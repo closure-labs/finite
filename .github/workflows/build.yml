@@ -38,8 +38,6 @@ jobs:
             tags: support-dell-xps-9350-intel
           - profile: dale
             tags: dale dell-xps-9350-intel
-          - profile: dale-cosmic
-            tags: dale-cosmic
 
     steps:
       - name: Checkout
@@ -127,24 +125,3 @@ jobs:
           registry_auth_file="${REGISTRY_AUTH_FILE:-${HOME}/.docker/config.json}"
           podman logout --authfile "${registry_auth_file}" "${REGISTRY}" || true
           rm -f "${registry_auth_file}"
-
-  cosmic-smoke:
-    name: Boot and log in to COSMIC
-    if: github.event_name != 'pull_request'
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Install VM runtime
-        run: |
-          sudo apt-get update
-          sudo apt-get install --yes openssh-client ovmf qemu-system-x86
-
-      - name: Boot image and verify COSMIC login
-        env:
-          COSMIC_SMOKE_IMAGE: ghcr.io/${{ github.repository }}:dale-cosmic
-        run: sudo tests/cosmic-vm-smoke.sh "${COSMIC_SMOKE_IMAGE}"

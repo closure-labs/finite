@@ -16,11 +16,9 @@ ghcr.io/declarative-dale/purplefin
 
 Purplefin's public build input is a named `BUILD_PROFILE`. Each profile is an
 ordered list of reusable modules and exactly one hardware module. The primary
-profiles are `base-generic`, `dale`, and `dale-cosmic`; Dale combines base,
-sales, trainer, support, and Dell XPS 13 9350 Intel/IPU7 hardware, while
-`dale-cosmic` adds Fedora's focused `cosmic-desktop` and
-`cosmic-desktop-apps` groups and makes COSMIC the default GDM session while
-retaining GNOME for recovery.
+profiles are `base-generic` and `dale`; Dale combines base, sales, trainer,
+support, and Dell XPS 13 9350 Intel/IPU7 hardware while retaining Bluefin's
+GNOME desktop.
 Legacy `BUILD_ROLE` plus
 hardware-valued `BUILD_PROFILE` inputs remain available for migration.
 
@@ -510,9 +508,3 @@ control files.
 ```bash
 just check
 ```
-
-On non-pull-request builds, CI also converts the published `dale-cosmic` image
-to a disposable QCOW2 VM, boots it under QEMU, performs a GDM automatic login,
-and verifies a Wayland session with the COSMIC compositor. The host-side flow
-is in `tests/cosmic-vm-smoke.sh`; the in-guest assertions are in
-`tests/cosmic-session-smoke.sh`.
