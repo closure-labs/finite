@@ -23,7 +23,6 @@ env "${generic_env[@]}" "${helper}" list-presets | grep -qx $'sales\tSales'
 env "${generic_env[@]}" "${helper}" list-presets | grep -qx $'support\tSupport'
 ! env "${generic_env[@]}" "${helper}" list-presets | grep -q '^dale'
 env "${dell_env[@]}" "${helper}" list-presets | grep -qx $'dale\tDale'
-env "${dell_env[@]}" "${helper}" list-presets | grep -qx $'dale-cosmic\tDale COSMIC'
 
 while IFS=$'\t' read -r preset hardware profile tag label; do
     [[ ${preset} == \#* || -z ${preset} ]] && continue

@@ -85,13 +85,13 @@ check:
     test -e "${firstboot_test}/pending-markers/40-pending.done"
 
     # Named profiles compose ordered reusable modules and retain a legacy path.
-    for profile in base-generic base-dell-xps-9350-intel sales-generic sales-dell-xps-9350-intel support-generic support-dell-xps-9350-intel dale dale-cosmic developer-generic trainer-generic executive-generic it-generic; do
+    for profile in base-generic base-dell-xps-9350-intel sales-generic sales-dell-xps-9350-intel support-generic support-dell-xps-9350-intel dale developer-generic trainer-generic executive-generic it-generic; do
         test -f "build_files/profiles/profiles/${profile}.conf"
         bash -n "build_files/profiles/profiles/${profile}.conf"
     done
 
     tests/installer-selector.sh
-    for module in base developer support sales trainer executive it cosmic hardware-generic-x86_64 hardware-framework-laptop hardware-dell-xps-9350-intel; do
+    for module in base developer support sales trainer executive it hardware-generic-x86_64 hardware-framework-laptop hardware-dell-xps-9350-intel; do
         test -x "build_files/modules/${module}.sh"
     done
     grep -qF 'ARG BUILD_ROLE=base' Containerfile
@@ -100,9 +100,6 @@ check:
     grep -qF '/tmp/purplefin-build/build.sh "${BUILD_PROFILE}" "${BUILD_ROLE}"' Containerfile
     grep -qF 'profile_definition="${build_root}/profiles/profiles/${profile}.conf"' build_files/build.sh
     grep -qF 'modules=(base sales trainer support hardware-dell-xps-9350-intel)' build_files/profiles/profiles/dale.conf
-    grep -qF 'modules=(base sales trainer support cosmic hardware-dell-xps-9350-intel)' build_files/profiles/profiles/dale-cosmic.conf
-    grep -qF 'dnf5 -y install @cosmic-desktop @cosmic-desktop-apps' build_files/modules/cosmic.sh
-    ! grep -qF '@cosmic-desktop-environment' build_files/modules/cosmic.sh
     grep -qF 'ARG BASE_IMAGE=ghcr.io/projectbluefin/bluefin' Containerfile
     test "$(grep -c '^ARG BASE_IMAGE' Containerfile)" -eq 2
     test "$(grep -c '^ARG BASE_TAG' Containerfile)" -eq 2
@@ -356,12 +353,11 @@ check:
     test "$(build_files/select-ostree-linux.sh dell-xps-9350-intel 7.1.2-200.fc44.x86_64)" = '7.1.2-200.fc44.x86_64'
     test "$(build_files/select-ostree-linux.sh dell-xps-9350-intel 7.1.3-200.fc44.x86_64)" = '7.1.3-200.fc44.x86_64'
     test "$(build_files/select-ostree-linux.sh dell-xps-9350-intel 7.2.0-200.fc44.x86_64)" = '7.2.0-200.fc44.x86_64'
-    test "$(build_files/select-ostree-linux.sh dale-cosmic 7.2.0-200.fc44.x86_64)" = '7.2.0-200.fc44.x86_64'
     test "$(build_files/select-ostree-linux.sh generic-x86_64 7.0.11-200.fc44.x86_64)" = '7.0.11-200.fc44.x86_64'
     test "$(build_files/select-ostree-linux.sh desktop-x86_64 7.0.11-200.fc44.x86_64)" = '7.0.11-200.fc44.x86_64'
     test "$(build_files/select-ostree-linux.sh lenovo-generic 7.0.11-200.fc44.x86_64)" = '7.0.11-200.fc44.x86_64'
     grep -qF 'BUILD_PROFILE=' .github/workflows/build.yml
-    test "$(grep -c '^          - profile:' .github/workflows/build.yml)" -eq 8
+    test "$(grep -c '^          - profile:' .github/workflows/build.yml)" -eq 7
     ci_matrix="$(awk '
         $1 == "-" && $2 == "profile:" { profile = $3 }
         $1 == "tags:" && profile != "" {
@@ -378,8 +374,7 @@ check:
         'sales-dell-xps-9350-intel|sales-dell-xps-9350-intel' \
         'support-generic|support-generic' \
         'support-dell-xps-9350-intel|support-dell-xps-9350-intel' \
-        'dale|dale dell-xps-9350-intel' \
-        'dale-cosmic|dale-cosmic')"
+        'dale|dale dell-xps-9350-intel')"
     grep -qF 'PURPLEFIN_OSTREE_LINUX=' .github/workflows/build.yml
     grep -qF 'ostree.linux=' .github/workflows/build.yml
     grep -qF 'steps.kernel.outputs.release' .github/workflows/build.yml
@@ -389,14 +384,6 @@ check:
     grep -qF 'podman login' .github/workflows/build.yml
     grep -qF 'podman push' .github/workflows/build.yml
     grep -qF 'REGISTRY_AUTH_FILE=' .github/workflows/build.yml
-    grep -qF 'name: Boot and log in to COSMIC' .github/workflows/build.yml
-    grep -qF 'sudo tests/cosmic-vm-smoke.sh "${COSMIC_SMOKE_IMAGE}"' .github/workflows/build.yml
-    test -x tests/cosmic-session-smoke.sh
-    test -x tests/cosmic-vm-smoke.sh
-    bash -n tests/cosmic-session-smoke.sh
-    bash -n tests/cosmic-vm-smoke.sh
-    ! grep -qF 'podman pull --retry' tests/cosmic-vm-smoke.sh
-    grep -qF 'pull_attempt <= 5' tests/cosmic-vm-smoke.sh
     ! rg -q 'ghcr.io/ublue-os/bluefin(:|\b)' Containerfile image-template.env README.md Justfile .github/workflows
     ! rg -q 'actions/checkout@v4|redhat-actions/(buildah-build|podman-login|push-to-registry)' .github/workflows
     ! grep -qF 'dracut --force "${kernel_modules_dir}/initramfs.img" "${kernel_version}"' build_files/build.sh

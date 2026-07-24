@@ -25,7 +25,7 @@ version_at_least() {
 }
 
 case "${profile}" in
-	dale|dale-cosmic|dell-xps-9350-intel|base-dell-xps-9350-intel|sales-dell-xps-9350-intel|support-dell-xps-9350-intel)
+	dale|dell-xps-9350-intel|base-dell-xps-9350-intel|sales-dell-xps-9350-intel|support-dell-xps-9350-intel)
 		if [[ -n "${PURPLEFIN_DELL_IPU7_KERNEL_EVR:-}" ]]; then
 			printf '%s.%s\n' "${PURPLEFIN_DELL_IPU7_KERNEL_EVR#0:}" "${base_arch}"
 		elif [[ "${PURPLEFIN_DELL_IPU7_KERNEL_ALLOW_UNPINNED:-0}" == "1" ]]; then
