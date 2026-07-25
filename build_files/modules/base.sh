@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Determinate Nix uses this as a bind-mount target on OSTree systems. Creating
+# it during the image build avoids trying to modify the read-only ComposeFS root.
+install -d -m 0755 /nix
+
 echo ":: Removing inherited Tailscale"
 systemctl disable tailscaled.service >/dev/null 2>&1 || true
 rm -f /etc/yum.repos.d/tailscale.repo /usr/share/ublue-os/privileged-setup.hooks.d/10-tailscale.sh /usr/share/fish/completions/tailscale.fish /etc/default/tailscaled

@@ -109,15 +109,18 @@ check:
     grep -qF 'purplefin_authselect_finalize' build_files/build.sh
 
     # Base/common content is present in every named profile.
+    grep -qF 'install -d -m 0755 /nix' build_files/modules/base.sh
     test -f manifests/Brewfile
     grep -qF 'marp-cli' manifests/Brewfile
     for formula in fzf neovim zsh-autosuggestions zsh-fast-syntax-highlighting zsh-history-substring-search zsh-vi-mode; do
         grep -qxF "brew \"${formula}\"" manifests/Brewfile
     done
     test -f manifests/flatpaks.preinstall
-    for app_id in com.bitwarden.desktop it.mijorus.gearlever com.nextcloud.desktopclient.nextcloud hu.irl.cameractrls; do
+    for app_id in com.bitwarden.desktop it.mijorus.gearlever com.nextcloud.desktopclient.nextcloud hu.irl.cameractrls org.mozilla.firefox org.mozilla.thunderbird; do
         grep -qF "[Flatpak Preinstall ${app_id}]" manifests/flatpaks.preinstall
     done
+    grep -qF '[Flatpak Preinstall org.mozilla.thunderbird]' profile_files/modules/sales/manifests/flatpaks.preinstall
+    ! rg -q 'org\.mozilla\.(Thunderbird|thunderbird_esr)' manifests/flatpaks.preinstall profile_files/modules/sales/manifests/flatpaks.preinstall
     ! grep -qF '[Flatpak Preinstall io.github.totoshko88.RustConn]' manifests/flatpaks.preinstall
     ! grep -qF '[Flatpak Preinstall com.vscodium.codium]' manifests/flatpaks.preinstall
     for package in fuse fuse-libs git micro nm-connection-editor nm-connection-editor-desktop wireguard-tools; do
