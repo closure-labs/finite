@@ -35,7 +35,7 @@ check:
     install -d "${tmpdir}/usr/lib/systemd/system/graphical-session.target.wants"
     ln -s ../purplefin-dell-xps-9350-panel.service "${tmpdir}/usr/lib/systemd/system/graphical-session.target.wants/purplefin-dell-xps-9350-panel.service"
     systemd_verify_log="${tmpdir}/systemd-verify.log"
-    if ! env -u XDG_RUNTIME_DIR SYSTEMD_BYPASS_USERDB=1 systemd-analyze verify --root="${tmpdir}" /usr/lib/systemd/system/purplefin-firstboot-rpm-ostree.service /usr/lib/systemd/system/purplefin-brew-bundle.service /usr/lib/systemd/system/purplefin-bitwarden-flatpak-update.service /usr/lib/systemd/system/purplefin-bitwarden-flatpak-update.timer /usr/lib/systemd/system/purplefin-refind-theme.service /usr/lib/systemd/system/purplefin-dell-ipu7-camera.service /usr/lib/systemd/system/purplefin-dell-xps-9350-battery.service /usr/lib/systemd/system/graphical-session.target /usr/lib/systemd/system/purplefin-dell-xps-9350-panel.service 2>"${systemd_verify_log}"; then
+    if ! env -u XDG_RUNTIME_DIR SYSTEMD_BYPASS_USERDB=1 systemd-analyze verify --root="${tmpdir}" /usr/lib/systemd/system/purplefin-firstboot-rpm-ostree.service /usr/lib/systemd/system/purplefin-brew-bundle.service /usr/lib/systemd/system/purplefin-refind-theme.service /usr/lib/systemd/system/purplefin-dell-ipu7-camera.service /usr/lib/systemd/system/purplefin-dell-xps-9350-battery.service /usr/lib/systemd/system/graphical-session.target /usr/lib/systemd/system/purplefin-dell-xps-9350-panel.service 2>"${systemd_verify_log}"; then
         grep -qF 'Failed to turn off SO_PASSRIGHTS on user lookup socket' "${systemd_verify_log}"
         grep -qF 'Failed to enable SO_PASSCRED on handoff timestamp socket' "${systemd_verify_log}"
         unexpected_systemd_error="$(grep -Ev '^(Failed to turn off SO_PASSRIGHTS on user lookup socket, ignoring: Operation not permitted|Failed to enable SO_PASSCRED on handoff timestamp socket: Operation not permitted)$' "${systemd_verify_log}" || true)"
@@ -141,16 +141,15 @@ check:
     test -x system_files/usr/libexec/purplefin/firstboot-rpm-ostree.d/05-bitwarden-desktop-flatpak-migration
     grep -qF 'rpm -q bitwarden' system_files/usr/libexec/purplefin/firstboot-rpm-ostree.d/05-bitwarden-desktop-flatpak-migration
     grep -qF 'run_rpm_ostree uninstall bitwarden' system_files/usr/libexec/purplefin/firstboot-rpm-ostree.d/05-bitwarden-desktop-flatpak-migration
-    test -x system_files/usr/libexec/purplefin/update-bitwarden-flatpak
-    grep -qF 'flatpak update --system --assumeyes --noninteractive "${app_id}"' system_files/usr/libexec/purplefin/update-bitwarden-flatpak
-    test -f system_files/usr/lib/systemd/system/purplefin-bitwarden-flatpak-update.service
-    test -f system_files/usr/lib/systemd/system/purplefin-bitwarden-flatpak-update.timer
-    grep -qF 'OnCalendar=*-*-* 06,18:00:00' system_files/usr/lib/systemd/system/purplefin-bitwarden-flatpak-update.timer
-    grep -qF 'purplefin-bitwarden-flatpak-update.timer' build_files/modules/base.sh
+    test ! -e system_files/usr/libexec/purplefin/update-bitwarden-flatpak
+    test ! -e system_files/usr/lib/systemd/system/purplefin-bitwarden-flatpak-update.service
+    test ! -e system_files/usr/lib/systemd/system/purplefin-bitwarden-flatpak-update.timer
+    ! grep -qF 'purplefin-bitwarden-flatpak-update' build_files/modules/base.sh
     test -f system_files/usr/share/polkit-1/actions/com.bitwarden.Bitwarden.policy
     grep -qF '<action id="com.bitwarden.Bitwarden.unlock">' system_files/usr/share/polkit-1/actions/com.bitwarden.Bitwarden.policy
     test -x build_files/install-bitwarden-cli-rpm.sh
-    test -x build_files/update-bitwarden-cli.sh
+    test ! -e build_files/update-bitwarden-cli.sh
+    test ! -e .github/workflows/update-bitwarden-cli.yml
     test -f build_files/bitwarden-cli.spec
     test -f build_files/bitwarden-cli.env
     grep -qE '^BITWARDEN_CLI_VERSION=[0-9]+(\.[0-9]+)+$' build_files/bitwarden-cli.env
@@ -159,11 +158,6 @@ check:
     grep -qF 'sha256sum --check --strict' build_files/install-bitwarden-cli-rpm.sh
     ! grep -qF 'https://vault.bitwarden.com/download/?app=cli&platform=linux' build_files/install-bitwarden-cli-rpm.sh
     grep -qF 'rpmbuild -bb' build_files/install-bitwarden-cli-rpm.sh
-    grep -qF 'api.github.com/repos/bitwarden/clients/releases?per_page=100' build_files/update-bitwarden-cli.sh
-    grep -qF 'sha256sum --check --strict' build_files/update-bitwarden-cli.sh
-    test -f .github/workflows/update-bitwarden-cli.yml
-    grep -qF 'cron: "23 8 * * *"' .github/workflows/update-bitwarden-cli.yml
-    grep -qF 'build_files/update-bitwarden-cli.sh' .github/workflows/update-bitwarden-cli.yml
     grep -qF 'Name:           purplefin-bitwarden-cli' build_files/bitwarden-cli.spec
     grep -qF '%global __os_install_post %{nil}' build_files/bitwarden-cli.spec
     grep -qF 'bash /tmp/purplefin-build/install-bitwarden-cli-rpm.sh' build_files/modules/base.sh
@@ -382,7 +376,6 @@ check:
     grep -qF 'ostree.linux=' .github/workflows/build.yml
     grep -qF 'steps.kernel.outputs.release' .github/workflows/build.yml
     grep -qF 'uses: actions/checkout@v7' .github/workflows/build.yml
-    grep -qF 'uses: actions/checkout@v7' .github/workflows/update-bitwarden-cli.yml
     grep -qF 'buildah bud' .github/workflows/build.yml
     grep -qF 'podman login' .github/workflows/build.yml
     grep -qF 'podman push' .github/workflows/build.yml

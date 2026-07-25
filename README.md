@@ -175,26 +175,10 @@ Terra's Bitwarden packages are excluded so future DNF operations cannot
 reintroduce the desktop RPM after migration to Flatpak.
 
 Bitwarden desktop is installed system-wide from Bitwarden's verified Flathub
-package. A Purplefin timer checks it for updates twice daily, independently of
-the bootc image lifecycle, and the image includes Bitwarden's polkit policy for
-Linux system-authentication unlock. The native `/usr/bin/bw` CLI remains a
+package, and the image includes Bitwarden's polkit policy for Linux
+system-authentication unlock. The native `/usr/bin/bw` CLI remains a
 Purplefin-built RPM in the bootc image: its official versioned archive and
 GitHub-published SHA-256 digest are pinned in `build_files/bitwarden-cli.env`.
-A daily GitHub workflow checks for a new CLI release and opens a pull request;
-merging that update builds the version into the next Purplefin deployment.
-
-To request immediate update checks instead of waiting for the timers and
-scheduled workflow, use:
-
-```bash
-run0 systemctl start purplefin-bitwarden-flatpak-update.service
-bw update
-run0 bootc upgrade
-```
-
-`bw update` reports whether the image-baked CLI is behind upstream; it does not
-replace the binary. A merged automated CLI update and a subsequent bootc image
-upgrade perform that replacement atomically.
 
 ### Migrating Bitwarden from the layered RPM
 
@@ -233,7 +217,6 @@ Verify the completed migration with:
 flatpak info --system com.bitwarden.desktop
 rpm -q purplefin-bitwarden-cli
 bw --version
-systemctl status purplefin-bitwarden-flatpak-update.timer
 test -f /usr/share/polkit-1/actions/com.bitwarden.Bitwarden.policy
 ```
 
@@ -470,7 +453,7 @@ non-working IPU7 inputs.
   Nextcloud Desktop Client, Cameractrls, and Gear Lever. Fedora's `qemu-img`
   package supplies the core image tools; Fedora has no separate
   `qemu-img-core` subpackage.
-- Bitwarden's verified desktop Flatpak, update timer, polkit policy, legacy RPM
+- Bitwarden's verified desktop Flatpak, polkit policy, legacy RPM
   migration, and official native CLI wrapped in a Purplefin-built RPM from a
   pinned archive and SHA-256 digest.
 - A centralized first-boot rpm-ostree runner with ordered tasks and

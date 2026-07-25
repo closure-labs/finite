@@ -25,4 +25,4 @@ bash /tmp/purplefin-build/install-bitwarden-cli-rpm.sh
 rpm -q purplefin-bitwarden-cli
 test "$(rpm -qf --qf '%{NAME}\n' /usr/bin/bw)" = "purplefin-bitwarden-cli"
 
-systemctl enable flatpak-nuke-fedora.service flatpak-preinstall.service purplefin-brew-bundle.service purplefin-bitwarden-flatpak-update.timer
+systemctl enable flatpak-nuke-fedora.service flatpak-preinstall.service purplefin-brew-bundle.service
