@@ -104,13 +104,17 @@ purplefin_dell_ipu7_int3472_patch_needed() {
 	return 0
 }
 
-purplefin_dell_ipu7_assert_firmware_present() {
-	local firmware_root suffix
+purplefin_dell_ipu7_find_firmware() {
+	local firmware_path firmware_root suffix
+	local firmware_roots="${PURPLEFIN_DELL_IPU7_FIRMWARE_ROOTS:-/usr/lib/firmware/intel/ipu:/lib/firmware/intel/ipu}"
+	local firmware_root_list=()
 
-	for firmware_root in /usr/lib/firmware/intel/ipu /lib/firmware/intel/ipu; do
+	IFS=: read -r -a firmware_root_list <<<"${firmware_roots}"
+	for firmware_root in "${firmware_root_list[@]}"; do
 		for suffix in '' .xz .zst; do
-			if [[ -f "${firmware_root}/ipu7_fw.bin${suffix}" ]]; then
-				echo ":: Found Dell IPU7 firmware ${firmware_root}/ipu7_fw.bin${suffix}"
+			firmware_path="${firmware_root}/ipu7_fw.bin${suffix}"
+			if [[ -f "${firmware_path}" ]]; then
+				printf '%s\n' "${firmware_path}"
 				return 0
 			fi
 		done

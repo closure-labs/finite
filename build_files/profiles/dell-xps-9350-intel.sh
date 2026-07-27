@@ -90,7 +90,7 @@ install_svp7500_stack() {
 	local inherited_record target_evr target_arch target_release
 	local config_path kernel_devel_spec source_root checkout actual_ref module
 	local int3472_provider="in-tree"
-	local initramfs_path initramfs_listing initramfs_dracut_modules
+	local ipu7_firmware_path initramfs_path initramfs_listing initramfs_dracut_modules
 	local initramfs_modules=(
 		usbio
 		gpio_usbio
@@ -110,6 +110,9 @@ install_svp7500_stack() {
 	local temporary_build_packages=()
 	local cleanup_packages=()
 	local package
+
+	ipu7_firmware_path="$(purplefin_dell_ipu7_find_firmware)" || exit 1
+	echo ":: Found Dell IPU7 firmware ${ipu7_firmware_path}"
 
 	inherited_record="$(installed_kernel_core_record)"
 	IFS=$'\t' read -r _ target_evr target_arch <<<"${inherited_record}"
@@ -224,8 +227,14 @@ EOF
 	echo ":: Rebuilding ${target_release} initramfs with the SVP7500 replacements"
 	dracut \
 		--add-drivers "${initramfs_modules[*]}" \
+		--install "${ipu7_firmware_path}" \
 		--rebuild "${initramfs_path}"
 	initramfs_listing="$(lsinitrd "${initramfs_path}")"
+	if ! awk -v firmware="${ipu7_firmware_path#/}" \
+		'$NF == firmware { found = 1 } END { exit !found }' <<<"${initramfs_listing}"; then
+		echo "Rebuilt initramfs does not contain Dell IPU7 firmware ${ipu7_firmware_path}" >&2
+		exit 1
+	fi
 	for module in intel_cvs ipu-bridge hm1092; do
 		if ! grep -qF "updates/purplefin/${module}.ko" <<<"${initramfs_listing}"; then
 			echo "Rebuilt initramfs does not contain Purplefin's ${module} replacement" >&2
@@ -250,8 +259,6 @@ EOF
 		dnf5 -y remove --no-autoremove "${cleanup_packages[@]}"
 	fi
 }
-
-purplefin_dell_ipu7_assert_firmware_present
 
 echo ":: Installing Fedora libcamera runtime"
 dnf5 -y install "${camera_runtime_packages[@]}"

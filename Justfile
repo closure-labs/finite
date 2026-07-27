@@ -551,6 +551,10 @@ check:
     grep -qF -- '--rebuild "${initramfs_path}"' build_files/profiles/dell-xps-9350-intel.sh
     ! grep -qF -- '--no-hostonly' build_files/profiles/dell-xps-9350-intel.sh
     grep -qF -- '--add-drivers "${initramfs_modules[*]}"' build_files/profiles/dell-xps-9350-intel.sh
+    grep -qF 'ipu7_firmware_path="$(purplefin_dell_ipu7_find_firmware)"' build_files/profiles/dell-xps-9350-intel.sh
+    grep -qF -- '--install "${ipu7_firmware_path}"' build_files/profiles/dell-xps-9350-intel.sh
+    grep -qF '$NF == firmware { found = 1 } END { exit !found }' build_files/profiles/dell-xps-9350-intel.sh
+    grep -qF 'Rebuilt initramfs does not contain Dell IPU7 firmware ${ipu7_firmware_path}' build_files/profiles/dell-xps-9350-intel.sh
     for module in ostree dmsquash-live dmsquash-live-autooverlay; do
         grep -qE "^[[:space:]]*${module}$" build_files/profiles/dell-xps-9350-intel.sh
     done
@@ -609,6 +613,10 @@ check:
     test "$(purplefin_dell_ipu7_fix_pack_repo)" = 'https://github.com/jibsta210/svp7500-camera-fix-pack'
     test "$(purplefin_dell_ipu7_fix_pack_version)" = 'v1.0.2'
     test "$(purplefin_dell_ipu7_fix_pack_ref)" = 'e4c95452339b2d9803974a899c4f2da6e143891d'
+    ipu7_firmware_root="${tmpdir}/firmware/intel/ipu"
+    install -d "${ipu7_firmware_root}"
+    printf 'test firmware\n' > "${ipu7_firmware_root}/ipu7_fw.bin.zst"
+    test "$(PURPLEFIN_DELL_IPU7_FIRMWARE_ROOTS="${ipu7_firmware_root}" purplefin_dell_ipu7_find_firmware)" = "${ipu7_firmware_root}/ipu7_fw.bin.zst"
     test "$(purplefin_dell_ipu7_kernel_release_for_evr_arch '7.1.3-201.fc44' x86_64)" = '7.1.3-201.fc44.x86_64'
     ipu7_config="${tmpdir}/ipu7-kernel.config"
     required_ipu7_configs=(CONFIG_IPU_BRIDGE CONFIG_VIDEO_INTEL_IPU7 CONFIG_VIDEO_OV02C10 CONFIG_USB_USBIO CONFIG_GPIO_USBIO CONFIG_I2C_USBIO)

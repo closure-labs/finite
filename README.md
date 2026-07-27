@@ -372,6 +372,9 @@ The flow is:
    avoiding a compiler mismatch without modifying the fix-pack sources.
    The exact source commit and provider choice are recorded in
    `/usr/share/purplefin/dell-ipu7/source-provenance`.
+   The rebuilt initramfs explicitly installs the detected `ipu7_fw.bin`
+   variant and verifies its presence, since the in-tree IPU7 module does not
+   advertise that firmware to Dracut.
 3. Fedora's stock `libcamera`, `libcamera-ipa`, `libcamera-tools`, and
    `pipewire-plugin-libcamera` provide the Simple pipeline and GPU SoftISP.
    Purplefin does not add a PSYS DKMS tree, custom libcamera build,
