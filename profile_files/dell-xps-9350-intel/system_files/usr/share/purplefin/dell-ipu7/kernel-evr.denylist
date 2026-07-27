@@ -1,2 +1,0 @@
-# One exact kernel EVR per line. Entries here are refused even when explicitly
-# requested through PURPLEFIN_DELL_IPU7_KERNEL_EVR.

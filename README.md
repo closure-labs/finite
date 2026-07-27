@@ -68,7 +68,7 @@ selection interface and image-builder requirements.
 | `desktop-x86_64` | Neutral generic x86-64 desktop scaffold for future hardware policy. |
 | `lenovo-generic` | Neutral Lenovo scaffold for future hardware policy. |
 | `dell-xps-9350-intel` | Dell XPS 13 9350 policies, lid-aware privilege authentication, rEFInd, and the IPU7 camera stack. |
-| `dell-xps-9350-intel-no-ipu7` | Dell XPS 13 9350 test overlay with its non-camera and lid-aware authentication policies and pinned mainline kernel, but no IPU7 camera integration. |
+| `dell-xps-9350-intel-no-ipu7` | Dell XPS 13 9350 test overlay with its non-camera and lid-aware authentication policies and Bluefin's included kernel, but no IPU7 camera integration. |
 
 Every hardware profile also applies the shared hardware-security baseline:
 fingerprint authentication, PAM U2F/FIDO2 support, YubiKey management, and
@@ -128,23 +128,9 @@ podman build \
   .
 ```
 
-The Dell profile also accepts build-time kernel canary arguments:
-
-```bash
-podman build \
-  --build-arg BUILD_ROLE=support \
-  --build-arg BUILD_PROFILE=dell-xps-9350-intel \
-  --build-arg PURPLEFIN_DELL_IPU7_KERNEL_EVR=7.1.2-355.vanilla.fc44 \
-  --build-arg PURPLEFIN_OSTREE_LINUX=7.1.2-355.vanilla.fc44.x86_64 \
-  --label ostree.linux=7.1.2-355.vanilla.fc44.x86_64 \
-  --tag ghcr.io/declarative-dale/purplefin:dell-xps-9350-intel \
-  .
-```
-
-The no-IPU7 Dell test profile uses the same pinned mainline kernel by default.
-Its neutral canary arguments are
-`PURPLEFIN_DELL_MAINLINE_KERNEL_EVR` and
-`PURPLEFIN_DELL_MAINLINE_KERNEL_ALLOW_UNPINNED`.
+Both Dell profiles keep Bluefin's included kernel unchanged. The full camera
+profile builds its small set of SVP7500 replacement modules against that exact
+kernel; the no-IPU7 test profile adds no camera kernel modules at all.
 
 ## Switch To An Image
 
@@ -163,9 +149,9 @@ time.
 The `latest` tag tracks the `base` + `generic-x86_64` image. The
 `dell-xps-9350-intel` tag tracks `support` + Dell IPU7. The local
 `build-dell-no-ipu7` compatibility recipe produces the `support` + Dell
-no-camera test image. The full Dell camera profile uses the pinned
-7.1.2 fallback only while Bluefin's kernel is older than 7.1.2, then follows
-Bluefin's kernel. The reusable `devops` component provides Ghostty, VSCodium,
+no-camera test image. Both follow Bluefin's kernel without a Dell-specific
+kernel repository or version override. The reusable `devops` component provides
+Ghostty, VSCodium,
 `packer`, `ansible`, `tofu`, and `bao`; both the support and development
 departments reference it. The base department provides Git, Micro, `qemu-img`,
 `qemu-tools`, and common QEMU image block backends.
@@ -355,81 +341,70 @@ systemctl --user restart purplefin-dell-xps-9350-panel.service
 gdctl show --modes --properties
 ```
 
-Secure Boot is intentionally not enabled while the Linux 7.1 camera path uses
-an unsigned external `intel_cvs` module. Follow the gated
-[Dell XPS 13 9350 Secure Boot runbook](docs/dell-xps-9350-secure-boot.md) only
-after Purplefin has selected the signed in-tree CVS provider.
+The fix-pack modules are currently unsigned. Read the
+[Dell XPS 13 9350 Secure Boot note](docs/dell-xps-9350-secure-boot.md) before
+enabling enforcement; there is no automatic handoff to mainline `cvs`.
 
 ## Dell IPU7 Camera Flow
 
 The Dell XPS 9350 Intel profile targets the Lunar Lake IPU7 (`8086:645d`),
-Intel CVS (`INTC10DE`), and OV02C10 (`OVTI02C1`) camera in this laptop. The
-generic and `dell-xps-9350-intel-no-ipu7` profiles do not install its module,
-activation rules, or camera-specific userspace configuration.
+Synaptics SVP7500/Intel CVS (`INTC10DE`), and OV02C10 (`OVTI02C1`) camera in
+this laptop. The generic and `dell-xps-9350-intel-no-ipu7` profiles do not
+install its replacement modules, udev rules, or camera-specific userspace
+configuration.
 
-IPU7 setup requires stable Linux 7.1.2 or newer; release candidates and older
-kernels are rejected. At image-build time Purplefin reads Bluefin's inherited
-`kernel-core` package. If its upstream version is older than 7.1.2, Purplefin
-replaces it with the pinned EVR `7.1.2-355.vanilla.fc44`. As soon as Bluefin
-ships 7.1.2 or newer, Purplefin keeps Bluefin's exact kernel instead. The same
-decision is written to `/usr/share/purplefin/dell-ipu7/kernel-selection`, and
-the build sets the OCI `ostree.linux` label to that exact release. Explicit
-canary overrides remain available through `PURPLEFIN_DELL_IPU7_KERNEL_EVR` and
-`PURPLEFIN_DELL_IPU7_KERNEL_ALLOW_UNPINNED`; exact EVRs can be blocked in
-`/usr/share/purplefin/dell-ipu7/kernel-evr.denylist`.
-
-Linux 7.1 has the in-tree IPU7 ISYS, USBIO, and OV02C10 drivers but not the
-Lunar Lake CVS ownership fix. Purplefin therefore builds only `intel_cvs` from
-Intel's `vision-drivers` commit
-`845d6f8bdf66ff1f455901da9de5e00a53a83dce` (tag `26WW19.4_NVL`). That commit
-guards the protocol-2-only host identifier command and works with the
-protocol-1 CVS in this laptop. The module is compiled into the image against
-the exact selected 7.1.x kernel; it is not built with DKMS after boot because the
-Atomic host mounts `/usr/src` and `/usr/lib/modules` read-only.
+The implementation follows `svp7500-camera-fix-pack` v1.0.2 at commit
+`e4c95452339b2d9803974a899c4f2da6e143891d`. Purplefin keeps Bluefin's exact
+included kernel and verifies that its IPU bridge, IPU7, OV02C10, and USBIO
+features are enabled. It does not enable a COPR or install a replacement
+kernel. The build stops if the included kernel cannot accept the modular
+fixes.
 
 The flow is:
 
-1. The Dell profile keeps Bluefin's kernel when it is at least 7.1.2. Otherwise
-   it temporarily enables the Dell-only mainline repo, installs the exact
-   pinned 7.1.2 fallback, prunes the obsolete inherited module tree, and removes
-   the temporary repo. Both paths validate the OV02C10, IPU7, and USBIO config.
-2. The build accepts Fedora's compressed `ipu7_fw.bin.xz`/`.zst` firmware,
-   temporarily installs exact matching `kernel-devel` when required, compiles the pinned Intel CVS
-   module, verifies its kernel vermagic and `INTC10DE` alias, installs it under
-   the target kernel's module tree, runs `depmod`, and removes build-only
-   packages.
+1. The profile retains the inherited Bluefin kernel and validates its IPU7,
+   OV02C10, IPU bridge, USBIO, and firmware support.
+2. Against that exact kernel, the image build compiles the fix-pack's patched
+   `intel_cvs`, `ipu_bridge`, and `hm1092` modules. It installs the patched
+   INT3472 module only when the in-tree driver does not already publish the IR
+   flood LED; replacing a newer in-tree INT3472 would break the illuminator.
+   Kbuild uses the same GCC or Clang family recorded by the inherited kernel,
+   avoiding a compiler mismatch without modifying the fix-pack sources.
+   The exact source commit and provider choice are recorded in
+   `/usr/share/purplefin/dell-ipu7/source-provenance`.
 3. Fedora's stock `libcamera`, `libcamera-ipa`, `libcamera-tools`, and
    `pipewire-plugin-libcamera` provide the Simple pipeline and GPU SoftISP.
-   No PSYS module, custom OV08X40 pipeline, `/usr/local` libcamera,
-   v4l2loopback device, or proprietary camera HAL is installed.
-4. At boot, `intel_cvs` performs the camera-ownership handshake. A udev rule
-   and `purplefin-dell-ipu7-camera.service` then rebind `i2c-OVTI02C1:00` to
-   `ov02c10`, covering the early-probe race documented in Fedora bug 2413472.
-5. WirePlumber suppresses the 32 raw V4L2 devices whose description is `ipu7`.
+   Purplefin does not add a PSYS DKMS tree, custom libcamera build,
+   v4l2loopback device, or proprietary camera HAL.
+4. The fix-pack's udev policy disables autosuspend for the `06cb:0701`
+   SVP7500 bridge and grants the `video` group access to an INT3472 IR flood
+   LED when the laptop exposes one. Module loading and sensor binding otherwise
+   use the kernel's normal device discovery; there is no Purplefin rebind
+   service or forced module-load list.
+5. WirePlumber suppresses raw V4L2 devices whose description is `ipu7`.
    Those are ISYS capture endpoints, not webcams. The libcamera monitor remains
    enabled and publishes the single usable camera. A user service configures
    each Flathub Firefox profile to use its PipeWire camera backend, preventing
    Firefox from bypassing WirePlumber and enumerating the raw V4L2 nodes.
-6. On Linux 7.2 or newer, the build instead requires
-   `CONFIG_VIDEO_INTEL_CVS` and the in-tree `intel_cvs` module with the Dell
-   `INTC10DE` alias, and does not build or install the external module.
 
-This workaround is based on the same-hardware Fedora report at
-`https://bugzilla.redhat.com/show_bug.cgi?id=2413472`. Native CVS/IPU bridge
-support first appears in Linux 7.2, which is the automatic handoff point for
-the in-tree CVS provider. The external 7.1.x module is unsigned, so Secure Boot
-must remain disabled on that path unless a locally enrolled module-signing key
-is added.
+The fix-pack's mainline CVS evaluation is important: Linux 7.2's `cvs` driver
+expects to sit inside a firmware-described media graph, while this SVP7500
+platform uses CVS as a control-plane-only ownership and MIPI configuration
+bridge. Purplefin therefore continues to install the pinned external
+`intel_cvs` on newer kernels instead of switching providers based on a version
+number.
 
 Runtime verification on the Dell laptop:
 
 ```bash
 uname -r
-cat /usr/share/purplefin/dell-ipu7/kernel-selection
+cat /usr/share/purplefin/dell-ipu7/source-provenance
 modinfo -n intel_cvs
+modinfo -n ipu_bridge
+modinfo -n hm1092
 readlink -f /sys/bus/i2c/devices/i2c-INTC10DE:00/driver
 readlink -f /sys/bus/i2c/devices/i2c-OVTI02C1:00/driver
-journalctl -k -b | grep -Ei 'ipu7|intel.cvs|ov02c10|firmware'
+journalctl -k -b | grep -Ei 'ipu7|intel.cvs|hm1092|ov02c10|firmware'
 cam -l
 rg 'media.webrtc.camera.allow-pipewire' \
   ~/.var/app/org.mozilla.firefox/config/mozilla/firefox/*/user.js
@@ -467,7 +442,10 @@ non-working IPU7 inputs.
   component.
 - Removal of inherited Tailscale packages, enabled services, RPM repository
   configuration, setup hooks, and user-facing tips from every composition.
-- Dell XPS 9350 Intel conditional 7.1.2 fallback until Bluefin reaches that version, exact kernel OCI metadata, external CVS for 7.1.x, validated in-tree CVS for 7.2+, OV02C10 reprobe compatibility, stock Fedora libcamera integration, and WirePlumber filtering for raw IPU7 endpoints.
+- Dell XPS 9350 Intel use of Bluefin's included kernel, pinned SVP7500 fix-pack
+  CVS/IPU bridge/HM1092 fixes, conditional INT3472 replacement, bridge
+  autosuspend protection, stock Fedora libcamera integration, and WirePlumber
+  filtering for raw IPU7 endpoints.
 - Dell XPS 9350 Intel lid-aware password/fingerprint routing for sudo and
   polkit, DMI-gated 75-80% UPower/Dell Custom charging, a laptop-safe TuneD
   Performance profile, AC/battery internal-panel refresh policy, and one-time
