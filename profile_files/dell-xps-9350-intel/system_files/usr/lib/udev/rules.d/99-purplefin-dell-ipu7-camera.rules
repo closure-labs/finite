@@ -1,4 +1,0 @@
-# OV02C10 probes before the Lunar Lake CVS has handed sensor ownership to the IPU.
-# Reprobe it as soon as Intel's CVS driver completes its bind.
-ACTION=="bind", SUBSYSTEM=="i2c", DRIVER=="Intel CVS driver", RUN+="/usr/libexec/purplefin/dell-ipu7-rebind-sensor"
-ACTION=="bind", SUBSYSTEM=="i2c", DRIVER=="intel_cvs", RUN+="/usr/libexec/purplefin/dell-ipu7-rebind-sensor"

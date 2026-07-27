@@ -35,14 +35,15 @@ check:
     install -d "${tmpdir}/usr/lib/systemd/system/graphical-session.target.wants"
     ln -s ../purplefin-dell-xps-9350-panel.service "${tmpdir}/usr/lib/systemd/system/graphical-session.target.wants/purplefin-dell-xps-9350-panel.service"
     systemd_verify_log="${tmpdir}/systemd-verify.log"
-    if ! env -u XDG_RUNTIME_DIR SYSTEMD_BYPASS_USERDB=1 systemd-analyze verify --root="${tmpdir}" /usr/lib/systemd/system/purplefin-firstboot-rpm-ostree.service /usr/lib/systemd/system/purplefin-brew-bundle.service /usr/lib/systemd/system/purplefin-refind-theme.service /usr/lib/systemd/system/purplefin-dell-ipu7-camera.service /usr/lib/systemd/system/purplefin-dell-xps-9350-battery.service /usr/lib/systemd/system/graphical-session.target /usr/lib/systemd/system/purplefin-dell-xps-9350-panel.service 2>"${systemd_verify_log}"; then
+    if ! env -u XDG_RUNTIME_DIR SYSTEMD_BYPASS_USERDB=1 systemd-analyze verify --root="${tmpdir}" /usr/lib/systemd/system/purplefin-firstboot-rpm-ostree.service /usr/lib/systemd/system/purplefin-brew-bundle.service /usr/lib/systemd/system/purplefin-refind-theme.service /usr/lib/systemd/system/purplefin-dell-xps-9350-battery.service /usr/lib/systemd/system/graphical-session.target /usr/lib/systemd/system/purplefin-dell-xps-9350-panel.service 2>"${systemd_verify_log}"; then
         grep -qF 'Failed to turn off SO_PASSRIGHTS on user lookup socket' "${systemd_verify_log}"
         grep -qF 'Failed to enable SO_PASSCRED on handoff timestamp socket' "${systemd_verify_log}"
         unexpected_systemd_error="$(grep -Ev '^(Failed to turn off SO_PASSRIGHTS on user lookup socket, ignoring: Operation not permitted|Failed to enable SO_PASSCRED on handoff timestamp socket: Operation not permitted)$' "${systemd_verify_log}" || true)"
         test -z "${unexpected_systemd_error}"
         echo 'systemd-analyze verify skipped: sandbox blocks its userdb socket setup' >&2
     fi
-    env -u XDG_RUNTIME_DIR udevadm verify --root="${tmpdir}" /usr/lib/udev/rules.d/99-purplefin-dell-ipu7-camera.rules
+    env -u XDG_RUNTIME_DIR udevadm verify --root="${tmpdir}" /usr/lib/udev/rules.d/99-purplefin-svp7500-no-autosuspend.rules
+    env -u XDG_RUNTIME_DIR udevadm verify --root="${tmpdir}" /usr/lib/udev/rules.d/99-purplefin-hm1092-ir-led.rules
 
     # Retired first-boot tasks lose their stale completion markers safely.
     firstboot_test="${tmpdir}/firstboot-test"
@@ -85,7 +86,7 @@ check:
     test -e "${firstboot_test}/pending-markers/40-pending.done"
 
     # Named profiles compose ordered reusable modules and retain a legacy path.
-    for profile in base-generic base-dell-xps-9350-intel sales-generic sales-dell-xps-9350-intel support-generic support-dell-xps-9350-intel dale developer-generic trainer-generic executive-generic it-generic; do
+    for profile in base-generic base-dell-xps-9350-intel sales-generic sales-dell-xps-9350-intel support-generic support-dell-xps-9350-intel support-dell-xps-9350-intel-no-ipu7 dale developer-generic trainer-generic executive-generic it-generic; do
         test -f "build_files/profiles/profiles/${profile}.conf"
         bash -n "build_files/profiles/profiles/${profile}.conf"
     done
@@ -339,17 +340,17 @@ check:
         file "system_files/usr/share/ublue-os/bluefin-logos/${logo}.png" | grep -q 'PNG image data, 1000 x 1000'
         cmp -s "system_files/usr/share/ublue-os/bluefin-logos/${logo}.png" profile_files/dell-xps-9350-intel/system_files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/icons/os_purplefin.png
     done
-    grep -qF 'PURPLEFIN_DELL_IPU7_KERNEL_EVR' Containerfile
-    grep -qF 'PURPLEFIN_DELL_IPU7_KERNEL_ALLOW_UNPINNED' Containerfile
-    grep -qF 'PURPLEFIN_DELL_MAINLINE_KERNEL_EVR' Containerfile
-    grep -qF 'PURPLEFIN_DELL_MAINLINE_KERNEL_ALLOW_UNPINNED' Containerfile
+    ! grep -qF 'PURPLEFIN_DELL_IPU7_KERNEL_EVR' Containerfile
+    ! grep -qF 'PURPLEFIN_DELL_MAINLINE_KERNEL_EVR' Containerfile
     grep -qF 'PURPLEFIN_OSTREE_LINUX' Containerfile
     grep -qF 'LABEL ostree.linux="${PURPLEFIN_OSTREE_LINUX}"' Containerfile
     test -x build_files/select-ostree-linux.sh
-    test "$(build_files/select-ostree-linux.sh dell-xps-9350-intel 7.0.11-200.fc44.x86_64)" = '7.1.2-355.vanilla.fc44.x86_64'
+    test "$(build_files/select-ostree-linux.sh dell-xps-9350-intel 7.0.11-200.fc44.x86_64)" = '7.0.11-200.fc44.x86_64'
     test "$(build_files/select-ostree-linux.sh dell-xps-9350-intel 7.1.2-200.fc44.x86_64)" = '7.1.2-200.fc44.x86_64'
     test "$(build_files/select-ostree-linux.sh dell-xps-9350-intel 7.1.3-200.fc44.x86_64)" = '7.1.3-200.fc44.x86_64'
     test "$(build_files/select-ostree-linux.sh dell-xps-9350-intel 7.2.0-200.fc44.x86_64)" = '7.2.0-200.fc44.x86_64'
+    test "$(build_files/select-ostree-linux.sh dell-xps-9350-intel-no-ipu7 7.0.11-200.fc44.x86_64)" = '7.0.11-200.fc44.x86_64'
+    test "$(build_files/select-ostree-linux.sh support-dell-xps-9350-intel-no-ipu7 7.0.11-200.fc44.x86_64)" = '7.0.11-200.fc44.x86_64'
     test "$(build_files/select-ostree-linux.sh generic-x86_64 7.0.11-200.fc44.x86_64)" = '7.0.11-200.fc44.x86_64'
     test "$(build_files/select-ostree-linux.sh desktop-x86_64 7.0.11-200.fc44.x86_64)" = '7.0.11-200.fc44.x86_64'
     test "$(build_files/select-ostree-linux.sh lenovo-generic 7.0.11-200.fc44.x86_64)" = '7.0.11-200.fc44.x86_64'
@@ -394,10 +395,7 @@ check:
     ! rg -qi 'librepods' README.md build_files/profiles
     test -x build_files/profiles/dell-xps-9350-intel-no-ipu7.sh
     grep -qF 'copy_profile_tree "usr/share/purplefin/refind"' build_files/profiles/dell-xps-9350-intel-no-ipu7.sh
-    grep -qF 'install_mainline_7_1_kernel' build_files/profiles/dell-xps-9350-intel-no-ipu7.sh
-    grep -qF 'kernel_default_evr="7.1.2-355.vanilla.fc44"' build_files/profiles/dell-xps-9350-intel-no-ipu7.sh
-    grep -qF 'remove_inherited_v4l2loopback_kmods' build_files/profiles/dell-xps-9350-intel-no-ipu7.sh
-    grep -qF 'kmod-zfs' build_files/profiles/dell-xps-9350-intel-no-ipu7.sh
+    ! grep -Eq 'kernel-(core|devel)|mainline|COPR|dnf5' build_files/profiles/dell-xps-9350-intel-no-ipu7.sh
     test -f build_files/profiles/lib/dell-xps-9350-common.sh
     for profile_script in build_files/profiles/dell-xps-9350-intel.sh build_files/profiles/dell-xps-9350-intel-no-ipu7.sh; do
         grep -qF 'source /tmp/purplefin-build/profiles/lib/dell-xps-9350-common.sh' "${profile_script}"
@@ -520,13 +518,11 @@ check:
     tests/dell-lid-auth.sh
     tests/dell-xps-9350-policies.sh
     test -f docs/dell-xps-9350-secure-boot.md
-    grep -qF 'cvs_provider=in-tree' docs/dell-xps-9350-secure-boot.md
+    grep -qF '`cvs` is not a replacement' docs/dell-xps-9350-secure-boot.md
     grep -qF 'updates/purplefin' docs/dell-xps-9350-secure-boot.md
-    grep -qF 'run0 mokutil --import' docs/dell-xps-9350-secure-boot.md
-    grep -qF 'Linux 7.1.3 fallback status' docs/dell-xps-9350-secure-boot.md
-    ! grep -qw sudo docs/dell-xps-9350-secure-boot.md
-    test -x profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/dell-ipu7-activate
-    test -x profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/dell-ipu7-rebind-sensor
+    grep -qF 'source-provenance' docs/dell-xps-9350-secure-boot.md
+    test ! -e profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/dell-ipu7-activate
+    test ! -e profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/dell-ipu7-rebind-sensor
     test -x profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/configure-firefox-pipewire-camera
     test -f profile_files/dell-xps-9350-intel/system_files/usr/lib/systemd/user/purplefin-firefox-pipewire-camera.service
     test -L profile_files/dell-xps-9350-intel/system_files/etc/systemd/user/default.target.wants/purplefin-firefox-pipewire-camera.service
@@ -541,35 +537,32 @@ check:
     test "$(grep -cF 'user_pref("media.webrtc.camera.allow-pipewire", true);' "${firefox_test_root}/Profile With Spaces/user.js")" = 1
     test "$(grep -cF '// Purplefin: expose the IPU7 libcamera source instead of raw V4L2 nodes.' "${firefox_test_root}/Profile With Spaces/user.js")" = 1
     test -f profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/lib/dell-ipu7.sh
-    grep -qF 'install_ipu7_kernel' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF 'purplefin_dell_ipu7_keep_inherited_kernel' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF 'selection_mode=' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF 'cvs_provider=' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF 'validate_in_tree_cvs_module' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF 'CONFIG_VIDEO_INTEL_CVS' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF 'remove_non_ipu7_runtime_kernels' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF 'remove_inherited_v4l2loopback_kmods' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF 'remove_incompatible_inherited_kernel_addons' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF 'kernel-build-packages' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF 'https://github.com/intel/vision-drivers.git' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF '845d6f8bdf66ff1f455901da9de5e00a53a83dce' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF 'KERNEL_SRC="/usr/lib/modules/${target_release}/build"' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF '/updates/purplefin/intel_cvs.ko' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF 'ipu7_fw.bin${suffix}' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF 'kernel-devel-matched-${target_evr}.${target_arch}' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF 'dnf5 -y remove --no-autoremove "${cleanup_packages[@]}"' build_files/profiles/dell-xps-9350-intel.sh
+    grep -qF 'installed_kernel_core_record' build_files/profiles/dell-xps-9350-intel.sh
+    grep -qF 'PURPLEFIN_OSTREE_LINUX' build_files/profiles/dell-xps-9350-intel.sh
+    ! grep -Eq 'kernel-vanilla|mainline-kernel|remove_non_ipu7_runtime_kernels|validate_in_tree_cvs_module' build_files/profiles/dell-xps-9350-intel.sh
+    grep -qF 'purplefin_dell_ipu7_fix_pack_ref' build_files/profiles/dell-xps-9350-intel.sh
+    grep -qF 'CONFIG_CC_IS_CLANG=y' build_files/profiles/dell-xps-9350-intel.sh
+    grep -qF 'CONFIG_CC_IS_GCC=y' build_files/profiles/dell-xps-9350-intel.sh
+    grep -qF 'svp7500_make_args=(CC=gcc)' build_files/profiles/dell-xps-9350-intel.sh
+    grep -qF 'intel-cvs-1.0 intel_cvs.ko' build_files/profiles/dell-xps-9350-intel.sh
+    grep -qF 'ipu-bridge-patched-1.0 ipu-bridge.ko' build_files/profiles/dell-xps-9350-intel.sh
+    grep -qF 'hm1092-1.0 hm1092.ko' build_files/profiles/dell-xps-9350-intel.sh
+    grep -qF 'purplefin_dell_ipu7_int3472_patch_needed' build_files/profiles/dell-xps-9350-intel.sh
+    grep -qF -- '--no-hostonly' build_files/profiles/dell-xps-9350-intel.sh
+    grep -qF -- '--add-drivers "${initramfs_modules[*]}"' build_files/profiles/dell-xps-9350-intel.sh
+    grep -qF 'dnf5 -y remove --no-autoremove' build_files/profiles/dell-xps-9350-intel.sh
     for package in libcamera libcamera-ipa libcamera-tools pipewire-plugin-libcamera; do
         grep -qE "^[[:space:]]*${package}$" build_files/profiles/dell-xps-9350-intel.sh
     done
-    test -f profile_files/dell-xps-9350-intel/system_files/usr/lib/systemd/system/purplefin-dell-ipu7-camera.service
-    test -f profile_files/dell-xps-9350-intel/system_files/usr/lib/udev/rules.d/99-purplefin-dell-ipu7-camera.rules
-    test -f profile_files/dell-xps-9350-intel/system_files/usr/lib/modprobe.d/purplefin-dell-ipu7.conf
-    test -f profile_files/dell-xps-9350-intel/system_files/usr/lib/modules-load.d/purplefin-dell-ipu7.conf
+    test ! -e profile_files/dell-xps-9350-intel/system_files/usr/lib/systemd/system/purplefin-dell-ipu7-camera.service
+    test ! -e profile_files/dell-xps-9350-intel/system_files/usr/lib/udev/rules.d/99-purplefin-dell-ipu7-camera.rules
+    test ! -e profile_files/dell-xps-9350-intel/system_files/usr/lib/modprobe.d/purplefin-dell-ipu7.conf
+    test ! -e profile_files/dell-xps-9350-intel/system_files/usr/lib/modules-load.d/purplefin-dell-ipu7.conf
+    test -f profile_files/dell-xps-9350-intel/system_files/usr/lib/udev/rules.d/99-purplefin-svp7500-no-autosuspend.rules
+    test -f profile_files/dell-xps-9350-intel/system_files/usr/lib/udev/rules.d/99-purplefin-hm1092-ir-led.rules
+    grep -qF 'ATTRS{idVendor}=="06cb"' profile_files/dell-xps-9350-intel/system_files/usr/lib/udev/rules.d/99-purplefin-svp7500-no-autosuspend.rules
+    grep -qF 'KERNEL=="*ir_flood_led*"' profile_files/dell-xps-9350-intel/system_files/usr/lib/udev/rules.d/99-purplefin-hm1092-ir-led.rules
     test -f profile_files/dell-xps-9350-intel/system_files/usr/share/wireplumber/wireplumber.conf.d/50-purplefin-dell-ipu7.conf
-    grep -qF 'ACTION=="bind", SUBSYSTEM=="i2c", DRIVER=="Intel CVS driver"' profile_files/dell-xps-9350-intel/system_files/usr/lib/udev/rules.d/99-purplefin-dell-ipu7-camera.rules
-    grep -qF 'ACTION=="bind", SUBSYSTEM=="i2c", DRIVER=="intel_cvs"' profile_files/dell-xps-9350-intel/system_files/usr/lib/udev/rules.d/99-purplefin-dell-ipu7-camera.rules
-    grep -qF 'i2c-OVTI02C1:00' profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/dell-ipu7-rebind-sensor
-    grep -qF 'softdep ov02c10 pre: intel_cvs' profile_files/dell-xps-9350-intel/system_files/usr/lib/modprobe.d/purplefin-dell-ipu7.conf
     grep -qF 'monitor.v4l2.rules' profile_files/dell-xps-9350-intel/system_files/usr/share/wireplumber/wireplumber.conf.d/50-purplefin-dell-ipu7.conf
     grep -qF 'device.description = "ipu7"' profile_files/dell-xps-9350-intel/system_files/usr/share/wireplumber/wireplumber.conf.d/50-purplefin-dell-ipu7.conf
     grep -qF 'device.disabled = true' profile_files/dell-xps-9350-intel/system_files/usr/share/wireplumber/wireplumber.conf.d/50-purplefin-dell-ipu7.conf
@@ -586,10 +579,8 @@ check:
         etc/systemd/user/default.target.wants/purplefin-dell-ipu7-v4l2loopback.service; do
         test ! -e "profile_files/dell-xps-9350-intel/system_files/${obsolete}"
     done
-    ! rg -q '0cab74a6146cdc094e90a408fc608773c350da0f|ba5db745b26e54abbe459e1a38ff1d22d0fe0caa|32b0d940baaf182a9d01d4833e30bd340d4dc918|OV08X40|intel_ipu7_psys' profile_files/dell-xps-9350-intel/system_files build_files/profiles/dell-xps-9350-intel.sh
-    test -f profile_files/dell-xps-9350-intel/system_files/usr/share/purplefin/dell-ipu7/kernel-evr.denylist
-    grep -qF '7.1.2-355.vanilla.fc44' profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/lib/dell-ipu7.sh
-    ! grep -qF 'kernel-staged.pending' profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/lib/dell-ipu7.sh
+    ! rg -q 'kernel-evr.denylist|7.1.2-355.vanilla.fc44|CONFIG_VIDEO_INTEL_CVS' profile_files/dell-xps-9350-intel/system_files build_files/profiles/dell-xps-9350-intel.sh
+    grep -qF 'e4c95452339b2d9803974a899c4f2da6e143891d' profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/lib/dell-ipu7.sh
     test ! -e profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/firstboot-rpm-ostree.d/50-dell-vates-plymouth-initramfs
     test -x profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/install-refind-theme
     test -f profile_files/dell-xps-9350-intel/system_files/usr/lib/systemd/system/purplefin-refind-theme.service
@@ -610,56 +601,10 @@ check:
 
     # shellcheck source=/dev/null
     source profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/lib/dell-ipu7.sh
-    kernel_denylist="${tmpdir}/ipu7-kernel.denylist"
-    : > "${kernel_denylist}"
-    export PURPLEFIN_DELL_IPU7_KERNEL_DENYLIST="${kernel_denylist}"
-
-    for kernel_release in 7.1.2-100.fc99.x86_64 7.1.9-200.fc99.x86_64 7.2.0-100.fc99.x86_64 7.10.0-100.fc99.x86_64 8.0.0-100.fc99.x86_64; do
-        purplefin_dell_ipu7_kernel_supported "${kernel_release}"
-    done
-    for kernel_release in 6.17.9-200.fc99.x86_64 7.0.18-200.fc99.x86_64 7.1.0-100.fc99.x86_64 7.1.1-200.fc99.x86_64 7.2.0-0.rc1.fc99.x86_64 malformed; do
-        ! purplefin_dell_ipu7_kernel_supported "${kernel_release}"
-    done
-    ! purplefin_dell_ipu7_keep_inherited_kernel '7.1.1-200.fc44'
-    purplefin_dell_ipu7_keep_inherited_kernel '7.1.2-200.fc44'
-    purplefin_dell_ipu7_keep_inherited_kernel '7.2.0-200.fc44'
-    ! purplefin_dell_ipu7_kernel_uses_in_tree_cvs '7.1.9-200.fc44'
-    purplefin_dell_ipu7_kernel_uses_in_tree_cvs '7.2.0-200.fc44'
-    selected_kernel="$(printf '%s\n' '7.1.3-400.vanilla.fc44' '7.1.2-355.vanilla.fc44' '7.1.0-0.rc1.fc44' '7.0.18-200.fc44' | purplefin_dell_ipu7_select_kernel_evr)"
-    test "${selected_kernel}" = '7.1.2-355.vanilla.fc44'
-    export PURPLEFIN_DELL_IPU7_KERNEL_ALLOW_UNPINNED=1
-    selected_kernel="$(printf '%s\n' '7.1.3-400.vanilla.fc44' '7.1.2-355.vanilla.fc44' '7.1.0-0.rc1.fc44' | purplefin_dell_ipu7_select_kernel_evr)"
-    test "${selected_kernel}" = '7.1.3-400.vanilla.fc44'
-    unset PURPLEFIN_DELL_IPU7_KERNEL_ALLOW_UNPINNED
-    export PURPLEFIN_DELL_IPU7_KERNEL_EVR=7.1.3-400.vanilla.fc44
-    selected_kernel="$(printf '%s\n' '7.1.2-355.vanilla.fc44' '7.1.3-400.vanilla.fc44' | purplefin_dell_ipu7_select_kernel_evr)"
-    test "${selected_kernel}" = '7.1.3-400.vanilla.fc44'
-    unset PURPLEFIN_DELL_IPU7_KERNEL_EVR
-    printf '%s\n' '7.1.2-355.vanilla.fc44' > "${kernel_denylist}"
-    if printf '%s\n' '7.1.2-355.vanilla.fc44' | purplefin_dell_ipu7_select_kernel_evr >/dev/null; then
-        echo "Dell IPU7 kernel selector accepted a denied pinned kernel" >&2
-        exit 1
-    fi
-    : > "${kernel_denylist}"
-    if printf '%s\n' '7.0.18-200.fc99' '7.1.0-0.rc1.fc99' | purplefin_dell_ipu7_select_kernel_evr >/dev/null; then
-        echo "Dell IPU7 kernel selector accepted a non-stable-7.1 kernel" >&2
-        exit 1
-    fi
-    repoquery_fixture=$'kernel\t7.1.2-355.vanilla.fc44\tx86_64\nkernel-devel\t7.1.2-355.vanilla.fc44\tx86_64'
-    package_specs="$(printf '%s\n' "${repoquery_fixture}" | purplefin_dell_ipu7_collect_package_specs_from_repoquery '7.1.2-355.vanilla.fc44' 'x86_64' kernel kernel-devel)"
-    grep -qx 'kernel-7.1.2-355.vanilla.fc44.x86_64' <<<"${package_specs}"
-    grep -qx 'kernel-devel-7.1.2-355.vanilla.fc44.x86_64' <<<"${package_specs}"
-    mismatched_repoquery_fixture=$'kernel\t7.1.2-355.vanilla.fc44\tx86_64\nkernel-devel\t7.1.3-400.vanilla.fc44\tx86_64'
-    if printf '%s\n' "${mismatched_repoquery_fixture}" | purplefin_dell_ipu7_collect_package_specs_from_repoquery '7.1.2-355.vanilla.fc44' 'x86_64' kernel kernel-devel >/dev/null; then
-        echo "Dell IPU7 package validator accepted mismatched kernel-devel" >&2
-        exit 1
-    fi
-    fstab_ok="${tmpdir}/fstab-ok"
-    fstab_bad="${tmpdir}/fstab-bad"
-    printf '%s\n' 'UUID=abcd /var ext4 defaults 0 0' > "${fstab_ok}"
-    printf '%s\n' '# comment' 'UUID=abcd / btrfs subvol=root 0 0' > "${fstab_bad}"
-    ! purplefin_dell_ipu7_fstab_has_root_mount_entry "${fstab_ok}"
-    purplefin_dell_ipu7_fstab_has_root_mount_entry "${fstab_bad}"
+    test "$(purplefin_dell_ipu7_fix_pack_repo)" = 'https://github.com/jibsta210/svp7500-camera-fix-pack'
+    test "$(purplefin_dell_ipu7_fix_pack_version)" = 'v1.0.2'
+    test "$(purplefin_dell_ipu7_fix_pack_ref)" = 'e4c95452339b2d9803974a899c4f2da6e143891d'
+    test "$(purplefin_dell_ipu7_kernel_release_for_evr_arch '7.1.3-201.fc44' x86_64)" = '7.1.3-201.fc44.x86_64'
     ipu7_config="${tmpdir}/ipu7-kernel.config"
     required_ipu7_configs=(CONFIG_IPU_BRIDGE CONFIG_VIDEO_INTEL_IPU7 CONFIG_VIDEO_OV02C10 CONFIG_USB_USBIO CONFIG_GPIO_USBIO CONFIG_I2C_USBIO)
     printf '%s=m\n' "${required_ipu7_configs[@]}" > "${ipu7_config}"
@@ -671,18 +616,8 @@ check:
             exit 1
         fi
     done
-    fake_sysfs="${tmpdir}/fake-sys"
-    fake_sensor="${fake_sysfs}/bus/i2c/devices/i2c-OVTI02C1:00"
-    fake_driver="${fake_sysfs}/bus/i2c/drivers/ov02c10"
-    mkdir -p "${fake_sensor}" "${fake_driver}"
-    : > "${fake_driver}/bind"
-    ln -s ../../drivers/ov02c10 "${fake_sensor}/driver"
-    PURPLEFIN_DELL_IPU7_SYSFS_ROOT="${fake_sysfs}" profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/dell-ipu7-rebind-sensor
-    rm "${fake_sensor}/driver"
-    if PURPLEFIN_DELL_IPU7_SYSFS_ROOT="${fake_sysfs}" profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/dell-ipu7-rebind-sensor >/dev/null 2>&1; then
-        echo "Dell IPU7 sensor helper accepted a bind that did not attach ov02c10" >&2
-        exit 1
-    fi
+    printf '%s=y\n' "${required_ipu7_configs[@]}" > "${ipu7_config}.built-in"
+    purplefin_dell_ipu7_validate_kernel_config_file "${ipu7_config}.built-in"
 
     refind_installer="profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/install-refind-theme"
     refind_theme_source="profile_files/dell-xps-9350-intel/system_files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark"
@@ -719,7 +654,7 @@ build-dell:
     just _build dale {{ image }}:dell-xps-9350-intel
 
 build-dell-no-ipu7:
-    just _build support dell-xps-9350-intel-no-ipu7 {{ image }}:dell-xps-9350-intel-no-ipu7
+    just _build support-dell-xps-9350-intel-no-ipu7 {{ image }}:dell-xps-9350-intel-no-ipu7
 
 build-base-generic:
     just _build base-generic {{ image }}:base-generic-x86_64
