@@ -548,8 +548,13 @@ check:
     grep -qF 'ipu-bridge-patched-1.0 ipu-bridge.ko' build_files/profiles/dell-xps-9350-intel.sh
     grep -qF 'hm1092-1.0 hm1092.ko' build_files/profiles/dell-xps-9350-intel.sh
     grep -qF 'purplefin_dell_ipu7_int3472_patch_needed' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF -- '--no-hostonly' build_files/profiles/dell-xps-9350-intel.sh
+    grep -qF -- '--rebuild "${initramfs_path}"' build_files/profiles/dell-xps-9350-intel.sh
+    ! grep -qF -- '--no-hostonly' build_files/profiles/dell-xps-9350-intel.sh
     grep -qF -- '--add-drivers "${initramfs_modules[*]}"' build_files/profiles/dell-xps-9350-intel.sh
+    for module in ostree dmsquash-live dmsquash-live-autooverlay; do
+        grep -qE "^[[:space:]]*${module}$" build_files/profiles/dell-xps-9350-intel.sh
+    done
+    grep -qF 'Rebuilt initramfs lost required boot module ${module}' build_files/profiles/dell-xps-9350-intel.sh
     grep -qF 'dnf5 -y remove --no-autoremove' build_files/profiles/dell-xps-9350-intel.sh
     for package in libcamera libcamera-ipa libcamera-tools pipewire-plugin-libcamera; do
         grep -qE "^[[:space:]]*${package}$" build_files/profiles/dell-xps-9350-intel.sh

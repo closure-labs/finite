@@ -90,7 +90,7 @@ install_svp7500_stack() {
 	local inherited_record target_evr target_arch target_release
 	local config_path kernel_devel_spec source_root checkout actual_ref module
 	local int3472_provider="in-tree"
-	local initramfs_listing
+	local initramfs_path initramfs_listing initramfs_dracut_modules
 	local initramfs_modules=(
 		usbio
 		gpio_usbio
@@ -100,6 +100,11 @@ install_svp7500_stack() {
 		hm1092
 		ov02c10
 		intel_ipu7
+	)
+	local required_initramfs_dracut_modules=(
+		ostree
+		dmsquash-live
+		dmsquash-live-autooverlay
 	)
 	local build_packages=(git make)
 	local temporary_build_packages=()
@@ -210,17 +215,28 @@ EOF
 	done
 	modinfo -k "${target_release}" -F alias hm1092 | grep -qxF 'acpi*:HIMX1092:*'
 
-	echo ":: Regenerating ${target_release} initramfs with the SVP7500 replacements"
+	initramfs_path="/usr/lib/modules/${target_release}/initramfs.img"
+	test -f "${initramfs_path}" || {
+		echo "Inherited initramfs ${initramfs_path} is missing" >&2
+		exit 1
+	}
+
+	echo ":: Rebuilding ${target_release} initramfs with the SVP7500 replacements"
 	dracut \
-		--force \
-		--no-hostonly \
 		--add-drivers "${initramfs_modules[*]}" \
-		"/usr/lib/modules/${target_release}/initramfs.img" \
-		"${target_release}"
-	initramfs_listing="$(lsinitrd "/usr/lib/modules/${target_release}/initramfs.img")"
+		--rebuild "${initramfs_path}"
+	initramfs_listing="$(lsinitrd "${initramfs_path}")"
 	for module in intel_cvs ipu-bridge hm1092; do
 		if ! grep -qF "updates/purplefin/${module}.ko" <<<"${initramfs_listing}"; then
-			echo "Regenerated initramfs does not contain Purplefin's ${module} replacement" >&2
+			echo "Rebuilt initramfs does not contain Purplefin's ${module} replacement" >&2
+			exit 1
+		fi
+	done
+
+	initramfs_dracut_modules="$(lsinitrd -m "${initramfs_path}")"
+	for module in "${required_initramfs_dracut_modules[@]}"; do
+		if ! grep -qxF "${module}" <<<"${initramfs_dracut_modules}"; then
+			echo "Rebuilt initramfs lost required boot module ${module}" >&2
 			exit 1
 		fi
 	done
