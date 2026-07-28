@@ -68,8 +68,12 @@ printf '%s  %s\n' "${source_sha256}" "${archive}" | sha256sum --check --strict
 tar -xf "${archive}" -C "${workdir}"
 patch --directory="${source_root}" --strip=1 <"${patch_file}"
 
+# GCC 16 reports false-positive array-bounds warnings in libcamera 0.7.1's
+# std::shared_ptr<std::mutex> code. Keep the diagnostics visible without
+# treating unrelated upstream warnings as errors.
 meson setup "${build_root}" "${source_root}" \
 	--buildtype=release \
+	-Dwerror=false \
 	-Dandroid=disabled \
 	-Dcam=disabled \
 	-Ddocumentation=disabled \
