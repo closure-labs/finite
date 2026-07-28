@@ -385,10 +385,12 @@ The flow is:
    use the kernel's normal device discovery; there is no Purplefin rebind
    service or forced module-load list.
 5. WirePlumber suppresses raw V4L2 devices whose description is `ipu7`.
-   Those are ISYS capture endpoints, not webcams. The libcamera monitor remains
-   enabled and publishes the single usable camera. A user service configures
-   each Flathub Firefox profile to use its PipeWire camera backend, preventing
-   Firefox from bypassing WirePlumber and enumerating the raw V4L2 nodes.
+   Those are ISYS capture endpoints, not webcams. It also suppresses the
+   libcamera HM1092 source, whose monochrome IR data is not usable through the
+   Bayer-oriented Simple pipeline. The OV02C10 remains the single camera
+   published to desktop applications. A user service configures each Flathub
+   Firefox profile to use its PipeWire camera backend, preventing Firefox from
+   bypassing WirePlumber and enumerating the raw V4L2 nodes.
 
 The fix-pack's mainline CVS evaluation is important: Linux 7.2's `cvs` driver
 expects to sit inside a firmware-described media graph, while this SVP7500
@@ -413,9 +415,10 @@ rg 'media.webrtc.camera.allow-pipewire' \
   ~/.var/app/org.mozilla.firefox/config/mozilla/firefox/*/user.js
 ```
 
-`cam -l` should report one OV02C10 camera. After restarting WirePlumber, its
-graph should contain no raw V4L2 devices described as `ipu7` and one libcamera
-camera source. After Firefox has created a profile, log out and back in (or run
+`cam -l` should report the OV02C10 RGB sensor and the HM1092 IR sensor. After
+restarting WirePlumber, its graph should contain no raw V4L2 devices described
+as `ipu7`, no HM1092 libcamera source, and one OV02C10 camera source. After
+Firefox has created a profile, log out and back in (or run
 `systemctl --user start purplefin-firefox-pipewire-camera.service`) and restart
 Firefox. Firefox should then show one internal camera instead of dozens of
 non-working IPU7 inputs.
