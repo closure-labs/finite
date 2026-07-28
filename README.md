@@ -375,12 +375,18 @@ The flow is:
    The rebuilt initramfs explicitly installs the detected `ipu7_fw.bin`
    variant and verifies its presence, since the in-tree IPU7 module does not
    advertise that firmware to Dracut.
-3. Fedora's stock `libcamera`, `libcamera-ipa`, `libcamera-tools`, and
-   `pipewire-plugin-libcamera` provide the Simple pipeline and GPU SoftISP.
-   Purplefin supplies an OV02C10 tuning profile with the sensor's black level
-   and a baseline color-correction matrix, avoiding libcamera's uncalibrated
-   identity-matrix fallback. Purplefin does not add a PSYS DKMS tree, custom
-   libcamera build, v4l2loopback device, or proprietary camera HAL.
+3. Fedora's `libcamera`, `libcamera-ipa`, `libcamera-tools`, and
+   `pipewire-plugin-libcamera` provide the Simple pipeline, isolated IPA proxy,
+   and GPU SoftISP. The Dell profile builds only a patched Simple IPA module
+   from the matching, checksum-pinned libcamera source. Its OV02C10 helper
+   converts the sensor's 1/16-step gain codes into physical gain and supplies
+   the 10-bit `0x40` black pedestal. The module lives in a separate Purplefin
+   search path and runs through Fedora's stock isolated proxy; Fedora's
+   libraries and other IPA modules remain untouched. Purplefin also supplies
+   an OV02C10 tuning profile with a baseline color-correction matrix, avoiding
+   libcamera's uncalibrated identity-matrix fallback. Purplefin does not add a
+   PSYS DKMS tree, full replacement libcamera stack, v4l2loopback device, or
+   proprietary camera HAL.
 4. The fix-pack's udev policy disables autosuspend for the `06cb:0701`
    SVP7500 bridge and grants the `video` group access to an INT3472 IR flood
    LED when the laptop exposes one. Module loading and sensor binding otherwise
@@ -406,6 +412,7 @@ Runtime verification on the Dell laptop:
 ```bash
 uname -r
 cat /usr/share/purplefin/dell-ipu7/source-provenance
+cat /usr/share/purplefin/dell-ipu7/libcamera-ipa-provenance
 modinfo -n intel_cvs
 modinfo -n ipu_bridge
 modinfo -n hm1092
@@ -452,8 +459,8 @@ non-working IPU7 inputs.
   configuration, setup hooks, and user-facing tips from every composition.
 - Dell XPS 9350 Intel use of Bluefin's included kernel, pinned SVP7500 fix-pack
   CVS/IPU bridge/HM1092 fixes, conditional INT3472 replacement, bridge
-  autosuspend protection, stock Fedora libcamera integration, and WirePlumber
-  filtering for raw IPU7 endpoints.
+  autosuspend protection, an isolated OV02C10 helper layered over Fedora
+  libcamera, and WirePlumber filtering for raw IPU7 endpoints.
 - Dell XPS 9350 Intel lid-aware password/fingerprint routing for sudo and
   polkit, DMI-gated 75-80% UPower/Dell Custom charging, a laptop-safe TuneD
   Performance profile, AC/battery internal-panel refresh policy, and one-time

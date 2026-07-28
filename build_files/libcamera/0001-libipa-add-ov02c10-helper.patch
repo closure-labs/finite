@@ -1,0 +1,34 @@
+From 7d4b1d4d0648dca0f5120c5e70b1694fc317d060 Mon Sep 17 00:00:00 2001
+From: Purplefin <purplefin@localhost>
+Date: Mon, 27 Jul 2026 20:00:00 -0500
+Subject: [PATCH] libipa: Add OV02C10 camera sensor helper
+
+The OV02C10 kernel driver's analogue gain control uses 1/16 steps. Its
+10-bit Bayer data also has the same 0x40 black pedestal used by several
+other OmniVision sensors.
+
+Signed-off-by: Purplefin <purplefin@localhost>
+---
+ src/ipa/libipa/camera_sensor_helper.cpp | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/src/ipa/libipa/camera_sensor_helper.cpp b/src/ipa/libipa/camera_sensor_helper.cpp
+index 20592cbf..0e079cbb 100644
+--- a/src/ipa/libipa/camera_sensor_helper.cpp
++++ b/src/ipa/libipa/camera_sensor_helper.cpp
+@@ -670,3 +670,15 @@
++class CameraSensorHelperOv02c10 : public CameraSensorHelper
++{
++public:
++	CameraSensorHelperOv02c10()
++	{
++		/* The sensor's 10-bit black pedestal is 0x40. */
++		blackLevel_ = 4096;
++		gain_ = AnalogueGainLinear{ 1, 0, 0, 16 };
++	}
++};
++REGISTER_CAMERA_SENSOR_HELPER("ov02c10", CameraSensorHelperOv02c10)
++
+ class CameraSensorHelperOv2740 : public CameraSensorHelper
+ {
+ public:

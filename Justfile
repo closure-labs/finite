@@ -585,6 +585,17 @@ check:
     grep -qF 'blackLevel: 4096' "${ov02c10_tuning}"
     grep -qF -- '- Ccm:' "${ov02c10_tuning}"
     grep -qF '0.0, 0.9, 0.0' "${ov02c10_tuning}"
+    test -x build_files/install-libcamera-ov02c10-ipa.sh
+    test -f build_files/libcamera/0001-libipa-add-ov02c10-helper.patch
+    grep -qF 'REGISTER_CAMERA_SENSOR_HELPER("ov02c10", CameraSensorHelperOv02c10)' build_files/libcamera/0001-libipa-add-ov02c10-helper.patch
+    grep -qF 'gain_ = AnalogueGainLinear{ 1, 0, 0, 16 };' build_files/libcamera/0001-libipa-add-ov02c10-helper.patch
+    grep -qF 'blackLevel_ = 4096;' build_files/libcamera/0001-libipa-add-ov02c10-helper.patch
+    grep -qF 'source_sha256="27a6d776bb728bb8bd38c4594ff3ab7fadfce19583427de8442963ef2fe5ad04"' build_files/install-libcamera-ov02c10-ipa.sh
+    grep -qF '/tmp/purplefin-build/install-libcamera-ov02c10-ipa.sh' build_files/profiles/dell-xps-9350-intel.sh
+    test -f profile_files/dell-xps-9350-intel/system_files/etc/libcamera/configuration.yaml
+    grep -qF -- '- /usr/lib64/libcamera/ipa-purplefin' profile_files/dell-xps-9350-intel/system_files/etc/libcamera/configuration.yaml
+    test ! -e profile_files/generic-x86_64/system_files/etc/libcamera/configuration.yaml
+    test ! -e profile_files/dell-xps-9350-intel-no-ipu7/system_files/etc/libcamera/configuration.yaml
     for obsolete in \
         usr/libexec/purplefin/dell-ipu7-setup \
         usr/libexec/purplefin/dell-ipu7-patch-psys-debugfs \

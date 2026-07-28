@@ -263,6 +263,9 @@ EOF
 echo ":: Installing Fedora libcamera runtime"
 dnf5 -y install "${camera_runtime_packages[@]}"
 
+echo ":: Installing Dell OV02C10 libcamera IPA helper"
+/tmp/purplefin-build/install-libcamera-ov02c10-ipa.sh
+
 install_svp7500_stack
 
 purplefin_configure_dell_xps_9350_common
