@@ -377,8 +377,10 @@ The flow is:
    advertise that firmware to Dracut.
 3. Fedora's stock `libcamera`, `libcamera-ipa`, `libcamera-tools`, and
    `pipewire-plugin-libcamera` provide the Simple pipeline and GPU SoftISP.
-   Purplefin does not add a PSYS DKMS tree, custom libcamera build,
-   v4l2loopback device, or proprietary camera HAL.
+   Purplefin supplies an OV02C10 tuning profile with the sensor's black level
+   and a baseline color-correction matrix, avoiding libcamera's uncalibrated
+   identity-matrix fallback. Purplefin does not add a PSYS DKMS tree, custom
+   libcamera build, v4l2loopback device, or proprietary camera HAL.
 4. The fix-pack's udev policy disables autosuspend for the `06cb:0701`
    SVP7500 bridge and grants the `video` group access to an INT3472 IR flood
    LED when the laptop exposes one. Module loading and sensor binding otherwise

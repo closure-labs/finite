@@ -580,6 +580,11 @@ check:
     grep -qF 'node.nick = "hm1092"' profile_files/dell-xps-9350-intel/system_files/usr/share/wireplumber/wireplumber.conf.d/50-purplefin-dell-ipu7.conf
     grep -qF 'node.disabled = true' profile_files/dell-xps-9350-intel/system_files/usr/share/wireplumber/wireplumber.conf.d/50-purplefin-dell-ipu7.conf
     spa-json-dump profile_files/dell-xps-9350-intel/system_files/usr/share/wireplumber/wireplumber.conf.d/50-purplefin-dell-ipu7.conf >/dev/null
+    ov02c10_tuning=profile_files/dell-xps-9350-intel/system_files/usr/share/libcamera/ipa/simple/ov02c10.yaml
+    test -f "${ov02c10_tuning}"
+    grep -qF 'blackLevel: 4096' "${ov02c10_tuning}"
+    grep -qF -- '- Ccm:' "${ov02c10_tuning}"
+    grep -qF '0.0, 0.9, 0.0' "${ov02c10_tuning}"
     for obsolete in \
         usr/libexec/purplefin/dell-ipu7-setup \
         usr/libexec/purplefin/dell-ipu7-patch-psys-debugfs \
