@@ -429,7 +429,9 @@ restarting WirePlumber, its graph should contain no raw V4L2 devices described
 as `ipu7`, no HM1092 libcamera source, and one OV02C10 camera source. After
 Firefox has created a profile, log out and back in (or run
 `systemctl --user start purplefin-firefox-pipewire-camera.service`) and restart
-Firefox. Firefox should then show one internal camera instead of dozens of
+Firefox. Purplefin watches `profiles.ini` and configures profiles created after
+login; restart a newly created profile once so Firefox reads its generated
+`user.js`. Firefox should then show one internal camera instead of dozens of
 non-working IPU7 inputs.
 
 ## What Is Tracked

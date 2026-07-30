@@ -525,8 +525,12 @@ check:
     test ! -e profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/dell-ipu7-rebind-sensor
     test -x profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/configure-firefox-pipewire-camera
     test -f profile_files/dell-xps-9350-intel/system_files/usr/lib/systemd/user/purplefin-firefox-pipewire-camera.service
+    test -f profile_files/dell-xps-9350-intel/system_files/usr/lib/systemd/user/purplefin-firefox-pipewire-camera.path
     test -L profile_files/dell-xps-9350-intel/system_files/etc/systemd/user/default.target.wants/purplefin-firefox-pipewire-camera.service
     test "$(readlink profile_files/dell-xps-9350-intel/system_files/etc/systemd/user/default.target.wants/purplefin-firefox-pipewire-camera.service)" = '../../../../usr/lib/systemd/user/purplefin-firefox-pipewire-camera.service'
+    test -L profile_files/dell-xps-9350-intel/system_files/etc/systemd/user/default.target.wants/purplefin-firefox-pipewire-camera.path
+    test "$(readlink profile_files/dell-xps-9350-intel/system_files/etc/systemd/user/default.target.wants/purplefin-firefox-pipewire-camera.path)" = '../../../../usr/lib/systemd/user/purplefin-firefox-pipewire-camera.path'
+    grep -qF 'PathChanged=%h/.var/app/org.mozilla.firefox/config/mozilla/firefox/profiles.ini' profile_files/dell-xps-9350-intel/system_files/usr/lib/systemd/user/purplefin-firefox-pipewire-camera.path
     firefox_test_root="${tmpdir}/firefox-profiles"
     install -d "${firefox_test_root}/Profile With Spaces"
     printf '%s\n' '[Profile0]' 'Path=Profile With Spaces' > "${firefox_test_root}/profiles.ini"
