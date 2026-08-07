@@ -455,9 +455,12 @@ non-working IPU7 inputs.
 - The support department's graphical-session-bound Espanso service and
   capability and RustConn Flatpak, in addition to the shared `devops`
   component.
-- Bluefin's inherited Tailscale package, enabled service, RPM repository
-  configuration, setup hook, shell completion, and user-facing tips are
-  preserved unchanged.
+- Bluefin's inherited Tailscale service, RPM repository configuration, setup
+  hook, shell completion, and user-facing tips are preserved. Purplefin lists
+  the Tailscale and Espanso RPMs in
+  `build_files/independently-managed-rpms.list`, upgrades the installed subset
+  from their repositories during image builds, and includes them in daily RPM
+  probes for profiles where they are installed.
 - Dell XPS 9350 Intel use of Bluefin's included kernel, pinned SVP7500 fix-pack
   CVS/IPU bridge/HM1092 fixes, conditional INT3472 replacement, bridge
   autosuspend protection, an isolated OV02C10 helper layered over Fedora

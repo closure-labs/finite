@@ -21,14 +21,16 @@ printf '%s\n' \
 	'  pull) exit 0 ;;' \
 	'  run)' \
 	'    if [[ " $* " == *" --entrypoint rpm "* ]]; then' \
-	'      printf '\''bash\t0:5.2-1\tx86_64\n'\''' \
+	'      printf '\''bash\t0:5.2-1\tx86_64\ntailscale\t0:1.98.9-1\tx86_64\n'\''' \
 	'      is_base=false' \
 	'      for argument in "$@"; do' \
 	'        [[ "${argument}" == "${BASE_REF}" ]] && is_base=true' \
 	'      done' \
-	'      [[ "${is_base}" == true ]] || printf '\''fuse\t0:2.9-1\tx86_64\n'\''' \
+	'      [[ "${is_base}" == true || "${FAKE_LAYERED_RPM:-true}" != true ]] || printf '\''fuse\t0:2.9-1\tx86_64\n'\''' \
+	'      [[ "${FAKE_ESPANSO_RPM:-false}" != true ]] || printf '\''espanso-wayland\t0:2.4.0-1.fc44\tx86_64\n'\''' \
 	'      exit 0' \
 	'    fi' \
+	'    printf '\''%s\n'\'' "$*" >"${FAKE_PODMAN_RUN_LOG}"' \
 	'    exit "${FAKE_DNF_STATUS}"' \
 	'    ;;' \
 	'  *) exit 2 ;;' \
@@ -43,6 +45,7 @@ export BUILD_INPUT=source-state
 export IMAGE_REF=ghcr.io/example/purplefin
 export FAKE_PUBLISHED_BASE="${BASE_DIGEST}"
 export FAKE_PUBLISHED_INPUT="${BUILD_INPUT}"
+export FAKE_PODMAN_RUN_LOG="${test_root}/podman-run.log"
 profile='[{"profile":"base-generic","tags":"generic-x86_64 latest"}]'
 
 export CHECK_RPM_UPDATES=false
@@ -55,8 +58,19 @@ export FAKE_PODMAN_FAIL=false
 export FAKE_DNF_STATUS=0
 matrix="$(cd "${repo_root}" && build_files/plan-image-builds.sh "${profile}")"
 test "$(jq '.include | length' <<<"${matrix}")" -eq 0
+grep -q -- '--enable-repo=tailscale-stable' "${FAKE_PODMAN_RUN_LOG}"
+grep -qw tailscale "${FAKE_PODMAN_RUN_LOG}"
+grep -qw -- '-y' "${FAKE_PODMAN_RUN_LOG}"
+! grep -qw espanso-wayland "${FAKE_PODMAN_RUN_LOG}"
+
+export FAKE_ESPANSO_RPM=true
+matrix="$(cd "${repo_root}" && build_files/plan-image-builds.sh "${profile}")"
+test "$(jq '.include | length' <<<"${matrix}")" -eq 0
+grep -qw espanso-wayland "${FAKE_PODMAN_RUN_LOG}"
+grep -q -- '--enable-repo=terra' "${FAKE_PODMAN_RUN_LOG}"
 
 export FAKE_DNF_STATUS=100
+export FAKE_LAYERED_RPM=false
 matrix="$(cd "${repo_root}" && build_files/plan-image-builds.sh "${profile}")"
 test "$(jq -r '.include[0].profile' <<<"${matrix}")" = base-generic
 

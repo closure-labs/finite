@@ -132,6 +132,12 @@ check:
     done
     grep -qF 'dnf5 -y install "${base_packages[@]}"' build_files/modules/base.sh
     grep -qF 'dnf5 -y --setopt=install_weak_deps=False install "${base_qemu_packages[@]}"' build_files/modules/base.sh
+    test -f build_files/independently-managed-rpms.list
+    grep -Eq '^tailscale-stable[[:space:]]+tailscale$' build_files/independently-managed-rpms.list
+    grep -Eq '^terra[[:space:]]+espanso-wayland$' build_files/independently-managed-rpms.list
+    test -f build_files/lib/independently-managed-rpms.sh
+    grep -qF 'purplefin_load_independently_managed_rpms' build_files/build.sh
+    grep -qF 'upgrade "${installed_independently_managed_rpms[@]}"' build_files/build.sh
     test ! -e build_files/install-nextcloud-appimage.sh
     ! grep -qF 'install-nextcloud-appimage' build_files/modules/base.sh
     ! grep -qF '/usr/bin/nextcloud' build_files/modules/base.sh
@@ -321,8 +327,10 @@ check:
     grep -qF 'purplefin_apply_overlay components "${component}" "purplefin-component-${component}"' "${overlay_common}"
     grep -qF '/usr/share/flatpak/preinstall.d/${manifest_name}.preinstall' "${overlay_common}"
 
-    # Common branding policy remains global; Bluefin's Tailscale integration is preserved.
-    ! rg -qi 'tailscale' build_files/modules/base.sh
+    # Bluefin's Tailscale integration is preserved while its RPM is updated independently.
+    grep -qF 'tailscale-stable' build_files/independently-managed-rpms.list
+    grep -qF 'espanso-wayland' build_files/independently-managed-rpms.list
+    grep -qF 'independently_managed_rpm_repo_args' build_files/plan-image-builds.sh
     test -f system_files/usr/share/plymouth/themes/spinner/watermark.png
     test -f system_files/usr/share/plymouth/themes/spinner/silverblue-watermark.png
     test -f system_files/usr/share/pixmaps/fedora-gdm-logo.png

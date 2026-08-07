@@ -55,6 +55,24 @@ done
 [[ -n "${applied_modules[base]:-}" ]] || { echo "Profile ${profile} must include base" >&2; exit 2; }
 [[ "${hardware_count}" -eq 1 ]] || { echo "Profile ${profile} must include exactly one hardware module" >&2; exit 2; }
 
+# Independently managed RPMs may belong to only some profiles, so update the
+# installed subset after every role and hardware module has been applied.
+# shellcheck source=/tmp/purplefin-build/lib/independently-managed-rpms.sh
+source "${build_root}/lib/independently-managed-rpms.sh"
+purplefin_load_independently_managed_rpms "${build_root}/independently-managed-rpms.list"
+installed_independently_managed_rpms=()
+for package in "${independently_managed_rpms[@]}"; do
+	if rpm -q "${package}" >/dev/null 2>&1; then
+		installed_independently_managed_rpms+=("${package}")
+	fi
+done
+if ((${#installed_independently_managed_rpms[@]} > 0)); then
+	echo ":: Updating independently managed RPMs"
+	dnf5 -y --refresh "${independently_managed_rpm_repo_args[@]}" \
+		upgrade "${installed_independently_managed_rpms[@]}"
+	for package in "${installed_independently_managed_rpms[@]}"; do rpm -q "${package}"; done
+fi
+
 install -d /usr/share/purplefin
 printf '%s\n' "${profile}" > /usr/share/purplefin/build-profile
 printf '%s\n' "${modules[@]}" > /usr/share/purplefin/build-modules

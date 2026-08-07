@@ -7,6 +7,11 @@ profiles_json="${1:?usage: plan-image-builds.sh PROFILES_JSON}"
 : "${BUILD_INPUT:?BUILD_INPUT is required}"
 : "${IMAGE_REF:?IMAGE_REF is required}"
 
+script_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=build_files/lib/independently-managed-rpms.sh
+source "${script_root}/lib/independently-managed-rpms.sh"
+purplefin_load_independently_managed_rpms "${script_root}/independently-managed-rpms.list"
+
 force_rebuild="${FORCE_REBUILD:-false}"
 check_rpm_updates="${CHECK_RPM_UPDATES:-true}"
 selected='[]'
@@ -68,7 +73,8 @@ while IFS= read -r entry; do
 	fi
 
 	# The matrix job pulls only its own previous image and exact Bluefin base.
-	# The expensive build runs only when an RPM layered on top has an upgrade.
+	# The expensive build runs only when a layered or independently managed RPM
+	# has an upgrade.
 	if ! ensure_base_inventory; then
 		add_profile "${entry}" 'Bluefin RPM baseline could not be read'
 		continue
@@ -89,16 +95,24 @@ while IFS= read -r entry; do
 	comm -13 "${base_inventory}" "${profile_inventory}" |
 		cut -f 1 |
 		LC_ALL=C sort -u >"${layered_packages}"
-	mapfile -t packages <"${layered_packages}"
+	mapfile -t packages < <(
+		for package in "${independently_managed_rpms[@]}"; do
+			awk -F '\t' -v package="${package}" '$1 == package { found = 1 } END { exit !found }' \
+				"${profile_inventory}" && printf '%s\n' "${package}"
+		done
+		cat "${layered_packages}"
+	)
+	mapfile -t packages < <(printf '%s\n' "${packages[@]}" | LC_ALL=C sort -u)
 	if ((${#packages[@]} == 0)); then
-		echo "${profile}: skip (inputs and base are current; no layered RPMs)" >&2
+		echo "${profile}: skip (inputs and base are current; no managed RPMs)" >&2
 		continue
 	fi
 
 	upgrade_log="$(mktemp)"
 	set +e
 	podman run --rm --pull=never --entrypoint dnf5 "${published_ref}" \
-		-q --refresh check-upgrade "${packages[@]}" >"${upgrade_log}" 2>&1
+		-y -q --refresh "${independently_managed_rpm_repo_args[@]}" \
+		check-upgrade "${packages[@]}" >"${upgrade_log}" 2>&1
 	upgrade_status=$?
 	set -e
 
