@@ -155,8 +155,6 @@ Ghostty, VSCodium,
 `packer`, `ansible`, `tofu`, and `bao`; both the support and development
 departments reference it. The base department provides Git, Micro, `qemu-img`,
 `qemu-tools`, and common QEMU image block backends.
-Inherited Tailscale packages, services, repositories, setup hooks, and
-user-facing tips are removed from every composition.
 Terra's Bitwarden packages are excluded so future DNF operations cannot
 reintroduce the desktop RPM after migration to Flatpak.
 
@@ -457,8 +455,9 @@ non-working IPU7 inputs.
 - The support department's graphical-session-bound Espanso service and
   capability and RustConn Flatpak, in addition to the shared `devops`
   component.
-- Removal of inherited Tailscale packages, enabled services, RPM repository
-  configuration, setup hooks, and user-facing tips from every composition.
+- Bluefin's inherited Tailscale package, enabled service, RPM repository
+  configuration, setup hook, shell completion, and user-facing tips are
+  preserved unchanged.
 - Dell XPS 9350 Intel use of Bluefin's included kernel, pinned SVP7500 fix-pack
   CVS/IPU bridge/HM1092 fixes, conditional INT3472 replacement, bridge
   autosuspend protection, an isolated OV02C10 helper layered over Fedora

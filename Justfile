@@ -321,13 +321,8 @@ check:
     grep -qF 'purplefin_apply_overlay components "${component}" "purplefin-component-${component}"' "${overlay_common}"
     grep -qF '/usr/share/flatpak/preinstall.d/${manifest_name}.preinstall' "${overlay_common}"
 
-    # Common removal and branding policy remains global.
-    grep -qF 'systemctl disable tailscaled.service' build_files/modules/base.sh
-    grep -qF 'dnf5 -y remove --no-autoremove tailscale' build_files/modules/base.sh
-    grep -qF 'rm -f /etc/yum.repos.d/tailscale.repo' build_files/modules/base.sh
-    grep -qF '/usr/share/ublue-os/privileged-setup.hooks.d/10-tailscale.sh' build_files/modules/base.sh
-    grep -qF '/usr/share/fish/completions/tailscale.fish' build_files/modules/base.sh
-    grep -qF "sed -i '/^\\[tailscale-stable\\]$/,+1d'" build_files/modules/base.sh
+    # Common branding policy remains global; Bluefin's Tailscale integration is preserved.
+    ! rg -qi 'tailscale' build_files/modules/base.sh
     test -f system_files/usr/share/plymouth/themes/spinner/watermark.png
     test -f system_files/usr/share/plymouth/themes/spinner/silverblue-watermark.png
     test -f system_files/usr/share/pixmaps/fedora-gdm-logo.png
@@ -392,7 +387,6 @@ check:
     grep -qF '/var/lib/rpm-state' build_files/build.sh
     grep -qF '/var/log/dnf5.log*' build_files/build.sh
     grep -qF 'installed_kernel_releases' build_files/build.sh
-    grep -qF '/usr/share/fish/completions/tailscale.fish' build_files/modules/base.sh
     test -x system_files/usr/libexec/purplefin/run-firstboot-rpm-ostree
     test -z "$(find system_files -iname '*ipu7*' -print -quit)"
     test -z "$(find system_files profile_files -iname '*librepods*' -print -quit)"
