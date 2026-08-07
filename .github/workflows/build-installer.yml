@@ -3,20 +3,28 @@ name: Build Purplefin installer ISO
 on:
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: read
   packages: read
 
 jobs:
   build-installer:
+    name: Build installer ISO
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     steps:
-      - uses: actions/checkout@v7
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Build installer environment
         run: |
           podman build \
             --file installer/Containerfile \
+            --pull=always \
             --tag localhost/purplefin-anaconda:latest \
             .
 
@@ -32,7 +40,8 @@ jobs:
             --bootc-installer-payload-ref ghcr.io/declarative-dale/purplefin:base-generic-x86_64 \
             localhost/purplefin-anaconda:latest
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload installer ISO
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: purplefin-installer-iso
           path: output/*.iso

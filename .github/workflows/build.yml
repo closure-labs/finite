@@ -8,22 +8,78 @@ on:
   schedule:
     - cron: "17 8 * * *"
   workflow_dispatch:
+    inputs:
+      force:
+        description: Rebuild every image even when its inputs are current
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
-  packages: write
-  id-token: write
+  packages: read
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  BASE_IMAGE: ghcr.io/projectbluefin/bluefin
+  BASE_TAG: stable
 
 jobs:
+  plan:
+    name: Resolve build inputs
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      base_digest: ${{ steps.plan.outputs.base_digest }}
+      base_kernel: ${{ steps.plan.outputs.base_kernel }}
+      build_input: ${{ steps.plan.outputs.build_input }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Resolve Bluefin and source metadata
+        id: plan
+        shell: bash
+        run: |
+          base_metadata="$(
+            skopeo inspect --retry-times 3 \
+              "docker://${BASE_IMAGE}:${BASE_TAG}"
+          )"
+          base_digest="$(jq -er '.Digest' <<<"${base_metadata}")"
+          base_kernel="$(jq -er '.Labels["ostree.linux"]' <<<"${base_metadata}")"
+          build_input="$(
+            git ls-files -s -- \
+              .github/workflows/build.yml \
+              Containerfile \
+              build_files \
+              manifests \
+              profile_files \
+              system_files |
+              sha256sum |
+              cut -d ' ' -f 1
+          )"
+
+          echo "base_digest=${base_digest}" >>"${GITHUB_OUTPUT}"
+          echo "base_kernel=${base_kernel}" >>"${GITHUB_OUTPUT}"
+          echo "build_input=${build_input}" >>"${GITHUB_OUTPUT}"
+
   build:
     name: Build ${{ matrix.profile }}
+    needs: plan
     runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
     strategy:
       fail-fast: false
+      max-parallel: 4
       matrix:
         include:
           - profile: base-generic
@@ -43,32 +99,72 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Check whether the image changed
+        id: changes
+        env:
+          BASE_DIGEST: ${{ needs.plan.outputs.base_digest }}
+          BASE_REF: ${{ format('{0}:{1}', env.BASE_IMAGE, env.BASE_TAG) }}
+          BUILD_INPUT: ${{ needs.plan.outputs.build_input }}
+          BUILD_PROFILE: ${{ matrix.profile }}
+          CHECK_RPM_UPDATES: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+          FORCE_REBUILD: ${{ github.event_name == 'workflow_dispatch' && inputs.force || false }}
+          IMAGE_REF: ${{ format('{0}/{1}', env.REGISTRY, env.IMAGE_NAME) }}
+          TAGS: ${{ matrix.tags }}
+        shell: bash
+        run: |
+          profile_json="$(
+            jq -cn \
+              --arg profile "${BUILD_PROFILE}" \
+              --arg tags "${TAGS}" \
+              '[{profile: $profile, tags: $tags}]'
+          )"
+          matrix="$(build_files/plan-image-builds.sh "${profile_json}")"
+          should_build="$(jq -r '.include | length > 0' <<<"${matrix}")"
+          echo "build=${should_build}" >>"${GITHUB_OUTPUT}"
 
       - name: Resolve boot kernel metadata
+        if: steps.changes.outputs.build == 'true'
         id: kernel
+        env:
+          BASE_KERNEL: ${{ needs.plan.outputs.base_kernel }}
+          BUILD_PROFILE: ${{ matrix.profile }}
         shell: bash
         run: |
-          base_kernel="$(skopeo inspect --retry-times 3 docker://ghcr.io/projectbluefin/bluefin:stable | jq -er '.Labels["ostree.linux"]')"
-          target_kernel="$(build_files/select-ostree-linux.sh '${{ matrix.profile }}' "${base_kernel}")"
-          echo "release=${target_kernel}" >> "${GITHUB_OUTPUT}"
+          target_kernel="$(
+            build_files/select-ostree-linux.sh \
+              "${BUILD_PROFILE}" "${BASE_KERNEL}"
+          )"
+          echo "release=${target_kernel}" >>"${GITHUB_OUTPUT}"
 
       - name: Build image
+        if: steps.changes.outputs.build == 'true'
         env:
-          TAGS: ${{ matrix.tags }}
+          BASE_DIGEST: ${{ needs.plan.outputs.base_digest }}
+          BUILD_INPUT: ${{ needs.plan.outputs.build_input }}
           BUILD_PROFILE: ${{ matrix.profile }}
+          IMAGE_REF: ${{ format('{0}/{1}', env.REGISTRY, env.IMAGE_NAME) }}
           PURPLEFIN_OSTREE_LINUX: ${{ steps.kernel.outputs.release }}
+          TAGS: ${{ matrix.tags }}
         shell: bash
         run: |
-          read -r -a tags <<< "${TAGS}"
-          primary_image="${IMAGE_NAME}:${tags[0]}"
+          read -r -a tags <<<"${TAGS}"
+          primary_image="${IMAGE_REF}:${tags[0]}"
+          created="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
 
           buildah bud \
             --file ./Containerfile \
+            --pull=always \
+            --label "io.purplefin.build.input=${BUILD_INPUT}" \
+            --label "io.purplefin.build.profile=${BUILD_PROFILE}" \
+            --label "org.opencontainers.image.base.digest=${BASE_DIGEST}" \
+            --label "org.opencontainers.image.created=${created}" \
+            --label "org.opencontainers.image.revision=${GITHUB_SHA}" \
             --label "ostree.linux=${PURPLEFIN_OSTREE_LINUX}" \
             --build-arg "BUILD_PROFILE=${BUILD_PROFILE}" \
-            --build-arg BASE_IMAGE=ghcr.io/projectbluefin/bluefin \
-            --build-arg BASE_TAG=stable \
+            --build-arg "BASE_IMAGE=${BASE_IMAGE}" \
+            --build-arg "BASE_TAG=${BASE_TAG}" \
             --build-arg "PURPLEFIN_OSTREE_LINUX=${PURPLEFIN_OSTREE_LINUX}" \
             --format docker \
             --tls-verify=true \
@@ -76,11 +172,11 @@ jobs:
             .
 
           for tag in "${tags[@]:1}"; do
-            buildah tag "${primary_image}" "${IMAGE_NAME}:${tag}"
+            buildah tag "${primary_image}" "${IMAGE_REF}:${tag}"
           done
 
       - name: Log in to GHCR
-        if: github.event_name != 'pull_request'
+        if: steps.changes.outputs.build == 'true' && github.event_name != 'pull_request'
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
@@ -93,36 +189,42 @@ jobs:
               "${REGISTRY}" \
               --username "${GITHUB_ACTOR}" \
               --password-stdin
-          echo "REGISTRY_AUTH_FILE=${registry_auth_file}" >> "${GITHUB_ENV}"
+          echo "REGISTRY_AUTH_FILE=${registry_auth_file}" >>"${GITHUB_ENV}"
 
-      - name: Push image
-        if: github.event_name != 'pull_request'
+      - name: Push image tags
+        if: steps.changes.outputs.build == 'true' && github.event_name != 'pull_request'
         env:
+          IMAGE_REF: ${{ format('{0}/{1}', env.REGISTRY, env.IMAGE_NAME) }}
           TAGS: ${{ matrix.tags }}
         shell: bash
         run: |
-          read -r -a tags <<< "${TAGS}"
+          read -r -a tags <<<"${TAGS}"
           for tag in "${tags[@]}"; do
             podman push --quiet \
-              "${IMAGE_NAME}:${tag}" \
-              "${REGISTRY}/${IMAGE_NAME}:${tag}" \
+              "${IMAGE_REF}:${tag}" \
               --tls-verify=true
           done
 
       - name: Install cosign
-        if: github.event_name != 'pull_request'
-        uses: sigstore/cosign-installer@v3
+        if: steps.changes.outputs.build == 'true' && github.event_name != 'pull_request'
+        uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3.9.1
 
       - name: Sign image tags
-        if: github.event_name != 'pull_request'
+        if: steps.changes.outputs.build == 'true' && github.event_name != 'pull_request'
+        env:
+          IMAGE_REF: ${{ format('{0}/{1}', env.REGISTRY, env.IMAGE_NAME) }}
+          TAGS: ${{ matrix.tags }}
+        shell: bash
         run: |
-          for tag in ${{ matrix.tags }}; do
-            cosign sign --yes "${REGISTRY}/${IMAGE_NAME}:${tag}"
+          read -r -a tags <<<"${TAGS}"
+          for tag in "${tags[@]}"; do
+            cosign sign --yes "${IMAGE_REF}:${tag}"
           done
 
       - name: Log out of GHCR
-        if: ${{ always() && github.event_name != 'pull_request' }}
+        if: ${{ always() && steps.changes.outputs.build == 'true' && github.event_name != 'pull_request' }}
         continue-on-error: true
+        shell: bash
         run: |
           registry_auth_file="${REGISTRY_AUTH_FILE:-${HOME}/.docker/config.json}"
           podman logout --authfile "${registry_auth_file}" "${REGISTRY}" || true

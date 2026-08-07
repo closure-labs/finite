@@ -376,7 +376,11 @@ check:
     grep -qF 'PURPLEFIN_OSTREE_LINUX=' .github/workflows/build.yml
     grep -qF 'ostree.linux=' .github/workflows/build.yml
     grep -qF 'steps.kernel.outputs.release' .github/workflows/build.yml
-    grep -qF 'uses: actions/checkout@v7' .github/workflows/build.yml
+    grep -qF 'uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1' .github/workflows/build.yml
+    grep -qF 'build_files/plan-image-builds.sh' .github/workflows/build.yml
+    grep -qF 'org.opencontainers.image.base.digest=' .github/workflows/build.yml
+    grep -qF 'io.purplefin.build.input=' .github/workflows/build.yml
+    tests/image-build-planner.sh
     grep -qF 'buildah bud' .github/workflows/build.yml
     grep -qF 'podman login' .github/workflows/build.yml
     grep -qF 'podman push' .github/workflows/build.yml
