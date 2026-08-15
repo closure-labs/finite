@@ -390,12 +390,18 @@ check:
     ! grep -qF 'base-kernel:' .github/workflows/build.yml .github/workflows/build-profile.yml
     ! grep -qF 'ostree.linux=' .github/workflows/build-profile.yml
     grep -qF 'uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1' .github/workflows/build.yml
+    grep -qF 'DeterminateSystems/flake-checker-action@de924abd783455e8429c858962b9e43062d19da1 # v13' .github/workflows/build.yml
     grep -qF 'bootc/build/plan.sh' .github/workflows/build.yml
     grep -qF 'org.opencontainers.image.base.digest=' .github/workflows/build-profile.yml
     grep -qF 'io.purplefin.build.input=' .github/workflows/build-profile.yml
     grep -qF 'io.purplefin.parent.digest=' .github/workflows/build-profile.yml
     grep -qF -- '--cache-from' .github/workflows/build-profile.yml
     grep -qF -- '--cache-to' .github/workflows/build-profile.yml
+    grep -qF 'cache_ref="${IMAGE_REF}-build-cache:${BUILD_PROFILE}"' .github/workflows/build-profile.yml
+    grep -qF 'inputs.runner' .github/workflows/build-profile.yml
+    test -f .github/workflows/cache-warmer.yml
+    grep -qF 'runs-on: purplefin-builder' .github/workflows/cache-warmer.yml
+    grep -qF 'cache-only: true' .github/workflows/cache-warmer.yml
     grep -qF 'image: oci-archive:' .github/workflows/build-profile.yml
     grep -qF 'steps.rechunk.outputs.archive' .github/workflows/build-profile.yml
     grep -qF 'base-publish:' .github/workflows/build.yml

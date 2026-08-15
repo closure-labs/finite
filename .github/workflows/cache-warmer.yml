@@ -1,0 +1,103 @@
+name: Warm bootc build cache
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/build-profile.yml
+      - .github/workflows/build.yml
+      - .github/workflows/cache-warmer.yml
+      - bootc/config/**
+      - bootc/generated/**
+      - bootc/lib/**
+      - bootc/modules/base.sh
+      - bootc/overlays/base/**
+      - bootc/packages/**
+      - Containerfile
+      - flake.lock
+      - flake.nix
+      - nix/**
+      - VERSION
+  workflow_dispatch:
+
+concurrency:
+  group: purplefin-cache-warmer
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Local repository checks
+    runs-on: purplefin-builder
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Validate repository and workflows
+        shell: bash
+        run: |
+          nix flake check --print-build-logs
+          nix develop --command tests/ci.sh
+
+  plan:
+    name: Resolve cache input
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      base_digest: ${{ steps.input.outputs.base_digest }}
+      base_image: ${{ steps.input.outputs.base_image }}
+      build_input: ${{ steps.input.outputs.build_input }}
+      version: ${{ steps.input.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Resolve immutable base input
+        id: input
+        shell: bash
+        run: |
+          base_image="$(jq -er '.image' bootc/generated/upstream.json)"
+          base_tag="$(jq -er '.tag' bootc/generated/upstream.json)"
+          base_digest="$({
+            skopeo inspect --retry-times 3 --format '{{.Digest}}' \
+              "docker://${base_image}:${base_tag}"
+          })"
+          build_input="$(
+            jq -er '.[] | select(.profile == "base") | .build_input' \
+              bootc/generated/image-matrix.json
+          )"
+          {
+            echo "base_digest=${base_digest}"
+            echo "base_image=${base_image}"
+            echo "build_input=${build_input}"
+            echo "version=$(<VERSION)"
+          } >>"${GITHUB_OUTPUT}"
+
+  warm-base:
+    name: Warm shared base cache
+    needs:
+      - check
+      - plan
+    uses: ./.github/workflows/build-profile.yml
+    permissions:
+      contents: read
+      packages: write
+    with:
+      cache-only: true
+      build-input: ${{ needs.plan.outputs.build_input }}
+      parent-digest: ${{ needs.plan.outputs.base_digest }}
+      parent-image: ${{ needs.plan.outputs.base_image }}
+      profile: base
+      publish: false
+      runner: purplefin-builder
+      tags: cache-warm-base
+      upstream-base-digest: ${{ needs.plan.outputs.base_digest }}
+      version: ${{ needs.plan.outputs.version }}

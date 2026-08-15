@@ -3,6 +3,10 @@ name: Build one Purplefin profile
 on:
   workflow_call:
     inputs:
+      cache-only:
+        required: false
+        default: false
+        type: boolean
       upstream-base-digest:
         required: true
         type: string
@@ -30,6 +34,10 @@ on:
       publish:
         required: true
         type: boolean
+      runner:
+        required: false
+        default: ubuntu-24.04
+        type: string
       tags:
         required: true
         type: string
@@ -46,7 +54,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ inputs.runner }}
     timeout-minutes: 120
     outputs:
       digest: ${{ steps.push.outputs.digest }}
@@ -57,7 +65,7 @@ jobs:
           persist-credentials: false
 
       - name: Log in to GHCR for publishing and build cache
-        if: inputs.publish
+        if: inputs.publish || inputs.cache-only
         env:
           GHCR_TOKEN: ${{ github.token }}
         shell: bash
@@ -80,7 +88,7 @@ jobs:
           PARENT_IMAGE: ${{ inputs.parent-image }}
           PARENT_PROFILE: ${{ inputs.parent-profile }}
           PARENT_TAG: ${{ inputs.parent-tag }}
-          PUBLISH: ${{ inputs.publish }}
+          CACHE_WRITE: ${{ inputs.publish || inputs.cache-only }}
           PURPLEFIN_VERSION: ${{ inputs.version }}
           TAGS: ${{ inputs.tags }}
           UPSTREAM_BASE_DIGEST: ${{ inputs.upstream-base-digest }}
@@ -90,7 +98,7 @@ jobs:
           primary_image="${IMAGE_REF}:${tags[0]}"
           created="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           containerfile=./Containerfile
-          cache_ref="${IMAGE_REF}-build-cache"
+          cache_ref="${IMAGE_REF}-build-cache:${BUILD_PROFILE}"
           cache_args=(--layers)
           parent_args=()
 
@@ -108,9 +116,9 @@ jobs:
             )
           fi
           base_ref="${PARENT_IMAGE}@${PARENT_DIGEST}"
-          if [[ "${PUBLISH}" == true ]]; then
+          if [[ "${CACHE_WRITE}" == true ]]; then
             cache_args+=(--cache-to "${cache_ref}")
-            if skopeo list-tags "docker://${cache_ref}" >/dev/null 2>&1; then
+            if skopeo inspect "docker://${cache_ref}" >/dev/null 2>&1; then
               cache_args+=(--cache-from "${cache_ref}" --cache-ttl 168h)
             fi
           fi
@@ -135,6 +143,7 @@ jobs:
             .
 
       - name: Rechunk bootc image for efficient updates
+        if: ${{ ! inputs.cache-only }}
         id: rechunk
         env:
           TAGS: ${{ inputs.tags }}
@@ -245,7 +254,7 @@ jobs:
           fi
 
       - name: Log out of GHCR
-        if: always() && inputs.publish
+        if: always() && (inputs.publish || inputs.cache-only)
         continue-on-error: true
         shell: bash
         run: |
