@@ -2,31 +2,19 @@
 set -euo pipefail
 
 build_root="${PURPLEFIN_BUILD_ROOT:-/tmp/purplefin-build}"
-profile_files_root="${PURPLEFIN_PROFILE_FILES_ROOT:-/tmp/purplefin-profile-files}"
 profile="${1:-${BUILD_PROFILE:-base-generic}}"
-legacy_role="${2:-${BUILD_ROLE:-}}"
 profile_definition="${build_root}/profiles/profiles/${profile}.conf"
 module_root="${build_root}/modules"
+modules=()
 
 valid_name='^[a-z0-9._-]+$'
 [[ "${profile}" =~ ${valid_name} ]] || { echo "Invalid build profile: ${profile}" >&2; exit 2; }
 
-# A named profile is the public composition interface.  The legacy role plus
-# hardware pair remains accepted so existing callers can migrate gradually.
-if [[ -f "${profile_definition}" ]]; then
-	# shellcheck source=/dev/null
-	source "${profile_definition}"
-	[[ "${profile_name:-}" == "${profile}" ]] || { echo "Invalid profile definition: ${profile_definition}" >&2; exit 2; }
-	declare -p modules >/dev/null 2>&1 || { echo "Profile ${profile} does not define modules" >&2; exit 2; }
-else
-	[[ -x "${build_root}/profiles/${profile}.sh" ]] || { echo "Unknown build profile: ${profile}" >&2; exit 2; }
-	legacy_role="${legacy_role:-base}"
-	[[ "${legacy_role}" =~ ${valid_name} && -x "${build_root}/profiles/roles/${legacy_role}.sh" ]] || {
-		echo "Unknown legacy build role: ${legacy_role}" >&2; exit 2;
-	}
-	profile="legacy-${legacy_role}-${profile}"
-	modules=(base "legacy-role-${legacy_role}" "legacy-hardware-${1:-${BUILD_PROFILE:-generic-x86_64}}")
-fi
+[[ -f "${profile_definition}" ]] || { echo "Unknown build profile: ${profile}" >&2; exit 2; }
+# shellcheck source=/dev/null
+source "${profile_definition}"
+[[ "${profile_name:-}" == "${profile}" ]] || { echo "Invalid profile definition: ${profile_definition}" >&2; exit 2; }
+declare -p modules >/dev/null 2>&1 || { echo "Profile ${profile} does not define modules" >&2; exit 2; }
 
 # shellcheck source=/tmp/purplefin-build/profiles/lib/authselect-features.sh
 source "${build_root}/profiles/lib/authselect-features.sh"
@@ -41,7 +29,7 @@ for module in "${modules[@]}"; do
 	[[ -z "${applied_modules[${module}]:-}" ]] || { echo "Duplicate module in ${profile}: ${module}" >&2; exit 2; }
 	module_script="${module_root}/${module}.sh"
 	[[ -x "${module_script}" ]] || { echo "Unknown module in ${profile}: ${module}" >&2; exit 2; }
-	if [[ "${module}" == hardware-* || "${module}" == legacy-hardware-* ]]; then
+	if [[ "${module}" == hardware-* ]]; then
 		((hardware_count += 1))
 	fi
 	if [[ "${module}" == base ]]; then
@@ -59,6 +47,8 @@ done
 # installed subset after every role and hardware module has been applied.
 # shellcheck source=/tmp/purplefin-build/lib/independently-managed-rpms.sh
 source "${build_root}/lib/independently-managed-rpms.sh"
+independently_managed_rpms=()
+independently_managed_rpm_repo_args=()
 purplefin_load_independently_managed_rpms "${build_root}/independently-managed-rpms.list"
 installed_independently_managed_rpms=()
 for package in "${independently_managed_rpms[@]}"; do
@@ -76,6 +66,7 @@ fi
 install -d /usr/share/purplefin
 printf '%s\n' "${profile}" > /usr/share/purplefin/build-profile
 printf '%s\n' "${modules[@]}" > /usr/share/purplefin/build-modules
+printf '%s\n' "${PURPLEFIN_VERSION:?PURPLEFIN_VERSION is required}" > /usr/share/purplefin/version
 
 if [[ -d /usr/libexec/purplefin/firstboot-rpm-ostree.d ]]; then
 	find /usr/libexec/purplefin/firstboot-rpm-ostree.d -maxdepth 1 -type f -exec chmod 0755 {} +

@@ -98,7 +98,9 @@ grep -qxF 'auth required pam_env.so' "${password_auth}"
 grep -qxF 'auth required pam_faildelay.so delay=2000000' "${password_auth}"
 grep -qxF 'auth sufficient pam_unix.so' "${password_auth}"
 grep -qxF 'auth required pam_deny.so' "${password_auth}"
-! grep -Eq 'pam_(fprintd|u2f)[.]so|nullok' "${password_auth}"
+if grep -Eq 'pam_(fprintd|u2f)[.]so|nullok' "${password_auth}"; then
+	exit 1
+fi
 
 grep -qxF 'auth       substack     purplefin-dell-lid-auth' "${sudo_auth}"
 grep -qxF 'account    include      system-auth' "${sudo_auth}"

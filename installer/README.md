@@ -1,23 +1,17 @@
 # Purplefin Anaconda installer
 
-`Containerfile` creates the installer environment used by the bootc installer
-ISO. It includes the ordinary Anaconda flow plus Purplefin's role selector.
+The installer workflow builds OSBuild's supported `bootc-generic-iso` image
+type with a digest-pinned `ghcr.io/osbuild/image-builder-cli` container.
 
-The selector intentionally does not compose packages on the target. It detects
-hardware, limits the visible presets to the catalog, verifies the selected
-GitHub Actions cosign signature, resolves the tag to a digest, and returns an
-Anaconda-compatible `registry:` bootc source reference.
+At dispatch time a maintainer selects one published Purplefin profile. The
+workflow resolves that tag, verifies its keyless GitHub Actions Cosign
+signature, and passes the resulting immutable digest both to the installer
+environment and as the embedded Anaconda payload. Package composition never
+happens during installation.
 
-The Anaconda UI integration calls:
-
-```python
-from purplefin.source_selection import resolve_source
-source = resolve_source(selected_preset)
-```
-
-and assigns `source` to the bootc payload source before installation starts.
-The implementation must use the Anaconda release's bootc source D-Bus API;
-the mapping and verification policy deliberately remain outside that unstable
-UI API. The ISO build uses `base-generic-x86_64` as image-builder's required
-embedded fallback payload. The selector replaces it with the verified network
-source selected by the user.
+`Containerfile` implements the generic ISO contract: Anaconda and ISO tooling,
+kernel and initramfs, EFI files, `/usr/lib/image-builder/bootc/iso.yaml`, and an
+interactive-defaults kickstart containing the immutable payload reference.
+The workflow uploads the ISO, SHA-256 checksum, provenance attestation, and QEMU
+smoke-boot log. The weekly run uses `base-generic-x86_64`; manual runs can select
+any tag listed by the workflow.

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2016
 set -euo pipefail
 
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -7,6 +8,7 @@ trap 'rm -rf "${test_root}"' EXIT
 fake_bin="${test_root}/bin"
 install -d "${fake_bin}"
 
+# The following single-quoted strings intentionally generate mock executables.
 printf '%s\n' \
 	'#!/usr/bin/env bash' \
 	'set -euo pipefail' \
@@ -40,13 +42,12 @@ chmod 0755 "${fake_bin}/skopeo" "${fake_bin}/podman"
 
 export PATH="${fake_bin}:${PATH}"
 export BASE_DIGEST=sha256:base
-export BASE_REF=ghcr.io/projectbluefin/bluefin:stable
-export BUILD_INPUT=source-state
+export BASE_REF=ghcr.io/projectbluefin/bluefin@sha256:base
 export IMAGE_REF=ghcr.io/example/purplefin
 export FAKE_PUBLISHED_BASE="${BASE_DIGEST}"
-export FAKE_PUBLISHED_INPUT="${BUILD_INPUT}"
 export FAKE_PODMAN_RUN_LOG="${test_root}/podman-run.log"
-profile='[{"profile":"base-generic","tags":"generic-x86_64 latest"}]'
+profile='[{"profile":"base-generic","tags":"generic-x86_64 latest","build_input":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]'
+export FAKE_PUBLISHED_INPUT=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 
 export CHECK_RPM_UPDATES=false
 export FAKE_PODMAN_FAIL=true
@@ -61,7 +62,9 @@ test "$(jq '.include | length' <<<"${matrix}")" -eq 0
 grep -q -- '--enable-repo=tailscale-stable' "${FAKE_PODMAN_RUN_LOG}"
 grep -qw tailscale "${FAKE_PODMAN_RUN_LOG}"
 grep -qw -- '-y' "${FAKE_PODMAN_RUN_LOG}"
-! grep -qw espanso-wayland "${FAKE_PODMAN_RUN_LOG}"
+if grep -qw espanso-wayland "${FAKE_PODMAN_RUN_LOG}"; then
+	exit 1
+fi
 
 export FAKE_ESPANSO_RPM=true
 matrix="$(cd "${repo_root}" && build_files/plan-image-builds.sh "${profile}")"

@@ -193,7 +193,7 @@ test ! -s "${tmpdir}/panel/gdctl.log"
 rm -rf "${tmpdir}/panel/drm/card0-DP-1"
 
 write_panel_state 1920x1200@120.000+vrr 1920x1200@60.000
-for run in 1 2; do
+for _ in 1 2; do
 	env "${panel_env[@]}" MOCK_ON_BATTERY=false "${panel_helper}" --apply >/dev/null
 done
 test "$(grep -cF 'set org.gnome.settings-daemon.plugins.power ambient-enabled true' "${tmpdir}/panel/gsettings.log")" -eq 1

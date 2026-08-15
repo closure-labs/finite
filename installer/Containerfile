@@ -1,18 +1,33 @@
-ARG BASE_IMAGE=ghcr.io/declarative-dale/purplefin
-ARG BASE_TAG=base-generic-x86_64
-FROM ${BASE_IMAGE}:${BASE_TAG}
+ARG BASE_REF=ghcr.io/declarative-dale/purplefin:base-generic-x86_64
+FROM ${BASE_REF}
 
-# Packages required by image-builder's bootc-installer output and by Purplefin's
-# online source-selection helper.
+ARG INSTALLER_PAYLOAD_REF=ghcr.io/declarative-dale/purplefin:base-generic-x86_64
+
+# This follows image-builder's supported bootc-generic-iso contract. The
+# payload is selected and resolved to a signed digest by the workflow.
 RUN dnf5 -y install \
-      anaconda anaconda-install-env-deps anaconda-dracut \
-      dracut-config-generic dracut-network net-tools squashfs-tools \
-      grub2-efi-x64-cdboot python3-mako lorax-templates-x86 \
-      biosdevname prefixdevname cosign skopeo && \
+      anaconda anaconda-install-img-deps anaconda-dracut \
+      dracut-config-generic dracut-network net-tools \
+      grub2-efi-x64-cdboot grub2-pc-modules grub2-tools-extra \
+      plymouth default-fonts-core-sans default-fonts-other-sans \
+      google-noto-sans-cjk-fonts isomd5sum squashfs-tools xorriso && \
     dnf5 clean all && \
     mkdir -p /boot/efi /var/mnt && \
     cp -ra /usr/lib/efi/*/*/EFI /boot/efi
 
 COPY installer/root/ /
-COPY installer/catalog.tsv /usr/share/purplefin-installer/catalog.tsv
-RUN chmod 0755 /usr/libexec/purplefin-installer/select-image
+
+RUN sed -i "s|@@INSTALLER_PAYLOAD_REF@@|${INSTALLER_PAYLOAD_REF}|g" \
+      /usr/share/anaconda/interactive-defaults.ks && \
+    echo 'install:x:0:0:root:/root:/usr/libexec/anaconda/run-anaconda' >>/etc/passwd && \
+    echo 'install::14438:0:99999:7:::' >>/etc/shadow && \
+    passwd -d root && \
+    mv /usr/share/anaconda/list-harddrives-stub /usr/bin/list-harddrives && \
+    mv /etc/yum.repos.d /etc/anaconda.repos.d && \
+    ln -sf /usr/lib/systemd/system/anaconda.target /etc/systemd/system/default.target && \
+    rm -f /usr/lib/systemd/system-generators/systemd-gpt-auto-generator && \
+    ln -sf /usr/lib/systemd/system/anaconda-shell@.service /usr/lib/systemd/system/autovt@.service && \
+    mkdir -p "$(realpath /root)" && \
+    kernel="$(kernel-install list --json pretty | jq -r '.[] | select(.has_kernel == true) | .version')" && \
+    DRACUT_NO_XATTR=1 dracut --force --zstd --reproducible --no-hostonly \
+      --add anaconda "/usr/lib/modules/${kernel}/initramfs.img" "${kernel}"

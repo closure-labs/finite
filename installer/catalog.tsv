@@ -1,8 +1,0 @@
-# preset	hardware	profile	image_tag	label
-base	generic	base-generic	base-generic-x86_64	Base
-base	dell-xps-9350-intel	base-dell-xps-9350-intel	base-dell-xps-9350-intel	Base
-sales	generic	sales-generic	sales-generic	Sales
-sales	dell-xps-9350-intel	sales-dell-xps-9350-intel	sales-dell-xps-9350-intel	Sales
-support	generic	support-generic	support-generic	Support
-support	dell-xps-9350-intel	support-dell-xps-9350-intel	support-dell-xps-9350-intel	Support
-dale	dell-xps-9350-intel	dale	dale	Dale

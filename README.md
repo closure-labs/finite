@@ -12,15 +12,30 @@ The image is built from this repository and published to:
 ghcr.io/declarative-dale/purplefin
 ```
 
+## Versions, builds, and releases
+
+`VERSION` is Purplefin's source version and is embedded in every image as the
+`org.opencontainers.image.version` label and `/usr/share/purplefin/version`.
+Normal builds resolve and verify Bluefin first, build from its immutable digest,
+rechunk the result, push it once, and sign and attest the resulting Purplefin
+digest. Profile inputs are hashed independently and the dynamic matrix includes
+only images whose source, base, or managed RPM state changed.
+
+The release workflow accepts a release version already present in `VERSION` and
+the next development version. It first dispatches and waits for a forced,
+all-profile release-candidate build. After release-environment approval it
+verifies those published profiles and promotes their existing digests to immutable
+`PROFILE-vVERSION` tags, creates the GitHub release and manifest, then commits
+the requested `-dev.N` version to `main` and dispatches its build. Release
+promotion never rebuilds an image.
+
 ## Build-Time Composition
 
 Purplefin's public build input is a named `BUILD_PROFILE`. Each profile is an
 ordered list of reusable modules and exactly one hardware module. The primary
 profiles are `base-generic` and `dale`; Dale combines base, sales, trainer,
 support, and Dell XPS 13 9350 Intel/IPU7 hardware while retaining Bluefin's
-GNOME desktop.
-Legacy `BUILD_ROLE` plus
-hardware-valued `BUILD_PROFILE` inputs remain available for migration.
+GNOME desktop. Named profiles are the only supported composition interface.
 
 Reusable workload modules include `developer` (DevOps tooling plus Rust),
 `sales` (Thunderbird), `support` (Espanso and RustConn), `trainer` (Grist
@@ -29,28 +44,18 @@ Firefox launcher), `executive` (Vates Notes Firefox launcher), and `it`
 scaffold until model-specific settings are validated.
 
 Purplefin composes one department with one hardware profile and emits one final
-bootc image. The common foundation is applied first, followed by the selected
-department and hardware profile:
+bootc image. The named `BUILD_PROFILE` selects an ordered module composition;
+the common foundation is applied first, followed by workload and hardware
+modules.
 
-- `BUILD_ROLE` selects the department workload. Its historical name is retained
-  for build compatibility.
-- `BUILD_PROFILE` selects the hardware overlay. The historical variable name is
-  retained for compatibility, but it now means hardware rather than the whole
-  image personality.
+## Graphical installer
 
-## Graphical installer pilot
-
-The optional Purplefin installer ISO uses Anaconda for storage, accounts, and
-networking, then installs one verified, prebuilt bootc image. It does not layer
-packages locally. After networking is configured, the Purplefin screen offers
-the Base, Sales, and Support presets; on a detected Dell XPS 13 9350 it also
-offers Dale. The selected GHCR tag is verified with the repository's GitHub
-Actions cosign identity and resolved to an immutable digest before installation.
-Unknown hardware safely receives a generic image.
-
-The ISO is intentionally built on demand from the **Build Purplefin installer
-ISO** workflow. See [installer/README.md](installer/README.md) for the source
-selection interface and image-builder requirements.
+The installer workflow takes a published profile, verifies its GitHub Actions
+Cosign signature, resolves it to an immutable digest, and embeds that exact
+payload in an Anaconda ISO. It uses OSBuild's current `image-builder` CLI and
+the supported `bootc-generic-iso` image type. A weekly trusted run builds the
+generic installer and smoke-boots it with QEMU; maintainers can dispatch the
+workflow for any published profile. See [installer/README.md](installer/README.md).
 
 | Department | Workload |
 | --- | --- |
@@ -65,16 +70,13 @@ selection interface and image-builder requirements.
 | Hardware profile | Overlay |
 | --- | --- |
 | `generic-x86_64` | Generic x86-64 hardware with no vendor-specific overlay. |
-| `desktop-x86_64` | Neutral generic x86-64 desktop scaffold for future hardware policy. |
-| `lenovo-generic` | Neutral Lenovo scaffold for future hardware policy. |
 | `dell-xps-9350-intel` | Dell XPS 13 9350 policies, lid-aware privilege authentication, rEFInd, and the IPU7 camera stack. |
-| `dell-xps-9350-intel-no-ipu7` | Dell XPS 13 9350 test overlay with its non-camera and lid-aware authentication policies and Bluefin's included kernel, but no IPU7 camera integration. |
 
 Every hardware profile also applies the shared hardware-security baseline:
 fingerprint authentication, PAM U2F/FIDO2 support, YubiKey management, and
 smart-card services. User-specific fingerprint enrollments and security-key
 mappings remain local to each machine and are never built into an image.
-Both Dell profiles make `sudo` and polkit authentication lid-aware: an open lid
+The Dell profile makes `sudo` and polkit authentication lid-aware: an open lid
 uses the normal fingerprint-first stack, while a closed or indeterminate lid
 uses the local account password without attempting fingerprint authentication.
 
@@ -91,46 +93,46 @@ The build workflow publishes these representative combinations:
 | Department | Hardware | Image tags |
 | --- | --- | --- |
 | `base` | `generic-x86_64` | `generic-x86_64`, `latest`, and `base-generic-x86_64` |
-| `support` | `dell-xps-9350-intel` | `dell-xps-9350-intel` and `support-dell-xps-9350-intel` |
-| `support` | `lenovo-generic` | `support-lenovo-generic` |
-| `development` | `desktop-x86_64` | `development-desktop-x86_64` |
+| `base` | `dell-xps-9350-intel` | `base-dell-xps-9350-intel` |
+| `sales` | `generic-x86_64` | `sales-generic` |
+| `sales` | `dell-xps-9350-intel` | `sales-dell-xps-9350-intel` |
+| `support` | `generic-x86_64` | `support-generic` |
+| `support` | `dell-xps-9350-intel` | `support-dell-xps-9350-intel` |
+| combined Dale profile | `dell-xps-9350-intel` | `dale` and `dell-xps-9350-intel` |
 
 ## Build Locally
 
 ```bash
 just build-generic
 just build-dell
-just build-dell-no-ipu7
 just build-base-generic
 just build-support-dell
-just build-support-lenovo
-just build-development-desktop
 ```
 
-The first three recipes are compatibility entry points: generic builds
-`base` + `generic-x86_64`, while both Dell recipes build `support` with the
-corresponding Dell hardware profile. The remaining recipes name their
-department and hardware combinations explicitly.
+The generic and Dell recipes build the two primary profiles. The remaining
+recipes name their profile explicitly.
 
 The `just` targets inspect Bluefin's `ostree.linux` label and write the matching
 kernel label into the derived image. For an equivalent direct build, resolve
 that value first:
 
 ```bash
-base_kernel="$(skopeo inspect docker://ghcr.io/projectbluefin/bluefin:stable | jq -er '.Labels["ostree.linux"]')"
-target_kernel="$(build_files/select-ostree-linux.sh dell-xps-9350-intel "${base_kernel}")"
+base_metadata="$(skopeo inspect docker://ghcr.io/projectbluefin/bluefin:stable)"
+base_digest="$(jq -er '.Digest' <<<"${base_metadata}")"
+base_kernel="$(jq -er '.Labels["ostree.linux"]' <<<"${base_metadata}")"
+target_kernel="$(build_files/select-ostree-linux.sh dale "${base_kernel}")"
 podman build \
-  --build-arg BUILD_ROLE=support \
-  --build-arg BUILD_PROFILE=dell-xps-9350-intel \
+  --build-arg BASE_REF="ghcr.io/projectbluefin/bluefin@${base_digest}" \
+  --build-arg BUILD_PROFILE=dale \
   --build-arg PURPLEFIN_OSTREE_LINUX="${target_kernel}" \
+  --build-arg PURPLEFIN_VERSION="$(<VERSION)" \
   --label "ostree.linux=${target_kernel}" \
   --tag ghcr.io/declarative-dale/purplefin:dell-xps-9350-intel \
   .
 ```
 
-Both Dell profiles keep Bluefin's included kernel unchanged. The full camera
-profile builds its small set of SVP7500 replacement modules against that exact
-kernel; the no-IPU7 test profile adds no camera kernel modules at all.
+The Dell profile keeps Bluefin's included kernel unchanged and builds its small
+set of SVP7500 replacement modules against that exact kernel.
 
 ## Switch To An Image
 
@@ -139,7 +141,7 @@ Select the complete department and hardware build you want. For example:
 ```bash
 run0 bootc switch ghcr.io/declarative-dale/purplefin:generic-x86_64
 run0 bootc switch ghcr.io/declarative-dale/purplefin:support-dell-xps-9350-intel
-run0 bootc switch ghcr.io/declarative-dale/purplefin:development-desktop-x86_64
+run0 bootc switch ghcr.io/declarative-dale/purplefin:dale
 ```
 
 Reboot after switching. Switching changes the complete tracked image; bootc
@@ -147,10 +149,9 @@ does not combine a department tag with a separate hardware tag at installation
 time.
 
 The `latest` tag tracks the `base` + `generic-x86_64` image. The
-`dell-xps-9350-intel` tag tracks `support` + Dell IPU7. The local
-`build-dell-no-ipu7` compatibility recipe produces the `support` + Dell
-no-camera test image. Both follow Bluefin's kernel without a Dell-specific
-kernel repository or version override. The reusable `devops` component provides
+`dell-xps-9350-intel` tag tracks the combined Dale profile. Both follow
+Bluefin's kernel without a Dell-specific kernel repository or version override.
+The reusable `devops` component provides
 Ghostty, VSCodium,
 `packer`, `ansible`, `tofu`, and `bao`; both the support and development
 departments reference it. The base department provides Git, Micro, `qemu-img`,
@@ -350,9 +351,8 @@ enabling enforcement; there is no automatic handoff to mainline `cvs`.
 
 The Dell XPS 9350 Intel profile targets the Lunar Lake IPU7 (`8086:645d`),
 Synaptics SVP7500/Intel CVS (`INTC10DE`), and OV02C10 (`OVTI02C1`) camera in
-this laptop. The generic and `dell-xps-9350-intel-no-ipu7` profiles do not
-install its replacement modules, udev rules, or camera-specific userspace
-configuration.
+this laptop. Generic profiles do not install its replacement modules, udev
+rules, or camera-specific userspace configuration.
 
 The implementation follows `svp7500-camera-fix-pack` v1.0.2 at commit
 `e4c95452339b2d9803974a899c4f2da6e143891d`. Purplefin keeps Bluefin's exact

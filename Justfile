@@ -85,28 +85,28 @@ check:
         system_files/usr/libexec/purplefin/run-firstboot-rpm-ostree
     test -e "${firstboot_test}/pending-markers/40-pending.done"
 
-    # Named profiles compose ordered reusable modules and retain a legacy path.
-    for profile in base-generic base-dell-xps-9350-intel sales-generic sales-dell-xps-9350-intel support-generic support-dell-xps-9350-intel support-dell-xps-9350-intel-no-ipu7 dale developer-generic trainer-generic executive-generic it-generic; do
+    # Named profiles are the only supported composition interface.
+    for profile in base-generic base-dell-xps-9350-intel sales-generic sales-dell-xps-9350-intel support-generic support-dell-xps-9350-intel dale developer-generic trainer-generic executive-generic it-generic; do
         test -f "build_files/profiles/profiles/${profile}.conf"
         bash -n "build_files/profiles/profiles/${profile}.conf"
     done
 
-    tests/installer-selector.sh
     for module in base developer support sales trainer executive it hardware-generic-x86_64 hardware-framework-laptop hardware-dell-xps-9350-intel; do
         test -x "build_files/modules/${module}.sh"
     done
-    grep -qF 'ARG BUILD_ROLE=base' Containerfile
+    test -f VERSION
+    grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$' VERSION
     grep -qF 'ARG BUILD_PROFILE=base-generic' Containerfile
-    grep -qF 'BUILD_ROLE="${BUILD_ROLE}"' Containerfile
-    grep -qF '/tmp/purplefin-build/build.sh "${BUILD_PROFILE}" "${BUILD_ROLE}"' Containerfile
+    grep -qF '/tmp/purplefin-build/build.sh "${BUILD_PROFILE}"' Containerfile
     grep -qF 'profile_definition="${build_root}/profiles/profiles/${profile}.conf"' build_files/build.sh
     grep -qF 'modules=(base sales trainer support hardware-dell-xps-9350-intel)' build_files/profiles/profiles/dale.conf
-    grep -qF 'ARG BASE_IMAGE=ghcr.io/projectbluefin/bluefin' Containerfile
-    test "$(grep -c '^ARG BASE_IMAGE' Containerfile)" -eq 2
-    test "$(grep -c '^ARG BASE_TAG' Containerfile)" -eq 2
-    grep -qF 'org.opencontainers.image.base.name="${BASE_IMAGE}:${BASE_TAG}"' Containerfile
+    grep -qF 'ARG BASE_REF=ghcr.io/projectbluefin/bluefin:stable' Containerfile
+    grep -qF 'FROM ${BASE_REF}' Containerfile
+    grep -qF 'org.opencontainers.image.base.name="${BASE_REF}"' Containerfile
+    grep -qF 'org.opencontainers.image.version="${PURPLEFIN_VERSION}"' Containerfile
     grep -qF 'Profile ${profile} must include exactly one hardware module' build_files/build.sh
     grep -qF 'printf '\''%s\n'\'' "${modules[@]}" > /usr/share/purplefin/build-modules' build_files/build.sh
+    grep -qF '/usr/share/purplefin/version' build_files/build.sh
     grep -qF 'purplefin_authselect_finalize' build_files/build.sh
 
     # Base/common content is present in every named profile.
@@ -211,11 +211,7 @@ check:
     grep -qF 'purplefin_authselect_request with-fingerprint with-pam-u2f' "${hardware_security}"
     grep -qF 'systemctl enable pcscd.socket' "${hardware_security}"
     ! rg -q 'dnf5 -y install fprintd libfprint|pam-u2f|pamu2fcfg|libfido2|opensc|pcsc-lite|pcscd|yubikey-manager|with-fingerprint|with-pam-u2f' \
-        build_files/profiles/generic-x86_64.sh \
-        build_files/profiles/desktop-x86_64.sh \
-        build_files/profiles/lenovo-generic.sh \
-        build_files/profiles/dell-xps-9350-intel.sh \
-        build_files/profiles/dell-xps-9350-intel-no-ipu7.sh
+        build_files/profiles/dell-xps-9350-intel.sh
 
     # Devops is a reusable component referenced by support and development.
     development_role=build_files/profiles/roles/development.sh
@@ -354,26 +350,18 @@ check:
     grep -qF 'PURPLEFIN_OSTREE_LINUX' Containerfile
     grep -qF 'LABEL ostree.linux="${PURPLEFIN_OSTREE_LINUX}"' Containerfile
     test -x build_files/select-ostree-linux.sh
-    test "$(build_files/select-ostree-linux.sh dell-xps-9350-intel 7.0.11-200.fc44.x86_64)" = '7.0.11-200.fc44.x86_64'
-    test "$(build_files/select-ostree-linux.sh dell-xps-9350-intel 7.1.2-200.fc44.x86_64)" = '7.1.2-200.fc44.x86_64'
-    test "$(build_files/select-ostree-linux.sh dell-xps-9350-intel 7.1.3-200.fc44.x86_64)" = '7.1.3-200.fc44.x86_64'
-    test "$(build_files/select-ostree-linux.sh dell-xps-9350-intel 7.2.0-200.fc44.x86_64)" = '7.2.0-200.fc44.x86_64'
-    test "$(build_files/select-ostree-linux.sh dell-xps-9350-intel-no-ipu7 7.0.11-200.fc44.x86_64)" = '7.0.11-200.fc44.x86_64'
-    test "$(build_files/select-ostree-linux.sh support-dell-xps-9350-intel-no-ipu7 7.0.11-200.fc44.x86_64)" = '7.0.11-200.fc44.x86_64'
-    test "$(build_files/select-ostree-linux.sh generic-x86_64 7.0.11-200.fc44.x86_64)" = '7.0.11-200.fc44.x86_64'
-    test "$(build_files/select-ostree-linux.sh desktop-x86_64 7.0.11-200.fc44.x86_64)" = '7.0.11-200.fc44.x86_64'
-    test "$(build_files/select-ostree-linux.sh lenovo-generic 7.0.11-200.fc44.x86_64)" = '7.0.11-200.fc44.x86_64'
-    grep -qF 'BUILD_PROFILE=' .github/workflows/build.yml
-    test "$(grep -c '^          - profile:' .github/workflows/build.yml)" -eq 7
-    ci_matrix="$(awk '
-        $1 == "-" && $2 == "profile:" { profile = $3 }
-        $1 == "tags:" && profile != "" {
-            tags = $0
-            sub(/^[[:space:]]*tags:[[:space:]]*/, "", tags)
-            print profile "|" tags
-            profile = ""
-        }
-    ' .github/workflows/build.yml)"
+    test "$(build_files/select-ostree-linux.sh dale 7.1.3-200.fc44.x86_64)" = '7.1.3-200.fc44.x86_64'
+    test "$(build_files/select-ostree-linux.sh base-generic 7.0.11-200.fc44.x86_64)" = '7.0.11-200.fc44.x86_64'
+    test "$(build_files/select-ostree-linux.sh support-dell-xps-9350-intel 7.2.0-200.fc44.x86_64)" = '7.2.0-200.fc44.x86_64'
+    test "$(jq length build_files/image-matrix.json)" -eq 7
+    test -x build_files/profile-build-input.sh
+    while IFS= read -r entry; do
+        profile="$(jq -r '.profile' <<<"${entry}")"
+        tags="$(jq -r '.tags' <<<"${entry}")"
+        build_input="$(build_files/profile-build-input.sh "${profile}" "${tags}")"
+        [[ "${build_input}" =~ ^[0-9a-f]{64}$ ]]
+    done < <(jq -c '.[]' build_files/image-matrix.json)
+    ci_matrix="$(jq -r '.[] | [.profile, .tags] | join("|")' build_files/image-matrix.json)"
     test "${ci_matrix}" = "$(printf '%s\n' \
         'base-generic|generic-x86_64 latest base-generic-x86_64' \
         'base-dell-xps-9350-intel|base-dell-xps-9350-intel' \
@@ -382,20 +370,25 @@ check:
         'support-generic|support-generic' \
         'support-dell-xps-9350-intel|support-dell-xps-9350-intel' \
         'dale|dale dell-xps-9350-intel')"
-    grep -qF 'PURPLEFIN_OSTREE_LINUX=' .github/workflows/build.yml
-    grep -qF 'ostree.linux=' .github/workflows/build.yml
-    grep -qF 'steps.kernel.outputs.release' .github/workflows/build.yml
+    grep -qF 'PURPLEFIN_OSTREE_LINUX=' .github/workflows/build-profile.yml
+    grep -qF 'ostree.linux=' .github/workflows/build-profile.yml
+    grep -qF 'steps.kernel.outputs.release' .github/workflows/build-profile.yml
     grep -qF 'uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1' .github/workflows/build.yml
     grep -qF 'build_files/plan-image-builds.sh' .github/workflows/build.yml
-    grep -qF 'org.opencontainers.image.base.digest=' .github/workflows/build.yml
-    grep -qF 'io.purplefin.build.input=' .github/workflows/build.yml
+    grep -qF 'org.opencontainers.image.base.digest=' .github/workflows/build-profile.yml
+    grep -qF 'io.purplefin.build.input=' .github/workflows/build-profile.yml
     tests/image-build-planner.sh
-    grep -qF 'buildah bud' .github/workflows/build.yml
-    grep -qF 'podman login' .github/workflows/build.yml
-    grep -qF 'podman push' .github/workflows/build.yml
-    grep -qF 'REGISTRY_AUTH_FILE=' .github/workflows/build.yml
-    ! rg -q 'ghcr.io/ublue-os/bluefin(:|\b)' Containerfile image-template.env README.md Justfile .github/workflows
+    grep -qF 'buildah bud' .github/workflows/build-profile.yml
+    grep -qF 'podman login' .github/workflows/build-profile.yml
+    grep -qF 'podman push' .github/workflows/build-profile.yml
+    grep -qF 'REGISTRY_AUTH_FILE=' .github/workflows/build-profile.yml
+    ! rg -q 'ghcr.io/ublue-os/bluefin(:|\b)' Containerfile README.md Justfile .github/workflows
     ! rg -q 'actions/checkout@v4|redhat-actions/(buildah-build|podman-login|push-to-registry)' .github/workflows
+    ! rg -q 'bootc-image-builder|--type bootc-installer|anaconda-iso' .github installer
+    grep -qF 'bootc-generic-iso' .github/workflows/build-installer.yml
+    grep -qF 'ghcr.io/osbuild/image-builder-cli@sha256:' .github/workflows/build-installer.yml
+    test -z "$(find build_files/modules -maxdepth 1 -name 'legacy-*' -print -quit)"
+    test -z "$(find build_files/profiles -maxdepth 1 \( -name '*no-ipu7*' -o -name 'desktop-x86_64.sh' -o -name 'lenovo-generic.sh' \) -print -quit)"
     ! grep -qF 'dracut --force "${kernel_modules_dir}/initramfs.img" "${kernel_version}"' build_files/build.sh
     grep -qF 'rm -f /boot/symvers-*.xz' build_files/build.sh
     grep -qF '/var/lib/rpm-state' build_files/build.sh
@@ -405,34 +398,9 @@ check:
     test -z "$(find system_files -iname '*ipu7*' -print -quit)"
     test -z "$(find system_files profile_files -iname '*librepods*' -print -quit)"
     ! rg -qi 'librepods' README.md build_files/profiles
-    test -x build_files/profiles/dell-xps-9350-intel-no-ipu7.sh
-    grep -qF 'copy_profile_tree "usr/share/purplefin/refind"' build_files/profiles/dell-xps-9350-intel-no-ipu7.sh
-    ! grep -Eq 'kernel-(core|devel)|mainline|COPR|dnf5' build_files/profiles/dell-xps-9350-intel-no-ipu7.sh
     test -f build_files/profiles/lib/dell-xps-9350-common.sh
-    for profile_script in build_files/profiles/dell-xps-9350-intel.sh build_files/profiles/dell-xps-9350-intel-no-ipu7.sh; do
-        grep -qF 'source /tmp/purplefin-build/profiles/lib/dell-xps-9350-common.sh' "${profile_script}"
-        grep -qF 'purplefin_configure_dell_xps_9350_common' "${profile_script}"
-    done
-    for common_path in \
-        etc/pam.d/polkit-1 \
-        etc/pam.d/purplefin-dell-lid-auth \
-        etc/pam.d/purplefin-dell-password-auth \
-        etc/pam.d/sudo \
-        usr/lib/purplefin/dell-xps-9350-battery.conf \
-        usr/lib/udev/hwdb.d/61-purplefin-dell-xps-9350-battery.hwdb \
-        usr/lib/tuned/profiles/purplefin-dell-xps-9350-performance/tuned.conf \
-        usr/lib/systemd/system/purplefin-dell-xps-9350-battery.service \
-        usr/libexec/purplefin/configure-dell-xps-9350-battery \
-        usr/libexec/purplefin/dell-lid-is-open \
-        usr/lib/systemd/user/purplefin-dell-xps-9350-panel.service \
-        usr/libexec/purplefin/dell-xps-9350-panel-policy \
-        usr/share/purplefin/dell-xps-9350-panel.conf \
-        usr/share/glib-2.0/schemas/zz9-purplefin-dell-xps-9350.gschema.override \
-        etc/systemd/user/graphical-session.target.wants/purplefin-dell-xps-9350-panel.service; do
-        grep -qF "copy_profile_file \"${common_path}\"" build_files/profiles/dell-xps-9350-intel-no-ipu7.sh
-    done
-    ! grep -Eq 'copy_profile_(file|tree) ".*(dell-ipu7|ipu7-|v4l2loopback|libcamera|pipewire|intel_cvs|intel_ipu7)' build_files/profiles/dell-xps-9350-intel-no-ipu7.sh
-    ! grep -Eq '20-dell-ipu7|30-dell-ipu7|40-dell-ipu7|dell-ipu7-setup|dell-ipu7-patch|usr/libexec/purplefin/lib/dell-ipu7|purplefin-dell-ipu7-(psys|v4l2loopback)' build_files/profiles/dell-xps-9350-intel-no-ipu7.sh
+    grep -qF 'source /tmp/purplefin-build/profiles/lib/dell-xps-9350-common.sh' build_files/profiles/dell-xps-9350-intel.sh
+    grep -qF 'purplefin_configure_dell_xps_9350_common' build_files/profiles/dell-xps-9350-intel.sh
     test ! -e profile_files/dell-xps-9350-intel/system_files/etc/plymouth
     test ! -e profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/firstboot-rpm-ostree.d/20-dell-ipu7-stable-kernel
     xps_profile_root=profile_files/dell-xps-9350-intel/system_files
@@ -612,7 +580,6 @@ check:
     test -f profile_files/dell-xps-9350-intel/system_files/etc/libcamera/configuration.yaml
     grep -qF -- '- /usr/lib64/libcamera/ipa-purplefin' profile_files/dell-xps-9350-intel/system_files/etc/libcamera/configuration.yaml
     test ! -e profile_files/generic-x86_64/system_files/etc/libcamera/configuration.yaml
-    test ! -e profile_files/dell-xps-9350-intel-no-ipu7/system_files/etc/libcamera/configuration.yaml
     for obsolete in \
         usr/libexec/purplefin/dell-ipu7-setup \
         usr/libexec/purplefin/dell-ipu7-patch-psys-debugfs \
@@ -687,12 +654,17 @@ _build profile tag:
     #!/usr/bin/env bash
     set -euo pipefail
     base_image='ghcr.io/projectbluefin/bluefin:stable'
-    base_kernel="$(skopeo inspect --retry-times 3 "docker://${base_image}" | jq -er '.Labels["ostree.linux"]')"
+    base_metadata="$(skopeo inspect --retry-times 3 "docker://${base_image}")"
+    base_digest="$(jq -er '.Digest' <<<"${base_metadata}")"
+    base_kernel="$(jq -er '.Labels["ostree.linux"]' <<<"${base_metadata}")"
     target_kernel="$(build_files/select-ostree-linux.sh '{{ profile }}' "${base_kernel}")"
     podman build \
         --pull=missing \
+        --build-arg BASE_REF="ghcr.io/projectbluefin/bluefin@${base_digest}" \
         --build-arg BUILD_PROFILE='{{ profile }}' \
         --build-arg PURPLEFIN_OSTREE_LINUX="${target_kernel}" \
+        --build-arg PURPLEFIN_VERSION="$(<VERSION)" \
+        --label "org.opencontainers.image.base.digest=${base_digest}" \
         --label "ostree.linux=${target_kernel}" \
         --tag '{{ tag }}' \
         .
@@ -703,20 +675,11 @@ build-generic:
 build-dell:
     just _build dale {{ image }}:dell-xps-9350-intel
 
-build-dell-no-ipu7:
-    just _build support-dell-xps-9350-intel-no-ipu7 {{ image }}:dell-xps-9350-intel-no-ipu7
-
 build-base-generic:
     just _build base-generic {{ image }}:base-generic-x86_64
 
 build-support-dell:
-    just _build dale {{ image }}:dale
-
-build-support-lenovo:
-    just _build sales-generic {{ image }}:support-lenovo-generic
-
-build-development-desktop:
-    just _build developer-generic {{ image }}:development-desktop-x86_64
+    just _build support-dell-xps-9350-intel {{ image }}:support-dell-xps-9350-intel
 
 lint-generic:
     podman run --rm --entrypoint bootc {{ image }}:generic-x86_64 container lint
@@ -724,17 +687,8 @@ lint-generic:
 lint-dell:
     podman run --rm --entrypoint bootc {{ image }}:dell-xps-9350-intel container lint
 
-lint-dell-no-ipu7:
-    podman run --rm --entrypoint bootc {{ image }}:dell-xps-9350-intel-no-ipu7 container lint
-
 lint-base-generic:
     podman run --rm --entrypoint bootc {{ image }}:base-generic-x86_64 container lint
 
 lint-support-dell:
     podman run --rm --entrypoint bootc {{ image }}:support-dell-xps-9350-intel container lint
-
-lint-support-lenovo:
-    podman run --rm --entrypoint bootc {{ image }}:support-lenovo-generic container lint
-
-lint-development-desktop:
-    podman run --rm --entrypoint bootc {{ image }}:development-desktop-x86_64 container lint

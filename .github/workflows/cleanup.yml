@@ -1,0 +1,58 @@
+name: Clean obsolete Purplefin package versions
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: Report candidates without deleting package versions
+        required: true
+        default: true
+        type: boolean
+
+concurrency:
+  group: purplefin-package-cleanup
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  cleanup:
+    name: Remove versions carrying only retired tags
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: package-cleanup
+    steps:
+      - name: Find and optionally delete obsolete versions
+        env:
+          DRY_RUN: ${{ inputs.dry-run }}
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          owner="${GITHUB_REPOSITORY_OWNER}"
+          package="${GITHUB_REPOSITORY#*/}"
+          obsolete_tags='["dale-cosmic","development-desktop-x86_64","support-lenovo-generic"]'
+          versions="$({
+            gh api --paginate \
+              "/users/${owner}/packages/container/${package}/versions?per_page=100" \
+              --slurp
+          })"
+
+          jq -c --argjson obsolete "${obsolete_tags}" '
+            add[] |
+            . as $version |
+            (.metadata.container.tags // []) as $tags |
+            select(($tags | length) > 0) |
+            select(all($tags[]; $obsolete | index(.) != null)) |
+            {id: $version.id, tags: $tags}
+          ' <<<"${versions}" |
+          while IFS= read -r candidate; do
+            version_id="$(jq -r '.id' <<<"${candidate}")"
+            tags="$(jq -r '.tags | join(", ")' <<<"${candidate}")"
+            echo "Obsolete package version ${version_id}: ${tags}"
+            if [[ "${DRY_RUN}" != true ]]; then
+              gh api --method DELETE \
+                "/users/${owner}/packages/container/${package}/versions/${version_id}"
+            fi
+          done

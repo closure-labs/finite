@@ -12,22 +12,16 @@ base_arch="${base_release##*.}"
 
 case "${profile}" in
 	dale | \
-	dell-xps-9350-intel | \
-	dell-xps-9350-intel-no-ipu7 | \
 	base-dell-xps-9350-intel | \
 	sales-dell-xps-9350-intel | \
 	support-dell-xps-9350-intel | \
-	support-dell-xps-9350-intel-no-ipu7 | \
 	base-generic | \
 	sales-generic | \
 	support-generic | \
 	developer-generic | \
 	trainer-generic | \
 	executive-generic | \
-	it-generic | \
-	generic-x86_64 | \
-	desktop-x86_64 | \
-	lenovo-generic)
+	it-generic)
 		printf '%s\n' "${base_release}"
 		;;
 	*)

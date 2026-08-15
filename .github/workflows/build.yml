@@ -30,202 +30,133 @@ env:
   BASE_TAG: stable
 
 jobs:
+  check:
+    name: Repository checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@c5a866b6ab867e88becbed4467b93592bce69f8a # v22
+
+      - name: Validate repository and workflows
+        shell: bash
+        run: |
+          nix shell \
+            nixpkgs#actionlint \
+            nixpkgs#just \
+            nixpkgs#shellcheck \
+            nixpkgs#zizmor \
+            -c build_files/check-ci.sh
+
   plan:
     name: Resolve build inputs
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    needs: check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     outputs:
       base_digest: ${{ steps.plan.outputs.base_digest }}
       base_kernel: ${{ steps.plan.outputs.base_kernel }}
-      build_input: ${{ steps.plan.outputs.build_input }}
+      has_builds: ${{ steps.plan.outputs.has_builds }}
+      matrix: ${{ steps.plan.outputs.matrix }}
+      version: ${{ steps.plan.outputs.version }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - name: Resolve Bluefin and source metadata
+      - name: Install cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      - name: Resolve, verify, and plan immutable inputs
         id: plan
-        shell: bash
-        run: |
-          base_metadata="$(
-            skopeo inspect --retry-times 3 \
-              "docker://${BASE_IMAGE}:${BASE_TAG}"
-          )"
-          base_digest="$(jq -er '.Digest' <<<"${base_metadata}")"
-          base_kernel="$(jq -er '.Labels["ostree.linux"]' <<<"${base_metadata}")"
-          build_input="$(
-            git ls-files -s -- \
-              .github/workflows/build.yml \
-              Containerfile \
-              build_files \
-              manifests \
-              profile_files \
-              system_files |
-              sha256sum |
-              cut -d ' ' -f 1
-          )"
-
-          echo "base_digest=${base_digest}" >>"${GITHUB_OUTPUT}"
-          echo "base_kernel=${base_kernel}" >>"${GITHUB_OUTPUT}"
-          echo "build_input=${build_input}" >>"${GITHUB_OUTPUT}"
-
-  build:
-    name: Build ${{ matrix.profile }}
-    needs: plan
-    runs-on: ubuntu-latest
-    timeout-minutes: 120
-    permissions:
-      contents: read
-      packages: write
-      id-token: write
-    strategy:
-      fail-fast: false
-      max-parallel: 4
-      matrix:
-        include:
-          - profile: base-generic
-            tags: generic-x86_64 latest base-generic-x86_64
-          - profile: base-dell-xps-9350-intel
-            tags: base-dell-xps-9350-intel
-          - profile: sales-generic
-            tags: sales-generic
-          - profile: sales-dell-xps-9350-intel
-            tags: sales-dell-xps-9350-intel
-          - profile: support-generic
-            tags: support-generic
-          - profile: support-dell-xps-9350-intel
-            tags: support-dell-xps-9350-intel
-          - profile: dale
-            tags: dale dell-xps-9350-intel
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Check whether the image changed
-        id: changes
         env:
-          BASE_DIGEST: ${{ needs.plan.outputs.base_digest }}
-          BASE_REF: ${{ format('{0}:{1}', env.BASE_IMAGE, env.BASE_TAG) }}
-          BUILD_INPUT: ${{ needs.plan.outputs.build_input }}
-          BUILD_PROFILE: ${{ matrix.profile }}
           CHECK_RPM_UPDATES: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
           FORCE_REBUILD: ${{ github.event_name == 'workflow_dispatch' && inputs.force || false }}
           IMAGE_REF: ${{ format('{0}/{1}', env.REGISTRY, env.IMAGE_NAME) }}
-          TAGS: ${{ matrix.tags }}
         shell: bash
         run: |
-          profile_json="$(
-            jq -cn \
-              --arg profile "${BUILD_PROFILE}" \
-              --arg tags "${TAGS}" \
-              '[{profile: $profile, tags: $tags}]'
-          )"
-          matrix="$(build_files/plan-image-builds.sh "${profile_json}")"
-          should_build="$(jq -r '.include | length > 0' <<<"${matrix}")"
-          echo "build=${should_build}" >>"${GITHUB_OUTPUT}"
+          base_metadata="$({
+            skopeo inspect --retry-times 3 \
+              "docker://${BASE_IMAGE}:${BASE_TAG}"
+          })"
+          base_digest="$(jq -er '.Digest' <<<"${base_metadata}")"
+          base_kernel="$(jq -er '.Labels["ostree.linux"]' <<<"${base_metadata}")"
+          base_ref="${BASE_IMAGE}@${base_digest}"
+          version="$(<VERSION)"
 
-      - name: Resolve boot kernel metadata
-        if: steps.changes.outputs.build == 'true'
-        id: kernel
-        env:
-          BASE_KERNEL: ${{ needs.plan.outputs.base_kernel }}
-          BUILD_PROFILE: ${{ matrix.profile }}
-        shell: bash
-        run: |
-          target_kernel="$(
-            build_files/select-ostree-linux.sh \
-              "${BUILD_PROFILE}" "${BASE_KERNEL}"
-          )"
-          echo "release=${target_kernel}" >>"${GITHUB_OUTPUT}"
+          cosign verify \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            --certificate-identity \
+              https://github.com/projectbluefin/bluefin/.github/workflows/build.yml@refs/heads/main \
+            "${base_ref}" >/dev/null
 
-      - name: Build image
-        if: steps.changes.outputs.build == 'true'
-        env:
-          BASE_DIGEST: ${{ needs.plan.outputs.base_digest }}
-          BUILD_INPUT: ${{ needs.plan.outputs.build_input }}
-          BUILD_PROFILE: ${{ matrix.profile }}
-          IMAGE_REF: ${{ format('{0}/{1}', env.REGISTRY, env.IMAGE_NAME) }}
-          PURPLEFIN_OSTREE_LINUX: ${{ steps.kernel.outputs.release }}
-          TAGS: ${{ matrix.tags }}
-        shell: bash
-        run: |
-          read -r -a tags <<<"${TAGS}"
-          primary_image="${IMAGE_REF}:${tags[0]}"
-          created="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          profiles='[]'
+          while IFS= read -r entry; do
+            profile="$(jq -r '.profile' <<<"${entry}")"
+            tags="$(jq -r '.tags' <<<"${entry}")"
+            build_input="$(build_files/profile-build-input.sh "${profile}" "${tags}")"
+            entry="$(jq -c --arg build_input "${build_input}" '. + {build_input: $build_input}' <<<"${entry}")"
+            profiles="$(jq -c --argjson entry "${entry}" '. + [$entry]' <<<"${profiles}")"
+          done < <(jq -c '.[]' build_files/image-matrix.json)
 
-          buildah bud \
-            --file ./Containerfile \
-            --pull=always \
-            --label "io.purplefin.build.input=${BUILD_INPUT}" \
-            --label "io.purplefin.build.profile=${BUILD_PROFILE}" \
-            --label "org.opencontainers.image.base.digest=${BASE_DIGEST}" \
-            --label "org.opencontainers.image.created=${created}" \
-            --label "org.opencontainers.image.revision=${GITHUB_SHA}" \
-            --label "ostree.linux=${PURPLEFIN_OSTREE_LINUX}" \
-            --build-arg "BUILD_PROFILE=${BUILD_PROFILE}" \
-            --build-arg "BASE_IMAGE=${BASE_IMAGE}" \
-            --build-arg "BASE_TAG=${BASE_TAG}" \
-            --build-arg "PURPLEFIN_OSTREE_LINUX=${PURPLEFIN_OSTREE_LINUX}" \
-            --format docker \
-            --tls-verify=true \
-            --tag "${primary_image}" \
-            .
+          export BASE_DIGEST="${base_digest}" BASE_REF="${base_ref}"
+          matrix="$(build_files/plan-image-builds.sh "${profiles}")"
+          has_builds="$(jq -r '.include | length > 0' <<<"${matrix}")"
 
-          for tag in "${tags[@]:1}"; do
-            buildah tag "${primary_image}" "${IMAGE_REF}:${tag}"
-          done
+          {
+            echo "base_digest=${base_digest}"
+            echo "base_kernel=${base_kernel}"
+            echo "has_builds=${has_builds}"
+            echo "matrix=${matrix}"
+            echo "version=${version}"
+          } >>"${GITHUB_OUTPUT}"
 
-      - name: Log in to GHCR
-        if: steps.changes.outputs.build == 'true' && github.event_name != 'pull_request'
-        env:
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: bash
-        run: |
-          install -d -m 0700 "${HOME}/.docker"
-          registry_auth_file="${HOME}/.docker/config.json"
-          printf '%s' "${GHCR_TOKEN}" |
-            podman login \
-              --authfile "${registry_auth_file}" \
-              "${REGISTRY}" \
-              --username "${GITHUB_ACTOR}" \
-              --password-stdin
-          echo "REGISTRY_AUTH_FILE=${registry_auth_file}" >>"${GITHUB_ENV}"
+  build-pr:
+    name: Build ${{ matrix.profile }}
+    if: github.event_name == 'pull_request' && needs.plan.outputs.has_builds == 'true'
+    needs: plan
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    uses: ./.github/workflows/build-profile.yml
+    permissions:
+      contents: read
+      packages: read
+    with:
+      base-digest: ${{ needs.plan.outputs.base_digest }}
+      base-kernel: ${{ needs.plan.outputs.base_kernel }}
+      build-input: ${{ matrix.build_input }}
+      profile: ${{ matrix.profile }}
+      publish: false
+      tags: ${{ matrix.tags }}
+      version: ${{ needs.plan.outputs.version }}
 
-      - name: Push image tags
-        if: steps.changes.outputs.build == 'true' && github.event_name != 'pull_request'
-        env:
-          IMAGE_REF: ${{ format('{0}/{1}', env.REGISTRY, env.IMAGE_NAME) }}
-          TAGS: ${{ matrix.tags }}
-        shell: bash
-        run: |
-          read -r -a tags <<<"${TAGS}"
-          for tag in "${tags[@]}"; do
-            podman push --quiet \
-              "${IMAGE_REF}:${tag}" \
-              --tls-verify=true
-          done
-
-      - name: Install cosign
-        if: steps.changes.outputs.build == 'true' && github.event_name != 'pull_request'
-        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
-
-      - name: Sign image tags
-        if: steps.changes.outputs.build == 'true' && github.event_name != 'pull_request'
-        env:
-          IMAGE_REF: ${{ format('{0}/{1}', env.REGISTRY, env.IMAGE_NAME) }}
-          TAGS: ${{ matrix.tags }}
-        shell: bash
-        run: |
-          read -r -a tags <<<"${TAGS}"
-          for tag in "${tags[@]}"; do
-            cosign sign --yes "${IMAGE_REF}:${tag}"
-          done
-
-      - name: Log out of GHCR
-        if: ${{ always() && steps.changes.outputs.build == 'true' && github.event_name != 'pull_request' }}
-        continue-on-error: true
-        shell: bash
-        run: |
-          registry_auth_file="${REGISTRY_AUTH_FILE:-${HOME}/.docker/config.json}"
-          podman logout --authfile "${registry_auth_file}" "${REGISTRY}" || true
-          rm -f "${registry_auth_file}"
+  build-publish:
+    name: Build and publish ${{ matrix.profile }}
+    if: github.event_name != 'pull_request' && needs.plan.outputs.has_builds == 'true'
+    needs: plan
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    uses: ./.github/workflows/build-profile.yml
+    permissions:
+      attestations: write
+      contents: read
+      id-token: write
+      packages: write
+    with:
+      base-digest: ${{ needs.plan.outputs.base_digest }}
+      base-kernel: ${{ needs.plan.outputs.base_kernel }}
+      build-input: ${{ matrix.build_input }}
+      profile: ${{ matrix.profile }}
+      publish: true
+      tags: ${{ matrix.tags }}
+      version: ${{ needs.plan.outputs.version }}

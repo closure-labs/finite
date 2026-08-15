@@ -4,7 +4,6 @@ set -euo pipefail
 profiles_json="${1:?usage: plan-image-builds.sh PROFILES_JSON}"
 : "${BASE_DIGEST:?BASE_DIGEST is required}"
 : "${BASE_REF:?BASE_REF is required}"
-: "${BUILD_INPUT:?BUILD_INPUT is required}"
 : "${IMAGE_REF:?IMAGE_REF is required}"
 
 script_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
@@ -43,8 +42,10 @@ ensure_base_inventory() {
 
 while IFS= read -r entry; do
 	profile="$(jq -r '.profile' <<<"${entry}")"
+	build_input="$(jq -r '.build_input' <<<"${entry}")"
 	primary_tag="$(jq -r '.tags | split(" ")[0]' <<<"${entry}")"
 	published_ref="${IMAGE_REF}:${primary_tag}"
+	[[ "${build_input}" =~ ^[0-9a-f]{64}$ ]] || { echo "Invalid build input for ${profile}" >&2; exit 2; }
 
 	if [[ "${force_rebuild}" == true ]]; then
 		add_profile "${entry}" 'manual force rebuild'
@@ -59,7 +60,7 @@ while IFS= read -r entry; do
 	published_input="$(jq -r '.Labels["io.purplefin.build.input"] // ""' <<<"${metadata}")"
 	published_base="$(jq -r '.Labels["org.opencontainers.image.base.digest"] // ""' <<<"${metadata}")"
 
-	if [[ "${published_input}" != "${BUILD_INPUT}" ]]; then
+	if [[ "${published_input}" != "${build_input}" ]]; then
 		add_profile "${entry}" 'build inputs changed'
 		continue
 	fi

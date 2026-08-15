@@ -1,48 +1,136 @@
-name: Build Purplefin installer ISO
+name: Build and boot-test Purplefin installer ISO
 
 on:
+  schedule:
+    - cron: "41 9 * * 0"
   workflow_dispatch:
+    inputs:
+      image-tag:
+        description: Published Purplefin profile to embed
+        required: true
+        default: base-generic-x86_64
+        type: choice
+        options:
+          - base-generic-x86_64
+          - base-dell-xps-9350-intel
+          - sales-generic
+          - sales-dell-xps-9350-intel
+          - support-generic
+          - support-dell-xps-9350-intel
+          - dale
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 permissions:
+  attestations: write
   contents: read
+  id-token: write
   packages: read
+
+env:
+  IMAGE_BUILDER: ghcr.io/osbuild/image-builder-cli@sha256:27cabea9e504a7c4a7546f287f5d60a4846c62b5a8d18c0f678d25fdc2d7975a
+  IMAGE_REF: ghcr.io/${{ github.repository }}
 
 jobs:
   build-installer:
-    name: Build installer ISO
-    runs-on: ubuntu-latest
-    timeout-minutes: 120
+    name: Build and boot installer ISO
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - name: Build installer environment
+      - name: Install cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      - name: Resolve and verify installer payload
+        id: payload
+        env:
+          COSIGN_IDENTITY: https://github.com/${{ github.repository }}/.github/workflows/build-profile.yml@refs/heads/main
+          IMAGE_TAG: ${{ inputs.image-tag || 'base-generic-x86_64' }}
+        shell: bash
         run: |
-          podman build \
+          digest="$({
+            skopeo inspect --retry-times 3 --format '{{.Digest}}' \
+              "docker://${IMAGE_REF}:${IMAGE_TAG}"
+          })"
+          [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
+          payload_ref="${IMAGE_REF}@${digest}"
+          cosign verify \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            --certificate-identity "${COSIGN_IDENTITY}" \
+            "${payload_ref}" >/dev/null
+          {
+            echo "digest=${digest}"
+            echo "ref=${payload_ref}"
+            echo "tag=${IMAGE_TAG}"
+          } >>"${GITHUB_OUTPUT}"
+
+      - name: Build installer environment in root container storage
+        env:
+          PAYLOAD_REF: ${{ steps.payload.outputs.ref }}
+        shell: bash
+        run: |
+          sudo podman pull "${PAYLOAD_REF}"
+          sudo podman build \
             --file installer/Containerfile \
-            --pull=always \
-            --tag localhost/purplefin-anaconda:latest \
+            --pull=never \
+            --build-arg "BASE_REF=${PAYLOAD_REF}" \
+            --build-arg "INSTALLER_PAYLOAD_REF=${PAYLOAD_REF}" \
+            --tag "localhost/purplefin-installer:${GITHUB_SHA}" \
             .
+          sudo podman pull "${IMAGE_BUILDER}"
 
-      - name: Build ISO
+      - name: Build bootc-generic-iso with image-builder
+        env:
+          IMAGE_TAG: ${{ steps.payload.outputs.tag }}
+          PAYLOAD_REF: ${{ steps.payload.outputs.ref }}
+        shell: bash
         run: |
-          mkdir -p output
-          podman run --rm --privileged \
-            --security-opt label=type:unconfined_t \
+          install -d output
+          sudo podman run --rm --privileged \
+            --security-opt label=disable \
             --volume "${PWD}/output:/output" \
             --volume /var/lib/containers/storage:/var/lib/containers/storage \
-            quay.io/centos-bootc/bootc-image-builder:latest \
-            --type bootc-installer \
-            --bootc-installer-payload-ref ghcr.io/declarative-dale/purplefin:base-generic-x86_64 \
-            localhost/purplefin-anaconda:latest
+            "${IMAGE_BUILDER}" \
+            build \
+              --bootc-ref "localhost/purplefin-installer:${GITHUB_SHA}" \
+              --bootc-installer-payload-ref "${PAYLOAD_REF}" \
+              --bootc-default-fs ext4 \
+              bootc-generic-iso
 
-      - name: Upload installer ISO
+          iso="$(find output -type f -name '*.iso' -print -quit)"
+          [[ -n "${iso}" ]]
+          mv "${iso}" "output/purplefin-${IMAGE_TAG}-$(<VERSION).iso"
+          sha256sum output/*.iso >output/SHA256SUMS
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@c5a866b6ab867e88becbed4467b93592bce69f8a # v22
+
+      - name: Smoke-boot installer with QEMU
+        shell: bash
+        run: |
+          iso="$(find output -maxdepth 1 -type f -name '*.iso' -print -quit)"
+          nix shell nixpkgs#qemu -c tests/boot-installer-iso.sh "${iso}"
+
+      - name: Attest installer artifacts
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: |
+            output/*.iso
+            output/SHA256SUMS
+
+      - name: Upload installer artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: purplefin-installer-iso
-          path: output/*.iso
+          name: purplefin-${{ steps.payload.outputs.tag }}-installer
+          path: |
+            output/*.iso
+            output/SHA256SUMS
+            output/qemu-boot.log
           if-no-files-found: error
+          retention-days: 14
