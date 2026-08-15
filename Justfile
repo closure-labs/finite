@@ -460,8 +460,13 @@ check:
     ! grep -qF 'glib-compile-schemas --strict /usr/share/glib-2.0/schemas' "${xps_common_profile}"
     schema_tmp="${tmpdir}/xps-schemas"
     install -d "${schema_tmp}"
-    cp /usr/share/glib-2.0/schemas/org.gnome.settings-daemon.enums.xml "${schema_tmp}/"
-    cp /usr/share/glib-2.0/schemas/org.gnome.settings-daemon.plugins.power.gschema.xml "${schema_tmp}/"
+    printf '%s\n' \
+        '<?xml version="1.0" encoding="UTF-8"?>' \
+        '<schemalist>' \
+        '  <schema id="org.gnome.settings-daemon.plugins.power" path="/org/gnome/settings-daemon/plugins/power/">' \
+        '    <key name="ambient-enabled" type="b"><default>true</default></key>' \
+        '  </schema>' \
+        '</schemalist>' > "${schema_tmp}/org.gnome.settings-daemon.plugins.power.gschema.xml"
     printf '%s\n' '[org.gnome.settings-daemon.plugins.power]' 'ambient-enabled=false' > "${schema_tmp}/zz0-base.gschema.override"
     cp "${ambient_override}" "${schema_tmp}/"
     glib-compile-schemas --strict "${schema_tmp}"
