@@ -109,7 +109,14 @@ jobs:
           sha256sum output/*.iso >output/SHA256SUMS
 
       - name: Install Nix
-        uses: DeterminateSystems/determinate-nix-action@61cbfe2efc2d4e7a8a6d56967c3c1058e846c858 # v3.21.9
+        uses: DeterminateSystems/nix-installer-action@c5a866b6ab867e88becbed4467b93592bce69f8a # v22
+        with:
+          determinate: false
+
+      - name: Cache Nix store paths
+        uses: DeterminateSystems/magic-nix-cache-action@908b263ff629f4cc17666315b7fd3ec127c6244d # v14
+        with:
+          use-flakehub: false
 
       - name: Smoke-boot installer with QEMU
         shell: bash
