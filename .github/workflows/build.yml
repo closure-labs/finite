@@ -105,7 +105,7 @@ jobs:
           cosign verify \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             --certificate-identity \
-              https://github.com/projectbluefin/bluefin/.github/workflows/build.yml@refs/heads/main \
+              https://github.com/projectbluefin/actions/.github/workflows/reusable-build.yml@refs/tags/v1 \
             "${base_ref}" >/dev/null
 
           profiles='[]'
