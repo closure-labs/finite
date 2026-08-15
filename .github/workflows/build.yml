@@ -26,8 +26,6 @@ permissions:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  BASE_IMAGE: ghcr.io/projectbluefin/bluefin
-  BASE_TAG: stable
 
 jobs:
   check:
@@ -43,27 +41,16 @@ jobs:
           persist-credentials: false
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@c5a866b6ab867e88becbed4467b93592bce69f8a # v22
-        with:
-          determinate: false
+        uses: DeterminateSystems/determinate-nix-action@61cbfe2efc2d4e7a8a6d56967c3c1058e846c858 # v3
 
-      - name: Cache Nix store paths
-        uses: DeterminateSystems/magic-nix-cache-action@908b263ff629f4cc17666315b7fd3ec127c6244d # v14
-        with:
-          use-flakehub: false
+      - name: Check flake inputs
+        uses: DeterminateSystems/flake-checker-action@3164002371bc90729c68af0e24d5aacf20d7c9f6 # v12
 
       - name: Validate repository and workflows
         shell: bash
         run: |
-          nix shell \
-            nixpkgs#actionlint \
-            nixpkgs#just \
-            nixpkgs#pipewire \
-            nixpkgs#ripgrep \
-            nixpkgs#shellcheck \
-            nixpkgs#zsh \
-            nixpkgs#zizmor \
-            -c build_files/check-ci.sh
+          nix flake check --print-build-logs
+          nix develop --command build_files/check-ci.sh
 
   plan:
     name: Resolve build inputs
@@ -71,16 +58,17 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     outputs:
-      base_dell: ${{ steps.plan.outputs.base_dell }}
+      base_image: ${{ steps.plan.outputs.base_image }}
       base_digest: ${{ steps.plan.outputs.base_digest }}
-      base_generic: ${{ steps.plan.outputs.base_generic }}
       base_kernel: ${{ steps.plan.outputs.base_kernel }}
-      derived_matrix: ${{ steps.plan.outputs.derived_matrix }}
-      has_base_dell: ${{ steps.plan.outputs.has_base_dell }}
-      has_base_generic: ${{ steps.plan.outputs.has_base_generic }}
+      hardware_matrix: ${{ steps.plan.outputs.hardware_matrix }}
+      has_hardware: ${{ steps.plan.outputs.has_hardware }}
       has_builds: ${{ steps.plan.outputs.has_builds }}
-      has_derived: ${{ steps.plan.outputs.has_derived }}
+      has_roles: ${{ steps.plan.outputs.has_roles }}
+      has_root_base: ${{ steps.plan.outputs.has_root_base }}
       matrix: ${{ steps.plan.outputs.matrix }}
+      role_matrix: ${{ steps.plan.outputs.role_matrix }}
+      root_base: ${{ steps.plan.outputs.root_base }}
       version: ${{ steps.plan.outputs.version }}
     steps:
       - name: Checkout
@@ -99,13 +87,15 @@ jobs:
           IMAGE_REF: ${{ format('{0}/{1}', env.REGISTRY, env.IMAGE_NAME) }}
         shell: bash
         run: |
+          base_image="$(jq -er '.image' build_files/upstream.json)"
+          base_tag="$(jq -er '.tag' build_files/upstream.json)"
           base_metadata="$({
             skopeo inspect --retry-times 3 \
-              "docker://${BASE_IMAGE}:${BASE_TAG}"
+              "docker://${base_image}:${base_tag}"
           })"
           base_digest="$(jq -er '.Digest' <<<"${base_metadata}")"
           base_kernel="$(jq -er '.Labels["ostree.linux"]' <<<"${base_metadata}")"
-          base_ref="${BASE_IMAGE}@${base_digest}"
+          base_ref="${base_image}@${base_digest}"
           version="$(<VERSION)"
 
           cosign verify \
@@ -114,36 +104,30 @@ jobs:
               https://github.com/projectbluefin/actions/.github/workflows/reusable-build.yml@refs/tags/v1 \
             "${base_ref}" >/dev/null
 
-          profiles='[]'
-          while IFS= read -r entry; do
-            profile="$(jq -r '.profile' <<<"${entry}")"
-            tags="$(jq -r '.tags' <<<"${entry}")"
-            build_input="$(build_files/profile-build-input.sh "${profile}" "${tags}")"
-            entry="$(jq -c --arg build_input "${build_input}" '. + {build_input: $build_input}' <<<"${entry}")"
-            profiles="$(jq -c --argjson entry "${entry}" '. + [$entry]' <<<"${profiles}")"
-          done < <(jq -c '.[]' build_files/image-matrix.json)
+          profiles="$(jq -c . build_files/image-matrix.json)"
 
           export BASE_DIGEST="${base_digest}" BASE_REF="${base_ref}"
           matrix="$(build_files/plan-image-builds.sh "${profiles}")"
           has_builds="$(jq -r '.include | length > 0' <<<"${matrix}")"
-          base_generic="$(jq -c 'first(.include[] | select(.profile == "base-generic")) // {}' <<<"${matrix}")"
-          base_dell="$(jq -c 'first(.include[] | select(.profile == "base-dell-xps-9350-intel")) // {}' <<<"${matrix}")"
-          derived_matrix="$(jq -c '{include: [.include[] | select(.parent != null)]}' <<<"${matrix}")"
-          has_base_generic="$(jq -r 'has("profile")' <<<"${base_generic}")"
-          has_base_dell="$(jq -r 'has("profile")' <<<"${base_dell}")"
-          has_derived="$(jq -r '.include | length > 0' <<<"${derived_matrix}")"
+          root_base="$(jq -c 'first(.include[] | select(.stage == "root")) // {}' <<<"${matrix}")"
+          hardware_matrix="$(jq -c '{include: [.include[] | select(.stage == "hardware")]}' <<<"${matrix}")"
+          role_matrix="$(jq -c '{include: [.include[] | select(.stage == "role")]}' <<<"${matrix}")"
+          has_root_base="$(jq -r 'has("profile")' <<<"${root_base}")"
+          has_hardware="$(jq -r '.include | length > 0' <<<"${hardware_matrix}")"
+          has_roles="$(jq -r '.include | length > 0' <<<"${role_matrix}")"
 
           {
-            echo "base_dell=${base_dell}"
+            echo "base_image=${base_image}"
             echo "base_digest=${base_digest}"
-            echo "base_generic=${base_generic}"
             echo "base_kernel=${base_kernel}"
-            echo "derived_matrix=${derived_matrix}"
-            echo "has_base_dell=${has_base_dell}"
-            echo "has_base_generic=${has_base_generic}"
+            echo "hardware_matrix=${hardware_matrix}"
+            echo "has_hardware=${has_hardware}"
             echo "has_builds=${has_builds}"
-            echo "has_derived=${has_derived}"
+            echo "has_roles=${has_roles}"
+            echo "has_root_base=${has_root_base}"
             echo "matrix=${matrix}"
+            echo "role_matrix=${role_matrix}"
+            echo "root_base=${root_base}"
             echo "version=${version}"
           } >>"${GITHUB_OUTPUT}"
 
@@ -163,16 +147,16 @@ jobs:
       base-kernel: ${{ needs.plan.outputs.base_kernel }}
       build-input: ${{ matrix.build_input }}
       parent-digest: ${{ needs.plan.outputs.base_digest }}
-      parent-image: ghcr.io/projectbluefin/bluefin
+      parent-image: ${{ needs.plan.outputs.base_image }}
       profile: ${{ matrix.profile }}
       publish: false
       tags: ${{ matrix.tags }}
       upstream-base-digest: ${{ needs.plan.outputs.base_digest }}
       version: ${{ needs.plan.outputs.version }}
 
-  base-generic-publish:
-    name: Build and publish base-generic
-    if: github.event_name != 'pull_request' && needs.plan.outputs.has_base_generic == 'true'
+  base-publish:
+    name: Build and publish common base
+    if: github.event_name != 'pull_request' && needs.plan.outputs.has_root_base == 'true'
     needs: plan
     uses: ./.github/workflows/build-profile.yml
     permissions:
@@ -182,51 +166,28 @@ jobs:
       packages: write
     with:
       base-kernel: ${{ needs.plan.outputs.base_kernel }}
-      build-input: ${{ fromJSON(needs.plan.outputs.base_generic).build_input }}
+      build-input: ${{ fromJSON(needs.plan.outputs.root_base).build_input }}
       parent-digest: ${{ needs.plan.outputs.base_digest }}
-      parent-image: ghcr.io/projectbluefin/bluefin
-      profile: base-generic
+      parent-image: ${{ needs.plan.outputs.base_image }}
+      profile: base
       publish: true
-      tags: ${{ fromJSON(needs.plan.outputs.base_generic).tags }}
+      tags: ${{ fromJSON(needs.plan.outputs.root_base).tags }}
       upstream-base-digest: ${{ needs.plan.outputs.base_digest }}
       version: ${{ needs.plan.outputs.version }}
 
-  base-dell-publish:
-    name: Build and publish base-dell-xps-9350-intel
-    if: github.event_name != 'pull_request' && needs.plan.outputs.has_base_dell == 'true'
-    needs: plan
-    uses: ./.github/workflows/build-profile.yml
-    permissions:
-      attestations: write
-      contents: read
-      id-token: write
-      packages: write
-    with:
-      base-kernel: ${{ needs.plan.outputs.base_kernel }}
-      build-input: ${{ fromJSON(needs.plan.outputs.base_dell).build_input }}
-      parent-digest: ${{ needs.plan.outputs.base_digest }}
-      parent-image: ghcr.io/projectbluefin/bluefin
-      profile: base-dell-xps-9350-intel
-      publish: true
-      tags: ${{ fromJSON(needs.plan.outputs.base_dell).tags }}
-      upstream-base-digest: ${{ needs.plan.outputs.base_digest }}
-      version: ${{ needs.plan.outputs.version }}
-
-  derived-publish:
+  hardware-publish:
     name: Build and publish ${{ matrix.profile }}
     if: >-
       always() && github.event_name != 'pull_request' &&
-      needs.plan.result == 'success' && needs.plan.outputs.has_derived == 'true' &&
-      (needs.base-generic-publish.result == 'success' || needs.base-generic-publish.result == 'skipped') &&
-      (needs.base-dell-publish.result == 'success' || needs.base-dell-publish.result == 'skipped')
+      needs.plan.result == 'success' && needs.plan.outputs.has_hardware == 'true' &&
+      (needs.base-publish.result == 'success' || needs.base-publish.result == 'skipped')
     needs:
       - plan
-      - base-generic-publish
-      - base-dell-publish
+      - base-publish
     strategy:
       fail-fast: false
       max-parallel: 4
-      matrix: ${{ fromJSON(needs.plan.outputs.derived_matrix) }}
+      matrix: ${{ fromJSON(needs.plan.outputs.hardware_matrix) }}
     uses: ./.github/workflows/build-profile.yml
     permissions:
       attestations: write
@@ -236,9 +197,44 @@ jobs:
     with:
       base-kernel: ${{ needs.plan.outputs.base_kernel }}
       build-input: ${{ matrix.build_input }}
-      parent-digest: ${{ matrix.parent == 'base-generic' && (needs.base-generic-publish.outputs.digest || matrix.parent_digest) || (needs.base-dell-publish.outputs.digest || matrix.parent_digest) }}
+      parent-digest: ${{ matrix.parent_digest || '' }}
       parent-image: ${{ format('ghcr.io/{0}', github.repository) }}
       parent-profile: ${{ matrix.parent }}
+      parent-tag: ${{ matrix.parent_tag }}
+      profile: ${{ matrix.profile }}
+      publish: true
+      tags: ${{ matrix.tags }}
+      upstream-base-digest: ${{ needs.plan.outputs.base_digest }}
+      version: ${{ needs.plan.outputs.version }}
+
+  roles-publish:
+    name: Build and publish ${{ matrix.profile }}
+    if: >-
+      always() && github.event_name != 'pull_request' &&
+      needs.plan.result == 'success' && needs.plan.outputs.has_roles == 'true' &&
+      (needs.base-publish.result == 'success' || needs.base-publish.result == 'skipped') &&
+      (needs.hardware-publish.result == 'success' || needs.hardware-publish.result == 'skipped')
+    needs:
+      - plan
+      - base-publish
+      - hardware-publish
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix: ${{ fromJSON(needs.plan.outputs.role_matrix) }}
+    uses: ./.github/workflows/build-profile.yml
+    permissions:
+      attestations: write
+      contents: read
+      id-token: write
+      packages: write
+    with:
+      base-kernel: ${{ needs.plan.outputs.base_kernel }}
+      build-input: ${{ matrix.build_input }}
+      parent-digest: ${{ matrix.parent_digest || '' }}
+      parent-image: ${{ format('ghcr.io/{0}', github.repository) }}
+      parent-profile: ${{ matrix.parent }}
+      parent-tag: ${{ matrix.parent_tag }}
       profile: ${{ matrix.profile }}
       publish: true
       tags: ${{ matrix.tags }}

@@ -9,6 +9,12 @@ signature, and passes the resulting immutable digest both to the installer
 environment and as the embedded Anaconda payload. Package composition never
 happens during installation.
 
+Each profile also has a Nix-generated Blueprint in `config/profiles`. Those
+files are intended for OSBuild disk-image types that accept bootc Blueprint
+filesystem/user customization. The generic installer ISO consumes the
+immutable bootc payload directly; RPM composition remains part of the bootc
+image rather than the Blueprint.
+
 `Containerfile` implements the generic ISO contract: Anaconda and ISO tooling,
 kernel and initramfs, EFI files, `/usr/lib/image-builder/bootc/iso.yaml`, and an
 interactive-defaults kickstart containing the immutable payload reference.

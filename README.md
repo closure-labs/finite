@@ -29,13 +29,19 @@ verifies those published profiles and promotes their existing digests to immutab
 the requested `-dev.N` version to `main` and dispatches its build. Release
 promotion never rebuilds an image.
 
-## Build-Time Composition
+## Declarative profile composition
 
-Purplefin's public build input is a named `BUILD_PROFILE`. Each profile is an
-ordered list of reusable modules and exactly one hardware module. The primary
-profiles are `base-generic` and `dale`; Dale combines base, sales, trainer,
-support, and Dell XPS 13 9350 Intel/IPU7 hardware while retaining Bluefin's
-GNOME desktop. Named profiles are the only supported composition interface.
+Purplefin uses a Nix flake and Den aspects as the source of truth. The `base`,
+hardware, and role aspects each define their bootc changes and optional Home
+Manager changes once. Named profiles select those aspects; Nix validates the
+inheritance graph and generates the build matrix, exact derived-module deltas,
+profile catalog, Home Manager activation packages, and OSBuild Blueprints.
+
+Bluefin Stable remains the complete upstream filesystem. Purplefin does not
+reconstruct or selectively copy it: the common `base` image starts from the
+verified upstream digest and adds all shared Purplefin changes. Hardware images
+derive from that common base, and every role or role combination derives from
+one hardware image.
 
 Reusable workload modules include `developer` (DevOps tooling plus Rust),
 `sales` (Thunderbird), `support` (Espanso and RustConn), `trainer` (Grist
@@ -88,7 +94,7 @@ build inputs, but every published image contains exactly one of each; they are
 not packages or layers selected by the installer. `bootc install`, `bootc
 switch`, and subsequent upgrades track that single precomposed image tag.
 
-The build workflow publishes these representative combinations:
+The build workflow publishes every declared profile:
 
 | Department | Hardware | Image tags |
 | --- | --- | --- |
@@ -99,30 +105,52 @@ The build workflow publishes these representative combinations:
 | `support` | `generic-x86_64` | `support-generic` |
 | `support` | `dell-xps-9350-intel` | `support-dell-xps-9350-intel` |
 | combined Dale profile | `dell-xps-9350-intel` | `dale` and `dell-xps-9350-intel` |
+| `developer` | `generic-x86_64` | `developer-generic` |
+| `trainer` | `generic-x86_64` | `trainer-generic` |
+| `executive` | `generic-x86_64` | `executive-generic` |
+| `it` | `generic-x86_64` | `it-generic` |
 
-On `main`, CI builds this matrix as a staged graph. Bluefin is used once for
-each required hardware base, and the resulting immutable digest becomes the
-parent of every selected role image:
+On `main`, CI builds the generated matrix as a three-stage graph:
 
 ```text
-verified Bluefin digest
-├── base-generic
-│   ├── sales-generic
-│   └── support-generic
-└── base-dell-xps-9350-intel
-    ├── sales-dell-xps-9350-intel
-    ├── support-dell-xps-9350-intel
-    └── dale
+verified ghcr.io/projectbluefin/bluefin:stable digest
+└── base                         (all shared Purplefin changes)
+    ├── base-generic             (generic hardware delta)
+    │   ├── sales-generic
+    │   ├── support-generic
+    │   ├── developer-generic
+    │   ├── trainer-generic
+    │   ├── executive-generic
+    │   └── it-generic
+    └── base-dell-xps-9350-intel (Dell/IPU7 hardware delta)
+        ├── sales-dell-xps-9350-intel
+        ├── support-dell-xps-9350-intel
+        └── dale
 ```
 
-Derived stages apply only their sales, support, or trainer additions. They do
-not repeat base policy, hardware security, kernel-module compilation, or the
-Dell camera helper build. Buildah also publishes reusable intermediate layers
-to the repository's `purplefin-build-cache` GHCR package. A base source change
-rebuilds its descendants; a role-only change reuses the current immutable base
-digest and rebuilds only that role. Pull requests continue to build complete
-images without publishing intermediate images or receiving package-write
-permission.
+Nix computes a selective source fingerprint and exact module delta for every
+profile. A shared-base change rebuilds the entire descendant closure; a
+hardware change rebuilds only that hardware branch; and a role-only change
+reuses the current immutable hardware parent. Buildah also publishes reusable
+intermediate layers to the repository's `purplefin-build-cache` GHCR package.
+The planner detects and repairs children left on an older parent after a partial
+publish. Pull requests build complete images without package-write permission.
+
+To change the graph, edit `nix/flake-modules/profiles.nix`; to change a reusable
+feature, edit `nix/modules`, `nix/home`, or the matching build module. Then run:
+
+```bash
+nix run .#generate
+nix develop --command just format
+nix flake check
+nix develop --command build_files/check-ci.sh
+```
+
+Generated `build_files/image-matrix.json`, `build_files/profile-catalog.json`,
+and files under `installer/config/profiles` must not be edited by hand. OSBuild Blueprints can
+describe supported bootc users and `/` or `/boot` filesystem customizations;
+RPM composition remains in the bootc Containerfile/modules because bootc
+Blueprints do not support package composition.
 
 ## Build Locally
 
@@ -185,6 +213,34 @@ helpers. Podman Machine is therefore available in every Purplefin profile
 without host package layering or user-local helper binaries.
 Terra's Bitwarden packages are excluded so future DNF operations cannot
 reintroduce the desktop RPM after migration to Flatpak.
+
+### Keep the laptop awake with the lid closed
+
+Purplefin includes a reversible native systemd inhibitor. While connected to
+AC power, start it before closing the lid:
+
+```bash
+purplefin-caffeinate on
+purplefin-caffeinate status
+```
+
+Restore normal lid/suspend behavior with `purplefin-caffeinate off`. The unit
+uses `systemd-inhibit` for both sleep and low-level lid handling and has
+`ConditionACPower=true`, so it refuses to start on battery. It is not enabled at
+boot and stops automatically when the user manager/session ends.
+
+Before switching to an image containing the utility, start the same temporary
+native inhibitor on Bluefin with:
+
+```bash
+systemd-run --user --unit=purplefin-caffeinate --collect \
+  /usr/bin/systemd-inhibit --what=sleep:handle-lid-switch \
+    --who=Purplefin --why='Lid-closed work session' --mode=block \
+    /usr/bin/sleep infinity
+```
+
+Revoke it with `systemctl --user stop purplefin-caffeinate.service`; a reboot
+also removes the transient unit.
 
 Bitwarden desktop is installed system-wide from Bitwarden's verified Flathub
 package, and the image includes Bitwarden's polkit policy for Linux

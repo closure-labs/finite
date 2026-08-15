@@ -14,8 +14,8 @@ purplefin_load_independently_managed_rpms "${script_root}/independently-managed-
 force_rebuild="${FORCE_REBUILD:-false}"
 check_rpm_updates="${CHECK_RPM_UPDATES:-true}"
 selected='[]'
-initially_selected='[]'
 declare -A published_digests=()
+declare -A published_parent_digests=()
 probe_root="$(mktemp -d)"
 trap 'rm -rf -- "${probe_root}"' EXIT
 base_inventory="${probe_root}/base-rpms"
@@ -63,6 +63,7 @@ while IFS= read -r entry; do
 		continue
 	}
 	published_digests["${profile}"]="${published_digest}"
+	published_parent_digests["${profile}"]="$(jq -r '.Labels["io.purplefin.parent.digest"] // ""' <<<"${metadata}")"
 
 	published_input="$(jq -r '.Labels["io.purplefin.build.input"] // ""' <<<"${metadata}")"
 	published_base="$(jq -r '.Labels["io.purplefin.upstream.digest"] // .Labels["org.opencontainers.image.base.digest"] // ""' <<<"${metadata}")"
@@ -143,20 +144,43 @@ while IFS= read -r entry; do
 	rm -f "${upgrade_log}"
 done < <(jq -c '.[]' <<<"${profiles_json}")
 
-initially_selected="${selected}"
+# Repair a partially completed staged publish. If a parent was replaced but a
+# child still names the old immutable parent, the child must be rebuilt even
+# when its own source hash is unchanged.
+while IFS=$'\t' read -r profile parent_profile; do
+	if jq -e --arg profile "${profile}" 'any(.[]; .profile == $profile)' <<<"${selected}" >/dev/null; then
+		continue
+	fi
+	parent_digest="${published_digests[${parent_profile}]:-}"
+	child_parent_digest="${published_parent_digests[${profile}]:-}"
+	if [[ "${parent_digest}" =~ ^sha256:[0-9a-f]{64}$ && "${child_parent_digest}" != "${parent_digest}" ]]; then
+		entry="$(jq -c --arg profile "${profile}" '.[] | select(.profile == $profile)' <<<"${profiles_json}")"
+		add_profile "${entry}" "published parent ${parent_profile} changed"
+	fi
+done < <(jq -r '.[] | select(.parent != null) | [.profile, .parent] | @tsv' <<<"${profiles_json}")
 
 # A source change in a staged base invalidates every image derived from that
-# base. A role-only change reuses the current immutable base digest.
-while IFS= read -r base_profile; do
-	while IFS= read -r child; do
-		child_profile="$(jq -r '.profile' <<<"${child}")"
-		if ! jq -e --arg profile "${child_profile}" 'any(.[]; .profile == $profile)' <<<"${selected}" >/dev/null; then
-			add_profile "${child}" "parent ${base_profile} is being rebuilt"
-		fi
-	done < <(jq -c --arg parent "${base_profile}" '.[] | select(.parent == $parent)' <<<"${profiles_json}")
-done < <(jq -r '.[] | select(.parent == null) | .profile' <<<"${initially_selected}")
+# base through every descendant. Repeat to close the complete graph rather than
+# assuming there is only one derived level.
+changed=true
+while [[ "${changed}" == true ]]; do
+	changed=false
+	selected_snapshot="${selected}"
+	while IFS= read -r parent_profile; do
+		while IFS= read -r child; do
+			child_profile="$(jq -r '.profile' <<<"${child}")"
+			if ! jq -e --arg profile "${child_profile}" 'any(.[]; .profile == $profile)' <<<"${selected}" >/dev/null; then
+				add_profile "${child}" "parent ${parent_profile} is being rebuilt"
+				changed=true
+			fi
+		done < <(jq -c --arg parent "${parent_profile}" '.[] | select(.parent == $parent)' <<<"${profiles_json}")
+	done < <(jq -r '.[].profile' <<<"${selected_snapshot}")
+done
 
 while IFS=$'\t' read -r profile parent_profile; do
+	parent_tag="$(jq -er --arg profile "${parent_profile}" '.[] | select(.profile == $profile) | .tags | split(" ")[0]' <<<"${profiles_json}")"
+	selected="$(jq -c --arg profile "${profile}" --arg tag "${parent_tag}" \
+		'map(if .profile == $profile then . + {parent_tag: $tag} else . end)' <<<"${selected}")"
 	if jq -e --arg profile "${parent_profile}" 'any(.[]; .profile == $profile)' <<<"${selected}" >/dev/null; then
 		continue
 	fi

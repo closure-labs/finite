@@ -14,7 +14,9 @@ printf '%s\n' \
 	'set -euo pipefail' \
 	'input="${FAKE_PUBLISHED_INPUT}"' \
 	'[[ "$*" != *"support-generic"* ]] || input="${FAKE_CHILD_PUBLISHED_INPUT:-${input}}"' \
-	'jq -cn --arg input "${input}" --arg base "${FAKE_PUBLISHED_BASE}" '\''{Digest: "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd", Labels: {"io.purplefin.build.input": $input, "io.purplefin.upstream.digest": $base}}'\''' \
+	'parent_digest=sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd' \
+	'[[ "$*" != *"support-generic"* ]] || parent_digest="${FAKE_CHILD_PARENT_DIGEST:-${parent_digest}}"' \
+	'jq -cn --arg input "${input}" --arg base "${FAKE_PUBLISHED_BASE}" --arg parent "${parent_digest}" '\''{Digest: "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd", Labels: {"io.purplefin.build.input": $input, "io.purplefin.upstream.digest": $base, "io.purplefin.parent.digest": $parent}}'\''' \
 	>"${fake_bin}/skopeo"
 
 printf '%s\n' \
@@ -48,7 +50,7 @@ export BASE_REF=ghcr.io/projectbluefin/bluefin@sha256:base
 export IMAGE_REF=ghcr.io/example/purplefin
 export FAKE_PUBLISHED_BASE="${BASE_DIGEST}"
 export FAKE_PODMAN_RUN_LOG="${test_root}/podman-run.log"
-profile='[{"profile":"base-generic","parent":null,"tags":"generic-x86_64 latest","build_input":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]'
+profile='[{"profile":"base","parent":null,"tags":"base","build_input":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]'
 export FAKE_PUBLISHED_INPUT=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 
 export CHECK_RPM_UPDATES=false
@@ -77,10 +79,11 @@ grep -q -- '--enable-repo=terra' "${FAKE_PODMAN_RUN_LOG}"
 export FAKE_DNF_STATUS=100
 export FAKE_LAYERED_RPM=false
 matrix="$(cd "${repo_root}" && build_files/plan-image-builds.sh "${profile}")"
-test "$(jq -r '.include[0].profile' <<<"${matrix}")" = base-generic
+test "$(jq -r '.include[0].profile' <<<"${matrix}")" = base
 
 profiles='[
-  {"profile":"base-generic","parent":null,"tags":"generic-x86_64 latest","build_input":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+  {"profile":"base","parent":null,"tags":"base","build_input":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+  {"profile":"base-generic","parent":"base","tags":"generic-x86_64 latest","build_input":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
   {"profile":"support-generic","parent":"base-generic","tags":"support-generic","build_input":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}
 ]'
 export CHECK_RPM_UPDATES=false
@@ -89,13 +92,20 @@ export FAKE_CHILD_PUBLISHED_INPUT=old-support-source
 matrix="$(cd "${repo_root}" && build_files/plan-image-builds.sh "${profiles}")"
 test "$(jq -r '[.include[].profile] | join(" ")' <<<"${matrix}")" = support-generic
 test "$(jq -r '.include[0].parent_digest' <<<"${matrix}")" = sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+test "$(jq -r '.include[0].parent_tag' <<<"${matrix}")" = generic-x86_64
 
 export FAKE_PUBLISHED_INPUT=old-base-source
 export FAKE_CHILD_PUBLISHED_INPUT=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
 matrix="$(cd "${repo_root}" && build_files/plan-image-builds.sh "${profiles}")"
-test "$(jq -r '[.include[].profile] | join(" ")' <<<"${matrix}")" = 'base-generic support-generic'
+test "$(jq -r '[.include[].profile] | join(" ")' <<<"${matrix}")" = 'base base-generic support-generic'
+
+export FAKE_PUBLISHED_INPUT=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+export FAKE_CHILD_PARENT_DIGEST=sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+matrix="$(cd "${repo_root}" && build_files/plan-image-builds.sh "${profiles}")"
+test "$(jq -r '[.include[].profile] | join(" ")' <<<"${matrix}")" = support-generic
+unset FAKE_CHILD_PARENT_DIGEST
 
 export FAKE_DNF_STATUS=0
 export FAKE_PUBLISHED_INPUT=old-source-state
 matrix="$(cd "${repo_root}" && build_files/plan-image-builds.sh "${profile}")"
-test "$(jq -r '.include[0].profile' <<<"${matrix}")" = base-generic
+test "$(jq -r '.include[0].profile' <<<"${matrix}")" = base

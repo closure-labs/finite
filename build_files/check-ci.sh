@@ -3,6 +3,9 @@ set -euo pipefail
 
 just check
 
+alejandra --check .
+deadnix --fail .
+
 mapfile -d '' shell_files < <(
 	find build_files system_files profile_files installer tests \
 		-type f -name '*.sh' -print0

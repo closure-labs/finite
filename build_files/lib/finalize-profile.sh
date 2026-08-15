@@ -35,6 +35,9 @@ purplefin_finalize_profile() {
 	printf '%s\n' "${profile}" >/usr/share/purplefin/build-profile
 	printf '%s\n' "${profile_modules[@]}" >/usr/share/purplefin/build-modules
 	printf '%s\n' "${PURPLEFIN_VERSION:?PURPLEFIN_VERSION is required}" >/usr/share/purplefin/version
+	jq -e --arg profile "${profile}" '.profiles[$profile]' \
+		"${build_root:-/tmp/purplefin-build}/profile-catalog.json" \
+		>/usr/share/purplefin/profile.json
 
 	if [[ -d /usr/libexec/purplefin/firstboot-rpm-ostree.d ]]; then
 		find /usr/libexec/purplefin/firstboot-rpm-ostree.d -maxdepth 1 -type f -exec chmod 0755 {} +

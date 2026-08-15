@@ -3,6 +3,16 @@ image := "ghcr.io/declarative-dale/purplefin"
 default:
     @just --list
 
+# Format Nix sources after removing unused Nix bindings.
+format:
+    deadnix --edit .
+    alejandra .
+
+# Check Nix formatting and unused bindings without modifying the source tree.
+format-check:
+    alejandra --check .
+    deadnix --fail .
+
 check:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -84,11 +94,8 @@ check:
         system_files/usr/libexec/purplefin/run-firstboot-rpm-ostree
     test -e "${firstboot_test}/pending-markers/40-pending.done"
 
-    # Named profiles are the only supported composition interface.
-    for profile in base-generic base-dell-xps-9350-intel sales-generic sales-dell-xps-9350-intel support-generic support-dell-xps-9350-intel dale developer-generic trainer-generic executive-generic it-generic; do
-        test -f "build_files/profiles/profiles/${profile}.conf"
-        bash -n "build_files/profiles/profiles/${profile}.conf"
-    done
+    # Den/Nix emits the only supported named-profile composition interface.
+    test "$(jq '.profiles | length' build_files/profile-catalog.json)" -eq 12
 
     for module in base developer support sales trainer executive it hardware-generic-x86_64 hardware-framework-laptop hardware-dell-xps-9350-intel; do
         test -x "build_files/modules/${module}.sh"
@@ -97,8 +104,10 @@ check:
     grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$' VERSION
     grep -qF 'ARG BUILD_PROFILE=base-generic' Containerfile
     grep -qF '/tmp/purplefin-build/build.sh "${BUILD_PROFILE}"' Containerfile
-    grep -qF 'profile_definition="${build_root}/profiles/profiles/${profile}.conf"' build_files/build.sh
-    grep -qF 'modules=(base sales trainer support hardware-dell-xps-9350-intel)' build_files/profiles/profiles/dale.conf
+    grep -qF 'profile_catalog="${build_root}/profile-catalog.json"' build_files/build.sh
+    test "$(jq -r '.profiles.dale.modules | join(" ")' build_files/profile-catalog.json)" = 'base sales trainer support hardware-dell-xps-9350-intel'
+    test "$(jq -r '.profiles.dale.deltaModules | join(" ")' build_files/profile-catalog.json)" = 'sales trainer support'
+    test "$(jq -r '.profiles["base-generic"].deltaModules | join(" ")' build_files/profile-catalog.json)" = 'hardware-generic-x86_64'
     grep -qF 'ARG BASE_REF=ghcr.io/projectbluefin/bluefin:stable' Containerfile
     grep -qF 'FROM ${BASE_REF}' Containerfile
     grep -qF 'org.opencontainers.image.base.name="${BASE_REF}"' Containerfile
@@ -107,6 +116,10 @@ check:
     grep -qF 'printf '\''%s\n'\'' "${profile_modules[@]}" >/usr/share/purplefin/build-modules' build_files/lib/finalize-profile.sh
     grep -qF '/usr/share/purplefin/version' build_files/lib/finalize-profile.sh
     grep -qF 'purplefin_authselect_finalize' build_files/build.sh
+    test -x system_files/usr/bin/purplefin-caffeinate
+    test -f system_files/usr/lib/systemd/user/purplefin-caffeinate.service
+    grep -qF 'ConditionACPower=true' system_files/usr/lib/systemd/user/purplefin-caffeinate.service
+    grep -qF -- '--what=sleep:handle-lid-switch' system_files/usr/lib/systemd/user/purplefin-caffeinate.service
 
     # Base/common content is present in every named profile.
     grep -qF 'install -d -m 0755 /nix' build_files/modules/base.sh
@@ -352,23 +365,30 @@ check:
     test "$(build_files/select-ostree-linux.sh dale 7.1.3-200.fc44.x86_64)" = '7.1.3-200.fc44.x86_64'
     test "$(build_files/select-ostree-linux.sh base-generic 7.0.11-200.fc44.x86_64)" = '7.0.11-200.fc44.x86_64'
     test "$(build_files/select-ostree-linux.sh support-dell-xps-9350-intel 7.2.0-200.fc44.x86_64)" = '7.2.0-200.fc44.x86_64'
-    test "$(jq length build_files/image-matrix.json)" -eq 7
-    test -x build_files/profile-build-input.sh
+    test "$(jq length build_files/image-matrix.json)" -eq 12
     while IFS= read -r entry; do
-        profile="$(jq -r '.profile' <<<"${entry}")"
-        tags="$(jq -r '.tags' <<<"${entry}")"
-        build_input="$(build_files/profile-build-input.sh "${profile}" "${tags}")"
+        build_input="$(jq -r '.build_input' <<<"${entry}")"
         [[ "${build_input}" =~ ^[0-9a-f]{64}$ ]]
     done < <(jq -c '.[]' build_files/image-matrix.json)
-    ci_matrix="$(jq -r '.[] | [.profile, (.parent // "root"), .tags] | join("|")' build_files/image-matrix.json)"
+    ci_matrix="$(jq -r '.[] | [.profile, .stage, (.parent // "root"), .tags] | join("|")' build_files/image-matrix.json)"
     test "${ci_matrix}" = "$(printf '%s\n' \
-        'base-generic|root|generic-x86_64 latest base-generic-x86_64' \
-        'base-dell-xps-9350-intel|root|base-dell-xps-9350-intel' \
-        'sales-generic|base-generic|sales-generic' \
-        'sales-dell-xps-9350-intel|base-dell-xps-9350-intel|sales-dell-xps-9350-intel' \
-        'support-generic|base-generic|support-generic' \
-        'support-dell-xps-9350-intel|base-dell-xps-9350-intel|support-dell-xps-9350-intel' \
-        'dale|base-dell-xps-9350-intel|dale dell-xps-9350-intel')"
+        'base|root|root|base' \
+        'base-generic|hardware|base|generic-x86_64 latest base-generic-x86_64' \
+        'base-dell-xps-9350-intel|hardware|base|base-dell-xps-9350-intel' \
+        'sales-generic|role|base-generic|sales-generic' \
+        'sales-dell-xps-9350-intel|role|base-dell-xps-9350-intel|sales-dell-xps-9350-intel' \
+        'support-generic|role|base-generic|support-generic' \
+        'support-dell-xps-9350-intel|role|base-dell-xps-9350-intel|support-dell-xps-9350-intel' \
+        'dale|role|base-dell-xps-9350-intel|dale dell-xps-9350-intel' \
+        'developer-generic|role|base-generic|developer-generic' \
+        'trainer-generic|role|base-generic|trainer-generic' \
+        'executive-generic|role|base-generic|executive-generic' \
+        'it-generic|role|base-generic|it-generic')"
+    test -f build_files/profile-catalog.json
+    test "$(jq -r '.upstream.image + ":" + .upstream.tag' build_files/profile-catalog.json)" = 'ghcr.io/projectbluefin/bluefin:stable'
+    test "$(jq -r '.profiles.dale.deltaModules | join(" ")' build_files/profile-catalog.json)" = 'sales trainer support'
+    test -f installer/config/profiles/dale.toml
+    grep -qF 'mountpoint = "/"' installer/config/profiles/dale.toml
     test -x build_files/build-derived.sh
     test -f Containerfile.derived
     tests/derived-profile-build.sh
@@ -384,8 +404,16 @@ check:
     grep -qF -- '--cache-to' .github/workflows/build-profile.yml
     grep -qF 'image: oci-archive:' .github/workflows/build-profile.yml
     grep -qF 'steps.rechunk.outputs.archive' .github/workflows/build-profile.yml
-    grep -qF 'base-generic-publish:' .github/workflows/build.yml
-    grep -qF 'derived-publish:' .github/workflows/build.yml
+    grep -qF 'base-publish:' .github/workflows/build.yml
+    grep -qF 'hardware-publish:' .github/workflows/build.yml
+    grep -qF 'roles-publish:' .github/workflows/build.yml
+    grep -qF 'DeterminateSystems/update-flake-lock@834c491b2ece4de0bbd00d85214bb5e83b4da5c6 # v28' .github/workflows/update-flake-lock.yml
+    grep -qF 'DeterminateSystems/determinate-nix-action@61cbfe2efc2d4e7a8a6d56967c3c1058e846c858 # v3' .github/workflows/build.yml
+    ! rg -q 'DeterminateSystems/nix-installer-action|DeterminateSystems/magic-nix-cache-action' .github/workflows
+    grep -qF 'den.url = "github:denful/den";' flake.nix
+    grep -qF 'den.aspects.profiles' nix/flake-modules/profiles.nix
+    test ! -e build_files/profile-build-input.sh
+    test -z "$(find build_files/profiles/profiles -type f -print -quit 2>/dev/null)"
     tests/image-build-planner.sh
     grep -qF 'buildah bud' .github/workflows/build-profile.yml
     grep -qF 'podman login' .github/workflows/build-profile.yml

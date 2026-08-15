@@ -6,6 +6,13 @@ repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 delta="$({
 	PURPLEFIN_BUILD_ROOT="${repo_root}/build_files" \
 		PURPLEFIN_DERIVED_DRY_RUN=true \
+		"${repo_root}/build_files/build-derived.sh" base-generic base
+})"
+test "${delta}" = hardware-generic-x86_64
+
+delta="$({
+	PURPLEFIN_BUILD_ROOT="${repo_root}/build_files" \
+		PURPLEFIN_DERIVED_DRY_RUN=true \
 		"${repo_root}/build_files/build-derived.sh" dale base-dell-xps-9350-intel
 })"
 test "${delta}" = $'sales\ntrainer\nsupport'

@@ -16,12 +16,17 @@ on:
         required: true
         type: string
       parent-digest:
-        required: true
+        required: false
+        default: ""
         type: string
       parent-image:
         required: true
         type: string
       parent-profile:
+        required: false
+        default: ""
+        type: string
+      parent-tag:
         required: false
         default: ""
         type: string
@@ -90,6 +95,7 @@ jobs:
           PARENT_DIGEST: ${{ inputs.parent-digest }}
           PARENT_IMAGE: ${{ inputs.parent-image }}
           PARENT_PROFILE: ${{ inputs.parent-profile }}
+          PARENT_TAG: ${{ inputs.parent-tag }}
           PUBLISH: ${{ inputs.publish }}
           PURPLEFIN_OSTREE_LINUX: ${{ steps.kernel.outputs.release }}
           PURPLEFIN_VERSION: ${{ inputs.version }}
@@ -100,13 +106,17 @@ jobs:
           read -r -a tags <<<"${TAGS}"
           primary_image="${IMAGE_REF}:${tags[0]}"
           created="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-          base_ref="${PARENT_IMAGE}@${PARENT_DIGEST}"
           containerfile=./Containerfile
           cache_ref="${IMAGE_REF}-build-cache"
           cache_args=(--layers)
           parent_args=()
 
           if [[ -n "${PARENT_PROFILE}" ]]; then
+            if [[ -z "${PARENT_DIGEST}" ]]; then
+              [[ -n "${PARENT_TAG}" ]] || { echo 'A parent digest or tag is required for derived builds' >&2; exit 2; }
+              PARENT_DIGEST="$(skopeo inspect --retry-times 3 --format '{{.Digest}}' "docker://${PARENT_IMAGE}:${PARENT_TAG}")"
+            fi
+            [[ "${PARENT_DIGEST}" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "Invalid parent digest: ${PARENT_DIGEST}" >&2; exit 2; }
             containerfile=./Containerfile.derived
             parent_args+=(
               --label "io.purplefin.parent.digest=${PARENT_DIGEST}"
@@ -114,6 +124,7 @@ jobs:
               --build-arg "PARENT_PROFILE=${PARENT_PROFILE}"
             )
           fi
+          base_ref="${PARENT_IMAGE}@${PARENT_DIGEST}"
           if [[ "${PUBLISH}" == true ]]; then
             cache_args+=(--cache-to "${cache_ref}")
             if skopeo list-tags "docker://${cache_ref}" >/dev/null 2>&1; then

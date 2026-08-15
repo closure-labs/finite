@@ -3,18 +3,19 @@ set -euo pipefail
 
 build_root="${PURPLEFIN_BUILD_ROOT:-/tmp/purplefin-build}"
 profile="${1:-${BUILD_PROFILE:-base-generic}}"
-profile_definition="${build_root}/profiles/profiles/${profile}.conf"
+profile_catalog="${build_root}/profile-catalog.json"
 module_root="${build_root}/modules"
 modules=()
 
 valid_name='^[a-z0-9._-]+$'
 [[ "${profile}" =~ ${valid_name} ]] || { echo "Invalid build profile: ${profile}" >&2; exit 2; }
 
-[[ -f "${profile_definition}" ]] || { echo "Unknown build profile: ${profile}" >&2; exit 2; }
-# shellcheck source=/dev/null
-source "${profile_definition}"
-[[ "${profile_name:-}" == "${profile}" ]] || { echo "Invalid profile definition: ${profile_definition}" >&2; exit 2; }
-declare -p modules >/dev/null 2>&1 || { echo "Profile ${profile} does not define modules" >&2; exit 2; }
+[[ -f "${profile_catalog}" ]] || { echo "Missing generated profile catalog: ${profile_catalog}" >&2; exit 2; }
+jq -e --arg profile "${profile}" '.profiles[$profile]' "${profile_catalog}" >/dev/null || {
+	echo "Unknown build profile: ${profile}" >&2
+	exit 2
+}
+mapfile -t modules < <(jq -er --arg profile "${profile}" '.profiles[$profile].modules[]' "${profile_catalog}")
 
 # shellcheck source=/tmp/purplefin-build/profiles/lib/authselect-features.sh
 source "${build_root}/profiles/lib/authselect-features.sh"
@@ -41,10 +42,14 @@ for module in "${modules[@]}"; do
 done
 
 [[ -n "${applied_modules[base]:-}" ]] || { echo "Profile ${profile} must include base" >&2; exit 2; }
-[[ "${hardware_count}" -eq 1 ]] || { echo "Profile ${profile} must include exactly one hardware module" >&2; exit 2; }
+if [[ "${profile}" == base ]]; then
+	[[ "${hardware_count}" -eq 0 ]] || { echo 'The common base cannot include a hardware module' >&2; exit 2; }
+else
+	[[ "${hardware_count}" -eq 1 ]] || { echo "Profile ${profile} must include exactly one hardware module" >&2; exit 2; }
+fi
 
-# The full build owns authentication-stack generation. Derived builds inherit
-# that completed hardware policy and intentionally do not reset it.
+# A full build owns authentication-stack generation. The common base makes no
+# hardware requests; hardware/full-profile builds make and finalize them here.
 purplefin_authselect_finalize
 # shellcheck source=/tmp/purplefin-build/lib/finalize-profile.sh
 source "${build_root}/lib/finalize-profile.sh"

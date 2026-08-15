@@ -1,0 +1,7 @@
+[[customizations.filesystem]]
+minsize = 21474836480
+mountpoint = "/"
+
+[[customizations.filesystem]]
+minsize = 2147483648
+mountpoint = "/boot"
