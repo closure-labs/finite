@@ -42,8 +42,7 @@ check:
         test -z "${unexpected_systemd_error}"
         echo 'systemd-analyze verify skipped: sandbox blocks its userdb socket setup' >&2
     fi
-    env -u XDG_RUNTIME_DIR udevadm verify --root="${tmpdir}" /usr/lib/udev/rules.d/99-purplefin-svp7500-no-autosuspend.rules
-    env -u XDG_RUNTIME_DIR udevadm verify --root="${tmpdir}" /usr/lib/udev/rules.d/99-purplefin-hm1092-ir-led.rules
+    env -u XDG_RUNTIME_DIR udevadm verify --root="${tmpdir}"
 
     # Retired first-boot tasks lose their stale completion markers safely.
     firstboot_test="${tmpdir}/firstboot-test"
