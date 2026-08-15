@@ -382,6 +382,8 @@ check:
     grep -qF 'io.purplefin.parent.digest=' .github/workflows/build-profile.yml
     grep -qF -- '--cache-from' .github/workflows/build-profile.yml
     grep -qF -- '--cache-to' .github/workflows/build-profile.yml
+    grep -qF 'image: oci-archive:' .github/workflows/build-profile.yml
+    grep -qF 'steps.rechunk.outputs.archive' .github/workflows/build-profile.yml
     grep -qF 'base-generic-publish:' .github/workflows/build.yml
     grep -qF 'derived-publish:' .github/workflows/build.yml
     tests/image-build-planner.sh

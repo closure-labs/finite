@@ -143,6 +143,7 @@ jobs:
             .
 
       - name: Rechunk bootc image for efficient updates
+        id: rechunk
         env:
           TAGS: ${{ inputs.tags }}
         shell: bash
@@ -150,7 +151,6 @@ jobs:
           read -r -a tags <<<"${TAGS}"
           primary_image="${IMAGE_REF}:${tags[0]}"
           output_dir="$(mktemp -d -p "${RUNNER_TEMP}" purplefin-rechunk.XXXXXX)"
-          trap 'rm -rf -- "${output_dir}"' EXIT
 
           podman run --rm --pull=never --privileged \
             --mount "type=image,src=${primary_image},target=/rpm-ostree" \
@@ -169,6 +169,7 @@ jobs:
           for tag in "${tags[@]:1}"; do
             podman tag "${primary_image}" "${IMAGE_REF}:${tag}"
           done
+          echo "archive=${output_dir}/purplefin.oci" >>"${GITHUB_OUTPUT}"
 
       - name: Push image and aliases
         if: inputs.publish
@@ -217,10 +218,8 @@ jobs:
         with:
           artifact-name: sbom-${{ inputs.profile }}.spdx.json
           format: spdx-json
-          image: ${{ env.IMAGE_REF }}@${{ steps.push.outputs.digest }}
+          image: oci-archive:${{ steps.rechunk.outputs.archive }}
           output-file: sbom.spdx.json
-          registry-username: ${{ github.actor }}
-          registry-password: ${{ github.token }}
           upload-artifact: false
 
       - name: Attest build provenance
@@ -241,6 +240,17 @@ jobs:
           subject-digest: ${{ steps.push.outputs.digest }}
           subject-name: ${{ env.IMAGE_REF }}
           subject-version: ${{ inputs.version }}
+
+      - name: Remove local OCI archive
+        if: always()
+        env:
+          OCI_ARCHIVE: ${{ steps.rechunk.outputs.archive }}
+        shell: bash
+        run: |
+          if [[ -n "${OCI_ARCHIVE}" ]]; then
+            rm -f -- "${OCI_ARCHIVE}"
+            rmdir -- "${OCI_ARCHIVE%/*}" 2>/dev/null || true
+          fi
 
       - name: Log out of GHCR
         if: always() && inputs.publish
