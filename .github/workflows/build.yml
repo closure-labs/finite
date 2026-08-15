@@ -71,9 +71,15 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     outputs:
+      base_dell: ${{ steps.plan.outputs.base_dell }}
       base_digest: ${{ steps.plan.outputs.base_digest }}
+      base_generic: ${{ steps.plan.outputs.base_generic }}
       base_kernel: ${{ steps.plan.outputs.base_kernel }}
+      derived_matrix: ${{ steps.plan.outputs.derived_matrix }}
+      has_base_dell: ${{ steps.plan.outputs.has_base_dell }}
+      has_base_generic: ${{ steps.plan.outputs.has_base_generic }}
       has_builds: ${{ steps.plan.outputs.has_builds }}
+      has_derived: ${{ steps.plan.outputs.has_derived }}
       matrix: ${{ steps.plan.outputs.matrix }}
       version: ${{ steps.plan.outputs.version }}
     steps:
@@ -120,11 +126,23 @@ jobs:
           export BASE_DIGEST="${base_digest}" BASE_REF="${base_ref}"
           matrix="$(build_files/plan-image-builds.sh "${profiles}")"
           has_builds="$(jq -r '.include | length > 0' <<<"${matrix}")"
+          base_generic="$(jq -c 'first(.include[] | select(.profile == "base-generic")) // {}' <<<"${matrix}")"
+          base_dell="$(jq -c 'first(.include[] | select(.profile == "base-dell-xps-9350-intel")) // {}' <<<"${matrix}")"
+          derived_matrix="$(jq -c '{include: [.include[] | select(.parent != null)]}' <<<"${matrix}")"
+          has_base_generic="$(jq -r 'has("profile")' <<<"${base_generic}")"
+          has_base_dell="$(jq -r 'has("profile")' <<<"${base_dell}")"
+          has_derived="$(jq -r '.include | length > 0' <<<"${derived_matrix}")"
 
           {
+            echo "base_dell=${base_dell}"
             echo "base_digest=${base_digest}"
+            echo "base_generic=${base_generic}"
             echo "base_kernel=${base_kernel}"
+            echo "derived_matrix=${derived_matrix}"
+            echo "has_base_dell=${has_base_dell}"
+            echo "has_base_generic=${has_base_generic}"
             echo "has_builds=${has_builds}"
+            echo "has_derived=${has_derived}"
             echo "matrix=${matrix}"
             echo "version=${version}"
           } >>"${GITHUB_OUTPUT}"
@@ -142,22 +160,20 @@ jobs:
       contents: read
       packages: read
     with:
-      base-digest: ${{ needs.plan.outputs.base_digest }}
       base-kernel: ${{ needs.plan.outputs.base_kernel }}
       build-input: ${{ matrix.build_input }}
+      parent-digest: ${{ needs.plan.outputs.base_digest }}
+      parent-image: ghcr.io/projectbluefin/bluefin
       profile: ${{ matrix.profile }}
       publish: false
       tags: ${{ matrix.tags }}
+      upstream-base-digest: ${{ needs.plan.outputs.base_digest }}
       version: ${{ needs.plan.outputs.version }}
 
-  build-publish:
-    name: Build and publish ${{ matrix.profile }}
-    if: github.event_name != 'pull_request' && needs.plan.outputs.has_builds == 'true'
+  base-generic-publish:
+    name: Build and publish base-generic
+    if: github.event_name != 'pull_request' && needs.plan.outputs.has_base_generic == 'true'
     needs: plan
-    strategy:
-      fail-fast: false
-      max-parallel: 4
-      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
     uses: ./.github/workflows/build-profile.yml
     permissions:
       attestations: write
@@ -165,10 +181,66 @@ jobs:
       id-token: write
       packages: write
     with:
-      base-digest: ${{ needs.plan.outputs.base_digest }}
+      base-kernel: ${{ needs.plan.outputs.base_kernel }}
+      build-input: ${{ fromJSON(needs.plan.outputs.base_generic).build_input }}
+      parent-digest: ${{ needs.plan.outputs.base_digest }}
+      parent-image: ghcr.io/projectbluefin/bluefin
+      profile: base-generic
+      publish: true
+      tags: ${{ fromJSON(needs.plan.outputs.base_generic).tags }}
+      upstream-base-digest: ${{ needs.plan.outputs.base_digest }}
+      version: ${{ needs.plan.outputs.version }}
+
+  base-dell-publish:
+    name: Build and publish base-dell-xps-9350-intel
+    if: github.event_name != 'pull_request' && needs.plan.outputs.has_base_dell == 'true'
+    needs: plan
+    uses: ./.github/workflows/build-profile.yml
+    permissions:
+      attestations: write
+      contents: read
+      id-token: write
+      packages: write
+    with:
+      base-kernel: ${{ needs.plan.outputs.base_kernel }}
+      build-input: ${{ fromJSON(needs.plan.outputs.base_dell).build_input }}
+      parent-digest: ${{ needs.plan.outputs.base_digest }}
+      parent-image: ghcr.io/projectbluefin/bluefin
+      profile: base-dell-xps-9350-intel
+      publish: true
+      tags: ${{ fromJSON(needs.plan.outputs.base_dell).tags }}
+      upstream-base-digest: ${{ needs.plan.outputs.base_digest }}
+      version: ${{ needs.plan.outputs.version }}
+
+  derived-publish:
+    name: Build and publish ${{ matrix.profile }}
+    if: >-
+      always() && github.event_name != 'pull_request' &&
+      needs.plan.result == 'success' && needs.plan.outputs.has_derived == 'true' &&
+      (needs.base-generic-publish.result == 'success' || needs.base-generic-publish.result == 'skipped') &&
+      (needs.base-dell-publish.result == 'success' || needs.base-dell-publish.result == 'skipped')
+    needs:
+      - plan
+      - base-generic-publish
+      - base-dell-publish
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix: ${{ fromJSON(needs.plan.outputs.derived_matrix) }}
+    uses: ./.github/workflows/build-profile.yml
+    permissions:
+      attestations: write
+      contents: read
+      id-token: write
+      packages: write
+    with:
       base-kernel: ${{ needs.plan.outputs.base_kernel }}
       build-input: ${{ matrix.build_input }}
+      parent-digest: ${{ matrix.parent == 'base-generic' && (needs.base-generic-publish.outputs.digest || matrix.parent_digest) || (needs.base-dell-publish.outputs.digest || matrix.parent_digest) }}
+      parent-image: ${{ format('ghcr.io/{0}', github.repository) }}
+      parent-profile: ${{ matrix.parent }}
       profile: ${{ matrix.profile }}
       publish: true
       tags: ${{ matrix.tags }}
+      upstream-base-digest: ${{ needs.plan.outputs.base_digest }}
       version: ${{ needs.plan.outputs.version }}

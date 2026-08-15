@@ -14,6 +14,8 @@ purplefin_load_independently_managed_rpms "${script_root}/independently-managed-
 force_rebuild="${FORCE_REBUILD:-false}"
 check_rpm_updates="${CHECK_RPM_UPDATES:-true}"
 selected='[]'
+initially_selected='[]'
+declare -A published_digests=()
 probe_root="$(mktemp -d)"
 trap 'rm -rf -- "${probe_root}"' EXIT
 base_inventory="${probe_root}/base-rpms"
@@ -56,9 +58,14 @@ while IFS= read -r entry; do
 		add_profile "${entry}" 'published image is missing or unreadable'
 		continue
 	fi
+	published_digest="$(jq -er '.Digest' <<<"${metadata}")" || {
+		add_profile "${entry}" 'published image has no immutable digest'
+		continue
+	}
+	published_digests["${profile}"]="${published_digest}"
 
 	published_input="$(jq -r '.Labels["io.purplefin.build.input"] // ""' <<<"${metadata}")"
-	published_base="$(jq -r '.Labels["org.opencontainers.image.base.digest"] // ""' <<<"${metadata}")"
+	published_base="$(jq -r '.Labels["io.purplefin.upstream.digest"] // .Labels["org.opencontainers.image.base.digest"] // ""' <<<"${metadata}")"
 
 	if [[ "${published_input}" != "${build_input}" ]]; then
 		add_profile "${entry}" 'build inputs changed'
@@ -135,5 +142,35 @@ while IFS= read -r entry; do
 	podman image rm "${published_ref}" >/dev/null 2>&1 || true
 	rm -f "${upgrade_log}"
 done < <(jq -c '.[]' <<<"${profiles_json}")
+
+initially_selected="${selected}"
+
+# A source change in a staged base invalidates every image derived from that
+# base. A role-only change reuses the current immutable base digest.
+while IFS= read -r base_profile; do
+	while IFS= read -r child; do
+		child_profile="$(jq -r '.profile' <<<"${child}")"
+		if ! jq -e --arg profile "${child_profile}" 'any(.[]; .profile == $profile)' <<<"${selected}" >/dev/null; then
+			add_profile "${child}" "parent ${base_profile} is being rebuilt"
+		fi
+	done < <(jq -c --arg parent "${base_profile}" '.[] | select(.parent == $parent)' <<<"${profiles_json}")
+done < <(jq -r '.[] | select(.parent == null) | .profile' <<<"${initially_selected}")
+
+while IFS=$'\t' read -r profile parent_profile; do
+	if jq -e --arg profile "${parent_profile}" 'any(.[]; .profile == $profile)' <<<"${selected}" >/dev/null; then
+		continue
+	fi
+	parent_digest="${published_digests[${parent_profile}]:-}"
+	[[ "${parent_digest}" =~ ^sha256:[0-9a-f]{64}$ ]] || {
+		echo "Selected profile ${profile} has no current immutable parent ${parent_profile}" >&2
+		exit 2
+	}
+	selected="$(jq -c --arg profile "${profile}" --arg digest "${parent_digest}" \
+		'map(if .profile == $profile then . + {parent_digest: $digest} else . end)' <<<"${selected}")"
+done < <(jq -r '.[] | select(.parent != null) | [.profile, .parent] | @tsv' <<<"${selected}")
+
+# Restore declaration order so workflow plans and logs remain deterministic.
+selected="$(jq -cn --argjson profiles "${profiles_json}" --argjson chosen "${selected}" \
+	'[ $profiles[] as $profile | $chosen[] | select(.profile == $profile.profile) ]')"
 
 jq -cn --argjson include "${selected}" '{include: $include}'

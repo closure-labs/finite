@@ -100,6 +100,30 @@ The build workflow publishes these representative combinations:
 | `support` | `dell-xps-9350-intel` | `support-dell-xps-9350-intel` |
 | combined Dale profile | `dell-xps-9350-intel` | `dale` and `dell-xps-9350-intel` |
 
+On `main`, CI builds this matrix as a staged graph. Bluefin is used once for
+each required hardware base, and the resulting immutable digest becomes the
+parent of every selected role image:
+
+```text
+verified Bluefin digest
+├── base-generic
+│   ├── sales-generic
+│   └── support-generic
+└── base-dell-xps-9350-intel
+    ├── sales-dell-xps-9350-intel
+    ├── support-dell-xps-9350-intel
+    └── dale
+```
+
+Derived stages apply only their sales, support, or trainer additions. They do
+not repeat base policy, hardware security, kernel-module compilation, or the
+Dell camera helper build. Buildah also publishes reusable intermediate layers
+to the repository's `purplefin-build-cache` GHCR package. A base source change
+rebuilds its descendants; a role-only change reuses the current immutable base
+digest and rebuilds only that role. Pull requests continue to build complete
+images without publishing intermediate images or receiving package-write
+permission.
+
 ## Build Locally
 
 ```bash

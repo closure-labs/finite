@@ -15,22 +15,33 @@ declare -p modules >/dev/null 2>&1 || { echo "Profile ${profile} does not define
 paths=(
 	.github/workflows/build.yml
 	.github/workflows/build-profile.yml
-	Containerfile
 	VERSION
-	build_files/bitwarden-cli.env
-	build_files/bitwarden-cli.spec
-	build_files/build.sh
 	build_files/image-matrix.json
 	build_files/independently-managed-rpms.list
-	build_files/install-bitwarden-cli-rpm.sh
-	build_files/lib
 	build_files/select-ostree-linux.sh
-	manifests
-	system_files
 	"${definition}"
 )
 
+parent="$(jq -er --arg profile "${profile}" '.[] | select(.profile == $profile) | .parent // ""' build_files/image-matrix.json)"
+if [[ -z "${parent}" ]]; then
+	paths+=(
+		Containerfile
+		build_files/bitwarden-cli.env
+		build_files/bitwarden-cli.spec
+		build_files/build.sh
+		build_files/install-bitwarden-cli-rpm.sh
+		build_files/lib
+		manifests
+		system_files
+	)
+else
+	paths+=(Containerfile.derived build_files/build-derived.sh build_files/lib)
+fi
+
 for module in "${modules[@]}"; do
+	if [[ -n "${parent}" && ( "${module}" == base || "${module}" == hardware-* ) ]]; then
+		continue
+	fi
 	paths+=("build_files/modules/${module}.sh" "profile_files/modules/${module}")
 	case "${module}" in
 		developer)

@@ -62,7 +62,8 @@ source_root="${workdir}/libcamera-v${source_version}"
 build_root="${workdir}/build"
 
 echo ":: Building Purplefin OV02C10 libcamera IPA helper"
-curl --fail --location --show-error --silent --retry 3 --retry-delay 2 \
+curl --fail --location --show-error --silent --retry 8 --retry-all-errors \
+	--retry-delay 5 --retry-max-time 300 \
 	--output "${archive}" "${source_url}"
 printf '%s  %s\n' "${source_sha256}" "${archive}" | sha256sum --check --strict
 tar -xf "${archive}" -C "${workdir}"

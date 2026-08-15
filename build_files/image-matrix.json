@@ -1,30 +1,37 @@
 [
   {
     "profile": "base-generic",
+    "parent": null,
     "tags": "generic-x86_64 latest base-generic-x86_64"
   },
   {
     "profile": "base-dell-xps-9350-intel",
+    "parent": null,
     "tags": "base-dell-xps-9350-intel"
   },
   {
     "profile": "sales-generic",
+    "parent": "base-generic",
     "tags": "sales-generic"
   },
   {
     "profile": "sales-dell-xps-9350-intel",
+    "parent": "base-dell-xps-9350-intel",
     "tags": "sales-dell-xps-9350-intel"
   },
   {
     "profile": "support-generic",
+    "parent": "base-generic",
     "tags": "support-generic"
   },
   {
     "profile": "support-dell-xps-9350-intel",
+    "parent": "base-dell-xps-9350-intel",
     "tags": "support-dell-xps-9350-intel"
   },
   {
     "profile": "dale",
+    "parent": "base-dell-xps-9350-intel",
     "tags": "dale dell-xps-9350-intel"
   }
 ]

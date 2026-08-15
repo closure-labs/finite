@@ -104,8 +104,8 @@ check:
     grep -qF 'org.opencontainers.image.base.name="${BASE_REF}"' Containerfile
     grep -qF 'org.opencontainers.image.version="${PURPLEFIN_VERSION}"' Containerfile
     grep -qF 'Profile ${profile} must include exactly one hardware module' build_files/build.sh
-    grep -qF 'printf '\''%s\n'\'' "${modules[@]}" > /usr/share/purplefin/build-modules' build_files/build.sh
-    grep -qF '/usr/share/purplefin/version' build_files/build.sh
+    grep -qF 'printf '\''%s\n'\'' "${profile_modules[@]}" >/usr/share/purplefin/build-modules' build_files/lib/finalize-profile.sh
+    grep -qF '/usr/share/purplefin/version' build_files/lib/finalize-profile.sh
     grep -qF 'purplefin_authselect_finalize' build_files/build.sh
 
     # Base/common content is present in every named profile.
@@ -141,8 +141,8 @@ check:
     grep -Eq '^tailscale-stable[[:space:]]+tailscale$' build_files/independently-managed-rpms.list
     grep -Eq '^terra[[:space:]]+espanso-wayland$' build_files/independently-managed-rpms.list
     test -f build_files/lib/independently-managed-rpms.sh
-    grep -qF 'purplefin_load_independently_managed_rpms' build_files/build.sh
-    grep -qF 'upgrade "${installed_independently_managed_rpms[@]}"' build_files/build.sh
+    grep -qF 'purplefin_load_independently_managed_rpms' build_files/lib/finalize-profile.sh
+    grep -qF 'upgrade "${installed_independently_managed_rpms[@]}"' build_files/lib/finalize-profile.sh
     test ! -e build_files/install-nextcloud-appimage.sh
     ! grep -qF 'install-nextcloud-appimage' build_files/modules/base.sh
     ! grep -qF '/usr/bin/nextcloud' build_files/modules/base.sh
@@ -360,15 +360,18 @@ check:
         build_input="$(build_files/profile-build-input.sh "${profile}" "${tags}")"
         [[ "${build_input}" =~ ^[0-9a-f]{64}$ ]]
     done < <(jq -c '.[]' build_files/image-matrix.json)
-    ci_matrix="$(jq -r '.[] | [.profile, .tags] | join("|")' build_files/image-matrix.json)"
+    ci_matrix="$(jq -r '.[] | [.profile, (.parent // "root"), .tags] | join("|")' build_files/image-matrix.json)"
     test "${ci_matrix}" = "$(printf '%s\n' \
-        'base-generic|generic-x86_64 latest base-generic-x86_64' \
-        'base-dell-xps-9350-intel|base-dell-xps-9350-intel' \
-        'sales-generic|sales-generic' \
-        'sales-dell-xps-9350-intel|sales-dell-xps-9350-intel' \
-        'support-generic|support-generic' \
-        'support-dell-xps-9350-intel|support-dell-xps-9350-intel' \
-        'dale|dale dell-xps-9350-intel')"
+        'base-generic|root|generic-x86_64 latest base-generic-x86_64' \
+        'base-dell-xps-9350-intel|root|base-dell-xps-9350-intel' \
+        'sales-generic|base-generic|sales-generic' \
+        'sales-dell-xps-9350-intel|base-dell-xps-9350-intel|sales-dell-xps-9350-intel' \
+        'support-generic|base-generic|support-generic' \
+        'support-dell-xps-9350-intel|base-dell-xps-9350-intel|support-dell-xps-9350-intel' \
+        'dale|base-dell-xps-9350-intel|dale dell-xps-9350-intel')"
+    test -x build_files/build-derived.sh
+    test -f Containerfile.derived
+    tests/derived-profile-build.sh
     grep -qF 'PURPLEFIN_OSTREE_LINUX=' .github/workflows/build-profile.yml
     grep -qF 'ostree.linux=' .github/workflows/build-profile.yml
     grep -qF 'steps.kernel.outputs.release' .github/workflows/build-profile.yml
@@ -376,6 +379,11 @@ check:
     grep -qF 'build_files/plan-image-builds.sh' .github/workflows/build.yml
     grep -qF 'org.opencontainers.image.base.digest=' .github/workflows/build-profile.yml
     grep -qF 'io.purplefin.build.input=' .github/workflows/build-profile.yml
+    grep -qF 'io.purplefin.parent.digest=' .github/workflows/build-profile.yml
+    grep -qF -- '--cache-from' .github/workflows/build-profile.yml
+    grep -qF -- '--cache-to' .github/workflows/build-profile.yml
+    grep -qF 'base-generic-publish:' .github/workflows/build.yml
+    grep -qF 'derived-publish:' .github/workflows/build.yml
     tests/image-build-planner.sh
     grep -qF 'buildah bud' .github/workflows/build-profile.yml
     grep -qF 'podman login' .github/workflows/build-profile.yml
@@ -389,10 +397,10 @@ check:
     test -z "$(find build_files/modules -maxdepth 1 -name 'legacy-*' -print -quit)"
     test -z "$(find build_files/profiles -maxdepth 1 \( -name '*no-ipu7*' -o -name 'desktop-x86_64.sh' -o -name 'lenovo-generic.sh' \) -print -quit)"
     ! grep -qF 'dracut --force "${kernel_modules_dir}/initramfs.img" "${kernel_version}"' build_files/build.sh
-    grep -qF 'rm -f /boot/symvers-*.xz' build_files/build.sh
-    grep -qF '/var/lib/rpm-state' build_files/build.sh
-    grep -qF '/var/log/dnf5.log*' build_files/build.sh
-    grep -qF 'installed_kernel_releases' build_files/build.sh
+    grep -qF 'rm -f /boot/symvers-*.xz' build_files/lib/finalize-profile.sh
+    grep -qF '/var/lib/rpm-state' build_files/lib/finalize-profile.sh
+    grep -qF '/var/log/dnf5.log*' build_files/lib/finalize-profile.sh
+    grep -qF 'installed_kernel_releases' build_files/lib/finalize-profile.sh
     test -x system_files/usr/libexec/purplefin/run-firstboot-rpm-ostree
     test -z "$(find system_files -iname '*ipu7*' -print -quit)"
     test -z "$(find system_files profile_files -iname '*librepods*' -print -quit)"
