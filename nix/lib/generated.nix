@@ -27,66 +27,49 @@
     ".github/workflows/build-profile.yml"
     ".github/workflows/build.yml"
     "VERSION"
-    "build_files/independently-managed-rpms.list"
-    "build_files/select-ostree-linux.sh"
+    "bootc/config/independently-managed-rpms.list"
     "flake.lock"
     "flake.nix"
-    "nix/flake-modules/den.nix"
     "nix/flake-modules/outputs.nix"
-    "nix/home/common.nix"
     "nix/lib"
-    "nix/modules/base.nix"
-    "nix/modules/profile-options.nix"
+    "nix/profile-options.nix"
   ];
   rootInputPaths = [
     "Containerfile"
-    "build_files/bitwarden-cli.env"
-    "build_files/bitwarden-cli.spec"
-    "build_files/build.sh"
-    "build_files/install-bitwarden-cli-rpm.sh"
-    "build_files/lib"
-    "manifests"
-    "system_files"
+    "bootc/build/full.sh"
+    "bootc/lib"
+    "bootc/modules/base.sh"
+    "bootc/overlays/base"
+    "bootc/packages"
   ];
   derivedInputPaths = [
     "Containerfile.derived"
-    "build_files/build-derived.sh"
-    "build_files/lib"
+    "bootc/build/derived.sh"
+    "bootc/lib"
   ];
   moduleInputPaths = module:
     [
-      "build_files/modules/${module}.sh"
-      "nix/modules/roles/${module}.nix"
-      "nix/home/roles/${module}.nix"
-      "profile_files/modules/${module}"
+      "bootc/modules/${module}.sh"
+      "bootc/overlays/roles/${module}"
     ]
     ++ lib.optionals (module == "developer") [
-      "build_files/profiles/components/devops.sh"
-      "build_files/profiles/lib/role-common.sh"
-      "build_files/profiles/roles/development.sh"
-      "profile_files/components/devops"
+      "bootc/components/devops"
+      "bootc/lib/overlay.sh"
     ]
     ++ lib.optionals (module == "support") [
-      "build_files/profiles/components/devops.sh"
-      "build_files/profiles/lib/role-common.sh"
-      "build_files/profiles/roles/support.sh"
-      "profile_files/components/devops"
-      "profile_files/roles/support"
+      "bootc/components/devops"
+      "bootc/lib/overlay.sh"
+      "bootc/overlays/roles/support"
     ]
     ++ lib.optionals (module == "hardware-dell-xps-9350-intel") [
-      "build_files/install-libcamera-ov02c10-ipa.sh"
-      "build_files/libcamera"
-      "build_files/profiles/dell-xps-9350-intel.sh"
-      "build_files/profiles/lib/authselect-features.sh"
-      "build_files/profiles/lib/dell-xps-9350-common.sh"
-      "build_files/profiles/lib/hardware-security.sh"
-      "nix/modules/hardware/dell-xps-9350-intel.nix"
-      "profile_files/dell-xps-9350-intel"
+      "bootc/lib/authselect-features.sh"
+      "bootc/lib/dell-xps-9350-common.sh"
+      "bootc/lib/hardware-security.sh"
+      "bootc/overlays/hardware/dell-xps-9350-intel"
     ]
     ++ lib.optionals (lib.hasPrefix "hardware-" module && module != "hardware-dell-xps-9350-intel") [
-      "build_files/profiles/lib/authselect-features.sh"
-      "build_files/profiles/lib/hardware-security.sh"
-      "nix/modules/hardware/${lib.removePrefix "hardware-" module}.nix"
+      "bootc/lib/authselect-features.sh"
+      "bootc/lib/hardware-security.sh"
     ];
   buildInput = name: let
     profile = profiles.${name};
@@ -167,10 +150,10 @@
     profiles;
 in
   pkgs.runCommand "purplefin-generated-${version}" {} ''
-    mkdir -p "$out/build_files" "$out/installer/config/profiles"
-    cp ${matrixFile} "$out/build_files/image-matrix.json"
-    cp ${catalogFile} "$out/build_files/profile-catalog.json"
-    cp ${upstreamFile} "$out/build_files/upstream.json"
+    mkdir -p "$out/bootc/generated" "$out/installer/config/profiles"
+    cp ${matrixFile} "$out/bootc/generated/image-matrix.json"
+    cp ${catalogFile} "$out/bootc/generated/profile-catalog.json"
+    cp ${upstreamFile} "$out/bootc/generated/upstream.json"
     ${lib.concatStringsSep "\n" (
       map (name: ''
         cp ${blueprintFiles.${name}} "$out/installer/config/profiles/${name}.toml"

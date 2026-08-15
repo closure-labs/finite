@@ -7,7 +7,6 @@ ARG BUILD_PROFILE
 ARG IMAGE_NAME=purplefin
 ARG IMAGE_VENDOR=declarative-dale
 ARG PARENT_PROFILE
-ARG PURPLEFIN_OSTREE_LINUX=
 ARG PURPLEFIN_VERSION=0.0.0-dev
 
 LABEL org.opencontainers.image.title="Purplefin"
@@ -16,14 +15,11 @@ LABEL org.opencontainers.image.vendor="${IMAGE_VENDOR}"
 LABEL org.opencontainers.image.source="https://github.com/declarative-dale/purplefin"
 LABEL org.opencontainers.image.base.name="${BASE_REF}"
 LABEL org.opencontainers.image.version="${PURPLEFIN_VERSION}"
-LABEL ostree.linux="${PURPLEFIN_OSTREE_LINUX}"
 
-COPY build_files/ /tmp/purplefin-build/
-COPY profile_files/ /tmp/purplefin-profile-files/
+COPY bootc/ /tmp/purplefin-build/
 
-RUN PURPLEFIN_OSTREE_LINUX="${PURPLEFIN_OSTREE_LINUX}" \
-    PURPLEFIN_VERSION="${PURPLEFIN_VERSION}" \
-    /tmp/purplefin-build/build-derived.sh "${BUILD_PROFILE}" "${PARENT_PROFILE}" && \
-    rm -rf /tmp/purplefin-build /tmp/purplefin-profile-files && \
+RUN PURPLEFIN_VERSION="${PURPLEFIN_VERSION}" \
+    /tmp/purplefin-build/build/derived.sh "${BUILD_PROFILE}" "${PARENT_PROFILE}" && \
+    rm -rf /tmp/purplefin-build && \
     bootc container lint && \
     ostree container commit

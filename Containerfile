@@ -6,7 +6,6 @@ ARG BASE_REF
 ARG BUILD_PROFILE=base-generic
 ARG IMAGE_NAME=purplefin
 ARG IMAGE_VENDOR=declarative-dale
-ARG PURPLEFIN_OSTREE_LINUX=
 ARG PURPLEFIN_VERSION=0.0.0-dev
 
 LABEL org.opencontainers.image.title="Purplefin"
@@ -15,17 +14,11 @@ LABEL org.opencontainers.image.vendor="${IMAGE_VENDOR}"
 LABEL org.opencontainers.image.source="https://github.com/declarative-dale/purplefin"
 LABEL org.opencontainers.image.base.name="${BASE_REF}"
 LABEL org.opencontainers.image.version="${PURPLEFIN_VERSION}"
-LABEL ostree.linux="${PURPLEFIN_OSTREE_LINUX}"
 
-COPY system_files/ /
-COPY manifests/Brewfile /usr/share/purplefin/manifests/Brewfile
-COPY manifests/flatpaks.preinstall /usr/share/flatpak/preinstall.d/purplefin.preinstall
-COPY build_files/ /tmp/purplefin-build/
-COPY profile_files/ /tmp/purplefin-profile-files/
+COPY bootc/ /tmp/purplefin-build/
 
-RUN PURPLEFIN_OSTREE_LINUX="${PURPLEFIN_OSTREE_LINUX}" \
-    PURPLEFIN_VERSION="${PURPLEFIN_VERSION}" \
-    /tmp/purplefin-build/build.sh "${BUILD_PROFILE}" && \
-    rm -rf /tmp/purplefin-build /tmp/purplefin-profile-files && \
+RUN PURPLEFIN_VERSION="${PURPLEFIN_VERSION}" \
+    /tmp/purplefin-build/build/full.sh "${BUILD_PROFILE}" && \
+    rm -rf /tmp/purplefin-build && \
     bootc container lint && \
     ostree container commit

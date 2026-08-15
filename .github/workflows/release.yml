@@ -178,7 +178,7 @@ jobs:
                 '{profile: $profile, channel_tag: $channel_tag, release_tag: $release_tag, digest: $digest, base_digest: $base_digest, build_input: $build_input}'
             })"
             images="$(jq -c --argjson image "${image}" '. + [$image]' <<<"${images}")"
-          done < <(jq -c '.[]' build_files/image-matrix.json)
+          done < <(jq -c '.[]' bootc/generated/image-matrix.json)
 
           jq -n \
             --arg version "${VERSION}" \

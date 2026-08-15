@@ -137,20 +137,35 @@ The planner detects and repairs children left on an older parent after a partial
 publish. Pull requests build complete images without package-write permission.
 
 To change the graph, edit `nix/flake-modules/profiles.nix`; to change a reusable
-feature, edit `nix/modules`, `nix/home`, or the matching build module. Then run:
+feature, edit its `nix/aspects/<aspect>/` directory or the matching `bootc/`
+module and overlay. Then run:
 
 ```bash
 nix run .#generate
 nix develop --command just format
 nix flake check
-nix develop --command build_files/check-ci.sh
+nix develop --command tests/ci.sh
 ```
 
-Generated `build_files/image-matrix.json`, `build_files/profile-catalog.json`,
+Generated `bootc/generated/image-matrix.json`, `bootc/generated/profile-catalog.json`,
 and files under `installer/config/profiles` must not be edited by hand. OSBuild Blueprints can
 describe supported bootc users and `/` or `/boot` filesystem customizations;
 RPM composition remains in the bootc Containerfile/modules because bootc
 Blueprints do not support package composition.
+
+The source tree is intentionally split into only a few ownership boundaries:
+
+```text
+nix/aspects/<aspect>/   Den aspect and optional Home Manager customization
+nix/flake-modules/     profile composition and exported flake outputs
+bootc/modules/         build-time implementation for each aspect
+bootc/overlays/        base, role, and hardware filesystem payloads
+bootc/components/      reusable multi-role components such as devops
+bootc/build/           full, derived, and planning entrypoints
+bootc/generated/       Nix-generated catalogs consumed by CI and bootc builds
+installer/             image-builder Containerfile, overlay, and Blueprints
+tests/                 local and CI validation entrypoints
+```
 
 ## Build Locally
 
@@ -164,27 +179,17 @@ just build-support-dell
 The generic and Dell recipes build the two primary profiles. The remaining
 recipes name their profile explicitly.
 
-The `just` targets inspect Bluefin's `ostree.linux` label and write the matching
-kernel label into the derived image. For an equivalent direct build, resolve
-that value first:
+For an equivalent direct build:
 
 ```bash
-base_metadata="$(skopeo inspect docker://ghcr.io/projectbluefin/bluefin:stable)"
-base_digest="$(jq -er '.Digest' <<<"${base_metadata}")"
-base_kernel="$(jq -er '.Labels["ostree.linux"]' <<<"${base_metadata}")"
-target_kernel="$(build_files/select-ostree-linux.sh dale "${base_kernel}")"
+base_digest="$(skopeo inspect --format '{{.Digest}}' docker://ghcr.io/projectbluefin/bluefin:stable)"
 podman build \
   --build-arg BASE_REF="ghcr.io/projectbluefin/bluefin@${base_digest}" \
   --build-arg BUILD_PROFILE=dale \
-  --build-arg PURPLEFIN_OSTREE_LINUX="${target_kernel}" \
   --build-arg PURPLEFIN_VERSION="$(<VERSION)" \
-  --label "ostree.linux=${target_kernel}" \
   --tag ghcr.io/declarative-dale/purplefin:dell-xps-9350-intel \
   .
 ```
-
-The Dell profile keeps Bluefin's included kernel unchanged and builds its small
-set of SVP7500 replacement modules against that exact kernel.
 
 ## Switch To An Image
 
@@ -201,8 +206,7 @@ does not combine a department tag with a separate hardware tag at installation
 time.
 
 The `latest` tag tracks the `base` + `generic-x86_64` image. The
-`dell-xps-9350-intel` tag tracks the combined Dale profile. Both follow
-Bluefin's kernel without a Dell-specific kernel repository or version override.
+`dell-xps-9350-intel` tag tracks the combined Dale profile.
 The reusable `devops` component provides
 Ghostty, VSCodium,
 `packer`, `ansible`, `tofu`, and `bao`; both the support and development
@@ -246,7 +250,7 @@ Bitwarden desktop is installed system-wide from Bitwarden's verified Flathub
 package, and the image includes Bitwarden's polkit policy for Linux
 system-authentication unlock. The native `/usr/bin/bw` CLI remains a
 Purplefin-built RPM in the bootc image: its official versioned archive and
-GitHub-published SHA-256 digest are pinned in `build_files/bitwarden-cli.env`.
+GitHub-published SHA-256 digest are pinned in `bootc/packages/bitwarden-cli/package.env`.
 
 ### Migrating Bitwarden from the layered RPM
 
@@ -435,17 +439,13 @@ this laptop. Generic profiles do not install its replacement modules, udev
 rules, or camera-specific userspace configuration.
 
 The implementation follows `svp7500-camera-fix-pack` v1.0.2 at commit
-`e4c95452339b2d9803974a899c4f2da6e143891d`. Purplefin keeps Bluefin's exact
-included kernel and verifies that its IPU bridge, IPU7, OV02C10, and USBIO
-features are enabled. It does not enable a COPR or install a replacement
-kernel. The build stops if the included kernel cannot accept the modular
-fixes.
+`e4c95452339b2d9803974a899c4f2da6e143891d`. The build verifies the IPU bridge,
+IPU7, OV02C10, USBIO, and firmware capabilities required by the modular fixes.
 
 The flow is:
 
-1. The profile retains the inherited Bluefin kernel and validates its IPU7,
-   OV02C10, IPU bridge, USBIO, and firmware support.
-2. Against that exact kernel, the image build compiles the fix-pack's patched
+1. The profile validates IPU7, OV02C10, IPU bridge, USBIO, and firmware support.
+2. The image build compiles the fix-pack's patched
    `intel_cvs`, `ipu_bridge`, and `hm1092` modules. It installs the patched
    INT3472 module only when the in-tree driver does not already publish the IR
    flood LED; replacing a newer in-tree INT3472 would break the illuminator.
@@ -542,11 +542,11 @@ non-working IPU7 inputs.
 - Bluefin's inherited Tailscale service, RPM repository configuration, setup
   hook, shell completion, and user-facing tips are preserved. Purplefin lists
   the Tailscale and Espanso RPMs in
-  `build_files/independently-managed-rpms.list`, upgrades the installed subset
+  `bootc/config/independently-managed-rpms.list`, upgrades the installed subset
   from their repositories during image builds, and includes them in daily RPM
   probes for profiles where they are installed.
-- Dell XPS 9350 Intel use of Bluefin's included kernel, pinned SVP7500 fix-pack
-  CVS/IPU bridge/HM1092 fixes, conditional INT3472 replacement, bridge
+- Dell XPS 9350 Intel pinned SVP7500 fix-pack CVS/IPU bridge/HM1092 fixes,
+  conditional INT3472 replacement, bridge
   autosuspend protection, an isolated OV02C10 helper layered over Fedora
   libcamera, and WirePlumber filtering for raw IPU7 endpoints.
 - Dell XPS 9350 Intel lid-aware password/fingerprint routing for sudo and

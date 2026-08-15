@@ -17,15 +17,15 @@ check:
     #!/usr/bin/env bash
     set -euo pipefail
 
-    find build_files system_files/usr/libexec/purplefin profile_files installer/root -type f \( -name '*.sh' -o -perm -111 \) -exec bash -n {} +
+    find bootc installer/overlay tests -type f \( -name '*.sh' -o -perm -111 \) -exec bash -n {} +
 
     tmpdir="$(mktemp -d)"
     refind_tmp="$(mktemp -d)"
     trap 'rm -rf "${tmpdir}" "${refind_tmp}"' EXIT
-    cp -a system_files/. "${tmpdir}/"
-    cp -a profile_files/roles/support/system_files/. "${tmpdir}/"
-    cp -a profile_files/components/devops/system_files/. "${tmpdir}/"
-    cp -a profile_files/dell-xps-9350-intel/system_files/. "${tmpdir}/"
+    cp -a bootc/overlays/base/files/. "${tmpdir}/"
+    cp -a bootc/overlays/roles/support/files/. "${tmpdir}/"
+    cp -a bootc/components/devops/files/. "${tmpdir}/"
+    cp -a bootc/overlays/hardware/dell-xps-9350-intel/files/. "${tmpdir}/"
     install -d "${tmpdir}/usr/lib/systemd/system"
     install -d "${tmpdir}/usr/bin" "${tmpdir}/usr/sbin"
     printf '%s\n' '#!/usr/bin/env sh' 'exit 0' > "${tmpdir}/usr/bin/true"
@@ -62,11 +62,11 @@ check:
     touch "${firstboot_test}/markers/10-active.done" "${firstboot_test}/markers/20-retired.done"
     env \
         PATH="${firstboot_test}/bin:${PATH}" \
-        PURPLEFIN_FIRSTBOOT_HELPER="${PWD}/system_files/usr/libexec/purplefin/lib/rpm-ostree-firstboot.sh" \
+        PURPLEFIN_FIRSTBOOT_HELPER="${PWD}/bootc/overlays/base/files/usr/libexec/purplefin/lib/rpm-ostree-firstboot.sh" \
         PURPLEFIN_FIRSTBOOT_RPM_OSTREE_TASK_DIR="${firstboot_test}/tasks" \
         PURPLEFIN_FIRSTBOOT_RPM_OSTREE_MARKER_DIR="${firstboot_test}/markers" \
         PURPLEFIN_FIRSTBOOT_REBOOT_REQUIRED_FILE="${firstboot_test}/reboot-required" \
-        system_files/usr/libexec/purplefin/run-firstboot-rpm-ostree
+        bootc/overlays/base/files/usr/libexec/purplefin/run-firstboot-rpm-ostree
     test -e "${firstboot_test}/markers/10-active.done"
     test ! -e "${firstboot_test}/markers/20-retired.done"
 
@@ -74,11 +74,11 @@ check:
     touch "${firstboot_test}/retired-markers/30-retired.done"
     env \
         PATH="${firstboot_test}/bin:${PATH}" \
-        PURPLEFIN_FIRSTBOOT_HELPER="${PWD}/system_files/usr/libexec/purplefin/lib/rpm-ostree-firstboot.sh" \
+        PURPLEFIN_FIRSTBOOT_HELPER="${PWD}/bootc/overlays/base/files/usr/libexec/purplefin/lib/rpm-ostree-firstboot.sh" \
         PURPLEFIN_FIRSTBOOT_RPM_OSTREE_TASK_DIR="${firstboot_test}/retired-tasks" \
         PURPLEFIN_FIRSTBOOT_RPM_OSTREE_MARKER_DIR="${firstboot_test}/retired-markers" \
         PURPLEFIN_FIRSTBOOT_REBOOT_REQUIRED_FILE="${firstboot_test}/retired-reboot-required" \
-        system_files/usr/libexec/purplefin/run-firstboot-rpm-ostree
+        bootc/overlays/base/files/usr/libexec/purplefin/run-firstboot-rpm-ostree
     test ! -e "${firstboot_test}/retired-markers/30-retired.done"
 
     install -d "${firstboot_test}/pending-bin" "${firstboot_test}/pending-markers"
@@ -87,113 +87,113 @@ check:
     touch "${firstboot_test}/pending-markers/40-pending.done"
     env \
         PATH="${firstboot_test}/pending-bin:${PATH}" \
-        PURPLEFIN_FIRSTBOOT_HELPER="${PWD}/system_files/usr/libexec/purplefin/lib/rpm-ostree-firstboot.sh" \
+        PURPLEFIN_FIRSTBOOT_HELPER="${PWD}/bootc/overlays/base/files/usr/libexec/purplefin/lib/rpm-ostree-firstboot.sh" \
         PURPLEFIN_FIRSTBOOT_RPM_OSTREE_TASK_DIR="${firstboot_test}/pending-tasks" \
         PURPLEFIN_FIRSTBOOT_RPM_OSTREE_MARKER_DIR="${firstboot_test}/pending-markers" \
         PURPLEFIN_FIRSTBOOT_REBOOT_REQUIRED_FILE="${firstboot_test}/pending-reboot-required" \
-        system_files/usr/libexec/purplefin/run-firstboot-rpm-ostree
+        bootc/overlays/base/files/usr/libexec/purplefin/run-firstboot-rpm-ostree
     test -e "${firstboot_test}/pending-markers/40-pending.done"
 
     # Den/Nix emits the only supported named-profile composition interface.
-    test "$(jq '.profiles | length' build_files/profile-catalog.json)" -eq 12
+    test "$(jq '.profiles | length' bootc/generated/profile-catalog.json)" -eq 12
 
     for module in base developer support sales trainer executive it hardware-generic-x86_64 hardware-framework-laptop hardware-dell-xps-9350-intel; do
-        test -x "build_files/modules/${module}.sh"
+        test -x "bootc/modules/${module}.sh"
     done
     test -f VERSION
     grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$' VERSION
     grep -qF 'ARG BUILD_PROFILE=base-generic' Containerfile
-    grep -qF '/tmp/purplefin-build/build.sh "${BUILD_PROFILE}"' Containerfile
-    grep -qF 'profile_catalog="${build_root}/profile-catalog.json"' build_files/build.sh
-    test "$(jq -r '.profiles.dale.modules | join(" ")' build_files/profile-catalog.json)" = 'base sales trainer support hardware-dell-xps-9350-intel'
-    test "$(jq -r '.profiles.dale.deltaModules | join(" ")' build_files/profile-catalog.json)" = 'sales trainer support'
-    test "$(jq -r '.profiles["base-generic"].deltaModules | join(" ")' build_files/profile-catalog.json)" = 'hardware-generic-x86_64'
+    grep -qF '/tmp/purplefin-build/build/full.sh "${BUILD_PROFILE}"' Containerfile
+    grep -qF 'profile_catalog="${build_root}/generated/profile-catalog.json"' bootc/build/full.sh
+    test "$(jq -r '.profiles.dale.modules | join(" ")' bootc/generated/profile-catalog.json)" = 'base sales trainer support hardware-dell-xps-9350-intel'
+    test "$(jq -r '.profiles.dale.deltaModules | join(" ")' bootc/generated/profile-catalog.json)" = 'sales trainer support'
+    test "$(jq -r '.profiles["base-generic"].deltaModules | join(" ")' bootc/generated/profile-catalog.json)" = 'hardware-generic-x86_64'
     grep -qF 'ARG BASE_REF=ghcr.io/projectbluefin/bluefin:stable' Containerfile
     grep -qF 'FROM ${BASE_REF}' Containerfile
     grep -qF 'org.opencontainers.image.base.name="${BASE_REF}"' Containerfile
     grep -qF 'org.opencontainers.image.version="${PURPLEFIN_VERSION}"' Containerfile
-    grep -qF 'Profile ${profile} must include exactly one hardware module' build_files/build.sh
-    grep -qF 'printf '\''%s\n'\'' "${profile_modules[@]}" >/usr/share/purplefin/build-modules' build_files/lib/finalize-profile.sh
-    grep -qF '/usr/share/purplefin/version' build_files/lib/finalize-profile.sh
-    grep -qF 'purplefin_authselect_finalize' build_files/build.sh
-    test -x system_files/usr/bin/purplefin-caffeinate
-    test -f system_files/usr/lib/systemd/user/purplefin-caffeinate.service
-    grep -qF 'ConditionACPower=true' system_files/usr/lib/systemd/user/purplefin-caffeinate.service
-    grep -qF -- '--what=sleep:handle-lid-switch' system_files/usr/lib/systemd/user/purplefin-caffeinate.service
+    grep -qF 'Profile ${profile} must include exactly one hardware module' bootc/build/full.sh
+    grep -qF 'printf '\''%s\n'\'' "${profile_modules[@]}" >/usr/share/purplefin/build-modules' bootc/lib/finalize-profile.sh
+    grep -qF '/usr/share/purplefin/version' bootc/lib/finalize-profile.sh
+    grep -qF 'purplefin_authselect_finalize' bootc/build/full.sh
+    test -x bootc/overlays/base/files/usr/bin/purplefin-caffeinate
+    test -f bootc/overlays/base/files/usr/lib/systemd/user/purplefin-caffeinate.service
+    grep -qF 'ConditionACPower=true' bootc/overlays/base/files/usr/lib/systemd/user/purplefin-caffeinate.service
+    grep -qF -- '--what=sleep:handle-lid-switch' bootc/overlays/base/files/usr/lib/systemd/user/purplefin-caffeinate.service
 
     # Base/common content is present in every named profile.
-    grep -qF 'install -d -m 0755 /nix' build_files/modules/base.sh
-    test -f manifests/Brewfile
-    grep -qF 'marp-cli' manifests/Brewfile
+    grep -qF 'install -d -m 0755 /nix' bootc/modules/base.sh
+    test -f bootc/overlays/base/manifests/Brewfile
+    grep -qF 'marp-cli' bootc/overlays/base/manifests/Brewfile
     for formula in fzf neovim zsh-autosuggestions zsh-fast-syntax-highlighting zsh-history-substring-search zsh-vi-mode; do
-        grep -qxF "brew \"${formula}\"" manifests/Brewfile
+        grep -qxF "brew \"${formula}\"" bootc/overlays/base/manifests/Brewfile
     done
-    test -f manifests/flatpaks.preinstall
+    test -f bootc/overlays/base/manifests/flatpaks.preinstall
     for app_id in com.bitwarden.desktop it.mijorus.gearlever com.nextcloud.desktopclient.nextcloud hu.irl.cameractrls org.mozilla.firefox org.mozilla.thunderbird; do
-        grep -qF "[Flatpak Preinstall ${app_id}]" manifests/flatpaks.preinstall
+        grep -qF "[Flatpak Preinstall ${app_id}]" bootc/overlays/base/manifests/flatpaks.preinstall
     done
-    grep -qF '[Flatpak Preinstall org.mozilla.thunderbird]' profile_files/modules/sales/manifests/flatpaks.preinstall
-    ! rg -q 'org\.mozilla\.(Thunderbird|thunderbird_esr)' manifests/flatpaks.preinstall profile_files/modules/sales/manifests/flatpaks.preinstall
-    ! grep -qF '[Flatpak Preinstall io.github.totoshko88.RustConn]' manifests/flatpaks.preinstall
-    ! grep -qF '[Flatpak Preinstall com.vscodium.codium]' manifests/flatpaks.preinstall
+    grep -qF '[Flatpak Preinstall org.mozilla.thunderbird]' bootc/overlays/roles/sales/manifests/flatpaks.preinstall
+    ! rg -q 'org\.mozilla\.(Thunderbird|thunderbird_esr)' bootc/overlays/base/manifests/flatpaks.preinstall bootc/overlays/roles/sales/manifests/flatpaks.preinstall
+    ! grep -qF '[Flatpak Preinstall io.github.totoshko88.RustConn]' bootc/overlays/base/manifests/flatpaks.preinstall
+    ! grep -qF '[Flatpak Preinstall com.vscodium.codium]' bootc/overlays/base/manifests/flatpaks.preinstall
     for package in fuse fuse-libs git micro nm-connection-editor nm-connection-editor-desktop wireguard-tools; do
-        grep -qF "${package}" build_files/modules/base.sh
+        grep -qF "${package}" bootc/modules/base.sh
     done
     for package in qemu-block-curl qemu-block-dmg qemu-block-iscsi qemu-block-nfs qemu-block-ssh qemu-img qemu-tools; do
-        grep -qF "${package}" build_files/modules/base.sh
+        grep -qF "${package}" bootc/modules/base.sh
     done
     for package in podman-machine qemu-system-x86-core; do
-        grep -qF "${package}" build_files/modules/base.sh
+        grep -qF "${package}" bootc/modules/base.sh
     done
     for helper in /usr/bin/qemu-system-x86_64 /usr/libexec/podman/gvproxy /usr/libexec/podman/virtiofsd; do
-        grep -qF "${helper}" build_files/modules/base.sh
+        grep -qF "${helper}" bootc/modules/base.sh
     done
-    grep -qF 'dnf5 -y install "${base_packages[@]}"' build_files/modules/base.sh
-    grep -qF 'dnf5 -y --setopt=install_weak_deps=False install "${base_qemu_packages[@]}" "${base_vm_packages[@]}"' build_files/modules/base.sh
-    test -f build_files/independently-managed-rpms.list
-    grep -Eq '^tailscale-stable[[:space:]]+tailscale$' build_files/independently-managed-rpms.list
-    grep -Eq '^terra[[:space:]]+espanso-wayland$' build_files/independently-managed-rpms.list
-    test -f build_files/lib/independently-managed-rpms.sh
-    grep -qF 'purplefin_load_independently_managed_rpms' build_files/lib/finalize-profile.sh
-    grep -qF 'upgrade "${installed_independently_managed_rpms[@]}"' build_files/lib/finalize-profile.sh
-    test ! -e build_files/install-nextcloud-appimage.sh
-    ! grep -qF 'install-nextcloud-appimage' build_files/modules/base.sh
-    ! grep -qF '/usr/bin/nextcloud' build_files/modules/base.sh
+    grep -qF 'dnf5 -y install "${base_packages[@]}"' bootc/modules/base.sh
+    grep -qF 'dnf5 -y --setopt=install_weak_deps=False install "${base_qemu_packages[@]}" "${base_vm_packages[@]}"' bootc/modules/base.sh
+    test -f bootc/config/independently-managed-rpms.list
+    grep -Eq '^tailscale-stable[[:space:]]+tailscale$' bootc/config/independently-managed-rpms.list
+    grep -Eq '^terra[[:space:]]+espanso-wayland$' bootc/config/independently-managed-rpms.list
+    test -f bootc/lib/independently-managed-rpms.sh
+    grep -qF 'purplefin_load_independently_managed_rpms' bootc/lib/finalize-profile.sh
+    grep -qF 'upgrade "${installed_independently_managed_rpms[@]}"' bootc/lib/finalize-profile.sh
+    test ! -e bootc/install-nextcloud-appimage.sh
+    ! grep -qF 'install-nextcloud-appimage' bootc/modules/base.sh
+    ! grep -qF '/usr/bin/nextcloud' bootc/modules/base.sh
 
     # Bitwarden remains common rather than belonging to a role or hardware profile.
-    test ! -e system_files/usr/libexec/purplefin/install-bitwarden-cli-native
-    test ! -e system_files/usr/libexec/purplefin/firstboot-rpm-ostree.d/05-bitwarden-desktop-layer
-    test -x system_files/usr/libexec/purplefin/firstboot-rpm-ostree.d/05-bitwarden-desktop-flatpak-migration
-    grep -qF 'rpm -q bitwarden' system_files/usr/libexec/purplefin/firstboot-rpm-ostree.d/05-bitwarden-desktop-flatpak-migration
-    grep -qF 'run_rpm_ostree uninstall bitwarden' system_files/usr/libexec/purplefin/firstboot-rpm-ostree.d/05-bitwarden-desktop-flatpak-migration
-    test ! -e system_files/usr/libexec/purplefin/update-bitwarden-flatpak
-    test ! -e system_files/usr/lib/systemd/system/purplefin-bitwarden-flatpak-update.service
-    test ! -e system_files/usr/lib/systemd/system/purplefin-bitwarden-flatpak-update.timer
-    ! grep -qF 'purplefin-bitwarden-flatpak-update' build_files/modules/base.sh
-    test -f system_files/usr/share/polkit-1/actions/com.bitwarden.Bitwarden.policy
-    grep -qF '<action id="com.bitwarden.Bitwarden.unlock">' system_files/usr/share/polkit-1/actions/com.bitwarden.Bitwarden.policy
-    test -x build_files/install-bitwarden-cli-rpm.sh
-    test ! -e build_files/update-bitwarden-cli.sh
+    test ! -e bootc/overlays/base/files/usr/libexec/purplefin/install-bitwarden-cli-native
+    test ! -e bootc/overlays/base/files/usr/libexec/purplefin/firstboot-rpm-ostree.d/05-bitwarden-desktop-layer
+    test -x bootc/overlays/base/files/usr/libexec/purplefin/firstboot-rpm-ostree.d/05-bitwarden-desktop-flatpak-migration
+    grep -qF 'rpm -q bitwarden' bootc/overlays/base/files/usr/libexec/purplefin/firstboot-rpm-ostree.d/05-bitwarden-desktop-flatpak-migration
+    grep -qF 'run_rpm_ostree uninstall bitwarden' bootc/overlays/base/files/usr/libexec/purplefin/firstboot-rpm-ostree.d/05-bitwarden-desktop-flatpak-migration
+    test ! -e bootc/overlays/base/files/usr/libexec/purplefin/update-bitwarden-flatpak
+    test ! -e bootc/overlays/base/files/usr/lib/systemd/system/purplefin-bitwarden-flatpak-update.service
+    test ! -e bootc/overlays/base/files/usr/lib/systemd/system/purplefin-bitwarden-flatpak-update.timer
+    ! grep -qF 'purplefin-bitwarden-flatpak-update' bootc/modules/base.sh
+    test -f bootc/overlays/base/files/usr/share/polkit-1/actions/com.bitwarden.Bitwarden.policy
+    grep -qF '<action id="com.bitwarden.Bitwarden.unlock">' bootc/overlays/base/files/usr/share/polkit-1/actions/com.bitwarden.Bitwarden.policy
+    test -x bootc/packages/bitwarden-cli/install.sh
+    test ! -e bootc/packages/bitwarden-cli/update.sh
     test ! -e .github/workflows/update-bitwarden-cli.yml
-    test -f build_files/bitwarden-cli.spec
-    test -f build_files/bitwarden-cli.env
-    grep -qE '^BITWARDEN_CLI_VERSION=[0-9]+(\.[0-9]+)+$' build_files/bitwarden-cli.env
-    grep -qE '^BITWARDEN_CLI_SHA256=[0-9a-f]{64}$' build_files/bitwarden-cli.env
-    grep -qF 'github.com/bitwarden/clients/releases/download/cli-v${cli_version}/bw-linux-${cli_version}.zip' build_files/install-bitwarden-cli-rpm.sh
-    grep -qF 'sha256sum --check --strict' build_files/install-bitwarden-cli-rpm.sh
-    ! grep -qF 'https://vault.bitwarden.com/download/?app=cli&platform=linux' build_files/install-bitwarden-cli-rpm.sh
-    grep -qF 'rpmbuild -bb' build_files/install-bitwarden-cli-rpm.sh
-    grep -qF 'Name:           purplefin-bitwarden-cli' build_files/bitwarden-cli.spec
-    grep -qF '%global __os_install_post %{nil}' build_files/bitwarden-cli.spec
-    grep -qF 'bash /tmp/purplefin-build/install-bitwarden-cli-rpm.sh' build_files/modules/base.sh
-    grep -qF 'rpm -q purplefin-bitwarden-cli' build_files/modules/base.sh
-    grep -qF "rpm -qf --qf '%{NAME}\\n' /usr/bin/bw" build_files/modules/base.sh
+    test -f bootc/packages/bitwarden-cli/package.spec
+    test -f bootc/packages/bitwarden-cli/package.env
+    grep -qE '^BITWARDEN_CLI_VERSION=[0-9]+(\.[0-9]+)+$' bootc/packages/bitwarden-cli/package.env
+    grep -qE '^BITWARDEN_CLI_SHA256=[0-9a-f]{64}$' bootc/packages/bitwarden-cli/package.env
+    grep -qF 'github.com/bitwarden/clients/releases/download/cli-v${cli_version}/bw-linux-${cli_version}.zip' bootc/packages/bitwarden-cli/install.sh
+    grep -qF 'sha256sum --check --strict' bootc/packages/bitwarden-cli/install.sh
+    ! grep -qF 'https://vault.bitwarden.com/download/?app=cli&platform=linux' bootc/packages/bitwarden-cli/install.sh
+    grep -qF 'rpmbuild -bb' bootc/packages/bitwarden-cli/install.sh
+    grep -qF 'Name:           purplefin-bitwarden-cli' bootc/packages/bitwarden-cli/package.spec
+    grep -qF '%global __os_install_post %{nil}' bootc/packages/bitwarden-cli/package.spec
+    grep -qF 'packages/bitwarden-cli/install.sh' bootc/modules/base.sh
+    grep -qF 'rpm -q purplefin-bitwarden-cli' bootc/modules/base.sh
+    grep -qF "rpm -qf --qf '%{NAME}\\n' /usr/bin/bw" bootc/modules/base.sh
     grep -qF '### Migrating Bitwarden from the layered RPM' README.md
 
     # Support owns Espanso and RustConn and references the shared devops component.
-    support_role=build_files/profiles/roles/support.sh
-    support_root=profile_files/roles/support
-    grep -qF '/tmp/purplefin-build/profiles/components/devops.sh' "${support_role}"
+    support_role=bootc/modules/support.sh
+    support_root=bootc/overlays/roles/support
+    grep -qF 'components/devops/apply.sh' "${support_role}"
     grep -qF 'purplefin_apply_role_overlay support' "${support_role}"
     grep -qF 'install espanso-wayland' "${support_role}"
     grep -qF 'setcap "cap_dac_override+p" "$(command -v espanso)"' "${support_role}"
@@ -201,39 +201,38 @@ check:
     test -f "${support_root}/manifests/flatpaks.preinstall"
     grep -qF '[Flatpak Preinstall io.github.totoshko88.RustConn]' "${support_root}/manifests/flatpaks.preinstall"
     ! grep -qF '[Flatpak Preinstall com.vscodium.codium]' "${support_root}/manifests/flatpaks.preinstall"
-    test -f "${support_root}/system_files/usr/lib/systemd/user/espanso.service"
-    espanso_unit="${support_root}/system_files/usr/lib/systemd/user/espanso.service"
+    test -f "${support_root}/files/usr/lib/systemd/user/espanso.service"
+    espanso_unit="${support_root}/files/usr/lib/systemd/user/espanso.service"
     grep -qxF 'After=graphical-session.target' "${espanso_unit}"
     grep -qxF 'PartOf=graphical-session.target' "${espanso_unit}"
     grep -qxF 'ExecStart=/usr/bin/espanso launcher' "${espanso_unit}"
     grep -qxF 'WantedBy=graphical-session.target' "${espanso_unit}"
     ! grep -qxF 'WantedBy=default.target' "${espanso_unit}"
-    test ! -e system_files/usr/lib/systemd/user/espanso.service
-    ! rg -q 'pam-u2f|pamu2fcfg|libfido2|opensc|pcsc-lite|pcscd|yubikey-manager|with-fingerprint|with-pam-u2f' build_files/profiles/roles
+    test ! -e bootc/overlays/base/files/usr/lib/systemd/user/espanso.service
+    ! rg -q 'pam-u2f|pamu2fcfg|libfido2|opensc|pcsc-lite|pcscd|yubikey-manager|with-fingerprint|with-pam-u2f' bootc/modules/{developer,executive,it,sales,support,trainer}.sh
 
     # Every hardware selection receives the same biometric, security-key, and
     # smart-card baseline as part of its hardware phase.
-    hardware_security=build_files/profiles/lib/hardware-security.sh
+    hardware_security=bootc/lib/hardware-security.sh
     test -f "${hardware_security}"
-    grep -qF 'source /tmp/purplefin-build/profiles/lib/hardware-security.sh' build_files/modules/hardware-generic-x86_64.sh
-    grep -qF 'purplefin_apply_hardware_security' build_files/modules/hardware-generic-x86_64.sh
+    grep -qF 'lib/hardware-security.sh' bootc/modules/hardware-generic-x86_64.sh
+    grep -qF 'purplefin_apply_hardware_security' bootc/modules/hardware-generic-x86_64.sh
     for package in fprintd fprintd-pam libfprint pam-u2f pamu2fcfg libfido2 opensc pcsc-lite yubikey-manager; do
         grep -qE "^[[:space:]]*${package}$" "${hardware_security}"
     done
     grep -qF 'purplefin_authselect_request with-fingerprint with-pam-u2f' "${hardware_security}"
     grep -qF 'systemctl enable pcscd.socket' "${hardware_security}"
     ! rg -q 'dnf5 -y install fprintd libfprint|pam-u2f|pamu2fcfg|libfido2|opensc|pcsc-lite|pcscd|yubikey-manager|with-fingerprint|with-pam-u2f' \
-        build_files/profiles/dell-xps-9350-intel.sh
+        bootc/overlays/hardware/dell-xps-9350-intel/configure.sh
 
     # Devops is a reusable component referenced by support and development.
-    development_role=build_files/profiles/roles/development.sh
-    devops_component=build_files/profiles/components/devops.sh
-    devops_root=profile_files/components/devops
+    development_role=bootc/modules/developer.sh
+    devops_component=bootc/components/devops/apply.sh
+    devops_root=bootc/components/devops
     devops_rpms="${devops_root}/manifests/rpms.list"
     test -x "${devops_component}"
-    grep -qF '/tmp/purplefin-build/profiles/components/devops.sh' "${support_role}"
-    grep -qF '/tmp/purplefin-build/profiles/components/devops.sh' "${development_role}"
-    grep -qF 'purplefin_apply_role_overlay development' "${development_role}"
+    grep -qF 'components/devops/apply.sh' "${support_role}"
+    grep -qF 'components/devops/apply.sh' "${development_role}"
     grep -qF 'purplefin_apply_component_overlay "${component}"' "${devops_component}"
     grep -qF 'dnf5 -y install "${devops_packages[@]}"' "${devops_component}"
     grep -qF 'for command in ghostty ansible bao packer tofu' "${devops_component}"
@@ -244,17 +243,17 @@ check:
     done
     grep -qF '[Flatpak Preinstall com.vscodium.codium]' "${devops_root}/manifests/flatpaks.preinstall"
     ! grep -qF '[Flatpak Preinstall io.github.totoshko88.RustConn]' "${devops_root}/manifests/flatpaks.preinstall"
-    ghostty_skel="${devops_root}/system_files/etc/skel/.config/ghostty/config.ghostty"
-    ghostty_shared="${devops_root}/system_files/usr/share/purplefin/ghostty/config.ghostty"
+    ghostty_skel="${devops_root}/files/etc/skel/.config/ghostty/config.ghostty"
+    ghostty_shared="${devops_root}/files/usr/share/purplefin/ghostty/config.ghostty"
     test -f "${ghostty_skel}"
     test -f "${ghostty_shared}"
     cmp -s "${ghostty_skel}" "${ghostty_shared}"
     grep -qx 'copy-on-select = clipboard' "${ghostty_skel}"
     grep -qx 'right-click-action = paste' "${ghostty_skel}"
     grep -qx 'command = /usr/bin/zsh' "${ghostty_skel}"
-    test -x "${devops_root}/system_files/usr/libexec/purplefin/install-ghostty-defaults"
-    test -f "${devops_root}/system_files/usr/lib/systemd/user/purplefin-ghostty-defaults.service"
-    zsh_shared="${devops_root}/system_files/usr/share/purplefin/zsh"
+    test -x "${devops_root}/files/usr/libexec/purplefin/install-ghostty-defaults"
+    test -f "${devops_root}/files/usr/lib/systemd/user/purplefin-ghostty-defaults.service"
+    zsh_shared="${devops_root}/files/usr/share/purplefin/zsh"
     for zsh_file in .zshenv .zshrc aliases.zsh bindings.zsh fzf.zsh plugins.zsh prompt.zsh starship.toml LICENSE; do
         test -f "${zsh_shared}/${zsh_file}"
     done
@@ -267,9 +266,9 @@ check:
     grep -qF 'zsh-fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh' "${zsh_shared}/plugins.zsh"
     ! grep -qF 'zplugin-update' "${zsh_shared}/plugins.zsh"
     ! grep -qF 'git clone' "${zsh_shared}/plugins.zsh"
-    zsh_installer="${devops_root}/system_files/usr/libexec/purplefin/install-zsh-defaults"
-    zsh_configurer="${devops_root}/system_files/usr/libexec/purplefin/configure-zsh-defaults"
-    zsh_service="${devops_root}/system_files/usr/lib/systemd/user/purplefin-zsh-defaults.service"
+    zsh_installer="${devops_root}/files/usr/libexec/purplefin/install-zsh-defaults"
+    zsh_configurer="${devops_root}/files/usr/libexec/purplefin/configure-zsh-defaults"
+    zsh_service="${devops_root}/files/usr/lib/systemd/user/purplefin-zsh-defaults.service"
     test -x "${zsh_installer}"
     test -x "${zsh_configurer}"
     test -f "${zsh_service}"
@@ -310,67 +309,63 @@ check:
         grep -qF 'export ZDOTDIR="$XDG_CONFIG_HOME/zsh"' "${zshenv_file}"
     done
 
-    hashicorp_repo="${devops_root}/system_files/etc/yum.repos.d/hashicorp.repo"
+    hashicorp_repo="${devops_root}/files/etc/yum.repos.d/hashicorp.repo"
     test -f "${hashicorp_repo}"
     grep -qx '\[hashicorp\]' "${hashicorp_repo}"
     grep -qx 'baseurl=https://rpm.releases.hashicorp.com/fedora/\$releasever/\$basearch/stable' "${hashicorp_repo}"
     grep -qx 'gpgkey=https://rpm.releases.hashicorp.com/gpg' "${hashicorp_repo}"
-    test -f "${devops_root}/system_files/usr/lib/tmpfiles.d/purplefin-openbao.conf"
-    grep -qx 'd /var/lib/openbao 0700 openbao openbao - -' "${devops_root}/system_files/usr/lib/tmpfiles.d/purplefin-openbao.conf"
-    ! rg -q 'dnf5.*(ghostty|ansible|packer|opentofu|openbao)|com\.vscodium\.codium' build_files/profiles/roles profile_files/roles
-    test -z "$(find profile_files/roles/development -type f -print -quit 2>/dev/null)"
+    test -f "${devops_root}/files/usr/lib/tmpfiles.d/purplefin-openbao.conf"
+    grep -qx 'd /var/lib/openbao 0700 openbao openbao - -' "${devops_root}/files/usr/lib/tmpfiles.d/purplefin-openbao.conf"
+    ! rg -q 'dnf5.*(ghostty|ansible|packer|opentofu|openbao)|com\.vscodium\.codium' bootc/modules bootc/overlays/roles
 
     # Reapplying the component is a no-op, including across subprocesses.
     devops_state="${tmpdir}/devops-component-state"
     install -d "${devops_state}"
     touch "${devops_state}/devops.applied"
     component_output="$(
-        PURPLEFIN_BUILD_ROOT="${PWD}/build_files" \
+        PURPLEFIN_BUILD_ROOT="${PWD}/bootc" \
         PURPLEFIN_COMPONENT_STATE_DIR="${devops_state}" \
         "${devops_component}"
     )"
     test "${component_output}" = ':: Devops component already applied'
 
-    test ! -e system_files/etc/skel/.config/ghostty/config.ghostty
-    test ! -e system_files/etc/yum.repos.d/hashicorp.repo
-    grep -qx 'excludepkgs=bitwarden\*' system_files/etc/yum.repos.d/terra.repo
+    test ! -e bootc/overlays/base/files/etc/skel/.config/ghostty/config.ghostty
+    test ! -e bootc/overlays/base/files/etc/yum.repos.d/hashicorp.repo
+    grep -qx 'excludepkgs=bitwarden\*' bootc/overlays/base/files/etc/yum.repos.d/terra.repo
 
-    overlay_common=build_files/profiles/lib/role-common.sh
+    overlay_common=bootc/lib/overlay.sh
     grep -qF 'cp -a "${system_root}/." /' "${overlay_common}"
     grep -qF 'purplefin_apply_overlay roles "${role}" "purplefin-${role}"' "${overlay_common}"
-    grep -qF 'purplefin_apply_overlay components "${component}" "purplefin-component-${component}"' "${overlay_common}"
+    grep -qF 'component_root="${build_root}/components/${component}"' "${overlay_common}"
     grep -qF '/usr/share/flatpak/preinstall.d/${manifest_name}.preinstall' "${overlay_common}"
 
     # Bluefin's Tailscale integration is preserved while its RPM is updated independently.
-    grep -qF 'tailscale-stable' build_files/independently-managed-rpms.list
-    grep -qF 'espanso-wayland' build_files/independently-managed-rpms.list
-    grep -qF 'independently_managed_rpm_repo_args' build_files/plan-image-builds.sh
-    test -f system_files/usr/share/plymouth/themes/spinner/watermark.png
-    test -f system_files/usr/share/plymouth/themes/spinner/silverblue-watermark.png
-    test -f system_files/usr/share/pixmaps/fedora-gdm-logo.png
-    file system_files/usr/share/plymouth/themes/spinner/watermark.png | grep -q 'PNG image data, 149 x 43'
-    file system_files/usr/share/plymouth/themes/spinner/silverblue-watermark.png | grep -q 'PNG image data, 149 x 43'
-    file system_files/usr/share/pixmaps/fedora-gdm-logo.png | grep -q 'PNG image data, 150 x 61'
-    cmp -s system_files/usr/share/plymouth/themes/spinner/watermark.png system_files/usr/share/plymouth/themes/spinner/silverblue-watermark.png
+    grep -qF 'tailscale-stable' bootc/config/independently-managed-rpms.list
+    grep -qF 'espanso-wayland' bootc/config/independently-managed-rpms.list
+    grep -qF 'independently_managed_rpm_repo_args' bootc/build/plan.sh
+    test -f bootc/overlays/base/files/usr/share/plymouth/themes/spinner/watermark.png
+    test -f bootc/overlays/base/files/usr/share/plymouth/themes/spinner/silverblue-watermark.png
+    test -f bootc/overlays/base/files/usr/share/pixmaps/fedora-gdm-logo.png
+    file bootc/overlays/base/files/usr/share/plymouth/themes/spinner/watermark.png | grep -q 'PNG image data, 149 x 43'
+    file bootc/overlays/base/files/usr/share/plymouth/themes/spinner/silverblue-watermark.png | grep -q 'PNG image data, 149 x 43'
+    file bootc/overlays/base/files/usr/share/pixmaps/fedora-gdm-logo.png | grep -q 'PNG image data, 150 x 61'
+    cmp -s bootc/overlays/base/files/usr/share/plymouth/themes/spinner/watermark.png bootc/overlays/base/files/usr/share/plymouth/themes/spinner/silverblue-watermark.png
     for logo in bluefin chicken dolly karl; do
-        test -f "system_files/usr/share/ublue-os/bluefin-logos/${logo}.png"
-        file "system_files/usr/share/ublue-os/bluefin-logos/${logo}.png" | grep -q 'PNG image data, 1000 x 1000'
-        cmp -s "system_files/usr/share/ublue-os/bluefin-logos/${logo}.png" profile_files/dell-xps-9350-intel/system_files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/icons/os_purplefin.png
+        test -f "bootc/overlays/base/files/usr/share/ublue-os/bluefin-logos/${logo}.png"
+        file "bootc/overlays/base/files/usr/share/ublue-os/bluefin-logos/${logo}.png" | grep -q 'PNG image data, 1000 x 1000'
+        cmp -s "bootc/overlays/base/files/usr/share/ublue-os/bluefin-logos/${logo}.png" bootc/overlays/hardware/dell-xps-9350-intel/files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/icons/os_purplefin.png
     done
     ! grep -qF 'PURPLEFIN_DELL_IPU7_KERNEL_EVR' Containerfile
     ! grep -qF 'PURPLEFIN_DELL_MAINLINE_KERNEL_EVR' Containerfile
-    grep -qF 'PURPLEFIN_OSTREE_LINUX' Containerfile
-    grep -qF 'LABEL ostree.linux="${PURPLEFIN_OSTREE_LINUX}"' Containerfile
-    test -x build_files/select-ostree-linux.sh
-    test "$(build_files/select-ostree-linux.sh dale 7.1.3-200.fc44.x86_64)" = '7.1.3-200.fc44.x86_64'
-    test "$(build_files/select-ostree-linux.sh base-generic 7.0.11-200.fc44.x86_64)" = '7.0.11-200.fc44.x86_64'
-    test "$(build_files/select-ostree-linux.sh support-dell-xps-9350-intel 7.2.0-200.fc44.x86_64)" = '7.2.0-200.fc44.x86_64'
-    test "$(jq length build_files/image-matrix.json)" -eq 12
+    ! grep -qF 'PURPLEFIN_OSTREE_LINUX' Containerfile Containerfile.derived
+    ! grep -qF 'LABEL ostree.linux=' Containerfile Containerfile.derived
+    test ! -e bootc/build/select-kernel.sh
+    test "$(jq length bootc/generated/image-matrix.json)" -eq 12
     while IFS= read -r entry; do
         build_input="$(jq -r '.build_input' <<<"${entry}")"
         [[ "${build_input}" =~ ^[0-9a-f]{64}$ ]]
-    done < <(jq -c '.[]' build_files/image-matrix.json)
-    ci_matrix="$(jq -r '.[] | [.profile, .stage, (.parent // "root"), .tags] | join("|")' build_files/image-matrix.json)"
+    done < <(jq -c '.[]' bootc/generated/image-matrix.json)
+    ci_matrix="$(jq -r '.[] | [.profile, .stage, (.parent // "root"), .tags] | join("|")' bootc/generated/image-matrix.json)"
     test "${ci_matrix}" = "$(printf '%s\n' \
         'base|root|root|base' \
         'base-generic|hardware|base|generic-x86_64 latest base-generic-x86_64' \
@@ -384,19 +379,18 @@ check:
         'trainer-generic|role|base-generic|trainer-generic' \
         'executive-generic|role|base-generic|executive-generic' \
         'it-generic|role|base-generic|it-generic')"
-    test -f build_files/profile-catalog.json
-    test "$(jq -r '.upstream.image + ":" + .upstream.tag' build_files/profile-catalog.json)" = 'ghcr.io/projectbluefin/bluefin:stable'
-    test "$(jq -r '.profiles.dale.deltaModules | join(" ")' build_files/profile-catalog.json)" = 'sales trainer support'
+    test -f bootc/generated/profile-catalog.json
+    test "$(jq -r '.upstream.image + ":" + .upstream.tag' bootc/generated/profile-catalog.json)" = 'ghcr.io/projectbluefin/bluefin:stable'
+    test "$(jq -r '.profiles.dale.deltaModules | join(" ")' bootc/generated/profile-catalog.json)" = 'sales trainer support'
     test -f installer/config/profiles/dale.toml
     grep -qF 'mountpoint = "/"' installer/config/profiles/dale.toml
-    test -x build_files/build-derived.sh
+    test -x bootc/build/derived.sh
     test -f Containerfile.derived
     tests/derived-profile-build.sh
-    grep -qF 'PURPLEFIN_OSTREE_LINUX=' .github/workflows/build-profile.yml
-    grep -qF 'ostree.linux=' .github/workflows/build-profile.yml
-    grep -qF 'steps.kernel.outputs.release' .github/workflows/build-profile.yml
+    ! grep -qF 'base-kernel:' .github/workflows/build.yml .github/workflows/build-profile.yml
+    ! grep -qF 'ostree.linux=' .github/workflows/build-profile.yml
     grep -qF 'uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1' .github/workflows/build.yml
-    grep -qF 'build_files/plan-image-builds.sh' .github/workflows/build.yml
+    grep -qF 'bootc/build/plan.sh' .github/workflows/build.yml
     grep -qF 'org.opencontainers.image.base.digest=' .github/workflows/build-profile.yml
     grep -qF 'io.purplefin.build.input=' .github/workflows/build-profile.yml
     grep -qF 'io.purplefin.parent.digest=' .github/workflows/build-profile.yml
@@ -412,8 +406,7 @@ check:
     ! rg -q 'DeterminateSystems/nix-installer-action|DeterminateSystems/magic-nix-cache-action' .github/workflows
     grep -qF 'den.url = "github:denful/den";' flake.nix
     grep -qF 'den.aspects.profiles' nix/flake-modules/profiles.nix
-    test ! -e build_files/profile-build-input.sh
-    test -z "$(find build_files/profiles/profiles -type f -print -quit 2>/dev/null)"
+    test ! -e bootc/profile-build-input.sh
     tests/image-build-planner.sh
     grep -qF 'buildah bud' .github/workflows/build-profile.yml
     grep -qF 'podman login' .github/workflows/build-profile.yml
@@ -424,24 +417,24 @@ check:
     ! rg -q 'bootc-image-builder|--type bootc-installer|anaconda-iso' .github installer
     grep -qF 'bootc-generic-iso' .github/workflows/build-installer.yml
     grep -qF 'ghcr.io/osbuild/image-builder-cli@sha256:' .github/workflows/build-installer.yml
-    test -z "$(find build_files/modules -maxdepth 1 -name 'legacy-*' -print -quit)"
-    test -z "$(find build_files/profiles -maxdepth 1 \( -name '*no-ipu7*' -o -name 'desktop-x86_64.sh' -o -name 'lenovo-generic.sh' \) -print -quit)"
-    ! grep -qF 'dracut --force "${kernel_modules_dir}/initramfs.img" "${kernel_version}"' build_files/build.sh
-    grep -qF 'rm -f /boot/symvers-*.xz' build_files/lib/finalize-profile.sh
-    grep -qF '/var/lib/rpm-state' build_files/lib/finalize-profile.sh
-    grep -qF '/var/log/dnf5.log*' build_files/lib/finalize-profile.sh
-    grep -qF 'installed_kernel_releases' build_files/lib/finalize-profile.sh
-    test -x system_files/usr/libexec/purplefin/run-firstboot-rpm-ostree
-    test -z "$(find system_files -iname '*ipu7*' -print -quit)"
-    test -z "$(find system_files profile_files -iname '*librepods*' -print -quit)"
-    ! rg -qi 'librepods' README.md build_files/profiles
-    test -f build_files/profiles/lib/dell-xps-9350-common.sh
-    grep -qF 'source /tmp/purplefin-build/profiles/lib/dell-xps-9350-common.sh' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF 'purplefin_configure_dell_xps_9350_common' build_files/profiles/dell-xps-9350-intel.sh
-    test ! -e profile_files/dell-xps-9350-intel/system_files/etc/plymouth
-    test ! -e profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/firstboot-rpm-ostree.d/20-dell-ipu7-stable-kernel
-    xps_profile_root=profile_files/dell-xps-9350-intel/system_files
-    xps_common_profile=build_files/profiles/lib/dell-xps-9350-common.sh
+    test -z "$(find bootc/modules -maxdepth 1 -name 'legacy-*' -print -quit)"
+    test -z "$(find bootc -maxdepth 2 \( -name '*no-ipu7*' -o -name 'desktop-x86_64.sh' -o -name 'lenovo-generic.sh' \) -print -quit)"
+    ! grep -qF 'dracut --force "${kernel_modules_dir}/initramfs.img" "${kernel_version}"' bootc/build/full.sh
+    grep -qF 'rm -f /boot/symvers-*.xz' bootc/lib/finalize-profile.sh
+    grep -qF '/var/lib/rpm-state' bootc/lib/finalize-profile.sh
+    grep -qF '/var/log/dnf5.log*' bootc/lib/finalize-profile.sh
+    grep -qF 'installed_kernel_releases' bootc/lib/finalize-profile.sh
+    test -x bootc/overlays/base/files/usr/libexec/purplefin/run-firstboot-rpm-ostree
+    test -z "$(find bootc/overlays/base/files -iname '*ipu7*' -print -quit)"
+    test -z "$(find bootc -iname '*librepods*' -print -quit)"
+    ! rg -qi 'librepods' README.md bootc
+    test -f bootc/lib/dell-xps-9350-common.sh
+    grep -qF 'lib/dell-xps-9350-common.sh' bootc/overlays/hardware/dell-xps-9350-intel/configure.sh
+    grep -qF 'purplefin_configure_dell_xps_9350_common' bootc/overlays/hardware/dell-xps-9350-intel/configure.sh
+    test ! -e bootc/overlays/hardware/dell-xps-9350-intel/files/etc/plymouth
+    test ! -e bootc/overlays/hardware/dell-xps-9350-intel/files/usr/libexec/purplefin/firstboot-rpm-ostree.d/20-dell-ipu7-stable-kernel
+    xps_profile_root=bootc/overlays/hardware/dell-xps-9350-intel/files
+    xps_common_profile=bootc/lib/dell-xps-9350-common.sh
     lid_auth_helper="${xps_profile_root}/usr/libexec/purplefin/dell-lid-is-open"
     lid_auth_stack="${xps_profile_root}/etc/pam.d/purplefin-dell-lid-auth"
     password_auth_stack="${xps_profile_root}/etc/pam.d/purplefin-dell-password-auth"
@@ -464,7 +457,7 @@ check:
     grep -qF 'LidClosed' "${lid_auth_helper}"
     grep -qF '/proc/acpi/button/lid' "${lid_auth_helper}"
     grep -qF 'lid-aware privilege authentication' "${xps_common_profile}"
-    ! rg -q 'purplefin-dell-lid-auth|dell-lid-is-open' system_files profile_files/roles profile_files/components
+    ! rg -q 'purplefin-dell-lid-auth|dell-lid-is-open' bootc/overlays/base/files bootc/overlays/roles bootc/components
     test -x "${battery_helper}"
     test -f "${battery_unit}"
     test -f "${battery_hwdb}"
@@ -543,85 +536,85 @@ check:
     grep -qF '`cvs` is not a replacement' docs/dell-xps-9350-secure-boot.md
     grep -qF 'updates/purplefin' docs/dell-xps-9350-secure-boot.md
     grep -qF 'source-provenance' docs/dell-xps-9350-secure-boot.md
-    test ! -e profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/dell-ipu7-activate
-    test ! -e profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/dell-ipu7-rebind-sensor
-    test -x profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/configure-firefox-pipewire-camera
-    test -f profile_files/dell-xps-9350-intel/system_files/usr/lib/systemd/user/purplefin-firefox-pipewire-camera.service
-    test -f profile_files/dell-xps-9350-intel/system_files/usr/lib/systemd/user/purplefin-firefox-pipewire-camera.path
-    test -L profile_files/dell-xps-9350-intel/system_files/etc/systemd/user/default.target.wants/purplefin-firefox-pipewire-camera.service
-    test "$(readlink profile_files/dell-xps-9350-intel/system_files/etc/systemd/user/default.target.wants/purplefin-firefox-pipewire-camera.service)" = '../../../../usr/lib/systemd/user/purplefin-firefox-pipewire-camera.service'
-    test -L profile_files/dell-xps-9350-intel/system_files/etc/systemd/user/default.target.wants/purplefin-firefox-pipewire-camera.path
-    test "$(readlink profile_files/dell-xps-9350-intel/system_files/etc/systemd/user/default.target.wants/purplefin-firefox-pipewire-camera.path)" = '../../../../usr/lib/systemd/user/purplefin-firefox-pipewire-camera.path'
-    grep -qF 'PathChanged=%h/.var/app/org.mozilla.firefox/config/mozilla/firefox/profiles.ini' profile_files/dell-xps-9350-intel/system_files/usr/lib/systemd/user/purplefin-firefox-pipewire-camera.path
+    test ! -e bootc/overlays/hardware/dell-xps-9350-intel/files/usr/libexec/purplefin/dell-ipu7-activate
+    test ! -e bootc/overlays/hardware/dell-xps-9350-intel/files/usr/libexec/purplefin/dell-ipu7-rebind-sensor
+    test -x bootc/overlays/hardware/dell-xps-9350-intel/files/usr/libexec/purplefin/configure-firefox-pipewire-camera
+    test -f bootc/overlays/hardware/dell-xps-9350-intel/files/usr/lib/systemd/user/purplefin-firefox-pipewire-camera.service
+    test -f bootc/overlays/hardware/dell-xps-9350-intel/files/usr/lib/systemd/user/purplefin-firefox-pipewire-camera.path
+    test -L bootc/overlays/hardware/dell-xps-9350-intel/files/etc/systemd/user/default.target.wants/purplefin-firefox-pipewire-camera.service
+    test "$(readlink bootc/overlays/hardware/dell-xps-9350-intel/files/etc/systemd/user/default.target.wants/purplefin-firefox-pipewire-camera.service)" = '../../../../usr/lib/systemd/user/purplefin-firefox-pipewire-camera.service'
+    test -L bootc/overlays/hardware/dell-xps-9350-intel/files/etc/systemd/user/default.target.wants/purplefin-firefox-pipewire-camera.path
+    test "$(readlink bootc/overlays/hardware/dell-xps-9350-intel/files/etc/systemd/user/default.target.wants/purplefin-firefox-pipewire-camera.path)" = '../../../../usr/lib/systemd/user/purplefin-firefox-pipewire-camera.path'
+    grep -qF 'PathChanged=%h/.var/app/org.mozilla.firefox/config/mozilla/firefox/profiles.ini' bootc/overlays/hardware/dell-xps-9350-intel/files/usr/lib/systemd/user/purplefin-firefox-pipewire-camera.path
     firefox_test_root="${tmpdir}/firefox-profiles"
     install -d "${firefox_test_root}/Profile With Spaces"
     printf '%s\n' '[Profile0]' 'Path=Profile With Spaces' > "${firefox_test_root}/profiles.ini"
     printf '%s\n' 'user_pref("example.preserved", true);' 'user_pref("media.webrtc.camera.allow-pipewire", false);' > "${firefox_test_root}/Profile With Spaces/user.js"
-    PURPLEFIN_FIREFOX_PROFILE_ROOT="${firefox_test_root}" profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/configure-firefox-pipewire-camera
-    PURPLEFIN_FIREFOX_PROFILE_ROOT="${firefox_test_root}" profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/configure-firefox-pipewire-camera
+    PURPLEFIN_FIREFOX_PROFILE_ROOT="${firefox_test_root}" bootc/overlays/hardware/dell-xps-9350-intel/files/usr/libexec/purplefin/configure-firefox-pipewire-camera
+    PURPLEFIN_FIREFOX_PROFILE_ROOT="${firefox_test_root}" bootc/overlays/hardware/dell-xps-9350-intel/files/usr/libexec/purplefin/configure-firefox-pipewire-camera
     grep -qF 'user_pref("example.preserved", true);' "${firefox_test_root}/Profile With Spaces/user.js"
     test "$(grep -cF 'user_pref("media.webrtc.camera.allow-pipewire", true);' "${firefox_test_root}/Profile With Spaces/user.js")" = 1
     test "$(grep -cF '// Purplefin: expose the IPU7 libcamera source instead of raw V4L2 nodes.' "${firefox_test_root}/Profile With Spaces/user.js")" = 1
-    test -f profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/lib/dell-ipu7.sh
-    grep -qF 'installed_kernel_core_record' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF 'PURPLEFIN_OSTREE_LINUX' build_files/profiles/dell-xps-9350-intel.sh
-    ! grep -Eq 'kernel-vanilla|mainline-kernel|remove_non_ipu7_runtime_kernels|validate_in_tree_cvs_module' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF 'purplefin_dell_ipu7_fix_pack_ref' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF 'CONFIG_CC_IS_CLANG=y' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF 'CONFIG_CC_IS_GCC=y' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF 'svp7500_make_args=(CC=gcc)' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF 'intel-cvs-1.0 intel_cvs.ko' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF 'ipu-bridge-patched-1.0 ipu-bridge.ko' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF 'hm1092-1.0 hm1092.ko' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF 'purplefin_dell_ipu7_int3472_patch_needed' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF -- '--rebuild "${initramfs_path}"' build_files/profiles/dell-xps-9350-intel.sh
-    ! grep -qF -- '--no-hostonly' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF -- '--add-drivers "${initramfs_modules[*]}"' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF 'ipu7_firmware_path="$(purplefin_dell_ipu7_find_firmware)"' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF -- '--install "${ipu7_firmware_path}"' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF '$NF == firmware { found = 1 } END { exit !found }' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF 'Rebuilt initramfs does not contain Dell IPU7 firmware ${ipu7_firmware_path}' build_files/profiles/dell-xps-9350-intel.sh
+    test -f bootc/overlays/hardware/dell-xps-9350-intel/files/usr/libexec/purplefin/lib/dell-ipu7.sh
+    grep -qF 'installed_kernel_core_record' bootc/overlays/hardware/dell-xps-9350-intel/configure.sh
+    ! grep -qF 'PURPLEFIN_OSTREE_LINUX' bootc/overlays/hardware/dell-xps-9350-intel/configure.sh
+    ! grep -Eq 'kernel-vanilla|mainline-kernel|remove_non_ipu7_runtime_kernels|validate_in_tree_cvs_module' bootc/overlays/hardware/dell-xps-9350-intel/configure.sh
+    grep -qF 'purplefin_dell_ipu7_fix_pack_ref' bootc/overlays/hardware/dell-xps-9350-intel/configure.sh
+    grep -qF 'CONFIG_CC_IS_CLANG=y' bootc/overlays/hardware/dell-xps-9350-intel/configure.sh
+    grep -qF 'CONFIG_CC_IS_GCC=y' bootc/overlays/hardware/dell-xps-9350-intel/configure.sh
+    grep -qF 'svp7500_make_args=(CC=gcc)' bootc/overlays/hardware/dell-xps-9350-intel/configure.sh
+    grep -qF 'intel-cvs-1.0 intel_cvs.ko' bootc/overlays/hardware/dell-xps-9350-intel/configure.sh
+    grep -qF 'ipu-bridge-patched-1.0 ipu-bridge.ko' bootc/overlays/hardware/dell-xps-9350-intel/configure.sh
+    grep -qF 'hm1092-1.0 hm1092.ko' bootc/overlays/hardware/dell-xps-9350-intel/configure.sh
+    grep -qF 'purplefin_dell_ipu7_int3472_patch_needed' bootc/overlays/hardware/dell-xps-9350-intel/configure.sh
+    grep -qF -- '--rebuild "${initramfs_path}"' bootc/overlays/hardware/dell-xps-9350-intel/configure.sh
+    ! grep -qF -- '--no-hostonly' bootc/overlays/hardware/dell-xps-9350-intel/configure.sh
+    grep -qF -- '--add-drivers "${initramfs_modules[*]}"' bootc/overlays/hardware/dell-xps-9350-intel/configure.sh
+    grep -qF 'ipu7_firmware_path="$(purplefin_dell_ipu7_find_firmware)"' bootc/overlays/hardware/dell-xps-9350-intel/configure.sh
+    grep -qF -- '--install "${ipu7_firmware_path}"' bootc/overlays/hardware/dell-xps-9350-intel/configure.sh
+    grep -qF '$NF == firmware { found = 1 } END { exit !found }' bootc/overlays/hardware/dell-xps-9350-intel/configure.sh
+    grep -qF 'Rebuilt initramfs does not contain Dell IPU7 firmware ${ipu7_firmware_path}' bootc/overlays/hardware/dell-xps-9350-intel/configure.sh
     for module in ostree dmsquash-live dmsquash-live-autooverlay; do
-        grep -qE "^[[:space:]]*${module}$" build_files/profiles/dell-xps-9350-intel.sh
+        grep -qE "^[[:space:]]*${module}$" bootc/overlays/hardware/dell-xps-9350-intel/configure.sh
     done
-    grep -qF 'Rebuilt initramfs lost required boot module ${module}' build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF 'dnf5 -y remove --no-autoremove' build_files/profiles/dell-xps-9350-intel.sh
+    grep -qF 'Rebuilt initramfs lost required boot module ${module}' bootc/overlays/hardware/dell-xps-9350-intel/configure.sh
+    grep -qF 'dnf5 -y remove --no-autoremove' bootc/overlays/hardware/dell-xps-9350-intel/configure.sh
     for package in libcamera libcamera-ipa libcamera-tools pipewire-plugin-libcamera; do
-        grep -qE "^[[:space:]]*${package}$" build_files/profiles/dell-xps-9350-intel.sh
+        grep -qE "^[[:space:]]*${package}$" bootc/overlays/hardware/dell-xps-9350-intel/configure.sh
     done
-    test ! -e profile_files/dell-xps-9350-intel/system_files/usr/lib/systemd/system/purplefin-dell-ipu7-camera.service
-    test ! -e profile_files/dell-xps-9350-intel/system_files/usr/lib/udev/rules.d/99-purplefin-dell-ipu7-camera.rules
-    test ! -e profile_files/dell-xps-9350-intel/system_files/usr/lib/modprobe.d/purplefin-dell-ipu7.conf
-    test ! -e profile_files/dell-xps-9350-intel/system_files/usr/lib/modules-load.d/purplefin-dell-ipu7.conf
-    test -f profile_files/dell-xps-9350-intel/system_files/usr/lib/udev/rules.d/99-purplefin-svp7500-no-autosuspend.rules
-    test -f profile_files/dell-xps-9350-intel/system_files/usr/lib/udev/rules.d/99-purplefin-hm1092-ir-led.rules
-    grep -qF 'ATTRS{idVendor}=="06cb"' profile_files/dell-xps-9350-intel/system_files/usr/lib/udev/rules.d/99-purplefin-svp7500-no-autosuspend.rules
-    grep -qF 'KERNEL=="*ir_flood_led*"' profile_files/dell-xps-9350-intel/system_files/usr/lib/udev/rules.d/99-purplefin-hm1092-ir-led.rules
-    test -f profile_files/dell-xps-9350-intel/system_files/usr/share/wireplumber/wireplumber.conf.d/50-purplefin-dell-ipu7.conf
-    grep -qF 'monitor.v4l2.rules' profile_files/dell-xps-9350-intel/system_files/usr/share/wireplumber/wireplumber.conf.d/50-purplefin-dell-ipu7.conf
-    grep -qF 'device.description = "ipu7"' profile_files/dell-xps-9350-intel/system_files/usr/share/wireplumber/wireplumber.conf.d/50-purplefin-dell-ipu7.conf
-    grep -qF 'monitor.libcamera.rules' profile_files/dell-xps-9350-intel/system_files/usr/share/wireplumber/wireplumber.conf.d/50-purplefin-dell-ipu7.conf
-    grep -qF 'device.description = "hm1092"' profile_files/dell-xps-9350-intel/system_files/usr/share/wireplumber/wireplumber.conf.d/50-purplefin-dell-ipu7.conf
-    grep -qF 'device.disabled = true' profile_files/dell-xps-9350-intel/system_files/usr/share/wireplumber/wireplumber.conf.d/50-purplefin-dell-ipu7.conf
-    grep -qF 'node.nick = "hm1092"' profile_files/dell-xps-9350-intel/system_files/usr/share/wireplumber/wireplumber.conf.d/50-purplefin-dell-ipu7.conf
-    grep -qF 'node.disabled = true' profile_files/dell-xps-9350-intel/system_files/usr/share/wireplumber/wireplumber.conf.d/50-purplefin-dell-ipu7.conf
-    spa-json-dump profile_files/dell-xps-9350-intel/system_files/usr/share/wireplumber/wireplumber.conf.d/50-purplefin-dell-ipu7.conf >/dev/null
-    ov02c10_tuning=profile_files/dell-xps-9350-intel/system_files/usr/share/libcamera/ipa/simple/ov02c10.yaml
+    test ! -e bootc/overlays/hardware/dell-xps-9350-intel/files/usr/lib/systemd/system/purplefin-dell-ipu7-camera.service
+    test ! -e bootc/overlays/hardware/dell-xps-9350-intel/files/usr/lib/udev/rules.d/99-purplefin-dell-ipu7-camera.rules
+    test ! -e bootc/overlays/hardware/dell-xps-9350-intel/files/usr/lib/modprobe.d/purplefin-dell-ipu7.conf
+    test ! -e bootc/overlays/hardware/dell-xps-9350-intel/files/usr/lib/modules-load.d/purplefin-dell-ipu7.conf
+    test -f bootc/overlays/hardware/dell-xps-9350-intel/files/usr/lib/udev/rules.d/99-purplefin-svp7500-no-autosuspend.rules
+    test -f bootc/overlays/hardware/dell-xps-9350-intel/files/usr/lib/udev/rules.d/99-purplefin-hm1092-ir-led.rules
+    grep -qF 'ATTRS{idVendor}=="06cb"' bootc/overlays/hardware/dell-xps-9350-intel/files/usr/lib/udev/rules.d/99-purplefin-svp7500-no-autosuspend.rules
+    grep -qF 'KERNEL=="*ir_flood_led*"' bootc/overlays/hardware/dell-xps-9350-intel/files/usr/lib/udev/rules.d/99-purplefin-hm1092-ir-led.rules
+    test -f bootc/overlays/hardware/dell-xps-9350-intel/files/usr/share/wireplumber/wireplumber.conf.d/50-purplefin-dell-ipu7.conf
+    grep -qF 'monitor.v4l2.rules' bootc/overlays/hardware/dell-xps-9350-intel/files/usr/share/wireplumber/wireplumber.conf.d/50-purplefin-dell-ipu7.conf
+    grep -qF 'device.description = "ipu7"' bootc/overlays/hardware/dell-xps-9350-intel/files/usr/share/wireplumber/wireplumber.conf.d/50-purplefin-dell-ipu7.conf
+    grep -qF 'monitor.libcamera.rules' bootc/overlays/hardware/dell-xps-9350-intel/files/usr/share/wireplumber/wireplumber.conf.d/50-purplefin-dell-ipu7.conf
+    grep -qF 'device.description = "hm1092"' bootc/overlays/hardware/dell-xps-9350-intel/files/usr/share/wireplumber/wireplumber.conf.d/50-purplefin-dell-ipu7.conf
+    grep -qF 'device.disabled = true' bootc/overlays/hardware/dell-xps-9350-intel/files/usr/share/wireplumber/wireplumber.conf.d/50-purplefin-dell-ipu7.conf
+    grep -qF 'node.nick = "hm1092"' bootc/overlays/hardware/dell-xps-9350-intel/files/usr/share/wireplumber/wireplumber.conf.d/50-purplefin-dell-ipu7.conf
+    grep -qF 'node.disabled = true' bootc/overlays/hardware/dell-xps-9350-intel/files/usr/share/wireplumber/wireplumber.conf.d/50-purplefin-dell-ipu7.conf
+    spa-json-dump bootc/overlays/hardware/dell-xps-9350-intel/files/usr/share/wireplumber/wireplumber.conf.d/50-purplefin-dell-ipu7.conf >/dev/null
+    ov02c10_tuning=bootc/overlays/hardware/dell-xps-9350-intel/files/usr/share/libcamera/ipa/simple/ov02c10.yaml
     test -f "${ov02c10_tuning}"
     grep -qF 'blackLevel: 4096' "${ov02c10_tuning}"
     grep -qF -- '- Ccm:' "${ov02c10_tuning}"
     grep -qF '0.0, 0.9, 0.0' "${ov02c10_tuning}"
-    test -x build_files/install-libcamera-ov02c10-ipa.sh
-    test -f build_files/libcamera/0001-libipa-add-ov02c10-helper.patch
-    grep -qF 'REGISTER_CAMERA_SENSOR_HELPER("ov02c10", CameraSensorHelperOv02c10)' build_files/libcamera/0001-libipa-add-ov02c10-helper.patch
-    grep -qF 'gain_ = AnalogueGainLinear{ 1, 0, 0, 16 };' build_files/libcamera/0001-libipa-add-ov02c10-helper.patch
-    grep -qF 'blackLevel_ = 4096;' build_files/libcamera/0001-libipa-add-ov02c10-helper.patch
-    grep -qF 'source_sha256="27a6d776bb728bb8bd38c4594ff3ab7fadfce19583427de8442963ef2fe5ad04"' build_files/install-libcamera-ov02c10-ipa.sh
-    grep -qF -- '-Dwerror=false' build_files/install-libcamera-ov02c10-ipa.sh
-    grep -qF '/tmp/purplefin-build/install-libcamera-ov02c10-ipa.sh' build_files/profiles/dell-xps-9350-intel.sh
-    test -f profile_files/dell-xps-9350-intel/system_files/etc/libcamera/configuration.yaml
-    grep -qF -- '- /usr/lib64/libcamera/ipa-purplefin' profile_files/dell-xps-9350-intel/system_files/etc/libcamera/configuration.yaml
-    test ! -e profile_files/generic-x86_64/system_files/etc/libcamera/configuration.yaml
+    test -x bootc/overlays/hardware/dell-xps-9350-intel/build/install-libcamera-ov02c10-ipa.sh
+    test -f bootc/overlays/hardware/dell-xps-9350-intel/build/0001-libipa-add-ov02c10-helper.patch
+    grep -qF 'REGISTER_CAMERA_SENSOR_HELPER("ov02c10", CameraSensorHelperOv02c10)' bootc/overlays/hardware/dell-xps-9350-intel/build/0001-libipa-add-ov02c10-helper.patch
+    grep -qF 'gain_ = AnalogueGainLinear{ 1, 0, 0, 16 };' bootc/overlays/hardware/dell-xps-9350-intel/build/0001-libipa-add-ov02c10-helper.patch
+    grep -qF 'blackLevel_ = 4096;' bootc/overlays/hardware/dell-xps-9350-intel/build/0001-libipa-add-ov02c10-helper.patch
+    grep -qF 'source_sha256="27a6d776bb728bb8bd38c4594ff3ab7fadfce19583427de8442963ef2fe5ad04"' bootc/overlays/hardware/dell-xps-9350-intel/build/install-libcamera-ov02c10-ipa.sh
+    grep -qF -- '-Dwerror=false' bootc/overlays/hardware/dell-xps-9350-intel/build/install-libcamera-ov02c10-ipa.sh
+    grep -qF 'build/install-libcamera-ov02c10-ipa.sh' bootc/overlays/hardware/dell-xps-9350-intel/configure.sh
+    test -f bootc/overlays/hardware/dell-xps-9350-intel/files/etc/libcamera/configuration.yaml
+    grep -qF -- '- /usr/lib64/libcamera/ipa-purplefin' bootc/overlays/hardware/dell-xps-9350-intel/files/etc/libcamera/configuration.yaml
+    test ! -e bootc/overlays/hardware/generic-x86_64/files/etc/libcamera/configuration.yaml
     for obsolete in \
         usr/libexec/purplefin/dell-ipu7-setup \
         usr/libexec/purplefin/dell-ipu7-patch-psys-debugfs \
@@ -632,30 +625,30 @@ check:
         usr/lib/systemd/user/pipewire.service.d/10-purplefin-dell-ipu7-libcamera.conf \
         usr/lib/systemd/user/purplefin-dell-ipu7-v4l2loopback.service \
         etc/systemd/user/default.target.wants/purplefin-dell-ipu7-v4l2loopback.service; do
-        test ! -e "profile_files/dell-xps-9350-intel/system_files/${obsolete}"
+        test ! -e "bootc/overlays/hardware/dell-xps-9350-intel/files/${obsolete}"
     done
-    ! rg -q 'kernel-evr.denylist|7.1.2-355.vanilla.fc44|CONFIG_VIDEO_INTEL_CVS' profile_files/dell-xps-9350-intel/system_files build_files/profiles/dell-xps-9350-intel.sh
-    grep -qF 'e4c95452339b2d9803974a899c4f2da6e143891d' profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/lib/dell-ipu7.sh
-    test ! -e profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/firstboot-rpm-ostree.d/50-dell-vates-plymouth-initramfs
-    test -x profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/install-refind-theme
-    test -f profile_files/dell-xps-9350-intel/system_files/usr/lib/systemd/system/purplefin-refind-theme.service
-    test -f profile_files/dell-xps-9350-intel/system_files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/theme.conf
-    test -f profile_files/dell-xps-9350-intel/system_files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/icons/os_fedora.png
-    test -f profile_files/dell-xps-9350-intel/system_files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/fonts/source-code-pro-extralight-14.png
-    test -f profile_files/dell-xps-9350-intel/system_files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/icons/os_win11.png
-    test -f profile_files/dell-xps-9350-intel/system_files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/icons/os_windows.png
-    test -f profile_files/dell-xps-9350-intel/system_files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/icons/os_bluefin.png
-    test -f profile_files/dell-xps-9350-intel/system_files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/icons/os_purplefin.png
-    cmp -s profile_files/dell-xps-9350-intel/system_files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/icons/os_bluefin.png profile_files/dell-xps-9350-intel/system_files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/icons/os_purplefin.png
-    cmp -s profile_files/dell-xps-9350-intel/system_files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/icons/os_bluefin.png profile_files/dell-xps-9350-intel/system_files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/icons/os_fedora.png
-    cmp -s profile_files/dell-xps-9350-intel/system_files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/icons/os_bluefin.png profile_files/dell-xps-9350-intel/system_files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/icons/os_linux.png
-    unexpected_refind_distro_icon="$(find profile_files/dell-xps-9350-intel/system_files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/icons -type f -name 'os_*.png' ! -path '*/icons/os_win.png' ! -path '*/icons/os_win8.png' ! -path '*/icons/os_win11.png' ! -path '*/icons/os_windows.png' ! -path '*/icons/os_bluefin.png' ! -path '*/icons/os_purplefin.png' ! -path '*/icons/os_fedora.png' ! -path '*/icons/os_linux.png' -print -quit)"
+    ! rg -q 'kernel-evr.denylist|7.1.2-355.vanilla.fc44|CONFIG_VIDEO_INTEL_CVS' bootc/overlays/hardware/dell-xps-9350-intel/files bootc/overlays/hardware/dell-xps-9350-intel/configure.sh
+    grep -qF 'e4c95452339b2d9803974a899c4f2da6e143891d' bootc/overlays/hardware/dell-xps-9350-intel/files/usr/libexec/purplefin/lib/dell-ipu7.sh
+    test ! -e bootc/overlays/hardware/dell-xps-9350-intel/files/usr/libexec/purplefin/firstboot-rpm-ostree.d/50-dell-vates-plymouth-initramfs
+    test -x bootc/overlays/hardware/dell-xps-9350-intel/files/usr/libexec/purplefin/install-refind-theme
+    test -f bootc/overlays/hardware/dell-xps-9350-intel/files/usr/lib/systemd/system/purplefin-refind-theme.service
+    test -f bootc/overlays/hardware/dell-xps-9350-intel/files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/theme.conf
+    test -f bootc/overlays/hardware/dell-xps-9350-intel/files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/icons/os_fedora.png
+    test -f bootc/overlays/hardware/dell-xps-9350-intel/files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/fonts/source-code-pro-extralight-14.png
+    test -f bootc/overlays/hardware/dell-xps-9350-intel/files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/icons/os_win11.png
+    test -f bootc/overlays/hardware/dell-xps-9350-intel/files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/icons/os_windows.png
+    test -f bootc/overlays/hardware/dell-xps-9350-intel/files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/icons/os_bluefin.png
+    test -f bootc/overlays/hardware/dell-xps-9350-intel/files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/icons/os_purplefin.png
+    cmp -s bootc/overlays/hardware/dell-xps-9350-intel/files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/icons/os_bluefin.png bootc/overlays/hardware/dell-xps-9350-intel/files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/icons/os_purplefin.png
+    cmp -s bootc/overlays/hardware/dell-xps-9350-intel/files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/icons/os_bluefin.png bootc/overlays/hardware/dell-xps-9350-intel/files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/icons/os_fedora.png
+    cmp -s bootc/overlays/hardware/dell-xps-9350-intel/files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/icons/os_bluefin.png bootc/overlays/hardware/dell-xps-9350-intel/files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/icons/os_linux.png
+    unexpected_refind_distro_icon="$(find bootc/overlays/hardware/dell-xps-9350-intel/files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/icons -type f -name 'os_*.png' ! -path '*/icons/os_win.png' ! -path '*/icons/os_win8.png' ! -path '*/icons/os_win11.png' ! -path '*/icons/os_windows.png' ! -path '*/icons/os_bluefin.png' ! -path '*/icons/os_purplefin.png' ! -path '*/icons/os_fedora.png' ! -path '*/icons/os_linux.png' -print -quit)"
     test -z "${unexpected_refind_distro_icon}"
-    grep -qx 'icons_dir themes/rEFInd-Regular-Dark/icons' profile_files/dell-xps-9350-intel/system_files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/theme.conf
-    ! grep -q '^menuentry ' profile_files/dell-xps-9350-intel/system_files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/theme.conf
+    grep -qx 'icons_dir themes/rEFInd-Regular-Dark/icons' bootc/overlays/hardware/dell-xps-9350-intel/files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/theme.conf
+    ! grep -q '^menuentry ' bootc/overlays/hardware/dell-xps-9350-intel/files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/theme.conf
 
     # shellcheck source=/dev/null
-    source profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/lib/dell-ipu7.sh
+    source bootc/overlays/hardware/dell-xps-9350-intel/files/usr/libexec/purplefin/lib/dell-ipu7.sh
     test "$(purplefin_dell_ipu7_fix_pack_repo)" = 'https://github.com/jibsta210/svp7500-camera-fix-pack'
     test "$(purplefin_dell_ipu7_fix_pack_version)" = 'v1.0.2'
     test "$(purplefin_dell_ipu7_fix_pack_ref)" = 'e4c95452339b2d9803974a899c4f2da6e143891d'
@@ -678,8 +671,8 @@ check:
     printf '%s=y\n' "${required_ipu7_configs[@]}" > "${ipu7_config}.built-in"
     purplefin_dell_ipu7_validate_kernel_config_file "${ipu7_config}.built-in"
 
-    refind_installer="profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/install-refind-theme"
-    refind_theme_source="profile_files/dell-xps-9350-intel/system_files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark"
+    refind_installer="bootc/overlays/hardware/dell-xps-9350-intel/files/usr/libexec/purplefin/install-refind-theme"
+    refind_theme_source="bootc/overlays/hardware/dell-xps-9350-intel/files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark"
     mkdir -p "${refind_tmp}/EFI/refind/themes/rEFInd-Regular-Dark/icons"
     printf '%s\n' 'timeout 5' > "${refind_tmp}/EFI/refind/refind.conf"
     printf '%s\n' 'replace-existing-target-icon' > "${refind_tmp}/EFI/refind/themes/rEFInd-Regular-Dark/icons/os_linux.png"
@@ -696,18 +689,13 @@ _build profile tag:
     #!/usr/bin/env bash
     set -euo pipefail
     base_image='ghcr.io/projectbluefin/bluefin:stable'
-    base_metadata="$(skopeo inspect --retry-times 3 "docker://${base_image}")"
-    base_digest="$(jq -er '.Digest' <<<"${base_metadata}")"
-    base_kernel="$(jq -er '.Labels["ostree.linux"]' <<<"${base_metadata}")"
-    target_kernel="$(build_files/select-ostree-linux.sh '{{ profile }}' "${base_kernel}")"
+    base_digest="$(skopeo inspect --retry-times 3 "docker://${base_image}" | jq -er .Digest)"
     podman build \
         --pull=missing \
         --build-arg BASE_REF="ghcr.io/projectbluefin/bluefin@${base_digest}" \
         --build-arg BUILD_PROFILE='{{ profile }}' \
-        --build-arg PURPLEFIN_OSTREE_LINUX="${target_kernel}" \
         --build-arg PURPLEFIN_VERSION="$(<VERSION)" \
         --label "org.opencontainers.image.base.digest=${base_digest}" \
-        --label "ostree.linux=${target_kernel}" \
         --tag '{{ tag }}' \
         .
 

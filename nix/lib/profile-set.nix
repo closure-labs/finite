@@ -20,7 +20,7 @@
   evalProfile = name:
     lib.evalModules {
       modules = [
-        ../modules/profile-options.nix
+        ../profile-options.nix
         (den.lib.aspects.resolve "bootc" den.aspects.profiles.${name})
       ];
     };

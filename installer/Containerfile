@@ -15,7 +15,7 @@ RUN dnf5 -y install \
     mkdir -p /boot/efi /var/mnt && \
     cp -ra /usr/lib/efi/*/*/EFI /boot/efi
 
-COPY installer/root/ /
+COPY installer/overlay/ /
 
 RUN sed -i "s|@@INSTALLER_PAYLOAD_REF@@|${INSTALLER_PAYLOAD_REF}|g" \
       /usr/share/anaconda/interactive-defaults.ks && \

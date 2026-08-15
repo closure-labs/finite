@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-profile_root="${repo_root}/profile_files/dell-xps-9350-intel/system_files"
+profile_root="${repo_root}/bootc/overlays/hardware/dell-xps-9350-intel/files"
 helper="${profile_root}/usr/libexec/purplefin/dell-lid-is-open"
 lid_auth="${profile_root}/etc/pam.d/purplefin-dell-lid-auth"
 password_auth="${profile_root}/etc/pam.d/purplefin-dell-password-auth"

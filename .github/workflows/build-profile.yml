@@ -6,9 +6,6 @@ on:
       upstream-base-digest:
         required: true
         type: string
-      base-kernel:
-        required: true
-        type: string
       build-input:
         required: true
         type: string
@@ -59,19 +56,6 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Resolve boot kernel metadata
-        id: kernel
-        env:
-          BASE_KERNEL: ${{ inputs.base-kernel }}
-          BUILD_PROFILE: ${{ inputs.profile }}
-        shell: bash
-        run: |
-          target_kernel="$({
-            build_files/select-ostree-linux.sh \
-              "${BUILD_PROFILE}" "${BASE_KERNEL}"
-          })"
-          echo "release=${target_kernel}" >>"${GITHUB_OUTPUT}"
-
       - name: Log in to GHCR for publishing and build cache
         if: inputs.publish
         env:
@@ -97,7 +81,6 @@ jobs:
           PARENT_PROFILE: ${{ inputs.parent-profile }}
           PARENT_TAG: ${{ inputs.parent-tag }}
           PUBLISH: ${{ inputs.publish }}
-          PURPLEFIN_OSTREE_LINUX: ${{ steps.kernel.outputs.release }}
           PURPLEFIN_VERSION: ${{ inputs.version }}
           TAGS: ${{ inputs.tags }}
           UPSTREAM_BASE_DIGEST: ${{ inputs.upstream-base-digest }}
@@ -143,10 +126,8 @@ jobs:
             --label "org.opencontainers.image.base.digest=${PARENT_DIGEST}" \
             --label "org.opencontainers.image.created=${created}" \
             --label "org.opencontainers.image.revision=${GITHUB_SHA}" \
-            --label "ostree.linux=${PURPLEFIN_OSTREE_LINUX}" \
             --build-arg "BASE_REF=${base_ref}" \
             --build-arg "BUILD_PROFILE=${BUILD_PROFILE}" \
-            --build-arg "PURPLEFIN_OSTREE_LINUX=${PURPLEFIN_OSTREE_LINUX}" \
             --build-arg "PURPLEFIN_VERSION=${PURPLEFIN_VERSION}" \
             --format docker \
             --tls-verify=true \

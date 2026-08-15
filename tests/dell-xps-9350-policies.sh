@@ -2,9 +2,9 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-battery_helper="${repo_root}/profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/configure-dell-xps-9350-battery"
-panel_helper="${repo_root}/profile_files/dell-xps-9350-intel/system_files/usr/libexec/purplefin/dell-xps-9350-panel-policy"
-vendor_battery_config="${repo_root}/profile_files/dell-xps-9350-intel/system_files/usr/lib/purplefin/dell-xps-9350-battery.conf"
+battery_helper="${repo_root}/bootc/overlays/hardware/dell-xps-9350-intel/files/usr/libexec/purplefin/configure-dell-xps-9350-battery"
+panel_helper="${repo_root}/bootc/overlays/hardware/dell-xps-9350-intel/files/usr/libexec/purplefin/dell-xps-9350-panel-policy"
+vendor_battery_config="${repo_root}/bootc/overlays/hardware/dell-xps-9350-intel/files/usr/lib/purplefin/dell-xps-9350-battery.conf"
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "${tmpdir}"' EXIT
 

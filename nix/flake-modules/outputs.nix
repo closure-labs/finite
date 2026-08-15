@@ -25,9 +25,9 @@
     )
     profiles;
   generatedCurrent = pkgs.runCommand "purplefin-generated-files-current" {} ''
-    diff -u ${generated}/build_files/image-matrix.json ${inputs.self}/build_files/image-matrix.json
-    diff -u ${generated}/build_files/profile-catalog.json ${inputs.self}/build_files/profile-catalog.json
-    diff -u ${generated}/build_files/upstream.json ${inputs.self}/build_files/upstream.json
+    diff -u ${generated}/bootc/generated/image-matrix.json ${inputs.self}/bootc/generated/image-matrix.json
+    diff -u ${generated}/bootc/generated/profile-catalog.json ${inputs.self}/bootc/generated/profile-catalog.json
+    diff -u ${generated}/bootc/generated/upstream.json ${inputs.self}/bootc/generated/upstream.json
     ${lib.concatStringsSep "\n" (
       lib.mapAttrsToList (name: _profile: ''
         diff -u ${generated}/installer/config/profiles/${name}.toml ${inputs.self}/installer/config/profiles/${name}.toml
@@ -50,7 +50,7 @@
     runtimeInputs = [pkgs.coreutils];
     text = ''
       repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
-      [[ -f "''${repo_root}/flake.nix" && -d "''${repo_root}/build_files" ]] || {
+      [[ -f "''${repo_root}/flake.nix" && -d "''${repo_root}/bootc" ]] || {
         echo "Run this command from the Purplefin repository root" >&2
         exit 2
       }
@@ -60,9 +60,9 @@
           "${generated}/''${relative_path}" \
           "''${repo_root}/''${relative_path}"
       done <<'PATHS'
-      build_files/image-matrix.json
-      build_files/profile-catalog.json
-      build_files/upstream.json
+      bootc/generated/image-matrix.json
+      bootc/generated/profile-catalog.json
+      bootc/generated/upstream.json
       ${lib.concatStringsSep "\n" (
         lib.concatMap (name: [
           "installer/config/profiles/${name}.toml"
@@ -79,7 +79,7 @@ in {
     };
 
     inherit homeConfigurations;
-    homeManagerModules.default = ../home/common.nix;
+    homeManagerModules.default = ../aspects/base/home.nix;
 
     packages.${system} =
       {

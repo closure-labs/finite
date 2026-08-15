@@ -50,7 +50,7 @@ jobs:
         shell: bash
         run: |
           nix flake check --print-build-logs
-          nix develop --command build_files/check-ci.sh
+          nix develop --command tests/ci.sh
 
   plan:
     name: Resolve build inputs
@@ -60,7 +60,6 @@ jobs:
     outputs:
       base_image: ${{ steps.plan.outputs.base_image }}
       base_digest: ${{ steps.plan.outputs.base_digest }}
-      base_kernel: ${{ steps.plan.outputs.base_kernel }}
       hardware_matrix: ${{ steps.plan.outputs.hardware_matrix }}
       has_hardware: ${{ steps.plan.outputs.has_hardware }}
       has_builds: ${{ steps.plan.outputs.has_builds }}
@@ -87,14 +86,13 @@ jobs:
           IMAGE_REF: ${{ format('{0}/{1}', env.REGISTRY, env.IMAGE_NAME) }}
         shell: bash
         run: |
-          base_image="$(jq -er '.image' build_files/upstream.json)"
-          base_tag="$(jq -er '.tag' build_files/upstream.json)"
+          base_image="$(jq -er '.image' bootc/generated/upstream.json)"
+          base_tag="$(jq -er '.tag' bootc/generated/upstream.json)"
           base_metadata="$({
             skopeo inspect --retry-times 3 \
               "docker://${base_image}:${base_tag}"
           })"
           base_digest="$(jq -er '.Digest' <<<"${base_metadata}")"
-          base_kernel="$(jq -er '.Labels["ostree.linux"]' <<<"${base_metadata}")"
           base_ref="${base_image}@${base_digest}"
           version="$(<VERSION)"
 
@@ -104,10 +102,10 @@ jobs:
               https://github.com/projectbluefin/actions/.github/workflows/reusable-build.yml@refs/tags/v1 \
             "${base_ref}" >/dev/null
 
-          profiles="$(jq -c . build_files/image-matrix.json)"
+          profiles="$(jq -c . bootc/generated/image-matrix.json)"
 
           export BASE_DIGEST="${base_digest}" BASE_REF="${base_ref}"
-          matrix="$(build_files/plan-image-builds.sh "${profiles}")"
+          matrix="$(bootc/build/plan.sh "${profiles}")"
           has_builds="$(jq -r '.include | length > 0' <<<"${matrix}")"
           root_base="$(jq -c 'first(.include[] | select(.stage == "root")) // {}' <<<"${matrix}")"
           hardware_matrix="$(jq -c '{include: [.include[] | select(.stage == "hardware")]}' <<<"${matrix}")"
@@ -119,7 +117,6 @@ jobs:
           {
             echo "base_image=${base_image}"
             echo "base_digest=${base_digest}"
-            echo "base_kernel=${base_kernel}"
             echo "hardware_matrix=${hardware_matrix}"
             echo "has_hardware=${has_hardware}"
             echo "has_builds=${has_builds}"
@@ -144,7 +141,6 @@ jobs:
       contents: read
       packages: read
     with:
-      base-kernel: ${{ needs.plan.outputs.base_kernel }}
       build-input: ${{ matrix.build_input }}
       parent-digest: ${{ needs.plan.outputs.base_digest }}
       parent-image: ${{ needs.plan.outputs.base_image }}
@@ -165,7 +161,6 @@ jobs:
       id-token: write
       packages: write
     with:
-      base-kernel: ${{ needs.plan.outputs.base_kernel }}
       build-input: ${{ fromJSON(needs.plan.outputs.root_base).build_input }}
       parent-digest: ${{ needs.plan.outputs.base_digest }}
       parent-image: ${{ needs.plan.outputs.base_image }}
@@ -195,7 +190,6 @@ jobs:
       id-token: write
       packages: write
     with:
-      base-kernel: ${{ needs.plan.outputs.base_kernel }}
       build-input: ${{ matrix.build_input }}
       parent-digest: ${{ matrix.parent_digest || '' }}
       parent-image: ${{ format('ghcr.io/{0}', github.repository) }}
@@ -229,7 +223,6 @@ jobs:
       id-token: write
       packages: write
     with:
-      base-kernel: ${{ needs.plan.outputs.base_kernel }}
       build-input: ${{ matrix.build_input }}
       parent-digest: ${{ matrix.parent_digest || '' }}
       parent-image: ${{ format('ghcr.io/{0}', github.repository) }}
