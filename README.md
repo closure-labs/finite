@@ -154,7 +154,10 @@ kernel repository or version override. The reusable `devops` component provides
 Ghostty, VSCodium,
 `packer`, `ansible`, `tofu`, and `bao`; both the support and development
 departments reference it. The base department provides Git, Micro, `qemu-img`,
-`qemu-tools`, and common QEMU image block backends.
+`qemu-tools`, common QEMU image block backends, and Fedora's complete
+`podman-machine` runtime with the headless QEMU, `gvproxy`, and `virtiofsd`
+helpers. Podman Machine is therefore available in every Purplefin profile
+without host package layering or user-local helper binaries.
 Terra's Bitwarden packages are excluded so future DNF operations cannot
 reintroduce the desktop RPM after migration to Flatpak.
 
@@ -438,11 +441,12 @@ non-working IPU7 inputs.
   department and hardware written into image metadata.
 - A shared base containing Git, Micro, Fedora's FUSE 2 runtime,
   `wireguard-tools`, the NetworkManager connection editor, `qemu-img`,
-  `qemu-tools`, common QEMU image block backends, the complete Homebrew
-  `Brewfile`, branding, and common Flatpak preinstalls such as Bitwarden,
-  Nextcloud Desktop Client, Cameractrls, and Gear Lever. Fedora's `qemu-img`
-  package supplies the core image tools; Fedora has no separate
-  `qemu-img-core` subpackage.
+  `qemu-tools`, common QEMU image block backends, `podman-machine`, its
+  headless QEMU provider, and the Fedora-packaged `gvproxy` and `virtiofsd`
+  helpers. The base also includes the complete Homebrew `Brewfile`, branding,
+  and common Flatpak preinstalls such as Bitwarden, Nextcloud Desktop Client,
+  Cameractrls, and Gear Lever. Fedora's `qemu-img` package supplies the core
+  image tools; Fedora has no separate `qemu-img-core` subpackage.
 - Bitwarden's verified desktop Flatpak, polkit policy, legacy RPM
   migration, and official native CLI wrapped in a Purplefin-built RPM from a
   pinned archive and SHA-256 digest.

@@ -130,8 +130,14 @@ check:
     for package in qemu-block-curl qemu-block-dmg qemu-block-iscsi qemu-block-nfs qemu-block-ssh qemu-img qemu-tools; do
         grep -qF "${package}" build_files/modules/base.sh
     done
+    for package in podman-machine qemu-system-x86-core; do
+        grep -qF "${package}" build_files/modules/base.sh
+    done
+    for helper in /usr/bin/qemu-system-x86_64 /usr/libexec/podman/gvproxy /usr/libexec/podman/virtiofsd; do
+        grep -qF "${helper}" build_files/modules/base.sh
+    done
     grep -qF 'dnf5 -y install "${base_packages[@]}"' build_files/modules/base.sh
-    grep -qF 'dnf5 -y --setopt=install_weak_deps=False install "${base_qemu_packages[@]}"' build_files/modules/base.sh
+    grep -qF 'dnf5 -y --setopt=install_weak_deps=False install "${base_qemu_packages[@]}" "${base_vm_packages[@]}"' build_files/modules/base.sh
     test -f build_files/independently-managed-rpms.list
     grep -Eq '^tailscale-stable[[:space:]]+tailscale$' build_files/independently-managed-rpms.list
     grep -Eq '^terra[[:space:]]+espanso-wayland$' build_files/independently-managed-rpms.list
