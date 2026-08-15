@@ -7,7 +7,7 @@ check:
     #!/usr/bin/env bash
     set -euo pipefail
 
-    find build_files system_files/usr/libexec/purplefin profile_files installer/root/usr/libexec -type f \( -name '*.sh' -o -perm -111 \) -exec bash -n {} +
+    find build_files system_files/usr/libexec/purplefin profile_files installer/root -type f \( -name '*.sh' -o -perm -111 \) -exec bash -n {} +
 
     tmpdir="$(mktemp -d)"
     refind_tmp="$(mktemp -d)"
