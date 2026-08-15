@@ -49,7 +49,9 @@ jobs:
           nix shell \
             nixpkgs#actionlint \
             nixpkgs#just \
+            nixpkgs#ripgrep \
             nixpkgs#shellcheck \
+            nixpkgs#zsh \
             nixpkgs#zizmor \
             -c build_files/check-ci.sh
 
