@@ -3,14 +3,16 @@ name: Release Purplefin
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: Release version already present in VERSION (for example 0.1.0)
+      bump:
+        description: Automatic uses conventional commits; override only when release impact differs
         required: true
-        type: string
-      next-version:
-        description: Development version committed after release (for example 0.1.1-dev.0)
-        required: true
-        type: string
+        type: choice
+        options:
+          - auto
+          - patch
+          - minor
+          - major
+        default: auto
 
 concurrency:
   group: purplefin-release
@@ -25,12 +27,16 @@ env:
 
 jobs:
   prepare:
-    name: Build every profile from the release commit
+    name: Select version and build every profile
     runs-on: ubuntu-24.04
     timeout-minutes: 180
     permissions:
       actions: write
-      contents: read
+      contents: write
+    outputs:
+      source_sha: ${{ steps.version.outputs.source_sha }}
+      tag: ${{ steps.version.outputs.tag }}
+      version: ${{ steps.version.outputs.version }}
     steps:
       - name: Checkout release source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -39,46 +45,170 @@ jobs:
           persist-credentials: false
           ref: main
 
-      - name: Validate and dispatch the release-candidate build
-        id: build
+      - name: Install Nix
+        uses: DeterminateSystems/determinate-nix-action@61cbfe2efc2d4e7a8a6d56967c3c1058e846c858 # v3
+
+      - name: Calculate and commit the release version
+        id: version
         env:
-          VERSION: ${{ inputs.version }}
+          REQUESTED_BUMP: ${{ inputs.bump }}
         shell: bash
         run: |
-          [[ "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
-          [[ "$(<VERSION)" == "${VERSION}" ]]
-          [[ "${GITHUB_SHA}" == "$(git rev-parse HEAD)" ]]
-          if git rev-parse --verify --quiet "refs/tags/v${VERSION}"; then
-            echo "Release tag v${VERSION} already exists" >&2
+          [[ "${GITHUB_REF}" == refs/heads/main ]] || {
+            echo "Releases may run only from main" >&2
+            exit 1
+          }
+          initial_sha="$(git rev-parse HEAD)"
+          [[ "${initial_sha}" == "${GITHUB_SHA}" ]] || {
+            echo "Checkout does not match the dispatched commit" >&2
+            exit 1
+          }
+          source_version="$(<VERSION)"
+          [[ "${source_version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-dev\.[0-9]+)?$ ]] || {
+            echo "VERSION must contain X.Y.Z or X.Y.Z-dev.N" >&2
+            exit 1
+          }
+
+          last_tag="$({
+            git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname |
+              grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' |
+              head -n 1 || true
+          })"
+          if [[ -z "${last_tag}" ]]; then
+            version="${source_version%%-dev.*}"
+            selected_bump="initial"
+          else
+            git merge-base --is-ancestor "${last_tag}" HEAD || {
+              echo "Latest release tag ${last_tag} is not an ancestor of main" >&2
+              exit 1
+            }
+            meaningful_commits="$({
+              git log "${last_tag}..HEAD" \
+                --format='%H' \
+                --invert-grep \
+                --grep='^Start Purplefin [0-9]\+\.[0-9]\+\.[0-9]\+-dev\.[0-9]\+$'
+            })"
+            [[ -n "${meaningful_commits}" ]] || {
+              echo "No releasable commits exist after ${last_tag}" >&2
+              exit 1
+            }
+
+            base_version="${last_tag#v}"
+            IFS=. read -r major minor patch <<<"${base_version}"
+            selected_bump="${REQUESTED_BUMP}"
+            if [[ "${selected_bump}" == auto ]]; then
+              release_log="$({
+                git log "${last_tag}..HEAD" \
+                  --format='%s%n%b' \
+                  --invert-grep \
+                  --grep='^Start Purplefin [0-9]\+\.[0-9]\+\.[0-9]\+-dev\.[0-9]\+$'
+              })"
+              if grep -Eq \
+                '(^[[:alnum:]-]+(\([^)]*\))?!:)|(^BREAKING[ -]CHANGE:)' \
+                <<<"${release_log}"; then
+                selected_bump="major"
+              elif grep -Eq '^feat(\([^)]*\))?:' <<<"${release_log}"; then
+                selected_bump="minor"
+              else
+                selected_bump="patch"
+              fi
+            fi
+            case "${selected_bump}" in
+              major) version="$((major + 1)).0.0" ;;
+              minor) version="${major}.$((minor + 1)).0" ;;
+              patch) version="${major}.${minor}.$((patch + 1))" ;;
+              *)
+                echo "Unsupported release bump: ${selected_bump}" >&2
+                exit 1
+                ;;
+            esac
+          fi
+
+          tag="v${version}"
+          if git rev-parse --verify --quiet "refs/tags/${tag}"; then
+            echo "Release tag ${tag} already exists" >&2
             exit 1
           fi
 
-          previous_run_id="$({
-            gh run list \
-              --workflow build.yml \
-              --event workflow_dispatch \
-              --commit "${GITHUB_SHA}" \
-              --limit 1 \
-              --json databaseId \
-              --jq '.[0].databaseId // empty'
-          })"
-          gh workflow run build.yml --ref main -f force=true
+          remote_sha="$(gh api "repos/${GITHUB_REPOSITORY}/commits/main" --jq .sha)"
+          [[ "${remote_sha}" == "${initial_sha}" ]] || {
+            echo "Main advanced after this release was dispatched" >&2
+            exit 1
+          }
+          if [[ "${source_version}" != "${version}" ]]; then
+            printf '%s\n' "${version}" >VERSION
+            nix run .#generate
+            git config user.name github-actions[bot]
+            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+            git add VERSION bootc/generated installer/config/profiles
+            git commit -m "Release Purplefin ${version}"
+            gh auth setup-git
+            git push origin HEAD:main
+          fi
+          source_sha="$(git rev-parse HEAD)"
+          {
+            echo "source_sha=${source_sha}"
+            echo "tag=${tag}"
+            echo "version=${version}"
+          } >>"${GITHUB_OUTPUT}"
+          printf 'Selected %s with a %s bump from %s\n' \
+            "${tag}" "${selected_bump}" "${last_tag:-VERSION seed}"
+
+      - name: Reuse or dispatch the release-candidate build
+        id: build
+        env:
+          SOURCE_SHA: ${{ steps.version.outputs.source_sha }}
+        shell: bash
+        run: |
           run_id=''
-          for _ in {1..12}; do
+          for _ in {1..6}; do
             run_id="$({
               gh run list \
                 --workflow build.yml \
-                --event workflow_dispatch \
-                --commit "${GITHUB_SHA}" \
-                --limit 5 \
-                --json databaseId \
-                --jq ".[] | select((.databaseId | tostring) != \"${previous_run_id}\") | .databaseId" |
+                --commit "${SOURCE_SHA}" \
+                --limit 20 \
+                --json conclusion,databaseId,status \
+                --jq '.[] | select(.status == "queued" or .status == "in_progress" or .conclusion == "success") | .databaseId' |
                 head -n 1
             })"
             [[ -z "${run_id}" ]] || break
             sleep 5
           done
-          [[ -n "${run_id}" ]]
+          if [[ -z "${run_id}" ]]; then
+            remote_sha="$(gh api "repos/${GITHUB_REPOSITORY}/commits/main" --jq .sha)"
+            [[ "${remote_sha}" == "${SOURCE_SHA}" ]] || {
+              echo "Main advanced before the candidate build was dispatched" >&2
+              exit 1
+            }
+            previous_run_id="$({
+              gh run list \
+                --workflow build.yml \
+                --event workflow_dispatch \
+                --commit "${SOURCE_SHA}" \
+                --limit 1 \
+                --json databaseId \
+                --jq '.[0].databaseId // empty'
+            })"
+            gh workflow run build.yml --ref main -f force=true
+            for _ in {1..24}; do
+              run_id="$({
+                gh run list \
+                  --workflow build.yml \
+                  --event workflow_dispatch \
+                  --commit "${SOURCE_SHA}" \
+                  --limit 5 \
+                  --json databaseId \
+                  --jq ".[] | select((.databaseId | tostring) != \"${previous_run_id}\") | .databaseId" |
+                  head -n 1
+              })"
+              [[ -z "${run_id}" ]] || break
+              sleep 5
+            done
+            [[ -n "${run_id}" ]] || {
+              echo "Could not locate the release-candidate build" >&2
+              exit 1
+            }
+          fi
           echo "run-id=${run_id}" >>"${GITHUB_OUTPUT}"
 
       - name: Wait for the release-candidate build
@@ -86,6 +216,26 @@ jobs:
           RUN_ID: ${{ steps.build.outputs.run-id }}
         shell: bash
         run: gh run watch "${RUN_ID}" --exit-status
+
+      - name: Require every published profile from the release source
+        env:
+          SOURCE_SHA: ${{ steps.version.outputs.source_sha }}
+          VERSION: ${{ steps.version.outputs.version }}
+        shell: bash
+        run: |
+          while IFS= read -r entry; do
+            profile="$(jq -r '.profile' <<<"${entry}")"
+            primary_tag="$(jq -r '.tags | split(" ")[0]' <<<"${entry}")"
+            expected_input="$(jq -r '.build_input' <<<"${entry}")"
+            metadata="$({
+              skopeo inspect --retry-times 3 \
+                "docker://${IMAGE_REF}:${primary_tag}"
+            })"
+            [[ "$(jq -er '.Labels["org.opencontainers.image.revision"]' <<<"${metadata}")" == "${SOURCE_SHA}" ]]
+            [[ "$(jq -er '.Labels["org.opencontainers.image.version"]' <<<"${metadata}")" == "${VERSION}" ]]
+            [[ "$(jq -er '.Labels["io.purplefin.build.profile"]' <<<"${metadata}")" == "${profile}" ]]
+            [[ "$(jq -er '.Labels["io.purplefin.build.input"]' <<<"${metadata}")" == "${expected_input}" ]]
+          done < <(jq -c '.[]' bootc/generated/image-matrix.json)
 
   release:
     name: Promote tested digests and release source
@@ -103,21 +253,23 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-          ref: main
+          ref: ${{ needs.prepare.outputs.source_sha }}
+
+      - name: Install Nix
+        uses: DeterminateSystems/determinate-nix-action@61cbfe2efc2d4e7a8a6d56967c3c1058e846c858 # v3
 
       - name: Validate release versions and source
         env:
-          NEXT_VERSION: ${{ inputs.next-version }}
-          VERSION: ${{ inputs.version }}
+          SOURCE_SHA: ${{ needs.prepare.outputs.source_sha }}
+          VERSION: ${{ needs.prepare.outputs.version }}
         shell: bash
         run: |
           release_pattern='^[0-9]+\.[0-9]+\.[0-9]+$'
-          development_pattern='^[0-9]+\.[0-9]+\.[0-9]+-dev\.[0-9]+$'
           [[ "${VERSION}" =~ ${release_pattern} ]]
-          [[ "${NEXT_VERSION}" =~ ${development_pattern} ]]
           [[ "$(<VERSION)" == "${VERSION}" ]]
-          [[ "${NEXT_VERSION}" != "${VERSION}" ]]
-          [[ "${GITHUB_SHA}" == "$(git rev-parse HEAD)" ]]
+          [[ "${SOURCE_SHA}" == "$(git rev-parse HEAD)" ]]
+          remote_sha="$(gh api "repos/${GITHUB_REPOSITORY}/commits/main" --jq .sha)"
+          [[ "${remote_sha}" == "${SOURCE_SHA}" ]]
           if git rev-parse --verify --quiet "refs/tags/v${VERSION}"; then
             echo "Release tag v${VERSION} already exists" >&2
             exit 1
@@ -147,7 +299,8 @@ jobs:
       - name: Verify and promote existing image digests
         env:
           COSIGN_IDENTITY: https://github.com/${{ github.repository }}/.github/workflows/build-profile.yml@refs/heads/main
-          VERSION: ${{ inputs.version }}
+          SOURCE_SHA: ${{ needs.prepare.outputs.source_sha }}
+          VERSION: ${{ needs.prepare.outputs.version }}
         shell: bash
         run: |
           images='[]'
@@ -162,7 +315,7 @@ jobs:
             image_version="$(jq -er '.Labels["org.opencontainers.image.version"]' <<<"${metadata}")"
             base_digest="$(jq -er '.Labels["org.opencontainers.image.base.digest"]' <<<"${metadata}")"
             build_input="$(jq -er '.Labels["io.purplefin.build.input"]' <<<"${metadata}")"
-            [[ "${revision}" == "${GITHUB_SHA}" ]]
+            [[ "${revision}" == "${SOURCE_SHA}" ]]
             [[ "${image_version}" == "${VERSION}" ]]
 
             immutable_ref="${IMAGE_REF}@${digest}"
@@ -232,7 +385,7 @@ jobs:
 
           jq -n \
             --arg version "${VERSION}" \
-            --arg source_commit "${GITHUB_SHA}" \
+            --arg source_commit "${SOURCE_SHA}" \
             --arg image "${IMAGE_REF}" \
             --argjson images "${images}" \
             '{version: $version, source_commit: $source_commit, image: $image, images: $images}' \
@@ -241,7 +394,8 @@ jobs:
 
       - name: Create Git tag and GitHub release
         env:
-          VERSION: ${{ inputs.version }}
+          SOURCE_SHA: ${{ needs.prepare.outputs.source_sha }}
+          VERSION: ${{ needs.prepare.outputs.version }}
         shell: bash
         run: |
           mapfile -t sbom_assets < <(find release-sboms -type f -name '*.spdx.json.gz' -print | sort)
@@ -253,24 +407,31 @@ jobs:
             "${sbom_assets[@]}" \
             --draft \
             --generate-notes \
-            --target "${GITHUB_SHA}" \
+            --target "${SOURCE_SHA}" \
             --title "Purplefin ${VERSION}"
           gh release edit "v${VERSION}" --draft=false
 
       - name: Commit the next development version
         env:
-          NEXT_VERSION: ${{ inputs.next-version }}
-          VERSION: ${{ inputs.version }}
+          SOURCE_SHA: ${{ needs.prepare.outputs.source_sha }}
+          VERSION: ${{ needs.prepare.outputs.version }}
         shell: bash
         run: |
-          printf '%s\n' "${NEXT_VERSION}" >VERSION
+          IFS=. read -r major minor patch <<<"${VERSION}"
+          next_version="${major}.${minor}.$((patch + 1))-dev.0"
+          remote_sha="$(gh api "repos/${GITHUB_REPOSITORY}/commits/main" --jq .sha)"
+          [[ "${remote_sha}" == "${SOURCE_SHA}" ]] || {
+            echo "Main advanced before the post-release version commit" >&2
+            exit 1
+          }
+          printf '%s\n' "${next_version}" >VERSION
+          nix run .#generate
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add VERSION
-          git commit -m "Start Purplefin ${NEXT_VERSION}"
+          git add VERSION bootc/generated installer/config/profiles
+          git commit -m "Start Purplefin ${next_version}"
           gh auth setup-git
           git push origin HEAD:main
-          gh workflow run build.yml --ref main -f force=false
 
       - name: Log out of GHCR
         if: always()

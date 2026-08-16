@@ -22,15 +22,18 @@ aliases. They sign that digest and attach GitHub provenance and SPDX SBOM
 attestations. Profile inputs are hashed independently and the dynamic matrix
 includes only images whose source, base, or managed RPM state changed.
 
-The release workflow accepts a release version already present in `VERSION` and
-the next development version. It first dispatches and waits for a forced,
+The release workflow selects SemVer from conventional commits by default, with
+manual patch, minor, and major overrides. It commits the selected stable version
+to `VERSION` when necessary, then reuses or dispatches and waits for a complete
 all-profile release-candidate build. After release-environment approval it
-verifies those published profiles and adds `PROFILE-vVERSION` aliases to their
-existing digests. The immutable digest mapping, manifest, and compressed SPDX
-SBOM for every profile are attached to a draft before the immutable GitHub
-release is published. It finally commits the requested `-dev.N` version to
-`main` and dispatches its build. Release promotion never rebuilds or re-uploads
-an image; tags are aliases and the recorded digest is the trust boundary.
+verifies every published profile against that exact source commit and adds
+`PROFILE-vVERSION` aliases to the existing digests. The immutable digest
+mapping, manifest, and compressed SPDX SBOM for every profile are attached to a
+draft before the immutable GitHub release is published. Only after every image
+and release asset succeeds does CI commit the next patch `-dev.0` source version;
+that push starts its normal build. Release promotion never rebuilds or
+re-uploads an image; tags are aliases and the recorded digest is the trust
+boundary.
 
 ## Declarative profile composition
 

@@ -422,6 +422,13 @@ check:
     ! grep -qF 'skopeo copy --all' .github/workflows/release.yml
     grep -qF -- '--draft' .github/workflows/release.yml
     grep -qF -- '--draft=false' .github/workflows/release.yml
+    grep -qF 'REQUESTED_BUMP:' .github/workflows/release.yml
+    grep -qF 'inputs.bump' .github/workflows/release.yml
+    grep -qF "nix run .#generate" .github/workflows/release.yml
+    grep -qF 'Release Purplefin ${version}' .github/workflows/release.yml
+    grep -qF 'next_version="${major}.${minor}.$((patch + 1))-dev.0"' .github/workflows/release.yml
+    grep -qF 'Start Purplefin ${next_version}' .github/workflows/release.yml
+    ! rg -q 'inputs\.(version|next-version)' .github/workflows/release.yml
     test ! -e .github/workflows/cache-warmer.yml
     test ! -e .github/actionlint.yaml
     test ! -e docs/self-hosted-cache-runner.md
