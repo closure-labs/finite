@@ -469,7 +469,7 @@ jobs:
         with:
           artifact-name: sbom-${{ inputs.profile }}.spdx.json
           format: spdx-json
-          image: registry:${{ steps.image.outputs.ref }}@${{ steps.image.outputs.digest }}
+          image: ${{ steps.image.outputs.ref }}@${{ steps.image.outputs.digest }}
           output-file: sbom.spdx.json
           registry-password: ${{ github.token }}
           registry-username: ${{ github.actor }}

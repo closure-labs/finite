@@ -423,7 +423,8 @@ check:
     grep -qF 'runs-on: purplefin-builder' .github/workflows/cache-warmer.yml
     grep -qF 'cache-only: true' .github/workflows/cache-warmer.yml
     grep -qF 'name: Warm rechunked $' .github/workflows/cache-warmer.yml
-    grep -qF 'image: registry:' .github/workflows/build-profile.yml
+    grep -qF 'steps.image.outputs.ref' .github/workflows/build-profile.yml
+    grep -qF 'steps.image.outputs.digest' .github/workflows/build-profile.yml
     grep -qF 'base-publish:' .github/workflows/build.yml
     grep -qF 'hardware-publish:' .github/workflows/build.yml
     grep -qF 'roles-publish:' .github/workflows/build.yml
