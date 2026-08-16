@@ -9,13 +9,9 @@ on:
       - .github/workflows/build-profile.yml
       - .github/workflows/build.yml
       - .github/workflows/cache-warmer.yml
-      - bootc/config/**
-      - bootc/generated/**
-      - bootc/lib/**
-      - bootc/modules/base.sh
-      - bootc/overlays/base/**
-      - bootc/packages/**
+      - bootc/**
       - Containerfile
+      - Containerfile.derived
       - flake.lock
       - flake.nix
       - nix/**
@@ -51,9 +47,13 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     outputs:
+      base: ${{ steps.input.outputs.base }}
       base_digest: ${{ steps.input.outputs.base_digest }}
       base_image: ${{ steps.input.outputs.base_image }}
-      build_input: ${{ steps.input.outputs.build_input }}
+      hardware_matrix: ${{ steps.input.outputs.hardware_matrix }}
+      has_hardware: ${{ steps.input.outputs.has_hardware }}
+      has_roles: ${{ steps.input.outputs.has_roles }}
+      role_matrix: ${{ steps.input.outputs.role_matrix }}
       version: ${{ steps.input.outputs.version }}
     steps:
       - name: Checkout
@@ -71,14 +71,48 @@ jobs:
             skopeo inspect --retry-times 3 --format '{{.Digest}}' \
               "docker://${base_image}:${base_tag}"
           })"
-          build_input="$(
-            jq -er '.[] | select(.profile == "base") | .build_input' \
-              bootc/generated/image-matrix.json
+          profiles="$(jq -c . bootc/generated/image-matrix.json)"
+          base="$(jq -cer '.[] | select(.profile == "base")' <<<"${profiles}")"
+          hardware_matrix="$(
+            jq -c '
+              . as $all |
+              {include: [
+                $all[] |
+                select(.stage == "hardware") as $entry |
+                $entry + {
+                  parent_build_input: (
+                    $all[] |
+                    select(.profile == $entry.parent) |
+                    .build_input
+                  )
+                }
+              ]}
+            ' <<<"${profiles}"
+          )"
+          role_matrix="$(
+            jq -c '
+              . as $all |
+              {include: [
+                $all[] |
+                select(.stage == "role") as $entry |
+                $entry + {
+                  parent_build_input: (
+                    $all[] |
+                    select(.profile == $entry.parent) |
+                    .build_input
+                  )
+                }
+              ]}
+            ' <<<"${profiles}"
           )"
           {
+            echo "base=${base}"
             echo "base_digest=${base_digest}"
             echo "base_image=${base_image}"
-            echo "build_input=${build_input}"
+            echo "hardware_matrix=${hardware_matrix}"
+            echo "has_hardware=$(jq -r '.include | length > 0' <<<"${hardware_matrix}")"
+            echo "has_roles=$(jq -r '.include | length > 0' <<<"${role_matrix}")"
+            echo "role_matrix=${role_matrix}"
             echo "version=$(<VERSION)"
           } >>"${GITHUB_OUTPUT}"
 
@@ -93,12 +127,73 @@ jobs:
       packages: write
     with:
       cache-only: true
-      build-input: ${{ needs.plan.outputs.build_input }}
+      build-input: ${{ fromJSON(needs.plan.outputs.base).build_input }}
       parent-digest: ${{ needs.plan.outputs.base_digest }}
       parent-image: ${{ needs.plan.outputs.base_image }}
       profile: base
       publish: false
       runner: purplefin-builder
       tags: cache-warm-base
+      upstream-base-digest: ${{ needs.plan.outputs.base_digest }}
+      version: ${{ needs.plan.outputs.version }}
+
+  warm-hardware:
+    name: Warm rechunked ${{ matrix.profile }}
+    if: needs.plan.outputs.has_hardware == 'true'
+    needs:
+      - check
+      - plan
+      - warm-base
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix: ${{ fromJSON(needs.plan.outputs.hardware_matrix) }}
+    uses: ./.github/workflows/build-profile.yml
+    permissions:
+      contents: read
+      packages: write
+    with:
+      cache-only: true
+      build-input: ${{ matrix.build_input }}
+      parent-image: ${{ format('ghcr.io/{0}-stage-cache', github.repository) }}
+      parent-profile: ${{ matrix.parent }}
+      parent-tag: ${{ format('{0}-{1}', matrix.parent, matrix.parent_build_input) }}
+      profile: ${{ matrix.profile }}
+      publish: false
+      runner: purplefin-builder
+      tags: ${{ format('cache-warm-{0}', matrix.profile) }}
+      upstream-base-digest: ${{ needs.plan.outputs.base_digest }}
+      version: ${{ needs.plan.outputs.version }}
+
+  warm-roles:
+    name: Warm rechunked ${{ matrix.profile }}
+    if: >-
+      always() && needs.plan.result == 'success' &&
+      needs.warm-base.result == 'success' &&
+      (needs.warm-hardware.result == 'success' || needs.warm-hardware.result == 'skipped') &&
+      needs.plan.outputs.has_roles == 'true'
+    needs:
+      - check
+      - plan
+      - warm-base
+      - warm-hardware
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix: ${{ fromJSON(needs.plan.outputs.role_matrix) }}
+    uses: ./.github/workflows/build-profile.yml
+    permissions:
+      contents: read
+      packages: write
+    with:
+      cache-only: true
+      build-input: ${{ matrix.build_input }}
+      parent-image: ${{ format('ghcr.io/{0}-stage-cache', github.repository) }}
+      parent-profile: ${{ matrix.parent }}
+      parent-tag: ${{ format('{0}-{1}', matrix.parent, matrix.parent_build_input) }}
+      profile: ${{ matrix.profile }}
+      publish: false
+      runner: purplefin-builder
+      tags: ${{ format('cache-warm-{0}', matrix.profile) }}
       upstream-base-digest: ${{ needs.plan.outputs.base_digest }}
       version: ${{ needs.plan.outputs.version }}

@@ -80,6 +80,7 @@ export FAKE_DNF_STATUS=100
 export FAKE_LAYERED_RPM=false
 matrix="$(cd "${repo_root}" && bootc/build/plan.sh "${profile}")"
 test "$(jq -r '.include[0].profile' <<<"${matrix}")" = base
+test "$(jq -r '.include[0].use_stage_cache' <<<"${matrix}")" = false
 
 profiles='[
   {"profile":"base","parent":null,"tags":"base","build_input":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
@@ -91,6 +92,7 @@ export FAKE_PUBLISHED_INPUT=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 export FAKE_CHILD_PUBLISHED_INPUT=old-support-source
 matrix="$(cd "${repo_root}" && bootc/build/plan.sh "${profiles}")"
 test "$(jq -r '[.include[].profile] | join(" ")' <<<"${matrix}")" = support-generic
+test "$(jq -r '.include[0].use_stage_cache' <<<"${matrix}")" = true
 test "$(jq -r '.include[0].parent_digest' <<<"${matrix}")" = sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
 test "$(jq -r '.include[0].parent_tag' <<<"${matrix}")" = generic-x86_64
 
@@ -109,3 +111,4 @@ export FAKE_DNF_STATUS=0
 export FAKE_PUBLISHED_INPUT=old-source-state
 matrix="$(cd "${repo_root}" && bootc/build/plan.sh "${profile}")"
 test "$(jq -r '.include[0].profile' <<<"${matrix}")" = base
+test "$(jq -r '.include[0].use_stage_cache' <<<"${matrix}")" = true

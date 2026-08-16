@@ -402,12 +402,15 @@ check:
     grep -qF -- '--cache-to' .github/workflows/build-profile.yml
     grep -qF 'cache_ref="${IMAGE_REF}-build-cache"' .github/workflows/build-profile.yml
     grep -qF 'reference=${IMAGE_REF}-build-cache:*' .github/workflows/build-profile.yml
+    grep -qF 'reference=${IMAGE_REF}-stage-cache:*' .github/workflows/build-profile.yml
+    grep -qF 'stage_ref=${IMAGE_REF}-stage-cache:' .github/workflows/build-profile.yml
     grep -qF 'inputs.runner' .github/workflows/build-profile.yml
     test -f .github/workflows/cache-warmer.yml
     grep -qF 'runs-on: purplefin-builder' .github/workflows/cache-warmer.yml
     grep -qF 'cache-only: true' .github/workflows/cache-warmer.yml
+    grep -qF 'name: Warm rechunked $' .github/workflows/cache-warmer.yml
     grep -qF 'image: oci-archive:' .github/workflows/build-profile.yml
-    grep -qF 'steps.rechunk.outputs.archive' .github/workflows/build-profile.yml
+    grep -qF 'steps.archive.outputs.archive' .github/workflows/build-profile.yml
     grep -qF 'base-publish:' .github/workflows/build.yml
     grep -qF 'hardware-publish:' .github/workflows/build.yml
     grep -qF 'roles-publish:' .github/workflows/build.yml

@@ -133,8 +133,11 @@ profile. A shared-base change rebuilds the entire descendant closure; a
 hardware change rebuilds only that hardware branch; and a role-only change
 reuses the current immutable hardware parent. Buildah also publishes reusable
 intermediate layers to the repository's `purplefin-build-cache` GHCR package.
-The planner detects and repairs children left on an older parent after a partial
-publish. Pull requests build complete images without package-write permission.
+The optional workstation runner also rechunks build-input-keyed stages into the
+`purplefin-stage-cache` package; hosted release jobs validate and reuse an exact
+stage or perform the complete build themselves. The planner detects and repairs
+children left on an older parent after a partial publish. Pull requests build
+complete images without package-write permission.
 
 To change the graph, edit `nix/flake-modules/profiles.nix`; to change a reusable
 feature, edit its `nix/aspects/<aspect>/` directory or the matching `bootc/`

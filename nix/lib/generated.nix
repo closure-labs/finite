@@ -25,8 +25,6 @@
     else [relativePath];
   commonInputPaths = [
     ".containerignore"
-    ".github/workflows/build-profile.yml"
-    ".github/workflows/build.yml"
     "VERSION"
     "bootc/config/independently-managed-rpms.list"
     "flake.lock"

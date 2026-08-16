@@ -38,6 +38,10 @@ on:
         required: false
         default: ubuntu-24.04
         type: string
+      use-stage-cache:
+        required: false
+        default: true
+        type: boolean
       tags:
         required: true
         type: string
@@ -95,7 +99,8 @@ jobs:
           printf 'Container storage at %s has %d GiB free.\n' \
             "${graph_root}" "$((available_bytes / 1024 / 1024 / 1024))"
 
-      - name: Build image from immutable parent
+      - name: Resolve immutable build inputs
+        id: inputs
         env:
           BUILD_INPUT: ${{ inputs.build-input }}
           BUILD_PROFILE: ${{ inputs.profile }}
@@ -103,7 +108,65 @@ jobs:
           PARENT_IMAGE: ${{ inputs.parent-image }}
           PARENT_PROFILE: ${{ inputs.parent-profile }}
           PARENT_TAG: ${{ inputs.parent-tag }}
+        shell: bash
+        run: |
+          if [[ -n "${PARENT_PROFILE}" && -z "${PARENT_DIGEST}" ]]; then
+            [[ -n "${PARENT_TAG}" ]] || {
+              echo 'A parent digest or tag is required for derived builds' >&2
+              exit 2
+            }
+            PARENT_DIGEST="$(
+              skopeo inspect --retry-times 3 --format '{{.Digest}}' \
+                "docker://${PARENT_IMAGE}:${PARENT_TAG}"
+            )"
+          fi
+          [[ "${PARENT_DIGEST}" =~ ^sha256:[0-9a-f]{64}$ ]] || {
+            echo "Invalid parent digest: ${PARENT_DIGEST}" >&2
+            exit 2
+          }
+          {
+            echo "parent_digest=${PARENT_DIGEST}"
+            echo "stage_ref=${IMAGE_REF}-stage-cache:${BUILD_PROFILE}-${BUILD_INPUT}"
+          } >>"${GITHUB_OUTPUT}"
+
+      - name: Probe rechunked stage cache
+        if: inputs.use-stage-cache
+        id: stage
+        env:
+          BUILD_INPUT: ${{ inputs.build-input }}
+          BUILD_PROFILE: ${{ inputs.profile }}
+          PARENT_DIGEST: ${{ steps.inputs.outputs.parent_digest }}
+          STAGE_REF: ${{ steps.inputs.outputs.stage_ref }}
+          UPSTREAM_BASE_DIGEST: ${{ inputs.upstream-base-digest }}
+        shell: bash
+        run: |
+          if metadata="$(skopeo inspect --retry-times 3 "docker://${STAGE_REF}" 2>/dev/null)" &&
+            jq -e \
+              --arg build_input "${BUILD_INPUT}" \
+              --arg parent_digest "${PARENT_DIGEST}" \
+              --arg profile "${BUILD_PROFILE}" \
+              --arg upstream_digest "${UPSTREAM_BASE_DIGEST}" \
+              '.Labels["io.purplefin.build.input"] == $build_input and
+               .Labels["io.purplefin.build.profile"] == $profile and
+               .Labels["io.purplefin.upstream.digest"] == $upstream_digest and
+               .Labels["org.opencontainers.image.base.digest"] == $parent_digest' \
+              <<<"${metadata}" >/dev/null; then
+            echo 'hit=true' >>"${GITHUB_OUTPUT}"
+          else
+            echo 'hit=false' >>"${GITHUB_OUTPUT}"
+          fi
+
+      - name: Build image from immutable parent
+        if: steps.stage.outputs.hit != 'true'
+        env:
+          BUILD_INPUT: ${{ inputs.build-input }}
+          BUILD_PROFILE: ${{ inputs.profile }}
+          PARENT_DIGEST: ${{ steps.inputs.outputs.parent_digest }}
+          PARENT_IMAGE: ${{ inputs.parent-image }}
+          PARENT_PROFILE: ${{ inputs.parent-profile }}
+          PARENT_TAG: ${{ inputs.parent-tag }}
           CACHE_WRITE: ${{ inputs.publish || inputs.cache-only }}
+          CACHE_READ: ${{ inputs.use-stage-cache }}
           PURPLEFIN_VERSION: ${{ inputs.version }}
           TAGS: ${{ inputs.tags }}
           UPSTREAM_BASE_DIGEST: ${{ inputs.upstream-base-digest }}
@@ -118,11 +181,6 @@ jobs:
           parent_args=()
 
           if [[ -n "${PARENT_PROFILE}" ]]; then
-            if [[ -z "${PARENT_DIGEST}" ]]; then
-              [[ -n "${PARENT_TAG}" ]] || { echo 'A parent digest or tag is required for derived builds' >&2; exit 2; }
-              PARENT_DIGEST="$(skopeo inspect --retry-times 3 --format '{{.Digest}}' "docker://${PARENT_IMAGE}:${PARENT_TAG}")"
-            fi
-            [[ "${PARENT_DIGEST}" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "Invalid parent digest: ${PARENT_DIGEST}" >&2; exit 2; }
             containerfile=./Containerfile.derived
             parent_args+=(
               --label "io.purplefin.parent.digest=${PARENT_DIGEST}"
@@ -133,7 +191,8 @@ jobs:
           base_ref="${PARENT_IMAGE}@${PARENT_DIGEST}"
           if [[ "${CACHE_WRITE}" == true ]]; then
             cache_args+=(--cache-to "${cache_ref}")
-            if skopeo list-tags "docker://${cache_ref}" >/dev/null 2>&1; then
+            if [[ "${CACHE_READ}" == true ]] && \
+              skopeo list-tags "docker://${cache_ref}" >/dev/null 2>&1; then
               cache_args+=(--cache-from "${cache_ref}" --cache-ttl 168h)
             fi
           fi
@@ -158,7 +217,7 @@ jobs:
             .
 
       - name: Rechunk bootc image for efficient updates
-        if: ${{ ! inputs.cache-only }}
+        if: steps.stage.outputs.hit != 'true'
         id: rechunk
         env:
           TAGS: ${{ inputs.tags }}
@@ -186,6 +245,55 @@ jobs:
             podman tag "${primary_image}" "${IMAGE_REF}:${tag}"
           done
           echo "archive=${output_dir}/purplefin.oci" >>"${GITHUB_OUTPUT}"
+
+      - name: Load rechunked stage cache
+        if: steps.stage.outputs.hit == 'true' && ! inputs.cache-only
+        id: cached
+        env:
+          STAGE_REF: ${{ steps.inputs.outputs.stage_ref }}
+          TAGS: ${{ inputs.tags }}
+        shell: bash
+        run: |
+          read -r -a tags <<<"${TAGS}"
+          primary_image="${IMAGE_REF}:${tags[0]}"
+          output_dir="$(mktemp -d -p "${RUNNER_TEMP}" purplefin-cached.XXXXXX)"
+          archive="${output_dir}/purplefin.oci"
+
+          skopeo copy --retry-times 3 \
+            "docker://${STAGE_REF}" \
+            "oci-archive:${archive}"
+          chunked_image="$(podman pull --quiet "oci-archive:${archive}")"
+          podman tag "${chunked_image}" "${primary_image}"
+          for tag in "${tags[@]:1}"; do
+            podman tag "${primary_image}" "${IMAGE_REF}:${tag}"
+          done
+          echo "archive=${archive}" >>"${GITHUB_OUTPUT}"
+
+      - name: Store rechunked stage cache
+        if: steps.stage.outputs.hit != 'true' && (inputs.cache-only || inputs.publish)
+        env:
+          STAGE_REF: ${{ steps.inputs.outputs.stage_ref }}
+          TAGS: ${{ inputs.tags }}
+        shell: bash
+        run: |
+          read -r -a tags <<<"${TAGS}"
+          podman tag "${IMAGE_REF}:${tags[0]}" "${STAGE_REF}"
+          podman push --quiet "${STAGE_REF}" --tls-verify=true
+
+      - name: Select OCI archive for SBOM
+        if: inputs.publish
+        id: archive
+        env:
+          BUILT_ARCHIVE: ${{ steps.rechunk.outputs.archive }}
+          CACHED_ARCHIVE: ${{ steps.cached.outputs.archive }}
+        shell: bash
+        run: |
+          archive="${CACHED_ARCHIVE:-${BUILT_ARCHIVE}}"
+          [[ -n "${archive}" && -f "${archive}" ]] || {
+            echo 'The rechunked OCI archive is missing' >&2
+            exit 1
+          }
+          echo "archive=${archive}" >>"${GITHUB_OUTPUT}"
 
       - name: Push image and aliases
         if: inputs.publish
@@ -234,7 +342,7 @@ jobs:
         with:
           artifact-name: sbom-${{ inputs.profile }}.spdx.json
           format: spdx-json
-          image: oci-archive:${{ steps.rechunk.outputs.archive }}
+          image: oci-archive:${{ steps.archive.outputs.archive }}
           output-file: sbom.spdx.json
           upload-artifact: false
 
@@ -260,23 +368,36 @@ jobs:
       - name: Remove local OCI archive
         if: always()
         env:
-          OCI_ARCHIVE: ${{ steps.rechunk.outputs.archive }}
+          BUILT_ARCHIVE: ${{ steps.rechunk.outputs.archive }}
+          CACHED_ARCHIVE: ${{ steps.cached.outputs.archive }}
         shell: bash
         run: |
-          if [[ -n "${OCI_ARCHIVE}" ]]; then
-            rm -f -- "${OCI_ARCHIVE}"
-            rmdir -- "${OCI_ARCHIVE%/*}" 2>/dev/null || true
-          fi
+          for archive in "${BUILT_ARCHIVE}" "${CACHED_ARCHIVE}"; do
+            if [[ -n "${archive}" ]]; then
+              rm -f -- "${archive}"
+              rmdir -- "${archive%/*}" 2>/dev/null || true
+            fi
+          done
 
       - name: Remove cache-only images
         if: always() && inputs.cache-only
         continue-on-error: true
         env:
+          STAGE_REF: ${{ steps.inputs.outputs.stage_ref }}
           TAGS: ${{ inputs.tags }}
         shell: bash
         run: |
           read -r -a tags <<<"${TAGS}"
           podman rmi "${IMAGE_REF}:${tags[0]}" || true
+          podman rmi "${STAGE_REF}" || true
+          mapfile -t stage_images < <(
+            podman images \
+              --filter "reference=${IMAGE_REF}-stage-cache:*" \
+              --format '{{.ID}}'
+          )
+          if (( ${#stage_images[@]} > 0 )); then
+            podman rmi "${stage_images[@]}" || true
+          fi
           mapfile -t cache_images < <(
             podman images \
               --filter "reference=${IMAGE_REF}-build-cache:*" \
