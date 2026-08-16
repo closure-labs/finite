@@ -5,6 +5,7 @@ on:
     branches:
       - main
     paths:
+      - .containerignore
       - .github/workflows/build-profile.yml
       - .github/workflows/build.yml
       - .github/workflows/cache-warmer.yml

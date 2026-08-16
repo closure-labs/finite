@@ -24,6 +24,7 @@
       )
     else [relativePath];
   commonInputPaths = [
+    ".containerignore"
     ".github/workflows/build-profile.yml"
     ".github/workflows/build.yml"
     "VERSION"

@@ -104,6 +104,9 @@ check:
     grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$' VERSION
     grep -qF 'ARG BUILD_PROFILE=base-generic' Containerfile
     grep -qF '/tmp/purplefin-build/build/full.sh "${BUILD_PROFILE}"' Containerfile
+    grep -qxF 'bootc/generated/image-matrix.json' .containerignore
+    grep -qxF 'bootc/generated/upstream.json' .containerignore
+    ! grep -qF 'bootc/generated/profile-catalog.json' .containerignore
     grep -qF 'profile_catalog="${build_root}/generated/profile-catalog.json"' bootc/build/full.sh
     test "$(jq -r '.profiles.dale.modules | join(" ")' bootc/generated/profile-catalog.json)" = 'base sales trainer support hardware-dell-xps-9350-intel'
     test "$(jq -r '.profiles.dale.deltaModules | join(" ")' bootc/generated/profile-catalog.json)" = 'sales trainer support'
