@@ -11,6 +11,7 @@ mapfile -d '' shell_files < <(
 		-type f -name '*.sh' -print0
 )
 shellcheck --external-sources --source-path=SCRIPTDIR "${shell_files[@]}"
+tests/text-style.sh
 tests/trusted-update-validation.sh
 
 jq -e '

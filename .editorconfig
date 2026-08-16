@@ -1,0 +1,26 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{json,md,nix,toml,yaml,yml}]
+indent_style = space
+indent_size = 2
+
+[*.sh]
+indent_style = tab
+tab_width = 4
+
+[Containerfile*]
+indent_style = space
+indent_size = 4
+
+[Justfile]
+indent_style = space
+indent_size = 4
+
+[bootc/overlays/hardware/dell-xps-9350-intel/files/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/**]
+trim_trailing_whitespace = false
