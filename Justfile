@@ -104,6 +104,7 @@ check:
     grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$' VERSION
     grep -qF 'ARG BUILD_PROFILE=base-generic' Containerfile
     grep -qF '/tmp/purplefin-build/build/full.sh "${BUILD_PROFILE}"' Containerfile
+    grep -qxF 'bootc/build/plan.sh' .containerignore
     grep -qxF 'bootc/generated/image-matrix.json' .containerignore
     grep -qxF 'bootc/generated/upstream.json' .containerignore
     ! grep -qF 'bootc/generated/profile-catalog.json' .containerignore
