@@ -69,7 +69,30 @@ dispatch_and_wait() {
 		--exit-status
 }
 
-dispatch_and_wait build.yml -f validate_only=true
+existing_ci_run_id=''
+for _ in {1..6}; do
+	existing_ci_run_id="$({
+		gh run list \
+			--repo "${GITHUB_REPOSITORY}" \
+			--workflow build.yml \
+			--event pull_request \
+			--branch "${branch}" \
+			--commit "${head_sha}" \
+			--limit 1 \
+			--json databaseId \
+			--jq '.[0].databaseId // empty'
+	})"
+	[[ -z "${existing_ci_run_id}" ]] || break
+	sleep 5
+done
+
+if [[ -n "${existing_ci_run_id}" ]]; then
+	gh run watch "${existing_ci_run_id}" \
+		--repo "${GITHUB_REPOSITORY}" \
+		--exit-status
+else
+	dispatch_and_wait build.yml -f validate_only=true
+fi
 if [[ "${VALIDATE_INSTALLER}" == true ]]; then
 	dispatch_and_wait build-installer.yml -f image-tag=base-generic-x86_64
 fi

@@ -71,7 +71,6 @@ jobs:
           {
             echo "digest=${digest}"
             echo "ref=${payload_ref}"
-            echo "profile=${profile}"
             echo "tag=${IMAGE_TAG}"
           } >>"${GITHUB_OUTPUT}"
 
@@ -94,18 +93,15 @@ jobs:
         env:
           IMAGE_TAG: ${{ steps.payload.outputs.tag }}
           PAYLOAD_REF: ${{ steps.payload.outputs.ref }}
-          PROFILE: ${{ steps.payload.outputs.profile }}
         shell: bash
         run: |
           install -d output
           sudo podman run --rm --privileged \
             --security-opt label=disable \
-            --volume "${PWD}/installer/config/profiles/${PROFILE}.toml:/config.toml:ro" \
             --volume "${PWD}/output:/output" \
             --volume /var/lib/containers/storage:/var/lib/containers/storage \
             "${IMAGE_BUILDER}" \
             build \
-              --blueprint /config.toml \
               --bootc-ref "localhost/purplefin-installer:${GITHUB_SHA}" \
               --bootc-installer-payload-ref "${PAYLOAD_REF}" \
               --bootc-default-fs ext4 \
