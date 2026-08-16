@@ -263,7 +263,7 @@ jobs:
               (.[0].Config.Labels // {}) as $actual |
               $expected |
               to_entries |
-              all(. as $entry; $actual[$entry.key] == $entry.value)
+              all(.[]; $actual[.key] == .value)
             ' >/dev/null
           podman tag "${chunked_image}" "${primary_image}"
           for tag in "${tags[@]:1}"; do
