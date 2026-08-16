@@ -153,8 +153,8 @@ children left on an older parent after a partial publish. Pull requests build
 complete images without package-write permission.
 
 CI exposes one stable `CI gate` for branch policy. Pull requests run the
-selective candidate graph, and native merge-queue candidates build every profile
-against the temporary `merge_group` commit without publishing. Trusted
+selective candidate graph, and native merge-queue candidates build the affected
+profiles against the temporary `merge_group` commit without publishing. Trusted
 Dependabot, Nix flake-update, and Image Builder CLI digest-update pull requests
 can be enrolled automatically once
 the repository prerequisites in

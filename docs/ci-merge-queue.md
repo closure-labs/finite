@@ -6,9 +6,10 @@ successfully. Dynamic profile jobs may be skipped when no profile input changed;
 the gate checks those skips against the planner output instead of treating a
 missing matrix job as success.
 
-Pull requests build selected candidates, while every `merge_group` event forces
-the complete profile graph. Neither event receives package-write, attestation,
-or identity-token permissions. Pushes to `main`, schedules, and manual runs
+Pull requests and `merge_group` events build the profiles selected by immutable
+input, base-digest, and parent-digest comparisons. A selected parent brings its
+descendants into the candidate graph. Neither event receives package-write,
+attestation, or identity-token permissions. Pushes to `main`, schedules, and manual runs
 explicitly dispatched from `main` are the only events allowed to publish. This
 keeps a merge-queue candidate from changing GHCR before it merges.
 

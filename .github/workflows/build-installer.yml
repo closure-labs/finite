@@ -64,27 +64,33 @@ jobs:
           [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
           test -f "installer/config/profiles/${profile}.toml"
           payload_ref="${IMAGE_REF}@${digest}"
+          payload_embed_ref="${IMAGE_REF}:${IMAGE_TAG}"
           cosign verify \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             --certificate-identity "${COSIGN_IDENTITY}" \
             "${payload_ref}" >/dev/null
           {
             echo "digest=${digest}"
+            echo "embed_ref=${payload_embed_ref}"
             echo "ref=${payload_ref}"
             echo "tag=${IMAGE_TAG}"
           } >>"${GITHUB_OUTPUT}"
 
       - name: Build installer environment in root container storage
         env:
+          PAYLOAD_EMBED_REF: ${{ steps.payload.outputs.embed_ref }}
           PAYLOAD_REF: ${{ steps.payload.outputs.ref }}
         shell: bash
         run: |
           sudo podman pull "${PAYLOAD_REF}"
+          sudo podman tag "${PAYLOAD_REF}" "${PAYLOAD_EMBED_REF}"
           sudo podman build \
             --file installer/Containerfile \
             --pull=never \
+            --build-context installer-overlay=installer/overlay \
             --build-arg "BASE_REF=${PAYLOAD_REF}" \
-            --build-arg "INSTALLER_PAYLOAD_REF=${PAYLOAD_REF}" \
+            --build-arg "INSTALLER_PAYLOAD_SOURCE_REF=${PAYLOAD_EMBED_REF}" \
+            --build-arg "INSTALLER_PAYLOAD_TARGET_REF=${PAYLOAD_REF}" \
             --tag "localhost/purplefin-installer:${GITHUB_SHA}" \
             .
           sudo podman pull "${IMAGE_BUILDER}"
@@ -92,18 +98,20 @@ jobs:
       - name: Build bootc-generic-iso with image-builder
         env:
           IMAGE_TAG: ${{ steps.payload.outputs.tag }}
-          PAYLOAD_REF: ${{ steps.payload.outputs.ref }}
+          PAYLOAD_EMBED_REF: ${{ steps.payload.outputs.embed_ref }}
         shell: bash
         run: |
           install -d output
+          output_owner="$(id -u):$(id -g)"
           sudo podman run --rm --privileged \
             --security-opt label=disable \
             --volume "${PWD}/output:/output" \
             --volume /var/lib/containers/storage:/var/lib/containers/storage \
             "${IMAGE_BUILDER}" \
             build \
+              --chown "${output_owner}" \
               --bootc-ref "localhost/purplefin-installer:${GITHUB_SHA}" \
-              --bootc-installer-payload-ref "${PAYLOAD_REF}" \
+              --bootc-installer-payload-ref "${PAYLOAD_EMBED_REF}" \
               --bootc-default-fs ext4 \
               bootc-generic-iso
 

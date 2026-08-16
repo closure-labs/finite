@@ -58,6 +58,11 @@ export FAKE_PODMAN_FAIL=true
 matrix="$(cd "${repo_root}" && bootc/build/plan.sh "${profile}")"
 test "$(jq '.include | length' <<<"${matrix}")" -eq 0
 
+export FORCE_REBUILD=true
+matrix="$(cd "${repo_root}" && bootc/build/plan.sh "${profile}")"
+test "$(jq -r '[.include[].profile] | join(" ")' <<<"${matrix}")" = base
+unset FORCE_REBUILD
+
 export CHECK_RPM_UPDATES=true
 export FAKE_PODMAN_FAIL=false
 export FAKE_DNF_STATUS=0
