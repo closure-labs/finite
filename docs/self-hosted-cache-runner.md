@@ -5,14 +5,20 @@ publisher. The `Warm bootc build cache` workflow runs repository checks, builds
 the common base, hardware parents, and role deltas on the trusted
 `purplefin-builder` runner, and rechunks each result. It exports Buildah layers
 to `ghcr.io/declarative-dale/purplefin-build-cache` and build-input-keyed,
-rechunked images to `ghcr.io/declarative-dale/purplefin-stage-cache`.
+rechunked images to `ghcr.io/declarative-dale/purplefin-stage-cache`. It also
+generates each stage's SPDX JSON once and stores it in
+`ghcr.io/declarative-dale/purplefin-sbom-cache`, with the stage digest recorded
+in the artifact metadata.
 
 The normal `Build Purplefin` workflow always runs on GitHub-hosted runners. It
 prefers an exact rechunked stage whose labels match the requested source,
 profile, upstream digest, and immutable parent. It performs the complete build
 and rechunk itself when no valid stage exists. A missing local runner therefore
-never blocks image publication. Hosted jobs remain responsible for release
-tags, signatures, SBOMs, and attestations.
+never blocks image publication. On a hit, ORAS copies the stage digest between
+GHCR repositories without downloading the image and applies every channel tag
+as an alias of that digest. Hosted jobs remain responsible for signatures and
+GitHub attestations; they reuse the validated cached SBOM or generate and cache
+one after a hosted fallback build.
 
 The host needs:
 
@@ -22,9 +28,12 @@ The host needs:
 - Podman, Buildah, Skopeo, Git, and `jq`;
 - enough container storage for the Bluefin parent and the base build.
 
-Cache-only jobs remove their local result, stage-cache tags, and Buildah cache
-tags after the remote exports complete. Parent layers may remain only while
-another local image still references them.
+Only cache-only workstation jobs write stage-cache tags, preventing hosted and
+local builds from racing to replace them. Cache-only jobs remove their local
+result, stage-cache tags, and Buildah cache tags after the remote image and SBOM
+exports complete. Parent layers may remain only while another local image still
+references them. The manual package-cleanup workflow removes untagged and
+retired stage/SBOM cache versions while preserving every current build input.
 
 Only trusted `main` pushes and manual dispatches target this runner. Do not add
 `pull_request` to the cache-warmer workflow: a self-hosted runner must not run

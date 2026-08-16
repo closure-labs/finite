@@ -17,17 +17,20 @@ ghcr.io/declarative-dale/purplefin
 `VERSION` is Purplefin's source version and is embedded in every image as the
 `org.opencontainers.image.version` label and `/usr/share/purplefin/version`.
 Normal builds resolve and verify Bluefin first, build from its immutable digest,
-rechunk the result, push it once, and sign and attest the resulting Purplefin
-digest. Profile inputs are hashed independently and the dynamic matrix includes
-only images whose source, base, or managed RPM state changed.
+rechunk the result, publish one digest, and apply channel tags as registry-side
+aliases. They sign that digest and attach GitHub provenance and SPDX SBOM
+attestations. Profile inputs are hashed independently and the dynamic matrix
+includes only images whose source, base, or managed RPM state changed.
 
 The release workflow accepts a release version already present in `VERSION` and
 the next development version. It first dispatches and waits for a forced,
 all-profile release-candidate build. After release-environment approval it
-verifies those published profiles and promotes their existing digests to immutable
-`PROFILE-vVERSION` tags, creates the GitHub release and manifest, then commits
-the requested `-dev.N` version to `main` and dispatches its build. Release
-promotion never rebuilds an image.
+verifies those published profiles and adds `PROFILE-vVERSION` aliases to their
+existing digests. The immutable digest mapping, manifest, and compressed SPDX
+SBOM for every profile are attached to a draft before the immutable GitHub
+release is published. It finally commits the requested `-dev.N` version to
+`main` and dispatches its build. Release promotion never rebuilds or re-uploads
+an image; tags are aliases and the recorded digest is the trust boundary.
 
 ## Declarative profile composition
 
@@ -134,8 +137,10 @@ hardware change rebuilds only that hardware branch; and a role-only change
 reuses the current immutable hardware parent. Buildah also publishes reusable
 intermediate layers to the repository's `purplefin-build-cache` GHCR package.
 The optional workstation runner also rechunks build-input-keyed stages into the
-`purplefin-stage-cache` package; hosted release jobs validate and reuse an exact
-stage or perform the complete build themselves. The planner detects and repairs
+`purplefin-stage-cache` package and scans each immutable stage once. Its SPDX
+JSON is stored as a small, digest-bound OCI artifact in `purplefin-sbom-cache`.
+Hosted jobs validate and promote an exact stage, reuse the matching SBOM, or
+perform the complete build and scan themselves. The planner detects and repairs
 children left on an older parent after a partial publish. Pull requests build
 complete images without package-write permission.
 

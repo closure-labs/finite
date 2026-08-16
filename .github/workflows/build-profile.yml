@@ -84,6 +84,27 @@ jobs:
               --password-stdin
           echo "REGISTRY_AUTH_FILE=${registry_auth_file}" >>"${GITHUB_ENV}"
 
+      - name: Install ORAS
+        if: inputs.publish || inputs.cache-only
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        with:
+          version: 1.3.3
+
+      - name: Reclaim stale cache-runner images
+        if: inputs.cache-only
+        shell: bash
+        run: |
+          mapfile -t stale_images < <(
+            podman images \
+              --filter 'label=io.purplefin.build.profile' \
+              --format '{{.ID}}' |
+              sort -u
+          )
+          if (( ${#stale_images[@]} > 0 )); then
+            podman rmi --force "${stale_images[@]}"
+          fi
+          podman image prune --force
+
       - name: Check local cache capacity
         if: inputs.cache-only
         shell: bash
@@ -126,6 +147,7 @@ jobs:
           }
           {
             echo "parent_digest=${PARENT_DIGEST}"
+            echo "sbom_repo=${IMAGE_REF}-sbom-cache"
             echo "stage_ref=${IMAGE_REF}-stage-cache:${BUILD_PROFILE}-${BUILD_INPUT}"
           } >>"${GITHUB_OUTPUT}"
 
@@ -151,7 +173,12 @@ jobs:
                .Labels["io.purplefin.upstream.digest"] == $upstream_digest and
                .Labels["org.opencontainers.image.base.digest"] == $parent_digest' \
               <<<"${metadata}" >/dev/null; then
-            echo 'hit=true' >>"${GITHUB_OUTPUT}"
+            digest="$(jq -er '.Digest' <<<"${metadata}")"
+            [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
+            {
+              echo "digest=${digest}"
+              echo 'hit=true'
+            } >>"${GITHUB_OUTPUT}"
           else
             echo 'hit=false' >>"${GITHUB_OUTPUT}"
           fi
@@ -220,12 +247,14 @@ jobs:
         if: steps.stage.outputs.hit != 'true'
         id: rechunk
         env:
+          CACHE_ONLY: ${{ inputs.cache-only }}
+          PUBLISH: ${{ inputs.publish }}
+          STAGE_REF: ${{ steps.inputs.outputs.stage_ref }}
           TAGS: ${{ inputs.tags }}
         shell: bash
         run: |
           read -r -a tags <<<"${TAGS}"
           primary_image="${IMAGE_REF}:${tags[0]}"
-          output_dir="$(mktemp -d -p "${RUNNER_TEMP}" purplefin-rechunk.XXXXXX)"
           preserved_labels="$({
             podman inspect "${primary_image}" |
               jq -c '
@@ -244,9 +273,31 @@ jobs:
             label_args+=(--label "${label}")
           done < <(jq -r 'to_entries[] | "\(.key)=\(.value)"' <<<"${preserved_labels}")
 
+          output_dir=''
+          remote_ref=''
+          run_args=()
+          if [[ "${PUBLISH}" == true ]]; then
+            remote_ref="${primary_image}"
+          elif [[ "${CACHE_ONLY}" == true ]]; then
+            remote_ref="${STAGE_REF}"
+          else
+            output_dir="$(mktemp -d -p "${RUNNER_TEMP}" purplefin-rechunk.XXXXXX)"
+          fi
+
+          if [[ -n "${remote_ref}" ]]; then
+            output="docker://${remote_ref}"
+            run_args+=(
+              --env REGISTRY_AUTH_FILE=/run/registry-auth.json
+              --volume "${REGISTRY_AUTH_FILE}:/run/registry-auth.json:ro"
+            )
+          else
+            output="oci-archive:/run/out/purplefin.oci"
+            run_args+=(--volume "${output_dir}:/run/out")
+          fi
+
           podman run --rm --pull=never --privileged \
             --mount "type=image,src=${primary_image},target=/rpm-ostree" \
-            --volume "${output_dir}:/run/out" \
+            "${run_args[@]}" \
             --entrypoint /usr/bin/rpm-ostree \
             "${primary_image}" \
             compose build-chunked-oci \
@@ -255,93 +306,142 @@ jobs:
               "${label_args[@]}" \
               --bootc \
               --rootfs /rpm-ostree \
-              --output oci-archive:/run/out/purplefin.oci
+              --output "${output}"
 
-          chunked_image="$(podman pull --quiet "oci-archive:${output_dir}/purplefin.oci")"
-          podman inspect "${chunked_image}" |
+          if [[ -n "${remote_ref}" ]]; then
+            metadata="$(skopeo inspect --retry-times 3 "docker://${remote_ref}")"
             jq -e --argjson expected "${preserved_labels}" '
-              (.[0].Config.Labels // {}) as $actual |
+              (.Labels // {}) as $actual |
               $expected |
               to_entries |
               all(.[]; $actual[.key] == .value)
-            ' >/dev/null
-          podman tag "${chunked_image}" "${primary_image}"
-          for tag in "${tags[@]:1}"; do
-            podman tag "${primary_image}" "${IMAGE_REF}:${tag}"
-          done
-          echo "archive=${output_dir}/purplefin.oci" >>"${GITHUB_OUTPUT}"
+            ' <<<"${metadata}" >/dev/null
+            digest="$(jq -er '.Digest' <<<"${metadata}")"
+            [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
+            {
+              echo "digest=${digest}"
+              echo "remote_ref=${remote_ref}"
+            } >>"${GITHUB_OUTPUT}"
+          else
+            archive="${output_dir}/purplefin.oci"
+            chunked_image="$(podman pull --quiet "oci-archive:${archive}")"
+            podman inspect "${chunked_image}" |
+              jq -e --argjson expected "${preserved_labels}" '
+                (.[0].Config.Labels // {}) as $actual |
+                $expected |
+                to_entries |
+                all(.[]; $actual[.key] == .value)
+              ' >/dev/null
+            podman tag "${chunked_image}" "${primary_image}"
+            echo "archive=${archive}" >>"${GITHUB_OUTPUT}"
+          fi
 
-      - name: Load rechunked stage cache
-        if: steps.stage.outputs.hit == 'true' && ! inputs.cache-only
-        id: cached
-        env:
-          STAGE_REF: ${{ steps.inputs.outputs.stage_ref }}
-          TAGS: ${{ inputs.tags }}
-        shell: bash
-        run: |
-          read -r -a tags <<<"${TAGS}"
-          primary_image="${IMAGE_REF}:${tags[0]}"
-          output_dir="$(mktemp -d -p "${RUNNER_TEMP}" purplefin-cached.XXXXXX)"
-          archive="${output_dir}/purplefin.oci"
-
-          skopeo copy --retry-times 3 \
-            "docker://${STAGE_REF}" \
-            "oci-archive:${archive}"
-          chunked_image="$(podman pull --quiet "oci-archive:${archive}")"
-          podman tag "${chunked_image}" "${primary_image}"
-          for tag in "${tags[@]:1}"; do
-            podman tag "${primary_image}" "${IMAGE_REF}:${tag}"
-          done
-          echo "archive=${archive}" >>"${GITHUB_OUTPUT}"
-
-      - name: Store rechunked stage cache
-        if: steps.stage.outputs.hit != 'true' && (inputs.cache-only || inputs.publish)
-        env:
-          STAGE_REF: ${{ steps.inputs.outputs.stage_ref }}
-          TAGS: ${{ inputs.tags }}
-        shell: bash
-        run: |
-          read -r -a tags <<<"${TAGS}"
-          podman tag "${IMAGE_REF}:${tags[0]}" "${STAGE_REF}"
-          podman push --quiet "${STAGE_REF}" --tls-verify=true
-
-      - name: Select OCI archive for SBOM
-        if: inputs.publish
-        id: archive
-        env:
-          BUILT_ARCHIVE: ${{ steps.rechunk.outputs.archive }}
-          CACHED_ARCHIVE: ${{ steps.cached.outputs.archive }}
-        shell: bash
-        run: |
-          archive="${CACHED_ARCHIVE:-${BUILT_ARCHIVE}}"
-          [[ -n "${archive}" && -f "${archive}" ]] || {
-            echo 'The rechunked OCI archive is missing' >&2
-            exit 1
-          }
-          echo "archive=${archive}" >>"${GITHUB_OUTPUT}"
-
-      - name: Push image and aliases
+      - name: Promote immutable image and apply aliases
         if: inputs.publish
         id: push
         env:
+          STAGE_DIGEST: ${{ steps.stage.outputs.digest }}
+          STAGE_HIT: ${{ steps.stage.outputs.hit }}
+          STAGE_REF: ${{ steps.inputs.outputs.stage_ref }}
+          RECHUNK_DIGEST: ${{ steps.rechunk.outputs.digest }}
           TAGS: ${{ inputs.tags }}
         shell: bash
         run: |
           read -r -a tags <<<"${TAGS}"
-          digest_file="$(mktemp)"
-          trap 'rm -f -- "${digest_file}"' EXIT
-
-          podman push --quiet --digestfile "${digest_file}" \
-            "${IMAGE_REF}:${tags[0]}" \
-            --tls-verify=true
-          digest="$(<"${digest_file}")"
+          primary_ref="${IMAGE_REF}:${tags[0]}"
+          if [[ "${STAGE_HIT}" == true ]]; then
+            digest="${STAGE_DIGEST}"
+            oras cp \
+              --from-registry-config "${REGISTRY_AUTH_FILE}" \
+              --to-registry-config "${REGISTRY_AUTH_FILE}" \
+              "${STAGE_REF}@${digest}" \
+              "${primary_ref}"
+          else
+            digest="${RECHUNK_DIGEST}"
+          fi
           [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
 
-          for tag in "${tags[@]:1}"; do
-            podman push --quiet "${IMAGE_REF}:${tag}" --tls-verify=true
-          done
+          published_digest="$({
+            skopeo inspect --retry-times 3 --format '{{.Digest}}' \
+              "docker://${primary_ref}"
+          })"
+          [[ "${published_digest}" == "${digest}" ]]
+
+          if (( ${#tags[@]} > 1 )); then
+            oras tag \
+              --registry-config "${REGISTRY_AUTH_FILE}" \
+              "${IMAGE_REF}@${digest}" \
+              "${tags[@]:1}"
+          fi
 
           echo "digest=${digest}" >>"${GITHUB_OUTPUT}"
+
+      - name: Select immutable image digest
+        if: inputs.publish || inputs.cache-only
+        id: image
+        env:
+          PUBLISH: ${{ inputs.publish }}
+          PUBLISHED_DIGEST: ${{ steps.push.outputs.digest }}
+          RECHUNK_DIGEST: ${{ steps.rechunk.outputs.digest }}
+          STAGE_DIGEST: ${{ steps.stage.outputs.digest }}
+          STAGE_REF: ${{ steps.inputs.outputs.stage_ref }}
+        shell: bash
+        run: |
+          digest="${PUBLISHED_DIGEST:-${RECHUNK_DIGEST:-${STAGE_DIGEST}}}"
+          [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
+          if [[ "${PUBLISH}" == true ]]; then
+            image_ref="${IMAGE_REF}"
+          else
+            image_ref="${STAGE_REF}"
+          fi
+          {
+            echo "digest=${digest}"
+            echo "ref=${image_ref}"
+          } >>"${GITHUB_OUTPUT}"
+
+      - name: Pull matching cached SBOM
+        if: inputs.publish || inputs.cache-only
+        id: sbom-cache
+        env:
+          BUILD_INPUT: ${{ inputs.build-input }}
+          BUILD_PROFILE: ${{ inputs.profile }}
+          IMAGE_DIGEST: ${{ steps.image.outputs.digest }}
+          SBOM_REPO: ${{ steps.inputs.outputs.sbom_repo }}
+        shell: bash
+        run: |
+          digest_key="${IMAGE_DIGEST#sha256:}"
+          sbom_ref="${SBOM_REPO}:${BUILD_PROFILE}-${BUILD_INPUT}-${digest_key:0:16}"
+          output_dir="$(mktemp -d -p "${RUNNER_TEMP}" purplefin-sbom.XXXXXX)"
+          if manifest="$({
+            oras manifest fetch \
+              --registry-config "${REGISTRY_AUTH_FILE}" \
+              "${sbom_ref}" 2>/dev/null
+          })" &&
+            jq -e \
+              --arg build_input "${BUILD_INPUT}" \
+              --arg digest "${IMAGE_DIGEST}" \
+              --arg profile "${BUILD_PROFILE}" '
+                .artifactType == "application/spdx+json" and
+                .annotations["io.purplefin.build.input"] == $build_input and
+                .annotations["io.purplefin.build.profile"] == $profile and
+                .annotations["io.purplefin.subject.digest"] == $digest and
+                (.layers | length) == 1 and
+                .layers[0].mediaType == "application/spdx+json"
+              ' <<<"${manifest}" >/dev/null; then
+            oras pull \
+              --registry-config "${REGISTRY_AUTH_FILE}" \
+              --output "${output_dir}" \
+              "${sbom_ref}"
+            sbom="${output_dir}/sbom.spdx.json"
+            [[ -f "${sbom}" ]]
+            {
+              echo 'hit=true'
+              echo "path=${sbom}"
+            } >>"${GITHUB_OUTPUT}"
+          else
+            rmdir "${output_dir}"
+            echo 'hit=false' >>"${GITHUB_OUTPUT}"
+          fi
 
       - name: Install cosign
         if: inputs.publish
@@ -362,14 +462,65 @@ jobs:
             "${immutable_image}" >/dev/null
 
       - name: Generate SBOM
-        if: inputs.publish
+        if: >-
+          (inputs.publish || inputs.cache-only) &&
+          steps.sbom-cache.outputs.hit != 'true'
         uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
         with:
           artifact-name: sbom-${{ inputs.profile }}.spdx.json
           format: spdx-json
-          image: oci-archive:${{ steps.archive.outputs.archive }}
+          image: registry:${{ steps.image.outputs.ref }}@${{ steps.image.outputs.digest }}
           output-file: sbom.spdx.json
+          registry-password: ${{ github.token }}
+          registry-username: ${{ github.actor }}
+          syft-version: v1.51.0
           upload-artifact: false
+          upload-release-assets: false
+
+      - name: Validate and select SBOM
+        if: inputs.publish || inputs.cache-only
+        id: sbom
+        env:
+          CACHED_SBOM: ${{ steps.sbom-cache.outputs.path }}
+        shell: bash
+        run: |
+          sbom="${CACHED_SBOM:-sbom.spdx.json}"
+          [[ -f "${sbom}" ]]
+          jq -e '
+            type == "object" and
+            (.spdxVersion | type == "string" and startswith("SPDX-")) and
+            (.packages | type == "array")
+          ' "${sbom}" >/dev/null
+          size="$(wc -c <"${sbom}")"
+          maximum_size=$((16 * 1024 * 1024))
+          if (( size > maximum_size )); then
+            printf 'SBOM is %d bytes; actions/attest accepts at most %d bytes.\n' \
+              "${size}" "${maximum_size}" >&2
+            exit 1
+          fi
+          echo "path=${sbom}" >>"${GITHUB_OUTPUT}"
+
+      - name: Store SBOM cache artifact
+        if: >-
+          (inputs.publish || inputs.cache-only) &&
+          steps.sbom-cache.outputs.hit != 'true'
+        env:
+          BUILD_INPUT: ${{ inputs.build-input }}
+          BUILD_PROFILE: ${{ inputs.profile }}
+          IMAGE_DIGEST: ${{ steps.image.outputs.digest }}
+          SBOM_REPO: ${{ steps.inputs.outputs.sbom_repo }}
+        shell: bash
+        run: |
+          digest_key="${IMAGE_DIGEST#sha256:}"
+          sbom_ref="${SBOM_REPO}:${BUILD_PROFILE}-${BUILD_INPUT}-${digest_key:0:16}"
+          oras push \
+            --registry-config "${REGISTRY_AUTH_FILE}" \
+            --artifact-type application/spdx+json \
+            --annotation "io.purplefin.build.input=${BUILD_INPUT}" \
+            --annotation "io.purplefin.build.profile=${BUILD_PROFILE}" \
+            --annotation "io.purplefin.subject.digest=${IMAGE_DIGEST}" \
+            "${sbom_ref}" \
+            sbom.spdx.json:application/spdx+json
 
       - name: Attest build provenance
         if: inputs.publish
@@ -385,7 +536,7 @@ jobs:
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           push-to-registry: true
-          sbom-path: sbom.spdx.json
+          sbom-path: ${{ steps.sbom.outputs.path }}
           subject-digest: ${{ steps.push.outputs.digest }}
           subject-name: ${{ env.IMAGE_REF }}
           subject-version: ${{ inputs.version }}
@@ -394,34 +545,38 @@ jobs:
         if: always()
         env:
           BUILT_ARCHIVE: ${{ steps.rechunk.outputs.archive }}
-          CACHED_ARCHIVE: ${{ steps.cached.outputs.archive }}
         shell: bash
         run: |
-          for archive in "${BUILT_ARCHIVE}" "${CACHED_ARCHIVE}"; do
-            if [[ -n "${archive}" ]]; then
-              rm -f -- "${archive}"
-              rmdir -- "${archive%/*}" 2>/dev/null || true
-            fi
-          done
+          if [[ -n "${BUILT_ARCHIVE}" ]]; then
+            rm -f -- "${BUILT_ARCHIVE}"
+            rmdir -- "${BUILT_ARCHIVE%/*}" 2>/dev/null || true
+          fi
+
+      - name: Remove local SBOM
+        if: always()
+        env:
+          CACHED_SBOM: ${{ steps.sbom-cache.outputs.path }}
+        shell: bash
+        run: |
+          rm -f -- sbom.spdx.json
+          if [[ -n "${CACHED_SBOM}" ]]; then
+            rm -f -- "${CACHED_SBOM}"
+            rmdir -- "${CACHED_SBOM%/*}" 2>/dev/null || true
+          fi
 
       - name: Remove cache-only images
         if: always() && inputs.cache-only
         continue-on-error: true
-        env:
-          STAGE_REF: ${{ steps.inputs.outputs.stage_ref }}
-          TAGS: ${{ inputs.tags }}
         shell: bash
         run: |
-          read -r -a tags <<<"${TAGS}"
-          podman rmi "${IMAGE_REF}:${tags[0]}" || true
-          podman rmi "${STAGE_REF}" || true
-          mapfile -t stage_images < <(
+          mapfile -t profile_images < <(
             podman images \
-              --filter "reference=${IMAGE_REF}-stage-cache:*" \
-              --format '{{.ID}}'
+              --filter 'label=io.purplefin.build.profile' \
+              --format '{{.ID}}' |
+              sort -u
           )
-          if (( ${#stage_images[@]} > 0 )); then
-            podman rmi "${stage_images[@]}" || true
+          if (( ${#profile_images[@]} > 0 )); then
+            podman rmi --force "${profile_images[@]}" || true
           fi
           mapfile -t cache_images < <(
             podman images \
@@ -429,8 +584,9 @@ jobs:
               --format '{{.ID}}'
           )
           if (( ${#cache_images[@]} > 0 )); then
-            podman rmi "${cache_images[@]}" || true
+            podman rmi --force "${cache_images[@]}" || true
           fi
+          podman image prune --force || true
 
       - name: Log out of GHCR
         if: always() && (inputs.publish || inputs.cache-only)

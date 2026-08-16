@@ -403,15 +403,27 @@ check:
     grep -qF -- '--cache-to' .github/workflows/build-profile.yml
     grep -qF 'cache_ref="${IMAGE_REF}-build-cache"' .github/workflows/build-profile.yml
     grep -qF 'reference=${IMAGE_REF}-build-cache:*' .github/workflows/build-profile.yml
-    grep -qF 'reference=${IMAGE_REF}-stage-cache:*' .github/workflows/build-profile.yml
+    grep -qF -- "--filter 'label=io.purplefin.build.profile'" .github/workflows/build-profile.yml
     grep -qF 'stage_ref=${IMAGE_REF}-stage-cache:' .github/workflows/build-profile.yml
+    grep -qF 'sbom_repo=${IMAGE_REF}-sbom-cache' .github/workflows/build-profile.yml
+    grep -qF 'remote_ref="${STAGE_REF}"' .github/workflows/build-profile.yml
+    grep -qF 'output="docker://${remote_ref}"' .github/workflows/build-profile.yml
+    grep -qF 'oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1' .github/workflows/build-profile.yml .github/workflows/release.yml
+    grep -qF 'version: 1.3.3' .github/workflows/build-profile.yml .github/workflows/release.yml
+    grep -qF 'syft-version: v1.51.0' .github/workflows/build-profile.yml
+    grep -qF 'oras cp' .github/workflows/build-profile.yml
+    grep -qF 'oras tag' .github/workflows/build-profile.yml .github/workflows/release.yml
+    grep -qF -- '--artifact-type application/spdx+json' .github/workflows/build-profile.yml
+    grep -qF 'io.purplefin.subject.digest=' .github/workflows/build-profile.yml
+    ! grep -qF 'skopeo copy --all' .github/workflows/release.yml
+    grep -qF -- '--draft' .github/workflows/release.yml
+    grep -qF -- '--draft=false' .github/workflows/release.yml
     grep -qF 'inputs.runner' .github/workflows/build-profile.yml
     test -f .github/workflows/cache-warmer.yml
     grep -qF 'runs-on: purplefin-builder' .github/workflows/cache-warmer.yml
     grep -qF 'cache-only: true' .github/workflows/cache-warmer.yml
     grep -qF 'name: Warm rechunked $' .github/workflows/cache-warmer.yml
-    grep -qF 'image: oci-archive:' .github/workflows/build-profile.yml
-    grep -qF 'steps.archive.outputs.archive' .github/workflows/build-profile.yml
+    grep -qF 'image: registry:' .github/workflows/build-profile.yml
     grep -qF 'base-publish:' .github/workflows/build.yml
     grep -qF 'hardware-publish:' .github/workflows/build.yml
     grep -qF 'roles-publish:' .github/workflows/build.yml
@@ -424,7 +436,7 @@ check:
     tests/image-build-planner.sh
     grep -qF 'buildah bud' .github/workflows/build-profile.yml
     grep -qF 'podman login' .github/workflows/build-profile.yml
-    grep -qF 'podman push' .github/workflows/build-profile.yml
+    ! grep -qF 'podman push' .github/workflows/build-profile.yml
     grep -qF 'REGISTRY_AUTH_FILE=' .github/workflows/build-profile.yml
     ! rg -q 'ghcr.io/ublue-os/bluefin(:|\b)' Containerfile README.md Justfile .github/workflows
     ! rg -q 'actions/checkout@v4|redhat-actions/(buildah-build|podman-login|push-to-registry)' .github/workflows

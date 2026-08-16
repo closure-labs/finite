@@ -24,6 +24,11 @@ jobs:
     timeout-minutes: 10
     environment: package-cleanup
     steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
       - name: Find and optionally delete obsolete versions
         env:
           DRY_RUN: ${{ inputs.dry-run }}
@@ -33,6 +38,20 @@ jobs:
           owner="${GITHUB_REPOSITORY_OWNER}"
           package="${GITHUB_REPOSITORY#*/}"
           obsolete_tags='["dale-cosmic","development-desktop-x86_64","support-lenovo-generic"]'
+          active_cache_tags="$({
+            jq -c '[.[] | "\(.profile)-\(.build_input)"]' \
+              bootc/generated/image-matrix.json
+          })"
+
+          delete_version() {
+            local package_name="$1"
+            local version_id="$2"
+            if [[ "${DRY_RUN}" != true ]]; then
+              gh api --method DELETE \
+                "/users/${owner}/packages/container/${package_name}/versions/${version_id}"
+            fi
+          }
+
           versions="$({
             gh api --paginate \
               "/users/${owner}/packages/container/${package}/versions?per_page=100" \
@@ -51,8 +70,42 @@ jobs:
             version_id="$(jq -r '.id' <<<"${candidate}")"
             tags="$(jq -r '.tags | join(", ")' <<<"${candidate}")"
             echo "Obsolete package version ${version_id}: ${tags}"
-            if [[ "${DRY_RUN}" != true ]]; then
-              gh api --method DELETE \
-                "/users/${owner}/packages/container/${package}/versions/${version_id}"
+            delete_version "${package}" "${version_id}"
+          done
+
+          for cache_suffix in stage-cache sbom-cache; do
+            cache_package="${package}-${cache_suffix}"
+            if ! cache_versions="$({
+              gh api --paginate \
+                "/users/${owner}/packages/container/${cache_package}/versions?per_page=100" \
+                --slurp 2>/dev/null
+            })"; then
+              echo "Cache package ${cache_package} does not exist yet"
+              continue
             fi
+
+            jq -c \
+              --arg cache_suffix "${cache_suffix}" \
+              --argjson active "${active_cache_tags}" '
+              add[] |
+              . as $version |
+              (.metadata.container.tags // []) as $tags |
+              select(
+                ($tags | length) == 0 or
+                all($tags[]; . as $tag |
+                  if $cache_suffix == "stage-cache" then
+                    ($active | index($tag)) == null
+                  else
+                    (any($active[]; . as $prefix | $tag | startswith($prefix + "-")) | not)
+                  end
+                )
+              ) |
+              {id: $version.id, tags: $tags}
+            ' <<<"${cache_versions}" |
+            while IFS= read -r candidate; do
+              version_id="$(jq -r '.id' <<<"${candidate}")"
+              tags="$(jq -r '.tags | if length == 0 then "untagged" else join(", ") end' <<<"${candidate}")"
+              echo "Obsolete ${cache_package} version ${version_id}: ${tags}"
+              delete_version "${cache_package}" "${version_id}"
+            done
           done
