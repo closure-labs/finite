@@ -55,8 +55,8 @@ if grep -qF -- '--blueprint' .github/workflows/build-installer.yml; then
 	exit 1
 fi
 grep -qF -- '--build-context installer-overlay=installer/overlay' .github/workflows/build-installer.yml
-grep -qF 'sudo podman tag "${PAYLOAD_REF}" "${PAYLOAD_EMBED_REF}"' .github/workflows/build-installer.yml
-grep -qF -- '--bootc-installer-payload-ref "${PAYLOAD_EMBED_REF}"' .github/workflows/build-installer.yml
+grep -qF "sudo podman tag \"\${PAYLOAD_REF}\" \"\${PAYLOAD_EMBED_REF}\"" .github/workflows/build-installer.yml
+grep -qF -- "--bootc-installer-payload-ref \"\${PAYLOAD_EMBED_REF}\"" .github/workflows/build-installer.yml
 grep -qF 'RUN --mount=from=installer-overlay,target=/run/installer-overlay' installer/Containerfile
 grep -qF 'cp -a /run/installer-overlay/. /' installer/Containerfile
 grep -qF '@@INSTALLER_PAYLOAD_SOURCE_REF@@' installer/overlay/usr/share/anaconda/interactive-defaults.ks
