@@ -461,24 +461,52 @@ jobs:
             --certificate-identity "${COSIGN_IDENTITY}" \
             "${immutable_image}" >/dev/null
 
-      - name: Generate SBOM
+      - name: Install Nix for SBOM generation
+        if: >-
+          (inputs.publish || inputs.cache-only) &&
+          inputs.runner != 'purplefin-builder' &&
+          steps.sbom-cache.outputs.hit != 'true'
+        uses: DeterminateSystems/determinate-nix-action@61cbfe2efc2d4e7a8a6d56967c3c1058e846c858 # v3
+
+      - name: Generate SBOM from mounted image root
         if: >-
           (inputs.publish || inputs.cache-only) &&
           steps.sbom-cache.outputs.hit != 'true'
-        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
         env:
-          TMPDIR: ${{ runner.temp }}
-        with:
-          artifact-name: sbom-${{ inputs.profile }}.spdx.json
-          config: .github/syft.yaml
-          format: spdx-json
-          image: ${{ steps.image.outputs.ref }}@${{ steps.image.outputs.digest }}
-          output-file: sbom.spdx.json
-          registry-password: ${{ github.token }}
-          registry-username: ${{ github.actor }}
-          syft-version: v1.51.0
-          upload-artifact: false
-          upload-release-assets: false
+          SOURCE_DIGEST: ${{ steps.image.outputs.digest }}
+          SOURCE_REF: ${{ steps.image.outputs.ref }}
+        shell: bash
+        run: |
+          syft_store="$(nix build .#syft --no-link --print-out-paths)"
+          syft_cmd="${syft_store}/bin/syft"
+          [[ -x "${syft_cmd}" ]]
+
+          mapfile -t syft_closure < <(
+            nix-store --query --requisites "${syft_store}"
+          )
+          syft_mounts=()
+          for store_path in "${syft_closure[@]}"; do
+            syft_mounts+=(--volume "${store_path}:${store_path}:ro")
+          done
+
+          immutable_image="${SOURCE_REF}@${SOURCE_DIGEST}"
+          podman pull --authfile "${REGISTRY_AUTH_FILE}" "${immutable_image}"
+          podman run --rm --pull=never \
+            --cpus 4 \
+            --memory 4g \
+            --network none \
+            --security-opt label=disable \
+            --user 0 \
+            --volume "${PWD}/.github/syft.yaml:/run/purplefin-syft.yaml:ro" \
+            "${syft_mounts[@]}" \
+            --entrypoint "${syft_cmd}" \
+            "${immutable_image}" \
+            scan dir:/ \
+              --config /run/purplefin-syft.yaml \
+              --exclude './nix/store/**' \
+              --source-name "${SOURCE_REF}" \
+              --source-version "${SOURCE_DIGEST}" \
+              --output spdx-json >sbom.spdx.json
 
       - name: Validate and select SBOM
         if: inputs.publish || inputs.cache-only

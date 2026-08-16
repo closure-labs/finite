@@ -35,6 +35,11 @@ exports complete. Parent layers may remain only while another local image still
 references them. The manual package-cleanup workflow removes untagged and
 retired stage/SBOM cache versions while preserving every current build input.
 
+The flake-pinned Syft package is mounted into the pulled stage image and scans
+its merged root filesystem with a 4 GiB container limit. This avoids retaining
+the registry's full layer graph in the runner process and keeps scanner tooling
+out of the resulting SPDX inventory.
+
 Only trusted `main` pushes and manual dispatches target this runner. Do not add
 `pull_request` to the cache-warmer workflow: a self-hosted runner must not run
 untrusted pull-request code.
