@@ -223,19 +223,62 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         shell: bash
         run: |
-          while IFS= read -r entry; do
-            profile="$(jq -r '.profile' <<<"${entry}")"
-            primary_tag="$(jq -r '.tags | split(" ")[0]' <<<"${entry}")"
-            expected_input="$(jq -r '.build_input' <<<"${entry}")"
-            metadata="$({
-              skopeo inspect --retry-times 3 \
-                "docker://${IMAGE_REF}:${primary_tag}"
+          profiles_are_current() {
+            local entry expected_input metadata primary_tag profile
+            while IFS= read -r entry; do
+              profile="$(jq -r '.profile' <<<"${entry}")"
+              primary_tag="$(jq -r '.tags | split(" ")[0]' <<<"${entry}")"
+              expected_input="$(jq -r '.build_input' <<<"${entry}")"
+              metadata="$({
+                skopeo inspect --retry-times 3 \
+                  "docker://${IMAGE_REF}:${primary_tag}"
+              })" || return 1
+              [[ "$(jq -er '.Labels["org.opencontainers.image.revision"]' <<<"${metadata}")" == "${SOURCE_SHA}" ]] || return 1
+              [[ "$(jq -er '.Labels["org.opencontainers.image.version"]' <<<"${metadata}")" == "${VERSION}" ]] || return 1
+              [[ "$(jq -er '.Labels["io.purplefin.build.profile"]' <<<"${metadata}")" == "${profile}" ]] || return 1
+              [[ "$(jq -er '.Labels["io.purplefin.build.input"]' <<<"${metadata}")" == "${expected_input}" ]] || return 1
+            done < <(jq -c '.[]' bootc/generated/image-matrix.json)
+          }
+
+          if ! profiles_are_current; then
+            echo "The reusable build did not publish every release profile; forcing a complete candidate build"
+            remote_sha="$(gh api "repos/${GITHUB_REPOSITORY}/commits/main" --jq .sha)"
+            [[ "${remote_sha}" == "${SOURCE_SHA}" ]] || {
+              echo "Main advanced before the complete candidate build" >&2
+              exit 1
+            }
+            previous_run_id="$({
+              gh run list \
+                --workflow build.yml \
+                --event workflow_dispatch \
+                --commit "${SOURCE_SHA}" \
+                --limit 1 \
+                --json databaseId \
+                --jq '.[0].databaseId // empty'
             })"
-            [[ "$(jq -er '.Labels["org.opencontainers.image.revision"]' <<<"${metadata}")" == "${SOURCE_SHA}" ]]
-            [[ "$(jq -er '.Labels["org.opencontainers.image.version"]' <<<"${metadata}")" == "${VERSION}" ]]
-            [[ "$(jq -er '.Labels["io.purplefin.build.profile"]' <<<"${metadata}")" == "${profile}" ]]
-            [[ "$(jq -er '.Labels["io.purplefin.build.input"]' <<<"${metadata}")" == "${expected_input}" ]]
-          done < <(jq -c '.[]' bootc/generated/image-matrix.json)
+            gh workflow run build.yml --ref main -f force=true
+            run_id=''
+            for _ in {1..24}; do
+              run_id="$({
+                gh run list \
+                  --workflow build.yml \
+                  --event workflow_dispatch \
+                  --commit "${SOURCE_SHA}" \
+                  --limit 5 \
+                  --json databaseId \
+                  --jq ".[] | select((.databaseId | tostring) != \"${previous_run_id}\") | .databaseId" |
+                  head -n 1
+              })"
+              [[ -z "${run_id}" ]] || break
+              sleep 5
+            done
+            [[ -n "${run_id}" ]] || {
+              echo "Could not locate the complete candidate build" >&2
+              exit 1
+            }
+            gh run watch "${run_id}" --exit-status
+            profiles_are_current
+          fi
 
   release:
     name: Promote tested digests and release source
