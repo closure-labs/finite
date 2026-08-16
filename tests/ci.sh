@@ -36,10 +36,12 @@ jq -e '
 grep -qF '  merge_group:' .github/workflows/build.yml
 grep -qF '    name: CI gate' .github/workflows/build.yml
 grep -qF "FORCE_REBUILD: \${{ github.event_name == 'merge_group'" .github/workflows/build.yml
-grep -qF "github.event_name == 'pull_request' || github.event_name == 'merge_group'" .github/workflows/build.yml
+grep -qF "(github.event_name == 'workflow_dispatch' && inputs.validate_only)" .github/workflows/build.yml
+grep -qF "VALIDATE_ONLY: \${{ github.event_name ==" .github/workflows/build.yml
 grep -qF 'name: Queue trusted update bots' .github/workflows/queue-trusted-updates.yml
 grep -qF "GH_TOKEN: \${{ secrets.MERGE_QUEUE_TOKEN || github.token }}" .github/workflows/queue-trusted-updates.yml
 grep -qF "token: \${{ secrets.MERGE_QUEUE_TOKEN || github.token }}" .github/workflows/update-flake-lock.yml
+grep -qF -- '-f validate_only=true' .github/workflows/update-flake-lock.yml
 
 actionlint -color
 zizmor --offline .github/workflows

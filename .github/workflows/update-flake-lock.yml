@@ -10,6 +10,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
+  actions: write
   contents: write
   pull-requests: write
 
@@ -28,6 +29,7 @@ jobs:
         uses: DeterminateSystems/determinate-nix-action@61cbfe2efc2d4e7a8a6d56967c3c1058e846c858 # v3
 
       - name: Update lock file and open a pull request
+        id: update
         uses: DeterminateSystems/update-flake-lock@834c491b2ece4de0bbd00d85214bb5e83b4da5c6 # v28
         with:
           # A separate token lets the pull_request and merge_group events run.
@@ -35,3 +37,64 @@ jobs:
           token: ${{ secrets.MERGE_QUEUE_TOKEN || github.token }}
           commit-msg: Update Nix flake inputs
           pr-title: Update Nix flake inputs
+
+      - name: Validate and enable auto-merge
+        if: >-
+          steps.update.outputs.pull-request-number != '' &&
+          steps.update.outputs.pull-request-operation != 'closed'
+        env:
+          GH_TOKEN: ${{ secrets.MERGE_QUEUE_TOKEN || github.token }}
+          PR_NUMBER: ${{ steps.update.outputs.pull-request-number }}
+        shell: bash
+        run: |
+          pr="$({
+            gh pr view "${PR_NUMBER}" \
+              --json headRefName,headRefOid,state,url
+          })"
+          branch="$(jq -er '.headRefName' <<<"${pr}")"
+          head_sha="$(jq -er '.headRefOid' <<<"${pr}")"
+          pr_url="$(jq -er '.url' <<<"${pr}")"
+          [[ "$(jq -er '.state' <<<"${pr}")" == OPEN ]]
+          [[ "${branch}" == update_flake_lock_action ]]
+
+          previous_run_id="$({
+            gh run list \
+              --workflow build.yml \
+              --event workflow_dispatch \
+              --branch "${branch}" \
+              --commit "${head_sha}" \
+              --limit 1 \
+              --json databaseId \
+              --jq '.[0].databaseId // empty'
+          })"
+          gh workflow run build.yml \
+            --ref "${branch}" \
+            -f validate_only=true
+
+          run_id=''
+          for _ in {1..24}; do
+            run_id="$({
+              gh run list \
+                --workflow build.yml \
+                --event workflow_dispatch \
+                --branch "${branch}" \
+                --commit "${head_sha}" \
+                --limit 5 \
+                --json databaseId \
+                --jq ".[] | select((.databaseId | tostring) != \"${previous_run_id}\") | .databaseId" |
+                head -n 1
+            })"
+            [[ -z "${run_id}" ]] || break
+            sleep 5
+          done
+          [[ -n "${run_id}" ]] || {
+            echo 'Could not locate the flake-update validation run' >&2
+            exit 1
+          }
+
+          gh run watch "${run_id}" --exit-status
+          gh pr merge \
+            --auto \
+            --merge \
+            --match-head-commit "${head_sha}" \
+            "${pr_url}"

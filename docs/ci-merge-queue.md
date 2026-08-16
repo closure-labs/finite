@@ -79,8 +79,9 @@ update enters the queue, and `CI gate` runs again against the queue's temporary
 merge commit.
 
 The flake updater uses `MERGE_QUEUE_TOKEN` when configured so opening or updating
-its pull request triggers CI. Without it, the updater falls back to
-`GITHUB_TOKEN`; GitHub then requires a maintainer to approve the flake-update
-workflow run. For the personal-repository fallback, the built-in token can
-enable ordinary auto-merge for trusted updates. A separate token remains
-necessary after upgrading to a native queue.
+its pull request triggers CI normally. Without it, the updater falls back to
+`GITHUB_TOKEN`, explicitly dispatches `Build Purplefin` in validation-only mode,
+waits for `CI gate`, and enables ordinary auto-merge. Validation-only dispatches
+never receive publishing permissions. A separate token remains necessary after
+upgrading to a native queue because the built-in token cannot enqueue a pull
+request.
