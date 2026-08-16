@@ -102,12 +102,14 @@ jobs:
         shell: bash
         run: |
           install -d output
+          output_owner="$(id -u):$(id -g)"
           sudo podman run --rm --privileged \
             --security-opt label=disable \
             --volume "${PWD}/output:/output" \
             --volume /var/lib/containers/storage:/var/lib/containers/storage \
             "${IMAGE_BUILDER}" \
             build \
+              --chown "${output_owner}" \
               --bootc-ref "localhost/purplefin-installer:${GITHUB_SHA}" \
               --bootc-installer-payload-ref "${PAYLOAD_EMBED_REF}" \
               --bootc-default-fs ext4 \
