@@ -451,8 +451,8 @@ check:
     ! rg -q 'ghcr.io/ublue-os/bluefin(:|\b)' Containerfile README.md Justfile .github/workflows
     ! rg -q 'actions/checkout@v4|redhat-actions/(buildah-build|podman-login|push-to-registry)' .github/workflows
     ! rg -q 'bootc-image-builder|--type bootc-installer|anaconda-iso' .github installer
-    grep -qF 'bootc-generic-iso' .github/workflows/build-installer.yml
-    grep -qF 'ghcr.io/osbuild/image-builder-cli@sha256:' .github/workflows/build-installer.yml
+    grep -qF 'bootc-generic-iso' .github/actions/build-installer/action.yml
+    grep -qF 'ghcr.io/osbuild/image-builder-cli@sha256:' .github/actions/build-installer/action.yml
     test -z "$(find bootc/modules -maxdepth 1 -name 'legacy-*' -print -quit)"
     test -z "$(find bootc -maxdepth 2 \( -name '*no-ipu7*' -o -name 'desktop-x86_64.sh' -o -name 'lenovo-generic.sh' \) -print -quit)"
     ! grep -qF 'dracut --force "${kernel_modules_dir}/initramfs.img" "${kernel_version}"' bootc/build/full.sh
