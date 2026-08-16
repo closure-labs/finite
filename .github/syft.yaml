@@ -1,0 +1,26 @@
+check-for-app-update: false
+default-catalogers:
+  - conda-meta-cataloger
+  - dotnet-deps-binary-cataloger
+  - homebrew-cataloger
+  - java-archive-cataloger
+  - java-jvm-cataloger
+  - javascript-package-cataloger
+  - linux-kernel-cataloger
+  - nix-cataloger
+  - php-composer-installed-cataloger
+  - python-installed-package-cataloger
+  - rpm-db-cataloger
+  - ruby-installed-gemspec-cataloger
+  - sbom-cataloger
+file:
+  metadata:
+    selection: none
+parallelism: 4
+package:
+  exclude-binary-overlap-by-ownership: false
+relationships:
+  package-file-ownership: false
+  package-file-ownership-overlap: false
+select-catalogers:
+  - -file

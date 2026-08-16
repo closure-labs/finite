@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - .containerignore
+      - .github/syft.yaml
       - .github/workflows/build-profile.yml
       - .github/workflows/build.yml
       - .github/workflows/cache-warmer.yml

@@ -470,6 +470,7 @@ jobs:
           TMPDIR: ${{ runner.temp }}
         with:
           artifact-name: sbom-${{ inputs.profile }}.spdx.json
+          config: .github/syft.yaml
           format: spdx-json
           image: ${{ steps.image.outputs.ref }}@${{ steps.image.outputs.digest }}
           output-file: sbom.spdx.json
