@@ -38,7 +38,10 @@ retired stage/SBOM cache versions while preserving every current build input.
 The flake-pinned Syft package is mounted into the pulled stage image and scans
 its merged root filesystem with a 4 GiB container limit. This avoids retaining
 the registry's full layer graph in the runner process and keeps scanner tooling
-out of the resulting SPDX inventory.
+out of the resulting SPDX inventory. The final compaction removes only Syft's
+synthesized CPE candidates; package URLs and dependency relationships remain.
+`nix run .#sbomnix` is available separately for Nix/Home Manager closures, which
+are not embedded in the current bootc root.
 
 Only trusted `main` pushes and manual dispatches target this runner. Do not add
 `pull_request` to the cache-warmer workflow: a self-hosted runner must not run

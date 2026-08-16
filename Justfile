@@ -414,7 +414,8 @@ check:
     grep -qF 'nix build .#syft --no-link --print-out-paths' .github/workflows/build-profile.yml
     grep -qF 'scan dir:/' .github/workflows/build-profile.yml
     grep -qF -- "--exclude './nix/store/**'" .github/workflows/build-profile.yml
-    grep -qF 'flake.packages.${system}.syft = pkgs.syft;' nix/flake-modules/tools.nix
+    grep -qF 'inherit (pkgs) sbomnix syft;' nix/flake-modules/tools.nix
+    grep -qF 'select(.referenceType != "cpe23Type")' .github/workflows/build-profile.yml
     test -f .github/syft.yaml
     ! grep -qF 'anchore/sbom-action' .github/workflows/build-profile.yml
     grep -qF 'oras cp' .github/workflows/build-profile.yml
