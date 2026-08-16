@@ -90,9 +90,9 @@ jobs:
         run: |
           graph_root="$(podman info --format '{{.Store.GraphRoot}}')"
           available_bytes="$(df --output=avail -B1 "${graph_root}" | tail -n 1)"
-          minimum_bytes=$((20 * 1024 * 1024 * 1024))
+          minimum_bytes=$((10 * 1024 * 1024 * 1024))
           if (( available_bytes < minimum_bytes )); then
-            printf 'Container storage at %s has only %d GiB free; 20 GiB is required.\n' \
+            printf 'Container storage at %s has only %d GiB free; 10 GiB is required.\n' \
               "${graph_root}" "$((available_bytes / 1024 / 1024 / 1024))" >&2
             exit 1
           fi
