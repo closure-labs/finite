@@ -397,7 +397,7 @@ check:
     grep -qF 'io.purplefin.parent.digest=' .github/workflows/build-profile.yml
     grep -qF -- '--cache-from' .github/workflows/build-profile.yml
     grep -qF -- '--cache-to' .github/workflows/build-profile.yml
-    grep -qF 'cache_ref="${IMAGE_REF}-build-cache:${BUILD_PROFILE}"' .github/workflows/build-profile.yml
+    grep -qF 'cache_ref="${IMAGE_REF}-build-cache"' .github/workflows/build-profile.yml
     grep -qF 'inputs.runner' .github/workflows/build-profile.yml
     test -f .github/workflows/cache-warmer.yml
     grep -qF 'runs-on: purplefin-builder' .github/workflows/cache-warmer.yml

@@ -3,7 +3,8 @@
 Purplefin's optional self-hosted runner is a cache warmer, not a release
 publisher. The `Warm bootc build cache` workflow runs repository checks and the
 shared base build on the trusted `purplefin-builder` runner, then exports
-Buildah layers to `ghcr.io/declarative-dale/purplefin-build-cache:base`.
+Buildah layers to the `ghcr.io/declarative-dale/purplefin-build-cache`
+repository.
 
 The normal `Build Purplefin` workflow always runs on GitHub-hosted runners. It
 uses the warmed cache when available and performs the complete build when the

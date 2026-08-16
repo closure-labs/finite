@@ -80,6 +80,21 @@ jobs:
               --password-stdin
           echo "REGISTRY_AUTH_FILE=${registry_auth_file}" >>"${GITHUB_ENV}"
 
+      - name: Check local cache capacity
+        if: inputs.cache-only
+        shell: bash
+        run: |
+          graph_root="$(podman info --format '{{.Store.GraphRoot}}')"
+          available_bytes="$(df --output=avail -B1 "${graph_root}" | tail -n 1)"
+          minimum_bytes=$((20 * 1024 * 1024 * 1024))
+          if (( available_bytes < minimum_bytes )); then
+            printf 'Container storage at %s has only %d GiB free; 20 GiB is required.\n' \
+              "${graph_root}" "$((available_bytes / 1024 / 1024 / 1024))" >&2
+            exit 1
+          fi
+          printf 'Container storage at %s has %d GiB free.\n' \
+            "${graph_root}" "$((available_bytes / 1024 / 1024 / 1024))"
+
       - name: Build image from immutable parent
         env:
           BUILD_INPUT: ${{ inputs.build-input }}
@@ -98,7 +113,7 @@ jobs:
           primary_image="${IMAGE_REF}:${tags[0]}"
           created="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           containerfile=./Containerfile
-          cache_ref="${IMAGE_REF}-build-cache:${BUILD_PROFILE}"
+          cache_ref="${IMAGE_REF}-build-cache"
           cache_args=(--layers)
           parent_args=()
 
@@ -118,7 +133,7 @@ jobs:
           base_ref="${PARENT_IMAGE}@${PARENT_DIGEST}"
           if [[ "${CACHE_WRITE}" == true ]]; then
             cache_args+=(--cache-to "${cache_ref}")
-            if skopeo inspect "docker://${cache_ref}" >/dev/null 2>&1; then
+            if skopeo list-tags "docker://${cache_ref}" >/dev/null 2>&1; then
               cache_args+=(--cache-from "${cache_ref}" --cache-ttl 168h)
             fi
           fi
@@ -252,6 +267,16 @@ jobs:
             rm -f -- "${OCI_ARCHIVE}"
             rmdir -- "${OCI_ARCHIVE%/*}" 2>/dev/null || true
           fi
+
+      - name: Remove cache-only image
+        if: always() && inputs.cache-only
+        continue-on-error: true
+        env:
+          TAGS: ${{ inputs.tags }}
+        shell: bash
+        run: |
+          read -r -a tags <<<"${TAGS}"
+          podman rmi "${IMAGE_REF}:${tags[0]}" || true
 
       - name: Log out of GHCR
         if: always() && (inputs.publish || inputs.cache-only)
