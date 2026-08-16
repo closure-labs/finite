@@ -161,7 +161,8 @@ the repository prerequisites in
 [the merge-queue runbook](docs/ci-merge-queue.md) are met. While Purplefin is
 user-owned, strict up-to-date status protection plus ordinary auto-merge provides
 the closest native approximation; the checked-in queue policy is ready for a
-future organization transfer.
+future organization transfer. The test layers and trigger-specific guarantees
+are summarized in [CI and testing objectives](docs/ci-objectives.md).
 
 The flake also exposes `.#sbomnix` for native SBOMs of Home Manager or other Nix
 closures. Those closures are not merged into the bootc image SBOM because the

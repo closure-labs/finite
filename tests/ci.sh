@@ -11,6 +11,7 @@ mapfile -d '' shell_files < <(
 		-type f -name '*.sh' -print0
 )
 shellcheck --external-sources --source-path=SCRIPTDIR "${shell_files[@]}"
+tests/trusted-update-validation.sh
 
 jq -e '
   .target == "branch" and
@@ -38,15 +39,21 @@ grep -qF '    name: CI gate' .github/workflows/build.yml
 grep -qF "FORCE_REBUILD: \${{ github.event_name == 'merge_group'" .github/workflows/build.yml
 grep -qF "(github.event_name == 'workflow_dispatch' && inputs.validate_only)" .github/workflows/build.yml
 grep -qF "VALIDATE_ONLY: \${{ github.event_name ==" .github/workflows/build.yml
-grep -qF 'name: Queue trusted update bots' .github/workflows/queue-trusted-updates.yml
-grep -qF "GH_TOKEN: \${{ secrets.MERGE_QUEUE_TOKEN || github.token }}" .github/workflows/queue-trusted-updates.yml
+grep -qF 'name: Queue Dependabot updates' .github/workflows/queue-dependabot.yml
+grep -qF 'select(.user.login == "dependabot[bot]")' .github/workflows/queue-dependabot.yml
+grep -qF "select(.head.repo.full_name == \$repository)" .github/workflows/queue-dependabot.yml
 grep -qF "token: \${{ secrets.MERGE_QUEUE_TOKEN || github.token }}" .github/workflows/update-flake-lock.yml
 grep -qF 'run: ci/validate-trusted-update.sh' .github/workflows/update-flake-lock.yml
 grep -qF 'name: Update Image Builder CLI digest' .github/workflows/update-image-builder.yml
 grep -qF 'IMAGE_BUILDER_TAG: ghcr.io/osbuild/image-builder-cli:latest' .github/workflows/update-image-builder.yml
 grep -qF 'VALIDATE_INSTALLER: "true"' .github/workflows/update-image-builder.yml
+grep -qF -- '--event pull_request' ci/validate-trusted-update.sh
 grep -qF 'dispatch_and_wait build.yml -f validate_only=true' ci/validate-trusted-update.sh
 grep -qF 'dispatch_and_wait build-installer.yml -f image-tag=base-generic-x86_64' ci/validate-trusted-update.sh
+if grep -qF -- '--blueprint' .github/workflows/build-installer.yml; then
+	echo 'bootc-generic-iso does not support Blueprint customizations' >&2
+	exit 1
+fi
 
 actionlint -color
 zizmor --offline .github/workflows

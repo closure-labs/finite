@@ -71,20 +71,22 @@ native queue ruleset is activated so `main` has one authoritative policy.
 
 ## Trusted update bots
 
-`Queue trusted update bots` enables auto-merge only for same-repository
-Dependabot pull requests and the exact flake-lock and Image Builder CLI updater
-branches and titles. It checks out and executes no pull-request code and pins
-the requested head commit when enabling auto-merge. All normal PR checks must
-pass before an update enters the queue, and `CI gate` runs again against the
-queue's temporary merge commit.
+`Queue Dependabot updates` runs daily on the default branch, verifies open pull
+requests through the GitHub API, and enables auto-merge only for non-draft,
+same-repository Dependabot updates targeting the default branch. It pins the
+requested head commit and operates exclusively on GitHub API metadata. The
+scheduled workflow has permission to enable auto-merge while Dependabot
+pull-request workflows retain their read-only token.
+Branch protection still requires the candidate to be current and pass `CI gate`
+before GitHub can merge it.
 
-The flake updater uses `MERGE_QUEUE_TOKEN` when configured so opening or updating
-its pull request triggers CI normally. Without it, the updater falls back to
-`GITHUB_TOKEN`, explicitly dispatches `Build Purplefin` in validation-only mode,
-waits for `CI gate`, and enables ordinary auto-merge. Validation-only dispatches
-never receive publishing permissions. A separate token remains necessary after
-upgrading to a native queue because the built-in token cannot enqueue a pull
-request.
+The flake and Image Builder updaters validate and merge their own exact pull
+requests. The Dependabot workflow is scoped exclusively to Dependabot. When
+`MERGE_QUEUE_TOKEN` causes the normal pull-request workflow to run, the shared
+validator reuses and waits for that run. With `GITHUB_TOKEN`, it dispatches
+`Build Purplefin` in validation-only mode. Validation-only dispatches use
+read-only package permissions. A separate token provides native-queue enqueue
+permission after an organization transfer.
 
 The Image Builder updater follows OSBuild's scheduled pinned-CI-image refresh
 pattern. It resolves the mutable `image-builder-cli:latest` discovery tag, then
