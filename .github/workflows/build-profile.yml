@@ -268,7 +268,7 @@ jobs:
             rmdir -- "${OCI_ARCHIVE%/*}" 2>/dev/null || true
           fi
 
-      - name: Remove cache-only image
+      - name: Remove cache-only images
         if: always() && inputs.cache-only
         continue-on-error: true
         env:
@@ -277,6 +277,14 @@ jobs:
         run: |
           read -r -a tags <<<"${TAGS}"
           podman rmi "${IMAGE_REF}:${tags[0]}" || true
+          mapfile -t cache_images < <(
+            podman images \
+              --filter "reference=${IMAGE_REF}-build-cache:*" \
+              --format '{{.ID}}'
+          )
+          if (( ${#cache_images[@]} > 0 )); then
+            podman rmi "${cache_images[@]}" || true
+          fi
 
       - name: Log out of GHCR
         if: always() && (inputs.publish || inputs.cache-only)
