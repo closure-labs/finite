@@ -23,13 +23,10 @@ base_inventory="${probe_root}/base-rpms"
 add_profile() {
 	local entry="$1"
 	local reason="$2"
-	local use_stage_cache="${3:-true}"
 	local profile
 
 	profile="$(jq -r '.profile' <<<"${entry}")"
 	echo "${profile}: build (${reason})" >&2
-	entry="$(jq -c --argjson use_stage_cache "${use_stage_cache}" \
-		'. + {use_stage_cache: $use_stage_cache}' <<<"${entry}")"
 	selected="$(jq -c --argjson entry "${entry}" '. + [$entry]' <<<"${selected}")"
 }
 
@@ -53,7 +50,7 @@ while IFS= read -r entry; do
 	[[ "${build_input}" =~ ^[0-9a-f]{64}$ ]] || { echo "Invalid build input for ${profile}" >&2; exit 2; }
 
 	if [[ "${force_rebuild}" == true ]]; then
-		add_profile "${entry}" 'manual force rebuild' false
+		add_profile "${entry}" 'manual force rebuild'
 		continue
 	fi
 
@@ -88,11 +85,11 @@ while IFS= read -r entry; do
 	# The expensive build runs only when a layered or independently managed RPM
 	# has an upgrade.
 	if ! ensure_base_inventory; then
-		add_profile "${entry}" 'Bluefin RPM baseline could not be read' false
+		add_profile "${entry}" 'Bluefin RPM baseline could not be read'
 		continue
 	fi
 	if ! podman pull --quiet "${published_ref}" >&2; then
-		add_profile "${entry}" 'published image could not be pulled for its RPM probe' false
+		add_profile "${entry}" 'published image could not be pulled for its RPM probe'
 		continue
 	fi
 
@@ -100,7 +97,7 @@ while IFS= read -r entry; do
 	layered_packages="${probe_root}/${profile}-layered-package-names"
 	if ! podman run --rm --pull=never --entrypoint rpm "${published_ref}" \
 		-qa --qf $'%{NAME}\t%{EVR}\t%{ARCH}\n' >"${profile_inventory}"; then
-		add_profile "${entry}" 'published RPM inventory could not be read' false
+		add_profile "${entry}" 'published RPM inventory could not be read'
 		continue
 	fi
 	LC_ALL=C sort -o "${profile_inventory}" "${profile_inventory}"
@@ -134,11 +131,11 @@ while IFS= read -r entry; do
 		;;
 		100)
 			sed "s/^/${profile}: /" "${upgrade_log}" >&2
-			add_profile "${entry}" 'installed RPM updates are available' false
+			add_profile "${entry}" 'installed RPM updates are available'
 		;;
 		*)
 			sed "s/^/${profile}: /" "${upgrade_log}" >&2
-			add_profile "${entry}" "RPM probe failed with status ${upgrade_status}" false
+			add_profile "${entry}" "RPM probe failed with status ${upgrade_status}"
 		;;
 	esac
 	# Keep the exact base tag for a possible build, but discard the old

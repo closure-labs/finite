@@ -136,16 +136,16 @@ profile. A shared-base change rebuilds the entire descendant closure; a
 hardware change rebuilds only that hardware branch; and a role-only change
 reuses the current immutable hardware parent. Buildah also publishes reusable
 intermediate layers to the repository's `purplefin-build-cache` GHCR package.
-The optional workstation runner also rechunks build-input-keyed stages into the
-`purplefin-stage-cache` package and scans each immutable stage once. Its SPDX
-JSON is stored as a small, digest-bound OCI artifact in `purplefin-sbom-cache`.
+GitHub-hosted runners build the dependency graph in parent-first order, rechunk
+each published image directly into GHCR, and store its SPDX JSON as a small,
+digest-bound OCI artifact in `purplefin-sbom-cache`.
 The locked flake supplies Syft; CI runs it inside the pulled image and scans the
 merged root filesystem, avoiding the registry layer resolver's duplicate disk
 use and high memory demand. It retains package URLs and relationships but drops
 Syft's synthesized CPE candidates, which keeps the attested SPDX predicate below
 GitHub's 16 MiB limit without removing packages.
-Hosted jobs validate and promote an exact stage, reuse the matching SBOM, or
-perform the complete build and scan themselves. The planner detects and repairs
+Hosted jobs reuse matching Buildah layers and SBOMs or perform the complete
+build and scan themselves. The planner detects and repairs
 children left on an older parent after a partial publish. Pull requests build
 complete images without package-write permission.
 

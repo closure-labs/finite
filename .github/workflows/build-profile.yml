@@ -3,10 +3,6 @@ name: Build one Purplefin profile
 on:
   workflow_call:
     inputs:
-      cache-only:
-        required: false
-        default: false
-        type: boolean
       upstream-base-digest:
         required: true
         type: string
@@ -34,14 +30,6 @@ on:
       publish:
         required: true
         type: boolean
-      runner:
-        required: false
-        default: ubuntu-24.04
-        type: string
-      use-stage-cache:
-        required: false
-        default: true
-        type: boolean
       tags:
         required: true
         type: string
@@ -58,7 +46,7 @@ env:
 
 jobs:
   build:
-    runs-on: ${{ inputs.runner }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 120
     outputs:
       digest: ${{ steps.push.outputs.digest }}
@@ -69,7 +57,7 @@ jobs:
           persist-credentials: false
 
       - name: Log in to GHCR for publishing and build cache
-        if: inputs.publish || inputs.cache-only
+        if: inputs.publish
         env:
           GHCR_TOKEN: ${{ github.token }}
         shell: bash
@@ -85,46 +73,14 @@ jobs:
           echo "REGISTRY_AUTH_FILE=${registry_auth_file}" >>"${GITHUB_ENV}"
 
       - name: Install ORAS
-        if: inputs.publish || inputs.cache-only
+        if: inputs.publish
         uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
         with:
           version: 1.3.3
 
-      - name: Reclaim stale cache-runner images
-        if: inputs.cache-only
-        shell: bash
-        run: |
-          mapfile -t stale_images < <(
-            podman images \
-              --filter 'label=io.purplefin.build.profile' \
-              --format '{{.ID}}' |
-              sort -u
-          )
-          if (( ${#stale_images[@]} > 0 )); then
-            podman rmi --force "${stale_images[@]}"
-          fi
-          podman image prune --force
-
-      - name: Check local cache capacity
-        if: inputs.cache-only
-        shell: bash
-        run: |
-          graph_root="$(podman info --format '{{.Store.GraphRoot}}')"
-          available_bytes="$(df --output=avail -B1 "${graph_root}" | tail -n 1)"
-          minimum_bytes=$((10 * 1024 * 1024 * 1024))
-          if (( available_bytes < minimum_bytes )); then
-            printf 'Container storage at %s has only %d GiB free; 10 GiB is required.\n' \
-              "${graph_root}" "$((available_bytes / 1024 / 1024 / 1024))" >&2
-            exit 1
-          fi
-          printf 'Container storage at %s has %d GiB free.\n' \
-            "${graph_root}" "$((available_bytes / 1024 / 1024 / 1024))"
-
       - name: Resolve immutable build inputs
         id: inputs
         env:
-          BUILD_INPUT: ${{ inputs.build-input }}
-          BUILD_PROFILE: ${{ inputs.profile }}
           PARENT_DIGEST: ${{ inputs.parent-digest }}
           PARENT_IMAGE: ${{ inputs.parent-image }}
           PARENT_PROFILE: ${{ inputs.parent-profile }}
@@ -148,43 +104,9 @@ jobs:
           {
             echo "parent_digest=${PARENT_DIGEST}"
             echo "sbom_repo=${IMAGE_REF}-sbom-cache"
-            echo "stage_ref=${IMAGE_REF}-stage-cache:${BUILD_PROFILE}-${BUILD_INPUT}"
           } >>"${GITHUB_OUTPUT}"
 
-      - name: Probe rechunked stage cache
-        if: inputs.use-stage-cache
-        id: stage
-        env:
-          BUILD_INPUT: ${{ inputs.build-input }}
-          BUILD_PROFILE: ${{ inputs.profile }}
-          PARENT_DIGEST: ${{ steps.inputs.outputs.parent_digest }}
-          STAGE_REF: ${{ steps.inputs.outputs.stage_ref }}
-          UPSTREAM_BASE_DIGEST: ${{ inputs.upstream-base-digest }}
-        shell: bash
-        run: |
-          if metadata="$(skopeo inspect --retry-times 3 "docker://${STAGE_REF}" 2>/dev/null)" &&
-            jq -e \
-              --arg build_input "${BUILD_INPUT}" \
-              --arg parent_digest "${PARENT_DIGEST}" \
-              --arg profile "${BUILD_PROFILE}" \
-              --arg upstream_digest "${UPSTREAM_BASE_DIGEST}" \
-              '.Labels["io.purplefin.build.input"] == $build_input and
-               .Labels["io.purplefin.build.profile"] == $profile and
-               .Labels["io.purplefin.upstream.digest"] == $upstream_digest and
-               .Labels["org.opencontainers.image.base.digest"] == $parent_digest' \
-              <<<"${metadata}" >/dev/null; then
-            digest="$(jq -er '.Digest' <<<"${metadata}")"
-            [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
-            {
-              echo "digest=${digest}"
-              echo 'hit=true'
-            } >>"${GITHUB_OUTPUT}"
-          else
-            echo 'hit=false' >>"${GITHUB_OUTPUT}"
-          fi
-
       - name: Build image from immutable parent
-        if: steps.stage.outputs.hit != 'true'
         env:
           BUILD_INPUT: ${{ inputs.build-input }}
           BUILD_PROFILE: ${{ inputs.profile }}
@@ -192,8 +114,7 @@ jobs:
           PARENT_IMAGE: ${{ inputs.parent-image }}
           PARENT_PROFILE: ${{ inputs.parent-profile }}
           PARENT_TAG: ${{ inputs.parent-tag }}
-          CACHE_WRITE: ${{ inputs.publish || inputs.cache-only }}
-          CACHE_READ: ${{ inputs.use-stage-cache }}
+          CACHE_WRITE: ${{ inputs.publish }}
           PURPLEFIN_VERSION: ${{ inputs.version }}
           TAGS: ${{ inputs.tags }}
           UPSTREAM_BASE_DIGEST: ${{ inputs.upstream-base-digest }}
@@ -216,12 +137,11 @@ jobs:
             )
           fi
           base_ref="${PARENT_IMAGE}@${PARENT_DIGEST}"
+          if skopeo list-tags "docker://${cache_ref}" >/dev/null 2>&1; then
+            cache_args+=(--cache-from "${cache_ref}" --cache-ttl 168h)
+          fi
           if [[ "${CACHE_WRITE}" == true ]]; then
             cache_args+=(--cache-to "${cache_ref}")
-            if [[ "${CACHE_READ}" == true ]] && \
-              skopeo list-tags "docker://${cache_ref}" >/dev/null 2>&1; then
-              cache_args+=(--cache-from "${cache_ref}" --cache-ttl 168h)
-            fi
           fi
 
           buildah bud \
@@ -244,12 +164,9 @@ jobs:
             .
 
       - name: Rechunk bootc image for efficient updates
-        if: steps.stage.outputs.hit != 'true'
         id: rechunk
         env:
-          CACHE_ONLY: ${{ inputs.cache-only }}
           PUBLISH: ${{ inputs.publish }}
-          STAGE_REF: ${{ steps.inputs.outputs.stage_ref }}
           TAGS: ${{ inputs.tags }}
         shell: bash
         run: |
@@ -278,8 +195,6 @@ jobs:
           run_args=()
           if [[ "${PUBLISH}" == true ]]; then
             remote_ref="${primary_image}"
-          elif [[ "${CACHE_ONLY}" == true ]]; then
-            remote_ref="${STAGE_REF}"
           else
             output_dir="$(mktemp -d -p "${RUNNER_TEMP}" purplefin-rechunk.XXXXXX)"
           fi
@@ -340,25 +255,13 @@ jobs:
         if: inputs.publish
         id: push
         env:
-          STAGE_DIGEST: ${{ steps.stage.outputs.digest }}
-          STAGE_HIT: ${{ steps.stage.outputs.hit }}
-          STAGE_REF: ${{ steps.inputs.outputs.stage_ref }}
           RECHUNK_DIGEST: ${{ steps.rechunk.outputs.digest }}
           TAGS: ${{ inputs.tags }}
         shell: bash
         run: |
           read -r -a tags <<<"${TAGS}"
           primary_ref="${IMAGE_REF}:${tags[0]}"
-          if [[ "${STAGE_HIT}" == true ]]; then
-            digest="${STAGE_DIGEST}"
-            oras cp \
-              --from-registry-config "${REGISTRY_AUTH_FILE}" \
-              --to-registry-config "${REGISTRY_AUTH_FILE}" \
-              "${STAGE_REF}@${digest}" \
-              "${primary_ref}"
-          else
-            digest="${RECHUNK_DIGEST}"
-          fi
+          digest="${RECHUNK_DIGEST}"
           [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
 
           published_digest="$({
@@ -377,30 +280,21 @@ jobs:
           echo "digest=${digest}" >>"${GITHUB_OUTPUT}"
 
       - name: Select immutable image digest
-        if: inputs.publish || inputs.cache-only
+        if: inputs.publish
         id: image
         env:
-          PUBLISH: ${{ inputs.publish }}
           PUBLISHED_DIGEST: ${{ steps.push.outputs.digest }}
-          RECHUNK_DIGEST: ${{ steps.rechunk.outputs.digest }}
-          STAGE_DIGEST: ${{ steps.stage.outputs.digest }}
-          STAGE_REF: ${{ steps.inputs.outputs.stage_ref }}
         shell: bash
         run: |
-          digest="${PUBLISHED_DIGEST:-${RECHUNK_DIGEST:-${STAGE_DIGEST}}}"
+          digest="${PUBLISHED_DIGEST}"
           [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
-          if [[ "${PUBLISH}" == true ]]; then
-            image_ref="${IMAGE_REF}"
-          else
-            image_ref="${STAGE_REF}"
-          fi
           {
             echo "digest=${digest}"
-            echo "ref=${image_ref}"
+            echo "ref=${IMAGE_REF}"
           } >>"${GITHUB_OUTPUT}"
 
       - name: Pull matching cached SBOM
-        if: inputs.publish || inputs.cache-only
+        if: inputs.publish
         id: sbom-cache
         env:
           BUILD_INPUT: ${{ inputs.build-input }}
@@ -463,14 +357,13 @@ jobs:
 
       - name: Install Nix for SBOM generation
         if: >-
-          (inputs.publish || inputs.cache-only) &&
-          inputs.runner != 'purplefin-builder' &&
+          inputs.publish &&
           steps.sbom-cache.outputs.hit != 'true'
         uses: DeterminateSystems/determinate-nix-action@61cbfe2efc2d4e7a8a6d56967c3c1058e846c858 # v3
 
       - name: Generate SBOM from mounted image root
         if: >-
-          (inputs.publish || inputs.cache-only) &&
+          inputs.publish &&
           steps.sbom-cache.outputs.hit != 'true'
         env:
           SOURCE_DIGEST: ${{ steps.image.outputs.digest }}
@@ -526,7 +419,7 @@ jobs:
             ' >sbom.spdx.json
 
       - name: Validate and select SBOM
-        if: inputs.publish || inputs.cache-only
+        if: inputs.publish
         id: sbom
         env:
           CACHED_SBOM: ${{ steps.sbom-cache.outputs.path }}
@@ -552,7 +445,7 @@ jobs:
 
       - name: Store SBOM cache artifact
         if: >-
-          (inputs.publish || inputs.cache-only) &&
+          inputs.publish &&
           steps.sbom-cache.outputs.hit != 'true'
         env:
           BUILD_INPUT: ${{ inputs.build-input }}
@@ -614,32 +507,8 @@ jobs:
             rmdir -- "${CACHED_SBOM%/*}" 2>/dev/null || true
           fi
 
-      - name: Remove cache-only images
-        if: always() && inputs.cache-only
-        continue-on-error: true
-        shell: bash
-        run: |
-          mapfile -t profile_images < <(
-            podman images \
-              --filter 'label=io.purplefin.build.profile' \
-              --format '{{.ID}}' |
-              sort -u
-          )
-          if (( ${#profile_images[@]} > 0 )); then
-            podman rmi --force "${profile_images[@]}" || true
-          fi
-          mapfile -t cache_images < <(
-            podman images \
-              --filter "reference=${IMAGE_REF}-build-cache:*" \
-              --format '{{.ID}}'
-          )
-          if (( ${#cache_images[@]} > 0 )); then
-            podman rmi --force "${cache_images[@]}" || true
-          fi
-          podman image prune --force || true
-
       - name: Log out of GHCR
-        if: always() && (inputs.publish || inputs.cache-only)
+        if: always() && inputs.publish
         continue-on-error: true
         shell: bash
         run: |

@@ -148,7 +148,6 @@ jobs:
       publish: false
       tags: ${{ matrix.tags }}
       upstream-base-digest: ${{ needs.plan.outputs.base_digest }}
-      use-stage-cache: ${{ matrix.use_stage_cache }}
       version: ${{ needs.plan.outputs.version }}
 
   base-publish:
@@ -169,7 +168,6 @@ jobs:
       publish: true
       tags: ${{ fromJSON(needs.plan.outputs.root_base).tags }}
       upstream-base-digest: ${{ needs.plan.outputs.base_digest }}
-      use-stage-cache: ${{ fromJSON(needs.plan.outputs.root_base).use_stage_cache }}
       version: ${{ needs.plan.outputs.version }}
 
   hardware-publish:
@@ -201,7 +199,6 @@ jobs:
       publish: true
       tags: ${{ matrix.tags }}
       upstream-base-digest: ${{ needs.plan.outputs.base_digest }}
-      use-stage-cache: ${{ matrix.use_stage_cache }}
       version: ${{ needs.plan.outputs.version }}
 
   roles-publish:
@@ -235,5 +232,4 @@ jobs:
       publish: true
       tags: ${{ matrix.tags }}
       upstream-base-digest: ${{ needs.plan.outputs.base_digest }}
-      use-stage-cache: ${{ matrix.use_stage_cache }}
       version: ${{ needs.plan.outputs.version }}

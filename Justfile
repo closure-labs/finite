@@ -402,11 +402,9 @@ check:
     grep -qF -- '--cache-from' .github/workflows/build-profile.yml
     grep -qF -- '--cache-to' .github/workflows/build-profile.yml
     grep -qF 'cache_ref="${IMAGE_REF}-build-cache"' .github/workflows/build-profile.yml
-    grep -qF 'reference=${IMAGE_REF}-build-cache:*' .github/workflows/build-profile.yml
-    grep -qF -- "--filter 'label=io.purplefin.build.profile'" .github/workflows/build-profile.yml
-    grep -qF 'stage_ref=${IMAGE_REF}-stage-cache:' .github/workflows/build-profile.yml
+    grep -qF 'runs-on: ubuntu-24.04' .github/workflows/build-profile.yml
+    ! rg -q 'stage-cache|cache-only|purplefin-builder|inputs.runner|use-stage-cache' .github/workflows
     grep -qF 'sbom_repo=${IMAGE_REF}-sbom-cache' .github/workflows/build-profile.yml
-    grep -qF 'remote_ref="${STAGE_REF}"' .github/workflows/build-profile.yml
     grep -qF 'output="docker://${remote_ref}"' .github/workflows/build-profile.yml
     grep -qF 'oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1' .github/workflows/build-profile.yml .github/workflows/release.yml
     grep -qF 'version: 1.3.3' .github/workflows/build-profile.yml .github/workflows/release.yml
@@ -418,18 +416,15 @@ check:
     grep -qF 'select(.referenceType != "cpe23Type")' .github/workflows/build-profile.yml
     test -f .github/syft.yaml
     ! grep -qF 'anchore/sbom-action' .github/workflows/build-profile.yml
-    grep -qF 'oras cp' .github/workflows/build-profile.yml
     grep -qF 'oras tag' .github/workflows/build-profile.yml .github/workflows/release.yml
     grep -qF -- '--artifact-type application/spdx+json' .github/workflows/build-profile.yml
     grep -qF 'io.purplefin.subject.digest=' .github/workflows/build-profile.yml
     ! grep -qF 'skopeo copy --all' .github/workflows/release.yml
     grep -qF -- '--draft' .github/workflows/release.yml
     grep -qF -- '--draft=false' .github/workflows/release.yml
-    grep -qF 'inputs.runner' .github/workflows/build-profile.yml
-    test -f .github/workflows/cache-warmer.yml
-    grep -qF 'runs-on: purplefin-builder' .github/workflows/cache-warmer.yml
-    grep -qF 'cache-only: true' .github/workflows/cache-warmer.yml
-    grep -qF 'name: Warm rechunked $' .github/workflows/cache-warmer.yml
+    test ! -e .github/workflows/cache-warmer.yml
+    test ! -e .github/actionlint.yaml
+    test ! -e docs/self-hosted-cache-runner.md
     grep -qF 'steps.image.outputs.ref' .github/workflows/build-profile.yml
     grep -qF 'steps.image.outputs.digest' .github/workflows/build-profile.yml
     grep -qF 'base-publish:' .github/workflows/build.yml
