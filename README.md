@@ -152,6 +152,17 @@ build and scan themselves. The planner detects and repairs
 children left on an older parent after a partial publish. Pull requests build
 complete images without package-write permission.
 
+CI exposes one stable `CI gate` for branch policy. Pull requests run the
+selective candidate graph, and native merge-queue candidates build every profile
+against the temporary `merge_group` commit without publishing. Trusted
+Dependabot, Nix flake-update, and Image Builder CLI digest-update pull requests
+can be enrolled automatically once
+the repository prerequisites in
+[the merge-queue runbook](docs/ci-merge-queue.md) are met. While Purplefin is
+user-owned, strict up-to-date status protection plus ordinary auto-merge provides
+the closest native approximation; the checked-in queue policy is ready for a
+future organization transfer.
+
 The flake also exposes `.#sbomnix` for native SBOMs of Home Manager or other Nix
 closures. Those closures are not merged into the bootc image SBOM because the
 current image creates only an empty `/nix` runtime mountpoint; it does not embed

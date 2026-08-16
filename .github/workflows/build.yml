@@ -5,12 +5,20 @@ on:
     branches:
       - main
   pull_request:
+  merge_group:
+    types:
+      - checks_requested
   schedule:
     - cron: "17 8 * * *"
   workflow_dispatch:
     inputs:
       force:
         description: Rebuild every image even when its inputs are current
+        required: false
+        default: false
+        type: boolean
+      validate_only:
+        description: Validate a bot branch without publishing
         required: false
         default: false
         type: boolean
@@ -82,7 +90,7 @@ jobs:
         id: plan
         env:
           CHECK_RPM_UPDATES: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
-          FORCE_REBUILD: ${{ github.event_name == 'workflow_dispatch' && inputs.force || false }}
+          FORCE_REBUILD: ${{ github.event_name == 'merge_group' || (github.event_name == 'workflow_dispatch' && inputs.force) }}
           IMAGE_REF: ${{ format('{0}/{1}', env.REGISTRY, env.IMAGE_NAME) }}
         shell: bash
         run: |
@@ -128,9 +136,12 @@ jobs:
             echo "version=${version}"
           } >>"${GITHUB_OUTPUT}"
 
-  build-pr:
-    name: Build ${{ matrix.profile }}
-    if: github.event_name == 'pull_request' && needs.plan.outputs.has_builds == 'true'
+  build-candidate:
+    name: Validate ${{ matrix.profile }}
+    if: >-
+      (github.event_name == 'pull_request' || github.event_name == 'merge_group' ||
+      (github.event_name == 'workflow_dispatch' && inputs.validate_only)) &&
+      needs.plan.outputs.has_builds == 'true'
     needs: plan
     strategy:
       fail-fast: false
@@ -152,7 +163,10 @@ jobs:
 
   base-publish:
     name: Build and publish common base
-    if: github.event_name != 'pull_request' && needs.plan.outputs.has_root_base == 'true'
+    if: >-
+      (github.event_name == 'push' || github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
+      needs.plan.outputs.has_root_base == 'true'
     needs: plan
     uses: ./.github/workflows/build-profile.yml
     permissions:
@@ -173,7 +187,9 @@ jobs:
   hardware-publish:
     name: Build and publish ${{ matrix.profile }}
     if: >-
-      always() && github.event_name != 'pull_request' &&
+      always() &&
+      (github.event_name == 'push' || github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
       needs.plan.result == 'success' && needs.plan.outputs.has_hardware == 'true' &&
       (needs.base-publish.result == 'success' || needs.base-publish.result == 'skipped')
     needs:
@@ -204,7 +220,9 @@ jobs:
   roles-publish:
     name: Build and publish ${{ matrix.profile }}
     if: >-
-      always() && github.event_name != 'pull_request' &&
+      always() &&
+      (github.event_name == 'push' || github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
       needs.plan.result == 'success' && needs.plan.outputs.has_roles == 'true' &&
       (needs.base-publish.result == 'success' || needs.base-publish.result == 'skipped') &&
       (needs.hardware-publish.result == 'success' || needs.hardware-publish.result == 'skipped')
@@ -233,3 +251,73 @@ jobs:
       tags: ${{ matrix.tags }}
       upstream-base-digest: ${{ needs.plan.outputs.base_digest }}
       version: ${{ needs.plan.outputs.version }}
+
+  ci-gate:
+    name: CI gate
+    if: always()
+    needs:
+      - check
+      - plan
+      - build-candidate
+      - base-publish
+      - hardware-publish
+      - roles-publish
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Require the complete event-appropriate build graph
+        env:
+          BASE_PUBLISH_RESULT: ${{ needs.base-publish.result }}
+          BUILD_CANDIDATE_RESULT: ${{ needs.build-candidate.result }}
+          CHECK_RESULT: ${{ needs.check.result }}
+          EVENT_NAME: ${{ github.event_name }}
+          HAS_BUILDS: ${{ needs.plan.outputs.has_builds }}
+          HAS_HARDWARE: ${{ needs.plan.outputs.has_hardware }}
+          HAS_ROLES: ${{ needs.plan.outputs.has_roles }}
+          HAS_ROOT_BASE: ${{ needs.plan.outputs.has_root_base }}
+          HARDWARE_PUBLISH_RESULT: ${{ needs.hardware-publish.result }}
+          PLAN_RESULT: ${{ needs.plan.result }}
+          REF: ${{ github.ref }}
+          ROLES_PUBLISH_RESULT: ${{ needs.roles-publish.result }}
+          VALIDATE_ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.validate_only || false }}
+        shell: bash
+        run: |
+          require_result() {
+            local job=$1 actual=$2 expected=$3
+            if [[ "${actual}" != "${expected}" ]]; then
+              printf '%s finished with %s; expected %s\n' \
+                "${job}" "${actual}" "${expected}" >&2
+              return 1
+            fi
+          }
+
+          require_selected_result() {
+            local job=$1 selected=$2 actual=$3
+            if [[ "${selected}" == true ]]; then
+              require_result "${job}" "${actual}" success
+            else
+              require_result "${job}" "${actual}" skipped
+            fi
+          }
+
+          require_result check "${CHECK_RESULT}" success
+          require_result plan "${PLAN_RESULT}" success
+
+          if [[ "${EVENT_NAME}" == pull_request || "${EVENT_NAME}" == merge_group || "${VALIDATE_ONLY}" == true ]]; then
+            require_selected_result build-candidate "${HAS_BUILDS}" "${BUILD_CANDIDATE_RESULT}"
+            require_result base-publish "${BASE_PUBLISH_RESULT}" skipped
+            require_result hardware-publish "${HARDWARE_PUBLISH_RESULT}" skipped
+            require_result roles-publish "${ROLES_PUBLISH_RESULT}" skipped
+            exit 0
+          fi
+
+          require_result build-candidate "${BUILD_CANDIDATE_RESULT}" skipped
+          if [[ "${EVENT_NAME}" == workflow_dispatch && "${REF}" != refs/heads/main ]]; then
+            echo 'Publishing workflow dispatches must target main' >&2
+            exit 1
+          fi
+          require_selected_result base-publish "${HAS_ROOT_BASE}" "${BASE_PUBLISH_RESULT}"
+          require_selected_result hardware-publish "${HAS_HARDWARE}" "${HARDWARE_PUBLISH_RESULT}"
+          require_selected_result roles-publish "${HAS_ROLES}" "${ROLES_PUBLISH_RESULT}"
