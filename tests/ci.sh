@@ -36,7 +36,7 @@ jq -e '
 ' ci/github/main-protection.json >/dev/null
 grep -qF '  merge_group:' .github/workflows/build.yml
 grep -qF '    name: CI gate' .github/workflows/build.yml
-grep -qF "FORCE_REBUILD: \${{ github.event_name == 'merge_group'" .github/workflows/build.yml
+grep -qF "FORCE_REBUILD: \${{ github.event_name == 'workflow_dispatch' && inputs.force }}" .github/workflows/build.yml
 grep -qF "(github.event_name == 'workflow_dispatch' && inputs.validate_only)" .github/workflows/build.yml
 grep -qF "VALIDATE_ONLY: \${{ github.event_name ==" .github/workflows/build.yml
 grep -qF 'name: Queue Dependabot updates' .github/workflows/queue-dependabot.yml
@@ -55,8 +55,12 @@ if grep -qF -- '--blueprint' .github/workflows/build-installer.yml; then
 	exit 1
 fi
 grep -qF -- '--build-context installer-overlay=installer/overlay' .github/workflows/build-installer.yml
+grep -qF 'sudo podman tag "${PAYLOAD_REF}" "${PAYLOAD_EMBED_REF}"' .github/workflows/build-installer.yml
+grep -qF -- '--bootc-installer-payload-ref "${PAYLOAD_EMBED_REF}"' .github/workflows/build-installer.yml
 grep -qF 'RUN --mount=from=installer-overlay,target=/run/installer-overlay' installer/Containerfile
 grep -qF 'cp -a /run/installer-overlay/. /' installer/Containerfile
+grep -qF '@@INSTALLER_PAYLOAD_SOURCE_REF@@' installer/overlay/usr/share/anaconda/interactive-defaults.ks
+grep -qF '@@INSTALLER_PAYLOAD_TARGET_REF@@' installer/overlay/usr/share/anaconda/interactive-defaults.ks
 
 actionlint -color
 zizmor --offline .github/workflows

@@ -90,7 +90,7 @@ jobs:
         id: plan
         env:
           CHECK_RPM_UPDATES: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
-          FORCE_REBUILD: ${{ github.event_name == 'merge_group' || (github.event_name == 'workflow_dispatch' && inputs.force) }}
+          FORCE_REBUILD: ${{ github.event_name == 'workflow_dispatch' && inputs.force }}
           IMAGE_REF: ${{ format('{0}/{1}', env.REGISTRY, env.IMAGE_NAME) }}
         shell: bash
         run: |
