@@ -92,8 +92,8 @@ permission after an organization transfer.
 
 The Image Builder updater follows OSBuild's scheduled pinned-CI-image refresh
 pattern. It resolves the mutable `image-builder-cli:latest` discovery tag, then
-changes only the immutable digest in `build-installer.yml`. The change
-classifier selects the reusable generic-installer build during pull-request or
+changes only the immutable digest in the shared installer build action. The
+change classifier selects that generic-installer build during pull-request or
 validation-only CI, and the stable gate requires its QEMU smoke boot before
 auto-merge. The discovery tag is never used to construct a release artifact
 directly.

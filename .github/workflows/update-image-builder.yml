@@ -40,8 +40,8 @@ jobs:
           [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
           current="$({
             sed -nE \
-              's#^  IMAGE_BUILDER: ghcr.io/osbuild/image-builder-cli@(sha256:[0-9a-f]{64})$#\1#p' \
-              .github/workflows/build-installer.yml
+              's#^    default: ghcr.io/osbuild/image-builder-cli@(sha256:[0-9a-f]{64})$#\1#p' \
+              .github/actions/build-installer/action.yml
           })"
           [[ "${current}" =~ ^sha256:[0-9a-f]{64}$ ]]
           if [[ "${digest}" == "${current}" ]]; then
@@ -50,12 +50,14 @@ jobs:
           fi
 
           sed -i -E \
-            "s#^  IMAGE_BUILDER: ghcr.io/osbuild/image-builder-cli@sha256:[0-9a-f]{64}$#  IMAGE_BUILDER: ghcr.io/osbuild/image-builder-cli@${digest}#" \
-            .github/workflows/build-installer.yml
-          [[ "$(git diff --name-only)" == .github/workflows/build-installer.yml ]]
-          grep -qF \
-            "  IMAGE_BUILDER: ghcr.io/osbuild/image-builder-cli@${digest}" \
-            .github/workflows/build-installer.yml
+            "s#^    default: ghcr.io/osbuild/image-builder-cli@sha256:[0-9a-f]{64}$#    default: ghcr.io/osbuild/image-builder-cli@${digest}#" \
+            .github/actions/build-installer/action.yml
+          [[ "$(git diff --name-only)" == .github/actions/build-installer/action.yml ]]
+          [[ "$(
+            grep -cF \
+              "    default: ghcr.io/osbuild/image-builder-cli@${digest}" \
+              .github/actions/build-installer/action.yml
+          )" == 1 ]]
           echo 'changed=true' >>"${GITHUB_OUTPUT}"
           echo "digest=${digest}" >>"${GITHUB_OUTPUT}"
 

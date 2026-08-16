@@ -235,14 +235,24 @@ jobs:
     needs:
       - changes
       - check
-    uses: ./.github/workflows/build-installer.yml
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
     permissions:
       attestations: read
       contents: read
       packages: read
-    with:
-      image-tag: base-generic-x86_64
-      publish: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build and smoke-test installer
+        uses: ./.github/actions/build-installer
+        with:
+          cache-write: false
+          image-tag: base-generic-x86_64
+          token: ${{ github.token }}
 
   base-publish:
     name: Build and publish common base

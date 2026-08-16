@@ -39,13 +39,13 @@ profile workflow's Syft SPDX document, digest-keyed SBOM cache, and GitHub SBOM
 attestation remain bound to that embedded OCI digest, and the installer
 component manifest records the attestation identity needed to verify it.
 
-The workflow is reusable from `Build Purplefin`. A change classifier selects it
-for installer workflow, overlay, QEMU smoke-test, and installer-toolchain
-changes, and `CI gate` requires the selected result for pull requests and merge
-candidates. Candidate builds use read-only package access. Weekly and explicit
-main runs can update matching layers in the shared GHCR build cache; the cache
-key follows the immutable payload digest, build arguments, Containerfile, and
-overlay content.
+The workflow and `Build Purplefin` share one repository-local installer build
+action. A change classifier selects it for installer workflow, action, overlay,
+QEMU smoke-test, and installer-toolchain changes, and `CI gate` requires the
+selected result for pull requests and merge candidates. Candidate builds use
+read-only package access. Weekly and explicit main runs can update matching
+layers in the shared GHCR build cache; the cache key follows the immutable
+payload digest, build arguments, Containerfile, and overlay content.
 
 Following OSBuild's own pinned-CI-image update pattern, a weekly workflow
 resolves `ghcr.io/osbuild/image-builder-cli:latest` only as a discovery input

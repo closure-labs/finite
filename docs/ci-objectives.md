@@ -19,10 +19,10 @@ construct Purplefin artifacts. Generated files are checked against the Nix
 model and updated through the explicit generation command.
 
 Expensive tests stay scheduled or change-driven. Installer-affecting changes
-select the reusable ISO build and fold its result into the stable `CI gate`;
-other changes skip it. Trusted main runs update the shared registry cache while
-candidate runs consume it with read-only package permissions. Package deletion
-uses an environment-protected manual workflow. The stable `CI gate`, main-only
-publication boundary, installer smoke boot, SBOM generation, signing,
-attestation verification, and artifact manifests define the durable CI
+select the shared installer build action and fold its result into the stable
+`CI gate`; other changes skip it. Trusted main runs update the shared registry
+cache while candidate runs consume it with read-only package permissions.
+Package deletion uses an environment-protected manual workflow. The stable `CI
+gate`, main-only publication boundary, installer smoke boot, SBOM generation,
+signing, attestation verification, and artifact manifests define the durable CI
 contracts.

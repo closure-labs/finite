@@ -4,6 +4,7 @@ set -euo pipefail
 required=false
 while IFS= read -r path; do
 	case "${path}" in
+		.github/actions/build-installer/* | \
 		.github/workflows/build-installer.yml | \
 			.github/workflows/build.yml | \
 			ci/installer-changes.sh | \
