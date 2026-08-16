@@ -72,11 +72,11 @@ native queue ruleset is activated so `main` has one authoritative policy.
 ## Trusted update bots
 
 `Queue trusted update bots` enables auto-merge only for same-repository
-Dependabot pull requests and the exact `update_flake_lock_action` pull request.
-It checks out and executes no pull-request code and pins the requested head
-commit when enabling auto-merge. All normal PR checks must pass before either
-update enters the queue, and `CI gate` runs again against the queue's temporary
-merge commit.
+Dependabot pull requests and the exact flake-lock and Image Builder CLI updater
+branches and titles. It checks out and executes no pull-request code and pins
+the requested head commit when enabling auto-merge. All normal PR checks must
+pass before an update enters the queue, and `CI gate` runs again against the
+queue's temporary merge commit.
 
 The flake updater uses `MERGE_QUEUE_TOKEN` when configured so opening or updating
 its pull request triggers CI normally. Without it, the updater falls back to
@@ -85,3 +85,10 @@ waits for `CI gate`, and enables ordinary auto-merge. Validation-only dispatches
 never receive publishing permissions. A separate token remains necessary after
 upgrading to a native queue because the built-in token cannot enqueue a pull
 request.
+
+The Image Builder updater follows OSBuild's scheduled pinned-CI-image refresh
+pattern. It resolves the mutable `image-builder-cli:latest` discovery tag, then
+changes only the immutable digest in `build-installer.yml`. Before auto-merge it
+uses the same validation-only CI dispatch and also builds and smoke-boots the
+generic installer from the candidate branch. The discovery tag is never used
+to construct a release artifact directly.

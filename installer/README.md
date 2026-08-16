@@ -33,3 +33,11 @@ The installer consumes an already published, signed Purplefin OCI digest. Its
 construction does not replace the profile workflow's Syft SPDX generation,
 digest-keyed SBOM cache, or GitHub SBOM attestation. Those remain bound to the
 OCI image digest that the ISO embeds.
+
+Following OSBuild's own pinned-CI-image update pattern, a weekly workflow
+resolves `ghcr.io/osbuild/image-builder-cli:latest` only as a discovery input
+and writes its immutable manifest digest into the installer workflow. A change
+is proposed as a single-file pull request. The updater runs the normal CI gate
+and builds and smoke-boots the generic installer from the candidate branch
+before enabling auto-merge. This provides timely builder updates without using
+a mutable image to construct an artifact.

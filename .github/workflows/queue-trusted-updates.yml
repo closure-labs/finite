@@ -24,7 +24,9 @@ jobs:
       github.event.pull_request.head.repo.full_name == github.repository &&
       (github.event.pull_request.user.login == 'dependabot[bot]' ||
       (github.event.pull_request.head.ref == 'update_flake_lock_action' &&
-      github.event.pull_request.title == 'Update Nix flake inputs'))
+      github.event.pull_request.title == 'Update Nix flake inputs') ||
+      (github.event.pull_request.head.ref == 'update_image_builder_cli' &&
+      github.event.pull_request.title == 'Update Image Builder CLI digest'))
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
