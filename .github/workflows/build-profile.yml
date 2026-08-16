@@ -226,6 +226,23 @@ jobs:
           read -r -a tags <<<"${TAGS}"
           primary_image="${IMAGE_REF}:${tags[0]}"
           output_dir="$(mktemp -d -p "${RUNNER_TEMP}" purplefin-rechunk.XXXXXX)"
+          preserved_labels="$({
+            podman inspect "${primary_image}" |
+              jq -c '
+                .[0].Config.Labels // {} |
+                with_entries(
+                  select(
+                    .key != "containers.bootc" and
+                    .key != "io.buildah.version" and
+                    (.key | startswith("ostree.") | not)
+                  )
+                )
+              '
+          })"
+          label_args=()
+          while IFS= read -r label; do
+            label_args+=(--label "${label}")
+          done < <(jq -r 'to_entries[] | "\(.key)=\(.value)"' <<<"${preserved_labels}")
 
           podman run --rm --pull=never --privileged \
             --mount "type=image,src=${primary_image},target=/rpm-ostree" \
@@ -235,11 +252,19 @@ jobs:
             compose build-chunked-oci \
               --max-layers 127 \
               --format-version=2 \
+              "${label_args[@]}" \
               --bootc \
               --rootfs /rpm-ostree \
               --output oci-archive:/run/out/purplefin.oci
 
           chunked_image="$(podman pull --quiet "oci-archive:${output_dir}/purplefin.oci")"
+          podman inspect "${chunked_image}" |
+            jq -e --argjson expected "${preserved_labels}" '
+              (.[0].Config.Labels // {}) as $actual |
+              $expected |
+              to_entries |
+              all(. as $entry; $actual[$entry.key] == $entry.value)
+            ' >/dev/null
           podman tag "${chunked_image}" "${primary_image}"
           for tag in "${tags[@]:1}"; do
             podman tag "${primary_image}" "${IMAGE_REF}:${tag}"
