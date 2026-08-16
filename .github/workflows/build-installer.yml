@@ -83,6 +83,7 @@ jobs:
           sudo podman build \
             --file installer/Containerfile \
             --pull=never \
+            --build-context installer-overlay=installer/overlay \
             --build-arg "BASE_REF=${PAYLOAD_REF}" \
             --build-arg "INSTALLER_PAYLOAD_REF=${PAYLOAD_REF}" \
             --tag "localhost/purplefin-installer:${GITHUB_SHA}" \

@@ -4,8 +4,10 @@ FROM ${BASE_REF}
 ARG INSTALLER_PAYLOAD_REF=ghcr.io/declarative-dale/purplefin:base-generic-x86_64
 
 # This follows image-builder's supported bootc-generic-iso contract. The
-# payload is selected and resolved to a signed digest by the workflow.
-RUN dnf5 -y install \
+# payload is selected and resolved to a signed digest by the workflow. A named
+# build context applies the installer overlay in the same committed layer.
+RUN --mount=from=installer-overlay,target=/run/installer-overlay \
+    dnf5 -y install \
       anaconda anaconda-install-img-deps anaconda-dracut \
       dracut-config-generic dracut-network net-tools \
       grub2-efi-x64-cdboot grub2-pc-modules grub2-tools-extra \
@@ -13,11 +15,9 @@ RUN dnf5 -y install \
       google-noto-sans-cjk-fonts isomd5sum squashfs-tools xorriso && \
     dnf5 clean all && \
     mkdir -p /boot/efi /var/mnt && \
-    cp -ra /usr/lib/efi/*/*/EFI /boot/efi
-
-COPY installer/overlay/ /
-
-RUN sed -i "s|@@INSTALLER_PAYLOAD_REF@@|${INSTALLER_PAYLOAD_REF}|g" \
+    cp -ra /usr/lib/efi/*/*/EFI /boot/efi && \
+    cp -a /run/installer-overlay/. / && \
+    sed -i "s|@@INSTALLER_PAYLOAD_REF@@|${INSTALLER_PAYLOAD_REF}|g" \
       /usr/share/anaconda/interactive-defaults.ks && \
     echo 'install:x:0:0:root:/root:/usr/libexec/anaconda/run-anaconda' >>/etc/passwd && \
     echo 'install::14438:0:99999:7:::' >>/etc/shadow && \

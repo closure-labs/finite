@@ -54,6 +54,9 @@ if grep -qF -- '--blueprint' .github/workflows/build-installer.yml; then
 	echo 'bootc-generic-iso does not support Blueprint customizations' >&2
 	exit 1
 fi
+grep -qF -- '--build-context installer-overlay=installer/overlay' .github/workflows/build-installer.yml
+grep -qF 'RUN --mount=from=installer-overlay,target=/run/installer-overlay' installer/Containerfile
+grep -qF 'cp -a /run/installer-overlay/. /' installer/Containerfile
 
 actionlint -color
 zizmor --offline .github/workflows
