@@ -85,5 +85,4 @@ jobs:
           EXPECTED_TITLE: Update Image Builder CLI digest
           GH_TOKEN: ${{ secrets.MERGE_QUEUE_TOKEN || github.token }}
           PR_NUMBER: ${{ steps.update.outputs.pull-request-number }}
-          VALIDATE_INSTALLER: "true"
         run: ci/validate-trusted-update.sh

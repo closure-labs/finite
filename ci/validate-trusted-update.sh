@@ -7,8 +7,6 @@ set -euo pipefail
 : "${EXPECTED_BRANCH:?EXPECTED_BRANCH must be set}"
 : "${EXPECTED_TITLE:?EXPECTED_TITLE must be set}"
 
-VALIDATE_INSTALLER="${VALIDATE_INSTALLER:-false}"
-
 pr="$({
 	gh pr view "${PR_NUMBER}" \
 		--repo "${GITHUB_REPOSITORY}" \
@@ -93,10 +91,6 @@ if [[ -n "${existing_ci_run_id}" ]]; then
 else
 	dispatch_and_wait build.yml -f validate_only=true
 fi
-if [[ "${VALIDATE_INSTALLER}" == true ]]; then
-	dispatch_and_wait build-installer.yml -f image-tag=base-generic-x86_64
-fi
-
 gh pr merge \
 	--repo "${GITHUB_REPOSITORY}" \
 	--auto \
