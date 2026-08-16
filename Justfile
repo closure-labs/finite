@@ -411,6 +411,7 @@ check:
     grep -qF 'oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1' .github/workflows/build-profile.yml .github/workflows/release.yml
     grep -qF 'version: 1.3.3' .github/workflows/build-profile.yml .github/workflows/release.yml
     grep -qF 'syft-version: v1.51.0' .github/workflows/build-profile.yml
+    grep -qF 'TMPDIR:' .github/workflows/build-profile.yml
     grep -qF 'oras cp' .github/workflows/build-profile.yml
     grep -qF 'oras tag' .github/workflows/build-profile.yml .github/workflows/release.yml
     grep -qF -- '--artifact-type application/spdx+json' .github/workflows/build-profile.yml

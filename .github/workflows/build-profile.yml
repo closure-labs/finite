@@ -466,6 +466,8 @@ jobs:
           (inputs.publish || inputs.cache-only) &&
           steps.sbom-cache.outputs.hit != 'true'
         uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        env:
+          TMPDIR: ${{ runner.temp }}
         with:
           artifact-name: sbom-${{ inputs.profile }}.spdx.json
           format: spdx-json
