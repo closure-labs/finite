@@ -7,6 +7,7 @@
   inherit (config) den;
   system = "x86_64-linux";
   pkgs = import inputs.nixpkgs {inherit system;};
+  treefmtEval = inputs.treefmt-nix.lib.evalModule pkgs ../../treefmt.nix;
   profileSet = import ../lib/profile-set.nix {inherit den lib;};
   inherit (profileSet) profiles;
   generated = import ../lib/generated.nix {
@@ -103,6 +104,7 @@ in {
     };
 
     checks.${system} = {
+      formatting = treefmtEval.config.build.check inputs.self;
       generated-current = generatedCurrent;
       home-configurations = homeCheck;
       profile-schema = generated;
@@ -112,12 +114,11 @@ in {
       default = pkgs.mkShell {
         packages = with pkgs; [
           actionlint
-          alejandra
-          deadnix
           just
           pipewire
           ripgrep
           shellcheck
+          treefmtEval.config.build.wrapper
           zsh
           zizmor
         ];
@@ -127,6 +128,6 @@ in {
       };
     };
 
-    formatter.${system} = pkgs.alejandra;
+    formatter.${system} = treefmtEval.config.build.wrapper;
   };
 }

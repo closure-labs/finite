@@ -3,8 +3,7 @@ set -euo pipefail
 
 just check
 
-alejandra --check .
-deadnix --fail .
+treefmt --fail-on-change
 
 mapfile -d '' shell_files < <(
 	find bootc ci installer tests \

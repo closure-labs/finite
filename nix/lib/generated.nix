@@ -27,9 +27,6 @@
     ".containerignore"
     "VERSION"
     "bootc/config/independently-managed-rpms.list"
-    "flake.lock"
-    "flake.nix"
-    "nix/flake-modules/outputs.nix"
     "nix/lib"
     "nix/profile-options.nix"
   ];
