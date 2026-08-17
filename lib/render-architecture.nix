@@ -10,7 +10,11 @@
     ++ builtins.attrValues den.aspects.features.capabilities
     ++ builtins.attrValues den.aspects.features.hardware
     ++ builtins.attrValues den.aspects.features.roles
-    ++ builtins.attrValues den.aspects.profiles;
+    ++ builtins.attrValues den.aspects.profiles
+    ++ [den.aspects.operations.source]
+    ++ builtins.attrValues den.aspects.operations.checks
+    ++ builtins.attrValues den.aspects.operations.delivery
+    ++ builtins.attrValues den.aspects.operations.github;
   declaredAspects =
     builtins.filter (
       value:

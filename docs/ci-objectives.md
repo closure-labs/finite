@@ -24,7 +24,10 @@ security validations with a pinned toolchain. GitHub Actions supplies only the
 event graph, permissions, protected environments, remote registry operations,
 and runners needed for container or VM integration. The repository-check job
 therefore executes one `nix flake check` rather than manually chaining local
-scripts.
+scripts. `modules/operations.nix` expresses those checks and the image,
+installer, release, and GitHub relationships in the same Den graph as the
+system profiles. The installer composite action delegates its implementation
+to the `installer-build` Flake application.
 
 Expensive tests stay scheduled or change-driven. Image-affecting changes select
 immutable input planning, and installer-affecting changes select the shared

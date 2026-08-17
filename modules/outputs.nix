@@ -67,21 +67,11 @@
     )}
   '';
   applications = import ../lib/flake-applications.nix {
-    inherit generated pkgs profiles repositoryToolchain version;
+    inherit generated pkgs profiles version;
   };
-  repositoryCheck =
-    pkgs.runCommand "purplefin-repository-checks" {
-      nativeBuildInputs = repositoryToolchain;
-    } ''
-      export HOME="$TMPDIR/home"
-      mkdir -p "$HOME" source
-      cp -R ${inputs.self}/. source/
-      chmod -R u+w source
-      cd source
-      PURPLEFIN_HERMETIC_CHECK=true PURPLEFIN_SOURCE_ROOT="$PWD" ${applications.ci}/bin/purplefin-ci
-      grep -qF 'profiles_dale --> features_roles_support' ${architecture}/namespace.mmd
-      touch "$out"
-    '';
+  repositoryChecks = import ../lib/repository-checks.nix {
+    inherit applications architecture generated inputs pkgs repositoryToolchain;
+  };
 in {
   flake = {
     lib.purplefin = {
@@ -142,15 +132,20 @@ in {
         type = "app";
         program = "${applications.installerSmoke}/bin/purplefin-installer-smoke";
       };
+      installer-build = {
+        type = "app";
+        program = "${applications.installerBuild}/bin/purplefin-installer-build";
+      };
     };
 
-    checks.${system} = {
-      formatting = treefmtEval.config.build.check inputs.self;
-      architecture = architecture;
-      home-configurations = homeCheck;
-      profile-schema = generated;
-      repository = repositoryCheck;
-    };
+    checks.${system} =
+      repositoryChecks
+      // {
+        formatting = treefmtEval.config.build.check inputs.self;
+        architecture = architecture;
+        home-configurations = homeCheck;
+        profile-schema = generated;
+      };
 
     devShells.${system} = {
       default = pkgs.mkShell {

@@ -71,6 +71,7 @@ nix build .#sbomnix
 nix run .#release-notes -- 0.2.0 CHANGELOG.md
 nix run .#classify-changes -- images
 nix run .#image-plan -- "$(jq -c . result/bootc/generated/image-matrix.json)"
+nix run .#installer-build
 nix run .#installer-smoke -- output/purplefin.iso
 ```
 
@@ -89,6 +90,36 @@ platform boundaries because they require mutable remote state or host
 capabilities. Shell under an aspect implements that aspect inside the image;
 it is not a manual orchestration API.
 
+The Den namespace also models repository operations in `modules/operations.nix`.
+Named check aspects map to separate Flake checks, and delivery aspects connect
+the image, installer, and release graphs to their GitHub entry points. The
+installer composite action is only an adapter: it installs Nix, supplies the
+GitHub-owned context, runs `nix run .#installer-build`, and uploads diagnostics.
+There is no separate `tests/ci.sh` orchestration layer.
+
+## Shell and workflow ownership
+
+The remaining shell files fall into two intentionally narrow categories:
+
+- aspect and root-filesystem scripts are image payload or runtime behavior;
+  Den declares their ordering and inclusion;
+- leaf contract tests and boundary helpers are invoked by named Nix
+  derivations or packaged Flake applications with pinned runtime inputs.
+
+The largest remaining extraction candidates are the build-profile and release
+workflow command blocks. Code for image construction, registry inspection,
+manifest construction, and release verification can become additional Flake
+applications. Workflow syntax must continue to own GitHub event filters,
+permissions, concurrency, matrices, environments, OIDC-backed attestation
+actions, and artifact or release publication.
+
+SecretSpec is not used currently. The only repository-managed long-lived
+credential is the optional `MERGE_QUEUE_TOKEN`; GitHub Actions remains its
+storage and injection boundary, while other workflow credentials are scoped
+job tokens or OIDC identities. Adopt a committed SecretSpec declaration when
+multiple secrets must be shared across local and CI providers; do not put
+resolved secret values in a Nix derivation or the Nix store.
+
 ## Source layout
 
 ```text
@@ -97,8 +128,9 @@ modules/schema/      typed entity and class schemas
 modules/policies/    Den resolution policies
 modules/classes/     class-specific option declarations
 modules/profiles.nix profile aspect DAG and typed profile registry
+modules/operations.nix CI, delivery, and GitHub aspect graph
 bootc/builder/       generic full, derived, planning, and reuse engines
-lib/                 graph evaluation and artifact rendering
+lib/                 graph evaluation, checks, applications, and artifact rendering
 home/                shared Home Manager modules
 installer/           Image Builder container and installer root filesystem
 automation/          thin release and GitHub platform boundary scripts

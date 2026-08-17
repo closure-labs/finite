@@ -2,7 +2,6 @@
   generated,
   pkgs,
   profiles,
-  repositoryToolchain,
   version,
 }: let
   exportArtifacts = pkgs.writeShellApplication {
@@ -81,10 +80,17 @@ in rec {
     '';
   };
 
-  ci = mkRepositoryApp {
+  ci = pkgs.writeShellApplication {
     name = "purplefin-ci";
-    script = "tests/ci.sh";
-    runtimeInputs = repositoryToolchain ++ [classifyChanges];
+    runtimeInputs = [pkgs.nix];
+    text = ''
+      repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
+      [[ -f "''${repo_root}/flake.nix" ]] || {
+        echo "Run this command from the Purplefin repository root" >&2
+        exit 2
+      }
+      exec nix flake check "path:''${repo_root}" --print-build-logs "$@"
+    '';
   };
   releaseNotes = mkRepositoryApp {
     name = "purplefin-release-notes";
@@ -110,6 +116,9 @@ in rec {
     name = "purplefin-installer-smoke";
     script = "tests/installer/smoke.sh";
     runtimeInputs = with pkgs; [bash coreutils gnugrep qemu];
+  };
+  installerBuild = import ./installer-application.nix {
+    inherit exportArtifacts installerSmoke pkgs;
   };
   imageBuild = pkgs.writeShellApplication {
     name = "purplefin-image-build";

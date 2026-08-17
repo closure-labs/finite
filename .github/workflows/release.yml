@@ -373,10 +373,12 @@ jobs:
               --certificate-identity "${COSIGN_IDENTITY}" \
               "${immutable_ref}" >/dev/null
             gh attestation verify "oci://${immutable_ref}" \
+              --bundle-from-oci \
               --repo "${GITHUB_REPOSITORY}" \
               --signer-workflow "${GITHUB_REPOSITORY}/.github/workflows/build-profile.yml" \
               --source-digest "${SOURCE_SHA}"
             gh attestation verify "oci://${immutable_ref}" \
+              --bundle-from-oci \
               --repo "${GITHUB_REPOSITORY}" \
               --signer-workflow "${GITHUB_REPOSITORY}/.github/workflows/build-profile.yml" \
               --source-digest "${SOURCE_SHA}" \

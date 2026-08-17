@@ -46,6 +46,7 @@ for obsolete in nix bootc/modules bootc/overlays bootc/components bootc/packages
 		exit 1
 	}
 done
+test ! -e tests/ci.sh
 
 test -x modules/aspects/base/apply.sh
 test -d modules/aspects/base/rootfs
