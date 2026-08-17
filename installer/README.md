@@ -25,14 +25,27 @@ image rather than the Blueprint.
 `Containerfile` implements the generic ISO contract: Anaconda and ISO tooling,
 kernel and initramfs, EFI files, `/usr/lib/image-builder/bootc/iso.yaml`, and an
 interactive-defaults kickstart containing the immutable payload reference.
-The workflow uploads the ISO, SHA-256 checksum, provenance attestation, and QEMU
-smoke-boot log. The weekly run uses `base-generic-x86_64`; manual runs can select
-any tag listed by the workflow.
+The workflow verifies the payload's build provenance and SPDX attestation,
+records the payload, Image Builder, installer-environment, source, and ISO
+digests in `installer-manifest.json`, and attests that manifest with the ISO and
+checksums. Published runs upload those artifacts and the QEMU smoke-boot log.
+Every run uploads a compact diagnostic bundle and writes phase outcomes,
+durations, cache state, and resolved digests to the Actions summary. The weekly
+run uses `base-generic-x86_64`; manual runs can select any tag listed by the
+workflow.
 
-The installer consumes an already published, signed Purplefin OCI digest. Its
-construction does not replace the profile workflow's Syft SPDX generation,
-digest-keyed SBOM cache, or GitHub SBOM attestation. Those remain bound to the
-OCI image digest that the ISO embeds.
+The installer consumes an already published, signed Purplefin OCI digest. The
+profile workflow's Syft SPDX document, digest-keyed SBOM cache, and GitHub SBOM
+attestation remain bound to that embedded OCI digest, and the installer
+component manifest records the attestation identity needed to verify it.
+
+The workflow and `Build Purplefin` share one repository-local installer build
+action. A change classifier selects it for installer workflow, action, overlay,
+QEMU smoke-test, and installer-toolchain changes, and `CI gate` requires the
+selected result for pull requests and merge candidates. Candidate builds use
+read-only package access. Weekly and explicit main runs can update matching
+layers in the shared GHCR build cache; the cache key follows the immutable
+payload digest, build arguments, Containerfile, and overlay content.
 
 Following OSBuild's own pinned-CI-image update pattern, a weekly workflow
 resolves `ghcr.io/osbuild/image-builder-cli:latest` only as a discovery input

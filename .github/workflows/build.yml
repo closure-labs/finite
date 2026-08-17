@@ -28,6 +28,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
+  attestations: read
   contents: read
   packages: read
 
@@ -36,6 +37,70 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  changes:
+    name: Classify expensive validations
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      installer: ${{ steps.filter.outputs.installer }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Select installer validation
+        id: filter
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          MERGE_GROUP_BASE_SHA: ${{ github.event.merge_group.base_sha }}
+          MERGE_GROUP_HEAD_SHA: ${{ github.event.merge_group.head_sha }}
+          PULL_REQUEST_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PULL_REQUEST_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          VALIDATE_ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.validate_only || false }}
+        shell: bash
+        run: |
+          case "${EVENT_NAME}" in
+            pull_request)
+              base_sha="${PULL_REQUEST_BASE_SHA}"
+              head_sha="${PULL_REQUEST_HEAD_SHA}"
+              ;;
+            merge_group)
+              base_sha="${MERGE_GROUP_BASE_SHA}"
+              head_sha="${MERGE_GROUP_HEAD_SHA}"
+              ;;
+            workflow_dispatch)
+              if [[ "${VALIDATE_ONLY}" != true ]]; then
+                echo 'installer=false' >>"${GITHUB_OUTPUT}"
+                exit 0
+              fi
+              base_sha="$(git merge-base origin/main HEAD)"
+              head_sha="$(git rev-parse HEAD)"
+              ;;
+            push | schedule)
+              echo 'installer=false' >>"${GITHUB_OUTPUT}"
+              exit 0
+              ;;
+            *)
+              echo "Unknown event ${EVENT_NAME}; requiring installer validation" >&2
+              echo 'installer=true' >>"${GITHUB_OUTPUT}"
+              exit 0
+              ;;
+          esac
+
+          changed_paths="${RUNNER_TEMP}/installer-changed-paths"
+          if ! git diff --name-only --diff-filter=ACDMRT \
+            "${base_sha}" "${head_sha}" >"${changed_paths}"; then
+            echo 'Could not determine changed paths; requiring installer validation' >&2
+            echo 'installer=true' >>"${GITHUB_OUTPUT}"
+            exit 0
+          fi
+          installer="$(ci/installer-changes.sh <"${changed_paths}")"
+          echo "installer=${installer}" >>"${GITHUB_OUTPUT}"
+
   check:
     name: Repository checks
     runs-on: ubuntu-24.04
@@ -161,6 +226,34 @@ jobs:
       upstream-base-digest: ${{ needs.plan.outputs.base_digest }}
       version: ${{ needs.plan.outputs.version }}
 
+  installer-candidate:
+    name: Validate installer
+    if: >-
+      (github.event_name == 'pull_request' || github.event_name == 'merge_group' ||
+      (github.event_name == 'workflow_dispatch' && inputs.validate_only)) &&
+      needs.changes.outputs.installer == 'true'
+    needs:
+      - changes
+      - check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    permissions:
+      attestations: read
+      contents: read
+      packages: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build and smoke-test installer
+        uses: ./.github/actions/build-installer
+        with:
+          cache-write: false
+          image-tag: base-generic-x86_64
+          token: ${{ github.token }}
+
   base-publish:
     name: Build and publish common base
     if: >-
@@ -256,9 +349,11 @@ jobs:
     name: CI gate
     if: always()
     needs:
+      - changes
       - check
       - plan
       - build-candidate
+      - installer-candidate
       - base-publish
       - hardware-publish
       - roles-publish
@@ -271,6 +366,7 @@ jobs:
         env:
           BASE_PUBLISH_RESULT: ${{ needs.base-publish.result }}
           BUILD_CANDIDATE_RESULT: ${{ needs.build-candidate.result }}
+          CHANGES_RESULT: ${{ needs.changes.result }}
           CHECK_RESULT: ${{ needs.check.result }}
           EVENT_NAME: ${{ github.event_name }}
           HAS_BUILDS: ${{ needs.plan.outputs.has_builds }}
@@ -278,6 +374,8 @@ jobs:
           HAS_ROLES: ${{ needs.plan.outputs.has_roles }}
           HAS_ROOT_BASE: ${{ needs.plan.outputs.has_root_base }}
           HARDWARE_PUBLISH_RESULT: ${{ needs.hardware-publish.result }}
+          INSTALLER_CANDIDATE_RESULT: ${{ needs.installer-candidate.result }}
+          INSTALLER_SELECTED: ${{ needs.changes.outputs.installer }}
           PLAN_RESULT: ${{ needs.plan.result }}
           REF: ${{ github.ref }}
           ROLES_PUBLISH_RESULT: ${{ needs.roles-publish.result }}
@@ -302,11 +400,13 @@ jobs:
             fi
           }
 
+          require_result changes "${CHANGES_RESULT}" success
           require_result check "${CHECK_RESULT}" success
           require_result plan "${PLAN_RESULT}" success
 
           if [[ "${EVENT_NAME}" == pull_request || "${EVENT_NAME}" == merge_group || "${VALIDATE_ONLY}" == true ]]; then
             require_selected_result build-candidate "${HAS_BUILDS}" "${BUILD_CANDIDATE_RESULT}"
+            require_selected_result installer-candidate "${INSTALLER_SELECTED}" "${INSTALLER_CANDIDATE_RESULT}"
             require_result base-publish "${BASE_PUBLISH_RESULT}" skipped
             require_result hardware-publish "${HARDWARE_PUBLISH_RESULT}" skipped
             require_result roles-publish "${ROLES_PUBLISH_RESULT}" skipped
@@ -314,6 +414,7 @@ jobs:
           fi
 
           require_result build-candidate "${BUILD_CANDIDATE_RESULT}" skipped
+          require_result installer-candidate "${INSTALLER_CANDIDATE_RESULT}" skipped
           if [[ "${EVENT_NAME}" == workflow_dispatch && "${REF}" != refs/heads/main ]]; then
             echo 'Publishing workflow dispatches must target main' >&2
             exit 1

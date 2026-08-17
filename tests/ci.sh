@@ -12,6 +12,7 @@ mapfile -d '' shell_files < <(
 )
 shellcheck --external-sources --source-path=SCRIPTDIR "${shell_files[@]}"
 tests/text-style.sh
+tests/installer-changes.sh
 tests/trusted-update-validation.sh
 
 jq -e '
@@ -37,6 +38,10 @@ jq -e '
 ' ci/github/main-protection.json >/dev/null
 grep -qF '  merge_group:' .github/workflows/build.yml
 grep -qF '    name: CI gate' .github/workflows/build.yml
+grep -qF '    name: Classify expensive validations' .github/workflows/build.yml
+grep -qF '    name: Validate installer' .github/workflows/build.yml
+grep -qF "installer=\"\$(ci/installer-changes.sh" .github/workflows/build.yml
+grep -qF 'require_selected_result installer-candidate' .github/workflows/build.yml
 grep -qF "FORCE_REBUILD: \${{ github.event_name == 'workflow_dispatch' && inputs.force }}" .github/workflows/build.yml
 grep -qF "(github.event_name == 'workflow_dispatch' && inputs.validate_only)" .github/workflows/build.yml
 grep -qF "VALIDATE_ONLY: \${{ github.event_name ==" .github/workflows/build.yml
@@ -47,22 +52,29 @@ grep -qF "token: \${{ secrets.MERGE_QUEUE_TOKEN || github.token }}" .github/work
 grep -qF 'run: ci/validate-trusted-update.sh' .github/workflows/update-flake-lock.yml
 grep -qF 'name: Update Image Builder CLI digest' .github/workflows/update-image-builder.yml
 grep -qF 'IMAGE_BUILDER_TAG: ghcr.io/osbuild/image-builder-cli:latest' .github/workflows/update-image-builder.yml
-grep -qF 'VALIDATE_INSTALLER: "true"' .github/workflows/update-image-builder.yml
 grep -qF -- '--event pull_request' ci/validate-trusted-update.sh
 grep -qF 'dispatch_and_wait build.yml -f validate_only=true' ci/validate-trusted-update.sh
-grep -qF 'dispatch_and_wait build-installer.yml -f image-tag=base-generic-x86_64' ci/validate-trusted-update.sh
-if grep -qF -- '--blueprint' .github/workflows/build-installer.yml; then
+installer_action=.github/actions/build-installer/action.yml
+if grep -qF -- '--blueprint' "${installer_action}"; then
 	echo 'bootc-generic-iso does not support Blueprint customizations' >&2
 	exit 1
 fi
-grep -qF -- '--build-context installer-overlay=installer/overlay' .github/workflows/build-installer.yml
-grep -qF "sudo podman tag \"\${PAYLOAD_REF}\" \"\${PAYLOAD_EMBED_REF}\"" .github/workflows/build-installer.yml
-grep -qF -- "--bootc-installer-payload-ref \"\${PAYLOAD_EMBED_REF}\"" .github/workflows/build-installer.yml
-grep -qF -- "--chown \"\${output_owner}\"" .github/workflows/build-installer.yml
+grep -qF -- '--build-context installer-overlay=installer/overlay' "${installer_action}"
+grep -qF "sudo podman tag \"\${PAYLOAD_REF}\" \"\${PAYLOAD_EMBED_REF}\"" "${installer_action}"
+grep -qF -- "--bootc-installer-payload-ref \"\${PAYLOAD_EMBED_REF}\"" "${installer_action}"
+grep -qF "sudo chown -R \"\$(id -u):\$(id -g)\" output" "${installer_action}"
+grep -qF -- "--cache-from \"\${CACHE_REF}\" --cache-ttl 336h" "${installer_action}"
+grep -qF "gh attestation verify \"oci://\${payload_ref}\"" "${installer_action}"
+grep -qF "installer_image_id=\"\${installer_image_id#sha256:}\"" "${installer_action}"
+grep -qF "installer_image_id=\"sha256:\${installer_image_id}\"" "${installer_action}"
+grep -qF 'output/installer-manifest.json' "${installer_action}"
+grep -qF 'name: Upload installer diagnostics' "${installer_action}"
+grep -qF "gh attestation verify \"oci://\${immutable_ref}\"" .github/workflows/release.yml
+grep -qF -- '--predicate-type https://spdx.dev/Document/v2.3' .github/workflows/release.yml
 grep -qF 'RUN --mount=from=installer-overlay,target=/run/installer-overlay' installer/Containerfile
 grep -qF 'cp -a /run/installer-overlay/. /' installer/Containerfile
 grep -qF '@@INSTALLER_PAYLOAD_SOURCE_REF@@' installer/overlay/usr/share/anaconda/interactive-defaults.ks
 grep -qF '@@INSTALLER_PAYLOAD_TARGET_REF@@' installer/overlay/usr/share/anaconda/interactive-defaults.ks
 
 actionlint -color
-zizmor --offline .github/workflows
+zizmor --offline .github

@@ -288,6 +288,7 @@ jobs:
     environment: release
     permissions:
       actions: write
+      attestations: read
       contents: write
       packages: write
     steps:
@@ -366,6 +367,15 @@ jobs:
               --certificate-oidc-issuer https://token.actions.githubusercontent.com \
               --certificate-identity "${COSIGN_IDENTITY}" \
               "${immutable_ref}" >/dev/null
+            gh attestation verify "oci://${immutable_ref}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --signer-workflow "${GITHUB_REPOSITORY}/.github/workflows/build-profile.yml" \
+              --source-digest "${SOURCE_SHA}"
+            gh attestation verify "oci://${immutable_ref}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --signer-workflow "${GITHUB_REPOSITORY}/.github/workflows/build-profile.yml" \
+              --source-digest "${SOURCE_SHA}" \
+              --predicate-type https://spdx.dev/Document/v2.3
 
             release_tag="${profile}-v${VERSION}"
             oras tag \

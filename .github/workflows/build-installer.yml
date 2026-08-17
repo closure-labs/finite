@@ -24,18 +24,14 @@ on:
           - it-generic
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
+  group: installer-${{ github.ref }}-${{ inputs.image-tag || 'base-generic-x86_64' }}
+  cancel-in-progress: true
 
 permissions:
   attestations: write
   contents: read
   id-token: write
-  packages: read
-
-env:
-  IMAGE_BUILDER: ghcr.io/osbuild/image-builder-cli@sha256:27cabea9e504a7c4a7546f287f5d60a4846c62b5a8d18c0f678d25fdc2d7975a
-  IMAGE_REF: ghcr.io/${{ github.repository }}
+  packages: write
 
 jobs:
   build-installer:
@@ -48,86 +44,16 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install cosign
-        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
-
-      - name: Resolve and verify installer payload
-        id: payload
-        env:
-          COSIGN_IDENTITY: https://github.com/${{ github.repository }}/.github/workflows/build-profile.yml@refs/heads/main
-          IMAGE_TAG: ${{ inputs.image-tag || 'base-generic-x86_64' }}
-        shell: bash
-        run: |
-          metadata="$(skopeo inspect --retry-times 3 "docker://${IMAGE_REF}:${IMAGE_TAG}")"
-          digest="$(jq -er '.Digest' <<<"${metadata}")"
-          profile="$(jq -er '.Labels["io.purplefin.build.profile"]' <<<"${metadata}")"
-          [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
-          test -f "installer/config/profiles/${profile}.toml"
-          payload_ref="${IMAGE_REF}@${digest}"
-          payload_embed_ref="${IMAGE_REF}:${IMAGE_TAG}"
-          cosign verify \
-            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-            --certificate-identity "${COSIGN_IDENTITY}" \
-            "${payload_ref}" >/dev/null
-          {
-            echo "digest=${digest}"
-            echo "embed_ref=${payload_embed_ref}"
-            echo "ref=${payload_ref}"
-            echo "tag=${IMAGE_TAG}"
-          } >>"${GITHUB_OUTPUT}"
-
-      - name: Build installer environment in root container storage
-        env:
-          PAYLOAD_EMBED_REF: ${{ steps.payload.outputs.embed_ref }}
-          PAYLOAD_REF: ${{ steps.payload.outputs.ref }}
-        shell: bash
-        run: |
-          sudo podman pull "${PAYLOAD_REF}"
-          sudo podman tag "${PAYLOAD_REF}" "${PAYLOAD_EMBED_REF}"
-          sudo podman build \
-            --file installer/Containerfile \
-            --pull=never \
-            --build-context installer-overlay=installer/overlay \
-            --build-arg "BASE_REF=${PAYLOAD_REF}" \
-            --build-arg "INSTALLER_PAYLOAD_SOURCE_REF=${PAYLOAD_EMBED_REF}" \
-            --build-arg "INSTALLER_PAYLOAD_TARGET_REF=${PAYLOAD_REF}" \
-            --tag "localhost/purplefin-installer:${GITHUB_SHA}" \
-            .
-          sudo podman pull "${IMAGE_BUILDER}"
-
-      - name: Build bootc-generic-iso with image-builder
-        env:
-          IMAGE_TAG: ${{ steps.payload.outputs.tag }}
-          PAYLOAD_EMBED_REF: ${{ steps.payload.outputs.embed_ref }}
-        shell: bash
-        run: |
-          install -d output
-          output_owner="$(id -u):$(id -g)"
-          sudo podman run --rm --privileged \
-            --security-opt label=disable \
-            --volume "${PWD}/output:/output" \
-            --volume /var/lib/containers/storage:/var/lib/containers/storage \
-            "${IMAGE_BUILDER}" \
-            build \
-              --chown "${output_owner}" \
-              --bootc-ref "localhost/purplefin-installer:${GITHUB_SHA}" \
-              --bootc-installer-payload-ref "${PAYLOAD_EMBED_REF}" \
-              --bootc-default-fs ext4 \
-              bootc-generic-iso
-
-          iso="$(find output -type f -name '*.iso' -print -quit)"
-          [[ -n "${iso}" ]]
-          mv "${iso}" "output/purplefin-${IMAGE_TAG}-$(<VERSION).iso"
-          sha256sum output/*.iso >output/SHA256SUMS
-
-      - name: Install Nix
-        uses: DeterminateSystems/determinate-nix-action@61cbfe2efc2d4e7a8a6d56967c3c1058e846c858 # v3
-
-      - name: Smoke-boot installer with QEMU
-        shell: bash
-        run: |
-          iso="$(find output -maxdepth 1 -type f -name '*.iso' -print -quit)"
-          nix develop .#installer --command tests/boot-installer-iso.sh "${iso}"
+      - name: Build and smoke-test installer
+        id: installer
+        uses: ./.github/actions/build-installer
+        with:
+          cache-write: >-
+            ${{ github.event_name == 'schedule' ||
+            (github.event_name == 'workflow_dispatch' &&
+            github.ref == 'refs/heads/main') }}
+          image-tag: ${{ inputs.image-tag || 'base-generic-x86_64' }}
+          token: ${{ github.token }}
 
       - name: Attest installer artifacts
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
@@ -135,14 +61,16 @@ jobs:
           subject-path: |
             output/*.iso
             output/SHA256SUMS
+            output/installer-manifest.json
 
       - name: Upload installer artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: purplefin-${{ steps.payload.outputs.tag }}-installer
+          name: purplefin-${{ steps.installer.outputs.payload-tag }}-installer
           path: |
             output/*.iso
             output/SHA256SUMS
+            output/installer-manifest.json
             output/qemu-boot.log
           if-no-files-found: error
           retention-days: 14

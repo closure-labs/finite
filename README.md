@@ -63,11 +63,15 @@ modules.
 ## Graphical installer
 
 The installer workflow takes a published profile, verifies its GitHub Actions
-Cosign signature, resolves it to an immutable digest, and embeds that exact
-payload in an Anaconda ISO. It uses OSBuild's current `image-builder` CLI and
-the supported `bootc-generic-iso` image type. A weekly trusted run builds the
-generic installer and smoke-boots it with QEMU; maintainers can dispatch the
-workflow for any published profile. See [installer/README.md](installer/README.md).
+Cosign signature, provenance, and SPDX attestation, resolves it to an immutable
+digest, and embeds that exact payload in an Anaconda ISO. It uses OSBuild's
+current `image-builder` CLI and the supported `bootc-generic-iso` image type.
+Installer-affecting pull requests run the shared installer build action through
+`CI gate`; weekly trusted runs refresh matching registry-cache layers. Every
+completed ISO is smoke-booted with QEMU and described by an attested component
+manifest.
+Maintainers can dispatch the workflow for any published profile. See
+[installer/README.md](installer/README.md).
 
 | Department | Workload |
 | --- | --- |

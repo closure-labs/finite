@@ -1,10 +1,11 @@
 # CI gating and merge queue
 
 `Build Purplefin` has one stable required status, `CI gate`. The gate verifies
-that repository checks, input planning, and every selected image build finished
-successfully. Dynamic profile jobs may be skipped when no profile input changed;
-the gate checks those skips against the planner output instead of treating a
-missing matrix job as success.
+that repository checks, input planning, and every selected image and installer
+build finished successfully. Dynamic profile jobs may be skipped when no
+profile input changed, and the installer job may be skipped when its inputs are
+unchanged. The gate checks those skips against planner and classifier output
+instead of treating a missing job as success.
 
 Pull requests and `merge_group` events build the profiles selected by immutable
 input, base-digest, and parent-digest comparisons. A selected parent brings its
@@ -91,7 +92,8 @@ permission after an organization transfer.
 
 The Image Builder updater follows OSBuild's scheduled pinned-CI-image refresh
 pattern. It resolves the mutable `image-builder-cli:latest` discovery tag, then
-changes only the immutable digest in `build-installer.yml`. Before auto-merge it
-uses the same validation-only CI dispatch and also builds and smoke-boots the
-generic installer from the candidate branch. The discovery tag is never used
-to construct a release artifact directly.
+changes only the immutable digest in the shared installer build action. The
+change classifier selects that generic-installer build during pull-request or
+validation-only CI, and the stable gate requires its QEMU smoke boot before
+auto-merge. The discovery tag is never used to construct a release artifact
+directly.
