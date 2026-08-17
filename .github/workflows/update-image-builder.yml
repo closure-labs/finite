@@ -64,7 +64,7 @@ jobs:
       - name: Open or update pull request
         if: steps.resolve.outputs.changed == 'true'
         id: update
-        uses: peter-evans/create-pull-request@84ae59a2cdc2258d6fa0732dd66352dddae2a412 # v7.0.9
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           token: ${{ secrets.MERGE_QUEUE_TOKEN || github.token }}
           branch: update_image_builder_cli
