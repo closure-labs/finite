@@ -44,6 +44,7 @@ jobs:
     permissions:
       contents: read
     outputs:
+      images: ${{ steps.filter.outputs.images }}
       installer: ${{ steps.filter.outputs.installer }}
     steps:
       - name: Checkout
@@ -74,6 +75,7 @@ jobs:
               ;;
             workflow_dispatch)
               if [[ "${VALIDATE_ONLY}" != true ]]; then
+                echo 'images=true' >>"${GITHUB_OUTPUT}"
                 echo 'installer=false' >>"${GITHUB_OUTPUT}"
                 exit 0
               fi
@@ -81,25 +83,30 @@ jobs:
               head_sha="$(git rev-parse HEAD)"
               ;;
             push | schedule)
+              echo 'images=true' >>"${GITHUB_OUTPUT}"
               echo 'installer=false' >>"${GITHUB_OUTPUT}"
               exit 0
               ;;
             *)
-              echo "Unknown event ${EVENT_NAME}; requiring installer validation" >&2
+              echo "Unknown event ${EVENT_NAME}; requiring expensive validations" >&2
+              echo 'images=true' >>"${GITHUB_OUTPUT}"
               echo 'installer=true' >>"${GITHUB_OUTPUT}"
               exit 0
               ;;
           esac
 
-          changed_paths="${RUNNER_TEMP}/installer-changed-paths"
+          changed_paths="${RUNNER_TEMP}/expensive-validation-changed-paths"
           if ! git diff --name-only --diff-filter=ACDMRT \
             "${base_sha}" "${head_sha}" >"${changed_paths}"; then
-            echo 'Could not determine changed paths; requiring installer validation' >&2
+            echo 'Could not determine changed paths; requiring expensive validations' >&2
+            echo 'images=true' >>"${GITHUB_OUTPUT}"
             echo 'installer=true' >>"${GITHUB_OUTPUT}"
             exit 0
           fi
-          installer="$(ci/installer-changes.sh <"${changed_paths}")"
-          echo "installer=${installer}" >>"${GITHUB_OUTPUT}"
+          {
+            echo "images=$(ci/changed-component.sh images <"${changed_paths}")"
+            echo "installer=$(ci/changed-component.sh installer <"${changed_paths}")"
+          } >>"${GITHUB_OUTPUT}"
 
   check:
     name: Repository checks
@@ -127,7 +134,10 @@ jobs:
 
   plan:
     name: Resolve build inputs
-    needs: check
+    if: needs.changes.outputs.images == 'true'
+    needs:
+      - changes
+      - check
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     outputs:
@@ -376,6 +386,7 @@ jobs:
           HARDWARE_PUBLISH_RESULT: ${{ needs.hardware-publish.result }}
           INSTALLER_CANDIDATE_RESULT: ${{ needs.installer-candidate.result }}
           INSTALLER_SELECTED: ${{ needs.changes.outputs.installer }}
+          IMAGES_SELECTED: ${{ needs.changes.outputs.images }}
           PLAN_RESULT: ${{ needs.plan.result }}
           REF: ${{ github.ref }}
           ROLES_PUBLISH_RESULT: ${{ needs.roles-publish.result }}
@@ -402,7 +413,7 @@ jobs:
 
           require_result changes "${CHANGES_RESULT}" success
           require_result check "${CHECK_RESULT}" success
-          require_result plan "${PLAN_RESULT}" success
+          require_selected_result plan "${IMAGES_SELECTED}" "${PLAN_RESULT}"
 
           if [[ "${EVENT_NAME}" == pull_request || "${EVENT_NAME}" == merge_group || "${VALIDATE_ONLY}" == true ]]; then
             require_selected_result build-candidate "${HAS_BUILDS}" "${BUILD_CANDIDATE_RESULT}"

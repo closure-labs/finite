@@ -10,3 +10,12 @@ updates:
       github-actions:
         patterns:
           - "*"
+
+  - package-ecosystem: nix
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      nix-flake-inputs:
+        patterns:
+          - "*"
