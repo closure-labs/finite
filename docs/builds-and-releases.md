@@ -37,6 +37,11 @@ these artifacts.
 The release workflow selects SemVer from conventional commits, with manual
 patch, minor, and major choices for release planning.
 
+Each stable version has a dated entry in [the changelog](../CHANGELOG.md). The
+entry uses Added, Changed, Fixed, and Security sections to summarize notable
+user and operator impact. The release workflow extracts that version's entry
+as the curated GitHub release notes.
+
 A release run prepares the stable version, obtains a successful all-profile
 candidate build from the exact source commit, and verifies every published
 signature, provenance statement, SPDX attestation, profile label, and source
