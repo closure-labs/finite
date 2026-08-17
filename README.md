@@ -159,8 +159,8 @@ complete images without package-write permission.
 CI exposes one stable `CI gate` for branch policy. Pull requests run the
 selective candidate graph, and native merge-queue candidates build the affected
 profiles against the temporary `merge_group` commit without publishing. Trusted
-Dependabot action and Nix-flake input updates, plus Image Builder CLI
-digest-update pull requests, can be enrolled automatically once
+Dependabot action updates, Determinate Nix-flake input refreshes, and Image
+Builder CLI digest-update pull requests can be enrolled automatically once
 the repository prerequisites in
 [the merge-queue runbook](docs/ci-merge-queue.md) are met. While Purplefin is
 user-owned, strict up-to-date status protection plus ordinary auto-merge provides

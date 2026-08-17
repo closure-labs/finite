@@ -52,13 +52,20 @@ grep -qF "VALIDATE_ONLY: \${{ github.event_name ==" .github/workflows/build.yml
 grep -qF 'name: Queue Dependabot updates' .github/workflows/queue-dependabot.yml
 grep -qF 'select(.user.login == "dependabot[bot]")' .github/workflows/queue-dependabot.yml
 grep -qF "select(.head.repo.full_name == \$repository)" .github/workflows/queue-dependabot.yml
-grep -qF '  - package-ecosystem: nix' .github/dependabot.yml
-grep -qF '      nix-flake-inputs:' .github/dependabot.yml
-[[ ! -e .github/workflows/update-flake-lock.yml ]]
+if grep -qF '  - package-ecosystem: nix' .github/dependabot.yml; then
+	echo 'Nix inputs must be updated by Determinate, not Dependabot' >&2
+	exit 1
+fi
+grep -qF 'name: Update Nix flake inputs' .github/workflows/update-flake-lock.yml
+grep -qF 'DeterminateSystems/update-flake-lock@834c491b2ece4de0bbd00d85214bb5e83b4da5c6' .github/workflows/update-flake-lock.yml
+grep -qF 'branch: automation/weekly-flake-input-refresh' .github/workflows/update-flake-lock.yml
+grep -qF 'EXPECTED_AUTHOR:' .github/workflows/update-flake-lock.yml
 grep -qF 'name: Update Image Builder CLI digest' .github/workflows/update-image-builder.yml
 grep -qF 'IMAGE_BUILDER_TAG: ghcr.io/osbuild/image-builder-cli:latest' .github/workflows/update-image-builder.yml
+grep -qF 'EXPECTED_AUTHOR:' .github/workflows/update-image-builder.yml
 grep -qF -- '--event pull_request' ci/validate-trusted-update.sh
 grep -qF 'dispatch_and_wait build.yml -f validate_only=true' ci/validate-trusted-update.sh
+grep -qF '.headRepository.nameWithOwner' ci/validate-trusted-update.sh
 installer_action=.github/actions/build-installer/action.yml
 if grep -qF -- '--blueprint' "${installer_action}"; then
 	echo 'bootc-generic-iso does not support Blueprint customizations' >&2
