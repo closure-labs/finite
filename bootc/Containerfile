@@ -1,4 +1,4 @@
-ARG BASE_REF=ghcr.io/projectbluefin/bluefin:stable
+ARG BASE_REF
 
 FROM ${BASE_REF}
 

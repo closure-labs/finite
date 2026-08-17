@@ -19,6 +19,10 @@ on:
       parent-image:
         required: true
         type: string
+      parent-from-npins:
+        required: false
+        default: false
+        type: boolean
       parent-profile:
         required: false
         default: ""
@@ -164,6 +168,10 @@ jobs:
           fi
           echo 'hit=false' >>"${GITHUB_OUTPUT}"
 
+      - name: Load npins-locked upstream image
+        if: inputs.parent-from-npins && steps.reuse.outputs.hit != 'true'
+        run: nix run .#load-bluefin
+
       - name: Build image from immutable parent
         if: steps.reuse.outputs.hit != 'true'
         id: build
@@ -171,6 +179,7 @@ jobs:
           BUILD_INPUT: ${{ inputs.build-input }}
           BUILD_PROFILE: ${{ inputs.profile }}
           PARENT_DIGEST: ${{ steps.inputs.outputs.parent_digest }}
+          PARENT_FROM_NPINS: ${{ inputs.parent-from-npins }}
           PARENT_IMAGE: ${{ inputs.parent-image }}
           PARENT_PROFILE: ${{ inputs.parent-profile }}
           PARENT_TAG: ${{ inputs.parent-tag }}
@@ -203,6 +212,12 @@ jobs:
             )
           fi
           base_ref="${PARENT_IMAGE}@${PARENT_DIGEST}"
+          pull_policy=always
+          if [[ "${PARENT_FROM_NPINS}" == true ]]; then
+            [[ -n "${PARENT_TAG}" ]]
+            base_ref="${PARENT_IMAGE}:${PARENT_TAG}"
+            pull_policy=never
+          fi
           cache_available=false
           if skopeo list-tags "docker://${cache_ref}" >/dev/null 2>&1; then
             cache_available=true
@@ -219,7 +234,7 @@ jobs:
 
           buildah bud \
             --file "${containerfile}" \
-            --pull=always \
+            --pull="${pull_policy}" \
             "${cache_args[@]}" \
             "${parent_args[@]}" \
             --label "io.purplefin.build.input=${BUILD_INPUT}" \

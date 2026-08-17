@@ -1,3 +1,4 @@
 /artifacts/
 /bootc/generated/
 /installer/config/profiles/
+/.npins-update.*/

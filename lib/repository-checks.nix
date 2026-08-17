@@ -49,6 +49,31 @@ in {
       ${architecture}/namespace.mmd
     grep -qF 'operations_github_build --> operations_delivery_installer' \
       ${architecture}/namespace.mmd
+    grep -qF 'operations_updates_bluefin --> sources_bluefin' \
+      ${architecture}/namespace.mmd
+    grep -qF 'operations_github_bluefin_update --> operations_updates_bluefin' \
+      ${architecture}/namespace.mmd
+  '';
+
+  upstream = mkSourceCheck "upstream-contracts" ''
+    jq -e '
+      .version == 8 and (
+        .pins["bluefin-stable"] as $pin |
+        $pin.type == "Container" and
+        $pin.image_name == "ghcr.io/projectbluefin/bluefin" and
+        $pin.image_tag == "stable" and
+        $pin.arch == "amd64" and
+        ($pin.image_digest | test("^sha256:[0-9a-f]{64}$")) and
+        ($pin.hash | test("^sha256-[A-Za-z0-9+/]{43}=$"))
+      )
+    ' npins/sources.json >/dev/null
+    secretspec schema --file secretspec.toml --profile local-cache |
+      jq -e '.required == ["CACHIX_AUTH_TOKEN"]' >/dev/null
+    ! grep -qF 'cachix watch-exec' lib/flake-applications.nix
+    grep -qF 'cachix push --omit-deriver purplefin' lib/flake-applications.nix
+    grep -qF 'https://purplefin.cachix.org' flake.nix
+    grep -qFx 'ARG BASE_REF' bootc/Containerfile
+    ! grep -qF 'bluefin:stable' bootc/Containerfile
   '';
 
   documentation = mkSourceCheck "documentation-checks" ''
@@ -116,6 +141,14 @@ in {
     grep -qF 'nix flake check --print-build-logs' .github/workflows/build.yml
     grep -qF 'nix run .#trusted-update' .github/workflows/update-flake-lock.yml
     grep -qF 'nix run .#trusted-update' .github/workflows/update-image-builder.yml
+    grep -qF 'nix run .#trusted-update' .github/workflows/update-bluefin.yml
+    grep -qF 'nix run .#update-bluefin' .github/workflows/update-bluefin.yml
+    grep -qF 'nix run .#verify-bluefin' .github/workflows/build.yml
+    grep -qF 'nix run .#load-bluefin' .github/workflows/build-profile.yml
+    grep -qF 'nix run .#ci-plan' .github/workflows/build.yml
+    grep -qF 'nix run .#cache-checks' .github/workflows/build.yml
+    grep -qF 'cachix/cachix-action@5f2d7c5294214f71b873db4b969586b980625e71' \
+      .github/workflows/build.yml
     grep -qF 'nix run .#export-artifacts -- .' .github/workflows/build-profile.yml
     grep -qF 'containerfile=./bootc/Containerfile' .github/workflows/build-profile.yml
     grep -qF 'nix run .#installer-build' .github/actions/build-installer/action.yml

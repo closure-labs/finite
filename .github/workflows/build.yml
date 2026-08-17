@@ -126,8 +126,20 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/determinate-nix-action@61cbfe2efc2d4e7a8a6d56967c3c1058e846c858 # v3
 
+      - name: Configure Purplefin Cachix
+        uses: cachix/cachix-action@5f2d7c5294214f71b873db4b969586b980625e71 # v17
+        with:
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          name: purplefin
+          skipPush: true
+
       - name: Check flake inputs
         uses: DeterminateSystems/flake-checker-action@de924abd783455e8429c858962b9e43062d19da1 # v13
+
+      - name: Build and cache small contract results
+        env:
+          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+        run: nix run .#cache-checks
 
       - name: Validate repository and workflows
         run: nix flake check --print-build-logs
@@ -143,6 +155,7 @@ jobs:
     outputs:
       base_image: ${{ steps.plan.outputs.base_image }}
       base_digest: ${{ steps.plan.outputs.base_digest }}
+      base_tag: ${{ steps.plan.outputs.base_tag }}
       hardware_matrix: ${{ steps.plan.outputs.hardware_matrix }}
       has_hardware: ${{ steps.plan.outputs.has_hardware }}
       has_builds: ${{ steps.plan.outputs.has_builds }}
@@ -161,61 +174,16 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/determinate-nix-action@61cbfe2efc2d4e7a8a6d56967c3c1058e846c858 # v3
 
-      - name: Materialize Flake-generated build artifacts
-        run: nix run .#export-artifacts -- .
+      - name: Verify locked Bluefin source
+        run: nix run .#verify-bluefin
 
-      - name: Install cosign
-        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
-
-      - name: Resolve, verify, and plan immutable inputs
+      - name: Resolve and plan immutable inputs
         id: plan
         env:
           CHECK_RPM_UPDATES: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
           FORCE_REBUILD: ${{ github.event_name == 'workflow_dispatch' && inputs.force }}
           IMAGE_REF: ${{ format('{0}/{1}', env.REGISTRY, env.IMAGE_NAME) }}
-        shell: bash
-        run: |
-          base_image="$(jq -er '.image' bootc/generated/upstream.json)"
-          base_tag="$(jq -er '.tag' bootc/generated/upstream.json)"
-          base_metadata="$({
-            skopeo inspect --retry-times 3 \
-              "docker://${base_image}:${base_tag}"
-          })"
-          base_digest="$(jq -er '.Digest' <<<"${base_metadata}")"
-          base_ref="${base_image}@${base_digest}"
-          version="$(<VERSION)"
-
-          cosign verify \
-            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-            --certificate-identity \
-              https://github.com/projectbluefin/actions/.github/workflows/reusable-build.yml@refs/tags/v1 \
-            "${base_ref}" >/dev/null
-
-          profiles="$(jq -c . bootc/generated/image-matrix.json)"
-
-          export BASE_DIGEST="${base_digest}" BASE_REF="${base_ref}"
-          matrix="$(nix run .#image-plan -- "${profiles}")"
-          has_builds="$(jq -r '.include | length > 0' <<<"${matrix}")"
-          root_base="$(jq -c 'first(.include[] | select(.stage == "root")) // {}' <<<"${matrix}")"
-          hardware_matrix="$(jq -c '{include: [.include[] | select(.stage == "hardware")]}' <<<"${matrix}")"
-          role_matrix="$(jq -c '{include: [.include[] | select(.stage == "role")]}' <<<"${matrix}")"
-          has_root_base="$(jq -r 'has("profile")' <<<"${root_base}")"
-          has_hardware="$(jq -r '.include | length > 0' <<<"${hardware_matrix}")"
-          has_roles="$(jq -r '.include | length > 0' <<<"${role_matrix}")"
-
-          {
-            echo "base_image=${base_image}"
-            echo "base_digest=${base_digest}"
-            echo "hardware_matrix=${hardware_matrix}"
-            echo "has_hardware=${has_hardware}"
-            echo "has_builds=${has_builds}"
-            echo "has_roles=${has_roles}"
-            echo "has_root_base=${has_root_base}"
-            echo "matrix=${matrix}"
-            echo "role_matrix=${role_matrix}"
-            echo "root_base=${root_base}"
-            echo "version=${version}"
-          } >>"${GITHUB_OUTPUT}"
+        run: nix run .#ci-plan -- "${GITHUB_OUTPUT}"
 
   build-candidate:
     name: Validate ${{ matrix.profile }}
@@ -235,7 +203,9 @@ jobs:
     with:
       build-input: ${{ matrix.build_input }}
       parent-digest: ${{ needs.plan.outputs.base_digest }}
+      parent-from-npins: true
       parent-image: ${{ needs.plan.outputs.base_image }}
+      parent-tag: ${{ needs.plan.outputs.base_tag }}
       profile: ${{ matrix.profile }}
       publish: false
       tags: ${{ matrix.tags }}
@@ -286,7 +256,9 @@ jobs:
     with:
       build-input: ${{ fromJSON(needs.plan.outputs.root_base).build_input }}
       parent-digest: ${{ needs.plan.outputs.base_digest }}
+      parent-from-npins: true
       parent-image: ${{ needs.plan.outputs.base_image }}
+      parent-tag: ${{ needs.plan.outputs.base_tag }}
       profile: base
       publish: true
       reuse-existing: ${{ fromJSON(needs.plan.outputs.root_base).reuse_existing }}

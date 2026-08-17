@@ -21,6 +21,8 @@ classify() {
 [[ "$(classify images installer/Containerfile .github/workflows/build-installer.yml)" == false ]]
 [[ "$(classify images .github/workflows/queue-dependabot.yml)" == false ]]
 [[ "$(classify images .github/workflows/update-flake-lock.yml)" == false ]]
+[[ "$(classify images .github/workflows/update-bluefin.yml secretspec.toml)" == false ]]
+[[ "$(classify images npins/sources.json)" == true ]]
 [[ "$(classify images bootc/Containerfile)" == true ]]
 [[ "$(classify images .github/workflows/build-profile.yml)" == true ]]
 [[ "$(classify images modules/aspects/base/apply.sh)" == true ]]

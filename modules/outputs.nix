@@ -12,6 +12,7 @@
     (with pkgs; [
       actionlint
       bash
+      cachix
       coreutils
       diffutils
       file
@@ -23,8 +24,10 @@
       gnused
       jq
       just
+      npins
       pipewire
       ripgrep
+      secretspec
       shellcheck
       systemd
       util-linux
@@ -37,6 +40,14 @@
     profileEntities = config.purplefin.profiles;
   };
   inherit (profileSet) profiles;
+  bluefin = config.purplefin.sources.bluefin;
+  bluefinArchive = pkgs.dockerTools.pullImage {
+    imageName = bluefin.image;
+    imageDigest = bluefin.digest;
+    finalImageTag = bluefin.tag;
+    arch = bluefin.architecture;
+    hash = bluefin.archiveHash;
+  };
   version = lib.removeSuffix "\n" (builtins.readFile ../VERSION);
   generated = import ../lib/render-profile-artifacts.nix {
     inherit lib pkgs profiles;
@@ -67,7 +78,7 @@
     )}
   '';
   applications = import ../lib/flake-applications.nix {
-    inherit generated pkgs profiles version;
+    inherit bluefin bluefinArchive generated pkgs version;
   };
   repositoryChecks = import ../lib/repository-checks.nix {
     inherit applications architecture generated inputs pkgs repositoryToolchain;
@@ -85,6 +96,7 @@ in {
     packages.${system} =
       {
         inherit architecture;
+        bluefin-upstream = bluefinArchive;
         ci = applications.ci;
         default = generated;
         inherit generated;
@@ -120,6 +132,10 @@ in {
         type = "app";
         program = "${applications.imagePlan}/bin/purplefin-image-plan";
       };
+      ci-plan = {
+        type = "app";
+        program = "${applications.ciPlan}/bin/purplefin-ci-plan";
+      };
       image-reuse = {
         type = "app";
         program = "${applications.imageReuse}/bin/purplefin-image-reuse";
@@ -135,6 +151,26 @@ in {
       installer-build = {
         type = "app";
         program = "${applications.installerBuild}/bin/purplefin-installer-build";
+      };
+      local-cache = {
+        type = "app";
+        program = "${applications.localCache}/bin/purplefin-local-cache";
+      };
+      cache-checks = {
+        type = "app";
+        program = "${applications.cacheChecks}/bin/purplefin-cache-checks";
+      };
+      load-bluefin = {
+        type = "app";
+        program = "${applications.loadBluefin}/bin/purplefin-load-bluefin";
+      };
+      update-bluefin = {
+        type = "app";
+        program = "${applications.updateBluefin}/bin/purplefin-update-bluefin";
+      };
+      verify-bluefin = {
+        type = "app";
+        program = "${applications.verifyBluefin}/bin/purplefin-verify-bluefin";
       };
     };
 

@@ -1,0 +1,13 @@
+{
+  "pins": {
+    "bluefin-stable": {
+      "type": "Container",
+      "image_name": "ghcr.io/projectbluefin/bluefin",
+      "image_tag": "stable",
+      "arch": "amd64",
+      "image_digest": "sha256:383f523982a84cd23b40a8d252b50d6c4a65b013b03bfb70e74e0708fd8e082f",
+      "hash": "sha256-cB2kM5FFbzM1UId8zX/iAdEWMKHwVD7wKNlJrKhy2Sc="
+    }
+  },
+  "version": 8
+}

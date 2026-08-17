@@ -1,6 +1,11 @@
 {
   description = "Purplefin bootc profile and user-environment configuration";
 
+  nixConfig = {
+    extra-substituters = "https://purplefin.cachix.org";
+    extra-trusted-public-keys = "purplefin.cachix.org-1:aW23hpySzX8WPYCiZSzxEc9mOYTIV9NDvylhqVgziFM=";
+  };
+
   inputs = {
     den.url = "github:denful/den";
 

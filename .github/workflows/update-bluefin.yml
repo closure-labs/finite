@@ -1,0 +1,62 @@
+name: Update Bluefin stable pin
+
+on:
+  schedule:
+    - cron: "7 7 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: update-bluefin-stable
+  cancel-in-progress: false
+
+permissions:
+  actions: write
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    name: Refresh and validate Bluefin stable
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Nix
+        uses: DeterminateSystems/determinate-nix-action@61cbfe2efc2d4e7a8a6d56967c3c1058e846c858 # v3
+
+      - name: Refresh and verify npins source
+        id: pin
+        run: nix run .#update-bluefin -- "${GITHUB_OUTPUT}"
+
+      - name: Open or update pull request
+        id: update
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ secrets.MERGE_QUEUE_TOKEN || github.token }}
+          branch: automation/update-bluefin-stable
+          delete-branch: true
+          commit-message: "npins: update Bluefin stable"
+          title: "npins: update Bluefin stable"
+          body: |
+            Refreshes the Bluefin stable container source to immutable digest
+            `${{ steps.pin.outputs.digest }}` and its Nix fixed-output hash.
+
+            The candidate validates the complete repository and image graph
+            before auto-merge is enabled.
+
+      - name: Validate and enable auto-merge
+        if: >-
+          steps.update.outputs.pull-request-number != '' &&
+          steps.update.outputs.pull-request-operation != 'closed'
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          EXPECTED_AUTHOR: ${{ vars.AUTOMATION_UPDATE_LOGIN || 'github-actions[bot]' }}
+          EXPECTED_BRANCH: automation/update-bluefin-stable
+          EXPECTED_TITLE: "npins: update Bluefin stable"
+          GH_TOKEN: ${{ secrets.MERGE_QUEUE_TOKEN || github.token }}
+          PR_NUMBER: ${{ steps.update.outputs.pull-request-number }}
+        run: nix run .#trusted-update

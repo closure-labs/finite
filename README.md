@@ -13,6 +13,8 @@ build provenance, and SPDX SBOM attestations.
   profiles in the Den graph declared by `modules/profiles.nix`.
 - **Flake:** the source of build plans, generated installer data, development
   tools, tests, and CI/CD applications.
+- **Source pin:** the Bluefin stable OCI digest and Nix archive hash locked by
+  `npins/sources.json` and included in the Den graph.
 - **Published tag:** a movable name for a signed image digest. Examples include
   `latest`, `developer-generic`, `support-generic`, and `dale`.
 
