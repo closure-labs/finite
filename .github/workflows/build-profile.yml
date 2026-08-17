@@ -64,6 +64,13 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Install Nix
+        uses: DeterminateSystems/determinate-nix-action@61cbfe2efc2d4e7a8a6d56967c3c1058e846c858 # v3
+
+      - name: Materialize Flake-generated build artifacts
+        shell: bash
+        run: nix run .#export-artifacts -- .
+
       - name: Log in to GHCR for publishing and build cache
         if: inputs.publish
         env:
@@ -139,7 +146,7 @@ jobs:
           trap record_duration EXIT
 
           read -r -a tags <<<"${TAGS}"
-          if digest="$(bootc/build/reuse-image.sh "${tags[0]}")" &&
+          if digest="$(nix run .#image-reuse -- "${tags[0]}")" &&
             [[ -n "${digest}" ]]; then
             if image_id="$({
               podman pull --quiet \
@@ -182,13 +189,13 @@ jobs:
           read -r -a tags <<<"${TAGS}"
           primary_image="${IMAGE_REF}:${tags[0]}"
           created="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-          containerfile=./Containerfile
+          containerfile=./bootc/Containerfile
           cache_ref="${IMAGE_REF}-build-cache"
           cache_args=(--layers)
           parent_args=()
 
           if [[ -n "${PARENT_PROFILE}" ]]; then
-            containerfile=./Containerfile.derived
+            containerfile=./bootc/Containerfile.derived
             parent_args+=(
               --label "io.purplefin.parent.digest=${PARENT_DIGEST}"
               --label "io.purplefin.parent.profile=${PARENT_PROFILE}"
@@ -424,12 +431,6 @@ jobs:
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             --certificate-identity "${COSIGN_IDENTITY}" \
             "${immutable_image}" >/dev/null
-
-      - name: Install Nix for SBOM generation
-        if: >-
-          inputs.publish &&
-          steps.sbom-cache.outputs.hit != 'true'
-        uses: DeterminateSystems/determinate-nix-action@61cbfe2efc2d4e7a8a6d56967c3c1058e846c858 # v3
 
       - name: Generate SBOM from mounted image root
         if: >-

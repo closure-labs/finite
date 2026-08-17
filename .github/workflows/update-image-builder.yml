@@ -78,6 +78,12 @@ jobs:
             The candidate runs the repository CI gate and builds and smoke-boots
             the generic installer before auto-merge is enabled.
 
+      - name: Install Nix
+        if: >-
+          steps.update.outputs.pull-request-number != '' &&
+          steps.update.outputs.pull-request-operation != 'closed'
+        uses: DeterminateSystems/determinate-nix-action@61cbfe2efc2d4e7a8a6d56967c3c1058e846c858 # v3
+
       - name: Validate and enable auto-merge
         if: >-
           steps.update.outputs.pull-request-number != '' &&
@@ -89,4 +95,4 @@ jobs:
           EXPECTED_TITLE: Update Image Builder CLI digest
           GH_TOKEN: ${{ secrets.MERGE_QUEUE_TOKEN || github.token }}
           PR_NUMBER: ${{ steps.update.outputs.pull-request-number }}
-        run: ci/validate-trusted-update.sh
+        run: nix run .#trusted-update

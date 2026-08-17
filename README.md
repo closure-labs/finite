@@ -1,75 +1,62 @@
 # Purplefin
 
-Purplefin is a signed, updateable bootc operating-system image based on
-[Bluefin Stable](https://projectbluefin.io/). It composes a common workstation
-foundation with role and hardware profiles, then publishes the finished images
-to `ghcr.io/declarative-dale/purplefin`.
+Purplefin is a signed, updateable [bootc](https://bootc-dev.github.io/bootc/)
+workstation image based on [Bluefin Stable](https://projectbluefin.io/). Images
+are published to `ghcr.io/declarative-dale/purplefin` with Cosign signatures,
+build provenance, and SPDX SBOM attestations.
 
-Every published image includes provenance and an SPDX SBOM. The default image
-provides Git, Micro, Podman Machine, QEMU disk tooling, Homebrew packages,
-common Flatpaks, fingerprint authentication, FIDO2 support, YubiKey tooling,
-and smart-card services.
+## Concepts
 
-## Choose an image
+- **Aspect:** a reusable base, hardware, capability, or role feature under
+  `modules/aspects/`.
+- **Profile:** a complete image assembled by including aspects and parent
+  profiles in the Den graph declared by `modules/profiles.nix`.
+- **Flake:** the source of build plans, generated installer data, development
+  tools, tests, and CI/CD applications.
+- **Published tag:** a movable name for a signed image digest. Examples include
+  `latest`, `developer-generic`, `support-generic`, and `dale`.
 
-| Image tag | Intended system |
-| --- | --- |
-| `latest` | Base workstation on generic x86-64 hardware |
-| `developer-generic` | Development workstation on generic x86-64 hardware |
-| `support-generic` | Support workstation on generic x86-64 hardware |
-| `dale` | Sales, training, and support workstation on a Dell XPS 13 9350 |
+## Quick start
 
-The generated
-[profile catalog](bootc/generated/profile-catalog.json) lists every image,
-role, hardware selection, parent, and published tag.
-
-## Switch an existing bootc system
-
-Choose a complete profile and reboot into it:
+On an existing bootc system, switch to the generic base profile and reboot:
 
 ```bash
 run0 bootc switch ghcr.io/declarative-dale/purplefin:latest
 run0 systemctl reboot
 ```
 
-Use the same tag for subsequent upgrades:
+Install future updates with:
 
 ```bash
 run0 bootc upgrade
 run0 systemctl reboot
 ```
 
-For a new machine, build or download the graphical Anaconda ISO described in
-the [installer guide](installer/README.md).
+To inspect all profiles from a checkout:
 
-## Develop
+```bash
+nix build .#generated
+jq '.profiles' result/bootc/generated/profile-catalog.json
+```
 
-Enter the pinned development environment and run the repository checks:
+For a fresh system, use the verified graphical ISO described in
+[Installation](docs/installation.md).
+
+## Development quick start
 
 ```bash
 nix develop
-just check
-nix flake check
+nix fmt
+nix flake check --print-build-logs
 ```
 
-The flake supplies the formatter, linters, test tools, generated profile data,
-Home Manager activation packages, and OSBuild Blueprints.
+## Documentation
 
-## Read more
-
-- [Changelog](CHANGELOG.md) summarizes the user-facing changes in each release.
-- [Building and development](docs/building-and-development.md) covers local
-  image builds, generated files, formatting, and validation.
-- [Customizing profiles](docs/customizing.md) explains the Den graph, aspects,
-  bootc modules, overlays, and Home Manager settings.
-- [Nonstandard use cases](docs/nonstandard-use-cases.md) covers security-key
-  enrollment, lid-closed work sessions, and package migrations.
-- [Dell XPS 13 9350](docs/dell-xps-9350.md) documents authentication, battery,
-  display, power, and IPU7 camera behavior.
-- [Installer](installer/README.md) describes the verified Anaconda ISO build
-  and its artifacts.
-- [Builds and releases](docs/builds-and-releases.md) documents selective image
-  builds, signatures, SBOMs, provenance, and release promotion.
-- [CI and testing](docs/ci-objectives.md) and the
-  [merge policy](docs/ci-merge-queue.md) describe the required gate and trusted
-  update automation.
+- [Installation and updates](docs/installation.md)
+- [Profiles and advanced configuration](docs/configuration.md)
+- [Development and local builds](docs/development.md)
+- [CI, image publication, and releases](docs/ci-and-releases.md)
+- [Troubleshooting](docs/troubleshooting.md)
+- [Dell XPS 13 9350 hardware behavior](docs/dell-xps-9350.md)
+- [Dell XPS 13 9350 Secure Boot status](docs/dell-xps-9350-secure-boot.md)
+- [Changelog](CHANGELOG.md)

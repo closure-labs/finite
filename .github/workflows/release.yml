@@ -137,10 +137,9 @@ jobs:
           }
           if [[ "${source_version}" != "${version}" ]]; then
             printf '%s\n' "${version}" >VERSION
-            nix run .#generate
             git config user.name github-actions[bot]
             git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-            git add VERSION bootc/generated installer/config/profiles
+            git add VERSION
             git commit -m "Release Purplefin ${version}"
             gh auth setup-git
             git push origin HEAD:main
@@ -153,6 +152,9 @@ jobs:
           } >>"${GITHUB_OUTPUT}"
           printf 'Selected %s with a %s bump from %s\n' \
             "${tag}" "${selected_bump}" "${last_tag:-VERSION seed}"
+
+      - name: Materialize Flake-generated build artifacts
+        run: nix run .#export-artifacts -- .
 
       - name: Reuse or dispatch the release-candidate build
         id: build
@@ -302,6 +304,9 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/determinate-nix-action@61cbfe2efc2d4e7a8a6d56967c3c1058e846c858 # v3
 
+      - name: Materialize Flake-generated build artifacts
+        run: nix run .#export-artifacts -- .
+
       - name: Validate release versions and source
         env:
           SOURCE_SHA: ${{ needs.prepare.outputs.source_sha }}
@@ -368,10 +373,12 @@ jobs:
               --certificate-identity "${COSIGN_IDENTITY}" \
               "${immutable_ref}" >/dev/null
             gh attestation verify "oci://${immutable_ref}" \
+              --bundle-from-oci \
               --repo "${GITHUB_REPOSITORY}" \
               --signer-workflow "${GITHUB_REPOSITORY}/.github/workflows/build-profile.yml" \
               --source-digest "${SOURCE_SHA}"
             gh attestation verify "oci://${immutable_ref}" \
+              --bundle-from-oci \
               --repo "${GITHUB_REPOSITORY}" \
               --signer-workflow "${GITHUB_REPOSITORY}/.github/workflows/build-profile.yml" \
               --source-digest "${SOURCE_SHA}" \
@@ -454,7 +461,7 @@ jobs:
           mapfile -t sbom_assets < <(find release-sboms -type f -name '*.spdx.json.gz' -print | sort)
           expected_assets="$(jq 'length' bootc/generated/image-matrix.json)"
           (( ${#sbom_assets[@]} == expected_assets ))
-          ci/release-notes.sh "${VERSION}" CHANGELOG.md >release-notes.md
+          nix run .#release-notes -- "${VERSION}" CHANGELOG.md >release-notes.md
           grep -q '[^[:space:]]' release-notes.md
           gh release create "v${VERSION}" \
             release-manifest.json \
@@ -480,10 +487,9 @@ jobs:
             exit 1
           }
           printf '%s\n' "${next_version}" >VERSION
-          nix run .#generate
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add VERSION bootc/generated installer/config/profiles
+          git add VERSION
           git commit -m "Start Purplefin ${next_version}"
           gh auth setup-git
           git push origin HEAD:main
