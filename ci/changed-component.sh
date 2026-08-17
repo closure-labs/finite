@@ -38,6 +38,7 @@ while IFS= read -r path; do
 		images:.github/workflows/cleanup.yml | \
 		images:.github/workflows/queue-dependabot.yml | \
 		images:.github/workflows/release.yml | \
+		images:.github/workflows/update-flake-lock.yml | \
 		images:.github/workflows/update-image-builder.yml | \
 		images:ci/changed-component.sh | \
 		images:ci/validate-trusted-update.sh | \

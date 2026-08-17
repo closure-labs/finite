@@ -83,6 +83,8 @@ jobs:
           steps.update.outputs.pull-request-number != '' &&
           steps.update.outputs.pull-request-operation != 'closed'
         env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          EXPECTED_AUTHOR: ${{ vars.AUTOMATION_UPDATE_LOGIN || 'github-actions[bot]' }}
           EXPECTED_BRANCH: update_image_builder_cli
           EXPECTED_TITLE: Update Image Builder CLI digest
           GH_TOKEN: ${{ secrets.MERGE_QUEUE_TOKEN || github.token }}

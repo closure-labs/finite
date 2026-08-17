@@ -74,8 +74,8 @@ native queue ruleset is activated so `main` has one authoritative policy.
 
 ## Trusted update bots
 
-Dependabot groups and updates GitHub Actions and Nix flake inputs. `Queue
-Dependabot updates` runs daily on the default branch, verifies open pull
+Dependabot groups and updates GitHub Actions. `Queue Dependabot updates` runs
+daily on the default branch, verifies open pull
 requests through the GitHub API, and enables auto-merge only for non-draft,
 same-repository Dependabot updates targeting the default branch. It pins the
 requested head commit and operates exclusively on GitHub API metadata. The
@@ -83,6 +83,14 @@ scheduled workflow has permission to enable auto-merge while Dependabot
 pull-request workflows retain their read-only token.
 Branch protection still requires the candidate to be current and pass `CI gate`
 before GitHub can merge it.
+
+`Update Nix flake inputs` uses Determinate Nix and the pinned Determinate lock
+updater once a week. It refreshes every input in `flake.lock` on the fixed
+`automation/weekly-flake-input-refresh` branch, then uses the shared validator
+to verify the expected author, title, base, same-repository branch, and exact
+head commit before enabling auto-merge. Set `AUTOMATION_UPDATE_LOGIN` when
+`MERGE_QUEUE_TOKEN` creates pull requests as a user or GitHub App other than
+`github-actions[bot]`.
 
 The Image Builder updater validates and merges its own exact pull request. When
 `MERGE_QUEUE_TOKEN` causes the normal pull-request workflow to run, the shared

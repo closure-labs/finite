@@ -437,9 +437,9 @@ check:
     grep -qF 'base-publish:' .github/workflows/build.yml
     grep -qF 'hardware-publish:' .github/workflows/build.yml
     grep -qF 'roles-publish:' .github/workflows/build.yml
-    grep -qF '  - package-ecosystem: nix' .github/dependabot.yml
-    grep -qF '      nix-flake-inputs:' .github/dependabot.yml
-    test ! -e .github/workflows/update-flake-lock.yml
+    ! grep -qF '  - package-ecosystem: nix' .github/dependabot.yml
+    grep -qF 'name: Update Nix flake inputs' .github/workflows/update-flake-lock.yml
+    grep -qF 'DeterminateSystems/update-flake-lock@834c491b2ece4de0bbd00d85214bb5e83b4da5c6' .github/workflows/update-flake-lock.yml
     grep -qF 'DeterminateSystems/determinate-nix-action@61cbfe2efc2d4e7a8a6d56967c3c1058e846c858 # v3' .github/workflows/build.yml
     ! rg -q 'DeterminateSystems/nix-installer-action|DeterminateSystems/magic-nix-cache-action' .github/workflows
     grep -qF 'den.url = "github:denful/den";' flake.nix

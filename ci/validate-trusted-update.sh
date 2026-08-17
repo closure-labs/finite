@@ -6,18 +6,35 @@ set -euo pipefail
 : "${PR_NUMBER:?PR_NUMBER must be set}"
 : "${EXPECTED_BRANCH:?EXPECTED_BRANCH must be set}"
 : "${EXPECTED_TITLE:?EXPECTED_TITLE must be set}"
+: "${EXPECTED_AUTHOR:?EXPECTED_AUTHOR must be set}"
+: "${DEFAULT_BRANCH:?DEFAULT_BRANCH must be set}"
 
-pr="$({
+read_pr() {
 	gh pr view "${PR_NUMBER}" \
 		--repo "${GITHUB_REPOSITORY}" \
-		--json headRefName,headRefOid,state,title,url
-})"
+		--json author,baseRefName,headRefName,headRefOid,headRepository,mergeStateStatus,state,title,url
+}
+
+validate_pr() {
+	local candidate=$1
+	[[ "$(jq -er '.state' <<<"${candidate}")" == OPEN ]]
+	[[ "$(jq -er '.title' <<<"${candidate}")" == "${EXPECTED_TITLE}" ]]
+	[[ "$(jq -er '.author.login' <<<"${candidate}")" == "${EXPECTED_AUTHOR}" ]]
+	[[ "$(jq -er '.baseRefName' <<<"${candidate}")" == "${DEFAULT_BRANCH}" ]]
+	[[ "$(jq -er '.headRepository.nameWithOwner' <<<"${candidate}")" == "${GITHUB_REPOSITORY}" ]]
+	[[ "$(jq -er '.headRefName' <<<"${candidate}")" == "${EXPECTED_BRANCH}" ]]
+}
+
+pr="$(read_pr)"
+validate_pr "${pr}"
+if [[ "$(jq -er '.mergeStateStatus' <<<"${pr}")" == BEHIND ]]; then
+	gh pr update-branch "${PR_NUMBER}" --repo "${GITHUB_REPOSITORY}"
+	pr="$(read_pr)"
+	validate_pr "${pr}"
+fi
 branch="$(jq -er '.headRefName' <<<"${pr}")"
 head_sha="$(jq -er '.headRefOid' <<<"${pr}")"
 pr_url="$(jq -er '.url' <<<"${pr}")"
-[[ "$(jq -er '.state' <<<"${pr}")" == OPEN ]]
-[[ "$(jq -er '.title' <<<"${pr}")" == "${EXPECTED_TITLE}" ]]
-[[ "${branch}" == "${EXPECTED_BRANCH}" ]]
 
 dispatch_and_wait() {
 	local workflow="$1"
