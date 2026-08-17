@@ -1,125 +1,75 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-just _repository-contracts
+generated_root="${PURPLEFIN_GENERATED_ROOT:?PURPLEFIN_GENERATED_ROOT is required}"
 
 treefmt --fail-on-change
 
 mapfile -d '' shell_files < <(
-	find bootc ci installer tests \
+	find automation bootc installer modules tests \
 		-type f -name '*.sh' -print0
 )
+bash -n "${shell_files[@]}"
 shellcheck --external-sources --source-path=SCRIPTDIR "${shell_files[@]}"
-bash tests/text-style.sh
-bash tests/markdown-links.sh
-bash tests/changed-component.sh
-bash tests/trusted-update-validation.sh
 
-latest_changelog_version="$(
-  sed -nE 's/^## \[([0-9]+\.[0-9]+\.[0-9]+)\] - [0-9]{4}-[0-9]{2}-[0-9]{2}$/\1/p' \
-    CHANGELOG.md | head -n 1
-)"
+bash tests/repository/contracts.sh
+bash tests/repository/text-style.sh
+bash tests/repository/markdown-links.sh
+bash tests/automation/classify-changes.sh
+bash tests/automation/trusted-update.sh
+bash tests/bootc/derived-profile.sh
+bash tests/bootc/plan.sh
+bash tests/bootc/reuse-image.sh
+bash modules/aspects/base/tests/contracts.sh
+bash modules/aspects/capabilities/devops/tests/contracts.sh
+bash modules/aspects/roles/support/tests/contracts.sh
+bash modules/aspects/hardware/dell-xps-9350-intel/tests/lid-auth.sh
+bash modules/aspects/hardware/dell-xps-9350-intel/tests/policies.sh
+
+latest_changelog_version="$({
+	sed -nE 's/^## \[([0-9]+\.[0-9]+\.[0-9]+)\] - [0-9]{4}-[0-9]{2}-[0-9]{2}$/\1/p' \
+		CHANGELOG.md | head -n 1
+})"
 [[ -n "${latest_changelog_version}" ]]
-release_notes="$(bash ci/release-notes.sh "${latest_changelog_version}" CHANGELOG.md)"
-grep -qF '### Added' <<<"${release_notes}"
-grep -qF '### Changed' <<<"${release_notes}"
-grep -qF '### Fixed' <<<"${release_notes}"
-grep -qF '### Security' <<<"${release_notes}"
+release_notes="$(bash automation/release/notes.sh "${latest_changelog_version}" CHANGELOG.md)"
+for heading in Added Changed Fixed Security; do
+	grep -qF "### ${heading}" <<<"${release_notes}"
+done
 if grep -qF '[Unreleased]:' <<<"${release_notes}"; then
-  echo 'Release notes contain changelog link definitions' >&2
-  exit 1
+	echo 'release notes unexpectedly contain the Unreleased link target' >&2
+	exit 1
 fi
 if [[ "$(<VERSION)" != *-dev.* ]]; then
-  [[ "$(<VERSION)" == "${latest_changelog_version}" ]]
+	[[ "$(<VERSION)" == "${latest_changelog_version}" ]]
 fi
-grep -qF "nix run .#release-notes -- \"\${VERSION}\" CHANGELOG.md >release-notes.md" \
-  .github/workflows/release.yml
-grep -qF -- '--notes-file release-notes.md' .github/workflows/release.yml
 
 jq -e '
   .target == "branch" and
   .enforcement == "active" and
   any(.rules[]; .type == "merge_queue") and
-  any(
-    .rules[];
-    .type == "required_status_checks" and
-    any(.parameters.required_status_checks[]; .context == "CI gate" and .integration_id == 15368)
-  )
-' ci/github/main-merge-queue.json >/dev/null
+  any(.rules[]; .type == "required_status_checks" and
+    any(.parameters.required_status_checks[]; .context == "CI gate" and .integration_id == 15368))
+' automation/github/policies/main-merge-queue.json >/dev/null
 jq -e '
   .target == "branch" and
   .enforcement == "active" and
   all(.rules[]; .type != "merge_queue") and
-  any(
-    .rules[];
-    .type == "required_status_checks" and
+  any(.rules[]; .type == "required_status_checks" and
     .parameters.strict_required_status_checks_policy == true and
-    any(.parameters.required_status_checks[]; .context == "CI gate" and .integration_id == 15368)
-  )
-' ci/github/main-protection.json >/dev/null
-grep -qF '  merge_group:' .github/workflows/build.yml
-grep -qF '    name: CI gate' .github/workflows/build.yml
-grep -qF '    name: Classify expensive validations' .github/workflows/build.yml
-grep -qF '    name: Validate installer' .github/workflows/build.yml
-grep -qF "images: \${{ steps.filter.outputs.images }}" .github/workflows/build.yml
-grep -qF 'ci/changed-component.sh images' .github/workflows/build.yml
-grep -qF 'ci/changed-component.sh installer' .github/workflows/build.yml
-grep -qF "if: needs.changes.outputs.images == 'true'" .github/workflows/build.yml
-grep -qF "require_selected_result plan \"\${IMAGES_SELECTED}\"" .github/workflows/build.yml
-grep -qF 'require_selected_result installer-candidate' .github/workflows/build.yml
-grep -qF "FORCE_REBUILD: \${{ github.event_name == 'workflow_dispatch' && inputs.force }}" .github/workflows/build.yml
-grep -qF "(github.event_name == 'workflow_dispatch' && inputs.validate_only)" .github/workflows/build.yml
-grep -qF "VALIDATE_ONLY: \${{ github.event_name ==" .github/workflows/build.yml
-grep -qF 'name: Queue Dependabot updates' .github/workflows/queue-dependabot.yml
-grep -qF 'select(.user.login == "dependabot[bot]")' .github/workflows/queue-dependabot.yml
-grep -qF "select(.head.repo.full_name == \$repository)" .github/workflows/queue-dependabot.yml
-if grep -qF '  - package-ecosystem: nix' .github/dependabot.yml; then
-	echo 'Nix inputs must be updated by Determinate, not Dependabot' >&2
-	exit 1
-fi
-grep -qF 'name: Update Nix flake inputs' .github/workflows/update-flake-lock.yml
-grep -qF 'DeterminateSystems/update-flake-lock@834c491b2ece4de0bbd00d85214bb5e83b4da5c6' .github/workflows/update-flake-lock.yml
-grep -qF 'branch: automation/weekly-flake-input-refresh' .github/workflows/update-flake-lock.yml
-grep -qF 'EXPECTED_AUTHOR:' .github/workflows/update-flake-lock.yml
-grep -qF 'name: Update Image Builder CLI digest' .github/workflows/update-image-builder.yml
-grep -qF 'IMAGE_BUILDER_TAG: ghcr.io/osbuild/image-builder-cli:latest' .github/workflows/update-image-builder.yml
-grep -qF 'EXPECTED_AUTHOR:' .github/workflows/update-image-builder.yml
-grep -qF -- '--event pull_request' ci/validate-trusted-update.sh
-grep -qF 'dispatch_and_wait build.yml -f validate_only=true' ci/validate-trusted-update.sh
-grep -qF '.headRepository.nameWithOwner' ci/validate-trusted-update.sh
-installer_action=.github/actions/build-installer/action.yml
-if grep -qF -- '--blueprint' "${installer_action}"; then
-	echo 'bootc-generic-iso does not support Blueprint customizations' >&2
-	exit 1
-fi
-grep -qF -- '--build-context installer-overlay=installer/overlay' "${installer_action}"
-grep -qF "sudo podman tag \"\${PAYLOAD_REF}\" \"\${PAYLOAD_EMBED_REF}\"" "${installer_action}"
-grep -qF -- "--bootc-installer-payload-ref \"\${PAYLOAD_EMBED_REF}\"" "${installer_action}"
-grep -qF "sudo chown -R \"\$(id -u):\$(id -g)\" output" "${installer_action}"
-grep -qF -- "--cache-from \"\${CACHE_REF}\" --cache-ttl 336h" "${installer_action}"
-grep -qF "cache_ref=\"\${IMAGE_REF}-installer-cache\"" "${installer_action}"
-grep -qF "gh attestation verify \"oci://\${payload_ref}\"" "${installer_action}"
-grep -qF "installer_image_id=\"\${installer_image_id#sha256:}\"" "${installer_action}"
-grep -qF "installer_image_id=\"sha256:\${installer_image_id}\"" "${installer_action}"
-grep -qF 'output/installer-manifest.json' "${installer_action}"
-grep -qF 'name: Upload installer diagnostics' "${installer_action}"
-grep -qF 'name: Summarize profile build' .github/workflows/build-profile.yml
-grep -qF 'steps.build.outputs.cache_available' .github/workflows/build-profile.yml
-grep -qF "gh attestation verify \"oci://\${immutable_ref}\"" .github/workflows/release.yml
-grep -qF -- '--predicate-type https://spdx.dev/Document/v2.3' .github/workflows/release.yml
-grep -qF 'RUN --mount=from=installer-overlay,target=/run/installer-overlay' installer/Containerfile
-grep -qF 'cp -a /run/installer-overlay/. /' installer/Containerfile
-grep -qF '@@INSTALLER_PAYLOAD_SOURCE_REF@@' installer/overlay/usr/share/anaconda/interactive-defaults.ks
-grep -qF '@@INSTALLER_PAYLOAD_TARGET_REF@@' installer/overlay/usr/share/anaconda/interactive-defaults.ks
+    any(.parameters.required_status_checks[]; .context == "CI gate" and .integration_id == 15368))
+' automation/github/policies/main-protection.json >/dev/null
+
 grep -qF 'nix flake check --print-build-logs' .github/workflows/build.yml
-if grep -qF 'nix develop --command tests/ci.sh' .github/workflows/build.yml; then
-	echo 'GitHub Actions must use the hermetic Flake check graph directly' >&2
-	exit 1
-fi
-grep -qF 'repository = repositoryCheck;' nix/flake-modules/outputs.nix
-grep -qF "program = \"\${ciApp}/bin/purplefin-ci\";" nix/flake-modules/outputs.nix
 grep -qF 'nix run .#trusted-update' .github/workflows/update-flake-lock.yml
 grep -qF 'nix run .#trusted-update' .github/workflows/update-image-builder.yml
+grep -qF 'nix run .#export-artifacts -- .' .github/workflows/build-profile.yml
+grep -qF 'containerfile=./bootc/Containerfile' .github/workflows/build-profile.yml
+grep -qF -- '--build-context installer-rootfs=installer/rootfs' .github/actions/build-installer/action.yml
+grep -qF 'RUN --mount=from=installer-rootfs,target=/run/installer-rootfs' installer/Containerfile
+grep -qF '@@INSTALLER_PAYLOAD_SOURCE_REF@@' installer/rootfs/usr/share/anaconda/interactive-defaults.ks
+grep -qF 'repository = repositoryCheck;' modules/outputs.nix
 
 actionlint -color .github/workflows/*.yml
 zizmor --offline --no-config --collect=all .github
+
+test -f "${generated_root}/bootc/generated/profile-catalog.json"

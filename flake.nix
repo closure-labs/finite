@@ -4,6 +4,11 @@
   inputs = {
     den.url = "github:denful/den";
 
+    den-diagram = {
+      url = "github:denful/den-diagram";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     import-tree.url = "github:vic/import-tree";
 
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -24,6 +29,6 @@
   outputs = inputs:
     (inputs.nixpkgs.lib.evalModules {
       specialArgs = {inherit inputs;};
-      modules = [(inputs.import-tree ./nix/flake-modules)];
+      modules = [(inputs.import-tree ./modules)];
     }).config.flake;
 }

@@ -1,9 +1,10 @@
 # Customizing Purplefin
 
-Purplefin models each final operating-system image as a Den profile. Profiles
-inherit a parent and include one or more aspects. Nix validates the graph and
-generates the ordered build matrix, module deltas, catalog, Home Manager
-configurations, and OSBuild Blueprints.
+Purplefin models each final operating-system image as a typed Den profile
+entity. A profile points at an aspect, and profile aspects include parent
+profiles plus reusable features. Nix resolves that graph into ordered image
+build steps, exact deltas, Home Manager configurations, the CI matrix, and
+OSBuild Blueprints.
 
 ## Profile graph
 
@@ -22,62 +23,69 @@ base
     └── dale
 ```
 
-The common `base` starts from Bluefin Stable. Hardware profiles add the shared
-security baseline and model-specific behavior. Role profiles add workload
-features to a hardware parent. The `dale` profile combines sales, training,
-and support features on the Dell hardware parent.
+The common base starts from Bluefin Stable. Hardware features add the shared
+security baseline and model behavior. Role features add workloads to a
+hardware parent. `dale` combines sales, training, and support features on the
+Dell hardware parent.
 
 ## Change an existing feature
 
-Each reusable feature has a Den aspect under `nix/aspects/<name>/`. Its bootc
-implementation lives in the matching `bootc/modules/<name>.sh`, with files and
-manifests under `bootc/overlays/` or `bootc/components/`.
-
-For example, the support aspect connects:
+A feature owns its declaration, image step, payload, manifests, and focused
+tests below `modules/aspects/`. For example, support is contained in:
 
 ```text
-nix/aspects/support/default.nix
-bootc/modules/support.sh
-bootc/overlays/roles/support/
+modules/aspects/roles/support/
+├── default.nix
+├── apply.sh
+├── manifests/
+└── rootfs/
 ```
 
-Edit the aspect when profile or Home Manager composition changes. Edit the
-bootc module, overlay, or component when the operating-system image changes.
+`default.nix` registers the feature in `den.aspects.features`, declares its
+ordered bootc step and complete source-input closure, and may provide Home
+Manager modules. `apply.sh` performs the image mutation and consumes only the
+payload beside it. This makes ownership and build invalidation visible from a
+single directory.
 
 ## Add a profile
 
-Add one definition to `nix/flake-modules/profiles.nix` with:
+Add both parts to `modules/profiles.nix`:
 
-- a unique profile name;
-- an existing parent;
-- the aspects introduced at that node;
-- one or more published tags.
+- a profile aspect whose `includes` compose its parent and features;
+- a typed `purplefin.profiles` entity with its parent and published tags.
 
-The parent supplies its full aspect stack. The new node's `includes` list
-becomes its exact build delta, which allows CI to reuse the immutable parent
-image.
-
-Refresh and validate the graph:
+The parent supplies the inherited feature stack. Features introduced at the
+new node become its exact derived-image delta. Validate the result with:
 
 ```bash
-nix run .#generate
-nix flake check
+nix flake check --print-build-logs
+nix build .#generated
+jq '.profiles["your-profile"]' result/bootc/generated/profile-catalog.json
 ```
 
-## Add a reusable aspect
+## Add a reusable feature
 
-Create `nix/aspects/<name>/default.nix` for the bootc feature metadata. Add
-`home.nix` when the feature contributes a Home Manager module. Implement its
-image changes in `bootc/modules/<name>.sh` and keep payload files beside their
-ownership boundary in an overlay or reusable component.
+Create a directory in the appropriate namespace:
 
-Reference the new aspect from one or more profile definitions, regenerate the
-catalog, and run the full validation sequence.
+- `modules/aspects/capabilities/<name>/`
+- `modules/aspects/roles/<name>/`
+- `modules/aspects/hardware/<name>/`
 
-## Customize installer filesystems and users
+Register `den.aspects.features.<namespace>.<name>` in `default.nix`. Declare
+every ordered build step and every source path it consumes through the typed
+bootc class. Put the implementation and assets in the same directory, then
+include the feature from profile or feature aspects.
 
-Profile options can generate Image Builder Blueprint settings for `/`, `/boot`,
-and supported bootc users. The generated Blueprints live in
-`installer/config/profiles/`. Operating-system packages and services are
-composed in the bootc modules so the installed payload matches the published
-image digest.
+## Inspect the architecture
+
+The architecture package renders the live Den aspect namespace rather than a
+hand-maintained diagram:
+
+```bash
+nix build .#architecture
+less result/architecture.md
+```
+
+Generated catalogs and installer Blueprints remain Nix store outputs. Use
+`nix run .#export-artifacts` only when a container or other filesystem-oriented
+consumer needs materialized files.

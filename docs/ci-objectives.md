@@ -6,7 +6,7 @@ focused while each failure identifies the contract that broke.
 
 | Layer | Trigger | Objective |
 | --- | --- | --- |
-| Repository checks | Every pull request, merge candidate, and main build | Evaluate the pinned Nix flake, verify generated files, run shell and policy tests, and lint workflows. |
+| Repository checks | Every pull request, merge candidate, and main build | Evaluate the pinned Nix flake, build generated artifacts, run shell and policy tests, and lint workflows. |
 | Candidate image builds | Image-affecting pull requests with affected profiles | Build changed profiles from verified immutable parents in validation mode. |
 | Merge candidate builds | Native `merge_group` events with affected profiles | Build the changed profile graph from the temporary merge commit in validation mode. |
 | Published image graph | Main pushes, daily schedule, or an explicit main dispatch | Publish only changed images, or every image when explicitly forced, with signatures, SPDX SBOMs, and provenance. |

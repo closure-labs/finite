@@ -1,129 +1,106 @@
 # Building and development
 
-Purplefin's pinned Nix development shell supplies `actionlint`, `just`,
-`ripgrep`, `shellcheck`, `treefmt`, `zizmor`, PipeWire tools, and Zsh:
+Purplefin uses its Nix Flake as the repository control plane. Enter the pinned
+development environment with:
 
 ```bash
 nix develop
 ```
 
-## Repository checks
+## Validate the repository
 
-Run the complete hermetic validation graph while editing or before publishing:
-
-```bash
-nix flake check --print-build-logs
-```
-
-Refresh generated artifacts explicitly when the profile model changes, then run
-the same check graph used by CI:
+Run the complete check graph while editing or before publishing:
 
 ```bash
-nix run .#generate
 nix fmt
 nix flake check --print-build-logs
 ```
 
-`nix flake check` owns formatting, generated-file consistency, profile schema,
-every Home Manager configuration, repository policy, shell validation,
-workflow linting, security linting, graph tests, installer tests, and hardware
-tests. CI invokes that single graph instead of manually composing test scripts.
-`nix run .#ci` runs the repository-check application directly when an
-interactive, non-sandboxed diagnostic run is useful. `just check` is retained
-only as a compatibility alias for the Flake check graph.
-
-Use `just format-check` for a read-only formatting check.
+The graph validates formatting, the typed Den profile model, generated
+artifacts, every Home Manager configuration, shell code, repository contracts,
+hardware behavior, GitHub Actions, and security policy. `nix run .#ci` is the
+interactive form of the repository check, and `just check` is a short alias.
 
 ## Build an image
 
-The common local recipes build the primary profiles:
+The image-build app resolves the configured upstream image to an immutable
+digest, materializes the generated build contract, and invokes Podman:
 
 ```bash
-just build-generic
-just build-dell
-just build-base-generic
-just build-support-dell
+nix run .#image-build -- base-generic localhost/purplefin:base-generic
+nix run .#image-build -- dale localhost/purplefin:dale
 ```
 
-The matching `lint-*` recipes validate the Containerfile stages. Run
-`just --list` for the current recipe list.
+The profile name must exist in the typed registry in `modules/profiles.nix`.
+The build engine executes the ordered steps declared by the profile's resolved
+Den aspects.
 
-A direct build resolves Bluefin to an immutable digest and passes the selected
-profile to the Containerfile:
+## Generated artifacts
+
+Catalogs and OSBuild Blueprints are derivations, not checked-in source:
 
 ```bash
-base_digest="$(
-  skopeo inspect \
-    --format '{{.Digest}}' \
-    docker://ghcr.io/projectbluefin/bluefin:stable
-)"
-
-podman build \
-  --build-arg BASE_REF="ghcr.io/projectbluefin/bluefin@${base_digest}" \
-  --build-arg BUILD_PROFILE=dale \
-  --build-arg PURPLEFIN_VERSION="$(<VERSION)" \
-  --tag localhost/purplefin:dale \
-  .
+nix build .#generated
+find -L result -type f -print
 ```
 
-## Generated files
+Tools that require ordinary filesystem paths can materialize the derivation in
+an ignored directory:
 
-The Den profile model generates:
+```bash
+nix run .#export-artifacts
+# or, for CI/container consumers expecting repository-relative paths:
+nix run .#export-artifacts -- .
+```
+
+The output contains:
 
 - `bootc/generated/image-matrix.json`
 - `bootc/generated/profile-catalog.json`
 - `bootc/generated/upstream.json`
 - `installer/config/profiles/*.toml`
 
-Refresh them after changing a profile, aspect, or image-builder setting:
-
-```bash
-nix run .#generate
-```
-
-Set `PURPLEFIN_SOURCE_ROOT` when generating into another checkout. The normal
-workflow runs the command from the repository root.
-
-## Useful flake outputs
+## Useful Flake outputs
 
 ```bash
 nix build .#generated
+nix build .#architecture
 nix build .#home-dale
 nix build .#syft
 nix build .#sbomnix
 nix run .#release-notes -- 0.2.0 CHANGELOG.md
-nix run .#changed-component -- images
-nix run .#image-build -- base-generic localhost/purplefin:base-generic
+nix run .#classify-changes -- images
+nix run .#image-plan -- "$(jq -c . result/bootc/generated/image-matrix.json)"
 nix run .#installer-smoke -- output/purplefin.iso
 ```
 
-`generated` contains all generated catalogs and Blueprints. Each `home-*`
-package is a Home Manager activation package for a named profile. Syft creates
-the published bootc SPDX documents, while sbomnix can describe native Nix
-closures. The Flake apps pin the toolchains for CI policy, release-note
-extraction, change classification, immutable image planning/reuse, and local
-Podman builds.
+`generated` is the machine-consumable architecture contract. `architecture`
+renders the actual Den aspect namespace as Mermaid. Each `home-*` package is a
+Home Manager activation package for a profile. The remaining applications pin
+the tools used at CI/CD and host-capability boundaries.
 
 ## Hermetic boundary
 
 Source-derived architecture, generated IaC, tests, workflow policy, and
-security linters are declared in the Flake and evaluated by `nix flake check`.
-GitHub event routing, protected environments, OIDC attestations, GHCR
-credentials, and container/VM execution remain thin platform boundaries: they
-require mutable remote state or host capabilities, but call Flake applications
-where a pinned local toolchain is useful. Bash files under `bootc/` remain the
-image's build/runtime implementation rather than a manual orchestration API.
+security linters are declared by the Flake and evaluated by
+`nix flake check`. GitHub event routing, protected environments, OIDC
+attestations, registry credentials, and container or VM execution remain thin
+platform boundaries because they require mutable remote state or host
+capabilities. Shell under an aspect implements that aspect inside the image;
+it is not a manual orchestration API.
 
 ## Source layout
 
 ```text
-nix/aspects/          Den aspects and Home Manager customizations
-nix/flake-modules/    profile composition and flake outputs
-bootc/modules/        build-time implementation for each aspect
-bootc/overlays/       base, role, and hardware filesystem content
-bootc/components/     reusable multi-role components
-bootc/build/          full, derived, and planning entrypoints
-bootc/generated/      generated catalogs consumed by builds and CI
-installer/            Image Builder environment, overlay, and Blueprints
-tests/                local and CI validation entrypoints
+modules/aspects/     Den features with their build step, payload, and local tests
+modules/schema/      typed entity and class schemas
+modules/policies/    Den resolution policies
+modules/classes/     class-specific option declarations
+modules/profiles.nix profile aspect DAG and typed profile registry
+bootc/builder/       generic full, derived, planning, and reuse engines
+lib/                 graph evaluation and artifact rendering
+home/                shared Home Manager modules
+installer/           Image Builder container and installer root filesystem
+automation/          thin release and GitHub platform boundary scripts
+tests/                repository, automation, bootc, and installer contracts
 ```

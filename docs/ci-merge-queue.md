@@ -14,14 +14,14 @@ explicitly dispatched from `main` are the only events allowed to publish. This
 keeps a merge-queue candidate from changing GHCR before it merges.
 
 The intended ruleset is checked in at
-`ci/github/main-merge-queue.json`. It requires pull requests, resolved review
+`automation/github/policies/main-merge-queue.json`. It requires pull requests, resolved review
 threads, the GitHub Actions-owned `CI gate`, and a serialized all-green merge
 queue. It also prevents branch deletion and non-fast-forward updates.
 
 ## Active repository policy
 
 The active `Protect main with CI gate` ruleset comes from
-`ci/github/main-protection.json`. It requires pull requests, resolved review
+`automation/github/policies/main-protection.json`. It requires pull requests, resolved review
 threads, the GitHub Actions-owned `CI gate`, and a candidate current with
 `main`. It also protects `main` from deletion and non-fast-forward updates.
 Repository auto-merge serializes passing pull requests, and merged branches are
@@ -35,7 +35,7 @@ gh api --method PATCH "repos/${GITHUB_REPOSITORY}" \
   -F allow_auto_merge=true \
   -F delete_branch_on_merge=true
 gh api --method POST "repos/${GITHUB_REPOSITORY}/rulesets" \
-  --input ci/github/main-protection.json
+  --input automation/github/policies/main-protection.json
 ```
 
 Inspect the repository's existing rulesets before creating the policy.
@@ -44,7 +44,7 @@ Inspect the repository's existing rulesets before creating the policy.
 
 GitHub's native merge queue is available when an organization owns the
 repository. The workflow already handles `merge_group` candidates, and
-`ci/github/main-merge-queue.json` contains the queue ruleset.
+`automation/github/policies/main-merge-queue.json` contains the queue ruleset.
 
 After transferring the repository:
 
@@ -61,7 +61,7 @@ After transferring the repository:
    gh api --method PATCH "repos/${GITHUB_REPOSITORY}" \
      -F allow_auto_merge=true
    gh api --method POST "repos/${GITHUB_REPOSITORY}/rulesets" \
-     --input ci/github/main-merge-queue.json
+     --input automation/github/policies/main-merge-queue.json
    ```
 
 Set `GITHUB_REPOSITORY` to the organization-owned `owner/purplefin` repository

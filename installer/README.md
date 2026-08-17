@@ -12,10 +12,12 @@ signature, and passes the resulting immutable digest both to the installer
 environment and as the embedded Anaconda payload. The selected image digest
 supplies the complete package set throughout installation.
 
-Each profile also has a Nix-generated Blueprint in `config/profiles`. Those
-files are intended for OSBuild disk-image types that accept bootc Blueprint
+Each profile also has a Nix-generated Blueprint in the `generated` Flake
+output. The installer action materializes those outputs at
+`config/profiles` for OSBuild disk-image types that accept bootc Blueprint
 filesystem and user customization. The generic installer ISO consumes the
-immutable bootc payload directly, while bootc modules compose its RPM content.
+immutable bootc payload directly, while resolved Den aspects compose its RPM
+content.
 
 `Containerfile` implements the generic ISO contract: Anaconda and ISO tooling,
 kernel and initramfs, EFI files, `/usr/lib/image-builder/bootc/iso.yaml`, and an
@@ -35,12 +37,12 @@ attestation remain bound to that embedded OCI digest, and the installer
 component manifest records the attestation identity needed to verify it.
 
 The workflow and `Build Purplefin` share one repository-local installer build
-action. A change classifier selects it for installer workflow, action, overlay,
+action. A change classifier selects it for installer workflow, action, rootfs,
 QEMU smoke-test, and installer-toolchain changes, and `CI gate` requires the
 selected result for pull requests and merge candidates. Candidate builds use
 read-only package access. Weekly and explicit main runs can update matching
 layers in the shared GHCR build cache; the cache key follows the immutable
-payload digest, build arguments, Containerfile, and overlay content.
+payload digest, build arguments, Containerfile, and installer rootfs content.
 
 Following OSBuild's own pinned-CI-image update pattern, a weekly workflow
 resolves `ghcr.io/osbuild/image-builder-cli:latest` only as a discovery input

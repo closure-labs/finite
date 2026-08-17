@@ -137,10 +137,9 @@ jobs:
           }
           if [[ "${source_version}" != "${version}" ]]; then
             printf '%s\n' "${version}" >VERSION
-            nix run .#generate
             git config user.name github-actions[bot]
             git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-            git add VERSION bootc/generated installer/config/profiles
+            git add VERSION
             git commit -m "Release Purplefin ${version}"
             gh auth setup-git
             git push origin HEAD:main
@@ -153,6 +152,9 @@ jobs:
           } >>"${GITHUB_OUTPUT}"
           printf 'Selected %s with a %s bump from %s\n' \
             "${tag}" "${selected_bump}" "${last_tag:-VERSION seed}"
+
+      - name: Materialize Flake-generated build artifacts
+        run: nix run .#export-artifacts -- .
 
       - name: Reuse or dispatch the release-candidate build
         id: build
@@ -301,6 +303,9 @@ jobs:
 
       - name: Install Nix
         uses: DeterminateSystems/determinate-nix-action@61cbfe2efc2d4e7a8a6d56967c3c1058e846c858 # v3
+
+      - name: Materialize Flake-generated build artifacts
+        run: nix run .#export-artifacts -- .
 
       - name: Validate release versions and source
         env:
@@ -480,10 +485,9 @@ jobs:
             exit 1
           }
           printf '%s\n' "${next_version}" >VERSION
-          nix run .#generate
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add VERSION bootc/generated installer/config/profiles
+          git add VERSION
           git commit -m "Start Purplefin ${next_version}"
           gh auth setup-git
           git push origin HEAD:main

@@ -32,6 +32,13 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Install Nix
+      uses: DeterminateSystems/determinate-nix-action@61cbfe2efc2d4e7a8a6d56967c3c1058e846c858 # v3
+
+    - name: Materialize Flake-generated build artifacts
+      shell: bash
+      run: nix run .#export-artifacts -- .
+
     - name: Install cosign
       uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
 
@@ -155,7 +162,7 @@ runs:
         sudo podman build "${auth_args[@]}" "${cache_args[@]}" \
           --file installer/Containerfile \
           --pull=never \
-          --build-context installer-overlay=installer/overlay \
+          --build-context installer-rootfs=installer/rootfs \
           --build-arg "BASE_REF=${PAYLOAD_REF}" \
           --build-arg "INSTALLER_PAYLOAD_SOURCE_REF=${PAYLOAD_EMBED_REF}" \
           --build-arg "INSTALLER_PAYLOAD_TARGET_REF=${PAYLOAD_REF}" \
@@ -243,9 +250,6 @@ runs:
           echo "iso=${final_iso}"
           echo "sha256=${iso_sha256}"
         } >>"${GITHUB_OUTPUT}"
-
-    - name: Install Nix
-      uses: DeterminateSystems/determinate-nix-action@61cbfe2efc2d4e7a8a6d56967c3c1058e846c858 # v3
 
     - name: Smoke-boot installer with QEMU
       id: smoke

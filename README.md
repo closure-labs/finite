@@ -19,9 +19,14 @@ and smart-card services.
 | `support-generic` | Support workstation on generic x86-64 hardware |
 | `dale` | Sales, training, and support workstation on a Dell XPS 13 9350 |
 
-The generated
-[profile catalog](bootc/generated/profile-catalog.json) lists every image,
-role, hardware selection, parent, and published tag.
+The Flake-generated profile catalog lists every image, role, hardware
+selection, parent, and published tag. Inspect it without adding generated state
+to the repository:
+
+```bash
+nix build .#generated
+jq .profiles result/bootc/generated/profile-catalog.json
+```
 
 ## Switch an existing bootc system
 
@@ -54,15 +59,15 @@ nix flake check
 The flake is the repository control plane: it supplies the formatter, linters,
 security checks, test orchestration, generated profile data, Home Manager
 activation packages, OSBuild Blueprints, and CI/CD helper applications.
-`just check` remains a compatibility alias for `nix flake check`.
+`just check` is a short alias for `nix flake check`.
 
 ## Read more
 
 - [Changelog](CHANGELOG.md) summarizes the user-facing changes in each release.
 - [Building and development](docs/building-and-development.md) covers local
   image builds, generated files, formatting, and validation.
-- [Customizing profiles](docs/customizing.md) explains the Den graph, aspects,
-  bootc modules, overlays, and Home Manager settings.
+- [Customizing profiles](docs/customizing.md) explains the Den graph,
+  feature-owned build inputs, and Home Manager settings.
 - [Nonstandard use cases](docs/nonstandard-use-cases.md) covers security-key
   enrollment, lid-closed work sessions, and package migrations.
 - [Dell XPS 13 9350](docs/dell-xps-9350.md) documents authentication, battery,
