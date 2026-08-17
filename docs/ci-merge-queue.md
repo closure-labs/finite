@@ -1,12 +1,10 @@
 # CI gating and merge queue
 
 `Build Purplefin` has one stable required status, `CI gate`. The gate verifies
-that repository checks and every selected planning, image, and installer job
-finished successfully. Input planning may be skipped when changed paths cannot
-affect images, dynamic profile jobs may be skipped when no profile input
-changed, and the installer job may be skipped when its inputs are unchanged.
-The gate checks those skips against planner and classifier output instead of
-treating a missing job as success.
+repository checks and every planning, image, and installer job selected by the
+change classifiers. Documentation-only changes complete through the repository
+checks, while image and installer changes add their corresponding build jobs.
+The gate matches every skipped job to planner and classifier output.
 
 Pull requests and `merge_group` events build the profiles selected by immutable
 input, base-digest, and parent-digest comparisons. A selected parent brings its
@@ -20,22 +18,17 @@ The intended ruleset is checked in at
 threads, the GitHub Actions-owned `CI gate`, and a serialized all-green merge
 queue. It also prevents branch deletion and non-fast-forward updates.
 
-## Repository prerequisites
+## Active repository policy
 
-GitHub currently limits its native merge queue to organization-owned
-repositories. Purplefin is currently a user-owned public repository, so the
-checked-in ruleset cannot be activated until the repository is transferred to
-an organization with merge-queue access. Keep the ruleset inactive until the
-workflow containing `merge_group` and `CI gate` exists on the default branch.
+The active `Protect main with CI gate` ruleset comes from
+`ci/github/main-protection.json`. It requires pull requests, resolved review
+threads, the GitHub Actions-owned `CI gate`, and a candidate current with
+`main`. It also protects `main` from deletion and non-fast-forward updates.
+Repository auto-merge serializes passing pull requests, and merged branches are
+deleted automatically.
 
-The active personal-repository approximation is checked in at
-`ci/github/main-protection.json`. It requires `CI gate`, requires each candidate
-to be current with `main`, prevents deletion and force-pushes, and allows
-GitHub's ordinary auto-merge to serialize passing pull requests. Unlike a native
-queue, it cannot create and validate a temporary group containing multiple pull
-requests; a candidate whose base becomes stale must update and pass CI again.
-
-Apply that fallback after the `CI gate` workflow exists on the pull request:
+Apply the checked-in policy to another user-owned repository after its `CI
+gate` workflow is present on the default branch:
 
 ```bash
 gh api --method PATCH "repos/${GITHUB_REPOSITORY}" \
@@ -45,12 +38,15 @@ gh api --method POST "repos/${GITHUB_REPOSITORY}/rulesets" \
   --input ci/github/main-protection.json
 ```
 
-Inspect existing rulesets before posting so the policy is created once rather
-than duplicated.
+Inspect the repository's existing rulesets before creating the policy.
 
-## Native queue upgrade
+## Activate the native merge queue
 
-After that transfer and workflow merge:
+GitHub's native merge queue is available when an organization owns the
+repository. The workflow already handles `merge_group` candidates, and
+`ci/github/main-merge-queue.json` contains the queue ruleset.
+
+After transferring the repository:
 
 1. Enable repository auto-merge.
 2. Create an Actions secret named `MERGE_QUEUE_TOKEN`. Use a fine-grained token
@@ -68,9 +64,9 @@ After that transfer and workflow merge:
      --input ci/github/main-merge-queue.json
    ```
 
-Set `GITHUB_REPOSITORY` to the post-transfer `owner/purplefin` repository before
-running the commands. Remove the personal-repository fallback ruleset when the
-native queue ruleset is activated so `main` has one authoritative policy.
+Set `GITHUB_REPOSITORY` to the organization-owned `owner/purplefin` repository
+before running the commands. Keep one active `main` ruleset by retiring the
+user-owned policy as the native queue policy is activated.
 
 ## Trusted update bots
 
@@ -104,5 +100,4 @@ pattern. It resolves the mutable `image-builder-cli:latest` discovery tag, then
 changes only the immutable digest in the shared installer build action. The
 change classifier selects that generic-installer build during pull-request or
 validation-only CI, and the stable gate requires its QEMU smoke boot before
-auto-merge. The discovery tag is never used to construct a release artifact
-directly.
+auto-merge. The resulting immutable digest constructs each release artifact.

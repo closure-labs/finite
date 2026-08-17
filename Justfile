@@ -191,7 +191,7 @@ check:
     grep -qF 'packages/bitwarden-cli/install.sh' bootc/modules/base.sh
     grep -qF 'rpm -q purplefin-bitwarden-cli' bootc/modules/base.sh
     grep -qF "rpm -qf --qf '%{NAME}\\n' /usr/bin/bw" bootc/modules/base.sh
-    grep -qF '### Migrating Bitwarden from the layered RPM' README.md
+    grep -qF '## Complete the Bitwarden desktop migration' docs/nonstandard-use-cases.md
 
     # Support owns Espanso and RustConn and references the shared devops component.
     support_role=bootc/modules/support.sh
@@ -569,7 +569,7 @@ check:
     tests/dell-lid-auth.sh
     tests/dell-xps-9350-policies.sh
     test -f docs/dell-xps-9350-secure-boot.md
-    grep -qF '`cvs` is not a replacement' docs/dell-xps-9350-secure-boot.md
+    grep -qF '## Module provider selection' docs/dell-xps-9350-secure-boot.md
     grep -qF 'updates/purplefin' docs/dell-xps-9350-secure-boot.md
     grep -qF 'source-provenance' docs/dell-xps-9350-secure-boot.md
     test ! -e bootc/overlays/hardware/dell-xps-9350-intel/files/usr/libexec/purplefin/dell-ipu7-activate
