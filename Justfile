@@ -444,8 +444,11 @@ check:
     grep -qF 'den.aspects.profiles' nix/flake-modules/profiles.nix
     test ! -e bootc/profile-build-input.sh
     tests/image-build-planner.sh
+    tests/image-reuse.sh
     grep -qF 'buildah bud' .github/workflows/build-profile.yml
     grep -qF 'podman login' .github/workflows/build-profile.yml
+    grep -qF 'name: Reuse matching published image' .github/workflows/build-profile.yml
+    grep -qF 'bootc/build/reuse-image.sh' .github/workflows/build-profile.yml
     ! grep -qF 'podman push' .github/workflows/build-profile.yml
     grep -qF 'REGISTRY_AUTH_FILE=' .github/workflows/build-profile.yml
     ! rg -q 'ghcr.io/ublue-os/bluefin(:|\b)' Containerfile README.md Justfile .github/workflows

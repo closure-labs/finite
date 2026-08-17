@@ -57,6 +57,7 @@ Home Manager activation packages, and OSBuild Blueprints.
 
 ## Read more
 
+- [Changelog](CHANGELOG.md) summarizes the user-facing changes in each release.
 - [Building and development](docs/building-and-development.md) covers local
   image builds, generated files, formatting, and validation.
 - [Customizing profiles](docs/customizing.md) explains the Den graph, aspects,

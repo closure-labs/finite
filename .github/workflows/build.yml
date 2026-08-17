@@ -283,6 +283,7 @@ jobs:
       parent-image: ${{ needs.plan.outputs.base_image }}
       profile: base
       publish: true
+      reuse-existing: ${{ fromJSON(needs.plan.outputs.root_base).reuse_existing }}
       tags: ${{ fromJSON(needs.plan.outputs.root_base).tags }}
       upstream-base-digest: ${{ needs.plan.outputs.base_digest }}
       version: ${{ needs.plan.outputs.version }}
@@ -316,6 +317,7 @@ jobs:
       parent-tag: ${{ matrix.parent_tag }}
       profile: ${{ matrix.profile }}
       publish: true
+      reuse-existing: ${{ matrix.reuse_existing }}
       tags: ${{ matrix.tags }}
       upstream-base-digest: ${{ needs.plan.outputs.base_digest }}
       version: ${{ needs.plan.outputs.version }}
@@ -351,6 +353,7 @@ jobs:
       parent-tag: ${{ matrix.parent_tag }}
       profile: ${{ matrix.profile }}
       publish: true
+      reuse-existing: ${{ matrix.reuse_existing }}
       tags: ${{ matrix.tags }}
       upstream-base-digest: ${{ needs.plan.outputs.base_digest }}
       version: ${{ needs.plan.outputs.version }}
