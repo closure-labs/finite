@@ -27,7 +27,8 @@ purplefin_update_independently_managed_rpms() {
 
 purplefin_finalize_profile() {
 	local profile="$1"
-	shift
+	local profile_catalog="$2"
+	shift 2
 	local -a profile_modules=("$@")
 	local -a installed_kernel_releases=()
 
@@ -36,7 +37,7 @@ purplefin_finalize_profile() {
 	printf '%s\n' "${profile_modules[@]}" >/usr/share/purplefin/build-modules
 	printf '%s\n' "${PURPLEFIN_VERSION:?PURPLEFIN_VERSION is required}" >/usr/share/purplefin/version
 	jq -e --arg profile "${profile}" '.profiles[$profile]' \
-		"${build_root:-/tmp/purplefin-build}/generated/profile-catalog.json" \
+		"${profile_catalog}" \
 		>/usr/share/purplefin/profile.json
 
 	if [[ -d /usr/libexec/purplefin/firstboot-rpm-ostree.d ]]; then

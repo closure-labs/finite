@@ -69,4 +69,4 @@ fi
 # shellcheck source=/tmp/purplefin-build/bootc/builder/lib/finalize-profile.sh
 source "${build_root}/bootc/builder/lib/finalize-profile.sh"
 purplefin_update_independently_managed_rpms "${build_root}"
-purplefin_finalize_profile "${profile}" "${target_modules[@]}"
+purplefin_finalize_profile "${profile}" "${profile_catalog}" "${target_modules[@]}"

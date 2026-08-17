@@ -50,6 +50,9 @@ test ! -e tests/ci.sh
 
 test -x bootc/builder/full.sh
 test -x bootc/builder/derived.sh
+grep -qF "purplefin_finalize_profile \"\${profile}\" \"\${profile_catalog}\"" bootc/builder/full.sh
+grep -qF "purplefin_finalize_profile \"\${profile}\" \"\${profile_catalog}\"" bootc/builder/derived.sh
+grep -qF "local profile_catalog=\"\$2\"" bootc/builder/lib/finalize-profile.sh
 test -x modules/aspects/base/apply.sh
 test -d modules/aspects/base/rootfs
 test -x modules/aspects/capabilities/devops/apply.sh
