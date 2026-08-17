@@ -3,22 +3,19 @@
 Last verified against the SVP7500 fix-pack integration: 2026-07-27.
 
 The `dell-xps-9350-intel` profile builds out-of-tree camera modules from
-`svp7500-camera-fix-pack`. They are installed under
-`/usr/lib/modules/$release/updates/purplefin` and are not signed by Purplefin.
-Do not enable kernel module-signature enforcement for this profile unless those
-exact modules are signed with a key trusted by the booted kernel.
+`svp7500-camera-fix-pack`. Purplefin installs the current unsigned modules under
+`/usr/lib/modules/$release/updates/purplefin`. Keep kernel module-signature
+enforcement disabled for this profile.
 
-## Why there is no in-tree handoff
+## Module provider selection
 
-The fix-pack's `docs/MAINLINE-CVS-EVALUATION.md` demonstrates that mainline
-`cvs` is not a replacement for the external `intel_cvs` on SVP7500 systems.
-Mainline expects CVS to be a node inside a firmware-described media graph. On
-this laptop it is a control-plane-only bridge for camera ownership and MIPI
-configuration, while the sensor connects directly to IPU7 in the media graph.
+The fix-pack's `docs/MAINLINE-CVS-EVALUATION.md` records the provider decision
+for SVP7500 systems. Mainline `cvs` expects a node inside a firmware-described
+media graph. This laptop uses CVS as a control-plane bridge for camera ownership
+and MIPI configuration while the sensor connects directly to IPU7.
 
-Consequently, a kernel version such as 7.2 is not a Secure Boot migration
-boundary. Purplefin always uses the pinned fix-pack `intel_cvs`, plus its
-patched `ipu_bridge` and HM1092 support, against Bluefin's included kernel.
+Purplefin therefore builds the pinned fix-pack `intel_cvs`, its patched
+`ipu_bridge`, and HM1092 support against Bluefin's included kernel.
 
 ## Inspect the installed stack
 
@@ -36,29 +33,21 @@ done
 ```
 
 Expected paths contain `updates/purplefin`. The recorded kernel release and
-each module's vermagic must match `uname -r`. An empty signer means the module
-is unsigned.
+each module's vermagic must match `uname -r`. An empty signer confirms the
+current unsigned-module policy.
 
 The INT3472 provider is selected independently. On kernels whose in-tree
 `intel_skl_int3472_discrete` already exposes `ir_flood`, Purplefin deliberately
 keeps the in-tree driver because the fix-pack replacement would remove the LED
 class device. The provider decision is recorded in `source-provenance`.
 
-## Safe policy
+## Signature policy
 
-- Keep Secure Boot or kernel lockdown enforcement disabled while the
-  `updates/purplefin` modules are unsigned.
-- Do not switch to mainline `cvs` merely because a newer kernel contains it.
-- Do not copy a module between kernel trees; rebuild and sign it for the exact
-  target release.
-- Do not install the fix-pack's INT3472 replacement over a kernel that already
-  exposes the IR flood LED.
-
-To support enforced signatures in the future, add a reproducible image-build
-signing step for every installed fix-pack module, enroll the corresponding
-certificate through the normal Bluefin MOK procedure, and verify the signer
-and vermagic before enabling enforcement. That signing workflow is not
-implemented by the current profile.
+- Keep Secure Boot and kernel lockdown enforcement disabled for the current
+  unsigned `updates/purplefin` modules.
+- Use Purplefin's selected `intel_cvs` and INT3472 providers.
+- Build every module for the exact target kernel release.
+- Verify module paths, vermagic, and provider choices after each kernel update.
 
 ## Runtime verification
 
@@ -74,4 +63,4 @@ journalctl -k -b --no-pager |
 ```
 
 The bridge should bind to the fix-pack's `Intel CVS driver`, OV02C10 should
-bind normally, and the journal must not contain a module-verification failure.
+bind normally, and the journal should show successful module loading.
