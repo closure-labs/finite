@@ -3,15 +3,13 @@ image := "ghcr.io/declarative-dale/purplefin"
 default:
     @just --list
 
-# Format Nix sources after removing unused Nix bindings.
+# Format repository sources with the flake formatter.
 format:
-    deadnix --edit .
-    alejandra .
+    nix fmt
 
-# Check Nix formatting and unused bindings without modifying the source tree.
+# Check repository formatting without modifying the source tree.
 format-check:
-    alejandra --check .
-    deadnix --fail .
+    nix fmt -- --fail-on-change
 
 check:
     #!/usr/bin/env bash
@@ -116,6 +114,7 @@ check:
     grep -qF 'FROM ${BASE_REF}' Containerfile
     grep -qF 'org.opencontainers.image.base.name="${BASE_REF}"' Containerfile
     grep -qF 'org.opencontainers.image.version="${PURPLEFIN_VERSION}"' Containerfile
+    ! grep -Eq '^    "(flake\.lock|flake\.nix|nix/flake-modules/outputs\.nix)"$' nix/lib/generated.nix
     grep -qF 'Profile ${profile} must include exactly one hardware module' bootc/build/full.sh
     grep -qF 'printf '\''%s\n'\'' "${profile_modules[@]}" >/usr/share/purplefin/build-modules' bootc/lib/finalize-profile.sh
     grep -qF '/usr/share/purplefin/version' bootc/lib/finalize-profile.sh
