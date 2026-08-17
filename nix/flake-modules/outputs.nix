@@ -8,6 +8,30 @@
   system = "x86_64-linux";
   pkgs = import inputs.nixpkgs {inherit system;};
   treefmtEval = inputs.treefmt-nix.lib.evalModule pkgs ../../treefmt.nix;
+  repositoryToolchain =
+    (with pkgs; [
+      actionlint
+      bash
+      coreutils
+      diffutils
+      file
+      findutils
+      gawk
+      git
+      glib
+      gnugrep
+      gnused
+      jq
+      just
+      pipewire
+      ripgrep
+      shellcheck
+      systemd
+      util-linux
+      zizmor
+      zsh
+    ])
+    ++ [treefmtEval.config.build.wrapper];
   profileSet = import ../lib/profile-set.nix {inherit den lib;};
   inherit (profileSet) profiles;
   generated = import ../lib/generated.nix {
@@ -72,6 +96,89 @@
       PATHS
     '';
   };
+  mkRepositoryApp = {
+    name,
+    script,
+    runtimeInputs,
+  }:
+    pkgs.writeShellApplication {
+      inherit name runtimeInputs;
+      text = ''
+        repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
+        [[ -f "''${repo_root}/flake.nix" ]] || {
+          echo "Run this command from the Purplefin repository root" >&2
+          exit 2
+        }
+        cd "''${repo_root}"
+        exec ${pkgs.bash}/bin/bash "''${repo_root}/${script}" "$@"
+      '';
+    };
+  ciApp = mkRepositoryApp {
+    name = "purplefin-ci";
+    script = "tests/ci.sh";
+    runtimeInputs = repositoryToolchain;
+  };
+  changedComponentApp = mkRepositoryApp {
+    name = "purplefin-changed-component";
+    script = "ci/changed-component.sh";
+    runtimeInputs = with pkgs; [bash coreutils gnugrep gnused];
+  };
+  releaseNotesApp = mkRepositoryApp {
+    name = "purplefin-release-notes";
+    script = "ci/release-notes.sh";
+    runtimeInputs = with pkgs; [bash coreutils gawk gnugrep gnused];
+  };
+  trustedUpdateApp = mkRepositoryApp {
+    name = "purplefin-trusted-update";
+    script = "ci/validate-trusted-update.sh";
+    runtimeInputs = with pkgs; [bash coreutils gh jq];
+  };
+  imagePlanApp = mkRepositoryApp {
+    name = "purplefin-image-plan";
+    script = "bootc/build/plan.sh";
+    runtimeInputs = with pkgs; [bash coreutils cosign jq podman skopeo];
+  };
+  imageReuseApp = mkRepositoryApp {
+    name = "purplefin-image-reuse";
+    script = "bootc/build/reuse-image.sh";
+    runtimeInputs = with pkgs; [bash coreutils cosign jq skopeo];
+  };
+  installerSmokeApp = mkRepositoryApp {
+    name = "purplefin-installer-smoke";
+    script = "tests/boot-installer-iso.sh";
+    runtimeInputs = with pkgs; [bash coreutils gnugrep qemu];
+  };
+  imageBuildApp = pkgs.writeShellApplication {
+    name = "purplefin-image-build";
+    runtimeInputs = with pkgs; [bash coreutils jq just podman skopeo];
+    text = ''
+      repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
+      [[ -f "''${repo_root}/flake.nix" ]] || {
+        echo "Run this command from the Purplefin repository root" >&2
+        exit 2
+      }
+      (( $# == 2 )) || {
+        echo "usage: nix run .#image-build -- PROFILE IMAGE_TAG" >&2
+        exit 2
+      }
+      cd "''${repo_root}"
+      exec ${pkgs.just}/bin/just _build "$1" "$2"
+    '';
+  };
+  repositoryCheck =
+    pkgs.runCommand "purplefin-repository-checks" {
+      nativeBuildInputs = repositoryToolchain;
+    } ''
+      export HOME="$TMPDIR/home"
+      mkdir -p "$HOME" source
+      cp -R ${inputs.self}/. source/
+      chmod -R u+w source
+      cd source
+      substituteInPlace Justfile \
+        --replace-fail '#!/usr/bin/env bash' '#!${pkgs.bash}/bin/bash'
+      PURPLEFIN_HERMETIC_CHECK=true PURPLEFIN_SOURCE_ROOT="$PWD" ${ciApp}/bin/purplefin-ci
+      touch "$out"
+    '';
 in {
   flake = {
     lib.purplefin = {
@@ -84,6 +191,7 @@ in {
 
     packages.${system} =
       {
+        ci = ciApp;
         default = generated;
         inherit generated;
       }
@@ -101,6 +209,42 @@ in {
         type = "app";
         program = "${generateApp}/bin/purplefin-generate";
       };
+      check = {
+        type = "app";
+        program = "${ciApp}/bin/purplefin-ci";
+      };
+      ci = {
+        type = "app";
+        program = "${ciApp}/bin/purplefin-ci";
+      };
+      changed-component = {
+        type = "app";
+        program = "${changedComponentApp}/bin/purplefin-changed-component";
+      };
+      release-notes = {
+        type = "app";
+        program = "${releaseNotesApp}/bin/purplefin-release-notes";
+      };
+      trusted-update = {
+        type = "app";
+        program = "${trustedUpdateApp}/bin/purplefin-trusted-update";
+      };
+      image-plan = {
+        type = "app";
+        program = "${imagePlanApp}/bin/purplefin-image-plan";
+      };
+      image-reuse = {
+        type = "app";
+        program = "${imageReuseApp}/bin/purplefin-image-reuse";
+      };
+      image-build = {
+        type = "app";
+        program = "${imageBuildApp}/bin/purplefin-image-build";
+      };
+      installer-smoke = {
+        type = "app";
+        program = "${installerSmokeApp}/bin/purplefin-installer-smoke";
+      };
     };
 
     checks.${system} = {
@@ -108,20 +252,12 @@ in {
       generated-current = generatedCurrent;
       home-configurations = homeCheck;
       profile-schema = generated;
+      repository = repositoryCheck;
     };
 
     devShells.${system} = {
       default = pkgs.mkShell {
-        packages = with pkgs; [
-          actionlint
-          just
-          pipewire
-          ripgrep
-          shellcheck
-          treefmtEval.config.build.wrapper
-          zsh
-          zizmor
-        ];
+        packages = repositoryToolchain;
       };
       installer = pkgs.mkShell {
         packages = [pkgs.qemu];

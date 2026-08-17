@@ -127,10 +127,7 @@ jobs:
         uses: DeterminateSystems/flake-checker-action@de924abd783455e8429c858962b9e43062d19da1 # v13
 
       - name: Validate repository and workflows
-        shell: bash
-        run: |
-          nix flake check --print-build-logs
-          nix develop --command tests/ci.sh
+        run: nix flake check --print-build-logs
 
   plan:
     name: Resolve build inputs
@@ -157,6 +154,9 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
+      - name: Install Nix
+        uses: DeterminateSystems/determinate-nix-action@61cbfe2efc2d4e7a8a6d56967c3c1058e846c858 # v3
 
       - name: Install cosign
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
@@ -188,7 +188,7 @@ jobs:
           profiles="$(jq -c . bootc/generated/image-matrix.json)"
 
           export BASE_DIGEST="${base_digest}" BASE_REF="${base_ref}"
-          matrix="$(bootc/build/plan.sh "${profiles}")"
+          matrix="$(nix run .#image-plan -- "${profiles}")"
           has_builds="$(jq -r '.include | length > 0' <<<"${matrix}")"
           root_base="$(jq -c 'first(.include[] | select(.stage == "root")) // {}' <<<"${matrix}")"
           hardware_matrix="$(jq -c '{include: [.include[] | select(.stage == "hardware")]}' <<<"${matrix}")"

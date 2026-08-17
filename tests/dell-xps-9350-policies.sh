@@ -84,6 +84,9 @@ case "${1:-}" in
 esac
 EOF
 
+for mock in "${tmpdir}/bin/"*; do
+	sed -i "1c #!${BASH}" "${mock}"
+done
 chmod 0755 "${tmpdir}/bin/"*
 
 printf '%s\n' 'Dell Inc.' >"${tmpdir}/battery/dmi/sys_vendor"
@@ -104,7 +107,7 @@ battery_env=(
 	"MOCK_UPOWER_LOG=${tmpdir}/battery/upower.log"
 )
 
-env "${battery_env[@]}" "${battery_helper}" >/dev/null
+env "${battery_env[@]}" bash "${battery_helper}" >/dev/null
 grep -qx EnableChargeThreshold "${tmpdir}/battery/upower.log"
 grep -qx Custom "${tmpdir}/battery/power/BAT0/charge_types"
 grep -qx 75 "${tmpdir}/battery/power/BAT0/charge_control_start_threshold"
@@ -112,20 +115,20 @@ grep -qx 80 "${tmpdir}/battery/power/BAT0/charge_control_end_threshold"
 
 printf '%s\n' START_THRESHOLD=60 END_THRESHOLD=70 >"${tmpdir}/battery/local.conf"
 printf '%s\n' 'Trickle [Custom] Fast Standard Adaptive' >"${tmpdir}/battery/power/BAT0/charge_types"
-env "${battery_env[@]}" "${battery_helper}" >/dev/null
+env "${battery_env[@]}" bash "${battery_helper}" >/dev/null
 grep -qx 60 "${tmpdir}/battery/power/BAT0/charge_control_start_threshold"
 grep -qx 70 "${tmpdir}/battery/power/BAT0/charge_control_end_threshold"
 
 printf '%s\n' ENABLED=false >"${tmpdir}/battery/local.conf"
 printf '%s\n' 41 >"${tmpdir}/battery/power/BAT0/charge_control_start_threshold"
-env "${battery_env[@]}" "${battery_helper}" >/dev/null
+env "${battery_env[@]}" bash "${battery_helper}" >/dev/null
 grep -qx 41 "${tmpdir}/battery/power/BAT0/charge_control_start_threshold"
 
 rm -f "${tmpdir}/battery/local.conf"
 printf '%s\n' 'Trickle [Fast] Standard Adaptive Custom' >"${tmpdir}/battery/power/BAT0/charge_types"
-MOCK_UPOWER_API=absent env "${battery_env[@]}" "${battery_helper}" >/dev/null
+MOCK_UPOWER_API=absent env "${battery_env[@]}" bash "${battery_helper}" >/dev/null
 grep -qx 75 "${tmpdir}/battery/power/BAT0/charge_control_start_threshold"
-if MOCK_UPOWER_API=error env "${battery_env[@]}" "${battery_helper}" >/dev/null 2>&1; then
+if MOCK_UPOWER_API=error env "${battery_env[@]}" bash "${battery_helper}" >/dev/null 2>&1; then
 	fail 'battery helper accepted a UPower transport failure'
 fi
 
@@ -174,27 +177,27 @@ panel_env=(
 
 write_panel_state 1920x1200@60.000 1920x1200@120.000+vrr
 env "${panel_env[@]}" PURPLEFIN_PANEL_AMBIENT_BRIGHTNESS_MIGRATION_ENABLED=false \
-	MOCK_ON_BATTERY=false "${panel_helper}" --apply >/dev/null
+	MOCK_ON_BATTERY=false bash "${panel_helper}" --apply >/dev/null
 grep -qF -- '--scale 1.25 --transform normal --x 0 --y 0 --monitor eDP-1 --mode 1920x1200@120.000+vrr' \
 	"${tmpdir}/panel/gdctl.log"
 
 : >"${tmpdir}/panel/gdctl.log"
 write_panel_state 1920x1200@120.000+vrr 1920x1200@60.000
 env "${panel_env[@]}" PURPLEFIN_PANEL_AMBIENT_BRIGHTNESS_MIGRATION_ENABLED=false \
-	MOCK_ON_BATTERY=true "${panel_helper}" --apply >/dev/null
+	MOCK_ON_BATTERY=true bash "${panel_helper}" --apply >/dev/null
 grep -qF -- '--mode 1920x1200@60.000' "${tmpdir}/panel/gdctl.log"
 
 install -d "${tmpdir}/panel/drm/card0-DP-1"
 printf '%s\n' connected >"${tmpdir}/panel/drm/card0-DP-1/status"
 : >"${tmpdir}/panel/gdctl.log"
 env "${panel_env[@]}" PURPLEFIN_PANEL_AMBIENT_BRIGHTNESS_MIGRATION_ENABLED=false \
-	MOCK_ON_BATTERY=false "${panel_helper}" --apply >/dev/null 2>&1 || true
+	MOCK_ON_BATTERY=false bash "${panel_helper}" --apply >/dev/null 2>&1 || true
 test ! -s "${tmpdir}/panel/gdctl.log"
 rm -rf "${tmpdir}/panel/drm/card0-DP-1"
 
 write_panel_state 1920x1200@120.000+vrr 1920x1200@60.000
 for _ in 1 2; do
-	env "${panel_env[@]}" MOCK_ON_BATTERY=false "${panel_helper}" --apply >/dev/null
+	env "${panel_env[@]}" MOCK_ON_BATTERY=false bash "${panel_helper}" --apply >/dev/null
 done
 test "$(grep -cF 'set org.gnome.settings-daemon.plugins.power ambient-enabled true' "${tmpdir}/panel/gsettings.log")" -eq 1
 test -f "${tmpdir}/panel/state/purplefin/dell-xps-9350-ambient-brightness-v1"

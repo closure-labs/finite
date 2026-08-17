@@ -9,14 +9,14 @@ fake_bin="${test_root}/bin"
 install -d "${fake_bin}"
 
 printf '%s\n' \
-	'#!/usr/bin/env bash' \
+	"#!${BASH}" \
 	'set -euo pipefail' \
 	'[[ "${FAKE_SKOPEO_FAIL:-false}" != true ]]' \
 	'printf '\''%s\n'\'' "${FAKE_METADATA}"' \
 	>"${fake_bin}/skopeo"
 
 printf '%s\n' \
-	'#!/usr/bin/env bash' \
+	"#!${BASH}" \
 	'set -euo pipefail' \
 	'printf '\''%s\n'\'' "$*" >"${FAKE_COSIGN_LOG}"' \
 	'[[ "${FAKE_COSIGN_FAIL:-false}" != true ]]' \
@@ -59,18 +59,18 @@ metadata() {
 
 FAKE_METADATA="$(metadata)"
 export FAKE_METADATA
-actual="$(cd "${repo_root}" && bootc/build/reuse-image.sh generic-x86_64)"
+actual="$(cd "${repo_root}" && bash bootc/build/reuse-image.sh generic-x86_64)"
 test "${actual}" = "${digest}"
 grep -qF -- "--certificate-identity ${COSIGN_IDENTITY}" "${FAKE_COSIGN_LOG}"
 grep -qF "${IMAGE_REF}@${digest}" "${FAKE_COSIGN_LOG}"
 
 FAKE_METADATA="$(metadata old-revision)"
 export FAKE_METADATA
-actual="$(cd "${repo_root}" && bootc/build/reuse-image.sh generic-x86_64)"
+actual="$(cd "${repo_root}" && bash bootc/build/reuse-image.sh generic-x86_64)"
 test -z "${actual}"
 
 FAKE_METADATA="$(metadata)"
 export FAKE_METADATA
 export FAKE_COSIGN_FAIL=true
-actual="$(cd "${repo_root}" && bootc/build/reuse-image.sh generic-x86_64)"
+actual="$(cd "${repo_root}" && bash bootc/build/reuse-image.sh generic-x86_64)"
 test -z "${actual}"

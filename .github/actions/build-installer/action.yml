@@ -257,8 +257,7 @@ runs:
         }
         trap record_duration EXIT
         iso="$(find output -maxdepth 1 -type f -name '*.iso' -print -quit)"
-        nix develop .#installer --command \
-          tests/boot-installer-iso.sh "${iso}" 2>&1 |
+        nix run .#installer-smoke -- "${iso}" 2>&1 |
           tee diagnostics/qemu-smoke.log
 
     - name: Collect installer diagnostics

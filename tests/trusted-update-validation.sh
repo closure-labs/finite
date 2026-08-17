@@ -68,7 +68,7 @@ run_validator() {
 		GITHUB_REPOSITORY=example/purplefin \
 		PR_NUMBER=1 \
 		VALIDATE_INSTALLER=false \
-		"${repo_root}/ci/validate-trusted-update.sh"
+		bash "${repo_root}/ci/validate-trusted-update.sh"
 }
 
 export MOCK_MODE=existing

@@ -48,12 +48,13 @@ Enter the pinned development environment and run the repository checks:
 
 ```bash
 nix develop
-just check
 nix flake check
 ```
 
-The flake supplies the formatter, linters, test tools, generated profile data,
-Home Manager activation packages, and OSBuild Blueprints.
+The flake is the repository control plane: it supplies the formatter, linters,
+security checks, test orchestration, generated profile data, Home Manager
+activation packages, OSBuild Blueprints, and CI/CD helper applications.
+`just check` remains a compatibility alias for `nix flake check`.
 
 ## Read more
 

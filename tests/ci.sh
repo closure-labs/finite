@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-just check
+just _repository-contracts
 
 treefmt --fail-on-change
 
@@ -10,17 +10,17 @@ mapfile -d '' shell_files < <(
 		-type f -name '*.sh' -print0
 )
 shellcheck --external-sources --source-path=SCRIPTDIR "${shell_files[@]}"
-tests/text-style.sh
-tests/markdown-links.sh
-tests/changed-component.sh
-tests/trusted-update-validation.sh
+bash tests/text-style.sh
+bash tests/markdown-links.sh
+bash tests/changed-component.sh
+bash tests/trusted-update-validation.sh
 
 latest_changelog_version="$(
   sed -nE 's/^## \[([0-9]+\.[0-9]+\.[0-9]+)\] - [0-9]{4}-[0-9]{2}-[0-9]{2}$/\1/p' \
     CHANGELOG.md | head -n 1
 )"
 [[ -n "${latest_changelog_version}" ]]
-release_notes="$(ci/release-notes.sh "${latest_changelog_version}" CHANGELOG.md)"
+release_notes="$(bash ci/release-notes.sh "${latest_changelog_version}" CHANGELOG.md)"
 grep -qF '### Added' <<<"${release_notes}"
 grep -qF '### Changed' <<<"${release_notes}"
 grep -qF '### Fixed' <<<"${release_notes}"
@@ -32,7 +32,7 @@ fi
 if [[ "$(<VERSION)" != *-dev.* ]]; then
   [[ "$(<VERSION)" == "${latest_changelog_version}" ]]
 fi
-grep -qF "ci/release-notes.sh \"\${VERSION}\" CHANGELOG.md >release-notes.md" \
+grep -qF "nix run .#release-notes -- \"\${VERSION}\" CHANGELOG.md >release-notes.md" \
   .github/workflows/release.yml
 grep -qF -- '--notes-file release-notes.md' .github/workflows/release.yml
 
@@ -111,6 +111,15 @@ grep -qF 'RUN --mount=from=installer-overlay,target=/run/installer-overlay' inst
 grep -qF 'cp -a /run/installer-overlay/. /' installer/Containerfile
 grep -qF '@@INSTALLER_PAYLOAD_SOURCE_REF@@' installer/overlay/usr/share/anaconda/interactive-defaults.ks
 grep -qF '@@INSTALLER_PAYLOAD_TARGET_REF@@' installer/overlay/usr/share/anaconda/interactive-defaults.ks
+grep -qF 'nix flake check --print-build-logs' .github/workflows/build.yml
+if grep -qF 'nix develop --command tests/ci.sh' .github/workflows/build.yml; then
+	echo 'GitHub Actions must use the hermetic Flake check graph directly' >&2
+	exit 1
+fi
+grep -qF 'repository = repositoryCheck;' nix/flake-modules/outputs.nix
+grep -qF "program = \"\${ciApp}/bin/purplefin-ci\";" nix/flake-modules/outputs.nix
+grep -qF 'nix run .#trusted-update' .github/workflows/update-flake-lock.yml
+grep -qF 'nix run .#trusted-update' .github/workflows/update-image-builder.yml
 
-actionlint -color
-zizmor --offline .github
+actionlint -color .github/workflows/*.yml
+zizmor --offline --no-config --collect=all .github

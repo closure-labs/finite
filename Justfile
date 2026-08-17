@@ -12,6 +12,9 @@ format-check:
     nix fmt -- --fail-on-change
 
 check:
+    nix flake check --print-build-logs
+
+_repository-contracts:
     #!/usr/bin/env bash
     set -euo pipefail
 
@@ -26,7 +29,7 @@ check:
     cp -a bootc/overlays/hardware/dell-xps-9350-intel/files/. "${tmpdir}/"
     install -d "${tmpdir}/usr/lib/systemd/system"
     install -d "${tmpdir}/usr/bin" "${tmpdir}/usr/sbin"
-    printf '%s\n' '#!/usr/bin/env sh' 'exit 0' > "${tmpdir}/usr/bin/true"
+    cp "$(type -P true)" "${tmpdir}/usr/bin/true"
     cp "${tmpdir}/usr/bin/true" "${tmpdir}/usr/sbin/modprobe"
     chmod 0755 "${tmpdir}/usr/bin/true" "${tmpdir}/usr/sbin/modprobe"
     printf '%s\n' '[Unit]' 'Description=System Initialization' > "${tmpdir}/usr/lib/systemd/system/sysinit.target"
@@ -43,7 +46,18 @@ check:
     install -d "${tmpdir}/usr/lib/systemd/system/graphical-session.target.wants"
     ln -s ../purplefin-dell-xps-9350-panel.service "${tmpdir}/usr/lib/systemd/system/graphical-session.target.wants/purplefin-dell-xps-9350-panel.service"
     systemd_verify_log="${tmpdir}/systemd-verify.log"
-    if ! env -u XDG_RUNTIME_DIR SYSTEMD_BYPASS_USERDB=1 systemd-analyze verify --root="${tmpdir}" /usr/lib/systemd/system/purplefin-firstboot-rpm-ostree.service /usr/lib/systemd/system/purplefin-brew-bundle.service /usr/lib/systemd/system/purplefin-refind-theme.service /usr/lib/systemd/system/purplefin-dell-xps-9350-battery.service /usr/lib/systemd/system/graphical-session.target /usr/lib/systemd/system/purplefin-dell-xps-9350-panel.service 2>"${systemd_verify_log}"; then
+    if [[ "${PURPLEFIN_HERMETIC_CHECK:-false}" == true ]]; then
+        install -d "${tmpdir}/runtime" "${tmpdir}/home"
+        systemd_units=(purplefin-firstboot-rpm-ostree.service purplefin-brew-bundle.service purplefin-refind-theme.service purplefin-dell-xps-9350-battery.service purplefin-dell-xps-9350-panel.service)
+        for unit in "${systemd_units[@]}"; do
+            sed -i "s|^ExecStart=/usr/|ExecStart=${tmpdir}/usr/|" "${tmpdir}/usr/lib/systemd/system/${unit}"
+        done
+        systemd_verify=(env XDG_RUNTIME_DIR="${tmpdir}/runtime" HOME="${tmpdir}/home" SYSTEMD_UNIT_PATH="${tmpdir}/usr/lib/systemd/system" SYSTEMD_BYPASS_USERDB=1 systemd-analyze --user verify --generators=no "${systemd_units[@]}")
+    else
+        systemd_verify=(env -u XDG_RUNTIME_DIR SYSTEMD_BYPASS_USERDB=1 systemd-analyze verify --generators=no --root="${tmpdir}" /usr/lib/systemd/system/purplefin-firstboot-rpm-ostree.service /usr/lib/systemd/system/purplefin-brew-bundle.service /usr/lib/systemd/system/purplefin-refind-theme.service /usr/lib/systemd/system/purplefin-dell-xps-9350-battery.service /usr/lib/systemd/system/graphical-session.target /usr/lib/systemd/system/purplefin-dell-xps-9350-panel.service)
+    fi
+    if ! "${systemd_verify[@]}" 2>"${systemd_verify_log}"; then
+        cat "${systemd_verify_log}" >&2
         grep -qF 'Failed to turn off SO_PASSRIGHTS on user lookup socket' "${systemd_verify_log}"
         grep -qF 'Failed to enable SO_PASSCRED on handoff timestamp socket' "${systemd_verify_log}"
         unexpected_systemd_error="$(grep -Ev '^(Failed to turn off SO_PASSRIGHTS on user lookup socket, ignoring: Operation not permitted|Failed to enable SO_PASSCRED on handoff timestamp socket: Operation not permitted)$' "${systemd_verify_log}" || true)"
@@ -55,8 +69,9 @@ check:
     # Retired first-boot tasks lose their stale completion markers safely.
     firstboot_test="${tmpdir}/firstboot-test"
     install -d "${firstboot_test}/bin" "${firstboot_test}/markers" "${firstboot_test}/tasks"
-    ln -s /usr/bin/true "${firstboot_test}/bin/rpm-ostree"
-    ln -s /usr/bin/true "${firstboot_test}/tasks/10-active"
+    true_path="$(type -P true)"
+    ln -s "${true_path}" "${firstboot_test}/bin/rpm-ostree"
+    ln -s "${true_path}" "${firstboot_test}/tasks/10-active"
     touch "${firstboot_test}/markers/10-active.done" "${firstboot_test}/markers/20-retired.done"
     env \
         PATH="${firstboot_test}/bin:${PATH}" \
@@ -64,7 +79,7 @@ check:
         PURPLEFIN_FIRSTBOOT_RPM_OSTREE_TASK_DIR="${firstboot_test}/tasks" \
         PURPLEFIN_FIRSTBOOT_RPM_OSTREE_MARKER_DIR="${firstboot_test}/markers" \
         PURPLEFIN_FIRSTBOOT_REBOOT_REQUIRED_FILE="${firstboot_test}/reboot-required" \
-        bootc/overlays/base/files/usr/libexec/purplefin/run-firstboot-rpm-ostree
+        bash bootc/overlays/base/files/usr/libexec/purplefin/run-firstboot-rpm-ostree
     test -e "${firstboot_test}/markers/10-active.done"
     test ! -e "${firstboot_test}/markers/20-retired.done"
 
@@ -76,7 +91,7 @@ check:
         PURPLEFIN_FIRSTBOOT_RPM_OSTREE_TASK_DIR="${firstboot_test}/retired-tasks" \
         PURPLEFIN_FIRSTBOOT_RPM_OSTREE_MARKER_DIR="${firstboot_test}/retired-markers" \
         PURPLEFIN_FIRSTBOOT_REBOOT_REQUIRED_FILE="${firstboot_test}/retired-reboot-required" \
-        bootc/overlays/base/files/usr/libexec/purplefin/run-firstboot-rpm-ostree
+        bash bootc/overlays/base/files/usr/libexec/purplefin/run-firstboot-rpm-ostree
     test ! -e "${firstboot_test}/retired-markers/30-retired.done"
 
     install -d "${firstboot_test}/pending-bin" "${firstboot_test}/pending-markers"
@@ -89,7 +104,7 @@ check:
         PURPLEFIN_FIRSTBOOT_RPM_OSTREE_TASK_DIR="${firstboot_test}/pending-tasks" \
         PURPLEFIN_FIRSTBOOT_RPM_OSTREE_MARKER_DIR="${firstboot_test}/pending-markers" \
         PURPLEFIN_FIRSTBOOT_REBOOT_REQUIRED_FILE="${firstboot_test}/pending-reboot-required" \
-        bootc/overlays/base/files/usr/libexec/purplefin/run-firstboot-rpm-ostree
+        bash bootc/overlays/base/files/usr/libexec/purplefin/run-firstboot-rpm-ostree
     test -e "${firstboot_test}/pending-markers/40-pending.done"
 
     # Den/Nix emits the only supported named-profile composition interface.
@@ -286,7 +301,7 @@ check:
         XDG_STATE_HOME="${zsh_home}/.local/state" \
         XDG_CACHE_HOME="${zsh_home}/.cache" \
         PURPLEFIN_ZSH_DEFAULTS_SOURCE="${PWD}/${zsh_shared}" \
-        "${zsh_installer}"
+        bash "${zsh_installer}"
     diff -qr "${zsh_shared}" "${zsh_home}/.config/zsh"
     cmp -s "${zsh_shared}/.zshenv" "${zsh_home}/.zshenv"
     test -d "${zsh_home}/.local/state/zsh"
@@ -298,14 +313,14 @@ check:
         XDG_STATE_HOME="${zsh_home}/.local/state" \
         XDG_CACHE_HOME="${zsh_home}/.cache" \
         PURPLEFIN_ZSH_DEFAULTS_SOURCE="${PWD}/${zsh_shared}" \
-        "${zsh_installer}"
+        bash "${zsh_installer}"
     grep -qxF '# user configuration' "${zsh_home}/.config/zsh/.zshrc"
 
     zshenv_test="${tmpdir}/zshenv-test"
     install -d "${zshenv_test}"
     touch "${zshenv_test}/zshenv" "${zshenv_test}/nested-zshenv"
     for iteration in 1 2; do
-        PURPLEFIN_ZSHENV_PATHS="${zshenv_test}/zshenv:${zshenv_test}/nested-zshenv" "${zsh_configurer}"
+        PURPLEFIN_ZSHENV_PATHS="${zshenv_test}/zshenv:${zshenv_test}/nested-zshenv" bash "${zsh_configurer}"
     done
     for zshenv_file in "${zshenv_test}/zshenv" "${zshenv_test}/nested-zshenv"; do
         test "$(grep -cF '# Purplefin zsh configuration' "${zshenv_file}")" -eq 1
@@ -328,7 +343,7 @@ check:
     component_output="$(
         PURPLEFIN_BUILD_ROOT="${PWD}/bootc" \
         PURPLEFIN_COMPONENT_STATE_DIR="${devops_state}" \
-        "${devops_component}"
+        bash "${devops_component}"
     )"
     test "${component_output}" = ':: Devops component already applied'
 
@@ -388,12 +403,12 @@ check:
     grep -qF 'mountpoint = "/"' installer/config/profiles/dale.toml
     test -x bootc/build/derived.sh
     test -f Containerfile.derived
-    tests/derived-profile-build.sh
+    bash tests/derived-profile-build.sh
     ! grep -qF 'base-kernel:' .github/workflows/build.yml .github/workflows/build-profile.yml
     ! grep -qF 'ostree.linux=' .github/workflows/build-profile.yml
     grep -qF 'uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1' .github/workflows/build.yml
     grep -qF 'DeterminateSystems/flake-checker-action@de924abd783455e8429c858962b9e43062d19da1 # v13' .github/workflows/build.yml
-    grep -qF 'bootc/build/plan.sh' .github/workflows/build.yml
+    grep -qF 'nix run .#image-plan' .github/workflows/build.yml
     grep -qF 'org.opencontainers.image.base.digest=' .github/workflows/build-profile.yml
     grep -qF 'io.purplefin.build.input=' .github/workflows/build-profile.yml
     grep -qF 'io.purplefin.parent.digest=' .github/workflows/build-profile.yml
@@ -443,18 +458,19 @@ check:
     grep -qF 'den.url = "github:denful/den";' flake.nix
     grep -qF 'den.aspects.profiles' nix/flake-modules/profiles.nix
     test ! -e bootc/profile-build-input.sh
-    tests/image-build-planner.sh
-    tests/image-reuse.sh
+    bash tests/image-build-planner.sh
+    bash tests/image-reuse.sh
     grep -qF 'buildah bud' .github/workflows/build-profile.yml
     grep -qF 'podman login' .github/workflows/build-profile.yml
     grep -qF 'name: Reuse matching published image' .github/workflows/build-profile.yml
-    grep -qF 'bootc/build/reuse-image.sh' .github/workflows/build-profile.yml
+    grep -qF 'nix run .#image-reuse' .github/workflows/build-profile.yml
     ! grep -qF 'podman push' .github/workflows/build-profile.yml
     grep -qF 'REGISTRY_AUTH_FILE=' .github/workflows/build-profile.yml
     ! rg -q 'ghcr.io/ublue-os/bluefin(:|\b)' Containerfile README.md Justfile .github/workflows
     ! rg -q 'actions/checkout@v4|redhat-actions/(buildah-build|podman-login|push-to-registry)' .github/workflows
     ! rg -q 'bootc-image-builder|--type bootc-installer|anaconda-iso' .github installer
     grep -qF 'bootc-generic-iso' .github/actions/build-installer/action.yml
+    grep -qF 'nix run .#installer-smoke' .github/actions/build-installer/action.yml
     grep -qF 'ghcr.io/osbuild/image-builder-cli@sha256:' .github/actions/build-installer/action.yml
     test -z "$(find bootc/modules -maxdepth 1 -name 'legacy-*' -print -quit)"
     test -z "$(find bootc -maxdepth 2 \( -name '*no-ipu7*' -o -name 'desktop-x86_64.sh' -o -name 'lenovo-generic.sh' \) -print -quit)"
@@ -507,6 +523,8 @@ check:
     grep -qx 'Requires=upower.service' "${battery_unit}"
     grep -qx 'START_THRESHOLD=75' "${xps_profile_root}/usr/lib/purplefin/dell-xps-9350-battery.conf"
     grep -qx 'END_THRESHOLD=80' "${xps_profile_root}/usr/lib/purplefin/dell-xps-9350-battery.conf"
+    install -d "${tmpdir}/etc/udev/hwdb.d"
+    cp "${battery_hwdb}" "${tmpdir}/etc/udev/hwdb.d/"
     systemd-hwdb --root="${tmpdir}" --strict update
     systemd-hwdb --root="${tmpdir}" query 'battery:BAT0:DELL TR7FC488:dmi:bvnDellInc.:svnDellInc.:pnXPS139350:' | grep -qx 'CHARGE_LIMIT=75,80'
     for expected_setting in include=balanced energy_performance_preference=performance boost=1 platform_profile=performance; do
@@ -569,8 +587,8 @@ check:
     grep -qF 'ignoring override for this key' "${schema_compile_log}"
     GSETTINGS_SCHEMA_DIR="${schema_tmp}" GSETTINGS_BACKEND=memory gsettings get org.gnome.settings-daemon.plugins.power ambient-enabled | grep -qx true
     GSETTINGS_SCHEMA_DIR="${schema_tmp}" GSETTINGS_BACKEND=memory gsettings get org.gnome.desktop.screensaver picture-uri | grep -qx "'file:///usr/share/backgrounds/day.jpg'"
-    tests/dell-lid-auth.sh
-    tests/dell-xps-9350-policies.sh
+    bash tests/dell-lid-auth.sh
+    bash tests/dell-xps-9350-policies.sh
     test -f docs/dell-xps-9350-secure-boot.md
     grep -qF '## Module provider selection' docs/dell-xps-9350-secure-boot.md
     grep -qF 'updates/purplefin' docs/dell-xps-9350-secure-boot.md
@@ -589,8 +607,8 @@ check:
     install -d "${firefox_test_root}/Profile With Spaces"
     printf '%s\n' '[Profile0]' 'Path=Profile With Spaces' > "${firefox_test_root}/profiles.ini"
     printf '%s\n' 'user_pref("example.preserved", true);' 'user_pref("media.webrtc.camera.allow-pipewire", false);' > "${firefox_test_root}/Profile With Spaces/user.js"
-    PURPLEFIN_FIREFOX_PROFILE_ROOT="${firefox_test_root}" bootc/overlays/hardware/dell-xps-9350-intel/files/usr/libexec/purplefin/configure-firefox-pipewire-camera
-    PURPLEFIN_FIREFOX_PROFILE_ROOT="${firefox_test_root}" bootc/overlays/hardware/dell-xps-9350-intel/files/usr/libexec/purplefin/configure-firefox-pipewire-camera
+    PURPLEFIN_FIREFOX_PROFILE_ROOT="${firefox_test_root}" bash bootc/overlays/hardware/dell-xps-9350-intel/files/usr/libexec/purplefin/configure-firefox-pipewire-camera
+    PURPLEFIN_FIREFOX_PROFILE_ROOT="${firefox_test_root}" bash bootc/overlays/hardware/dell-xps-9350-intel/files/usr/libexec/purplefin/configure-firefox-pipewire-camera
     grep -qF 'user_pref("example.preserved", true);' "${firefox_test_root}/Profile With Spaces/user.js"
     test "$(grep -cF 'user_pref("media.webrtc.camera.allow-pipewire", true);' "${firefox_test_root}/Profile With Spaces/user.js")" = 1
     test "$(grep -cF '// Purplefin: expose the IPU7 libcamera source instead of raw V4L2 nodes.' "${firefox_test_root}/Profile With Spaces/user.js")" = 1
@@ -717,7 +735,7 @@ check:
     printf '%s\n' 'replace-existing-target-icon' > "${refind_tmp}/EFI/refind/themes/rEFInd-Regular-Dark/icons/os_linux.png"
     printf '%s\n' 'remove-stale-distro-icon' > "${refind_tmp}/EFI/refind/themes/rEFInd-Regular-Dark/icons/os_ubuntu.png"
     for run in 1 2; do
-        PURPLEFIN_REFIND_DIR="${refind_tmp}/EFI/refind" PURPLEFIN_REFIND_THEME_SOURCE="${PWD}/${refind_theme_source}" "${refind_installer}" >/dev/null 2>&1
+        PURPLEFIN_REFIND_DIR="${refind_tmp}/EFI/refind" PURPLEFIN_REFIND_THEME_SOURCE="${PWD}/${refind_theme_source}" bash "${refind_installer}" >/dev/null 2>&1
     done
     cmp -s "${refind_theme_source}/icons/os_linux.png" "${refind_tmp}/EFI/refind/themes/rEFInd-Regular-Dark/icons/os_linux.png"
     cmp -s "${refind_theme_source}/icons/os_win11.png" "${refind_tmp}/EFI/refind/themes/rEFInd-Regular-Dark/icons/os_win11.png"

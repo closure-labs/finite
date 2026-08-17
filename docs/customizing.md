@@ -62,7 +62,6 @@ Refresh and validate the graph:
 ```bash
 nix run .#generate
 nix flake check
-nix develop --command tests/ci.sh
 ```
 
 ## Add a reusable aspect

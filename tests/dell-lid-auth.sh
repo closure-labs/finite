@@ -17,7 +17,7 @@ fail() {
 }
 
 expect_closed() {
-	if /usr/bin/env -i "${helper}" --state-root "$1"; then
+	if env -i "${BASH}" "${helper}" --state-root "$1"; then
 		fail "accepted non-open lid state under $1"
 	fi
 }
@@ -31,36 +31,36 @@ expect_closed "${lid_root}"
 
 install -d "${lid_root}/LID0"
 printf '%s\n' 'state: open' >"${lid_root}/LID0/state"
-/usr/bin/env -i "${helper}" --state-root "${lid_root}"
+env -i "${BASH}" "${helper}" --state-root "${lid_root}"
 
-printf '%s\n' '#!/usr/bin/bash' 'printf '\''%s\n'\'' '\''b false'\''' >"${tmpdir}/busctl-open"
-printf '%s\n' '#!/usr/bin/bash' 'printf '\''%s\n'\'' '\''b true'\''' >"${tmpdir}/busctl-closed"
-printf '%s\n' '#!/usr/bin/bash' 'printf '\''%s\n'\'' '\''unexpected'\''' >"${tmpdir}/busctl-malformed"
-printf '%s\n' '#!/usr/bin/bash' 'exit 1' >"${tmpdir}/busctl-fail"
+printf '%s\n' "#!${BASH}" 'printf '\''%s\n'\'' '\''b false'\''' >"${tmpdir}/busctl-open"
+printf '%s\n' "#!${BASH}" 'printf '\''%s\n'\'' '\''b true'\''' >"${tmpdir}/busctl-closed"
+printf '%s\n' "#!${BASH}" 'printf '\''%s\n'\'' '\''unexpected'\''' >"${tmpdir}/busctl-malformed"
+printf '%s\n' "#!${BASH}" 'exit 1' >"${tmpdir}/busctl-fail"
 chmod 0755 "${tmpdir}"/busctl-*
 
 # Either source reporting closed wins over an open result from the other.
 printf '%s\n' 'state: closed' >"${lid_root}/LID0/state"
-if /usr/bin/env -i "${helper}" --test-sources "${tmpdir}/busctl-open" "${lid_root}"; then
+if env -i "${BASH}" "${helper}" --test-sources "${tmpdir}/busctl-open" "${lid_root}"; then
 	fail 'accepted ACPI/logind disagreement with ACPI closed'
 fi
 printf '%s\n' 'state: open' >"${lid_root}/LID0/state"
-if /usr/bin/env -i "${helper}" --test-sources "${tmpdir}/busctl-closed" "${lid_root}"; then
+if env -i "${BASH}" "${helper}" --test-sources "${tmpdir}/busctl-closed" "${lid_root}"; then
 	fail 'accepted logind closed state'
 fi
 
 printf '%s\n' 'state: open' >"${lid_root}/LID0/state"
-/usr/bin/env -i "${helper}" --test-sources "${tmpdir}/busctl-open" "${lid_root}"
+env -i "${BASH}" "${helper}" --test-sources "${tmpdir}/busctl-open" "${lid_root}"
 
 # Malformed or unavailable logind data falls back to the ACPI state.
-/usr/bin/env -i "${helper}" --test-sources "${tmpdir}/busctl-malformed" "${lid_root}"
-/usr/bin/env -i "${helper}" --test-sources "${tmpdir}/busctl-fail" "${lid_root}"
+env -i "${BASH}" "${helper}" --test-sources "${tmpdir}/busctl-malformed" "${lid_root}"
+env -i "${BASH}" "${helper}" --test-sources "${tmpdir}/busctl-fail" "${lid_root}"
 
 # A known-open logind state remains usable on systems without an ACPI file.
 empty_lid_root="${tmpdir}/no-acpi-lid"
 install -d "${empty_lid_root}"
-/usr/bin/env -i "${helper}" --test-sources "${tmpdir}/busctl-open" "${empty_lid_root}"
-if /usr/bin/env -i "${helper}" --test-sources "${tmpdir}/busctl-malformed" "${empty_lid_root}"; then
+env -i "${BASH}" "${helper}" --test-sources "${tmpdir}/busctl-open" "${empty_lid_root}"
+if env -i "${BASH}" "${helper}" --test-sources "${tmpdir}/busctl-malformed" "${empty_lid_root}"; then
 	fail 'accepted indeterminate lid state without an ACPI fallback'
 fi
 
@@ -79,12 +79,12 @@ expect_closed "${lid_root}"
 printf '%s\n' 'state: open' >"${lid_root}/LID0/state"
 install -d "${lid_root}/LID1"
 printf '%s\n' 'state: open' >"${lid_root}/LID1/state"
-/usr/bin/env -i "${helper}" --state-root "${lid_root}"
+env -i "${BASH}" "${helper}" --state-root "${lid_root}"
 
 printf '%s\n' 'state: closed' >"${lid_root}/LID1/state"
 expect_closed "${lid_root}"
 
-if "${helper}" --invalid-option "${lid_root}"; then
+if bash "${helper}" --invalid-option "${lid_root}"; then
 	fail 'accepted an unsupported test option'
 fi
 

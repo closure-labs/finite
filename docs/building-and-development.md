@@ -9,24 +9,28 @@ nix develop
 
 ## Repository checks
 
-Run the fast repository checks while editing:
+Run the complete hermetic validation graph while editing or before publishing:
 
 ```bash
-just check
+nix flake check --print-build-logs
 ```
 
-Run the complete local validation before publishing a change:
+Refresh generated artifacts explicitly when the profile model changes, then run
+the same check graph used by CI:
 
 ```bash
 nix run .#generate
-just format
-nix flake check
-nix develop --command tests/ci.sh
+nix fmt
+nix flake check --print-build-logs
 ```
 
-`nix flake check` verifies formatting, generated files, the profile schema, and
-every Home Manager configuration. `tests/ci.sh` runs the repository policy,
-shell, workflow, graph, installer, and hardware tests used by CI.
+`nix flake check` owns formatting, generated-file consistency, profile schema,
+every Home Manager configuration, repository policy, shell validation,
+workflow linting, security linting, graph tests, installer tests, and hardware
+tests. CI invokes that single graph instead of manually composing test scripts.
+`nix run .#ci` runs the repository-check application directly when an
+interactive, non-sandboxed diagnostic run is useful. `just check` is retained
+only as a compatibility alias for the Flake check graph.
 
 Use `just format-check` for a read-only formatting check.
 
@@ -87,12 +91,28 @@ nix build .#generated
 nix build .#home-dale
 nix build .#syft
 nix build .#sbomnix
+nix run .#release-notes -- 0.2.0 CHANGELOG.md
+nix run .#changed-component -- images
+nix run .#image-build -- base-generic localhost/purplefin:base-generic
+nix run .#installer-smoke -- output/purplefin.iso
 ```
 
 `generated` contains all generated catalogs and Blueprints. Each `home-*`
 package is a Home Manager activation package for a named profile. Syft creates
 the published bootc SPDX documents, while sbomnix can describe native Nix
-closures.
+closures. The Flake apps pin the toolchains for CI policy, release-note
+extraction, change classification, immutable image planning/reuse, and local
+Podman builds.
+
+## Hermetic boundary
+
+Source-derived architecture, generated IaC, tests, workflow policy, and
+security linters are declared in the Flake and evaluated by `nix flake check`.
+GitHub event routing, protected environments, OIDC attestations, GHCR
+credentials, and container/VM execution remain thin platform boundaries: they
+require mutable remote state or host capabilities, but call Flake applications
+where a pinned local toolchain is useful. Bash files under `bootc/` remain the
+image's build/runtime implementation rather than a manual orchestration API.
 
 ## Source layout
 

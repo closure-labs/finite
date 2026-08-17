@@ -53,4 +53,4 @@ jobs:
           EXPECTED_TITLE: "flake.lock: refresh all inputs"
           GH_TOKEN: ${{ secrets.MERGE_QUEUE_TOKEN || github.token }}
           PR_NUMBER: ${{ steps.update.outputs.pull-request-number }}
-        run: ci/validate-trusted-update.sh
+        run: nix run .#trusted-update

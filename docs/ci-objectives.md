@@ -18,6 +18,14 @@ digest-pinned. Mutable tags discover available updates, and immutable digests
 construct Purplefin artifacts. Generated files are checked against the Nix
 model and updated through the explicit generation command.
 
+The Flake is the source-derived CI control plane. Its check graph declares the
+repository, formatting, generated-data, profile, Home Manager, workflow, and
+security validations with a pinned toolchain. GitHub Actions supplies only the
+event graph, permissions, protected environments, remote registry operations,
+and runners needed for container or VM integration. The repository-check job
+therefore executes one `nix flake check` rather than manually chaining local
+scripts.
+
 Expensive tests stay scheduled or change-driven. Image-affecting changes select
 immutable input planning, and installer-affecting changes select the shared
 installer build action; the stable `CI gate` verifies both decisions. Trusted

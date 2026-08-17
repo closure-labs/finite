@@ -10,7 +10,7 @@ install -d "${fake_bin}"
 
 # The following single-quoted strings intentionally generate mock executables.
 printf '%s\n' \
-	'#!/usr/bin/env bash' \
+	"#!${BASH}" \
 	'set -euo pipefail' \
 	'input="${FAKE_PUBLISHED_INPUT}"' \
 	'[[ "$*" != *"support-generic"* ]] || input="${FAKE_CHILD_PUBLISHED_INPUT:-${input}}"' \
@@ -20,7 +20,7 @@ printf '%s\n' \
 	>"${fake_bin}/skopeo"
 
 printf '%s\n' \
-	'#!/usr/bin/env bash' \
+	"#!${BASH}" \
 	'set -euo pipefail' \
 	'[[ "${FAKE_PODMAN_FAIL:-false}" != true ]] || exit 9' \
 	'case "${1:-}" in' \
@@ -55,11 +55,11 @@ export FAKE_PUBLISHED_INPUT=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 
 export CHECK_RPM_UPDATES=false
 export FAKE_PODMAN_FAIL=true
-matrix="$(cd "${repo_root}" && bootc/build/plan.sh "${profile}")"
+matrix="$(cd "${repo_root}" && bash bootc/build/plan.sh "${profile}")"
 test "$(jq '.include | length' <<<"${matrix}")" -eq 0
 
 export FORCE_REBUILD=true
-matrix="$(cd "${repo_root}" && bootc/build/plan.sh "${profile}")"
+matrix="$(cd "${repo_root}" && bash bootc/build/plan.sh "${profile}")"
 test "$(jq -r '[.include[].profile] | join(" ")' <<<"${matrix}")" = base
 test "$(jq -r '.include[0].reuse_existing' <<<"${matrix}")" = false
 unset FORCE_REBUILD
@@ -67,7 +67,7 @@ unset FORCE_REBUILD
 export CHECK_RPM_UPDATES=true
 export FAKE_PODMAN_FAIL=false
 export FAKE_DNF_STATUS=0
-matrix="$(cd "${repo_root}" && bootc/build/plan.sh "${profile}")"
+matrix="$(cd "${repo_root}" && bash bootc/build/plan.sh "${profile}")"
 test "$(jq '.include | length' <<<"${matrix}")" -eq 0
 grep -q -- '--enable-repo=tailscale-stable' "${FAKE_PODMAN_RUN_LOG}"
 grep -qw tailscale "${FAKE_PODMAN_RUN_LOG}"
@@ -77,14 +77,14 @@ if grep -qw espanso-wayland "${FAKE_PODMAN_RUN_LOG}"; then
 fi
 
 export FAKE_ESPANSO_RPM=true
-matrix="$(cd "${repo_root}" && bootc/build/plan.sh "${profile}")"
+matrix="$(cd "${repo_root}" && bash bootc/build/plan.sh "${profile}")"
 test "$(jq '.include | length' <<<"${matrix}")" -eq 0
 grep -qw espanso-wayland "${FAKE_PODMAN_RUN_LOG}"
 grep -q -- '--enable-repo=terra' "${FAKE_PODMAN_RUN_LOG}"
 
 export FAKE_DNF_STATUS=100
 export FAKE_LAYERED_RPM=false
-matrix="$(cd "${repo_root}" && bootc/build/plan.sh "${profile}")"
+matrix="$(cd "${repo_root}" && bash bootc/build/plan.sh "${profile}")"
 test "$(jq -r '.include[0].profile' <<<"${matrix}")" = base
 test "$(jq -r '.include[0].reuse_existing' <<<"${matrix}")" = false
 
@@ -96,7 +96,7 @@ profiles='[
 export CHECK_RPM_UPDATES=false
 export FAKE_PUBLISHED_INPUT=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 export FAKE_CHILD_PUBLISHED_INPUT=old-support-source
-matrix="$(cd "${repo_root}" && bootc/build/plan.sh "${profiles}")"
+matrix="$(cd "${repo_root}" && bash bootc/build/plan.sh "${profiles}")"
 test "$(jq -r '[.include[].profile] | join(" ")' <<<"${matrix}")" = support-generic
 test "$(jq -r '.include[0].reuse_existing' <<<"${matrix}")" = true
 test "$(jq -r '.include[0].parent_digest' <<<"${matrix}")" = sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
@@ -104,16 +104,16 @@ test "$(jq -r '.include[0].parent_tag' <<<"${matrix}")" = generic-x86_64
 
 export FAKE_PUBLISHED_INPUT=old-base-source
 export FAKE_CHILD_PUBLISHED_INPUT=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
-matrix="$(cd "${repo_root}" && bootc/build/plan.sh "${profiles}")"
+matrix="$(cd "${repo_root}" && bash bootc/build/plan.sh "${profiles}")"
 test "$(jq -r '[.include[].profile] | join(" ")' <<<"${matrix}")" = 'base base-generic support-generic'
 
 export FAKE_PUBLISHED_INPUT=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 export FAKE_CHILD_PARENT_DIGEST=sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
-matrix="$(cd "${repo_root}" && bootc/build/plan.sh "${profiles}")"
+matrix="$(cd "${repo_root}" && bash bootc/build/plan.sh "${profiles}")"
 test "$(jq -r '[.include[].profile] | join(" ")' <<<"${matrix}")" = support-generic
 unset FAKE_CHILD_PARENT_DIGEST
 
 export FAKE_DNF_STATUS=0
 export FAKE_PUBLISHED_INPUT=old-source-state
-matrix="$(cd "${repo_root}" && bootc/build/plan.sh "${profile}")"
+matrix="$(cd "${repo_root}" && bash bootc/build/plan.sh "${profile}")"
 test "$(jq -r '.include[0].profile' <<<"${matrix}")" = base

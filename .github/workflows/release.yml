@@ -454,7 +454,7 @@ jobs:
           mapfile -t sbom_assets < <(find release-sboms -type f -name '*.spdx.json.gz' -print | sort)
           expected_assets="$(jq 'length' bootc/generated/image-matrix.json)"
           (( ${#sbom_assets[@]} == expected_assets ))
-          ci/release-notes.sh "${VERSION}" CHANGELOG.md >release-notes.md
+          nix run .#release-notes -- "${VERSION}" CHANGELOG.md >release-notes.md
           grep -q '[^[:space:]]' release-notes.md
           gh release create "v${VERSION}" \
             release-manifest.json \

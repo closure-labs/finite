@@ -4,7 +4,7 @@ set -euo pipefail
 classify() {
 	local component=$1
 	shift
-	printf '%s\n' "$@" | ci/changed-component.sh "${component}"
+	printf '%s\n' "$@" | bash ci/changed-component.sh "${component}"
 }
 
 [[ "$(classify installer README.md docs/ci.md bootc/generated/image-matrix.json)" == false ]]
@@ -27,7 +27,7 @@ classify() {
 [[ "$(classify images flake.lock)" == true ]]
 [[ "$(classify images README.md Containerfile docs/ci.md)" == true ]]
 
-if ci/changed-component.sh unknown </dev/null; then
+if bash ci/changed-component.sh unknown </dev/null; then
 	echo 'unknown components must fail' >&2
 	exit 1
 fi
