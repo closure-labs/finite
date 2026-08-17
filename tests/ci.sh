@@ -15,6 +15,27 @@ tests/markdown-links.sh
 tests/changed-component.sh
 tests/trusted-update-validation.sh
 
+latest_changelog_version="$(
+  sed -nE 's/^## \[([0-9]+\.[0-9]+\.[0-9]+)\] - [0-9]{4}-[0-9]{2}-[0-9]{2}$/\1/p' \
+    CHANGELOG.md | head -n 1
+)"
+[[ -n "${latest_changelog_version}" ]]
+release_notes="$(ci/release-notes.sh "${latest_changelog_version}" CHANGELOG.md)"
+grep -qF '### Added' <<<"${release_notes}"
+grep -qF '### Changed' <<<"${release_notes}"
+grep -qF '### Fixed' <<<"${release_notes}"
+grep -qF '### Security' <<<"${release_notes}"
+if grep -qF '[Unreleased]:' <<<"${release_notes}"; then
+  echo 'Release notes contain changelog link definitions' >&2
+  exit 1
+fi
+if [[ "$(<VERSION)" != *-dev.* ]]; then
+  [[ "$(<VERSION)" == "${latest_changelog_version}" ]]
+fi
+grep -qF "ci/release-notes.sh \"\${VERSION}\" CHANGELOG.md >release-notes.md" \
+  .github/workflows/release.yml
+grep -qF -- '--notes-file release-notes.md' .github/workflows/release.yml
+
 jq -e '
   .target == "branch" and
   .enforcement == "active" and
