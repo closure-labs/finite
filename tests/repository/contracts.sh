@@ -48,6 +48,8 @@ for obsolete in nix bootc/modules bootc/overlays bootc/components bootc/packages
 done
 test ! -e tests/ci.sh
 
+test -x bootc/builder/full.sh
+test -x bootc/builder/derived.sh
 test -x modules/aspects/base/apply.sh
 test -d modules/aspects/base/rootfs
 test -x modules/aspects/capabilities/devops/apply.sh
