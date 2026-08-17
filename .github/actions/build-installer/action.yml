@@ -201,7 +201,9 @@ runs:
             --format '{{.Id}}' \
             "localhost/purplefin-installer:${GITHUB_SHA}"
         )"
-        [[ "${installer_image_id}" =~ ^sha256:[0-9a-f]{64}$ ]]
+        installer_image_id="${installer_image_id#sha256:}"
+        [[ "${installer_image_id}" =~ ^[0-9a-f]{64}$ ]]
+        installer_image_id="sha256:${installer_image_id}"
         image_builder_digest="${IMAGE_BUILDER##*@}"
         [[ "${image_builder_digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
         jq -n \

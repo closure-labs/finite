@@ -65,6 +65,8 @@ grep -qF -- "--bootc-installer-payload-ref \"\${PAYLOAD_EMBED_REF}\"" "${install
 grep -qF "sudo chown -R \"\$(id -u):\$(id -g)\" output" "${installer_action}"
 grep -qF -- "--cache-from \"\${CACHE_REF}\" --cache-ttl 336h" "${installer_action}"
 grep -qF "gh attestation verify \"oci://\${payload_ref}\"" "${installer_action}"
+grep -qF "installer_image_id=\"\${installer_image_id#sha256:}\"" "${installer_action}"
+grep -qF "installer_image_id=\"sha256:\${installer_image_id}\"" "${installer_action}"
 grep -qF 'output/installer-manifest.json' "${installer_action}"
 grep -qF 'name: Upload installer diagnostics' "${installer_action}"
 grep -qF "gh attestation verify \"oci://\${immutable_ref}\"" .github/workflows/release.yml
