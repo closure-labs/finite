@@ -23,10 +23,13 @@ base_inventory="${probe_root}/base-rpms"
 add_profile() {
 	local entry="$1"
 	local reason="$2"
+	local reuse_existing="${3:-true}"
 	local profile
 
 	profile="$(jq -r '.profile' <<<"${entry}")"
 	echo "${profile}: build (${reason})" >&2
+	entry="$(jq -c --argjson reuse_existing "${reuse_existing}" \
+		'. + {reuse_existing: $reuse_existing}' <<<"${entry}")"
 	selected="$(jq -c --argjson entry "${entry}" '. + [$entry]' <<<"${selected}")"
 }
 
@@ -50,7 +53,7 @@ while IFS= read -r entry; do
 	[[ "${build_input}" =~ ^[0-9a-f]{64}$ ]] || { echo "Invalid build input for ${profile}" >&2; exit 2; }
 
 	if [[ "${force_rebuild}" == true ]]; then
-		add_profile "${entry}" 'manual force rebuild'
+		add_profile "${entry}" 'manual force rebuild' false
 		continue
 	fi
 
@@ -131,11 +134,11 @@ while IFS= read -r entry; do
 		;;
 		100)
 			sed "s/^/${profile}: /" "${upgrade_log}" >&2
-			add_profile "${entry}" 'installed RPM updates are available'
+			add_profile "${entry}" 'installed RPM updates are available' false
 		;;
 		*)
 			sed "s/^/${profile}: /" "${upgrade_log}" >&2
-			add_profile "${entry}" "RPM probe failed with status ${upgrade_status}"
+			add_profile "${entry}" "RPM probe failed with status ${upgrade_status}" false
 		;;
 	esac
 	# Keep the exact base tag for a possible build, but discard the old

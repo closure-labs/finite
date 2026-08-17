@@ -30,6 +30,10 @@ on:
       publish:
         required: true
         type: boolean
+      reuse-existing:
+        required: false
+        default: true
+        type: boolean
       tags:
         required: true
         type: string
@@ -82,6 +86,10 @@ jobs:
         with:
           version: 1.3.3
 
+      - name: Install cosign
+        if: inputs.publish
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
       - name: Resolve immutable build inputs
         id: inputs
         env:
@@ -110,7 +118,47 @@ jobs:
             echo "sbom_repo=${IMAGE_REF}-sbom-cache"
           } >>"${GITHUB_OUTPUT}"
 
+      - name: Reuse matching published image
+        if: inputs.publish && inputs.reuse-existing
+        id: reuse
+        env:
+          BUILD_INPUT: ${{ inputs.build-input }}
+          BUILD_PROFILE: ${{ inputs.profile }}
+          COSIGN_IDENTITY: https://github.com/${{ github.repository }}/.github/workflows/build-profile.yml@refs/heads/main
+          EXPECTED_PARENT_DIGEST: ${{ steps.inputs.outputs.parent_digest }}
+          EXPECTED_REVISION: ${{ github.sha }}
+          EXPECTED_UPSTREAM_DIGEST: ${{ inputs.upstream-base-digest }}
+          EXPECTED_VERSION: ${{ inputs.version }}
+          TAGS: ${{ inputs.tags }}
+        shell: bash
+        run: |
+          started=${SECONDS}
+          record_duration() {
+            echo "seconds=$((SECONDS - started))" >>"${GITHUB_OUTPUT}"
+          }
+          trap record_duration EXIT
+
+          read -r -a tags <<<"${TAGS}"
+          if digest="$(bootc/build/reuse-image.sh "${tags[0]}")" &&
+            [[ -n "${digest}" ]]; then
+            if image_id="$({
+              podman pull --quiet \
+                --authfile "${REGISTRY_AUTH_FILE}" \
+                "${IMAGE_REF}@${digest}"
+            })"; then
+              podman tag "${image_id}" "${IMAGE_REF}:${tags[0]}"
+              {
+                echo 'hit=true'
+                echo "digest=${digest}"
+              } >>"${GITHUB_OUTPUT}"
+              exit 0
+            fi
+            echo "${BUILD_PROFILE}: matching image could not be pulled; building it again" >&2
+          fi
+          echo 'hit=false' >>"${GITHUB_OUTPUT}"
+
       - name: Build image from immutable parent
+        if: steps.reuse.outputs.hit != 'true'
         id: build
         env:
           BUILD_INPUT: ${{ inputs.build-input }}
@@ -182,6 +230,7 @@ jobs:
             .
 
       - name: Rechunk bootc image for efficient updates
+        if: steps.reuse.outputs.hit != 'true'
         id: rechunk
         env:
           PUBLISH: ${{ inputs.publish }}
@@ -280,12 +329,13 @@ jobs:
         id: push
         env:
           RECHUNK_DIGEST: ${{ steps.rechunk.outputs.digest }}
+          REUSED_DIGEST: ${{ steps.reuse.outputs.digest }}
           TAGS: ${{ inputs.tags }}
         shell: bash
         run: |
           read -r -a tags <<<"${TAGS}"
           primary_ref="${IMAGE_REF}:${tags[0]}"
-          digest="${RECHUNK_DIGEST}"
+          digest="${REUSED_DIGEST:-${RECHUNK_DIGEST}}"
           [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
 
           published_digest="$({
@@ -360,10 +410,6 @@ jobs:
             rmdir "${output_dir}"
             echo 'hit=false' >>"${GITHUB_OUTPUT}"
           fi
-
-      - name: Install cosign
-        if: inputs.publish
-        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
 
       - name: Sign and verify immutable image
         if: inputs.publish
@@ -533,6 +579,9 @@ jobs:
           PUBLISH: ${{ inputs.publish }}
           RECHUNK_OUTCOME: ${{ steps.rechunk.outcome }}
           RECHUNK_SECONDS: ${{ steps.rechunk.outputs.seconds }}
+          REUSE_DIGEST: ${{ steps.reuse.outputs.digest }}
+          REUSE_HIT: ${{ steps.reuse.outputs.hit }}
+          REUSE_SECONDS: ${{ steps.reuse.outputs.seconds }}
           SBOM_ATTESTATION_OUTCOME: ${{ steps.sbom_attestation.outcome }}
           SBOM_CACHE_HIT: ${{ steps.sbom-cache.outputs.hit }}
           SBOM_GENERATION_OUTCOME: ${{ steps.sbom_generation.outcome }}
@@ -572,6 +621,7 @@ jobs:
             echo "| Tags | \`${TAGS}\` |"
             echo "| Parent digest | \`${PARENT_DIGEST:-unresolved}\` |"
             echo "| Image digest | \`${image_digest}\` |"
+            echo "| Published image reuse | \`${REUSE_HIT:-false}\` (${REUSE_SECONDS:-0}s; \`${REUSE_DIGEST:-none}\`) |"
             echo "| Registry cache | \`${CACHE_AVAILABLE:-unknown}\` available; \`${CACHE_WRITE:-false}\` updated; \`${CACHE_REF:-unresolved}\` |"
             echo "| Image build | \`${BUILD_OUTCOME:-skipped}\` (${BUILD_SECONDS:-0}s) |"
             echo "| Rechunk | \`${RECHUNK_OUTCOME:-skipped}\` (${RECHUNK_SECONDS:-0}s) |"
