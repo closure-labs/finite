@@ -51,6 +51,10 @@ jobs:
     outputs:
       digest: ${{ steps.push.outputs.digest }}
     steps:
+      - name: Initialize build report
+        shell: bash
+        run: echo "BUILD_STARTED_AT=$(date +%s)" >>"${GITHUB_ENV}"
+
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -107,6 +111,7 @@ jobs:
           } >>"${GITHUB_OUTPUT}"
 
       - name: Build image from immutable parent
+        id: build
         env:
           BUILD_INPUT: ${{ inputs.build-input }}
           BUILD_PROFILE: ${{ inputs.profile }}
@@ -120,6 +125,12 @@ jobs:
           UPSTREAM_BASE_DIGEST: ${{ inputs.upstream-base-digest }}
         shell: bash
         run: |
+          started=${SECONDS}
+          record_duration() {
+            echo "seconds=$((SECONDS - started))" >>"${GITHUB_OUTPUT}"
+          }
+          trap record_duration EXIT
+
           read -r -a tags <<<"${TAGS}"
           primary_image="${IMAGE_REF}:${tags[0]}"
           created="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
@@ -137,12 +148,19 @@ jobs:
             )
           fi
           base_ref="${PARENT_IMAGE}@${PARENT_DIGEST}"
+          cache_available=false
           if skopeo list-tags "docker://${cache_ref}" >/dev/null 2>&1; then
+            cache_available=true
             cache_args+=(--cache-from "${cache_ref}" --cache-ttl 168h)
           fi
           if [[ "${CACHE_WRITE}" == true ]]; then
             cache_args+=(--cache-to "${cache_ref}")
           fi
+          {
+            echo "cache_available=${cache_available}"
+            echo "cache_ref=${cache_ref}"
+            echo "cache_write=${CACHE_WRITE}"
+          } >>"${GITHUB_OUTPUT}"
 
           buildah bud \
             --file "${containerfile}" \
@@ -170,6 +188,12 @@ jobs:
           TAGS: ${{ inputs.tags }}
         shell: bash
         run: |
+          started=${SECONDS}
+          record_duration() {
+            echo "seconds=$((SECONDS - started))" >>"${GITHUB_OUTPUT}"
+          }
+          trap record_duration EXIT
+
           read -r -a tags <<<"${TAGS}"
           primary_image="${IMAGE_REF}:${tags[0]}"
           preserved_labels="$({
@@ -368,8 +392,15 @@ jobs:
         env:
           SOURCE_DIGEST: ${{ steps.image.outputs.digest }}
           SOURCE_REF: ${{ steps.image.outputs.ref }}
+        id: sbom_generation
         shell: bash
         run: |
+          started=${SECONDS}
+          record_duration() {
+            echo "seconds=$((SECONDS - started))" >>"${GITHUB_OUTPUT}"
+          }
+          trap record_duration EXIT
+
           syft_store="$(nix build .#syft --no-link --print-out-paths)"
           syft_cmd="${syft_store}/bin/syft"
           [[ -x "${syft_cmd}" ]]
@@ -467,6 +498,7 @@ jobs:
 
       - name: Attest build provenance
         if: inputs.publish
+        id: provenance
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           push-to-registry: true
@@ -476,6 +508,7 @@ jobs:
 
       - name: Attest SBOM
         if: inputs.publish
+        id: sbom_attestation
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           push-to-registry: true
@@ -483,6 +516,69 @@ jobs:
           subject-digest: ${{ steps.push.outputs.digest }}
           subject-name: ${{ env.IMAGE_REF }}
           subject-version: ${{ inputs.version }}
+
+      - name: Summarize profile build
+        if: always()
+        env:
+          BUILD_INPUT: ${{ inputs.build-input }}
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+          BUILD_PROFILE: ${{ inputs.profile }}
+          BUILD_SECONDS: ${{ steps.build.outputs.seconds }}
+          CACHE_AVAILABLE: ${{ steps.build.outputs.cache_available }}
+          CACHE_REF: ${{ steps.build.outputs.cache_ref }}
+          CACHE_WRITE: ${{ steps.build.outputs.cache_write }}
+          IMAGE_DIGEST: ${{ steps.push.outputs.digest }}
+          PARENT_DIGEST: ${{ steps.inputs.outputs.parent_digest }}
+          PROVENANCE_OUTCOME: ${{ steps.provenance.outcome }}
+          PUBLISH: ${{ inputs.publish }}
+          RECHUNK_OUTCOME: ${{ steps.rechunk.outcome }}
+          RECHUNK_SECONDS: ${{ steps.rechunk.outputs.seconds }}
+          SBOM_ATTESTATION_OUTCOME: ${{ steps.sbom_attestation.outcome }}
+          SBOM_CACHE_HIT: ${{ steps.sbom-cache.outputs.hit }}
+          SBOM_GENERATION_OUTCOME: ${{ steps.sbom_generation.outcome }}
+          SBOM_GENERATION_SECONDS: ${{ steps.sbom_generation.outputs.seconds }}
+          TAGS: ${{ inputs.tags }}
+        shell: bash
+        run: |
+          finished_at="$(date +%s)"
+          started_at="${BUILD_STARTED_AT:-${finished_at}}"
+          [[ "${started_at}" =~ ^[0-9]+$ ]] || started_at="${finished_at}"
+          total_seconds=$((finished_at - started_at))
+
+          mode=validation
+          image_digest=local-only
+          sbom_state='not requested'
+          attestations='not requested'
+          if [[ "${PUBLISH}" == true ]]; then
+            mode=publish
+            image_digest="${IMAGE_DIGEST:-unavailable}"
+            if [[ "${SBOM_CACHE_HIT}" == true ]]; then
+              sbom_state=reused
+            elif [[ "${SBOM_GENERATION_OUTCOME}" == success ]]; then
+              sbom_state="generated (${SBOM_GENERATION_SECONDS:-0}s)"
+            else
+              sbom_state="${SBOM_GENERATION_OUTCOME:-skipped}"
+            fi
+            attestations="provenance=${PROVENANCE_OUTCOME:-skipped}; SPDX=${SBOM_ATTESTATION_OUTCOME:-skipped}"
+          fi
+
+          {
+            echo "### Profile ${BUILD_PROFILE}"
+            echo
+            echo '| Property | Value |'
+            echo '| --- | --- |'
+            echo "| Mode | \`${mode}\` |"
+            echo "| Build input | \`${BUILD_INPUT}\` |"
+            echo "| Tags | \`${TAGS}\` |"
+            echo "| Parent digest | \`${PARENT_DIGEST:-unresolved}\` |"
+            echo "| Image digest | \`${image_digest}\` |"
+            echo "| Registry cache | \`${CACHE_AVAILABLE:-unknown}\` available; \`${CACHE_WRITE:-false}\` updated; \`${CACHE_REF:-unresolved}\` |"
+            echo "| Image build | \`${BUILD_OUTCOME:-skipped}\` (${BUILD_SECONDS:-0}s) |"
+            echo "| Rechunk | \`${RECHUNK_OUTCOME:-skipped}\` (${RECHUNK_SECONDS:-0}s) |"
+            echo "| SBOM | \`${sbom_state}\` |"
+            echo "| Attestations | \`${attestations}\` |"
+            echo "| Total duration | ${total_seconds}s |"
+          } >>"${GITHUB_STEP_SUMMARY}"
 
       - name: Remove local OCI archive
         if: always()

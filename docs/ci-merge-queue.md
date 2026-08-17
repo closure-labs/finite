@@ -1,11 +1,12 @@
 # CI gating and merge queue
 
 `Build Purplefin` has one stable required status, `CI gate`. The gate verifies
-that repository checks, input planning, and every selected image and installer
-build finished successfully. Dynamic profile jobs may be skipped when no
-profile input changed, and the installer job may be skipped when its inputs are
-unchanged. The gate checks those skips against planner and classifier output
-instead of treating a missing job as success.
+that repository checks and every selected planning, image, and installer job
+finished successfully. Input planning may be skipped when changed paths cannot
+affect images, dynamic profile jobs may be skipped when no profile input
+changed, and the installer job may be skipped when its inputs are unchanged.
+The gate checks those skips against planner and classifier output instead of
+treating a missing job as success.
 
 Pull requests and `merge_group` events build the profiles selected by immutable
 input, base-digest, and parent-digest comparisons. A selected parent brings its
@@ -73,7 +74,8 @@ native queue ruleset is activated so `main` has one authoritative policy.
 
 ## Trusted update bots
 
-`Queue Dependabot updates` runs daily on the default branch, verifies open pull
+Dependabot groups and updates GitHub Actions and Nix flake inputs. `Queue
+Dependabot updates` runs daily on the default branch, verifies open pull
 requests through the GitHub API, and enables auto-merge only for non-draft,
 same-repository Dependabot updates targeting the default branch. It pins the
 requested head commit and operates exclusively on GitHub API metadata. The
@@ -82,8 +84,7 @@ pull-request workflows retain their read-only token.
 Branch protection still requires the candidate to be current and pass `CI gate`
 before GitHub can merge it.
 
-The flake and Image Builder updaters validate and merge their own exact pull
-requests. The Dependabot workflow is scoped exclusively to Dependabot. When
+The Image Builder updater validates and merges its own exact pull request. When
 `MERGE_QUEUE_TOKEN` causes the normal pull-request workflow to run, the shared
 validator reuses and waits for that run. With `GITHUB_TOKEN`, it dispatches
 `Build Purplefin` in validation-only mode. Validation-only dispatches use

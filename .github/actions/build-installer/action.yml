@@ -99,7 +99,7 @@ runs:
         IMAGE_REF: ghcr.io/${{ github.repository }}
       shell: bash
       run: |
-        cache_ref="${IMAGE_REF}-build-cache"
+        cache_ref="${IMAGE_REF}-installer-cache"
         authfile="${RUNNER_TEMP}/purplefin-installer-auth.json"
         if [[ "${CACHE_WRITE}" == true ]]; then
           printf '%s' "${GHCR_TOKEN}" |
