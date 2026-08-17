@@ -1,163 +1,126 @@
-{den, ...}: let
+{
+  den,
+  lib,
+  ...
+}: let
   inherit (den.aspects) features;
-in {
-  den.aspects.profiles = {
+
+  definitions = {
     base = {
       includes = [features.base];
-      bootc.purplefin = {
-        profileName = "base";
-        tags = ["base"];
-      };
+      tags = ["base"];
     };
 
     base-generic = {
-      includes = [
-        features.base
-        features.hardware-generic-x86_64
+      parent = "base";
+      includes = [features.hardware-generic-x86_64];
+      tags = [
+        "generic-x86_64"
+        "latest"
+        "base-generic-x86_64"
       ];
-      bootc.purplefin = {
-        profileName = "base-generic";
-        parent = "base";
-        tags = [
-          "generic-x86_64"
-          "latest"
-          "base-generic-x86_64"
-        ];
-      };
     };
 
     base-dell-xps-9350-intel = {
-      includes = [
-        features.base
-        features.hardware-dell-xps-9350-intel
-      ];
-      bootc.purplefin = {
-        profileName = "base-dell-xps-9350-intel";
-        parent = "base";
-        tags = ["base-dell-xps-9350-intel"];
-      };
+      parent = "base";
+      includes = [features.hardware-dell-xps-9350-intel];
+      tags = ["base-dell-xps-9350-intel"];
     };
 
     sales-generic = {
-      includes = [
-        features.base
-        features.sales
-        features.hardware-generic-x86_64
-      ];
-      bootc.purplefin = {
-        profileName = "sales-generic";
-        parent = "base-generic";
-        tags = ["sales-generic"];
-      };
+      parent = "base-generic";
+      includes = [features.sales];
+      tags = ["sales-generic"];
     };
 
     sales-dell-xps-9350-intel = {
-      includes = [
-        features.base
-        features.sales
-        features.hardware-dell-xps-9350-intel
-      ];
-      bootc.purplefin = {
-        profileName = "sales-dell-xps-9350-intel";
-        parent = "base-dell-xps-9350-intel";
-        tags = ["sales-dell-xps-9350-intel"];
-      };
+      parent = "base-dell-xps-9350-intel";
+      includes = [features.sales];
+      tags = ["sales-dell-xps-9350-intel"];
     };
 
     support-generic = {
-      includes = [
-        features.base
-        features.support
-        features.hardware-generic-x86_64
-      ];
-      bootc.purplefin = {
-        profileName = "support-generic";
-        parent = "base-generic";
-        tags = ["support-generic"];
-      };
+      parent = "base-generic";
+      includes = [features.support];
+      tags = ["support-generic"];
     };
 
     support-dell-xps-9350-intel = {
-      includes = [
-        features.base
-        features.support
-        features.hardware-dell-xps-9350-intel
-      ];
-      bootc.purplefin = {
-        profileName = "support-dell-xps-9350-intel";
-        parent = "base-dell-xps-9350-intel";
-        tags = ["support-dell-xps-9350-intel"];
-      };
+      parent = "base-dell-xps-9350-intel";
+      includes = [features.support];
+      tags = ["support-dell-xps-9350-intel"];
     };
 
     dale = {
+      parent = "base-dell-xps-9350-intel";
       includes = [
-        features.base
         features.sales
         features.trainer
         features.support
-        features.hardware-dell-xps-9350-intel
       ];
-      bootc.purplefin = {
-        profileName = "dale";
-        parent = "base-dell-xps-9350-intel";
-        tags = [
-          "dale"
-          "dell-xps-9350-intel"
-        ];
-      };
+      tags = [
+        "dale"
+        "dell-xps-9350-intel"
+      ];
     };
 
     developer-generic = {
-      includes = [
-        features.base
-        features.developer
-        features.hardware-generic-x86_64
-      ];
-      bootc.purplefin = {
-        profileName = "developer-generic";
-        parent = "base-generic";
-        tags = ["developer-generic"];
-      };
+      parent = "base-generic";
+      includes = [features.developer];
+      tags = ["developer-generic"];
     };
 
     trainer-generic = {
-      includes = [
-        features.base
-        features.trainer
-        features.hardware-generic-x86_64
-      ];
-      bootc.purplefin = {
-        profileName = "trainer-generic";
-        parent = "base-generic";
-        tags = ["trainer-generic"];
-      };
+      parent = "base-generic";
+      includes = [features.trainer];
+      tags = ["trainer-generic"];
     };
 
     executive-generic = {
-      includes = [
-        features.base
-        features.executive
-        features.hardware-generic-x86_64
-      ];
-      bootc.purplefin = {
-        profileName = "executive-generic";
-        parent = "base-generic";
-        tags = ["executive-generic"];
-      };
+      parent = "base-generic";
+      includes = [features.executive];
+      tags = ["executive-generic"];
     };
 
     it-generic = {
-      includes = [
-        features.base
-        features.it
-        features.hardware-generic-x86_64
-      ];
-      bootc.purplefin = {
-        profileName = "it-generic";
-        parent = "base-generic";
-        tags = ["it-generic"];
-      };
+      parent = "base-generic";
+      includes = [features.it];
+      tags = ["it-generic"];
     };
   };
+
+  profileStacks =
+    lib.mapAttrs (
+      name: definition: let
+        parent = definition.parent or null;
+        inherited =
+          if parent == null
+          then []
+          else [
+            (den.aspects.profile-stacks.${parent}
+              or (throw "Purplefin profile error: ${name} has unknown parent ${parent}"))
+          ];
+      in {
+        includes = inherited ++ definition.includes;
+      }
+    )
+    definitions;
+
+  profiles =
+    lib.mapAttrs (
+      name: definition: let
+        parent = definition.parent or null;
+      in {
+        includes = [den.aspects.profile-stacks.${name}];
+        bootc.purplefin = {
+          profileName = name;
+          inherit parent;
+          tags = definition.tags;
+        };
+      }
+    )
+    definitions;
+in {
+  den.aspects.profile-stacks = profileStacks;
+  den.aspects.profiles = profiles;
 }

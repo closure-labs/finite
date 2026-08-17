@@ -114,7 +114,7 @@ check:
     grep -qF 'FROM ${BASE_REF}' Containerfile
     grep -qF 'org.opencontainers.image.base.name="${BASE_REF}"' Containerfile
     grep -qF 'org.opencontainers.image.version="${PURPLEFIN_VERSION}"' Containerfile
-    ! grep -Eq '^    "(flake\.lock|flake\.nix|nix/flake-modules/outputs\.nix)"$' nix/lib/generated.nix
+    ! grep -Eq '^    "(flake\.lock|flake\.nix|nix/flake-modules/outputs\.nix|nix/lib|nix/profile-options\.nix)"$' nix/lib/generated.nix
     grep -qF 'Profile ${profile} must include exactly one hardware module' bootc/build/full.sh
     grep -qF 'printf '\''%s\n'\'' "${profile_modules[@]}" >/usr/share/purplefin/build-modules' bootc/lib/finalize-profile.sh
     grep -qF '/usr/share/purplefin/version' bootc/lib/finalize-profile.sh
@@ -368,20 +368,19 @@ check:
         build_input="$(jq -r '.build_input' <<<"${entry}")"
         [[ "${build_input}" =~ ^[0-9a-f]{64}$ ]]
     done < <(jq -c '.[]' bootc/generated/image-matrix.json)
-    ci_matrix="$(jq -r '.[] | [.profile, .stage, (.parent // "root"), .tags] | join("|")' bootc/generated/image-matrix.json)"
-    test "${ci_matrix}" = "$(printf '%s\n' \
-        'base|root|root|base' \
-        'base-generic|hardware|base|generic-x86_64 latest base-generic-x86_64' \
-        'base-dell-xps-9350-intel|hardware|base|base-dell-xps-9350-intel' \
-        'sales-generic|role|base-generic|sales-generic' \
-        'sales-dell-xps-9350-intel|role|base-dell-xps-9350-intel|sales-dell-xps-9350-intel' \
-        'support-generic|role|base-generic|support-generic' \
-        'support-dell-xps-9350-intel|role|base-dell-xps-9350-intel|support-dell-xps-9350-intel' \
-        'dale|role|base-dell-xps-9350-intel|dale dell-xps-9350-intel' \
-        'developer-generic|role|base-generic|developer-generic' \
-        'trainer-generic|role|base-generic|trainer-generic' \
-        'executive-generic|role|base-generic|executive-generic' \
-        'it-generic|role|base-generic|it-generic')"
+    jq -e --slurpfile catalog bootc/generated/profile-catalog.json '
+        ([to_entries[] | {key: .value.profile, value: .key}] | from_entries) as $positions
+        | ([.[].profile] | length == (unique | length))
+        and (length == ($catalog[0].profiles | length))
+        and all(.[];
+            . as $entry
+            | $catalog[0].profiles[$entry.profile] as $profile
+            | $profile != null
+            and $entry.parent == $profile.parent
+            and $entry.stage == $profile.stage
+            and $entry.tags == ($profile.tags | join(" "))
+            and ($entry.parent == null or $positions[$entry.parent] < $positions[$entry.profile]))
+    ' bootc/generated/image-matrix.json >/dev/null
     test -f bootc/generated/profile-catalog.json
     test "$(jq -r '.upstream.image + ":" + .upstream.tag' bootc/generated/profile-catalog.json)" = 'ghcr.io/projectbluefin/bluefin:stable'
     test "$(jq -r '.profiles.dale.deltaModules | join(" ")' bootc/generated/profile-catalog.json)" = 'sales trainer support'

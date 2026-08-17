@@ -27,8 +27,6 @@
     ".containerignore"
     "VERSION"
     "bootc/config/independently-managed-rpms.list"
-    "nix/lib"
-    "nix/profile-options.nix"
   ];
   rootInputPaths = [
     "Containerfile"
@@ -86,6 +84,7 @@
         hardware
         modules
         parent
+        profileName
         roles
         stage
         tags

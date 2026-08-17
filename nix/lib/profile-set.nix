@@ -2,20 +2,12 @@
   lib,
   den,
 }: let
-  profileNames = [
-    "base"
-    "base-generic"
-    "base-dell-xps-9350-intel"
-    "sales-generic"
-    "sales-dell-xps-9350-intel"
-    "support-generic"
-    "support-dell-xps-9350-intel"
-    "dale"
-    "developer-generic"
-    "trainer-generic"
-    "executive-generic"
-    "it-generic"
-  ];
+  profileNames = builtins.filter (
+    name: let
+      candidate = den.aspects.profiles.${name};
+    in
+      builtins.isAttrs candidate && candidate ? bootc
+  ) (builtins.attrNames den.aspects.profiles);
 
   evalProfile = name:
     lib.evalModules {
@@ -26,6 +18,18 @@
     };
 
   rawProfiles = lib.genAttrs profileNames (name: (evalProfile name).config.purplefin);
+  orderResult =
+    lib.lists.toposort (
+      parentName: childName: rawProfiles.${childName}.parent == parentName
+    )
+    profileNames;
+  profileOrder =
+    if orderResult ? result
+    then orderResult.result
+    else
+      throw "Purplefin profile error: parent cycle: ${
+        lib.concatStringsSep " -> " orderResult.cycle
+      }";
 
   roleOrder = [
     "developer"
@@ -120,11 +124,11 @@
           stage = "root";
         };
     };
-  allTags = lib.concatMap (name: validatedProfiles.${name}.tags) profileNames;
+  allTags = lib.concatMap (name: validatedProfiles.${name}.tags) profileOrder;
 in
   assert ensure (
     lib.length allTags == lib.length (lib.unique allTags)
   ) "registry tags must be globally unique"; {
-    order = profileNames;
+    order = profileOrder;
     profiles = validatedProfiles;
   }
