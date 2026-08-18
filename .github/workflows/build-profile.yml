@@ -115,7 +115,6 @@ jobs:
           }
           {
             echo "parent_digest=${PARENT_DIGEST}"
-            echo "sbom_repo=${IMAGE_REF}-sbom-cache"
           } >>"${GITHUB_OUTPUT}"
 
       - name: Reuse matching published image
@@ -365,64 +364,6 @@ jobs:
 
           echo "digest=${digest}" >>"${GITHUB_OUTPUT}"
 
-      - name: Select immutable image digest
-        if: inputs.publish
-        id: image
-        env:
-          PUBLISHED_DIGEST: ${{ steps.push.outputs.digest }}
-        shell: bash
-        run: |
-          digest="${PUBLISHED_DIGEST}"
-          [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
-          {
-            echo "digest=${digest}"
-            echo "ref=${IMAGE_REF}"
-          } >>"${GITHUB_OUTPUT}"
-
-      - name: Pull matching cached SBOM
-        if: inputs.publish
-        id: sbom-cache
-        env:
-          BUILD_INPUT: ${{ inputs.build-input }}
-          BUILD_PROFILE: ${{ inputs.profile }}
-          IMAGE_DIGEST: ${{ steps.image.outputs.digest }}
-          SBOM_REPO: ${{ steps.inputs.outputs.sbom_repo }}
-        shell: bash
-        run: |
-          digest_key="${IMAGE_DIGEST#sha256:}"
-          sbom_ref="${SBOM_REPO}:${BUILD_PROFILE}-${BUILD_INPUT}-${digest_key:0:16}"
-          output_dir="$(mktemp -d -p "${RUNNER_TEMP}" purplefin-sbom.XXXXXX)"
-          if manifest="$({
-            oras manifest fetch \
-              --registry-config "${REGISTRY_AUTH_FILE}" \
-              "${sbom_ref}" 2>/dev/null
-          })" &&
-            jq -e \
-              --arg build_input "${BUILD_INPUT}" \
-              --arg digest "${IMAGE_DIGEST}" \
-              --arg profile "${BUILD_PROFILE}" '
-                .artifactType == "application/spdx+json" and
-                .annotations["io.purplefin.build.input"] == $build_input and
-                .annotations["io.purplefin.build.profile"] == $profile and
-                .annotations["io.purplefin.subject.digest"] == $digest and
-                (.layers | length) == 1 and
-                .layers[0].mediaType == "application/spdx+json"
-              ' <<<"${manifest}" >/dev/null; then
-            oras pull \
-              --registry-config "${REGISTRY_AUTH_FILE}" \
-              --output "${output_dir}" \
-              "${sbom_ref}"
-            sbom="${output_dir}/sbom.spdx.json"
-            [[ -f "${sbom}" ]]
-            {
-              echo 'hit=true'
-              echo "path=${sbom}"
-            } >>"${GITHUB_OUTPUT}"
-          else
-            rmdir "${output_dir}"
-            echo 'hit=false' >>"${GITHUB_OUTPUT}"
-          fi
-
       - name: Sign and verify immutable image
         if: inputs.publish
         env:
@@ -437,134 +378,12 @@ jobs:
             --certificate-identity "${COSIGN_IDENTITY}" \
             "${immutable_image}" >/dev/null
 
-      - name: Generate SBOM from mounted image root
-        if: >-
-          inputs.publish &&
-          steps.sbom-cache.outputs.hit != 'true'
-        env:
-          SOURCE_DIGEST: ${{ steps.image.outputs.digest }}
-          SOURCE_REF: ${{ steps.image.outputs.ref }}
-        id: sbom_generation
-        shell: bash
-        run: |
-          started=${SECONDS}
-          record_duration() {
-            echo "seconds=$((SECONDS - started))" >>"${GITHUB_OUTPUT}"
-          }
-          trap record_duration EXIT
-
-          syft_cmd="$(readlink -f "$(command -v syft)")"
-          syft_store="$(dirname "$(dirname "${syft_cmd}")")"
-          [[ -x "${syft_cmd}" ]]
-
-          mapfile -t syft_closure < <(
-            nix-store --query --requisites "${syft_store}"
-          )
-          syft_mounts=()
-          for store_path in "${syft_closure[@]}"; do
-            syft_mounts+=(--volume "${store_path}:${store_path}:ro")
-          done
-
-          immutable_image="${SOURCE_REF}@${SOURCE_DIGEST}"
-          podman pull --authfile "${REGISTRY_AUTH_FILE}" "${immutable_image}"
-          podman run --rm --pull=never \
-            --cpus 4 \
-            --env SYFT_CACHE_DIR=/tmp/syft-cache \
-            --memory 4g \
-            --network none \
-            --security-opt label=disable \
-            --user 0 \
-            --volume "${PWD}/.github/syft.yaml:/run/purplefin-syft.yaml:ro" \
-            "${syft_mounts[@]}" \
-            --entrypoint "${syft_cmd}" \
-            "${immutable_image}" \
-            scan dir:/ \
-              --config /run/purplefin-syft.yaml \
-              --exclude './nix/store/**' \
-              --source-name "${SOURCE_REF}" \
-              --source-version "${SOURCE_DIGEST}" \
-              --output spdx-json |
-            jq -c '
-              .packages |= map(
-                if has("externalRefs") then
-                  .externalRefs |= map(
-                    select(.referenceType != "cpe23Type")
-                  ) |
-                  if (.externalRefs | length) == 0 then
-                    del(.externalRefs)
-                  else
-                    .
-                  end
-                else
-                  .
-                end
-              )
-            ' >sbom.spdx.json
-
-      - name: Validate and select SBOM
-        if: inputs.publish
-        id: sbom
-        env:
-          CACHED_SBOM: ${{ steps.sbom-cache.outputs.path }}
-        shell: bash
-        run: |
-          sbom="${CACHED_SBOM:-sbom.spdx.json}"
-          [[ -f "${sbom}" ]]
-          jq -e '
-            type == "object" and
-            (.spdxVersion | type == "string" and startswith("SPDX-")) and
-            (.packages | type == "array") and
-            any(.packages[].externalRefs[]?; .referenceType == "purl") and
-            all(.packages[].externalRefs[]?; .referenceType != "cpe23Type")
-          ' "${sbom}" >/dev/null
-          size="$(wc -c <"${sbom}")"
-          maximum_size=$((16 * 1024 * 1024))
-          if (( size > maximum_size )); then
-            printf 'SBOM is %d bytes; actions/attest accepts at most %d bytes.\n' \
-              "${size}" "${maximum_size}" >&2
-            exit 1
-          fi
-          echo "path=${sbom}" >>"${GITHUB_OUTPUT}"
-
-      - name: Store SBOM cache artifact
-        if: >-
-          inputs.publish &&
-          steps.sbom-cache.outputs.hit != 'true'
-        env:
-          BUILD_INPUT: ${{ inputs.build-input }}
-          BUILD_PROFILE: ${{ inputs.profile }}
-          IMAGE_DIGEST: ${{ steps.image.outputs.digest }}
-          SBOM_REPO: ${{ steps.inputs.outputs.sbom_repo }}
-        shell: bash
-        run: |
-          digest_key="${IMAGE_DIGEST#sha256:}"
-          sbom_ref="${SBOM_REPO}:${BUILD_PROFILE}-${BUILD_INPUT}-${digest_key:0:16}"
-          oras push \
-            --registry-config "${REGISTRY_AUTH_FILE}" \
-            --artifact-type application/spdx+json \
-            --annotation "io.purplefin.build.input=${BUILD_INPUT}" \
-            --annotation "io.purplefin.build.profile=${BUILD_PROFILE}" \
-            --annotation "io.purplefin.subject.digest=${IMAGE_DIGEST}" \
-            "${sbom_ref}" \
-            sbom.spdx.json:application/spdx+json
-
       - name: Attest build provenance
         if: inputs.publish
         id: provenance
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           push-to-registry: true
-          subject-digest: ${{ steps.push.outputs.digest }}
-          subject-name: ${{ env.IMAGE_REF }}
-          subject-version: ${{ inputs.version }}
-
-      - name: Attest SBOM
-        if: inputs.publish
-        id: sbom_attestation
-        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
-        with:
-          push-to-registry: true
-          sbom-path: ${{ steps.sbom.outputs.path }}
           subject-digest: ${{ steps.push.outputs.digest }}
           subject-name: ${{ env.IMAGE_REF }}
           subject-version: ${{ inputs.version }}
@@ -588,10 +407,6 @@ jobs:
           REUSE_DIGEST: ${{ steps.reuse.outputs.digest }}
           REUSE_HIT: ${{ steps.reuse.outputs.hit }}
           REUSE_SECONDS: ${{ steps.reuse.outputs.seconds }}
-          SBOM_ATTESTATION_OUTCOME: ${{ steps.sbom_attestation.outcome }}
-          SBOM_CACHE_HIT: ${{ steps.sbom-cache.outputs.hit }}
-          SBOM_GENERATION_OUTCOME: ${{ steps.sbom_generation.outcome }}
-          SBOM_GENERATION_SECONDS: ${{ steps.sbom_generation.outputs.seconds }}
           TAGS: ${{ inputs.tags }}
         shell: bash
         run: |
@@ -602,19 +417,11 @@ jobs:
 
           mode=validation
           image_digest=local-only
-          sbom_state='not requested'
           attestations='not requested'
           if [[ "${PUBLISH}" == true ]]; then
             mode=publish
             image_digest="${IMAGE_DIGEST:-unavailable}"
-            if [[ "${SBOM_CACHE_HIT}" == true ]]; then
-              sbom_state=reused
-            elif [[ "${SBOM_GENERATION_OUTCOME}" == success ]]; then
-              sbom_state="generated (${SBOM_GENERATION_SECONDS:-0}s)"
-            else
-              sbom_state="${SBOM_GENERATION_OUTCOME:-skipped}"
-            fi
-            attestations="provenance=${PROVENANCE_OUTCOME:-skipped}; SPDX=${SBOM_ATTESTATION_OUTCOME:-skipped}"
+            attestations="provenance=${PROVENANCE_OUTCOME:-skipped}"
           fi
 
           {
@@ -631,7 +438,6 @@ jobs:
             echo "| Registry cache | \`${CACHE_AVAILABLE:-unknown}\` available; \`${CACHE_WRITE:-false}\` updated; \`${CACHE_REF:-unresolved}\` |"
             echo "| Image build | \`${BUILD_OUTCOME:-skipped}\` (${BUILD_SECONDS:-0}s) |"
             echo "| Rechunk | \`${RECHUNK_OUTCOME:-skipped}\` (${RECHUNK_SECONDS:-0}s) |"
-            echo "| SBOM | \`${sbom_state}\` |"
             echo "| Attestations | \`${attestations}\` |"
             echo "| Total duration | ${total_seconds}s |"
           } >>"${GITHUB_STEP_SUMMARY}"
@@ -645,18 +451,6 @@ jobs:
           if [[ -n "${BUILT_ARCHIVE}" ]]; then
             rm -f -- "${BUILT_ARCHIVE}"
             rmdir -- "${BUILT_ARCHIVE%/*}" 2>/dev/null || true
-          fi
-
-      - name: Remove local SBOM
-        if: always()
-        env:
-          CACHED_SBOM: ${{ steps.sbom-cache.outputs.path }}
-        shell: bash
-        run: |
-          rm -f -- sbom.spdx.json
-          if [[ -n "${CACHED_SBOM}" ]]; then
-            rm -f -- "${CACHED_SBOM}"
-            rmdir -- "${CACHED_SBOM%/*}" 2>/dev/null || true
           fi
 
       - name: Log out of GHCR

@@ -437,12 +437,6 @@ jobs:
               --repo "${GITHUB_REPOSITORY}" \
               --signer-workflow "${GITHUB_REPOSITORY}/.github/workflows/build-profile.yml" \
               --source-digest "${SOURCE_SHA}"
-            gh attestation verify "oci://${immutable_ref}" \
-              --bundle-from-oci \
-              --repo "${GITHUB_REPOSITORY}" \
-              --signer-workflow "${GITHUB_REPOSITORY}/.github/workflows/build-profile.yml" \
-              --source-digest "${SOURCE_SHA}" \
-              --predicate-type https://spdx.dev/Document/v2.3
 
             release_tag="${profile}-v${VERSION}"
             oras tag \
@@ -455,35 +449,13 @@ jobs:
             })"
             [[ "${release_digest}" == "${digest}" ]]
 
-            digest_key="${digest#sha256:}"
-            sbom_cache_ref="${IMAGE_REF}-sbom-cache:${profile}-${build_input}-${digest_key:0:16}"
-            sbom_manifest="$({
-              oras manifest fetch \
-                --registry-config "${REGISTRY_AUTH_FILE}" \
-                "${sbom_cache_ref}"
-            })"
-            jq -e \
-              --arg build_input "${build_input}" \
-              --arg digest "${digest}" \
-              --arg profile "${profile}" '
-                .artifactType == "application/spdx+json" and
-                .annotations["io.purplefin.build.input"] == $build_input and
-                .annotations["io.purplefin.build.profile"] == $profile and
-                .annotations["io.purplefin.subject.digest"] == $digest and
-                (.layers | length) == 1 and
-                .layers[0].mediaType == "application/spdx+json"
-              ' <<<"${sbom_manifest}" >/dev/null
             sbom_dir="$(mktemp -d -p "${RUNNER_TEMP}" "purplefin-${profile}-sbom.XXXXXX")"
-            oras pull \
-              --registry-config "${REGISTRY_AUTH_FILE}" \
-              --output "${sbom_dir}" \
-              "${sbom_cache_ref}"
             sbom="${sbom_dir}/sbom.spdx.json"
-            jq -e '
-              type == "object" and
-              (.spdxVersion | type == "string" and startswith("SPDX-")) and
-              (.packages | type == "array")
-            ' "${sbom}" >/dev/null
+            SBOM_IMAGE_DIGEST="${digest}" \
+              SBOM_IMAGE_REF="${IMAGE_REF}" \
+              SBOM_SIGNER_WORKFLOW="${GITHUB_REPOSITORY}/.github/workflows/build.yml" \
+              SBOM_SOURCE_DIGEST="${SOURCE_SHA}" \
+              purplefin-sbom-attestation extract "${sbom}"
             sbom_asset="purplefin-${profile}-v${VERSION}.spdx.json.gz"
             gzip -9c "${sbom}" >"release-sboms/${sbom_asset}"
             rm -f -- "${sbom}"

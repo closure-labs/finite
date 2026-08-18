@@ -302,6 +302,191 @@ jobs:
       upstream-base-digest: ${{ needs.plan.outputs.base_digest }}
       version: ${{ needs.plan.outputs.version }}
 
+  sbom-publish:
+    name: Attest SBOM for ${{ matrix.profile }}
+    if: >-
+      always() &&
+      (github.event_name == 'push' || github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
+      needs.plan.result == 'success' && needs.plan.outputs.has_builds == 'true' &&
+      (needs.base-publish.result == 'success' || needs.base-publish.result == 'skipped') &&
+      (needs.hardware-publish.result == 'success' || needs.hardware-publish.result == 'skipped') &&
+      (needs.roles-publish.result == 'success' || needs.roles-publish.result == 'skipped')
+    needs:
+      - plan
+      - base-publish
+      - hardware-publish
+      - roles-publish
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      attestations: write
+      contents: read
+      id-token: write
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Nix and Cachix
+        uses: ./.github/actions/setup-nix
+        with:
+          github-token: ${{ github.token }}
+          toolset: workflow-image
+
+      - name: Log in to GHCR
+        shell: bash
+        run: |
+          install -d -m 0700 "${HOME}/.docker"
+          registry_auth_file="${HOME}/.docker/config.json"
+          printf '%s' "${GH_TOKEN}" |
+            podman login \
+              --authfile "${registry_auth_file}" \
+              ghcr.io \
+              --username "${GITHUB_ACTOR}" \
+              --password-stdin
+          echo "REGISTRY_AUTH_FILE=${registry_auth_file}" >>"${GITHUB_ENV}"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Resolve and verify the published image
+        id: image
+        env:
+          BUILD_INPUT: ${{ matrix.build_input }}
+          BUILD_PROFILE: ${{ matrix.profile }}
+          COSIGN_IDENTITY: https://github.com/${{ github.repository }}/.github/workflows/build-profile.yml@refs/heads/main
+          EXPECTED_REVISION: ${{ github.sha }}
+          EXPECTED_UPSTREAM_DIGEST: ${{ needs.plan.outputs.base_digest }}
+          EXPECTED_VERSION: ${{ needs.plan.outputs.version }}
+          IMAGE_REF: ${{ format('{0}/{1}', env.REGISTRY, env.IMAGE_NAME) }}
+          TAGS: ${{ matrix.tags }}
+        shell: bash
+        run: |
+          primary_tag="${TAGS%% *}"
+          metadata="$(skopeo inspect --retry-times 3 "docker://${IMAGE_REF}:${primary_tag}")"
+          digest="$(jq -er '.Digest' <<<"${metadata}")"
+          [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
+          jq -e \
+            --arg build_input "${BUILD_INPUT}" \
+            --arg profile "${BUILD_PROFILE}" \
+            --arg revision "${EXPECTED_REVISION}" \
+            --arg upstream_digest "${EXPECTED_UPSTREAM_DIGEST}" \
+            --arg version "${EXPECTED_VERSION}" '
+              .Labels["io.purplefin.build.input"] == $build_input and
+              .Labels["io.purplefin.build.profile"] == $profile and
+              .Labels["io.purplefin.upstream.digest"] == $upstream_digest and
+              .Labels["org.opencontainers.image.revision"] == $revision and
+              .Labels["org.opencontainers.image.version"] == $version
+            ' <<<"${metadata}" >/dev/null
+          cosign verify \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            --certificate-identity "${COSIGN_IDENTITY}" \
+            "${IMAGE_REF}@${digest}" >/dev/null
+          {
+            echo "digest=${digest}"
+            echo "ref=${IMAGE_REF}"
+          } >>"${GITHUB_OUTPUT}"
+
+      - name: Restore or generate the signed SBOM
+        id: sbom
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SBOM_IMAGE_DIGEST: ${{ steps.image.outputs.digest }}
+          SBOM_IMAGE_REF: ${{ steps.image.outputs.ref }}
+          SBOM_SIGNER_WORKFLOW: ${{ github.repository }}/.github/workflows/build.yml
+          SBOM_SOURCE_DIGEST: ${{ github.sha }}
+        shell: bash
+        run: |
+          started=${SECONDS}
+          set +e
+          purplefin-image-sbom extract sbom.spdx.json
+          status=$?
+          set -e
+          case "${status}" in
+            0) hit=true ;;
+            3)
+              hit=false
+              purplefin-image-sbom generate sbom.spdx.json
+              ;;
+            *) exit "${status}" ;;
+          esac
+          {
+            echo "hit=${hit}"
+            echo 'path=sbom.spdx.json'
+            echo "seconds=$((SECONDS - started))"
+          } >>"${GITHUB_OUTPUT}"
+
+      - name: Attest newly generated SBOM
+        if: steps.sbom.outputs.hit != 'true'
+        id: sbom_attestation
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          push-to-registry: true
+          sbom-path: ${{ steps.sbom.outputs.path }}
+          subject-digest: ${{ steps.image.outputs.digest }}
+          subject-name: ${{ steps.image.outputs.ref }}
+          subject-version: ${{ needs.plan.outputs.version }}
+
+      - name: Verify the published SBOM attestation
+        if: steps.sbom.outputs.hit != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SBOM_IMAGE_DIGEST: ${{ steps.image.outputs.digest }}
+          SBOM_IMAGE_REF: ${{ steps.image.outputs.ref }}
+          SBOM_SIGNER_WORKFLOW: ${{ github.repository }}/.github/workflows/build.yml
+          SBOM_SOURCE_DIGEST: ${{ github.sha }}
+        shell: bash
+        run: |
+          for _ in {1..6}; do
+            if purplefin-image-sbom extract verified-sbom.spdx.json; then
+              [[ "$(sha256sum sbom.spdx.json | cut -d' ' -f1)" == \
+                "$(sha256sum verified-sbom.spdx.json | cut -d' ' -f1)" ]]
+              exit 0
+            fi
+            sleep 5
+          done
+          echo 'The published SBOM attestation could not be verified' >&2
+          exit 1
+
+      - name: Summarize SBOM publication
+        if: always()
+        env:
+          ATTESTATION_OUTCOME: ${{ steps.sbom_attestation.outcome }}
+          BUILD_PROFILE: ${{ matrix.profile }}
+          IMAGE_DIGEST: ${{ steps.image.outputs.digest }}
+          SBOM_HIT: ${{ steps.sbom.outputs.hit }}
+          SBOM_SECONDS: ${{ steps.sbom.outputs.seconds }}
+        shell: bash
+        run: |
+          state="generated and attested (${SBOM_SECONDS:-0}s; ${ATTESTATION_OUTCOME:-skipped})"
+          if [[ "${SBOM_HIT}" == true ]]; then
+            state="reused verified attestation (${SBOM_SECONDS:-0}s)"
+          fi
+          {
+            echo "### SBOM ${BUILD_PROFILE}"
+            echo
+            echo '| Property | Value |'
+            echo '| --- | --- |'
+            echo "| Image digest | \`${IMAGE_DIGEST:-unresolved}\` |"
+            echo "| SPDX source | \`${state}\` |"
+          } >>"${GITHUB_STEP_SUMMARY}"
+
+      - name: Clean SBOM files and log out of GHCR
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          rm -f -- sbom.spdx.json verified-sbom.spdx.json
+          registry_auth_file="${REGISTRY_AUTH_FILE:-${HOME}/.docker/config.json}"
+          podman logout --authfile "${registry_auth_file}" ghcr.io || true
+          rm -f -- "${registry_auth_file}"
+
   ci-gate:
     name: CI gate
     if: always()
@@ -314,6 +499,7 @@ jobs:
       - base-publish
       - hardware-publish
       - roles-publish
+      - sbom-publish
     runs-on: ubuntu-slim
     timeout-minutes: 5
     permissions:
@@ -337,6 +523,7 @@ jobs:
           PLAN_RESULT: ${{ needs.plan.result }}
           REF: ${{ github.ref }}
           ROLES_PUBLISH_RESULT: ${{ needs.roles-publish.result }}
+          SBOM_PUBLISH_RESULT: ${{ needs.sbom-publish.result }}
           VALIDATE_ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.validate_only || false }}
         shell: bash
         run: |
@@ -368,6 +555,7 @@ jobs:
             require_result base-publish "${BASE_PUBLISH_RESULT}" skipped
             require_result hardware-publish "${HARDWARE_PUBLISH_RESULT}" skipped
             require_result roles-publish "${ROLES_PUBLISH_RESULT}" skipped
+            require_result sbom-publish "${SBOM_PUBLISH_RESULT}" skipped
             exit 0
           fi
 
@@ -380,3 +568,4 @@ jobs:
           require_selected_result base-publish "${HAS_ROOT_BASE}" "${BASE_PUBLISH_RESULT}"
           require_selected_result hardware-publish "${HAS_HARDWARE}" "${HARDWARE_PUBLISH_RESULT}"
           require_selected_result roles-publish "${HAS_ROLES}" "${ROLES_PUBLISH_RESULT}"
+          require_selected_result sbom-publish "${HAS_BUILDS}" "${SBOM_PUBLISH_RESULT}"

@@ -328,15 +328,10 @@ in rec {
     script = "automation/github/queue-dependabot.sh";
     runtimeInputs = with pkgs; [bash gh jq];
   };
-  packageCleanup = pkgs.writeShellApplication {
+  packageCleanup = mkRepositoryApp {
     name = "purplefin-package-cleanup";
-    runtimeInputs = with pkgs; [bash coreutils gh jq];
-    text = ''
-      export PURPLEFIN_GENERATED_ROOT=${generated}
-      repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
-      cd "''${repo_root}"
-      exec ${pkgs.bash}/bin/bash "''${repo_root}/automation/github/package-cleanup.sh" "$@"
-    '';
+    script = "automation/github/package-cleanup.sh";
+    runtimeInputs = with pkgs; [bash gh jq];
   };
   classifyCi = mkRepositoryApp {
     name = "purplefin-classify-ci";
@@ -435,6 +430,16 @@ in rec {
   installerBuild = import ./installer-application.nix {
     inherit generated imageBuilder installerSmoke pkgs;
   };
+  sbomAttestation = mkRepositoryApp {
+    name = "purplefin-sbom-attestation";
+    script = "bootc/builder/sbom.sh";
+    runtimeInputs = with pkgs; [coreutils gh jq];
+  };
+  imageSbom = mkRepositoryApp {
+    name = "purplefin-image-sbom";
+    script = "bootc/builder/sbom.sh";
+    runtimeInputs = with pkgs; [coreutils gh jq nix syft];
+  };
   imageBuild = pkgs.writeShellApplication {
     name = "purplefin-image-build";
     runtimeInputs = with pkgs; [bash coreutils jq podman];
@@ -489,8 +494,8 @@ in rec {
   };
   workflowImage = mkWorkflowToolset {
     name = "purplefin-workflow-image";
-    paths = with pkgs; [ciPlan coreutils cosign gh imagePlan imageReuse jq loadBluefin nix oras skopeo syft validateImageShard];
-    required = [ciPlan imageReuse loadBluefin validateImageShard];
+    paths = with pkgs; [ciPlan coreutils cosign gh imagePlan imageReuse imageSbom jq loadBluefin nix oras skopeo validateImageShard];
+    required = [ciPlan imageReuse imageSbom loadBluefin validateImageShard];
   };
   workflowInstaller = mkWorkflowToolset {
     name = "purplefin-workflow-installer";
@@ -499,8 +504,8 @@ in rec {
   };
   workflowRelease = mkWorkflowToolset {
     name = "purplefin-workflow-release";
-    paths = with pkgs; [coreutils cosign gh gzip jq nix oras releaseNotes skopeo trustedUpdate];
-    required = [releaseNotes trustedUpdate];
+    paths = with pkgs; [coreutils cosign gh gzip jq nix oras releaseNotes sbomAttestation skopeo trustedUpdate];
+    required = [releaseNotes sbomAttestation trustedUpdate];
   };
   workflowMaintenance = mkWorkflowToolset {
     name = "purplefin-workflow-maintenance";

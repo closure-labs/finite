@@ -136,7 +136,7 @@ in {
         workflow-installer = applications.workflowInstaller;
         workflow-maintenance = applications.workflowMaintenance;
         workflow-release = applications.workflowRelease;
-        inherit (pkgs) sbomnix syft;
+        inherit (pkgs) syft;
       }
       // lib.mapAttrs' (
         name: configuration: lib.nameValuePair "home-${name}" configuration.activationPackage
@@ -183,6 +183,14 @@ in {
       image-reuse = {
         type = "app";
         program = "${applications.imageReuse}/bin/purplefin-image-reuse";
+      };
+      image-sbom = {
+        type = "app";
+        program = "${applications.imageSbom}/bin/purplefin-image-sbom";
+      };
+      sbom-attestation = {
+        type = "app";
+        program = "${applications.sbomAttestation}/bin/purplefin-sbom-attestation";
       };
       validate-image-shard = {
         type = "app";
