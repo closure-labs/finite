@@ -7,11 +7,11 @@ format:
 
 # Run the complete hermetic validation graph.
 check:
-    nix flake check --print-build-logs
+    nix run .#ci
 
 # Run repository checks interactively with the pinned toolchain.
 ci:
-    nix run .#ci
+    just check
 
 # Build a named profile into a local OCI image.
 build profile tag:

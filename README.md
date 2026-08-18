@@ -49,7 +49,7 @@ For a fresh system, use the verified graphical ISO described in
 ```bash
 nix develop
 nix fmt
-nix flake check --print-build-logs
+nix run .#ci
 ```
 
 ## Documentation

@@ -41,13 +41,6 @@
   };
   inherit (profileSet) profiles;
   bluefin = config.purplefin.sources.bluefin;
-  bluefinArchive = pkgs.dockerTools.pullImage {
-    imageName = bluefin.image;
-    imageDigest = bluefin.digest;
-    finalImageTag = bluefin.tag;
-    arch = bluefin.architecture;
-    hash = bluefin.archiveHash;
-  };
   version = lib.removeSuffix "\n" (builtins.readFile ../VERSION);
   generated = import ../lib/render-profile-artifacts.nix {
     inherit lib pkgs profiles;
@@ -68,21 +61,47 @@
         }
     )
     profiles;
-  homeCheck = pkgs.runCommand "purplefin-home-configurations" {} ''
-    mkdir -p "$out"
+  homeCheck = pkgs.runCommand "purplefin-home-configurations-proof" {} ''
     ${lib.concatStringsSep "\n" (
-      lib.mapAttrsToList (name: configuration: ''
-        ln -s ${configuration.activationPackage} "$out/${name}"
+      lib.mapAttrsToList (_name: configuration: ''
+        test -e ${configuration.activationPackage}
       '')
       homeConfigurations
     )}
+    touch "$out"
   '';
   applications = import ../lib/flake-applications.nix {
-    inherit bluefin bluefinArchive generated pkgs version;
+    inherit bluefin generated pkgs version;
   };
   repositoryChecks = import ../lib/repository-checks.nix {
-    inherit applications architecture generated inputs pkgs repositoryToolchain;
+    inherit applications architecture generated lib pkgs repositoryToolchain;
   };
+  formattingValidation = treefmtEval.config.build.check inputs.self;
+  formattingCheck = pkgs.runCommand "purplefin-formatting-proof" {} ''
+    test -e ${formattingValidation}
+    touch "$out"
+  '';
+  architectureCheck = pkgs.runCommand "purplefin-architecture-proof" {} ''
+    test -f ${architecture}/architecture.md
+    test -f ${architecture}/namespace.mmd
+    touch "$out"
+  '';
+  profileSchemaCheck = pkgs.runCommand "purplefin-profile-schema-proof" {} ''
+    test -f ${generated}/bootc/generated/image-matrix.json
+    test -f ${generated}/bootc/generated/profile-catalog.json
+    test -f ${generated}/installer/config/profiles/base-generic.toml
+    touch "$out"
+  '';
+  checks =
+    repositoryChecks
+    // {
+      formatting = formattingCheck;
+      architecture = architectureCheck;
+      home-configurations = homeCheck;
+      profile-schema = profileSchemaCheck;
+    };
+  ci = applications.mkCi checks;
+  localCache = applications.mkLocalCache ci;
 in {
   flake = {
     lib.purplefin = {
@@ -96,8 +115,7 @@ in {
     packages.${system} =
       {
         inherit architecture;
-        bluefin-upstream = bluefinArchive;
-        ci = applications.ci;
+        inherit ci;
         default = generated;
         inherit generated;
         inherit (pkgs) sbomnix syft;
@@ -114,11 +132,15 @@ in {
       };
       ci = {
         type = "app";
-        program = "${applications.ci}/bin/purplefin-ci";
+        program = "${ci}/bin/purplefin-ci";
       };
       classify-changes = {
         type = "app";
         program = "${applications.classifyChanges}/bin/purplefin-classify-changes";
+      };
+      classify-ci = {
+        type = "app";
+        program = "${applications.classifyCi}/bin/purplefin-classify-ci";
       };
       release-notes = {
         type = "app";
@@ -154,11 +176,7 @@ in {
       };
       local-cache = {
         type = "app";
-        program = "${applications.localCache}/bin/purplefin-local-cache";
-      };
-      cache-checks = {
-        type = "app";
-        program = "${applications.cacheChecks}/bin/purplefin-cache-checks";
+        program = "${localCache}/bin/purplefin-local-cache";
       };
       load-bluefin = {
         type = "app";
@@ -174,14 +192,7 @@ in {
       };
     };
 
-    checks.${system} =
-      repositoryChecks
-      // {
-        formatting = treefmtEval.config.build.check inputs.self;
-        architecture = architecture;
-        home-configurations = homeCheck;
-        profile-schema = generated;
-      };
+    checks.${system} = checks;
 
     devShells.${system} = {
       default = pkgs.mkShell {

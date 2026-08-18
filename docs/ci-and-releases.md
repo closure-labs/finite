@@ -18,10 +18,14 @@ events, permissions, runners, environments, attestations, and artifact upload.
 installer job selected for the change. The checked-in branch policy is
 `automation/github/policies/main-protection.json`.
 
-The Flake declares the public `purplefin.cachix.org` substituter and key.
-GitHub configures it with `cachix/cachix-action`; the repository secret
-`CACHIX_AUTH_TOKEN` enables writes. CI explicitly pushes only the small contract
-check results through `nix run .#cache-checks`.
+The Flake declares the public `purplefin.cachix.org` substituter and key. Every
+Nix job uses the repository's pinned `setup-nix` action for GitHub access and
+read-through Cachix configuration, with automatic store watching disabled.
+`nix run .#ci` builds the 13 declared checks once, resolves their reference-free
+proof outputs, rejects any closure larger than 1 MiB, and explicitly pushes only
+those proofs. The `CACHIX_AUTH_TOKEN` repository secret enables writes on
+protected events and same-repository pull requests; fork pull requests remain
+read-only.
 
 ## Image publication
 
@@ -44,9 +48,9 @@ Dependabot updates pinned GitHub Actions. Scheduled workflows update
 `npins` source through validated pull requests. The Bluefin updater resolves
 the mutable `stable` channel into a committed OCI digest and Nix fixed-output
 hash, verifies its Cosign identity, and lets the candidate image graph validate
-the result. Image builds consume only that committed source. The daily build
-also checks independently managed RPMs for updates against the committed
-Bluefin base.
+the result. Nix-provided Skopeo copies that exact digest directly into container
+storage; no OCI archive is placed in the Nix store. The daily build also checks
+independently managed RPMs for updates against the committed Bluefin base.
 
 `MERGE_QUEUE_TOKEN` is optional; when set, it must be scoped to this repository
 with Contents and Pull requests read/write access.

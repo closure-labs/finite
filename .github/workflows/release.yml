@@ -45,8 +45,10 @@ jobs:
           persist-credentials: false
           ref: main
 
-      - name: Install Nix
-        uses: DeterminateSystems/determinate-nix-action@61cbfe2efc2d4e7a8a6d56967c3c1058e846c858 # v3
+      - name: Set up Nix and Cachix
+        uses: ./.github/actions/setup-nix
+        with:
+          github-token: ${{ github.token }}
 
       - name: Calculate and commit the release version
         id: version
@@ -301,8 +303,10 @@ jobs:
           persist-credentials: false
           ref: ${{ needs.prepare.outputs.source_sha }}
 
-      - name: Install Nix
-        uses: DeterminateSystems/determinate-nix-action@61cbfe2efc2d4e7a8a6d56967c3c1058e846c858 # v3
+      - name: Set up Nix and Cachix
+        uses: ./.github/actions/setup-nix
+        with:
+          github-token: ${{ github.token }}
 
       - name: Materialize Flake-generated build artifacts
         run: nix run .#export-artifacts -- .

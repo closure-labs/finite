@@ -1,10 +1,24 @@
 {
   bluefin,
-  bluefinArchive,
   generated,
   pkgs,
   version,
 }: let
+  checkNames = [
+    "architecture"
+    "aspects"
+    "automation"
+    "bootc"
+    "documentation"
+    "formatting"
+    "home-configurations"
+    "profile-schema"
+    "release"
+    "repository"
+    "shell"
+    "upstream"
+    "workflows"
+  ];
   exportArtifacts = pkgs.writeShellApplication {
     name = "purplefin-export-artifacts";
     runtimeInputs = [pkgs.coreutils];
@@ -34,7 +48,6 @@
           exit 2
         }
         cd "''${repo_root}"
-        export PURPLEFIN_GENERATED_ROOT="${generated}"
         exec ${pkgs.bash}/bin/bash "''${repo_root}/${script}" "$@"
       '';
     };
@@ -63,6 +76,7 @@ in rec {
             required=true; break ;;
           images:README.md | images:LICENSE | images:docs/* | \
           images:.editorconfig | images:.github/actions/build-installer/* | \
+          images:.github/actions/setup-nix/* | \
           images:.github/dependabot.yml | \
           images:.github/workflows/build-installer.yml | \
           images:.github/workflows/cleanup.yml | \
@@ -71,9 +85,11 @@ in rec {
           images:.github/workflows/update-flake-lock.yml | \
           images:.github/workflows/update-bluefin.yml | \
           images:.github/workflows/update-image-builder.yml | \
+          images:automation/github/classify-ci.sh | \
           images:automation/github/validate-trusted-update.sh | \
           images:secretspec.toml | \
           images:installer/* | images:tests/installer/* | \
+          images:tests/automation/* | \
           images:tests/repository/text-style.sh)
             ;;
           images:*) required=true; break ;;
@@ -83,82 +99,94 @@ in rec {
     '';
   };
 
-  ci = pkgs.writeShellApplication {
-    name = "purplefin-ci";
-    runtimeInputs = [pkgs.nix];
-    text = ''
-      repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
-      [[ -f "''${repo_root}/flake.nix" ]] || {
-        echo "Run this command from the Purplefin repository root" >&2
-        exit 2
-      }
-      exec nix flake check "path:''${repo_root}" --print-build-logs "$@"
-    '';
-  };
-  cacheChecks = pkgs.writeShellApplication {
-    name = "purplefin-cache-checks";
-    runtimeInputs = with pkgs; [cachix coreutils nix];
-    text = ''
-      repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
-      [[ -f "''${repo_root}/flake.nix" ]] || {
-        echo "Run this command from the Purplefin repository root" >&2
-        exit 2
-      }
-      if (( $# == 0 )); then
-        set -- \
-          "path:''${repo_root}#checks.x86_64-linux.shell" \
-          "path:''${repo_root}#checks.x86_64-linux.repository" \
-          "path:''${repo_root}#checks.x86_64-linux.documentation" \
-          "path:''${repo_root}#checks.x86_64-linux.automation" \
-          "path:''${repo_root}#checks.x86_64-linux.bootc" \
-          "path:''${repo_root}#checks.x86_64-linux.aspects" \
-          "path:''${repo_root}#checks.x86_64-linux.release" \
-          "path:''${repo_root}#checks.x86_64-linux.workflows" \
-          "path:''${repo_root}#checks.x86_64-linux.upstream"
-      fi
-      mapfile -t outputs < <(
-        nix --accept-flake-config build \
-          --no-link \
-          --print-build-logs \
-          --print-out-paths \
-          "$@"
+  mkCi = checks: let
+    actualNames = builtins.attrNames checks;
+    quotedNames = pkgs.lib.concatMapStringsSep " " pkgs.lib.escapeShellArg checkNames;
+    quotedPaths =
+      pkgs.lib.concatMapStringsSep " " (
+        name:
+          pkgs.lib.escapeShellArg (
+            builtins.unsafeDiscardStringContext (toString checks.${name})
+          )
       )
-      printf '%s\n' "''${outputs[@]}"
-      if [[ "''${PURPLEFIN_CACHE_PUSH:-true}" == true && -n "''${CACHIX_AUTH_TOKEN:-}" ]]; then
-        cachix push --omit-deriver purplefin "''${outputs[@]}"
-      elif [[ "''${PURPLEFIN_CACHE_PUSH:-true}" == true ]]; then
-        echo "CACHIX_AUTH_TOKEN is unavailable; built outputs were not pushed" >&2
-      fi
-    '';
-  };
-  localCache = pkgs.writeShellApplication {
-    name = "purplefin-local-cache";
-    runtimeInputs = with pkgs; [coreutils secretspec];
-    text = ''
-      repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
-      [[ -f "''${repo_root}/flake.nix" ]] || {
-        echo "Run this command from the Purplefin repository root" >&2
-        exit 2
-      }
-      if [[ -z "''${CACHIX_AUTH_TOKEN:-}" ]]; then
-        token_file="''${HOME}/.other-fun-things/.cachix-purplefin-auth"
-        if [[ ! -r "''${token_file}" ]]; then
-          export PURPLEFIN_CACHE_PUSH=false
-          exec ${cacheChecks}/bin/purplefin-cache-checks "$@"
+      checkNames;
+  in
+    assert actualNames == checkNames;
+      pkgs.writeShellApplication {
+        name = "purplefin-ci";
+        runtimeInputs = with pkgs; [cachix coreutils jq nix];
+        text = ''
+          repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
+          [[ -f "''${repo_root}/flake.nix" ]] || {
+            echo "Run this command from the Purplefin repository root" >&2
+            exit 2
+          }
+
+          nix --accept-flake-config flake check \
+            "git+file://''${repo_root}" \
+            --print-build-logs \
+            "$@"
+
+          check_names=(${quotedNames})
+          check_paths=(${quotedPaths})
+          max_closure_size=$((1024 * 1024))
+          for index in "''${!check_paths[@]}"; do
+            name="''${check_names[$index]}"
+            path="''${check_paths[$index]}"
+            [[ -e "''${path}" ]] || {
+              echo "The completed Flake check did not realize ''${name}: ''${path}" >&2
+              exit 1
+            }
+            closure_size="$(
+              nix path-info --json --json-format 1 --closure-size "''${path}" |
+                jq -er 'to_entries[0].value.closureSize'
+            )"
+            if (( closure_size > max_closure_size )); then
+              printf '%s proof closure is %s bytes; cache limit is %s bytes\n' \
+                "''${name}" "''${closure_size}" "''${max_closure_size}" >&2
+              exit 1
+            fi
+            printf '%s\t%s bytes\t%s\n' "''${name}" "''${closure_size}" "''${path}"
+          done
+
+          if [[ "''${PURPLEFIN_CACHE_PUSH:-true}" == true && -n "''${CACHIX_AUTH_TOKEN:-}" ]]; then
+            for path in "''${check_paths[@]}"; do
+              cachix push --omit-deriver purplefin "''${path}"
+            done
+          elif [[ "''${PURPLEFIN_CACHE_PUSH:-true}" == true ]]; then
+            echo "CACHIX_AUTH_TOKEN is unavailable; proof outputs were not pushed" >&2
+          fi
+        '';
+      };
+  mkLocalCache = ciApplication:
+    pkgs.writeShellApplication {
+      name = "purplefin-local-cache";
+      runtimeInputs = with pkgs; [coreutils secretspec];
+      text = ''
+        repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
+        [[ -f "''${repo_root}/flake.nix" ]] || {
+          echo "Run this command from the Purplefin repository root" >&2
+          exit 2
+        }
+        if [[ -z "''${CACHIX_AUTH_TOKEN:-}" ]]; then
+          token_file="''${HOME}/.other-fun-things/.cachix-purplefin-auth"
+          [[ -r "''${token_file}" ]] || {
+            echo "CACHIX_AUTH_TOKEN is unset and ''${token_file} is unreadable" >&2
+            exit 2
+          }
+          CACHIX_AUTH_TOKEN="$(<"''${token_file}")"
+          export CACHIX_AUTH_TOKEN
         fi
-        CACHIX_AUTH_TOKEN="$(<"''${token_file}")"
-        export CACHIX_AUTH_TOKEN
-      fi
-      cd "''${repo_root}"
-      exec secretspec run \
-        --file "''${repo_root}/secretspec.toml" \
-        --provider local \
-        --profile local-cache \
-        --reason "Purplefin local Nix cache" \
-        --scope cachix \
-        -- ${cacheChecks}/bin/purplefin-cache-checks "$@"
-    '';
-  };
+        cd "''${repo_root}"
+        exec secretspec run \
+          --file "''${repo_root}/secretspec.toml" \
+          --provider local \
+          --profile local-cache \
+          --reason "Purplefin local Nix cache" \
+          --scope cachix \
+          -- ${ciApplication}/bin/purplefin-ci "$@"
+      '';
+    };
   verifyBluefin = pkgs.writeShellApplication {
     name = "purplefin-verify-bluefin";
     runtimeInputs = [pkgs.cosign];
@@ -173,11 +201,37 @@ in rec {
   };
   loadBluefin = pkgs.writeShellApplication {
     name = "purplefin-load-bluefin";
-    runtimeInputs = [pkgs.podman];
+    runtimeInputs = with pkgs; [coreutils cosign skopeo];
     text = ''
-      podman load --input ${bluefinArchive} >/dev/null
+      ${verifyBluefin}/bin/purplefin-verify-bluefin >/dev/null
+      source='docker://${bluefin.image}@${bluefin.digest}'
       image='${bluefin.image}:${bluefin.tag}'
-      podman image exists "''${image}"
+      data_home="''${XDG_DATA_HOME:-''${HOME}/.local/share}"
+      runtime_dir="''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+      graph_root="''${CONTAINERS_STORAGE_GRAPHROOT:-''${data_home}/containers/storage}"
+      run_root="''${CONTAINERS_STORAGE_RUNROOT:-''${runtime_dir}/containers}"
+      storage_driver="''${CONTAINERS_STORAGE_DRIVER:-overlay}"
+      storage_ref="containers-storage:[''${storage_driver}@''${graph_root}+''${run_root}]''${image}"
+      install -d "''${graph_root}" "''${run_root}"
+      loaded_digest="$(
+        skopeo inspect --format '{{.Digest}}' "''${storage_ref}" 2>/dev/null || true
+      )"
+      if [[ "''${loaded_digest}" != '${bluefin.digest}' ]]; then
+        skopeo copy \
+          --override-arch '${bluefin.architecture}' \
+          --override-os linux \
+          --preserve-digests \
+          --retry-times 3 \
+          "''${source}" \
+          "''${storage_ref}" >&2
+        loaded_digest="$(
+          skopeo inspect --format '{{.Digest}}' "''${storage_ref}"
+        )"
+      fi
+      [[ "''${loaded_digest}" == '${bluefin.digest}' ]] || {
+        echo "Loaded Bluefin digest ''${loaded_digest} does not match ${bluefin.digest}" >&2
+        exit 1
+      }
       printf '%s\n' "''${image}"
     '';
   };
@@ -230,6 +284,11 @@ in rec {
     script = "automation/github/validate-trusted-update.sh";
     runtimeInputs = with pkgs; [bash coreutils gh jq];
   };
+  classifyCi = mkRepositoryApp {
+    name = "purplefin-classify-ci";
+    script = "automation/github/classify-ci.sh";
+    runtimeInputs = with pkgs; [bash classifyChanges coreutils git];
+  };
   imagePlan = mkRepositoryApp {
     name = "purplefin-image-plan";
     script = "bootc/builder/plan.sh";
@@ -244,6 +303,7 @@ in rec {
         exit 2
       }
       : "''${IMAGE_REF:?IMAGE_REF is required}"
+      ${verifyBluefin}/bin/purplefin-verify-bluefin >/dev/null
       base_image='${bluefin.image}'
       base_tag='${bluefin.tag}'
       base_digest='${bluefin.digest}'

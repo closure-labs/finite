@@ -78,11 +78,13 @@ jobs:
             The candidate runs the repository CI gate and builds and smoke-boots
             the generic installer before auto-merge is enabled.
 
-      - name: Install Nix
+      - name: Set up Nix and Cachix
         if: >-
           steps.update.outputs.pull-request-number != '' &&
           steps.update.outputs.pull-request-operation != 'closed'
-        uses: DeterminateSystems/determinate-nix-action@61cbfe2efc2d4e7a8a6d56967c3c1058e846c858 # v3
+        uses: ./.github/actions/setup-nix
+        with:
+          github-token: ${{ github.token }}
 
       - name: Validate and enable auto-merge
         if: >-

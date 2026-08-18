@@ -61,7 +61,7 @@ In `modules/profiles.nix`:
 Validate and inspect it:
 
 ```bash
-nix flake check --print-build-logs
+nix run .#ci
 nix build .#generated
 jq '.profiles["your-profile"]' \
   result/bootc/generated/profile-catalog.json
