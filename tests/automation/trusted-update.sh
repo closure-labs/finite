@@ -31,7 +31,11 @@ gh() {
 		;;
 	"run list")
 		if [[ " $* " == *' --event pull_request '* ]]; then
-			[[ "${MOCK_MODE}" == existing ]] && printf '%s\n' 101
+			if [[ "${MOCK_MODE}" == existing ]]; then
+				printf '%s\n' '{"conclusion":null,"databaseId":101,"status":"in_progress"}'
+			elif [[ "${MOCK_MODE}" == action-required ]]; then
+				printf '%s\n' '{"conclusion":"action_required","databaseId":303,"status":"completed"}'
+			fi
 		elif [[ -e "${MOCK_STATE}" ]]; then
 			printf '%s\n' 202
 		fi
@@ -43,7 +47,7 @@ gh() {
 	"pr update-branch")
 		: >"${MOCK_PR_STATE}"
 		;;
-	"run watch" | "pr merge")
+	"api --method" | "run watch" | "pr merge")
 		;;
 	*)
 		echo "Unexpected gh command: $*" >&2
@@ -79,6 +83,13 @@ if grep -qF 'gh workflow run' "${MOCK_LOG}"; then
 	echo 'Validator dispatched duplicate CI despite an existing pull-request run' >&2
 	exit 1
 fi
+
+: >"${MOCK_LOG}"
+export MOCK_MODE=action-required
+run_validator
+grep -qF 'gh api --method POST repos/example/purplefin/actions/runs/303/approve' "${MOCK_LOG}"
+grep -qF 'gh run watch 303' "${MOCK_LOG}"
+grep -qF 'gh pr merge' "${MOCK_LOG}"
 
 : >"${MOCK_LOG}"
 rm -f "${MOCK_PR_STATE}"

@@ -539,6 +539,12 @@ jobs:
             --title "Purplefin ${VERSION}"
           gh release edit "v${VERSION}" --draft=false
 
+      - name: Clean generated release assets
+        shell: bash
+        run: |
+          rm -rf -- release-sboms
+          rm -f -- release-manifest.json release-manifest.json.sha256 release-notes.md
+
       - name: Select the next development version
         id: next-version
         env:
