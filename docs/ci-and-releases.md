@@ -9,7 +9,7 @@ events, permissions, runners, environments, attestations, and artifact upload.
 | Layer | Runs when | Validates |
 | --- | --- | --- |
 | Repository | Every pull request and main build | Flake checks, generated data, source, tests, and workflows |
-| Candidate images | Image inputs change | Selected profiles and descendants using read-only registry access |
+| Candidate images | Image inputs change | Selected profiles and descendants in four read-only, runner-local shards |
 | Installer | Installer inputs change or on schedule | Payload attestations, ISO build, manifest, and QEMU boot |
 | Publication | Trusted main runs | Images, tags, signatures, provenance, SPDX SBOMs, and caches |
 | Release | Manual release dispatch | Exact source candidate and every promoted digest and attestation |
@@ -17,6 +17,12 @@ events, permissions, runners, environments, attestations, and artifact upload.
 `CI gate` is the stable required check. Its result covers every image and
 installer job selected for the change. The checked-in branch policy is
 `automation/github/policies/main-protection.json`.
+
+Pull requests and merge groups divide selected profiles among at most four
+balanced shards. A shard verifies and loads the locked Bluefin digest once,
+then builds and rechunks its profiles sequentially with `--pull=never`, pruning
+each completed candidate before continuing. Container storage remains local to
+one ephemeral runner, so no mutable image state crosses a job boundary.
 
 The Flake declares the public `purplefin.cachix.org` substituter and key. Every
 Nix job uses the repository's pinned `setup-nix` action for GitHub access and
@@ -68,8 +74,8 @@ author; the GitHub Actions app identity is trusted by default.
 Dispatch `Release Purplefin` from `main` and select `auto`, `patch`, `minor`, or
 `major`. The workflow:
 
-1. selects the version and merges its stable `VERSION` through a protected,
-   CI-gated pull request;
+1. selects the version and, when needed, merges its stable `VERSION` through a
+   protected, CI-gated pull request;
 2. builds or reuses an all-profile candidate from that exact merge commit;
 3. verifies every signature, provenance statement, SPDX attestation, profile
    label, and source revision;
@@ -80,3 +86,9 @@ Dispatch `Release Purplefin` from `main` and select `auto`, `patch`, `minor`, or
 
 Stable changelog entries use `Added`, `Changed`, `Fixed`, and `Security`
 sections.
+
+Release-preparation pull requests may set `VERSION` and the dated changelog
+entry in advance. After that commit reaches `main`, dispatch the release with a
+`patch` bump (or `auto` when the conventional-commit history selects the same
+version). If the stable version is already present, the workflow uses that
+protected `main` commit directly instead of creating an empty version change.

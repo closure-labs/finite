@@ -6,6 +6,8 @@ All notable changes to Purplefin are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-08-18
+
 ### Added
 
 - Typed, architecture-specific OCI locks for Bluefin and OSBuild Image Builder,
@@ -21,11 +23,31 @@ All notable changes to Purplefin are documented here. The format follows
 - Generated build contracts are consumed directly from the Nix store, and CI
   derives its cache-proof list from the evaluated check graph.
 - The generated profile catalog uses schema 3 for the typed OCI source model.
+- Pull requests and merge groups now validate profiles in four balanced shards,
+  loading the verified Bluefin digest once per runner before building and
+  rechunking each assigned profile.
+
+### Fixed
+
+- Nix workflow toolsets now use a lower profile priority so runner-provided
+  Buildah and Podman retain their supported user-namespace integration.
+- Trusted release updates approve gated validation runs when required and clean
+  generated manifests, notes, and SBOMs before preparing the next development
+  version.
 
 ### Removed
 
 - The unused npins container archive hash and worktree artifact-export path.
 - Dedicated ORAS and Cosign setup actions in image and release jobs.
+
+### Security
+
+- Bluefin and Image Builder transports are bound to architecture-specific OCI
+  manifest digests; Bluefin loads also verify the committed Cosign issuer and
+  identity before the exact digest enters container storage.
+- Candidate sharding retains read-only registry permissions, `--pull=never`
+  builds, independent image cleanup, and the existing signing, provenance, and
+  SPDX attestation boundaries.
 
 ## [0.2.1] - 2026-08-17
 
@@ -117,6 +139,7 @@ All notable changes to Purplefin are documented here. The format follows
 - The required `CI gate` now validates repository policy, selected image and
   installer jobs, merge candidates, and trusted dependency-update automation.
 
-[Unreleased]: https://github.com/declarative-dale/purplefin/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/declarative-dale/purplefin/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/declarative-dale/purplefin/releases/tag/v0.2.2
 [0.2.1]: https://github.com/declarative-dale/purplefin/releases/tag/v0.2.1
 [0.2.0]: https://github.com/declarative-dale/purplefin/releases/tag/v0.2.0
