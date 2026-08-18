@@ -425,7 +425,7 @@ in rec {
   installerSmoke = mkRepositoryApp {
     name = "purplefin-installer-smoke";
     script = "tests/installer/smoke.sh";
-    runtimeInputs = with pkgs; [bash coreutils gnugrep qemu];
+    runtimeInputs = with pkgs; [bash coreutils gnugrep qemu_kvm];
   };
   installerBuild = import ./installer-application.nix {
     inherit generated imageBuilder installerSmoke pkgs;
@@ -487,15 +487,25 @@ in rec {
         ignoreCollisions = true;
       };
 
-  workflowCi = mkWorkflowToolset {
-    name = "purplefin-workflow-ci";
-    paths = with pkgs; [actionlint cachix classifyCi ciPlan coreutils git jq nix trustedUpdate zizmor];
-    required = [classifyCi];
+  workflowPrepare = mkWorkflowToolset {
+    name = "purplefin-workflow-prepare";
+    paths = with pkgs; [classifyCi ciPlan coreutils git jq];
+    required = [classifyCi ciPlan];
   };
-  workflowImage = mkWorkflowToolset {
-    name = "purplefin-workflow-image";
-    paths = with pkgs; [ciPlan coreutils cosign gh imagePlan imageReuse imageSbom jq loadBluefin nix oras skopeo validateImageShard];
-    required = [ciPlan imageReuse imageSbom loadBluefin validateImageShard];
+  workflowValidation = mkWorkflowToolset {
+    name = "purplefin-workflow-validation";
+    paths = with pkgs; [coreutils jq loadBluefin skopeo validateImageShard];
+    required = [loadBluefin validateImageShard];
+  };
+  workflowPublish = mkWorkflowToolset {
+    name = "purplefin-workflow-publish";
+    paths = with pkgs; [coreutils cosign gh imageReuse jq loadBluefin nix oras skopeo];
+    required = [imageReuse loadBluefin];
+  };
+  workflowSbom = mkWorkflowToolset {
+    name = "purplefin-workflow-sbom";
+    paths = with pkgs; [coreutils cosign gh imageSbom jq skopeo];
+    required = [imageSbom];
   };
   workflowInstaller = mkWorkflowToolset {
     name = "purplefin-workflow-installer";
@@ -506,10 +516,5 @@ in rec {
     name = "purplefin-workflow-release";
     paths = with pkgs; [coreutils cosign gh gzip jq nix oras releaseNotes sbomAttestation skopeo trustedUpdate];
     required = [releaseNotes sbomAttestation trustedUpdate];
-  };
-  workflowMaintenance = mkWorkflowToolset {
-    name = "purplefin-workflow-maintenance";
-    paths = with pkgs; [coreutils gh jq nix packageCleanup skopeo sourceUpdate trustedUpdate];
-    required = [packageCleanup sourceUpdate trustedUpdate];
   };
 }

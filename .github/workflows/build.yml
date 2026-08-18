@@ -25,7 +25,7 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
 
 permissions:
   attestations: read
@@ -37,15 +37,28 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  changes:
-    name: Classify expensive validations
+  prepare:
+    name: Check, classify, and plan
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 40
     permissions:
       contents: read
     outputs:
+      base_image: ${{ steps.plan.outputs.base_image }}
+      base_digest: ${{ steps.plan.outputs.base_digest }}
+      base_tag: ${{ steps.plan.outputs.base_tag }}
+      candidate_shards: ${{ steps.plan.outputs.candidate_shards }}
+      hardware_matrix: ${{ steps.plan.outputs.hardware_matrix }}
+      has_hardware: ${{ steps.plan.outputs.has_hardware }}
+      has_builds: ${{ steps.plan.outputs.has_builds }}
+      has_roles: ${{ steps.plan.outputs.has_roles }}
+      has_root_base: ${{ steps.plan.outputs.has_root_base }}
       images: ${{ steps.filter.outputs.images }}
       installer: ${{ steps.filter.outputs.installer }}
+      matrix: ${{ steps.plan.outputs.matrix }}
+      role_matrix: ${{ steps.plan.outputs.role_matrix }}
+      root_base: ${{ steps.plan.outputs.root_base }}
+      version: ${{ steps.plan.outputs.version }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -56,8 +69,17 @@ jobs:
       - name: Set up Nix and Cachix
         uses: ./.github/actions/setup-nix
         with:
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
           github-token: ${{ github.token }}
-          toolset: workflow-ci
+          toolset: workflow-prepare
+
+      - name: Validate repository and workflows
+        env:
+          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          PURPLEFIN_CACHE_PUSH: >-
+            ${{ github.event_name != 'pull_request' ||
+            github.event.pull_request.head.repo.full_name == github.repository }}
+        run: nix run .#ci
 
       - name: Select expensive validations
         id: filter
@@ -75,67 +97,8 @@ jobs:
         shell: bash
         run: purplefin-classify-ci "${GITHUB_OUTPUT}"
 
-  check:
-    name: Repository checks
-    runs-on: ubuntu-24.04
-    timeout-minutes: 20
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Set up Nix and Cachix
-        uses: ./.github/actions/setup-nix
-        with:
-          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
-          github-token: ${{ github.token }}
-
-      - name: Validate repository and workflows
-        env:
-          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
-          PURPLEFIN_CACHE_PUSH: >-
-            ${{ github.event_name != 'pull_request' ||
-            github.event.pull_request.head.repo.full_name == github.repository }}
-        run: nix run .#ci
-
-  plan:
-    name: Resolve build inputs
-    if: needs.changes.outputs.images == 'true'
-    needs:
-      - changes
-      - check
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    outputs:
-      base_image: ${{ steps.plan.outputs.base_image }}
-      base_digest: ${{ steps.plan.outputs.base_digest }}
-      base_tag: ${{ steps.plan.outputs.base_tag }}
-      candidate_shards: ${{ steps.plan.outputs.candidate_shards }}
-      hardware_matrix: ${{ steps.plan.outputs.hardware_matrix }}
-      has_hardware: ${{ steps.plan.outputs.has_hardware }}
-      has_builds: ${{ steps.plan.outputs.has_builds }}
-      has_roles: ${{ steps.plan.outputs.has_roles }}
-      has_root_base: ${{ steps.plan.outputs.has_root_base }}
-      matrix: ${{ steps.plan.outputs.matrix }}
-      role_matrix: ${{ steps.plan.outputs.role_matrix }}
-      root_base: ${{ steps.plan.outputs.root_base }}
-      version: ${{ steps.plan.outputs.version }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Set up Nix and Cachix
-        uses: ./.github/actions/setup-nix
-        with:
-          github-token: ${{ github.token }}
-          toolset: workflow-image
-
       - name: Verify and plan immutable inputs
+        if: steps.filter.outputs.images == 'true'
         id: plan
         env:
           CHECK_RPM_UPDATES: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}

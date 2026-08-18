@@ -5,6 +5,7 @@ profiles_json="${1:?usage: plan-image-builds.sh PROFILES_JSON}"
 : "${BASE_DIGEST:?BASE_DIGEST is required}"
 : "${BASE_REF:?BASE_REF is required}"
 : "${IMAGE_REF:?IMAGE_REF is required}"
+podman_command="${PURPLEFIN_PODMAN:-podman}"
 
 script_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/independently-managed-rpms.sh
@@ -39,8 +40,8 @@ ensure_base_inventory() {
 	fi
 
 	echo "Pulling ${BASE_REF} for the shared RPM baseline" >&2
-	podman pull --quiet "${BASE_REF}" >&2
-	podman run --rm --pull=never --entrypoint rpm "${BASE_REF}" \
+	"${podman_command}" pull --quiet "${BASE_REF}" >&2
+	"${podman_command}" run --rm --pull=never --entrypoint rpm "${BASE_REF}" \
 		-qa --qf $'%{NAME}\t%{EVR}\t%{ARCH}\n' >"${base_inventory}"
 	LC_ALL=C sort -o "${base_inventory}" "${base_inventory}"
 }
@@ -91,14 +92,14 @@ while IFS= read -r entry; do
 		add_profile "${entry}" 'Bluefin RPM baseline could not be read'
 		continue
 	fi
-	if ! podman pull --quiet "${published_ref}" >&2; then
+	if ! "${podman_command}" pull --quiet "${published_ref}" >&2; then
 		add_profile "${entry}" 'published image could not be pulled for its RPM probe'
 		continue
 	fi
 
 	profile_inventory="${probe_root}/${profile}-rpms"
 	layered_packages="${probe_root}/${profile}-layered-package-names"
-	if ! podman run --rm --pull=never --entrypoint rpm "${published_ref}" \
+	if ! "${podman_command}" run --rm --pull=never --entrypoint rpm "${published_ref}" \
 		-qa --qf $'%{NAME}\t%{EVR}\t%{ARCH}\n' >"${profile_inventory}"; then
 		add_profile "${entry}" 'published RPM inventory could not be read'
 		continue
@@ -122,7 +123,7 @@ while IFS= read -r entry; do
 
 	upgrade_log="$(mktemp)"
 	set +e
-	podman run --rm --pull=never --entrypoint dnf5 "${published_ref}" \
+	"${podman_command}" run --rm --pull=never --entrypoint dnf5 "${published_ref}" \
 		-y -q --refresh "${independently_managed_rpm_repo_args[@]}" \
 		check-upgrade "${packages[@]}" >"${upgrade_log}" 2>&1
 	upgrade_status=$?
@@ -143,7 +144,7 @@ while IFS= read -r entry; do
 	esac
 	# Keep the exact base tag for a possible build, but discard the old
 	# profile's unique layer before Buildah creates its replacement.
-	podman image rm "${published_ref}" >/dev/null 2>&1 || true
+	"${podman_command}" image rm "${published_ref}" >/dev/null 2>&1 || true
 	rm -f "${upgrade_log}"
 done < <(jq -c '.[]' <<<"${profiles_json}")
 

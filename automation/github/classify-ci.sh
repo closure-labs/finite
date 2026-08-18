@@ -17,6 +17,7 @@ select_all() {
 classify_range() {
 	local base_sha=$1
 	local head_sha=$2
+	local allow_release_metadata=${3:-false}
 	local changed_paths
 
 	if [[ ! "${base_sha}" =~ ^[0-9a-f]{40}$ || ! "${head_sha}" =~ ^[0-9a-f]{40}$ ]] ||
@@ -33,6 +34,15 @@ classify_range() {
 		select_all
 		return
 	fi
+	if [[ "${allow_release_metadata}" == true ]] &&
+		grep -qxF VERSION "${changed_paths}" &&
+		! grep -Ev '^(VERSION|CHANGELOG\.md|README\.md|docs/.*)$' "${changed_paths}" | grep -q .; then
+		echo 'Release metadata only; skipping image and installer candidates' >&2
+		emit false false
+		rm -f -- "${changed_paths}"
+		return
+	fi
+
 	emit \
 		"$(purplefin-classify-changes images <"${changed_paths}")" \
 		"$(purplefin-classify-changes installer <"${changed_paths}")"
@@ -43,12 +53,14 @@ case "${event_name}" in
 pull_request)
 	classify_range \
 		"${PULL_REQUEST_BASE_SHA:-}" \
-		"${PULL_REQUEST_HEAD_SHA:-}"
+		"${PULL_REQUEST_HEAD_SHA:-}" \
+		true
 	;;
 merge_group)
 	classify_range \
 		"${MERGE_GROUP_BASE_SHA:-}" \
-		"${MERGE_GROUP_HEAD_SHA:-}"
+		"${MERGE_GROUP_HEAD_SHA:-}" \
+		true
 	;;
 push)
 	before_sha="${PUSH_BEFORE_SHA:-}"
@@ -73,7 +85,7 @@ workflow_dispatch)
 			git -C "${repo_root}" merge-base \
 				"${DEFAULT_BRANCH_REF:-origin/main}" "${head_sha}" 2>/dev/null
 		)"; then
-			classify_range "${base_sha}" "${head_sha}"
+			classify_range "${base_sha}" "${head_sha}" true
 		else
 			select_all
 		fi

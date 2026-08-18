@@ -29,11 +29,10 @@ jobs:
         uses: ./.github/actions/setup-nix
         with:
           github-token: ${{ github.token }}
-          toolset: workflow-maintenance
 
       - name: Update the Flake lock
         id: source
-        run: purplefin-source-update flake "${GITHUB_OUTPUT}"
+        run: nix run .#source-update -- flake "${GITHUB_OUTPUT}"
 
       - name: Open or update pull request
         if: steps.source.outputs.changed == 'true'
@@ -62,4 +61,4 @@ jobs:
           EXPECTED_TITLE: "flake.lock: refresh all inputs"
           GH_TOKEN: ${{ secrets.MERGE_QUEUE_TOKEN || github.token }}
           PR_NUMBER: ${{ steps.update.outputs.pull-request-number }}
-        run: purplefin-trusted-update
+        run: nix run .#trusted-update

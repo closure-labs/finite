@@ -33,11 +33,10 @@ jobs:
         uses: ./.github/actions/setup-nix
         with:
           github-token: ${{ github.token }}
-          toolset: workflow-maintenance
 
       - name: Find and optionally delete obsolete versions
         env:
           DRY_RUN: ${{ inputs.dry-run }}
           GH_TOKEN: ${{ github.token }}
         shell: bash
-        run: purplefin-package-cleanup
+        run: nix run .#package-cleanup

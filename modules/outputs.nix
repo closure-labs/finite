@@ -131,11 +131,12 @@ in {
         inherit ci;
         default = generated;
         inherit generated;
-        workflow-ci = applications.workflowCi;
-        workflow-image = applications.workflowImage;
         workflow-installer = applications.workflowInstaller;
-        workflow-maintenance = applications.workflowMaintenance;
+        workflow-prepare = applications.workflowPrepare;
+        workflow-publish = applications.workflowPublish;
         workflow-release = applications.workflowRelease;
+        workflow-sbom = applications.workflowSbom;
+        workflow-validation = applications.workflowValidation;
         inherit (pkgs) syft;
       }
       // lib.mapAttrs' (
