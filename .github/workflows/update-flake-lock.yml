@@ -29,17 +29,24 @@ jobs:
         uses: ./.github/actions/setup-nix
         with:
           github-token: ${{ github.token }}
+          toolset: workflow-maintenance
 
-      - name: Update the lock file and open a pull request
+      - name: Update the Flake lock
+        id: source
+        run: purplefin-source-update flake "${GITHUB_OUTPUT}"
+
+      - name: Open or update pull request
+        if: steps.source.outputs.changed == 'true'
         id: update
-        uses: DeterminateSystems/update-flake-lock@834c491b2ece4de0bbd00d85214bb5e83b4da5c6 # v28
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           token: ${{ secrets.MERGE_QUEUE_TOKEN || github.token }}
           base: main
           branch: automation/weekly-flake-input-refresh
-          commit-msg: "flake.lock: refresh all inputs"
-          pr-title: "flake.lock: refresh all inputs"
-          pr-body: |
+          delete-branch: true
+          commit-message: "flake.lock: refresh all inputs"
+          title: "flake.lock: refresh all inputs"
+          body: |
             Automated weekly refresh of every locked flake input.
 
             Required validation and protected-branch policy still apply.
@@ -55,4 +62,4 @@ jobs:
           EXPECTED_TITLE: "flake.lock: refresh all inputs"
           GH_TOKEN: ${{ secrets.MERGE_QUEUE_TOKEN || github.token }}
           PR_NUMBER: ${{ steps.update.outputs.pull-request-number }}
-        run: nix run .#trusted-update
+        run: purplefin-trusted-update

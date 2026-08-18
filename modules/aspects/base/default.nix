@@ -27,6 +27,20 @@
         };
       };
     };
-    homeManager = ../../../home/base.nix;
+    homeManager = {lib, ...}: {
+      home = {
+        username = lib.mkDefault "purplefin";
+        homeDirectory = lib.mkDefault "/var/home/purplefin";
+        stateVersion = "26.05";
+      };
+
+      programs = {
+        home-manager.enable = true;
+        git.enable = true;
+        zsh.enable = true;
+      };
+
+      xdg.enable = true;
+    };
   };
 }

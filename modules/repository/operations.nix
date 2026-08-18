@@ -18,7 +18,11 @@ in {
         features.roles.support
       ];
       workflows.includes = [operations.source];
-      upstream.includes = [operations.source sources.bluefin];
+      upstream.includes = [
+        operations.source
+        sources.bluefin
+        sources.image-builder
+      ];
       all.includes = [
         operations.checks.shell
         operations.checks."repository-contracts"
@@ -52,11 +56,20 @@ in {
         operations.updates.bluefin
         operations.delivery.images
       ];
+      image-builder-update.includes = [
+        operations.updates.image-builder
+        operations.delivery.installer
+      ];
     };
 
     updates.bluefin.includes = [
       operations.source
       sources.bluefin
+      operations.checks.upstream
+    ];
+    updates.image-builder.includes = [
+      operations.source
+      sources.image-builder
       operations.checks.upstream
     ];
 

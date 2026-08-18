@@ -14,6 +14,10 @@
     base.enable = lib.mkEnableOption "the shared Purplefin base module";
 
     upstream = {
+      schema = lib.mkOption {
+        type = lib.types.enum [1];
+        description = "Typed OCI lock schema version.";
+      };
       image = lib.mkOption {
         type = lib.types.str;
         description = "OCI repository used as the complete Purplefin base.";
@@ -28,15 +32,16 @@
       };
       digest = lib.mkOption {
         type = lib.types.strMatching "sha256:[0-9a-f]{64}";
-        description = "Immutable upstream OCI digest committed by npins.";
+        description = "Immutable upstream OCI digest committed in the typed source lock.";
       };
-      archiveHash = lib.mkOption {
-        type = lib.types.strMatching "sha256-[A-Za-z0-9+/]{43}=";
-        description = "Nix fixed-output hash for the upstream OCI archive.";
-      };
-      cosignIdentity = lib.mkOption {
-        type = lib.types.str;
-        description = "Required keyless signing identity for the upstream digest.";
+      cosign = lib.mkOption {
+        type = lib.types.submodule {
+          options = {
+            issuer = lib.mkOption {type = lib.types.str;};
+            identity = lib.mkOption {type = lib.types.str;};
+          };
+        };
+        description = "Required keyless signing policy for the upstream digest.";
       };
       preserve = lib.mkOption {
         type = lib.types.bool;

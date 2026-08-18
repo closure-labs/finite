@@ -1,4 +1,4 @@
-{...}: {
+_: {
   den.aspects.features.hardware.framework-laptop.bootc.purplefin = {
     hardware = "framework-laptop";
     build = {

@@ -9,6 +9,10 @@ inputs:
     description: Optional token used only by explicit guarded Cachix pushes
     required: false
     default: ""
+  toolset:
+    description: Optional Purplefin workflow toolset package to add to PATH
+    required: false
+    default: ""
 
 runs:
   using: composite
@@ -25,3 +29,11 @@ runs:
         authToken: ${{ inputs.cachix-auth-token }}
         name: purplefin
         skipPush: true
+
+    - name: Install Nix-declared workflow tools
+      if: inputs.toolset != ''
+      env:
+        PURPLEFIN_TOOLSET: ${{ inputs.toolset }}
+      shell: bash
+      run: |
+        nix profile add --accept-flake-config --priority 4 ".#${PURPLEFIN_TOOLSET}"

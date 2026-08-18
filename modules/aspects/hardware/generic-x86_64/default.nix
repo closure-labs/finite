@@ -1,4 +1,4 @@
-{...}: {
+_: {
   den.aspects.features.hardware.generic-x86_64.bootc.purplefin = {
     hardware = "generic-x86_64";
     build = {

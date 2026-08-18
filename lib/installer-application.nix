@@ -1,5 +1,6 @@
 {
-  exportArtifacts,
+  generated,
+  imageBuilder,
   installerSmoke,
   pkgs,
 }:
@@ -29,7 +30,7 @@ pkgs.writeShellApplication {
     : "''${GITHUB_ACTOR:?GITHUB_ACTOR is required}"
     : "''${GITHUB_REPOSITORY:?GITHUB_REPOSITORY is required}"
     : "''${GITHUB_SHA:?GITHUB_SHA is required}"
-    : "''${IMAGE_BUILDER:?IMAGE_BUILDER is required}"
+    image_builder='${imageBuilder.image}@${imageBuilder.digest}'
     : "''${IMAGE_REF:=ghcr.io/''${GITHUB_REPOSITORY}}"
     : "''${IMAGE_TAG:=base-generic-x86_64}"
     : "''${RUNNER_TEMP:=/tmp}"
@@ -72,15 +73,13 @@ pkgs.writeShellApplication {
     }
     trap collect_diagnostics EXIT
 
-    ${exportArtifacts}/bin/purplefin-export-artifacts "''${repo_root}" >/dev/null
-
     metadata="$(skopeo inspect --retry-times 3 "docker://''${IMAGE_REF}:''${IMAGE_TAG}")"
     payload_digest="$(jq -er '.Digest' <<<"''${metadata}")"
     profile="$(jq -er '.Labels["io.purplefin.build.profile"]' <<<"''${metadata}")"
     source_revision="$(jq -er '.Labels["org.opencontainers.image.revision"]' <<<"''${metadata}")"
     [[ "''${payload_digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
     [[ "''${source_revision}" =~ ^[0-9a-f]{40}$ ]]
-    test -f "installer/config/profiles/''${profile}.toml"
+    test -f "${generated}/installer/config/profiles/''${profile}.toml"
     payload_ref="''${IMAGE_REF}@''${payload_digest}"
     payload_embed_ref="''${IMAGE_REF}:''${IMAGE_TAG}"
     payload_tag="''${IMAGE_TAG}"
@@ -141,7 +140,7 @@ pkgs.writeShellApplication {
       --build-arg "INSTALLER_PAYLOAD_TARGET_REF=''${payload_ref}" \
       --tag "localhost/purplefin-installer:''${GITHUB_SHA}" \
       . 2>&1 | tee diagnostics/installer-environment.log
-    "''${root_podman[@]}" pull "''${auth_args[@]}" "''${IMAGE_BUILDER}"
+    "''${root_podman[@]}" pull "''${auth_args[@]}" "''${image_builder}"
     environment_seconds=$((SECONDS - started))
 
     started="''${SECONDS}"
@@ -149,7 +148,7 @@ pkgs.writeShellApplication {
       --security-opt label=disable \
       --volume "''${PWD}/output:/output" \
       --volume /var/lib/containers/storage:/var/lib/containers/storage \
-      "''${IMAGE_BUILDER}" \
+      "''${image_builder}" \
       build \
         --bootc-ref "localhost/purplefin-installer:''${GITHUB_SHA}" \
         --bootc-installer-payload-ref "''${payload_embed_ref}" \
@@ -169,10 +168,10 @@ pkgs.writeShellApplication {
     installer_image_id="''${installer_image_id#sha256:}"
     [[ "''${installer_image_id}" =~ ^[0-9a-f]{64}$ ]]
     installer_image_id="sha256:''${installer_image_id}"
-    image_builder_digest="''${IMAGE_BUILDER##*@}"
+    image_builder_digest="''${image_builder##*@}"
     [[ "''${image_builder_digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
     jq -n \
-      --arg image_builder "''${IMAGE_BUILDER}" \
+      --arg image_builder "''${image_builder}" \
       --arg image_builder_digest "''${image_builder_digest}" \
       --arg installer_environment_image_id "''${installer_image_id}" \
       --arg iso "''${final_iso##*/}" \

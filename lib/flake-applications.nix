@@ -1,39 +1,10 @@
 {
   bluefin,
   generated,
+  imageBuilder,
   pkgs,
   version,
 }: let
-  checkNames = [
-    "architecture"
-    "aspects"
-    "automation"
-    "bootc"
-    "documentation"
-    "formatting"
-    "home-configurations"
-    "profile-schema"
-    "release"
-    "repository"
-    "shell"
-    "upstream"
-    "workflows"
-  ];
-  exportArtifacts = pkgs.writeShellApplication {
-    name = "purplefin-export-artifacts";
-    runtimeInputs = [pkgs.coreutils];
-    text = ''
-      destination="''${1:-$PWD/artifacts}"
-      for relative in bootc/generated installer/config/profiles; do
-        target="''${destination}/''${relative}"
-        mkdir -p "''${target}"
-        chmod -R u+w "''${target}"
-        cp -R ${generated}/"''${relative}"/. "''${target}/"
-        chmod -R u+w "''${target}"
-      done
-      printf '%s\n' "''${destination}"
-    '';
-  };
   mkRepositoryApp = {
     name,
     script,
@@ -52,8 +23,6 @@
       '';
     };
 in rec {
-  inherit exportArtifacts;
-
   classifyChanges = pkgs.writeShellApplication {
     name = "purplefin-classify-changes";
     runtimeInputs = [pkgs.coreutils];
@@ -71,6 +40,7 @@ in rec {
           installer:.github/workflows/build.yml | \
           installer:flake.lock | installer:flake.nix | \
           installer:installer/Containerfile | installer:installer/rootfs/* | \
+          installer:sources/image-builder.json | \
           installer:modules/* | installer:lib/* | \
           installer:tests/installer/*)
             required=true; break ;;
@@ -100,7 +70,7 @@ in rec {
   };
 
   mkCi = checks: let
-    actualNames = builtins.attrNames checks;
+    checkNames = builtins.attrNames checks;
     quotedNames = pkgs.lib.concatMapStringsSep " " pkgs.lib.escapeShellArg checkNames;
     quotedPaths =
       pkgs.lib.concatMapStringsSep " " (
@@ -111,54 +81,53 @@ in rec {
       )
       checkNames;
   in
-    assert actualNames == checkNames;
-      pkgs.writeShellApplication {
-        name = "purplefin-ci";
-        runtimeInputs = with pkgs; [cachix coreutils jq nix];
-        text = ''
-          repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
-          [[ -f "''${repo_root}/flake.nix" ]] || {
-            echo "Run this command from the Purplefin repository root" >&2
-            exit 2
+    pkgs.writeShellApplication {
+      name = "purplefin-ci";
+      runtimeInputs = with pkgs; [cachix coreutils jq nix];
+      text = ''
+        repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
+        [[ -f "''${repo_root}/flake.nix" ]] || {
+          echo "Run this command from the Purplefin repository root" >&2
+          exit 2
+        }
+
+        nix --accept-flake-config flake check \
+          "git+file://''${repo_root}" \
+          --print-build-logs \
+          "$@"
+
+        check_names=(${quotedNames})
+        check_paths=(${quotedPaths})
+        nix --accept-flake-config build --no-link "''${check_paths[@]}"
+        max_closure_size=$((1024 * 1024))
+        for index in "''${!check_paths[@]}"; do
+          name="''${check_names[$index]}"
+          path="''${check_paths[$index]}"
+          [[ -e "''${path}" ]] || {
+            echo "The completed Flake check did not realize ''${name}: ''${path}" >&2
+            exit 1
           }
-
-          nix --accept-flake-config flake check \
-            "git+file://''${repo_root}" \
-            --print-build-logs \
-            "$@"
-
-          check_names=(${quotedNames})
-          check_paths=(${quotedPaths})
-          nix --accept-flake-config build --no-link "''${check_paths[@]}"
-          max_closure_size=$((1024 * 1024))
-          for index in "''${!check_paths[@]}"; do
-            name="''${check_names[$index]}"
-            path="''${check_paths[$index]}"
-            [[ -e "''${path}" ]] || {
-              echo "The completed Flake check did not realize ''${name}: ''${path}" >&2
-              exit 1
-            }
-            closure_size="$(
-              nix path-info --json --json-format 1 --closure-size "''${path}" |
-                jq -er 'to_entries[0].value.closureSize'
-            )"
-            if (( closure_size > max_closure_size )); then
-              printf '%s proof closure is %s bytes; cache limit is %s bytes\n' \
-                "''${name}" "''${closure_size}" "''${max_closure_size}" >&2
-              exit 1
-            fi
-            printf '%s\t%s bytes\t%s\n' "''${name}" "''${closure_size}" "''${path}"
-          done
-
-          if [[ "''${PURPLEFIN_CACHE_PUSH:-true}" == true && -n "''${CACHIX_AUTH_TOKEN:-}" ]]; then
-            for path in "''${check_paths[@]}"; do
-              cachix push --omit-deriver purplefin "''${path}"
-            done
-          elif [[ "''${PURPLEFIN_CACHE_PUSH:-true}" == true ]]; then
-            echo "CACHIX_AUTH_TOKEN is unavailable; proof outputs were not pushed" >&2
+          closure_size="$(
+            nix path-info --json --json-format 1 --closure-size "''${path}" |
+              jq -er 'to_entries[0].value.closureSize'
+          )"
+          if (( closure_size > max_closure_size )); then
+            printf '%s proof closure is %s bytes; cache limit is %s bytes\n' \
+              "''${name}" "''${closure_size}" "''${max_closure_size}" >&2
+            exit 1
           fi
-        '';
-      };
+          printf '%s\t%s bytes\t%s\n' "''${name}" "''${closure_size}" "''${path}"
+        done
+
+        if [[ "''${PURPLEFIN_CACHE_PUSH:-true}" == true && -n "''${CACHIX_AUTH_TOKEN:-}" ]]; then
+          for path in "''${check_paths[@]}"; do
+            cachix push --omit-deriver purplefin "''${path}"
+          done
+        elif [[ "''${PURPLEFIN_CACHE_PUSH:-true}" == true ]]; then
+          echo "CACHIX_AUTH_TOKEN is unavailable; proof outputs were not pushed" >&2
+        fi
+      '';
+    };
   mkLocalCache = ciApplication:
     pkgs.writeShellApplication {
       name = "purplefin-local-cache";
@@ -194,8 +163,8 @@ in rec {
     text = ''
       image='${bluefin.image}@${bluefin.digest}'
       cosign verify \
-        --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-        --certificate-identity '${bluefin.cosignIdentity}' \
+        --certificate-oidc-issuer '${bluefin.cosign.issuer}' \
+        --certificate-identity '${bluefin.cosign.identity}' \
         "''${image}" >/dev/null
       printf '%s\n' "''${image}"
     '';
@@ -244,42 +213,103 @@ in rec {
       printf '%s\n' "''${image}"
     '';
   };
-  updateBluefin = pkgs.writeShellApplication {
-    name = "purplefin-update-bluefin";
-    runtimeInputs = with pkgs; [coreutils cosign jq npins];
+  sourceVerify = pkgs.writeShellApplication {
+    name = "purplefin-source-verify";
+    runtimeInputs = with pkgs; [cosign coreutils skopeo];
+    text = ''
+      source_name="''${1:?usage: purplefin-source-verify SOURCE}"
+      case "''${source_name}" in
+        bluefin)
+          image='${bluefin.image}'
+          architecture='${bluefin.architecture}'
+          digest='${bluefin.digest}'
+          skopeo inspect --retry-times 3 --override-arch "''${architecture}" \
+            "docker://''${image}@''${digest}" >/dev/null
+          cosign verify \
+            --certificate-oidc-issuer '${bluefin.cosign.issuer}' \
+            --certificate-identity '${bluefin.cosign.identity}' \
+            "''${image}@''${digest}" >/dev/null
+          ;;
+        image-builder)
+          image='${imageBuilder.image}'
+          architecture='${imageBuilder.architecture}'
+          digest='${imageBuilder.digest}'
+          skopeo inspect --retry-times 3 --override-arch "''${architecture}" \
+            "docker://''${image}@''${digest}" >/dev/null
+          ;;
+        *)
+          echo "Unknown OCI source: ''${source_name}" >&2
+          exit 2
+          ;;
+      esac
+      printf '%s@%s\n' "''${image}" "''${digest}"
+    '';
+  };
+  sourceUpdate = pkgs.writeShellApplication {
+    name = "purplefin-source-update";
+    runtimeInputs = with pkgs; [coreutils cosign jq nix skopeo];
     text = ''
       repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
-      lock="''${repo_root}/npins/sources.json"
-      [[ -f "''${repo_root}/flake.nix" && -f "''${lock}" ]] || {
+      [[ -f "''${repo_root}/flake.nix" ]] || {
         echo "Run this command from the Purplefin repository root" >&2
         exit 2
       }
       cd "''${repo_root}"
-      update_tmp="$(mktemp -d -p "''${repo_root}" .npins-update.XXXXXX)"
-      trap 'rm -rf -- "''${update_tmp}"' EXIT
-      export TMPDIR="''${update_tmp}"
-      npins --directory "''${repo_root}/npins" update bluefin-stable
-      image="$(jq -er '.pins["bluefin-stable"].image_name' "''${lock}")"
-      tag="$(jq -er '.pins["bluefin-stable"].image_tag' "''${lock}")"
-      architecture="$(jq -er '.pins["bluefin-stable"].arch' "''${lock}")"
-      digest="$(jq -er '.pins["bluefin-stable"].image_digest' "''${lock}")"
-      archive_hash="$(jq -er '.pins["bluefin-stable"].hash' "''${lock}")"
-      [[ "''${image}" == '${bluefin.image}' ]]
-      [[ "''${tag}" == '${bluefin.tag}' ]]
-      [[ "''${architecture}" == '${bluefin.architecture}' ]]
-      [[ "''${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
-      [[ "''${archive_hash}" =~ ^sha256-[A-Za-z0-9+/]{43}=$ ]]
-      cosign verify \
-        --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-        --certificate-identity '${bluefin.cosignIdentity}' \
-        "''${image}@''${digest}" >/dev/null
-      if (( $# == 0 )); then
-        printf '%s\n' "''${digest}"
-      elif (( $# == 1 )); then
-        printf 'digest=%s\n' "''${digest}" >>"$1"
+      source_name="''${1:?usage: purplefin-source-update SOURCE [OUTPUT_FILE]}"
+      output_file="''${2:-}"
+      case "''${source_name}" in
+        flake)
+          before="$(sha256sum flake.lock | cut -d' ' -f1)"
+          nix flake update
+          after="$(sha256sum flake.lock | cut -d' ' -f1)"
+          changed=false
+          [[ "''${before}" == "''${after}" ]] || changed=true
+          digest="''${after}"
+          ;;
+        bluefin | image-builder)
+          lock="''${repo_root}/sources/''${source_name}.json"
+          [[ -f "''${lock}" ]]
+          image="$(jq -er '.image' "''${lock}")"
+          tag="$(jq -er '.tag' "''${lock}")"
+          architecture="$(jq -er '.architecture' "''${lock}")"
+          current="$(jq -er '.digest' "''${lock}")"
+          digest="$(
+            skopeo inspect --retry-times 3 --override-arch "''${architecture}" \
+              --format '{{.Digest}}' "docker://''${image}:''${tag}"
+          )"
+          [[ "''${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
+          if [[ "''${source_name}" == bluefin ]]; then
+            issuer="$(jq -er '.cosign.issuer' "''${lock}")"
+            identity="$(jq -er '.cosign.identity' "''${lock}")"
+            cosign verify \
+              --certificate-oidc-issuer "''${issuer}" \
+              --certificate-identity "''${identity}" \
+              "''${image}@''${digest}" >/dev/null
+          fi
+          changed=false
+          if [[ "''${current}" != "''${digest}" ]]; then
+            temporary="$(mktemp "''${lock}.XXXXXX")"
+            trap 'rm -f -- "''${temporary}"' EXIT
+            jq --arg digest "''${digest}" '.digest = $digest' "''${lock}" >"''${temporary}"
+            chmod --reference="''${lock}" "''${temporary}"
+            mv -- "''${temporary}" "''${lock}"
+            changed=true
+          fi
+          ;;
+        *)
+          echo "Unknown source: ''${source_name}" >&2
+          exit 2
+          ;;
+      esac
+      if [[ -n "''${output_file}" ]]; then
+        {
+          printf 'changed=%s\n' "''${changed}"
+          printf 'digest=%s\n' "''${digest}"
+        } >>"''${output_file}"
       else
-        echo "usage: nix run .#update-bluefin [-- OUTPUT_FILE]" >&2
-        exit 2
+        jq -cn --arg source "''${source_name}" --arg digest "''${digest}" \
+          --argjson changed "''${changed}" \
+          '{source: $source, changed: $changed, digest: $digest}'
       fi
     '';
   };
@@ -293,6 +323,21 @@ in rec {
     script = "automation/github/validate-trusted-update.sh";
     runtimeInputs = with pkgs; [bash coreutils gh jq];
   };
+  queueDependabot = mkRepositoryApp {
+    name = "purplefin-queue-dependabot";
+    script = "automation/github/queue-dependabot.sh";
+    runtimeInputs = with pkgs; [bash gh jq];
+  };
+  packageCleanup = pkgs.writeShellApplication {
+    name = "purplefin-package-cleanup";
+    runtimeInputs = with pkgs; [bash coreutils gh jq];
+    text = ''
+      export PURPLEFIN_GENERATED_ROOT=${generated}
+      repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
+      cd "''${repo_root}"
+      exec ${pkgs.bash}/bin/bash "''${repo_root}/automation/github/package-cleanup.sh" "$@"
+    '';
+  };
   classifyCi = mkRepositoryApp {
     name = "purplefin-classify-ci";
     script = "automation/github/classify-ci.sh";
@@ -302,6 +347,11 @@ in rec {
     name = "purplefin-image-plan";
     script = "bootc/builder/plan.sh";
     runtimeInputs = with pkgs; [bash coreutils cosign jq podman skopeo];
+  };
+  shardPlan = mkRepositoryApp {
+    name = "purplefin-shard-plan";
+    script = "bootc/builder/shard-plan.sh";
+    runtimeInputs = with pkgs; [bash jq];
   };
   ciPlan = pkgs.writeShellApplication {
     name = "purplefin-ci-plan";
@@ -323,10 +373,12 @@ in rec {
       root_base="$(jq -c 'first(.include[] | select(.stage == "root")) // {}' <<<"''${matrix}")"
       hardware_matrix="$(jq -c '{include: [.include[] | select(.stage == "hardware")]}' <<<"''${matrix}")"
       role_matrix="$(jq -c '{include: [.include[] | select(.stage == "role")]}' <<<"''${matrix}")"
+      candidate_shards="$(${shardPlan}/bin/purplefin-shard-plan "''${matrix}" 4)"
       {
         printf 'base_image=%s\n' "''${base_image}"
         printf 'base_digest=%s\n' "''${base_digest}"
         printf 'base_tag=%s\n' "''${base_tag}"
+        printf 'candidate_shards=%s\n' "''${candidate_shards}"
         printf 'hardware_matrix=%s\n' "''${hardware_matrix}"
         printf 'has_hardware=%s\n' "$(jq -r '.include | length > 0' <<<"''${hardware_matrix}")"
         printf 'has_builds=%s\n' "$(jq -r '.include | length > 0' <<<"''${matrix}")"
@@ -344,13 +396,44 @@ in rec {
     script = "bootc/builder/reuse-image.sh";
     runtimeInputs = with pkgs; [bash coreutils cosign jq skopeo];
   };
+  validateImageShard = pkgs.writeShellApplication {
+    name = "purplefin-validate-image-shard";
+    runtimeInputs = with pkgs; [bash coreutils jq skopeo];
+    text = ''
+      export PURPLEFIN_GENERATED_ROOT=${generated}
+      export PURPLEFIN_BASE_DIGEST='${bluefin.digest}'
+      export PURPLEFIN_LOAD_BLUEFIN=${loadBluefin}/bin/purplefin-load-bluefin
+      export PURPLEFIN_VERSION='${version}'
+      if [[ "''${CI:-}" == true ]]; then
+        host_buildah="$(PATH=/usr/local/bin:/usr/bin:/bin command -v buildah || true)"
+        host_podman="$(PATH=/usr/local/bin:/usr/bin:/bin command -v podman || true)"
+        [[ -n "''${host_buildah}" && -n "''${host_podman}" ]] || {
+          echo "The CI runner's host Buildah and Podman are required" >&2
+          exit 1
+        }
+        export PURPLEFIN_BUILDAH="''${host_buildah}"
+        export PURPLEFIN_PODMAN="''${host_podman}"
+      else
+        export PURPLEFIN_BUILDAH=${pkgs.buildah}/bin/buildah
+        export PURPLEFIN_PODMAN=${pkgs.podman}/bin/podman
+      fi
+      repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
+      [[ -f "''${repo_root}/flake.nix" ]] || {
+        echo "Run this command from the Purplefin repository root" >&2
+        exit 2
+      }
+      cd "''${repo_root}"
+      exec ${pkgs.bash}/bin/bash \
+        "''${repo_root}/bootc/builder/validate-shard.sh" "$@"
+    '';
+  };
   installerSmoke = mkRepositoryApp {
     name = "purplefin-installer-smoke";
     script = "tests/installer/smoke.sh";
     runtimeInputs = with pkgs; [bash coreutils gnugrep qemu];
   };
   installerBuild = import ./installer-application.nix {
-    inherit exportArtifacts installerSmoke pkgs;
+    inherit generated imageBuilder installerSmoke pkgs;
   };
   imageBuild = pkgs.writeShellApplication {
     name = "purplefin-image-build";
@@ -366,24 +449,62 @@ in rec {
         exit 2
       }
       cd "''${repo_root}"
-      ${exportArtifacts}/bin/purplefin-export-artifacts "''${repo_root}" >/dev/null
       profile="$1"
       tag="$2"
       jq -e --arg profile "''${profile}" '.profiles[$profile]' \
-        bootc/generated/profile-catalog.json >/dev/null || {
+        ${generated}/bootc/generated/profile-catalog.json >/dev/null || {
         echo "Unknown profile: ''${profile}" >&2
         exit 2
       }
       base_image="$(${loadBluefin}/bin/purplefin-load-bluefin)"
       exec podman build \
         --file bootc/Containerfile \
+        --network host \
         --pull=never \
+        --security-opt label=disable \
+        --build-context purplefin-generated=${generated} \
         --build-arg "BASE_REF=''${base_image}" \
         --build-arg "BUILD_PROFILE=''${profile}" \
         --build-arg "PURPLEFIN_VERSION=${version}" \
         --label "org.opencontainers.image.base.digest=${bluefin.digest}" \
         --tag "''${tag}" \
-        .
+      .
     '';
+  };
+  mkWorkflowToolset = {
+    name,
+    paths,
+    required,
+  }:
+    assert builtins.all (application: builtins.elem application paths) required;
+      pkgs.buildEnv {
+        inherit name paths;
+        ignoreCollisions = true;
+      };
+
+  workflowCi = mkWorkflowToolset {
+    name = "purplefin-workflow-ci";
+    paths = with pkgs; [actionlint cachix classifyCi ciPlan coreutils git jq nix trustedUpdate zizmor];
+    required = [classifyCi];
+  };
+  workflowImage = mkWorkflowToolset {
+    name = "purplefin-workflow-image";
+    paths = with pkgs; [ciPlan coreutils cosign gh imagePlan imageReuse jq loadBluefin nix oras skopeo syft validateImageShard];
+    required = [ciPlan imageReuse loadBluefin validateImageShard];
+  };
+  workflowInstaller = mkWorkflowToolset {
+    name = "purplefin-workflow-installer";
+    paths = [installerBuild installerSmoke];
+    required = [installerBuild];
+  };
+  workflowRelease = mkWorkflowToolset {
+    name = "purplefin-workflow-release";
+    paths = with pkgs; [coreutils cosign gh gzip jq nix oras releaseNotes skopeo trustedUpdate];
+    required = [releaseNotes trustedUpdate];
+  };
+  workflowMaintenance = mkWorkflowToolset {
+    name = "purplefin-workflow-maintenance";
+    paths = with pkgs; [coreutils gh jq nix packageCleanup skopeo sourceUpdate trustedUpdate];
+    required = [packageCleanup sourceUpdate trustedUpdate];
   };
 }

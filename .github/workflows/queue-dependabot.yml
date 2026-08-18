@@ -19,34 +19,14 @@ jobs:
     runs-on: ubuntu-slim
     timeout-minutes: 5
     steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
       - name: Verify and enqueue open Dependabot pull requests
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           GH_TOKEN: ${{ secrets.MERGE_QUEUE_TOKEN || github.token }}
         shell: bash
-        run: |
-          pull_requests="$({
-            gh api --paginate \
-              "repos/${GITHUB_REPOSITORY}/pulls?state=open&per_page=100" \
-              --slurp
-          })"
-
-          jq -c \
-            --arg branch "${DEFAULT_BRANCH}" \
-            --arg repository "${GITHUB_REPOSITORY}" '
-              add[] |
-              select(.draft == false) |
-              select(.user.login == "dependabot[bot]") |
-              select(.head.repo.full_name == $repository) |
-              select(.base.ref == $branch) |
-              {sha: .head.sha, url: .html_url}
-            ' <<<"${pull_requests}" |
-          while IFS= read -r pull_request; do
-            head_sha="$(jq -er '.sha' <<<"${pull_request}")"
-            pr_url="$(jq -er '.url' <<<"${pull_request}")"
-            gh pr merge \
-              --auto \
-              --merge \
-              --match-head-commit "${head_sha}" \
-              "${pr_url}"
-          done
+        run: bash automation/github/queue-dependabot.sh

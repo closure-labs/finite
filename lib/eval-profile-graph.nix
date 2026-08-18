@@ -10,7 +10,7 @@
   in
     lib.evalModules {
       modules = [
-        ../modules/classes/bootc.nix
+        ../modules/profiles/bootc-class.nix
         (den.lib.aspects.resolve "bootc" entity.aspect)
         {
           purplefin = {
@@ -28,12 +28,9 @@
     )
     profileNames;
   profileOrder =
-    if orderResult ? result
-    then orderResult.result
-    else
-      throw "Purplefin profile error: parent cycle: ${
-        lib.concatStringsSep " -> " orderResult.cycle
-      }";
+    orderResult.result or (throw "Purplefin profile error: parent cycle: ${
+      lib.concatStringsSep " -> " orderResult.cycle
+    }");
 
   roleOrder = [
     "developer"

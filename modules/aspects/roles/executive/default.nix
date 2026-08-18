@@ -1,4 +1,4 @@
-{...}: {
+_: {
   den.aspects.features.roles.executive.bootc = {lib, ...}: {
     purplefin = {
       roles = lib.mkAfter ["executive"];

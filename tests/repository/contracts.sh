@@ -10,7 +10,7 @@ grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$' VERSION
 test -f "${catalog}"
 test -f "${matrix}"
 jq -e '
-  .schema == 2 and
+  .schema == 3 and
   (.profiles | length) == 12 and
   .profiles.base.parent == null and
   .profiles["base-generic"].parent == "base" and
@@ -36,14 +36,23 @@ done < <(
 
 test -f bootc/Containerfile
 test -f bootc/Containerfile.derived
-test -f npins/sources.json
+test -f sources/bluefin.json
+test -f sources/image-builder.json
 test -f secretspec.toml
 jq -e '
-  .pins["bluefin-stable"] as $pin |
-  $pin.type == "Container" and
-  ($pin.image_digest | test("^sha256:[0-9a-f]{64}$")) and
-  ($pin.hash | test("^sha256-[A-Za-z0-9+/]{43}=$"))
-' npins/sources.json >/dev/null
+  .schema == 1 and
+  .image == "ghcr.io/projectbluefin/bluefin" and
+  .architecture == "amd64" and
+  (.digest | test("^sha256:[0-9a-f]{64}$")) and
+  (.cosign.issuer | startswith("https://")) and
+  (.cosign.identity | startswith("https://"))
+' sources/bluefin.json >/dev/null
+jq -e '
+  .schema == 1 and
+  .image == "ghcr.io/osbuild/image-builder-cli" and
+  .architecture == "amd64" and
+  (.digest | test("^sha256:[0-9a-f]{64}$"))
+' sources/image-builder.json >/dev/null
 grep -qFx 'ARG BASE_REF' bootc/Containerfile
 if grep -qF 'bluefin:stable' bootc/Containerfile; then
 	echo 'Containerfile contains a mutable Bluefin tag' >&2

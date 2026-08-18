@@ -70,7 +70,7 @@
     })
     profileOrder;
   catalog = {
-    schema = 2;
+    schema = 3;
     inherit version;
     inherit (profiles.base) upstream;
     profiles =

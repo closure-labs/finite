@@ -21,7 +21,7 @@ installer job selected for the change. The checked-in branch policy is
 The Flake declares the public `purplefin.cachix.org` substituter and key. Every
 Nix job uses the repository's pinned `setup-nix` action for GitHub access and
 read-through Cachix configuration, with automatic store watching disabled.
-`nix run .#ci` builds the 13 declared checks once, resolves their reference-free
+`nix run .#ci` builds every declared check once, resolves its reference-free
 proof outputs, rejects any closure larger than 1 MiB, and explicitly pushes only
 those proofs. The `CACHIX_AUTH_TOKEN` repository secret enables writes on
 protected events and same-repository pull requests. Fork pull requests use the
@@ -46,12 +46,17 @@ access, while trusted `main` runs publish signed results.
 
 Dependabot updates pinned GitHub Actions. Scheduled workflows update
 `flake.lock`, the digest-pinned Image Builder container, and the Bluefin stable
-`npins` source through validated pull requests. The Bluefin updater resolves
-the mutable `stable` channel into a committed OCI digest and Nix fixed-output
-hash, verifies its Cosign identity, and lets the candidate image graph validate
-the result. Nix-provided Skopeo streams that exact digest directly into
-container storage. The daily build also checks independently managed RPMs for
-updates against the committed Bluefin base.
+OCI lock through validated pull requests. Both OCI locks record an explicit
+architecture and immutable manifest digest. The Bluefin updater additionally
+verifies its committed Cosign issuer and identity. Nix-provided Skopeo streams
+that exact digest directly into container storage without creating a container
+archive in the Nix store. The daily build also checks independently managed
+RPMs for updates against the committed Bluefin base.
+
+GitHub keeps triggers, permissions, environments, matrices, PR creation, and
+attestations visible in workflow YAML. Each job otherwise installs one
+domain-specific Flake toolset, so ORAS, Cosign, Skopeo, Syft, jq, and GitHub CLI
+behavior comes from `flake.lock` rather than ad hoc setup actions.
 
 When configured, `MERGE_QUEUE_TOKEN` advances trusted update pull requests
 through the merge queue with repository-scoped Contents and Pull requests

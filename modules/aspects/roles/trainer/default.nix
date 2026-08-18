@@ -1,4 +1,4 @@
-{...}: {
+_: {
   den.aspects.features.roles.trainer = {
     bootc = {lib, ...}: {
       purplefin = {

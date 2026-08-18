@@ -1,7 +1,6 @@
 /artifacts/
 /bootc/generated/
 /installer/config/profiles/
-/.npins-update.*/
 /release-manifest.json
 /release-manifest.json.sha256
 /release-notes.md

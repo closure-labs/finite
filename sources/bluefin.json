@@ -1,0 +1,11 @@
+{
+  "architecture": "amd64",
+  "cosign": {
+    "identity": "https://github.com/projectbluefin/actions/.github/workflows/reusable-build.yml@refs/tags/v1",
+    "issuer": "https://token.actions.githubusercontent.com"
+  },
+  "digest": "sha256:383f523982a84cd23b40a8d252b50d6c4a65b013b03bfb70e74e0708fd8e082f",
+  "image": "ghcr.io/projectbluefin/bluefin",
+  "schema": 1,
+  "tag": "stable"
+}

@@ -24,11 +24,11 @@
       gnused
       jq
       just
-      npins
       pipewire
       ripgrep
       secretspec
       shellcheck
+      statix
       systemd
       util-linux
       zizmor
@@ -41,6 +41,7 @@
   };
   inherit (profileSet) profiles;
   bluefin = config.purplefin.sources.bluefin;
+  imageBuilder = config.purplefin.sources.imageBuilder;
   version = lib.removeSuffix "\n" (builtins.readFile ../VERSION);
   generated = import ../lib/render-profile-artifacts.nix {
     inherit lib pkgs profiles;
@@ -56,8 +57,22 @@
       name: profile:
         inputs.home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
-          extraSpecialArgs = {inherit profile;};
-          modules = [(den.lib.aspects.resolve "homeManager" den.aspects.profiles.${name})];
+          modules = [
+            (den.lib.aspects.resolve "homeManager" config.purplefin.profiles.${name}.aspect)
+            {
+              home.sessionVariables.PURPLEFIN_PROFILE = profile.profileName;
+              xdg.configFile."purplefin/profile.json".text = builtins.toJSON {
+                inherit
+                  (profile)
+                  hardware
+                  modules
+                  parent
+                  roles
+                  tags
+                  ;
+              };
+            }
+          ];
         }
     )
     profiles;
@@ -71,10 +86,10 @@
     touch "$out"
   '';
   applications = import ../lib/flake-applications.nix {
-    inherit bluefin generated pkgs version;
+    inherit bluefin generated imageBuilder pkgs version;
   };
   repositoryChecks = import ../lib/repository-checks.nix {
-    inherit applications architecture generated lib pkgs repositoryToolchain;
+    inherit applications architecture generated lib pkgs;
   };
   formattingValidation = treefmtEval.config.build.check inputs.self;
   formattingCheck = pkgs.runCommand "purplefin-formatting-proof" {} ''
@@ -110,14 +125,17 @@ in {
     };
 
     inherit homeConfigurations;
-    homeManagerModules.default = ../home/base.nix;
-
     packages.${system} =
       {
         inherit architecture;
         inherit ci;
         default = generated;
         inherit generated;
+        workflow-ci = applications.workflowCi;
+        workflow-image = applications.workflowImage;
+        workflow-installer = applications.workflowInstaller;
+        workflow-maintenance = applications.workflowMaintenance;
+        workflow-release = applications.workflowRelease;
         inherit (pkgs) sbomnix syft;
       }
       // lib.mapAttrs' (
@@ -126,10 +144,6 @@ in {
       homeConfigurations;
 
     apps.${system} = {
-      export-artifacts = {
-        type = "app";
-        program = "${applications.exportArtifacts}/bin/purplefin-export-artifacts";
-      };
       ci = {
         type = "app";
         program = "${ci}/bin/purplefin-ci";
@@ -150,6 +164,14 @@ in {
         type = "app";
         program = "${applications.trustedUpdate}/bin/purplefin-trusted-update";
       };
+      queue-dependabot = {
+        type = "app";
+        program = "${applications.queueDependabot}/bin/purplefin-queue-dependabot";
+      };
+      package-cleanup = {
+        type = "app";
+        program = "${applications.packageCleanup}/bin/purplefin-package-cleanup";
+      };
       image-plan = {
         type = "app";
         program = "${applications.imagePlan}/bin/purplefin-image-plan";
@@ -161,6 +183,10 @@ in {
       image-reuse = {
         type = "app";
         program = "${applications.imageReuse}/bin/purplefin-image-reuse";
+      };
+      validate-image-shard = {
+        type = "app";
+        program = "${applications.validateImageShard}/bin/purplefin-validate-image-shard";
       };
       image-build = {
         type = "app";
@@ -182,13 +208,13 @@ in {
         type = "app";
         program = "${applications.loadBluefin}/bin/purplefin-load-bluefin";
       };
-      update-bluefin = {
+      source-update = {
         type = "app";
-        program = "${applications.updateBluefin}/bin/purplefin-update-bluefin";
+        program = "${applications.sourceUpdate}/bin/purplefin-source-update";
       };
-      verify-bluefin = {
+      source-verify = {
         type = "app";
-        program = "${applications.verifyBluefin}/bin/purplefin-verify-bluefin";
+        program = "${applications.sourceVerify}/bin/purplefin-source-verify";
       };
     };
 

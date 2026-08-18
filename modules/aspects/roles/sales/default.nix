@@ -1,4 +1,4 @@
-{...}: {
+_: {
   den.aspects.features.roles.sales = {
     bootc = {lib, ...}: {
       purplefin = {
