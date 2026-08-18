@@ -55,7 +55,8 @@ updates against the committed Bluefin base.
 
 When configured, `MERGE_QUEUE_TOKEN` advances trusted update pull requests
 through the merge queue with repository-scoped Contents and Pull requests
-read/write access.
+read/write access. `AUTOMATION_UPDATE_LOGIN` names that token's pull request
+author; the GitHub Actions app identity is trusted by default.
 
 ## Create a release
 

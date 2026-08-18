@@ -170,7 +170,7 @@ jobs:
           steps.release-version.outputs.pull-request-operation != 'closed'
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-          EXPECTED_AUTHOR: github-actions[bot]
+          EXPECTED_AUTHOR: app/github-actions
           EXPECTED_BRANCH: automation/release-${{ steps.version.outputs.tag }}
           EXPECTED_TITLE: Release Purplefin ${{ steps.version.outputs.version }}
           GH_TOKEN: ${{ github.token }}
@@ -577,7 +577,7 @@ jobs:
           steps.development-version.outputs.pull-request-operation != 'closed'
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-          EXPECTED_AUTHOR: github-actions[bot]
+          EXPECTED_AUTHOR: app/github-actions
           EXPECTED_BRANCH: automation/start-${{ steps.next-version.outputs.next_version }}
           EXPECTED_TITLE: Start Purplefin ${{ steps.next-version.outputs.next_version }}
           GH_TOKEN: ${{ github.token }}
