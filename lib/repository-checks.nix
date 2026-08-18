@@ -261,6 +261,8 @@ in {
       grep -qF 'nix run .#trusted-update' .github/workflows/update-image-builder.yml
       grep -qF 'nix run .#trusted-update' .github/workflows/update-bluefin.yml
       [[ "$(grep -cF 'nix run .#trusted-update' .github/workflows/release.yml)" == 2 ]]
+      [[ "$(grep -cF 'SOURCE_SHA: ''${{ steps.source.outputs.source_sha }}' .github/workflows/release.yml)" == 2 ]]
+      ! grep -qF 'steps.version.outputs.source_sha' .github/workflows/release.yml
       ! grep -qF 'git push origin HEAD:main' .github/workflows/release.yml
       ! grep -R -qF 'github-actions[bot]' .github/workflows
       grep -qF 'nix run .#update-bluefin' .github/workflows/update-bluefin.yml
