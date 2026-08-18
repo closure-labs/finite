@@ -33,8 +33,9 @@ jobs:
     permissions:
       actions: write
       contents: write
+      pull-requests: write
     outputs:
-      source_sha: ${{ steps.version.outputs.source_sha }}
+      source_sha: ${{ steps.source.outputs.source_sha }}
       tag: ${{ steps.version.outputs.tag }}
       version: ${{ steps.version.outputs.version }}
     steps:
@@ -50,7 +51,7 @@ jobs:
         with:
           github-token: ${{ github.token }}
 
-      - name: Calculate and commit the release version
+      - name: Calculate the release version
         id: version
         env:
           REQUESTED_BUMP: ${{ inputs.bump }}
@@ -137,23 +138,83 @@ jobs:
             echo "Main advanced after this release was dispatched" >&2
             exit 1
           }
-          if [[ "${source_version}" != "${version}" ]]; then
-            printf '%s\n' "${version}" >VERSION
-            git config user.name github-actions[bot]
-            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-            git add VERSION
-            git commit -m "Release Purplefin ${version}"
-            gh auth setup-git
-            git push origin HEAD:main
-          fi
-          source_sha="$(git rev-parse HEAD)"
+          printf '%s\n' "${version}" >VERSION
           {
-            echo "source_sha=${source_sha}"
+            echo "initial_sha=${initial_sha}"
+            echo "source_version=${source_version}"
             echo "tag=${tag}"
             echo "version=${version}"
           } >>"${GITHUB_OUTPUT}"
           printf 'Selected %s with a %s bump from %s\n' \
             "${tag}" "${selected_bump}" "${last_tag:-VERSION seed}"
+
+      - name: Open the release version pull request
+        id: release-version
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ github.token }}
+          base: main
+          branch: automation/release-${{ steps.version.outputs.tag }}
+          delete-branch: true
+          commit-message: Release Purplefin ${{ steps.version.outputs.version }}
+          title: Release Purplefin ${{ steps.version.outputs.version }}
+          body: |
+            Sets the stable source version for `${{ steps.version.outputs.tag }}`.
+
+            The release continues only after the protected `main` branch accepts
+            this commit through the required CI gate.
+
+      - name: Validate and merge the release version
+        if: >-
+          steps.release-version.outputs.pull-request-number != '' &&
+          steps.release-version.outputs.pull-request-operation != 'closed'
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          EXPECTED_AUTHOR: github-actions[bot]
+          EXPECTED_BRANCH: automation/release-${{ steps.version.outputs.tag }}
+          EXPECTED_TITLE: Release Purplefin ${{ steps.version.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.release-version.outputs.pull-request-number }}
+        run: nix run .#trusted-update
+
+      - name: Resolve the protected release source
+        id: source
+        env:
+          INITIAL_SHA: ${{ steps.version.outputs.initial_sha }}
+          PR_NUMBER: ${{ steps.release-version.outputs.pull-request-number }}
+          PR_OPERATION: ${{ steps.release-version.outputs.pull-request-operation }}
+          VERSION: ${{ steps.version.outputs.version }}
+        shell: bash
+        run: |
+          source_sha=''
+          if [[ -n "${PR_NUMBER}" && "${PR_OPERATION}" != closed ]]; then
+            for _ in {1..60}; do
+              pull_request="$(gh pr view "${PR_NUMBER}" --json mergeCommit,mergedAt,state)"
+              source_sha="$(jq -r '.mergeCommit.oid // empty' <<<"${pull_request}")"
+              [[ -z "$(jq -r '.mergedAt // empty' <<<"${pull_request}")" ]] || break
+              [[ "$(jq -r '.state' <<<"${pull_request}")" == OPEN ]] || {
+                echo "Release version pull request closed without merging" >&2
+                exit 1
+              }
+              sleep 5
+            done
+            [[ -n "${source_sha}" ]] || {
+              echo "Timed out waiting for the release version pull request" >&2
+              exit 1
+            }
+          else
+            source_sha="$(gh api "repos/${GITHUB_REPOSITORY}/commits/main" --jq .sha)"
+            [[ "${source_sha}" == "${INITIAL_SHA}" ]] || {
+              echo "Main advanced without the release version pull request" >&2
+              exit 1
+            }
+          fi
+
+          git fetch origin main
+          [[ "$(git rev-parse origin/main)" == "${source_sha}" ]]
+          git checkout --detach "${source_sha}"
+          [[ "$(<VERSION)" == "${VERSION}" ]]
+          echo "source_sha=${source_sha}" >>"${GITHUB_OUTPUT}"
 
       - name: Materialize Flake-generated build artifacts
         run: nix run .#export-artifacts -- .
@@ -161,7 +222,7 @@ jobs:
       - name: Reuse or dispatch the release-candidate build
         id: build
         env:
-          SOURCE_SHA: ${{ steps.version.outputs.source_sha }}
+          SOURCE_SHA: ${{ steps.source.outputs.source_sha }}
         shell: bash
         run: |
           run_id=''
@@ -288,13 +349,14 @@ jobs:
     name: Promote tested digests and release source
     needs: prepare
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 180
     environment: release
     permissions:
       actions: write
       attestations: read
       contents: write
       packages: write
+      pull-requests: write
     steps:
       - name: Checkout release source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -477,7 +539,8 @@ jobs:
             --title "Purplefin ${VERSION}"
           gh release edit "v${VERSION}" --draft=false
 
-      - name: Commit the next development version
+      - name: Select the next development version
+        id: next-version
         env:
           SOURCE_SHA: ${{ needs.prepare.outputs.source_sha }}
           VERSION: ${{ needs.prepare.outputs.version }}
@@ -491,12 +554,55 @@ jobs:
             exit 1
           }
           printf '%s\n' "${next_version}" >VERSION
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add VERSION
-          git commit -m "Start Purplefin ${next_version}"
-          gh auth setup-git
-          git push origin HEAD:main
+          echo "next_version=${next_version}" >>"${GITHUB_OUTPUT}"
+
+      - name: Open the next development version pull request
+        id: development-version
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ github.token }}
+          base: main
+          branch: automation/start-${{ steps.next-version.outputs.next_version }}
+          delete-branch: true
+          commit-message: Start Purplefin ${{ steps.next-version.outputs.next_version }}
+          title: Start Purplefin ${{ steps.next-version.outputs.next_version }}
+          body: |
+            Starts development after the `${{ needs.prepare.outputs.tag }}` release.
+
+            Protected-branch validation must pass before this version advances.
+
+      - name: Validate and merge the next development version
+        if: >-
+          steps.development-version.outputs.pull-request-number != '' &&
+          steps.development-version.outputs.pull-request-operation != 'closed'
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          EXPECTED_AUTHOR: github-actions[bot]
+          EXPECTED_BRANCH: automation/start-${{ steps.next-version.outputs.next_version }}
+          EXPECTED_TITLE: Start Purplefin ${{ steps.next-version.outputs.next_version }}
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.development-version.outputs.pull-request-number }}
+        run: nix run .#trusted-update
+
+      - name: Wait for the next development version merge
+        if: >-
+          steps.development-version.outputs.pull-request-number != '' &&
+          steps.development-version.outputs.pull-request-operation != 'closed'
+        env:
+          PR_NUMBER: ${{ steps.development-version.outputs.pull-request-number }}
+        shell: bash
+        run: |
+          for _ in {1..60}; do
+            pull_request="$(gh pr view "${PR_NUMBER}" --json mergedAt,state)"
+            [[ -z "$(jq -r '.mergedAt // empty' <<<"${pull_request}")" ]] || exit 0
+            [[ "$(jq -r '.state' <<<"${pull_request}")" == OPEN ]] || {
+              echo "Development version pull request closed without merging" >&2
+              exit 1
+            }
+            sleep 5
+          done
+          echo "Timed out waiting for the development version pull request" >&2
+          exit 1
 
       - name: Log out of GHCR
         if: always()
