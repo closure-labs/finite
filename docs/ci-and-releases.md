@@ -44,9 +44,19 @@ Profiles build parent-first. Each published digest has:
 - OCI labels for version, source, profile, build input, parent, and upstream
   digests.
 
-Matching signed images and digest-bound SBOM cache artifacts are reused. Pull
-requests and merge candidates validate candidates with read-only registry
-access, while trusted `main` runs publish signed results.
+Matching signed images and their verified SBOM attestations are reused. A final
+four-way publication matrix generates missing SBOMs after every selected image
+is available, so scanning does not delay descendant image builds. The signed
+attestation is also the release asset source; Purplefin does not maintain a
+second unsigned SBOM cache package. Pull requests and merge candidates validate
+candidates with read-only registry access, while trusted `main` runs publish
+signed results.
+
+Syft scans the final mounted OCI filesystem because Purplefin images are
+assembled from Bluefin and RPM content rather than from a Nix store closure.
+The Flake pins Syft and wraps generation, normalization, size checks, and
+attestation extraction. `sbomnix` is intentionally not used for this boundary:
+it describes Nix derivation closures, which would omit the runtime RPM payload.
 
 ## Trusted updates
 

@@ -85,7 +85,7 @@ inspection, copy the desired files from the `result` symlink.
 | `nix run .#source-update -- bluefin` | Refresh and verify the Bluefin lock |
 | `nix build .#home-dale` | Home Manager activation package for `dale` |
 | `nix build .#syft` | Pinned Syft package |
-| `nix build .#sbomnix` | Pinned sbomnix package |
+| `nix run .#image-sbom -- validate <file>` | Validate a normalized SPDX image SBOM |
 | `nix run .#installer-smoke -- <iso>` | QEMU installer boot test |
 | `nix run .#release-notes -- <version> CHANGELOG.md` | Release notes for one version |
 

@@ -55,6 +55,7 @@
     ../tests/automation
   ];
   bootcSource = sourceFor [
+    ../.github/syft.yaml
     ../bootc/builder
     ../modules/aspects
     ../tests/bootc
@@ -80,6 +81,7 @@
     ../.github
     ../automation/github/policies
     ../bootc/Containerfile
+    ../bootc/builder/sbom.sh
     ../flake.nix
     ../lib/installer-application.nix
     ../modules/outputs.nix
@@ -227,6 +229,7 @@ in {
       bash tests/bootc/derived-profile.sh
       bash tests/bootc/plan.sh
       bash tests/bootc/reuse-image.sh
+      bash tests/bootc/sbom.sh
       bash tests/bootc/shards.sh
     '';
   };
@@ -309,6 +312,11 @@ in {
       grep -qF 'candidate_shards' .github/workflows/build.yml
       grep -qF 'purplefin-classify-ci' .github/workflows/build.yml
       grep -qF 'purplefin-image-reuse' .github/workflows/build-profile.yml
+      grep -qF 'purplefin-image-sbom' .github/workflows/build.yml
+      grep -qF 'purplefin-sbom-attestation' .github/workflows/release.yml
+      grep -qF 'SBOM_SIGNER_WORKFLOW' bootc/builder/sbom.sh
+      ! grep -R -qF -- '-sbom-cache' .github automation
+      ! grep -R -qF 'Store SBOM cache artifact' .github
       grep -qF 'purplefin-release-notes' .github/workflows/release.yml
       grep -qF 'toolset: workflow-ci' .github/workflows/build.yml
       grep -qF 'toolset: workflow-image' .github/workflows/build.yml
@@ -342,6 +350,8 @@ in {
         [[ "$(grep -cF 'gh attestation verify "oci://' "''${verifier}")" == \
           "$(grep -cF -- '--bundle-from-oci' "''${verifier}")" ]]
       done
+      grep -qF '"''${gh_command}" attestation verify' bootc/builder/sbom.sh
+      grep -qF -- '--bundle-from-oci' bootc/builder/sbom.sh
 
       actionlint -color .github/workflows/*.yml
       zizmor --offline --no-config --collect=all .github
