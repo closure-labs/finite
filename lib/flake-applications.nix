@@ -433,30 +433,40 @@ in rec {
       .
     '';
   };
+  mkWorkflowToolset = {
+    name,
+    paths,
+    required,
+  }:
+    assert builtins.all (application: builtins.elem application paths) required;
+      pkgs.buildEnv {
+        inherit name paths;
+        ignoreCollisions = true;
+      };
 
-  workflowCi = pkgs.buildEnv {
+  workflowCi = mkWorkflowToolset {
     name = "purplefin-workflow-ci";
     paths = with pkgs; [actionlint cachix classifyCi ciPlan coreutils git jq nix trustedUpdate zizmor];
-    ignoreCollisions = true;
+    required = [classifyCi];
   };
-  workflowImage = pkgs.buildEnv {
+  workflowImage = mkWorkflowToolset {
     name = "purplefin-workflow-image";
-    paths = with pkgs; [coreutils cosign gh imagePlan imageReuse jq loadBluefin nix oras skopeo syft];
-    ignoreCollisions = true;
+    paths = with pkgs; [ciPlan coreutils cosign gh imagePlan imageReuse jq loadBluefin nix oras skopeo syft];
+    required = [ciPlan imageReuse loadBluefin];
   };
-  workflowInstaller = pkgs.buildEnv {
+  workflowInstaller = mkWorkflowToolset {
     name = "purplefin-workflow-installer";
     paths = [installerBuild installerSmoke];
-    ignoreCollisions = true;
+    required = [installerBuild];
   };
-  workflowRelease = pkgs.buildEnv {
+  workflowRelease = mkWorkflowToolset {
     name = "purplefin-workflow-release";
     paths = with pkgs; [coreutils cosign gh gzip jq nix oras releaseNotes skopeo trustedUpdate];
-    ignoreCollisions = true;
+    required = [releaseNotes trustedUpdate];
   };
-  workflowMaintenance = pkgs.buildEnv {
+  workflowMaintenance = mkWorkflowToolset {
     name = "purplefin-workflow-maintenance";
     paths = with pkgs; [coreutils gh jq nix packageCleanup skopeo sourceUpdate trustedUpdate];
-    ignoreCollisions = true;
+    required = [packageCleanup sourceUpdate trustedUpdate];
   };
 }
