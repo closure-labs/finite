@@ -21,6 +21,19 @@ The CI application runs the canonical `nix flake check` and verifies that every
 check produces a reference-free proof closure below 1 MiB. Authorized
 workstations and trusted GitHub events publish those proofs to Cachix.
 
+Pull requests and merge groups validate image profiles in up to four balanced
+runner-local shards. Each shard verifies and loads the locked Bluefin digest
+once, then builds and rechunks each assigned profile independently with
+`--pull=never`. GitHub jobs do not share container storage; sharding preserves
+four-way concurrency while avoiding a separate upstream image transfer for
+every profile. Publishing remains a staged immutable-digest graph with
+independent signing and attestations.
+
+The Nix wrapper supplies the pinned orchestration tools. On GitHub-hosted
+runners it deliberately delegates rootless container execution to the runner's
+Buildah and Podman, retaining their user-namespace integration while Skopeo
+loads the verified digest into the same storage.
+
 On the primary workstation, run the check graph with Cachix upload enabled:
 
 ```bash

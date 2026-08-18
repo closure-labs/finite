@@ -184,6 +184,10 @@ in {
         type = "app";
         program = "${applications.imageReuse}/bin/purplefin-image-reuse";
       };
+      validate-image-shard = {
+        type = "app";
+        program = "${applications.validateImageShard}/bin/purplefin-validate-image-shard";
+      };
       image-build = {
         type = "app";
         program = "${applications.imageBuild}/bin/purplefin-image-build";

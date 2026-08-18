@@ -348,6 +348,11 @@ in rec {
     script = "bootc/builder/plan.sh";
     runtimeInputs = with pkgs; [bash coreutils cosign jq podman skopeo];
   };
+  shardPlan = mkRepositoryApp {
+    name = "purplefin-shard-plan";
+    script = "bootc/builder/shard-plan.sh";
+    runtimeInputs = with pkgs; [bash jq];
+  };
   ciPlan = pkgs.writeShellApplication {
     name = "purplefin-ci-plan";
     runtimeInputs = [pkgs.jq];
@@ -368,10 +373,12 @@ in rec {
       root_base="$(jq -c 'first(.include[] | select(.stage == "root")) // {}' <<<"''${matrix}")"
       hardware_matrix="$(jq -c '{include: [.include[] | select(.stage == "hardware")]}' <<<"''${matrix}")"
       role_matrix="$(jq -c '{include: [.include[] | select(.stage == "role")]}' <<<"''${matrix}")"
+      candidate_shards="$(${shardPlan}/bin/purplefin-shard-plan "''${matrix}" 4)"
       {
         printf 'base_image=%s\n' "''${base_image}"
         printf 'base_digest=%s\n' "''${base_digest}"
         printf 'base_tag=%s\n' "''${base_tag}"
+        printf 'candidate_shards=%s\n' "''${candidate_shards}"
         printf 'hardware_matrix=%s\n' "''${hardware_matrix}"
         printf 'has_hardware=%s\n' "$(jq -r '.include | length > 0' <<<"''${hardware_matrix}")"
         printf 'has_builds=%s\n' "$(jq -r '.include | length > 0' <<<"''${matrix}")"
@@ -388,6 +395,37 @@ in rec {
     name = "purplefin-image-reuse";
     script = "bootc/builder/reuse-image.sh";
     runtimeInputs = with pkgs; [bash coreutils cosign jq skopeo];
+  };
+  validateImageShard = pkgs.writeShellApplication {
+    name = "purplefin-validate-image-shard";
+    runtimeInputs = with pkgs; [bash coreutils jq skopeo];
+    text = ''
+      export PURPLEFIN_GENERATED_ROOT=${generated}
+      export PURPLEFIN_BASE_DIGEST='${bluefin.digest}'
+      export PURPLEFIN_LOAD_BLUEFIN=${loadBluefin}/bin/purplefin-load-bluefin
+      export PURPLEFIN_VERSION='${version}'
+      if [[ "''${CI:-}" == true ]]; then
+        host_buildah="$(PATH=/usr/local/bin:/usr/bin:/bin command -v buildah || true)"
+        host_podman="$(PATH=/usr/local/bin:/usr/bin:/bin command -v podman || true)"
+        [[ -n "''${host_buildah}" && -n "''${host_podman}" ]] || {
+          echo "The CI runner's host Buildah and Podman are required" >&2
+          exit 1
+        }
+        export PURPLEFIN_BUILDAH="''${host_buildah}"
+        export PURPLEFIN_PODMAN="''${host_podman}"
+      else
+        export PURPLEFIN_BUILDAH=${pkgs.buildah}/bin/buildah
+        export PURPLEFIN_PODMAN=${pkgs.podman}/bin/podman
+      fi
+      repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
+      [[ -f "''${repo_root}/flake.nix" ]] || {
+        echo "Run this command from the Purplefin repository root" >&2
+        exit 2
+      }
+      cd "''${repo_root}"
+      exec ${pkgs.bash}/bin/bash \
+        "''${repo_root}/bootc/builder/validate-shard.sh" "$@"
+    '';
   };
   installerSmoke = mkRepositoryApp {
     name = "purplefin-installer-smoke";
@@ -451,8 +489,8 @@ in rec {
   };
   workflowImage = mkWorkflowToolset {
     name = "purplefin-workflow-image";
-    paths = with pkgs; [ciPlan coreutils cosign gh imagePlan imageReuse jq loadBluefin nix oras skopeo syft];
-    required = [ciPlan imageReuse loadBluefin];
+    paths = with pkgs; [ciPlan coreutils cosign gh imagePlan imageReuse jq loadBluefin nix oras skopeo syft validateImageShard];
+    required = [ciPlan imageReuse loadBluefin validateImageShard];
   };
   workflowInstaller = mkWorkflowToolset {
     name = "purplefin-workflow-installer";

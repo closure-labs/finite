@@ -113,6 +113,7 @@ jobs:
       base_image: ${{ steps.plan.outputs.base_image }}
       base_digest: ${{ steps.plan.outputs.base_digest }}
       base_tag: ${{ steps.plan.outputs.base_tag }}
+      candidate_shards: ${{ steps.plan.outputs.candidate_shards }}
       hardware_matrix: ${{ steps.plan.outputs.hardware_matrix }}
       has_hardware: ${{ steps.plan.outputs.has_hardware }}
       has_builds: ${{ steps.plan.outputs.has_builds }}
@@ -143,7 +144,7 @@ jobs:
         run: purplefin-ci-plan "${GITHUB_OUTPUT}"
 
   build-candidate:
-    name: Validate ${{ matrix.profile }}
+    name: Validate shard ${{ matrix.shard }} (${{ matrix.name }})
     if: >-
       (github.event_name == 'pull_request' || github.event_name == 'merge_group' ||
       (github.event_name == 'workflow_dispatch' && inputs.validate_only)) &&
@@ -152,22 +153,30 @@ jobs:
     strategy:
       fail-fast: false
       max-parallel: 4
-      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
-    uses: ./.github/workflows/build-profile.yml
+      matrix: ${{ fromJSON(needs.plan.outputs.candidate_shards) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
     permissions:
       contents: read
       packages: read
-    with:
-      build-input: ${{ matrix.build_input }}
-      parent-digest: ${{ needs.plan.outputs.base_digest }}
-      parent-from-lock: true
-      parent-image: ${{ needs.plan.outputs.base_image }}
-      parent-tag: ${{ needs.plan.outputs.base_tag }}
-      profile: ${{ matrix.profile }}
-      publish: false
-      tags: ${{ matrix.tags }}
-      upstream-base-digest: ${{ needs.plan.outputs.base_digest }}
-      version: ${{ needs.plan.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Nix and Cachix
+        uses: ./.github/actions/setup-nix
+        with:
+          github-token: ${{ github.token }}
+          toolset: workflow-image
+
+      - name: Validate profiles from one locked base
+        env:
+          IMAGE_REF: ${{ format('{0}/{1}', env.REGISTRY, env.IMAGE_NAME) }}
+          PROFILE_SHARD: ${{ toJSON(matrix.profiles) }}
+          UPSTREAM_BASE_DIGEST: ${{ needs.plan.outputs.base_digest }}
+        run: purplefin-validate-image-shard
 
   installer-candidate:
     name: Validate installer

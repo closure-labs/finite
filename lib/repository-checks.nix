@@ -227,6 +227,7 @@ in {
       bash tests/bootc/derived-profile.sh
       bash tests/bootc/plan.sh
       bash tests/bootc/reuse-image.sh
+      bash tests/bootc/shards.sh
     '';
   };
 
@@ -304,6 +305,8 @@ in {
       grep -qF 'purplefin-source-update flake' .github/workflows/update-flake-lock.yml
       grep -qF 'purplefin-load-bluefin' .github/workflows/build-profile.yml
       grep -qF 'purplefin-ci-plan' .github/workflows/build.yml
+      grep -qF 'purplefin-validate-image-shard' .github/workflows/build.yml
+      grep -qF 'candidate_shards' .github/workflows/build.yml
       grep -qF 'purplefin-classify-ci' .github/workflows/build.yml
       grep -qF 'purplefin-image-reuse' .github/workflows/build-profile.yml
       grep -qF 'purplefin-release-notes' .github/workflows/release.yml
