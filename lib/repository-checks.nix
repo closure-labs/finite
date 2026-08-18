@@ -159,6 +159,8 @@ in {
       ! grep -qF 'bluefin-upstream' modules/outputs.nix
       grep -qF 'skopeo copy' lib/flake-applications.nix
       grep -qF 'containers-storage:' lib/flake-applications.nix
+      grep -qF 'host_podman' lib/flake-applications.nix
+      grep -qF 'unshare "$0"' lib/flake-applications.nix
       grep -qF 'https://purplefin.cachix.org' flake.nix
       grep -qFx 'ARG BASE_REF' bootc/Containerfile
       ! grep -qF 'bluefin:stable' bootc/Containerfile

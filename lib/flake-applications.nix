@@ -204,6 +204,14 @@ in rec {
     name = "purplefin-load-bluefin";
     runtimeInputs = with pkgs; [coreutils cosign skopeo];
     text = ''
+      if [[ "''${CI:-}" == true && $EUID -ne 0 && -z "''${_PURPLEFIN_IN_USERNS:-}" ]]; then
+        host_podman="$(PATH=/usr/local/bin:/usr/bin:/bin command -v podman || true)"
+        [[ -n "''${host_podman}" && "''${host_podman}" != /nix/store/* ]] || {
+          echo "The CI runner's host Podman is required to enter rootless storage" >&2
+          exit 1
+        }
+        exec env _PURPLEFIN_IN_USERNS=1 "''${host_podman}" unshare "$0" "$@"
+      fi
       ${verifyBluefin}/bin/purplefin-verify-bluefin >/dev/null
       source='docker://${bluefin.image}@${bluefin.digest}'
       image='${bluefin.image}:${bluefin.tag}'
