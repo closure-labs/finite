@@ -314,6 +314,8 @@ in {
         .github/actions/setup-nix/action.yml
       grep -qF 'cachix/cachix-action@5f2d7c5294214f71b873db4b969586b980625e71' \
         .github/actions/setup-nix/action.yml
+      grep -qF 'nix profile add --accept-flake-config --priority 4' \
+        .github/actions/setup-nix/action.yml
       ! grep -R -qF 'DeterminateSystems/determinate-nix-action' .github
       grep -qF -- '--build-context purplefin-generated=' .github/workflows/build-profile.yml
       grep -qF 'RUN --mount=type=bind,from=purplefin-generated,source=.,target=/run/purplefin-generated' \

@@ -36,4 +36,4 @@ runs:
         PURPLEFIN_TOOLSET: ${{ inputs.toolset }}
       shell: bash
       run: |
-        nix profile install --accept-flake-config ".#${PURPLEFIN_TOOLSET}"
+        nix profile add --accept-flake-config --priority 4 ".#${PURPLEFIN_TOOLSET}"
