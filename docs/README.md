@@ -19,7 +19,8 @@ Start with the guide that matches what you want to accomplish.
 ## Operate and maintain Purplefin
 
 - [Understand CI, publication, and releases](ci-and-releases.md), including
-  validation layers, signed images, trusted updates, and release promotion.
+  sharded candidate validation, signed images, trusted updates, and release
+  promotion.
 - [Troubleshoot Purplefin](troubleshooting.md) with deployment, repository,
   image-build, installer, and Dell hardware diagnostics.
 - [Review Dell Secure Boot status](dell-xps-9350-secure-boot.md) for the signed
