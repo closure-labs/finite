@@ -153,6 +153,7 @@ in {
         jq -e '.required == ["CACHIX_AUTH_TOKEN"]' >/dev/null
       ! grep -qF 'cachix watch-exec' lib/flake-applications.nix
       grep -qF 'cachix push --omit-deriver purplefin' lib/flake-applications.nix
+      grep -qF 'nix --accept-flake-config build --no-link' lib/flake-applications.nix
       grep -qF 'max_closure_size=$((1024 * 1024))' lib/flake-applications.nix
       ! grep -qF 'dockerTools.pullImage' modules/outputs.nix
       ! grep -qF 'bluefin-upstream' modules/outputs.nix

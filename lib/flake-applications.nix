@@ -129,6 +129,7 @@ in rec {
 
           check_names=(${quotedNames})
           check_paths=(${quotedPaths})
+          nix --accept-flake-config build --no-link "''${check_paths[@]}"
           max_closure_size=$((1024 * 1024))
           for index in "''${!check_paths[@]}"; do
             name="''${check_names[$index]}"
