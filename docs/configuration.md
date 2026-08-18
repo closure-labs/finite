@@ -1,4 +1,4 @@
-# Profiles and advanced configuration
+# Customize profiles and aspects
 
 Purplefin models each final image as a typed Den profile. Profiles include a
 parent profile and reusable aspects; Nix resolves the graph into ordered bootc
