@@ -62,14 +62,15 @@ read/write access.
 Dispatch `Release Purplefin` from `main` and select `auto`, `patch`, `minor`, or
 `major`. The workflow:
 
-1. selects the version and validates its changelog entry;
-2. builds or reuses an all-profile candidate from the exact source commit;
+1. selects the version and merges its stable `VERSION` through a protected,
+   CI-gated pull request;
+2. builds or reuses an all-profile candidate from that exact merge commit;
 3. verifies every signature, provenance statement, SPDX attestation, profile
    label, and source revision;
 4. promotes the existing digests to versioned tags;
 5. publishes the profile manifest, compressed SPDX documents, and release
    notes;
-6. advances `VERSION` to the next patch development version.
+6. advances `VERSION` through a second protected, CI-gated pull request.
 
 Stable changelog entries use `Added`, `Changed`, `Fixed`, and `Security`
 sections.

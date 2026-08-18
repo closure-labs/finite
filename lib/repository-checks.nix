@@ -260,6 +260,8 @@ in {
       grep -qF 'nix run .#trusted-update' .github/workflows/update-flake-lock.yml
       grep -qF 'nix run .#trusted-update' .github/workflows/update-image-builder.yml
       grep -qF 'nix run .#trusted-update' .github/workflows/update-bluefin.yml
+      [[ "$(grep -cF 'nix run .#trusted-update' .github/workflows/release.yml)" == 2 ]]
+      ! grep -qF 'git push origin HEAD:main' .github/workflows/release.yml
       grep -qF 'nix run .#update-bluefin' .github/workflows/update-bluefin.yml
       grep -qF 'nix run .#load-bluefin' .github/workflows/build-profile.yml
       grep -qF 'nix run .#ci-plan' .github/workflows/build.yml
