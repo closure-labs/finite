@@ -24,8 +24,8 @@ read-through Cachix configuration, with automatic store watching disabled.
 `nix run .#ci` builds the 13 declared checks once, resolves their reference-free
 proof outputs, rejects any closure larger than 1 MiB, and explicitly pushes only
 those proofs. The `CACHIX_AUTH_TOKEN` repository secret enables writes on
-protected events and same-repository pull requests; fork pull requests remain
-read-only.
+protected events and same-repository pull requests. Fork pull requests use the
+public cache for substitution.
 
 ## Image publication
 
@@ -39,7 +39,8 @@ Profiles build parent-first. Each published digest has:
   digests.
 
 Matching signed images and digest-bound SBOM cache artifacts are reused. Pull
-requests and merge candidates cannot publish.
+requests and merge candidates validate candidates with read-only registry
+access, while trusted `main` runs publish signed results.
 
 ## Trusted updates
 
@@ -48,12 +49,13 @@ Dependabot updates pinned GitHub Actions. Scheduled workflows update
 `npins` source through validated pull requests. The Bluefin updater resolves
 the mutable `stable` channel into a committed OCI digest and Nix fixed-output
 hash, verifies its Cosign identity, and lets the candidate image graph validate
-the result. Nix-provided Skopeo copies that exact digest directly into container
-storage; no OCI archive is placed in the Nix store. The daily build also checks
-independently managed RPMs for updates against the committed Bluefin base.
+the result. Nix-provided Skopeo streams that exact digest directly into
+container storage. The daily build also checks independently managed RPMs for
+updates against the committed Bluefin base.
 
-`MERGE_QUEUE_TOKEN` is optional; when set, it must be scoped to this repository
-with Contents and Pull requests read/write access.
+When configured, `MERGE_QUEUE_TOKEN` advances trusted update pull requests
+through the merge queue with repository-scoped Contents and Pull requests
+read/write access.
 
 ## Create a release
 

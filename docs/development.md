@@ -1,9 +1,9 @@
-# Development and local builds
+# Build and develop with Nix
 
 The Nix Flake pins the development toolchain and exposes the repository's
 checks, generated data, packages, and applications.
 
-## Development shell
+## Open the development environment
 
 ```bash
 nix develop
@@ -17,9 +17,9 @@ nix fmt
 nix run .#ci
 ```
 
-The CI application runs the canonical `nix flake check`, verifies that every
-check produced a reference-free proof closure below 1 MiB, and leaves Cachix
-read-only unless an authorization token is available.
+The CI application runs the canonical `nix flake check` and verifies that every
+check produces a reference-free proof closure below 1 MiB. Authorized
+workstations and trusted GitHub events publish those proofs to Cachix.
 
 On the primary workstation, run the check graph with Cachix upload enabled:
 
@@ -29,11 +29,10 @@ nix run .#local-cache
 
 The `local-cache` app uses SecretSpec profile `local-cache` and scope `cachix`.
 It accepts `CACHIX_AUTH_TOKEN` from the environment or loads the workstation
-value from `$HOME/.other-fun-things/.cachix-purplefin-auth`. It pushes only the
-13 guarded proof outputs; it does not watch the Nix store or upload container
-images, generated data closures, or Home Manager activation closures.
+value from `$HOME/.other-fun-things/.cachix-purplefin-auth`, then publishes the
+13 closure-guarded proof outputs.
 
-## Build an image
+## Build a local image
 
 The image application resolves immutable inputs, generates the build contract,
 and invokes Podman:

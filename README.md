@@ -1,50 +1,42 @@
 # Purplefin
 
-Purplefin is a signed, updateable [bootc](https://bootc-dev.github.io/bootc/)
-workstation image based on [Bluefin Stable](https://projectbluefin.io/). Images
-are published to `ghcr.io/declarative-dale/purplefin` with Cosign signatures,
-build provenance, and SPDX SBOM attestations.
+Purplefin turns a typed Nix profile graph into signed, updateable
+[bootc](https://bootc-dev.github.io/bootc/) workstation images based on
+[Bluefin Stable](https://projectbluefin.io/).
 
-## Concepts
+You get twelve ready-to-run workstation profiles, reproducible local builds,
+a graphical installer, verified updates, and signed release artifacts with
+provenance and SPDX SBOM attestations.
 
-- **Aspect:** a reusable base, hardware, capability, or role feature under
-  `modules/aspects/`.
-- **Profile:** a complete image assembled by including aspects and parent
-  profiles in the Den graph declared by `modules/profiles.nix`.
-- **Flake:** the source of build plans, generated installer data, development
-  tools, tests, and CI/CD applications.
-- **Source pin:** the Bluefin stable OCI digest and Nix archive hash locked by
-  `npins/sources.json` and included in the Den graph.
-- **Published tag:** a movable name for a signed image digest. Examples include
-  `latest`, `developer-generic`, `support-generic`, and `dale`.
+## Run Purplefin
 
-## Quick start
-
-On an existing bootc system, switch to the generic base profile and reboot:
+On an existing bootc system, switch to the generic workstation image:
 
 ```bash
 run0 bootc switch ghcr.io/declarative-dale/purplefin:latest
 run0 systemctl reboot
 ```
 
-Install future updates with:
+Stay current with:
 
 ```bash
 run0 bootc upgrade
 run0 systemctl reboot
 ```
 
-To inspect all profiles from a checkout:
+For a fresh machine, follow the [graphical installation guide](docs/installation.md).
+
+## Build Purplefin with Nix
+
+Install Nix with Flakes enabled and rootless Podman, then run:
 
 ```bash
-nix build .#generated
-jq '.profiles' result/bootc/generated/profile-catalog.json
+git clone https://github.com/declarative-dale/purplefin.git
+cd purplefin
+nix run .#image-build -- base-generic localhost/purplefin:base-generic
 ```
 
-For a fresh system, use the verified graphical ISO described in
-[Installation](docs/installation.md).
-
-## Development quick start
+Format and validate the complete repository with the pinned toolchain:
 
 ```bash
 nix develop
@@ -52,13 +44,24 @@ nix fmt
 nix run .#ci
 ```
 
-## Documentation
+## Choose a profile
 
-- [Installation and updates](docs/installation.md)
-- [Profiles and advanced configuration](docs/configuration.md)
-- [Development and local builds](docs/development.md)
-- [CI, image publication, and releases](docs/ci-and-releases.md)
-- [Troubleshooting](docs/troubleshooting.md)
-- [Dell XPS 13 9350 hardware behavior](docs/dell-xps-9350.md)
-- [Dell XPS 13 9350 Secure Boot status](docs/dell-xps-9350-secure-boot.md)
+| Profile | Use it for |
+| --- | --- |
+| `latest` | A generic base workstation |
+| `developer-generic` | Software development on generic x86-64 hardware |
+| `support-generic` | Support and operations on generic x86-64 hardware |
+| `dale` | Sales, training, and support on a Dell XPS 13 9350 |
+
+List every generated profile and published tag with:
+
+```bash
+nix build .#generated
+jq '.profiles | with_entries(.value = .value.tags)' \
+  result/bootc/generated/profile-catalog.json
+```
+
+## Learn more
+
+- [Documentation guide](docs/README.md)
 - [Changelog](CHANGELOG.md)
