@@ -84,9 +84,9 @@ dispatch_and_wait() {
 		--exit-status
 }
 
-existing_ci_run_id=''
+existing_ci_run=''
 for _ in {1..6}; do
-	existing_ci_run_id="$({
+	existing_ci_run="$({
 		gh run list \
 			--repo "${GITHUB_REPOSITORY}" \
 			--workflow build.yml \
@@ -94,14 +94,20 @@ for _ in {1..6}; do
 			--branch "${branch}" \
 			--commit "${head_sha}" \
 			--limit 1 \
-			--json databaseId \
-			--jq '.[0].databaseId // empty'
+			--json conclusion,databaseId,status \
+			--jq '.[0] // empty'
 	})"
-	[[ -z "${existing_ci_run_id}" ]] || break
+	[[ -z "${existing_ci_run}" ]] || break
 	sleep 5
 done
 
-if [[ -n "${existing_ci_run_id}" ]]; then
+if [[ -n "${existing_ci_run}" ]]; then
+	existing_ci_run_id="$(jq -er '.databaseId' <<<"${existing_ci_run}")"
+	if [[ "$(jq -r '.conclusion // empty' <<<"${existing_ci_run}")" == action_required ]]; then
+		gh api \
+			--method POST \
+			"repos/${GITHUB_REPOSITORY}/actions/runs/${existing_ci_run_id}/approve"
+	fi
 	gh run watch "${existing_ci_run_id}" \
 		--repo "${GITHUB_REPOSITORY}" \
 		--exit-status
