@@ -16,7 +16,3 @@ ci:
 # Build a named profile into a local OCI image.
 build profile tag:
     nix run .#image-build -- {{ profile }} {{ tag }}
-
-# Export generated profile artifacts for external consumers.
-export-artifacts destination="artifacts":
-    nix run .#export-artifacts -- {{ destination }}

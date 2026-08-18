@@ -1,4 +1,4 @@
-{...}: {
+_: {
   den.aspects.features.capabilities.devops.bootc.purplefin.build = {
     steps = [
       {

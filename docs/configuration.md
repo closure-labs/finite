@@ -52,7 +52,7 @@ directory and include every consumed path in its source closure.
 
 ## Add a profile
 
-In `modules/profiles.nix`:
+In `modules/profiles/definitions.nix`:
 
 1. Add a profile aspect whose `includes` list composes its parent and features.
 2. Add the matching `purplefin.profiles` entity with its parent and published

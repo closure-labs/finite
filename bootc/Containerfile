@@ -16,7 +16,9 @@ LABEL org.opencontainers.image.title="Purplefin" \
 COPY bootc/ /tmp/purplefin-build/bootc/
 COPY modules/aspects/ /tmp/purplefin-build/modules/aspects/
 
-RUN PURPLEFIN_VERSION="${PURPLEFIN_VERSION}" \
+RUN --mount=type=bind,from=purplefin-generated,source=.,target=/run/purplefin-generated \
+    PURPLEFIN_GENERATED_ROOT=/run/purplefin-generated \
+    PURPLEFIN_VERSION="${PURPLEFIN_VERSION}" \
     /tmp/purplefin-build/bootc/builder/full.sh "${BUILD_PROFILE}" && \
     rm -rf /tmp/purplefin-build && \
     bootc container lint && \

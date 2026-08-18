@@ -4,7 +4,6 @@
   generated,
   lib,
   pkgs,
-  repositoryToolchain,
 }: let
   root = ../.;
   inherit (lib) fileset;
@@ -13,26 +12,44 @@
       inherit root;
       fileset = fileset.unions selected;
     };
-  shellSource = sourceFor [
-    ../automation
-    ../bootc
-    ../installer
-    ../modules
-    ../tests
-  ];
+  shellFiles = fileset.fileFilter (file: file.type == "regular" && lib.hasSuffix ".sh" file.name) root;
+  nixFiles = fileset.fileFilter (file: file.type == "regular" && lib.hasSuffix ".nix" file.name) root;
+  textFiles =
+    fileset.fileFilter (
+      file:
+        file.type
+        == "regular"
+        && (
+          builtins.elem file.name [".editorconfig" ".gitignore" "Containerfile" "Containerfile.derived" "Justfile" "LICENSE" "VERSION"]
+          || builtins.any (suffix: lib.hasSuffix suffix file.name) [
+            ".conf"
+            ".css"
+            ".json"
+            ".md"
+            ".nix"
+            ".sh"
+            ".toml"
+            ".xml"
+            ".yaml"
+            ".yml"
+            ".zsh"
+          ]
+        )
+    )
+    root;
+  shellSource = sourceFor [shellFiles];
+  nixSource = sourceFor [nixFiles];
   repositorySource = sourceFor [
     ../VERSION
     ../bootc/Containerfile
     ../bootc/Containerfile.derived
     ../bootc/builder
     ../modules/aspects
-    ../npins
+    ../sources
     ../secretspec.toml
     ../tests/repository/contracts.sh
   ];
-  documentationSource = sourceFor [
-    root
-  ];
+  documentationSource = sourceFor [textFiles];
   automationSource = sourceFor [
     ../automation/github
     ../tests/automation
@@ -56,7 +73,7 @@
     ../flake.nix
     ../lib/flake-applications.nix
     ../modules/outputs.nix
-    ../npins
+    ../sources
     ../secretspec.toml
   ];
   workflowSource = sourceFor [
@@ -77,9 +94,7 @@
     tools ? [],
   }:
     pkgs.runCommand "purplefin-${name}" {
-      nativeBuildInputs =
-        repositoryToolchain
-        ++ tools;
+      nativeBuildInputs = [pkgs.bash pkgs.coreutils] ++ tools;
     } ''
       export HOME="$TMPDIR/home"
       mkdir -p "$HOME" source
@@ -98,9 +113,10 @@ in {
   shell = mkSourceCheck {
     name = "shell-checks";
     source = shellSource;
+    tools = with pkgs; [findutils shellcheck];
     commands = ''
       mapfile -d $'\0' shell_files < <(
-        find automation bootc installer modules tests \
+        find automation bootc modules tests \
           -type f -name '*.sh' -print0
       )
       bash -n "''${shell_files[@]}"
@@ -115,6 +131,7 @@ in {
     name = "repository-contracts";
     source = repositorySource;
     generatedRoot = generated;
+    tools = with pkgs; [gnugrep jq];
     commands = ''
       bash tests/repository/contracts.sh
       grep -qF 'profiles_dale --> features_roles_support' \
@@ -137,18 +154,24 @@ in {
   upstream = mkSourceCheck {
     name = "upstream-contracts";
     source = upstreamSource;
+    tools = with pkgs; [gnugrep jq secretspec];
     commands = ''
       jq -e '
-        .version == 8 and (
-          .pins["bluefin-stable"] as $pin |
-          $pin.type == "Container" and
-          $pin.image_name == "ghcr.io/projectbluefin/bluefin" and
-          $pin.image_tag == "stable" and
-          $pin.arch == "amd64" and
-          ($pin.image_digest | test("^sha256:[0-9a-f]{64}$")) and
-          ($pin.hash | test("^sha256-[A-Za-z0-9+/]{43}=$"))
-        )
-      ' npins/sources.json >/dev/null
+        .schema == 1 and
+        .image == "ghcr.io/projectbluefin/bluefin" and
+        .tag == "stable" and
+        .architecture == "amd64" and
+        (.digest | test("^sha256:[0-9a-f]{64}$")) and
+        (.cosign.issuer | startswith("https://")) and
+        (.cosign.identity | startswith("https://"))
+      ' sources/bluefin.json >/dev/null
+      jq -e '
+        .schema == 1 and
+        .image == "ghcr.io/osbuild/image-builder-cli" and
+        .tag == "latest" and
+        .architecture == "amd64" and
+        (.digest | test("^sha256:[0-9a-f]{64}$"))
+      ' sources/image-builder.json >/dev/null
       secretspec schema --file secretspec.toml --profile local-cache |
         jq -e '.required == ["CACHIX_AUTH_TOKEN"]' >/dev/null
       ! grep -qF 'cachix watch-exec' lib/flake-applications.nix
@@ -170,6 +193,7 @@ in {
   documentation = mkSourceCheck {
     name = "documentation-checks";
     source = documentationSource;
+    tools = with pkgs; [file findutils gawk gnugrep ripgrep];
     commands = ''
       bash tests/repository/text-style.sh
       bash tests/repository/markdown-links.sh
@@ -179,7 +203,14 @@ in {
   automation = mkSourceCheck {
     name = "automation-checks";
     source = automationSource;
-    tools = [applications.classifyChanges applications.classifyCi applications.trustedUpdate];
+    tools = with pkgs; [
+      applications.classifyChanges
+      applications.classifyCi
+      applications.trustedUpdate
+      git
+      gnugrep
+      jq
+    ];
     commands = ''
       bash tests/automation/classify-changes.sh
       bash tests/automation/classify-ci.sh
@@ -191,6 +222,7 @@ in {
     name = "bootc-checks";
     source = bootcSource;
     generatedRoot = generated;
+    tools = with pkgs; [diffutils findutils gnugrep jq];
     commands = ''
       bash tests/bootc/derived-profile.sh
       bash tests/bootc/plan.sh
@@ -201,6 +233,7 @@ in {
   aspects = mkSourceCheck {
     name = "aspect-contracts";
     source = aspectsSource;
+    tools = with pkgs; [gnugrep systemd util-linux];
     commands = ''
       bash modules/aspects/base/tests/contracts.sh
       bash modules/aspects/capabilities/devops/tests/contracts.sh
@@ -213,7 +246,7 @@ in {
   release = mkSourceCheck {
     name = "release-contracts";
     source = releaseSource;
-    tools = [applications.releaseNotes];
+    tools = with pkgs; [applications.releaseNotes gawk gnugrep gnused];
     commands = ''
       latest_changelog_version="$({
         sed -nE 's/^## \[([0-9]+\.[0-9]+\.[0-9]+)\] - [0-9]{4}-[0-9]{2}-[0-9]{2}$/\1/p' \
@@ -237,6 +270,7 @@ in {
   workflows = mkSourceCheck {
     name = "workflow-checks";
     source = workflowSource;
+    tools = with pkgs; [actionlint gnugrep jq yq-go zizmor];
     commands = ''
       jq -e '
         .target == "branch" and
@@ -257,26 +291,35 @@ in {
       ' automation/github/policies/main-protection.json >/dev/null
 
       grep -qF 'nix run .#ci' .github/workflows/build.yml
-      grep -qF 'nix run .#trusted-update' .github/workflows/update-flake-lock.yml
-      grep -qF 'nix run .#trusted-update' .github/workflows/update-image-builder.yml
-      grep -qF 'nix run .#trusted-update' .github/workflows/update-bluefin.yml
-      [[ "$(grep -cF 'nix run .#trusted-update' .github/workflows/release.yml)" == 2 ]]
+      grep -qF 'purplefin-trusted-update' .github/workflows/update-flake-lock.yml
+      grep -qF 'purplefin-trusted-update' .github/workflows/update-image-builder.yml
+      grep -qF 'purplefin-trusted-update' .github/workflows/update-bluefin.yml
+      [[ "$(grep -cF 'purplefin-trusted-update' .github/workflows/release.yml)" == 2 ]]
       [[ "$(grep -cF 'SOURCE_SHA: ''${{ steps.source.outputs.source_sha }}' .github/workflows/release.yml)" == 2 ]]
       ! grep -qF 'steps.version.outputs.source_sha' .github/workflows/release.yml
       ! grep -qF 'git push origin HEAD:main' .github/workflows/release.yml
       ! grep -R -qF 'github-actions[bot]' .github/workflows
-      grep -qF 'nix run .#update-bluefin' .github/workflows/update-bluefin.yml
-      grep -qF 'nix run .#load-bluefin' .github/workflows/build-profile.yml
-      grep -qF 'nix run .#ci-plan' .github/workflows/build.yml
-      grep -qF 'nix run .#classify-ci' .github/workflows/build.yml
+      grep -qF 'purplefin-source-update bluefin' .github/workflows/update-bluefin.yml
+      grep -qF 'purplefin-source-update image-builder' .github/workflows/update-image-builder.yml
+      grep -qF 'purplefin-source-update flake' .github/workflows/update-flake-lock.yml
+      grep -qF 'purplefin-load-bluefin' .github/workflows/build-profile.yml
+      grep -qF 'purplefin-ci-plan' .github/workflows/build.yml
+      grep -qF 'purplefin-classify-ci' .github/workflows/build.yml
+      grep -qF 'purplefin-image-reuse' .github/workflows/build-profile.yml
+      grep -qF 'purplefin-release-notes' .github/workflows/release.yml
+      grep -qF 'toolset: workflow-ci' .github/workflows/build.yml
+      grep -qF 'toolset: workflow-image' .github/workflows/build.yml
+      grep -qF 'toolset: workflow-release' .github/workflows/release.yml
       grep -qF 'cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24' \
         .github/actions/setup-nix/action.yml
       grep -qF 'cachix/cachix-action@5f2d7c5294214f71b873db4b969586b980625e71' \
         .github/actions/setup-nix/action.yml
       ! grep -R -qF 'DeterminateSystems/determinate-nix-action' .github
-      grep -qF 'nix run .#export-artifacts -- .' .github/workflows/build-profile.yml
+      grep -qF -- '--build-context purplefin-generated=' .github/workflows/build-profile.yml
+      grep -qF 'RUN --mount=type=bind,from=purplefin-generated,source=.,target=/run/purplefin-generated' \
+        bootc/Containerfile
       grep -qF 'containerfile=./bootc/Containerfile' .github/workflows/build-profile.yml
-      grep -qF 'nix run .#installer-build' .github/actions/build-installer/action.yml
+      grep -qF 'purplefin-installer-build' .github/actions/build-installer/action.yml
       grep -qF -- '--build-context installer-rootfs=installer/rootfs' \
         lib/installer-application.nix
       grep -qF 'RUN --mount=from=installer-rootfs,target=/run/installer-rootfs' \
@@ -286,6 +329,10 @@ in {
       grep -qF 'checks.''${system} =' modules/outputs.nix
       grep -qF 'repositoryChecks' modules/outputs.nix
 
+      for workflow in .github/workflows/*.yml; do
+        yq -e 'has("jobs") and (.jobs | length > 0)' "''${workflow}" >/dev/null
+      done
+
       for verifier in lib/installer-application.nix .github/workflows/release.yml; do
         [[ "$(grep -cF 'gh attestation verify "oci://' "''${verifier}")" == \
           "$(grep -cF -- '--bundle-from-oci' "''${verifier}")" ]]
@@ -293,6 +340,15 @@ in {
 
       actionlint -color .github/workflows/*.yml
       zizmor --offline --no-config --collect=all .github
+    '';
+  };
+
+  nix = mkSourceCheck {
+    name = "nix-checks";
+    source = nixSource;
+    tools = [pkgs.statix];
+    commands = ''
+      statix check .
     '';
   };
 }

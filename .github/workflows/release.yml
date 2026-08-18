@@ -50,6 +50,7 @@ jobs:
         uses: ./.github/actions/setup-nix
         with:
           github-token: ${{ github.token }}
+          toolset: workflow-release
 
       - name: Calculate the release version
         id: version
@@ -175,7 +176,7 @@ jobs:
           EXPECTED_TITLE: Release Purplefin ${{ steps.version.outputs.version }}
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ steps.release-version.outputs.pull-request-number }}
-        run: nix run .#trusted-update
+        run: purplefin-trusted-update
 
       - name: Resolve the protected release source
         id: source
@@ -216,8 +217,8 @@ jobs:
           [[ "$(<VERSION)" == "${VERSION}" ]]
           echo "source_sha=${source_sha}" >>"${GITHUB_OUTPUT}"
 
-      - name: Materialize Flake-generated build artifacts
-        run: nix run .#export-artifacts -- .
+      - name: Resolve Flake-generated build artifacts
+        run: echo "PURPLEFIN_GENERATED_ROOT=$(nix build .#generated --no-link --print-out-paths)" >>"${GITHUB_ENV}"
 
       - name: Reuse or dispatch the release-candidate build
         id: build
@@ -302,7 +303,7 @@ jobs:
               [[ "$(jq -er '.Labels["org.opencontainers.image.version"]' <<<"${metadata}")" == "${VERSION}" ]] || return 1
               [[ "$(jq -er '.Labels["io.purplefin.build.profile"]' <<<"${metadata}")" == "${profile}" ]] || return 1
               [[ "$(jq -er '.Labels["io.purplefin.build.input"]' <<<"${metadata}")" == "${expected_input}" ]] || return 1
-            done < <(jq -c '.[]' bootc/generated/image-matrix.json)
+            done < <(jq -c '.[]' "${PURPLEFIN_GENERATED_ROOT}/bootc/generated/image-matrix.json")
           }
 
           if ! profiles_are_current; then
@@ -369,9 +370,10 @@ jobs:
         uses: ./.github/actions/setup-nix
         with:
           github-token: ${{ github.token }}
+          toolset: workflow-release
 
-      - name: Materialize Flake-generated build artifacts
-        run: nix run .#export-artifacts -- .
+      - name: Resolve Flake-generated build artifacts
+        run: echo "PURPLEFIN_GENERATED_ROOT=$(nix build .#generated --no-link --print-out-paths)" >>"${GITHUB_ENV}"
 
       - name: Validate release versions and source
         env:
@@ -389,14 +391,6 @@ jobs:
             echo "Release tag v${VERSION} already exists" >&2
             exit 1
           fi
-
-      - name: Install cosign
-        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
-
-      - name: Install ORAS
-        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
-        with:
-          version: 1.3.3
 
       - name: Log in to GHCR
         shell: bash
@@ -507,7 +501,7 @@ jobs:
                 '{profile: $profile, channel_tag: $channel_tag, release_tag: $release_tag, digest: $digest, base_digest: $base_digest, build_input: $build_input, sbom_asset: $sbom_asset}'
             })"
             images="$(jq -c --argjson image "${image}" '. + [$image]' <<<"${images}")"
-          done < <(jq -c '.[]' bootc/generated/image-matrix.json)
+          done < <(jq -c '.[]' "${PURPLEFIN_GENERATED_ROOT}/bootc/generated/image-matrix.json")
 
           jq -n \
             --arg version "${VERSION}" \
@@ -525,9 +519,9 @@ jobs:
         shell: bash
         run: |
           mapfile -t sbom_assets < <(find release-sboms -type f -name '*.spdx.json.gz' -print | sort)
-          expected_assets="$(jq 'length' bootc/generated/image-matrix.json)"
+          expected_assets="$(jq 'length' "${PURPLEFIN_GENERATED_ROOT}/bootc/generated/image-matrix.json")"
           (( ${#sbom_assets[@]} == expected_assets ))
-          nix run .#release-notes -- "${VERSION}" CHANGELOG.md >release-notes.md
+          purplefin-release-notes "${VERSION}" CHANGELOG.md >release-notes.md
           grep -q '[^[:space:]]' release-notes.md
           gh release create "v${VERSION}" \
             release-manifest.json \
@@ -588,7 +582,7 @@ jobs:
           EXPECTED_TITLE: Start Purplefin ${{ steps.next-version.outputs.next_version }}
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ steps.development-version.outputs.pull-request-number }}
-        run: nix run .#trusted-update
+        run: purplefin-trusted-update
 
       - name: Wait for the next development version merge
         if: >-

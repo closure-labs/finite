@@ -4,14 +4,8 @@
   ...
 }: let
   profileType = lib.types.submodule (
-    {
-      name,
-      config,
-      ...
-    }: {
+    {name, ...}: {
       imports = [den.schema.profile];
-      config._module.args.profile = config;
-
       options = {
         name = lib.mkOption {
           type = lib.types.strMatching "[a-z0-9._-]+";

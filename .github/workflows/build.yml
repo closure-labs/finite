@@ -57,6 +57,7 @@ jobs:
         uses: ./.github/actions/setup-nix
         with:
           github-token: ${{ github.token }}
+          toolset: workflow-ci
 
       - name: Select expensive validations
         id: filter
@@ -72,7 +73,7 @@ jobs:
           PUSH_BEFORE_SHA: ${{ github.event.before }}
           VALIDATE_ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.validate_only || false }}
         shell: bash
-        run: nix run .#classify-ci -- "${GITHUB_OUTPUT}"
+        run: purplefin-classify-ci "${GITHUB_OUTPUT}"
 
   check:
     name: Repository checks
@@ -131,6 +132,7 @@ jobs:
         uses: ./.github/actions/setup-nix
         with:
           github-token: ${{ github.token }}
+          toolset: workflow-image
 
       - name: Verify and plan immutable inputs
         id: plan
@@ -138,7 +140,7 @@ jobs:
           CHECK_RPM_UPDATES: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
           FORCE_REBUILD: ${{ github.event_name == 'workflow_dispatch' && inputs.force }}
           IMAGE_REF: ${{ format('{0}/{1}', env.REGISTRY, env.IMAGE_NAME) }}
-        run: nix run .#ci-plan -- "${GITHUB_OUTPUT}"
+        run: purplefin-ci-plan "${GITHUB_OUTPUT}"
 
   build-candidate:
     name: Validate ${{ matrix.profile }}
@@ -158,7 +160,7 @@ jobs:
     with:
       build-input: ${{ matrix.build_input }}
       parent-digest: ${{ needs.plan.outputs.base_digest }}
-      parent-from-npins: true
+      parent-from-lock: true
       parent-image: ${{ needs.plan.outputs.base_image }}
       parent-tag: ${{ needs.plan.outputs.base_tag }}
       profile: ${{ matrix.profile }}
@@ -211,7 +213,7 @@ jobs:
     with:
       build-input: ${{ fromJSON(needs.plan.outputs.root_base).build_input }}
       parent-digest: ${{ needs.plan.outputs.base_digest }}
-      parent-from-npins: true
+      parent-from-lock: true
       parent-image: ${{ needs.plan.outputs.base_image }}
       parent-tag: ${{ needs.plan.outputs.base_tag }}
       profile: base

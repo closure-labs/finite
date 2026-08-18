@@ -25,41 +25,15 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Set up Nix and Cachix
+        uses: ./.github/actions/setup-nix
+        with:
+          github-token: ${{ github.token }}
+          toolset: workflow-maintenance
+
       - name: Resolve latest Image Builder CLI digest
         id: resolve
-        env:
-          IMAGE_BUILDER_TAG: ghcr.io/osbuild/image-builder-cli:latest
-        shell: bash
-        run: |
-          digest="$({
-            skopeo inspect \
-              --retry-times 3 \
-              --format '{{.Digest}}' \
-              "docker://${IMAGE_BUILDER_TAG}"
-          })"
-          [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
-          current="$({
-            sed -nE \
-              's#^    default: ghcr.io/osbuild/image-builder-cli@(sha256:[0-9a-f]{64})$#\1#p' \
-              .github/actions/build-installer/action.yml
-          })"
-          [[ "${current}" =~ ^sha256:[0-9a-f]{64}$ ]]
-          if [[ "${digest}" == "${current}" ]]; then
-            echo 'changed=false' >>"${GITHUB_OUTPUT}"
-            exit 0
-          fi
-
-          sed -i -E \
-            "s#^    default: ghcr.io/osbuild/image-builder-cli@sha256:[0-9a-f]{64}$#    default: ghcr.io/osbuild/image-builder-cli@${digest}#" \
-            .github/actions/build-installer/action.yml
-          [[ "$(git diff --name-only)" == .github/actions/build-installer/action.yml ]]
-          [[ "$(
-            grep -cF \
-              "    default: ghcr.io/osbuild/image-builder-cli@${digest}" \
-              .github/actions/build-installer/action.yml
-          )" == 1 ]]
-          echo 'changed=true' >>"${GITHUB_OUTPUT}"
-          echo "digest=${digest}" >>"${GITHUB_OUTPUT}"
+        run: purplefin-source-update image-builder "${GITHUB_OUTPUT}"
 
       - name: Open or update pull request
         if: steps.resolve.outputs.changed == 'true'
@@ -78,14 +52,6 @@ jobs:
             The candidate runs the repository CI gate and builds and smoke-boots
             the generic installer before auto-merge is enabled.
 
-      - name: Set up Nix and Cachix
-        if: >-
-          steps.update.outputs.pull-request-number != '' &&
-          steps.update.outputs.pull-request-operation != 'closed'
-        uses: ./.github/actions/setup-nix
-        with:
-          github-token: ${{ github.token }}
-
       - name: Validate and enable auto-merge
         if: >-
           steps.update.outputs.pull-request-number != '' &&
@@ -97,4 +63,4 @@ jobs:
           EXPECTED_TITLE: Update Image Builder CLI digest
           GH_TOKEN: ${{ secrets.MERGE_QUEUE_TOKEN || github.token }}
           PR_NUMBER: ${{ steps.update.outputs.pull-request-number }}
-        run: nix run .#trusted-update
+        run: purplefin-trusted-update

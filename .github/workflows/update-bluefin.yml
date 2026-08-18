@@ -29,10 +29,11 @@ jobs:
         uses: ./.github/actions/setup-nix
         with:
           github-token: ${{ github.token }}
+          toolset: workflow-maintenance
 
-      - name: Refresh and verify npins source
+      - name: Refresh and verify Bluefin OCI lock
         id: pin
-        run: nix run .#update-bluefin -- "${GITHUB_OUTPUT}"
+        run: purplefin-source-update bluefin "${GITHUB_OUTPUT}"
 
       - name: Open or update pull request
         id: update
@@ -41,11 +42,11 @@ jobs:
           token: ${{ secrets.MERGE_QUEUE_TOKEN || github.token }}
           branch: automation/update-bluefin-stable
           delete-branch: true
-          commit-message: "npins: update Bluefin stable"
-          title: "npins: update Bluefin stable"
+          commit-message: "sources: update Bluefin stable"
+          title: "sources: update Bluefin stable"
           body: |
             Refreshes the Bluefin stable container source to immutable digest
-            `${{ steps.pin.outputs.digest }}` and its Nix fixed-output hash.
+            `${{ steps.pin.outputs.digest }}` and verifies its Cosign identity.
 
             The candidate validates the complete repository and image graph
             before auto-merge is enabled.
@@ -58,7 +59,7 @@ jobs:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           EXPECTED_AUTHOR: ${{ vars.AUTOMATION_UPDATE_LOGIN || 'app/github-actions' }}
           EXPECTED_BRANCH: automation/update-bluefin-stable
-          EXPECTED_TITLE: "npins: update Bluefin stable"
+          EXPECTED_TITLE: "sources: update Bluefin stable"
           GH_TOKEN: ${{ secrets.MERGE_QUEUE_TOKEN || github.token }}
           PR_NUMBER: ${{ steps.update.outputs.pull-request-number }}
-        run: nix run .#trusted-update
+        run: purplefin-trusted-update

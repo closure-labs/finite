@@ -1,4 +1,4 @@
-{...}: {
+_: {
   den.aspects.features.hardware.dell-xps-9350-intel.bootc.purplefin = {
     hardware = "dell-xps-9350-intel";
     build = {

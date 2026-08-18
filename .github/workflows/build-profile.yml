@@ -19,7 +19,7 @@ on:
       parent-image:
         required: true
         type: string
-      parent-from-npins:
+      parent-from-lock:
         required: false
         default: false
         type: boolean
@@ -72,10 +72,7 @@ jobs:
         uses: ./.github/actions/setup-nix
         with:
           github-token: ${{ github.token }}
-
-      - name: Materialize Flake-generated build artifacts
-        shell: bash
-        run: nix run .#export-artifacts -- .
+          toolset: workflow-image
 
       - name: Log in to GHCR for publishing and build cache
         if: inputs.publish
@@ -92,16 +89,6 @@ jobs:
               --username "${GITHUB_ACTOR}" \
               --password-stdin
           echo "REGISTRY_AUTH_FILE=${registry_auth_file}" >>"${GITHUB_ENV}"
-
-      - name: Install ORAS
-        if: inputs.publish
-        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
-        with:
-          version: 1.3.3
-
-      - name: Install cosign
-        if: inputs.publish
-        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
 
       - name: Resolve immutable build inputs
         id: inputs
@@ -152,7 +139,7 @@ jobs:
           trap record_duration EXIT
 
           read -r -a tags <<<"${TAGS}"
-          if digest="$(nix run .#image-reuse -- "${tags[0]}")" &&
+          if digest="$(purplefin-image-reuse "${tags[0]}")" &&
             [[ -n "${digest}" ]]; then
             if image_id="$({
               podman pull --quiet \
@@ -170,9 +157,9 @@ jobs:
           fi
           echo 'hit=false' >>"${GITHUB_OUTPUT}"
 
-      - name: Load npins-locked upstream image
-        if: inputs.parent-from-npins && steps.reuse.outputs.hit != 'true'
-        run: nix run .#load-bluefin
+      - name: Load locked upstream image
+        if: inputs.parent-from-lock && steps.reuse.outputs.hit != 'true'
+        run: purplefin-load-bluefin
 
       - name: Build image from immutable parent
         if: steps.reuse.outputs.hit != 'true'
@@ -181,7 +168,7 @@ jobs:
           BUILD_INPUT: ${{ inputs.build-input }}
           BUILD_PROFILE: ${{ inputs.profile }}
           PARENT_DIGEST: ${{ steps.inputs.outputs.parent_digest }}
-          PARENT_FROM_NPINS: ${{ inputs.parent-from-npins }}
+          PARENT_FROM_LOCK: ${{ inputs.parent-from-lock }}
           PARENT_IMAGE: ${{ inputs.parent-image }}
           PARENT_PROFILE: ${{ inputs.parent-profile }}
           PARENT_TAG: ${{ inputs.parent-tag }}
@@ -215,7 +202,7 @@ jobs:
           fi
           base_ref="${PARENT_IMAGE}@${PARENT_DIGEST}"
           pull_policy=always
-          if [[ "${PARENT_FROM_NPINS}" == true ]]; then
+          if [[ "${PARENT_FROM_LOCK}" == true ]]; then
             [[ -n "${PARENT_TAG}" ]]
             base_ref="${PARENT_IMAGE}:${PARENT_TAG}"
             pull_policy=never
@@ -237,6 +224,7 @@ jobs:
           buildah bud \
             --file "${containerfile}" \
             --pull="${pull_policy}" \
+            --build-context purplefin-generated="$(nix build .#generated --no-link --print-out-paths)" \
             "${cache_args[@]}" \
             "${parent_args[@]}" \
             --label "io.purplefin.build.input=${BUILD_INPUT}" \
@@ -465,8 +453,8 @@ jobs:
           }
           trap record_duration EXIT
 
-          syft_store="$(nix build .#syft --no-link --print-out-paths)"
-          syft_cmd="${syft_store}/bin/syft"
+          syft_cmd="$(readlink -f "$(command -v syft)")"
+          syft_store="$(dirname "$(dirname "${syft_cmd}")")"
           [[ -x "${syft_cmd}" ]]
 
           mapfile -t syft_closure < <(

@@ -1,0 +1,7 @@
+{
+  "architecture": "amd64",
+  "digest": "sha256:27cabea9e504a7c4a7546f287f5d60a4846c62b5a8d18c0f678d25fdc2d7975a",
+  "image": "ghcr.io/osbuild/image-builder-cli",
+  "schema": 1,
+  "tag": "latest"
+}

@@ -10,10 +10,6 @@ inputs:
     description: Published Purplefin profile to embed
     required: false
     default: base-generic-x86_64
-  image-builder:
-    description: Immutable OSBuild Image Builder CLI reference
-    required: false
-    default: ghcr.io/osbuild/image-builder-cli@sha256:27cabea9e504a7c4a7546f287f5d60a4846c62b5a8d18c0f678d25fdc2d7975a
   token:
     description: GitHub token used for attestations and trusted cache publication
     required: true
@@ -36,6 +32,7 @@ runs:
       uses: ./.github/actions/setup-nix
       with:
         github-token: ${{ inputs.token }}
+        toolset: workflow-installer
 
     - name: Run Nix-declared installer graph
       id: installer
@@ -43,11 +40,10 @@ runs:
         CACHE_WRITE: ${{ inputs.cache-write }}
         GHCR_TOKEN: ${{ inputs.token }}
         GH_TOKEN: ${{ inputs.token }}
-        IMAGE_BUILDER: ${{ inputs.image-builder }}
         IMAGE_REF: ghcr.io/${{ github.repository }}
         IMAGE_TAG: ${{ inputs.image-tag }}
       shell: bash
-      run: nix run .#installer-build
+      run: purplefin-installer-build
 
     - name: Upload installer diagnostics
       if: always()

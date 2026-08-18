@@ -6,6 +6,27 @@ All notable changes to Purplefin are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Typed, architecture-specific OCI locks for Bluefin and OSBuild Image Builder,
+  with Nix applications for verification and atomic updates.
+- Per-domain Nix workflow toolsets and a Statix validation proof.
+
+### Changed
+
+- GitHub workflows now keep security orchestration in YAML while using locked
+  Nix tools for OCI, CI, installer, release, and maintenance operations.
+- Profile, source, and repository modules now live in named dendritic
+  subtrees; Home Manager profile data no longer relies on `extraSpecialArgs`.
+- Generated build contracts are consumed directly from the Nix store, and CI
+  derives its cache-proof list from the evaluated check graph.
+- The generated profile catalog uses schema 3 for the typed OCI source model.
+
+### Removed
+
+- The unused npins container archive hash and worktree artifact-export path.
+- Dedicated ORAS and Cosign setup actions in image and release jobs.
+
 ## [0.2.1] - 2026-08-17
 
 ### Added
