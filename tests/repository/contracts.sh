@@ -36,6 +36,19 @@ done < <(
 
 test -f bootc/Containerfile
 test -f bootc/Containerfile.derived
+test -f npins/sources.json
+test -f secretspec.toml
+jq -e '
+  .pins["bluefin-stable"] as $pin |
+  $pin.type == "Container" and
+  ($pin.image_digest | test("^sha256:[0-9a-f]{64}$")) and
+  ($pin.hash | test("^sha256-[A-Za-z0-9+/]{43}=$"))
+' npins/sources.json >/dev/null
+grep -qFx 'ARG BASE_REF' bootc/Containerfile
+if grep -qF 'bluefin:stable' bootc/Containerfile; then
+	echo 'Containerfile contains a mutable Bluefin tag' >&2
+	exit 1
+fi
 grep -qF 'COPY modules/aspects/' bootc/Containerfile
 grep -qF '/tmp/purplefin-build/bootc/builder/full.sh' bootc/Containerfile
 grep -qF '/tmp/purplefin-build/bootc/builder/derived.sh' bootc/Containerfile.derived

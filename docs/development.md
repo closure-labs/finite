@@ -14,10 +14,24 @@ configurations, workflows, and tests:
 
 ```bash
 nix fmt
-nix flake check --print-build-logs
+nix run .#ci
 ```
 
-`nix run .#ci` runs the same check graph.
+The CI application runs the canonical `nix flake check`, verifies that every
+check produced a reference-free proof closure below 1 MiB, and leaves Cachix
+read-only unless an authorization token is available.
+
+On the primary workstation, run the check graph with Cachix upload enabled:
+
+```bash
+nix run .#local-cache
+```
+
+The `local-cache` app uses SecretSpec profile `local-cache` and scope `cachix`.
+It accepts `CACHIX_AUTH_TOKEN` from the environment or loads the workstation
+value from `$HOME/.other-fun-things/.cachix-purplefin-auth`. It pushes only the
+13 guarded proof outputs; it does not watch the Nix store or upload container
+images, generated data closures, or Home Manager activation closures.
 
 ## Build an image
 
@@ -57,6 +71,8 @@ nix run .#export-artifacts -- .
 | Command | Result |
 | --- | --- |
 | `nix build .#architecture` | Mermaid rendering of the evaluated Den graph |
+| `nix run .#verify-bluefin` | Verify the locked digest and Cosign identity |
+| `nix run .#load-bluefin` | Copy the verified digest into container storage |
 | `nix build .#home-dale` | Home Manager activation package for `dale` |
 | `nix build .#syft` | Pinned Syft package |
 | `nix build .#sbomnix` | Pinned sbomnix package |
@@ -70,6 +86,7 @@ modules/aspects/      base, capability, hardware, and role aspects
 modules/profiles.nix  profile composition and published tags
 modules/operations.nix checks, delivery, and GitHub operation graph
 modules/schema/       typed entities and classes
+npins/sources.json    immutable upstream container source lock
 bootc/builder/        full, derived, planning, and reuse engines
 lib/                  Flake checks, applications, and artifact rendering
 home/                 shared Home Manager modules

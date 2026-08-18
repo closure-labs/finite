@@ -26,7 +26,7 @@ run0 systemctl reboot
 Run the complete graph with build logs:
 
 ```bash
-nix flake check --print-build-logs
+nix run .#ci
 ```
 
 Run a single named check when isolating a failure:

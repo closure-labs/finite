@@ -1,12 +1,12 @@
-name: Update Nix flake inputs
+name: Update Bluefin stable pin
 
 on:
   schedule:
-    - cron: "31 9 * * 1"
+    - cron: "7 7 * * *"
   workflow_dispatch:
 
 concurrency:
-  group: update-flake-lock
+  group: update-bluefin-stable
   cancel-in-progress: false
 
 permissions:
@@ -16,9 +16,9 @@ permissions:
 
 jobs:
   update:
-    name: Refresh every locked input
+    name: Refresh and validate Bluefin stable
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 180
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -30,19 +30,25 @@ jobs:
         with:
           github-token: ${{ github.token }}
 
-      - name: Update the lock file and open a pull request
+      - name: Refresh and verify npins source
+        id: pin
+        run: nix run .#update-bluefin -- "${GITHUB_OUTPUT}"
+
+      - name: Open or update pull request
         id: update
-        uses: DeterminateSystems/update-flake-lock@834c491b2ece4de0bbd00d85214bb5e83b4da5c6 # v28
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           token: ${{ secrets.MERGE_QUEUE_TOKEN || github.token }}
-          base: main
-          branch: automation/weekly-flake-input-refresh
-          commit-msg: "flake.lock: refresh all inputs"
-          pr-title: "flake.lock: refresh all inputs"
-          pr-body: |
-            Automated weekly refresh of every locked flake input.
+          branch: automation/update-bluefin-stable
+          delete-branch: true
+          commit-message: "npins: update Bluefin stable"
+          title: "npins: update Bluefin stable"
+          body: |
+            Refreshes the Bluefin stable container source to immutable digest
+            `${{ steps.pin.outputs.digest }}` and its Nix fixed-output hash.
 
-            Required validation and protected-branch policy still apply.
+            The candidate validates the complete repository and image graph
+            before auto-merge is enabled.
 
       - name: Validate and enable auto-merge
         if: >-
@@ -51,8 +57,8 @@ jobs:
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           EXPECTED_AUTHOR: ${{ vars.AUTOMATION_UPDATE_LOGIN || 'github-actions[bot]' }}
-          EXPECTED_BRANCH: automation/weekly-flake-input-refresh
-          EXPECTED_TITLE: "flake.lock: refresh all inputs"
+          EXPECTED_BRANCH: automation/update-bluefin-stable
+          EXPECTED_TITLE: "npins: update Bluefin stable"
           GH_TOKEN: ${{ secrets.MERGE_QUEUE_TOKEN || github.token }}
           PR_NUMBER: ${{ steps.update.outputs.pull-request-number }}
         run: nix run .#trusted-update

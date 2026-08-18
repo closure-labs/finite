@@ -1,13 +1,14 @@
-{...}: {
+{
+  config,
+  den,
+  ...
+}: {
   den.aspects.features.base = {
+    includes = [den.aspects.sources.bluefin];
     bootc = {
       purplefin = {
         base.enable = true;
-        upstream = {
-          image = "ghcr.io/projectbluefin/bluefin";
-          tag = "stable";
-          preserve = true;
-        };
+        upstream = config.purplefin.sources.bluefin // {preserve = true;};
         build = {
           steps = [
             {

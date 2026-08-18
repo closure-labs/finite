@@ -20,7 +20,23 @@
       };
       tag = lib.mkOption {
         type = lib.types.strMatching "[a-z0-9._-]+";
-        description = "Verified upstream channel resolved to a digest by CI.";
+        description = "Mutable upstream channel used only by the source updater.";
+      };
+      architecture = lib.mkOption {
+        type = lib.types.enum ["amd64"];
+        description = "OCI architecture selected by the locked upstream source.";
+      };
+      digest = lib.mkOption {
+        type = lib.types.strMatching "sha256:[0-9a-f]{64}";
+        description = "Immutable upstream OCI digest committed by npins.";
+      };
+      archiveHash = lib.mkOption {
+        type = lib.types.strMatching "sha256-[A-Za-z0-9+/]{43}=";
+        description = "Nix fixed-output hash for the upstream OCI archive.";
+      };
+      cosignIdentity = lib.mkOption {
+        type = lib.types.str;
+        description = "Required keyless signing identity for the upstream digest.";
       };
       preserve = lib.mkOption {
         type = lib.types.bool;

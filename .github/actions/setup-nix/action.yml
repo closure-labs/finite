@@ -1,0 +1,27 @@
+name: Set up Nix and Purplefin Cachix
+description: Install Nix with GitHub access and configure the read-through Purplefin cache
+
+inputs:
+  github-token:
+    description: GitHub token used by Nix to avoid anonymous API rate limits
+    required: true
+  cachix-auth-token:
+    description: Optional token used only by explicit guarded Cachix pushes
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Install Nix
+      uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31
+      with:
+        extra_nix_config: |
+          access-tokens = github.com=${{ inputs.github-token }}
+
+    - name: Configure Purplefin Cachix
+      uses: cachix/cachix-action@5f2d7c5294214f71b873db4b969586b980625e71 # v17
+      with:
+        authToken: ${{ inputs.cachix-auth-token }}
+        name: purplefin
+        skipPush: true
