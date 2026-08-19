@@ -268,6 +268,7 @@ in {
     tools = with pkgs; [
       applications.imagePlan
       applications.imageReuse
+      applications.imageSign
       applications.imageSbom
       applications.shardPlan
       applications.validateImageShard
@@ -282,6 +283,7 @@ in {
       bash tests/bootc/derived-profile.sh
       bash tests/bootc/plan.sh
       bash tests/bootc/reuse-image.sh
+      bash tests/bootc/sign-image.sh
       bash tests/bootc/sbom.sh
       bash tests/bootc/shards.sh
     '';
@@ -374,6 +376,8 @@ in {
       grep -qF 'candidate_shards' .github/workflows/build.yml
       grep -qF 'purplefin-classify-ci' .github/workflows/build.yml
       grep -qF 'purplefin-image-reuse' .github/workflows/build-profile.yml
+      grep -qF 'purplefin-image-sign' .github/workflows/build-profile.yml
+      ! grep -qF 'cosign sign' .github/workflows/build-profile.yml
       grep -qF 'purplefin-image-sbom' .github/workflows/attest-software-bill-of-materials.yml
       grep -qF 'purplefin-sbom-attestation' .github/workflows/release.yml
       grep -qF 'SBOM_SIGNER_WORKFLOW' lib/flake-applications.nix
@@ -424,6 +428,7 @@ in {
         ${applications.workflowPrepare}/bin/purplefin-ci-plan \
         ${applications.workflowValidation}/bin/purplefin-validate-image-shard \
         ${applications.workflowPublish}/bin/purplefin-image-reuse \
+        ${applications.workflowPublish}/bin/purplefin-image-sign \
         ${applications.workflowPublish}/bin/purplefin-load-bluefin \
         ${applications.workflowPublish}/bin/purplefin-promote-images \
         ${applications.workflowInstaller}/bin/purplefin-installer-build \
