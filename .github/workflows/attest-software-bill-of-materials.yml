@@ -66,6 +66,7 @@ jobs:
           EXPECTED_UPSTREAM_DIGEST: ${{ inputs.upstream-base-digest }}
           EXPECTED_VERSION: ${{ inputs.version }}
           EXPECTED_REVISION: ${{ inputs.source-digest }}
+          GH_TOKEN: ${{ github.token }}
           SUBJECT_TAG: ${{ inputs.subject-tag }}
         shell: bash
         run: |
