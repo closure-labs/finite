@@ -78,6 +78,7 @@ Check:
 
 - `installer-manifest.json` for the payload and Image Builder digests;
 - `installer-environment.log` for container construction failures;
+- `image-builder-pull.log` for pinned Image Builder image pull failures;
 - `image-builder.log` for ISO generation failures;
 - `qemu-smoke.log` or `qemu-boot.log` for boot-test failures;
 - `runner-capacity-before.txt` and `runner-capacity-after.txt` for storage

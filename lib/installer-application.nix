@@ -12,6 +12,7 @@ pkgs.writeShellApplication {
     cosign
     findutils
     gh
+    gnutar
     gnugrep
     jq
     podman
@@ -44,10 +45,15 @@ pkgs.writeShellApplication {
     install -d -m 0755 diagnostics output
     root_podman=(sudo "''${PURPLEFIN_PODMAN:?PURPLEFIN_PODMAN is required}")
     registry_auth_file="''${RUNNER_TEMP}/purplefin-installer-auth.json"
+    cosign_config_dir="''${RUNNER_TEMP}/purplefin-installer-cosign"
     cache_ref="''${IMAGE_REF}-installer-cache"
     cache_available=false
+    environment_cache_hit=false
+    environment_cache_ref=unresolved
+    environment_input=unresolved
     environment_seconds=0
     image_builder_seconds=0
+    image_builder_pull_pid=
     smoke_seconds=0
     payload_digest=unresolved
     payload_tag=unresolved
@@ -55,6 +61,10 @@ pkgs.writeShellApplication {
     collect_diagnostics() {
       local status=$?
       set +e
+      if [[ -n "''${image_builder_pull_pid}" ]]; then
+        kill -TERM "''${image_builder_pull_pid}" >/dev/null 2>&1 || true
+        wait "''${image_builder_pull_pid}" >/dev/null 2>&1 || true
+      fi
       {
         echo '# Runner filesystem'
         df -h /
@@ -74,6 +84,7 @@ pkgs.writeShellApplication {
       if [[ "''${CACHE_WRITE}" == true ]]; then
         "''${root_podman[@]}" logout --authfile "''${registry_auth_file}" ghcr.io >/dev/null 2>&1
         rm -f "''${registry_auth_file}"
+        rm -rf "''${cosign_config_dir}"
       fi
       exit "''${status}"
     }
@@ -89,7 +100,33 @@ pkgs.writeShellApplication {
     payload_ref="''${IMAGE_REF}@''${payload_digest}"
     payload_embed_ref="''${IMAGE_REF}:''${IMAGE_TAG}"
     payload_tag="''${IMAGE_TAG}"
+    installer_context_digest="$(
+      tar \
+        --create \
+        --file=- \
+        --format=gnu \
+        --group=0 \
+        --mtime='UTC 1970-01-01' \
+        --numeric-owner \
+        --owner=0 \
+        --sort=name \
+        installer/Containerfile installer/rootfs |
+        sha256sum |
+        cut -d' ' -f1
+    )"
+    environment_input="$(
+      printf '%s\n' \
+        'purplefin-installer-environment-v1' \
+        "context=''${installer_context_digest}" \
+        "payload=''${payload_ref}" \
+        "payload-embed=''${payload_embed_ref}" |
+        sha256sum |
+        cut -d' ' -f1
+    )"
+    [[ "''${environment_input}" =~ ^[0-9a-f]{64}$ ]]
+    environment_cache_ref="''${cache_ref}:environment-''${environment_input}"
     cosign_identity="https://github.com/''${GITHUB_REPOSITORY}/.github/workflows/build-profile.yml@refs/heads/main"
+    environment_cache_identity="https://github.com/''${GITHUB_REPOSITORY}/.github/workflows/build-installer.yml@refs/heads/main"
     cosign verify \
       --certificate-oidc-issuer https://token.actions.githubusercontent.com \
       --certificate-identity "''${cosign_identity}" \
@@ -117,6 +154,12 @@ pkgs.writeShellApplication {
           --username "''${GITHUB_ACTOR}" \
           --password-stdin
       auth_args+=(--authfile "''${registry_auth_file}")
+      install -d -m 0700 "''${cosign_config_dir}"
+      printf '%s' "''${GHCR_TOKEN}" |
+        DOCKER_CONFIG="''${cosign_config_dir}" cosign login \
+          ghcr.io \
+          --username "''${GITHUB_ACTOR}" \
+          --password-stdin
     fi
     if skopeo list-tags "docker://''${cache_ref}" >/dev/null 2>&1; then
       cache_available=true
@@ -135,18 +178,70 @@ pkgs.writeShellApplication {
     } | tee diagnostics/runner-capacity-before.txt
 
     started="''${SECONDS}"
+    "''${root_podman[@]}" pull "''${auth_args[@]}" "''${image_builder}" \
+      >diagnostics/image-builder-pull.log 2>&1 &
+    image_builder_pull_pid=$!
     "''${root_podman[@]}" pull "''${auth_args[@]}" "''${payload_ref}"
     "''${root_podman[@]}" tag "''${payload_ref}" "''${payload_embed_ref}"
-    "''${root_podman[@]}" build "''${auth_args[@]}" "''${cache_args[@]}" \
-      --file installer/Containerfile \
-      --pull=never \
-      --build-context installer-rootfs=installer/rootfs \
-      --build-arg "BASE_REF=''${payload_ref}" \
-      --build-arg "INSTALLER_PAYLOAD_SOURCE_REF=''${payload_embed_ref}" \
-      --build-arg "INSTALLER_PAYLOAD_TARGET_REF=''${payload_ref}" \
-      --tag "localhost/purplefin-installer:''${GITHUB_SHA}" \
-      . 2>&1 | tee diagnostics/installer-environment.log
-    "''${root_podman[@]}" pull "''${auth_args[@]}" "''${image_builder}"
+    environment_cache_metadata="$({
+      skopeo inspect --retry-times 3 "docker://''${environment_cache_ref}" 2>/dev/null || true
+    })"
+    environment_cache_digest="$(jq -r '.Digest // empty' <<<"''${environment_cache_metadata}")"
+    immutable_environment_cache_ref="''${cache_ref}@''${environment_cache_digest}"
+    if [[ "''${environment_cache_digest}" =~ ^sha256:[0-9a-f]{64}$ ]] &&
+      jq -e \
+        --arg input "''${environment_input}" \
+        '(.Labels // {})["io.purplefin.installer.input"] == $input' \
+        <<<"''${environment_cache_metadata}" >/dev/null &&
+      cosign verify \
+        --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+        --certificate-identity "''${environment_cache_identity}" \
+        "''${immutable_environment_cache_ref}" >/dev/null 2>&1; then
+      environment_cache_hit=true
+      echo "Reusing exact installer environment ''${immutable_environment_cache_ref}" |
+        tee diagnostics/installer-environment.log
+      "''${root_podman[@]}" pull "''${auth_args[@]}" "''${immutable_environment_cache_ref}"
+      "''${root_podman[@]}" tag \
+        "''${immutable_environment_cache_ref}" \
+        "localhost/purplefin-installer:''${GITHUB_SHA}"
+    else
+      "''${root_podman[@]}" build "''${auth_args[@]}" "''${cache_args[@]}" \
+        --file installer/Containerfile \
+        --pull=never \
+        --build-context installer-rootfs=installer/rootfs \
+        --build-arg "BASE_REF=''${payload_ref}" \
+        --build-arg "INSTALLER_PAYLOAD_SOURCE_REF=''${payload_embed_ref}" \
+        --build-arg "INSTALLER_PAYLOAD_TARGET_REF=''${payload_ref}" \
+        --label "io.purplefin.installer.input=''${environment_input}" \
+        --tag "localhost/purplefin-installer:''${GITHUB_SHA}" \
+        installer 2>&1 | tee diagnostics/installer-environment.log
+      if [[ "''${CACHE_WRITE}" == true ]]; then
+        "''${root_podman[@]}" tag \
+          "localhost/purplefin-installer:''${GITHUB_SHA}" \
+          "''${environment_cache_ref}"
+        "''${root_podman[@]}" push \
+          "''${auth_args[@]}" \
+          "''${environment_cache_ref}" 2>&1 |
+          tee -a diagnostics/installer-environment.log
+        environment_cache_digest="$(
+          skopeo inspect --retry-times 3 "docker://''${environment_cache_ref}" |
+            jq -er .Digest
+        )"
+        [[ "''${environment_cache_digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
+        DOCKER_CONFIG="''${cosign_config_dir}" cosign sign --yes \
+          "''${cache_ref}@''${environment_cache_digest}"
+      fi
+    fi
+    set +e
+    wait "''${image_builder_pull_pid}"
+    image_builder_pull_status=$?
+    set -e
+    image_builder_pull_pid=
+    cat diagnostics/image-builder-pull.log
+    [[ "''${image_builder_pull_status}" == 0 ]] || {
+      echo "Image Builder pull failed with status ''${image_builder_pull_status}" >&2
+      exit "''${image_builder_pull_status}"
+    }
     environment_seconds=$((SECONDS - started))
 
     started="''${SECONDS}"
@@ -179,7 +274,9 @@ pkgs.writeShellApplication {
     jq -n \
       --arg image_builder "''${image_builder}" \
       --arg image_builder_digest "''${image_builder_digest}" \
+      --arg installer_environment_input "''${environment_input}" \
       --arg installer_environment_image_id "''${installer_image_id}" \
+      --argjson installer_environment_cache_hit "''${environment_cache_hit}" \
       --arg iso "''${final_iso##*/}" \
       --arg iso_sha256 "''${iso_sha256}" \
       --arg payload "''${payload_ref}" \
@@ -195,7 +292,11 @@ pkgs.writeShellApplication {
         source: {repository: $source_repository, commit: $source_commit},
         version: $version,
         iso: {name: $iso, sha256: $iso_sha256},
-        installer_environment: {image_id: $installer_environment_image_id},
+        installer_environment: {
+          image_id: $installer_environment_image_id,
+          input: $installer_environment_input,
+          cache_hit: $installer_environment_cache_hit
+        },
         image_builder: {reference: $image_builder, digest: $image_builder_digest},
         payload: {
           reference: $payload,
@@ -231,6 +332,8 @@ pkgs.writeShellApplication {
         echo "| Payload tag | \`''${payload_tag}\` |"
         echo "| Payload digest | \`''${payload_digest}\` |"
         echo "| Installer image | \`''${installer_image_id}\` |"
+        echo "| Installer input | \`''${environment_input}\` |"
+        echo "| Exact environment cache hit | \`''${environment_cache_hit}\` |"
         echo "| ISO SHA-256 | \`''${iso_sha256}\` |"
         echo "| Registry cache available | \`''${cache_available}\` |"
         echo "| Registry cache updated | \`''${CACHE_WRITE}\` |"

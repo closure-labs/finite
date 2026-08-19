@@ -834,21 +834,40 @@
 
       iso="''${1:?usage: boot-installer-iso.sh ISO}"
       [[ -s "''${iso}" ]] || { echo "Installer ISO is missing: ''${iso}" >&2; exit 2; }
-      command -v qemu-system-x86_64 >/dev/null
+      qemu="''${PURPLEFIN_QEMU:-qemu-system-x86_64}"
+      qemu_img="''${PURPLEFIN_QEMU_IMG:-qemu-img}"
+      timeout_seconds="''${PURPLEFIN_INSTALLER_SMOKE_TIMEOUT_SECONDS:-300}"
+      poll_interval="''${PURPLEFIN_INSTALLER_SMOKE_POLL_INTERVAL_SECONDS:-1}"
+      ready_pattern='anaconda|installation.*started|starting.*installer'
+      [[ "''${timeout_seconds}" =~ ^[1-9][0-9]*$ ]] || {
+        echo 'PURPLEFIN_INSTALLER_SMOKE_TIMEOUT_SECONDS must be a positive integer' >&2
+        exit 2
+      }
+      command -v "''${qemu}" >/dev/null
+      command -v "''${qemu_img}" >/dev/null
 
       log="$(dirname -- "''${iso}")/qemu-boot.log"
       disk="$(mktemp --suffix=.qcow2)"
-      trap 'rm -f -- "''${disk}"' EXIT
-      qemu-img create -q -f qcow2 "''${disk}" 32G
+      qemu_pid=
+      tail_pid=
+      # Invoked indirectly by the EXIT trap.
+      # shellcheck disable=SC2329
+      cleanup_installer_smoke() {
+        [[ -z "''${qemu_pid}" ]] || kill -TERM "''${qemu_pid}" >/dev/null 2>&1 || true
+        [[ -z "''${tail_pid}" ]] || kill -TERM "''${tail_pid}" >/dev/null 2>&1 || true
+        rm -f -- "''${disk}"
+      }
+      trap cleanup_installer_smoke EXIT
+      "''${qemu_img}" create -q -f qcow2 "''${disk}" 32G
 
       acceleration=(-accel "tcg,thread=multi")
       if [[ -r /dev/kvm && -w /dev/kvm ]]; then
         acceleration=(-accel kvm)
       fi
 
-      set +e
-      timeout --signal=TERM 5m \
-        qemu-system-x86_64 \
+      : >"''${log}"
+      timeout --signal=TERM --kill-after=10s "''${timeout_seconds}s" \
+        "''${qemu}" \
           "''${acceleration[@]}" \
           -machine q35 \
           -m 4096 \
@@ -858,19 +877,46 @@
           -boot d \
           -display none \
           -serial stdio \
-          -no-reboot 2>&1 | tee "''${log}"
-      qemu_status="''${PIPESTATUS[0]}"
+          -no-reboot >"''${log}" 2>&1 &
+      qemu_pid=$!
+      tail --pid="''${qemu_pid}" -n +1 -F "''${log}" &
+      tail_pid=$!
+
+      reached_installer=false
+      while kill -0 "''${qemu_pid}" >/dev/null 2>&1; do
+        if grep -Eqi "''${ready_pattern}" "''${log}"; then
+          reached_installer=true
+          kill -TERM "''${qemu_pid}" >/dev/null 2>&1 || true
+          break
+        fi
+        sleep "''${poll_interval}"
+      done
+
+      set +e
+      wait "''${qemu_pid}"
+      qemu_status=$?
+      wait "''${tail_pid}"
+      tail_status=$?
       set -e
+      qemu_pid=
+      tail_pid=
+
+      [[ "''${tail_status}" == 0 ]] || {
+        echo "QEMU log follower failed with status ''${tail_status}" >&2
+        exit "''${tail_status}"
+      }
+      if [[ "''${reached_installer}" == true ]] ||
+        grep -Eqi "''${ready_pattern}" "''${log}"; then
+        exit 0
+      fi
 
       case "''${qemu_status}" in
         0 | 124 | 143) ;;
         *) echo "QEMU failed with status ''${qemu_status}" >&2; exit "''${qemu_status}" ;;
       esac
 
-      grep -Eqi 'anaconda|installation.*started|starting.*installer' "''${log}" || {
-        echo 'The ISO booted but did not reach the Anaconda installer' >&2
-        exit 1
-      }
+      echo 'The ISO booted but did not reach the Anaconda installer' >&2
+      exit 1
     '';
   };
   installerBuild = import ./installer-application.nix {
