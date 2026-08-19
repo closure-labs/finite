@@ -311,22 +311,7 @@ jobs:
           COSIGN_IDENTITY: https://github.com/${{ github.repository }}/.github/workflows/build-profile.yml@refs/heads/main
           DIGEST: ${{ steps.push.outputs.digest }}
         shell: bash
-        run: |
-          immutable_image="${IMAGE_REF}@${DIGEST}"
-          signed=false
-          for attempt in 1 2; do
-            if cosign sign --yes "${immutable_image}"; then
-              signed=true
-              break
-            fi
-            echo "Cosign signing attempt ${attempt} failed" >&2
-            sleep 5
-          done
-          [[ "${signed}" == true ]]
-          cosign verify \
-            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-            --certificate-identity "${COSIGN_IDENTITY}" \
-            "${immutable_image}" >/dev/null
+        run: purplefin-image-sign
 
       - name: Check for verified build provenance
         id: provenance_check

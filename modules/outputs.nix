@@ -207,6 +207,10 @@ in {
         type = "app";
         program = "${applications.imageReuse}/bin/purplefin-image-reuse";
       };
+      image-sign = {
+        type = "app";
+        program = "${applications.imageSign}/bin/purplefin-image-sign";
+      };
       image-sbom = {
         type = "app";
         program = "${applications.imageSbom}/bin/purplefin-image-sbom";
