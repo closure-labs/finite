@@ -4,6 +4,7 @@
     "sha256": "58cf15422853e95187405d66b0cdb306e66f602218ee0032386c46b1b776a6d1",
     "url": "https://github.com/DeterminateSystems/nix-installer/releases/download/v3.21.9/nix-installer-x86_64-linux"
   },
+  "minimumRuntimeVersion": "3.21.9",
   "schema": 1,
   "selinuxPolicy": {
     "sha256": "44a7427c40825b1fb3b331c480d55569296b619c7c50ff27ee2e237eb1bdcd8d",

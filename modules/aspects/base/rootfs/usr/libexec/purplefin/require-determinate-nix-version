@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+minimum_version="${1:?usage: require-determinate-nix-version MINIMUM_VERSION [NIX_BINARY]}"
+nix_binary="${2:-/nix/var/nix/profiles/default/bin/nix}"
+version_pattern='^[0-9]+\.[0-9]+\.[0-9]+$'
+
+if [[ ! "${minimum_version}" =~ ${version_pattern} ]]; then
+	echo "Invalid minimum Determinate Nix version: ${minimum_version}" >&2
+	exit 2
+fi
+
+version_output="$("${nix_binary}" --version)"
+runtime_version="$(
+	sed -nE \
+		's/^nix \(Determinate Nix ([0-9]+\.[0-9]+\.[0-9]+)\) [^[:space:]]+$/\1/p' \
+		<<<"${version_output}"
+)"
+if [[ ! "${runtime_version}" =~ ${version_pattern} ]]; then
+	echo "Unable to determine the Determinate Nix runtime version from: ${version_output}" >&2
+	exit 1
+fi
+
+if ! printf '%s\n%s\n' "${minimum_version}" "${runtime_version}" |
+	sort --version-sort --check=silent; then
+	echo \
+		"Determinate Nix ${runtime_version} is older than required ${minimum_version}" \
+		>&2
+	exit 1
+fi
+
+printf 'Determinate Nix %s satisfies minimum %s\n' \
+	"${runtime_version}" "${minimum_version}"

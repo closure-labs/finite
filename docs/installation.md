@@ -43,7 +43,9 @@ Purplefin first installs Fedora's supported `nix` and `nix-daemon` packages,
 then uses the pinned Determinate Nix Installer to migrate that upstream Nix
 installation to Determinate Nix. This follows Determinate Systems' migration
 path while retaining Fedora's native filesystem, systemd, and sysusers
-integration.
+integration. Base-image builds require Determinate Nix 3.21.9 or newer; the
+installer may resolve a later stable runtime, but an older runtime fails the
+image build before publication.
 
 The Fedora `nix-filesystem` dependency supplies `/nix`; Purplefin does not
 create that directory separately. Because bootc keeps the image root immutable

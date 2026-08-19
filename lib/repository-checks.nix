@@ -195,6 +195,7 @@ in {
         .schema == 1 and
         .architecture == "x86_64-linux" and
         (.version | test("^[0-9]+\\.[0-9]+\\.[0-9]+$")) and
+        (.minimumRuntimeVersion | test("^[0-9]+\\.[0-9]+\\.[0-9]+$")) and
         (.installer.url | startswith("https://github.com/DeterminateSystems/nix-installer/releases/download/")) and
         (.installer.sha256 | test("^[0-9a-f]{64}$")) and
         (.selinuxPolicy.url | startswith("https://raw.githubusercontent.com/DeterminateSystems/nix-installer/")) and
@@ -299,6 +300,7 @@ in {
       set -euo pipefail
 
       bash modules/aspects/base/tests/contracts.sh
+      bash modules/aspects/base/tests/determinate-version.sh
       bash modules/aspects/base/tests/nix-lifecycle.sh
       bash modules/aspects/capabilities/devops/tests/contracts.sh
       bash modules/aspects/roles/support/tests/contracts.sh

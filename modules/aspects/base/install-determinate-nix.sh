@@ -11,6 +11,7 @@ test -x "${installer}"
 test -s "${policy}"
 test -f "${lock}"
 [[ "$(jq -er .architecture "${lock}")" == x86_64-linux ]]
+minimum_runtime_version="$(jq -er .minimumRuntimeVersion "${lock}")"
 [[ ! -e "${seed}" ]]
 [[ -d /nix ]]
 [[ "$(rpm -qf --qf '%{NAME}\n' /nix)" == nix-filesystem ]]
@@ -42,6 +43,8 @@ if [[ -L /usr/local ]]; then
 	rmdir /var/usrlocal/bin
 fi
 install -D -m 0444 "${policy}" /usr/share/selinux/packages/determinate-nix.pp
+/usr/libexec/purplefin/require-determinate-nix-version \
+	"${minimum_runtime_version}"
 
 # The installer emits mutable-host unit overrides. Purplefin vendors the same
 # unit contracts under /usr/lib/systemd/system and owns the bootc mount order.
