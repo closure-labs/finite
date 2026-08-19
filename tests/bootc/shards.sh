@@ -2,51 +2,68 @@
 set -euo pipefail
 
 profiles="$({
-	jq -cn '[range(0; 12) as $index | {
-		profile: "profile-\($index)",
-		build_input: ("a" * 64),
-		tags: "profile-\($index)",
-		stage: "role",
-		parent: "base"
-	}]'
+	jq -cn '
+		[{
+			profile: "base",
+			build_input: ("a" * 64),
+			tags: "base",
+			stage: "root",
+			parent: null
+		}] +
+		[range(0; 4) as $index | {
+			profile: "hardware-\($index)",
+			build_input: ("a" * 64),
+			tags: "hardware-\($index)",
+			stage: "hardware",
+			parent: "base"
+		}] +
+		[range(0; 8) as $index | {
+			profile: "role-\($index)",
+			build_input: ("a" * 64),
+			tags: "role-\($index)",
+			stage: "role",
+			parent: "hardware-\($index % 4)"
+		}]'
 })"
 matrix="$(jq -cn --argjson include "${profiles}" '{include: $include}')"
-shards="$(bash bootc/builder/shard-plan.sh "${matrix}")"
+shards="$(purplefin-shard-plan "${profiles}" "${matrix}")"
 
 jq -e '
 	(.include | length) == 4 and
-	([.include[].profiles[].profile] | length) == 12 and
-	([.include[].profiles[].profile] | unique | length) == 12
+	([.include[].profiles[] | select(.target) | .profile] | length) == 13 and
+	([.include[].profiles[] | select(.target) | .profile] | unique | length) == 13 and
+	all(.include[].profiles[]; .target == true or .target == false)
 ' <<<"${shards}" >/dev/null
 jq -e '
-	.include[0].profiles | map(.profile) == ["profile-0", "profile-4", "profile-8"]
+	.include[0].profiles | map(.profile) == ["base", "hardware-3", "role-3", "role-7"]
 ' <<<"${shards}" >/dev/null
 jq -e '
-	.include[3].profiles | map(.profile) == ["profile-3", "profile-7", "profile-11"]
+	(.include[1].profiles | map(.profile)) == ["base", "hardware-0", "role-0", "role-4"] and
+	(.include[1].profiles[0].target == false)
 ' <<<"${shards}" >/dev/null
 
-for count in $(seq 0 12); do
+for count in $(seq 0 13); do
 	selected="$(jq -c --argjson count "${count}" '.[0:$count]' <<<"${profiles}")"
 	selected_matrix="$(jq -cn --argjson include "${selected}" '{include: $include}')"
-	selected_shards="$(bash bootc/builder/shard-plan.sh "${selected_matrix}")"
+	selected_shards="$(purplefin-shard-plan "${profiles}" "${selected_matrix}")"
 	jq -e --argjson count "${count}" '
 		(.include | length) == ([4, $count] | min) and
 		all(.include[]; (.profiles | length) > 0) and
-		([.include[].profiles[].profile] | length) == $count and
-		([.include[].profiles[].profile] | unique | length) == $count
+		([.include[].profiles[] | select(.target) | .profile] | length) == $count and
+		([.include[].profiles[] | select(.target) | .profile] | unique | length) == $count
 	' <<<"${selected_shards}" >/dev/null
 done
 
 duplicate="$(jq -cn --argjson profile "$(jq -c '.[0]' <<<"${profiles}")" '{include: [$profile, $profile]}')"
-if bash bootc/builder/shard-plan.sh "${duplicate}" >/dev/null 2>&1; then
+if purplefin-shard-plan "${profiles}" "${duplicate}" >/dev/null 2>&1; then
 	echo "duplicate profiles must fail shard planning" >&2
 	exit 1
 fi
-if bash bootc/builder/shard-plan.sh '[]' >/dev/null 2>&1; then
+if purplefin-shard-plan '[]' "${matrix}" >/dev/null 2>&1; then
 	echo "a non-object matrix must fail shard planning" >&2
 	exit 1
 fi
-if bash bootc/builder/shard-plan.sh "${matrix}" 0 >/dev/null 2>&1; then
+if purplefin-shard-plan "${profiles}" "${matrix}" 0 >/dev/null 2>&1; then
 	echo "a zero shard limit must fail shard planning" >&2
 	exit 1
 fi
@@ -58,7 +75,7 @@ PROFILE_SHARD="${valid_shard}" \
 	PURPLEFIN_BASE_DIGEST="sha256:$(printf 'b%.0s' {1..64})" \
 	PURPLEFIN_LOAD_BLUEFIN=/not-used \
 	PURPLEFIN_VERSION=testing \
-	bash bootc/builder/validate-shard.sh --check |
+	purplefin-validate-image-shard --check |
 	jq -e '. == ["base", "base-dell-xps-9350-intel"]' >/dev/null
 
 unknown="$(jq -c '.[0] | .profile = "unknown" | [.]' "${generated_root}/bootc/generated/image-matrix.json")"
@@ -67,7 +84,7 @@ if PROFILE_SHARD="${unknown}" \
 	PURPLEFIN_BASE_DIGEST="sha256:$(printf 'b%.0s' {1..64})" \
 	PURPLEFIN_LOAD_BLUEFIN=/not-used \
 	PURPLEFIN_VERSION=testing \
-	bash bootc/builder/validate-shard.sh --check >/dev/null 2>&1; then
+	purplefin-validate-image-shard --check >/dev/null 2>&1; then
 	echo "unknown profiles must fail shard validation" >&2
 	exit 1
 fi
@@ -78,7 +95,7 @@ if PROFILE_SHARD="${duplicated}" \
 	PURPLEFIN_BASE_DIGEST="sha256:$(printf 'b%.0s' {1..64})" \
 	PURPLEFIN_LOAD_BLUEFIN=/not-used \
 	PURPLEFIN_VERSION=testing \
-	bash bootc/builder/validate-shard.sh --check >/dev/null 2>&1; then
+	purplefin-validate-image-shard --check >/dev/null 2>&1; then
 	echo "duplicate shard profiles must fail validation" >&2
 	exit 1
 fi
@@ -91,7 +108,7 @@ for invalid_shard in \
 		PURPLEFIN_BASE_DIGEST="sha256:$(printf 'b%.0s' {1..64})" \
 		PURPLEFIN_LOAD_BLUEFIN=/not-used \
 		PURPLEFIN_VERSION=testing \
-		bash bootc/builder/validate-shard.sh --check >/dev/null 2>&1; then
+		purplefin-validate-image-shard --check >/dev/null 2>&1; then
 		echo "malformed or stale shard contracts must fail validation" >&2
 		exit 1
 	fi

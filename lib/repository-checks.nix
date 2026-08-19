@@ -176,6 +176,14 @@ in {
       ' sources/image-builder.json >/dev/null
       secretspec schema --file secretspec.toml --profile local-cache |
         jq -e '.required == ["CACHIX_AUTH_TOKEN"]' >/dev/null
+      secretspec schema --file secretspec.toml --profile github-actions |
+        jq -e '
+          .required == [] and
+          (.properties | keys == ["CACHIX_AUTH_TOKEN", "MERGE_QUEUE_TOKEN"])
+        ' >/dev/null
+      grep -qF 'github-actions = "env"' secretspec.toml
+      grep -qF 'ref = { item = "GITHUB_ACTIONS_CACHIX_AUTH_TOKEN" }' secretspec.toml
+      grep -qF 'ref = { item = "GITHUB_ACTIONS_MERGE_QUEUE_TOKEN" }' secretspec.toml
       ! grep -qF 'cachix watch-exec' lib/flake-applications.nix
       grep -qF 'cachix push --omit-deriver purplefin' lib/flake-applications.nix
       grep -qF 'nix --accept-flake-config build --no-link' lib/flake-applications.nix
@@ -208,6 +216,8 @@ in {
     tools = with pkgs; [
       applications.classifyChanges
       applications.classifyCi
+      applications.ciGate
+      applications.promoteImages
       applications.trustedUpdate
       git
       gnugrep
@@ -217,6 +227,7 @@ in {
       bash tests/automation/classify-changes.sh
       bash tests/automation/classify-ci.sh
       bash tests/automation/ci-gate.sh
+      bash tests/automation/promote-images.sh
       bash tests/automation/trusted-update.sh
     '';
   };
@@ -225,7 +236,15 @@ in {
     name = "bootc-checks";
     source = bootcSource;
     generatedRoot = generated;
-    tools = with pkgs; [diffutils findutils gnugrep jq];
+    tools = with pkgs; [
+      applications.imagePlan
+      applications.shardPlan
+      applications.validateImageShard
+      diffutils
+      findutils
+      gnugrep
+      jq
+    ];
     commands = ''
       bash tests/bootc/derived-profile.sh
       bash tests/bootc/plan.sh
@@ -296,17 +315,17 @@ in {
       ' automation/github/policies/main-protection.json >/dev/null
 
       grep -qF 'nix run .#ci' .github/workflows/build.yml
-      grep -qF 'purplefin-trusted-update' .github/workflows/update-flake-lock.yml
-      grep -qF 'purplefin-trusted-update' .github/workflows/update-image-builder.yml
-      grep -qF 'purplefin-trusted-update' .github/workflows/update-bluefin.yml
+      grep -qF 'nix run .#trusted-update' .github/workflows/update-flake-lock.yml
+      grep -qF 'nix run .#trusted-update' .github/workflows/update-image-builder.yml
+      grep -qF 'nix run .#trusted-update' .github/workflows/update-bluefin.yml
       [[ "$(grep -cF 'purplefin-trusted-update' .github/workflows/release.yml)" == 2 ]]
       [[ "$(grep -cF 'SOURCE_SHA: ''${{ steps.source.outputs.source_sha }}' .github/workflows/release.yml)" == 2 ]]
       ! grep -qF 'steps.version.outputs.source_sha' .github/workflows/release.yml
       ! grep -qF 'git push origin HEAD:main' .github/workflows/release.yml
       ! grep -R -qF 'github-actions[bot]' .github/workflows
-      grep -qF 'purplefin-source-update bluefin' .github/workflows/update-bluefin.yml
-      grep -qF 'purplefin-source-update image-builder' .github/workflows/update-image-builder.yml
-      grep -qF 'purplefin-source-update flake' .github/workflows/update-flake-lock.yml
+      grep -qF 'nix run .#source-update -- bluefin' .github/workflows/update-bluefin.yml
+      grep -qF 'nix run .#source-update -- image-builder' .github/workflows/update-image-builder.yml
+      grep -qF 'nix run .#source-update -- flake' .github/workflows/update-flake-lock.yml
       grep -qF 'purplefin-load-bluefin' .github/workflows/build-profile.yml
       grep -qF 'purplefin-ci-plan' .github/workflows/build.yml
       grep -qF 'purplefin-validate-image-shard' .github/workflows/build.yml
@@ -323,7 +342,11 @@ in {
       grep -qF 'toolset: workflow-validation' .github/workflows/build.yml
       grep -qF 'toolset: workflow-publish' .github/workflows/build-profile.yml
       grep -qF 'toolset: workflow-sbom' .github/workflows/attest-software-bill-of-materials.yml
-      grep -qF 'automation/github/ci-gate.sh' .github/workflows/build.yml
+      grep -qF 'purplefin-ci-gate' .github/workflows/build.yml
+      grep -qF 'toolset: workflow-gate' .github/workflows/build.yml
+      grep -qF 'purplefin-promote-images' .github/workflows/build.yml
+      ! grep -R -Eq 'needs\.(changes|check|plan)|inputs\.publish|publish: true' \
+        .github/workflows
       grep -qF 'attest-software-bill-of-materials.yml' .github/workflows/build.yml
       grep -qF 'attest-software-bill-of-materials.yml' lib/installer-application.nix
       grep -qF 'attest-software-bill-of-materials.yml' .github/workflows/release.yml
@@ -332,8 +355,20 @@ in {
         .github/actions/setup-nix/action.yml
       grep -qF 'cachix/cachix-action@5f2d7c5294214f71b873db4b969586b980625e71' \
         .github/actions/setup-nix/action.yml
-      grep -qF 'nix profile add --accept-flake-config --priority 4' \
+      grep -qF 'nix build --accept-flake-config' \
         .github/actions/setup-nix/action.yml
+      grep -qF -- '--out-link /tmp/purplefin-workflow-toolset' \
+        .github/actions/setup-nix/action.yml
+      grep -qF 'nix run --accept-flake-config .#github-actions-secrets' \
+        .github/actions/setup-nix/action.yml
+      grep -qF 'authToken: ''${{ env.CACHIX_AUTH_TOKEN }}' \
+        .github/actions/setup-nix/action.yml
+      [[ "$(grep -R -h -oF 'secrets.CACHIX_AUTH_TOKEN' .github | wc -l)" == 1 ]]
+      [[ "$(grep -R -h -oF 'secrets.MERGE_QUEUE_TOKEN' .github | wc -l)" == 4 ]]
+      ! grep -R -qF 'token: ''${{ secrets.MERGE_QUEUE_TOKEN' .github
+      grep -qF 'GH_TOKEN: ''${{ env.MERGE_QUEUE_TOKEN || github.token }}' \
+        .github/workflows/queue-dependabot.yml
+      ! grep -qF 'nix profile add' .github/actions/setup-nix/action.yml
       ! grep -R -qF 'DeterminateSystems/determinate-nix-action' .github
       grep -qF -- '--build-context purplefin-generated=' .github/workflows/build-profile.yml
       grep -qF 'RUN --mount=type=bind,from=purplefin-generated,source=.,target=/run/purplefin-generated' \

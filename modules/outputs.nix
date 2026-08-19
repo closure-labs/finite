@@ -132,6 +132,7 @@ in {
         default = generated;
         inherit generated;
         workflow-installer = applications.workflowInstaller;
+        workflow-gate = applications.workflowGate;
         workflow-prepare = applications.workflowPrepare;
         workflow-publish = applications.workflowPublish;
         workflow-release = applications.workflowRelease;
@@ -157,6 +158,10 @@ in {
         type = "app";
         program = "${applications.classifyCi}/bin/purplefin-classify-ci";
       };
+      github-actions-secrets = {
+        type = "app";
+        program = "${applications.githubActionsSecrets}/bin/purplefin-github-actions-secrets";
+      };
       release-notes = {
         type = "app";
         program = "${applications.releaseNotes}/bin/purplefin-release-notes";
@@ -172,6 +177,14 @@ in {
       package-cleanup = {
         type = "app";
         program = "${applications.packageCleanup}/bin/purplefin-package-cleanup";
+      };
+      ci-gate = {
+        type = "app";
+        program = "${applications.ciGate}/bin/purplefin-ci-gate";
+      };
+      promote-images = {
+        type = "app";
+        program = "${applications.promoteImages}/bin/purplefin-promote-images";
       };
       image-plan = {
         type = "app";

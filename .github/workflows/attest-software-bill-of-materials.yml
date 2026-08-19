@@ -9,7 +9,10 @@ on:
       profile:
         required: true
         type: string
-      tags:
+      source-digest:
+        required: true
+        type: string
+      subject-tag:
         required: true
         type: string
       upstream-base-digest:
@@ -62,14 +65,14 @@ jobs:
           BUILD_PROFILE: ${{ inputs.profile }}
           EXPECTED_UPSTREAM_DIGEST: ${{ inputs.upstream-base-digest }}
           EXPECTED_VERSION: ${{ inputs.version }}
-          TAGS: ${{ inputs.tags }}
+          EXPECTED_REVISION: ${{ inputs.source-digest }}
+          SUBJECT_TAG: ${{ inputs.subject-tag }}
         shell: bash
         run: |
-          primary_tag="${TAGS%% *}"
-          metadata="$(skopeo inspect --retry-times 3 "docker://${IMAGE_REF}:${primary_tag}")"
+          metadata="$(skopeo inspect --retry-times 3 "docker://${IMAGE_REF}:${SUBJECT_TAG}")"
           digest="$(jq -er '.Digest' <<<"${metadata}")"
           jq -e --arg build_input "${BUILD_INPUT}" --arg profile "${BUILD_PROFILE}" \
-            --arg revision "${GITHUB_SHA}" --arg upstream_digest "${EXPECTED_UPSTREAM_DIGEST}" \
+            --arg revision "${EXPECTED_REVISION}" --arg upstream_digest "${EXPECTED_UPSTREAM_DIGEST}" \
             --arg version "${EXPECTED_VERSION}" '
               .Labels["io.purplefin.build.input"] == $build_input and
               .Labels["io.purplefin.build.profile"] == $profile and
@@ -80,6 +83,11 @@ jobs:
           cosign verify --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             --certificate-identity "https://github.com/${GITHUB_REPOSITORY}/.github/workflows/build-profile.yml@refs/heads/main" \
             "${IMAGE_REF}@${digest}" >/dev/null
+          gh attestation verify "oci://${IMAGE_REF}@${digest}" \
+            --bundle-from-oci --repo "${GITHUB_REPOSITORY}" \
+            --signer-workflow "${GITHUB_REPOSITORY}/.github/workflows/build-profile.yml" \
+            --source-digest "${EXPECTED_REVISION}" \
+            --predicate-type https://slsa.dev/provenance/v1 >/dev/null
           echo "digest=${digest}" >>"${GITHUB_OUTPUT}"
 
       - name: Restore or generate software bill of materials
@@ -89,7 +97,7 @@ jobs:
           SBOM_IMAGE_DIGEST: ${{ steps.image.outputs.digest }}
           SBOM_IMAGE_REF: ${{ env.IMAGE_REF }}
           SBOM_SIGNER_WORKFLOW: ${{ github.repository }}/.github/workflows/attest-software-bill-of-materials.yml
-          SBOM_SOURCE_DIGEST: ${{ github.sha }}
+          SBOM_SOURCE_DIGEST: ${{ inputs.source-digest }}
         shell: bash
         run: |
           set +e
@@ -131,7 +139,7 @@ jobs:
           SBOM_IMAGE_DIGEST: ${{ steps.image.outputs.digest }}
           SBOM_IMAGE_REF: ${{ env.IMAGE_REF }}
           SBOM_SIGNER_WORKFLOW: ${{ github.repository }}/.github/workflows/attest-software-bill-of-materials.yml
-          SBOM_SOURCE_DIGEST: ${{ github.sha }}
+          SBOM_SOURCE_DIGEST: ${{ inputs.source-digest }}
         shell: bash
         run: |
           for _ in {1..6}; do

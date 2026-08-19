@@ -36,6 +36,7 @@ in rec {
       while IFS= read -r path; do
         case "''${component}:''${path}" in
           installer:.github/actions/build-installer/* | \
+          installer:.github/actions/setup-nix/* | \
           installer:.github/workflows/build-installer.yml | \
           installer:.github/workflows/build.yml | \
           installer:flake.lock | installer:flake.nix | \
@@ -46,7 +47,6 @@ in rec {
             required=true; break ;;
           images:README.md | images:LICENSE | images:docs/* | \
           images:.editorconfig | images:.github/actions/build-installer/* | \
-          images:.github/actions/setup-nix/* | \
           images:.github/dependabot.yml | \
           images:.github/workflows/build-installer.yml | \
           images:.github/workflows/cleanup.yml | \
@@ -66,6 +66,25 @@ in rec {
         esac
       done
       printf '%s\n' "''${required}"
+    '';
+  };
+
+  githubActionsSecrets = pkgs.writeShellApplication {
+    name = "purplefin-github-actions-secrets";
+    runtimeInputs = [pkgs.secretspec];
+    text = ''
+      repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
+      [[ -f "''${repo_root}/secretspec.toml" ]] || {
+        echo "Run this command from the Purplefin repository root" >&2
+        exit 2
+      }
+      exec secretspec export \
+        --file "''${repo_root}/secretspec.toml" \
+        --format gha \
+        --profile github-actions \
+        --provider github-actions \
+        --reason "Purplefin GitHub Actions secret mapping" \
+        --scope github-actions
     '';
   };
 
@@ -333,21 +352,15 @@ in rec {
     script = "automation/github/package-cleanup.sh";
     runtimeInputs = with pkgs; [bash gh jq];
   };
+  ciGate = import ./ci-applications/ci-gate.nix {inherit pkgs;};
+  promoteImages = import ./ci-applications/promote-images.nix {inherit pkgs;};
   classifyCi = mkRepositoryApp {
     name = "purplefin-classify-ci";
     script = "automation/github/classify-ci.sh";
     runtimeInputs = with pkgs; [bash classifyChanges coreutils git];
   };
-  imagePlan = mkRepositoryApp {
-    name = "purplefin-image-plan";
-    script = "bootc/builder/plan.sh";
-    runtimeInputs = with pkgs; [bash coreutils cosign jq podman skopeo];
-  };
-  shardPlan = mkRepositoryApp {
-    name = "purplefin-shard-plan";
-    script = "bootc/builder/shard-plan.sh";
-    runtimeInputs = with pkgs; [bash jq];
-  };
+  imagePlan = import ./ci-applications/image-plan.nix {inherit pkgs;};
+  shardPlan = import ./ci-applications/shard-plan.nix {inherit pkgs;};
   ciPlan = pkgs.writeShellApplication {
     name = "purplefin-ci-plan";
     runtimeInputs = [pkgs.jq];
@@ -357,30 +370,52 @@ in rec {
         exit 2
       }
       : "''${IMAGE_REF:?IMAGE_REF is required}"
+      : "''${GITHUB_SHA:?GITHUB_SHA is required}"
       ${verifyBluefin}/bin/purplefin-verify-bluefin >/dev/null
       base_image='${bluefin.image}'
       base_tag='${bluefin.tag}'
       base_digest='${bluefin.digest}'
       base_ref="''${base_image}@''${base_digest}"
       profiles="$(jq -c . ${generated}/bootc/generated/image-matrix.json)"
-      export BASE_DIGEST="''${base_digest}" BASE_REF="''${base_ref}"
+      export BASE_DIGEST="''${base_digest}" BASE_REF="''${base_ref}" EXPECTED_VERSION='${version}'
       matrix="$(${imagePlan}/bin/purplefin-image-plan "''${profiles}")"
       root_base="$(jq -c 'first(.include[] | select(.stage == "root")) // {}' <<<"''${matrix}")"
       hardware_matrix="$(jq -c '{include: [.include[] | select(.stage == "hardware")]}' <<<"''${matrix}")"
       role_matrix="$(jq -c '{include: [.include[] | select(.stage == "role")]}' <<<"''${matrix}")"
-      candidate_shards="$(${shardPlan}/bin/purplefin-shard-plan "''${matrix}" 4)"
+      candidate_shards="$(${shardPlan}/bin/purplefin-shard-plan "''${profiles}" "''${matrix}" 4)"
+      sbom_matrix="$(jq -c --arg source_digest "''${GITHUB_SHA}" \
+        --argjson profiles "''${profiles}" '
+        ([.include[] | . + {
+          source_digest: $source_digest,
+          subject_tag: (.profile + "-candidate")
+        }] + .sbom_repair) as $selected |
+        {include: [
+          $profiles[] as $decl |
+          $selected[] |
+          select(.profile == $decl.profile)
+        ]}
+      ' <<<"''${matrix}")"
+      base_sbom_matrix="$(jq -c '{include: [.include[] | select(.stage == "root")]}' <<<"''${sbom_matrix}")"
+      hardware_sbom_matrix="$(jq -c '{include: [.include[] | select(.stage == "hardware")]}' <<<"''${sbom_matrix}")"
+      role_sbom_matrix="$(jq -c '{include: [.include[] | select(.stage == "role")]}' <<<"''${sbom_matrix}")"
       {
         printf 'base_image=%s\n' "''${base_image}"
         printf 'base_digest=%s\n' "''${base_digest}"
         printf 'base_tag=%s\n' "''${base_tag}"
+        printf 'base_sbom_matrix=%s\n' "''${base_sbom_matrix}"
         printf 'candidate_shards=%s\n' "''${candidate_shards}"
         printf 'hardware_matrix=%s\n' "''${hardware_matrix}"
+        printf 'hardware_sbom_matrix=%s\n' "''${hardware_sbom_matrix}"
         printf 'has_hardware=%s\n' "$(jq -r '.include | length > 0' <<<"''${hardware_matrix}")"
         printf 'has_builds=%s\n' "$(jq -r '.include | length > 0' <<<"''${matrix}")"
         printf 'has_roles=%s\n' "$(jq -r '.include | length > 0' <<<"''${role_matrix}")"
         printf 'has_root_base=%s\n' "$(jq -r 'has("profile")' <<<"''${root_base}")"
+        printf 'has_base_sbom=%s\n' "$(jq -r '.include | length > 0' <<<"''${base_sbom_matrix}")"
+        printf 'has_hardware_sbom=%s\n' "$(jq -r '.include | length > 0' <<<"''${hardware_sbom_matrix}")"
+        printf 'has_role_sbom=%s\n' "$(jq -r '.include | length > 0' <<<"''${role_sbom_matrix}")"
         printf 'matrix=%s\n' "''${matrix}"
         printf 'role_matrix=%s\n' "''${role_matrix}"
+        printf 'role_sbom_matrix=%s\n' "''${role_sbom_matrix}"
         printf 'root_base=%s\n' "''${root_base}"
         printf 'version=%s\n' '${version}'
       } >>"$1"
@@ -391,36 +426,8 @@ in rec {
     script = "bootc/builder/reuse-image.sh";
     runtimeInputs = with pkgs; [bash coreutils cosign jq skopeo];
   };
-  validateImageShard = pkgs.writeShellApplication {
-    name = "purplefin-validate-image-shard";
-    runtimeInputs = with pkgs; [bash coreutils jq skopeo];
-    text = ''
-      export PURPLEFIN_GENERATED_ROOT=${generated}
-      export PURPLEFIN_BASE_DIGEST='${bluefin.digest}'
-      export PURPLEFIN_LOAD_BLUEFIN=${loadBluefin}/bin/purplefin-load-bluefin
-      export PURPLEFIN_VERSION='${version}'
-      if [[ "''${CI:-}" == true ]]; then
-        host_buildah="$(PATH=/usr/local/bin:/usr/bin:/bin command -v buildah || true)"
-        host_podman="$(PATH=/usr/local/bin:/usr/bin:/bin command -v podman || true)"
-        [[ -n "''${host_buildah}" && -n "''${host_podman}" ]] || {
-          echo "The CI runner's host Buildah and Podman are required" >&2
-          exit 1
-        }
-        export PURPLEFIN_BUILDAH="''${host_buildah}"
-        export PURPLEFIN_PODMAN="''${host_podman}"
-      else
-        export PURPLEFIN_BUILDAH=${pkgs.buildah}/bin/buildah
-        export PURPLEFIN_PODMAN=${pkgs.podman}/bin/podman
-      fi
-      repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
-      [[ -f "''${repo_root}/flake.nix" ]] || {
-        echo "Run this command from the Purplefin repository root" >&2
-        exit 2
-      }
-      cd "''${repo_root}"
-      exec ${pkgs.bash}/bin/bash \
-        "''${repo_root}/bootc/builder/validate-shard.sh" "$@"
-    '';
+  validateImageShard = import ./ci-applications/validate-image-shard.nix {
+    inherit bluefin generated loadBluefin pkgs version;
   };
   installerSmoke = mkRepositoryApp {
     name = "purplefin-installer-smoke";
@@ -492,15 +499,20 @@ in rec {
     paths = with pkgs; [classifyCi ciPlan coreutils git jq];
     required = [classifyCi ciPlan];
   };
+  workflowGate = mkWorkflowToolset {
+    name = "purplefin-workflow-gate";
+    paths = [ciGate];
+    required = [ciGate];
+  };
   workflowValidation = mkWorkflowToolset {
     name = "purplefin-workflow-validation";
-    paths = with pkgs; [coreutils jq loadBluefin skopeo validateImageShard];
-    required = [loadBluefin validateImageShard];
+    paths = [validateImageShard];
+    required = [validateImageShard];
   };
   workflowPublish = mkWorkflowToolset {
     name = "purplefin-workflow-publish";
-    paths = with pkgs; [coreutils cosign gh imageReuse jq loadBluefin nix oras skopeo];
-    required = [imageReuse loadBluefin];
+    paths = with pkgs; [coreutils cosign gh imageReuse jq loadBluefin nix promoteImages skopeo];
+    required = [imageReuse loadBluefin promoteImages];
   };
   workflowSbom = mkWorkflowToolset {
     name = "purplefin-workflow-sbom";
@@ -509,7 +521,7 @@ in rec {
   };
   workflowInstaller = mkWorkflowToolset {
     name = "purplefin-workflow-installer";
-    paths = [installerBuild installerSmoke];
+    paths = [installerBuild];
     required = [installerBuild];
   };
   workflowRelease = mkWorkflowToolset {

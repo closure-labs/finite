@@ -31,23 +31,13 @@ on:
         required: false
         default: ""
         type: string
-      publish:
-        required: true
-        type: boolean
       reuse-existing:
         required: false
         default: true
         type: boolean
-      tags:
-        required: true
-        type: string
       version:
         required: true
         type: string
-    outputs:
-      digest:
-        description: Immutable digest of the published, rechunked image
-        value: ${{ jobs.build.outputs.digest }}
 
 env:
   IMAGE_REF: ghcr.io/${{ github.repository }}
@@ -56,8 +46,6 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     timeout-minutes: 120
-    outputs:
-      digest: ${{ steps.push.outputs.digest }}
     steps:
       - name: Initialize build report
         shell: bash
@@ -74,8 +62,7 @@ jobs:
           github-token: ${{ github.token }}
           toolset: workflow-publish
 
-      - name: Log in to GHCR for publishing and build cache
-        if: inputs.publish
+      - name: Log in to GHCR for staging and build cache
         env:
           GHCR_TOKEN: ${{ github.token }}
         shell: bash
@@ -117,8 +104,8 @@ jobs:
             echo "parent_digest=${PARENT_DIGEST}"
           } >>"${GITHUB_OUTPUT}"
 
-      - name: Reuse matching published image
-        if: inputs.publish && inputs.reuse-existing
+      - name: Reuse matching staged image
+        if: inputs.reuse-existing
         id: reuse
         env:
           BUILD_INPUT: ${{ inputs.build-input }}
@@ -128,7 +115,7 @@ jobs:
           EXPECTED_REVISION: ${{ github.sha }}
           EXPECTED_UPSTREAM_DIGEST: ${{ inputs.upstream-base-digest }}
           EXPECTED_VERSION: ${{ inputs.version }}
-          TAGS: ${{ inputs.tags }}
+          CANDIDATE_TAG: ${{ format('{0}-candidate', inputs.profile) }}
         shell: bash
         run: |
           started=${SECONDS}
@@ -137,15 +124,14 @@ jobs:
           }
           trap record_duration EXIT
 
-          read -r -a tags <<<"${TAGS}"
-          if digest="$(purplefin-image-reuse "${tags[0]}")" &&
+          if digest="$(purplefin-image-reuse "${CANDIDATE_TAG}")" &&
             [[ -n "${digest}" ]]; then
             if image_id="$({
               podman pull --quiet \
                 --authfile "${REGISTRY_AUTH_FILE}" \
                 "${IMAGE_REF}@${digest}"
             })"; then
-              podman tag "${image_id}" "${IMAGE_REF}:${tags[0]}"
+              podman tag "${image_id}" "${IMAGE_REF}:${CANDIDATE_TAG}"
               {
                 echo 'hit=true'
                 echo "digest=${digest}"
@@ -171,9 +157,8 @@ jobs:
           PARENT_IMAGE: ${{ inputs.parent-image }}
           PARENT_PROFILE: ${{ inputs.parent-profile }}
           PARENT_TAG: ${{ inputs.parent-tag }}
-          CACHE_WRITE: ${{ inputs.publish }}
+          CACHE_WRITE: "true"
           PURPLEFIN_VERSION: ${{ inputs.version }}
-          TAGS: ${{ inputs.tags }}
           UPSTREAM_BASE_DIGEST: ${{ inputs.upstream-base-digest }}
         shell: bash
         run: |
@@ -183,8 +168,7 @@ jobs:
           }
           trap record_duration EXIT
 
-          read -r -a tags <<<"${TAGS}"
-          primary_image="${IMAGE_REF}:${tags[0]}"
+          primary_image="${IMAGE_REF}:${BUILD_PROFILE}-candidate"
           created="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           containerfile=./bootc/Containerfile
           cache_ref="${IMAGE_REF}-build-cache"
@@ -244,8 +228,7 @@ jobs:
         if: steps.reuse.outputs.hit != 'true'
         id: rechunk
         env:
-          PUBLISH: ${{ inputs.publish }}
-          TAGS: ${{ inputs.tags }}
+          BUILD_PROFILE: ${{ inputs.profile }}
         shell: bash
         run: |
           started=${SECONDS}
@@ -254,8 +237,7 @@ jobs:
           }
           trap record_duration EXIT
 
-          read -r -a tags <<<"${TAGS}"
-          primary_image="${IMAGE_REF}:${tags[0]}"
+          primary_image="${IMAGE_REF}:${BUILD_PROFILE}-candidate"
           preserved_labels="$({
             podman inspect "${primary_image}" |
               jq -c '
@@ -274,25 +256,12 @@ jobs:
             label_args+=(--label "${label}")
           done < <(jq -r 'to_entries[] | "\(.key)=\(.value)"' <<<"${preserved_labels}")
 
-          output_dir=''
-          remote_ref=''
-          run_args=()
-          if [[ "${PUBLISH}" == true ]]; then
-            remote_ref="${primary_image}"
-          else
-            output_dir="$(mktemp -d -p "${RUNNER_TEMP}" purplefin-rechunk.XXXXXX)"
-          fi
-
-          if [[ -n "${remote_ref}" ]]; then
-            output="docker://${remote_ref}"
-            run_args+=(
-              --env REGISTRY_AUTH_FILE=/run/registry-auth.json
-              --volume "${REGISTRY_AUTH_FILE}:/run/registry-auth.json:ro"
-            )
-          else
-            output="oci-archive:/run/out/purplefin.oci"
-            run_args+=(--volume "${output_dir}:/run/out")
-          fi
+          remote_ref="${primary_image}"
+          output="docker://${remote_ref}"
+          run_args=(
+            --env REGISTRY_AUTH_FILE=/run/registry-auth.json
+            --volume "${REGISTRY_AUTH_FILE}:/run/registry-auth.json:ro"
+          )
 
           podman run --rm --pull=never --privileged \
             --mount "type=image,src=${primary_image},target=/rpm-ostree" \
@@ -307,45 +276,24 @@ jobs:
               --rootfs /rpm-ostree \
               --output "${output}"
 
-          if [[ -n "${remote_ref}" ]]; then
-            metadata="$(skopeo inspect --retry-times 3 "docker://${remote_ref}")"
-            jq -e --argjson expected "${preserved_labels}" '
-              (.Labels // {}) as $actual |
-              $expected |
-              to_entries |
-              all(.[]; $actual[.key] == .value)
-            ' <<<"${metadata}" >/dev/null
-            digest="$(jq -er '.Digest' <<<"${metadata}")"
-            [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
-            {
-              echo "digest=${digest}"
-              echo "remote_ref=${remote_ref}"
-            } >>"${GITHUB_OUTPUT}"
-          else
-            archive="${output_dir}/purplefin.oci"
-            chunked_image="$(podman pull --quiet "oci-archive:${archive}")"
-            podman inspect "${chunked_image}" |
-              jq -e --argjson expected "${preserved_labels}" '
-                (.[0].Config.Labels // {}) as $actual |
-                $expected |
-                to_entries |
-                all(.[]; $actual[.key] == .value)
-              ' >/dev/null
-            podman tag "${chunked_image}" "${primary_image}"
-            echo "archive=${archive}" >>"${GITHUB_OUTPUT}"
-          fi
+          metadata="$(skopeo inspect --retry-times 3 "docker://${remote_ref}")"
+          jq -e --argjson expected "${preserved_labels}" '
+            (.Labels // {}) as $actual |
+            $expected | to_entries | all(.[]; $actual[.key] == .value)
+          ' <<<"${metadata}" >/dev/null
+          digest="$(jq -er '.Digest' <<<"${metadata}")"
+          [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
+          echo "digest=${digest}" >>"${GITHUB_OUTPUT}"
 
-      - name: Promote immutable image and apply aliases
-        if: inputs.publish
+      - name: Record staged candidate digest
         id: push
         env:
+          BUILD_PROFILE: ${{ inputs.profile }}
           RECHUNK_DIGEST: ${{ steps.rechunk.outputs.digest }}
           REUSED_DIGEST: ${{ steps.reuse.outputs.digest }}
-          TAGS: ${{ inputs.tags }}
         shell: bash
         run: |
-          read -r -a tags <<<"${TAGS}"
-          primary_ref="${IMAGE_REF}:${tags[0]}"
+          primary_ref="${IMAGE_REF}:${BUILD_PROFILE}-candidate"
           digest="${REUSED_DIGEST:-${RECHUNK_DIGEST}}"
           [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
 
@@ -355,17 +303,10 @@ jobs:
           })"
           [[ "${published_digest}" == "${digest}" ]]
 
-          if (( ${#tags[@]} > 1 )); then
-            oras tag \
-              --registry-config "${REGISTRY_AUTH_FILE}" \
-              "${IMAGE_REF}@${digest}" \
-              "${tags[@]:1}"
-          fi
-
           echo "digest=${digest}" >>"${GITHUB_OUTPUT}"
 
       - name: Sign and verify immutable image
-        if: inputs.publish && steps.reuse.outputs.hit != 'true'
+        if: steps.reuse.outputs.hit != 'true'
         env:
           COSIGN_IDENTITY: https://github.com/${{ github.repository }}/.github/workflows/build-profile.yml@refs/heads/main
           DIGEST: ${{ steps.push.outputs.digest }}
@@ -388,7 +329,6 @@ jobs:
             "${immutable_image}" >/dev/null
 
       - name: Check for verified build provenance
-        if: inputs.publish
         id: provenance_check
         env:
           DIGEST: ${{ steps.push.outputs.digest }}
@@ -407,7 +347,7 @@ jobs:
           fi
 
       - name: Attest build provenance
-        if: inputs.publish && steps.provenance_check.outputs.hit != 'true'
+        if: steps.provenance_check.outputs.hit != 'true'
         id: provenance_first
         continue-on-error: true
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
@@ -419,7 +359,7 @@ jobs:
 
       - name: Retry build provenance attestation
         if: >-
-          inputs.publish && steps.provenance_check.outputs.hit != 'true' &&
+          steps.provenance_check.outputs.hit != 'true' &&
           steps.provenance_first.outcome == 'failure'
         id: provenance_retry
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
@@ -430,7 +370,6 @@ jobs:
           subject-version: ${{ inputs.version }}
 
       - name: Verify build provenance
-        if: inputs.publish
         env:
           DIGEST: ${{ steps.push.outputs.digest }}
           GH_TOKEN: ${{ github.token }}
@@ -465,13 +404,11 @@ jobs:
           PROVENANCE_FIRST_OUTCOME: ${{ steps.provenance_first.outcome }}
           PROVENANCE_HIT: ${{ steps.provenance_check.outputs.hit }}
           PROVENANCE_RETRY_OUTCOME: ${{ steps.provenance_retry.outcome }}
-          PUBLISH: ${{ inputs.publish }}
           RECHUNK_OUTCOME: ${{ steps.rechunk.outcome }}
           RECHUNK_SECONDS: ${{ steps.rechunk.outputs.seconds }}
           REUSE_DIGEST: ${{ steps.reuse.outputs.digest }}
           REUSE_HIT: ${{ steps.reuse.outputs.hit }}
           REUSE_SECONDS: ${{ steps.reuse.outputs.seconds }}
-          TAGS: ${{ inputs.tags }}
         shell: bash
         run: |
           finished_at="$(date +%s)"
@@ -479,16 +416,11 @@ jobs:
           [[ "${started_at}" =~ ^[0-9]+$ ]] || started_at="${finished_at}"
           total_seconds=$((finished_at - started_at))
 
-          mode=validation
-          image_digest=local-only
-          attestations='not requested'
-          if [[ "${PUBLISH}" == true ]]; then
-            mode=publish
-            image_digest="${IMAGE_DIGEST:-unavailable}"
-            attestations="provenance=reused"
-            if [[ "${PROVENANCE_HIT}" != true ]]; then
-              attestations="provenance=${PROVENANCE_FIRST_OUTCOME:-skipped}/${PROVENANCE_RETRY_OUTCOME:-not-needed}"
-            fi
+          mode=stage
+          image_digest="${IMAGE_DIGEST:-unavailable}"
+          attestations="provenance=reused"
+          if [[ "${PROVENANCE_HIT}" != true ]]; then
+            attestations="provenance=${PROVENANCE_FIRST_OUTCOME:-skipped}/${PROVENANCE_RETRY_OUTCOME:-not-needed}"
           fi
 
           {
@@ -498,7 +430,6 @@ jobs:
             echo '| --- | --- |'
             echo "| Mode | \`${mode}\` |"
             echo "| Build input | \`${BUILD_INPUT}\` |"
-            echo "| Tags | \`${TAGS}\` |"
             echo "| Parent digest | \`${PARENT_DIGEST:-unresolved}\` |"
             echo "| Image digest | \`${image_digest}\` |"
             echo "| Published image reuse | \`${REUSE_HIT:-false}\` (${REUSE_SECONDS:-0}s; \`${REUSE_DIGEST:-none}\`) |"
@@ -509,19 +440,8 @@ jobs:
             echo "| Total duration | ${total_seconds}s |"
           } >>"${GITHUB_STEP_SUMMARY}"
 
-      - name: Remove local OCI archive
-        if: always()
-        env:
-          BUILT_ARCHIVE: ${{ steps.rechunk.outputs.archive }}
-        shell: bash
-        run: |
-          if [[ -n "${BUILT_ARCHIVE}" ]]; then
-            rm -f -- "${BUILT_ARCHIVE}"
-            rmdir -- "${BUILT_ARCHIVE%/*}" 2>/dev/null || true
-          fi
-
       - name: Log out of GHCR
-        if: always() && inputs.publish
+        if: always()
         continue-on-error: true
         shell: bash
         run: |

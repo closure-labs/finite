@@ -19,10 +19,11 @@ installer job selected for the change. The checked-in branch policy is
 `automation/github/policies/main-protection.json`.
 
 Pull requests and merge groups divide selected profiles among at most four
-balanced shards. A shard verifies and loads the locked Bluefin digest once,
-then builds and rechunks its profiles sequentially with `--pull=never`, pruning
-each completed candidate before continuing. Container storage remains local to
-one ephemeral runner, so no mutable image state crosses a job boundary.
+dependency-aware shards. Each shard verifies and loads the locked Bluefin
+digest once, builds roots with `Containerfile`, and builds descendants with
+`Containerfile.derived`. Selected ancestors remain in local container storage
+until every dependent target in that shard has been rechunked. No mutable image
+state crosses a job boundary.
 
 The Flake declares the public `purplefin.cachix.org` substituter and key. Every
 Nix job uses the repository's pinned `setup-nix` action for GitHub access and
@@ -32,6 +33,13 @@ proof outputs, rejects any closure larger than 1 MiB, and explicitly pushes only
 those proofs. The `CACHIX_AUTH_TOKEN` repository secret enables writes on
 protected events and same-repository pull requests. Fork pull requests use the
 public cache for substitution.
+
+Workflow secrets cross into jobs only through declared inputs on the pinned
+`setup-nix` action. That action maps GitHub's secret values to the SecretSpec
+`github-actions` profile, whose environment-backed provider masks and exports
+the declared names through `GITHUB_ENV`. Later steps consume only the exported
+`CACHIX_AUTH_TOKEN` and `MERGE_QUEUE_TOKEN` variables; workflow commands do not
+read the GitHub secrets context directly.
 
 ## Image publication
 
@@ -44,13 +52,17 @@ Profiles build parent-first. Each published digest has:
 - OCI labels for version, source, profile, build input, parent, and upstream
   digests.
 
-Matching signed images and their verified software bill of materials attestations are reused. Ordered
-base, hardware, and role attestation jobs generate missing software bills of materials after each selected image
-is available, so scanning does not delay descendant image builds. The signed
-attestation is also the release asset source; Purplefin does not maintain a
-second unsigned software bill of materials cache package. Pull requests and merge candidates validate
-candidates with read-only registry access, while trusted `main` runs publish
-signed results.
+Trusted builds first write only profile-specific candidate tags. Ordered base,
+hardware, and role jobs sign those immutable digests and attach provenance;
+tier-specific reusable jobs then attest their software bills of materials. A
+single final promotion job verifies the complete selected graph—including
+parent digests and every signer identity—before moving any public channel tag.
+An interrupted run is therefore repairable: missing signatures or provenance
+select a rebuild, while a missing software bill of materials attestation selects
+only that attestation job. The signed attestation is also the release asset
+source; Purplefin does not maintain a second unsigned software bill of materials
+cache package. Pull requests and merge candidates validate candidates with
+read-only registry access.
 
 Syft scans the final mounted OCI filesystem because Purplefin images are
 assembled from Bluefin and RPM content rather than from a Nix store closure.
@@ -69,15 +81,18 @@ that exact digest directly into container storage without creating a container
 archive in the Nix store. The daily build also checks independently managed
 RPMs for updates against the committed Bluefin base.
 
-GitHub keeps triggers, permissions, environments, matrices, PR creation, and
-attestations visible in workflow YAML. Each job otherwise installs one
-domain-specific Flake toolset, so ORAS, Cosign, Skopeo, Syft, jq, and GitHub CLI
-behavior comes from `flake.lock` rather than ad hoc setup actions.
+GitHub keeps triggers, permissions, environments, matrices, pull request
+creation, and attestations visible in workflow YAML. Operational planning,
+validation, gating, and promotion are Nix-defined applications. Each job builds
+one domain-specific Flake toolset into a fixed runner-local link and adds only
+that toolset to `PATH`, so ORAS, Cosign, Skopeo, Syft, jq, and GitHub CLI behavior
+comes from `flake.lock` without mutating a persistent Nix profile.
 
-When configured, `MERGE_QUEUE_TOKEN` advances trusted update pull requests
-through the merge queue with repository-scoped Contents and Pull requests
-read/write access. `AUTOMATION_UPDATE_LOGIN` names that token's pull request
-author; the GitHub Actions app identity is trusted by default.
+When configured, the SecretSpec-mapped `MERGE_QUEUE_TOKEN` advances trusted
+update pull requests through the merge queue with repository-scoped Contents
+and Pull requests read/write access. `AUTOMATION_UPDATE_LOGIN` names that
+token's pull request author; the GitHub Actions app identity is trusted by
+default.
 
 ## Create a release
 
