@@ -1,6 +1,7 @@
 {lib, ...}: let
   bluefinLock = builtins.fromJSON (builtins.readFile ../../sources/bluefin.json);
   imageBuilderLock = builtins.fromJSON (builtins.readFile ../../sources/image-builder.json);
+  determinateNixLock = builtins.fromJSON (builtins.readFile ../../sources/determinate-nix.json);
   ociSourceType = lib.types.submodule {
     options = {
       schema = lib.mkOption {
@@ -37,6 +38,34 @@
   };
 in {
   options.purplefin.sources = {
+    determinateNix = lib.mkOption {
+      type = lib.types.submodule {
+        options = {
+          schema = lib.mkOption {type = lib.types.enum [1];};
+          version = lib.mkOption {type = lib.types.strMatching "[0-9]+\\.[0-9]+\\.[0-9]+";};
+          architecture = lib.mkOption {type = lib.types.enum ["x86_64-linux"];};
+          installer = lib.mkOption {
+            type = lib.types.submodule {
+              options = {
+                url = lib.mkOption {type = lib.types.strMatching "https://.*";};
+                sha256 = lib.mkOption {type = lib.types.strMatching "[0-9a-f]{64}";};
+              };
+            };
+          };
+          selinuxPolicy = lib.mkOption {
+            type = lib.types.submodule {
+              options = {
+                url = lib.mkOption {type = lib.types.strMatching "https://.*";};
+                sha256 = lib.mkOption {type = lib.types.strMatching "[0-9a-f]{64}";};
+              };
+            };
+          };
+        };
+      };
+      readOnly = true;
+      description = "Pinned Determinate Nix bootstrap and SELinux policy.";
+    };
+
     bluefin = lib.mkOption {
       type = ociSourceType;
       readOnly = true;
@@ -51,11 +80,13 @@ in {
 
   config = assert bluefinLock.cosign != null; {
     purplefin.sources = {
+      determinateNix = determinateNixLock;
       bluefin = bluefinLock;
       imageBuilder = imageBuilderLock // {cosign = null;};
     };
 
     den.aspects.sources = {
+      determinate-nix = {};
       bluefin = {};
       image-builder = {};
     };

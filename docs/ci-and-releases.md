@@ -88,6 +88,10 @@ one domain-specific Flake toolset into a fixed runner-local link and adds only
 that toolset to `PATH`, so ORAS, Cosign, Skopeo, Syft, jq, and GitHub CLI behavior
 comes from `flake.lock` without mutating a persistent Nix profile.
 
+The weekly Determinate Nix updater resolves the latest stable upstream
+release, pins both the installer asset and its SELinux policy by SHA-256, and
+opens the same trusted-update pull-request path used by the OCI source locks.
+
 When configured, the SecretSpec-mapped `MERGE_QUEUE_TOKEN` advances trusted
 update pull requests through the merge queue with repository-scoped Contents
 and Pull requests read/write access. `AUTOMATION_UPDATE_LOGIN` names that

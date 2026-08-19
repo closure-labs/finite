@@ -39,6 +39,23 @@ nix build .#checks.x86_64-linux.bootc --print-build-logs
 
 Confirm formatting independently with `nix fmt`.
 
+## Determinate Nix does not start
+
+Check the persistent-state provisioning and mount before inspecting the daemon:
+
+```bash
+systemctl status purplefin-nix-selinux.service purplefin-nix-seed.service nix.mount
+systemctl status nix-daemon.socket nix-daemon.service determinate-nixd.socket
+findmnt /nix
+```
+
+`/nix` must be a writable bind mount backed by `/var/home/nix`. Purplefin
+initializes an empty state from the immutable image seed, but deliberately
+refuses to replace a non-empty malformed state. If
+`purplefin-nix-seed.service` reports malformed state, preserve
+`/var/home/nix` for diagnosis before repairing or restoring it; rebooting or
+upgrading the bootc image will not erase it.
+
 ## Diagnose a local image build
 
 ```bash

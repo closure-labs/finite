@@ -37,6 +37,25 @@ Inspect the active and staged deployments:
 bootc status
 ```
 
+## Determinate Nix lifecycle
+
+Purplefin first installs Fedora's supported `nix` and `nix-daemon` packages,
+then uses the pinned Determinate Nix Installer to migrate that upstream Nix
+installation to Determinate Nix. This follows Determinate Systems' migration
+path while retaining Fedora's native filesystem, systemd, and sysusers
+integration.
+
+The Fedora `nix-filesystem` dependency supplies `/nix`; Purplefin does not
+create that directory separately. Because bootc keeps the image root immutable
+and `/nix` must be writable, first boot copies the image seed to persistent
+`/var/home/nix` and bind-mounts it at `/nix` before the Nix daemon starts. Later
+boots preserve that state, including installed packages and store paths.
+
+Determinate Nixd owns Nix upgrades after migration. Use the normal Determinate
+Nix upgrade mechanism rather than upgrading the runtime through Fedora's Nix
+packages. A bootc upgrade may update the seed used by new installations, but
+never overwrites an existing `/var/home/nix`.
+
 ## Install from ISO
 
 1. Run the `Build and boot-test Purplefin installer ISO` workflow from `main`.

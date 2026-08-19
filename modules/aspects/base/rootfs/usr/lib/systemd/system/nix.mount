@@ -1,0 +1,19 @@
+[Unit]
+Description=Mount persistent Determinate Nix state on /nix
+Requires=purplefin-nix-seed.service
+After=purplefin-nix-seed.service
+PropagatesStopTo=nix-daemon.service
+ConditionPathIsDirectory=/nix
+DefaultDependencies=no
+
+[Mount]
+What=/var/home/nix
+Where=/nix
+Type=none
+DirectoryMode=0755
+Options=bind
+
+[Install]
+RequiredBy=nix-daemon.service
+RequiredBy=nix-daemon.socket
+RequiredBy=determinate-nixd.socket
