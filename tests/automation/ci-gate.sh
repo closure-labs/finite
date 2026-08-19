@@ -34,6 +34,10 @@ run_gate \
 run_gate \
 	EVENT_NAME=push REF=refs/heads/main IMAGES_SELECTED=true PLAN_RESULT=success \
 	HAS_ROOT_BASE=true BASE_PUBLISH_RESULT=success BASE_SBOM_RESULT=success
+run_gate \
+	EVENT_NAME=push REF=refs/heads/main IMAGES_SELECTED=true PLAN_RESULT=success \
+	HAS_HARDWARE=true HARDWARE_PUBLISH_RESULT=success HARDWARE_SBOM_RESULT=success \
+	HAS_ROLES=true ROLES_PUBLISH_RESULT=success ROLE_SBOM_RESULT=success
 
 if run_gate PREPARE_RESULT=failure 2>/dev/null; then
 	echo 'A failed preparation job unexpectedly passed the gate' >&2

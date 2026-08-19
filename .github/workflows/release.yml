@@ -453,7 +453,7 @@ jobs:
             sbom="${sbom_dir}/sbom.spdx.json"
             SBOM_IMAGE_DIGEST="${digest}" \
               SBOM_IMAGE_REF="${IMAGE_REF}" \
-              SBOM_SIGNER_WORKFLOW="${GITHUB_REPOSITORY}/.github/workflows/build.yml" \
+              SBOM_SIGNER_WORKFLOW="${GITHUB_REPOSITORY}/.github/workflows/attest-software-bill-of-materials.yml" \
               SBOM_SOURCE_DIGEST="${SOURCE_SHA}" \
               purplefin-sbom-attestation extract "${sbom}"
             sbom_asset="purplefin-${profile}-v${VERSION}.spdx.json.gz"

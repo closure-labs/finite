@@ -53,7 +53,7 @@ common_env=(
 	PURPLEFIN_GH="${workdir}/bin/gh"
 	SBOM_IMAGE_DIGEST="${digest}"
 	SBOM_IMAGE_REF=ghcr.io/example/purplefin
-	SBOM_SIGNER_WORKFLOW=example/purplefin/.github/workflows/build.yml
+	SBOM_SIGNER_WORKFLOW=example/purplefin/.github/workflows/attest-software-bill-of-materials.yml
 	SBOM_SOURCE_DIGEST="${source_digest}"
 )
 env "${common_env[@]}" bash "${script}" extract "${workdir}/restored.json"

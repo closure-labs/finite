@@ -313,14 +313,20 @@ in {
       grep -qF 'candidate_shards' .github/workflows/build.yml
       grep -qF 'purplefin-classify-ci' .github/workflows/build.yml
       grep -qF 'purplefin-image-reuse' .github/workflows/build-profile.yml
-      grep -qF 'purplefin-image-sbom' .github/workflows/build.yml
+      grep -qF 'purplefin-image-sbom' .github/workflows/attest-software-bill-of-materials.yml
       grep -qF 'purplefin-sbom-attestation' .github/workflows/release.yml
       grep -qF 'SBOM_SIGNER_WORKFLOW' bootc/builder/sbom.sh
       ! grep -R -qF -- '-sbom-cache' .github automation
       ! grep -R -qF 'Store SBOM cache artifact' .github
       grep -qF 'purplefin-release-notes' .github/workflows/release.yml
-      grep -qF 'toolset: workflow-ci' .github/workflows/build.yml
-      grep -qF 'toolset: workflow-image' .github/workflows/build.yml
+      grep -qF 'toolset: workflow-prepare' .github/workflows/build.yml
+      grep -qF 'toolset: workflow-validation' .github/workflows/build.yml
+      grep -qF 'toolset: workflow-publish' .github/workflows/build-profile.yml
+      grep -qF 'toolset: workflow-sbom' .github/workflows/attest-software-bill-of-materials.yml
+      grep -qF 'automation/github/ci-gate.sh' .github/workflows/build.yml
+      grep -qF 'attest-software-bill-of-materials.yml' .github/workflows/build.yml
+      grep -qF 'attest-software-bill-of-materials.yml' lib/installer-application.nix
+      grep -qF 'attest-software-bill-of-materials.yml' .github/workflows/release.yml
       grep -qF 'toolset: workflow-release' .github/workflows/release.yml
       grep -qF 'cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24' \
         .github/actions/setup-nix/action.yml

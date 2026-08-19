@@ -11,7 +11,7 @@ events, permissions, runners, environments, attestations, and artifact upload.
 | Repository | Every pull request and main build | Flake checks, generated data, source, tests, and workflows |
 | Candidate images | Image inputs change | Selected profiles and descendants in four read-only, runner-local shards |
 | Installer | Installer inputs change or on schedule | Payload attestations, ISO build, manifest, and QEMU boot |
-| Publication | Trusted main runs | Images, tags, signatures, provenance, SPDX SBOMs, and caches |
+| Publication | Trusted main runs | Images, tags, signatures, provenance, SPDX software bills of materials, and caches |
 | Release | Manual release dispatch | Exact source candidate and every promoted digest and attestation |
 
 `CI gate` is the stable required check. Its result covers every image and
@@ -40,15 +40,15 @@ Profiles build parent-first. Each published digest has:
 - profile and channel tags;
 - a keyless GitHub Actions Cosign signature;
 - GitHub build provenance;
-- an SPDX SBOM attestation;
+- an SPDX software bill of materials attestation;
 - OCI labels for version, source, profile, build input, parent, and upstream
   digests.
 
-Matching signed images and their verified SBOM attestations are reused. A final
-four-way publication matrix generates missing SBOMs after every selected image
+Matching signed images and their verified software bill of materials attestations are reused. Ordered
+base, hardware, and role attestation jobs generate missing software bills of materials after each selected image
 is available, so scanning does not delay descendant image builds. The signed
 attestation is also the release asset source; Purplefin does not maintain a
-second unsigned SBOM cache package. Pull requests and merge candidates validate
+second unsigned software bill of materials cache package. Pull requests and merge candidates validate
 candidates with read-only registry access, while trusted `main` runs publish
 signed results.
 

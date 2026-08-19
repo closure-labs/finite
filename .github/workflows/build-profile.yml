@@ -72,7 +72,7 @@ jobs:
         uses: ./.github/actions/setup-nix
         with:
           github-token: ${{ github.token }}
-          toolset: workflow-image
+          toolset: workflow-publish
 
       - name: Log in to GHCR for publishing and build cache
         if: inputs.publish

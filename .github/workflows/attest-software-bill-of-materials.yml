@@ -104,6 +104,8 @@ jobs:
 
       - name: Attest newly generated software bill of materials
         if: steps.sbom.outputs.hit != 'true'
+        id: attestation
+        continue-on-error: true
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           push-to-registry: true
@@ -112,9 +114,40 @@ jobs:
           subject-name: ${{ env.IMAGE_REF }}
           subject-version: ${{ inputs.version }}
 
+      - name: Retry software bill of materials attestation
+        if: steps.sbom.outputs.hit != 'true' && steps.attestation.outcome == 'failure'
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          push-to-registry: true
+          sbom-path: sbom.spdx.json
+          subject-digest: ${{ steps.image.outputs.digest }}
+          subject-name: ${{ env.IMAGE_REF }}
+          subject-version: ${{ inputs.version }}
+
+      - name: Verify the published software bill of materials attestation
+        if: steps.sbom.outputs.hit != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SBOM_IMAGE_DIGEST: ${{ steps.image.outputs.digest }}
+          SBOM_IMAGE_REF: ${{ env.IMAGE_REF }}
+          SBOM_SIGNER_WORKFLOW: ${{ github.repository }}/.github/workflows/attest-software-bill-of-materials.yml
+          SBOM_SOURCE_DIGEST: ${{ github.sha }}
+        shell: bash
+        run: |
+          for _ in {1..6}; do
+            if purplefin-image-sbom extract verified-sbom.spdx.json; then
+              [[ "$(sha256sum sbom.spdx.json | cut -d' ' -f1)" == \
+                "$(sha256sum verified-sbom.spdx.json | cut -d' ' -f1)" ]]
+              exit 0
+            fi
+            sleep 5
+          done
+          echo 'The published software bill of materials attestation could not be verified' >&2
+          exit 1
+
       - name: Clean up
         if: always()
         shell: bash
         run: |
-          rm -f -- sbom.spdx.json
+          rm -f -- sbom.spdx.json verified-sbom.spdx.json
           podman logout --authfile "${REGISTRY_AUTH_FILE:-${HOME}/.docker/config.json}" ghcr.io || true

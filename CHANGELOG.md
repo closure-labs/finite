@@ -11,29 +11,29 @@ All notable changes to Purplefin are documented here. The format follows
 ### Added
 
 - Flake applications for pinned Syft generation, normalized SPDX validation,
-  and verified SBOM attestation extraction.
+  and verified software bill of materials attestation extraction.
 
 ### Changed
 
-- SBOM generation now runs in a final four-way publication matrix, allowing
+- Software bill of materials generation now runs in an ordered publication graph, allowing
   parent and descendant image builds to finish without waiting for scans.
 
 ### Fixed
 
-- Release SBOM assets are extracted from the verified GitHub attestation for
+- Release software bill of materials assets are extracted from the verified GitHub attestation for
   each immutable image digest instead of a parallel unsigned artifact.
-- Installer payload validation now requires the SBOM signer workflow that
+- Installer payload validation now requires the software bill of materials signer workflow that
   actually publishes SPDX attestations.
 - Image signatures and GitHub attestations retry transient transparency-log
   failures, and reused images avoid duplicate signatures and provenance.
 
 ### Removed
 
-- The duplicate unsigned GHCR SBOM cache package and its cleanup path.
+- The duplicate unsigned GHCR software bill of materials cache package and its cleanup path.
 
 ### Security
 
-- Reused SBOMs must match the image digest, source commit, predicate type, and
+- Reused software bills of materials must match the image digest, source commit, predicate type, and
   pinned signer workflow before they can be published or released.
 
 ## [0.2.2] - 2026-08-18
@@ -62,7 +62,7 @@ All notable changes to Purplefin are documented here. The format follows
 - Nix workflow toolsets now use a lower profile priority so runner-provided
   Buildah and Podman retain their supported user-namespace integration.
 - Trusted release updates approve gated validation runs when required and clean
-  generated manifests, notes, and SBOMs before preparing the next development
+  generated manifests, notes, and software bills of materials before preparing the next development
   version.
 
 ### Removed
@@ -140,7 +140,7 @@ All notable changes to Purplefin are documented here. The format follows
   dependency graph parent-first, rechunk each image, and promote channel tags
   as aliases of one published digest.
 - CI now selects profiles from semantic source, base, RPM, and parent changes;
-  Buildah layers and digest-bound SBOM documents are reused across matching
+  Buildah layers and digest-bound software bill of materials documents are reused across matching
   builds.
 - The common workstation foundation now includes Podman Machine, QEMU disk
   tooling, Homebrew packages, shared Flatpaks, and a reusable DevOps component
@@ -164,8 +164,8 @@ All notable changes to Purplefin are documented here. The format follows
 ### Security
 
 - Published images now include keyless Cosign signatures, GitHub build
-  provenance, compact SPDX SBOM attestations, immutable release tags, and
-  digest manifests with per-profile SBOM assets.
+  provenance, compact SPDX software bill of materials attestations, immutable release tags, and
+  digest manifests with per-profile software bill of materials assets.
 - The required `CI gate` now validates repository policy, selected image and
   installer jobs, merge candidates, and trusted dependency-update automation.
 
