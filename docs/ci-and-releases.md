@@ -93,6 +93,15 @@ The manual obsolete-tag cleanup queries only the primary image package. Build
 and installer caches live in isolated sibling packages and are intentionally
 outside its deletion scope.
 
+Installer validation fingerprints the installer container context together
+with the immutable payload reference. Trusted scheduled builds publish and
+keylessly sign that exact environment in the installer cache; pull requests
+reuse it only after verifying the main installer-workflow identity. Cache
+misses retain the layer cache, and the pinned Image Builder image is pulled in
+parallel with environment preparation. The QEMU smoke test exits as soon as
+the serial console reaches the installer-ready marker instead of waiting for
+the five-minute safety timeout.
+
 Syft scans the final mounted OCI filesystem because Purplefin images are
 assembled from Bluefin and RPM content rather than from a Nix store closure.
 The Flake pins Syft and wraps generation, normalization, size checks, and

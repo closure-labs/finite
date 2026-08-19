@@ -88,6 +88,7 @@
     ../modules/outputs.nix
     ../installer/Containerfile
     ../installer/rootfs/usr/share/anaconda/interactive-defaults.ks
+    ../tests/installer
     ../tests/repository
   ];
   mkSourceCheck = {
@@ -427,6 +428,8 @@ in {
       grep -qF 'RUN --mount=from=installer-rootfs,target=/run/installer-rootfs' installer/Containerfile
       grep -qF '@@INSTALLER_PAYLOAD_SOURCE_REF@@' \
         installer/rootfs/usr/share/anaconda/interactive-defaults.ks
+      bash tests/installer/smoke.sh \
+        ${applications.installerSmoke}/bin/purplefin-installer-smoke
       grep -qF 'checks.''${system} =' modules/outputs.nix
       grep -qF 'repositoryChecks' modules/outputs.nix
 
