@@ -104,10 +104,10 @@ modules/profiles/     profile schema, composition, routing, and bootc class
 modules/repository/   checks, delivery, and GitHub operation graph
 modules/sources/      typed source-lock module
 sources/              auditable OCI locks for Bluefin and Image Builder
-bootc/builder/        full, derived, planning, and reuse engines
-lib/                  Flake checks, applications, and artifact rendering
+bootc/builder/        container build entrypoints and shared shell libraries
+lib/                  Flake-owned applications, checks, and artifact rendering
 installer/            installer container and root filesystem
-automation/           GitHub policy and release helpers
+automation/           declarative GitHub repository policies
 tests/                focused repository and build contracts
 ```
 

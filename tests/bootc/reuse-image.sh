@@ -2,7 +2,6 @@
 # shellcheck disable=SC2016
 set -euo pipefail
 
-repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 test_root="$(mktemp -d)"
 trap 'rm -rf -- "${test_root}"' EXIT
 fake_bin="${test_root}/bin"
@@ -33,6 +32,8 @@ export EXPECTED_UPSTREAM_DIGEST=sha256:ddddddddddddddddddddddddddddddddddddddddd
 export EXPECTED_VERSION=1.2.3
 export IMAGE_REF=ghcr.io/example/purplefin
 export FAKE_COSIGN_LOG="${test_root}/cosign.log"
+export PURPLEFIN_COSIGN="${fake_bin}/cosign"
+export PURPLEFIN_SKOPEO="${fake_bin}/skopeo"
 digest=sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
 
 metadata() {
@@ -59,18 +60,18 @@ metadata() {
 
 FAKE_METADATA="$(metadata)"
 export FAKE_METADATA
-actual="$(cd "${repo_root}" && bash bootc/builder/reuse-image.sh generic-x86_64)"
+actual="$(purplefin-image-reuse generic-x86_64)"
 test "${actual}" = "${digest}"
 grep -qF -- "--certificate-identity ${COSIGN_IDENTITY}" "${FAKE_COSIGN_LOG}"
 grep -qF "${IMAGE_REF}@${digest}" "${FAKE_COSIGN_LOG}"
 
 FAKE_METADATA="$(metadata old-revision)"
 export FAKE_METADATA
-actual="$(cd "${repo_root}" && bash bootc/builder/reuse-image.sh generic-x86_64)"
+actual="$(purplefin-image-reuse generic-x86_64)"
 test -z "${actual}"
 
 FAKE_METADATA="$(metadata)"
 export FAKE_METADATA
 export FAKE_COSIGN_FAIL=true
-actual="$(cd "${repo_root}" && bash bootc/builder/reuse-image.sh generic-x86_64)"
+actual="$(purplefin-image-reuse generic-x86_64)"
 test -z "${actual}"

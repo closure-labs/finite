@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 test_root="$(mktemp -d)"
 trap 'rm -rf "${test_root}"' EXIT
 
@@ -72,7 +71,7 @@ run_validator() {
 		GITHUB_REPOSITORY=example/purplefin \
 		PR_NUMBER=1 \
 		VALIDATE_INSTALLER=false \
-		bash "${repo_root}/automation/github/validate-trusted-update.sh"
+		purplefin-trusted-update
 }
 
 export MOCK_MODE=existing

@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-source_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 test_root="$(mktemp -d)"
 trap 'rm -rf -- "${test_root}"' EXIT
 git -C "${test_root}" init --quiet
@@ -48,7 +47,7 @@ classify_event() {
 	local output
 	output="$(mktemp)"
 	env PURPLEFIN_SOURCE_ROOT="${test_root}" "$@" \
-		bash "${source_root}/automation/github/classify-ci.sh" "${output}"
+		purplefin-classify-ci "${output}"
 	grep -qxF "images=${expected_images}" "${output}"
 	grep -qxF "installer=${expected_installer}" "${output}"
 	rm -f -- "${output}"

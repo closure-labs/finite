@@ -24,7 +24,7 @@ classify() {
 [[ "$(classify images .github/workflows/update-bluefin.yml)" == false ]]
 [[ "$(classify images .github/actions/setup-nix/action.yml)" == true ]]
 [[ "$(classify installer .github/actions/setup-nix/action.yml)" == true ]]
-[[ "$(classify images automation/github/classify-ci.sh tests/automation/classify-ci.sh secretspec.toml)" == false ]]
+[[ "$(classify images tests/automation/classify-ci.sh secretspec.toml)" == false ]]
 [[ "$(classify images sources/bluefin.json)" == true ]]
 [[ "$(classify installer sources/image-builder.json)" == true ]]
 [[ "$(classify installer sources/determinate-nix.json)" == true ]]
