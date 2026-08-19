@@ -144,9 +144,8 @@ jobs:
         shell: bash
         run: |
           for _ in {1..6}; do
-            if purplefin-image-sbom extract verified-sbom.spdx.json; then
-              [[ "$(sha256sum sbom.spdx.json | cut -d' ' -f1)" == \
-                "$(sha256sum verified-sbom.spdx.json | cut -d' ' -f1)" ]]
+            if purplefin-image-sbom extract verified-sbom.spdx.json &&
+              purplefin-image-sbom equivalent sbom.spdx.json verified-sbom.spdx.json; then
               exit 0
             fi
             sleep 5
