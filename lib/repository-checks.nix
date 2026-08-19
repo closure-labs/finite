@@ -243,6 +243,7 @@ in {
     tools = with pkgs; [
       applications.classifyChanges
       applications.classifyCi
+      applications.ciPlan
       applications.ciGate
       applications.promoteImages
       applications.trustedUpdate
@@ -375,6 +376,12 @@ in {
       grep -qF 'purplefin-validate-image-shard' .github/workflows/build.yml
       grep -qF 'candidate_shards' .github/workflows/build.yml
       grep -qF 'purplefin-classify-ci' .github/workflows/build.yml
+      grep -qF -- '--no-renames' lib/ci-applications/classify-ci.nix
+      grep -qF 'fromJSON(needs.prepare.outputs.lifecycle' .github/workflows/build.yml
+      grep -qF '.validation.images.required' .github/workflows/build.yml
+      grep -qF '.publication.builds.root' .github/workflows/build.yml
+      grep -qF "'purplefin-publication'" .github/workflows/build.yml
+      grep -qF 'group: purplefin-publication' .github/workflows/release.yml
       grep -qF 'purplefin-image-reuse' .github/workflows/build-profile.yml
       grep -qF 'purplefin-image-sign' .github/workflows/build-profile.yml
       ! grep -qF 'cosign sign' .github/workflows/build-profile.yml
@@ -443,15 +450,16 @@ in {
       previous_line=0
       for output in \
         base_image base_digest base_tag base_sbom_matrix candidate_shards \
-        hardware_matrix hardware_sbom_matrix has_hardware has_builds has_roles \
-        has_root_base has_base_sbom has_hardware_sbom has_role_sbom matrix \
+        hardware_matrix hardware_sbom_matrix lifecycle matrix \
         role_matrix role_sbom_matrix root_base version; do
         line="$(grep -nF "printf '$output=%s" lib/flake-applications.nix | cut -d: -f1)"
         test -n "''${line}"
         ((line > previous_line))
         previous_line="''${line}"
       done
-      grep -qF "printf 'images=%s\\ninstaller=%s\\n'" lib/flake-applications.nix
+      grep -qF "printf 'classification=%s\\n'" lib/ci-applications/classify-ci.nix
+      ! grep -Eq "printf 'has_(hardware|builds|roles|root_base|base_sbom|hardware_sbom|role_sbom)=" \
+        lib/flake-applications.nix
 
       if grep -R -Eq '(automation/[^ ]+\.sh|bootc/builder/(reuse-image|sbom)\.sh)' \
         .github lib; then

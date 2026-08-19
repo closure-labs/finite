@@ -6,50 +6,7 @@
   pkgs,
   version,
 }: rec {
-  classifyChanges = pkgs.writeShellApplication {
-    name = "purplefin-classify-changes";
-    runtimeInputs = [pkgs.coreutils];
-    text = ''
-      component="''${1:?usage: purplefin-classify-changes COMPONENT}"
-      required=false
-      case "''${component}" in
-        images | installer) ;;
-        *) echo "unknown component: ''${component}" >&2; exit 2 ;;
-      esac
-      while IFS= read -r path; do
-        case "''${component}:''${path}" in
-          installer:.github/actions/build-installer/* | \
-          installer:.github/actions/setup-nix/* | \
-          installer:.github/workflows/build-installer.yml | \
-          installer:.github/workflows/build.yml | \
-          installer:flake.lock | installer:flake.nix | \
-          installer:installer/Containerfile | installer:installer/rootfs/* | \
-          installer:sources/image-builder.json | installer:sources/determinate-nix.json | \
-          installer:modules/* | installer:lib/* | \
-          installer:tests/installer/*)
-            required=true; break ;;
-          images:README.md | images:LICENSE | images:docs/* | \
-          images:.editorconfig | images:.github/actions/build-installer/* | \
-          images:.github/dependabot.yml | \
-          images:.github/workflows/build-installer.yml | \
-          images:.github/workflows/cleanup.yml | \
-          images:.github/workflows/queue-dependabot.yml | \
-          images:.github/workflows/release.yml | \
-          images:.github/workflows/update-flake-lock.yml | \
-          images:.github/workflows/update-bluefin.yml | \
-          images:.github/workflows/update-determinate-nix.yml | \
-          images:.github/workflows/update-image-builder.yml | \
-          images:secretspec.toml | \
-          images:installer/* | images:tests/installer/* | \
-          images:tests/automation/* | \
-          images:tests/repository/text-style.sh)
-            ;;
-          images:*) required=true; break ;;
-        esac
-      done
-      printf '%s\n' "''${required}"
-    '';
-  };
+  classifyChanges = import ./ci-applications/classify-changes.nix {inherit pkgs;};
 
   githubActionsSecrets = pkgs.writeShellApplication {
     name = "purplefin-github-actions-secrets";
@@ -642,6 +599,8 @@
 
       owner="''${GITHUB_REPOSITORY_OWNER}"
       package="''${GITHUB_REPOSITORY#*/}"
+      # Build and installer caches use isolated sibling packages. Querying only
+      # the primary image package keeps cache retention outside this cleanup.
       obsolete_tags='["dale-cosmic","development-desktop-x86_64","support-lenovo-generic"]'
 
       delete_version() {
@@ -671,115 +630,7 @@
   };
   ciGate = import ./ci-applications/ci-gate.nix {inherit pkgs;};
   promoteImages = import ./ci-applications/promote-images.nix {inherit pkgs;};
-  classifyCi = pkgs.writeShellApplication {
-    name = "purplefin-classify-ci";
-    runtimeInputs = with pkgs; [bash classifyChanges coreutils git];
-    text = ''
-      repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
-      [[ -f "''${repo_root}/flake.nix" ]] || {
-        echo "Run this command from the Purplefin repository root" >&2
-        exit 2
-      }
-      cd "''${repo_root}"
-      set -euo pipefail
-
-      output_file="''${1:?usage: classify-ci.sh GITHUB_OUTPUT}"
-      repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
-      event_name="''${EVENT_NAME:?EVENT_NAME is required}"
-
-      emit() {
-        printf 'images=%s\ninstaller=%s\n' "$1" "$2" >>"''${output_file}"
-      }
-
-      select_all() {
-        echo 'Could not establish a trustworthy event diff; requiring all expensive validations' >&2
-        emit true true
-      }
-
-      classify_range() {
-        local base_sha=$1
-        local head_sha=$2
-        local allow_release_metadata=''${3:-false}
-        local changed_paths
-
-        if [[ ! "''${base_sha}" =~ ^[0-9a-f]{40}$ || ! "''${head_sha}" =~ ^[0-9a-f]{40}$ ]] ||
-          ! git -C "''${repo_root}" cat-file -e "''${base_sha}^{commit}" 2>/dev/null ||
-          ! git -C "''${repo_root}" cat-file -e "''${head_sha}^{commit}" 2>/dev/null; then
-          select_all
-          return
-        fi
-
-        changed_paths="$(mktemp)"
-        if ! git -C "''${repo_root}" diff --name-only --diff-filter=ACDMRT \
-          "''${base_sha}" "''${head_sha}" >"''${changed_paths}"; then
-          rm -f -- "''${changed_paths}"
-          select_all
-          return
-        fi
-        if [[ "''${allow_release_metadata}" == true ]] &&
-          grep -qxF VERSION "''${changed_paths}" &&
-          ! grep -Ev '^(VERSION|CHANGELOG\.md|README\.md|docs/.*)$' "''${changed_paths}" | grep -q .; then
-          echo 'Release metadata only; skipping image and installer candidates' >&2
-          emit false false
-          rm -f -- "''${changed_paths}"
-          return
-        fi
-
-        emit \
-          "$(purplefin-classify-changes images <"''${changed_paths}")" \
-          "$(purplefin-classify-changes installer <"''${changed_paths}")"
-        rm -f -- "''${changed_paths}"
-      }
-
-      case "''${event_name}" in
-      pull_request)
-        classify_range \
-          "''${PULL_REQUEST_BASE_SHA:-}" \
-          "''${PULL_REQUEST_HEAD_SHA:-}" \
-          true
-        ;;
-      merge_group)
-        classify_range \
-          "''${MERGE_GROUP_BASE_SHA:-}" \
-          "''${MERGE_GROUP_HEAD_SHA:-}" \
-          true
-        ;;
-      push)
-        before_sha="''${PUSH_BEFORE_SHA:-}"
-        after_sha="''${PUSH_AFTER_SHA:-}"
-        if [[ "''${before_sha}" =~ ^0{40}$ ]]; then
-          select_all
-        else
-          classify_range "''${before_sha}" "''${after_sha}"
-        fi
-        ;;
-      schedule)
-        # Scheduled runs deliberately probe every profile for independently managed
-        # RPM updates even when the repository itself has not changed.
-        emit true false
-        ;;
-      workflow_dispatch)
-        if [[ "''${FORCE_REBUILD:-false}" == true || "''${VALIDATE_ONLY:-false}" != true ]]; then
-          emit true false
-        else
-          head_sha="$(git -C "''${repo_root}" rev-parse HEAD)"
-          if base_sha="$(
-            git -C "''${repo_root}" merge-base \
-              "''${DEFAULT_BRANCH_REF:-origin/main}" "''${head_sha}" 2>/dev/null
-          )"; then
-            classify_range "''${base_sha}" "''${head_sha}" true
-          else
-            select_all
-          fi
-        fi
-        ;;
-      *)
-        echo "Unknown event ''${event_name}" >&2
-        select_all
-        ;;
-      esac
-    '';
-  };
+  classifyCi = import ./ci-applications/classify-ci.nix {inherit classifyChanges pkgs;};
   imagePlan = import ./ci-applications/image-plan.nix {inherit pkgs;};
   shardPlan = import ./ci-applications/shard-plan.nix {inherit pkgs;};
   ciPlan = pkgs.writeShellApplication {
@@ -790,35 +641,96 @@
         echo "usage: nix run .#ci-plan -- GITHUB_OUTPUT" >&2
         exit 2
       }
-      : "''${IMAGE_REF:?IMAGE_REF is required}"
-      : "''${GITHUB_SHA:?GITHUB_SHA is required}"
-      ${verifyBluefin}/bin/purplefin-verify-bluefin >/dev/null
+      classification="''${CLASSIFICATION:?CLASSIFICATION is required}"
+      jq -e '
+        .schema == 1 and
+        (.diff.status == "classified" or .diff.status == "fallback" or .diff.status == "predetermined") and
+        (.validation.images.required | type == "boolean") and
+        (.validation.images.scope == "none" or
+          .validation.images.scope == "changed" or
+          .validation.images.scope == "all") and
+        (.validation.installer.required | type == "boolean")
+      ' <<<"''${classification}" >/dev/null || {
+        echo 'Invalid CI classification contract' >&2
+        exit 2
+      }
+
       base_image='${bluefin.image}'
       base_tag='${bluefin.tag}'
       base_digest='${bluefin.digest}'
       base_ref="''${base_image}@''${base_digest}"
       profiles="$(jq -c . ${generated}/bootc/generated/image-matrix.json)"
-      export BASE_DIGEST="''${base_digest}" BASE_REF="''${base_ref}" EXPECTED_VERSION='${version}'
-      matrix="$(${imagePlan}/bin/purplefin-image-plan "''${profiles}")"
-      root_base="$(jq -c 'first(.include[] | select(.stage == "root")) // {}' <<<"''${matrix}")"
-      hardware_matrix="$(jq -c '{include: [.include[] | select(.stage == "hardware")]}' <<<"''${matrix}")"
-      role_matrix="$(jq -c '{include: [.include[] | select(.stage == "role")]}' <<<"''${matrix}")"
-      candidate_shards="$(${shardPlan}/bin/purplefin-shard-plan "''${profiles}" "''${matrix}" 4)"
-      sbom_matrix="$(jq -c --arg source_digest "''${GITHUB_SHA}" \
-        --argjson profiles "''${profiles}" '
-        ([.include[] | . + {
-          source_digest: $source_digest,
-          subject_tag: (.profile + "-candidate")
-        }] + .sbom_repair) as $selected |
-        {include: [
-          $profiles[] as $decl |
-          $selected[] |
-          select(.profile == $decl.profile)
-        ]}
-      ' <<<"''${matrix}")"
-      base_sbom_matrix="$(jq -c '{include: [.include[] | select(.stage == "root")]}' <<<"''${sbom_matrix}")"
-      hardware_sbom_matrix="$(jq -c '{include: [.include[] | select(.stage == "hardware")]}' <<<"''${sbom_matrix}")"
-      role_sbom_matrix="$(jq -c '{include: [.include[] | select(.stage == "role")]}' <<<"''${sbom_matrix}")"
+      matrix='{"include":[],"sbom_repair":[]}'
+      root_base='{}'
+      hardware_matrix='{"include":[]}'
+      role_matrix='{"include":[]}'
+      candidate_shards='{"include":[]}'
+      base_sbom_matrix='{"include":[]}'
+      hardware_sbom_matrix='{"include":[]}'
+      role_sbom_matrix='{"include":[]}'
+
+      if jq -e '.validation.images.required' <<<"''${classification}" >/dev/null; then
+        : "''${IMAGE_REF:?IMAGE_REF is required}"
+        : "''${GITHUB_SHA:?GITHUB_SHA is required}"
+        ${verifyBluefin}/bin/purplefin-verify-bluefin >/dev/null
+        export BASE_DIGEST="''${base_digest}" BASE_REF="''${base_ref}" EXPECTED_VERSION='${version}'
+        matrix="$(${imagePlan}/bin/purplefin-image-plan "''${profiles}")"
+        root_base="$(jq -c 'first(.include[] | select(.stage == "root")) // {}' <<<"''${matrix}")"
+        hardware_matrix="$(jq -c '{include: [.include[] | select(.stage == "hardware")]}' <<<"''${matrix}")"
+        role_matrix="$(jq -c '{include: [.include[] | select(.stage == "role")]}' <<<"''${matrix}")"
+        candidate_shards="$(${shardPlan}/bin/purplefin-shard-plan "''${profiles}" "''${matrix}" 4)"
+        sbom_matrix="$(jq -c --arg source_digest "''${GITHUB_SHA}" \
+          --argjson profiles "''${profiles}" '
+          ([.include[] | . + {
+            source_digest: $source_digest,
+            subject_tag: (.profile + "-candidate")
+          }] + .sbom_repair) as $selected |
+          {include: [
+            $profiles[] as $decl |
+            $selected[] |
+            select(.profile == $decl.profile)
+          ]}
+        ' <<<"''${matrix}")"
+        base_sbom_matrix="$(jq -c '{include: [.include[] | select(.stage == "root")]}' <<<"''${sbom_matrix}")"
+        hardware_sbom_matrix="$(jq -c '{include: [.include[] | select(.stage == "hardware")]}' <<<"''${sbom_matrix}")"
+        role_sbom_matrix="$(jq -c '{include: [.include[] | select(.stage == "role")]}' <<<"''${sbom_matrix}")"
+      fi
+
+      lifecycle="$(jq -cn \
+        --argjson classification "''${classification}" \
+        --argjson base_sbom "''${base_sbom_matrix}" \
+        --argjson hardware "''${hardware_matrix}" \
+        --argjson hardware_sbom "''${hardware_sbom_matrix}" \
+        --argjson matrix "''${matrix}" \
+        --argjson role "''${role_matrix}" \
+        --argjson role_sbom "''${role_sbom_matrix}" \
+        --argjson root "''${root_base}" '
+        {
+          schema: 1,
+          classification: $classification,
+          validation: {
+            images: {
+              required: ($matrix.include | length > 0),
+              targets: [$matrix.include[].profile]
+            },
+            installer: $classification.validation.installer
+          },
+          publication: {
+            builds: {
+              any: ($matrix.include | length > 0),
+              root: ($root | has("profile")),
+              hardware: ($hardware.include | length > 0),
+              roles: ($role.include | length > 0)
+            },
+            sbom: {
+              base: ($base_sbom.include | length > 0),
+              hardware: ($hardware_sbom.include | length > 0),
+              roles: ($role_sbom.include | length > 0)
+            },
+            promote: ($matrix.include | length > 0)
+          }
+        }
+      ')"
       {
         printf 'base_image=%s\n' "''${base_image}"
         printf 'base_digest=%s\n' "''${base_digest}"
@@ -827,13 +739,7 @@
         printf 'candidate_shards=%s\n' "''${candidate_shards}"
         printf 'hardware_matrix=%s\n' "''${hardware_matrix}"
         printf 'hardware_sbom_matrix=%s\n' "''${hardware_sbom_matrix}"
-        printf 'has_hardware=%s\n' "$(jq -r '.include | length > 0' <<<"''${hardware_matrix}")"
-        printf 'has_builds=%s\n' "$(jq -r '.include | length > 0' <<<"''${matrix}")"
-        printf 'has_roles=%s\n' "$(jq -r '.include | length > 0' <<<"''${role_matrix}")"
-        printf 'has_root_base=%s\n' "$(jq -r 'has("profile")' <<<"''${root_base}")"
-        printf 'has_base_sbom=%s\n' "$(jq -r '.include | length > 0' <<<"''${base_sbom_matrix}")"
-        printf 'has_hardware_sbom=%s\n' "$(jq -r '.include | length > 0' <<<"''${hardware_sbom_matrix}")"
-        printf 'has_role_sbom=%s\n' "$(jq -r '.include | length > 0' <<<"''${role_sbom_matrix}")"
+        printf 'lifecycle=%s\n' "''${lifecycle}"
         printf 'matrix=%s\n' "''${matrix}"
         printf 'role_matrix=%s\n' "''${role_matrix}"
         printf 'role_sbom_matrix=%s\n' "''${role_sbom_matrix}"
@@ -842,73 +748,7 @@
       } >>"$1"
     '';
   };
-  imageSign = pkgs.writeShellApplication {
-    name = "purplefin-image-sign";
-    runtimeInputs = with pkgs; [coreutils cosign];
-    text = ''
-      : "''${COSIGN_IDENTITY:?COSIGN_IDENTITY is required}"
-      : "''${DIGEST:?DIGEST is required}"
-      : "''${IMAGE_REF:?IMAGE_REF is required}"
-
-      cosign_command="''${PURPLEFIN_COSIGN:-cosign}"
-      retry_delay="''${PURPLEFIN_COSIGN_RETRY_DELAY_SECONDS:-5}"
-      sign_attempts="''${PURPLEFIN_COSIGN_SIGN_ATTEMPTS:-2}"
-      verify_attempts="''${PURPLEFIN_COSIGN_VERIFY_ATTEMPTS:-6}"
-
-      [[ "''${DIGEST}" =~ ^sha256:[0-9a-f]{64}$ ]] || {
-        echo "Invalid image digest: ''${DIGEST}" >&2
-        exit 2
-      }
-      [[ "''${retry_delay}" =~ ^[0-9]+$ ]] || {
-        echo "PURPLEFIN_COSIGN_RETRY_DELAY_SECONDS must be a non-negative integer" >&2
-        exit 2
-      }
-      [[ "''${sign_attempts}" =~ ^[1-9][0-9]*$ ]] || {
-        echo "PURPLEFIN_COSIGN_SIGN_ATTEMPTS must be a positive integer" >&2
-        exit 2
-      }
-      [[ "''${verify_attempts}" =~ ^[1-9][0-9]*$ ]] || {
-        echo "PURPLEFIN_COSIGN_VERIFY_ATTEMPTS must be a positive integer" >&2
-        exit 2
-      }
-
-      immutable_image="''${IMAGE_REF}@''${DIGEST}"
-      signed=false
-      for ((attempt = 1; attempt <= sign_attempts; attempt += 1)); do
-        if "''${cosign_command}" sign --yes "''${immutable_image}"; then
-          signed=true
-          break
-        fi
-        echo "Cosign signing attempt ''${attempt}/''${sign_attempts} failed" >&2
-        if (( attempt < sign_attempts && retry_delay > 0 )); then
-          sleep "''${retry_delay}"
-        fi
-      done
-      [[ "''${signed}" == true ]] || {
-        echo "Cosign signing failed after ''${sign_attempts} attempts" >&2
-        exit 1
-      }
-
-      verified=false
-      for ((attempt = 1; attempt <= verify_attempts; attempt += 1)); do
-        if "''${cosign_command}" verify \
-          --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-          --certificate-identity "''${COSIGN_IDENTITY}" \
-          "''${immutable_image}" >/dev/null; then
-          verified=true
-          break
-        fi
-        echo "Cosign verification attempt ''${attempt}/''${verify_attempts} failed" >&2
-        if (( attempt < verify_attempts && retry_delay > 0 )); then
-          sleep "''${retry_delay}"
-        fi
-      done
-      [[ "''${verified}" == true ]] || {
-        echo "Cosign verification failed after ''${verify_attempts} attempts" >&2
-        exit 1
-      }
-    '';
-  };
+  imageSign = import ./ci-applications/image-sign.nix {inherit pkgs;};
   imageReuse = pkgs.writeShellApplication {
     name = "purplefin-image-reuse";
     runtimeInputs = with pkgs; [bash coreutils cosign jq skopeo];

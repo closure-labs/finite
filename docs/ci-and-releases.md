@@ -3,6 +3,21 @@
 GitHub Actions selects work from the changed paths and the Nix-generated image
 graph. The Flake supplies the check and build applications; workflows supply
 events, permissions, runners, environments, attestations, and artifact upload.
+Path classification treats renames as a deletion plus an addition, so moving a
+build input into a documentation directory cannot hide its original impact.
+Installer validation is selected only by the installer graph, generated profile
+blueprints, or their pinned tools; image-only aspects and repository tests do
+not rebuild the unchanged ISO.
+
+Classification and planning cross the workflow boundary as schema-versioned
+JSON contracts. Classification records whether its diff is trustworthy and
+which validation domains are eligible. The lifecycle contract then records the
+exact image targets and the build, software-bill-of-materials, promotion, and
+installer jobs required for the run. Profile selection uses the generated
+per-profile build-input fingerprints and parent graph: changed targets expand to
+their descendants, while shard planning adds ancestors only as local build
+dependencies. Publication additionally checks registry state, signatures,
+provenance, RPM updates, and repair work before finalizing that lifecycle.
 
 ## Validation layers
 
@@ -25,6 +40,12 @@ once, builds roots with `Containerfile`, and builds descendants with
 `Containerfile.derived`. Ancestors needed only as local parents skip duplicate
 rechunking; every selected profile remains a fully rechunked target in exactly
 one shard. No mutable image state crosses a job boundary.
+
+Events whose classification is predetermined (scheduled runs and publishing
+workflow dispatches) use a shallow checkout. Diff-classified pull requests,
+merge groups, pushes, and validation dispatches retain complete history. Merge
+groups fail safe to all expensive validation when the supplied base is not an
+ancestor of the synthetic head.
 
 The Flake declares the public `purplefin.cachix.org` substituter and key. Every
 Nix job uses the repository's pinned `setup-nix` action for GitHub access and
@@ -58,12 +79,19 @@ hardware, and role jobs sign those immutable digests and attach provenance;
 tier-specific reusable jobs then attest their software bills of materials. A
 single final promotion job verifies the complete selected graph—including
 parent digests and every signer identity—before moving any public channel tag.
+Normal publication and the release promotion phase share one non-cancelling
+concurrency group. The release preparation phase remains outside that group so
+it can wait for or dispatch the exact-source build without deadlocking it.
 An interrupted run is therefore repairable: missing signatures or provenance
 select a rebuild, while a missing software bill of materials attestation selects
 only that attestation job. The signed attestation is also the release asset
 source; Purplefin does not maintain a second unsigned software bill of materials
 cache package. Pull requests and merge candidates validate candidates with
 read-only registry access.
+
+The manual obsolete-tag cleanup queries only the primary image package. Build
+and installer caches live in isolated sibling packages and are intentionally
+outside its deletion scope.
 
 Syft scans the final mounted OCI filesystem because Purplefin images are
 assembled from Bluefin and RPM content rather than from a Nix store closure.

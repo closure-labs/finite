@@ -1,7 +1,7 @@
 {pkgs}:
 pkgs.writeShellApplication {
   name = "purplefin-ci-gate";
-  runtimeInputs = [pkgs.coreutils];
+  runtimeInputs = with pkgs; [coreutils jq];
   text = ''
     set -euo pipefail
 
@@ -24,10 +24,39 @@ pkgs.writeShellApplication {
     }
 
     require_result prepare "''${PREPARE_RESULT:?}" success
+    lifecycle="''${LIFECYCLE:?LIFECYCLE is required}"
+    jq -e '
+      .schema == 1 and
+      (.validation.images.required | type == "boolean") and
+      (.validation.images.targets | type == "array") and
+      all(.validation.images.targets[]; type == "string" and length > 0) and
+      (.validation.installer.required | type == "boolean") and
+      (.publication.builds.any | type == "boolean") and
+      (.publication.builds.root | type == "boolean") and
+      (.publication.builds.hardware | type == "boolean") and
+      (.publication.builds.roles | type == "boolean") and
+      (.publication.sbom.base | type == "boolean") and
+      (.publication.sbom.hardware | type == "boolean") and
+      (.publication.sbom.roles | type == "boolean") and
+      (.publication.promote | type == "boolean") and
+      .publication.promote == .publication.builds.any
+    ' <<<"''${lifecycle}" >/dev/null || {
+      echo 'Invalid CI lifecycle contract' >&2
+      exit 2
+    }
+    has_root_base="$(jq -r '.publication.builds.root' <<<"''${lifecycle}")"
+    has_hardware="$(jq -r '.publication.builds.hardware' <<<"''${lifecycle}")"
+    has_roles="$(jq -r '.publication.builds.roles' <<<"''${lifecycle}")"
+    has_base_sbom="$(jq -r '.publication.sbom.base' <<<"''${lifecycle}")"
+    has_hardware_sbom="$(jq -r '.publication.sbom.hardware' <<<"''${lifecycle}")"
+    has_role_sbom="$(jq -r '.publication.sbom.roles' <<<"''${lifecycle}")"
+    installer_selected="$(jq -r '.validation.installer.required' <<<"''${lifecycle}")"
+    validation_images="$(jq -r '.validation.images.required' <<<"''${lifecycle}")"
+    promote_selected="$(jq -r '.publication.promote' <<<"''${lifecycle}")"
 
     if [[ "''${EVENT_NAME:?}" == pull_request || "''${EVENT_NAME}" == merge_group || "''${VALIDATE_ONLY:-false}" == true ]]; then
-      require_selected_result build-candidate "''${HAS_BUILDS:-false}" "''${BUILD_CANDIDATE_RESULT:?}"
-      require_selected_result installer-candidate "''${INSTALLER_SELECTED:?}" "''${INSTALLER_CANDIDATE_RESULT:?}"
+      require_selected_result build-candidate "''${validation_images}" "''${BUILD_CANDIDATE_RESULT:?}"
+      require_selected_result installer-candidate "''${installer_selected}" "''${INSTALLER_CANDIDATE_RESULT:?}"
       require_result base-publish "''${BASE_PUBLISH_RESULT:?}" skipped
       require_result hardware-publish "''${HARDWARE_PUBLISH_RESULT:?}" skipped
       require_result roles-publish "''${ROLES_PUBLISH_RESULT:?}" skipped
@@ -44,12 +73,12 @@ pkgs.writeShellApplication {
       echo 'Publishing workflow dispatches must target main' >&2
       exit 1
     fi
-    require_selected_result base-publish "''${HAS_ROOT_BASE:-false}" "''${BASE_PUBLISH_RESULT:?}"
-    require_selected_result hardware-publish "''${HAS_HARDWARE:-false}" "''${HARDWARE_PUBLISH_RESULT:?}"
-    require_selected_result roles-publish "''${HAS_ROLES:-false}" "''${ROLES_PUBLISH_RESULT:?}"
-    require_selected_result base-sbom "''${HAS_BASE_SBOM:-false}" "''${BASE_SBOM_RESULT:?}"
-    require_selected_result hardware-sbom "''${HAS_HARDWARE_SBOM:-false}" "''${HARDWARE_SBOM_RESULT:?}"
-    require_selected_result role-sbom "''${HAS_ROLE_SBOM:-false}" "''${ROLE_SBOM_RESULT:?}"
-    require_selected_result promote "''${HAS_BUILDS:-false}" "''${PROMOTE_RESULT:?}"
+    require_selected_result base-publish "''${has_root_base}" "''${BASE_PUBLISH_RESULT:?}"
+    require_selected_result hardware-publish "''${has_hardware}" "''${HARDWARE_PUBLISH_RESULT:?}"
+    require_selected_result roles-publish "''${has_roles}" "''${ROLES_PUBLISH_RESULT:?}"
+    require_selected_result base-sbom "''${has_base_sbom}" "''${BASE_SBOM_RESULT:?}"
+    require_selected_result hardware-sbom "''${has_hardware_sbom}" "''${HARDWARE_SBOM_RESULT:?}"
+    require_selected_result role-sbom "''${has_role_sbom}" "''${ROLE_SBOM_RESULT:?}"
+    require_selected_result promote "''${promote_selected}" "''${PROMOTE_RESULT:?}"
   '';
 }
