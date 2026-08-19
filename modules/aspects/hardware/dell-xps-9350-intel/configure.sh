@@ -107,7 +107,7 @@ install_svp7500_stack() {
 		dmsquash-live
 		dmsquash-live-autooverlay
 	)
-	local build_packages=(git make)
+	local build_packages=(dracut-live git make)
 	local temporary_build_packages=()
 	local cleanup_packages=()
 	local package
@@ -222,6 +222,7 @@ EOF
 
 	echo ":: Rebuilding ${target_release} initramfs with the SVP7500 replacements"
 	dracut \
+		--add "${required_initramfs_dracut_modules[*]}" \
 		--add-drivers "${initramfs_modules[*]}" \
 		--install "${ipu7_firmware_path}" \
 		--rebuild "${initramfs_path}"

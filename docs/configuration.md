@@ -1,25 +1,24 @@
 # Customize profiles and aspects
 
-Purplefin models each final image as a typed Den profile. Profiles include a
-parent profile and reusable aspects; Nix resolves the graph into ordered bootc
-steps, Home Manager configurations, CI matrices, catalogs, and installer
-Blueprints.
+Purplefin separates the system foundation from user roles. Four typed Den
+profiles produce lightly layered bootc images; eight typed Home Manager
+profiles provide applications and preferences. Nix resolves both registries
+into CI matrices, catalogs, activation packages, and installer Blueprints.
 
 ## Profile graph
 
 ```text
-base
-├── base-generic
-│   ├── developer-generic
-│   ├── executive-generic
-│   ├── it-generic
-│   ├── sales-generic
-│   ├── support-generic
-│   └── trainer-generic
-└── base-dell-xps-9350-intel
-    ├── dale
-    ├── sales-dell-xps-9350-intel
-    └── support-dell-xps-9350-intel
+Bluefin ──┬── generic-x86_64
+         └── dell-xps-9350-intel
+
+Bluefin DX ──┬── generic-x86_64
+            └── dell-xps-9350-intel
+
+Home Manager
+├── Bluefin: sales, executive
+└── Bluefin DX: developer, support, it, trainer
+    ├── dale: every role combined, Dell XPS 13 9350 only
+    └── elad: every role combined, generic x86-64 without the Dell camera layer
 ```
 
 Inspect the evaluated graph and catalog:
@@ -35,28 +34,26 @@ jq '.profiles' result/bootc/generated/profile-catalog.json
 ## Change an aspect
 
 Aspects live below `modules/aspects/<namespace>/<name>/`. A feature directory
-contains its Den declaration, build step, payload, and focused tests:
+contains its Den declaration and focused tests. Base and hardware features may
+also carry an image build step; role features are Home Manager modules:
 
 ```text
 modules/aspects/roles/support/
 ├── default.nix
-├── apply.sh
-├── manifests/
-├── rootfs/
 └── tests/
 ```
 
-`default.nix` declares the aspect, ordered bootc steps, source inputs, and any
-Home Manager modules. Keep files consumed by a step in the same feature
-directory and include every consumed path in its source closure.
+`default.nix` declares the aspect and its Home Manager configuration. Keep
+files consumed by a module in the same feature directory. Only system and
+hardware necessities belong in bootc source closures.
 
 ## Add a profile
 
 In `modules/profiles/definitions.nix`:
 
-1. Add a profile aspect whose `includes` list composes its parent and features.
-2. Add the matching `purplefin.profiles` entity with its parent and published
-   tags.
+1. Add a Home Manager aspect that includes the base and desired roles.
+2. Add the matching `purplefin.homeProfiles` entity with its required
+   `baseClass`, supported hardware, and ordered roles.
 
 Validate and inspect it:
 
@@ -64,7 +61,7 @@ Validate and inspect it:
 nix run .#ci
 nix build .#generated
 jq '.profiles["your-profile"]' \
-  result/bootc/generated/profile-catalog.json
+  result/bootc/generated/home-profile-catalog.json
 ```
 
 ## Add an aspect

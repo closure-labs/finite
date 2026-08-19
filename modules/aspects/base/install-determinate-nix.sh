@@ -5,10 +5,12 @@ generated_root="${PURPLEFIN_GENERATED_ROOT:?PURPLEFIN_GENERATED_ROOT is required
 installer="${generated_root}/bootc/generated/determinate-nix-installer"
 lock="${generated_root}/bootc/generated/determinate-nix.json"
 policy="${generated_root}/bootc/generated/determinate-nix.pp"
+file_contexts="${generated_root}/bootc/generated/nix.fc"
 seed=/usr/lib/purplefin/determinate-nix-seed
 
 test -x "${installer}"
 test -s "${policy}"
+test -s "${file_contexts}"
 test -f "${lock}"
 [[ "$(jq -er .architecture "${lock}")" == x86_64-linux ]]
 minimum_runtime_version="$(jq -er .minimumRuntimeVersion "${lock}")"
@@ -25,6 +27,27 @@ if [[ -L /usr/local ]]; then
 	install -d -m 0755 /var/usrlocal/bin
 fi
 
+# The native Fedora package intentionally establishes /nix, the build users,
+# and the host package contract first. Determinate currently aborts its Linux
+# planner when the package-provided nix-env is visible, even though this empty
+# native bootstrap is safe to replace. Hide that one preflight probe for the
+# duration of the pinned installer and restore the RPM-owned binary verbatim.
+native_nix_env=/usr/bin/nix-env
+hidden_native_nix_env=/usr/lib/purplefin/native-nix-env
+test -x "${native_nix_env}"
+install -d -m 0755 /usr/lib/purplefin
+mv "${native_nix_env}" "${hidden_native_nix_env}"
+restore_native_nix_env() {
+	if [[ -e "${hidden_native_nix_env}" ]]; then
+		mv "${hidden_native_nix_env}" "${native_nix_env}"
+	fi
+}
+trap restore_native_nix_env EXIT
+if command -v nix-env >/dev/null 2>&1; then
+	echo 'Fedora native nix-env is still visible after preparing the Determinate handoff' >&2
+	exit 1
+fi
+
 HOME=/var/roothome "${installer}" install linux \
 	--determinate \
 	--diagnostic-endpoint "" \
@@ -35,6 +58,8 @@ HOME=/var/roothome "${installer}" install linux \
 	--no-confirm \
 	--no-modify-profile \
 	--no-start-daemon
+restore_native_nix_env
+trap - EXIT
 
 test -x /usr/local/bin/determinate-nixd
 install -D -m 0555 /usr/local/bin/determinate-nixd /usr/bin/determinate-nixd
@@ -43,6 +68,7 @@ if [[ -L /usr/local ]]; then
 	rmdir /var/usrlocal/bin
 fi
 install -D -m 0444 "${policy}" /usr/share/selinux/packages/determinate-nix.pp
+install -D -m 0444 "${file_contexts}" /usr/share/purplefin/selinux/nix.fc
 /usr/libexec/purplefin/require-determinate-nix-version \
 	"${minimum_runtime_version}"
 

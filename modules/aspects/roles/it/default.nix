@@ -1,20 +1,12 @@
 _: {
-  den.aspects.features.roles.it.bootc = {lib, ...}: {
-    purplefin = {
-      roles = lib.mkAfter ["it"];
-      build = {
-        steps = lib.mkAfter [
-          {
-            name = "it";
-            order = 360;
-            script = ./apply.sh;
-          }
-        ];
-        sourcePaths = [
-          ./apply.sh
-          ./manifests
-        ];
-      };
+  den.aspects.features.roles.it.homeManager = {
+    config,
+    pkgs,
+    ...
+  }: {
+    home = {
+      packages = [(config.lib.nixGL.wrap pkgs.rustdesk-flutter)];
+      sessionVariables.PURPLEFIN_ROLE_IT = "1";
     };
   };
 }

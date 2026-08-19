@@ -35,8 +35,12 @@ jobs:
         id: pin
         run: nix run .#source-update -- bluefin "${GITHUB_OUTPUT}"
 
+      - name: Refresh and verify Bluefin DX OCI lock
+        id: pin_dx
+        run: nix run .#source-update -- bluefin-dx "${GITHUB_OUTPUT}"
+
       - name: Open or update pull request
-        if: steps.pin.outputs.changed == 'true'
+        if: steps.pin.outputs.changed == 'true' || steps.pin_dx.outputs.changed == 'true'
         id: update
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
@@ -47,7 +51,8 @@ jobs:
           title: "sources: update Bluefin stable"
           body: |
             Refreshes the Bluefin stable container source to immutable digest
-            `${{ steps.pin.outputs.digest }}` and verifies its Cosign identity.
+            `${{ steps.pin.outputs.digest }}` and the Bluefin DX digest
+            `${{ steps.pin_dx.outputs.digest }}`, verifying both Cosign identities.
 
             The candidate validates the complete repository and image graph
             before auto-merge is enabled.

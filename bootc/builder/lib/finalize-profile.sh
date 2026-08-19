@@ -1,30 +1,5 @@
 #!/usr/bin/env bash
 
-purplefin_update_independently_managed_rpms() {
-	local build_root="$1"
-	local package
-	local -a installed_independently_managed_rpms=()
-
-	# shellcheck source=/tmp/purplefin-build/lib/independently-managed-rpms.sh
-	source "${build_root}/bootc/builder/lib/independently-managed-rpms.sh"
-	independently_managed_rpms=()
-	independently_managed_rpm_repo_args=()
-	purplefin_load_independently_managed_rpms "${build_root}/modules/aspects/base/independently-managed-rpms.list"
-	for package in "${independently_managed_rpms[@]}"; do
-		if rpm -q "${package}" >/dev/null 2>&1; then
-			installed_independently_managed_rpms+=("${package}")
-		fi
-	done
-	if ((${#installed_independently_managed_rpms[@]} > 0)); then
-		echo ":: Updating independently managed RPMs"
-		dnf5 -y --refresh "${independently_managed_rpm_repo_args[@]}" \
-			upgrade "${installed_independently_managed_rpms[@]}"
-		for package in "${installed_independently_managed_rpms[@]}"; do
-			rpm -q "${package}"
-		done
-	fi
-}
-
 purplefin_finalize_profile() {
 	local profile="$1"
 	local profile_catalog="$2"

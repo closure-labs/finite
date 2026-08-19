@@ -22,12 +22,11 @@ check produces a reference-free proof closure below 1 MiB. Authorized
 workstations and trusted GitHub events publish those proofs to Cachix.
 
 Pull requests and merge groups validate image profiles in up to four balanced
-runner-local shards. Each shard verifies and loads the locked Bluefin digest
-once, then builds and rechunks each assigned profile independently with
-`--pull=never`. GitHub jobs do not share container storage; sharding preserves
-four-way concurrency while avoiding a separate upstream image transfer for
-every profile. Publishing remains a staged immutable-digest graph with
-independent signing and attestations.
+runner-local shards. Each foundation carries its locked Bluefin or Bluefin DX
+upstream, and the shard loads the appropriate signed digest before building
+and rechunking it with `--pull=never`. GitHub jobs do not share container
+storage. Publishing remains an immutable-digest graph with independent signing
+and attestations.
 
 The Nix wrapper supplies the pinned orchestration tools. On GitHub-hosted
 runners it deliberately delegates rootless container execution to the runner's
@@ -56,8 +55,8 @@ The image application resolves immutable inputs, generates the build contract,
 and invokes Podman:
 
 ```bash
-nix run .#image-build -- base-generic localhost/purplefin:base-generic
-nix run .#image-build -- dale localhost/purplefin:dale
+nix run .#image-build -- bluefin-generic localhost/purplefin:bluefin-generic
+nix run .#image-build -- bluefin-dx-dell-xps-9350-intel localhost/purplefin:dale
 ```
 
 Profile names are declared in `modules/profiles/definitions.nix`.
@@ -73,7 +72,8 @@ The output contains:
 
 - `bootc/generated/image-matrix.json`
 - `bootc/generated/profile-catalog.json`
-- `bootc/generated/upstream.json`
+- `bootc/generated/upstreams.json`
+- `bootc/generated/home-profile-catalog.json`
 - `installer/config/profiles/*.toml`
 
 Build consumers receive this store path directly. To make a writable copy for
@@ -85,12 +85,16 @@ inspection, copy the desired files from the `result` symlink.
 | --- | --- |
 | `nix build .#architecture` | Mermaid rendering of the evaluated Den graph |
 | `nix run .#source-verify -- bluefin` | Verify the locked digest and Cosign identity |
+| `nix run .#source-verify -- bluefin-dx` | Verify the locked Bluefin DX digest and Cosign identity |
 | `nix run .#source-verify -- image-builder` | Verify the locked installer builder digest |
 | `nix run .#source-verify -- determinate-nix` | Verify the pinned Determinate installer and SELinux policy hashes |
 | `nix run .#load-bluefin` | Copy the verified digest into container storage |
 | `nix run .#source-update -- bluefin` | Refresh and verify the Bluefin lock |
+| `nix run .#source-update -- bluefin-dx` | Refresh and verify the Bluefin DX lock |
 | `nix run .#source-update -- determinate-nix` | Refresh the stable Determinate Nix release lock |
 | `nix build .#home-dale` | Home Manager activation package for `dale` |
+| `nix build .#home-elad` | All-role Home Manager activation package without the Dell camera layer |
+| `nix run .#cloud-init -- ...` | Generate a NoCloud Home Manager seed |
 | `nix build .#syft` | Pinned Syft package |
 | `nix run .#image-sbom -- validate <file>` | Validate a normalized SPDX image software bill of materials |
 | `nix run .#installer-smoke -- <iso>` | QEMU installer boot test |
@@ -103,7 +107,7 @@ modules/aspects/      co-located base, capability, hardware, and role features
 modules/profiles/     profile schema, composition, routing, and bootc class
 modules/repository/   checks, delivery, and GitHub operation graph
 modules/sources/      typed source-lock module
-sources/              auditable OCI locks for Bluefin and Image Builder
+sources/              auditable OCI locks for Bluefin, Bluefin DX, and Image Builder
 bootc/builder/        container build entrypoints and shared shell libraries
 lib/                  Flake-owned applications, checks, and artifact rendering
 installer/            installer container and root filesystem

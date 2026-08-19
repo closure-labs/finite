@@ -63,6 +63,7 @@ jobs:
       role_matrix: ${{ steps.plan.outputs.role_matrix }}
       role_sbom_matrix: ${{ steps.plan.outputs.role_sbom_matrix }}
       root_base: ${{ steps.plan.outputs.root_base }}
+      root_matrix: ${{ steps.plan.outputs.root_matrix }}
       version: ${{ steps.plan.outputs.version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -102,9 +103,6 @@ jobs:
           CHECK_PUBLICATION_TRUST: >-
             ${{ github.event_name == 'push' || github.event_name == 'schedule' ||
             (github.event_name == 'workflow_dispatch' && !inputs.validate_only) }}
-          CHECK_RPM_UPDATES: >-
-            ${{ github.event_name == 'schedule' ||
-            (github.event_name == 'workflow_dispatch' && !inputs.validate_only) }}
           FORCE_REBUILD: ${{ github.event_name == 'workflow_dispatch' && inputs.force }}
           GH_TOKEN: ${{ github.token }}
           IMAGE_REF: ${{ format('{0}/{1}', env.REGISTRY, env.IMAGE_NAME) }}
@@ -138,7 +136,6 @@ jobs:
         env:
           IMAGE_REF: ${{ format('{0}/{1}', env.REGISTRY, env.IMAGE_NAME) }}
           PROFILE_SHARD: ${{ toJSON(matrix.profiles) }}
-          UPSTREAM_BASE_DIGEST: ${{ needs.prepare.outputs.base_digest }}
         run: purplefin-validate-image-shard
 
   installer-candidate:
@@ -177,15 +174,20 @@ jobs:
       contents: read
       id-token: write
       packages: write
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix: ${{ fromJSON(needs.prepare.outputs.root_matrix) }}
     with:
-      build-input: ${{ fromJSON(needs.prepare.outputs.root_base).build_input }}
-      parent-digest: ${{ needs.prepare.outputs.base_digest }}
+      build-input: ${{ matrix.build_input }}
+      parent-digest: ${{ matrix.upstream.digest }}
       parent-from-lock: true
-      parent-image: ${{ needs.prepare.outputs.base_image }}
-      parent-tag: ${{ needs.prepare.outputs.base_tag }}
-      profile: base
-      reuse-existing: ${{ fromJSON(needs.prepare.outputs.root_base).reuse_existing }}
-      upstream-base-digest: ${{ needs.prepare.outputs.base_digest }}
+      parent-image: ${{ matrix.upstream.image }}
+      parent-tag: ${{ matrix.upstream.tag }}
+      profile: ${{ matrix.profile }}
+      reuse-existing: ${{ matrix.reuse_existing }}
+      upstream-base-digest: ${{ matrix.upstream.digest }}
+      upstream-source: ${{ endsWith(matrix.upstream.image, '/bluefin-dx') && 'bluefin-dx' || 'bluefin' }}
       version: ${{ needs.prepare.outputs.version }}
 
   hardware-publish:
@@ -215,7 +217,7 @@ jobs:
       parent-tag: ${{ matrix.parent_tag }}
       profile: ${{ matrix.profile }}
       reuse-existing: ${{ matrix.reuse_existing }}
-      upstream-base-digest: ${{ needs.prepare.outputs.base_digest }}
+      upstream-base-digest: ${{ matrix.upstream.digest }}
       version: ${{ needs.prepare.outputs.version }}
 
   roles-publish:
@@ -246,7 +248,7 @@ jobs:
       parent-tag: ${{ matrix.parent_tag }}
       profile: ${{ matrix.profile }}
       reuse-existing: ${{ matrix.reuse_existing }}
-      upstream-base-digest: ${{ needs.prepare.outputs.base_digest }}
+      upstream-base-digest: ${{ matrix.upstream.digest }}
       version: ${{ needs.prepare.outputs.version }}
 
   base-sbom:
@@ -271,7 +273,7 @@ jobs:
       profile: ${{ matrix.profile }}
       source-digest: ${{ matrix.source_digest }}
       subject-tag: ${{ matrix.subject_tag }}
-      upstream-base-digest: ${{ needs.prepare.outputs.base_digest }}
+      upstream-base-digest: ${{ matrix.upstream.digest }}
       version: ${{ needs.prepare.outputs.version }}
 
   hardware-sbom:
@@ -298,7 +300,7 @@ jobs:
       profile: ${{ matrix.profile }}
       source-digest: ${{ matrix.source_digest }}
       subject-tag: ${{ matrix.subject_tag }}
-      upstream-base-digest: ${{ needs.prepare.outputs.base_digest }}
+      upstream-base-digest: ${{ matrix.upstream.digest }}
       version: ${{ needs.prepare.outputs.version }}
 
   role-sbom:
@@ -325,7 +327,7 @@ jobs:
       profile: ${{ matrix.profile }}
       source-digest: ${{ matrix.source_digest }}
       subject-tag: ${{ matrix.subject_tag }}
-      upstream-base-digest: ${{ needs.prepare.outputs.base_digest }}
+      upstream-base-digest: ${{ matrix.upstream.digest }}
       version: ${{ needs.prepare.outputs.version }}
 
   promote:
@@ -370,7 +372,6 @@ jobs:
           BUILD_MATRIX: ${{ needs.prepare.outputs.matrix }}
           GH_TOKEN: ${{ github.token }}
           IMAGE_REF: ${{ format('{0}/{1}', env.REGISTRY, env.IMAGE_NAME) }}
-          UPSTREAM_BASE_DIGEST: ${{ needs.prepare.outputs.base_digest }}
           VERSION: ${{ needs.prepare.outputs.version }}
         run: purplefin-promote-images
       - name: Log out of GHCR

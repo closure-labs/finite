@@ -9,6 +9,5 @@ if ! rpm -q bitwarden >/dev/null 2>&1; then
 	exit 0
 fi
 
-purplefin_firstboot_log "Removing the legacy Bitwarden desktop RPM layer; the Flatpak is its replacement"
+purplefin_firstboot_log "Removing the legacy Bitwarden desktop RPM layer; Home Manager now provides it from Nix"
 run_rpm_ostree uninstall bitwarden
-

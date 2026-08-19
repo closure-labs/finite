@@ -1,6 +1,8 @@
 {
   determinateNixInstaller,
+  determinateNixSelinuxFileContexts,
   determinateNixSelinuxPolicy,
+  homeProfiles,
   lib,
   pkgs,
   profileOrder,
@@ -69,12 +71,13 @@
       profile = name;
       parent = profiles.${name}.parent;
       tags = profiles.${name}.tagsString;
+      upstream = profiles.${name}.upstream;
     })
     profileOrder;
   catalog = {
-    schema = 3;
+    schema = 4;
     inherit version;
-    inherit (profiles.base) upstream;
+    upstreams = lib.mapAttrs (_: profile: profile.upstream) profiles;
     profiles =
       lib.mapAttrs (_: profile: {
         inherit
@@ -107,9 +110,32 @@
       })
       profiles;
   };
+  homeCatalog = {
+    schema = 1;
+    inherit version;
+    profiles =
+      lib.mapAttrs (_: profile: {
+        inherit (profile) baseClass hardware name roles;
+        foundations =
+          map (
+            hardware:
+              if profile.baseClass == "bluefin-dx"
+              then
+                if hardware == "dell-xps-9350-intel"
+                then "bluefin-dx-dell-xps-9350-intel"
+                else "bluefin-dx-generic"
+              else if hardware == "dell-xps-9350-intel"
+              then "bluefin-dell-xps-9350-intel"
+              else "bluefin-generic"
+          )
+          profile.hardware;
+      })
+      homeProfiles;
+  };
   matrixFile = pkgs.writeText "image-matrix.json" (builtins.toJSON matrix + "\n");
   catalogFile = pkgs.writeText "profile-catalog.json" (builtins.toJSON catalog + "\n");
-  upstreamFile = pkgs.writeText "upstream.json" (builtins.toJSON profiles.base.upstream + "\n");
+  homeCatalogFile = pkgs.writeText "home-profile-catalog.json" (builtins.toJSON homeCatalog + "\n");
+  upstreamFile = pkgs.writeText "upstreams.json" (builtins.toJSON catalog.upstreams + "\n");
   toml = pkgs.formats.toml {};
   blueprintFiles =
     lib.mapAttrs (
@@ -124,16 +150,23 @@ in
     mkdir -p "$out/bootc/generated" "$out/installer/config/profiles"
     cp ${matrixFile} "$out/bootc/generated/image-matrix.json"
     cp ${catalogFile} "$out/bootc/generated/profile-catalog.json"
-    cp ${upstreamFile} "$out/bootc/generated/upstream.json"
+    cp ${homeCatalogFile} "$out/bootc/generated/home-profile-catalog.json"
+    cp ${upstreamFile} "$out/bootc/generated/upstreams.json"
     cp ${../sources/determinate-nix.json} "$out/bootc/generated/determinate-nix.json"
     cp ${determinateNixInstaller} "$out/bootc/generated/determinate-nix-installer"
     cp ${determinateNixSelinuxPolicy} "$out/bootc/generated/determinate-nix.pp"
+    cp ${determinateNixSelinuxFileContexts} "$out/bootc/generated/nix.fc"
     chmod 0555 "$out/bootc/generated/determinate-nix-installer"
     chmod 0444 "$out/bootc/generated/determinate-nix.pp"
+    chmod 0444 "$out/bootc/generated/nix.fc"
     ${lib.concatStringsSep "\n" (
-      map (name: ''
-        cp ${blueprintFiles.${name}} "$out/installer/config/profiles/${name}.toml"
-      '')
+      lib.concatMap (
+        name:
+          map (installerName: ''
+            cp ${blueprintFiles.${name}} "$out/installer/config/profiles/${installerName}.toml"
+          '')
+          (lib.unique ([name] ++ profiles.${name}.tags))
+      )
       profileOrder
     )}
   ''

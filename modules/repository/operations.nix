@@ -21,6 +21,7 @@ in {
       upstream.includes = [
         operations.source
         sources.bluefin
+        sources.bluefin-dx
         sources.determinate-nix
         sources.image-builder
       ];
@@ -37,7 +38,14 @@ in {
     };
 
     delivery = {
-      images.includes = [sources.bluefin] ++ builtins.attrValues profiles;
+      images.includes = [
+        sources.bluefin
+        sources.bluefin-dx
+        profiles.bluefin-generic
+        profiles.bluefin-dell-xps-9350-intel
+        profiles.bluefin-dx-generic
+        profiles.bluefin-dx-dell-xps-9350-intel
+      ];
       installer.includes = [operations.delivery.images];
       release.includes = [
         operations.delivery.images
@@ -71,6 +79,7 @@ in {
       bluefin.includes = [
         operations.source
         sources.bluefin
+        sources.bluefin-dx
         operations.checks.upstream
       ];
       determinate-nix.includes = [

@@ -9,19 +9,31 @@ test -f VERSION
 grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$' VERSION
 test -f "${catalog}"
 test -f "${matrix}"
+home_catalog="${generated_root}/bootc/generated/home-profile-catalog.json"
+test -f "${home_catalog}"
 jq -e '
-  .schema == 3 and
-  (.profiles | length) == 12 and
-  .profiles.base.parent == null and
-  .profiles["base-generic"].parent == "base" and
-  .profiles.dale.parent == "base-dell-xps-9350-intel" and
-  .profiles.dale.modules == [
-    "base", "devops", "sales", "trainer", "support",
-    "hardware-dell-xps-9350-intel"
-  ] and
-  .profiles.dale.deltaModules == ["devops", "sales", "trainer", "support"]
+  .schema == 4 and
+  (.profiles | length) == 4 and
+  all(.profiles[]; .parent == null and .roles == []) and
+  .profiles["bluefin-generic"].modules == ["base", "hardware-generic-x86_64"] and
+  .profiles["bluefin-dx-dell-xps-9350-intel"].modules == ["base", "hardware-dell-xps-9350-intel"]
 ' "${catalog}" >/dev/null
-jq -e 'length == 12 and all(.[]; .build_input | test("^[0-9a-f]{64}$"))' "${matrix}" >/dev/null
+jq -e 'length == 4 and all(.[];
+  .stage == "root" and
+  (.build_input | test("^[0-9a-f]{64}$")) and
+  (.upstream.digest | test("^sha256:[0-9a-f]{64}$")))' "${matrix}" >/dev/null
+jq -e '
+  .schema == 1 and
+  (.profiles | length) == 8 and
+  .profiles.sales.baseClass == "bluefin" and
+  .profiles.support.baseClass == "bluefin-dx" and
+  .profiles.dale.roles == ["sales", "executive", "developer", "support", "it", "trainer"] and
+  .profiles.dale.hardware == ["dell-xps-9350-intel"] and
+  .profiles.elad.baseClass == "bluefin-dx" and
+  .profiles.elad.roles == ["sales", "executive", "developer", "support", "it", "trainer"] and
+  .profiles.elad.hardware == ["generic-x86_64"] and
+  .profiles.elad.foundations == ["bluefin-dx-generic"]
+' "${home_catalog}" >/dev/null
 
 while IFS=$'\t' read -r profile step script; do
 	[[ -x "${script}" ]] || {
@@ -37,16 +49,25 @@ done < <(
 test -f bootc/Containerfile
 test -f bootc/Containerfile.derived
 test -f sources/bluefin.json
+test -f sources/bluefin-dx.json
 test -f sources/image-builder.json
 test -f secretspec.toml
 jq -e '
   .schema == 1 and
-  .image == "ghcr.io/projectbluefin/bluefin" and
+  .image == "ghcr.io/ublue-os/bluefin" and
   .architecture == "amd64" and
   (.digest | test("^sha256:[0-9a-f]{64}$")) and
   (.cosign.issuer | startswith("https://")) and
   (.cosign.identity | startswith("https://"))
 ' sources/bluefin.json >/dev/null
+jq -e '
+  .schema == 1 and
+  .image == "ghcr.io/ublue-os/bluefin-dx" and
+  .architecture == "amd64" and
+  (.digest | test("^sha256:[0-9a-f]{64}$")) and
+  (.cosign.issuer | startswith("https://")) and
+  (.cosign.identity | startswith("https://"))
+' sources/bluefin-dx.json >/dev/null
 jq -e '
   .schema == 1 and
   .image == "ghcr.io/osbuild/image-builder-cli" and
@@ -77,23 +98,30 @@ grep -qF "purplefin_finalize_profile \"\${profile}\" \"\${profile_catalog}\"" bo
 grep -qF "local profile_catalog=\"\$2\"" bootc/builder/lib/finalize-profile.sh
 test -x modules/aspects/base/apply.sh
 test -d modules/aspects/base/rootfs
-test -x modules/aspects/capabilities/devops/apply.sh
+test -f modules/aspects/capabilities/devops/default.nix
 test -x modules/aspects/hardware/dell-xps-9350-intel/apply.sh
 test -d modules/aspects/hardware/dell-xps-9350-intel/rootfs
-test -x modules/aspects/roles/support/apply.sh
+grep -qF 'export CCACHE_DISABLE=1' \
+	modules/aspects/hardware/dell-xps-9350-intel/build/install-libcamera-ov02c10-ipa.sh
+grep -qF -- "--add \"\${required_initramfs_dracut_modules[*]}\"" \
+	modules/aspects/hardware/dell-xps-9350-intel/configure.sh
+grep -qF 'local build_packages=(dracut-live git make)' \
+	modules/aspects/hardware/dell-xps-9350-intel/configure.sh
+test -f modules/aspects/roles/support/default.nix
 
 if find modules/aspects/roles -type d \( -path '*/rootfs/files' -o -path '*/rootfs/manifests' \) | grep -q .; then
 	echo 'Role aspects retain a legacy rootfs/files or rootfs/manifests wrapper' >&2
 	exit 1
 fi
 
-grep -qF 'dnf5 -y install nix nix-daemon' modules/aspects/base/apply.sh
+grep -qF 'dnf5 -y install cloud-init nix nix-daemon' modules/aspects/base/apply.sh
 if grep -qF 'install -d -m 0755 /nix' \
 	modules/aspects/base/apply.sh modules/aspects/base/install-determinate-nix.sh; then
 	echo 'Fedora nix-filesystem must own creation of /nix' >&2
 	exit 1
 fi
-grep -qF 'marp-cli' modules/aspects/base/manifests/Brewfile
-grep -qF '[Flatpak Preinstall org.mozilla.thunderbird]' modules/aspects/base/manifests/flatpaks.preinstall
-grep -qF 'tailscale-stable' modules/aspects/base/independently-managed-rpms.list
-grep -qF 'espanso-wayland' modules/aspects/base/independently-managed-rpms.list
+test ! -e modules/aspects/base/manifests/Brewfile
+test ! -e modules/aspects/base/independently-managed-rpms.list
+test ! -e bootc/builder/lib/independently-managed-rpms.sh
+grep -qF 'bitwarden-cli' modules/aspects/base/default.nix
+grep -qF 'nixGL.wrap bitwarden-desktop' modules/aspects/base/default.nix

@@ -1,20 +1,12 @@
 _: {
-  den.aspects.features.roles.executive.bootc = {lib, ...}: {
-    purplefin = {
-      roles = lib.mkAfter ["executive"];
-      build = {
-        steps = lib.mkAfter [
-          {
-            name = "executive";
-            order = 350;
-            script = ./apply.sh;
-          }
-        ];
-        sourcePaths = [
-          ./apply.sh
-          ./rootfs
-        ];
-      };
+  den.aspects.features.roles.executive.homeManager = {
+    home.sessionVariables.PURPLEFIN_ROLE_EXECUTIVE = "1";
+    xdg.desktopEntries.purplefin-vates-notes = {
+      name = "Vates Notes";
+      comment = "Open Vates Notes in Firefox";
+      exec = "firefox --new-window https://notes.vates.tech";
+      icon = "firefox";
+      categories = ["Office" "WebBrowser"];
     };
   };
 }

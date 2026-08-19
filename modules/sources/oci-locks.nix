@@ -1,5 +1,6 @@
 {lib, ...}: let
   bluefinLock = builtins.fromJSON (builtins.readFile ../../sources/bluefin.json);
+  bluefinDxLock = builtins.fromJSON (builtins.readFile ../../sources/bluefin-dx.json);
   imageBuilderLock = builtins.fromJSON (builtins.readFile ../../sources/image-builder.json);
   determinateNixLock = builtins.fromJSON (builtins.readFile ../../sources/determinate-nix.json);
   ociSourceType = lib.types.submodule {
@@ -64,6 +65,14 @@ in {
               };
             };
           };
+          selinuxFileContexts = lib.mkOption {
+            type = lib.types.submodule {
+              options = {
+                url = lib.mkOption {type = lib.types.strMatching "https://.*";};
+                sha256 = lib.mkOption {type = lib.types.strMatching "[0-9a-f]{64}";};
+              };
+            };
+          };
         };
       };
       readOnly = true;
@@ -75,6 +84,11 @@ in {
       readOnly = true;
       description = "Typed, signed Bluefin OCI lock.";
     };
+    bluefinDx = lib.mkOption {
+      type = ociSourceType;
+      readOnly = true;
+      description = "Typed, signed Bluefin DX OCI lock.";
+    };
     imageBuilder = lib.mkOption {
       type = ociSourceType;
       readOnly = true;
@@ -82,16 +96,18 @@ in {
     };
   };
 
-  config = assert bluefinLock.cosign != null; {
+  config = assert bluefinLock.cosign != null && bluefinDxLock.cosign != null; {
     purplefin.sources = {
       determinateNix = determinateNixLock;
       bluefin = bluefinLock;
+      bluefinDx = bluefinDxLock;
       imageBuilder = imageBuilderLock // {cosign = null;};
     };
 
     den.aspects.sources = {
       determinate-nix = {};
       bluefin = {};
+      bluefin-dx = {};
       image-builder = {};
     };
   };

@@ -68,14 +68,12 @@
       in
         assert ensure profile.base.enable "${name} does not include the base aspect";
         assert ensure (profile.profileName == name) "${name} declares profileName=${profile.profileName}";
-        assert ensure (name == "base" || profile.hardware != null) "${name} does not select hardware";
-        assert ensure (name != "base" || profile.hardware == null) "the common base must not select hardware";
+        assert ensure (profile.hardware != null) "${name} does not select hardware";
         assert ensure profile.upstream.preserve "${name} must preserve the complete upstream Bluefin base";
         assert ensure (profile.tags != []) "${name} is missing a registry tag";
         assert ensure (lib.length roles == lib.length (lib.unique roles)) "${name} repeats a role";
         assert ensure (lib.length modules == lib.length (lib.unique modules)) "${name} repeats a build step";
         assert ensure (lib.length profile.tags == lib.length (lib.unique profile.tags)) "${name} repeats a tag";
-        assert ensure ((profile.parent == null) == (name == "base")) "only the common base may omit a parent";
         assert ensure (roles == [] || profile.hardware != null) "${name} has roles without a hardware selection";
           profile
           // {
@@ -118,16 +116,19 @@
         };
 
   validatedProfiles =
-    lib.mapAttrs validateParent profiles
-    // {
-      base =
-        profiles.base
-        // {
-          deltaSteps = profiles.base.steps;
-          deltaModules = profiles.base.modules;
-          stage = "root";
-        };
-    };
+    lib.mapAttrs (
+      name: profile:
+        if profile.parent == null
+        then
+          profile
+          // {
+            deltaSteps = profile.steps;
+            deltaModules = profile.modules;
+            stage = "root";
+          }
+        else validateParent name profile
+    )
+    profiles;
   allTags = lib.concatMap (name: validatedProfiles.${name}.tags) profileOrder;
 in
   assert ensure (

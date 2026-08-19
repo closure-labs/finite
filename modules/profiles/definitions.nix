@@ -2,129 +2,126 @@
   inherit (den.aspects) features profiles;
 in {
   den.aspects.profiles = {
-    base.includes = [features.base];
-
-    base-generic.includes = [
-      profiles.base
+    bluefin-generic.includes = [
+      features.base
+      features.upstreams.bluefin
       features.hardware.generic-x86_64
     ];
-
-    base-dell-xps-9350-intel.includes = [
-      profiles.base
+    bluefin-dell-xps-9350-intel.includes = [
+      features.base
+      features.upstreams.bluefin
+      features.hardware.dell-xps-9350-intel
+    ];
+    bluefin-dx-generic.includes = [
+      features.base
+      features.upstreams.bluefin-dx
+      features.hardware.generic-x86_64
+    ];
+    bluefin-dx-dell-xps-9350-intel.includes = [
+      features.base
+      features.upstreams.bluefin-dx
       features.hardware.dell-xps-9350-intel
     ];
 
-    sales-generic.includes = [
-      profiles.base-generic
+    home-sales.includes = [features.base features.roles.sales];
+    home-executive.includes = [features.base features.roles.executive];
+    home-developer.includes = [features.base features.roles.developer];
+    home-support.includes = [features.base features.roles.support];
+    home-it.includes = [features.base features.roles.it];
+    home-trainer.includes = [features.base features.roles.trainer];
+    home-dale.includes = [
+      features.base
       features.roles.sales
-    ];
-
-    sales-dell-xps-9350-intel.includes = [
-      profiles.base-dell-xps-9350-intel
-      features.roles.sales
-    ];
-
-    support-generic.includes = [
-      profiles.base-generic
-      features.roles.support
-    ];
-
-    support-dell-xps-9350-intel.includes = [
-      profiles.base-dell-xps-9350-intel
-      features.roles.support
-    ];
-
-    dale.includes = [
-      profiles.base-dell-xps-9350-intel
-      features.roles.sales
-      features.roles.trainer
-      features.roles.support
-    ];
-
-    developer-generic.includes = [
-      profiles.base-generic
-      features.roles.developer
-    ];
-
-    trainer-generic.includes = [
-      profiles.base-generic
-      features.roles.trainer
-    ];
-
-    executive-generic.includes = [
-      profiles.base-generic
       features.roles.executive
-    ];
-
-    it-generic.includes = [
-      profiles.base-generic
+      features.roles.developer
+      features.roles.support
       features.roles.it
+      features.roles.trainer
+    ];
+    home-elad.includes = [
+      features.base
+      features.roles.sales
+      features.roles.executive
+      features.roles.developer
+      features.roles.support
+      features.roles.it
+      features.roles.trainer
     ];
   };
 
   purplefin.profiles = {
-    base.tags = ["base"];
+    bluefin-generic.tags = [
+      "bluefin-generic"
+      "base"
+      "base-generic"
+      "generic-x86_64"
+      "base-generic-x86_64"
+      "latest"
+      "sales-generic"
+      "executive-generic"
+    ];
+    bluefin-dell-xps-9350-intel.tags = [
+      "bluefin-dell-xps-9350-intel"
+      "base-dell-xps-9350-intel"
+      "sales-dell-xps-9350-intel"
+    ];
+    bluefin-dx-generic.tags = [
+      "bluefin-dx-generic"
+      "developer-generic"
+      "support-generic"
+      "trainer-generic"
+      "it-generic"
+    ];
+    bluefin-dx-dell-xps-9350-intel.tags = [
+      "bluefin-dx-dell-xps-9350-intel"
+      "support-dell-xps-9350-intel"
+      "dale"
+      "dell-xps-9350-intel"
+    ];
+  };
 
-    base-generic = {
-      parent = "base";
-      tags = [
-        "generic-x86_64"
-        "latest"
-        "base-generic-x86_64"
-      ];
+  purplefin.homeProfiles = {
+    sales = {
+      baseClass = "bluefin";
+      roles = ["sales"];
+      aspect = profiles.home-sales;
     };
-
-    base-dell-xps-9350-intel = {
-      parent = "base";
-      tags = ["base-dell-xps-9350-intel"];
+    executive = {
+      baseClass = "bluefin";
+      roles = ["executive"];
+      aspect = profiles.home-executive;
     };
-
-    sales-generic = {
-      parent = "base-generic";
-      tags = ["sales-generic"];
+    developer = {
+      baseClass = "bluefin-dx";
+      roles = ["developer"];
+      aspect = profiles.home-developer;
     };
-
-    sales-dell-xps-9350-intel = {
-      parent = "base-dell-xps-9350-intel";
-      tags = ["sales-dell-xps-9350-intel"];
+    support = {
+      baseClass = "bluefin-dx";
+      roles = ["support"];
+      aspect = profiles.home-support;
     };
-
-    support-generic = {
-      parent = "base-generic";
-      tags = ["support-generic"];
+    it = {
+      baseClass = "bluefin-dx";
+      roles = ["it"];
+      aspect = profiles.home-it;
     };
-
-    support-dell-xps-9350-intel = {
-      parent = "base-dell-xps-9350-intel";
-      tags = ["support-dell-xps-9350-intel"];
+    trainer = {
+      baseClass = "bluefin-dx";
+      roles = ["trainer"];
+      aspect = profiles.home-trainer;
     };
-
     dale = {
-      parent = "base-dell-xps-9350-intel";
-      tags = [
-        "dale"
-        "dell-xps-9350-intel"
-      ];
+      baseClass = "bluefin-dx";
+      hardware = ["dell-xps-9350-intel"];
+      roles = ["sales" "executive" "developer" "support" "it" "trainer"];
+      aspect = profiles.home-dale;
     };
-
-    developer-generic = {
-      parent = "base-generic";
-      tags = ["developer-generic"];
-    };
-
-    trainer-generic = {
-      parent = "base-generic";
-      tags = ["trainer-generic"];
-    };
-
-    executive-generic = {
-      parent = "base-generic";
-      tags = ["executive-generic"];
-    };
-
-    it-generic = {
-      parent = "base-generic";
-      tags = ["it-generic"];
+    elad = {
+      baseClass = "bluefin-dx";
+      hardware = ["generic-x86_64"];
+      roles = ["sales" "executive" "developer" "support" "it" "trainer"];
+      aspect = profiles.home-elad;
     };
   };
 }
