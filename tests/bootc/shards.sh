@@ -32,14 +32,17 @@ jq -e '
 	(.include | length) == 4 and
 	([.include[].profiles[] | select(.target) | .profile] | length) == 13 and
 	([.include[].profiles[] | select(.target) | .profile] | unique | length) == 13 and
-	all(.include[].profiles[]; .target == true or .target == false)
+	all(.include[].profiles[]; .target == true or .target == false) and
+	all(.include[]; .estimated_cost > 0)
 ' <<<"${shards}" >/dev/null
 jq -e '
-	.include[0].profiles | map(.profile) == ["base", "hardware-3", "role-3", "role-7"]
+	(.include[0].profiles | map(.profile)) == ["base", "hardware-0", "role-0", "role-4"] and
+	.include[0].estimated_cost == 44
 ' <<<"${shards}" >/dev/null
 jq -e '
-	(.include[1].profiles | map(.profile)) == ["base", "hardware-0", "role-0", "role-4"] and
-	(.include[1].profiles[0].target == false)
+	(.include[1].profiles | map(.profile)) == ["base", "hardware-1", "role-1", "role-5"] and
+	(.include[1].profiles[0].target == false) and
+	.include[1].estimated_cost == 34
 ' <<<"${shards}" >/dev/null
 
 for count in $(seq 0 13); do
@@ -69,7 +72,7 @@ if purplefin-shard-plan "${profiles}" "${matrix}" 0 >/dev/null 2>&1; then
 fi
 
 generated_root="${PURPLEFIN_GENERATED_ROOT:?PURPLEFIN_GENERATED_ROOT is required}"
-valid_shard="$(jq -c '.[0:2]' "${generated_root}/bootc/generated/image-matrix.json")"
+valid_shard="$(jq -c '.[0:2] | map(. + {target: true})' "${generated_root}/bootc/generated/image-matrix.json")"
 PROFILE_SHARD="${valid_shard}" \
 	PURPLEFIN_GENERATED_ROOT="${generated_root}" \
 	PURPLEFIN_BASE_DIGEST="sha256:$(printf 'b%.0s' {1..64})" \

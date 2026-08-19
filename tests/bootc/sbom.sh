@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-script="${repo_root}/bootc/builder/sbom.sh"
+sbom_command=purplefin-image-sbom
 workdir="$(mktemp -d)"
 trap 'rm -rf -- "${workdir}"' EXIT
 mkdir -p "${workdir}/bin"
@@ -56,22 +56,22 @@ common_env=(
 	SBOM_SIGNER_WORKFLOW=example/purplefin/.github/workflows/attest-software-bill-of-materials.yml
 	SBOM_SOURCE_DIGEST="${source_digest}"
 )
-env "${common_env[@]}" bash "${script}" extract "${workdir}/restored.json"
+env "${common_env[@]}" "${sbom_command}" extract "${workdir}/restored.json"
 cmp "${workdir}/predicate.json" "${workdir}/restored.json"
 
 jq . "${workdir}/predicate.json" >"${workdir}/formatted.json"
-bash "${script}" equivalent \
+"${sbom_command}" equivalent \
 	"${workdir}/predicate.json" "${workdir}/formatted.json"
 jq '.packages[0].name = "different"' \
 	"${workdir}/predicate.json" >"${workdir}/different.json"
-if bash "${script}" equivalent \
+if "${sbom_command}" equivalent \
 	"${workdir}/predicate.json" "${workdir}/different.json"; then
 	echo 'Distinct software bills were considered equivalent' >&2
 	exit 1
 fi
 
 if env "${common_env[@]}" MOCK_GH_MODE=miss \
-	bash "${script}" extract "${workdir}/miss.json"; then
+	"${sbom_command}" extract "${workdir}/miss.json"; then
 	echo 'A missing attestation unexpectedly restored an SBOM' >&2
 	exit 1
 else
@@ -79,7 +79,7 @@ else
 	[[ "${status}" -eq 3 ]]
 fi
 if env "${common_env[@]}" MOCK_GH_MODE=ambiguous \
-	bash "${script}" extract "${workdir}/ambiguous.json" 2>/dev/null; then
+	"${sbom_command}" extract "${workdir}/ambiguous.json" 2>/dev/null; then
 	echo 'Distinct verified predicates were accepted' >&2
 	exit 1
 else
@@ -124,9 +124,9 @@ env \
 	PURPLEFIN_SYFT_STORE="${workdir}" \
 	SBOM_IMAGE_DIGEST="${digest}" \
 	SBOM_IMAGE_REF=ghcr.io/example/purplefin \
-	bash "${script}" generate "${workdir}/generated.json"
+	"${sbom_command}" generate "${workdir}/generated.json"
 jq -e '
 	.packages[0].name == "generated" and
 	([.packages[].externalRefs[]?.referenceType] == ["purl"])
 ' "${workdir}/generated.json" >/dev/null
-bash "${script}" validate "${workdir}/generated.json"
+"${sbom_command}" validate "${workdir}/generated.json"

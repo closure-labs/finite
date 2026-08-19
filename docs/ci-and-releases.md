@@ -19,11 +19,12 @@ installer job selected for the change. The checked-in branch policy is
 `automation/github/policies/main-protection.json`.
 
 Pull requests and merge groups divide selected profiles among at most four
-dependency-aware shards. Each shard verifies and loads the locked Bluefin
-digest once, builds roots with `Containerfile`, and builds descendants with
-`Containerfile.derived`. Selected ancestors remain in local container storage
-until every dependent target in that shard has been rechunked. No mutable image
-state crosses a job boundary.
+dependency-aware shards, co-locating shared lineages while balancing estimated
+build and rechunk cost. Each shard verifies and loads the locked Bluefin digest
+once, builds roots with `Containerfile`, and builds descendants with
+`Containerfile.derived`. Ancestors needed only as local parents skip duplicate
+rechunking; every selected profile remains a fully rechunked target in exactly
+one shard. No mutable image state crosses a job boundary.
 
 The Flake declares the public `purplefin.cachix.org` substituter and key. Every
 Nix job uses the repository's pinned `setup-nix` action for GitHub access and
