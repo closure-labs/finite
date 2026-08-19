@@ -22,7 +22,11 @@ on:
         type: boolean
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: >-
+    ${{ (github.event_name == 'push' || github.event_name == 'schedule' ||
+    (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
+    'purplefin-publication' || format('{0}-validation-{1}', github.workflow,
+    github.event.pull_request.number || github.ref) }}
   cancel-in-progress: >-
     ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' ||
     (github.event_name == 'workflow_dispatch' && inputs.validate_only) }}
@@ -51,16 +55,10 @@ jobs:
       base_tag: ${{ steps.plan.outputs.base_tag }}
       base_sbom_matrix: ${{ steps.plan.outputs.base_sbom_matrix }}
       candidate_shards: ${{ steps.plan.outputs.candidate_shards }}
+      classification: ${{ steps.filter.outputs.classification }}
       hardware_matrix: ${{ steps.plan.outputs.hardware_matrix }}
       hardware_sbom_matrix: ${{ steps.plan.outputs.hardware_sbom_matrix }}
-      has_hardware: ${{ steps.plan.outputs.has_hardware }}
-      has_builds: ${{ steps.plan.outputs.has_builds }}
-      has_roles: ${{ steps.plan.outputs.has_roles }}
-      has_root_base: ${{ steps.plan.outputs.has_root_base }}
-      has_base_sbom: ${{ steps.plan.outputs.has_base_sbom }}
-      has_hardware_sbom: ${{ steps.plan.outputs.has_hardware_sbom }}
-      has_role_sbom: ${{ steps.plan.outputs.has_role_sbom }}
-      installer: ${{ steps.filter.outputs.installer }}
+      lifecycle: ${{ steps.plan.outputs.lifecycle }}
       matrix: ${{ steps.plan.outputs.matrix }}
       role_matrix: ${{ steps.plan.outputs.role_matrix }}
       role_sbom_matrix: ${{ steps.plan.outputs.role_sbom_matrix }}
@@ -69,7 +67,10 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
+          fetch-depth: >-
+            ${{ (github.event_name == 'schedule' ||
+            (github.event_name == 'workflow_dispatch' &&
+            (inputs.force || !inputs.validate_only))) && 1 || 0 }}
           persist-credentials: false
       - uses: ./.github/actions/setup-nix
         with:
@@ -95,9 +96,9 @@ jobs:
           VALIDATE_ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.validate_only || false }}
         run: purplefin-classify-ci "${GITHUB_OUTPUT}"
       - name: Verify and plan immutable inputs
-        if: steps.filter.outputs.images == 'true'
         id: plan
         env:
+          CLASSIFICATION: ${{ steps.filter.outputs.classification }}
           CHECK_PUBLICATION_TRUST: >-
             ${{ github.event_name == 'push' || github.event_name == 'schedule' ||
             (github.event_name == 'workflow_dispatch' && !inputs.validate_only) }}
@@ -114,7 +115,7 @@ jobs:
     if: >-
       (github.event_name == 'pull_request' || github.event_name == 'merge_group' ||
       (github.event_name == 'workflow_dispatch' && inputs.validate_only)) &&
-      needs.prepare.outputs.has_builds == 'true'
+      fromJSON(needs.prepare.outputs.lifecycle || '{}').validation.images.required == true
     needs: prepare
     strategy:
       fail-fast: false
@@ -145,7 +146,7 @@ jobs:
     if: >-
       (github.event_name == 'pull_request' || github.event_name == 'merge_group' ||
       (github.event_name == 'workflow_dispatch' && inputs.validate_only)) &&
-      needs.prepare.outputs.installer == 'true'
+      fromJSON(needs.prepare.outputs.lifecycle || '{}').validation.installer.required == true
     needs: prepare
     runs-on: ubuntu-24.04
     timeout-minutes: 150
@@ -168,7 +169,7 @@ jobs:
     if: >-
       (github.event_name == 'push' || github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
-      needs.prepare.outputs.has_root_base == 'true'
+      fromJSON(needs.prepare.outputs.lifecycle || '{}').publication.builds.root == true
     needs: prepare
     uses: ./.github/workflows/build-profile.yml
     permissions:
@@ -192,7 +193,8 @@ jobs:
     if: >-
       always() && (github.event_name == 'push' || github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
-      needs.prepare.result == 'success' && needs.prepare.outputs.has_hardware == 'true' &&
+      needs.prepare.result == 'success' &&
+      fromJSON(needs.prepare.outputs.lifecycle || '{}').publication.builds.hardware == true &&
       (needs.base-publish.result == 'success' || needs.base-publish.result == 'skipped')
     needs: [prepare, base-publish]
     strategy:
@@ -221,7 +223,8 @@ jobs:
     if: >-
       always() && (github.event_name == 'push' || github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
-      needs.prepare.result == 'success' && needs.prepare.outputs.has_roles == 'true' &&
+      needs.prepare.result == 'success' &&
+      fromJSON(needs.prepare.outputs.lifecycle || '{}').publication.builds.roles == true &&
       (needs.base-publish.result == 'success' || needs.base-publish.result == 'skipped') &&
       (needs.hardware-publish.result == 'success' || needs.hardware-publish.result == 'skipped')
     needs: [prepare, base-publish, hardware-publish]
@@ -251,7 +254,8 @@ jobs:
     if: >-
       always() && (github.event_name == 'push' || github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
-      needs.prepare.result == 'success' && needs.prepare.outputs.has_base_sbom == 'true' &&
+      needs.prepare.result == 'success' &&
+      fromJSON(needs.prepare.outputs.lifecycle || '{}').publication.sbom.base == true &&
       (needs.base-publish.result == 'success' || needs.base-publish.result == 'skipped')
     needs: [prepare, base-publish]
     strategy:
@@ -275,7 +279,8 @@ jobs:
     if: >-
       always() && (github.event_name == 'push' || github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
-      needs.prepare.result == 'success' && needs.prepare.outputs.has_hardware_sbom == 'true' &&
+      needs.prepare.result == 'success' &&
+      fromJSON(needs.prepare.outputs.lifecycle || '{}').publication.sbom.hardware == true &&
       (needs.hardware-publish.result == 'success' || needs.hardware-publish.result == 'skipped')
     needs: [prepare, hardware-publish]
     strategy:
@@ -301,7 +306,8 @@ jobs:
     if: >-
       always() && (github.event_name == 'push' || github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
-      needs.prepare.result == 'success' && needs.prepare.outputs.has_role_sbom == 'true' &&
+      needs.prepare.result == 'success' &&
+      fromJSON(needs.prepare.outputs.lifecycle || '{}').publication.sbom.roles == true &&
       (needs.roles-publish.result == 'success' || needs.roles-publish.result == 'skipped')
     needs: [prepare, roles-publish]
     strategy:
@@ -327,7 +333,8 @@ jobs:
     if: >-
       always() && (github.event_name == 'push' || github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
-      needs.prepare.result == 'success' && needs.prepare.outputs.has_builds == 'true' &&
+      needs.prepare.result == 'success' &&
+      fromJSON(needs.prepare.outputs.lifecycle || '{}').publication.promote == true &&
       (needs.base-publish.result == 'success' || needs.base-publish.result == 'skipped') &&
       (needs.hardware-publish.result == 'success' || needs.hardware-publish.result == 'skipped') &&
       (needs.roles-publish.result == 'success' || needs.roles-publish.result == 'skipped') &&
@@ -394,15 +401,8 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           HARDWARE_PUBLISH_RESULT: ${{ needs.hardware-publish.result }}
           HARDWARE_SBOM_RESULT: ${{ needs.hardware-sbom.result }}
-          HAS_BUILDS: ${{ needs.prepare.outputs.has_builds }}
-          HAS_HARDWARE: ${{ needs.prepare.outputs.has_hardware }}
-          HAS_ROLES: ${{ needs.prepare.outputs.has_roles }}
-          HAS_ROOT_BASE: ${{ needs.prepare.outputs.has_root_base }}
-          HAS_BASE_SBOM: ${{ needs.prepare.outputs.has_base_sbom }}
-          HAS_HARDWARE_SBOM: ${{ needs.prepare.outputs.has_hardware_sbom }}
-          HAS_ROLE_SBOM: ${{ needs.prepare.outputs.has_role_sbom }}
           INSTALLER_CANDIDATE_RESULT: ${{ needs.installer-candidate.result }}
-          INSTALLER_SELECTED: ${{ needs.prepare.outputs.installer }}
+          LIFECYCLE: ${{ needs.prepare.outputs.lifecycle }}
           PREPARE_RESULT: ${{ needs.prepare.result }}
           PROMOTE_RESULT: ${{ needs.promote.result }}
           REF: ${{ github.ref }}

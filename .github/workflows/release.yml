@@ -349,6 +349,9 @@ jobs:
   release:
     name: Promote tested digests and release source
     needs: prepare
+    concurrency:
+      group: purplefin-publication
+      cancel-in-progress: false
     runs-on: ubuntu-24.04
     timeout-minutes: 180
     environment: release

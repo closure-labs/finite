@@ -54,10 +54,17 @@ grep -qF "${IMAGE_REF}@${DIGEST}" "${FAKE_VERIFY_LOG}"
 printf '0\n' >"${FAKE_SIGN_COUNT}"
 printf '0\n' >"${FAKE_VERIFY_COUNT}"
 export FAKE_SIGN_FAILURES=0
-export FAKE_VERIFY_FAILURES=4
+export FAKE_VERIFY_FAILURES=99
 if purplefin-image-sign; then
 	echo 'Expected permanent signature verification failure' >&2
 	exit 1
 fi
 test "$(<"${FAKE_SIGN_COUNT}")" = 1
-test "$(<"${FAKE_VERIFY_COUNT}")" = 4
+test "$(<"${FAKE_VERIFY_COUNT}")" = 5
+
+printf '0\n' >"${FAKE_SIGN_COUNT}"
+printf '0\n' >"${FAKE_VERIFY_COUNT}"
+export FAKE_VERIFY_FAILURES=0
+purplefin-image-sign
+test "$(<"${FAKE_SIGN_COUNT}")" = 0
+test "$(<"${FAKE_VERIFY_COUNT}")" = 1
