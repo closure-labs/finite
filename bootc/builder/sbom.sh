@@ -9,6 +9,7 @@ usage() {
 usage: sbom.sh extract OUTPUT
        sbom.sh generate OUTPUT
        sbom.sh validate SBOM
+       sbom.sh equivalent LEFT RIGHT
 EOF
 }
 
@@ -51,6 +52,14 @@ validate_sbom() {
 			"${size}" "${maximum_size}" >&2
 		return 1
 	fi
+}
+
+equivalent_sboms() {
+	local left="$1"
+	local right="$2"
+	validate_sbom "${left}"
+	validate_sbom "${right}"
+	cmp --silent <(jq -Sc . "${left}") <(jq -Sc . "${right}")
 }
 
 extract_attestation() {
@@ -187,13 +196,28 @@ generate_sbom() {
 	mv -- "${generated}" "${output}"
 }
 
-(( $# == 2 )) || {
+command="${1:-}"
+[[ -n "${command}" ]] || {
 	usage
 	exit 2
 }
-case "$1" in
-	extract) extract_attestation "$2" ;;
-	generate) generate_sbom "$2" ;;
-	validate) validate_sbom "$2" ;;
+shift
+case "${command}" in
+	extract)
+		(( $# == 1 )) || { usage; exit 2; }
+		extract_attestation "$1"
+		;;
+	generate)
+		(( $# == 1 )) || { usage; exit 2; }
+		generate_sbom "$1"
+		;;
+	validate)
+		(( $# == 1 )) || { usage; exit 2; }
+		validate_sbom "$1"
+		;;
+	equivalent)
+		(( $# == 2 )) || { usage; exit 2; }
+		equivalent_sboms "$1" "$2"
+		;;
 	*) usage; exit 2 ;;
 esac

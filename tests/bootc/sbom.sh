@@ -59,6 +59,17 @@ common_env=(
 env "${common_env[@]}" bash "${script}" extract "${workdir}/restored.json"
 cmp "${workdir}/predicate.json" "${workdir}/restored.json"
 
+jq . "${workdir}/predicate.json" >"${workdir}/formatted.json"
+bash "${script}" equivalent \
+	"${workdir}/predicate.json" "${workdir}/formatted.json"
+jq '.packages[0].name = "different"' \
+	"${workdir}/predicate.json" >"${workdir}/different.json"
+if bash "${script}" equivalent \
+	"${workdir}/predicate.json" "${workdir}/different.json"; then
+	echo 'Distinct software bills were considered equivalent' >&2
+	exit 1
+fi
+
 if env "${common_env[@]}" MOCK_GH_MODE=miss \
 	bash "${script}" extract "${workdir}/miss.json"; then
 	echo 'A missing attestation unexpectedly restored an SBOM' >&2
