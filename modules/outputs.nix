@@ -42,9 +42,18 @@
   inherit (profileSet) profiles;
   bluefin = config.purplefin.sources.bluefin;
   imageBuilder = config.purplefin.sources.imageBuilder;
+  determinateNix = config.purplefin.sources.determinateNix;
+  determinateNixInstaller = pkgs.fetchurl {
+    name = "determinate-nix-installer-${determinateNix.version}";
+    inherit (determinateNix.installer) url sha256;
+  };
+  determinateNixSelinuxPolicy = pkgs.fetchurl {
+    name = "determinate-nix-selinux-policy-${determinateNix.version}";
+    inherit (determinateNix.selinuxPolicy) url sha256;
+  };
   version = lib.removeSuffix "\n" (builtins.readFile ../VERSION);
   generated = import ../lib/render-profile-artifacts.nix {
-    inherit lib pkgs profiles;
+    inherit determinateNixInstaller determinateNixSelinuxPolicy lib pkgs profiles;
     profileOrder = profileSet.order;
     inherit version;
   };
@@ -86,7 +95,7 @@
     touch "$out"
   '';
   applications = import ../lib/flake-applications.nix {
-    inherit bluefin generated imageBuilder pkgs version;
+    inherit bluefin determinateNix generated imageBuilder pkgs version;
   };
   repositoryChecks = import ../lib/repository-checks.nix {
     inherit applications architecture generated lib pkgs;

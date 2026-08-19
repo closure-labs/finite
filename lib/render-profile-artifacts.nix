@@ -1,4 +1,6 @@
 {
+  determinateNixInstaller,
+  determinateNixSelinuxPolicy,
   lib,
   pkgs,
   profileOrder,
@@ -123,6 +125,11 @@ in
     cp ${matrixFile} "$out/bootc/generated/image-matrix.json"
     cp ${catalogFile} "$out/bootc/generated/profile-catalog.json"
     cp ${upstreamFile} "$out/bootc/generated/upstream.json"
+    cp ${../sources/determinate-nix.json} "$out/bootc/generated/determinate-nix.json"
+    cp ${determinateNixInstaller} "$out/bootc/generated/determinate-nix-installer"
+    cp ${determinateNixSelinuxPolicy} "$out/bootc/generated/determinate-nix.pp"
+    chmod 0555 "$out/bootc/generated/determinate-nix-installer"
+    chmod 0444 "$out/bootc/generated/determinate-nix.pp"
     ${lib.concatStringsSep "\n" (
       map (name: ''
         cp ${blueprintFiles.${name}} "$out/installer/config/profiles/${name}.toml"

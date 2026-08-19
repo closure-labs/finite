@@ -4,7 +4,10 @@
   ...
 }: {
   den.aspects.features.base = {
-    includes = [den.aspects.sources.bluefin];
+    includes = [
+      den.aspects.sources.bluefin
+      den.aspects.sources.determinate-nix
+    ];
     bootc = {
       purplefin = {
         base.enable = true;
@@ -19,10 +22,12 @@
           ];
           sourcePaths = [
             ./apply.sh
+            ./install-determinate-nix.sh
             ./independently-managed-rpms.list
             ./manifests
             ./packages-bitwarden-cli
             ./rootfs
+            ../../../sources/determinate-nix.json
           ];
         };
       };

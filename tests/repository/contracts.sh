@@ -87,7 +87,12 @@ if find modules/aspects/roles -type d \( -path '*/rootfs/files' -o -path '*/root
 	exit 1
 fi
 
-grep -qF 'install -d -m 0755 /nix' modules/aspects/base/apply.sh
+grep -qF 'dnf5 -y install nix nix-daemon' modules/aspects/base/apply.sh
+if grep -qF 'install -d -m 0755 /nix' \
+	modules/aspects/base/apply.sh modules/aspects/base/install-determinate-nix.sh; then
+	echo 'Fedora nix-filesystem must own creation of /nix' >&2
+	exit 1
+fi
 grep -qF 'marp-cli' modules/aspects/base/manifests/Brewfile
 grep -qF '[Flatpak Preinstall org.mozilla.thunderbird]' modules/aspects/base/manifests/flatpaks.preinstall
 grep -qF 'tailscale-stable' modules/aspects/base/independently-managed-rpms.list

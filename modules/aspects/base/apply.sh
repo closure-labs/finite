@@ -10,9 +10,19 @@ install -D -m 0644 "${base_root}/manifests/Brewfile" \
 install -D -m 0644 "${base_root}/manifests/flatpaks.preinstall" \
 	/usr/share/flatpak/preinstall.d/purplefin.preinstall
 
-# Determinate Nix uses this as a bind-mount target on OSTree systems. Creating
-# it during the image build avoids trying to modify the read-only ComposeFS root.
-install -d -m 0755 /nix
+# Fedora owns the host filesystem and account contracts used to bootstrap Nix.
+# Pin the otherwise-dynamic build identities before installing the packages so
+# Determinate Nix Installer can migrate the upstream installation in place.
+systemd-sysusers /usr/lib/sysusers.d/purplefin-nix.conf
+dnf5 -y install nix nix-daemon
+rpm -q nix nix-daemon nix-filesystem nix-system
+install -m 0644 /usr/lib/sysusers.d/purplefin-nix.conf /usr/lib/sysusers.d/nix.conf
+rm /usr/lib/sysusers.d/purplefin-nix.conf
+
+# Bake the complete Determinate Nix payload into the immutable image. The
+# Fedora nix-filesystem package supplies /nix; at boot systemd seeds persistent
+# /var state and bind-mounts it on that mountpoint.
+bash "${base_root}/install-determinate-nix.sh"
 
 base_packages=(fuse fuse-libs git micro nm-connection-editor nm-connection-editor-desktop wireguard-tools)
 base_qemu_packages=(qemu-block-curl qemu-block-dmg qemu-block-iscsi qemu-block-nfs qemu-block-ssh qemu-img qemu-tools)

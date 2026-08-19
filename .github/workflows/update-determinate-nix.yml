@@ -1,0 +1,66 @@
+name: Update Determinate Nix
+
+on:
+  schedule:
+    - cron: "29 9 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: update-determinate-nix
+  cancel-in-progress: false
+
+permissions:
+  actions: write
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    name: Refresh and validate Determinate Nix
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Nix and Cachix
+        uses: ./.github/actions/setup-nix
+        with:
+          github-token: ${{ github.token }}
+          merge-queue-token: ${{ secrets.MERGE_QUEUE_TOKEN }}
+
+      - name: Resolve latest Determinate Nix release
+        id: resolve
+        run: nix run .#source-update -- determinate-nix "${GITHUB_OUTPUT}"
+
+      - name: Open or update pull request
+        if: steps.resolve.outputs.changed == 'true'
+        id: update
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ env.MERGE_QUEUE_TOKEN || github.token }}
+          branch: automation/update-determinate-nix
+          delete-branch: true
+          commit-message: "sources: update Determinate Nix"
+          title: "sources: update Determinate Nix"
+          body: |
+            Refreshes the pinned Determinate Nix installer and SELinux policy
+            from the latest stable upstream release.
+
+            The candidate validates the complete repository and image graph
+            before auto-merge is enabled.
+
+      - name: Validate and enable auto-merge
+        if: >-
+          steps.update.outputs.pull-request-number != '' &&
+          steps.update.outputs.pull-request-operation != 'closed'
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          EXPECTED_AUTHOR: ${{ vars.AUTOMATION_UPDATE_LOGIN || 'app/github-actions' }}
+          EXPECTED_BRANCH: automation/update-determinate-nix
+          EXPECTED_TITLE: "sources: update Determinate Nix"
+          GH_TOKEN: ${{ env.MERGE_QUEUE_TOKEN || github.token }}
+          PR_NUMBER: ${{ steps.update.outputs.pull-request-number }}
+        run: nix run .#trusted-update

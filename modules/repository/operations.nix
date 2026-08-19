@@ -21,6 +21,7 @@ in {
       upstream.includes = [
         operations.source
         sources.bluefin
+        sources.determinate-nix
         sources.image-builder
       ];
       all.includes = [
@@ -56,22 +57,33 @@ in {
         operations.updates.bluefin
         operations.delivery.images
       ];
+      determinate-nix-update.includes = [
+        operations.updates.determinate-nix
+        operations.delivery.images
+      ];
       image-builder-update.includes = [
         operations.updates.image-builder
         operations.delivery.installer
       ];
     };
 
-    updates.bluefin.includes = [
-      operations.source
-      sources.bluefin
-      operations.checks.upstream
-    ];
-    updates.image-builder.includes = [
-      operations.source
-      sources.image-builder
-      operations.checks.upstream
-    ];
+    updates = {
+      bluefin.includes = [
+        operations.source
+        sources.bluefin
+        operations.checks.upstream
+      ];
+      determinate-nix.includes = [
+        operations.source
+        sources.determinate-nix
+        operations.checks.upstream
+      ];
+      image-builder.includes = [
+        operations.source
+        sources.image-builder
+        operations.checks.upstream
+      ];
+    };
 
     source = {};
   };
