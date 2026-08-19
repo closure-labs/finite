@@ -45,6 +45,11 @@ It accepts `CACHIX_AUTH_TOKEN` from the environment or loads the workstation
 value from `$HOME/.other-fun-things/.cachix-purplefin-auth`, then publishes the
 evaluated closure-guarded proof outputs.
 
+GitHub-hosted jobs use the separate SecretSpec `github-actions` profile. The
+repository's setup action binds explicitly supplied GitHub Action secrets to
+that environment-backed provider and exports only the declared
+`CACHIX_AUTH_TOKEN` and `MERGE_QUEUE_TOKEN` names for later steps.
+
 ## Build a local image
 
 The image application resolves immutable inputs, generates the build contract,
@@ -85,7 +90,7 @@ inspection, copy the desired files from the `result` symlink.
 | `nix run .#source-update -- bluefin` | Refresh and verify the Bluefin lock |
 | `nix build .#home-dale` | Home Manager activation package for `dale` |
 | `nix build .#syft` | Pinned Syft package |
-| `nix build .#sbomnix` | Pinned sbomnix package |
+| `nix run .#image-sbom -- validate <file>` | Validate a normalized SPDX image software bill of materials |
 | `nix run .#installer-smoke -- <iso>` | QEMU installer boot test |
 | `nix run .#release-notes -- <version> CHANGELOG.md` | Release notes for one version |
 

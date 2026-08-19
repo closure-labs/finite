@@ -131,12 +131,14 @@ in {
         inherit ci;
         default = generated;
         inherit generated;
-        workflow-ci = applications.workflowCi;
-        workflow-image = applications.workflowImage;
         workflow-installer = applications.workflowInstaller;
-        workflow-maintenance = applications.workflowMaintenance;
+        workflow-gate = applications.workflowGate;
+        workflow-prepare = applications.workflowPrepare;
+        workflow-publish = applications.workflowPublish;
         workflow-release = applications.workflowRelease;
-        inherit (pkgs) sbomnix syft;
+        workflow-sbom = applications.workflowSbom;
+        workflow-validation = applications.workflowValidation;
+        inherit (pkgs) syft;
       }
       // lib.mapAttrs' (
         name: configuration: lib.nameValuePair "home-${name}" configuration.activationPackage
@@ -156,6 +158,10 @@ in {
         type = "app";
         program = "${applications.classifyCi}/bin/purplefin-classify-ci";
       };
+      github-actions-secrets = {
+        type = "app";
+        program = "${applications.githubActionsSecrets}/bin/purplefin-github-actions-secrets";
+      };
       release-notes = {
         type = "app";
         program = "${applications.releaseNotes}/bin/purplefin-release-notes";
@@ -172,6 +178,14 @@ in {
         type = "app";
         program = "${applications.packageCleanup}/bin/purplefin-package-cleanup";
       };
+      ci-gate = {
+        type = "app";
+        program = "${applications.ciGate}/bin/purplefin-ci-gate";
+      };
+      promote-images = {
+        type = "app";
+        program = "${applications.promoteImages}/bin/purplefin-promote-images";
+      };
       image-plan = {
         type = "app";
         program = "${applications.imagePlan}/bin/purplefin-image-plan";
@@ -183,6 +197,14 @@ in {
       image-reuse = {
         type = "app";
         program = "${applications.imageReuse}/bin/purplefin-image-reuse";
+      };
+      image-sbom = {
+        type = "app";
+        program = "${applications.imageSbom}/bin/purplefin-image-sbom";
+      };
+      sbom-attestation = {
+        type = "app";
+        program = "${applications.sbomAttestation}/bin/purplefin-sbom-attestation";
       };
       validate-image-shard = {
         type = "app";

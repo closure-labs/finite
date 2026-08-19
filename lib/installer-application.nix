@@ -96,7 +96,7 @@ pkgs.writeShellApplication {
     gh attestation verify "oci://''${payload_ref}" \
       --bundle-from-oci \
       --repo "''${GITHUB_REPOSITORY}" \
-      --signer-workflow "''${GITHUB_REPOSITORY}/.github/workflows/build-profile.yml" \
+      --signer-workflow "''${GITHUB_REPOSITORY}/.github/workflows/attest-software-bill-of-materials.yml" \
       --source-digest "''${source_revision}" \
       --predicate-type https://spdx.dev/Document/v2.3
 
@@ -179,7 +179,7 @@ pkgs.writeShellApplication {
       --arg payload "''${payload_ref}" \
       --arg payload_digest "''${payload_digest}" \
       --arg payload_sbom_predicate 'https://spdx.dev/Document/v2.3' \
-      --arg payload_signer_workflow "''${GITHUB_REPOSITORY}/.github/workflows/build-profile.yml" \
+      --arg payload_signer_workflow "''${GITHUB_REPOSITORY}/.github/workflows/attest-software-bill-of-materials.yml" \
       --arg payload_source_revision "''${source_revision}" \
       --arg source_commit "''${GITHUB_SHA}" \
       --arg source_repository "''${GITHUB_REPOSITORY}" \

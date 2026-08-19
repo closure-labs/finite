@@ -18,7 +18,7 @@ jobs:
   update:
     name: Refresh and validate Image Builder CLI
     runs-on: ubuntu-24.04
-    timeout-minutes: 180
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -29,18 +29,18 @@ jobs:
         uses: ./.github/actions/setup-nix
         with:
           github-token: ${{ github.token }}
-          toolset: workflow-maintenance
+          merge-queue-token: ${{ secrets.MERGE_QUEUE_TOKEN }}
 
       - name: Resolve latest Image Builder CLI digest
         id: resolve
-        run: purplefin-source-update image-builder "${GITHUB_OUTPUT}"
+        run: nix run .#source-update -- image-builder "${GITHUB_OUTPUT}"
 
       - name: Open or update pull request
         if: steps.resolve.outputs.changed == 'true'
         id: update
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
-          token: ${{ secrets.MERGE_QUEUE_TOKEN || github.token }}
+          token: ${{ env.MERGE_QUEUE_TOKEN || github.token }}
           branch: update_image_builder_cli
           delete-branch: true
           commit-message: Update Image Builder CLI digest
@@ -61,6 +61,6 @@ jobs:
           EXPECTED_AUTHOR: ${{ vars.AUTOMATION_UPDATE_LOGIN || 'app/github-actions' }}
           EXPECTED_BRANCH: update_image_builder_cli
           EXPECTED_TITLE: Update Image Builder CLI digest
-          GH_TOKEN: ${{ secrets.MERGE_QUEUE_TOKEN || github.token }}
+          GH_TOKEN: ${{ env.MERGE_QUEUE_TOKEN || github.token }}
           PR_NUMBER: ${{ steps.update.outputs.pull-request-number }}
-        run: purplefin-trusted-update
+        run: nix run .#trusted-update

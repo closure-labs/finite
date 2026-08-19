@@ -6,7 +6,7 @@ Purplefin turns a typed Nix profile graph into signed, updateable
 
 You get twelve ready-to-run workstation profiles, reproducible local builds,
 a graphical installer, verified updates, and signed release artifacts with
-provenance and SPDX SBOM attestations.
+provenance and SPDX software bill of materials attestations.
 
 ## Run Purplefin
 

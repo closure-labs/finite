@@ -29,18 +29,18 @@ jobs:
         uses: ./.github/actions/setup-nix
         with:
           github-token: ${{ github.token }}
-          toolset: workflow-maintenance
+          merge-queue-token: ${{ secrets.MERGE_QUEUE_TOKEN }}
 
       - name: Update the Flake lock
         id: source
-        run: purplefin-source-update flake "${GITHUB_OUTPUT}"
+        run: nix run .#source-update -- flake "${GITHUB_OUTPUT}"
 
       - name: Open or update pull request
         if: steps.source.outputs.changed == 'true'
         id: update
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
-          token: ${{ secrets.MERGE_QUEUE_TOKEN || github.token }}
+          token: ${{ env.MERGE_QUEUE_TOKEN || github.token }}
           base: main
           branch: automation/weekly-flake-input-refresh
           delete-branch: true
@@ -60,6 +60,6 @@ jobs:
           EXPECTED_AUTHOR: ${{ vars.AUTOMATION_UPDATE_LOGIN || 'app/github-actions' }}
           EXPECTED_BRANCH: automation/weekly-flake-input-refresh
           EXPECTED_TITLE: "flake.lock: refresh all inputs"
-          GH_TOKEN: ${{ secrets.MERGE_QUEUE_TOKEN || github.token }}
+          GH_TOKEN: ${{ env.MERGE_QUEUE_TOKEN || github.token }}
           PR_NUMBER: ${{ steps.update.outputs.pull-request-number }}
-        run: purplefin-trusted-update
+        run: nix run .#trusted-update

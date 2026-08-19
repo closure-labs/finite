@@ -18,7 +18,7 @@ jobs:
   update:
     name: Refresh and validate Bluefin stable
     runs-on: ubuntu-24.04
-    timeout-minutes: 180
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -29,17 +29,18 @@ jobs:
         uses: ./.github/actions/setup-nix
         with:
           github-token: ${{ github.token }}
-          toolset: workflow-maintenance
+          merge-queue-token: ${{ secrets.MERGE_QUEUE_TOKEN }}
 
       - name: Refresh and verify Bluefin OCI lock
         id: pin
-        run: purplefin-source-update bluefin "${GITHUB_OUTPUT}"
+        run: nix run .#source-update -- bluefin "${GITHUB_OUTPUT}"
 
       - name: Open or update pull request
+        if: steps.pin.outputs.changed == 'true'
         id: update
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
-          token: ${{ secrets.MERGE_QUEUE_TOKEN || github.token }}
+          token: ${{ env.MERGE_QUEUE_TOKEN || github.token }}
           branch: automation/update-bluefin-stable
           delete-branch: true
           commit-message: "sources: update Bluefin stable"
@@ -60,6 +61,6 @@ jobs:
           EXPECTED_AUTHOR: ${{ vars.AUTOMATION_UPDATE_LOGIN || 'app/github-actions' }}
           EXPECTED_BRANCH: automation/update-bluefin-stable
           EXPECTED_TITLE: "sources: update Bluefin stable"
-          GH_TOKEN: ${{ secrets.MERGE_QUEUE_TOKEN || github.token }}
+          GH_TOKEN: ${{ env.MERGE_QUEUE_TOKEN || github.token }}
           PR_NUMBER: ${{ steps.update.outputs.pull-request-number }}
-        run: purplefin-trusted-update
+        run: nix run .#trusted-update

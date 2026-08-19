@@ -51,5 +51,5 @@ runs:
       with:
         name: purplefin-${{ steps.installer.outputs.payload-tag || 'unresolved' }}-installer-diagnostics
         path: diagnostics/
-        if-no-files-found: error
+        if-no-files-found: warn
         retention-days: 7

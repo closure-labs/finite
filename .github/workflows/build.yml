@@ -2,12 +2,10 @@ name: Build Purplefin
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
   merge_group:
-    types:
-      - checks_requested
+    types: [checks_requested]
   schedule:
     - cron: "17 8 * * *"
   workflow_dispatch:
@@ -25,7 +23,9 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: >-
+    ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' ||
+    (github.event_name == 'workflow_dispatch' && inputs.validate_only) }}
 
 permissions:
   attestations: read
@@ -37,28 +37,49 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  changes:
-    name: Classify expensive validations
+  prepare:
+    name: Check, classify, and plan
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 40
     permissions:
+      attestations: read
       contents: read
+      packages: read
     outputs:
-      images: ${{ steps.filter.outputs.images }}
+      base_image: ${{ steps.plan.outputs.base_image }}
+      base_digest: ${{ steps.plan.outputs.base_digest }}
+      base_tag: ${{ steps.plan.outputs.base_tag }}
+      base_sbom_matrix: ${{ steps.plan.outputs.base_sbom_matrix }}
+      candidate_shards: ${{ steps.plan.outputs.candidate_shards }}
+      hardware_matrix: ${{ steps.plan.outputs.hardware_matrix }}
+      hardware_sbom_matrix: ${{ steps.plan.outputs.hardware_sbom_matrix }}
+      has_hardware: ${{ steps.plan.outputs.has_hardware }}
+      has_builds: ${{ steps.plan.outputs.has_builds }}
+      has_roles: ${{ steps.plan.outputs.has_roles }}
+      has_root_base: ${{ steps.plan.outputs.has_root_base }}
+      has_base_sbom: ${{ steps.plan.outputs.has_base_sbom }}
+      has_hardware_sbom: ${{ steps.plan.outputs.has_hardware_sbom }}
+      has_role_sbom: ${{ steps.plan.outputs.has_role_sbom }}
       installer: ${{ steps.filter.outputs.installer }}
+      matrix: ${{ steps.plan.outputs.matrix }}
+      role_matrix: ${{ steps.plan.outputs.role_matrix }}
+      role_sbom_matrix: ${{ steps.plan.outputs.role_sbom_matrix }}
+      root_base: ${{ steps.plan.outputs.root_base }}
+      version: ${{ steps.plan.outputs.version }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
-
-      - name: Set up Nix and Cachix
-        uses: ./.github/actions/setup-nix
+      - uses: ./.github/actions/setup-nix
         with:
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
           github-token: ${{ github.token }}
-          toolset: workflow-ci
-
+          toolset: workflow-prepare
+      - name: Validate repository and workflows
+        env:
+          PURPLEFIN_CACHE_PUSH: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+        run: nix run .#ci
       - name: Select expensive validations
         id: filter
         env:
@@ -72,74 +93,19 @@ jobs:
           PUSH_AFTER_SHA: ${{ github.sha }}
           PUSH_BEFORE_SHA: ${{ github.event.before }}
           VALIDATE_ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.validate_only || false }}
-        shell: bash
         run: purplefin-classify-ci "${GITHUB_OUTPUT}"
-
-  check:
-    name: Repository checks
-    runs-on: ubuntu-24.04
-    timeout-minutes: 20
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Set up Nix and Cachix
-        uses: ./.github/actions/setup-nix
-        with:
-          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
-          github-token: ${{ github.token }}
-
-      - name: Validate repository and workflows
-        env:
-          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
-          PURPLEFIN_CACHE_PUSH: >-
-            ${{ github.event_name != 'pull_request' ||
-            github.event.pull_request.head.repo.full_name == github.repository }}
-        run: nix run .#ci
-
-  plan:
-    name: Resolve build inputs
-    if: needs.changes.outputs.images == 'true'
-    needs:
-      - changes
-      - check
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    outputs:
-      base_image: ${{ steps.plan.outputs.base_image }}
-      base_digest: ${{ steps.plan.outputs.base_digest }}
-      base_tag: ${{ steps.plan.outputs.base_tag }}
-      candidate_shards: ${{ steps.plan.outputs.candidate_shards }}
-      hardware_matrix: ${{ steps.plan.outputs.hardware_matrix }}
-      has_hardware: ${{ steps.plan.outputs.has_hardware }}
-      has_builds: ${{ steps.plan.outputs.has_builds }}
-      has_roles: ${{ steps.plan.outputs.has_roles }}
-      has_root_base: ${{ steps.plan.outputs.has_root_base }}
-      matrix: ${{ steps.plan.outputs.matrix }}
-      role_matrix: ${{ steps.plan.outputs.role_matrix }}
-      root_base: ${{ steps.plan.outputs.root_base }}
-      version: ${{ steps.plan.outputs.version }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Set up Nix and Cachix
-        uses: ./.github/actions/setup-nix
-        with:
-          github-token: ${{ github.token }}
-          toolset: workflow-image
-
       - name: Verify and plan immutable inputs
+        if: steps.filter.outputs.images == 'true'
         id: plan
         env:
-          CHECK_RPM_UPDATES: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+          CHECK_PUBLICATION_TRUST: >-
+            ${{ github.event_name == 'push' || github.event_name == 'schedule' ||
+            (github.event_name == 'workflow_dispatch' && !inputs.validate_only) }}
+          CHECK_RPM_UPDATES: >-
+            ${{ github.event_name == 'schedule' ||
+            (github.event_name == 'workflow_dispatch' && !inputs.validate_only) }}
           FORCE_REBUILD: ${{ github.event_name == 'workflow_dispatch' && inputs.force }}
+          GH_TOKEN: ${{ github.token }}
           IMAGE_REF: ${{ format('{0}/{1}', env.REGISTRY, env.IMAGE_NAME) }}
         run: purplefin-ci-plan "${GITHUB_OUTPUT}"
 
@@ -148,34 +114,30 @@ jobs:
     if: >-
       (github.event_name == 'pull_request' || github.event_name == 'merge_group' ||
       (github.event_name == 'workflow_dispatch' && inputs.validate_only)) &&
-      needs.plan.outputs.has_builds == 'true'
-    needs: plan
+      needs.prepare.outputs.has_builds == 'true'
+    needs: prepare
     strategy:
       fail-fast: false
       max-parallel: 4
-      matrix: ${{ fromJSON(needs.plan.outputs.candidate_shards) }}
+      matrix: ${{ fromJSON(needs.prepare.outputs.candidate_shards) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     permissions:
       contents: read
       packages: read
     steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-
-      - name: Set up Nix and Cachix
-        uses: ./.github/actions/setup-nix
+      - uses: ./.github/actions/setup-nix
         with:
           github-token: ${{ github.token }}
-          toolset: workflow-image
-
+          toolset: workflow-validation
       - name: Validate profiles from one locked base
         env:
           IMAGE_REF: ${{ format('{0}/{1}', env.REGISTRY, env.IMAGE_NAME) }}
           PROFILE_SHARD: ${{ toJSON(matrix.profiles) }}
-          UPSTREAM_BASE_DIGEST: ${{ needs.plan.outputs.base_digest }}
+          UPSTREAM_BASE_DIGEST: ${{ needs.prepare.outputs.base_digest }}
         run: purplefin-validate-image-shard
 
   installer-candidate:
@@ -183,10 +145,8 @@ jobs:
     if: >-
       (github.event_name == 'pull_request' || github.event_name == 'merge_group' ||
       (github.event_name == 'workflow_dispatch' && inputs.validate_only)) &&
-      needs.changes.outputs.installer == 'true'
-    needs:
-      - changes
-      - check
+      needs.prepare.outputs.installer == 'true'
+    needs: prepare
     runs-on: ubuntu-24.04
     timeout-minutes: 150
     permissions:
@@ -194,13 +154,10 @@ jobs:
       contents: read
       packages: read
     steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-
-      - name: Build and smoke-test installer
-        uses: ./.github/actions/build-installer
+      - uses: ./.github/actions/build-installer
         with:
           cache-write: false
           image-tag: base-generic-x86_64
@@ -211,8 +168,8 @@ jobs:
     if: >-
       (github.event_name == 'push' || github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
-      needs.plan.outputs.has_root_base == 'true'
-    needs: plan
+      needs.prepare.outputs.has_root_base == 'true'
+    needs: prepare
     uses: ./.github/workflows/build-profile.yml
     permissions:
       attestations: write
@@ -220,33 +177,28 @@ jobs:
       id-token: write
       packages: write
     with:
-      build-input: ${{ fromJSON(needs.plan.outputs.root_base).build_input }}
-      parent-digest: ${{ needs.plan.outputs.base_digest }}
+      build-input: ${{ fromJSON(needs.prepare.outputs.root_base).build_input }}
+      parent-digest: ${{ needs.prepare.outputs.base_digest }}
       parent-from-lock: true
-      parent-image: ${{ needs.plan.outputs.base_image }}
-      parent-tag: ${{ needs.plan.outputs.base_tag }}
+      parent-image: ${{ needs.prepare.outputs.base_image }}
+      parent-tag: ${{ needs.prepare.outputs.base_tag }}
       profile: base
-      publish: true
-      reuse-existing: ${{ fromJSON(needs.plan.outputs.root_base).reuse_existing }}
-      tags: ${{ fromJSON(needs.plan.outputs.root_base).tags }}
-      upstream-base-digest: ${{ needs.plan.outputs.base_digest }}
-      version: ${{ needs.plan.outputs.version }}
+      reuse-existing: ${{ fromJSON(needs.prepare.outputs.root_base).reuse_existing }}
+      upstream-base-digest: ${{ needs.prepare.outputs.base_digest }}
+      version: ${{ needs.prepare.outputs.version }}
 
   hardware-publish:
     name: Build and publish ${{ matrix.profile }}
     if: >-
-      always() &&
-      (github.event_name == 'push' || github.event_name == 'schedule' ||
+      always() && (github.event_name == 'push' || github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
-      needs.plan.result == 'success' && needs.plan.outputs.has_hardware == 'true' &&
+      needs.prepare.result == 'success' && needs.prepare.outputs.has_hardware == 'true' &&
       (needs.base-publish.result == 'success' || needs.base-publish.result == 'skipped')
-    needs:
-      - plan
-      - base-publish
+    needs: [prepare, base-publish]
     strategy:
       fail-fast: false
       max-parallel: 4
-      matrix: ${{ fromJSON(needs.plan.outputs.hardware_matrix) }}
+      matrix: ${{ fromJSON(needs.prepare.outputs.hardware_matrix) }}
     uses: ./.github/workflows/build-profile.yml
     permissions:
       attestations: write
@@ -260,29 +212,23 @@ jobs:
       parent-profile: ${{ matrix.parent }}
       parent-tag: ${{ matrix.parent_tag }}
       profile: ${{ matrix.profile }}
-      publish: true
       reuse-existing: ${{ matrix.reuse_existing }}
-      tags: ${{ matrix.tags }}
-      upstream-base-digest: ${{ needs.plan.outputs.base_digest }}
-      version: ${{ needs.plan.outputs.version }}
+      upstream-base-digest: ${{ needs.prepare.outputs.base_digest }}
+      version: ${{ needs.prepare.outputs.version }}
 
   roles-publish:
     name: Build and publish ${{ matrix.profile }}
     if: >-
-      always() &&
-      (github.event_name == 'push' || github.event_name == 'schedule' ||
+      always() && (github.event_name == 'push' || github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
-      needs.plan.result == 'success' && needs.plan.outputs.has_roles == 'true' &&
+      needs.prepare.result == 'success' && needs.prepare.outputs.has_roles == 'true' &&
       (needs.base-publish.result == 'success' || needs.base-publish.result == 'skipped') &&
       (needs.hardware-publish.result == 'success' || needs.hardware-publish.result == 'skipped')
-    needs:
-      - plan
-      - base-publish
-      - hardware-publish
+    needs: [prepare, base-publish, hardware-publish]
     strategy:
       fail-fast: false
       max-parallel: 4
-      matrix: ${{ fromJSON(needs.plan.outputs.role_matrix) }}
+      matrix: ${{ fromJSON(needs.prepare.outputs.role_matrix) }}
     uses: ./.github/workflows/build-profile.yml
     permissions:
       attestations: write
@@ -296,87 +242,171 @@ jobs:
       parent-profile: ${{ matrix.parent }}
       parent-tag: ${{ matrix.parent_tag }}
       profile: ${{ matrix.profile }}
-      publish: true
       reuse-existing: ${{ matrix.reuse_existing }}
-      tags: ${{ matrix.tags }}
-      upstream-base-digest: ${{ needs.plan.outputs.base_digest }}
-      version: ${{ needs.plan.outputs.version }}
+      upstream-base-digest: ${{ needs.prepare.outputs.base_digest }}
+      version: ${{ needs.prepare.outputs.version }}
+
+  base-sbom:
+    name: Attest base software bill of materials
+    if: >-
+      always() && (github.event_name == 'push' || github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
+      needs.prepare.result == 'success' && needs.prepare.outputs.has_base_sbom == 'true' &&
+      (needs.base-publish.result == 'success' || needs.base-publish.result == 'skipped')
+    needs: [prepare, base-publish]
+    strategy:
+      matrix: ${{ fromJSON(needs.prepare.outputs.base_sbom_matrix) }}
+    uses: ./.github/workflows/attest-software-bill-of-materials.yml
+    permissions:
+      attestations: write
+      contents: read
+      id-token: write
+      packages: write
+    with:
+      build-input: ${{ matrix.build_input }}
+      profile: ${{ matrix.profile }}
+      source-digest: ${{ matrix.source_digest }}
+      subject-tag: ${{ matrix.subject_tag }}
+      upstream-base-digest: ${{ needs.prepare.outputs.base_digest }}
+      version: ${{ needs.prepare.outputs.version }}
+
+  hardware-sbom:
+    name: Attest hardware software bill of materials for ${{ matrix.profile }}
+    if: >-
+      always() && (github.event_name == 'push' || github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
+      needs.prepare.result == 'success' && needs.prepare.outputs.has_hardware_sbom == 'true' &&
+      (needs.hardware-publish.result == 'success' || needs.hardware-publish.result == 'skipped')
+    needs: [prepare, hardware-publish]
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix: ${{ fromJSON(needs.prepare.outputs.hardware_sbom_matrix) }}
+    uses: ./.github/workflows/attest-software-bill-of-materials.yml
+    permissions:
+      attestations: write
+      contents: read
+      id-token: write
+      packages: write
+    with:
+      build-input: ${{ matrix.build_input }}
+      profile: ${{ matrix.profile }}
+      source-digest: ${{ matrix.source_digest }}
+      subject-tag: ${{ matrix.subject_tag }}
+      upstream-base-digest: ${{ needs.prepare.outputs.base_digest }}
+      version: ${{ needs.prepare.outputs.version }}
+
+  role-sbom:
+    name: Attest role software bill of materials for ${{ matrix.profile }}
+    if: >-
+      always() && (github.event_name == 'push' || github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
+      needs.prepare.result == 'success' && needs.prepare.outputs.has_role_sbom == 'true' &&
+      (needs.roles-publish.result == 'success' || needs.roles-publish.result == 'skipped')
+    needs: [prepare, roles-publish]
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix: ${{ fromJSON(needs.prepare.outputs.role_sbom_matrix) }}
+    uses: ./.github/workflows/attest-software-bill-of-materials.yml
+    permissions:
+      attestations: write
+      contents: read
+      id-token: write
+      packages: write
+    with:
+      build-input: ${{ matrix.build_input }}
+      profile: ${{ matrix.profile }}
+      source-digest: ${{ matrix.source_digest }}
+      subject-tag: ${{ matrix.subject_tag }}
+      upstream-base-digest: ${{ needs.prepare.outputs.base_digest }}
+      version: ${{ needs.prepare.outputs.version }}
+
+  promote:
+    name: Promote verified image graph
+    if: >-
+      always() && (github.event_name == 'push' || github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
+      needs.prepare.result == 'success' && needs.prepare.outputs.has_builds == 'true' &&
+      (needs.base-publish.result == 'success' || needs.base-publish.result == 'skipped') &&
+      (needs.hardware-publish.result == 'success' || needs.hardware-publish.result == 'skipped') &&
+      (needs.roles-publish.result == 'success' || needs.roles-publish.result == 'skipped') &&
+      (needs.base-sbom.result == 'success' || needs.base-sbom.result == 'skipped') &&
+      (needs.hardware-sbom.result == 'success' || needs.hardware-sbom.result == 'skipped') &&
+      (needs.role-sbom.result == 'success' || needs.role-sbom.result == 'skipped')
+    needs: [prepare, base-publish, hardware-publish, roles-publish, base-sbom, hardware-sbom, role-sbom]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      attestations: read
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+        with:
+          github-token: ${{ github.token }}
+          toolset: workflow-publish
+      - name: Log in to GHCR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          install -d -m 0700 "${HOME}/.docker"
+          registry_auth_file="${HOME}/.docker/config.json"
+          printf '%s' "${GH_TOKEN}" | podman login --authfile "${registry_auth_file}" ghcr.io \
+            --username "${GITHUB_ACTOR}" --password-stdin
+          echo "REGISTRY_AUTH_FILE=${registry_auth_file}" >>"${GITHUB_ENV}"
+      - name: Verify and promote the complete selected graph
+        env:
+          BUILD_MATRIX: ${{ needs.prepare.outputs.matrix }}
+          GH_TOKEN: ${{ github.token }}
+          IMAGE_REF: ${{ format('{0}/{1}', env.REGISTRY, env.IMAGE_NAME) }}
+          UPSTREAM_BASE_DIGEST: ${{ needs.prepare.outputs.base_digest }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: purplefin-promote-images
+      - name: Log out of GHCR
+        if: always()
+        run: podman logout --authfile "${REGISTRY_AUTH_FILE:-${HOME}/.docker/config.json}" ghcr.io || true
 
   ci-gate:
     name: CI gate
     if: always()
-    needs:
-      - changes
-      - check
-      - plan
-      - build-candidate
-      - installer-candidate
-      - base-publish
-      - hardware-publish
-      - roles-publish
-    runs-on: ubuntu-slim
+    needs: [prepare, build-candidate, installer-candidate, base-publish, hardware-publish, roles-publish, base-sbom, hardware-sbom, role-sbom, promote]
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
       contents: read
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+        with:
+          github-token: ${{ github.token }}
+          toolset: workflow-gate
       - name: Require the complete event-appropriate build graph
         env:
           BASE_PUBLISH_RESULT: ${{ needs.base-publish.result }}
+          BASE_SBOM_RESULT: ${{ needs.base-sbom.result }}
           BUILD_CANDIDATE_RESULT: ${{ needs.build-candidate.result }}
-          CHANGES_RESULT: ${{ needs.changes.result }}
-          CHECK_RESULT: ${{ needs.check.result }}
           EVENT_NAME: ${{ github.event_name }}
-          HAS_BUILDS: ${{ needs.plan.outputs.has_builds }}
-          HAS_HARDWARE: ${{ needs.plan.outputs.has_hardware }}
-          HAS_ROLES: ${{ needs.plan.outputs.has_roles }}
-          HAS_ROOT_BASE: ${{ needs.plan.outputs.has_root_base }}
           HARDWARE_PUBLISH_RESULT: ${{ needs.hardware-publish.result }}
+          HARDWARE_SBOM_RESULT: ${{ needs.hardware-sbom.result }}
+          HAS_BUILDS: ${{ needs.prepare.outputs.has_builds }}
+          HAS_HARDWARE: ${{ needs.prepare.outputs.has_hardware }}
+          HAS_ROLES: ${{ needs.prepare.outputs.has_roles }}
+          HAS_ROOT_BASE: ${{ needs.prepare.outputs.has_root_base }}
+          HAS_BASE_SBOM: ${{ needs.prepare.outputs.has_base_sbom }}
+          HAS_HARDWARE_SBOM: ${{ needs.prepare.outputs.has_hardware_sbom }}
+          HAS_ROLE_SBOM: ${{ needs.prepare.outputs.has_role_sbom }}
           INSTALLER_CANDIDATE_RESULT: ${{ needs.installer-candidate.result }}
-          INSTALLER_SELECTED: ${{ needs.changes.outputs.installer }}
-          IMAGES_SELECTED: ${{ needs.changes.outputs.images }}
-          PLAN_RESULT: ${{ needs.plan.result }}
+          INSTALLER_SELECTED: ${{ needs.prepare.outputs.installer }}
+          PREPARE_RESULT: ${{ needs.prepare.result }}
+          PROMOTE_RESULT: ${{ needs.promote.result }}
           REF: ${{ github.ref }}
+          ROLE_SBOM_RESULT: ${{ needs.role-sbom.result }}
           ROLES_PUBLISH_RESULT: ${{ needs.roles-publish.result }}
           VALIDATE_ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.validate_only || false }}
-        shell: bash
-        run: |
-          require_result() {
-            local job=$1 actual=$2 expected=$3
-            if [[ "${actual}" != "${expected}" ]]; then
-              printf '%s finished with %s; expected %s\n' \
-                "${job}" "${actual}" "${expected}" >&2
-              return 1
-            fi
-          }
-
-          require_selected_result() {
-            local job=$1 selected=$2 actual=$3
-            if [[ "${selected}" == true ]]; then
-              require_result "${job}" "${actual}" success
-            else
-              require_result "${job}" "${actual}" skipped
-            fi
-          }
-
-          require_result changes "${CHANGES_RESULT}" success
-          require_result check "${CHECK_RESULT}" success
-          require_selected_result plan "${IMAGES_SELECTED}" "${PLAN_RESULT}"
-
-          if [[ "${EVENT_NAME}" == pull_request || "${EVENT_NAME}" == merge_group || "${VALIDATE_ONLY}" == true ]]; then
-            require_selected_result build-candidate "${HAS_BUILDS}" "${BUILD_CANDIDATE_RESULT}"
-            require_selected_result installer-candidate "${INSTALLER_SELECTED}" "${INSTALLER_CANDIDATE_RESULT}"
-            require_result base-publish "${BASE_PUBLISH_RESULT}" skipped
-            require_result hardware-publish "${HARDWARE_PUBLISH_RESULT}" skipped
-            require_result roles-publish "${ROLES_PUBLISH_RESULT}" skipped
-            exit 0
-          fi
-
-          require_result build-candidate "${BUILD_CANDIDATE_RESULT}" skipped
-          require_result installer-candidate "${INSTALLER_CANDIDATE_RESULT}" skipped
-          if [[ "${EVENT_NAME}" == workflow_dispatch && "${REF}" != refs/heads/main ]]; then
-            echo 'Publishing workflow dispatches must target main' >&2
-            exit 1
-          fi
-          require_selected_result base-publish "${HAS_ROOT_BASE}" "${BASE_PUBLISH_RESULT}"
-          require_selected_result hardware-publish "${HAS_HARDWARE}" "${HARDWARE_PUBLISH_RESULT}"
-          require_selected_result roles-publish "${HAS_ROLES}" "${ROLES_PUBLISH_RESULT}"
+        run: purplefin-ci-gate

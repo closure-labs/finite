@@ -5,12 +5,16 @@ inputs:
   github-token:
     description: GitHub token used by Nix to avoid anonymous API rate limits
     required: true
+  merge-queue-token:
+    description: Optional GitHub Actions secret used for trusted update pull requests
+    required: false
+    default: ""
   cachix-auth-token:
     description: Optional token used only by explicit guarded Cachix pushes
     required: false
     default: ""
   toolset:
-    description: Optional Purplefin workflow toolset package to add to PATH
+    description: Optional Purplefin workflow toolset package to expose on PATH
     required: false
     default: ""
 
@@ -23,10 +27,18 @@ runs:
         extra_nix_config: |
           access-tokens = github.com=${{ inputs.github-token }}
 
+    - name: Map declared GitHub Actions secrets
+      if: inputs.cachix-auth-token != '' || inputs.merge-queue-token != ''
+      env:
+        GITHUB_ACTIONS_CACHIX_AUTH_TOKEN: ${{ inputs.cachix-auth-token }}
+        GITHUB_ACTIONS_MERGE_QUEUE_TOKEN: ${{ inputs.merge-queue-token }}
+      shell: bash
+      run: nix run --accept-flake-config .#github-actions-secrets
+
     - name: Configure Purplefin Cachix
       uses: cachix/cachix-action@5f2d7c5294214f71b873db4b969586b980625e71 # v17
       with:
-        authToken: ${{ inputs.cachix-auth-token }}
+        authToken: ${{ env.CACHIX_AUTH_TOKEN }}
         name: purplefin
         skipPush: true
 
@@ -36,4 +48,7 @@ runs:
         PURPLEFIN_TOOLSET: ${{ inputs.toolset }}
       shell: bash
       run: |
-        nix profile add --accept-flake-config --priority 4 ".#${PURPLEFIN_TOOLSET}"
+        nix build --accept-flake-config \
+          --out-link /tmp/purplefin-workflow-toolset \
+          ".#${PURPLEFIN_TOOLSET}"
+        echo /tmp/purplefin-workflow-toolset/bin >>"${GITHUB_PATH}"
