@@ -43,6 +43,10 @@ in {
         options = {
           schema = lib.mkOption {type = lib.types.enum [1];};
           version = lib.mkOption {type = lib.types.strMatching "[0-9]+\\.[0-9]+\\.[0-9]+";};
+          minimumRuntimeVersion = lib.mkOption {
+            type = lib.types.strMatching "[0-9]+\\.[0-9]+\\.[0-9]+";
+            description = "Oldest Determinate Nix runtime accepted in a published image seed.";
+          };
           architecture = lib.mkOption {type = lib.types.enum ["x86_64-linux"];};
           installer = lib.mkOption {
             type = lib.types.submodule {

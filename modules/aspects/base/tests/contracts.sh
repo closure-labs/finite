@@ -7,6 +7,7 @@ rootfs="${aspect_root}/rootfs"
 test -x "${aspect_root}/apply.sh"
 test -x "${aspect_root}/install-determinate-nix.sh"
 test -x "${aspect_root}/tests/nix-systemd.sh"
+test -x "${aspect_root}/rootfs/usr/libexec/purplefin/require-determinate-nix-version"
 test -x "${aspect_root}/packages-bitwarden-cli/install.sh"
 test -x "${rootfs}/usr/bin/purplefin-caffeinate"
 test -x "${rootfs}/usr/libexec/purplefin/run-firstboot-rpm-ostree"
@@ -26,6 +27,7 @@ grep -qF 'rpm -qf' "${aspect_root}/install-determinate-nix.sh"
 grep -qF '/etc/tmpfiles.d/nix-daemon.conf' "${aspect_root}/install-determinate-nix.sh"
 grep -qF -- '--no-modify-profile' "${aspect_root}/install-determinate-nix.sh"
 grep -qF -- '--nix-build-user-prefix nixbld-' "${aspect_root}/install-determinate-nix.sh"
+grep -qF '.minimumRuntimeVersion' "${aspect_root}/install-determinate-nix.sh"
 if grep -qF 'install -d -m 0755 /nix' \
 	"${aspect_root}/apply.sh" "${aspect_root}/install-determinate-nix.sh"; then
 	echo 'Fedora nix-filesystem must own creation of /nix' >&2
