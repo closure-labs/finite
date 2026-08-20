@@ -2,9 +2,6 @@ name: Set up Nix and Purplefin Cachix
 description: Install Nix with GitHub access and configure the read-through Purplefin cache
 
 inputs:
-  github-token:
-    description: GitHub token used by Nix to avoid anonymous API rate limits
-    required: true
   merge-queue-token:
     description: Optional GitHub Actions secret used for trusted update pull requests
     required: false
@@ -13,19 +10,11 @@ inputs:
     description: Optional token used only by explicit guarded Cachix pushes
     required: false
     default: ""
-  toolset:
-    description: Optional Purplefin workflow toolset package to expose on PATH
-    required: false
-    default: ""
-
 runs:
   using: composite
   steps:
-    - name: Install Nix
-      uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31
-      with:
-        extra_nix_config: |
-          access-tokens = github.com=${{ inputs.github-token }}
+    - name: Install Determinate Nix
+      uses: DeterminateSystems/determinate-nix-action@668647a33843b1f280cb2ef4c41736f86b29f826 # v3.22.1
 
     - name: Map declared GitHub Actions secrets
       if: inputs.cachix-auth-token != '' || inputs.merge-queue-token != ''
@@ -33,7 +22,9 @@ runs:
         GITHUB_ACTIONS_CACHIX_AUTH_TOKEN: ${{ inputs.cachix-auth-token }}
         GITHUB_ACTIONS_MERGE_QUEUE_TOKEN: ${{ inputs.merge-queue-token }}
       shell: bash
-      run: nix run --accept-flake-config .#github-actions-secrets
+      run: >-
+        nix shell --accept-flake-config .#ci-github-actions-secrets
+        -c purplefin-github-actions-secrets
 
     - name: Configure Purplefin Cachix
       uses: cachix/cachix-action@5f2d7c5294214f71b873db4b969586b980625e71 # v17
@@ -41,14 +32,3 @@ runs:
         authToken: ${{ env.CACHIX_AUTH_TOKEN }}
         name: purplefin
         skipPush: true
-
-    - name: Install Nix-declared workflow tools
-      if: inputs.toolset != ''
-      env:
-        PURPLEFIN_TOOLSET: ${{ inputs.toolset }}
-      shell: bash
-      run: |
-        nix build --accept-flake-config \
-          --out-link /tmp/purplefin-workflow-toolset \
-          ".#${PURPLEFIN_TOOLSET}"
-        echo /tmp/purplefin-workflow-toolset/bin >>"${GITHUB_PATH}"

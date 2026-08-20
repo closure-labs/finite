@@ -7,14 +7,23 @@
 }: let
   root = ../.;
   inherit (lib) fileset;
+  localState = fileset.unions [
+    (fileset.maybeMissing ../.devenv)
+    (fileset.maybeMissing ../.direnv)
+  ];
+  projectFiles = fileset.difference root localState;
   sourceFor = selected:
     fileset.toSource {
       inherit root;
       fileset = fileset.unions selected;
     };
-  shellFiles = fileset.fileFilter (file: file.type == "regular" && lib.hasSuffix ".sh" file.name) root;
-  nixFiles = fileset.fileFilter (file: file.type == "regular" && lib.hasSuffix ".nix" file.name) root;
-  textFiles =
+  shellFiles = fileset.intersection projectFiles (
+    fileset.fileFilter (file: file.type == "regular" && lib.hasSuffix ".sh" file.name) root
+  );
+  nixFiles = fileset.intersection projectFiles (
+    fileset.fileFilter (file: file.type == "regular" && lib.hasSuffix ".nix" file.name) root
+  );
+  textFiles = fileset.intersection projectFiles (
     fileset.fileFilter (
       file:
         file.type
@@ -36,7 +45,8 @@
           ]
         )
     )
-    root;
+    root
+  );
   shellSource = sourceFor [shellFiles];
   nixSource = sourceFor [nixFiles];
   repositorySource = sourceFor [
@@ -79,6 +89,10 @@
   ];
   workflowSource = sourceFor [
     ../.github
+    ../devenv-tasks.nix
+    ../devenv.nix
+    ../devenv.yaml
+    ../docs/ci-and-releases.md
     ../lib/ci-applications
     ../lib/flake-applications.nix
     ../automation/github/policies
@@ -229,7 +243,9 @@ in {
       grep -qF 'ref = { item = "GITHUB_ACTIONS_MERGE_QUEUE_TOKEN" }' secretspec.toml
       ! grep -qF 'cachix watch-exec' lib/flake-applications.nix
       grep -qF 'cachix push --omit-deriver purplefin' lib/flake-applications.nix
-      grep -qF 'nix --accept-flake-config build --no-link' lib/flake-applications.nix
+      grep -qF 'nix --accept-flake-config eval --json' lib/flake-applications.nix
+      ! grep -qF 'quotedPaths' lib/flake-applications.nix
+      grep -qF 'flake_uri="git+file://' lib/flake-applications.nix
       grep -qF 'max_closure_size=$((1024 * 1024))' lib/flake-applications.nix
       ! grep -qF 'dockerTools.pullImage' modules/outputs.nix
       ! grep -qF 'bluefin-upstream' modules/outputs.nix
@@ -261,7 +277,9 @@ in {
     tools = with pkgs; [
       applications.classifyChanges
       applications.classifyCi
-      applications.ciPlan
+      applications.buildCiPlan
+      applications.ciPrepare
+      applications.validateCiPlan
       applications.ciGate
       applications.promoteImages
       applications.trustedUpdate
@@ -377,27 +395,28 @@ in {
             .context == "CI gate" and .integration_id == 15368))
       ' automation/github/policies/main-protection.json >/dev/null
 
-      grep -qF 'nix run .#ci' .github/workflows/build.yml
+      grep -qF 'nix shell --accept-flake-config .#ci-check' .github/workflows/build.yml
+      grep -qF 'nix shell --accept-flake-config .#ci-prepare' .github/workflows/build.yml
       for updater in update-bluefin.yml update-determinate-nix.yml update-flake-lock.yml update-image-builder.yml; do
-        grep -qF 'nix run .#trusted-update' ".github/workflows/''${updater}"
+        grep -qF '.#ci-trusted-update' ".github/workflows/''${updater}"
       done
       [[ "$(grep -cF 'purplefin-trusted-update' .github/workflows/release.yml)" == 2 ]]
       [[ "$(grep -cF 'SOURCE_SHA: ''${{ steps.source.outputs.source_sha }}' .github/workflows/release.yml)" == 2 ]]
       ! grep -qF 'steps.version.outputs.source_sha' .github/workflows/release.yml
       ! grep -qF 'git push origin HEAD:main' .github/workflows/release.yml
       ! grep -R -qF 'github-actions[bot]' .github/workflows
-      grep -qF 'nix run .#source-update -- bluefin' .github/workflows/update-bluefin.yml
-      grep -qF 'nix run .#source-update -- bluefin-dx' .github/workflows/update-bluefin.yml
-      grep -qF 'nix run .#source-update -- determinate-nix' .github/workflows/update-determinate-nix.yml
-      grep -qF 'nix run .#source-update -- image-builder' .github/workflows/update-image-builder.yml
-      grep -qF 'nix run .#source-update -- flake' .github/workflows/update-flake-lock.yml
+      grep -qF 'purplefin-source-update bluefin ' .github/workflows/update-bluefin.yml
+      grep -qF 'purplefin-source-update bluefin-dx ' .github/workflows/update-bluefin.yml
+      grep -qF 'purplefin-source-update determinate-nix ' .github/workflows/update-determinate-nix.yml
+      grep -qF 'purplefin-source-update image-builder ' .github/workflows/update-image-builder.yml
+      grep -qF 'purplefin-update-locks ' .github/workflows/update-flake-lock.yml
       grep -qF 'purplefin-load-bluefin' .github/workflows/build-profile.yml
-      grep -qF 'purplefin-ci-plan' .github/workflows/build.yml
+      grep -qF 'purplefin-ci-prepare' .github/workflows/build.yml
       grep -qF 'purplefin-validate-image-shard' .github/workflows/build.yml
       grep -qF 'candidate_shards' .github/workflows/build.yml
-      grep -qF 'purplefin-classify-ci' .github/workflows/build.yml
+      ! grep -qF 'purplefin-classify-ci' .github/workflows/build.yml
       grep -qF -- '--no-renames' lib/ci-applications/classify-ci.nix
-      grep -qF 'fromJSON(needs.prepare.outputs.lifecycle' .github/workflows/build.yml
+      grep -qF 'fromJSON(needs.prepare.outputs.plan' .github/workflows/build.yml
       grep -qF '.validation.images.required' .github/workflows/build.yml
       grep -qF '.publication.builds.root' .github/workflows/build.yml
       grep -qF "'purplefin-publication'" .github/workflows/build.yml
@@ -411,25 +430,19 @@ in {
       ! grep -R -qF -- '-sbom-cache' .github automation
       ! grep -R -qF 'Store SBOM cache artifact' .github
       grep -qF 'purplefin-release-notes' .github/workflows/release.yml
-      grep -qF 'toolset: workflow-prepare' .github/workflows/build.yml
-      grep -qF 'toolset: workflow-validation' .github/workflows/build.yml
-      grep -qF 'toolset: workflow-publish' .github/workflows/build-profile.yml
-      grep -qF 'toolset: workflow-sbom' .github/workflows/attest-software-bill-of-materials.yml
+      ! grep -R -qF 'toolset:' .github
       grep -qF 'purplefin-ci-gate' .github/workflows/build.yml
-      grep -qF 'toolset: workflow-gate' .github/workflows/build.yml
       grep -qF 'purplefin-promote-images' .github/workflows/build.yml
       ! grep -R -Eq 'needs\.(changes|check|plan)|inputs\.publish|publish: true' .github/workflows
       grep -qF 'attest-software-bill-of-materials.yml' .github/workflows/build.yml
       grep -qF 'attest-software-bill-of-materials.yml' lib/installer-application.nix
       grep -qF 'attest-software-bill-of-materials.yml' .github/workflows/release.yml
-      grep -qF 'toolset: workflow-release' .github/workflows/release.yml
-      grep -qF 'cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24' \
+      grep -qF 'DeterminateSystems/determinate-nix-action@668647a33843b1f280cb2ef4c41736f86b29f826' \
         .github/actions/setup-nix/action.yml
       grep -qF 'cachix/cachix-action@5f2d7c5294214f71b873db4b969586b980625e71' \
         .github/actions/setup-nix/action.yml
-      grep -qF 'nix build --accept-flake-config' .github/actions/setup-nix/action.yml
-      grep -qF -- '--out-link /tmp/purplefin-workflow-toolset' .github/actions/setup-nix/action.yml
-      grep -qF 'nix run --accept-flake-config .#github-actions-secrets' .github/actions/setup-nix/action.yml
+      ! grep -qF -- '--out-link /tmp/purplefin-workflow-toolset' .github/actions/setup-nix/action.yml
+      grep -qF '.#ci-github-actions-secrets' .github/actions/setup-nix/action.yml
       grep -qF 'authToken: ''${{ env.CACHIX_AUTH_TOKEN }}' .github/actions/setup-nix/action.yml
       [[ "$(grep -R -h -oF 'secrets.CACHIX_AUTH_TOKEN' .github | wc -l)" == 1 ]]
       [[ "$(grep -R -h -oF 'secrets.MERGE_QUEUE_TOKEN' .github | wc -l)" == 5 ]]
@@ -437,7 +450,11 @@ in {
       grep -qF 'GH_TOKEN: ''${{ env.MERGE_QUEUE_TOKEN || github.token }}' \
         .github/workflows/queue-dependabot.yml
       ! grep -qF 'nix profile add' .github/actions/setup-nix/action.yml
-      ! grep -R -qF 'DeterminateSystems/determinate-nix-action' .github
+      ! grep -R -Eq 'runtimeInputs[[:space:]]*=.*[^[:alnum:]_-]nix([^[:alnum:]_-]|$)' \
+        lib/ci-applications lib/flake-applications.nix
+      grep -qF 'timeout-minutes: 15' .github/workflows/build.yml
+      grep -qF '"additionalProperties": false' lib/ci-applications/ci-plan.schema.json
+      grep -qF -- "--option 'packages:pkgs!'" docs/ci-and-releases.md
       grep -qF -- '--build-context purplefin-generated=' .github/workflows/build-profile.yml
       grep -qF 'RUN --mount=type=bind,from=purplefin-generated,source=.,target=/run/purplefin-generated' \
         bootc/Containerfile
@@ -449,39 +466,29 @@ in {
         installer/rootfs/usr/share/anaconda/interactive-defaults.ks
       bash tests/installer/smoke.sh \
         ${applications.installerSmoke}/bin/purplefin-installer-smoke
-      grep -qF 'checks.''${system} =' modules/outputs.nix
+      grep -qF 'checks.' modules/outputs.nix
       grep -qF 'repositoryChecks' modules/outputs.nix
 
       for executable in \
-        ${applications.workflowPrepare}/bin/purplefin-classify-ci \
-        ${applications.workflowPrepare}/bin/purplefin-ci-plan \
-        ${applications.workflowValidation}/bin/purplefin-validate-image-shard \
-        ${applications.workflowPublish}/bin/purplefin-image-reuse \
-        ${applications.workflowPublish}/bin/purplefin-image-sign \
-        ${applications.workflowPublish}/bin/purplefin-load-bluefin \
-        ${applications.workflowPublish}/bin/purplefin-promote-images \
-        ${applications.workflowInstaller}/bin/purplefin-installer-build \
-        ${applications.workflowSbom}/bin/purplefin-image-sbom \
-        ${applications.workflowRelease}/bin/purplefin-release-notes \
-        ${applications.workflowRelease}/bin/purplefin-sbom-attestation \
-        ${applications.workflowRelease}/bin/purplefin-trusted-update \
-        ${applications.workflowGate}/bin/purplefin-ci-gate; do
-        test -x "''${executable}"
+        ${applications.ciPrepare}/bin/purplefin-ci-prepare \
+        ${applications.validateCiPlan}/bin/purplefin-ci-validate-plan \
+        ${applications.validateImageShard}/bin/purplefin-validate-image-shard \
+        ${applications.imageReuse}/bin/purplefin-image-reuse \
+        ${applications.imageSign}/bin/purplefin-image-sign \
+        ${applications.loadBluefin}/bin/purplefin-load-bluefin \
+        ${applications.promoteImages}/bin/purplefin-promote-images \
+        ${applications.installerBuild}/bin/purplefin-installer-build \
+        ${applications.imageSbom}/bin/purplefin-image-sbom \
+        ${applications.releaseNotes}/bin/purplefin-release-notes \
+        ${applications.updateLocks}/bin/purplefin-update-locks \
+        ${applications.sbomAttestation}/bin/purplefin-sbom-attestation \
+        ${applications.trustedUpdate}/bin/purplefin-trusted-update \
+        ${applications.ciGate}/bin/purplefin-ci-gate; do
+        test -x "$executable"
       done
-
-      previous_line=0
-      for output in \
-        base_image base_digest base_tag base_sbom_matrix candidate_shards \
-        hardware_matrix hardware_sbom_matrix lifecycle matrix \
-        role_matrix role_sbom_matrix root_base root_matrix version; do
-        line="$(grep -nF "printf '$output=%s" lib/flake-applications.nix | cut -d: -f1)"
-        test -n "''${line}"
-        ((line > previous_line))
-        previous_line="''${line}"
-      done
-      grep -qF "printf 'classification=%s\\n'" lib/ci-applications/classify-ci.nix
-      ! grep -Eq "printf 'has_(hardware|builds|roles|root_base|base_sbom|hardware_sbom|role_sbom)=" \
-        lib/flake-applications.nix
+      [[ "$(grep -cF 'steps.plan.outputs.plan' .github/workflows/build.yml)" == 1 ]]
+      ! grep -Eq 'outputs\.(lifecycle|matrix|root_matrix|hardware_matrix|role_matrix)' \
+        .github/workflows/build.yml
 
       if grep -R -Eq '(automation/[^ ]+\.sh|bootc/builder/(reuse-image|sbom)\.sh)' \
         .github lib; then

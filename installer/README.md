@@ -3,7 +3,7 @@
 The installer builds OSBuild's `bootc-generic-iso` with a digest-pinned Image
 Builder container and a published Purplefin image digest.
 
-`nix run .#installer-build` performs the build used by GitHub Actions:
+`nix shell .#ci-installer-build -c purplefin-installer-build` performs the build used by GitHub Actions:
 
 1. verify the payload's Cosign signature, provenance, and SPDX attestation;
 2. build the installer environment from `Containerfile` and `rootfs/`;

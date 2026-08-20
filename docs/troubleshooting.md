@@ -26,7 +26,7 @@ run0 systemctl reboot
 Run the complete graph with build logs:
 
 ```bash
-nix run .#ci
+nix shell --accept-flake-config .#ci-check -c purplefin-ci-check
 ```
 
 Run a single named check when isolating a failure:
@@ -61,7 +61,8 @@ upgrading the bootc image will not erase it.
 ```bash
 podman info
 podman images --digests
-nix run .#image-build -- base-generic localhost/purplefin:debug
+nix shell --accept-flake-config .#ci-image-build \
+  -c purplefin-image-build base-generic localhost/purplefin:debug
 ```
 
 Check that the requested profile exists:

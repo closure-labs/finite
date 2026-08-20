@@ -43,9 +43,6 @@ jobs:
 
       - name: Set up Nix and Cachix
         uses: ./.github/actions/setup-nix
-        with:
-          github-token: ${{ github.token }}
-          toolset: workflow-sbom
 
       - name: Log in to GHCR
         env:
@@ -70,7 +67,8 @@ jobs:
           SUBJECT_TAG: ${{ inputs.subject-tag }}
         shell: bash
         run: |
-          metadata="$(skopeo inspect --retry-times 3 "docker://${IMAGE_REF}:${SUBJECT_TAG}")"
+          metadata="$(nix shell --accept-flake-config .#ci-skopeo \
+            -c skopeo inspect --retry-times 3 "docker://${IMAGE_REF}:${SUBJECT_TAG}")"
           digest="$(jq -er '.Digest' <<<"${metadata}")"
           jq -e --arg build_input "${BUILD_INPUT}" --arg profile "${BUILD_PROFILE}" \
             --arg revision "${EXPECTED_REVISION}" --arg upstream_digest "${EXPECTED_UPSTREAM_DIGEST}" \
@@ -81,7 +79,8 @@ jobs:
               .Labels["org.opencontainers.image.revision"] == $revision and
               .Labels["org.opencontainers.image.version"] == $version
             ' <<<"${metadata}" >/dev/null
-          cosign verify --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+          nix shell --accept-flake-config .#ci-cosign -c cosign verify \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             --certificate-identity "https://github.com/${GITHUB_REPOSITORY}/.github/workflows/build-profile.yml@refs/heads/main" \
             "${IMAGE_REF}@${digest}" >/dev/null
           gh attestation verify "oci://${IMAGE_REF}@${digest}" \
@@ -102,12 +101,17 @@ jobs:
         shell: bash
         run: |
           set +e
-          purplefin-image-sbom extract sbom.spdx.json
+          nix shell --accept-flake-config .#ci-image-sbom \
+            -c purplefin-image-sbom extract sbom.spdx.json
           status=$?
           set -e
           case "${status}" in
             0) echo 'hit=true' >>"${GITHUB_OUTPUT}" ;;
-            3) purplefin-image-sbom generate sbom.spdx.json; echo 'hit=false' >>"${GITHUB_OUTPUT}" ;;
+            3)
+              nix shell --accept-flake-config .#ci-image-sbom \
+                -c purplefin-image-sbom generate sbom.spdx.json
+              echo 'hit=false' >>"${GITHUB_OUTPUT}"
+              ;;
             *) exit "${status}" ;;
           esac
 
@@ -144,8 +148,10 @@ jobs:
         shell: bash
         run: |
           for _ in {1..6}; do
-            if purplefin-image-sbom extract verified-sbom.spdx.json &&
-              purplefin-image-sbom equivalent sbom.spdx.json verified-sbom.spdx.json; then
+            if nix shell --accept-flake-config .#ci-image-sbom \
+              -c purplefin-image-sbom extract verified-sbom.spdx.json &&
+              nix shell --accept-flake-config .#ci-image-sbom \
+                -c purplefin-image-sbom equivalent sbom.spdx.json verified-sbom.spdx.json; then
               exit 0
             fi
             sleep 5

@@ -1,0 +1,207 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/declarative-dale/purplefin/blob/main/lib/ci-applications/ci-plan.schema.json",
+  "title": "Purplefin authoritative CI plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "source",
+    "classification",
+    "base",
+    "validation",
+    "publication",
+    "matrices",
+    "root_base"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event", "ref", "sha", "version"],
+      "properties": {
+        "event": { "type": "string", "minLength": 1 },
+        "ref": { "type": "string" },
+        "sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$" }
+      }
+    },
+    "classification": { "$ref": "#/$defs/classification" },
+    "base": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["image", "tag", "digest"],
+      "properties": {
+        "image": { "type": "string", "minLength": 1 },
+        "tag": { "type": "string", "minLength": 1 },
+        "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["images", "installer"],
+      "properties": {
+        "images": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["required", "targets"],
+          "properties": {
+            "required": { "type": "boolean" },
+            "targets": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true }
+          }
+        },
+        "installer": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["required"],
+          "properties": { "required": { "type": "boolean" } }
+        }
+      }
+    },
+    "publication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["trusted", "builds", "sbom", "promote"],
+      "properties": {
+        "trusted": { "type": "boolean" },
+        "builds": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["any", "root", "hardware", "roles"],
+          "properties": {
+            "any": { "type": "boolean" },
+            "root": { "type": "boolean" },
+            "hardware": { "type": "boolean" },
+            "roles": { "type": "boolean" }
+          }
+        },
+        "sbom": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["base", "hardware", "roles"],
+          "properties": {
+            "base": { "type": "boolean" },
+            "hardware": { "type": "boolean" },
+            "roles": { "type": "boolean" }
+          }
+        },
+        "promote": { "type": "boolean" }
+      }
+    },
+    "matrices": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["all", "candidate_shards", "root", "hardware", "roles", "sbom"],
+      "properties": {
+        "all": { "$ref": "#/$defs/fullMatrix" },
+        "candidate_shards": { "$ref": "#/$defs/matrix" },
+        "root": { "$ref": "#/$defs/matrix" },
+        "hardware": { "$ref": "#/$defs/matrix" },
+        "roles": { "$ref": "#/$defs/matrix" },
+        "sbom": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["base", "hardware", "roles"],
+          "properties": {
+            "base": { "$ref": "#/$defs/matrix" },
+            "hardware": { "$ref": "#/$defs/matrix" },
+            "roles": { "$ref": "#/$defs/matrix" }
+          }
+        }
+      }
+    },
+    "root_base": { "type": "object" }
+  },
+  "$defs": {
+    "classification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "diff", "validation"],
+      "properties": {
+        "schema": { "const": 1 },
+        "diff": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "base", "head"],
+          "properties": {
+            "status": { "enum": ["classified", "fallback", "predetermined"] },
+            "base": { "type": ["string", "null"] },
+            "head": { "type": ["string", "null"] }
+          }
+        },
+        "validation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["images", "installer"],
+          "properties": {
+            "images": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["required", "scope"],
+              "properties": {
+                "required": { "type": "boolean" },
+                "scope": { "enum": ["none", "changed", "all"] }
+              }
+            },
+            "installer": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["required"],
+              "properties": { "required": { "type": "boolean" } }
+            }
+          }
+        }
+      }
+    },
+    "matrix": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["include"],
+      "properties": { "include": { "type": "array", "items": { "type": "object" } } }
+    },
+    "fullMatrix": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["include", "sbom_repair"],
+      "properties": {
+        "include": { "type": "array", "items": { "type": "object" } },
+        "sbom_repair": { "type": "array", "items": { "type": "object" } }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "validation": { "properties": { "images": { "properties": { "required": { "const": false } } } } } } },
+      "then": {
+        "properties": {
+          "validation": { "properties": { "images": { "properties": { "targets": { "maxItems": 0 } } } } },
+          "matrices": {
+            "properties": {
+              "all": { "properties": { "include": { "maxItems": 0 }, "sbom_repair": { "maxItems": 0 } } },
+              "candidate_shards": { "properties": { "include": { "maxItems": 0 } } },
+              "root": { "properties": { "include": { "maxItems": 0 } } },
+              "hardware": { "properties": { "include": { "maxItems": 0 } } },
+              "roles": { "properties": { "include": { "maxItems": 0 } } }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "publication": { "properties": { "trusted": { "const": false } } } } },
+      "then": {
+        "properties": {
+          "publication": {
+            "properties": {
+              "builds": { "properties": { "any": { "const": false }, "root": { "const": false }, "hardware": { "const": false }, "roles": { "const": false } } },
+              "sbom": { "properties": { "base": { "const": false }, "hardware": { "const": false }, "roles": { "const": false } } },
+              "promote": { "const": false }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

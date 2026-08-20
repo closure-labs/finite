@@ -14,7 +14,7 @@ pkgs.writeShellApplication {
     cd "''${repo_root}"
     set -euo pipefail
 
-    output_file="''${1:?usage: purplefin-classify-ci GITHUB_OUTPUT}"
+    output_file="''${1:-}"
     event_name="''${EVENT_NAME:?EVENT_NAME is required}"
     temp_root="$(mktemp -d)"
     trap 'rm -rf -- "''${temp_root}"' EXIT
@@ -42,7 +42,11 @@ pkgs.writeShellApplication {
           }
         }
       ')"
-      printf 'classification=%s\n' "''${classification}" >>"''${output_file}"
+      if [[ -n "''${output_file}" ]]; then
+        printf 'classification=%s\n' "''${classification}" >>"''${output_file}"
+      else
+        printf '%s\n' "''${classification}"
+      fi
     }
 
     select_all() {

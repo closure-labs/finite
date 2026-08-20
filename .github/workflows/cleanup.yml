@@ -31,12 +31,12 @@ jobs:
 
       - name: Set up Nix and Cachix
         uses: ./.github/actions/setup-nix
-        with:
-          github-token: ${{ github.token }}
 
       - name: Find and optionally delete obsolete versions
         env:
           DRY_RUN: ${{ inputs.dry-run }}
           GH_TOKEN: ${{ github.token }}
         shell: bash
-        run: nix run .#package-cleanup
+        run: >-
+          nix shell --accept-flake-config .#ci-package-cleanup
+          -c purplefin-package-cleanup

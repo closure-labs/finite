@@ -2,12 +2,20 @@
   description = "Purplefin bootc profile and user-environment configuration";
 
   nixConfig = {
-    extra-substituters = "https://purplefin.cachix.org";
-    extra-trusted-public-keys = "purplefin.cachix.org-1:aW23hpySzX8WPYCiZSzxEc9mOYTIV9NDvylhqVgziFM=";
+    extra-substituters = [
+      "https://purplefin.cachix.org"
+      "https://devenv.cachix.org"
+    ];
+    extra-trusted-public-keys = [
+      "purplefin.cachix.org-1:aW23hpySzX8WPYCiZSzxEc9mOYTIV9NDvylhqVgziFM="
+      "devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw="
+    ];
   };
 
   inputs = {
     den.url = "github:denful/den";
+
+    devenv.url = "github:cachix/devenv/v2.2.2";
 
     den-diagram = {
       url = "github:denful/den-diagram";
@@ -16,10 +24,10 @@
 
     import-tree.url = "github:vic/import-tree";
 
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "https://flakehub.com/f/DeterminateSystems/nixpkgs-weekly/0";
 
     home-manager = {
-      url = "github:nix-community/home-manager";
+      url = "https://flakehub.com/f/nix-community/home-manager/0";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 

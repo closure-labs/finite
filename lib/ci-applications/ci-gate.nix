@@ -1,7 +1,10 @@
-{pkgs}:
+{
+  pkgs,
+  validateCiPlan,
+}:
 pkgs.writeShellApplication {
   name = "purplefin-ci-gate";
-  runtimeInputs = with pkgs; [coreutils jq];
+  runtimeInputs = with pkgs; [coreutils jq validateCiPlan];
   text = ''
     set -euo pipefail
 
@@ -24,26 +27,11 @@ pkgs.writeShellApplication {
     }
 
     require_result prepare "''${PREPARE_RESULT:?}" success
-    lifecycle="''${LIFECYCLE:?LIFECYCLE is required}"
-    jq -e '
-      .schema == 1 and
-      (.validation.images.required | type == "boolean") and
-      (.validation.images.targets | type == "array") and
-      all(.validation.images.targets[]; type == "string" and length > 0) and
-      (.validation.installer.required | type == "boolean") and
-      (.publication.builds.any | type == "boolean") and
-      (.publication.builds.root | type == "boolean") and
-      (.publication.builds.hardware | type == "boolean") and
-      (.publication.builds.roles | type == "boolean") and
-      (.publication.sbom.base | type == "boolean") and
-      (.publication.sbom.hardware | type == "boolean") and
-      (.publication.sbom.roles | type == "boolean") and
-      (.publication.promote | type == "boolean") and
-      .publication.promote == .publication.builds.any
-    ' <<<"''${lifecycle}" >/dev/null || {
-      echo 'Invalid CI lifecycle contract' >&2
-      exit 2
-    }
+    lifecycle="''${CI_PLAN:?CI_PLAN is required}"
+    plan_file="$(mktemp "''${TMPDIR:-/tmp}/purplefin-ci-gate-plan.XXXXXX.json")"
+    trap 'rm -f -- "''${plan_file}"' EXIT
+    printf '%s\n' "''${lifecycle}" >"''${plan_file}"
+    purplefin-ci-validate-plan "''${plan_file}"
     has_root_base="$(jq -r '.publication.builds.root' <<<"''${lifecycle}")"
     has_hardware="$(jq -r '.publication.builds.hardware' <<<"''${lifecycle}")"
     has_roles="$(jq -r '.publication.builds.roles' <<<"''${lifecycle}")"

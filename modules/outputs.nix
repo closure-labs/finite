@@ -117,13 +117,25 @@
     touch "$out"
   '';
   applications = import ../lib/flake-applications.nix {
+    devenv = inputs.devenv.packages.${system}.devenv;
     inherit bluefin bluefinDx determinateNix generated imageBuilder pkgs version;
     selfSource = inputs.self;
   };
   repositoryChecks = import ../lib/repository-checks.nix {
     inherit applications architecture generated lib pkgs;
   };
-  formattingValidation = treefmtEval.config.build.check inputs.self;
+  formattingSource = lib.cleanSourceWith {
+    src = inputs.self;
+    filter = path: _type: let
+      relative = lib.removePrefix "${toString inputs.self}/" (toString path);
+    in
+      relative
+      != ".devenv"
+      && !(lib.hasPrefix ".devenv/" relative)
+      && relative != ".direnv"
+      && !(lib.hasPrefix ".direnv/" relative);
+  };
+  formattingValidation = treefmtEval.config.build.check formattingSource;
   formattingCheck = pkgs.runCommand "purplefin-formatting-proof" {} ''
     test -e ${formattingValidation}
     touch "$out"
@@ -153,8 +165,8 @@
       home-configurations = homeCheck;
       profile-schema = profileSchemaCheck;
     };
-  ci = applications.mkCi checks;
-  localCache = applications.mkLocalCache ci;
+  ciCheck = applications.mkCheck checks;
+  localCache = applications.mkLocalCache ciCheck;
 in {
   flake = {
     lib.purplefin = {
@@ -166,16 +178,35 @@ in {
     packages.${system} =
       {
         inherit architecture;
-        inherit ci;
+        ci-check = ciCheck;
+        ci-prepare = applications.ciPrepare;
+        ci-validate-plan = applications.validateCiPlan;
+        ci-gate = applications.ciGate;
+        ci-validate-image-shard = applications.validateImageShard;
+        ci-image-reuse = applications.imageReuse;
+        ci-image-sign = applications.imageSign;
+        ci-image-build = applications.imageBuild;
+        ci-image-sbom = applications.imageSbom;
+        ci-sbom-attestation = applications.sbomAttestation;
+        ci-promote-images = applications.promoteImages;
+        ci-installer-build = applications.installerBuild;
+        ci-installer-smoke = applications.installerSmoke;
+        ci-release-notes = applications.releaseNotes;
+        ci-update-locks = applications.updateLocks;
+        ci-source-update = applications.sourceUpdate;
+        ci-source-verify = applications.sourceVerify;
+        ci-trusted-update = applications.trustedUpdate;
+        ci-queue-dependabot = applications.queueDependabot;
+        ci-package-cleanup = applications.packageCleanup;
+        ci-github-actions-secrets = applications.githubActionsSecrets;
+        ci-load-bluefin = applications.loadBluefin;
+        ci-lock-validate = applications.validateLocks;
+        ci-cosign = pkgs.cosign;
+        ci-oras = pkgs.oras;
+        ci-skopeo = pkgs.skopeo;
+        devenv = inputs.devenv.packages.${system}.devenv;
         default = generated;
         inherit generated;
-        workflow-installer = applications.workflowInstaller;
-        workflow-gate = applications.workflowGate;
-        workflow-prepare = applications.workflowPrepare;
-        workflow-publish = applications.workflowPublish;
-        workflow-release = applications.workflowRelease;
-        workflow-sbom = applications.workflowSbom;
-        workflow-validation = applications.workflowValidation;
         inherit (pkgs) syft;
       }
       // lib.mapAttrs' (
@@ -184,77 +215,9 @@ in {
       homeConfigurations;
 
     apps.${system} = {
-      ci = {
+      devenv = {
         type = "app";
-        program = "${ci}/bin/purplefin-ci";
-      };
-      classify-changes = {
-        type = "app";
-        program = "${applications.classifyChanges}/bin/purplefin-classify-changes";
-      };
-      classify-ci = {
-        type = "app";
-        program = "${applications.classifyCi}/bin/purplefin-classify-ci";
-      };
-      github-actions-secrets = {
-        type = "app";
-        program = "${applications.githubActionsSecrets}/bin/purplefin-github-actions-secrets";
-      };
-      release-notes = {
-        type = "app";
-        program = "${applications.releaseNotes}/bin/purplefin-release-notes";
-      };
-      trusted-update = {
-        type = "app";
-        program = "${applications.trustedUpdate}/bin/purplefin-trusted-update";
-      };
-      queue-dependabot = {
-        type = "app";
-        program = "${applications.queueDependabot}/bin/purplefin-queue-dependabot";
-      };
-      package-cleanup = {
-        type = "app";
-        program = "${applications.packageCleanup}/bin/purplefin-package-cleanup";
-      };
-      ci-gate = {
-        type = "app";
-        program = "${applications.ciGate}/bin/purplefin-ci-gate";
-      };
-      promote-images = {
-        type = "app";
-        program = "${applications.promoteImages}/bin/purplefin-promote-images";
-      };
-      image-plan = {
-        type = "app";
-        program = "${applications.imagePlan}/bin/purplefin-image-plan";
-      };
-      ci-plan = {
-        type = "app";
-        program = "${applications.ciPlan}/bin/purplefin-ci-plan";
-      };
-      image-reuse = {
-        type = "app";
-        program = "${applications.imageReuse}/bin/purplefin-image-reuse";
-      };
-      image-sign = {
-        type = "app";
-        program = "${applications.imageSign}/bin/purplefin-image-sign";
-      };
-      image-sbom = {
-        type = "app";
-        program = "${applications.imageSbom}/bin/purplefin-image-sbom";
-      };
-      sbom-attestation = {
-        type = "app";
-        program = "${applications.sbomAttestation}/bin/purplefin-sbom-attestation";
-      };
-      validate-image-shard = {
-        type = "app";
-        program = "${applications.validateImageShard}/bin/purplefin-validate-image-shard";
-      };
-      image-build = {
-        type = "app";
-        program = "${applications.imageBuild}/bin/purplefin-image-build";
+        program = lib.getExe inputs.devenv.packages.${system}.devenv;
       };
       home-switch = {
         type = "app";
@@ -264,29 +227,9 @@ in {
         type = "app";
         program = "${applications.cloudInit}/bin/purplefin-cloud-init";
       };
-      installer-smoke = {
-        type = "app";
-        program = "${applications.installerSmoke}/bin/purplefin-installer-smoke";
-      };
-      installer-build = {
-        type = "app";
-        program = "${applications.installerBuild}/bin/purplefin-installer-build";
-      };
       local-cache = {
         type = "app";
         program = "${localCache}/bin/purplefin-local-cache";
-      };
-      load-bluefin = {
-        type = "app";
-        program = "${applications.loadBluefin}/bin/purplefin-load-bluefin";
-      };
-      source-update = {
-        type = "app";
-        program = "${applications.sourceUpdate}/bin/purplefin-source-update";
-      };
-      source-verify = {
-        type = "app";
-        program = "${applications.sourceVerify}/bin/purplefin-source-verify";
       };
     };
 
