@@ -6,6 +6,8 @@ All notable changes to Purplefin are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-08-20
+
 ### Added
 
 - Four minimal Bluefin and Bluefin DX foundations for generic and Dell XPS 13
@@ -37,6 +39,19 @@ All notable changes to Purplefin are documented here. The format follows
   now inherits the complete upstream Bluefin package set, including Tailscale.
 - Image-baked Espanso, Bitwarden, role Flatpak manifests, Homebrew bundle
   automation, and role-specific image scripts.
+
+### Fixed
+
+- Installer blueprints retain canonical and legacy profile tag aliases so
+  existing generic installation requests resolve to the correct Bluefin image.
+- Dell camera builds bypass inherited ccache state and include Dracut live-boot
+  modules while rebuilding initramfs on both Bluefin and Bluefin DX.
+
+### Security
+
+- Determinate Nix installer and SELinux policy inputs are hash-pinned, and the
+  installed runtime is checked against the repository's minimum supported
+  Determinate version.
 
 ## [0.2.3] - 2026-08-18
 
@@ -201,7 +216,8 @@ All notable changes to Purplefin are documented here. The format follows
 - The required `CI gate` now validates repository policy, selected image and
   installer jobs, merge candidates, and trusted dependency-update automation.
 
-[Unreleased]: https://github.com/declarative-dale/purplefin/compare/v0.2.3...HEAD
+[Unreleased]: https://github.com/declarative-dale/purplefin/compare/v0.2.4...HEAD
+[0.2.4]: https://github.com/declarative-dale/purplefin/releases/tag/v0.2.4
 [0.2.3]: https://github.com/declarative-dale/purplefin/releases/tag/v0.2.3
 [0.2.2]: https://github.com/declarative-dale/purplefin/releases/tag/v0.2.2
 [0.2.1]: https://github.com/declarative-dale/purplefin/releases/tag/v0.2.1
