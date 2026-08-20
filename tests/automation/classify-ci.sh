@@ -151,7 +151,7 @@ jq -e '
 		promote: false
 	}
 ' <<<"${lifecycle}" >/dev/null
-for output_name in candidate_shards hardware_matrix hardware_sbom_matrix matrix role_matrix role_sbom_matrix; do
+for output_name in candidate_shards hardware_matrix hardware_sbom_matrix matrix role_matrix role_sbom_matrix root_matrix; do
 	value="$(sed -n "s/^${output_name}=//p" "${plan_output}")"
 	jq -e '.include == []' <<<"${value}" >/dev/null
 done

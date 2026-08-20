@@ -29,25 +29,9 @@ compinit -d "${XDG_CACHE_HOME}/zsh/zcompdump"
 zstyle ':completion:*' menu select
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
 
-# Load fzf's standard Ctrl-R/Ctrl-T bindings and completion where available.
-for fzf_shell_dir in \
-  "${HOMEBREW_PREFIX:-/home/linuxbrew/.linuxbrew}/opt/fzf/shell" \
-  /opt/homebrew/opt/fzf/shell \
-  /usr/local/opt/fzf/shell \
-  /usr/share/fzf \
-  /usr/share/doc/fzf/examples; do
-  if [[ -r "${fzf_shell_dir}/key-bindings.zsh" ]]; then
-    source "${fzf_shell_dir}/key-bindings.zsh"
-    [[ -r "${fzf_shell_dir}/completion.zsh" ]] && source "${fzf_shell_dir}/completion.zsh"
-    break
-  fi
-done
-unset fzf_shell_dir
-
 source "${ZDOTDIR}/fzf.zsh"
 source "${ZDOTDIR}/aliases.zsh"
 source "${ZDOTDIR}/bindings.zsh"
-source "${ZDOTDIR}/plugins.zsh"
 source "${ZDOTDIR}/prompt.zsh"
 
 export NVM_DIR="${HOME}/.nvm"

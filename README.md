@@ -4,10 +4,11 @@ Purplefin turns a typed Nix profile graph into signed, updateable
 [bootc](https://bootc-dev.github.io/bootc/) workstation images based on
 [Bluefin Stable](https://projectbluefin.io/).
 
-You get twelve ready-to-run workstation profiles, reproducible local builds,
-a graphical installer, verified updates, and signed release artifacts with
-provenance and SPDX software bill of materials attestations. Determinate Nix
-is installed in every image and is ready after the first boot.
+You get four lightly layered foundation images, eight Nix/Home Manager role
+profiles, a graphical installer, verified updates, and signed release
+artifacts. The foundations preserve the complete upstream Bluefin or Bluefin
+DX package set, including Tailscale. Determinate Nix and its SELinux policy are
+installed in every image and are ready after first boot.
 
 ## Run Purplefin
 
@@ -34,7 +35,7 @@ Install Nix with Flakes enabled and rootless Podman, then run:
 ```bash
 git clone https://github.com/declarative-dale/purplefin.git
 cd purplefin
-nix run .#image-build -- base-generic localhost/purplefin:base-generic
+nix run .#image-build -- bluefin-generic localhost/purplefin:bluefin-generic
 ```
 
 Format and validate the complete repository with the pinned toolchain:
@@ -45,14 +46,25 @@ nix fmt
 nix run .#ci
 ```
 
-## Choose a profile
+## Choose a foundation and home profile
 
-| Profile | Use it for |
-| --- | --- |
-| `latest` | A generic base workstation |
-| `developer-generic` | Software development on generic x86-64 hardware |
-| `support-generic` | Support and operations on generic x86-64 hardware |
-| `dale` | Sales, training, and support on a Dell XPS 13 9350 |
+| Home profile | Foundation | Purpose |
+| --- | --- | --- |
+| `sales`, `executive` | Bluefin | Less technical roles |
+| `developer`, `support`, `it`, `trainer` | Bluefin DX | Technical roles |
+| `dale` | Bluefin DX, Dell XPS 13 9350 | Superset of every role |
+| `elad` | Bluefin DX, generic x86-64 | Every role without the Dell camera layer |
+
+Apply a role to the installer-created user:
+
+```bash
+nix run github:declarative-dale/purplefin#home-switch -- \
+  --profile support --hardware generic-x86_64
+```
+
+After activation, `purplefin-home` performs later manual updates. A generated
+NoCloud seed can perform the initial activation; see the
+[installation guide](docs/installation.md).
 
 List every generated profile and published tag with:
 

@@ -6,7 +6,10 @@
 }: let
   inherit (config) den;
   system = "x86_64-linux";
-  pkgs = import inputs.nixpkgs {inherit system;};
+  pkgs = import inputs.nixpkgs {
+    inherit system;
+    config.allowUnfree = true;
+  };
   treefmtEval = inputs.treefmt-nix.lib.evalModule pkgs ../treefmt.nix;
   repositoryToolchain =
     (with pkgs; [
@@ -41,6 +44,8 @@
   };
   inherit (profileSet) profiles;
   bluefin = config.purplefin.sources.bluefin;
+  bluefinDx = config.purplefin.sources.bluefinDx;
+  homeProfiles = config.purplefin.homeProfiles;
   imageBuilder = config.purplefin.sources.imageBuilder;
   determinateNix = config.purplefin.sources.determinateNix;
   determinateNixInstaller = pkgs.fetchurl {
@@ -51,9 +56,13 @@
     name = "determinate-nix-selinux-policy-${determinateNix.version}";
     inherit (determinateNix.selinuxPolicy) url sha256;
   };
+  determinateNixSelinuxFileContexts = pkgs.fetchurl {
+    name = "determinate-nix-selinux-file-contexts-${determinateNix.version}";
+    inherit (determinateNix.selinuxFileContexts) url sha256;
+  };
   version = lib.removeSuffix "\n" (builtins.readFile ../VERSION);
   generated = import ../lib/render-profile-artifacts.nix {
-    inherit determinateNixInstaller determinateNixSelinuxPolicy lib pkgs profiles;
+    inherit determinateNixInstaller determinateNixSelinuxFileContexts determinateNixSelinuxPolicy homeProfiles lib pkgs profiles;
     profileOrder = profileSet.order;
     inherit version;
   };
@@ -61,30 +70,43 @@
     inherit den lib pkgs;
     diagram = inputs.den-diagram.lib;
   };
-  homeConfigurations =
-    lib.mapAttrs (
-      name: profile:
-        inputs.home-manager.lib.homeManagerConfiguration {
-          inherit pkgs;
-          modules = [
-            (den.lib.aspects.resolve "homeManager" config.purplefin.profiles.${name}.aspect)
+  mkHomeConfiguration = {
+    name,
+    username ? "purplefin",
+    homeDirectory ? "/var/home/${username}",
+    hardware ? builtins.head homeProfiles.${name}.hardware,
+  }: let
+    profile = homeProfiles.${name};
+    hardwareModule =
+      if hardware == "dell-xps-9350-intel"
+      then [(den.lib.aspects.resolve "homeManager" den.aspects.features.hardware.dell-xps-9350-intel)]
+      else [];
+  in
+    assert builtins.elem hardware profile.hardware;
+      inputs.home-manager.lib.homeManagerConfiguration {
+        inherit pkgs;
+        extraSpecialArgs = {inherit inputs;};
+        modules =
+          [
+            (den.lib.aspects.resolve "homeManager" profile.aspect)
             {
-              home.sessionVariables.PURPLEFIN_PROFILE = profile.profileName;
+              home = {
+                inherit homeDirectory username;
+                sessionVariables = {
+                  PURPLEFIN_PROFILE = name;
+                  PURPLEFIN_BASE_CLASS = profile.baseClass;
+                  PURPLEFIN_HARDWARE = hardware;
+                };
+              };
               xdg.configFile."purplefin/profile.json".text = builtins.toJSON {
-                inherit
-                  (profile)
-                  hardware
-                  modules
-                  parent
-                  roles
-                  tags
-                  ;
+                inherit hardware name;
+                inherit (profile) baseClass roles;
               };
             }
-          ];
-        }
-    )
-    profiles;
+          ]
+          ++ hardwareModule;
+      };
+  homeConfigurations = lib.mapAttrs (name: _: mkHomeConfiguration {inherit name;}) homeProfiles;
   homeCheck = pkgs.runCommand "purplefin-home-configurations-proof" {} ''
     ${lib.concatStringsSep "\n" (
       lib.mapAttrsToList (_name: configuration: ''
@@ -95,7 +117,8 @@
     touch "$out"
   '';
   applications = import ../lib/flake-applications.nix {
-    inherit bluefin determinateNix generated imageBuilder pkgs version;
+    inherit bluefin bluefinDx determinateNix generated imageBuilder pkgs version;
+    selfSource = inputs.self;
   };
   repositoryChecks = import ../lib/repository-checks.nix {
     inherit applications architecture generated lib pkgs;
@@ -113,7 +136,13 @@
   profileSchemaCheck = pkgs.runCommand "purplefin-profile-schema-proof" {} ''
     test -f ${generated}/bootc/generated/image-matrix.json
     test -f ${generated}/bootc/generated/profile-catalog.json
+    test -f ${generated}/bootc/generated/home-profile-catalog.json
+    test -f ${generated}/installer/config/profiles/bluefin-generic.toml
     test -f ${generated}/installer/config/profiles/base-generic.toml
+    test -f ${generated}/installer/config/profiles/base-generic-x86_64.toml
+    cmp \
+      ${generated}/installer/config/profiles/bluefin-generic.toml \
+      ${generated}/installer/config/profiles/base-generic.toml
     touch "$out"
   '';
   checks =
@@ -129,7 +158,7 @@
 in {
   flake = {
     lib.purplefin = {
-      inherit profiles;
+      inherit homeProfiles mkHomeConfiguration profiles;
       profileOrder = profileSet.order;
     };
 
@@ -226,6 +255,14 @@ in {
       image-build = {
         type = "app";
         program = "${applications.imageBuild}/bin/purplefin-image-build";
+      };
+      home-switch = {
+        type = "app";
+        program = "${applications.homeSwitch}/bin/purplefin-home-switch";
+      };
+      cloud-init = {
+        type = "app";
+        program = "${applications.cloudInit}/bin/purplefin-cloud-init";
       };
       installer-smoke = {
         type = "app";

@@ -2,13 +2,10 @@
 set -euo pipefail
 
 aspect_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-unit="${aspect_root}/rootfs/usr/lib/systemd/user/espanso.service"
+module="${aspect_root}/default.nix"
 
-test -x "${aspect_root}/apply.sh"
-test -f "${unit}"
-grep -qxF 'After=graphical-session.target' "${unit}"
-grep -qxF 'PartOf=graphical-session.target' "${unit}"
-grep -qxF 'ExecStart=/usr/bin/espanso launcher' "${unit}"
-grep -qxF 'WantedBy=graphical-session.target' "${unit}"
-grep -qF '[Flatpak Preinstall io.github.totoshko88.RustConn]' \
-	"${aspect_root}/manifests/flatpaks.preinstall"
+grep -qF 'espanso = config.lib.nixGL.wrap pkgs.espanso' "${module}"
+grep -qF 'services.flatpak.packages = ["io.github.totoshko88.RustConn"]' "${module}"
+grep -qF "ExecStart = \"\${espanso}/bin/espanso launcher\"" "${module}"
+test ! -e "${aspect_root}/apply.sh"
+test ! -e "${aspect_root}/manifests"

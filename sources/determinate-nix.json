@@ -10,5 +10,9 @@
     "sha256": "44a7427c40825b1fb3b331c480d55569296b619c7c50ff27ee2e237eb1bdcd8d",
     "url": "https://raw.githubusercontent.com/DeterminateSystems/nix-installer/v3.21.9/src/action/linux/selinux/determinate-nix.pp"
   },
+  "selinuxFileContexts": {
+    "sha256": "668726761299f1c51b74aa5c6cc1a8196e206bb6ccf04eeecd944eadc13713c9",
+    "url": "https://raw.githubusercontent.com/DeterminateSystems/nix-installer/v3.21.9/src/action/linux/selinux/nix.fc"
+  },
   "version": "3.21.9"
 }

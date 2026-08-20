@@ -10,7 +10,6 @@ pkgs.writeShellApplication {
     : "''${GITHUB_SHA:?GITHUB_SHA is required}"
     : "''${IMAGE_REF:?IMAGE_REF is required}"
     : "''${REGISTRY_AUTH_FILE:?REGISTRY_AUTH_FILE is required}"
-    : "''${UPSTREAM_BASE_DIGEST:?UPSTREAM_BASE_DIGEST is required}"
     : "''${VERSION:?VERSION is required}"
     cosign_command="''${PURPLEFIN_COSIGN:-cosign}"
     gh_command="''${PURPLEFIN_GH:-gh}"
@@ -22,18 +21,19 @@ pkgs.writeShellApplication {
       profile="$(jq -er '.profile' <<<"''${entry}")"
       build_input="$(jq -er '.build_input' <<<"''${entry}")"
       parent="$(jq -r '.parent // ""' <<<"''${entry}")"
+      upstream_digest="$(jq -er '.upstream.digest | select(test("^sha256:[0-9a-f]{64}$"))' <<<"''${entry}")"
       metadata="$("''${skopeo_command}" inspect --retry-times 3 "docker://''${IMAGE_REF}:''${profile}-candidate")"
       digest="$(jq -er '.Digest' <<<"''${metadata}")"
       [[ "''${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
       digests["''${profile}"]="''${digest}"
-      expected_parent="''${UPSTREAM_BASE_DIGEST}"
+      expected_parent="''${upstream_digest}"
       if [[ -n "''${parent}" ]]; then
         expected_parent="''${digests[''${parent}]:-$(jq -r '.parent_digest // ""' <<<"''${entry}")}"
       fi
       [[ "''${expected_parent}" =~ ^sha256:[0-9a-f]{64}$ ]]
       jq -e --arg build_input "''${build_input}" --arg parent_digest "''${expected_parent}" \
         --arg profile "''${profile}" --arg revision "''${GITHUB_SHA}" \
-        --arg upstream_digest "''${UPSTREAM_BASE_DIGEST}" --arg version "''${VERSION}" '
+        --arg upstream_digest "''${upstream_digest}" --arg version "''${VERSION}" '
         (.Labels // {}) as $labels |
         $labels["io.purplefin.build.input"] == $build_input and
         $labels["io.purplefin.build.profile"] == $profile and

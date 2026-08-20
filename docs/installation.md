@@ -3,16 +3,23 @@
 Purplefin can replace the image on an existing bootc system or be installed
 with its graphical Anaconda ISO.
 
-## Choose a profile
+## Choose a foundation and home profile
 
 Common published tags are:
 
 | Tag | Target |
 | --- | --- |
-| `latest` | Base workstation on generic x86-64 hardware |
-| `developer-generic` | Developer workstation on generic x86-64 hardware |
-| `support-generic` | Support workstation on generic x86-64 hardware |
-| `dale` | Sales, training, and support on a Dell XPS 13 9350 |
+| `bluefin-generic` (`latest`) | Standard Bluefin on generic x86-64 |
+| `bluefin-dell-xps-9350-intel` | Standard Bluefin on Dell XPS 13 9350 |
+| `bluefin-dx-generic` | Bluefin DX on generic x86-64 |
+| `bluefin-dx-dell-xps-9350-intel` | Bluefin DX on Dell XPS 13 9350 |
+
+Legacy role tags temporarily point at their compatible foundation. The role
+itself is selected with Home Manager: `sales` and `executive` require Bluefin;
+`developer`, `support`, `it`, and `trainer` require Bluefin DX. `dale` combines
+every role and requires the Dell Bluefin DX foundation. `elad` combines every
+role on generic Bluefin DX so none of the Dell IPU7/SVP7500 camera layer or its
+associated kernel modules are present.
 
 The generated catalog contains every profile and tag:
 
@@ -40,10 +47,10 @@ bootc status
 ## Determinate Nix lifecycle
 
 Purplefin first installs Fedora's supported `nix` and `nix-daemon` packages,
-then uses the pinned Determinate Nix Installer to migrate that upstream Nix
-installation to Determinate Nix. This follows Determinate Systems' migration
-path while retaining Fedora's native filesystem, systemd, and sysusers
-integration. Base-image builds require Determinate Nix 3.21.9 or newer; the
+then runs the pinned Determinate Nix Installer. The immutable image build uses
+a narrow adapter around Determinate's existing-Nix preflight while retaining
+Fedora's native filesystem and sysusers contracts. Base-image builds require
+Determinate Nix 3.21.9 or newer; the
 installer may resolve a later stable runtime, but an older runtime fails the
 image build before publication.
 
@@ -57,6 +64,47 @@ Determinate Nixd owns Nix upgrades after migration. Use the normal Determinate
 Nix upgrade mechanism rather than upgrading the runtime through Fedora's Nix
 packages. A bootc upgrade may update the seed used by new installations, but
 never overwrites an existing `/var/home/nix`.
+
+The pinned Determinate policy module and its upstream `nix.fc` file-context
+source are verified as build inputs. The policy is installed before the Nix
+state is restored and relabeled.
+
+## Apply a Home Manager role
+
+Run this as the existing desktop user after booting the compatible foundation:
+
+```bash
+nix run github:declarative-dale/purplefin#home-switch -- \
+  --profile sales --hardware generic-x86_64
+```
+
+Home Manager owns the role applications and preferences, including NixGL
+wrappers for graphical Nix packages. Bitwarden CLI and Desktop are installed
+from Nix rather than baked into the image. Espanso remains available to the
+`support`, `dale`, and `elad` profiles as a Nix package and user service. Later
+updates are intentionally manual:
+
+```bash
+purplefin-home
+```
+
+## Generate a cloud-init NoCloud seed
+
+Cloud-init is additive and does not create users, change networking, or replace
+the installer hostname. Generate a seed for an account that the installer will
+create:
+
+```bash
+nix run .#cloud-init -- \
+  --profile support \
+  --hardware generic-x86_64 \
+  --user dale \
+  --output result/cloud-init-support
+```
+
+Attach `seed.iso` from that directory as a NoCloud configuration drive. The
+first boot activates the chosen Home Manager profile for that existing user.
+Use `--flake` to select a fork or pinned flake URI.
 
 ## Install from ISO
 

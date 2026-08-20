@@ -154,12 +154,17 @@ in {
     tools = with pkgs; [gnugrep jq];
     commands = ''
       bash tests/repository/contracts.sh
-      grep -qF 'profiles_dale --> features_roles_support' ${architecture}/namespace.mmd
+      for profile in dale elad; do
+        for role in sales executive developer support it trainer; do
+          grep -qF "profiles_home_''${profile} --> features_roles_''${role}" ${architecture}/namespace.mmd
+        done
+      done
       grep -qF 'operations_github_build --> operations_checks_all' ${architecture}/namespace.mmd
       grep -qF 'operations_checks_all --> operations_checks_repository_contracts' ${architecture}/namespace.mmd
       grep -qF 'operations_checks_all --> operations_checks_bootc_engine' ${architecture}/namespace.mmd
       grep -qF 'operations_github_build --> operations_delivery_installer' ${architecture}/namespace.mmd
       grep -qF 'operations_updates_bluefin --> sources_bluefin' ${architecture}/namespace.mmd
+      grep -qF 'operations_updates_bluefin --> sources_bluefin_dx' ${architecture}/namespace.mmd
       grep -qF 'operations_github_bluefin_update --> operations_updates_bluefin' ${architecture}/namespace.mmd
       grep -qF 'operations_updates_determinate_nix --> sources_determinate_nix' ${architecture}/namespace.mmd
       grep -qF 'operations_github_determinate_nix_update --> operations_updates_determinate_nix' \
@@ -177,13 +182,22 @@ in {
 
       jq -e '
         .schema == 1 and
-        .image == "ghcr.io/projectbluefin/bluefin" and
+        .image == "ghcr.io/ublue-os/bluefin" and
         .tag == "stable" and
         .architecture == "amd64" and
         (.digest | test("^sha256:[0-9a-f]{64}$")) and
         (.cosign.issuer | startswith("https://")) and
         (.cosign.identity | startswith("https://"))
       ' sources/bluefin.json >/dev/null
+      jq -e '
+        .schema == 1 and
+        .image == "ghcr.io/ublue-os/bluefin-dx" and
+        .tag == "stable" and
+        .architecture == "amd64" and
+        (.digest | test("^sha256:[0-9a-f]{64}$")) and
+        (.cosign.issuer | startswith("https://")) and
+        (.cosign.identity | startswith("https://"))
+      ' sources/bluefin-dx.json >/dev/null
       jq -e '
         .schema == 1 and
         .image == "ghcr.io/osbuild/image-builder-cli" and
@@ -199,7 +213,9 @@ in {
         (.installer.url | startswith("https://github.com/DeterminateSystems/nix-installer/releases/download/")) and
         (.installer.sha256 | test("^[0-9a-f]{64}$")) and
         (.selinuxPolicy.url | startswith("https://raw.githubusercontent.com/DeterminateSystems/nix-installer/")) and
-        (.selinuxPolicy.sha256 | test("^[0-9a-f]{64}$"))
+        (.selinuxPolicy.sha256 | test("^[0-9a-f]{64}$")) and
+        (.selinuxFileContexts.url | endswith("/nix.fc")) and
+        (.selinuxFileContexts.sha256 | test("^[0-9a-f]{64}$"))
       ' sources/determinate-nix.json >/dev/null
       secretspec schema --file secretspec.toml --profile local-cache |
         jq -e '.required == ["CACHIX_AUTH_TOKEN"]' >/dev/null
@@ -371,6 +387,7 @@ in {
       ! grep -qF 'git push origin HEAD:main' .github/workflows/release.yml
       ! grep -R -qF 'github-actions[bot]' .github/workflows
       grep -qF 'nix run .#source-update -- bluefin' .github/workflows/update-bluefin.yml
+      grep -qF 'nix run .#source-update -- bluefin-dx' .github/workflows/update-bluefin.yml
       grep -qF 'nix run .#source-update -- determinate-nix' .github/workflows/update-determinate-nix.yml
       grep -qF 'nix run .#source-update -- image-builder' .github/workflows/update-image-builder.yml
       grep -qF 'nix run .#source-update -- flake' .github/workflows/update-flake-lock.yml
@@ -456,7 +473,7 @@ in {
       for output in \
         base_image base_digest base_tag base_sbom_matrix candidate_shards \
         hardware_matrix hardware_sbom_matrix lifecycle matrix \
-        role_matrix role_sbom_matrix root_base version; do
+        role_matrix role_sbom_matrix root_base root_matrix version; do
         line="$(grep -nF "printf '$output=%s" lib/flake-applications.nix | cut -d: -f1)"
         test -n "''${line}"
         ((line > previous_line))

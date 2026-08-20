@@ -11,7 +11,7 @@
     ++ builtins.attrValues den.aspects.features.hardware
     ++ builtins.attrValues den.aspects.features.roles
     ++ builtins.attrValues den.aspects.profiles
-    ++ [den.aspects.sources.bluefin]
+    ++ [den.aspects.sources.bluefin den.aspects.sources.bluefin-dx]
     ++ [den.aspects.sources.determinate-nix]
     ++ [den.aspects.operations.source]
     ++ builtins.attrValues den.aspects.operations.checks

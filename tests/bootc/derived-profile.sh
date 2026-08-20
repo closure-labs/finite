@@ -2,31 +2,18 @@
 set -euo pipefail
 
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
+generated_root="${PURPLEFIN_GENERATED_ROOT:?PURPLEFIN_GENERATED_ROOT is required}"
+catalog="${generated_root}/bootc/generated/profile-catalog.json"
 
-delta="$({
-	PURPLEFIN_BUILD_ROOT="${repo_root}" \
-		PURPLEFIN_DERIVED_DRY_RUN=true \
-		bash "${repo_root}/bootc/builder/derived.sh" base-generic base
-})"
-test "${delta}" = hardware-generic-x86_64
-
-delta="$({
-	PURPLEFIN_BUILD_ROOT="${repo_root}" \
-		PURPLEFIN_DERIVED_DRY_RUN=true \
-		bash "${repo_root}/bootc/builder/derived.sh" dale base-dell-xps-9350-intel
-})"
-test "${delta}" = $'devops\nsales\ntrainer\nsupport'
-
-delta="$({
-	PURPLEFIN_BUILD_ROOT="${repo_root}" \
-		PURPLEFIN_DERIVED_DRY_RUN=true \
-		bash "${repo_root}/bootc/builder/derived.sh" support-generic base-generic
-})"
-test "${delta}" = $'devops\nsupport'
+jq -e '
+  (.profiles | length) == 4 and
+  all(.profiles[]; .parent == null and .stage == "root")
+' "${catalog}" >/dev/null
 
 if PURPLEFIN_BUILD_ROOT="${repo_root}" \
+	PURPLEFIN_GENERATED_ROOT="${generated_root}" \
 	PURPLEFIN_DERIVED_DRY_RUN=true \
-	bash "${repo_root}/bootc/builder/derived.sh" support-generic base-dell-xps-9350-intel >/dev/null 2>&1; then
-	echo 'A derived profile accepted a parent with different hardware' >&2
+	bash "${repo_root}/bootc/builder/derived.sh" bluefin-generic base >/dev/null 2>&1; then
+	echo 'A foundation profile unexpectedly accepted a parent' >&2
 	exit 1
 fi

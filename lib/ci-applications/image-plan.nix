@@ -1,38 +1,23 @@
 {pkgs}:
 pkgs.writeShellApplication {
   name = "purplefin-image-plan";
-  excludeShellChecks = ["SC1091" "SC2154"];
-  runtimeInputs = with pkgs; [coreutils cosign gh jq podman skopeo];
+  runtimeInputs = with pkgs; [coreutils cosign gh jq skopeo];
   text = ''
-    export PURPLEFIN_MANAGED_RPMS_LIBRARY=${../../bootc/builder/lib/independently-managed-rpms.sh}
-    export PURPLEFIN_MANAGED_RPMS_MANIFEST=${../../modules/aspects/base/independently-managed-rpms.list}
     set -euo pipefail
 
     profiles_json="''${1:?usage: plan-image-builds.sh PROFILES_JSON}"
-    : "''${BASE_DIGEST:?BASE_DIGEST is required}"
-    : "''${BASE_REF:?BASE_REF is required}"
     : "''${EXPECTED_VERSION:?EXPECTED_VERSION is required}"
     : "''${IMAGE_REF:?IMAGE_REF is required}"
     cosign_command="''${PURPLEFIN_COSIGN:-cosign}"
     gh_command="''${PURPLEFIN_GH:-gh}"
-    podman_command="''${PURPLEFIN_PODMAN:-podman}"
     skopeo_command="''${PURPLEFIN_SKOPEO:-skopeo}"
 
-    # shellcheck source=bootc/builder/lib/independently-managed-rpms.sh
-    source "''${PURPLEFIN_MANAGED_RPMS_LIBRARY:?PURPLEFIN_MANAGED_RPMS_LIBRARY is required}"
-    purplefin_load_independently_managed_rpms \
-      "''${PURPLEFIN_MANAGED_RPMS_MANIFEST:?PURPLEFIN_MANAGED_RPMS_MANIFEST is required}"
-
     force_rebuild="''${FORCE_REBUILD:-false}"
-    check_rpm_updates="''${CHECK_RPM_UPDATES:-true}"
     check_publication_trust="''${CHECK_PUBLICATION_TRUST:-false}"
     selected='[]'
     sbom_repairs='[]'
     declare -A published_digests=()
     declare -A published_parent_digests=()
-    probe_root="$(mktemp -d)"
-    trap 'rm -rf -- "''${probe_root}"' EXIT
-    base_inventory="''${probe_root}/base-rpms"
 
     add_profile() {
       local entry="$1"
@@ -58,22 +43,11 @@ pkgs.writeShellApplication {
       sbom_repairs="$(jq -c --argjson entry "''${entry}" '. + [$entry]' <<<"''${sbom_repairs}")"
     }
 
-    ensure_base_inventory() {
-      if [[ -s "''${base_inventory}" ]]; then
-        return 0
-      fi
-
-      echo "Pulling ''${BASE_REF} for the shared RPM baseline" >&2
-      "''${podman_command}" pull --quiet "''${BASE_REF}" >&2
-      "''${podman_command}" run --rm --pull=never --entrypoint rpm "''${BASE_REF}" \
-        -qa --qf $'%{NAME}\t%{EVR}\t%{ARCH}\n' >"''${base_inventory}"
-      LC_ALL=C sort -o "''${base_inventory}" "''${base_inventory}"
-    }
-
     while IFS= read -r entry; do
       profile="$(jq -r '.profile' <<<"''${entry}")"
       build_input="$(jq -r '.build_input' <<<"''${entry}")"
       primary_tag="$(jq -r '.tags | split(" ")[0]' <<<"''${entry}")"
+      expected_upstream="$(jq -er '.upstream.digest | select(test("^sha256:[0-9a-f]{64}$"))' <<<"''${entry}")"
       published_ref="''${IMAGE_REF}:''${primary_tag}"
       [[ "''${build_input}" =~ ^[0-9a-f]{64}$ ]] || { echo "Invalid build input for ''${profile}" >&2; exit 2; }
 
@@ -105,7 +79,7 @@ pkgs.writeShellApplication {
         add_profile "''${entry}" 'build inputs changed'
         continue
       fi
-      if [[ "''${published_base}" != "''${BASE_DIGEST}" ]]; then
+      if [[ "''${published_base}" != "''${expected_upstream}" ]]; then
         add_profile "''${entry}" 'Bluefin base digest changed'
         continue
       fi
@@ -139,72 +113,7 @@ pkgs.writeShellApplication {
           add_sbom_repair "''${entry}" "''${published_digest}" "''${published_revision}"
         fi
       fi
-      if [[ "''${check_rpm_updates}" != true ]]; then
-        echo "''${profile}: skip (build inputs and Bluefin base are current)" >&2
-        continue
-      fi
-
-      # The matrix job pulls only its own previous image and exact Bluefin base.
-      # The expensive build runs only when a layered or independently managed RPM
-      # has an upgrade.
-      if ! ensure_base_inventory; then
-        add_profile "''${entry}" 'Bluefin RPM baseline could not be read'
-        continue
-      fi
-      if ! "''${podman_command}" pull --quiet "''${published_ref}" >&2; then
-        add_profile "''${entry}" 'published image could not be pulled for its RPM probe'
-        continue
-      fi
-
-      profile_inventory="''${probe_root}/''${profile}-rpms"
-      layered_packages="''${probe_root}/''${profile}-layered-package-names"
-      if ! "''${podman_command}" run --rm --pull=never --entrypoint rpm "''${published_ref}" \
-        -qa --qf $'%{NAME}\t%{EVR}\t%{ARCH}\n' >"''${profile_inventory}"; then
-        add_profile "''${entry}" 'published RPM inventory could not be read'
-        continue
-      fi
-      LC_ALL=C sort -o "''${profile_inventory}" "''${profile_inventory}"
-      comm -13 "''${base_inventory}" "''${profile_inventory}" |
-        cut -f 1 |
-        LC_ALL=C sort -u >"''${layered_packages}"
-      mapfile -t packages < <(
-        for package in "''${independently_managed_rpms[@]}"; do
-          awk -F '\t' -v package="''${package}" '$1 == package { found = 1 } END { exit !found }' \
-            "''${profile_inventory}" && printf '%s\n' "''${package}"
-        done
-        cat "''${layered_packages}"
-      )
-      mapfile -t packages < <(printf '%s\n' "''${packages[@]}" | LC_ALL=C sort -u)
-      if ((''${#packages[@]} == 0)); then
-        echo "''${profile}: skip (inputs and base are current; no managed RPMs)" >&2
-        continue
-      fi
-
-      upgrade_log="$(mktemp)"
-      set +e
-      "''${podman_command}" run --rm --pull=never --entrypoint dnf5 "''${published_ref}" \
-        -y -q --refresh "''${independently_managed_rpm_repo_args[@]}" \
-        check-upgrade "''${packages[@]}" >"''${upgrade_log}" 2>&1
-      upgrade_status=$?
-      set -e
-
-      case "''${upgrade_status}" in
-        0)
-          echo "''${profile}: skip (inputs, base, and installed RPMs are current)" >&2
-        ;;
-        100)
-          sed "s/^/''${profile}: /" "''${upgrade_log}" >&2
-          add_profile "''${entry}" 'installed RPM updates are available' false
-        ;;
-        *)
-          sed "s/^/''${profile}: /" "''${upgrade_log}" >&2
-          add_profile "''${entry}" "RPM probe failed with status ''${upgrade_status}" false
-        ;;
-      esac
-      # Keep the exact base tag for a possible build, but discard the old
-      # profile's unique layer before Buildah creates its replacement.
-      "''${podman_command}" image rm "''${published_ref}" >/dev/null 2>&1 || true
-      rm -f "''${upgrade_log}"
+      echo "''${profile}: skip (build inputs and locked upstream are current)" >&2
     done < <(jq -c '.[]' <<<"''${profiles_json}")
 
     # Repair a partially completed staged publish. If a parent was replaced but a

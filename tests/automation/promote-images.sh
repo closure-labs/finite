@@ -34,10 +34,10 @@ chmod 0755 "${fake_skopeo}" "${fake_oras}"
 digest_a="sha256:$(printf 'a%.0s' {1..64})"
 build_input="$(printf 'c%.0s' {1..64})"
 BUILD_MATRIX="$({
-	jq -cn --arg digest "${digest_a}" --arg input "${build_input}" '{include: [
-		{profile: "base", parent: null, build_input: $input, tags: "base stable"},
+	jq -cn --arg digest "${digest_a}" --arg input "${build_input}" --arg upstream "${UPSTREAM_BASE_DIGEST:-sha256:$(printf 'd%.0s' {1..64})}" '{include: [
+		{profile: "base", parent: null, build_input: $input, tags: "base stable", upstream: {digest: $upstream}},
 		{profile: "hardware", parent: "base", parent_digest: $digest,
-		 build_input: $input, tags: "hardware latest"}
+		 build_input: $input, tags: "hardware latest", upstream: {digest: $upstream}}
 	]}'
 })"
 export BUILD_MATRIX

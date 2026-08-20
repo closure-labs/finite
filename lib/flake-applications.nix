@@ -1,11 +1,20 @@
 {
   bluefin,
+  bluefinDx,
   determinateNix,
   generated,
   imageBuilder,
   pkgs,
+  selfSource,
   version,
-}: rec {
+}: let
+  upstreamLocks = {
+    inherit bluefin;
+    bluefin-dx = bluefinDx;
+  };
+  upstreamLocksFile = pkgs.writeText "purplefin-upstreams.json" (builtins.toJSON upstreamLocks);
+  selfFlakeUri = "path:${builtins.unsafeDiscardStringContext (toString selfSource)}";
+in rec {
   classifyChanges = import ./ci-applications/classify-changes.nix {inherit pkgs;};
 
   githubActionsSecrets = pkgs.writeShellApplication {
@@ -117,19 +126,26 @@
     };
   verifyBluefin = pkgs.writeShellApplication {
     name = "purplefin-verify-bluefin";
-    runtimeInputs = [pkgs.cosign];
+    runtimeInputs = [pkgs.cosign pkgs.jq];
     text = ''
-      image='${bluefin.image}@${bluefin.digest}'
+      source_name="''${1:-bluefin}"
+      jq -e --arg source "''${source_name}" '.[$source]' ${upstreamLocksFile} >/dev/null || {
+        echo "Unknown Bluefin source: ''${source_name}" >&2
+        exit 2
+      }
+      image="$(jq -er --arg source "''${source_name}" '.[$source].image + "@" + .[$source].digest' ${upstreamLocksFile})"
+      issuer="$(jq -er --arg source "''${source_name}" '.[$source].cosign.issuer' ${upstreamLocksFile})"
+      identity="$(jq -er --arg source "''${source_name}" '.[$source].cosign.identity' ${upstreamLocksFile})"
       cosign verify \
-        --certificate-oidc-issuer '${bluefin.cosign.issuer}' \
-        --certificate-identity '${bluefin.cosign.identity}' \
+        --certificate-oidc-issuer "''${issuer}" \
+        --certificate-identity "''${identity}" \
         "''${image}" >/dev/null
       printf '%s\n' "''${image}"
     '';
   };
   loadBluefin = pkgs.writeShellApplication {
     name = "purplefin-load-bluefin";
-    runtimeInputs = with pkgs; [coreutils cosign skopeo];
+    runtimeInputs = with pkgs; [coreutils cosign jq skopeo];
     text = ''
       if [[ "''${CI:-}" == true && $EUID -ne 0 && -z "''${_PURPLEFIN_IN_USERNS:-}" ]]; then
         host_podman="$(PATH=/usr/local/bin:/usr/bin:/bin command -v podman || true)"
@@ -139,9 +155,14 @@
         }
         exec env _PURPLEFIN_IN_USERNS=1 "''${host_podman}" unshare "$0" "$@"
       fi
-      ${verifyBluefin}/bin/purplefin-verify-bluefin >/dev/null
-      source='docker://${bluefin.image}@${bluefin.digest}'
-      image='${bluefin.image}:${bluefin.tag}'
+      source_name="''${1:-bluefin}"
+      ${verifyBluefin}/bin/purplefin-verify-bluefin "''${source_name}" >/dev/null
+      locked_image="$(jq -er --arg source "''${source_name}" '.[$source].image' ${upstreamLocksFile})"
+      locked_digest="$(jq -er --arg source "''${source_name}" '.[$source].digest' ${upstreamLocksFile})"
+      locked_tag="$(jq -er --arg source "''${source_name}" '.[$source].tag' ${upstreamLocksFile})"
+      locked_architecture="$(jq -er --arg source "''${source_name}" '.[$source].architecture' ${upstreamLocksFile})"
+      source="docker://''${locked_image}@''${locked_digest}"
+      image="''${locked_image}:''${locked_tag}"
       data_home="''${XDG_DATA_HOME:-''${HOME}/.local/share}"
       runtime_dir="''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
       graph_root="''${CONTAINERS_STORAGE_GRAPHROOT:-''${data_home}/containers/storage}"
@@ -152,9 +173,9 @@
       loaded_digest="$(
         skopeo inspect --format '{{.Digest}}' "''${storage_ref}" 2>/dev/null || true
       )"
-      if [[ "''${loaded_digest}" != '${bluefin.digest}' ]]; then
+      if [[ "''${loaded_digest}" != "''${locked_digest}" ]]; then
         skopeo copy \
-          --override-arch '${bluefin.architecture}' \
+          --override-arch "''${locked_architecture}" \
           --override-os linux \
           --preserve-digests \
           --retry-times 3 \
@@ -164,8 +185,8 @@
           skopeo inspect --format '{{.Digest}}' "''${storage_ref}"
         )"
       fi
-      [[ "''${loaded_digest}" == '${bluefin.digest}' ]] || {
-        echo "Loaded Bluefin digest ''${loaded_digest} does not match ${bluefin.digest}" >&2
+      [[ "''${loaded_digest}" == "''${locked_digest}" ]] || {
+        echo "Loaded Bluefin digest ''${loaded_digest} does not match ''${locked_digest}" >&2
         exit 1
       }
       printf '%s\n' "''${image}"
@@ -187,18 +208,22 @@
       export PURPLEFIN_DETERMINATE_NIX_INSTALLER_URL=${pkgs.lib.escapeShellArg determinateNix.installer.url}
       export PURPLEFIN_DETERMINATE_NIX_POLICY_SHA256=${determinateNix.selinuxPolicy.sha256}
       export PURPLEFIN_DETERMINATE_NIX_POLICY_URL=${pkgs.lib.escapeShellArg determinateNix.selinuxPolicy.url}
+      export PURPLEFIN_DETERMINATE_NIX_FC_SHA256=${determinateNix.selinuxFileContexts.sha256}
+      export PURPLEFIN_DETERMINATE_NIX_FC_URL=${pkgs.lib.escapeShellArg determinateNix.selinuxFileContexts.url}
       export PURPLEFIN_DETERMINATE_NIX_VERSION=${determinateNix.version}
       source_name="''${1:?usage: purplefin-source-verify SOURCE}"
       case "''${source_name}" in
-        bluefin)
-          image="''${PURPLEFIN_BLUEFIN_IMAGE:?}"
-          architecture="''${PURPLEFIN_BLUEFIN_ARCHITECTURE:?}"
-          digest="''${PURPLEFIN_BLUEFIN_DIGEST:?}"
+        bluefin | bluefin-dx)
+          image="$(jq -er --arg source "''${source_name}" '.[$source].image' ${upstreamLocksFile})"
+          architecture="$(jq -er --arg source "''${source_name}" '.[$source].architecture' ${upstreamLocksFile})"
+          digest="$(jq -er --arg source "''${source_name}" '.[$source].digest' ${upstreamLocksFile})"
+          issuer="$(jq -er --arg source "''${source_name}" '.[$source].cosign.issuer' ${upstreamLocksFile})"
+          identity="$(jq -er --arg source "''${source_name}" '.[$source].cosign.identity' ${upstreamLocksFile})"
           skopeo inspect --retry-times 3 --override-arch "''${architecture}" \
             "docker://''${image}@''${digest}" >/dev/null
           cosign verify \
-            --certificate-oidc-issuer "''${PURPLEFIN_BLUEFIN_ISSUER:?}" \
-            --certificate-identity "''${PURPLEFIN_BLUEFIN_IDENTITY:?}" \
+            --certificate-oidc-issuer "''${issuer}" \
+            --certificate-identity "''${identity}" \
             "''${image}@''${digest}" >/dev/null
           ;;
         image-builder)
@@ -211,14 +236,19 @@
         determinate-nix)
           installer="$(mktemp)"
           policy="$(mktemp)"
-          trap 'rm -f -- "''${installer}" "''${policy}"' EXIT
+          file_contexts="$(mktemp)"
+          trap 'rm -f -- "''${installer}" "''${policy}" "''${file_contexts}"' EXIT
           curl --fail --location --retry 3 --output "''${installer}" \
             "''${PURPLEFIN_DETERMINATE_NIX_INSTALLER_URL:?}"
           curl --fail --location --retry 3 --output "''${policy}" \
             "''${PURPLEFIN_DETERMINATE_NIX_POLICY_URL:?}"
+          curl --fail --location --retry 3 --output "''${file_contexts}" \
+            "''${PURPLEFIN_DETERMINATE_NIX_FC_URL:?}"
           printf '%s  %s\n' "''${PURPLEFIN_DETERMINATE_NIX_INSTALLER_SHA256:?}" "''${installer}" |
             sha256sum --check --status
           printf '%s  %s\n' "''${PURPLEFIN_DETERMINATE_NIX_POLICY_SHA256:?}" "''${policy}" |
+            sha256sum --check --status
+          printf '%s  %s\n' "''${PURPLEFIN_DETERMINATE_NIX_FC_SHA256:?}" "''${file_contexts}" |
             sha256sum --check --status
           printf 'determinate-nix@%s\n' "''${PURPLEFIN_DETERMINATE_NIX_VERSION:?}"
           exit 0
@@ -252,7 +282,7 @@
           [[ "''${before}" == "''${after}" ]] || changed=true
           digest="''${after}"
           ;;
-        bluefin | image-builder)
+        bluefin | bluefin-dx | image-builder)
           lock="''${repo_root}/sources/''${source_name}.json"
           [[ -f "''${lock}" ]]
           image="$(jq -er '.image' "''${lock}")"
@@ -264,7 +294,7 @@
               --format '{{.Digest}}' "docker://''${image}:''${tag}"
           )"
           [[ "''${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
-          if [[ "''${source_name}" == bluefin ]]; then
+          if [[ "''${source_name}" == bluefin || "''${source_name}" == bluefin-dx ]]; then
             issuer="$(jq -er '.cosign.issuer' "''${lock}")"
             identity="$(jq -er '.cosign.identity' "''${lock}")"
             cosign verify \
@@ -294,22 +324,30 @@
           digest="$(jq -er '.digest | select(test("^sha256:[0-9a-f]{64}$"))' <<<"''${asset}")"
           installer_sha256="''${digest#sha256:}"
           policy_url="https://raw.githubusercontent.com/DeterminateSystems/nix-installer/''${tag}/src/action/linux/selinux/determinate-nix.pp"
+          file_contexts_url="https://raw.githubusercontent.com/DeterminateSystems/nix-installer/''${tag}/src/action/linux/selinux/nix.fc"
           policy_file="$(mktemp)"
+          file_contexts_file="$(mktemp)"
           temporary="$(mktemp "''${lock}.XXXXXX")"
-          trap 'rm -f -- "''${policy_file}" "''${temporary}"' EXIT
+          trap 'rm -f -- "''${policy_file}" "''${file_contexts_file}" "''${temporary}"' EXIT
           curl --fail --location --retry 3 --output "''${policy_file}" "''${policy_url}"
+          curl --fail --location --retry 3 --output "''${file_contexts_file}" "''${file_contexts_url}"
           policy_sha256="$(sha256sum "''${policy_file}" | cut -d' ' -f1)"
+          file_contexts_sha256="$(sha256sum "''${file_contexts_file}" | cut -d' ' -f1)"
           jq \
             --arg version "''${version}" \
             --arg installer_url "''${installer_url}" \
             --arg installer_sha256 "''${installer_sha256}" \
             --arg policy_url "''${policy_url}" \
-            --arg policy_sha256 "''${policy_sha256}" '
+            --arg policy_sha256 "''${policy_sha256}" \
+            --arg file_contexts_url "''${file_contexts_url}" \
+            --arg file_contexts_sha256 "''${file_contexts_sha256}" '
               .version = $version |
               .installer.url = $installer_url |
               .installer.sha256 = $installer_sha256 |
               .selinuxPolicy.url = $policy_url |
-              .selinuxPolicy.sha256 = $policy_sha256
+              .selinuxPolicy.sha256 = $policy_sha256 |
+              .selinuxFileContexts.url = $file_contexts_url |
+              .selinuxFileContexts.sha256 = $file_contexts_sha256
             ' "''${lock}" >"''${temporary}"
           changed=false
           if ! cmp --silent "''${lock}" "''${temporary}"; then
@@ -658,10 +696,10 @@
       base_image='${bluefin.image}'
       base_tag='${bluefin.tag}'
       base_digest='${bluefin.digest}'
-      base_ref="''${base_image}@''${base_digest}"
       profiles="$(jq -c . ${generated}/bootc/generated/image-matrix.json)"
       matrix='{"include":[],"sbom_repair":[]}'
       root_base='{}'
+      root_matrix='{"include":[]}'
       hardware_matrix='{"include":[]}'
       role_matrix='{"include":[]}'
       candidate_shards='{"include":[]}'
@@ -672,10 +710,12 @@
       if jq -e '.validation.images.required' <<<"''${classification}" >/dev/null; then
         : "''${IMAGE_REF:?IMAGE_REF is required}"
         : "''${GITHUB_SHA:?GITHUB_SHA is required}"
-        ${verifyBluefin}/bin/purplefin-verify-bluefin >/dev/null
-        export BASE_DIGEST="''${base_digest}" BASE_REF="''${base_ref}" EXPECTED_VERSION='${version}'
+        ${verifyBluefin}/bin/purplefin-verify-bluefin bluefin >/dev/null
+        ${verifyBluefin}/bin/purplefin-verify-bluefin bluefin-dx >/dev/null
+        export EXPECTED_VERSION='${version}'
         matrix="$(${imagePlan}/bin/purplefin-image-plan "''${profiles}")"
         root_base="$(jq -c 'first(.include[] | select(.stage == "root")) // {}' <<<"''${matrix}")"
+        root_matrix="$(jq -c '{include: [.include[] | select(.stage == "root")]}' <<<"''${matrix}")"
         hardware_matrix="$(jq -c '{include: [.include[] | select(.stage == "hardware")]}' <<<"''${matrix}")"
         role_matrix="$(jq -c '{include: [.include[] | select(.stage == "role")]}' <<<"''${matrix}")"
         candidate_shards="$(${shardPlan}/bin/purplefin-shard-plan "''${profiles}" "''${matrix}" 4)"
@@ -704,7 +744,7 @@
         --argjson matrix "''${matrix}" \
         --argjson role "''${role_matrix}" \
         --argjson role_sbom "''${role_sbom_matrix}" \
-        --argjson root "''${root_base}" '
+        --argjson root "''${root_matrix}" '
         {
           schema: 1,
           classification: $classification,
@@ -718,7 +758,7 @@
           publication: {
             builds: {
               any: ($matrix.include | length > 0),
-              root: ($root | has("profile")),
+              root: ($root.include | length > 0),
               hardware: ($hardware.include | length > 0),
               roles: ($role.include | length > 0)
             },
@@ -744,6 +784,7 @@
         printf 'role_matrix=%s\n' "''${role_matrix}"
         printf 'role_sbom_matrix=%s\n' "''${role_sbom_matrix}"
         printf 'root_base=%s\n' "''${root_base}"
+        printf 'root_matrix=%s\n' "''${root_matrix}"
         printf 'version=%s\n' '${version}'
       } >>"$1"
     '';
@@ -818,7 +859,7 @@
     '';
   };
   validateImageShard = import ./ci-applications/validate-image-shard.nix {
-    inherit bluefin generated loadBluefin pkgs version;
+    inherit generated loadBluefin pkgs version;
   };
   installerSmoke = pkgs.writeShellApplication {
     name = "purplefin-installer-smoke";
@@ -1390,6 +1431,154 @@
       esac
     '';
   };
+  homeSwitch = pkgs.writeShellApplication {
+    name = "purplefin-home-switch";
+    runtimeInputs = with pkgs; [coreutils getent jq nix];
+    text = ''
+      profile=""
+      hardware=""
+      mode=switch
+      while (( $# > 0 )); do
+        case "$1" in
+          --profile) profile="''${2:?--profile requires a value}"; shift 2 ;;
+          --hardware) hardware="''${2:?--hardware requires a value}"; shift 2 ;;
+          --check) mode=check; shift ;;
+          --switch) mode=switch; shift ;;
+          *) echo "usage: purplefin-home-switch --profile PROFILE [--hardware HARDWARE] [--check|--switch]" >&2; exit 2 ;;
+        esac
+      done
+      [[ "''${profile}" =~ ^[a-z0-9._-]+$ ]] || {
+        echo "A valid --profile is required" >&2
+        exit 2
+      }
+      jq -e --arg profile "''${profile}" '.profiles[$profile]' \
+        ${generated}/bootc/generated/home-profile-catalog.json >/dev/null || {
+        echo "Unknown Home Manager profile: ''${profile}" >&2
+        exit 2
+      }
+      if [[ -z "''${hardware}" && -r /usr/share/purplefin/profile.json ]]; then
+        hardware="$(jq -r '.hardware // empty' /usr/share/purplefin/profile.json)"
+      fi
+      hardware="''${hardware:-generic-x86_64}"
+      jq -e --arg profile "''${profile}" --arg hardware "''${hardware}" \
+        '.profiles[$profile].hardware | index($hardware) != null' \
+        ${generated}/bootc/generated/home-profile-catalog.json >/dev/null || {
+        echo "Profile ''${profile} does not support hardware ''${hardware}" >&2
+        exit 2
+      }
+      if [[ -r /usr/share/purplefin/build-profile && "''${PURPLEFIN_SKIP_FOUNDATION_CHECK:-false}" != true ]]; then
+        foundation="$(</usr/share/purplefin/build-profile)"
+        jq -e --arg profile "''${profile}" --arg foundation "''${foundation}" \
+          '.profiles[$profile].foundations | index($foundation) != null' \
+          ${generated}/bootc/generated/home-profile-catalog.json >/dev/null || {
+          echo "Profile ''${profile} is incompatible with running foundation ''${foundation}" >&2
+          exit 2
+        }
+      fi
+      username="$(id -un)"
+      home_directory="$(getent passwd "''${username}" | cut -d: -f6)"
+      [[ -n "''${home_directory}" ]] || home_directory="''${HOME}"
+      export PURPLEFIN_HOME_PROFILE="''${profile}"
+      export PURPLEFIN_HOME_HARDWARE="''${hardware}"
+      export PURPLEFIN_HOME_USERNAME="''${username}"
+      export PURPLEFIN_HOME_DIRECTORY="''${home_directory}"
+      expression='let
+        flake = builtins.getFlake "${selfFlakeUri}";
+      in
+        (flake.lib.purplefin.mkHomeConfiguration {
+          name = builtins.getEnv "PURPLEFIN_HOME_PROFILE";
+          hardware = builtins.getEnv "PURPLEFIN_HOME_HARDWARE";
+          username = builtins.getEnv "PURPLEFIN_HOME_USERNAME";
+          homeDirectory = builtins.getEnv "PURPLEFIN_HOME_DIRECTORY";
+        }).activationPackage'
+      activation="$(nix --accept-flake-config build --impure --no-link --print-out-paths --expr "''${expression}")"
+      printf 'Home profile %s for %s (%s) builds as %s\n' \
+        "''${profile}" "''${username}" "''${hardware}" "''${activation}"
+      [[ "''${mode}" == check ]] || exec "''${activation}/activate"
+    '';
+  };
+  cloudInit = pkgs.writeShellApplication {
+    name = "purplefin-cloud-init";
+    runtimeInputs = with pkgs; [coreutils jq xorriso yq-go];
+    text = ''
+      profile=""
+      hardware=""
+      username=""
+      output=""
+      flake_uri="github:declarative-dale/purplefin"
+      while (( $# > 0 )); do
+        case "$1" in
+          --profile) profile="''${2:?--profile requires a value}"; shift 2 ;;
+          --hardware) hardware="''${2:?--hardware requires a value}"; shift 2 ;;
+          --user) username="''${2:?--user requires a value}"; shift 2 ;;
+          --output) output="''${2:?--output requires a value}"; shift 2 ;;
+          --flake) flake_uri="''${2:?--flake requires a value}"; shift 2 ;;
+          *) echo "usage: purplefin-cloud-init --profile PROFILE --hardware HARDWARE --user USER --output DIR [--flake URI]" >&2; exit 2 ;;
+        esac
+      done
+      [[ "''${profile}" =~ ^[a-z0-9._-]+$ && "''${hardware}" =~ ^[a-z0-9._-]+$ ]] || {
+        echo "Valid --profile and --hardware values are required" >&2
+        exit 2
+      }
+      [[ "''${username}" =~ ^[a-z_][a-z0-9_-]*[$]?$ ]] || {
+        echo "A valid existing --user is required" >&2
+        exit 2
+      }
+      [[ -n "''${output}" ]] || { echo "--output is required" >&2; exit 2; }
+      [[ ! -e "''${output}" ]] || { echo "Output already exists: ''${output}" >&2; exit 2; }
+      foundation="$(jq -er --arg profile "''${profile}" --arg hardware "''${hardware}" '
+        .profiles[$profile] as $profile |
+        ($profile.hardware | index($hardware)) as $index |
+        select($index != null) |
+        $profile.foundations[$index]
+      ' ${generated}/bootc/generated/home-profile-catalog.json)" || {
+        echo "Profile ''${profile} does not support ''${hardware}" >&2
+        exit 2
+      }
+      home_directory="/var/home/''${username}"
+      workdir="$(mktemp -d)"
+      trap 'rm -rf -- "''${workdir}"' EXIT
+      jq -n \
+        --arg flake "''${flake_uri}" \
+        --arg hardware "''${hardware}" \
+        --arg home "''${home_directory}" \
+        --arg profile "''${profile}" \
+        --arg user "''${username}" '
+        {
+          preserve_hostname: true,
+          ssh_pwauth: false,
+          runcmd: [[
+            "runuser", "-u", $user, "--", "env", "HOME=" + $home,
+            "/nix/var/nix/profiles/default/bin/nix", "run",
+            $flake + "#home-switch", "--",
+            "--profile", $profile, "--hardware", $hardware, "--switch"
+          ]]
+        }
+      ' | yq -P >"''${workdir}/user-data.yaml"
+      {
+        printf '#cloud-config\n'
+        cat "''${workdir}/user-data.yaml"
+      } >"''${workdir}/user-data"
+      instance_hash="$(sha256sum "''${workdir}/user-data" | cut -c1-16)"
+      jq -n --arg id "purplefin-''${instance_hash}" --arg hostname purplefin \
+        '{"instance-id": $id, "local-hostname": $hostname}' | yq -P >"''${workdir}/meta-data"
+      jq -n \
+        --arg foundation "''${foundation}" \
+        --arg flake "''${flake_uri}" \
+        --arg hardware "''${hardware}" \
+        --arg profile "''${profile}" \
+        --arg user "''${username}" \
+        '{schema: 1, foundation: $foundation, flake: $flake, hardware: $hardware, profile: $profile, user: $user}' \
+        >"''${workdir}/manifest.json"
+      xorriso -as mkisofs -quiet -V cidata -J -R \
+        -o "''${workdir}/seed.iso" "''${workdir}/user-data" "''${workdir}/meta-data"
+      install -d "''${output}"
+      install -m 0644 "''${workdir}/user-data" "''${workdir}/meta-data" \
+        "''${workdir}/manifest.json" "''${workdir}/seed.iso" "''${output}/"
+      printf 'Generated NoCloud seed for %s on %s at %s\n' \
+        "''${profile}" "''${foundation}" "''${output}"
+    '';
+  };
   imageBuild = pkgs.writeShellApplication {
     name = "purplefin-image-build";
     runtimeInputs = with pkgs; [bash coreutils jq podman];
@@ -1411,7 +1600,14 @@
         echo "Unknown profile: ''${profile}" >&2
         exit 2
       }
-      base_image="$(${loadBluefin}/bin/purplefin-load-bluefin)"
+      upstream_image="$(jq -er --arg profile "''${profile}" '.[] | select(.profile == $profile) | .upstream.image' ${generated}/bootc/generated/image-matrix.json)"
+      upstream_digest="$(jq -er --arg profile "''${profile}" '.[] | select(.profile == $profile) | .upstream.digest' ${generated}/bootc/generated/image-matrix.json)"
+      if [[ "''${upstream_image}" == *bluefin-dx ]]; then
+        source_name=bluefin-dx
+      else
+        source_name=bluefin
+      fi
+      base_image="$(${loadBluefin}/bin/purplefin-load-bluefin "''${source_name}")"
       exec podman build \
         --file bootc/Containerfile \
         --network host \
@@ -1421,7 +1617,8 @@
         --build-arg "BASE_REF=''${base_image}" \
         --build-arg "BUILD_PROFILE=''${profile}" \
         --build-arg "PURPLEFIN_VERSION=${version}" \
-        --label "org.opencontainers.image.base.digest=${bluefin.digest}" \
+        --label "io.purplefin.upstream.digest=''${upstream_digest}" \
+        --label "org.opencontainers.image.base.digest=''${upstream_digest}" \
         --tag "''${tag}" \
       .
     '';

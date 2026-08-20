@@ -3,7 +3,7 @@ set -euo pipefail
 
 build_root="${PURPLEFIN_BUILD_ROOT:-/tmp/purplefin-build}"
 generated_root="${PURPLEFIN_GENERATED_ROOT:-${build_root}}"
-profile="${1:-${BUILD_PROFILE:-base-generic}}"
+profile="${1:-${BUILD_PROFILE:-bluefin-generic}}"
 profile_catalog="${generated_root}/bootc/generated/profile-catalog.json"
 modules=()
 build_steps=()
@@ -57,5 +57,4 @@ fi
 purplefin_authselect_finalize
 # shellcheck source=/tmp/purplefin-build/bootc/builder/lib/finalize-profile.sh
 source "${build_root}/bootc/builder/lib/finalize-profile.sh"
-purplefin_update_independently_managed_rpms "${build_root}"
 purplefin_finalize_profile "${profile}" "${profile_catalog}" "${modules[@]}"

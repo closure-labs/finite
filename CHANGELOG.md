@@ -6,6 +6,38 @@ All notable changes to Purplefin are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Four minimal Bluefin and Bluefin DX foundations for generic and Dell XPS 13
+  9350 hardware, plus eight independently selectable Home Manager role profiles.
+- NixGL-wrapped graphical applications, declarative per-user Flatpaks, and a
+  Nix-managed Espanso user service for the support and Dale profiles.
+- A NoCloud seed generator that applies a compatible Home Manager profile to
+  an existing installer-created user without managing users or networking.
+- The native Fedora Nix package bootstrap followed by the pinned Determinate
+  installer, including its SELinux policy and file-context inputs.
+
+### Changed
+
+- Developer, support, IT, trainer, and Dale environments now target Bluefin DX;
+  sales and executive environments target standard Bluefin.
+- The Dell-only Dale profile now composes every role into one Bluefin DX user
+  environment.
+- The Elad profile composes every role on generic Bluefin DX without the Dell
+  IPU7/SVP7500 camera components or associated custom kernel modules.
+- Bitwarden CLI, Bitwarden Desktop, developer tools, and role applications are
+  delivered through Nix/Home Manager instead of custom image layers or Homebrew.
+- Image generation now preserves each signed Bluefin upstream as the foundation
+  and limits Purplefin image changes to boot-critical integration and proven
+  Dell hardware support.
+
+### Removed
+
+- The independently managed RPM mechanism and its Tailscale override; Purplefin
+  now inherits the complete upstream Bluefin package set, including Tailscale.
+- Image-baked Espanso, Bitwarden, role Flatpak manifests, Homebrew bundle
+  automation, and role-specific image scripts.
+
 ## [0.2.3] - 2026-08-18
 
 ### Added

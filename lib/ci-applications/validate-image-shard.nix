@@ -1,5 +1,4 @@
 {
-  bluefin,
   generated,
   loadBluefin,
   pkgs,
@@ -10,7 +9,6 @@ pkgs.writeShellApplication {
   runtimeInputs = with pkgs; [coreutils jq skopeo];
   text = ''
        export PURPLEFIN_GENERATED_ROOT=${generated}
-       export PURPLEFIN_BASE_DIGEST=${bluefin.digest}
        export PURPLEFIN_LOAD_BLUEFIN=${loadBluefin}/bin/purplefin-load-bluefin
        export PURPLEFIN_VERSION=${version}
        export PURPLEFIN_DEFAULT_BUILDAH=${pkgs.buildah}/bin/buildah
@@ -33,7 +31,6 @@ pkgs.writeShellApplication {
        repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
        cd "''${repo_root}" || exit
        : "''${PURPLEFIN_GENERATED_ROOT:?PURPLEFIN_GENERATED_ROOT is required}"
-       : "''${PURPLEFIN_BASE_DIGEST:?PURPLEFIN_BASE_DIGEST is required}"
        : "''${PURPLEFIN_LOAD_BLUEFIN:?PURPLEFIN_LOAD_BLUEFIN is required}"
        : "''${PURPLEFIN_VERSION:?PURPLEFIN_VERSION is required}"
 
@@ -64,6 +61,8 @@ pkgs.writeShellApplication {
              (.profile | type == "string" and length > 0) and
              (.build_input | type == "string" and test("^[0-9a-f]{64}$")) and
              (.tags | type == "string" and length > 0) and
+             (.upstream.image | type == "string" and length > 0) and
+             (.upstream.digest | type == "string" and test("^sha256:[0-9a-f]{64}$")) and
              (.target | type == "boolean") and
              (.stage == "root" or .stage == "hardware" or .stage == "role")
            ) and
@@ -77,12 +76,12 @@ pkgs.writeShellApplication {
            profile="$(jq -er '.profile' <<<"''${entry}")"
            expected="$(jq -cer --arg profile "''${profile}" '
              .[] | select(.profile == $profile) |
-             {profile, build_input, tags, stage, parent}
+             {profile, build_input, tags, stage, parent, upstream}
            ' "''${profile_matrix}")" || {
              echo "Unknown profile in shard: ''${profile}" >&2
              return 2
            }
-           actual="$(jq -c '{profile, build_input, tags, stage, parent}' <<<"''${entry}")"
+           actual="$(jq -c '{profile, build_input, tags, stage, parent, upstream}' <<<"''${entry}")"
            [[ "''${actual}" == "''${expected}" ]] || {
              echo "Shard contract for ''${profile} does not match the generated graph" >&2
              return 2
@@ -92,10 +91,12 @@ pkgs.writeShellApplication {
 
        validate_profile() {
          entry="$1"
-         upstream_image="$2"
-         cache_available="$3"
+         cache_available="$2"
          profile="$(jq -er '.profile' <<<"''${entry}")"
          build_input="$(jq -er '.build_input' <<<"''${entry}")"
+         upstream_digest="$(jq -er '.upstream.digest' <<<"''${entry}")"
+         upstream_name="$(jq -er '.upstream.image | if endswith("/bluefin-dx") then "bluefin-dx" else "bluefin" end' <<<"''${entry}")"
+         upstream_image="$("''${PURPLEFIN_LOAD_BLUEFIN}" "''${upstream_name}")"
          target="$(jq -r '.target | tostring' <<<"''${entry}")"
          started_at="$(date +%s)"
     archive=""
@@ -139,8 +140,8 @@ pkgs.writeShellApplication {
            "''${cache_args[@]}" \
            --label "io.purplefin.build.input=''${build_input}" \
            --label "io.purplefin.build.profile=''${profile}" \
-           --label "io.purplefin.upstream.digest=''${PURPLEFIN_BASE_DIGEST}" \
-           --label "org.opencontainers.image.base.digest=''${PURPLEFIN_BASE_DIGEST}" \
+           --label "io.purplefin.upstream.digest=''${upstream_digest}" \
+           --label "org.opencontainers.image.base.digest=''${upstream_digest}" \
            --label "org.opencontainers.image.created=''${created}" \
            --label "org.opencontainers.image.revision=''${GITHUB_SHA:-local}" \
            "''${parent_args[@]}" \
@@ -163,7 +164,7 @@ pkgs.writeShellApplication {
                echo "### Profile ''${profile}"
                echo
                echo "- Build input: \`''${build_input}\`"
-               echo "- Bluefin digest: \`''${PURPLEFIN_BASE_DIGEST}\`"
+               echo "- Bluefin digest: \`''${upstream_digest}\`"
                echo "- Registry cache available: \`''${cache_available}\`"
                echo "- Ancestor image build: \`$((built_at - started_at))s\`"
                echo "- Target rechunk validation: \`skipped (dependency only)\`"
@@ -230,7 +231,7 @@ pkgs.writeShellApplication {
              echo "### Profile ''${profile}"
              echo
              echo "- Build input: \`''${build_input}\`"
-             echo "- Bluefin digest: \`''${PURPLEFIN_BASE_DIGEST}\`"
+             echo "- Bluefin digest: \`''${upstream_digest}\`"
              echo "- Registry cache available: \`''${cache_available}\`"
              echo "- Image build: \`$((built_at - started_at))s\`"
              echo "- Target rechunk validation: \`$((finished_at - rechunk_started_at))s\`"
@@ -252,13 +253,8 @@ pkgs.writeShellApplication {
            ;;
        esac
 
-       [[ "''${UPSTREAM_BASE_DIGEST:?UPSTREAM_BASE_DIGEST is required}" == "''${PURPLEFIN_BASE_DIGEST}" ]] || {
-         echo "Planned Bluefin digest does not match the Nix lock" >&2
-         exit 2
-       }
        : "''${PURPLEFIN_BUILDAH:?PURPLEFIN_BUILDAH is required}"
        : "''${PURPLEFIN_PODMAN:?PURPLEFIN_PODMAN is required}"
-       base_image="$("''${PURPLEFIN_LOAD_BLUEFIN}")"
        cache_ref="''${IMAGE_REF:?IMAGE_REF is required}-build-cache"
        cache_available=false
        if skopeo list-tags "docker://''${cache_ref}" >/dev/null 2>&1; then
@@ -267,8 +263,8 @@ pkgs.writeShellApplication {
 
        while IFS= read -r entry; do
          profile="$(jq -er '.profile' <<<"''${entry}")"
-         echo "Validating ''${profile} from the shared locked Bluefin image"
-         validate_profile "''${entry}" "''${base_image}" "''${cache_available}"
+         echo "Validating ''${profile} from its locked Bluefin foundation"
+         validate_profile "''${entry}" "''${cache_available}"
          echo "''${profile}: validation passed"
        done < <(jq -c '.[]' <<<"''${profile_shard}")
   '';

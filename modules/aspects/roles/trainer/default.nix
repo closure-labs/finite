@@ -1,23 +1,12 @@
 _: {
-  den.aspects.features.roles.trainer = {
-    bootc = {lib, ...}: {
-      purplefin = {
-        roles = lib.mkAfter ["trainer"];
-        build = {
-          steps = lib.mkAfter [
-            {
-              name = "trainer";
-              order = 330;
-              script = ./apply.sh;
-            }
-          ];
-          sourcePaths = [
-            ./apply.sh
-            ./rootfs
-          ];
-        };
-      };
+  den.aspects.features.roles.trainer.homeManager = {
+    home.sessionVariables.PURPLEFIN_ROLE_TRAINER = "1";
+    xdg.desktopEntries.purplefin-grist = {
+      name = "Grist";
+      comment = "Open Vates Grist in Firefox";
+      exec = "firefox --new-window https://grist.vates.tech";
+      icon = "firefox";
+      categories = ["Office" "WebBrowser"];
     };
-    homeManager.home.sessionVariables.PURPLEFIN_ROLE_TRAINER = "1";
   };
 }

@@ -75,16 +75,14 @@ generated_root="${PURPLEFIN_GENERATED_ROOT:?PURPLEFIN_GENERATED_ROOT is required
 valid_shard="$(jq -c '.[0:2] | map(. + {target: true})' "${generated_root}/bootc/generated/image-matrix.json")"
 PROFILE_SHARD="${valid_shard}" \
 	PURPLEFIN_GENERATED_ROOT="${generated_root}" \
-	PURPLEFIN_BASE_DIGEST="sha256:$(printf 'b%.0s' {1..64})" \
 	PURPLEFIN_LOAD_BLUEFIN=/not-used \
 	PURPLEFIN_VERSION=testing \
 	purplefin-validate-image-shard --check |
-	jq -e '. == ["base", "base-dell-xps-9350-intel"]' >/dev/null
+	jq -e --argjson expected "$(jq -c '.[0:2] | map(.profile)' "${generated_root}/bootc/generated/image-matrix.json")" '. == $expected' >/dev/null
 
 unknown="$(jq -c '.[0] | .profile = "unknown" | [.]' "${generated_root}/bootc/generated/image-matrix.json")"
 if PROFILE_SHARD="${unknown}" \
 	PURPLEFIN_GENERATED_ROOT="${generated_root}" \
-	PURPLEFIN_BASE_DIGEST="sha256:$(printf 'b%.0s' {1..64})" \
 	PURPLEFIN_LOAD_BLUEFIN=/not-used \
 	PURPLEFIN_VERSION=testing \
 	purplefin-validate-image-shard --check >/dev/null 2>&1; then
@@ -95,7 +93,6 @@ fi
 duplicated="$(jq -cn --argjson entry "$(jq -c '.[0]' "${generated_root}/bootc/generated/image-matrix.json")" '[$entry, $entry]')"
 if PROFILE_SHARD="${duplicated}" \
 	PURPLEFIN_GENERATED_ROOT="${generated_root}" \
-	PURPLEFIN_BASE_DIGEST="sha256:$(printf 'b%.0s' {1..64})" \
 	PURPLEFIN_LOAD_BLUEFIN=/not-used \
 	PURPLEFIN_VERSION=testing \
 	purplefin-validate-image-shard --check >/dev/null 2>&1; then
@@ -108,7 +105,6 @@ for invalid_shard in \
 	"$(jq -c '.[0] | .build_input = ("c" * 64) | [.]' "${generated_root}/bootc/generated/image-matrix.json")"; do
 	if PROFILE_SHARD="${invalid_shard}" \
 		PURPLEFIN_GENERATED_ROOT="${generated_root}" \
-		PURPLEFIN_BASE_DIGEST="sha256:$(printf 'b%.0s' {1..64})" \
 		PURPLEFIN_LOAD_BLUEFIN=/not-used \
 		PURPLEFIN_VERSION=testing \
 		purplefin-validate-image-shard --check >/dev/null 2>&1; then
