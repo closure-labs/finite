@@ -1,7 +1,12 @@
 {pkgs}:
 pkgs.writeShellApplication {
   name = "purplefin-installer-e2e";
-  runtimeInputs = with pkgs; [bash coreutils gnugrep qemu_kvm];
+  runtimeInputs = with pkgs; [
+    bash
+    coreutils
+    gnugrep
+    qemu_kvm
+  ];
   text = ''
     set -euo pipefail
 
@@ -9,7 +14,11 @@ pkgs.writeShellApplication {
     [[ -s "''${iso}" ]] || { echo "Installer ISO is missing: ''${iso}" >&2; exit 2; }
     qemu="''${PURPLEFIN_QEMU:-qemu-system-x86_64}"
     qemu_img="''${PURPLEFIN_QEMU_IMG:-qemu-img}"
-    install_timeout="''${PURPLEFIN_INSTALLER_E2E_INSTALL_TIMEOUT_SECONDS:-1800}"
+    # Hosted release runners can spend close to 30 minutes pulling and
+    # installing the multi-gigabyte bootc payload after Anaconda becomes
+    # ready. Keep this below the enclosing 120-minute job timeout while
+    # leaving enough room for the installed-system boot assertion.
+    install_timeout="''${PURPLEFIN_INSTALLER_E2E_INSTALL_TIMEOUT_SECONDS:-3600}"
     boot_timeout="''${PURPLEFIN_INSTALLER_E2E_BOOT_TIMEOUT_SECONDS:-300}"
     poll_interval="''${PURPLEFIN_INSTALLER_SMOKE_POLL_INTERVAL_SECONDS:-1}"
     cpus="''${PURPLEFIN_INSTALLER_SMOKE_CPUS:-4}"
