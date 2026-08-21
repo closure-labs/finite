@@ -64,6 +64,16 @@ jq '.profiles["your-profile"]' \
   result/bootc/generated/home-profile-catalog.json
 ```
 
+The initial `home-switch` activation writes a per-user driver flake at
+`~/.config/purplefin/home/flake.nix`. Its `homeConfigurations.$USER` output
+contains the selected profile, hardware, installer-created username, and the
+absolute home path Home Manager requires. After bootstrap, use the native
+`nh home switch` workflow; `programs.nh.homeFlake` supplies an explicit `path:`
+URI for the driver automatically. Use `--update-input purplefin` when the
+Purplefin source itself should advance. Pass `--source FLAKE` during bootstrap
+when that update source should be a fork, local checkout, or pinned reference
+rather than the canonical GitHub repository.
+
 ## Add an aspect
 
 Create the aspect in one of these namespaces:

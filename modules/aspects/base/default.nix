@@ -17,6 +17,7 @@
           sourcePaths = [
             ./apply.sh
             ./install-determinate-nix.sh
+            ./install-nix-systemd-units.sh
             ./rootfs
             ../../../sources/determinate-nix.json
           ];
@@ -69,15 +70,6 @@
           zsh-fast-syntax-highlighting
           zsh-history-substring-search
           zsh-vi-mode
-          (writeShellScriptBin "purplefin-home" ''
-            set -euo pipefail
-            flake="''${PURPLEFIN_FLAKE:-github:declarative-dale/purplefin}"
-            profile="''${PURPLEFIN_PROFILE:?PURPLEFIN_PROFILE is not set}"
-            hardware="''${PURPLEFIN_HARDWARE:-generic-x86_64}"
-            exec /nix/var/nix/profiles/default/bin/nix run \
-              "$flake#home-switch" -- \
-              --profile "$profile" --hardware "$hardware" "$@"
-          '')
         ];
       };
 
@@ -126,9 +118,12 @@
       };
 
       programs = {
-        home-manager.enable = true;
         git.enable = true;
-        zsh.enable = true;
+        nh.enable = true;
+        zsh = {
+          enable = true;
+          shellAliases.purplefin-home = "nh home switch --update-input purplefin";
+        };
       };
 
       xdg.enable = true;

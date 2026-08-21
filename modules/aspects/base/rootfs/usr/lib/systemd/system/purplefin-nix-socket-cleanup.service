@@ -1,0 +1,9 @@
+[Unit]
+Description=Remove stale persistent Nix daemon sockets
+RequiresMountsFor=/nix/var/nix/daemon-socket /nix/var/determinate
+Before=nix-daemon.socket determinate-nixd.socket
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/rm -f -- /nix/var/nix/daemon-socket/socket /nix/var/determinate/determinate-nixd.socket
+RemainAfterExit=yes

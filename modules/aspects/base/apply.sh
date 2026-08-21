@@ -4,14 +4,18 @@ set -euo pipefail
 build_root="${PURPLEFIN_BUILD_ROOT:-/tmp/purplefin-build}"
 base_root="${build_root}/modules/aspects/base"
 
-cp -a "${base_root}/rootfs/." /
-
 # Fedora owns the host filesystem and account contracts used to bootstrap Nix.
 # Pin the otherwise-dynamic build identities before installing the packages so
 # Determinate Nix Installer can migrate the upstream installation in place.
-systemd-sysusers /usr/lib/sysusers.d/purplefin-nix.conf
+systemd-sysusers "${base_root}/rootfs/usr/lib/sysusers.d/purplefin-nix.conf"
 dnf5 -y install cloud-init nix nix-daemon
 rpm -q cloud-init nix nix-daemon nix-filesystem nix-system
+
+# Package installation owns the initial filesystem contract. Apply Purplefin's
+# rootfs afterwards so its Determinate daemon units cannot be replaced by the
+# Fedora nix-daemon package's upstream units.
+cp -a "${base_root}/rootfs/." /
+
 # Package scriptlets may populate the build container's transient /run tree.
 # Cloud-init recreates this state at boot; it must not enter the bootc commit.
 rm -rf -- /run/cloud-init

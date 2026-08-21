@@ -15,7 +15,11 @@
     bluefin-dx = bluefinDx;
   };
   upstreamLocksFile = pkgs.writeText "purplefin-upstreams.json" (builtins.toJSON upstreamLocks);
-  selfFlakeUri = "path:${builtins.unsafeDiscardStringContext (toString selfSource)}";
+  # Retain the store-path context so every application embedding this URI also
+  # retains the flake source it evaluates at runtime. Without that reference,
+  # automatic garbage collection can delete the source before home-switch uses
+  # builtins.getFlake.
+  selfFlakeUri = "path:${toString selfSource}";
 in rec {
   classifyChanges = import ./ci-applications/classify-changes.nix {inherit pkgs;};
   updateLocks = import ./ci-applications/update-locks.nix {
@@ -1262,14 +1266,16 @@ in rec {
     text = ''
       profile=""
       hardware=""
+      source_flake="github:declarative-dale/purplefin"
       mode=switch
       while (( $# > 0 )); do
         case "$1" in
           --profile) profile="''${2:?--profile requires a value}"; shift 2 ;;
           --hardware) hardware="''${2:?--hardware requires a value}"; shift 2 ;;
+          --source) source_flake="''${2:?--source requires a value}"; shift 2 ;;
           --check) mode=check; shift ;;
           --switch) mode=switch; shift ;;
-          *) echo "usage: purplefin-home-switch --profile PROFILE [--hardware HARDWARE] [--check|--switch]" >&2; exit 2 ;;
+          *) echo "usage: purplefin-home-switch --profile PROFILE [--hardware HARDWARE] [--source FLAKE] [--check|--switch]" >&2; exit 2 ;;
         esac
       done
       [[ "''${profile}" =~ ^[a-z0-9._-]+$ ]] || {
@@ -1307,6 +1313,7 @@ in rec {
       export PURPLEFIN_HOME_HARDWARE="''${hardware}"
       export PURPLEFIN_HOME_USERNAME="''${username}"
       export PURPLEFIN_HOME_DIRECTORY="''${home_directory}"
+      export PURPLEFIN_HOME_SOURCE="''${source_flake}"
       expression='let
         flake = builtins.getFlake "${selfFlakeUri}";
       in
@@ -1315,6 +1322,7 @@ in rec {
           hardware = builtins.getEnv "PURPLEFIN_HOME_HARDWARE";
           username = builtins.getEnv "PURPLEFIN_HOME_USERNAME";
           homeDirectory = builtins.getEnv "PURPLEFIN_HOME_DIRECTORY";
+          sourceFlake = builtins.getEnv "PURPLEFIN_HOME_SOURCE";
         }).activationPackage'
       activation="$(nix --accept-flake-config build --impure --no-link --print-out-paths --expr "''${expression}")"
       printf 'Home profile %s for %s (%s) builds as %s\n' \
@@ -1376,7 +1384,8 @@ in rec {
             "runuser", "-u", $user, "--", "env", "HOME=" + $home,
             "/nix/var/nix/profiles/default/bin/nix", "run",
             $flake + "#home-switch", "--",
-            "--profile", $profile, "--hardware", $hardware, "--switch"
+            "--profile", $profile, "--hardware", $hardware,
+            "--source", $flake, "--switch"
           ]]
         }
       ' | yq -P >"''${workdir}/user-data.yaml"
@@ -1442,6 +1451,7 @@ in rec {
         --build-arg "BASE_REF=''${base_image}" \
         --build-arg "BUILD_PROFILE=''${profile}" \
         --build-arg "PURPLEFIN_VERSION=${version}" \
+        --label "io.purplefin.build.profile=''${profile}" \
         --label "io.purplefin.upstream.digest=''${upstream_digest}" \
         --label "org.opencontainers.image.base.digest=''${upstream_digest}" \
         --tag "''${tag}" \

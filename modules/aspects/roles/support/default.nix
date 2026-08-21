@@ -6,7 +6,9 @@
       pkgs,
       ...
     }: let
-      espanso = config.lib.nixGL.wrap pkgs.espanso;
+      # Bluefin and Purplefin desktop sessions are Wayland-only. Keep the
+      # backend choice explicit so Nixpkgs cannot select Espanso's X11 build.
+      espanso = config.lib.nixGL.wrap pkgs.espanso-wayland;
     in {
       home = {
         packages = [espanso];

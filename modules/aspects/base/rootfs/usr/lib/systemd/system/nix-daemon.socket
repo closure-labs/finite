@@ -2,11 +2,14 @@
 Description=Determinate Nix Daemon Socket
 Before=multi-user.target
 RequiresMountsFor=/nix/store /nix/var /nix/var/nix/db
+Requires=purplefin-nix-socket-cleanup.service
+After=purplefin-nix-socket-cleanup.service
 ConditionPathIsReadWrite=/nix/var/nix/daemon-socket
 
 [Socket]
 FileDescriptorName=nix-daemon.socket
 ListenStream=/nix/var/nix/daemon-socket/socket
+RemoveOnStop=true
 
 [Install]
 WantedBy=sockets.target

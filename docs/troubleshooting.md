@@ -56,6 +56,22 @@ refuses to replace a non-empty malformed state. If
 `/var/home/nix` for diagnosis before repairing or restoring it; rebooting or
 upgrading the bootc image will not erase it.
 
+If `/nix/var/nix` is absent and `nix` warns that it is using a per-user chroot
+store, confirm that the active image contains Purplefin's Determinate unit and
+immutable activation links:
+
+```bash
+grep -F 'ExecStart=@/usr/bin/determinate-nixd' \
+  /usr/lib/systemd/system/nix-daemon.service
+readlink /usr/lib/systemd/system/multi-user.target.wants/nix-daemon.service
+readlink /usr/lib/systemd/system/sockets.target.wants/nix-daemon.socket
+```
+
+All three checks should succeed. A corrected image upgrade followed by a reboot
+restores these vendor files without replacing valid state in `/var/home/nix`.
+Purplefin also removes stale daemon socket files after mounting that state and
+before systemd binds the new sockets.
+
 ## Diagnose a local image build
 
 ```bash

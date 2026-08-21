@@ -55,6 +55,7 @@
     ../bootc/Containerfile.derived
     ../bootc/builder
     ../modules/aspects
+    ../modules/outputs.nix
     ../sources
     ../secretspec.toml
     ../tests/repository/contracts.sh
@@ -264,6 +265,8 @@ in {
       grep -qF 'ref = { item = "GITHUB_ACTIONS_MERGE_QUEUE_TOKEN" }' secretspec.toml
       ! grep -qF 'cachix watch-exec' lib/flake-applications.nix
       grep -qF 'cachix push --omit-deriver purplefin' lib/flake-applications.nix
+      grep -qF 'selfFlakeUri = "path:''${toString selfSource}"' lib/flake-applications.nix
+      ! grep -qF 'unsafeDiscardStringContext' lib/flake-applications.nix
       grep -qF 'nix --accept-flake-config eval --json' lib/flake-applications.nix
       ! grep -qF 'quotedPaths' lib/flake-applications.nix
       grep -qF 'flake_uri="git+file://' lib/flake-applications.nix
@@ -282,6 +285,7 @@ in {
       grep -qF 'containers-storage:' lib/flake-applications.nix
       grep -qF 'host_podman' lib/flake-applications.nix
       grep -qF 'unshare "$0"' lib/flake-applications.nix
+      grep -qF -- '--label "io.purplefin.build.profile=' lib/flake-applications.nix
       grep -qF 'https://purplefin.cachix.org' flake.nix
       grep -qFx 'ARG BASE_REF' bootc/Containerfile
       ! grep -qF 'bluefin:stable' bootc/Containerfile

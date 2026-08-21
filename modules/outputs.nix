@@ -76,8 +76,27 @@
     username ? "purplefin",
     homeDirectory ? "/var/home/${username}",
     hardware ? builtins.head homeProfiles.${name}.hardware,
+    sourceFlake ? "github:declarative-dale/purplefin",
   }: let
     profile = homeProfiles.${name};
+    homeDriverFlake = pkgs.writeText "purplefin-home-flake.nix" ''
+      {
+        inputs.purplefin.url = ${builtins.toJSON sourceFlake};
+
+        outputs = { purplefin, ... }: {
+          homeConfigurations = {
+            ${builtins.toJSON username} =
+              purplefin.lib.purplefin.mkHomeConfiguration {
+                name = ${builtins.toJSON name};
+                hardware = ${builtins.toJSON hardware};
+                username = ${builtins.toJSON username};
+                homeDirectory = ${builtins.toJSON homeDirectory};
+                sourceFlake = ${builtins.toJSON sourceFlake};
+              };
+          };
+        };
+      }
+    '';
     hardwareModule =
       if hardware == "dell-xps-9350-intel"
       then [(den.lib.aspects.resolve "homeManager" den.aspects.features.hardware.dell-xps-9350-intel)]
@@ -90,7 +109,11 @@
         modules =
           [
             (den.lib.aspects.resolve "homeManager" profile.aspect)
-            {
+            ({
+              config,
+              lib,
+              ...
+            }: {
               home = {
                 inherit homeDirectory username;
                 sessionVariables = {
@@ -99,11 +122,23 @@
                   PURPLEFIN_HARDWARE = hardware;
                 };
               };
+              home.activation.writePurplefinHomeFlake = lib.hm.dag.entryAfter ["linkGeneration"] ''
+                driver_dir=${lib.escapeShellArg "${config.xdg.configHome}/purplefin/home"}
+                driver_file="''${driver_dir}/flake.nix"
+                run ${pkgs.coreutils}/bin/mkdir -p "''${driver_dir}"
+                if [[ -L "''${driver_file}" ]]; then
+                  run ${pkgs.coreutils}/bin/rm -f "''${driver_file}"
+                fi
+                if ! ${pkgs.diffutils}/bin/cmp -s ${homeDriverFlake} "''${driver_file}"; then
+                  run ${pkgs.coreutils}/bin/install -m 0644 ${homeDriverFlake} "''${driver_file}"
+                fi
+              '';
+              programs.nh.homeFlake = "path:${config.xdg.configHome}/purplefin/home";
               xdg.configFile."purplefin/profile.json".text = builtins.toJSON {
                 inherit hardware name;
                 inherit (profile) baseClass roles;
               };
-            }
+            })
           ]
           ++ hardwareModule;
       };

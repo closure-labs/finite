@@ -63,7 +63,8 @@ nix run github:declarative-dale/purplefin#home-switch -- \
   --profile support --hardware generic-x86_64
 ```
 
-After activation, `purplefin-home` performs later manual updates. A generated
+After activation, `nh home switch --update-input purplefin` performs later
+manual updates from the generated per-user Home Manager flake. A generated
 NoCloud seed can perform the initial activation; see the
 [installation guide](docs/installation.md).
 

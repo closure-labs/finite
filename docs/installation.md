@@ -59,6 +59,13 @@ create that directory separately. Because bootc keeps the image root immutable
 and `/nix` must be writable, first boot copies the image seed to persistent
 `/var/home/nix` and bind-mounts it at `/nix` before the Nix daemon starts. Later
 boots preserve that state, including installed packages and store paths.
+The daemon and socket activation links live in the immutable systemd vendor
+tree, so fresh installations start Nix without depending on an `/etc` merge.
+This also restores activation after switching an existing bootc workstation
+whose retained `/etc` state omitted older Nix enablement links.
+Before binding the daemon sockets, Purplefin removes socket files retained in
+persistent state by an older installation; store paths and profiles are left
+untouched.
 
 Determinate Nixd owns Nix upgrades after migration. Use the normal Determinate
 Nix upgrade mechanism rather than upgrading the runtime through Fedora's Nix
@@ -78,15 +85,28 @@ nix run github:declarative-dale/purplefin#home-switch -- \
   --profile sales --hardware generic-x86_64
 ```
 
+The bootstrap records the canonical Purplefin flake as the update source. When
+installing from a fork, local checkout, or pinned reference, pass the same
+reference with `--source FLAKE`.
+
 Home Manager owns the role applications and preferences, including NixGL
 wrappers for graphical Nix packages. Bitwarden CLI and Desktop are installed
-from Nix rather than baked into the image. Espanso remains available to the
-`support`, `dale`, and `elad` profiles as a Nix package and user service. Later
-updates are intentionally manual:
+from Nix rather than baked into the image. The locked Devenv CLI is included
+in the `developer`, `dale`, and `elad` profiles. Espanso remains available to the
+`support`, `dale`, and `elad` profiles as a Wayland Nix package and user
+service. The initial activation writes a small per-user flake under
+`~/.config/purplefin/home`; it records the selected role, hardware, username,
+and absolute home directory required by Home Manager. `nh` discovers this
+flake through an explicit `path:` URI and selects its
+`homeConfigurations.$USER` output automatically. Reapply the locked generation
+with `nh home switch`. Update only the Purplefin input and activate it with:
 
 ```bash
-purplefin-home
+nh home switch --update-input purplefin
 ```
+
+For compatibility, Zsh provides `purplefin-home` as an alias for the
+update-and-switch command.
 
 ## Generate a cloud-init NoCloud seed
 
