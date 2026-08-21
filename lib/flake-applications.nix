@@ -3,6 +3,7 @@
   bluefinDx,
   devenv,
   determinateNix,
+  fedoraBootc,
   generated,
   imageBuilder,
   pkgs,
@@ -223,6 +224,9 @@ in rec {
       export PURPLEFIN_IMAGE_BUILDER_ARCHITECTURE=${imageBuilder.architecture}
       export PURPLEFIN_IMAGE_BUILDER_DIGEST=${imageBuilder.digest}
       export PURPLEFIN_IMAGE_BUILDER_IMAGE=${imageBuilder.image}
+      export PURPLEFIN_FEDORA_BOOTC_ARCHITECTURE=${fedoraBootc.architecture}
+      export PURPLEFIN_FEDORA_BOOTC_DIGEST=${fedoraBootc.digest}
+      export PURPLEFIN_FEDORA_BOOTC_IMAGE=${fedoraBootc.image}
       export PURPLEFIN_DETERMINATE_NIX_INSTALLER_SHA256=${determinateNix.installer.sha256}
       export PURPLEFIN_DETERMINATE_NIX_INSTALLER_URL=${pkgs.lib.escapeShellArg determinateNix.installer.url}
       export PURPLEFIN_DETERMINATE_NIX_POLICY_SHA256=${determinateNix.selinuxPolicy.sha256}
@@ -249,6 +253,13 @@ in rec {
           image="''${PURPLEFIN_IMAGE_BUILDER_IMAGE:?}"
           architecture="''${PURPLEFIN_IMAGE_BUILDER_ARCHITECTURE:?}"
           digest="''${PURPLEFIN_IMAGE_BUILDER_DIGEST:?}"
+          skopeo inspect --retry-times 3 --override-arch "''${architecture}" \
+            "docker://''${image}@''${digest}" >/dev/null
+          ;;
+        fedora-bootc)
+          image="''${PURPLEFIN_FEDORA_BOOTC_IMAGE:?}"
+          architecture="''${PURPLEFIN_FEDORA_BOOTC_ARCHITECTURE:?}"
+          digest="''${PURPLEFIN_FEDORA_BOOTC_DIGEST:?}"
           skopeo inspect --retry-times 3 --override-arch "''${architecture}" \
             "docker://''${image}@''${digest}" >/dev/null
           ;;
@@ -293,7 +304,7 @@ in rec {
       source_name="''${1:?usage: purplefin-source-update SOURCE [OUTPUT_FILE]}"
       output_file="''${2:-}"
       case "''${source_name}" in
-        bluefin | bluefin-dx | image-builder)
+        bluefin | bluefin-dx | fedora-bootc | image-builder)
           lock="''${repo_root}/sources/''${source_name}.json"
           [[ -f "''${lock}" ]]
           image="$(jq -er '.image' "''${lock}")"
@@ -775,7 +786,7 @@ in rec {
   installerE2e = import ./ci-applications/installer-e2e.nix {inherit pkgs;};
   installerSmoke = import ./ci-applications/installer-smoke.nix {inherit pkgs;};
   installerBuild = import ./installer-application.nix {
-    inherit generated imageBuilder installerE2e installerSmoke pkgs;
+    inherit fedoraBootc generated imageBuilder installerE2e installerSmoke pkgs;
   };
   sbomAttestation = pkgs.writeShellApplication {
     name = "purplefin-sbom-attestation";

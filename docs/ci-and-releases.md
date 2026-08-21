@@ -103,14 +103,17 @@ applications, the Image Builder lock, or the Nix toolchain lock. Shared Flake
 exports, workflows, profile modules, and installer unit tests are validated by
 the contract without rebuilding an unchanged ISO.
 
-Full installer validation fingerprints the installer container context
-together with the immutable payload reference. Trusted `main` builds publish
-and keylessly sign that exact environment after installer changes or a new base
-payload; scheduled builds provide an independent weekly probe. Pull requests
-reuse the cache only after verifying the main installer-workflow identity.
-Cache misses retain the layer cache, and the pinned Image Builder image is
-pulled in parallel with environment preparation. OSBuild stage and RPM metadata
-caches are mounted explicitly and reused by the two ISO variants within a run.
+Full installer validation builds the live Anaconda environment from a pinned,
+minimal Fedora bootc image. The signed Purplefin image is passed separately as
+Image Builder's installer payload, so desktop and developer packages are not
+duplicated into the live squashfs. The environment fingerprint covers the
+Fedora base, installer context, and immutable payload reference. Trusted `main`
+builds publish and keylessly sign that exact environment; pull requests reuse
+it only after verifying the main installer-workflow identity. Package install
+and dracut layers remain payload-independent, allowing layer-cache reuse across
+Purplefin updates. The pinned Image Builder image is pulled in parallel with
+environment preparation. OSBuild stage and RPM metadata caches are mounted
+explicitly and reused by the two ISO variants within a run.
 The QEMU smoke test exits as soon as `anaconda.service` emits the
 Purplefin-owned readiness marker instead of waiting for the five-minute safety
 timeout.

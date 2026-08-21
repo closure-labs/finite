@@ -1,4 +1,5 @@
 {
+  fedoraBootc,
   generated,
   imageBuilder,
   installerE2e,
@@ -22,6 +23,7 @@ pkgs.writeShellApplication {
   ];
   text = ''
     export PURPLEFIN_GENERATED_ROOT=${generated}
+    export PURPLEFIN_INSTALLER_BASE_REF=${fedoraBootc.image}@${fedoraBootc.digest}
     export PURPLEFIN_IMAGE_BUILDER_REF=${imageBuilder.image}@${imageBuilder.digest}
     export PURPLEFIN_INSTALLER_E2E_APP=${installerE2e}/bin/purplefin-installer-e2e
     export PURPLEFIN_INSTALLER_SMOKE=${installerSmoke}/bin/purplefin-installer-smoke
@@ -46,6 +48,7 @@ pkgs.writeShellApplication {
     : "''${GITHUB_REPOSITORY:?GITHUB_REPOSITORY is required}"
     : "''${GITHUB_SHA:?GITHUB_SHA is required}"
     image_builder="''${PURPLEFIN_IMAGE_BUILDER_REF:?PURPLEFIN_IMAGE_BUILDER_REF is required}"
+    installer_base="''${PURPLEFIN_INSTALLER_BASE_REF:?PURPLEFIN_INSTALLER_BASE_REF is required}"
     : "''${IMAGE_REF:=ghcr.io/''${GITHUB_REPOSITORY}}"
     : "''${IMAGE_TAG:=base-generic-x86_64}"
     : "''${RUNNER_TEMP:=/tmp}"
@@ -129,7 +132,8 @@ pkgs.writeShellApplication {
     )"
     environment_input="$(
       printf '%s\n' \
-        'purplefin-installer-environment-v1' \
+        'purplefin-installer-environment-v2' \
+        "base=''${installer_base}" \
         "context=''${installer_context_digest}" \
         "payload=''${payload_ref}" \
         "payload-embed=''${payload_embed_ref}" |
@@ -194,6 +198,7 @@ pkgs.writeShellApplication {
     "''${root_podman[@]}" pull "''${auth_args[@]}" "''${image_builder}" \
       >diagnostics/image-builder-pull.log 2>&1 &
     image_builder_pull_pid=$!
+    "''${root_podman[@]}" pull "''${auth_args[@]}" "''${installer_base}"
     "''${root_podman[@]}" pull "''${auth_args[@]}" "''${payload_ref}"
     "''${root_podman[@]}" tag "''${payload_ref}" "''${payload_embed_ref}"
     environment_cache_metadata="$({
@@ -221,8 +226,9 @@ pkgs.writeShellApplication {
       "''${root_podman[@]}" build "''${auth_args[@]}" "''${cache_args[@]}" \
         --file installer/Containerfile \
         --pull=never \
+        --security-opt label=disable \
         --build-context installer-rootfs=installer/rootfs \
-        --build-arg "BASE_REF=''${payload_ref}" \
+        --build-arg "BASE_REF=''${installer_base}" \
         --build-arg "INSTALLER_PAYLOAD_SOURCE_REF=''${payload_embed_ref}" \
         --build-arg "INSTALLER_PAYLOAD_TARGET_REF=''${payload_ref}" \
         --label "io.purplefin.installer.input=''${environment_input}" \
@@ -291,6 +297,8 @@ pkgs.writeShellApplication {
     jq -n \
       --arg image_builder "''${image_builder}" \
       --arg image_builder_digest "''${image_builder_digest}" \
+      --arg installer_base "''${installer_base}" \
+      --arg installer_base_digest "''${installer_base##*@}" \
       --arg installer_environment_input "''${environment_input}" \
       --arg installer_environment_image_id "''${installer_image_id}" \
       --argjson installer_environment_cache_hit "''${environment_cache_hit}" \
@@ -310,6 +318,7 @@ pkgs.writeShellApplication {
         version: $version,
         iso: {name: $iso, sha256: $iso_sha256},
         installer_environment: {
+          base: {reference: $installer_base, digest: $installer_base_digest},
           image_id: $installer_environment_image_id,
           input: $installer_environment_input,
           cache_hit: $installer_environment_cache_hit

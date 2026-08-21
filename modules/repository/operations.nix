@@ -24,6 +24,7 @@ in {
         sources.bluefin
         sources.bluefin-dx
         sources.determinate-nix
+        sources.fedora-bootc
         sources.image-builder
       ];
       all.includes = [
@@ -48,7 +49,11 @@ in {
         profiles.bluefin-dx-generic
         profiles.bluefin-dx-dell-xps-9350-intel
       ];
-      installer.includes = [operations.delivery.images];
+      installer.includes = [
+        operations.delivery.images
+        sources.fedora-bootc
+        sources.image-builder
+      ];
       release.includes = [
         operations.delivery.images
         operations.delivery.installer
@@ -75,6 +80,10 @@ in {
         operations.updates.image-builder
         operations.delivery.installer
       ];
+      fedora-bootc-update.includes = [
+        operations.updates.fedora-bootc
+        operations.delivery.installer
+      ];
     };
 
     updates = {
@@ -92,6 +101,11 @@ in {
       image-builder.includes = [
         operations.source
         sources.image-builder
+        operations.checks.upstream
+      ];
+      fedora-bootc.includes = [
+        operations.source
+        sources.fedora-bootc
         operations.checks.upstream
       ];
     };
