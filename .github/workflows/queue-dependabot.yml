@@ -27,11 +27,12 @@ jobs:
       - name: Set up Nix and SecretSpec
         uses: ./.github/actions/setup-nix
         with:
-          github-token: ${{ github.token }}
           merge-queue-token: ${{ secrets.MERGE_QUEUE_TOKEN }}
 
       - name: Verify and enqueue open Dependabot pull requests
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           GH_TOKEN: ${{ env.MERGE_QUEUE_TOKEN || github.token }}
-        run: nix run .#queue-dependabot
+        run: >-
+          nix shell --accept-flake-config .#ci-queue-dependabot
+          -c purplefin-queue-dependabot

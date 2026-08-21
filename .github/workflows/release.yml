@@ -48,9 +48,6 @@ jobs:
 
       - name: Set up Nix and Cachix
         uses: ./.github/actions/setup-nix
-        with:
-          github-token: ${{ github.token }}
-          toolset: workflow-release
 
       - name: Calculate the release version
         id: version
@@ -173,10 +170,13 @@ jobs:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           EXPECTED_AUTHOR: app/github-actions
           EXPECTED_BRANCH: automation/release-${{ steps.version.outputs.tag }}
+          EXPECTED_FILES: VERSION
           EXPECTED_TITLE: Release Purplefin ${{ steps.version.outputs.version }}
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ steps.release-version.outputs.pull-request-number }}
-        run: purplefin-trusted-update
+        run: >-
+          nix shell --accept-flake-config .#ci-trusted-update
+          -c purplefin-trusted-update
 
       - name: Resolve the protected release source
         id: source
@@ -296,8 +296,9 @@ jobs:
               primary_tag="$(jq -r '.tags | split(" ")[0]' <<<"${entry}")"
               expected_input="$(jq -r '.build_input' <<<"${entry}")"
               metadata="$({
-                skopeo inspect --retry-times 3 \
-                  "docker://${IMAGE_REF}:${primary_tag}"
+                nix shell --accept-flake-config .#ci-skopeo \
+                  -c skopeo inspect --retry-times 3 \
+                    "docker://${IMAGE_REF}:${primary_tag}"
               })" || return 1
               [[ "$(jq -er '.Labels["org.opencontainers.image.revision"]' <<<"${metadata}")" == "${SOURCE_SHA}" ]] || return 1
               [[ "$(jq -er '.Labels["org.opencontainers.image.version"]' <<<"${metadata}")" == "${VERSION}" ]] || return 1
@@ -371,9 +372,6 @@ jobs:
 
       - name: Set up Nix and Cachix
         uses: ./.github/actions/setup-nix
-        with:
-          github-token: ${{ github.token }}
-          toolset: workflow-release
 
       - name: Resolve Flake-generated build artifacts
         run: echo "PURPLEFIN_GENERATED_ROOT=$(nix build .#generated --no-link --print-out-paths)" >>"${GITHUB_ENV}"
@@ -421,7 +419,8 @@ jobs:
             profile="$(jq -r '.profile' <<<"${entry}")"
             primary_tag="$(jq -r '.tags | split(" ")[0]' <<<"${entry}")"
             source_ref="${IMAGE_REF}:${primary_tag}"
-            metadata="$(skopeo inspect --retry-times 3 "docker://${source_ref}")"
+            metadata="$(nix shell --accept-flake-config .#ci-skopeo \
+              -c skopeo inspect --retry-times 3 "docker://${source_ref}")"
             digest="$(jq -er '.Digest' <<<"${metadata}")"
             revision="$(jq -er '.Labels["org.opencontainers.image.revision"]' <<<"${metadata}")"
             image_version="$(jq -er '.Labels["org.opencontainers.image.version"]' <<<"${metadata}")"
@@ -431,7 +430,7 @@ jobs:
             [[ "${image_version}" == "${VERSION}" ]]
 
             immutable_ref="${IMAGE_REF}@${digest}"
-            cosign verify \
+            nix shell --accept-flake-config .#ci-cosign -c cosign verify \
               --certificate-oidc-issuer https://token.actions.githubusercontent.com \
               --certificate-identity "${COSIGN_IDENTITY}" \
               "${immutable_ref}" >/dev/null
@@ -442,12 +441,13 @@ jobs:
               --source-digest "${SOURCE_SHA}"
 
             release_tag="${profile}-v${VERSION}"
-            oras tag \
+            nix shell --accept-flake-config .#ci-oras -c oras tag \
               --registry-config "${REGISTRY_AUTH_FILE}" \
               "${immutable_ref}" \
               "${release_tag}"
             release_digest="$({
-              skopeo inspect --retry-times 3 --format '{{.Digest}}' \
+              nix shell --accept-flake-config .#ci-skopeo \
+                -c skopeo inspect --retry-times 3 --format '{{.Digest}}' \
                 "docker://${IMAGE_REF}:${release_tag}"
             })"
             [[ "${release_digest}" == "${digest}" ]]
@@ -458,7 +458,8 @@ jobs:
               SBOM_IMAGE_REF="${IMAGE_REF}" \
               SBOM_SIGNER_WORKFLOW="${GITHUB_REPOSITORY}/.github/workflows/attest-software-bill-of-materials.yml" \
               SBOM_SOURCE_DIGEST="${SOURCE_SHA}" \
-              purplefin-sbom-attestation extract "${sbom}"
+              nix shell --accept-flake-config .#ci-sbom-attestation \
+                -c purplefin-sbom-attestation extract "${sbom}"
             sbom_asset="purplefin-${profile}-v${VERSION}.spdx.json.gz"
             gzip -9c "${sbom}" >"release-sboms/${sbom_asset}"
             rm -f -- "${sbom}"
@@ -496,7 +497,8 @@ jobs:
           mapfile -t sbom_assets < <(find release-sboms -type f -name '*.spdx.json.gz' -print | sort)
           expected_assets="$(jq 'length' "${PURPLEFIN_GENERATED_ROOT}/bootc/generated/image-matrix.json")"
           (( ${#sbom_assets[@]} == expected_assets ))
-          purplefin-release-notes "${VERSION}" CHANGELOG.md >release-notes.md
+          nix shell --accept-flake-config .#ci-release-notes \
+            -c purplefin-release-notes "${VERSION}" CHANGELOG.md >release-notes.md
           grep -q '[^[:space:]]' release-notes.md
           gh release create "v${VERSION}" \
             release-manifest.json \
@@ -554,10 +556,13 @@ jobs:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           EXPECTED_AUTHOR: app/github-actions
           EXPECTED_BRANCH: automation/start-${{ steps.next-version.outputs.next_version }}
+          EXPECTED_FILES: VERSION
           EXPECTED_TITLE: Start Purplefin ${{ steps.next-version.outputs.next_version }}
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ steps.development-version.outputs.pull-request-number }}
-        run: purplefin-trusted-update
+        run: >-
+          nix shell --accept-flake-config .#ci-trusted-update
+          -c purplefin-trusted-update
 
       - name: Wait for the next development version merge
         if: >-

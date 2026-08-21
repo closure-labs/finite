@@ -35,7 +35,8 @@ Install Nix with Flakes enabled and rootless Podman, then run:
 ```bash
 git clone https://github.com/declarative-dale/purplefin.git
 cd purplefin
-nix run .#image-build -- bluefin-generic localhost/purplefin:bluefin-generic
+nix shell --accept-flake-config .#ci-image-build \
+  -c purplefin-image-build bluefin-generic localhost/purplefin:bluefin-generic
 ```
 
 Format and validate the complete repository with the pinned toolchain:
@@ -43,7 +44,7 @@ Format and validate the complete repository with the pinned toolchain:
 ```bash
 nix develop
 nix fmt
-nix run .#ci
+nix shell --accept-flake-config .#ci-check -c purplefin-ci-check
 ```
 
 ## Choose a foundation and home profile

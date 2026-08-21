@@ -1,6 +1,7 @@
 {
   bluefin,
   bluefinDx,
+  devenv,
   determinateNix,
   generated,
   imageBuilder,
@@ -16,6 +17,9 @@
   selfFlakeUri = "path:${builtins.unsafeDiscardStringContext (toString selfSource)}";
 in rec {
   classifyChanges = import ./ci-applications/classify-changes.nix {inherit pkgs;};
+  updateLocks = import ./ci-applications/update-locks.nix {
+    inherit devenv pkgs;
+  };
 
   githubActionsSecrets = pkgs.writeShellApplication {
     name = "purplefin-github-actions-secrets";
@@ -36,40 +40,44 @@ in rec {
     '';
   };
 
-  mkCi = checks: let
+  mkCheck = checks: let
     checkNames = builtins.attrNames checks;
     quotedNames = pkgs.lib.concatMapStringsSep " " pkgs.lib.escapeShellArg checkNames;
-    quotedPaths =
-      pkgs.lib.concatMapStringsSep " " (
-        name:
-          pkgs.lib.escapeShellArg (
-            builtins.unsafeDiscardStringContext (toString checks.${name})
-          )
-      )
-      checkNames;
   in
     pkgs.writeShellApplication {
-      name = "purplefin-ci";
-      runtimeInputs = with pkgs; [cachix coreutils jq nix];
+      name = "purplefin-ci-check";
+      # Nix comes from the host's Determinate installation; do not shadow it
+      # with the upstream Nixpkgs client inside this application wrapper.
+      runtimeInputs = with pkgs; [cachix coreutils jq];
       text = ''
         repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
         [[ -f "''${repo_root}/flake.nix" ]] || {
           echo "Run this command from the Purplefin repository root" >&2
           exit 2
         }
+        flake_uri="path:''${repo_root}"
+        if [[ "''${GITHUB_ACTIONS:-false}" == true ]]; then
+          # Keep checkout metadata out of checks such as treefmt, which create
+          # their own temporary Git repository from the flake source.
+          flake_uri="git+file://''${repo_root}"
+        fi
 
         nix --accept-flake-config flake check \
-          "git+file://''${repo_root}" \
+          "''${flake_uri}" \
           --print-build-logs \
           "$@"
 
         check_names=(${quotedNames})
-        check_paths=(${quotedPaths})
-        nix --accept-flake-config build --no-link "''${check_paths[@]}"
+        check_paths_json="$(
+          nix --accept-flake-config eval --json \
+            --apply 'checks: builtins.mapAttrs (_: check: check.outPath) checks' \
+            "''${flake_uri}#checks.${pkgs.stdenv.hostPlatform.system}"
+        )"
         max_closure_size=$((1024 * 1024))
-        for index in "''${!check_paths[@]}"; do
-          name="''${check_names[$index]}"
-          path="''${check_paths[$index]}"
+        check_paths=()
+        for name in "''${check_names[@]}"; do
+          path="$(jq -er --arg name "''${name}" '.[$name]' <<<"''${check_paths_json}")"
+          check_paths+=("''${path}")
           [[ -e "''${path}" ]] || {
             echo "The completed Flake check did not realize ''${name}: ''${path}" >&2
             exit 1
@@ -121,7 +129,7 @@ in rec {
           --profile local-cache \
           --reason "Purplefin local Nix cache" \
           --scope cachix \
-          -- ${ciApplication}/bin/purplefin-ci "$@"
+          -- ${ciApplication}/bin/purplefin-ci-check "$@"
       '';
     };
   verifyBluefin = pkgs.writeShellApplication {
@@ -263,7 +271,7 @@ in rec {
   };
   sourceUpdate = pkgs.writeShellApplication {
     name = "purplefin-source-update";
-    runtimeInputs = with pkgs; [coreutils cosign curl diffutils gh jq nix skopeo];
+    runtimeInputs = with pkgs; [coreutils cosign curl diffutils gh jq skopeo];
     text = ''
       repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
       [[ -f "''${repo_root}/flake.nix" ]] || {
@@ -274,14 +282,6 @@ in rec {
       source_name="''${1:?usage: purplefin-source-update SOURCE [OUTPUT_FILE]}"
       output_file="''${2:-}"
       case "''${source_name}" in
-        flake)
-          before="$(sha256sum flake.lock | cut -d' ' -f1)"
-          nix flake update
-          after="$(sha256sum flake.lock | cut -d' ' -f1)"
-          changed=false
-          [[ "''${before}" == "''${after}" ]] || changed=true
-          digest="''${after}"
-          ;;
         bluefin | bluefin-dx | image-builder)
           lock="''${repo_root}/sources/''${source_name}.json"
           [[ -f "''${lock}" ]]
@@ -466,7 +466,7 @@ in rec {
           read_pr() {
             gh pr view "''${PR_NUMBER}" \
               --repo "''${GITHUB_REPOSITORY}" \
-              --json author,baseRefName,headRefName,headRefOid,headRepository,mergeStateStatus,state,title,url
+              --json author,baseRefName,files,headRefName,headRefOid,headRepository,mergeStateStatus,state,title,url
           }
 
           validate_pr() {
@@ -477,6 +477,16 @@ in rec {
             [[ "$(jq -er '.baseRefName' <<<"''${candidate}")" == "''${DEFAULT_BRANCH}" ]]
             [[ "$(jq -er '.headRepository.nameWithOwner' <<<"''${candidate}")" == "''${GITHUB_REPOSITORY}" ]]
             [[ "$(jq -er '.headRefName' <<<"''${candidate}")" == "''${EXPECTED_BRANCH}" ]]
+            if [[ -n "''${EXPECTED_FILES:-}" ]]; then
+              jq -e --arg allowed "''${EXPECTED_FILES}" '
+                ($allowed | split(",")) as $allowed_files |
+                (.files | length) > 0 and
+                all(.files[]; (.path as $path | $allowed_files | index($path)) != null)
+              ' <<<"''${candidate}" >/dev/null || {
+                echo 'Pull request changes files outside the declared automation scope' >&2
+                return 1
+              }
+            fi
           }
 
           pr="$(read_pr)"
@@ -666,128 +676,18 @@ in rec {
         done
     '';
   };
-  ciGate = import ./ci-applications/ci-gate.nix {inherit pkgs;};
+  ciGate = import ./ci-applications/ci-gate.nix {inherit pkgs validateCiPlan;};
   promoteImages = import ./ci-applications/promote-images.nix {inherit pkgs;};
   classifyCi = import ./ci-applications/classify-ci.nix {inherit classifyChanges pkgs;};
   imagePlan = import ./ci-applications/image-plan.nix {inherit pkgs;};
   shardPlan = import ./ci-applications/shard-plan.nix {inherit pkgs;};
-  ciPlan = pkgs.writeShellApplication {
-    name = "purplefin-ci-plan";
-    runtimeInputs = [pkgs.jq];
-    text = ''
-      (( $# == 1 )) || {
-        echo "usage: nix run .#ci-plan -- GITHUB_OUTPUT" >&2
-        exit 2
-      }
-      classification="''${CLASSIFICATION:?CLASSIFICATION is required}"
-      jq -e '
-        .schema == 1 and
-        (.diff.status == "classified" or .diff.status == "fallback" or .diff.status == "predetermined") and
-        (.validation.images.required | type == "boolean") and
-        (.validation.images.scope == "none" or
-          .validation.images.scope == "changed" or
-          .validation.images.scope == "all") and
-        (.validation.installer.required | type == "boolean")
-      ' <<<"''${classification}" >/dev/null || {
-        echo 'Invalid CI classification contract' >&2
-        exit 2
-      }
-
-      base_image='${bluefin.image}'
-      base_tag='${bluefin.tag}'
-      base_digest='${bluefin.digest}'
-      profiles="$(jq -c . ${generated}/bootc/generated/image-matrix.json)"
-      matrix='{"include":[],"sbom_repair":[]}'
-      root_base='{}'
-      root_matrix='{"include":[]}'
-      hardware_matrix='{"include":[]}'
-      role_matrix='{"include":[]}'
-      candidate_shards='{"include":[]}'
-      base_sbom_matrix='{"include":[]}'
-      hardware_sbom_matrix='{"include":[]}'
-      role_sbom_matrix='{"include":[]}'
-
-      if jq -e '.validation.images.required' <<<"''${classification}" >/dev/null; then
-        : "''${IMAGE_REF:?IMAGE_REF is required}"
-        : "''${GITHUB_SHA:?GITHUB_SHA is required}"
-        ${verifyBluefin}/bin/purplefin-verify-bluefin bluefin >/dev/null
-        ${verifyBluefin}/bin/purplefin-verify-bluefin bluefin-dx >/dev/null
-        export EXPECTED_VERSION='${version}'
-        matrix="$(${imagePlan}/bin/purplefin-image-plan "''${profiles}")"
-        root_base="$(jq -c 'first(.include[] | select(.stage == "root")) // {}' <<<"''${matrix}")"
-        root_matrix="$(jq -c '{include: [.include[] | select(.stage == "root")]}' <<<"''${matrix}")"
-        hardware_matrix="$(jq -c '{include: [.include[] | select(.stage == "hardware")]}' <<<"''${matrix}")"
-        role_matrix="$(jq -c '{include: [.include[] | select(.stage == "role")]}' <<<"''${matrix}")"
-        candidate_shards="$(${shardPlan}/bin/purplefin-shard-plan "''${profiles}" "''${matrix}" 4)"
-        sbom_matrix="$(jq -c --arg source_digest "''${GITHUB_SHA}" \
-          --argjson profiles "''${profiles}" '
-          ([.include[] | . + {
-            source_digest: $source_digest,
-            subject_tag: (.profile + "-candidate")
-          }] + .sbom_repair) as $selected |
-          {include: [
-            $profiles[] as $decl |
-            $selected[] |
-            select(.profile == $decl.profile)
-          ]}
-        ' <<<"''${matrix}")"
-        base_sbom_matrix="$(jq -c '{include: [.include[] | select(.stage == "root")]}' <<<"''${sbom_matrix}")"
-        hardware_sbom_matrix="$(jq -c '{include: [.include[] | select(.stage == "hardware")]}' <<<"''${sbom_matrix}")"
-        role_sbom_matrix="$(jq -c '{include: [.include[] | select(.stage == "role")]}' <<<"''${sbom_matrix}")"
-      fi
-
-      lifecycle="$(jq -cn \
-        --argjson classification "''${classification}" \
-        --argjson base_sbom "''${base_sbom_matrix}" \
-        --argjson hardware "''${hardware_matrix}" \
-        --argjson hardware_sbom "''${hardware_sbom_matrix}" \
-        --argjson matrix "''${matrix}" \
-        --argjson role "''${role_matrix}" \
-        --argjson role_sbom "''${role_sbom_matrix}" \
-        --argjson root "''${root_matrix}" '
-        {
-          schema: 1,
-          classification: $classification,
-          validation: {
-            images: {
-              required: ($matrix.include | length > 0),
-              targets: [$matrix.include[].profile]
-            },
-            installer: $classification.validation.installer
-          },
-          publication: {
-            builds: {
-              any: ($matrix.include | length > 0),
-              root: ($root.include | length > 0),
-              hardware: ($hardware.include | length > 0),
-              roles: ($role.include | length > 0)
-            },
-            sbom: {
-              base: ($base_sbom.include | length > 0),
-              hardware: ($hardware_sbom.include | length > 0),
-              roles: ($role_sbom.include | length > 0)
-            },
-            promote: ($matrix.include | length > 0)
-          }
-        }
-      ')"
-      {
-        printf 'base_image=%s\n' "''${base_image}"
-        printf 'base_digest=%s\n' "''${base_digest}"
-        printf 'base_tag=%s\n' "''${base_tag}"
-        printf 'base_sbom_matrix=%s\n' "''${base_sbom_matrix}"
-        printf 'candidate_shards=%s\n' "''${candidate_shards}"
-        printf 'hardware_matrix=%s\n' "''${hardware_matrix}"
-        printf 'hardware_sbom_matrix=%s\n' "''${hardware_sbom_matrix}"
-        printf 'lifecycle=%s\n' "''${lifecycle}"
-        printf 'matrix=%s\n' "''${matrix}"
-        printf 'role_matrix=%s\n' "''${role_matrix}"
-        printf 'role_sbom_matrix=%s\n' "''${role_sbom_matrix}"
-        printf 'root_base=%s\n' "''${root_base}"
-        printf 'root_matrix=%s\n' "''${root_matrix}"
-        printf 'version=%s\n' '${version}'
-      } >>"$1"
-    '';
+  validateCiPlan = import ./ci-applications/validate-ci-plan.nix {inherit pkgs;};
+  validateLocks = import ./ci-applications/validate-locks.nix {inherit pkgs;};
+  buildCiPlan = import ./ci-applications/build-ci-plan.nix {
+    inherit bluefin generated imagePlan pkgs shardPlan verifyBluefin version;
+  };
+  ciPrepare = import ./ci-applications/ci-prepare.nix {
+    inherit buildCiPlan classifyCi pkgs validateCiPlan;
   };
   imageSign = import ./ci-applications/image-sign.nix {inherit pkgs;};
   imageReuse = pkgs.writeShellApplication {
@@ -1199,7 +1099,7 @@ in rec {
   };
   imageSbom = pkgs.writeShellApplication {
     name = "purplefin-image-sbom";
-    runtimeInputs = with pkgs; [coreutils gh jq nix syft];
+    runtimeInputs = with pkgs; [coreutils gh jq syft];
     text = ''
       repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
       [[ -f "''${repo_root}/flake.nix" ]] || {
@@ -1433,7 +1333,7 @@ in rec {
   };
   homeSwitch = pkgs.writeShellApplication {
     name = "purplefin-home-switch";
-    runtimeInputs = with pkgs; [coreutils getent jq nix];
+    runtimeInputs = with pkgs; [coreutils getent jq];
     text = ''
       profile=""
       hardware=""
@@ -1622,51 +1522,5 @@ in rec {
         --tag "''${tag}" \
       .
     '';
-  };
-  mkWorkflowToolset = {
-    name,
-    paths,
-    required,
-  }:
-    assert builtins.all (application: builtins.elem application paths) required;
-      pkgs.buildEnv {
-        inherit name paths;
-        ignoreCollisions = true;
-      };
-
-  workflowPrepare = mkWorkflowToolset {
-    name = "purplefin-workflow-prepare";
-    paths = with pkgs; [classifyCi ciPlan coreutils git jq];
-    required = [classifyCi ciPlan];
-  };
-  workflowGate = mkWorkflowToolset {
-    name = "purplefin-workflow-gate";
-    paths = [ciGate];
-    required = [ciGate];
-  };
-  workflowValidation = mkWorkflowToolset {
-    name = "purplefin-workflow-validation";
-    paths = [validateImageShard];
-    required = [validateImageShard];
-  };
-  workflowPublish = mkWorkflowToolset {
-    name = "purplefin-workflow-publish";
-    paths = with pkgs; [coreutils cosign gh imageReuse imageSign jq loadBluefin nix promoteImages skopeo];
-    required = [imageReuse imageSign loadBluefin promoteImages];
-  };
-  workflowSbom = mkWorkflowToolset {
-    name = "purplefin-workflow-sbom";
-    paths = with pkgs; [coreutils cosign gh imageSbom jq skopeo];
-    required = [imageSbom];
-  };
-  workflowInstaller = mkWorkflowToolset {
-    name = "purplefin-workflow-installer";
-    paths = [installerBuild];
-    required = [installerBuild];
-  };
-  workflowRelease = mkWorkflowToolset {
-    name = "purplefin-workflow-release";
-    paths = with pkgs; [coreutils cosign gh gzip jq nix oras releaseNotes sbomAttestation skopeo trustedUpdate];
-    required = [releaseNotes sbomAttestation trustedUpdate];
   };
 }

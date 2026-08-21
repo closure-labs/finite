@@ -124,6 +124,28 @@ classify_event true true \
 	MERGE_GROUP_BASE_SHA="${divergent_sha}" \
 	MERGE_GROUP_HEAD_SHA="${docs_sha}"
 
+prepare_output="$(mktemp)"
+env \
+	CHECK_PUBLICATION_TRUST=false \
+	EVENT_NAME=pull_request \
+	GITHUB_OUTPUT="${prepare_output}" \
+	GITHUB_REF=refs/pull/1/merge \
+	GITHUB_SHA="${docs_sha}" \
+	PULL_REQUEST_BASE_SHA="${base_sha}" \
+	PULL_REQUEST_HEAD_SHA="${docs_sha}" \
+	PURPLEFIN_SOURCE_ROOT="${test_root}" \
+	purplefin-ci-prepare
+prepared_plan="$(sed -n 's/^plan=//p' "${prepare_output}")"
+[[ -n "${prepared_plan}" ]]
+jq -e '
+	.schema_version == 1 and
+	.source.event == "pull_request" and
+	.classification.diff.status == "classified" and
+	.validation.images.required == false and
+	.publication.trusted == false
+' <<<"${prepared_plan}" >/dev/null
+rm -f -- "${prepare_output}"
+
 git -C "${test_root}" switch --quiet --detach "${installer_sha}"
 git -C "${test_root}" mv bootc/Containerfile docs/old-bootc-containerfile.md
 git -C "${test_root}" mv installer/Containerfile docs/old-installer-containerfile.md
@@ -134,29 +156,51 @@ classify_event true true \
 	PULL_REQUEST_BASE_SHA="${installer_sha}" \
 	PULL_REQUEST_HEAD_SHA="${renamed_sha}"
 
-# A classification with no image work must still produce a complete lifecycle
+# A classification with no image work must still produce a complete plan
 # without requiring registry credentials or immutable-image verification.
 classification='{"schema":1,"diff":{"status":"classified","base":null,"head":null},"validation":{"images":{"required":false,"scope":"none"},"installer":{"required":true}}}'
 plan_output="$(mktemp)"
-CLASSIFICATION="${classification}" purplefin-ci-plan "${plan_output}"
-lifecycle="$(sed -n 's/^lifecycle=//p' "${plan_output}")"
+env \
+	CHECK_PUBLICATION_TRUST=false \
+	CLASSIFICATION="${classification}" \
+	EVENT_NAME=pull_request \
+	GITHUB_REF=refs/pull/1/merge \
+	GITHUB_SHA=1111111111111111111111111111111111111111 \
+	purplefin-ci-build-plan >"${plan_output}"
+purplefin-ci-validate-plan "${plan_output}"
 jq -e '
-	.schema == 1 and
+	.schema_version == 1 and
+	.source == {
+		event: "pull_request",
+		ref: "refs/pull/1/merge",
+		sha: "1111111111111111111111111111111111111111",
+		version: .source.version
+	} and
 	.classification.schema == 1 and
 	.validation.images == {required: false, targets: []} and
 	.validation.installer.required == true and
 	.publication == {
+		trusted: false,
 		builds: {any: false, root: false, hardware: false, roles: false},
 		sbom: {base: false, hardware: false, roles: false},
 		promote: false
-	}
-' <<<"${lifecycle}" >/dev/null
-for output_name in candidate_shards hardware_matrix hardware_sbom_matrix matrix role_matrix role_sbom_matrix root_matrix; do
-	value="$(sed -n "s/^${output_name}=//p" "${plan_output}")"
-	jq -e '.include == []' <<<"${value}" >/dev/null
-done
-if grep -Eq '^has_(hardware|builds|roles|root_base|base_sbom|hardware_sbom|role_sbom)=' "${plan_output}"; then
-	echo 'CI plan emitted a removed scalar lifecycle output' >&2
+	} and
+	.matrices.all == {include: [], sbom_repair: []} and
+	.matrices.candidate_shards.include == [] and
+	.matrices.root.include == [] and
+	.matrices.hardware.include == [] and
+	.matrices.roles.include == [] and
+	.matrices.sbom.base.include == [] and
+	.matrices.sbom.hardware.include == [] and
+	.matrices.sbom.roles.include == [] and
+	.root_base == {}
+' "${plan_output}" >/dev/null
+
+invalid_plan="$(mktemp)"
+jq '.unexpected = true' "${plan_output}" >"${invalid_plan}"
+if purplefin-ci-validate-plan "${invalid_plan}" 2>/dev/null; then
+	echo 'CI plan schema accepted an undeclared property' >&2
 	exit 1
 fi
+rm -f -- "${invalid_plan}"
 rm -f -- "${plan_output}"

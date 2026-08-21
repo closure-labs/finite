@@ -14,7 +14,7 @@ configurations, workflows, and tests:
 
 ```bash
 nix fmt
-nix run .#ci
+nix shell --accept-flake-config .#ci-check -c purplefin-ci-check
 ```
 
 The CI application runs the canonical `nix flake check` and verifies that every
@@ -55,8 +55,10 @@ The image application resolves immutable inputs, generates the build contract,
 and invokes Podman:
 
 ```bash
-nix run .#image-build -- bluefin-generic localhost/purplefin:bluefin-generic
-nix run .#image-build -- bluefin-dx-dell-xps-9350-intel localhost/purplefin:dale
+nix shell --accept-flake-config .#ci-image-build -c purplefin-image-build \
+  bluefin-generic localhost/purplefin:bluefin-generic
+nix shell --accept-flake-config .#ci-image-build -c purplefin-image-build \
+  bluefin-dx-dell-xps-9350-intel localhost/purplefin:dale
 ```
 
 Profile names are declared in `modules/profiles/definitions.nix`.
@@ -84,21 +86,21 @@ inspection, copy the desired files from the `result` symlink.
 | Command | Result |
 | --- | --- |
 | `nix build .#architecture` | Mermaid rendering of the evaluated Den graph |
-| `nix run .#source-verify -- bluefin` | Verify the locked digest and Cosign identity |
-| `nix run .#source-verify -- bluefin-dx` | Verify the locked Bluefin DX digest and Cosign identity |
-| `nix run .#source-verify -- image-builder` | Verify the locked installer builder digest |
-| `nix run .#source-verify -- determinate-nix` | Verify the pinned Determinate installer and SELinux policy hashes |
-| `nix run .#load-bluefin` | Copy the verified digest into container storage |
-| `nix run .#source-update -- bluefin` | Refresh and verify the Bluefin lock |
-| `nix run .#source-update -- bluefin-dx` | Refresh and verify the Bluefin DX lock |
-| `nix run .#source-update -- determinate-nix` | Refresh the stable Determinate Nix release lock |
+| `nix shell .#ci-source-verify -c purplefin-source-verify bluefin` | Verify the locked digest and Cosign identity |
+| `nix shell .#ci-source-verify -c purplefin-source-verify bluefin-dx` | Verify the locked Bluefin DX digest and Cosign identity |
+| `nix shell .#ci-source-verify -c purplefin-source-verify image-builder` | Verify the locked installer builder digest |
+| `nix shell .#ci-source-verify -c purplefin-source-verify determinate-nix` | Verify the pinned Determinate installer and SELinux policy hashes |
+| `nix shell .#ci-load-bluefin -c purplefin-load-bluefin bluefin` | Copy the verified digest into container storage |
+| `nix shell .#ci-source-update -c purplefin-source-update bluefin` | Refresh and verify the Bluefin lock |
+| `nix shell .#ci-source-update -c purplefin-source-update bluefin-dx` | Refresh and verify the Bluefin DX lock |
+| `nix shell .#ci-source-update -c purplefin-source-update determinate-nix` | Refresh the stable Determinate Nix release lock |
 | `nix build .#home-dale` | Home Manager activation package for `dale` |
 | `nix build .#home-elad` | All-role Home Manager activation package without the Dell camera layer |
 | `nix run .#cloud-init -- ...` | Generate a NoCloud Home Manager seed |
 | `nix build .#syft` | Pinned Syft package |
-| `nix run .#image-sbom -- validate <file>` | Validate a normalized SPDX image software bill of materials |
-| `nix run .#installer-smoke -- <iso>` | QEMU installer boot test |
-| `nix run .#release-notes -- <version> CHANGELOG.md` | Release notes for one version |
+| `nix shell .#ci-image-sbom -c purplefin-image-sbom validate <file>` | Validate a normalized SPDX image software bill of materials |
+| `nix shell .#ci-installer-smoke -c purplefin-installer-smoke <iso>` | QEMU installer boot test |
+| `nix shell .#ci-release-notes -c purplefin-release-notes <version> CHANGELOG.md` | Release notes for one version |
 
 ## Repository layout
 

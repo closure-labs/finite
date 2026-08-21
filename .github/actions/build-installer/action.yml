@@ -30,9 +30,6 @@ runs:
   steps:
     - name: Set up Nix and Cachix
       uses: ./.github/actions/setup-nix
-      with:
-        github-token: ${{ inputs.token }}
-        toolset: workflow-installer
 
     - name: Run Nix-declared installer graph
       id: installer
@@ -43,7 +40,9 @@ runs:
         IMAGE_REF: ghcr.io/${{ github.repository }}
         IMAGE_TAG: ${{ inputs.image-tag }}
       shell: bash
-      run: purplefin-installer-build
+      run: >-
+        nix shell --accept-flake-config .#ci-installer-build
+        -c purplefin-installer-build
 
     - name: Upload installer diagnostics
       if: always()

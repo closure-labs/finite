@@ -58,7 +58,7 @@ In `modules/profiles/definitions.nix`:
 Validate and inspect it:
 
 ```bash
-nix run .#ci
+nix shell --accept-flake-config .#ci-check -c purplefin-ci-check
 nix build .#generated
 jq '.profiles["your-profile"]' \
   result/bootc/generated/home-profile-catalog.json

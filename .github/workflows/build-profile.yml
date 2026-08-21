@@ -62,9 +62,6 @@ jobs:
 
       - name: Set up Nix and Cachix
         uses: ./.github/actions/setup-nix
-        with:
-          github-token: ${{ github.token }}
-          toolset: workflow-publish
 
       - name: Log in to GHCR for staging and build cache
         env:
@@ -96,8 +93,9 @@ jobs:
               exit 2
             }
             PARENT_DIGEST="$(
-              skopeo inspect --retry-times 3 --format '{{.Digest}}' \
-                "docker://${PARENT_IMAGE}:${PARENT_TAG}"
+              nix shell --accept-flake-config .#ci-skopeo \
+                -c skopeo inspect --retry-times 3 --format '{{.Digest}}' \
+                  "docker://${PARENT_IMAGE}:${PARENT_TAG}"
             )"
           fi
           [[ "${PARENT_DIGEST}" =~ ^sha256:[0-9a-f]{64}$ ]] || {
@@ -128,7 +126,8 @@ jobs:
           }
           trap record_duration EXIT
 
-          if digest="$(purplefin-image-reuse "${CANDIDATE_TAG}")" &&
+          if digest="$(nix shell --accept-flake-config .#ci-image-reuse \
+            -c purplefin-image-reuse "${CANDIDATE_TAG}")" &&
             [[ -n "${digest}" ]]; then
             if image_id="$({
               podman pull --quiet \
@@ -150,7 +149,9 @@ jobs:
         if: inputs.parent-from-lock && steps.reuse.outputs.hit != 'true'
         env:
           UPSTREAM_SOURCE: ${{ inputs.upstream-source }}
-        run: purplefin-load-bluefin "${UPSTREAM_SOURCE}"
+        run: >-
+          nix shell --accept-flake-config .#ci-load-bluefin
+          -c purplefin-load-bluefin "${UPSTREAM_SOURCE}"
 
       - name: Build image from immutable parent
         if: steps.reuse.outputs.hit != 'true'
@@ -197,7 +198,8 @@ jobs:
             pull_policy=never
           fi
           cache_available=false
-          if skopeo list-tags "docker://${cache_ref}" >/dev/null 2>&1; then
+          if nix shell --accept-flake-config .#ci-skopeo \
+            -c skopeo list-tags "docker://${cache_ref}" >/dev/null 2>&1; then
             cache_available=true
             cache_args+=(--cache-from "${cache_ref}" --cache-ttl 168h)
           fi
@@ -282,7 +284,8 @@ jobs:
               --rootfs /rpm-ostree \
               --output "${output}"
 
-          metadata="$(skopeo inspect --retry-times 3 "docker://${remote_ref}")"
+          metadata="$(nix shell --accept-flake-config .#ci-skopeo \
+            -c skopeo inspect --retry-times 3 "docker://${remote_ref}")"
           jq -e --argjson expected "${preserved_labels}" '
             (.Labels // {}) as $actual |
             $expected | to_entries | all(.[]; $actual[.key] == .value)
@@ -304,8 +307,9 @@ jobs:
           [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
 
           published_digest="$({
-            skopeo inspect --retry-times 3 --format '{{.Digest}}' \
-              "docker://${primary_ref}"
+            nix shell --accept-flake-config .#ci-skopeo \
+              -c skopeo inspect --retry-times 3 --format '{{.Digest}}' \
+                "docker://${primary_ref}"
           })"
           [[ "${published_digest}" == "${digest}" ]]
 
@@ -317,7 +321,9 @@ jobs:
           COSIGN_IDENTITY: https://github.com/${{ github.repository }}/.github/workflows/build-profile.yml@refs/heads/main
           DIGEST: ${{ steps.push.outputs.digest }}
         shell: bash
-        run: purplefin-image-sign
+        run: >-
+          nix shell --accept-flake-config .#ci-image-sign
+          -c purplefin-image-sign
 
       - name: Check for verified build provenance
         id: provenance_check

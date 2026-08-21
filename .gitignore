@@ -1,4 +1,6 @@
 /artifacts/
+/.devenv/
+/.direnv/
 /bootc/generated/
 /installer/config/profiles/
 /release-manifest.json

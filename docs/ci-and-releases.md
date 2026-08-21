@@ -9,11 +9,11 @@ Installer validation is selected only by the installer graph, generated profile
 blueprints, or their pinned tools; image-only aspects and repository tests do
 not rebuild the unchanged ISO.
 
-Classification and planning cross the workflow boundary as schema-versioned
-JSON contracts. Classification records whether its diff is trustworthy and
-which validation domains are eligible. The lifecycle contract then records the
-exact image targets and the build, software-bill-of-materials, promotion, and
-installer jobs required for the run. Profile selection uses the generated
+Classification and planning cross the workflow boundary as one schema-versioned,
+strictly validated JSON plan. `purplefin-ci-prepare` is the only workflow-facing
+authority: it records whether the diff is trustworthy and the exact image,
+software-bill-of-materials, promotion, and installer jobs required for the run.
+Profile selection uses the generated
 per-profile build-input fingerprints and parent graph: changed targets expand to
 their descendants, while shard planning adds ancestors only as local build
 dependencies. Publication additionally checks registry state, signatures,
@@ -50,7 +50,8 @@ ancestor of the synthetic head.
 The Flake declares the public `purplefin.cachix.org` substituter and key. Every
 Nix job uses the repository's pinned `setup-nix` action for GitHub access and
 read-through Cachix configuration, with automatic store watching disabled.
-`nix run .#ci` builds every declared check once, resolves its reference-free
+`nix shell --accept-flake-config .#ci-check -c purplefin-ci-check` builds every
+declared check once, resolves its reference-free
 proof outputs, rejects any closure larger than 1 MiB, and explicitly pushes only
 those proofs. The `CACHIX_AUTH_TOKEN` repository secret enables writes on
 protected events and same-repository pull requests. Fork pull requests use the
@@ -121,10 +122,22 @@ RPMs for updates against the committed Bluefin base.
 
 GitHub keeps triggers, permissions, environments, matrices, pull request
 creation, and attestations visible in workflow YAML. Operational planning,
-validation, gating, and promotion are Nix-defined applications. Each job builds
-one domain-specific Flake toolset into a fixed runner-local link and adds only
-that toolset to `PATH`, so ORAS, Cosign, Skopeo, Syft, jq, and GitHub CLI behavior
-comes from `flake.lock` without mutating a persistent Nix profile.
+validation, gating, and promotion are focused Nix packages invoked with
+`nix shell`; no mutable runner profile or workflow-wide toolset is installed.
+The remaining third-party Actions perform GitHub-native work such as checkout,
+attestation, artifact transfer, and pull-request creation.
+
+The same leaves are declared as a local devenv task graph. Run the complete
+local graph with `nix shell --accept-flake-config .#devenv -c devenv tasks run ci:check`,
+or isolate a leaf with `nix shell --accept-flake-config .#devenv -c devenv tasks
+run --mode single --option 'packages:pkgs!' '' ci:prepare`. Hosted jobs invoke the
+leaf packages directly because that avoids cold devenv startup while retaining
+identical pinned commands and Cachix reuse.
+
+Purplefin's package universe follows the rolling
+`DeterminateSystems/nixpkgs-weekly/0` FlakeHub series. Home Manager follows that
+same Nixpkgs input and is fetched from Determinate's public FlakeHub mirror at
+`nix-community/home-manager/0`; lock validation rejects drift from either URL.
 
 The weekly Determinate Nix updater resolves the latest stable upstream
 release, pins both the installer asset and its SELinux policy by SHA-256, and
