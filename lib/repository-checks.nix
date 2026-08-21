@@ -481,6 +481,11 @@ in {
       ! grep -R -qF -- '-sbom-cache' .github automation
       ! grep -R -qF 'Store SBOM cache artifact' .github
       grep -qF 'purplefin-release-notes' .github/workflows/release.yml
+      grep -qF 'if [[ "''${source_version}" != *-dev.* ]]; then' .github/workflows/release.yml
+      grep -qF 'version="''${source_version}"' .github/workflows/release.yml
+      grep -qF 'selected_bump="staged"' .github/workflows/release.yml
+      grep -qF 'Staged release ''${version} must be newer than ''${last_version}' \
+        .github/workflows/release.yml
       ! grep -R -qF 'toolset:' .github
       grep -qF 'purplefin-ci-gate' .github/workflows/build.yml
       grep -qF 'purplefin-promote-images' .github/workflows/build.yml

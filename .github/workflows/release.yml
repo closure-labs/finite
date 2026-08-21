@@ -75,10 +75,7 @@ jobs:
               grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' |
               head -n 1 || true
           })"
-          if [[ -z "${last_tag}" ]]; then
-            version="${source_version%%-dev.*}"
-            selected_bump="initial"
-          else
+          if [[ -n "${last_tag}" ]]; then
             git merge-base --is-ancestor "${last_tag}" HEAD || {
               echo "Latest release tag ${last_tag} is not an ancestor of main" >&2
               exit 1
@@ -93,7 +90,23 @@ jobs:
               echo "No releasable commits exist after ${last_tag}" >&2
               exit 1
             }
+          fi
 
+          if [[ "${source_version}" != *-dev.* ]]; then
+            version="${source_version}"
+            selected_bump="staged"
+            if [[ -n "${last_tag}" ]]; then
+              last_version="${last_tag#v}"
+              newest_version="$(printf '%s\n' "${last_version}" "${version}" | sort -V | tail -n 1)"
+              [[ "${version}" != "${last_version}" && "${newest_version}" == "${version}" ]] || {
+                echo "Staged release ${version} must be newer than ${last_version}" >&2
+                exit 1
+              }
+            fi
+          elif [[ -z "${last_tag}" ]]; then
+            version="${source_version%%-dev.*}"
+            selected_bump="initial"
+          else
             base_version="${last_tag#v}"
             IFS=. read -r major minor patch <<<"${base_version}"
             selected_bump="${REQUESTED_BUMP}"
