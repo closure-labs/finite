@@ -27,7 +27,21 @@ run_smoke() {
 printf '#!%s\n' "$(command -v bash)" >"${test_root}/qemu"
 cat >>"${test_root}/qemu" <<'EOF'
 trap 'exit 143' TERM
-echo 'Starting Anaconda installer'
+echo 'Starting anaconda-pre.service'
+sleep 30 &
+wait $!
+EOF
+chmod +x "${test_root}/qemu"
+
+if run_smoke; then
+	echo 'Smoke test accepted a generic Anaconda boot message' >&2
+	exit 1
+fi
+
+printf '#!%s\n' "$(command -v bash)" >"${test_root}/qemu"
+cat >>"${test_root}/qemu" <<'EOF'
+trap 'exit 143' TERM
+echo 'PURPLEFIN_INSTALLER_READY=1'
 sleep 30 &
 wait $!
 EOF
@@ -36,7 +50,7 @@ chmod +x "${test_root}/qemu"
 started="${SECONDS}"
 run_smoke
 ((SECONDS - started < 5))
-grep -qF 'Starting Anaconda installer' "${test_root}/qemu-boot.log"
+grep -qF 'PURPLEFIN_INSTALLER_READY=1' "${test_root}/qemu-boot.log"
 
 printf '#!%s\n' "$(command -v bash)" >"${test_root}/qemu"
 cat >>"${test_root}/qemu" <<'EOF'

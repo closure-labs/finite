@@ -25,7 +25,9 @@ provenance, RPM updates, and repair work before finalizing that lifecycle.
 | --- | --- | --- |
 | Repository | Every pull request and main build | Flake checks, generated data, source, tests, and workflows |
 | Candidate images | Image inputs change | Selected profiles and descendants in four read-only, runner-local shards |
-| Installer | Installer inputs change or on schedule | Payload attestations, ISO build, manifest, and QEMU boot |
+| Installer contract | Every pull request and main build | Nix wiring, generated Blueprints, rootfs contract, and smoke-test behavior |
+| Installer image | Installer inputs change, a base payload is published, or on schedule | Payload attestations, ISO build, manifest, and QEMU boot |
+| Installer installation | Weekly schedule and forced release candidate | Non-interactive Kickstart install, disk reboot, and installed-system readiness |
 | Publication | Trusted main runs | Images, tags, signatures, provenance, SPDX software bills of materials, and caches |
 | Release | Manual release dispatch | Exact source candidate and every promoted digest and attestation |
 
@@ -95,14 +97,30 @@ The manual obsolete-tag cleanup queries only the primary image package. Build
 and installer caches live in isolated sibling packages and are intentionally
 outside its deletion scope.
 
-Installer validation fingerprints the installer container context together
-with the immutable payload reference. Trusted scheduled builds publish and
-keylessly sign that exact environment in the installer cache; pull requests
-reuse it only after verifying the main installer-workflow identity. Cache
-misses retain the layer cache, and the pinned Image Builder image is pulled in
-parallel with environment preparation. The QEMU smoke test exits as soon as
-the serial console reaches the installer-ready marker instead of waiting for
-the five-minute safety timeout.
+The fast installer contract is part of the ordinary Nix check graph. A full ISO
+is selected only for the installer container/rootfs, its build or smoke
+applications, the Image Builder lock, or the Nix toolchain lock. Shared Flake
+exports, workflows, profile modules, and installer unit tests are validated by
+the contract without rebuilding an unchanged ISO.
+
+Full installer validation fingerprints the installer container context
+together with the immutable payload reference. Trusted `main` builds publish
+and keylessly sign that exact environment after installer changes or a new base
+payload; scheduled builds provide an independent weekly probe. Pull requests
+reuse the cache only after verifying the main installer-workflow identity.
+Cache misses retain the layer cache, and the pinned Image Builder image is
+pulled in parallel with environment preparation. OSBuild stage and RPM metadata
+caches are mounted explicitly and reused by the two ISO variants within a run.
+The QEMU smoke test exits as soon as `anaconda.service` emits the
+Purplefin-owned readiness marker instead of waiting for the five-minute safety
+timeout.
+
+Scheduled runs and forced release-candidate builds additionally create a
+separate CI-only ISO from an Image Builder Kickstart Blueprint. It installs to
+a disposable virtual disk, reboots without the ISO, and succeeds only when the
+installed Purplefin system reaches multi-user startup and emits its own marker.
+That unattended ISO is deleted after validation and is never uploaded as a user
+artifact; the published ISO remains interactive.
 
 Syft scans the final mounted OCI filesystem because Purplefin images are
 assembled from Bluefin and RPM content rather than from a Nix store closure.

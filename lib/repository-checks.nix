@@ -71,6 +71,14 @@
     ../modules/aspects
     ../tests/bootc
   ];
+  installerSource = sourceFor [
+    ../flake.nix
+    ../installer
+    ../lib/ci-applications/installer-e2e.nix
+    ../lib/ci-applications/installer-smoke.nix
+    ../lib/installer-application.nix
+    ../tests/installer
+  ];
   aspectsSource = sourceFor [
     ../modules/aspects
   ];
@@ -334,6 +342,21 @@ in {
     '';
   };
 
+  installer = mkSourceCheck {
+    name = "installer-contracts";
+    source = installerSource;
+    tools = [pkgs.gnugrep pkgs.gnused pkgs.pykickstart];
+    commands = ''
+      set -euo pipefail
+
+      bash tests/installer/contracts.sh
+      bash tests/installer/smoke.sh \
+        ${applications.installerSmoke}/bin/purplefin-installer-smoke
+      bash tests/installer/e2e.sh \
+        ${applications.installerE2e}/bin/purplefin-installer-e2e
+    '';
+  };
+
   aspects = mkSourceCheck {
     name = "aspect-contracts";
     source = aspectsSource;
@@ -468,12 +491,14 @@ in {
         bootc/Containerfile
       grep -qF 'containerfile=./bootc/Containerfile' .github/workflows/build-profile.yml
       grep -qF 'purplefin-installer-build' .github/actions/build-installer/action.yml
+      grep -qF 'installer-cache:' .github/workflows/build.yml
+      grep -qF 'cache-write: true' .github/workflows/build.yml
+      grep -qF 'end-to-end:' .github/actions/build-installer/action.yml
+      grep -qF 'PURPLEFIN_INSTALLER_E2E' .github/actions/build-installer/action.yml
       grep -qF -- '--build-context installer-rootfs=installer/rootfs' lib/installer-application.nix
       grep -qF 'RUN --mount=from=installer-rootfs,target=/run/installer-rootfs' installer/Containerfile
       grep -qF '@@INSTALLER_PAYLOAD_SOURCE_REF@@' \
         installer/rootfs/usr/share/anaconda/interactive-defaults.ks
-      bash tests/installer/smoke.sh \
-        ${applications.installerSmoke}/bin/purplefin-installer-smoke
       grep -qF 'checks.' modules/outputs.nix
       grep -qF 'repositoryChecks' modules/outputs.nix
 
@@ -486,6 +511,7 @@ in {
         ${applications.loadBluefin}/bin/purplefin-load-bluefin \
         ${applications.promoteImages}/bin/purplefin-promote-images \
         ${applications.installerBuild}/bin/purplefin-installer-build \
+        ${applications.installerE2e}/bin/purplefin-installer-e2e \
         ${applications.imageSbom}/bin/purplefin-image-sbom \
         ${applications.releaseNotes}/bin/purplefin-release-notes \
         ${applications.updateLocks}/bin/purplefin-update-locks \

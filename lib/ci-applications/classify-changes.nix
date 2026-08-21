@@ -12,19 +12,12 @@ pkgs.writeShellApplication {
     while IFS= read -r path; do
       case "''${component}:''${path}" in
         installer:.github/actions/build-installer/* | \
-        installer:.github/actions/setup-nix/* | \
-        installer:.github/workflows/build-installer.yml | \
-        installer:.github/workflows/build.yml | \
-        installer:flake.lock | installer:flake.nix | \
+        installer:flake.lock | \
         installer:installer/Containerfile | installer:installer/rootfs/* | \
-        installer:sources/image-builder.json | installer:sources/determinate-nix.json | \
-        installer:lib/eval-profile-graph.nix | \
-        installer:lib/flake-applications.nix | \
-        installer:lib/installer-application.nix | \
-        installer:lib/render-profile-artifacts.nix | \
-        installer:modules/den.nix | installer:modules/outputs.nix | \
-        installer:modules/profiles/* | installer:modules/sources/* | \
-        installer:tests/installer/*)
+        installer:sources/image-builder.json | \
+        installer:lib/ci-applications/installer-e2e.nix | \
+        installer:lib/ci-applications/installer-smoke.nix | \
+        installer:lib/installer-application.nix)
           required=true; break ;;
         images:README.md | images:LICENSE | images:docs/* | \
         images:.editorconfig | images:.github/actions/build-installer/* | \

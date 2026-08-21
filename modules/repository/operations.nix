@@ -10,6 +10,7 @@ in {
       documentation.includes = [operations.source];
       automation.includes = [operations.source];
       "bootc-engine".includes = [operations.source features.base];
+      installer.includes = [operations.source];
       aspects.includes = [
         operations.source
         features.base
@@ -31,6 +32,7 @@ in {
         operations.checks.documentation
         operations.checks.automation
         operations.checks."bootc-engine"
+        operations.checks.installer
         operations.checks.aspects
         operations.checks.workflows
         operations.checks.upstream
