@@ -91,6 +91,7 @@ inspection, copy the desired files from the `result` symlink.
 | `nix shell .#ci-source-verify -c purplefin-source-verify bluefin` | Verify the locked digest and Cosign identity |
 | `nix shell .#ci-source-verify -c purplefin-source-verify bluefin-dx` | Verify the locked Bluefin DX digest and Cosign identity |
 | `nix shell .#ci-source-verify -c purplefin-source-verify image-builder` | Verify the locked installer builder digest |
+| `nix shell .#ci-source-verify -c purplefin-source-verify fedora-bootc` | Verify the locked minimal installer live-environment digest |
 | `nix shell .#ci-source-verify -c purplefin-source-verify determinate-nix` | Verify the pinned Determinate installer and SELinux policy hashes |
 | `nix shell .#ci-load-bluefin -c purplefin-load-bluefin bluefin` | Copy the verified digest into container storage |
 | `nix shell .#ci-source-update -c purplefin-source-update bluefin` | Refresh and verify the Bluefin lock |

@@ -191,6 +191,11 @@ in {
       grep -qF 'operations_updates_determinate_nix --> sources_determinate_nix' ${architecture}/namespace.mmd
       grep -qF 'operations_github_determinate_nix_update --> operations_updates_determinate_nix' \
         ${architecture}/namespace.mmd
+      grep -qF 'operations_delivery_installer --> sources_fedora_bootc' ${architecture}/namespace.mmd
+      grep -qF 'operations_delivery_installer --> sources_image_builder' ${architecture}/namespace.mmd
+      grep -qF 'operations_updates_fedora_bootc --> sources_fedora_bootc' ${architecture}/namespace.mmd
+      grep -qF 'operations_github_fedora_bootc_update --> operations_updates_fedora_bootc' \
+        ${architecture}/namespace.mmd
     '';
   };
 
@@ -227,6 +232,13 @@ in {
         .architecture == "amd64" and
         (.digest | test("^sha256:[0-9a-f]{64}$"))
       ' sources/image-builder.json >/dev/null
+      jq -e '
+        .schema == 1 and
+        .image == "quay.io/fedora/fedora-bootc" and
+        .tag == "44" and
+        .architecture == "amd64" and
+        (.digest | test("^sha256:[0-9a-f]{64}$"))
+      ' sources/fedora-bootc.json >/dev/null
       jq -e '
         .schema == 1 and
         .architecture == "x86_64-linux" and
@@ -428,7 +440,12 @@ in {
 
       grep -qF 'nix shell --accept-flake-config .#ci-check' .github/workflows/build.yml
       grep -qF 'nix shell --accept-flake-config .#ci-prepare' .github/workflows/build.yml
-      for updater in update-bluefin.yml update-determinate-nix.yml update-flake-lock.yml update-image-builder.yml; do
+      for updater in \
+        update-bluefin.yml \
+        update-determinate-nix.yml \
+        update-fedora-bootc.yml \
+        update-flake-lock.yml \
+        update-image-builder.yml; do
         grep -qF '.#ci-trusted-update' ".github/workflows/''${updater}"
       done
       [[ "$(grep -cF 'purplefin-trusted-update' .github/workflows/release.yml)" == 2 ]]
@@ -439,6 +456,7 @@ in {
       grep -qF 'purplefin-source-update bluefin ' .github/workflows/update-bluefin.yml
       grep -qF 'purplefin-source-update bluefin-dx ' .github/workflows/update-bluefin.yml
       grep -qF 'purplefin-source-update determinate-nix ' .github/workflows/update-determinate-nix.yml
+      grep -qF 'purplefin-source-update fedora-bootc ' .github/workflows/update-fedora-bootc.yml
       grep -qF 'purplefin-source-update image-builder ' .github/workflows/update-image-builder.yml
       grep -qF 'purplefin-update-locks ' .github/workflows/update-flake-lock.yml
       grep -qF 'purplefin-load-bluefin' .github/workflows/build-profile.yml
@@ -476,7 +494,7 @@ in {
       grep -qF '.#ci-github-actions-secrets' .github/actions/setup-nix/action.yml
       grep -qF 'authToken: ''${{ env.CACHIX_AUTH_TOKEN }}' .github/actions/setup-nix/action.yml
       [[ "$(grep -R -h -oF 'secrets.CACHIX_AUTH_TOKEN' .github | wc -l)" == 1 ]]
-      [[ "$(grep -R -h -oF 'secrets.MERGE_QUEUE_TOKEN' .github | wc -l)" == 5 ]]
+      [[ "$(grep -R -h -oF 'secrets.MERGE_QUEUE_TOKEN' .github | wc -l)" == 6 ]]
       ! grep -R -qF 'token: ''${{ secrets.MERGE_QUEUE_TOKEN' .github
       grep -qF 'GH_TOKEN: ''${{ env.MERGE_QUEUE_TOKEN || github.token }}' \
         .github/workflows/queue-dependabot.yml
@@ -497,6 +515,9 @@ in {
       grep -qF 'PURPLEFIN_INSTALLER_E2E' .github/actions/build-installer/action.yml
       grep -qF -- '--build-context installer-rootfs=installer/rootfs' lib/installer-application.nix
       grep -qF 'RUN --mount=from=installer-rootfs,target=/run/installer-rootfs' installer/Containerfile
+      grep -qF 'PURPLEFIN_INSTALLER_BASE_REF' lib/installer-application.nix
+      grep -qF -- '--build-arg "BASE_REF=' lib/installer-application.nix
+      grep -qF -- '--bootc-installer-payload-ref' lib/installer-application.nix
       grep -qF '@@INSTALLER_PAYLOAD_SOURCE_REF@@' \
         installer/rootfs/usr/share/anaconda/interactive-defaults.ks
       grep -qF 'checks.' modules/outputs.nix

@@ -51,6 +51,7 @@ test -f bootc/Containerfile.derived
 test -f sources/bluefin.json
 test -f sources/bluefin-dx.json
 test -f sources/image-builder.json
+test -f sources/fedora-bootc.json
 test -f secretspec.toml
 jq -e '
   .schema == 1 and
@@ -74,6 +75,13 @@ jq -e '
   .architecture == "amd64" and
   (.digest | test("^sha256:[0-9a-f]{64}$"))
 ' sources/image-builder.json >/dev/null
+jq -e '
+  .schema == 1 and
+  .image == "quay.io/fedora/fedora-bootc" and
+  .tag == "44" and
+  .architecture == "amd64" and
+  (.digest | test("^sha256:[0-9a-f]{64}$"))
+' sources/fedora-bootc.json >/dev/null
 grep -qFx 'ARG BASE_REF' bootc/Containerfile
 if grep -qF 'bluefin:stable' bootc/Containerfile; then
 	echo 'Containerfile contains a mutable Bluefin tag' >&2

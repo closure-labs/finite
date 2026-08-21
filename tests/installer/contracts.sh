@@ -24,6 +24,11 @@ grep -qF -- '--bootc-ref' lib/installer-application.nix
 grep -qF -- '--bootc-installer-payload-ref' lib/installer-application.nix
 grep -qF -- '--build-context installer-rootfs=installer/rootfs' \
 	lib/installer-application.nix
+grep -qF -- '--security-opt label=disable' lib/installer-application.nix
+grep -qF 'PURPLEFIN_INSTALLER_BASE_REF' lib/installer-application.nix
+grep -qF 'purplefin-installer-environment-v2' lib/installer-application.nix
+grep -qF -- '--build-arg "BASE_REF=' lib/installer-application.nix
+grep -qF 'ARG BASE_REF=quay.io/fedora/fedora-bootc:44' installer/Containerfile
 grep -qF 'certificate-identity-regexp' lib/installer-application.nix
 grep -qF 'workflows/(build|build-installer)' lib/installer-application.nix
 grep -qF -- '--blueprint /purplefin-ci-unattended.toml' lib/installer-application.nix

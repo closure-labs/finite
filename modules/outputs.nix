@@ -45,6 +45,7 @@
   inherit (profileSet) profiles;
   bluefin = config.purplefin.sources.bluefin;
   bluefinDx = config.purplefin.sources.bluefinDx;
+  fedoraBootc = config.purplefin.sources.fedoraBootc;
   homeProfiles = config.purplefin.homeProfiles;
   imageBuilder = config.purplefin.sources.imageBuilder;
   determinateNix = config.purplefin.sources.determinateNix;
@@ -118,7 +119,7 @@
   '';
   applications = import ../lib/flake-applications.nix {
     devenv = inputs.devenv.packages.${system}.devenv;
-    inherit bluefin bluefinDx determinateNix generated imageBuilder pkgs version;
+    inherit bluefin bluefinDx determinateNix fedoraBootc generated imageBuilder pkgs version;
     selfSource = inputs.self;
   };
   repositoryChecks = import ../lib/repository-checks.nix {
