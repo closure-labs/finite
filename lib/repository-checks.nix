@@ -504,6 +504,8 @@ in {
       ! grep -R -Eq 'runtimeInputs[[:space:]]*=.*[^[:alnum:]_-]nix([^[:alnum:]_-]|$)' \
         lib/ci-applications lib/flake-applications.nix
       grep -qF 'timeout-minutes: 15' .github/workflows/build.yml
+      [[ "$(grep -cF 'fetch-depth: 0' .github/workflows/build.yml)" == 1 ]]
+      ! grep -qF 'fetch-depth: >-' .github/workflows/build.yml
       grep -qF '"additionalProperties": false' lib/ci-applications/ci-plan.schema.json
       grep -qF -- "--option 'packages:pkgs!'" docs/ci-and-releases.md
       grep -qF -- '--build-context purplefin-generated=' .github/workflows/build-profile.yml
