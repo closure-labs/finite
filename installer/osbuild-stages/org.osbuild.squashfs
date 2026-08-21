@@ -1,0 +1,60 @@
+#!/usr/bin/python3
+"""Pinned OSBuild squashfs stage with Purplefin's Zstd-level default.
+
+This is the stage shipped by the Image Builder digest recorded in
+sources/image-builder.json, with one compatibility policy: when Image Builder
+requests Zstd without a level, use level 1 instead of mksquashfs's level 15.
+Explicit compressor options remain authoritative.
+"""
+
+import os
+import subprocess
+import sys
+
+import osbuild.api
+from osbuild.util import parsing
+
+DEFAULT_ZSTD_COMPRESSION_LEVEL = "1"
+
+
+def main(args):
+    inputs = args["inputs"]
+    output_dir = args["tree"]
+    options = args["options"]
+
+    # Optionally override default source
+    if "source" in options:
+        source = os.path.normpath(parsing.parse_location(options["source"], args))
+    else:
+        source = inputs["tree"]["path"]
+
+    filename = options["filename"].lstrip("/")
+    compression = options.get("compression")
+    exclude_paths = options.get("exclude_paths")
+
+    target = os.path.join(output_dir, filename)
+
+    cmd = ["mksquashfs", source, target]
+
+    if compression:
+        method = compression["method"]
+        opts = compression.get("options", {})
+        cmd += ["-comp", method]
+        if method == "zstd" and "compression-level" not in opts:
+            cmd += ["-Xcompression-level", DEFAULT_ZSTD_COMPRESSION_LEVEL]
+        for opt, val in opts.items():
+            cmd += [f"-X{opt}", val]
+
+    if exclude_paths:
+        cmd += ["-regex", "-e"]
+        cmd.extend(exclude_paths)
+
+    subprocess.run(cmd, check=True)
+
+    return 0
+
+
+if __name__ == "__main__":
+    _args = osbuild.api.arguments()
+    r = main(_args)
+    sys.exit(r)
