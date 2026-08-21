@@ -11,6 +11,11 @@ Builder container and a published Purplefin image digest.
 4. write `installer-manifest.json` and `SHA256SUMS`;
 5. smoke-boot the ISO with QEMU.
 
+The pinned Image Builder's squashfs stage is mounted with an audited drop-in
+that keeps Zstd but selects compression level 1. See
+[`osbuild-stages/README.md`](osbuild-stages/README.md) for its upstream lock,
+benchmark, and removal condition.
+
 The ordinary Nix check graph validates the installer contract without building
 an ISO. Pull requests perform the full build only when an installer input
 changes. Trusted `main` builds also rebuild after publishing a new base payload

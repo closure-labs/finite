@@ -34,5 +34,21 @@ grep -qF 'workflows/(build|build-installer)' lib/installer-application.nix
 grep -qF -- '--blueprint /purplefin-ci-unattended.toml' lib/installer-application.nix
 grep -qF -- '--cache /var/cache/image-builder/store' lib/installer-application.nix
 grep -qF -- '--rpmmd-cache /var/cache/image-builder/rpmmd' lib/installer-application.nix
+test -x installer/osbuild-stages/org.osbuild.squashfs
+jq -e --slurpfile image_builder sources/image-builder.json '
+  .schema == 1 and
+  .image_builder_digest == $image_builder[0].digest and
+  (.override_sha256 | test("^[0-9a-f]{64}$")) and
+  (.upstream_sha256 | test("^[0-9a-f]{64}$")) and
+  .zstd_compression_level == 1
+' installer/osbuild-stages/lock.json >/dev/null
+locked_override_sha256="$(jq -r .override_sha256 installer/osbuild-stages/lock.json)"
+actual_override_sha256="$(sha256sum installer/osbuild-stages/org.osbuild.squashfs | cut -d' ' -f1)"
+[[ "${actual_override_sha256}" == "${locked_override_sha256}" ]]
+grep -qF 'DEFAULT_ZSTD_COMPRESSION_LEVEL = "1"' \
+	installer/osbuild-stages/org.osbuild.squashfs
+grep -qF -- '-Xcompression-level' installer/osbuild-stages/org.osbuild.squashfs
+mount_count="$(grep -cF 'osbuild/stages/org.osbuild.squashfs:ro' lib/installer-application.nix)"
+[[ "${mount_count}" == 2 ]]
 grep -qF 'RUN --mount=from=installer-rootfs,target=/run/installer-rootfs' \
 	installer/Containerfile

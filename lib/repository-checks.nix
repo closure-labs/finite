@@ -77,6 +77,7 @@
     ../lib/ci-applications/installer-e2e.nix
     ../lib/ci-applications/installer-smoke.nix
     ../lib/installer-application.nix
+    ../sources/image-builder.json
     ../tests/installer
   ];
   aspectsSource = sourceFor [
@@ -357,11 +358,12 @@ in {
   installer = mkSourceCheck {
     name = "installer-contracts";
     source = installerSource;
-    tools = [pkgs.gnugrep pkgs.gnused pkgs.pykickstart];
+    tools = [pkgs.gnugrep pkgs.gnused pkgs.jq pkgs.pykickstart pkgs.python3];
     commands = ''
       set -euo pipefail
 
       bash tests/installer/contracts.sh
+      python3 tests/installer/squashfs-stage.py
       bash tests/installer/smoke.sh \
         ${applications.installerSmoke}/bin/purplefin-installer-smoke
       bash tests/installer/e2e.sh \

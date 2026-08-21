@@ -49,6 +49,26 @@ pkgs.writeShellApplication {
     : "''${GITHUB_SHA:?GITHUB_SHA is required}"
     image_builder="''${PURPLEFIN_IMAGE_BUILDER_REF:?PURPLEFIN_IMAGE_BUILDER_REF is required}"
     installer_base="''${PURPLEFIN_INSTALLER_BASE_REF:?PURPLEFIN_INSTALLER_BASE_REF is required}"
+    squashfs_stage="''${repo_root}/installer/osbuild-stages/org.osbuild.squashfs"
+    squashfs_stage_lock="''${repo_root}/installer/osbuild-stages/lock.json"
+    test -x "''${squashfs_stage}"
+    test -f "''${squashfs_stage_lock}"
+    image_builder_digest="''${image_builder##*@}"
+    locked_image_builder_digest="$(jq -er .image_builder_digest "''${squashfs_stage_lock}")"
+    locked_squashfs_stage_sha256="$(jq -er .override_sha256 "''${squashfs_stage_lock}")"
+    upstream_squashfs_stage_sha256="$(jq -er .upstream_sha256 "''${squashfs_stage_lock}")"
+    squashfs_compression_level="$(jq -er .zstd_compression_level "''${squashfs_stage_lock}")"
+    [[ "''${image_builder_digest}" == "''${locked_image_builder_digest}" ]] || {
+      echo 'The squashfs stage override has not been audited for the pinned Image Builder digest' >&2
+      exit 2
+    }
+    actual_override_sha256="$(sha256sum "''${squashfs_stage}" | cut -d' ' -f1)"
+    [[ "''${actual_override_sha256}" == "''${locked_squashfs_stage_sha256}" ]] || {
+      echo 'The squashfs stage override differs from its audited lock' >&2
+      exit 2
+    }
+    [[ "''${upstream_squashfs_stage_sha256}" =~ ^[0-9a-f]{64}$ ]]
+    [[ "''${squashfs_compression_level}" =~ ^[0-9]+$ ]]
     : "''${IMAGE_REF:=ghcr.io/''${GITHUB_REPOSITORY}}"
     : "''${IMAGE_TAG:=base-generic-x86_64}"
     : "''${RUNNER_TEMP:=/tmp}"
@@ -261,6 +281,17 @@ pkgs.writeShellApplication {
       echo "Image Builder pull failed with status ''${image_builder_pull_status}" >&2
       exit "''${image_builder_pull_status}"
     }
+    actual_squashfs_stage_sha256="$(
+      "''${root_podman[@]}" run --rm \
+        --entrypoint /usr/bin/sha256sum \
+        "''${image_builder}" \
+        /usr/lib/osbuild/stages/org.osbuild.squashfs |
+        cut -d' ' -f1
+    )"
+    [[ "''${actual_squashfs_stage_sha256}" == "''${upstream_squashfs_stage_sha256}" ]] || {
+      echo 'The pinned Image Builder squashfs stage differs from the audited override source' >&2
+      exit 2
+    }
     environment_seconds=$((SECONDS - started))
 
     started="''${SECONDS}"
@@ -270,6 +301,7 @@ pkgs.writeShellApplication {
       --volume /var/lib/containers/storage:/var/lib/containers/storage \
       --volume "''${image_builder_cache_root}/store:/var/cache/image-builder/store" \
       --volume "''${image_builder_cache_root}/rpmmd:/var/cache/image-builder/rpmmd" \
+      --volume "''${squashfs_stage}:/usr/lib/osbuild/stages/org.osbuild.squashfs:ro" \
       "''${image_builder}" \
       build \
         --cache /var/cache/image-builder/store \
@@ -292,11 +324,13 @@ pkgs.writeShellApplication {
     installer_image_id="''${installer_image_id#sha256:}"
     [[ "''${installer_image_id}" =~ ^[0-9a-f]{64}$ ]]
     installer_image_id="sha256:''${installer_image_id}"
-    image_builder_digest="''${image_builder##*@}"
     [[ "''${image_builder_digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
     jq -n \
       --arg image_builder "''${image_builder}" \
       --arg image_builder_digest "''${image_builder_digest}" \
+      --arg squashfs_override_sha256 "''${locked_squashfs_stage_sha256}" \
+      --arg squashfs_stage_sha256 "''${upstream_squashfs_stage_sha256}" \
+      --argjson squashfs_zstd_level "''${squashfs_compression_level}" \
       --arg installer_base "''${installer_base}" \
       --arg installer_base_digest "''${installer_base##*@}" \
       --arg installer_environment_input "''${environment_input}" \
@@ -323,7 +357,16 @@ pkgs.writeShellApplication {
           input: $installer_environment_input,
           cache_hit: $installer_environment_cache_hit
         },
-        image_builder: {reference: $image_builder, digest: $image_builder_digest},
+        image_builder: {
+          reference: $image_builder,
+          digest: $image_builder_digest,
+          squashfs: {
+            method: "zstd",
+            level: $squashfs_zstd_level,
+            override_sha256: $squashfs_override_sha256,
+            upstream_stage_sha256: $squashfs_stage_sha256
+          }
+        },
         payload: {
           reference: $payload,
           digest: $payload_digest,
@@ -362,6 +405,7 @@ pkgs.writeShellApplication {
         --volume /var/lib/containers/storage:/var/lib/containers/storage \
         --volume "''${image_builder_cache_root}/store:/var/cache/image-builder/store" \
         --volume "''${image_builder_cache_root}/rpmmd:/var/cache/image-builder/rpmmd" \
+        --volume "''${squashfs_stage}:/usr/lib/osbuild/stages/org.osbuild.squashfs:ro" \
         "''${image_builder}" \
         --output-dir /e2e-output \
         build \

@@ -113,7 +113,12 @@ it only after verifying the main installer-workflow identity. Package install
 and dracut layers remain payload-independent, allowing layer-cache reuse across
 Purplefin updates. The pinned Image Builder image is pulled in parallel with
 environment preparation. OSBuild stage and RPM metadata caches are mounted
-explicitly and reused by the two ISO variants within a run.
+explicitly and reused by the two ISO variants within a run. The pinned
+builder's generic-ISO path otherwise leaves squashfs-tools at its Zstd
+level-15 default. An audited, digest-locked stage drop-in selects Zstd level 1
+for both ISO variants; the compatibility override is removed when Image
+Builder exposes a supported compression-level control. The installer manifest
+records the method, level, override checksum, and upstream stage checksum.
 The QEMU smoke test exits as soon as `anaconda.service` emits the
 Purplefin-owned readiness marker instead of waiting for the five-minute safety
 timeout.
