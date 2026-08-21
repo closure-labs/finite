@@ -5,15 +5,21 @@ pkgs.writeShellApplication {
     bash
     coreutils
     gnugrep
+    python3
     qemu_kvm
+    xorriso
   ];
   text = ''
     set -euo pipefail
 
-    iso="''${1:?usage: purplefin-installer-e2e ISO}"
+    iso="''${1:?usage: purplefin-installer-e2e ISO KICKSTART}"
+    kickstart="''${2:?usage: purplefin-installer-e2e ISO KICKSTART}"
     [[ -s "''${iso}" ]] || { echo "Installer ISO is missing: ''${iso}" >&2; exit 2; }
+    [[ -s "''${kickstart}" ]] || { echo "Kickstart is missing: ''${kickstart}" >&2; exit 2; }
     qemu="''${PURPLEFIN_QEMU:-qemu-system-x86_64}"
     qemu_img="''${PURPLEFIN_QEMU_IMG:-qemu-img}"
+    python="''${PURPLEFIN_PYTHON:-python3}"
+    xorriso="''${PURPLEFIN_XORRISO:-xorriso}"
     # Hosted release runners can spend close to 30 minutes pulling and
     # installing the multi-gigabyte bootc payload after Anaconda becomes
     # ready. Keep this below the enclosing 120-minute job timeout while
@@ -31,20 +37,54 @@ pkgs.writeShellApplication {
       }
     done
 
-    disk="$(mktemp --suffix=.qcow2)"
+    test_root="$(mktemp -d)"
+    disk="''${test_root}/installed.qcow2"
+    kernel="''${test_root}/vmlinuz"
+    initrd="''${test_root}/initrd.img"
+    served_kickstart="''${test_root}/purplefin-ci.ks"
     install_log="$(dirname -- "''${iso}")/qemu-install.log"
     boot_log="$(dirname -- "''${iso}")/qemu-installed-boot.log"
+    server_log="$(dirname -- "''${iso}")/qemu-kickstart-server.log"
     qemu_pid=
     tail_pid=
+    server_pid=
     # Invoked indirectly by the EXIT trap.
     # shellcheck disable=SC2329
     cleanup_installer_e2e() {
       [[ -z "''${qemu_pid}" ]] || kill -TERM "''${qemu_pid}" >/dev/null 2>&1 || true
       [[ -z "''${tail_pid}" ]] || kill -TERM "''${tail_pid}" >/dev/null 2>&1 || true
-      rm -f -- "''${disk}"
+      [[ -z "''${server_pid}" ]] || kill -TERM "''${server_pid}" >/dev/null 2>&1 || true
+      rm -rf -- "''${test_root}"
     }
     trap cleanup_installer_e2e EXIT
     "''${qemu_img}" create -q -f qcow2 "''${disk}" 32G
+    "''${xorriso}" -osirrox on -indev "''${iso}" \
+      -extract /images/pxeboot/vmlinuz "''${kernel}" \
+      -extract /images/pxeboot/initrd.img "''${initrd}" >/dev/null 2>&1
+    cp -- "''${kickstart}" "''${served_kickstart}"
+
+    port="$(
+      "''${python}" -c \
+        'import socket; s = socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1]); s.close()'
+    )"
+    "''${python}" -m http.server "''${port}" \
+      --bind 0.0.0.0 --directory "''${test_root}" >"''${server_log}" 2>&1 &
+    server_pid=$!
+    server_ready=false
+    for _ in {1..50}; do
+      if "''${python}" -c \
+        'import sys, urllib.request; urllib.request.urlopen(sys.argv[1], timeout=1).read()' \
+        "http://127.0.0.1:''${port}/purplefin-ci.ks" >/dev/null 2>&1; then
+        server_ready=true
+        break
+      fi
+      sleep 0.1
+    done
+    [[ "''${server_ready}" == true ]] || {
+      cat "''${server_log}"
+      echo 'Kickstart HTTP server did not become ready' >&2
+      exit 1
+    }
 
     acceleration=(-accel "tcg,thread=multi")
     if [[ -r /dev/kvm && -w /dev/kvm ]]; then
@@ -63,15 +103,25 @@ pkgs.writeShellApplication {
     )
 
     echo 'Installing Purplefin onto the disposable virtual disk'
+    kernel_cmdline="root=live:CDLABEL=Purplefin-Installer rd.live.image inst.stage2=hd:LABEL=Purplefin-Installer inst.text inst.ksstrict console=tty0 console=ttyS0,115200n8 selinux=0 ip=dhcp rd.neednet=1 inst.ks=http://10.0.2.2:''${port}/purplefin-ci.ks"
     timeout --signal=TERM --kill-after=20s "''${install_timeout}s" \
-      "''${qemu}" "''${common_args[@]}" -cdrom "''${iso}" -boot d \
+      "''${qemu}" "''${common_args[@]}" \
+        -cdrom "''${iso}" \
+        -kernel "''${kernel}" \
+        -initrd "''${initrd}" \
+        -append "''${kernel_cmdline}" \
       >"''${install_log}" 2>&1 || {
         status=$?
         cat "''${install_log}"
+        cat "''${server_log}"
         echo "Unattended installer failed with status ''${status}" >&2
         exit "''${status}"
       }
     cat "''${install_log}"
+    kill -TERM "''${server_pid}" >/dev/null 2>&1 || true
+    wait "''${server_pid}" >/dev/null 2>&1 || true
+    server_pid=
+    cat "''${server_log}"
 
     echo 'Booting the installed Purplefin system'
     : >"''${boot_log}"
