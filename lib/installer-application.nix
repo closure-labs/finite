@@ -391,37 +391,14 @@ pkgs.writeShellApplication {
     if [[ "''${PURPLEFIN_INSTALLER_E2E}" == true ]]; then
       started="''${SECONDS}"
       e2e_root="$(mktemp -d -p "''${RUNNER_TEMP}" purplefin-installer-e2e.XXXXXX)"
-      e2e_output="''${e2e_root}/output"
-      e2e_blueprint="''${e2e_root}/blueprint.toml"
-      install -d -m 0755 "''${e2e_output}"
+      e2e_kickstart="''${e2e_root}/purplefin-ci.ks"
       sed \
         -e "s|@@INSTALLER_PAYLOAD_SOURCE_REF@@|''${payload_embed_ref}|g" \
         -e "s|@@INSTALLER_PAYLOAD_TARGET_REF@@|''${payload_ref}|g" \
-        installer/ci-unattended.toml.in >"''${e2e_blueprint}"
-      "''${root_podman[@]}" run --rm --privileged \
-        --security-opt label=disable \
-        --volume "''${e2e_output}:/e2e-output" \
-        --volume "''${e2e_blueprint}:/purplefin-ci-unattended.toml:ro" \
-        --volume /var/lib/containers/storage:/var/lib/containers/storage \
-        --volume "''${image_builder_cache_root}/store:/var/cache/image-builder/store" \
-        --volume "''${image_builder_cache_root}/rpmmd:/var/cache/image-builder/rpmmd" \
-        --volume "''${squashfs_stage}:/usr/lib/osbuild/stages/org.osbuild.squashfs:ro" \
-        "''${image_builder}" \
-        --output-dir /e2e-output \
-        build \
-          --blueprint /purplefin-ci-unattended.toml \
-          --cache /var/cache/image-builder/store \
-          --rpmmd-cache /var/cache/image-builder/rpmmd \
-          --bootc-ref "localhost/purplefin-installer:''${GITHUB_SHA}" \
-          --bootc-installer-payload-ref "''${payload_embed_ref}" \
-          --bootc-default-fs ext4 \
-          bootc-generic-iso 2>&1 | tee diagnostics/image-builder-e2e.log
-      sudo chown -R "$(id -u):$(id -g)" "''${e2e_root}"
-      e2e_iso="$(find "''${e2e_output}" -type f -name '*.iso' -print -quit)"
-      [[ -n "''${e2e_iso}" ]]
+        installer/ci-unattended.ks.in >"''${e2e_kickstart}"
       "''${PURPLEFIN_INSTALLER_E2E_APP:?PURPLEFIN_INSTALLER_E2E_APP is required}" \
-        "''${e2e_iso}" 2>&1 | tee diagnostics/qemu-e2e.log
-      for e2e_log in "''${e2e_output}"/qemu-*.log; do
+        "''${final_iso}" "''${e2e_kickstart}" 2>&1 | tee diagnostics/qemu-e2e.log
+      for e2e_log in output/qemu-*.log; do
         [[ ! -f "''${e2e_log}" ]] || cp "''${e2e_log}" diagnostics/
       done
       rm -rf -- "''${e2e_root}"

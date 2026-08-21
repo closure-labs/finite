@@ -9,12 +9,11 @@ test -f "${ready_dropin}"
 grep -qFx '[Service]' "${ready_dropin}"
 grep -qF 'ExecStartPost=' "${ready_dropin}"
 grep -qF 'PURPLEFIN_INSTALLER_READY=1' "${ready_dropin}"
-grep -qF '[customizations.installer.kickstart]' installer/ci-unattended.toml.in
-grep -qF 'PURPLEFIN_INSTALLED_READY=1' installer/ci-unattended.toml.in
+grep -qF 'text --non-interactive' installer/ci-unattended.ks.in
+grep -qF 'PURPLEFIN_INSTALLED_READY=1' installer/ci-unattended.ks.in
 grep -qF 'bootc --source-imgref registry:@@INSTALLER_PAYLOAD_SOURCE_REF@@' \
-	installer/ci-unattended.toml.in
-sed -n '/^contents = """$/,/^"""$/p' installer/ci-unattended.toml.in |
-	sed '1d;$d' >"${kickstart}"
+	installer/ci-unattended.ks.in
+cp installer/ci-unattended.ks.in "${kickstart}"
 ksvalidator "${kickstart}"
 grep -qF "ready_marker='PURPLEFIN_INSTALLER_READY=1'" \
 	lib/ci-applications/installer-smoke.nix
@@ -33,7 +32,12 @@ grep -qF -- '--build-arg "BASE_REF=' lib/installer-application.nix
 grep -qF 'ARG BASE_REF=quay.io/fedora/fedora-bootc:44' installer/Containerfile
 grep -qF 'certificate-identity-regexp' lib/installer-application.nix
 grep -qF 'workflows/(build|build-installer)' lib/installer-application.nix
-grep -qF -- '--blueprint /purplefin-ci-unattended.toml' lib/installer-application.nix
+grep -qF 'installer/ci-unattended.ks.in' lib/installer-application.nix
+grep -qF 'inst.ks=http://10.0.2.2:' lib/ci-applications/installer-e2e.nix
+grep -qF -- '-kernel "' lib/ci-applications/installer-e2e.nix
+if grep -qF -- '--blueprint' lib/installer-application.nix; then
+	exit 1
+fi
 grep -qF -- '--cache /var/cache/image-builder/store' lib/installer-application.nix
 grep -qF -- '--rpmmd-cache /var/cache/image-builder/rpmmd' lib/installer-application.nix
 test -x installer/osbuild-stages/org.osbuild.squashfs
@@ -51,6 +55,6 @@ grep -qF 'DEFAULT_ZSTD_COMPRESSION_LEVEL = "1"' \
 	installer/osbuild-stages/org.osbuild.squashfs
 grep -qF -- '-Xcompression-level' installer/osbuild-stages/org.osbuild.squashfs
 mount_count="$(grep -cF 'osbuild/stages/org.osbuild.squashfs:ro' lib/installer-application.nix)"
-[[ "${mount_count}" == 2 ]]
+[[ "${mount_count}" == 1 ]]
 grep -qF 'RUN --mount=from=installer-rootfs,target=/run/installer-rootfs' \
 	installer/Containerfile
