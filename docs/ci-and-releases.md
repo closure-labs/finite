@@ -50,10 +50,11 @@ ancestor of the synthetic head.
 The Flake declares the public `purplefin.cachix.org` substituter and key. Every
 Nix job uses the repository's pinned `setup-nix` action for GitHub access and
 read-through Cachix configuration, with automatic store watching disabled.
-`nix shell --accept-flake-config .#ci-check -c purplefin-ci-check` builds every
-declared check once, resolves its reference-free
-proof outputs, rejects any closure larger than 1 MiB, and explicitly pushes only
-those proofs. The `CACHIX_AUTH_TOKEN` repository secret enables writes on
+`nix shell --accept-flake-config .#ci-check -c purplefin-ci-check` explicitly
+builds only the declared checks in one parallel Nix invocation, then validates
+every standard Flake output without additional builds. It resolves the checks'
+reference-free proof outputs, rejects any closure larger than 1 MiB, and pushes
+only those proofs. The `CACHIX_AUTH_TOKEN` repository secret enables writes on
 protected events and same-repository pull requests. Fork pull requests use the
 public cache for substitution.
 

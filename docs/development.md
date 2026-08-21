@@ -17,9 +17,11 @@ nix fmt
 nix shell --accept-flake-config .#ci-check -c purplefin-ci-check
 ```
 
-The CI application runs the canonical `nix flake check` and verifies that every
-check produces a reference-free proof closure below 1 MiB. Authorized
-workstations and trusted GitHub events publish those proofs to Cachix.
+The CI application explicitly builds only the declared checks in one parallel
+invocation, then runs the canonical `nix flake check --no-build` and verifies
+that every check produces a reference-free proof closure below 1 MiB.
+Authorized workstations and trusted GitHub events publish those proofs to
+Cachix.
 
 Pull requests and merge groups validate image profiles in up to four balanced
 runner-local shards. Each foundation carries its locked Bluefin or Bluefin DX

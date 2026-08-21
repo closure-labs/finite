@@ -246,6 +246,14 @@ in {
       grep -qF 'nix --accept-flake-config eval --json' lib/flake-applications.nix
       ! grep -qF 'quotedPaths' lib/flake-applications.nix
       grep -qF 'flake_uri="git+file://' lib/flake-applications.nix
+      grep -qF -- '--no-build' lib/flake-applications.nix
+      grep -qF 'nix --accept-flake-config build' lib/flake-applications.nix
+      grep -qF -- '--no-link' lib/flake-applications.nix
+      grep -qF '#ci-checks"' lib/flake-applications.nix
+      [[ "$(grep -m1 -nF 'nix --accept-flake-config build' lib/flake-applications.nix | cut -d: -f1)" -lt \
+        "$(grep -m1 -nF 'nix --accept-flake-config flake check' lib/flake-applications.nix | cut -d: -f1)" ]]
+      grep -qF 'ci-checks = ciChecks' modules/outputs.nix
+      grep -qF 'ln -s' modules/outputs.nix
       grep -qF 'max_closure_size=$((1024 * 1024))' lib/flake-applications.nix
       ! grep -qF 'dockerTools.pullImage' modules/outputs.nix
       ! grep -qF 'bluefin-upstream' modules/outputs.nix
