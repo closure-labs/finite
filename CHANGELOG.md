@@ -6,6 +6,33 @@ All notable changes to Purplefin are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-20
+
+### Added
+
+- A schema-validated CI plan and aggregate Nix check package that make the
+  complete repository validation graph explicit and locally reproducible.
+
+### Changed
+
+- CI preparation now runs through declared devenv tasks and focused Nix
+  applications for checks, gates, releases, publishing, and lock updates.
+- Hosted workflows use the repository's pinned Nix environments while retaining
+  Cachix and isolating lightweight tasks from unrelated package realizations.
+
+### Fixed
+
+- Fresh CI runners explicitly realize every declared flake check before the
+  no-build verification pass, preventing cache-only proof paths from breaking
+  post-merge builds.
+- Merge-group and path classification now fail safely when the compared source
+  range cannot be established reliably.
+
+### Security
+
+- CI plans are strictly schema-validated, publication is serialized, and
+  protected merge-group ancestry is verified before build decisions are trusted.
+
 ## [0.2.4] - 2026-08-20
 
 ### Added
