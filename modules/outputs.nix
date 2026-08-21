@@ -165,6 +165,15 @@
       home-configurations = homeCheck;
       profile-schema = profileSchemaCheck;
     };
+  ciChecks = pkgs.runCommand "purplefin-ci-checks" {} ''
+    mkdir "$out"
+    ${lib.concatStringsSep "\n" (
+      lib.mapAttrsToList (name: check: ''
+        ln -s ${check} "$out/${name}"
+      '')
+      checks
+    )}
+  '';
   ciCheck = applications.mkCheck checks;
   localCache = applications.mkLocalCache ciCheck;
 in {
@@ -179,6 +188,7 @@ in {
       {
         inherit architecture;
         ci-check = ciCheck;
+        ci-checks = ciChecks;
         ci-prepare = applications.ciPrepare;
         ci-validate-plan = applications.validateCiPlan;
         ci-gate = applications.ciGate;

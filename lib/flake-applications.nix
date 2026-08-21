@@ -62,12 +62,23 @@ in rec {
           flake_uri="git+file://''${repo_root}"
         fi
 
+        check_names=(${quotedNames})
+
+        # Build only the declared checks explicitly so their proof paths are
+        # guaranteed to be present for sizing and upload. Do this before the
+        # build-free Flake validation because cold Devenv evaluation requires
+        # import-from-derivation paths that the check build realizes.
+        nix --accept-flake-config build \
+          --keep-going \
+          --no-link \
+          --print-build-logs \
+          "$@" \
+          "''${flake_uri}#ci-checks"
         nix --accept-flake-config flake check \
           "''${flake_uri}" \
-          --print-build-logs \
+          --no-build \
           "$@"
 
-        check_names=(${quotedNames})
         check_paths_json="$(
           nix --accept-flake-config eval --json \
             --apply 'checks: builtins.mapAttrs (_: check: check.outPath) checks' \
@@ -79,7 +90,7 @@ in rec {
           path="$(jq -er --arg name "''${name}" '.[$name]' <<<"''${check_paths_json}")"
           check_paths+=("''${path}")
           [[ -e "''${path}" ]] || {
-            echo "The completed Flake check did not realize ''${name}: ''${path}" >&2
+            echo "The explicit check build did not realize ''${name}: ''${path}" >&2
             exit 1
           }
           closure_size="$(
