@@ -3,13 +3,17 @@
 The installer builds OSBuild's `bootc-generic-iso` with a digest-pinned Image
 Builder container and a published Purplefin image digest.
 
-`nix shell .#ci-installer-build -c purplefin-installer-build` performs the build used by GitHub Actions:
+`nix shell .#ci-installer-build -c purplefin-installer-build` performs the
+build phase used by GitHub Actions:
 
 1. verify the payload's Cosign signature, provenance, and SPDX attestation;
 2. build the installer environment from `Containerfile` and `rootfs/`;
 3. create the ISO with Image Builder;
-4. write `installer-manifest.json` and `SHA256SUMS`;
-5. smoke-boot the ISO with QEMU.
+4. write `installer-manifest.json`, `SHA256SUMS`, and the rendered CI Kickstart.
+
+The composite action then invokes the Nix-backed smoke, unattended-install,
+and installed-boot leaves as separate visible steps. The build leaf emits the
+internal ISO and rendered Kickstart paths used by those steps.
 
 The pinned Image Builder's squashfs stage is mounted with an audited drop-in
 that keeps Zstd but selects compression level 1. See
@@ -18,8 +22,10 @@ benchmark, and removal condition.
 
 The ordinary Nix check graph validates the installer contract without building
 an ISO. Pull requests perform the full build only when an installer input
-changes. Trusted `main` builds also rebuild after publishing a new base payload
-so later pull requests can reuse the signed exact-environment cache.
+changes. Trusted `main` builds also warm a signed environment cache keyed by
+cache version 3, the Fedora installer base, installer context, and mutable
+profile tag. A new signed payload digest under the same tag reuses that
+environment while Image Builder still embeds the exact verified digest.
 
 The QEMU smoke test proves that `anaconda.service` successfully creates its
 installer session and emits `PURPLEFIN_INSTALLER_READY=1`; generic Anaconda boot
@@ -29,6 +35,8 @@ Weekly runs and forced release-candidate builds also use
 `ci-unattended.ks.in` to boot the release ISO kernel and initramfs with an
 explicit CI Kickstart. It performs a non-interactive installation onto an
 ephemeral disk, reboots from the disk, and waits for
+`bootc status --json --format-version=1` to report both the verified payload
+digest and expected mutable profile tag before it emits
 `PURPLEFIN_INSTALLED_READY=1`. The regular smoke test already covers the ISO's
 bootloader path, so the end-to-end test avoids rebuilding and recompressing a
 second, otherwise identical ISO.

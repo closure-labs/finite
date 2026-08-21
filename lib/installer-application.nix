@@ -2,8 +2,6 @@
   fedoraBootc,
   generated,
   imageBuilder,
-  installerE2e,
-  installerSmoke,
   pkgs,
 }:
 pkgs.writeShellApplication {
@@ -25,10 +23,32 @@ pkgs.writeShellApplication {
     export PURPLEFIN_GENERATED_ROOT=${generated}
     export PURPLEFIN_INSTALLER_BASE_REF=${fedoraBootc.image}@${fedoraBootc.digest}
     export PURPLEFIN_IMAGE_BUILDER_REF=${imageBuilder.image}@${imageBuilder.digest}
-    export PURPLEFIN_INSTALLER_E2E_APP=${installerE2e}/bin/purplefin-installer-e2e
-    export PURPLEFIN_INSTALLER_SMOKE=${installerSmoke}/bin/purplefin-installer-smoke
     export PURPLEFIN_PODMAN=${pkgs.podman}/bin/podman
     set -euo pipefail
+
+    installer_environment_input() {
+      local installer_base=$1 installer_context=$2 profile_tag=$3
+      printf '%s\n' \
+        'purplefin-installer-environment-v3' \
+        "base=''${installer_base}" \
+        "context=''${installer_context}" \
+        "profile-tag=''${profile_tag}" |
+        sha256sum |
+        cut -d' ' -f1
+    }
+
+    if [[ "''${1:-}" == cache-input ]]; then
+      [[ $# == 4 ]] || {
+        echo 'usage: purplefin-installer-build cache-input INSTALLER_BASE CONTEXT_DIGEST PROFILE_TAG' >&2
+        exit 2
+      }
+      installer_environment_input "$2" "$3" "$4"
+      exit
+    fi
+    [[ $# == 0 ]] || {
+      echo 'usage: purplefin-installer-build [cache-input INSTALLER_BASE CONTEXT_DIGEST PROFILE_TAG]' >&2
+      exit 2
+    }
 
     repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
     [[ -f "''${repo_root}/flake.nix" ]] || {
@@ -38,11 +58,6 @@ pkgs.writeShellApplication {
     cd "''${repo_root}" || exit
 
     : "''${CACHE_WRITE:=false}"
-    : "''${PURPLEFIN_INSTALLER_E2E:=false}"
-    [[ "''${PURPLEFIN_INSTALLER_E2E}" == true || "''${PURPLEFIN_INSTALLER_E2E}" == false ]] || {
-      echo 'PURPLEFIN_INSTALLER_E2E must be true or false' >&2
-      exit 2
-    }
     : "''${GH_TOKEN:?GH_TOKEN is required to verify attestations}"
     : "''${GITHUB_ACTOR:?GITHUB_ACTOR is required}"
     : "''${GITHUB_REPOSITORY:?GITHUB_REPOSITORY is required}"
@@ -78,7 +93,6 @@ pkgs.writeShellApplication {
     registry_auth_file="''${RUNNER_TEMP}/purplefin-installer-auth.json"
     cosign_config_dir="''${RUNNER_TEMP}/purplefin-installer-cosign"
     cache_ref="''${IMAGE_REF}-installer-cache"
-    cache_available=false
     environment_cache_hit=false
     environment_cache_ref=unresolved
     environment_input=unresolved
@@ -89,8 +103,6 @@ pkgs.writeShellApplication {
     install -d -m 0755 \
       "''${image_builder_cache_root}/rpmmd" \
       "''${image_builder_cache_root}/store"
-    smoke_seconds=0
-    e2e_seconds=0
     payload_digest=unresolved
     payload_tag=unresolved
 
@@ -134,7 +146,8 @@ pkgs.writeShellApplication {
     [[ "''${source_revision}" =~ ^[0-9a-f]{40}$ ]]
     test -f "''${PURPLEFIN_GENERATED_ROOT:?PURPLEFIN_GENERATED_ROOT is required}/installer/config/profiles/''${profile}.toml"
     payload_ref="''${IMAGE_REF}@''${payload_digest}"
-    payload_embed_ref="''${IMAGE_REF}:''${IMAGE_TAG}"
+    payload_embed_ref="''${payload_ref}"
+    payload_update_ref="''${IMAGE_REF}:''${IMAGE_TAG}"
     payload_tag="''${IMAGE_TAG}"
     installer_context_digest="$(
       tar \
@@ -151,14 +164,10 @@ pkgs.writeShellApplication {
         cut -d' ' -f1
     )"
     environment_input="$(
-      printf '%s\n' \
-        'purplefin-installer-environment-v2' \
-        "base=''${installer_base}" \
-        "context=''${installer_context_digest}" \
-        "payload=''${payload_ref}" \
-        "payload-embed=''${payload_embed_ref}" |
-        sha256sum |
-        cut -d' ' -f1
+      installer_environment_input \
+        "''${installer_base}" \
+        "''${installer_context_digest}" \
+        "''${payload_update_ref}"
     )"
     [[ "''${environment_input}" =~ ^[0-9a-f]{64}$ ]]
     environment_cache_ref="''${cache_ref}:environment-''${environment_input}"
@@ -199,7 +208,6 @@ pkgs.writeShellApplication {
           --password-stdin
     fi
     if skopeo list-tags "docker://''${cache_ref}" >/dev/null 2>&1; then
-      cache_available=true
       cache_args+=(--cache-from "''${cache_ref}" --cache-ttl 336h)
     fi
     if [[ "''${CACHE_WRITE}" == true ]]; then
@@ -220,7 +228,10 @@ pkgs.writeShellApplication {
     image_builder_pull_pid=$!
     "''${root_podman[@]}" pull "''${auth_args[@]}" "''${installer_base}"
     "''${root_podman[@]}" pull "''${auth_args[@]}" "''${payload_ref}"
-    "''${root_podman[@]}" tag "''${payload_ref}" "''${payload_embed_ref}"
+    # Image Builder shares this containers-storage. Give the verified digest a
+    # mutable name locally because osbuild cannot convert layers into a
+    # digest-named containers-storage destination.
+    "''${root_podman[@]}" tag "''${payload_ref}" "''${payload_update_ref}"
     environment_cache_metadata="$({
       skopeo inspect --retry-times 3 "docker://''${environment_cache_ref}" 2>/dev/null || true
     })"
@@ -249,8 +260,8 @@ pkgs.writeShellApplication {
         --security-opt label=disable \
         --build-context installer-rootfs=installer/rootfs \
         --build-arg "BASE_REF=''${installer_base}" \
-        --build-arg "INSTALLER_PAYLOAD_SOURCE_REF=''${payload_embed_ref}" \
-        --build-arg "INSTALLER_PAYLOAD_TARGET_REF=''${payload_ref}" \
+        --build-arg "INSTALLER_PAYLOAD_SOURCE_REF=''${payload_update_ref}" \
+        --build-arg "INSTALLER_PAYLOAD_TARGET_REF=''${payload_update_ref}" \
         --label "io.purplefin.installer.input=''${environment_input}" \
         --tag "localhost/purplefin-installer:''${GITHUB_SHA}" \
         installer 2>&1 | tee diagnostics/installer-environment.log
@@ -307,7 +318,7 @@ pkgs.writeShellApplication {
         --cache /var/cache/image-builder/store \
         --rpmmd-cache /var/cache/image-builder/rpmmd \
         --bootc-ref "localhost/purplefin-installer:''${GITHUB_SHA}" \
-        --bootc-installer-payload-ref "''${payload_embed_ref}" \
+        --bootc-installer-payload-ref "''${payload_update_ref}" \
         --bootc-default-fs ext4 \
         bootc-generic-iso 2>&1 | tee diagnostics/image-builder.log
     sudo chown -R "$(id -u):$(id -g)" output
@@ -340,6 +351,8 @@ pkgs.writeShellApplication {
       --arg iso_sha256 "''${iso_sha256}" \
       --arg payload "''${payload_ref}" \
       --arg payload_digest "''${payload_digest}" \
+      --arg payload_embedded_reference "''${payload_embed_ref}" \
+      --arg payload_update_reference "''${payload_update_ref}" \
       --arg payload_sbom_predicate 'https://spdx.dev/Document/v2.3' \
       --arg payload_signer_workflow "''${GITHUB_REPOSITORY}/.github/workflows/attest-software-bill-of-materials.yml" \
       --arg payload_source_revision "''${source_revision}" \
@@ -347,7 +360,7 @@ pkgs.writeShellApplication {
       --arg source_repository "''${GITHUB_REPOSITORY}" \
       --arg version "$(<VERSION)" \
       '{
-        schema_version: 1,
+        schema_version: 2,
         source: {repository: $source_repository, commit: $source_commit},
         version: $version,
         iso: {name: $iso, sha256: $iso_sha256},
@@ -370,6 +383,8 @@ pkgs.writeShellApplication {
         payload: {
           reference: $payload,
           digest: $payload_digest,
+          embedded_reference: $payload_embedded_reference,
+          update_reference: $payload_update_reference,
           source_revision: $payload_source_revision,
           sbom: {
             predicate_type: $payload_sbom_predicate,
@@ -383,54 +398,33 @@ pkgs.writeShellApplication {
     } >output/SHA256SUMS
     image_builder_seconds=$((SECONDS - started))
 
-    started="''${SECONDS}"
-    "''${PURPLEFIN_INSTALLER_SMOKE:?PURPLEFIN_INSTALLER_SMOKE is required}" "''${final_iso}" 2>&1 |
-      tee diagnostics/qemu-smoke.log
-    smoke_seconds=$((SECONDS - started))
+    e2e_kickstart="output/purplefin-ci.ks"
+    sed \
+      -e "s|@@INSTALLER_PAYLOAD_SOURCE_REF@@|''${payload_update_ref}|g" \
+      -e "s|@@INSTALLER_PAYLOAD_TARGET_REF@@|''${payload_update_ref}|g" \
+      -e "s|@@INSTALLER_PAYLOAD_DIGEST@@|''${payload_digest}|g" \
+      -e "s|@@INSTALLER_UPDATE_REFERENCE@@|''${payload_update_ref}|g" \
+      installer/ci-unattended.ks.in >"''${e2e_kickstart}"
 
-    if [[ "''${PURPLEFIN_INSTALLER_E2E}" == true ]]; then
-      started="''${SECONDS}"
-      e2e_root="$(mktemp -d -p "''${RUNNER_TEMP}" purplefin-installer-e2e.XXXXXX)"
-      e2e_kickstart="''${e2e_root}/purplefin-ci.ks"
-      sed \
-        -e "s|@@INSTALLER_PAYLOAD_SOURCE_REF@@|''${payload_embed_ref}|g" \
-        -e "s|@@INSTALLER_PAYLOAD_TARGET_REF@@|''${payload_ref}|g" \
-        installer/ci-unattended.ks.in >"''${e2e_kickstart}"
-      "''${PURPLEFIN_INSTALLER_E2E_APP:?PURPLEFIN_INSTALLER_E2E_APP is required}" \
-        "''${final_iso}" "''${e2e_kickstart}" 2>&1 | tee diagnostics/qemu-e2e.log
-      for e2e_log in output/qemu-*.log; do
-        [[ ! -f "''${e2e_log}" ]] || cp "''${e2e_log}" diagnostics/
-      done
-      rm -rf -- "''${e2e_root}"
-      e2e_seconds=$((SECONDS - started))
-    fi
+    finished_at="''${SECONDS}"
+    build_seconds="''${finished_at}"
+    iso_path="$(realpath "''${final_iso}")"
+    kickstart_path="$(realpath "''${e2e_kickstart}")"
 
     if [[ -n "''${GITHUB_OUTPUT:-}" ]]; then
       {
         echo "iso-sha256=''${iso_sha256}"
         echo "payload-digest=''${payload_digest}"
         echo "payload-tag=''${payload_tag}"
+        echo "iso-path=''${iso_path}"
+        echo "kickstart-path=''${kickstart_path}"
+        echo "installer-input=''${environment_input}"
+        echo "environment-cache-hit=''${environment_cache_hit}"
+        echo "update-reference=''${payload_update_ref}"
+        echo "environment-seconds=''${environment_seconds}"
+        echo "image-builder-seconds=''${image_builder_seconds}"
+        echo "build-seconds=''${build_seconds}"
       } >>"''${GITHUB_OUTPUT}"
-    fi
-    if [[ -n "''${GITHUB_STEP_SUMMARY:-}" ]]; then
-      {
-        echo '### Installer validation'
-        echo
-        echo '| Property | Value |'
-        echo '| --- | --- |'
-        echo "| Payload tag | \`''${payload_tag}\` |"
-        echo "| Payload digest | \`''${payload_digest}\` |"
-        echo "| Installer image | \`''${installer_image_id}\` |"
-        echo "| Installer input | \`''${environment_input}\` |"
-        echo "| Exact environment cache hit | \`''${environment_cache_hit}\` |"
-        echo "| ISO SHA-256 | \`''${iso_sha256}\` |"
-        echo "| Registry cache available | \`''${cache_available}\` |"
-        echo "| Registry cache updated | \`''${CACHE_WRITE}\` |"
-        echo "| Environment build | \`success\` (''${environment_seconds}s) |"
-        echo "| Image Builder | \`success\` (''${image_builder_seconds}s) |"
-        echo "| QEMU smoke boot | \`success\` (''${smoke_seconds}s) |"
-        echo "| Unattended install and boot | \`''${PURPLEFIN_INSTALLER_E2E}\` (''${e2e_seconds}s) |"
-      } >>"''${GITHUB_STEP_SUMMARY}"
     fi
   '';
 }

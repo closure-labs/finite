@@ -72,6 +72,7 @@
     ../tests/bootc
   ];
   installerSource = sourceFor [
+    ../.github/actions/build-installer
     ../flake.nix
     ../installer
     ../lib/ci-applications/installer-e2e.nix
@@ -362,7 +363,8 @@ in {
     commands = ''
       set -euo pipefail
 
-      bash tests/installer/contracts.sh
+      bash tests/installer/contracts.sh \
+        ${applications.installerBuild}/bin/purplefin-installer-build
       python3 tests/installer/squashfs-stage.py
       bash tests/installer/smoke.sh \
         ${applications.installerSmoke}/bin/purplefin-installer-smoke
@@ -521,7 +523,8 @@ in {
       grep -qF 'installer-cache:' .github/workflows/build.yml
       grep -qF 'cache-write: true' .github/workflows/build.yml
       grep -qF 'end-to-end:' .github/actions/build-installer/action.yml
-      grep -qF 'PURPLEFIN_INSTALLER_E2E' .github/actions/build-installer/action.yml
+      grep -qF 'purplefin-installer-e2e install' .github/actions/build-installer/action.yml
+      grep -qF 'purplefin-installer-e2e boot' .github/actions/build-installer/action.yml
       grep -qF -- '--build-context installer-rootfs=installer/rootfs' lib/installer-application.nix
       grep -qF 'RUN --mount=from=installer-rootfs,target=/run/installer-rootfs' installer/Containerfile
       grep -qF 'PURPLEFIN_INSTALLER_BASE_REF' lib/installer-application.nix

@@ -1,5 +1,5 @@
-name: Build and smoke-test Purplefin installer
-description: Run the Nix-declared installer build and boot-validation graph
+name: Build and validate Purplefin installer
+description: Run the visible Nix-declared installer build and boot-validation phases
 
 inputs:
   cache-write:
@@ -35,7 +35,7 @@ runs:
     - name: Set up Nix and Cachix
       uses: ./.github/actions/setup-nix
 
-    - name: Run Nix-declared installer graph
+    - name: Build installer environment and ISO
       id: installer
       env:
         CACHE_WRITE: ${{ inputs.cache-write }}
@@ -43,11 +43,111 @@ runs:
         GH_TOKEN: ${{ inputs.token }}
         IMAGE_REF: ghcr.io/${{ github.repository }}
         IMAGE_TAG: ${{ inputs.image-tag }}
-        PURPLEFIN_INSTALLER_E2E: ${{ inputs.end-to-end }}
       shell: bash
       run: >-
         nix shell --accept-flake-config .#ci-installer-build
         -c purplefin-installer-build
+
+    - name: Smoke-test installer ISO bootloader
+      id: smoke
+      env:
+        ISO_PATH: ${{ steps.installer.outputs.iso-path }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        started=${SECONDS}
+        record_duration() {
+          echo "seconds=$((SECONDS - started))" >>"${GITHUB_OUTPUT}"
+        }
+        trap record_duration EXIT
+        nix shell --accept-flake-config .#ci-installer-smoke \
+          -c purplefin-installer-smoke "${ISO_PATH}" 2>&1 |
+          tee diagnostics/qemu-smoke.log
+
+    - name: Perform unattended installation
+      if: inputs.end-to-end == 'true'
+      id: install
+      env:
+        ISO_PATH: ${{ steps.installer.outputs.iso-path }}
+        KICKSTART_PATH: ${{ steps.installer.outputs.kickstart-path }}
+        PURPLEFIN_INSTALLER_DIAGNOSTICS_DIR: ${{ github.workspace }}/diagnostics
+        STATE_ROOT: ${{ runner.temp }}/purplefin-installer-e2e
+      shell: bash
+      run: |
+        set -euo pipefail
+        started=${SECONDS}
+        record_duration() {
+          echo "seconds=$((SECONDS - started))" >>"${GITHUB_OUTPUT}"
+        }
+        trap record_duration EXIT
+        nix shell --accept-flake-config .#ci-installer-e2e \
+          -c purplefin-installer-e2e install \
+            "${ISO_PATH}" "${KICKSTART_PATH}" "${STATE_ROOT}"
+
+    - name: Boot and validate installed system
+      if: inputs.end-to-end == 'true'
+      id: boot
+      env:
+        PURPLEFIN_INSTALLER_DIAGNOSTICS_DIR: ${{ github.workspace }}/diagnostics
+        STATE_ROOT: ${{ runner.temp }}/purplefin-installer-e2e
+      shell: bash
+      run: |
+        set -euo pipefail
+        started=${SECONDS}
+        record_duration() {
+          echo "seconds=$((SECONDS - started))" >>"${GITHUB_OUTPUT}"
+        }
+        trap record_duration EXIT
+        nix shell --accept-flake-config .#ci-installer-e2e \
+          -c purplefin-installer-e2e boot "${STATE_ROOT}"
+
+    - name: Summarize installer validation
+      if: always()
+      env:
+        BOOT_OUTCOME: ${{ steps.boot.outcome }}
+        BOOT_SECONDS: ${{ steps.boot.outputs.seconds }}
+        BUILD_OUTCOME: ${{ steps.installer.outcome }}
+        BUILD_SECONDS: ${{ steps.installer.outputs.build-seconds }}
+        CACHE_HIT: ${{ steps.installer.outputs.environment-cache-hit }}
+        ENVIRONMENT_SECONDS: ${{ steps.installer.outputs.environment-seconds }}
+        IMAGE_BUILDER_SECONDS: ${{ steps.installer.outputs.image-builder-seconds }}
+        INSTALLER_INPUT: ${{ steps.installer.outputs.installer-input }}
+        INSTALL_OUTCOME: ${{ steps.install.outcome }}
+        INSTALL_SECONDS: ${{ steps.install.outputs.seconds }}
+        ISO_SHA256: ${{ steps.installer.outputs.iso-sha256 }}
+        PAYLOAD_DIGEST: ${{ steps.installer.outputs.payload-digest }}
+        PAYLOAD_TAG: ${{ steps.installer.outputs.payload-tag }}
+        SMOKE_OUTCOME: ${{ steps.smoke.outcome }}
+        SMOKE_SECONDS: ${{ steps.smoke.outputs.seconds }}
+        UPDATE_REFERENCE: ${{ steps.installer.outputs.update-reference }}
+      shell: bash
+      run: |
+        {
+          echo '### Installer validation'
+          echo
+          echo '| Property | Value |'
+          echo '| --- | --- |'
+          echo "| Payload tag | \`${PAYLOAD_TAG:-unresolved}\` |"
+          echo "| Payload digest | \`${PAYLOAD_DIGEST:-unresolved}\` |"
+          echo "| Update origin | \`${UPDATE_REFERENCE:-unresolved}\` |"
+          echo "| Installer cache input | \`${INSTALLER_INPUT:-unresolved}\` |"
+          echo "| Installer cache version | \`v3\` |"
+          echo "| Installer cache hit | \`${CACHE_HIT:-false}\` |"
+          echo "| ISO SHA-256 | \`${ISO_SHA256:-unresolved}\` |"
+          echo "| Build | \`${BUILD_OUTCOME:-skipped}\` (${BUILD_SECONDS:-0}s; environment ${ENVIRONMENT_SECONDS:-0}s, Image Builder ${IMAGE_BUILDER_SECONDS:-0}s) |"
+          echo "| Smoke | \`${SMOKE_OUTCOME:-skipped}\` (${SMOKE_SECONDS:-0}s) |"
+          echo "| Install | \`${INSTALL_OUTCOME:-skipped}\` (${INSTALL_SECONDS:-0}s) |"
+          echo "| Installed boot | \`${BOOT_OUTCOME:-skipped}\` (${BOOT_SECONDS:-0}s) |"
+        } >>"${GITHUB_STEP_SUMMARY}"
+
+    - name: Collect installer diagnostics
+      if: always()
+      shell: bash
+      run: |
+        install -d -m 0755 diagnostics
+        for log in output/qemu-*.log; do
+          [[ ! -f "${log}" ]] || cp "${log}" diagnostics/
+        done
 
     - name: Upload installer diagnostics
       if: always()

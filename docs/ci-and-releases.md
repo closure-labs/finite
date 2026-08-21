@@ -106,29 +106,32 @@ the contract without rebuilding an unchanged ISO.
 Full installer validation builds the live Anaconda environment from a pinned,
 minimal Fedora bootc image. The signed Purplefin image is passed separately as
 Image Builder's installer payload, so desktop and developer packages are not
-duplicated into the live squashfs. The environment fingerprint covers the
-Fedora base, installer context, and immutable payload reference. Trusted `main`
-builds publish and keylessly sign that exact environment; pull requests reuse
-it only after verifying the main installer-workflow identity. Package install
-and dracut layers remain payload-independent, allowing layer-cache reuse across
-Purplefin updates. The pinned Image Builder image is pulled in parallel with
-environment preparation. OSBuild stage and RPM metadata caches are mounted
-explicitly and reused by the two ISO variants within a run. The pinned
+duplicated into the live squashfs. The version-3 environment fingerprint covers
+the Fedora base, installer context, and mutable profile tag, but not the
+changing payload digest. Trusted `main` builds publish and keylessly sign that
+environment; pull requests reuse it only after verifying the main
+installer-workflow identity. Exact-source integrity remains independent: the
+selected digest must pass signature, provenance, and SPDX checks before Image
+Builder embeds it, while the installed bootc update origin tracks the profile
+tag. The pinned Image Builder image is pulled in parallel with environment
+preparation. OSBuild stage and RPM metadata caches are mounted explicitly. The pinned
 builder's generic-ISO path otherwise leaves squashfs-tools at its Zstd
 level-15 default. An audited, digest-locked stage drop-in selects Zstd level 1
 for both ISO variants; the compatibility override is removed when Image
 Builder exposes a supported compression-level control. The installer manifest
 records the method, level, override checksum, and upstream stage checksum.
 The QEMU smoke test exits as soon as `anaconda.service` emits the
-Purplefin-owned readiness marker instead of waiting for the five-minute safety
-timeout.
+Purplefin-owned readiness marker instead of waiting for its safety timeout.
 
-Scheduled runs and forced release-candidate builds additionally create a
-separate CI-only ISO from an Image Builder Kickstart Blueprint. It installs to
-a disposable virtual disk, reboots without the ISO, and succeeds only when the
-installed Purplefin system reaches multi-user startup and emits its own marker.
-That unattended ISO is deleted after validation and is never uploaded as a user
-artifact; the published ISO remains interactive.
+Scheduled runs and forced release-candidate builds additionally serve a CI-only
+Kickstart to the release ISO kernel. The guest must fetch it within three
+minutes and finish installing to a disposable disk within twenty minutes. A
+separate visible step reboots without the ISO and has three minutes to prove,
+through bootc status v1, that the booted digest is the verified payload and the
+update origin is the mutable profile tag. CI Kickstart state is never uploaded
+as a user artifact; the published ISO remains interactive. The action summary
+records cache version/input/hit, update origin, and separate build, smoke,
+install, and installed-boot durations.
 
 Syft scans the final mounted OCI filesystem because Purplefin images are
 assembled from Bluefin and RPM content rather than from a Nix store closure.

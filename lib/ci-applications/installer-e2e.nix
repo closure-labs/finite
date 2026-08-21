@@ -12,79 +12,100 @@ pkgs.writeShellApplication {
   text = ''
     set -euo pipefail
 
-    iso="''${1:?usage: purplefin-installer-e2e ISO KICKSTART}"
-    kickstart="''${2:?usage: purplefin-installer-e2e ISO KICKSTART}"
-    [[ -s "''${iso}" ]] || { echo "Installer ISO is missing: ''${iso}" >&2; exit 2; }
-    [[ -s "''${kickstart}" ]] || { echo "Kickstart is missing: ''${kickstart}" >&2; exit 2; }
+    usage() {
+      cat >&2 <<'EOF'
+    usage: purplefin-installer-e2e install ISO KICKSTART STATE_ROOT
+           purplefin-installer-e2e boot STATE_ROOT
+    EOF
+    }
+
+    phase="''${1:-}"
+    case "''${phase}" in
+      install)
+        [[ $# == 4 ]] || { usage; exit 2; }
+        iso=$2
+        kickstart=$3
+        state_root=$4
+        ;;
+      boot)
+        [[ $# == 2 ]] || { usage; exit 2; }
+        state_root=$2
+        ;;
+      *)
+        usage
+        exit 2
+        ;;
+    esac
+
     qemu="''${PURPLEFIN_QEMU:-qemu-system-x86_64}"
     qemu_img="''${PURPLEFIN_QEMU_IMG:-qemu-img}"
     python="''${PURPLEFIN_PYTHON:-python3}"
     xorriso="''${PURPLEFIN_XORRISO:-xorriso}"
-    # Hosted release runners can spend close to 30 minutes pulling and
-    # installing the multi-gigabyte bootc payload after Anaconda becomes
-    # ready. Keep this below the enclosing 120-minute job timeout while
-    # leaving enough room for the installed-system boot assertion.
-    install_timeout="''${PURPLEFIN_INSTALLER_E2E_INSTALL_TIMEOUT_SECONDS:-3600}"
-    boot_timeout="''${PURPLEFIN_INSTALLER_E2E_BOOT_TIMEOUT_SECONDS:-300}"
+    kickstart_timeout="''${PURPLEFIN_INSTALLER_E2E_KICKSTART_TIMEOUT_SECONDS:-180}"
+    install_timeout="''${PURPLEFIN_INSTALLER_E2E_INSTALL_TIMEOUT_SECONDS:-1200}"
+    boot_timeout="''${PURPLEFIN_INSTALLER_E2E_BOOT_TIMEOUT_SECONDS:-180}"
     poll_interval="''${PURPLEFIN_INSTALLER_SMOKE_POLL_INTERVAL_SECONDS:-1}"
     cpus="''${PURPLEFIN_INSTALLER_SMOKE_CPUS:-4}"
     memory_mb="''${PURPLEFIN_INSTALLER_SMOKE_MEMORY_MB:-4096}"
     ready_marker='PURPLEFIN_INSTALLED_READY=1'
-    for parameter in "''${install_timeout}" "''${boot_timeout}" "''${cpus}" "''${memory_mb}"; do
+    for parameter in \
+      "''${kickstart_timeout}" \
+      "''${install_timeout}" \
+      "''${boot_timeout}" \
+      "''${cpus}" \
+      "''${memory_mb}"; do
       [[ "''${parameter}" =~ ^[1-9][0-9]*$ ]] || {
         echo 'Installer E2E numeric parameters must be positive integers' >&2
         exit 2
       }
     done
 
-    test_root="$(mktemp -d)"
-    disk="''${test_root}/installed.qcow2"
-    kernel="''${test_root}/vmlinuz"
-    initrd="''${test_root}/initrd.img"
-    served_kickstart="''${test_root}/purplefin-ci.ks"
-    install_log="$(dirname -- "''${iso}")/qemu-install.log"
-    boot_log="$(dirname -- "''${iso}")/qemu-installed-boot.log"
-    server_log="$(dirname -- "''${iso}")/qemu-kickstart-server.log"
+    install -d -m 0755 "''${state_root}"
+    diagnostics_dir="''${PURPLEFIN_INSTALLER_DIAGNOSTICS_DIR:-''${state_root}}"
+    install -d -m 0755 "''${diagnostics_dir}"
+    disk="''${state_root}/installed.qcow2"
+    kernel="''${state_root}/vmlinuz"
+    initrd="''${state_root}/initrd.img"
+    served_kickstart="''${state_root}/purplefin-ci.ks"
+    health_check="''${state_root}/server-ready"
+    install_log="''${diagnostics_dir}/qemu-install.log"
+    boot_log="''${diagnostics_dir}/qemu-installed-boot.log"
+    server_log="''${diagnostics_dir}/qemu-kickstart-server.log"
     qemu_pid=
     tail_pid=
     server_pid=
+
+    terminate_and_reap() {
+      local pid=$1
+      [[ -n "''${pid}" ]] || return 0
+      kill -TERM "''${pid}" >/dev/null 2>&1 || true
+      wait "''${pid}" >/dev/null 2>&1 || true
+    }
+
+    print_phase_logs() {
+      local log
+      for log in "''${install_log}" "''${boot_log}" "''${server_log}"; do
+        if [[ -f "''${log}" ]]; then
+          echo "===== ''${log##*/} =====" >&2
+          cat "''${log}" >&2
+        fi
+      done
+    }
+
     # Invoked indirectly by the EXIT trap.
     # shellcheck disable=SC2329
     cleanup_installer_e2e() {
-      [[ -z "''${qemu_pid}" ]] || kill -TERM "''${qemu_pid}" >/dev/null 2>&1 || true
-      [[ -z "''${tail_pid}" ]] || kill -TERM "''${tail_pid}" >/dev/null 2>&1 || true
-      [[ -z "''${server_pid}" ]] || kill -TERM "''${server_pid}" >/dev/null 2>&1 || true
-      rm -rf -- "''${test_root}"
+      local status=$?
+      set +e
+      terminate_and_reap "''${qemu_pid}"
+      terminate_and_reap "''${tail_pid}"
+      terminate_and_reap "''${server_pid}"
+      if ((status != 0)); then
+        print_phase_logs
+      fi
+      exit "''${status}"
     }
     trap cleanup_installer_e2e EXIT
-    "''${qemu_img}" create -q -f qcow2 "''${disk}" 32G
-    "''${xorriso}" -osirrox on -indev "''${iso}" \
-      -extract /images/pxeboot/vmlinuz "''${kernel}" \
-      -extract /images/pxeboot/initrd.img "''${initrd}" >/dev/null 2>&1
-    cp -- "''${kickstart}" "''${served_kickstart}"
-
-    port="$(
-      "''${python}" -c \
-        'import socket; s = socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1]); s.close()'
-    )"
-    "''${python}" -m http.server "''${port}" \
-      --bind 0.0.0.0 --directory "''${test_root}" >"''${server_log}" 2>&1 &
-    server_pid=$!
-    server_ready=false
-    for _ in {1..50}; do
-      if "''${python}" -c \
-        'import sys, urllib.request; urllib.request.urlopen(sys.argv[1], timeout=1).read()' \
-        "http://127.0.0.1:''${port}/purplefin-ci.ks" >/dev/null 2>&1; then
-        server_ready=true
-        break
-      fi
-      sleep 0.1
-    done
-    [[ "''${server_ready}" == true ]] || {
-      cat "''${server_log}"
-      echo 'Kickstart HTTP server did not become ready' >&2
-      exit 1
-    }
 
     acceleration=(-accel "tcg,thread=multi")
     if [[ -r /dev/kvm && -w /dev/kvm ]]; then
@@ -102,27 +123,107 @@ pkgs.writeShellApplication {
       -no-reboot
     )
 
-    echo 'Installing Purplefin onto the disposable virtual disk'
-    kernel_cmdline="root=live:CDLABEL=Purplefin-Installer rd.live.image inst.stage2=hd:LABEL=Purplefin-Installer inst.text inst.ksstrict console=tty0 console=ttyS0,115200n8 selinux=0 ip=dhcp rd.neednet=1 inst.ks=http://10.0.2.2:''${port}/purplefin-ci.ks"
-    timeout --signal=TERM --kill-after=20s "''${install_timeout}s" \
-      "''${qemu}" "''${common_args[@]}" \
-        -cdrom "''${iso}" \
-        -kernel "''${kernel}" \
-        -initrd "''${initrd}" \
-        -append "''${kernel_cmdline}" \
-      >"''${install_log}" 2>&1 || {
-        status=$?
-        cat "''${install_log}"
-        cat "''${server_log}"
-        echo "Unattended installer failed with status ''${status}" >&2
-        exit "''${status}"
-      }
-    cat "''${install_log}"
-    kill -TERM "''${server_pid}" >/dev/null 2>&1 || true
-    wait "''${server_pid}" >/dev/null 2>&1 || true
-    server_pid=
-    cat "''${server_log}"
+    if [[ "''${phase}" == install ]]; then
+      [[ -s "''${iso}" ]] || { echo "Installer ISO is missing: ''${iso}" >&2; exit 2; }
+      [[ -s "''${kickstart}" ]] || { echo "Kickstart is missing: ''${kickstart}" >&2; exit 2; }
+      rm -f -- "''${disk}" "''${kernel}" "''${initrd}" "''${state_root}/install-complete"
+      "''${qemu_img}" create -q -f qcow2 "''${disk}" 32G
+      "''${xorriso}" -osirrox on -indev "''${iso}" \
+        -extract /images/pxeboot/vmlinuz "''${kernel}" \
+        -extract /images/pxeboot/initrd.img "''${initrd}" >/dev/null 2>&1
+      cp -- "''${kickstart}" "''${served_kickstart}"
+      printf 'ready\n' >"''${health_check}"
 
+      port="$(
+        "''${python}" -c \
+          'import socket; s = socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1]); s.close()'
+      )"
+      : >"''${server_log}"
+      "''${python}" -m http.server "''${port}" \
+        --bind 0.0.0.0 --directory "''${state_root}" >"''${server_log}" 2>&1 &
+      server_pid=$!
+      server_ready=false
+      for _ in {1..50}; do
+        if "''${python}" -c \
+          'import sys, urllib.request; urllib.request.urlopen(sys.argv[1], timeout=1).read()' \
+          "http://127.0.0.1:''${port}/server-ready" >/dev/null 2>&1; then
+          server_ready=true
+          break
+        fi
+        sleep 0.1
+      done
+      [[ "''${server_ready}" == true ]] || {
+        echo 'Kickstart HTTP server did not become ready' >&2
+        exit 1
+      }
+
+      echo 'Installing Purplefin onto the disposable virtual disk'
+      kernel_cmdline="root=live:CDLABEL=Purplefin-Installer rd.live.image inst.stage2=hd:LABEL=Purplefin-Installer inst.text inst.ksstrict console=tty0 console=ttyS0,115200n8 selinux=0 ip=dhcp rd.neednet=1 inst.ks=http://10.0.2.2:''${port}/purplefin-ci.ks"
+      : >"''${install_log}"
+      timeout --signal=TERM --kill-after=20s "''${install_timeout}s" \
+        "''${qemu}" "''${common_args[@]}" \
+          -cdrom "''${iso}" \
+          -kernel "''${kernel}" \
+          -initrd "''${initrd}" \
+          -append "''${kernel_cmdline}" \
+        >"''${install_log}" 2>&1 &
+      qemu_pid=$!
+      tail --pid="''${qemu_pid}" -n +1 -F "''${install_log}" &
+      tail_pid=$!
+
+      kickstart_fetched=false
+      kickstart_deadline=$((SECONDS + kickstart_timeout))
+      while kill -0 "''${qemu_pid}" >/dev/null 2>&1; do
+        if grep -Fq '"GET /purplefin-ci.ks ' "''${server_log}"; then
+          kickstart_fetched=true
+          break
+        fi
+        if ((SECONDS >= kickstart_deadline)); then
+          echo "The guest did not fetch purplefin-ci.ks within ''${kickstart_timeout}s" >&2
+          exit 1
+        fi
+        sleep "''${poll_interval}"
+      done
+      if [[ "''${kickstart_fetched}" != true ]] &&
+        grep -Fq '"GET /purplefin-ci.ks ' "''${server_log}"; then
+        kickstart_fetched=true
+      fi
+      [[ "''${kickstart_fetched}" == true ]] || {
+        echo 'The installer exited before fetching purplefin-ci.ks' >&2
+        exit 1
+      }
+
+      set +e
+      wait "''${qemu_pid}"
+      qemu_status=$?
+      wait "''${tail_pid}"
+      tail_status=$?
+      set -e
+      qemu_pid=
+      tail_pid=
+      terminate_and_reap "''${server_pid}"
+      server_pid=
+      [[ "''${tail_status}" == 0 ]] || {
+        echo "Installer log follower failed with status ''${tail_status}" >&2
+        exit "''${tail_status}"
+      }
+      if [[ "''${qemu_status}" == 124 ]]; then
+        echo "Unattended installation timed out after ''${install_timeout}s" >&2
+        exit 124
+      fi
+      [[ "''${qemu_status}" == 0 ]] || {
+        echo "Unattended installer failed with status ''${qemu_status}" >&2
+        exit "''${qemu_status}"
+      }
+      touch "''${state_root}/install-complete"
+      print_phase_logs
+      exit 0
+    fi
+
+    [[ -s "''${disk}" && -f "''${state_root}/install-complete" ]] || {
+      echo "Completed installer state is missing: ''${state_root}" >&2
+      exit 2
+    }
     echo 'Booting the installed Purplefin system'
     : >"''${boot_log}"
     timeout --signal=TERM --kill-after=10s "''${boot_timeout}s" \
@@ -135,28 +236,41 @@ pkgs.writeShellApplication {
     while kill -0 "''${qemu_pid}" >/dev/null 2>&1; do
       if grep -Fq "''${ready_marker}" "''${boot_log}"; then
         reached_installed_system=true
-        kill -TERM "''${qemu_pid}" >/dev/null 2>&1 || true
+        terminate_and_reap "''${qemu_pid}"
+        qemu_pid=
         break
       fi
       sleep "''${poll_interval}"
     done
 
     set +e
-    wait "''${qemu_pid}"
-    qemu_status=$?
+    if [[ -n "''${qemu_pid}" ]]; then
+      wait "''${qemu_pid}"
+      qemu_status=$?
+      qemu_pid=
+    else
+      qemu_status=143
+    fi
     wait "''${tail_pid}"
     tail_status=$?
     set -e
-    qemu_pid=
     tail_pid=
 
-    [[ "''${tail_status}" == 0 ]] || exit "''${tail_status}"
+    [[ "''${tail_status}" == 0 ]] || {
+      echo "Installed-system log follower failed with status ''${tail_status}" >&2
+      exit "''${tail_status}"
+    }
     if [[ "''${reached_installed_system}" == true ]] ||
       grep -Fq "''${ready_marker}" "''${boot_log}"; then
+      print_phase_logs
       exit 0
     fi
+    if [[ "''${qemu_status}" == 124 ]]; then
+      echo "Installed-system boot timed out after ''${boot_timeout}s" >&2
+      exit 124
+    fi
     case "''${qemu_status}" in
-      0 | 124 | 143) ;;
+      0 | 143) ;;
       *) echo "Installed-system QEMU failed with status ''${qemu_status}" >&2; exit "''${qemu_status}" ;;
     esac
     echo "The installed system did not emit ''${ready_marker}" >&2
