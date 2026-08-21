@@ -1,0 +1,32 @@
+[customizations.installer.kickstart]
+contents = """
+text --non-interactive
+lang en_US.UTF-8
+keyboard us
+timezone Etc/UTC --utc
+zerombr
+clearpart --all --initlabel --disklabel=gpt
+autopart --noswap --type=plain --fstype=ext4
+network --bootproto=dhcp --device=link --activate --onboot=on
+rootpw --lock
+bootloader --append="console=tty0 console=ttyS0,115200n8"
+reboot
+bootc --source-imgref registry:@@INSTALLER_PAYLOAD_SOURCE_REF@@ --target-imgref @@INSTALLER_PAYLOAD_TARGET_REF@@
+
+%post --erroronfail
+cat >/etc/systemd/system/purplefin-ci-installed-ready.service <<'PURPLEFIN_EOF'
+[Unit]
+Description=Purplefin installed-system CI readiness marker
+After=systemd-user-sessions.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/sh -c '/usr/bin/printf "PURPLEFIN_INSTALLED_READY=1\n" >/dev/console'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+PURPLEFIN_EOF
+systemctl enable purplefin-ci-installed-ready.service
+%end
+"""

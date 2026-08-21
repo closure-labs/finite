@@ -6,6 +6,10 @@ inputs:
     description: Publish matching installer layers to the trusted GHCR cache
     required: false
     default: "false"
+  end-to-end:
+    description: Build a CI-only Kickstart ISO, install it, and boot the resulting disk
+    required: false
+    default: "false"
   image-tag:
     description: Published Purplefin profile to embed
     required: false
@@ -39,6 +43,7 @@ runs:
         GH_TOKEN: ${{ inputs.token }}
         IMAGE_REF: ghcr.io/${{ github.repository }}
         IMAGE_TAG: ${{ inputs.image-tag }}
+        PURPLEFIN_INSTALLER_E2E: ${{ inputs.end-to-end }}
       shell: bash
       run: >-
         nix shell --accept-flake-config .#ci-installer-build

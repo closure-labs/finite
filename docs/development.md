@@ -102,6 +102,7 @@ inspection, copy the desired files from the `result` symlink.
 | `nix build .#syft` | Pinned Syft package |
 | `nix shell .#ci-image-sbom -c purplefin-image-sbom validate <file>` | Validate a normalized SPDX image software bill of materials |
 | `nix shell .#ci-installer-smoke -c purplefin-installer-smoke <iso>` | QEMU installer boot test |
+| `nix shell .#ci-installer-e2e -c purplefin-installer-e2e <test-iso>` | Install a CI Kickstart ISO and boot its disposable disk |
 | `nix shell .#ci-release-notes -c purplefin-release-notes <version> CHANGELOG.md` | Release notes for one version |
 
 ## Repository layout

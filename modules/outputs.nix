@@ -200,6 +200,7 @@ in {
         ci-sbom-attestation = applications.sbomAttestation;
         ci-promote-images = applications.promoteImages;
         ci-installer-build = applications.installerBuild;
+        ci-installer-e2e = applications.installerE2e;
         ci-installer-smoke = applications.installerSmoke;
         ci-release-notes = applications.releaseNotes;
         ci-update-locks = applications.updateLocks;

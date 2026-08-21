@@ -5,6 +5,11 @@ on:
     - cron: "41 9 * * 0"
   workflow_dispatch:
     inputs:
+      end-to-end:
+        description: Also perform an unattended install and boot the installed system
+        required: false
+        default: false
+        type: boolean
       image-tag:
         description: Published Purplefin profile to embed
         required: true
@@ -37,7 +42,7 @@ jobs:
   build-installer:
     name: Build and boot installer ISO
     runs-on: ubuntu-24.04
-    timeout-minutes: 150
+    timeout-minutes: 120
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -52,6 +57,7 @@ jobs:
             ${{ github.event_name == 'schedule' ||
             (github.event_name == 'workflow_dispatch' &&
             github.ref == 'refs/heads/main') }}
+          end-to-end: ${{ github.event_name == 'schedule' || inputs.end-to-end }}
           image-tag: ${{ inputs.image-tag || 'base-generic-x86_64' }}
           token: ${{ github.token }}
 

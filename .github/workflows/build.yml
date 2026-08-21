@@ -127,7 +127,7 @@ jobs:
       fromJSON(needs.prepare.outputs.plan || '{}').validation.installer.required == true
     needs: prepare
     runs-on: ubuntu-24.04
-    timeout-minutes: 150
+    timeout-minutes: 60
     permissions:
       attestations: read
       contents: read
@@ -139,6 +139,34 @@ jobs:
       - uses: ./.github/actions/build-installer
         with:
           cache-write: false
+          image-tag: base-generic-x86_64
+          token: ${{ github.token }}
+
+  installer-cache:
+    name: Validate installer and warm trusted cache
+    if: >-
+      always() && (github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
+      needs.prepare.result == 'success' &&
+      (fromJSON(needs.prepare.outputs.plan || '{}').validation.installer.required == true ||
+      fromJSON(needs.prepare.outputs.plan || '{}').publication.builds.root == true) &&
+      (needs.promote.result == 'success' || needs.promote.result == 'skipped')
+    needs: [prepare, promote]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    permissions:
+      attestations: read
+      contents: read
+      id-token: write
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/build-installer
+        with:
+          cache-write: true
+          end-to-end: ${{ github.event_name == 'workflow_dispatch' && inputs.force || false }}
           image-tag: base-generic-x86_64
           token: ${{ github.token }}
 

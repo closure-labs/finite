@@ -1,6 +1,7 @@
 {
   generated,
   imageBuilder,
+  installerE2e,
   installerSmoke,
   pkgs,
 }:
@@ -14,6 +15,7 @@ pkgs.writeShellApplication {
     gh
     gnutar
     gnugrep
+    gnused
     jq
     podman
     skopeo
@@ -21,6 +23,7 @@ pkgs.writeShellApplication {
   text = ''
     export PURPLEFIN_GENERATED_ROOT=${generated}
     export PURPLEFIN_IMAGE_BUILDER_REF=${imageBuilder.image}@${imageBuilder.digest}
+    export PURPLEFIN_INSTALLER_E2E_APP=${installerE2e}/bin/purplefin-installer-e2e
     export PURPLEFIN_INSTALLER_SMOKE=${installerSmoke}/bin/purplefin-installer-smoke
     export PURPLEFIN_PODMAN=${pkgs.podman}/bin/podman
     set -euo pipefail
@@ -33,6 +36,11 @@ pkgs.writeShellApplication {
     cd "''${repo_root}" || exit
 
     : "''${CACHE_WRITE:=false}"
+    : "''${PURPLEFIN_INSTALLER_E2E:=false}"
+    [[ "''${PURPLEFIN_INSTALLER_E2E}" == true || "''${PURPLEFIN_INSTALLER_E2E}" == false ]] || {
+      echo 'PURPLEFIN_INSTALLER_E2E must be true or false' >&2
+      exit 2
+    }
     : "''${GH_TOKEN:?GH_TOKEN is required to verify attestations}"
     : "''${GITHUB_ACTOR:?GITHUB_ACTOR is required}"
     : "''${GITHUB_REPOSITORY:?GITHUB_REPOSITORY is required}"
@@ -54,7 +62,12 @@ pkgs.writeShellApplication {
     environment_seconds=0
     image_builder_seconds=0
     image_builder_pull_pid=
+    image_builder_cache_root="''${RUNNER_TEMP}/purplefin-image-builder-cache"
+    install -d -m 0755 \
+      "''${image_builder_cache_root}/rpmmd" \
+      "''${image_builder_cache_root}/store"
     smoke_seconds=0
+    e2e_seconds=0
     payload_digest=unresolved
     payload_tag=unresolved
 
@@ -126,7 +139,7 @@ pkgs.writeShellApplication {
     [[ "''${environment_input}" =~ ^[0-9a-f]{64}$ ]]
     environment_cache_ref="''${cache_ref}:environment-''${environment_input}"
     cosign_identity="https://github.com/''${GITHUB_REPOSITORY}/.github/workflows/build-profile.yml@refs/heads/main"
-    environment_cache_identity="https://github.com/''${GITHUB_REPOSITORY}/.github/workflows/build-installer.yml@refs/heads/main"
+    environment_cache_identity_regex="^https://github.com/''${GITHUB_REPOSITORY}/.github/workflows/(build|build-installer)\\.yml@refs/heads/main$"
     cosign verify \
       --certificate-oidc-issuer https://token.actions.githubusercontent.com \
       --certificate-identity "''${cosign_identity}" \
@@ -195,7 +208,7 @@ pkgs.writeShellApplication {
         <<<"''${environment_cache_metadata}" >/dev/null &&
       cosign verify \
         --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-        --certificate-identity "''${environment_cache_identity}" \
+        --certificate-identity-regexp "''${environment_cache_identity_regex}" \
         "''${immutable_environment_cache_ref}" >/dev/null 2>&1; then
       environment_cache_hit=true
       echo "Reusing exact installer environment ''${immutable_environment_cache_ref}" |
@@ -249,8 +262,12 @@ pkgs.writeShellApplication {
       --security-opt label=disable \
       --volume "''${PWD}/output:/output" \
       --volume /var/lib/containers/storage:/var/lib/containers/storage \
+      --volume "''${image_builder_cache_root}/store:/var/cache/image-builder/store" \
+      --volume "''${image_builder_cache_root}/rpmmd:/var/cache/image-builder/rpmmd" \
       "''${image_builder}" \
       build \
+        --cache /var/cache/image-builder/store \
+        --rpmmd-cache /var/cache/image-builder/rpmmd \
         --bootc-ref "localhost/purplefin-installer:''${GITHUB_SHA}" \
         --bootc-installer-payload-ref "''${payload_embed_ref}" \
         --bootc-default-fs ext4 \
@@ -308,13 +325,55 @@ pkgs.writeShellApplication {
           }
         }
       }' >output/installer-manifest.json
-    sha256sum "''${final_iso}" output/installer-manifest.json >output/SHA256SUMS
+    {
+      printf '%s  %s\n' "''${iso_sha256}" "''${final_iso}"
+      sha256sum output/installer-manifest.json
+    } >output/SHA256SUMS
     image_builder_seconds=$((SECONDS - started))
 
     started="''${SECONDS}"
     "''${PURPLEFIN_INSTALLER_SMOKE:?PURPLEFIN_INSTALLER_SMOKE is required}" "''${final_iso}" 2>&1 |
       tee diagnostics/qemu-smoke.log
     smoke_seconds=$((SECONDS - started))
+
+    if [[ "''${PURPLEFIN_INSTALLER_E2E}" == true ]]; then
+      started="''${SECONDS}"
+      e2e_root="$(mktemp -d -p "''${RUNNER_TEMP}" purplefin-installer-e2e.XXXXXX)"
+      e2e_output="''${e2e_root}/output"
+      e2e_blueprint="''${e2e_root}/blueprint.toml"
+      install -d -m 0755 "''${e2e_output}"
+      sed \
+        -e "s|@@INSTALLER_PAYLOAD_SOURCE_REF@@|''${payload_embed_ref}|g" \
+        -e "s|@@INSTALLER_PAYLOAD_TARGET_REF@@|''${payload_ref}|g" \
+        installer/ci-unattended.toml.in >"''${e2e_blueprint}"
+      "''${root_podman[@]}" run --rm --privileged \
+        --security-opt label=disable \
+        --volume "''${e2e_output}:/e2e-output" \
+        --volume "''${e2e_blueprint}:/purplefin-ci-unattended.toml:ro" \
+        --volume /var/lib/containers/storage:/var/lib/containers/storage \
+        --volume "''${image_builder_cache_root}/store:/var/cache/image-builder/store" \
+        --volume "''${image_builder_cache_root}/rpmmd:/var/cache/image-builder/rpmmd" \
+        "''${image_builder}" \
+        --output-dir /e2e-output \
+        build \
+          --blueprint /purplefin-ci-unattended.toml \
+          --cache /var/cache/image-builder/store \
+          --rpmmd-cache /var/cache/image-builder/rpmmd \
+          --bootc-ref "localhost/purplefin-installer:''${GITHUB_SHA}" \
+          --bootc-installer-payload-ref "''${payload_embed_ref}" \
+          --bootc-default-fs ext4 \
+          bootc-generic-iso 2>&1 | tee diagnostics/image-builder-e2e.log
+      sudo chown -R "$(id -u):$(id -g)" "''${e2e_root}"
+      e2e_iso="$(find "''${e2e_output}" -type f -name '*.iso' -print -quit)"
+      [[ -n "''${e2e_iso}" ]]
+      "''${PURPLEFIN_INSTALLER_E2E_APP:?PURPLEFIN_INSTALLER_E2E_APP is required}" \
+        "''${e2e_iso}" 2>&1 | tee diagnostics/qemu-e2e.log
+      for e2e_log in "''${e2e_output}"/qemu-*.log; do
+        [[ ! -f "''${e2e_log}" ]] || cp "''${e2e_log}" diagnostics/
+      done
+      rm -rf -- "''${e2e_root}"
+      e2e_seconds=$((SECONDS - started))
+    fi
 
     if [[ -n "''${GITHUB_OUTPUT:-}" ]]; then
       {
@@ -340,6 +399,7 @@ pkgs.writeShellApplication {
         echo "| Environment build | \`success\` (''${environment_seconds}s) |"
         echo "| Image Builder | \`success\` (''${image_builder_seconds}s) |"
         echo "| QEMU smoke boot | \`success\` (''${smoke_seconds}s) |"
+        echo "| Unattended install and boot | \`''${PURPLEFIN_INSTALLER_E2E}\` (''${e2e_seconds}s) |"
       } >>"''${GITHUB_STEP_SUMMARY}"
     fi
   '';
