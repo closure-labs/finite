@@ -20,6 +20,8 @@ grep -qF "ready_marker='PURPLEFIN_INSTALLER_READY=1'" \
 	lib/ci-applications/installer-smoke.nix
 grep -qF "ready_marker='PURPLEFIN_INSTALLED_READY=1'" \
 	lib/ci-applications/installer-e2e.nix
+grep -qF 'PURPLEFIN_INSTALLER_E2E_INSTALL_TIMEOUT_SECONDS:-3600' \
+	lib/ci-applications/installer-e2e.nix
 grep -qF -- '--bootc-ref' lib/installer-application.nix
 grep -qF -- '--bootc-installer-payload-ref' lib/installer-application.nix
 grep -qF -- '--build-context installer-rootfs=installer/rootfs' \
