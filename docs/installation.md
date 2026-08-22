@@ -145,8 +145,10 @@ Use `--flake` to select a fork or pinned flake URI.
    installer.
 
 The artifact also contains `installer-manifest.json` and `qemu-boot.log`. The
-manifest records the ISO, source commit, Image Builder, minimal Fedora bootc
-live-environment base, and embedded Purplefin image digests.
+schema-v2 manifest records the ISO, source commit, Image Builder, minimal
+Fedora bootc live-environment base, and Purplefin payload. Its
+`embedded_reference` is the exact verified digest incorporated into the ISO;
+`update_reference` is the mutable profile tag that the installed system tracks.
 
 ## Update or roll back
 

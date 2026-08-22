@@ -73,6 +73,7 @@
     ../tests/bootc
   ];
   installerSource = sourceFor [
+    ../.github/actions/build-installer
     ../flake.nix
     ../installer
     ../lib/ci-applications/installer-e2e.nix
@@ -352,6 +353,7 @@ in {
       applications.imageReuse
       applications.imageSign
       applications.imageSbom
+      applications.rechunkImage
       applications.shardPlan
       applications.validateImageShard
       diffutils
@@ -364,6 +366,8 @@ in {
 
       bash tests/bootc/derived-profile.sh
       bash tests/bootc/plan.sh
+      bash tests/bootc/rechunk.sh \
+        ${applications.rechunkImage}/bin/purplefin-rechunk-image
       bash tests/bootc/reuse-image.sh
       bash tests/bootc/sign-image.sh
       bash tests/bootc/sbom.sh
@@ -378,7 +382,8 @@ in {
     commands = ''
       set -euo pipefail
 
-      bash tests/installer/contracts.sh
+      bash tests/installer/contracts.sh \
+        ${applications.installerBuild}/bin/purplefin-installer-build
       python3 tests/installer/squashfs-stage.py
       bash tests/installer/smoke.sh \
         ${applications.installerSmoke}/bin/purplefin-installer-smoke
@@ -490,6 +495,7 @@ in {
       grep -qF 'group: purplefin-publication' .github/workflows/release.yml
       grep -qF 'purplefin-image-reuse' .github/workflows/build-profile.yml
       grep -qF 'purplefin-image-sign' .github/workflows/build-profile.yml
+      grep -qF 'purplefin-rechunk-image' .github/workflows/build-profile.yml
       ! grep -qF 'cosign sign' .github/workflows/build-profile.yml
       grep -qF 'purplefin-image-sbom' .github/workflows/attest-software-bill-of-materials.yml
       grep -qF 'purplefin-sbom-attestation' .github/workflows/release.yml
@@ -537,7 +543,8 @@ in {
       grep -qF 'installer-cache:' .github/workflows/build.yml
       grep -qF 'cache-write: true' .github/workflows/build.yml
       grep -qF 'end-to-end:' .github/actions/build-installer/action.yml
-      grep -qF 'PURPLEFIN_INSTALLER_E2E' .github/actions/build-installer/action.yml
+      grep -qF 'purplefin-installer-e2e install' .github/actions/build-installer/action.yml
+      grep -qF 'purplefin-installer-e2e boot' .github/actions/build-installer/action.yml
       grep -qF -- '--build-context installer-rootfs=installer/rootfs' lib/installer-application.nix
       grep -qF 'RUN --mount=from=installer-rootfs,target=/run/installer-rootfs' installer/Containerfile
       grep -qF 'PURPLEFIN_INSTALLER_BASE_REF' lib/installer-application.nix
@@ -554,6 +561,7 @@ in {
         ${applications.validateImageShard}/bin/purplefin-validate-image-shard \
         ${applications.imageReuse}/bin/purplefin-image-reuse \
         ${applications.imageSign}/bin/purplefin-image-sign \
+        ${applications.rechunkImage}/bin/purplefin-rechunk-image \
         ${applications.loadBluefin}/bin/purplefin-load-bluefin \
         ${applications.promoteImages}/bin/purplefin-promote-images \
         ${applications.installerBuild}/bin/purplefin-installer-build \

@@ -18,6 +18,7 @@ in {
     "ci:image:validate".exec = runLeaf "ci-validate-image-shard" "purplefin-validate-image-shard" "";
     "ci:image:reuse".exec = runLeaf "ci-image-reuse" "purplefin-image-reuse" "";
     "ci:image:build".exec = runLeaf "ci-image-build" "purplefin-image-build" "";
+    "ci:image:rechunk".exec = runLeaf "ci-rechunk-image" "purplefin-rechunk-image" "";
     "ci:image:sign".exec = runLeaf "ci-image-sign" "purplefin-image-sign" "";
     "ci:image:sbom".exec = runLeaf "ci-image-sbom" "purplefin-image-sbom" "";
     "ci:image:promote".exec = runLeaf "ci-promote-images" "purplefin-promote-images" "";

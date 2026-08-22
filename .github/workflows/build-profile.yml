@@ -147,11 +147,18 @@ jobs:
 
       - name: Load locked upstream image
         if: inputs.parent-from-lock && steps.reuse.outputs.hit != 'true'
+        id: upstream_load
         env:
           UPSTREAM_SOURCE: ${{ inputs.upstream-source }}
-        run: >-
-          nix shell --accept-flake-config .#ci-load-bluefin
-          -c purplefin-load-bluefin "${UPSTREAM_SOURCE}"
+        shell: bash
+        run: |
+          started=${SECONDS}
+          record_duration() {
+            echo "seconds=$((SECONDS - started))" >>"${GITHUB_OUTPUT}"
+          }
+          trap record_duration EXIT
+          nix shell --accept-flake-config .#ci-load-bluefin \
+            -c purplefin-load-bluefin "${UPSTREAM_SOURCE}"
 
       - name: Build image from immutable parent
         if: steps.reuse.outputs.hit != 'true'
@@ -232,67 +239,70 @@ jobs:
             --tag "${primary_image}" \
             .
 
+      - name: Resolve verified previous profile build
+        if: steps.reuse.outputs.hit != 'true'
+        id: previous_build
+        env:
+          BUILD_PROFILE: ${{ inputs.profile }}
+          COSIGN_IDENTITY: https://github.com/${{ github.repository }}/.github/workflows/build-profile.yml@refs/heads/main
+        shell: bash
+        run: |
+          set -euo pipefail
+          mutable_ref="${IMAGE_REF}:${BUILD_PROFILE}"
+          metadata="$({
+            nix shell --accept-flake-config .#ci-skopeo \
+              -c skopeo inspect --retry-times 3 "docker://${mutable_ref}" 2>/dev/null || true
+          })"
+          digest="$(jq -r '.Digest // empty' <<<"${metadata}")"
+          if [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]] &&
+            nix shell --accept-flake-config .#ci-cosign \
+              -c cosign verify \
+                --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+                --certificate-identity "${COSIGN_IDENTITY}" \
+                "${IMAGE_REF}@${digest}" >/dev/null 2>&1; then
+            {
+              echo 'available=true'
+              echo "digest=${digest}"
+              echo "reference=docker://${IMAGE_REF}@${digest}"
+            } >>"${GITHUB_OUTPUT}"
+          else
+            {
+              echo 'available=false'
+              echo 'digest=none'
+            } >>"${GITHUB_OUTPUT}"
+            echo "${BUILD_PROFILE}: no verifiable previous profile build; using a full rechunk" >&2
+          fi
+
       - name: Rechunk bootc image for efficient updates
         if: steps.reuse.outputs.hit != 'true'
         id: rechunk
         env:
           BUILD_PROFILE: ${{ inputs.profile }}
+          PREVIOUS_BUILD: ${{ steps.previous_build.outputs.reference }}
         shell: bash
         run: |
-          started=${SECONDS}
-          record_duration() {
-            echo "seconds=$((SECONDS - started))" >>"${GITHUB_OUTPUT}"
-          }
-          trap record_duration EXIT
-
           primary_image="${IMAGE_REF}:${BUILD_PROFILE}-candidate"
-          preserved_labels="$({
-            podman inspect "${primary_image}" |
-              jq -c '
-                .[0].Config.Labels // {} |
-                with_entries(
-                  select(
-                    .key != "containers.bootc" and
-                    .key != "io.buildah.version" and
-                    (.key | startswith("ostree.") | not)
-                  )
-                )
-              '
-          })"
-          label_args=()
-          while IFS= read -r label; do
-            label_args+=(--label "${label}")
-          done < <(jq -r 'to_entries[] | "\(.key)=\(.value)"' <<<"${preserved_labels}")
-
           remote_ref="${primary_image}"
           output="docker://${remote_ref}"
-          run_args=(
-            --env REGISTRY_AUTH_FILE=/run/registry-auth.json
-            --volume "${REGISTRY_AUTH_FILE}:/run/registry-auth.json:ro"
+          rechunk_args=(
+            --source "${primary_image}"
+            --output "${output}"
+            --authfile "${REGISTRY_AUTH_FILE}"
           )
-
-          podman run --rm --pull=never --privileged \
-            --mount "type=image,src=${primary_image},target=/rpm-ostree" \
-            "${run_args[@]}" \
-            --entrypoint /usr/bin/rpm-ostree \
-            "${primary_image}" \
-            compose build-chunked-oci \
-              --max-layers 127 \
-              --format-version=2 \
-              "${label_args[@]}" \
-              --bootc \
-              --rootfs /rpm-ostree \
-              --output "${output}"
-
-          metadata="$(nix shell --accept-flake-config .#ci-skopeo \
-            -c skopeo inspect --retry-times 3 "docker://${remote_ref}")"
-          jq -e --argjson expected "${preserved_labels}" '
-            (.Labels // {}) as $actual |
-            $expected | to_entries | all(.[]; $actual[.key] == .value)
-          ' <<<"${metadata}" >/dev/null
-          digest="$(jq -er '.Digest' <<<"${metadata}")"
-          [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
-          echo "digest=${digest}" >>"${GITHUB_OUTPUT}"
+          if [[ -n "${PREVIOUS_BUILD}" ]]; then
+            rechunk_args+=(--previous-build "${PREVIOUS_BUILD}")
+          fi
+          report="$({
+            PURPLEFIN_PODMAN="$(command -v podman)" \
+              nix shell --accept-flake-config .#ci-rechunk-image \
+                -c purplefin-rechunk-image "${rechunk_args[@]}"
+          })"
+          {
+            echo "digest=$(jq -er .digest <<<"${report}")"
+            echo "mode=$(jq -er .mode <<<"${report}")"
+            echo "previous_build_digest=$(jq -er .previous_build_digest <<<"${report}")"
+            echo "seconds=$(jq -er .rechunk_seconds <<<"${report}")"
+          } >>"${GITHUB_OUTPUT}"
 
       - name: Record staged candidate digest
         id: push
@@ -402,10 +412,13 @@ jobs:
           PROVENANCE_HIT: ${{ steps.provenance_check.outputs.hit }}
           PROVENANCE_RETRY_OUTCOME: ${{ steps.provenance_retry.outcome }}
           RECHUNK_OUTCOME: ${{ steps.rechunk.outcome }}
+          RECHUNK_MODE: ${{ steps.rechunk.outputs.mode }}
+          RECHUNK_PREVIOUS_DIGEST: ${{ steps.rechunk.outputs.previous_build_digest }}
           RECHUNK_SECONDS: ${{ steps.rechunk.outputs.seconds }}
           REUSE_DIGEST: ${{ steps.reuse.outputs.digest }}
           REUSE_HIT: ${{ steps.reuse.outputs.hit }}
           REUSE_SECONDS: ${{ steps.reuse.outputs.seconds }}
+          UPSTREAM_LOAD_SECONDS: ${{ steps.upstream_load.outputs.seconds }}
         shell: bash
         run: |
           finished_at="$(date +%s)"
@@ -431,8 +444,9 @@ jobs:
             echo "| Image digest | \`${image_digest}\` |"
             echo "| Published image reuse | \`${REUSE_HIT:-false}\` (${REUSE_SECONDS:-0}s; \`${REUSE_DIGEST:-none}\`) |"
             echo "| Registry cache | \`${CACHE_AVAILABLE:-unknown}\` available; \`${CACHE_WRITE:-false}\` updated; \`${CACHE_REF:-unresolved}\` |"
-            echo "| Image build | \`${BUILD_OUTCOME:-skipped}\` (${BUILD_SECONDS:-0}s) |"
-            echo "| Rechunk | \`${RECHUNK_OUTCOME:-skipped}\` (${RECHUNK_SECONDS:-0}s) |"
+            echo "| Upstream load | ${UPSTREAM_LOAD_SECONDS:-0}s |"
+            echo "| Container build | \`${BUILD_OUTCOME:-skipped}\` (${BUILD_SECONDS:-0}s) |"
+            echo "| Rechunk | \`${RECHUNK_OUTCOME:-skipped}\` (${RECHUNK_SECONDS:-0}s; \`${RECHUNK_MODE:-not-run}\`; previous \`${RECHUNK_PREVIOUS_DIGEST:-none}\`) |"
             echo "| Attestations | \`${attestations}\` |"
             echo "| Total duration | ${total_seconds}s |"
           } >>"${GITHUB_STEP_SUMMARY}"

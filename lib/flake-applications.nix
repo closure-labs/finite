@@ -775,13 +775,14 @@ in rec {
          printf '%s\n' "''${digest}"
     '';
   };
+  rechunkImage = import ./ci-applications/rechunk-image.nix {inherit pkgs;};
   validateImageShard = import ./ci-applications/validate-image-shard.nix {
-    inherit generated loadBluefin pkgs version;
+    inherit generated loadBluefin pkgs rechunkImage version;
   };
   installerE2e = import ./ci-applications/installer-e2e.nix {inherit pkgs;};
   installerSmoke = import ./ci-applications/installer-smoke.nix {inherit pkgs;};
   installerBuild = import ./installer-application.nix {
-    inherit fedoraBootc generated imageBuilder installerE2e installerSmoke pkgs;
+    inherit fedoraBootc generated imageBuilder pkgs;
   };
   sbomAttestation = pkgs.writeShellApplication {
     name = "purplefin-sbom-attestation";
