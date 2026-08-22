@@ -82,6 +82,11 @@ Check:
 - `image-builder-pull.log` for pinned Image Builder image pull failures;
 - `image-builder.log` for ISO generation failures;
 - `qemu-smoke.log` or `qemu-boot.log` for boot-test failures;
+- `qemu-install.log` for unattended Anaconda failures or the 20-minute limit;
+- `qemu-installed-boot.log` for digest, update-reference, or three-minute boot
+  readiness failures;
+- `qemu-kickstart-server.log` to confirm that the guest fetched
+  `purplefin-ci.ks` within three minutes;
 - `runner-capacity-before.txt` and `runner-capacity-after.txt` for storage
   exhaustion.
 

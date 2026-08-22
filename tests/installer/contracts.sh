@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+installer_build="${1:?usage: contracts.sh INSTALLER_BUILD}"
 ready_dropin=installer/rootfs/usr/lib/systemd/system/anaconda.service.d/purplefin-ready.conf
 kickstart="$(mktemp)"
 trap 'rm -f -- "${kickstart}"' EXIT
@@ -13,21 +14,53 @@ grep -qF 'text --non-interactive' installer/ci-unattended.ks.in
 grep -qF 'PURPLEFIN_INSTALLED_READY=1' installer/ci-unattended.ks.in
 grep -qF 'bootc --source-imgref registry:@@INSTALLER_PAYLOAD_SOURCE_REF@@' \
 	installer/ci-unattended.ks.in
+grep -qF -- '--target-imgref @@INSTALLER_PAYLOAD_TARGET_REF@@' \
+	installer/ci-unattended.ks.in
+grep -qF 'status --json --format-version=1' installer/ci-unattended.ks.in
+grep -qF 'Before=purplefin-firstboot-rpm-ostree.service' \
+	installer/ci-unattended.ks.in
+grep -qF 'StandardError=journal+console' installer/ci-unattended.ks.in
+grep -qF 'image["imageDigest"]' installer/ci-unattended.ks.in
+grep -qF 'image["image"]["image"]' installer/ci-unattended.ks.in
+grep -qF 'PURPLEFIN_INSTALLED_ERROR=digest-mismatch' installer/ci-unattended.ks.in
+grep -qF 'PURPLEFIN_INSTALLED_ERROR=reference-mismatch' installer/ci-unattended.ks.in
 cp installer/ci-unattended.ks.in "${kickstart}"
 ksvalidator "${kickstart}"
 grep -qF "ready_marker='PURPLEFIN_INSTALLER_READY=1'" \
 	lib/ci-applications/installer-smoke.nix
 grep -qF "ready_marker='PURPLEFIN_INSTALLED_READY=1'" \
 	lib/ci-applications/installer-e2e.nix
-grep -qF 'PURPLEFIN_INSTALLER_E2E_INSTALL_TIMEOUT_SECONDS:-3600' \
+grep -qF 'PURPLEFIN_INSTALLER_E2E_KICKSTART_TIMEOUT_SECONDS:-180' \
+	lib/ci-applications/installer-e2e.nix
+grep -qF 'PURPLEFIN_INSTALLER_E2E_INSTALL_TIMEOUT_SECONDS:-1200' \
+	lib/ci-applications/installer-e2e.nix
+grep -qF 'PURPLEFIN_INSTALLER_E2E_BOOT_TIMEOUT_SECONDS:-180' \
 	lib/ci-applications/installer-e2e.nix
 grep -qF -- '--bootc-ref' lib/installer-application.nix
 grep -qF -- '--bootc-installer-payload-ref' lib/installer-application.nix
+grep -qF -- "--bootc-installer-payload-ref \"''\${payload_update_ref}\"" \
+	lib/installer-application.nix
+grep -qF "pull \"''\${auth_args[@]}\" \"''\${payload_ref}\"" \
+	lib/installer-application.nix
+grep -qF "tag \"''\${payload_ref}\" \"''\${payload_update_ref}\"" \
+	lib/installer-application.nix
 grep -qF -- '--build-context installer-rootfs=installer/rootfs' \
 	lib/installer-application.nix
 grep -qF -- '--security-opt label=disable' lib/installer-application.nix
 grep -qF 'PURPLEFIN_INSTALLER_BASE_REF' lib/installer-application.nix
-grep -qF 'purplefin-installer-environment-v2' lib/installer-application.nix
+grep -qF 'purplefin-installer-environment-v3' lib/installer-application.nix
+grep -qF 'schema_version: 2' lib/installer-application.nix
+# The literal jq variable names are part of the generated manifest expression.
+# shellcheck disable=SC2016
+grep -qF 'embedded_reference: $payload_embedded_reference' lib/installer-application.nix
+# shellcheck disable=SC2016
+grep -qF 'update_reference: $payload_update_reference' lib/installer-application.nix
+grep -qF 'profile-tag=' lib/installer-application.nix
+if grep -A8 -F 'purplefin-installer-environment-v3' lib/installer-application.nix |
+	grep -qF 'payload_digest'; then
+	echo 'Installer environment cache identity depends on the payload digest' >&2
+	exit 1
+fi
 grep -qF -- '--build-arg "BASE_REF=' lib/installer-application.nix
 grep -qF 'ARG BASE_REF=quay.io/fedora/fedora-bootc:44' installer/Containerfile
 grep -qF 'certificate-identity-regexp' lib/installer-application.nix
@@ -58,3 +91,35 @@ mount_count="$(grep -cF 'osbuild/stages/org.osbuild.squashfs:ro' lib/installer-a
 [[ "${mount_count}" == 1 ]]
 grep -qF 'RUN --mount=from=installer-rootfs,target=/run/installer-rootfs' \
 	installer/Containerfile
+
+for phase in \
+	'Build installer environment and ISO' \
+	'Smoke-test installer ISO bootloader' \
+	'Perform unattended installation' \
+	'Boot and validate installed system' \
+	'Upload installer diagnostics'; do
+	grep -qF -- "- name: ${phase}" .github/actions/build-installer/action.yml
+done
+grep -qF 'iso-path=' lib/installer-application.nix
+grep -qF 'kickstart-path=' lib/installer-application.nix
+if grep -A20 '^outputs:' .github/actions/build-installer/action.yml |
+	grep -Eq '^  (iso-path|kickstart-path):'; then
+	echo 'Internal installer paths leaked into the composite action output contract' >&2
+	exit 1
+fi
+
+base='quay.io/fedora/fedora-bootc@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+context_a='1111111111111111111111111111111111111111111111111111111111111111'
+context_b='2222222222222222222222222222222222222222222222222222222222222222'
+tag_a='ghcr.io/example/purplefin:base-generic-x86_64'
+tag_b='ghcr.io/example/purplefin:base-dell-xps-9350-intel'
+export PURPLEFIN_TEST_PAYLOAD_DIGEST=sha256:aaaa
+key_a="$(${installer_build} cache-input "${base}" "${context_a}" "${tag_a}")"
+export PURPLEFIN_TEST_PAYLOAD_DIGEST=sha256:bbbb
+key_same="$(${installer_build} cache-input "${base}" "${context_a}" "${tag_a}")"
+unset PURPLEFIN_TEST_PAYLOAD_DIGEST
+key_context="$(${installer_build} cache-input "${base}" "${context_b}" "${tag_a}")"
+key_tag="$(${installer_build} cache-input "${base}" "${context_a}" "${tag_b}")"
+[[ "${key_a}" == "${key_same}" ]]
+[[ "${key_a}" != "${key_context}" ]]
+[[ "${key_a}" != "${key_tag}" ]]

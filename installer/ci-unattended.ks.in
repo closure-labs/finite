@@ -12,15 +12,59 @@ reboot
 bootc --source-imgref registry:@@INSTALLER_PAYLOAD_SOURCE_REF@@ --target-imgref @@INSTALLER_PAYLOAD_TARGET_REF@@
 
 %post --erroronfail
+cat >/usr/local/libexec/purplefin-ci-installed-ready <<'PURPLEFIN_EOF'
+#!/usr/bin/bash
+set -euo pipefail
+
+bootc="${PURPLEFIN_BOOTC:-/usr/bin/bootc}"
+python="${PURPLEFIN_PYTHON:-/usr/bin/python3}"
+console="${PURPLEFIN_CONSOLE:-/dev/console}"
+
+if ! status="$("${bootc}" status --json --format-version=1)"; then
+	printf 'PURPLEFIN_INSTALLED_ERROR=bootc-status-failed\n' >"${console}"
+	exit 1
+fi
+printf 'PURPLEFIN_BOOTC_STATUS=%s\n' "${status}" >"${console}"
+
+if ! observed="$("${python}" -c '
+import json
+import sys
+
+image = json.load(sys.stdin)["status"]["booted"]["image"]
+print(image["imageDigest"], image["image"]["image"], sep="\t")
+' <<<"${status}")"; then
+	printf 'PURPLEFIN_INSTALLED_ERROR=bootc-status-invalid\n' >>"${console}"
+	exit 1
+fi
+IFS=$'\t' read -r booted_digest booted_reference <<<"${observed}"
+
+printf 'PURPLEFIN_INSTALLED_DIGEST=%s\n' "${booted_digest}" >>"${console}"
+printf 'PURPLEFIN_INSTALLED_REFERENCE=%s\n' "${booted_reference}" >>"${console}"
+printf 'PURPLEFIN_EXPECTED_DIGEST=%s\n' '@@INSTALLER_PAYLOAD_DIGEST@@' >>"${console}"
+printf 'PURPLEFIN_EXPECTED_REFERENCE=%s\n' '@@INSTALLER_UPDATE_REFERENCE@@' >>"${console}"
+if [[ "${booted_digest}" != '@@INSTALLER_PAYLOAD_DIGEST@@' ]]; then
+	printf 'PURPLEFIN_INSTALLED_ERROR=digest-mismatch\n' >>"${console}"
+	exit 1
+fi
+if [[ "${booted_reference}" != '@@INSTALLER_UPDATE_REFERENCE@@' ]]; then
+	printf 'PURPLEFIN_INSTALLED_ERROR=reference-mismatch\n' >>"${console}"
+	exit 1
+fi
+printf 'PURPLEFIN_INSTALLED_READY=1\n' >>"${console}"
+PURPLEFIN_EOF
+chmod 0755 /usr/local/libexec/purplefin-ci-installed-ready
 cat >/etc/systemd/system/purplefin-ci-installed-ready.service <<'PURPLEFIN_EOF'
 [Unit]
 Description=Purplefin installed-system CI readiness marker
 After=systemd-user-sessions.service
+Before=purplefin-firstboot-rpm-ostree.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/sh -c '/usr/bin/printf "PURPLEFIN_INSTALLED_READY=1\n" >/dev/console'
+ExecStart=/usr/local/libexec/purplefin-ci-installed-ready
 RemainAfterExit=yes
+StandardOutput=journal+console
+StandardError=journal+console
 
 [Install]
 WantedBy=multi-user.target
