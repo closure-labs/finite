@@ -337,6 +337,7 @@ in {
       applications.imageReuse
       applications.imageSign
       applications.imageSbom
+      applications.rechunkImage
       applications.shardPlan
       applications.validateImageShard
       diffutils
@@ -349,6 +350,8 @@ in {
 
       bash tests/bootc/derived-profile.sh
       bash tests/bootc/plan.sh
+      bash tests/bootc/rechunk.sh \
+        ${applications.rechunkImage}/bin/purplefin-rechunk-image
       bash tests/bootc/reuse-image.sh
       bash tests/bootc/sign-image.sh
       bash tests/bootc/sbom.sh
@@ -476,6 +479,7 @@ in {
       grep -qF 'group: purplefin-publication' .github/workflows/release.yml
       grep -qF 'purplefin-image-reuse' .github/workflows/build-profile.yml
       grep -qF 'purplefin-image-sign' .github/workflows/build-profile.yml
+      grep -qF 'purplefin-rechunk-image' .github/workflows/build-profile.yml
       ! grep -qF 'cosign sign' .github/workflows/build-profile.yml
       grep -qF 'purplefin-image-sbom' .github/workflows/attest-software-bill-of-materials.yml
       grep -qF 'purplefin-sbom-attestation' .github/workflows/release.yml
@@ -541,6 +545,7 @@ in {
         ${applications.validateImageShard}/bin/purplefin-validate-image-shard \
         ${applications.imageReuse}/bin/purplefin-image-reuse \
         ${applications.imageSign}/bin/purplefin-image-sign \
+        ${applications.rechunkImage}/bin/purplefin-rechunk-image \
         ${applications.loadBluefin}/bin/purplefin-load-bluefin \
         ${applications.promoteImages}/bin/purplefin-promote-images \
         ${applications.installerBuild}/bin/purplefin-installer-build \

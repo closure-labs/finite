@@ -2,6 +2,7 @@
   generated,
   loadBluefin,
   pkgs,
+  rechunkImage,
   version,
 }:
 pkgs.writeShellApplication {
@@ -10,6 +11,7 @@ pkgs.writeShellApplication {
   text = ''
        export PURPLEFIN_GENERATED_ROOT=${generated}
        export PURPLEFIN_LOAD_BLUEFIN=${loadBluefin}/bin/purplefin-load-bluefin
+       export PURPLEFIN_RECHUNK_IMAGE=${rechunkImage}/bin/purplefin-rechunk-image
        export PURPLEFIN_VERSION=${version}
        export PURPLEFIN_DEFAULT_BUILDAH=${pkgs.buildah}/bin/buildah
        export PURPLEFIN_DEFAULT_PODMAN=${pkgs.podman}/bin/podman
@@ -32,6 +34,7 @@ pkgs.writeShellApplication {
        cd "''${repo_root}" || exit
        : "''${PURPLEFIN_GENERATED_ROOT:?PURPLEFIN_GENERATED_ROOT is required}"
        : "''${PURPLEFIN_LOAD_BLUEFIN:?PURPLEFIN_LOAD_BLUEFIN is required}"
+       : "''${PURPLEFIN_RECHUNK_IMAGE:?PURPLEFIN_RECHUNK_IMAGE is required}"
        : "''${PURPLEFIN_VERSION:?PURPLEFIN_VERSION is required}"
 
        profile_matrix="''${PURPLEFIN_GENERATED_ROOT}/bootc/generated/image-matrix.json"
@@ -175,47 +178,17 @@ pkgs.writeShellApplication {
 
          rechunk_started_at="$(date +%s)"
          echo "''${profile}: starting target rechunk validation"
-         preserved_labels="$({
-           "''${PURPLEFIN_PODMAN}" inspect "''${primary_image}" |
-             jq -c '
-               .[0].Config.Labels // {} |
-               with_entries(
-                 select(
-                   .key != "containers.bootc" and
-                   .key != "io.buildah.version" and
-                   (.key | startswith("ostree.") | not)
-                 )
-               )
-             '
-         })"
-         label_args=()
-         while IFS= read -r label; do
-           label_args+=(--label "''${label}")
-         done < <(jq -r 'to_entries[] | "\(.key)=\(.value)"' <<<"''${preserved_labels}")
-
          output_dir="$(mktemp -d -p "''${RUNNER_TEMP:-''${TMPDIR:-/tmp}}" purplefin-rechunk.XXXXXX)"
          archive="''${output_dir}/purplefin.oci"
-         "''${PURPLEFIN_PODMAN}" run --rm --pull=never --privileged \
-           --mount "type=image,src=''${primary_image},target=/rpm-ostree" \
-           --volume "''${output_dir}:/run/out" \
-           --entrypoint /usr/bin/rpm-ostree \
-           "''${primary_image}" \
-           compose build-chunked-oci \
-             --max-layers 127 \
-             --format-version=2 \
-             "''${label_args[@]}" \
-             --bootc \
-             --rootfs /rpm-ostree \
-             --output oci-archive:/run/out/purplefin.oci
+         rechunk_report="$(
+           PURPLEFIN_PODMAN="''${PURPLEFIN_PODMAN}" \
+             "''${PURPLEFIN_RECHUNK_IMAGE}" \
+               --source "''${primary_image}" \
+               --output "oci-archive:''${archive}"
+         )"
+         rechunk_mode="$(jq -er .mode <<<"''${rechunk_report}")"
 
          chunked_image="$("''${PURPLEFIN_PODMAN}" pull --quiet "oci-archive:''${archive}")"
-         "''${PURPLEFIN_PODMAN}" inspect "''${chunked_image}" |
-           jq -e --argjson expected "''${preserved_labels}" '
-             (.[0].Config.Labels // {}) as $actual |
-             $expected |
-             to_entries |
-             all(.[]; $actual[.key] == .value)
-           ' >/dev/null
          chunked_tag="''${primary_image}-chunked"
          "''${PURPLEFIN_PODMAN}" tag "''${chunked_image}" "''${chunked_tag}"
          validated_images["''${profile}"]="''${chunked_tag}"
@@ -225,7 +198,7 @@ pkgs.writeShellApplication {
     archive=""
 
          finished_at="$(date +%s)"
-         echo "''${profile}: target rechunk passed in $((finished_at - rechunk_started_at))s; total validation $((finished_at - started_at))s"
+         echo "''${profile}: target rechunk passed in $((finished_at - rechunk_started_at))s (''${rechunk_mode}); total validation $((finished_at - started_at))s"
          if [[ -n "''${GITHUB_STEP_SUMMARY:-}" ]]; then
            {
              echo "### Profile ''${profile}"
@@ -234,7 +207,7 @@ pkgs.writeShellApplication {
              echo "- Bluefin digest: \`''${upstream_digest}\`"
              echo "- Registry cache available: \`''${cache_available}\`"
              echo "- Image build: \`$((built_at - started_at))s\`"
-             echo "- Target rechunk validation: \`$((finished_at - rechunk_started_at))s\`"
+             echo "- Target rechunk validation: \`$((finished_at - rechunk_started_at))s\` (\`''${rechunk_mode}\`)"
              echo "- Total validation: \`$((finished_at - started_at))s\`"
            } >>"''${GITHUB_STEP_SUMMARY}"
          fi

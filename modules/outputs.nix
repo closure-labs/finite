@@ -196,6 +196,7 @@ in {
         ci-validate-image-shard = applications.validateImageShard;
         ci-image-reuse = applications.imageReuse;
         ci-image-sign = applications.imageSign;
+        ci-rechunk-image = applications.rechunkImage;
         ci-image-build = applications.imageBuild;
         ci-image-sbom = applications.imageSbom;
         ci-sbom-attestation = applications.sbomAttestation;

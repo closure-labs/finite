@@ -102,6 +102,7 @@ inspection, copy the desired files from the `result` symlink.
 | `nix run .#cloud-init -- ...` | Generate a NoCloud Home Manager seed |
 | `nix build .#syft` | Pinned Syft package |
 | `nix shell .#ci-image-sbom -c purplefin-image-sbom validate <file>` | Validate a normalized SPDX image software bill of materials |
+| `nix shell .#ci-rechunk-image -c purplefin-rechunk-image --source <image> --output <transport>` | Rechunk a local bootc image with the shared format-v2 policy |
 | `nix shell .#ci-installer-smoke -c purplefin-installer-smoke <iso>` | QEMU installer boot test |
 | `nix shell .#ci-installer-e2e -c purplefin-installer-e2e install <iso> <kickstart> <state>` | Install through the CI Kickstart onto a disposable disk |
 | `nix shell .#ci-installer-e2e -c purplefin-installer-e2e boot <state>` | Boot and validate the installed disposable disk |
