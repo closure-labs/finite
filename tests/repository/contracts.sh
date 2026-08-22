@@ -133,11 +133,16 @@ test ! -e modules/aspects/base/independently-managed-rpms.list
 test ! -e bootc/builder/lib/independently-managed-rpms.sh
 grep -qF 'bitwarden-cli' modules/aspects/base/default.nix
 grep -qF 'nixGL.wrap bitwarden-desktop' modules/aspects/base/default.nix
-grep -qF "programs.nh.homeFlake = \"path:\${config.xdg.configHome}/purplefin/home\"" \
+grep -qF "programs.nh.homeFlake = \"path:\${config.xdg.configHome}/home-manager\"" \
 	modules/outputs.nix
-grep -qF 'home.activation.writePurplefinHomeFlake' modules/outputs.nix
+grep -qF 'home.activation.writeHomeManagerFlake' modules/outputs.nix
+grep -qF 'sourceFlake ? "github:declarative-dale/purplefin"' modules/outputs.nix
 grep -qF "sourceFlake = \${builtins.toJSON sourceFlake};" modules/outputs.nix
-if grep -qF 'xdg.configFile."purplefin/home/flake.nix"' modules/outputs.nix; then
+if grep -qF 'xdg.configFile."home-manager/flake.nix"' modules/outputs.nix; then
 	echo 'The nh driver flake must be materialized instead of linked into the Nix store' >&2
+	exit 1
+fi
+if grep -qF '/purplefin/home' modules/outputs.nix; then
+	echo 'The nh driver flake must use the standard ~/.config/home-manager directory' >&2
 	exit 1
 fi

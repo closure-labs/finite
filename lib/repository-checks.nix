@@ -91,9 +91,12 @@
   ];
   upstreamSource = sourceFor [
     ../bootc/Containerfile
+    ../devenv.nix
+    ../devenv.yaml
     ../flake.nix
     ../lib/flake-applications.nix
     ../modules/outputs.nix
+    ../modules/profiles/definitions.nix
     ../sources
     ../secretspec.toml
   ];
@@ -287,6 +290,15 @@ in {
       grep -qF 'unshare "$0"' lib/flake-applications.nix
       grep -qF -- '--label "io.purplefin.build.profile=' lib/flake-applications.nix
       grep -qF 'https://purplefin.cachix.org' flake.nix
+      grep -qF 'https://cachix.cachix.org' flake.nix
+      grep -qF 'cachix.cachix.org-1:eWNHQldwUO7G2VkjpnjDbWwy4KQ/HNxht7H4SSoMckM=' flake.nix
+      grep -qF 'cachix.pull = ["cachix" "purplefin"]' devenv.nix
+      grep -qF 'provider: local' devenv.yaml
+      grep -qF 'local = "file:~/.other-fun-things"' secretspec.toml
+      ! grep -qF 'token_file=' lib/flake-applications.nix
+      grep -qF 'runtimeInputs = [devenv];' lib/flake-applications.nix
+      grep -qF 'features.users.dale' modules/profiles/definitions.nix
+      grep -qF 'home.packages = [(lib.lowPrio pkgs.secretspec)];' modules/profiles/definitions.nix
       grep -qFx 'ARG BASE_REF' bootc/Containerfile
       ! grep -qF 'bluefin:stable' bootc/Containerfile
     '';

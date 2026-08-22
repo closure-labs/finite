@@ -122,8 +122,8 @@
                   PURPLEFIN_HARDWARE = hardware;
                 };
               };
-              home.activation.writePurplefinHomeFlake = lib.hm.dag.entryAfter ["linkGeneration"] ''
-                driver_dir=${lib.escapeShellArg "${config.xdg.configHome}/purplefin/home"}
+              home.activation.writeHomeManagerFlake = lib.hm.dag.entryAfter ["linkGeneration"] ''
+                driver_dir=${lib.escapeShellArg "${config.xdg.configHome}/home-manager"}
                 driver_file="''${driver_dir}/flake.nix"
                 run ${pkgs.coreutils}/bin/mkdir -p "''${driver_dir}"
                 if [[ -L "''${driver_file}" ]]; then
@@ -133,7 +133,7 @@
                   run ${pkgs.coreutils}/bin/install -m 0644 ${homeDriverFlake} "''${driver_file}"
                 fi
               '';
-              programs.nh.homeFlake = "path:${config.xdg.configHome}/purplefin/home";
+              programs.nh.homeFlake = "path:${config.xdg.configHome}/home-manager";
               xdg.configFile."purplefin/profile.json".text = builtins.toJSON {
                 inherit hardware name;
                 inherit (profile) baseClass roles;

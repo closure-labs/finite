@@ -1,4 +1,5 @@
 /artifacts/
+/*.oci
 /.devenv/
 /.direnv/
 /bootc/generated/

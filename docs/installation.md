@@ -94,12 +94,14 @@ wrappers for graphical Nix packages. Bitwarden CLI and Desktop are installed
 from Nix rather than baked into the image. The locked Devenv CLI is included
 in the `developer`, `dale`, and `elad` profiles. Espanso remains available to the
 `support`, `dale`, and `elad` profiles as a Wayland Nix package and user
-service. The initial activation writes a small per-user flake under
-`~/.config/purplefin/home`; it records the selected role, hardware, username,
-and absolute home directory required by Home Manager. `nh` discovers this
-flake through an explicit `path:` URI and selects its
-`homeConfigurations.$USER` output automatically. Reapply the locked generation
-with `nh home switch`. Update only the Purplefin input and activate it with:
+service. The initial activation writes a standalone per-user flake under
+`~/.config/home-manager`; it records the selected role, hardware, username,
+and absolute home directory required by Home Manager. Its Purplefin input uses
+the canonical GitHub flake by default, so the source repository does not need
+to exist on the deployed workstation. `nh` discovers this flake through an
+explicit `path:` URI and selects its `homeConfigurations.$USER` output
+automatically. Reapply the locked generation with `nh home switch`. Update only
+the Purplefin input and activate it with:
 
 ```bash
 nh home switch --update-input purplefin
