@@ -30,7 +30,9 @@
       lib,
       pkgs,
       ...
-    }: {
+    }: let
+      weeklyPkgs = inputs.nixpkgs-weekly.legacyPackages.${pkgs.stdenv.hostPlatform.system};
+    in {
       imports = [
         inputs.determinate.homeManagerModules.default
         inputs.nix-flatpak.homeManagerModules.nix-flatpak
@@ -45,7 +47,7 @@
           bash-preexec
           bat
           bitwarden-cli
-          (config.lib.nixGL.wrap bitwarden-desktop)
+          (config.lib.nixGL.wrap weeklyPkgs.bitwarden-desktop)
           chezmoi
           codex
           direnv

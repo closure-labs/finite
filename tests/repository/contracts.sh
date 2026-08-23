@@ -132,12 +132,18 @@ test ! -e modules/aspects/base/manifests/Brewfile
 test ! -e modules/aspects/base/independently-managed-rpms.list
 test ! -e bootc/builder/lib/independently-managed-rpms.sh
 grep -qF 'bitwarden-cli' modules/aspects/base/default.nix
-grep -qF 'nixGL.wrap bitwarden-desktop' modules/aspects/base/default.nix
+grep -qF 'nixGL.wrap weeklyPkgs.bitwarden-desktop' modules/aspects/base/default.nix
 grep -qF "programs.nh.homeFlake = \"path:\${config.xdg.configHome}/home-manager\"" \
 	modules/outputs.nix
 grep -qF 'home.activation.writeHomeManagerFlake' modules/outputs.nix
 grep -qF 'sourceFlake ? "github:declarative-dale/purplefin"' modules/outputs.nix
 grep -qF "sourceFlake = \${builtins.toJSON sourceFlake};" modules/outputs.nix
+grep -qF 'nixpkgs.url = "https://flakehub.com/f/DeterminateSystems/nixpkgs-26.05-chilled/0.1"' \
+	modules/outputs.nix
+grep -qF 'url = "https://flakehub.com/f/nix-community/home-manager/0.2605"' modules/outputs.nix
+grep -qF 'inputs.nixpkgs.follows = "nixpkgs"' modules/outputs.nix
+grep -qF 'inputs.nixpkgs-weekly.follows = "nixpkgs-weekly"' modules/outputs.nix
+grep -qF 'inputs.home-manager.follows = "home-manager"' modules/outputs.nix
 if grep -qF 'xdg.configFile."home-manager/flake.nix"' modules/outputs.nix; then
 	echo 'The nh driver flake must be materialized instead of linked into the Nix store' >&2
 	exit 1

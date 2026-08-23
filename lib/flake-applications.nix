@@ -25,6 +25,7 @@ in rec {
   updateLocks = import ./ci-applications/update-locks.nix {
     inherit devenv pkgs;
   };
+  updateHomeRelease = import ./ci-applications/update-home-release.nix {inherit pkgs;};
 
   githubActionsSecrets = pkgs.writeShellApplication {
     name = "purplefin-github-actions-secrets";

@@ -1,0 +1,77 @@
+name: Advance stable Nixpkgs and Home Manager
+
+on:
+  schedule:
+    - cron: "47 9 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: update-home-release
+  cancel-in-progress: false
+
+permissions:
+  actions: write
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    name: Advance only when both stable channels are available
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Nix and Cachix
+        uses: ./.github/actions/setup-nix
+        with:
+          merge-queue-token: ${{ secrets.MERGE_QUEUE_TOKEN }}
+
+      - name: Resolve the next common stable release
+        id: release
+        run: >-
+          nix shell --accept-flake-config .#ci-home-release-update
+          -c purplefin-update-home-release "${GITHUB_OUTPUT}"
+
+      - name: Validate synchronized locks
+        if: steps.release.outputs.changed == 'true'
+        run: >-
+          nix shell --accept-flake-config .#ci-lock-validate
+          -c purplefin-ci-validate-locks
+
+      - name: Open or update pull request
+        if: steps.release.outputs.changed == 'true'
+        id: update
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ env.MERGE_QUEUE_TOKEN || github.token }}
+          base: main
+          branch: automation/advance-home-release
+          delete-branch: true
+          commit-message: "inputs: advance Home Manager and Nixpkgs to ${{ steps.release.outputs.release }}"
+          title: "inputs: advance Home Manager and Nixpkgs to ${{ steps.release.outputs.release }}"
+          body: |
+            Advances the paired stable Home Manager and chilled Nixpkgs series
+            after both official upstream release branches and both FlakeHub
+            mirrors are available.
+
+            Required validation and protected-branch policy still apply.
+
+      - name: Validate and enable auto-merge
+        if: >-
+          steps.update.outputs.pull-request-number != '' &&
+          steps.update.outputs.pull-request-operation != 'closed'
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          EXPECTED_AUTHOR: ${{ vars.AUTOMATION_UPDATE_LOGIN || 'app/github-actions' }}
+          EXPECTED_BRANCH: automation/advance-home-release
+          EXPECTED_FILES: docs/ci-and-releases.md,docs/configuration.md,docs/installation.md,flake.lock,flake.nix,lib/ci-applications/validate-locks.nix,modules/outputs.nix,tests/repository/contracts.sh
+          EXPECTED_TITLE: "inputs: advance Home Manager and Nixpkgs to ${{ steps.release.outputs.release }}"
+          GH_TOKEN: ${{ env.MERGE_QUEUE_TOKEN || github.token }}
+          PR_NUMBER: ${{ steps.update.outputs.pull-request-number }}
+        run: >-
+          nix shell --accept-flake-config .#ci-trusted-update
+          -c purplefin-trusted-update

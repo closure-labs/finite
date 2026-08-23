@@ -67,8 +67,10 @@ jq '.profiles["your-profile"]' \
 The initial `home-switch` activation writes a standalone per-user flake at
 `~/.config/home-manager/flake.nix`. Its `homeConfigurations.$USER` output
 contains the selected profile, hardware, installer-created username, and the
-absolute home path Home Manager requires. The generated input defaults to the
-canonical GitHub repository instead of a local checkout. After bootstrap, use
+absolute home path Home Manager requires. The generated flake pairs the chilled
+Nixpkgs 26.05 series with Home Manager 26.05 and makes Purplefin follow both
+inputs. Its Purplefin input defaults to the canonical GitHub repository instead
+of a local checkout. After bootstrap, use
 the native `nh home switch` workflow; `programs.nh.homeFlake` supplies an
 explicit `path:` URI for the flake automatically. Use `--update-input
 purplefin` when the Purplefin source itself should advance. Pass `--source

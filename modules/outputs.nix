@@ -81,7 +81,22 @@
     profile = homeProfiles.${name};
     homeDriverFlake = pkgs.writeText "purplefin-home-flake.nix" ''
       {
-        inputs.purplefin.url = ${builtins.toJSON sourceFlake};
+        inputs = {
+          nixpkgs.url = "https://flakehub.com/f/DeterminateSystems/nixpkgs-26.05-chilled/0.1";
+          nixpkgs-weekly.url = "https://flakehub.com/f/DeterminateSystems/nixpkgs-weekly/0.1";
+
+          home-manager = {
+            url = "https://flakehub.com/f/nix-community/home-manager/0.2605";
+            inputs.nixpkgs.follows = "nixpkgs";
+          };
+
+          purplefin = {
+            url = ${builtins.toJSON sourceFlake};
+            inputs.nixpkgs.follows = "nixpkgs";
+            inputs.nixpkgs-weekly.follows = "nixpkgs-weekly";
+            inputs.home-manager.follows = "home-manager";
+          };
+        };
 
         outputs = { purplefin, ... }: {
           homeConfigurations = {
@@ -241,6 +256,7 @@ in {
         ci-installer-smoke = applications.installerSmoke;
         ci-release-notes = applications.releaseNotes;
         ci-update-locks = applications.updateLocks;
+        ci-home-release-update = applications.updateHomeRelease;
         ci-source-update = applications.sourceUpdate;
         ci-source-verify = applications.sourceVerify;
         ci-trusted-update = applications.trustedUpdate;

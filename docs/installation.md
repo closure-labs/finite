@@ -96,9 +96,10 @@ in the `developer`, `dale`, and `elad` profiles. Espanso remains available to th
 `support`, `dale`, and `elad` profiles as a Wayland Nix package and user
 service. The initial activation writes a standalone per-user flake under
 `~/.config/home-manager`; it records the selected role, hardware, username,
-and absolute home directory required by Home Manager. Its Purplefin input uses
-the canonical GitHub flake by default, so the source repository does not need
-to exist on the deployed workstation. `nh` discovers this flake through an
+and absolute home directory required by Home Manager. It pairs the chilled
+Nixpkgs 26.05 series with Home Manager 26.05, while its Purplefin input uses the
+canonical GitHub flake by default, so the source repository does not need to
+exist on the deployed workstation. `nh` discovers this flake through an
 explicit `path:` URI and selects its `homeConfigurations.$USER` output
 automatically. Reapply the locked generation with `nh home switch`. Update only
 the Purplefin input and activate it with:

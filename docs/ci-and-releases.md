@@ -183,10 +183,21 @@ run --mode single --option 'packages:pkgs!' '' ci:prepare`. Hosted jobs invoke t
 leaf packages directly because that avoids cold devenv startup while retaining
 identical pinned commands and Cachix reuse.
 
-Purplefin's package universe follows the rolling
-`DeterminateSystems/nixpkgs-weekly/0` FlakeHub series. Home Manager follows that
-same Nixpkgs input and is fetched from Determinate's public FlakeHub mirror at
-`nix-community/home-manager/0`; lock validation rejects drift from either URL.
+Purplefin's package universe follows the stable, seven-day-cooled
+`DeterminateSystems/nixpkgs-26.05-chilled/0.1` FlakeHub series. Home Manager is
+constrained to the matching 26.05 series at `nix-community/home-manager/0.2605`
+and follows that same Nixpkgs input; lock validation rejects drift from either
+URL.
+
+A separate weekly release-series job checks the official Nixpkgs
+`nixos-YY.MM` and Home Manager `release-YY.MM` branches. It advances the paired
+series only after both upstream branches and both corresponding FlakeHub mirrors
+are available. The ordinary weekly lock refresh then remains within that
+selected stable series.
+
+Fast-moving desktop applications that outlive the support window of their
+stable Electron dependency may be selected from the cooled weekly package input
+without changing the stable Nixpkgs instance used to evaluate Home Manager.
 
 The weekly Determinate Nix updater resolves the latest stable upstream
 release, pins both the installer asset and its SELinux policy by SHA-256, and

@@ -62,8 +62,15 @@
   ];
   documentationSource = sourceFor [textFiles];
   automationSource = sourceFor [
+    ../docs/ci-and-releases.md
+    ../docs/configuration.md
+    ../docs/installation.md
+    ../flake.lock
     ../flake.nix
+    ../lib/ci-applications/validate-locks.nix
+    ../modules/outputs.nix
     ../tests/automation
+    ../tests/repository/contracts.sh
   ];
   bootcSource = sourceFor [
     ../.github/syft.yaml
@@ -329,6 +336,7 @@ in {
       applications.ciGate
       applications.promoteImages
       applications.trustedUpdate
+      applications.updateHomeRelease
       git
       gnugrep
       jq
@@ -341,6 +349,7 @@ in {
       bash tests/automation/ci-gate.sh
       bash tests/automation/promote-images.sh
       bash tests/automation/trusted-update.sh
+      bash tests/automation/update-home-release.sh
     '';
   };
 
@@ -468,6 +477,7 @@ in {
         update-determinate-nix.yml \
         update-fedora-bootc.yml \
         update-flake-lock.yml \
+        update-home-release.yml \
         update-image-builder.yml; do
         grep -qF '.#ci-trusted-update' ".github/workflows/''${updater}"
       done
@@ -482,6 +492,7 @@ in {
       grep -qF 'purplefin-source-update fedora-bootc ' .github/workflows/update-fedora-bootc.yml
       grep -qF 'purplefin-source-update image-builder ' .github/workflows/update-image-builder.yml
       grep -qF 'purplefin-update-locks ' .github/workflows/update-flake-lock.yml
+      grep -qF 'purplefin-update-home-release ' .github/workflows/update-home-release.yml
       grep -qF 'purplefin-load-bluefin' .github/workflows/build-profile.yml
       grep -qF 'purplefin-ci-prepare' .github/workflows/build.yml
       grep -qF 'purplefin-validate-image-shard' .github/workflows/build.yml
@@ -523,7 +534,7 @@ in {
       grep -qF '.#ci-github-actions-secrets' .github/actions/setup-nix/action.yml
       grep -qF 'authToken: ''${{ env.CACHIX_AUTH_TOKEN }}' .github/actions/setup-nix/action.yml
       [[ "$(grep -R -h -oF 'secrets.CACHIX_AUTH_TOKEN' .github | wc -l)" == 1 ]]
-      [[ "$(grep -R -h -oF 'secrets.MERGE_QUEUE_TOKEN' .github | wc -l)" == 6 ]]
+      [[ "$(grep -R -h -oF 'secrets.MERGE_QUEUE_TOKEN' .github | wc -l)" == 7 ]]
       ! grep -R -qF 'token: ''${{ secrets.MERGE_QUEUE_TOKEN' .github
       grep -qF 'GH_TOKEN: ''${{ env.MERGE_QUEUE_TOKEN || github.token }}' \
         .github/workflows/queue-dependabot.yml
@@ -569,6 +580,7 @@ in {
         ${applications.imageSbom}/bin/purplefin-image-sbom \
         ${applications.releaseNotes}/bin/purplefin-release-notes \
         ${applications.updateLocks}/bin/purplefin-update-locks \
+        ${applications.updateHomeRelease}/bin/purplefin-update-home-release \
         ${applications.sbomAttestation}/bin/purplefin-sbom-attestation \
         ${applications.trustedUpdate}/bin/purplefin-trusted-update \
         ${applications.ciGate}/bin/purplefin-ci-gate; do
