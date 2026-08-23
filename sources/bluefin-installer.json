@@ -1,0 +1,26 @@
+{
+  "schema": 2,
+  "iso_source": {
+    "owner": "projectbluefin",
+    "repository": "dakota-iso",
+    "revision": "691e2a4b3b505560a647c9ba7afbca1f5c6fbae7",
+    "hash": "sha256-JUphk47CG6phQynGaZr3Vb0nHSBJiK8G2htuptHQd/M="
+  },
+  "installer": {
+    "version": "3.0.16",
+    "url": "https://github.com/projectbluefin/bootc-installer/releases/download/v3.0.16/org.bootcinstaller.Installer.flatpak",
+    "sha256": "6d68445965bf03fd628fcc9e856b162939b5f87bf4532f62725cf0e114c7eea7"
+  },
+  "builder": {
+    "image": "docker.io/library/debian",
+    "tag": "bookworm",
+    "architecture": "amd64",
+    "digest": "sha256:88a7d30d49e1d13f0aac17b0e5fb9e291717e3a7c4a512fe56636db576383b8a"
+  },
+  "image_builder": {
+    "version": "79.0.0",
+    "image": "ghcr.io/osbuild/image-builder-cli",
+    "architecture": "amd64",
+    "digest": "sha256:0a00bdb0f0e88fdbee85167a616ff54a5becb39f7cbfa75b67f8e87a9c7d59c5"
+  }
+}

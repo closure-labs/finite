@@ -2,135 +2,132 @@
 set -euo pipefail
 
 installer_build="${1:?usage: contracts.sh INSTALLER_BUILD}"
-ready_dropin=installer/rootfs/usr/lib/systemd/system/anaconda.service.d/finite-ready.conf
-kickstart="$(mktemp)"
-trap 'rm -f -- "${kickstart}"' EXIT
 
-test -f "${ready_dropin}"
-grep -qFx '[Service]' "${ready_dropin}"
-grep -qF 'ExecStartPost=' "${ready_dropin}"
-grep -qF 'FINITE_INSTALLER_READY=1' "${ready_dropin}"
-grep -qF 'text --non-interactive' installer/ci-unattended.ks.in
-grep -qF 'FINITE_INSTALLED_READY=1' installer/ci-unattended.ks.in
-grep -qF 'bootc --source-imgref registry:@@INSTALLER_PAYLOAD_SOURCE_REF@@' \
-	installer/ci-unattended.ks.in
-grep -qF -- '--target-imgref @@INSTALLER_PAYLOAD_TARGET_REF@@' \
-	installer/ci-unattended.ks.in
-grep -qF 'status --json --format-version=1' installer/ci-unattended.ks.in
-grep -qF 'Before=finite-firstboot-rpm-ostree.service' \
-	installer/ci-unattended.ks.in
-grep -qF 'StandardError=journal+console' installer/ci-unattended.ks.in
-grep -qF 'image["imageDigest"]' installer/ci-unattended.ks.in
-grep -qF 'image["image"]["image"]' installer/ci-unattended.ks.in
-grep -qF 'FINITE_INSTALLED_ERROR=digest-mismatch' installer/ci-unattended.ks.in
-grep -qF 'FINITE_INSTALLED_ERROR=reference-mismatch' installer/ci-unattended.ks.in
-cp installer/ci-unattended.ks.in "${kickstart}"
-ksvalidator "${kickstart}"
-grep -qF "ready_marker='FINITE_INSTALLER_READY=1'" \
-	lib/ci-applications/installer-smoke.nix
-grep -qF "ready_marker='FINITE_INSTALLED_READY=1'" \
-	lib/ci-applications/installer-e2e.nix
-grep -qF 'FINITE_INSTALLER_E2E_KICKSTART_TIMEOUT_SECONDS:-180' \
-	lib/ci-applications/installer-e2e.nix
-grep -qF 'FINITE_INSTALLER_E2E_INSTALL_TIMEOUT_SECONDS:-1200' \
-	lib/ci-applications/installer-e2e.nix
-grep -qF 'FINITE_INSTALLER_E2E_BOOT_TIMEOUT_SECONDS:-180' \
-	lib/ci-applications/installer-e2e.nix
-grep -qF 'OVMF.fd' lib/ci-applications/installer-e2e.nix
+jq -e '
+  .schema == 2 and
+  (.iso_source.owner == "projectbluefin") and
+  (.iso_source.repository == "dakota-iso") and
+  (.iso_source.revision | test("^[0-9a-f]{40}$")) and
+  (.iso_source.hash | startswith("sha256-")) and
+  (.installer.version | test("^[0-9]+\\.[0-9]+\\.[0-9]+$")) and
+  (.installer.url | startswith("https://github.com/projectbluefin/bootc-installer/releases/download/")) and
+  (.installer.sha256 | test("^[0-9a-f]{64}$")) and
+  (.builder.image == "docker.io/library/debian") and
+  (.builder.tag == "bookworm") and
+  (.builder.architecture == "amd64") and
+  (.builder.digest | test("^sha256:[0-9a-f]{64}$")) and
+  (.image_builder.version | test("^[0-9]+\\.[0-9]+\\.[0-9]+$")) and
+  .image_builder.image == "ghcr.io/osbuild/image-builder-cli" and
+  .image_builder.architecture == "amd64" and
+  (.image_builder.digest | test("^sha256:[0-9a-f]{64}$"))
+' sources/bluefin-installer.json >/dev/null
+
+test -x installer/prepare-bluefin-iso-source
+test -x installer/live/finite/configure-live.d.sh
+for file in images.json recipe.json ci-autoinstall.json; do
+	jq -e . "installer/live/finite/${file}" >/dev/null
+done
+grep -qFx 'grub' installer/live/finite/bootloader
+grep -qFx 'false' installer/live/finite/composefs
+grep -qF '@@UPDATE_REFERENCE@@' installer/live/finite/images.json
+grep -qF '@@UPDATE_REFERENCE@@' installer/live/finite/ci-autoinstall.json
+grep -qF '"disk": "/dev/vda"' installer/live/finite/ci-autoinstall.json
+grep -qF '"filesystem": "btrfs"' installer/live/finite/ci-autoinstall.json
+grep -qF 'FINITE_INSTALLER_READY=1' installer/live/finite/configure-live.d.sh
+grep -qF 'FINITE_INSTALLER_COMPLETE=1' installer/live/finite/configure-live.d.sh
+grep -qF 'FINITE_INSTALLED_READY=1' installer/live/finite/configure-live.d.sh
+grep -qF 'finite.installer.autoinstall=1' installer/live/finite/configure-live.d.sh
+grep -qF 'Installation complete!' installer/live/finite/configure-live.d.sh
+grep -qF 'Installation failed!' installer/live/finite/configure-live.d.sh
+grep -qF 'root-mount-spec = "LABEL=root"' installer/live/finite/bootc-install-defaults.toml
+cmp -s \
+	installer/live/finite/bootc-install-defaults.toml \
+	modules/aspects/base/rootfs/usr/lib/bootc/install/00-defaults.toml
+grep -qF '/usr/lib/bootc/install/00-defaults.toml' installer/live/finite/configure-live.d.sh
+# Literal generated-script contract.
+# shellcheck disable=SC2016
+grep -qF 'flatpak kill "${app_id}"' installer/live/finite/configure-live.d.sh
+grep -qF 'installer-debug.log' installer/live/finite/configure-live.d.sh
+grep -qF 'label: FINITE_LIVE' installer/live/finite/iso.yaml
+grep -qF 'root=live:LABEL=FINITE_LIVE' installer/live/finite/iso.yaml
+grep -qF 'linux: /images/pxeboot/vmlinuz' installer/live/finite/iso.yaml
+grep -qF 'Image Builder embeds the verified payload' installer/prepare-bluefin-iso-source
+test ! -e installer/image-builder/Containerfile
+grep -qF '/dev/vda2' installer/live/finite/configure-live.d.sh
+grep -qF '/dev/vda3' installer/live/finite/configure-live.d.sh
+grep -qF 'install -d -m 0755 /usr/local/sbin' installer/live/finite/configure-live.d.sh
+
+grep -qF 'projectbluefin/dakota-iso' lib/installer-application.nix
+grep -qF 'projectbluefin/bootc-installer' lib/installer-application.nix
+grep -qF 'finite-bluefin-installer-seed-v1' lib/installer-application.nix
+grep -qF 'seed_repository="' lib/installer-application.nix
+grep -qF 'payload_specific: false' lib/installer-application.nix
+grep -qF 'bootc-generic-iso' lib/installer-application.nix
+grep -qF -- '--bootc-installer-payload-ref' lib/installer-application.nix
+grep -qF -- '--distro' lib/installer-application.nix
+grep -qF 'image_builder_distro=' lib/installer-application.nix
+grep -qF 'dev.hhd.rechunk.info' lib/installer-application.nix
+grep -qF -- '--bootc-ref' lib/installer-application.nix
+if grep -qF 'configured_live_image' lib/installer-application.nix; then
+	echo 'Installer assembly still creates a derived live configuration image' >&2
+	exit 1
+fi
+if grep -qF 'oci-archive:' lib/installer-application.nix; then
+	echo 'Installer assembly still creates an intermediate OCI archive' >&2
+	exit 1
+fi
+if grep -qF 'build-live-squashfs.sh' lib/installer-application.nix; then
+	echo 'Installer assembly still calls Dakota squashfs scripts' >&2
+	exit 1
+fi
+grep -qF 'FINITE_INSTALLER_BUILDER_DIGEST' lib/installer-application.nix
+grep -qF 'FINITE_IMAGE_BUILDER_DIGEST' lib/installer-application.nix
+grep -qF 'root_exec=(run0)' lib/installer-application.nix
+grep -qF 'root_exec=(sudo)' lib/installer-application.nix
+grep -qF -- '--layers=false' lib/installer-application.nix
+grep -qF 'graphDriverName' lib/installer-application.nix
+# This intentionally matches the literal shell source.
+# shellcheck disable=SC2016
+grep -qF 'FROM ${builder_ref} AS initramfs-builder' installer/prepare-bluefin-iso-source
+grep -qF 'cosign sign --yes' lib/installer-application.nix
+grep -qF 'seed-cache-hit=' lib/installer-application.nix
+grep -qF 'seed-published=' lib/installer-application.nix
+grep -qF 'schema_version: 4' lib/installer-application.nix
+grep -qF 'application: "osbuild/image-builder"' lib/installer-application.nix
+grep -qF 'target_bootloader: "grub2"' lib/installer-application.nix
+grep -qF 'target_filesystem: "btrfs"' lib/installer-application.nix
+grep -qF 'offline: true' lib/installer-application.nix
+grep -qF '28732ac11ff8d211ba4b00a0c93ec93b' lib/installer-application.nix
+
+# The reusable seed is keyed by foundation inputs. The published installer is
+# intentionally limited to that foundation's generic profile.
+source_revision=691e2a4b3b505560a647c9ba7afbca1f5c6fbae7
+installer_sha=6d68445965bf03fd628fcc9e856b162939b5f87bf4532f62725cf0e114c7eea7
+overlay_a=1111111111111111111111111111111111111111111111111111111111111111
+overlay_b=2222222222222222222222222222222222222222222222222222222222222222
+digest_a=sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+digest_b=sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+key_a="$(${installer_build} cache-input "${source_revision}" "${installer_sha}" "${overlay_a}" bluefin "${digest_a}")"
+key_same="$(${installer_build} cache-input "${source_revision}" "${installer_sha}" "${overlay_a}" bluefin "${digest_a}")"
+key_overlay="$(${installer_build} cache-input "${source_revision}" "${installer_sha}" "${overlay_b}" bluefin "${digest_a}")"
+key_foundation="$(${installer_build} cache-input "${source_revision}" "${installer_sha}" "${overlay_a}" bluefin-dx "${digest_a}")"
+key_digest="$(${installer_build} cache-input "${source_revision}" "${installer_sha}" "${overlay_a}" bluefin "${digest_b}")"
+[[ "${key_a}" =~ ^[0-9a-f]{64}$ ]]
+[[ "${key_a}" == "${key_same}" ]]
+[[ "${key_a}" != "${key_overlay}" ]]
+[[ "${key_a}" != "${key_foundation}" ]]
+[[ "${key_a}" != "${key_digest}" ]]
+
+grep -qF "ready_marker='FINITE_INSTALLER_READY=1'" lib/ci-applications/installer-smoke.nix
+grep -qF 'root=live:LABEL=FINITE_LIVE' lib/ci-applications/installer-e2e.nix
+grep -qF 'finite.installer.autoinstall=1' lib/ci-applications/installer-e2e.nix
+grep -qF 'FINITE_INSTALLER_ERROR=' lib/ci-applications/installer-e2e.nix
+grep -qF 'FINITE_INSTALLER_COMPLETE=1' lib/ci-applications/installer-e2e.nix
+grep -qF 'FINITE_INSTALLED_READY=1' lib/ci-applications/installer-e2e.nix
 grep -qF 'OVMF_CODE.fd' lib/ci-applications/installer-e2e.nix
 grep -qF 'OVMF_VARS.fd' lib/ci-applications/installer-e2e.nix
-grep -qF 'if=pflash,format=raw,unit=0,readonly=on' \
-	lib/ci-applications/installer-e2e.nix
-grep -qF 'if=pflash,format=raw,unit=1' \
-	lib/ci-applications/installer-e2e.nix
-firmware_prepare_count="$(
-	grep -cF 'prepare_firmware_vars' lib/ci-applications/installer-e2e.nix
-)"
-[[ "${firmware_prepare_count}" == 3 ]]
-grep -qF 'portable' \
-	lib/ci-applications/installer-e2e.nix
-grep -qF -- '--bootc-ref' lib/installer-application.nix
-grep -qF -- '--bootc-installer-payload-ref' lib/installer-application.nix
-grep -qF -- "--bootc-installer-payload-ref \"''\${payload_update_ref}\"" \
-	lib/installer-application.nix
-grep -qF "pull \"''\${auth_args[@]}\" \"''\${payload_ref}\"" \
-	lib/installer-application.nix
-grep -qF "GHCR_TOKEN is required to read the Finite payload" \
-	lib/installer-application.nix
-grep -qF "auth_args=(--authfile \"''\${registry_auth_file}\")" \
-	lib/installer-application.nix
-attestation_auth_count="$(
-	grep -cF "DOCKER_CONFIG=\"''\${cosign_config_dir}\" gh attestation verify" \
-		lib/installer-application.nix
-)"
-[[ "${attestation_auth_count}" == 2 ]]
-if grep -B2 -F "auth_args=(--authfile \"''\${registry_auth_file}\")" \
-	lib/installer-application.nix | grep -qF 'CACHE_WRITE'; then
-	echo 'Installer payload authentication is conditional on cache writes' >&2
-	exit 1
-fi
-grep -qF "tag \"''\${payload_ref}\" \"''\${payload_update_ref}\"" \
-	lib/installer-application.nix
-grep -qF -- '--build-context installer-rootfs=installer/rootfs' \
-	lib/installer-application.nix
-grep -qF -- '--security-opt label=disable' lib/installer-application.nix
-grep -qF 'FINITE_INSTALLER_BASE_REF' lib/installer-application.nix
-grep -qF 'finite-installer-environment-v3' lib/installer-application.nix
-grep -qF 'schema_version: 2' lib/installer-application.nix
-# The literal jq variable names are part of the generated manifest expression.
-# shellcheck disable=SC2016
-grep -qF 'embedded_reference: $payload_embedded_reference' lib/installer-application.nix
-# shellcheck disable=SC2016
-grep -qF 'update_reference: $payload_update_reference' lib/installer-application.nix
-grep -qF 'profile-tag=' lib/installer-application.nix
-if grep -A8 -F 'finite-installer-environment-v3' lib/installer-application.nix |
-	grep -qF 'payload_digest'; then
-	echo 'Installer environment cache identity depends on the payload digest' >&2
-	exit 1
-fi
-grep -qF -- '--build-arg "BASE_REF=' lib/installer-application.nix
-grep -qF -- '--build-arg "INSTALLER_CONTEXT_DIGEST=' \
-	lib/installer-application.nix
-grep -qF 'ARG INSTALLER_CONTEXT_DIGEST' installer/Containerfile
-# shellcheck disable=SC2016
-grep -qF 'test -n "${INSTALLER_CONTEXT_DIGEST}"' installer/Containerfile
-grep -qF 'ARG BASE_REF=quay.io/fedora/fedora-bootc:44' installer/Containerfile
-test -f installer/patches/anaconda-finalize-bootc.patch
-grep -qF 'anaconda-finalize-bootc.patch' installer/Containerfile
-grep -qF 'patch --batch --fuzz=0' installer/Containerfile
-grep -qF 'FinalizeBootcTask' installer/patches/anaconda-finalize-bootc.patch
-grep -qF 'safe_exec_program("bootc", ["install", "finalize", self._physroot])' \
-	installer/patches/anaconda-finalize-bootc.patch
-grep -qF 'installer/Containerfile installer/patches installer/rootfs' \
-	lib/installer-application.nix
-grep -qF 'certificate-identity-regexp' lib/installer-application.nix
-grep -qF 'workflows/(build|build-installer)' lib/installer-application.nix
-grep -qF 'installer/ci-unattended.ks.in' lib/installer-application.nix
-grep -qF 'inst.ks=http://10.0.2.2:' lib/ci-applications/installer-e2e.nix
-grep -qF -- '-kernel "' lib/ci-applications/installer-e2e.nix
-if grep -qF -- '--blueprint' lib/installer-application.nix; then
-	exit 1
-fi
-grep -qF -- '--cache /var/cache/image-builder/store' lib/installer-application.nix
-grep -qF -- '--rpmmd-cache /var/cache/image-builder/rpmmd' lib/installer-application.nix
-test -x installer/osbuild-stages/org.osbuild.squashfs
-jq -e --slurpfile image_builder sources/image-builder.json '
-  .schema == 1 and
-  .image_builder_digest == $image_builder[0].digest and
-  (.override_sha256 | test("^[0-9a-f]{64}$")) and
-  (.upstream_sha256 | test("^[0-9a-f]{64}$")) and
-  .zstd_compression_level == 1
-' installer/osbuild-stages/lock.json >/dev/null
-locked_override_sha256="$(jq -r .override_sha256 installer/osbuild-stages/lock.json)"
-actual_override_sha256="$(sha256sum installer/osbuild-stages/org.osbuild.squashfs | cut -d' ' -f1)"
-[[ "${actual_override_sha256}" == "${locked_override_sha256}" ]]
-grep -qF 'DEFAULT_ZSTD_COMPRESSION_LEVEL = "1"' \
-	installer/osbuild-stages/org.osbuild.squashfs
-grep -qF -- '-Xcompression-level' installer/osbuild-stages/org.osbuild.squashfs
-mount_count="$(grep -cF 'osbuild/stages/org.osbuild.squashfs:ro' lib/installer-application.nix)"
-[[ "${mount_count}" == 1 ]]
-grep -qF 'RUN --mount=from=installer-rootfs,target=/run/installer-rootfs' \
-	installer/Containerfile
+grep -qF '(.partitiontable.partitions | length) == 3' lib/ci-applications/installer-e2e.nix
+grep -qF 'c12a7328-f81f-11d2-ba4b-00a0c93ec93b' lib/ci-applications/installer-e2e.nix
 
 for phase in \
 	'Build installer environment and ISO' \
@@ -140,26 +137,12 @@ for phase in \
 	'Upload installer diagnostics'; do
 	grep -qF -- "- name: ${phase}" .github/actions/build-installer/action.yml
 done
-grep -qF 'iso-path=' lib/installer-application.nix
-grep -qF 'kickstart-path=' lib/installer-application.nix
-if grep -A20 '^outputs:' .github/actions/build-installer/action.yml |
-	grep -Eq '^  (iso-path|kickstart-path):'; then
-	echo 'Internal installer paths leaked into the composite action output contract' >&2
+grep -qF 'seed-digest:' .github/actions/build-installer/action.yml
+grep -qF 'seed-cache-hit' .github/actions/build-installer/action.yml
+grep -qF 'finite-installer-e2e install' .github/actions/build-installer/action.yml
+grep -qF 'finite-installer-e2e boot' .github/actions/build-installer/action.yml
+if grep -R -Eqi 'anaconda|kickstart|portable.efi' \
+	installer lib/installer-application.nix lib/ci-applications/installer-e2e.nix; then
+	echo 'Obsolete Anaconda or portable-EFI implementation remains in the installer path' >&2
 	exit 1
 fi
-
-base='quay.io/fedora/fedora-bootc@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
-context_a='1111111111111111111111111111111111111111111111111111111111111111'
-context_b='2222222222222222222222222222222222222222222222222222222222222222'
-tag_a='ghcr.io/example/finite:bluefin-generic'
-tag_b='ghcr.io/example/finite:base-dell-xps-9350-intel'
-export FINITE_TEST_PAYLOAD_DIGEST=sha256:aaaa
-key_a="$(${installer_build} cache-input "${base}" "${context_a}" "${tag_a}")"
-export FINITE_TEST_PAYLOAD_DIGEST=sha256:bbbb
-key_same="$(${installer_build} cache-input "${base}" "${context_a}" "${tag_a}")"
-unset FINITE_TEST_PAYLOAD_DIGEST
-key_context="$(${installer_build} cache-input "${base}" "${context_b}" "${tag_a}")"
-key_tag="$(${installer_build} cache-input "${base}" "${context_a}" "${tag_b}")"
-[[ "${key_a}" == "${key_same}" ]]
-[[ "${key_a}" != "${key_context}" ]]
-[[ "${key_a}" != "${key_tag}" ]]

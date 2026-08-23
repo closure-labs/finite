@@ -40,6 +40,8 @@ for profile in \
 	bluefin-dx-dell-xps-9350-intel; do
 	grep -qF -- "- ${profile}" .github/workflows/build-installer.yml
 done
+grep -A24 -F 'name: Validate installer' .github/workflows/build.yml |
+	grep -qF 'end-to-end: true'
 if rg -q \
 	'base-generic-x86_64|base-dell-xps-9350-intel|sales-generic|sales-dell|support-generic|support-dell|developer-generic|trainer-generic|executive-generic|it-generic' \
 	.github/workflows; then
@@ -62,8 +64,7 @@ test -f bootc/Containerfile
 test -f bootc/Containerfile.derived
 test -f sources/bluefin.json
 test -f sources/bluefin-dx.json
-test -f sources/image-builder.json
-test -f sources/fedora-bootc.json
+test -f sources/bluefin-installer.json
 test -f secretspec.toml
 jq -e '
   .schema == 1 and
@@ -82,18 +83,16 @@ jq -e '
   (.cosign.identity | startswith("https://"))
 ' sources/bluefin-dx.json >/dev/null
 jq -e '
-  .schema == 1 and
-  .image == "ghcr.io/osbuild/image-builder-cli" and
-  .architecture == "amd64" and
-  (.digest | test("^sha256:[0-9a-f]{64}$"))
-' sources/image-builder.json >/dev/null
-jq -e '
-  .schema == 1 and
-  .image == "quay.io/fedora/fedora-bootc" and
-  .tag == "44" and
-  .architecture == "amd64" and
-  (.digest | test("^sha256:[0-9a-f]{64}$"))
-' sources/fedora-bootc.json >/dev/null
+  .schema == 2 and
+  .iso_source.owner == "projectbluefin" and
+  .iso_source.repository == "dakota-iso" and
+  (.iso_source.revision | test("^[0-9a-f]{40}$")) and
+  (.installer.url | startswith("https://github.com/projectbluefin/bootc-installer/releases/download/")) and
+  (.installer.sha256 | test("^[0-9a-f]{64}$")) and
+  .image_builder.image == "ghcr.io/osbuild/image-builder-cli" and
+  .image_builder.architecture == "amd64" and
+  (.image_builder.digest | test("^sha256:[0-9a-f]{64}$"))
+' sources/bluefin-installer.json >/dev/null
 grep -qFx 'ARG BASE_REF' bootc/Containerfile
 if grep -qF 'bluefin:stable' bootc/Containerfile; then
 	echo 'Containerfile contains a mutable Bluefin tag' >&2
@@ -102,6 +101,12 @@ fi
 grep -qF 'COPY modules/aspects/' bootc/Containerfile
 grep -qF '/tmp/finite-build/bootc/builder/full.sh' bootc/Containerfile
 grep -qF '/tmp/finite-build/bootc/builder/derived.sh' bootc/Containerfile.derived
+grep -qF 'name: Classify and plan' .github/workflows/build.yml
+grep -qF 'name: Validate repository and workflows' .github/workflows/build.yml
+grep -qF 'needs: [prepare, checks, build-candidate' .github/workflows/build.yml
+# Literal GitHub expression contract.
+# shellcheck disable=SC2016
+grep -qF 'CHECKS_RESULT: ${{ needs.checks.result }}' .github/workflows/build.yml
 
 for obsolete in nix bootc/modules bootc/overlays bootc/components bootc/packages bootc/config installer/overlay ci; do
 	test ! -e "${obsolete}" || {
@@ -164,11 +169,11 @@ if rg -n 'den\.lib\.aspects\.resolve' --glob '*.nix' lib modules; then
 fi
 
 old_product='purple''fin'
-if find . -path './flake.nix' -prune -o -iname "*${old_product}*" -print | grep -q .; then
+if find . -path './.git' -prune -o -iname "*${old_product}*" -print | grep -q .; then
 	echo 'A tracked path retains the former product name' >&2
 	exit 1
 fi
-if rg -i "${old_product}" --glob '!flake.nix'; then
-	echo 'Former product text exists outside the centralized legacy cache configuration' >&2
+if rg -i "${old_product}" --hidden -g '!.git/**'; then
+	echo 'Former product text exists in the active repository' >&2
 	exit 1
 fi

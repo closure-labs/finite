@@ -7,7 +7,7 @@ inputs:
     required: false
     default: "false"
   end-to-end:
-    description: Build a CI-only Kickstart ISO, install it, and boot the resulting disk
+    description: Run the bootc-installer unattended recipe and boot the resulting disk
     required: false
     default: "false"
   image-tag:
@@ -28,6 +28,9 @@ outputs:
   payload-tag:
     description: Published Finite tag embedded in the installer
     value: ${{ steps.installer.outputs.payload-tag }}
+  seed-digest:
+    description: Immutable digest of the reusable live-installer seed
+    value: ${{ steps.installer.outputs.seed-digest }}
 
 runs:
   using: composite
@@ -69,7 +72,6 @@ runs:
       id: install
       env:
         ISO_PATH: ${{ steps.installer.outputs.iso-path }}
-        KICKSTART_PATH: ${{ steps.installer.outputs.kickstart-path }}
         FINITE_INSTALLER_DIAGNOSTICS_DIR: ${{ github.workspace }}/diagnostics
         STATE_ROOT: ${{ runner.temp }}/finite-installer-e2e
       shell: bash
@@ -82,13 +84,15 @@ runs:
         trap record_duration EXIT
         nix shell --accept-flake-config .#ci-installer-e2e \
           -c finite-installer-e2e install \
-            "${ISO_PATH}" "${KICKSTART_PATH}" "${STATE_ROOT}"
+            "${ISO_PATH}" "${STATE_ROOT}"
 
     - name: Boot and validate installed system
       if: inputs.end-to-end == 'true'
       id: boot
       env:
         FINITE_INSTALLER_DIAGNOSTICS_DIR: ${{ github.workspace }}/diagnostics
+        EXPECTED_DIGEST: ${{ steps.installer.outputs.payload-digest }}
+        EXPECTED_REFERENCE: ${{ steps.installer.outputs.update-reference }}
         STATE_ROOT: ${{ runner.temp }}/finite-installer-e2e
       shell: bash
       run: |
@@ -99,7 +103,8 @@ runs:
         }
         trap record_duration EXIT
         nix shell --accept-flake-config .#ci-installer-e2e \
-          -c finite-installer-e2e boot "${STATE_ROOT}"
+          -c finite-installer-e2e boot \
+            "${STATE_ROOT}" "${EXPECTED_DIGEST}" "${EXPECTED_REFERENCE}"
 
     - name: Summarize installer validation
       if: always()
@@ -108,9 +113,12 @@ runs:
         BOOT_SECONDS: ${{ steps.boot.outputs.seconds }}
         BUILD_OUTCOME: ${{ steps.installer.outcome }}
         BUILD_SECONDS: ${{ steps.installer.outputs.build-seconds }}
-        CACHE_HIT: ${{ steps.installer.outputs.environment-cache-hit }}
+        SEED_CACHE_HIT: ${{ steps.installer.outputs.seed-cache-hit }}
+        SEED_DIGEST: ${{ steps.installer.outputs.seed-digest }}
+        SEED_PUBLISHED: ${{ steps.installer.outputs.seed-published }}
+        SEED_REFERENCE: ${{ steps.installer.outputs.seed-reference }}
         ENVIRONMENT_SECONDS: ${{ steps.installer.outputs.environment-seconds }}
-        IMAGE_BUILDER_SECONDS: ${{ steps.installer.outputs.image-builder-seconds }}
+        ISO_SECONDS: ${{ steps.installer.outputs.iso-seconds }}
         INSTALLER_INPUT: ${{ steps.installer.outputs.installer-input }}
         INSTALL_OUTCOME: ${{ steps.install.outcome }}
         INSTALL_SECONDS: ${{ steps.install.outputs.seconds }}
@@ -130,11 +138,13 @@ runs:
           echo "| Payload tag | \`${PAYLOAD_TAG:-unresolved}\` |"
           echo "| Payload digest | \`${PAYLOAD_DIGEST:-unresolved}\` |"
           echo "| Update origin | \`${UPDATE_REFERENCE:-unresolved}\` |"
-          echo "| Installer cache input | \`${INSTALLER_INPUT:-unresolved}\` |"
-          echo "| Installer cache version | \`v3\` |"
-          echo "| Installer cache hit | \`${CACHE_HIT:-false}\` |"
+          echo "| Installer seed input | \`${INSTALLER_INPUT:-unresolved}\` |"
+          echo "| Installer seed | \`${SEED_REFERENCE:-unresolved}\` |"
+          echo "| Installer seed digest | \`${SEED_DIGEST:-unresolved}\` |"
+          echo "| Installer seed cache hit | \`${SEED_CACHE_HIT:-false}\` |"
+          echo "| Installer seed published | \`${SEED_PUBLISHED:-false}\` |"
           echo "| ISO SHA-256 | \`${ISO_SHA256:-unresolved}\` |"
-          echo "| Build | \`${BUILD_OUTCOME:-skipped}\` (${BUILD_SECONDS:-0}s; environment ${ENVIRONMENT_SECONDS:-0}s, Image Builder ${IMAGE_BUILDER_SECONDS:-0}s) |"
+          echo "| Build | \`${BUILD_OUTCOME:-skipped}\` (${BUILD_SECONDS:-0}s; seed ${ENVIRONMENT_SECONDS:-0}s, ISO ${ISO_SECONDS:-0}s) |"
           echo "| Smoke | \`${SMOKE_OUTCOME:-skipped}\` (${SMOKE_SECONDS:-0}s) |"
           echo "| Install | \`${INSTALL_OUTCOME:-skipped}\` (${INSTALL_SECONDS:-0}s) |"
           echo "| Installed boot | \`${BOOT_OUTCOME:-skipped}\` (${BOOT_SECONDS:-0}s) |"

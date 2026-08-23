@@ -1,6 +1,0 @@
-label: "Finite-Installer"
-grub2:
-  entries:
-    - name: "Install Finite"
-      linux: "/images/pxeboot/vmlinuz inst.stage2=hd:LABEL=Finite-Installer inst.text console=tty0 console=ttyS0,115200n8 selinux=0"
-      initrd: "/images/pxeboot/initrd.img"

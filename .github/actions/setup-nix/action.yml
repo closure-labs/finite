@@ -1,4 +1,4 @@
-name: Set up Nix and retained cache
+name: Set up Nix and Finite cache
 description: Install Nix with GitHub access and accept the repository's centralized cache configuration
 
 inputs:
@@ -14,7 +14,11 @@ runs:
   using: composite
   steps:
     - name: Install Determinate Nix
-      uses: DeterminateSystems/determinate-nix-action@668647a33843b1f280cb2ef4c41736f86b29f826 # v3.22.1
+      uses: DeterminateSystems/determinate-nix-action@527f17dd63d2d60d3e5552934bc84b9a33a14d11 # v3.22.2
+      with:
+        extra-conf: |
+          max-jobs = 4
+          cores = 1
 
     - name: Map declared GitHub Actions secrets
       if: inputs.cachix-auth-token != '' || inputs.merge-queue-token != ''

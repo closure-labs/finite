@@ -1,12 +1,13 @@
 {
   bluefin,
   bluefinDx,
+  bluefinInstallerLock,
+  bluefinIsoSource,
+  bootcInstallerBundle,
   devenv,
   determinateNix,
-  fedoraBootc,
   generated,
-  imageBuilder,
-  legacyCacheName,
+  cacheName,
   pkgs,
   secretspec,
   version,
@@ -66,16 +67,25 @@ in rec {
 
         check_names=(${quotedNames})
 
-        # Build only the declared checks explicitly so their proof paths are
-        # guaranteed to be present for sizing and upload. Do this before the
-        # build-free Flake validation because cold Devenv evaluation requires
-        # import-from-derivation paths that the check build realizes.
+        # Evaluate the aggregate derivation in a short-lived client, then build
+        # that derivation path without retaining the full Flake evaluator heap.
+        # On a 16 GiB workstation the previous single `nix build flake#attr`
+        # client held roughly 7.5 GiB while builders ran and exhausted zram.
+        ci_checks_drv="$(
+          nix --accept-flake-config eval --raw \
+            "''${flake_uri}#ci-checks.drvPath"
+        )"
+        [[ "''${ci_checks_drv}" == /nix/store/*.drv ]]
         nix --accept-flake-config build \
           --keep-going \
           --no-link \
           --print-build-logs \
           "$@" \
-          "''${flake_uri}#ci-checks"
+          "''${ci_checks_drv}^*"
+
+        # Validate every standard output after realizing the IFD-backed checks.
+        # This is a separate process so its evaluator heap is released before
+        # the proof-path inspection below.
         nix --accept-flake-config flake check \
           "''${flake_uri}" \
           --no-build \
@@ -109,7 +119,7 @@ in rec {
 
         if [[ "''${FINITE_CACHE_PUSH:-true}" == true && -n "''${CACHIX_AUTH_TOKEN:-}" ]]; then
           for path in "''${check_paths[@]}"; do
-            cachix push --omit-deriver ${pkgs.lib.escapeShellArg legacyCacheName} "''${path}"
+            cachix push --omit-deriver ${pkgs.lib.escapeShellArg cacheName} "''${path}"
           done
         elif [[ "''${FINITE_CACHE_PUSH:-true}" == true ]]; then
           echo "CACHIX_AUTH_TOKEN is unavailable; proof outputs were not pushed" >&2
@@ -213,12 +223,6 @@ in rec {
       export FINITE_BLUEFIN_IMAGE=${bluefin.image}
       export FINITE_BLUEFIN_ISSUER=${bluefin.cosign.issuer}
       export FINITE_BLUEFIN_IDENTITY=${bluefin.cosign.identity}
-      export FINITE_IMAGE_BUILDER_ARCHITECTURE=${imageBuilder.architecture}
-      export FINITE_IMAGE_BUILDER_DIGEST=${imageBuilder.digest}
-      export FINITE_IMAGE_BUILDER_IMAGE=${imageBuilder.image}
-      export FINITE_FEDORA_BOOTC_ARCHITECTURE=${fedoraBootc.architecture}
-      export FINITE_FEDORA_BOOTC_DIGEST=${fedoraBootc.digest}
-      export FINITE_FEDORA_BOOTC_IMAGE=${fedoraBootc.image}
       export FINITE_DETERMINATE_NIX_INSTALLER_SHA256=${determinateNix.installer.sha256}
       export FINITE_DETERMINATE_NIX_INSTALLER_URL=${pkgs.lib.escapeShellArg determinateNix.installer.url}
       export FINITE_DETERMINATE_NIX_POLICY_SHA256=${determinateNix.selinuxPolicy.sha256}
@@ -240,20 +244,6 @@ in rec {
             --certificate-oidc-issuer "''${issuer}" \
             --certificate-identity "''${identity}" \
             "''${image}@''${digest}" >/dev/null
-          ;;
-        image-builder)
-          image="''${FINITE_IMAGE_BUILDER_IMAGE:?}"
-          architecture="''${FINITE_IMAGE_BUILDER_ARCHITECTURE:?}"
-          digest="''${FINITE_IMAGE_BUILDER_DIGEST:?}"
-          skopeo inspect --retry-times 3 --override-arch "''${architecture}" \
-            "docker://''${image}@''${digest}" >/dev/null
-          ;;
-        fedora-bootc)
-          image="''${FINITE_FEDORA_BOOTC_IMAGE:?}"
-          architecture="''${FINITE_FEDORA_BOOTC_ARCHITECTURE:?}"
-          digest="''${FINITE_FEDORA_BOOTC_DIGEST:?}"
-          skopeo inspect --retry-times 3 --override-arch "''${architecture}" \
-            "docker://''${image}@''${digest}" >/dev/null
           ;;
         determinate-nix)
           installer="$(mktemp)"
@@ -296,7 +286,7 @@ in rec {
       source_name="''${1:?usage: finite-source-update SOURCE [OUTPUT_FILE]}"
       output_file="''${2:-}"
       case "''${source_name}" in
-        bluefin | bluefin-dx | fedora-bootc | image-builder)
+        bluefin | bluefin-dx)
           lock="''${repo_root}/sources/''${source_name}.json"
           [[ -f "''${lock}" ]]
           image="$(jq -er '.image' "''${lock}")"
@@ -785,7 +775,7 @@ in rec {
   installerE2e = import ./ci-applications/installer-e2e.nix {inherit pkgs;};
   installerSmoke = import ./ci-applications/installer-smoke.nix {inherit pkgs;};
   installerBuild = import ./installer-application.nix {
-    inherit fedoraBootc generated imageBuilder pkgs;
+    inherit bluefinInstallerLock bluefinIsoSource bootcInstallerBundle generated pkgs;
   };
   sbomAttestation = pkgs.writeShellApplication {
     name = "finite-sbom-attestation";

@@ -28,7 +28,9 @@ run0 systemctl reboot
 ```
 
 Replace `latest` with another tag from the table when needed. For a new machine
-or installer ISO, follow the [installation guide](docs/installation.md).
+or installer ISO, follow the [installation guide](docs/installation.md). Finite
+uses Project Bluefin's native graphical bootc installer, keeps GRUB2 on
+installed Bluefin systems, and embeds the verified image for offline setup.
 
 ## Complete first login
 

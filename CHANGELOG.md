@@ -6,6 +6,14 @@ All notable changes to Finite are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Migrated Nix substitutions and proof publication to the Finite-owned
+  `finite-os.cachix.org` cache and removed the last active former-name
+  exception from the repository.
+- Increased GitHub-hosted Nix capacity to four jobs with four cores per
+  derivation; workstation examples remain capped at two jobs.
+
 ## [0.5.0] - 2026-08-22
 
 ### Added
@@ -33,6 +41,13 @@ All notable changes to Finite are documented here. The format follows
 - Updated rEFInd, Plymouth, GDM, and shared image branding to the Finite mark.
 - Cloud-init now writes a YAML Home Manager seed for first-login import instead
   of invoking a named profile.
+- Replaced the legacy installer stack with Project Bluefin's pinned
+  `dakota-iso` and `bootc-installer` architecture. Bluefin targets retain GRUB2
+  and the live environment boots from an OSBuild Image Builder GRUB2 ISO.
+- Installer builds now reuse a signed live seed per foundation and inject the
+  selected profile recipe and verified offline payload after that seed boundary.
+- Replaced Dakota's custom OCI archive and ISO assembly with Image Builder's
+  direct containers-storage payload embedding and `bootc-generic-iso` pipeline.
 
 ### Removed
 
@@ -47,14 +62,19 @@ All notable changes to Finite are documented here. The format follows
 - Complete Home Manager composition validation is evaluation-only in the normal
   check graph, avoiding accidental realization of every large role closure on
   developer workstations.
+- Installer-changing pull requests and merge groups now run the native
+  unattended JSON recipe, validate Project Bluefin's three-partition GRUB2
+  layout, and boot the installed image with fresh OVMF variables before merge.
+- Installer failures emit machine-readable serial markers so CI stops promptly
+  and retains focused seed, ISO assembly, installation, partition, and boot logs.
 
 ### Security
 
 - Profile import rejects undeclared fields, malicious source values, malformed
   identities, duplicate or unknown roles, unsupported foundation/hardware
   pairs, and running-image mismatches.
-- The legacy external Cachix endpoint and signing key are centralized as the
-  only permitted former-name exception, with a repository-wide rename contract.
+- Cachix configuration and proof publication are centralized, with a
+  repository-wide contract rejecting every active former-name reference.
 
 ## [0.3.0] - 2026-08-20
 

@@ -1,0 +1,154 @@
+#!/usr/bin/bash
+set -euo pipefail
+
+if (($# != 8)); then
+	echo 'usage: prepare-bluefin-iso-source SOURCE DEST PAYLOAD_REF UPDATE_REF INSTALLER_BUNDLE INSTALLER_SHA256 LOGO BUILDER_REF' >&2
+	exit 2
+fi
+
+source_root=$1
+destination=$2
+payload_ref=$3
+update_ref=$4
+installer_bundle=$5
+installer_sha256=$6
+logo=$7
+builder_ref=$8
+
+test -d "${source_root}/live/src"
+test -s "${installer_bundle}"
+test -s "${logo}"
+[[ "${payload_ref}" =~ ^[a-z0-9._/-]+:[A-Za-z0-9._-]+@sha256:[0-9a-f]{64}$ ]]
+[[ "${update_ref}" =~ ^[a-z0-9._/-]+:[A-Za-z0-9._-]+$ ]]
+[[ "${installer_sha256}" =~ ^[0-9a-f]{64}$ ]]
+[[ "${builder_ref}" =~ ^[a-z0-9._/-]+@sha256:[0-9a-f]{64}$ ]]
+
+install -d -m 0755 "${destination}"
+cp -a "${source_root}/." "${destination}/"
+chmod -R u+w "${destination}"
+
+# Dakota retains a Debian fallback stage even when native Bluefin dracut
+# succeeds. Keep the build offline and reproducible by replacing its mutable
+# short-name base with the locked linux/amd64 manifest preloaded by Finite.
+sed -i \
+	"s|^FROM debian:bookworm AS initramfs-builder$|FROM ${builder_ref} AS initramfs-builder|" \
+	"${destination}/live/Containerfile"
+grep -qF "FROM ${builder_ref} AS initramfs-builder" \
+	"${destination}/live/Containerfile"
+
+variant="${destination}/live/src/finite"
+install -d -m 0755 "${variant}"
+cp -a installer/live/finite/. "${variant}/"
+install -m 0644 "${installer_bundle}" "${variant}/installer.flatpak"
+install -m 0644 "${logo}" "${variant}/finite-logo.png"
+printf '%s\n' "${update_ref}" >"${variant}/base_imgref"
+printf '%s\n' "${update_ref}" >"${variant}/nvidia_imgref"
+printf '%s\n' "${installer_sha256}" >"${variant}/installer.sha256"
+
+python3 - "${variant}/images.json" "${variant}/ci-autoinstall.json" "${update_ref}" <<'PY'
+from pathlib import Path
+import sys
+
+for name in sys.argv[1:3]:
+    path = Path(name)
+    path.write_text(path.read_text().replace("@@UPDATE_REFERENCE@@", sys.argv[3]))
+PY
+
+python3 - "${destination}/live/src/install-flatpaks.sh" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text()
+start = text.index("# bootc-installer bundle")
+end = text.index("# Import the bundle")
+replacement = r'''# bootc-installer bundle (pinned by Finite)
+VARIANT=$(echo "${TARGET:-finite}" | sed 's/-nvidia-open$//;s/-nvidia$//')
+INSTALLER_APP_ID="org.bootcinstaller.Installer"
+INSTALLER_BUNDLE="/src/${VARIANT}/installer.flatpak"
+INSTALLER_SHA256=$(cat "/src/${VARIANT}/installer.sha256")
+test -s "${INSTALLER_BUNDLE}"
+printf '%s  %s\n' "${INSTALLER_SHA256}" "${INSTALLER_BUNDLE}" | sha256sum --check -
+cp "${INSTALLER_BUNDLE}" /tmp/tuna-installer.flatpak
+
+'''
+path.write_text(text[:start] + replacement + text[end:])
+PY
+
+python3 - \
+	"${destination}/live/Containerfile" \
+	"${destination}/live/src/configure-live.sh" <<'PY'
+from pathlib import Path
+import sys
+
+containerfile = Path(sys.argv[1])
+text = containerfile.read_text()
+old_packages = r'''dnf install -y systemd-boot-unsigned fuse-overlayfs \
+        && dnf clean all;'''
+new_packages = r'''dnf install -y \
+            fuse-overlayfs \
+            grub2-efi-x64-cdboot \
+            grub2-pc-modules \
+            systemd-boot-unsigned \
+        && install -d -m 0755 /boot/efi \
+        && cp -a /usr/lib/efi/*/*/EFI /boot/efi/ \
+        && dnf clean all;'''
+if old_packages not in text:
+    raise SystemExit(f"missing pinned live boot package block in {containerfile}")
+containerfile.write_text(text.replace(old_packages, new_packages, 1))
+
+configure = Path(sys.argv[2])
+text = configure.read_text()
+start_marker = "else\n    # non-composefs (bootcDirect): overlay driver with fuse-overlayfs"
+end_marker = "fi\n\n# fisherman handles scratch space"
+start = text.find(start_marker)
+end = text.find(end_marker, start)
+if start < 0 or end < 0:
+    raise SystemExit(f"missing pinned non-composefs storage block in {configure}")
+replacement = r'''else
+    # Image Builder embeds the verified payload directly in this graphroot.
+    # fuse-overlayfs permits the live overlay to create only its writable
+    # container layer without duplicating the read-only payload layers.
+    cat > /etc/containers/storage.conf << 'STOREOF'
+[storage]
+driver = "overlay"
+runroot = "/run/containers/storage"
+graphroot = "/var/lib/containers/storage"
+
+[storage.options.overlay]
+mount_program = "/usr/bin/fuse-overlayfs"
+STOREOF
+'''
+configure.write_text(text[:start] + replacement + text[end:])
+PY
+
+while IFS= read -r -d '' path; do
+	sed -i \
+		-e 's/DAKOTA_LIVE/FINITE_LIVE/g' \
+		-e 's/Dakota Live/Finite Live/g' \
+		"${path}"
+done < <(
+	find "${destination}/live/src" -type f \
+		\( -name '*.sh' -o -name '*.conf' -o -name '*.json' -o -name '*.desktop' \) \
+		-print0
+)
+
+# The live environment is the exact verified Finite payload. The mutable tag
+# remains only its day-two update origin; the build stages use the digest.
+install -d -m 0755 "${destination}/finite"
+printf '%s\n' finite >"${destination}/finite/live_target"
+printf '%s\n' "${payload_ref#*:}" >"${destination}/finite/tag"
+printf '%s\n' closure-labs >"${destination}/finite/registry"
+printf '%s\n' 'Finite Live' >"${destination}/finite/live_title"
+printf '%s\n' "${update_ref}" >"${destination}/finite/payload_ref"
+
+bash -n \
+	"${destination}/live/src/install-flatpaks.sh" \
+	"${destination}/live/src/configure-live.sh" \
+	"${variant}/configure-live.d.sh"
+
+grep -qF 'grub2-efi-x64-cdboot' "${destination}/live/Containerfile"
+grep -qF 'Image Builder embeds the verified payload' "${destination}/live/src/configure-live.sh"
+grep -qF 'label: FINITE_LIVE' "${variant}/iso.yaml"
+grep -qF 'FINITE_INSTALLER_READY=1' "${variant}/configure-live.d.sh"
+grep -qF "${installer_sha256}" "${variant}/installer.sha256"

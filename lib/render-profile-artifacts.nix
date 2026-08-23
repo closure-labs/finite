@@ -105,10 +105,6 @@
           })
           profile.deltaSteps;
         inherit (profile) homeModules;
-        imageBuilder = {
-          blueprint = "installer/config/profiles/${profile.profileName}.toml";
-          inherit (profile.imageBuilder) filesystems rootFilesystem;
-        };
       })
       profiles;
   };
@@ -145,18 +141,9 @@
   catalogFile = pkgs.writeText "profile-catalog.json" (builtins.toJSON catalog + "\n");
   homeCatalogFile = pkgs.writeText "home-profile-catalog.json" (builtins.toJSON homeCatalog + "\n");
   upstreamFile = pkgs.writeText "upstreams.json" (builtins.toJSON catalog.upstreams + "\n");
-  toml = pkgs.formats.toml {};
-  blueprintFiles =
-    lib.mapAttrs (
-      name: profile:
-        toml.generate "${name}.toml" {
-          customizations.filesystem = profile.imageBuilder.filesystems;
-        }
-    )
-    profiles;
 in
   pkgs.runCommand "finite-generated-${version}" {} ''
-    mkdir -p "$out/bootc/generated" "$out/installer/config/profiles"
+    mkdir -p "$out/bootc/generated"
     cp ${matrixFile} "$out/bootc/generated/image-matrix.json"
     cp ${catalogFile} "$out/bootc/generated/profile-catalog.json"
     cp ${homeCatalogFile} "$out/bootc/generated/home-profile-catalog.json"
@@ -168,14 +155,4 @@ in
     chmod 0555 "$out/bootc/generated/determinate-nix-installer"
     chmod 0444 "$out/bootc/generated/determinate-nix.pp"
     chmod 0444 "$out/bootc/generated/nix.fc"
-    ${lib.concatStringsSep "\n" (
-      lib.concatMap (
-        name:
-          map (installerName: ''
-            cp ${blueprintFiles.${name}} "$out/installer/config/profiles/${installerName}.toml"
-          '')
-          (lib.unique ([name] ++ profiles.${name}.tags))
-      )
-      profileOrder
-    )}
   ''

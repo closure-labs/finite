@@ -13,8 +13,8 @@ pkgs.writeShellApplication {
       case "''${component}:''${path}" in
         installer:.github/actions/build-installer/* | \
         installer:flake.lock | \
-        installer:installer/Containerfile | installer:installer/rootfs/* | \
-        installer:sources/fedora-bootc.json | installer:sources/image-builder.json | \
+        installer:installer/live/* | installer:installer/prepare-bluefin-iso-source | \
+        installer:sources/bluefin-installer.json | \
         installer:lib/ci-applications/installer-e2e.nix | \
         installer:lib/ci-applications/installer-smoke.nix | \
         installer:lib/installer-application.nix)
@@ -29,10 +29,8 @@ pkgs.writeShellApplication {
         images:.github/workflows/update-flake-lock.yml | \
         images:.github/workflows/update-bluefin.yml | \
         images:.github/workflows/update-determinate-nix.yml | \
-        images:.github/workflows/update-fedora-bootc.yml | \
-        images:.github/workflows/update-image-builder.yml | \
         images:secretspec.toml | \
-        images:installer/* | images:sources/fedora-bootc.json | images:tests/* | \
+        images:installer/* | images:sources/bluefin-installer.json | images:tests/* | \
         images:lib/installer-application.nix | \
         images:lib/render-architecture.nix | \
         images:lib/repository-checks.nix | \

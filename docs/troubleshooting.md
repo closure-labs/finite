@@ -93,19 +93,20 @@ jq '.profiles | keys' result/bootc/generated/profile-catalog.json
 Download both the installer and diagnostics artifacts from the workflow run.
 Check:
 
-- `installer-manifest.json` for the payload and Image Builder digests;
-- `installer-environment.log` for container construction failures;
-- `image-builder-pull.log` for pinned Image Builder image pull failures;
-- `image-builder.log` for ISO generation failures;
+- `installer-manifest.json` for the payload, seed, and pinned installer inputs;
+- `foundation-inspect.log` and `seed-inspect.log` for GHCR resolution failures;
+- `live-environment.log` for live-seed construction failures;
+- `iso-build.log` for squashfs, offline-store, or ISO assembly failures;
 - `qemu-smoke.log` or `qemu-boot.log` for boot-test failures;
-- `qemu-install.log` for unattended Anaconda failures or the 20-minute limit;
+- `qemu-install.log` for unattended bootc-installer failures or the 30-minute
+  limit; `FINITE_INSTALLER_ERROR=` is fatal and stops the guest immediately;
+- `FINITE_INSTALLER_COMPLETE=1` in that log to confirm the installer returned
+  successfully and the CI first-boot probe was written;
 - `qemu-installed-boot.log` for UEFI startup, digest, update-reference, or
-  three-minute boot readiness failures; an empty guest log indicates a
-  firmware or bootloader failure before the kernel starts, while `UEFI Misc
-  Device ... Not Found` with clean variables indicates that bootc finalization
-  did not finish the portable ESP loader;
-- `qemu-kickstart-server.log` to confirm that the guest fetched
-  `finite-ci.ks` within three minutes;
+  five-minute boot readiness failures; an empty guest log indicates a firmware
+  or GRUB failure before the kernel starts;
+- `installed-partitions.json` for the required GPT, EFI system partition,
+  separate `/boot`, and Btrfs system partition;
 - `runner-capacity-before.txt` and `runner-capacity-after.txt` for storage
   exhaustion.
 

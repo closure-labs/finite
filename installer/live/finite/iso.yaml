@@ -1,0 +1,15 @@
+label: FINITE_LIVE
+kernel_args:
+  - root=live:LABEL=FINITE_LIVE
+  - rd.live.image
+  - rd.live.overlay.overlayfs=1
+  - enforcing=0
+  - console=tty0
+  - console=ttyS0,115200n8
+grub2:
+  default: 0
+  timeout: 10
+  entries:
+    - name: Install Finite
+      linux: /images/pxeboot/vmlinuz
+      initrd: /images/pxeboot/initrd.img

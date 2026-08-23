@@ -27,6 +27,7 @@ pkgs.writeShellApplication {
     }
 
     require_result prepare "''${PREPARE_RESULT:?}" success
+    require_result checks "''${CHECKS_RESULT:?}" success
     lifecycle="''${CI_PLAN:?CI_PLAN is required}"
     plan_file="$(mktemp "''${TMPDIR:-/tmp}/finite-ci-gate-plan.XXXXXX.json")"
     trap 'rm -f -- "''${plan_file}"' EXIT

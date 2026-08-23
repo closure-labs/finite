@@ -1,0 +1,42 @@
+{
+  "log_file": "/var/log/finite-installer.log",
+  "distro_name": "Finite",
+  "welcome_title": "Welcome to Finite",
+  "distro_logo": "/run/host/usr/share/pixmaps/finite.png",
+  "bootloader": "grub2",
+  "composeFsBackend": false,
+  "filesystem": "btrfs",
+  "tour": {
+    "welcome": {
+      "image": "/run/host/usr/share/bootc-installer/images/finite-logo.png",
+      "title": "Welcome to Finite",
+      "description": "Install a verified Finite workstation from this offline image."
+    },
+    "features": {
+      "image": "/run/host/usr/share/bootc-installer/images/finite-logo.png",
+      "title": "Choose your foundation",
+      "description": "Finite supports Bluefin and Bluefin DX foundations with composable Home Manager roles."
+    },
+    "community": {
+      "image": "/run/host/usr/share/bootc-installer/images/finite-logo.png",
+      "title": "Offline and reproducible",
+      "description": "The exact signed OCI payload is embedded in this installer; installation does not require a registry pull."
+    },
+    "developer": {
+      "image": "/run/host/usr/share/bootc-installer/images/finite-logo.png",
+      "title": "Configure after first login",
+      "description": "Select any combination of roles on first login, or reopen the selector later with finite-configure."
+    },
+    "completed": {
+      "image": "/run/host/usr/share/bootc-installer/images/finite-logo.png",
+      "title": "Finite is installed",
+      "description": "Restart into Finite and complete your personal configuration."
+    }
+  },
+  "steps": {
+    "welcome": {"template": "welcome", "protected": true},
+    "image": {"template": "image", "protected": true},
+    "disk": {"template": "disk"},
+    "encryption": {"template": "encryption"}
+  }
+}

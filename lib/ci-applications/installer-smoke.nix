@@ -1,7 +1,7 @@
 {pkgs}:
 pkgs.writeShellApplication {
   name = "finite-installer-smoke";
-  runtimeInputs = with pkgs; [bash coreutils gnugrep qemu_kvm];
+  runtimeInputs = with pkgs; [bash coreutils gnugrep OVMF.fd qemu_kvm];
   text = ''
     repo_root="''${FINITE_SOURCE_ROOT:-$PWD}"
     [[ -f "''${repo_root}/flake.nix" ]] || {
@@ -20,6 +20,8 @@ pkgs.writeShellApplication {
     cpus="''${FINITE_INSTALLER_SMOKE_CPUS:-4}"
     memory_mb="''${FINITE_INSTALLER_SMOKE_MEMORY_MB:-4096}"
     ready_marker='FINITE_INSTALLER_READY=1'
+    ovmf_code="${pkgs.OVMF.fd}/FV/OVMF_CODE.fd"
+    ovmf_vars_template="${pkgs.OVMF.fd}/FV/OVMF_VARS.fd"
     [[ "''${timeout_seconds}" =~ ^[1-9][0-9]*$ ]] || {
       echo 'FINITE_INSTALLER_SMOKE_TIMEOUT_SECONDS must be a positive integer' >&2
       exit 2
@@ -37,6 +39,7 @@ pkgs.writeShellApplication {
 
     log="$(dirname -- "''${iso}")/qemu-boot.log"
     disk="$(mktemp --suffix=.qcow2)"
+    firmware_vars="$(mktemp --suffix=.fd)"
     qemu_pid=
     tail_pid=
     # Invoked indirectly by the EXIT trap.
@@ -44,10 +47,12 @@ pkgs.writeShellApplication {
     cleanup_installer_smoke() {
       [[ -z "''${qemu_pid}" ]] || kill -TERM "''${qemu_pid}" >/dev/null 2>&1 || true
       [[ -z "''${tail_pid}" ]] || kill -TERM "''${tail_pid}" >/dev/null 2>&1 || true
-      rm -f -- "''${disk}"
+      rm -f -- "''${disk}" "''${firmware_vars}"
     }
     trap cleanup_installer_smoke EXIT
     "''${qemu_img}" create -q -f qcow2 "''${disk}" 32G
+    cp "''${ovmf_vars_template}" "''${firmware_vars}"
+    chmod u+w "''${firmware_vars}"
 
     acceleration=(-accel "tcg,thread=multi")
     if [[ -r /dev/kvm && -w /dev/kvm ]]; then
@@ -61,6 +66,8 @@ pkgs.writeShellApplication {
         -machine q35 \
         -m "''${memory_mb}" \
         -smp "''${cpus}" \
+        -drive "if=pflash,format=raw,unit=0,readonly=on,file=''${ovmf_code}" \
+        -drive "if=pflash,format=raw,unit=1,file=''${firmware_vars}" \
         -drive "file=''${disk},if=virtio,format=qcow2" \
         -cdrom "''${iso}" \
         -boot d \

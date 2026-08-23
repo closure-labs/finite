@@ -103,8 +103,8 @@ files before binding the persistent state.
    gh attestation verify finite-*.iso --repo closure-labs/finite
    ```
 
-5. Write the ISO to installation media and complete Anaconda.
+5. Write the ISO to installation media and complete the graphical Finite installer.
 
-The manifest records immutable payload and builder digests, the source commit,
-the embedded reference, and the mutable update reference. See
+The manifest records the immutable payload, signed live-seed identity, pinned
+Project Bluefin installer inputs, source commit, and mutable update reference. See
 [Troubleshooting](troubleshooting.md) for runtime and installer checks.
