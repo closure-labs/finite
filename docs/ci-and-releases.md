@@ -148,12 +148,13 @@ Finite-owned readiness marker instead of waiting for its safety timeout.
 Scheduled runs and forced release-candidate builds additionally serve a CI-only
 Kickstart to the release ISO kernel. The guest must fetch it within three
 minutes and finish installing to a disposable disk within twenty minutes. A
-separate visible step reboots without the ISO and has three minutes to prove,
-through bootc status v1, that the booted digest is the verified payload and the
-update origin is the mutable profile tag. CI Kickstart state is never uploaded
-as a user artifact; the published ISO remains interactive. The action summary
-records cache version/input/hit, update origin, and separate build, smoke,
-install, and installed-boot durations.
+separate visible step reboots without the ISO under the same OVMF UEFI
+firmware state and has three minutes to prove, through bootc status v1, that
+the booted digest is the verified payload and the update origin is the mutable
+profile tag. CI Kickstart state is never uploaded as a user artifact; the
+published ISO remains interactive. The action summary records cache
+version/input/hit, update origin, and separate build, smoke, install, and
+installed-boot durations.
 
 Syft scans the final mounted OCI filesystem because Finite images are
 assembled from Bluefin and RPM content rather than from a Nix store closure.

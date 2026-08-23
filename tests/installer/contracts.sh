@@ -36,6 +36,13 @@ grep -qF 'FINITE_INSTALLER_E2E_INSTALL_TIMEOUT_SECONDS:-1200' \
 	lib/ci-applications/installer-e2e.nix
 grep -qF 'FINITE_INSTALLER_E2E_BOOT_TIMEOUT_SECONDS:-180' \
 	lib/ci-applications/installer-e2e.nix
+grep -qF 'OVMF.fd' lib/ci-applications/installer-e2e.nix
+grep -qF 'OVMF_CODE.fd' lib/ci-applications/installer-e2e.nix
+grep -qF 'OVMF_VARS.fd' lib/ci-applications/installer-e2e.nix
+grep -qF 'if=pflash,format=raw,unit=0,readonly=on' \
+	lib/ci-applications/installer-e2e.nix
+grep -qF 'if=pflash,format=raw,unit=1' \
+	lib/ci-applications/installer-e2e.nix
 grep -qF -- '--bootc-ref' lib/installer-application.nix
 grep -qF -- '--bootc-installer-payload-ref' lib/installer-application.nix
 grep -qF -- "--bootc-installer-payload-ref \"''\${payload_update_ref}\"" \

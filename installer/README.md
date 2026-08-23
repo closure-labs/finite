@@ -34,7 +34,8 @@ messages are not treated as success.
 Weekly runs and forced release-candidate builds also use
 `ci-unattended.ks.in` to boot the release ISO kernel and initramfs with an
 explicit CI Kickstart. It performs a non-interactive installation onto an
-ephemeral disk, reboots from the disk, and waits for
+ephemeral disk under OVMF UEFI firmware, reboots from the disk with the same
+persisted firmware variables, and waits for
 `bootc status --json --format-version=1` to report both the verified payload
 digest and expected mutable profile tag before it emits
 `FINITE_INSTALLED_READY=1`. The regular smoke test already covers the ISO's

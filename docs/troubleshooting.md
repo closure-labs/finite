@@ -99,8 +99,9 @@ Check:
 - `image-builder.log` for ISO generation failures;
 - `qemu-smoke.log` or `qemu-boot.log` for boot-test failures;
 - `qemu-install.log` for unattended Anaconda failures or the 20-minute limit;
-- `qemu-installed-boot.log` for digest, update-reference, or three-minute boot
-  readiness failures;
+- `qemu-installed-boot.log` for UEFI startup, digest, update-reference, or
+  three-minute boot readiness failures; an empty guest log indicates a
+  firmware or boot-entry failure before the kernel starts;
 - `qemu-kickstart-server.log` to confirm that the guest fetched
   `finite-ci.ks` within three minutes;
 - `runner-capacity-before.txt` and `runner-capacity-after.txt` for storage
