@@ -42,8 +42,8 @@ nix run .#local-cache
 ```
 
 The `local-cache` app uses SecretSpec profile `local-cache` and scope `cachix`.
-It accepts `CACHIX_AUTH_TOKEN` from the environment or loads the workstation
-value from `$HOME/.other-fun-things/.cachix-purplefin-auth`, then publishes the
+SecretSpec resolves the workstation value from
+`$HOME/.other-fun-things/.cachix-purplefin-auth`, then the app publishes the
 evaluated closure-guarded proof outputs.
 
 GitHub-hosted jobs use the separate SecretSpec `github-actions` profile. The

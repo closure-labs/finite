@@ -33,7 +33,7 @@ provenance, RPM updates, and repair work before finalizing that lifecycle.
 
 `CI gate` is the stable required check. Its result covers every image and
 installer job selected for the change. The checked-in branch policy is
-`automation/github/policies/main-protection.json`.
+`automation/github/policies/main-merge-queue.json`.
 
 Pull requests and merge groups divide selected profiles among at most four
 dependency-aware shards, co-locating shared lineages while balancing estimated
@@ -42,6 +42,12 @@ once, builds roots with `Containerfile`, and builds descendants with
 `Containerfile.derived`. Ancestors needed only as local parents skip duplicate
 rechunking; every selected profile remains a fully rechunked target in exactly
 one shard. No mutable image state crosses a job boundary.
+
+Installer candidates prefer the current repository's GHCR payload. During a
+repository transfer, they may fall back to the legacy public payload until the
+first trusted main build publishes the new namespace. Signature and attestation
+verification follows the payload's audited OCI source label, so the fallback
+does not weaken provenance checks and becomes dormant automatically.
 
 Publication and pull-request validation share the focused
 `purplefin-rechunk-image` Nix application. It preserves non-generated OCI
@@ -183,10 +189,22 @@ run --mode single --option 'packages:pkgs!' '' ci:prepare`. Hosted jobs invoke t
 leaf packages directly because that avoids cold devenv startup while retaining
 identical pinned commands and Cachix reuse.
 
-Purplefin's package universe follows the rolling
-`DeterminateSystems/nixpkgs-weekly/0` FlakeHub series. Home Manager follows that
-same Nixpkgs input and is fetched from Determinate's public FlakeHub mirror at
-`nix-community/home-manager/0`; lock validation rejects drift from either URL.
+Purplefin's package universe follows the stable, seven-day-cooled
+`DeterminateSystems/nixpkgs-26.05-chilled/0.1` FlakeHub series. Home Manager is
+constrained to the matching 26.05 series at `nix-community/home-manager/0.2605`
+and follows that same Nixpkgs input; lock validation rejects drift from either
+URL.
+
+A separate weekly release-series job checks the official Nixpkgs
+`nixos-YY.MM` and Home Manager `release-YY.MM` branches. It advances the paired
+series only after both upstream branches and both corresponding FlakeHub mirrors
+are available. The ordinary weekly lock refresh then remains within that
+selected stable series.
+
+Fast-moving applications and tools, currently Bitwarden Desktop and SecretSpec,
+may be selected from the cooled weekly package input when the stable package is
+insecure or lacks required commands. This does not change the stable Nixpkgs
+instance used to evaluate Home Manager.
 
 The weekly Determinate Nix updater resolves the latest stable upstream
 release, pins both the installer asset and its SELinux policy by SHA-256, and

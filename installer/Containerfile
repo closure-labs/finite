@@ -34,8 +34,8 @@ RUN --mount=from=installer-rootfs,target=/run/installer-rootfs \
     DRACUT_NO_XATTR=1 dracut --force --zstd --reproducible --no-hostonly \
       --add anaconda "/usr/lib/modules/${kernel}/initramfs.img" "${kernel}"
 
-ARG INSTALLER_PAYLOAD_SOURCE_REF=ghcr.io/declarative-dale/purplefin:base-generic-x86_64
-ARG INSTALLER_PAYLOAD_TARGET_REF=ghcr.io/declarative-dale/purplefin:base-generic-x86_64
+ARG INSTALLER_PAYLOAD_SOURCE_REF=ghcr.io/closure-labs/finite:base-generic-x86_64
+ARG INSTALLER_PAYLOAD_TARGET_REF=ghcr.io/closure-labs/finite:base-generic-x86_64
 
 RUN sed -i \
       -e "s|@@INSTALLER_PAYLOAD_SOURCE_REF@@|${INSTALLER_PAYLOAD_SOURCE_REF}|g" \

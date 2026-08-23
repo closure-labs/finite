@@ -76,8 +76,42 @@
     username ? "purplefin",
     homeDirectory ? "/var/home/${username}",
     hardware ? builtins.head homeProfiles.${name}.hardware,
+    sourceFlake ? "github:closure-labs/finite",
   }: let
     profile = homeProfiles.${name};
+    homeDriverFlake = pkgs.writeText "purplefin-home-flake.nix" ''
+      {
+        inputs = {
+          nixpkgs.url = "https://flakehub.com/f/DeterminateSystems/nixpkgs-26.05-chilled/0.1";
+          nixpkgs-weekly.url = "https://flakehub.com/f/DeterminateSystems/nixpkgs-weekly/0.1";
+
+          home-manager = {
+            url = "https://flakehub.com/f/nix-community/home-manager/0.2605";
+            inputs.nixpkgs.follows = "nixpkgs";
+          };
+
+          purplefin = {
+            url = ${builtins.toJSON sourceFlake};
+            inputs.nixpkgs.follows = "nixpkgs";
+            inputs.nixpkgs-weekly.follows = "nixpkgs-weekly";
+            inputs.home-manager.follows = "home-manager";
+          };
+        };
+
+        outputs = { purplefin, ... }: {
+          homeConfigurations = {
+            ${builtins.toJSON username} =
+              purplefin.lib.purplefin.mkHomeConfiguration {
+                name = ${builtins.toJSON name};
+                hardware = ${builtins.toJSON hardware};
+                username = ${builtins.toJSON username};
+                homeDirectory = ${builtins.toJSON homeDirectory};
+                sourceFlake = ${builtins.toJSON sourceFlake};
+              };
+          };
+        };
+      }
+    '';
     hardwareModule =
       if hardware == "dell-xps-9350-intel"
       then [(den.lib.aspects.resolve "homeManager" den.aspects.features.hardware.dell-xps-9350-intel)]
@@ -90,7 +124,11 @@
         modules =
           [
             (den.lib.aspects.resolve "homeManager" profile.aspect)
-            {
+            ({
+              config,
+              lib,
+              ...
+            }: {
               home = {
                 inherit homeDirectory username;
                 sessionVariables = {
@@ -99,11 +137,23 @@
                   PURPLEFIN_HARDWARE = hardware;
                 };
               };
+              home.activation.writeHomeManagerFlake = lib.hm.dag.entryAfter ["linkGeneration"] ''
+                driver_dir=${lib.escapeShellArg "${config.xdg.configHome}/home-manager"}
+                driver_file="''${driver_dir}/flake.nix"
+                run ${pkgs.coreutils}/bin/mkdir -p "''${driver_dir}"
+                if [[ -L "''${driver_file}" ]]; then
+                  run ${pkgs.coreutils}/bin/rm -f "''${driver_file}"
+                fi
+                if ! ${pkgs.diffutils}/bin/cmp -s ${homeDriverFlake} "''${driver_file}"; then
+                  run ${pkgs.coreutils}/bin/install -m 0644 ${homeDriverFlake} "''${driver_file}"
+                fi
+              '';
+              programs.nh.homeFlake = "path:${config.xdg.configHome}/home-manager";
               xdg.configFile."purplefin/profile.json".text = builtins.toJSON {
                 inherit hardware name;
                 inherit (profile) baseClass roles;
               };
-            }
+            })
           ]
           ++ hardwareModule;
       };
@@ -120,10 +170,12 @@
   applications = import ../lib/flake-applications.nix {
     devenv = inputs.devenv.packages.${system}.devenv;
     inherit bluefin bluefinDx determinateNix fedoraBootc generated imageBuilder pkgs version;
+    secretspec = inputs.nixpkgs-weekly.legacyPackages.${system}.secretspec;
     selfSource = inputs.self;
   };
   repositoryChecks = import ../lib/repository-checks.nix {
     inherit applications architecture generated lib pkgs;
+    secretspec = inputs.nixpkgs-weekly.legacyPackages.${system}.secretspec;
   };
   formattingSource = lib.cleanSourceWith {
     src = inputs.self;
@@ -206,6 +258,7 @@ in {
         ci-installer-smoke = applications.installerSmoke;
         ci-release-notes = applications.releaseNotes;
         ci-update-locks = applications.updateLocks;
+        ci-home-release-update = applications.updateHomeRelease;
         ci-source-update = applications.sourceUpdate;
         ci-source-verify = applications.sourceVerify;
         ci-trusted-update = applications.trustedUpdate;

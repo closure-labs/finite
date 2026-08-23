@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+aspect_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+module="${aspect_root}/default.nix"
+
+# shellcheck disable=SC2016 # Match the literal Nix interpolation.
+grep -qF 'inputs.devenv.packages.${pkgs.stdenv.hostPlatform.system}.devenv' "${module}"
+grep -qF 'home.sessionVariables.PURPLEFIN_ROLE_DEVELOPER = "1"' "${module}"
+test ! -e "${aspect_root}/apply.sh"
+test ! -e "${aspect_root}/manifests"

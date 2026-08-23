@@ -5,10 +5,12 @@
     extra-substituters = [
       "https://purplefin.cachix.org"
       "https://devenv.cachix.org"
+      "https://cachix.cachix.org"
     ];
     extra-trusted-public-keys = [
       "purplefin.cachix.org-1:aW23hpySzX8WPYCiZSzxEc9mOYTIV9NDvylhqVgziFM="
       "devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw="
+      "cachix.cachix.org-1:eWNHQldwUO7G2VkjpnjDbWwy4KQ/HNxht7H4SSoMckM="
     ];
   };
 
@@ -24,10 +26,11 @@
 
     import-tree.url = "github:vic/import-tree";
 
-    nixpkgs.url = "https://flakehub.com/f/DeterminateSystems/nixpkgs-weekly/0";
+    nixpkgs.url = "https://flakehub.com/f/DeterminateSystems/nixpkgs-26.05-chilled/0.1";
+    nixpkgs-weekly.url = "https://flakehub.com/f/DeterminateSystems/nixpkgs-weekly/0.1";
 
     home-manager = {
-      url = "https://flakehub.com/f/nix-community/home-manager/0";
+      url = "https://flakehub.com/f/nix-community/home-manager/0.2605";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 

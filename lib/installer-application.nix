@@ -138,12 +138,25 @@ pkgs.writeShellApplication {
     }
     trap collect_diagnostics EXIT
 
-    metadata="$(skopeo inspect --retry-times 3 "docker://''${IMAGE_REF}:''${IMAGE_TAG}")"
+    if ! metadata="$(
+      skopeo inspect --retry-times 3 "docker://''${IMAGE_REF}:''${IMAGE_TAG}" \
+        2>diagnostics/payload-inspect-primary.log
+    )"; then
+      : "''${LEGACY_IMAGE_REF:?LEGACY_IMAGE_REF is required when the primary payload is unavailable}"
+      [[ "''${LEGACY_IMAGE_REF}" != "''${IMAGE_REF}" ]]
+      echo "Primary payload ''${IMAGE_REF}:''${IMAGE_TAG} is unavailable; trying ''${LEGACY_IMAGE_REF}" >&2
+      IMAGE_REF="''${LEGACY_IMAGE_REF}"
+      metadata="$(skopeo inspect --retry-times 3 "docker://''${IMAGE_REF}:''${IMAGE_TAG}")"
+    fi
     payload_digest="$(jq -er '.Digest' <<<"''${metadata}")"
     profile="$(jq -er '.Labels["io.purplefin.build.profile"]' <<<"''${metadata}")"
     source_revision="$(jq -er '.Labels["org.opencontainers.image.revision"]' <<<"''${metadata}")"
+    payload_source_url="$(jq -er '.Labels["org.opencontainers.image.source"]' <<<"''${metadata}")"
+    payload_source_repository="''${payload_source_url#https://github.com/}"
+    payload_source_repository="''${payload_source_repository%.git}"
     [[ "''${payload_digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
     [[ "''${source_revision}" =~ ^[0-9a-f]{40}$ ]]
+    [[ "''${payload_source_repository}" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]
     test -f "''${PURPLEFIN_GENERATED_ROOT:?PURPLEFIN_GENERATED_ROOT is required}/installer/config/profiles/''${profile}.toml"
     payload_ref="''${IMAGE_REF}@''${payload_digest}"
     payload_embed_ref="''${payload_ref}"
@@ -171,7 +184,7 @@ pkgs.writeShellApplication {
     )"
     [[ "''${environment_input}" =~ ^[0-9a-f]{64}$ ]]
     environment_cache_ref="''${cache_ref}:environment-''${environment_input}"
-    cosign_identity="https://github.com/''${GITHUB_REPOSITORY}/.github/workflows/build-profile.yml@refs/heads/main"
+    cosign_identity="https://github.com/''${payload_source_repository}/.github/workflows/build-profile.yml@refs/heads/main"
     environment_cache_identity_regex="^https://github.com/''${GITHUB_REPOSITORY}/.github/workflows/(build|build-installer)\\.yml@refs/heads/main$"
     cosign verify \
       --certificate-oidc-issuer https://token.actions.githubusercontent.com \
@@ -179,13 +192,13 @@ pkgs.writeShellApplication {
       "''${payload_ref}" >/dev/null
     gh attestation verify "oci://''${payload_ref}" \
       --bundle-from-oci \
-      --repo "''${GITHUB_REPOSITORY}" \
-      --signer-workflow "''${GITHUB_REPOSITORY}/.github/workflows/build-profile.yml" \
+      --repo "''${payload_source_repository}" \
+      --signer-workflow "''${payload_source_repository}/.github/workflows/build-profile.yml" \
       --source-digest "''${source_revision}"
     gh attestation verify "oci://''${payload_ref}" \
       --bundle-from-oci \
-      --repo "''${GITHUB_REPOSITORY}" \
-      --signer-workflow "''${GITHUB_REPOSITORY}/.github/workflows/attest-software-bill-of-materials.yml" \
+      --repo "''${payload_source_repository}" \
+      --signer-workflow "''${payload_source_repository}/.github/workflows/attest-software-bill-of-materials.yml" \
       --source-digest "''${source_revision}" \
       --predicate-type https://spdx.dev/Document/v2.3
 
@@ -354,7 +367,7 @@ pkgs.writeShellApplication {
       --arg payload_embedded_reference "''${payload_embed_ref}" \
       --arg payload_update_reference "''${payload_update_ref}" \
       --arg payload_sbom_predicate 'https://spdx.dev/Document/v2.3' \
-      --arg payload_signer_workflow "''${GITHUB_REPOSITORY}/.github/workflows/attest-software-bill-of-materials.yml" \
+      --arg payload_signer_workflow "''${payload_source_repository}/.github/workflows/attest-software-bill-of-materials.yml" \
       --arg payload_source_revision "''${source_revision}" \
       --arg source_commit "''${GITHUB_SHA}" \
       --arg source_repository "''${GITHUB_REPOSITORY}" \

@@ -31,6 +31,7 @@ in {
     home-trainer.includes = [features.base features.roles.trainer];
     home-dale.includes = [
       features.base
+      features.users.dale
       features.roles.sales
       features.roles.executive
       features.roles.developer
@@ -47,6 +48,17 @@ in {
       features.roles.it
       features.roles.trainer
     ];
+  };
+
+  den.aspects.features.users.dale.homeManager = {
+    inputs,
+    lib,
+    pkgs,
+    ...
+  }: let
+    weeklyPkgs = inputs.nixpkgs-weekly.legacyPackages.${pkgs.stdenv.hostPlatform.system};
+  in {
+    home.packages = [(lib.lowPrio weeklyPkgs.secretspec)];
   };
 
   purplefin.profiles = {

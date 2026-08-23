@@ -10,7 +10,7 @@ ARG PURPLEFIN_VERSION=0.0.0-dev
 LABEL org.opencontainers.image.title="Purplefin" \
       org.opencontainers.image.description="A custom Bluefin image with composable named profiles" \
       org.opencontainers.image.vendor="declarative-dale" \
-      org.opencontainers.image.source="https://github.com/declarative-dale/purplefin" \
+      org.opencontainers.image.source="https://github.com/closure-labs/finite" \
       org.opencontainers.image.base.name="${BASE_REF}" \
       org.opencontainers.image.version="${PURPLEFIN_VERSION}"
 

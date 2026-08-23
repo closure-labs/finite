@@ -43,6 +43,7 @@ runs:
         GH_TOKEN: ${{ inputs.token }}
         IMAGE_REF: ghcr.io/${{ github.repository }}
         IMAGE_TAG: ${{ inputs.image-tag }}
+        LEGACY_IMAGE_REF: ghcr.io/declarative-dale/purplefin
       shell: bash
       run: >-
         nix shell --accept-flake-config .#ci-installer-build

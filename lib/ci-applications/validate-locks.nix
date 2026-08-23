@@ -27,18 +27,22 @@ pkgs.writeShellApplication {
     }
 
     [[ "$(original_url flake.lock nixpkgs)" == \
-      'https://flakehub.com/f/DeterminateSystems/nixpkgs-weekly/0' ]]
+      'https://flakehub.com/f/DeterminateSystems/nixpkgs-26.05-chilled/0.1' ]]
     [[ "$(original_url flake.lock home-manager)" == \
-      'https://flakehub.com/f/nix-community/home-manager/0' ]]
+      'https://flakehub.com/f/nix-community/home-manager/0.2605' ]]
+    [[ "$(original_url flake.lock nixpkgs-weekly)" == \
+      'https://flakehub.com/f/DeterminateSystems/nixpkgs-weekly/0.1' ]]
     [[ "$(original_url devenv.lock nixpkgs)" == \
       'https://flakehub.com/f/DeterminateSystems/nixpkgs-weekly/0' ]]
 
-    for input in nixpkgs devenv; do
-      flake_rev="$(locked_rev flake.lock "''${input}")"
-      devenv_rev="$(locked_rev devenv.lock "''${input}")"
+    for input_pair in nixpkgs-weekly:nixpkgs devenv:devenv; do
+      flake_input="''${input_pair%%:*}"
+      devenv_input="''${input_pair#*:}"
+      flake_rev="$(locked_rev flake.lock "''${flake_input}")"
+      devenv_rev="$(locked_rev devenv.lock "''${devenv_input}")"
       [[ "''${flake_rev}" == "''${devenv_rev}" ]] || {
-        printf '%s lock revisions differ: flake.lock=%s devenv.lock=%s\n' \
-          "''${input}" "''${flake_rev}" "''${devenv_rev}" >&2
+        printf '%s/%s lock revisions differ: flake.lock=%s devenv.lock=%s\n' \
+          "''${flake_input}" "''${devenv_input}" "''${flake_rev}" "''${devenv_rev}" >&2
         exit 1
       }
     done

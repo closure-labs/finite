@@ -4,6 +4,7 @@
   generated,
   lib,
   pkgs,
+  secretspec,
 }: let
   root = ../.;
   inherit (lib) fileset;
@@ -55,14 +56,22 @@
     ../bootc/Containerfile.derived
     ../bootc/builder
     ../modules/aspects
+    ../modules/outputs.nix
     ../sources
     ../secretspec.toml
     ../tests/repository/contracts.sh
   ];
   documentationSource = sourceFor [textFiles];
   automationSource = sourceFor [
+    ../docs/ci-and-releases.md
+    ../docs/configuration.md
+    ../docs/installation.md
+    ../flake.lock
     ../flake.nix
+    ../lib/ci-applications/validate-locks.nix
+    ../modules/outputs.nix
     ../tests/automation
+    ../tests/repository/contracts.sh
   ];
   bootcSource = sourceFor [
     ../.github/syft.yaml
@@ -91,9 +100,12 @@
   ];
   upstreamSource = sourceFor [
     ../bootc/Containerfile
+    ../devenv.nix
+    ../devenv.yaml
     ../flake.nix
     ../lib/flake-applications.nix
     ../modules/outputs.nix
+    ../modules/profiles/definitions.nix
     ../sources
     ../secretspec.toml
   ];
@@ -204,7 +216,7 @@ in {
   upstream = mkSourceCheck {
     name = "upstream-contracts";
     source = upstreamSource;
-    tools = with pkgs; [gnugrep jq secretspec];
+    tools = with pkgs; [gnugrep jq] ++ [secretspec];
     commands = ''
       # shellcheck disable=SC2016,SC2251
       set -euo pipefail
@@ -265,6 +277,8 @@ in {
       grep -qF 'ref = { item = "GITHUB_ACTIONS_MERGE_QUEUE_TOKEN" }' secretspec.toml
       ! grep -qF 'cachix watch-exec' lib/flake-applications.nix
       grep -qF 'cachix push --omit-deriver purplefin' lib/flake-applications.nix
+      grep -qF 'selfFlakeUri = "path:''${toString selfSource}"' lib/flake-applications.nix
+      ! grep -qF 'unsafeDiscardStringContext' lib/flake-applications.nix
       grep -qF 'nix --accept-flake-config eval --json' lib/flake-applications.nix
       ! grep -qF 'quotedPaths' lib/flake-applications.nix
       grep -qF 'flake_uri="git+file://' lib/flake-applications.nix
@@ -283,7 +297,17 @@ in {
       grep -qF 'containers-storage:' lib/flake-applications.nix
       grep -qF 'host_podman' lib/flake-applications.nix
       grep -qF 'unshare "$0"' lib/flake-applications.nix
+      grep -qF -- '--label "io.purplefin.build.profile=' lib/flake-applications.nix
       grep -qF 'https://purplefin.cachix.org' flake.nix
+      grep -qF 'https://cachix.cachix.org' flake.nix
+      grep -qF 'cachix.cachix.org-1:eWNHQldwUO7G2VkjpnjDbWwy4KQ/HNxht7H4SSoMckM=' flake.nix
+      grep -qF 'cachix.pull = ["cachix" "purplefin"]' devenv.nix
+      grep -qF 'provider: local' devenv.yaml
+      grep -qF 'local = "file:~/.other-fun-things"' secretspec.toml
+      ! grep -qF 'token_file=' lib/flake-applications.nix
+      grep -qF 'runtimeInputs = [devenv secretspec];' lib/flake-applications.nix
+      grep -qF 'features.users.dale' modules/profiles/definitions.nix
+      grep -qF 'home.packages = [(lib.lowPrio weeklyPkgs.secretspec)];' modules/profiles/definitions.nix
       grep -qFx 'ARG BASE_REF' bootc/Containerfile
       ! grep -qF 'bluefin:stable' bootc/Containerfile
     '';
@@ -313,6 +337,7 @@ in {
       applications.ciGate
       applications.promoteImages
       applications.trustedUpdate
+      applications.updateHomeRelease
       git
       gnugrep
       jq
@@ -325,6 +350,7 @@ in {
       bash tests/automation/ci-gate.sh
       bash tests/automation/promote-images.sh
       bash tests/automation/trusted-update.sh
+      bash tests/automation/update-home-release.sh
     '';
   };
 
@@ -452,6 +478,7 @@ in {
         update-determinate-nix.yml \
         update-fedora-bootc.yml \
         update-flake-lock.yml \
+        update-home-release.yml \
         update-image-builder.yml; do
         grep -qF '.#ci-trusted-update' ".github/workflows/''${updater}"
       done
@@ -466,6 +493,7 @@ in {
       grep -qF 'purplefin-source-update fedora-bootc ' .github/workflows/update-fedora-bootc.yml
       grep -qF 'purplefin-source-update image-builder ' .github/workflows/update-image-builder.yml
       grep -qF 'purplefin-update-locks ' .github/workflows/update-flake-lock.yml
+      grep -qF 'purplefin-update-home-release ' .github/workflows/update-home-release.yml
       grep -qF 'purplefin-load-bluefin' .github/workflows/build-profile.yml
       grep -qF 'purplefin-ci-prepare' .github/workflows/build.yml
       grep -qF 'purplefin-validate-image-shard' .github/workflows/build.yml
@@ -482,6 +510,8 @@ in {
       grep -qF 'purplefin-rechunk-image' .github/workflows/build-profile.yml
       ! grep -qF 'cosign sign' .github/workflows/build-profile.yml
       grep -qF 'purplefin-image-sbom' .github/workflows/attest-software-bill-of-materials.yml
+      grep -qF 'LEGACY_IMAGE_REF: ghcr.io/declarative-dale/purplefin' .github/actions/build-installer/action.yml
+      grep -qF 'payload_source_url#https://github.com/' lib/installer-application.nix
       grep -qF 'purplefin-sbom-attestation' .github/workflows/release.yml
       grep -qF 'SBOM_SIGNER_WORKFLOW' lib/flake-applications.nix
       ! grep -R -qF -- '-sbom-cache' .github automation
@@ -507,7 +537,7 @@ in {
       grep -qF '.#ci-github-actions-secrets' .github/actions/setup-nix/action.yml
       grep -qF 'authToken: ''${{ env.CACHIX_AUTH_TOKEN }}' .github/actions/setup-nix/action.yml
       [[ "$(grep -R -h -oF 'secrets.CACHIX_AUTH_TOKEN' .github | wc -l)" == 1 ]]
-      [[ "$(grep -R -h -oF 'secrets.MERGE_QUEUE_TOKEN' .github | wc -l)" == 6 ]]
+      [[ "$(grep -R -h -oF 'secrets.MERGE_QUEUE_TOKEN' .github | wc -l)" == 7 ]]
       ! grep -R -qF 'token: ''${{ secrets.MERGE_QUEUE_TOKEN' .github
       grep -qF 'GH_TOKEN: ''${{ env.MERGE_QUEUE_TOKEN || github.token }}' \
         .github/workflows/queue-dependabot.yml
@@ -553,6 +583,7 @@ in {
         ${applications.imageSbom}/bin/purplefin-image-sbom \
         ${applications.releaseNotes}/bin/purplefin-release-notes \
         ${applications.updateLocks}/bin/purplefin-update-locks \
+        ${applications.updateHomeRelease}/bin/purplefin-update-home-release \
         ${applications.sbomAttestation}/bin/purplefin-sbom-attestation \
         ${applications.trustedUpdate}/bin/purplefin-trusted-update \
         ${applications.ciGate}/bin/purplefin-ci-gate; do

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+build_root="${PURPLEFIN_BUILD_ROOT:-/tmp/purplefin-build}"
 generated_root="${PURPLEFIN_GENERATED_ROOT:?PURPLEFIN_GENERATED_ROOT is required}"
 installer="${generated_root}/bootc/generated/determinate-nix-installer"
 lock="${generated_root}/bootc/generated/determinate-nix.json"
@@ -106,4 +107,8 @@ test -x "${seed}/nix-installer"
 test -f "${seed}/receipt.json"
 test -d "${seed}/store"
 test -d "${seed}/var/nix"
-systemctl enable nix-daemon.service nix-daemon.socket determinate-nixd.socket
+
+# Assert that the Fedora package did not replace Purplefin's Determinate units,
+# then activate them from the immutable vendor tree. This also repairs upgrades
+# from hosts where the equivalent /etc enablement links were locally absent.
+bash "${build_root}/modules/aspects/base/install-nix-systemd-units.sh"

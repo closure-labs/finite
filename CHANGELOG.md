@@ -243,9 +243,9 @@ All notable changes to Purplefin are documented here. The format follows
 - The required `CI gate` now validates repository policy, selected image and
   installer jobs, merge candidates, and trusted dependency-update automation.
 
-[Unreleased]: https://github.com/declarative-dale/purplefin/compare/v0.2.4...HEAD
-[0.2.4]: https://github.com/declarative-dale/purplefin/releases/tag/v0.2.4
-[0.2.3]: https://github.com/declarative-dale/purplefin/releases/tag/v0.2.3
-[0.2.2]: https://github.com/declarative-dale/purplefin/releases/tag/v0.2.2
-[0.2.1]: https://github.com/declarative-dale/purplefin/releases/tag/v0.2.1
-[0.2.0]: https://github.com/declarative-dale/purplefin/releases/tag/v0.2.0
+[Unreleased]: https://github.com/closure-labs/finite/compare/v0.2.4...HEAD
+[0.2.4]: https://github.com/closure-labs/finite/releases/tag/v0.2.4
+[0.2.3]: https://github.com/closure-labs/finite/releases/tag/v0.2.3
+[0.2.2]: https://github.com/closure-labs/finite/releases/tag/v0.2.2
+[0.2.1]: https://github.com/closure-labs/finite/releases/tag/v0.2.1
+[0.2.0]: https://github.com/closure-labs/finite/releases/tag/v0.2.0
