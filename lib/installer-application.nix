@@ -200,12 +200,12 @@ pkgs.writeShellApplication {
       --certificate-oidc-issuer https://token.actions.githubusercontent.com \
       --certificate-identity "''${cosign_identity}" \
       "''${payload_ref}" >/dev/null
-    gh attestation verify "oci://''${payload_ref}" \
+    DOCKER_CONFIG="''${cosign_config_dir}" gh attestation verify "oci://''${payload_ref}" \
       --bundle-from-oci \
       --repo "''${payload_source_repository}" \
       --signer-workflow "''${payload_source_repository}/.github/workflows/build-profile.yml" \
       --source-digest "''${source_revision}"
-    gh attestation verify "oci://''${payload_ref}" \
+    DOCKER_CONFIG="''${cosign_config_dir}" gh attestation verify "oci://''${payload_ref}" \
       --bundle-from-oci \
       --repo "''${payload_source_repository}" \
       --signer-workflow "''${payload_source_repository}/.github/workflows/attest-software-bill-of-materials.yml" \
@@ -271,6 +271,7 @@ pkgs.writeShellApplication {
         --security-opt label=disable \
         --build-context installer-rootfs=installer/rootfs \
         --build-arg "BASE_REF=''${installer_base}" \
+        --build-arg "INSTALLER_CONTEXT_DIGEST=''${installer_context_digest}" \
         --build-arg "INSTALLER_PAYLOAD_SOURCE_REF=''${payload_update_ref}" \
         --build-arg "INSTALLER_PAYLOAD_TARGET_REF=''${payload_update_ref}" \
         --label "io.finite.installer.input=''${environment_input}" \
