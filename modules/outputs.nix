@@ -175,6 +175,7 @@
   };
   repositoryChecks = import ../lib/repository-checks.nix {
     inherit applications architecture generated lib pkgs;
+    secretspec = inputs.nixpkgs-weekly.legacyPackages.${system}.secretspec;
   };
   formattingSource = lib.cleanSourceWith {
     src = inputs.self;

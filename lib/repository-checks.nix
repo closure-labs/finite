@@ -4,6 +4,7 @@
   generated,
   lib,
   pkgs,
+  secretspec,
 }: let
   root = ../.;
   inherit (lib) fileset;
@@ -215,7 +216,7 @@ in {
   upstream = mkSourceCheck {
     name = "upstream-contracts";
     source = upstreamSource;
-    tools = with pkgs; [gnugrep jq secretspec];
+    tools = with pkgs; [gnugrep jq] ++ [secretspec];
     commands = ''
       # shellcheck disable=SC2016,SC2251
       set -euo pipefail

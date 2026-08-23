@@ -41,9 +41,11 @@ curl() {
 }
 
 nix() {
-	printf 'nix' >>"${MOCK_LOG}"
-	printf ' %q' "$@" >>"${MOCK_LOG}"
-	printf '\n' >>"${MOCK_LOG}"
+	{
+		printf 'nix'
+		printf ' %q' "$@"
+		printf '\n'
+	} >>"${MOCK_LOG}"
 }
 
 export -f curl git nix
