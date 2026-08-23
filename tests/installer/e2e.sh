@@ -42,6 +42,13 @@ cat >>"${test_root}/qemu" <<'EOF'
 set -euo pipefail
 trap 'exit 143' TERM
 echo "$$" >>"${FAKE_QEMU_PIDS}"
+firmware_vars=''
+for argument in "$@"; do
+	case "${argument}" in
+		if=pflash,format=raw,unit=1,file=*) firmware_vars="${argument##*file=}" ;;
+	esac
+done
+[[ -n "${firmware_vars}" && -s "${firmware_vars}" ]]
 if [[ " $* " == *' -kernel '* ]]; then
 	[[ " $* " == *' -initrd '* ]]
 	kernel_arguments="${*: -1}"
@@ -65,6 +72,7 @@ if [[ " $* " == *' -kernel '* ]]; then
 			;;
 		success)
 			python3 -c 'import sys, urllib.request; urllib.request.urlopen(sys.argv[1]).read()' "${host_url}"
+			printf 'transient-direct-kernel-entry\n' >"${firmware_vars}"
 			echo 'Unattended installation complete'
 			exit 0
 			;;
@@ -74,6 +82,7 @@ fi
 
 case "${FAKE_QEMU_MODE}" in
 	boot-success)
+		! grep -qF 'transient-direct-kernel-entry' "${firmware_vars}"
 		echo 'FINITE_INSTALLED_READY=1'
 		sleep 30 &
 		wait $!

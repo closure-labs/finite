@@ -86,6 +86,11 @@ pkgs.writeShellApplication {
       wait "''${pid}" >/dev/null 2>&1 || true
     }
 
+    prepare_firmware_vars() {
+      cp --force -- "''${ovmf_vars_template}" "''${firmware_vars}"
+      chmod u+w "''${firmware_vars}"
+    }
+
     print_phase_logs() {
       local log
       for log in "''${install_log}" "''${boot_log}" "''${server_log}"; do
@@ -129,21 +134,21 @@ pkgs.writeShellApplication {
       -no-reboot
     )
 
+    [[ -s "''${ovmf_code}" && -s "''${ovmf_vars_template}" ]] || {
+      echo 'OVMF firmware is missing from the installer E2E environment' >&2
+      exit 2
+    }
+
     if [[ "''${phase}" == install ]]; then
       [[ -s "''${iso}" ]] || { echo "Installer ISO is missing: ''${iso}" >&2; exit 2; }
       [[ -s "''${kickstart}" ]] || { echo "Kickstart is missing: ''${kickstart}" >&2; exit 2; }
-      [[ -s "''${ovmf_code}" && -s "''${ovmf_vars_template}" ]] || {
-        echo 'OVMF firmware is missing from the installer E2E environment' >&2
-        exit 2
-      }
       rm -f -- \
         "''${disk}" \
         "''${firmware_vars}" \
         "''${kernel}" \
         "''${initrd}" \
         "''${state_root}/install-complete"
-      cp -- "''${ovmf_vars_template}" "''${firmware_vars}"
-      chmod u+w "''${firmware_vars}"
+      prepare_firmware_vars
       "''${qemu_img}" create -q -f qcow2 "''${disk}" 32G
       "''${xorriso}" -osirrox on -indev "''${iso}" \
         -extract /images/pxeboot/vmlinuz "''${kernel}" \
@@ -237,10 +242,14 @@ pkgs.writeShellApplication {
       exit 0
     fi
 
-    [[ -s "''${disk}" && -s "''${firmware_vars}" && -f "''${state_root}/install-complete" ]] || {
+    [[ -s "''${disk}" && -f "''${state_root}/install-complete" ]] || {
       echo "Completed installer state is missing: ''${state_root}" >&2
       exit 2
     }
+    # The direct-kernel installer boot leaves a transient OVMF Boot#### entry
+    # that cannot exist during the disk-only boot. Start the validation boot
+    # from clean firmware variables so OVMF discovers the installed loader.
+    prepare_firmware_vars
     echo 'Booting the installed Finite system'
     : >"''${boot_log}"
     timeout --signal=TERM --kill-after=10s "''${boot_timeout}s" \

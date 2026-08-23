@@ -43,6 +43,12 @@ grep -qF 'if=pflash,format=raw,unit=0,readonly=on' \
 	lib/ci-applications/installer-e2e.nix
 grep -qF 'if=pflash,format=raw,unit=1' \
 	lib/ci-applications/installer-e2e.nix
+firmware_prepare_count="$(
+	grep -cF 'prepare_firmware_vars' lib/ci-applications/installer-e2e.nix
+)"
+[[ "${firmware_prepare_count}" == 3 ]]
+grep -qF 'transient OVMF Boot#### entry' \
+	lib/ci-applications/installer-e2e.nix
 grep -qF -- '--bootc-ref' lib/installer-application.nix
 grep -qF -- '--bootc-installer-payload-ref' lib/installer-application.nix
 grep -qF -- "--bootc-installer-payload-ref \"''\${payload_update_ref}\"" \
