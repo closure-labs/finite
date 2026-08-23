@@ -46,6 +46,11 @@ grep -qF "GHCR_TOKEN is required to read the Finite payload" \
 	lib/installer-application.nix
 grep -qF "auth_args=(--authfile \"''\${registry_auth_file}\")" \
 	lib/installer-application.nix
+attestation_auth_count="$(
+	grep -cF "DOCKER_CONFIG=\"''\${cosign_config_dir}\" gh attestation verify" \
+		lib/installer-application.nix
+)"
+[[ "${attestation_auth_count}" == 2 ]]
 if grep -B2 -F "auth_args=(--authfile \"''\${registry_auth_file}\")" \
 	lib/installer-application.nix | grep -qF 'CACHE_WRITE'; then
 	echo 'Installer payload authentication is conditional on cache writes' >&2
@@ -71,6 +76,11 @@ if grep -A8 -F 'finite-installer-environment-v3' lib/installer-application.nix |
 	exit 1
 fi
 grep -qF -- '--build-arg "BASE_REF=' lib/installer-application.nix
+grep -qF -- '--build-arg "INSTALLER_CONTEXT_DIGEST=' \
+	lib/installer-application.nix
+grep -qF 'ARG INSTALLER_CONTEXT_DIGEST' installer/Containerfile
+# shellcheck disable=SC2016
+grep -qF 'test -n "${INSTALLER_CONTEXT_DIGEST}"' installer/Containerfile
 grep -qF 'ARG BASE_REF=quay.io/fedora/fedora-bootc:44' installer/Containerfile
 grep -qF 'certificate-identity-regexp' lib/installer-application.nix
 grep -qF 'workflows/(build|build-installer)' lib/installer-application.nix
