@@ -5,6 +5,7 @@ pkgs.writeShellApplication {
     bash
     coreutils
     gnugrep
+    OVMF.fd
     python3
     qemu_kvm
     xorriso
@@ -41,6 +42,8 @@ pkgs.writeShellApplication {
     qemu_img="''${FINITE_QEMU_IMG:-qemu-img}"
     python="''${FINITE_PYTHON:-python3}"
     xorriso="''${FINITE_XORRISO:-xorriso}"
+    ovmf_code="${pkgs.OVMF.fd}/FV/OVMF_CODE.fd"
+    ovmf_vars_template="${pkgs.OVMF.fd}/FV/OVMF_VARS.fd"
     kickstart_timeout="''${FINITE_INSTALLER_E2E_KICKSTART_TIMEOUT_SECONDS:-180}"
     install_timeout="''${FINITE_INSTALLER_E2E_INSTALL_TIMEOUT_SECONDS:-1200}"
     boot_timeout="''${FINITE_INSTALLER_E2E_BOOT_TIMEOUT_SECONDS:-180}"
@@ -64,6 +67,7 @@ pkgs.writeShellApplication {
     diagnostics_dir="''${FINITE_INSTALLER_DIAGNOSTICS_DIR:-''${state_root}}"
     install -d -m 0755 "''${diagnostics_dir}"
     disk="''${state_root}/installed.qcow2"
+    firmware_vars="''${state_root}/OVMF_VARS.fd"
     kernel="''${state_root}/vmlinuz"
     initrd="''${state_root}/initrd.img"
     served_kickstart="''${state_root}/finite-ci.ks"
@@ -116,6 +120,8 @@ pkgs.writeShellApplication {
       -machine q35
       -m "''${memory_mb}"
       -smp "''${cpus}"
+      -drive "if=pflash,format=raw,unit=0,readonly=on,file=''${ovmf_code}"
+      -drive "if=pflash,format=raw,unit=1,file=''${firmware_vars}"
       -drive "file=''${disk},if=virtio,format=qcow2"
       -display none
       -serial stdio
@@ -126,7 +132,18 @@ pkgs.writeShellApplication {
     if [[ "''${phase}" == install ]]; then
       [[ -s "''${iso}" ]] || { echo "Installer ISO is missing: ''${iso}" >&2; exit 2; }
       [[ -s "''${kickstart}" ]] || { echo "Kickstart is missing: ''${kickstart}" >&2; exit 2; }
-      rm -f -- "''${disk}" "''${kernel}" "''${initrd}" "''${state_root}/install-complete"
+      [[ -s "''${ovmf_code}" && -s "''${ovmf_vars_template}" ]] || {
+        echo 'OVMF firmware is missing from the installer E2E environment' >&2
+        exit 2
+      }
+      rm -f -- \
+        "''${disk}" \
+        "''${firmware_vars}" \
+        "''${kernel}" \
+        "''${initrd}" \
+        "''${state_root}/install-complete"
+      cp -- "''${ovmf_vars_template}" "''${firmware_vars}"
+      chmod u+w "''${firmware_vars}"
       "''${qemu_img}" create -q -f qcow2 "''${disk}" 32G
       "''${xorriso}" -osirrox on -indev "''${iso}" \
         -extract /images/pxeboot/vmlinuz "''${kernel}" \
@@ -220,7 +237,7 @@ pkgs.writeShellApplication {
       exit 0
     fi
 
-    [[ -s "''${disk}" && -f "''${state_root}/install-complete" ]] || {
+    [[ -s "''${disk}" && -s "''${firmware_vars}" && -f "''${state_root}/install-complete" ]] || {
       echo "Completed installer state is missing: ''${state_root}" >&2
       exit 2
     }
