@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-generated_root="${PURPLEFIN_GENERATED_ROOT:?PURPLEFIN_GENERATED_ROOT is required}"
+generated_root="${FINITE_GENERATED_ROOT:?FINITE_GENERATED_ROOT is required}"
 catalog="${generated_root}/bootc/generated/profile-catalog.json"
 matrix="${generated_root}/bootc/generated/image-matrix.json"
 
@@ -14,7 +14,7 @@ test -f "${home_catalog}"
 jq -e '
   .schema == 4 and
   (.profiles | length) == 4 and
-  all(.profiles[]; .parent == null and .roles == []) and
+  all(.profiles[]; .parent == null and .roles == [] and (.foundation == "bluefin" or .foundation == "bluefin-dx")) and
   .profiles["bluefin-generic"].modules == ["base", "hardware-generic-x86_64"] and
   .profiles["bluefin-dx-dell-xps-9350-intel"].modules == ["base", "hardware-dell-xps-9350-intel"]
 ' "${catalog}" >/dev/null
@@ -23,17 +23,29 @@ jq -e 'length == 4 and all(.[];
   (.build_input | test("^[0-9a-f]{64}$")) and
   (.upstream.digest | test("^sha256:[0-9a-f]{64}$")))' "${matrix}" >/dev/null
 jq -e '
-  .schema == 1 and
-  (.profiles | length) == 8 and
-  .profiles.sales.baseClass == "bluefin" and
-  .profiles.support.baseClass == "bluefin-dx" and
-  .profiles.dale.roles == ["sales", "executive", "developer", "support", "it", "trainer"] and
-  .profiles.dale.hardware == ["dell-xps-9350-intel"] and
-  .profiles.elad.baseClass == "bluefin-dx" and
-  .profiles.elad.roles == ["sales", "executive", "developer", "support", "it", "trainer"] and
-  .profiles.elad.hardware == ["generic-x86_64"] and
-  .profiles.elad.foundations == ["bluefin-dx-generic"]
+  .schema == 2 and
+  (.foundations | keys) == ["bluefin", "bluefin-dx"] and
+  (.hardware | keys) == ["dell-xps-9350-intel", "generic-x86_64"] and
+  (.roles | keys) == ["developer", "executive", "it", "sales", "support", "trainer"] and
+  .foundations.bluefin.template == "home-bluefin" and
+  .foundations["bluefin-dx"].template == "home-bluefin-dx" and
+  all(.compatibility[]; (.hardware | length) == 2 and (.roles | length) == 6) and
+  all(.roles[]; (.foundations | sort) == ["bluefin", "bluefin-dx"])
 ' "${home_catalog}" >/dev/null
+
+for profile in \
+	bluefin-generic \
+	bluefin-dell-xps-9350-intel \
+	bluefin-dx-generic \
+	bluefin-dx-dell-xps-9350-intel; do
+	grep -qF -- "- ${profile}" .github/workflows/build-installer.yml
+done
+if rg -q \
+	'base-generic-x86_64|base-dell-xps-9350-intel|sales-generic|sales-dell|support-generic|support-dell|developer-generic|trainer-generic|executive-generic|it-generic' \
+	.github/workflows; then
+	echo 'A removed fixed profile tag remains in the workflows' >&2
+	exit 1
+fi
 
 while IFS=$'\t' read -r profile step script; do
 	[[ -x "${script}" ]] || {
@@ -88,8 +100,8 @@ if grep -qF 'bluefin:stable' bootc/Containerfile; then
 	exit 1
 fi
 grep -qF 'COPY modules/aspects/' bootc/Containerfile
-grep -qF '/tmp/purplefin-build/bootc/builder/full.sh' bootc/Containerfile
-grep -qF '/tmp/purplefin-build/bootc/builder/derived.sh' bootc/Containerfile.derived
+grep -qF '/tmp/finite-build/bootc/builder/full.sh' bootc/Containerfile
+grep -qF '/tmp/finite-build/bootc/builder/derived.sh' bootc/Containerfile.derived
 
 for obsolete in nix bootc/modules bootc/overlays bootc/components bootc/packages bootc/config installer/overlay ci; do
 	test ! -e "${obsolete}" || {
@@ -101,8 +113,8 @@ test ! -e tests/ci.sh
 
 test -x bootc/builder/full.sh
 test -x bootc/builder/derived.sh
-grep -qF "purplefin_finalize_profile \"\${profile}\" \"\${profile_catalog}\"" bootc/builder/full.sh
-grep -qF "purplefin_finalize_profile \"\${profile}\" \"\${profile_catalog}\"" bootc/builder/derived.sh
+grep -qF "finite_finalize_profile \"\${profile}\" \"\${profile_catalog}\"" bootc/builder/full.sh
+grep -qF "finite_finalize_profile \"\${profile}\" \"\${profile_catalog}\"" bootc/builder/derived.sh
 grep -qF "local profile_catalog=\"\$2\"" bootc/builder/lib/finalize-profile.sh
 test -x modules/aspects/base/apply.sh
 test -d modules/aspects/base/rootfs
@@ -122,7 +134,7 @@ if find modules/aspects/roles -type d \( -path '*/rootfs/files' -o -path '*/root
 	exit 1
 fi
 
-grep -qF 'dnf5 -y install cloud-init nix nix-daemon' modules/aspects/base/apply.sh
+grep -qF 'dnf5 -y install cloud-init jq nix nix-daemon yq zenity' modules/aspects/base/apply.sh
 if grep -qF 'install -d -m 0755 /nix' \
 	modules/aspects/base/apply.sh modules/aspects/base/install-determinate-nix.sh; then
 	echo 'Fedora nix-filesystem must own creation of /nix' >&2
@@ -133,22 +145,30 @@ test ! -e modules/aspects/base/independently-managed-rpms.list
 test ! -e bootc/builder/lib/independently-managed-rpms.sh
 grep -qF 'bitwarden-cli' modules/aspects/base/default.nix
 grep -qF 'nixGL.wrap weeklyPkgs.bitwarden-desktop' modules/aspects/base/default.nix
-grep -qF "programs.nh.homeFlake = \"path:\${config.xdg.configHome}/home-manager\"" \
-	modules/outputs.nix
-grep -qF 'home.activation.writeHomeManagerFlake' modules/outputs.nix
-grep -qF 'sourceFlake ? "github:closure-labs/finite"' modules/outputs.nix
-grep -qF "sourceFlake = \${builtins.toJSON sourceFlake};" modules/outputs.nix
-grep -qF 'nixpkgs.url = "https://flakehub.com/f/DeterminateSystems/nixpkgs-26.05-chilled/0.1"' \
-	modules/outputs.nix
-grep -qF 'url = "https://flakehub.com/f/nix-community/home-manager/0.2605"' modules/outputs.nix
-grep -qF 'inputs.nixpkgs.follows = "nixpkgs"' modules/outputs.nix
-grep -qF 'inputs.nixpkgs-weekly.follows = "nixpkgs-weekly"' modules/outputs.nix
-grep -qF 'inputs.home-manager.follows = "home-manager"' modules/outputs.nix
-if grep -qF 'xdg.configFile."home-manager/flake.nix"' modules/outputs.nix; then
-	echo 'The nh driver flake must be materialized instead of linked into the Nix store' >&2
+# shellcheck disable=SC2016
+grep -qF 'den.homes.${system}.finite' lib/home-manager-flake-module.nix
+grep -qF 'den.aspects.finite-home' lib/home-manager-flake-module.nix
+grep -qF 'nh.homeFlake' lib/home-manager-flake-module.nix
+grep -qF 'zsh.shellAliases.finite-configure' lib/home-manager-flake-module.nix
+grep -qF 'finite.flakeModules.home' lib/home-profile-applications.nix
+# shellcheck disable=SC2016
+grep -qF '"$nix_command" --accept-flake-config flake lock "$workflake"' lib/home-profile-applications.nix
+grep -qF 'homeConfigurations.finite.activationPackage' lib/home-profile-applications.nix
+grep -qF 'ConditionPathExists=!%h/.config/finite/profile.json' \
+	modules/aspects/base/rootfs/usr/lib/systemd/user/finite-home-first-login.service
+test -L modules/aspects/base/rootfs/etc/systemd/user/graphical-session.target.wants/finite-home-first-login.service
+test -x modules/aspects/base/rootfs/usr/libexec/finite/home-first-login
+if rg -n 'den\.lib\.aspects\.resolve' --glob '*.nix' lib modules; then
+	echo 'Production code uses Den internal aspect resolution' >&2
 	exit 1
 fi
-if grep -qF '/purplefin/home' modules/outputs.nix; then
-	echo 'The nh driver flake must use the standard ~/.config/home-manager directory' >&2
+
+old_product='purple''fin'
+if find . -path './flake.nix' -prune -o -iname "*${old_product}*" -print | grep -q .; then
+	echo 'A tracked path retains the former product name' >&2
+	exit 1
+fi
+if rg -i "${old_product}" --glob '!flake.nix'; then
+	echo 'Former product text exists outside the centralized legacy cache configuration' >&2
 	exit 1
 fi

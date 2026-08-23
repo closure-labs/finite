@@ -1,170 +1,110 @@
 # Installation and updates
 
-Purplefin can replace the image on an existing bootc system or be installed
-with its graphical Anaconda ISO.
+Finite publishes four foundation images:
 
-## Choose a foundation and home profile
-
-Common published tags are:
-
-| Tag | Target |
+| Tag | Foundation and hardware |
 | --- | --- |
-| `bluefin-generic` (`latest`) | Standard Bluefin on generic x86-64 |
-| `bluefin-dell-xps-9350-intel` | Standard Bluefin on Dell XPS 13 9350 |
-| `bluefin-dx-generic` | Bluefin DX on generic x86-64 |
-| `bluefin-dx-dell-xps-9350-intel` | Bluefin DX on Dell XPS 13 9350 |
+| `bluefin-generic` (`latest`) | Bluefin, generic x86-64 |
+| `bluefin-dell-xps-9350-intel` | Bluefin, Dell XPS 13 9350 |
+| `bluefin-dx-generic` | Bluefin DX, generic x86-64 |
+| `bluefin-dx-dell-xps-9350-intel` | Bluefin DX, Dell XPS 13 9350 |
 
-Legacy role tags temporarily point at their compatible foundation. The role
-itself is selected with Home Manager: `sales` and `executive` require Bluefin;
-`developer`, `support`, `it`, and `trainer` require Bluefin DX. `dale` combines
-every role and requires the Dell Bluefin DX foundation. `elad` combines every
-role on generic Bluefin DX so none of the Dell IPU7/SVP7500 camera layer or its
-associated kernel modules are present.
+Roles are not image tags. Every combination of the six roles is selected per
+user through Home Manager after the foundation boots.
 
-The generated catalog contains every profile and tag:
-
-```bash
-nix build .#generated
-jq '.profiles | with_entries(.value = .value.tags)' \
-  result/bootc/generated/profile-catalog.json
-```
+Finite-branded rEFInd entries are installed by the Dell hardware image. All
+four images display the Finite mark in the Plymouth splash after a boot entry
+is selected.
 
 ## Switch an existing bootc system
 
-Replace `latest` with the selected profile tag:
-
-```bash
+```console
 run0 bootc switch ghcr.io/closure-labs/finite:latest
 run0 systemctl reboot
-```
-
-Inspect the active and staged deployments:
-
-```bash
 bootc status
 ```
 
-## Determinate Nix lifecycle
+Use another tag from the table when appropriate. Update or roll back with:
 
-Purplefin first installs Fedora's supported `nix` and `nix-daemon` packages,
-then runs the pinned Determinate Nix Installer. The immutable image build uses
-a narrow adapter around Determinate's existing-Nix preflight while retaining
-Fedora's native filesystem and sysusers contracts. Base-image builds require
-Determinate Nix 3.21.9 or newer; the
-installer may resolve a later stable runtime, but an older runtime fails the
-image build before publication.
-
-The Fedora `nix-filesystem` dependency supplies `/nix`; Purplefin does not
-create that directory separately. Because bootc keeps the image root immutable
-and `/nix` must be writable, first boot copies the image seed to persistent
-`/var/home/nix` and bind-mounts it at `/nix` before the Nix daemon starts. Later
-boots preserve that state, including installed packages and store paths.
-The daemon and socket activation links live in the immutable systemd vendor
-tree, so fresh installations start Nix without depending on an `/etc` merge.
-This also restores activation after switching an existing bootc workstation
-whose retained `/etc` state omitted older Nix enablement links.
-Before binding the daemon sockets, Purplefin removes socket files retained in
-persistent state by an older installation; store paths and profiles are left
-untouched.
-
-Determinate Nixd owns Nix upgrades after migration. Use the normal Determinate
-Nix upgrade mechanism rather than upgrading the runtime through Fedora's Nix
-packages. A bootc upgrade may update the seed used by new installations, but
-never overwrites an existing `/var/home/nix`.
-
-The pinned Determinate policy module and its upstream `nix.fc` file-context
-source are verified as build inputs. The policy is installed before the Nix
-state is restored and relabeled.
-
-## Apply a Home Manager role
-
-Run this as the existing desktop user after booting the compatible foundation:
-
-```bash
-nix run github:closure-labs/finite#home-switch -- \
-  --profile sales --hardware generic-x86_64
-```
-
-The bootstrap records the canonical Purplefin flake as the update source. When
-installing from a fork, local checkout, or pinned reference, pass the same
-reference with `--source FLAKE`.
-
-Home Manager owns the role applications and preferences, including NixGL
-wrappers for graphical Nix packages. Bitwarden CLI and Desktop are installed
-from Nix rather than baked into the image. The locked Devenv CLI is included
-in the `developer`, `dale`, and `elad` profiles. Espanso remains available to the
-`support`, `dale`, and `elad` profiles as a Wayland Nix package and user
-service. The initial activation writes a standalone per-user flake under
-`~/.config/home-manager`; it records the selected role, hardware, username,
-and absolute home directory required by Home Manager. It pairs the chilled
-Nixpkgs 26.05 series with Home Manager 26.05, while its Purplefin input uses the
-canonical GitHub flake by default, so the source repository does not need to
-exist on the deployed workstation. `nh` discovers this flake through an
-explicit `path:` URI and selects its `homeConfigurations.$USER` output
-automatically. Reapply the locked generation with `nh home switch`. Update only
-the Purplefin input and activate it with:
-
-```bash
-nh home switch --update-input purplefin
-```
-
-For compatibility, Zsh provides `purplefin-home` as an alias for the
-update-and-switch command.
-
-## Generate a cloud-init NoCloud seed
-
-Cloud-init is additive and does not create users, change networking, or replace
-the installer hostname. Generate a seed for an account that the installer will
-create:
-
-```bash
-nix run .#cloud-init -- \
-  --profile support \
-  --hardware generic-x86_64 \
-  --user dale \
-  --output result/cloud-init-support
-```
-
-Attach `seed.iso` from that directory as a NoCloud configuration drive. The
-first boot activates the chosen Home Manager profile for that existing user.
-Use `--flake` to select a fork or pinned flake URI.
-
-## Install from ISO
-
-1. Run the `Build and boot-test Purplefin installer ISO` workflow from `main`.
-2. Select the profile to embed.
-3. Download the `purplefin-<profile>-installer` workflow artifact.
-4. Verify the checksums and GitHub attestation:
-
-   ```bash
-   sha256sum --check SHA256SUMS
-   gh attestation verify purplefin-*.iso \
-     --repo closure-labs/finite
-   ```
-
-5. Write the ISO to installation media, boot it, and complete the graphical
-   installer.
-
-The artifact also contains `installer-manifest.json` and `qemu-boot.log`. The
-schema-v2 manifest records the ISO, source commit, Image Builder, minimal
-Fedora bootc live-environment base, and Purplefin payload. Its
-`embedded_reference` is the exact verified digest incorporated into the ISO;
-`update_reference` is the mutable profile tag that the installed system tracks.
-
-## Update or roll back
-
-Stage the newest image for the current tag and reboot:
-
-```bash
+```console
 run0 bootc upgrade
 run0 systemctl reboot
-```
-
-To return to the previous deployment:
-
-```bash
+# or
 run0 bootc rollback
 run0 systemctl reboot
 ```
 
-See [Troubleshooting](troubleshooting.md) for image, installer, and boot checks.
+## First graphical login
+
+`finite-home-first-login.service` runs independently for every local graphical
+user. If `~/.config/finite/profile.json` already exists it exits immediately.
+Otherwise it imports `/etc/finite/home-profiles/$USER.yaml` without prompting,
+or shows a Zenity checklist with all roles initially unchecked.
+
+Choosing Configure with no roles creates the base-only environment. Canceling
+or closing the dialog writes nothing, and the selector returns at the next
+graphical login. Build or activation errors are shown graphically, recorded in
+the user journal, and retried on a later login. Run `finite-configure` at any
+time to change the selected roles; the running image remains authoritative for
+foundation and hardware.
+
+## Provision with cloud-init
+
+Generate a NoCloud seed containing YAML for an installer-created account:
+
+```console
+nix run .#cloud-init -- \
+  --foundation bluefin-dx \
+  --hardware generic-x86_64 \
+  --roles developer,support \
+  --user dale \
+  --output result/cloud-init-dale
+```
+
+Attach `seed.iso` as a NoCloud configuration drive. Cloud-init writes only
+`/etc/finite/home-profiles/dale.yaml`; it does not invoke a named preset, create
+users, replace networking, or change the installer hostname. First-login
+validates and imports the seed.
+
+## Bootstrap manually
+
+```console
+nix run github:closure-labs/finite#home-profile -- \
+  --foundation bluefin-dx --hardware generic-x86_64 \
+  --roles developer,support --format yaml >profile.yaml
+nix run github:closure-labs/finite#home-bootstrap -- --profile profile.yaml
+```
+
+Bootstrap validates before writing, generates a remote-input lock, builds the
+activation package, atomically replaces the managed files, and activates only
+after the build succeeds. Later updates use:
+
+```console
+nh home switch --update-input finite
+```
+
+## Determinate Nix lifecycle
+
+Finite installs Fedora's Nix filesystem and account contracts before applying
+the pinned Determinate Nix installer and SELinux policy. `/nix` is backed by
+persistent `/var/home/nix`; image updates never overwrite an existing store.
+Determinate Nixd owns runtime upgrades. Finite removes only stale daemon socket
+files before binding the persistent state.
+
+## Install from ISO
+
+1. Run the `Build and boot-test Finite installer ISO` workflow from `main`.
+2. Select one of the four foundation profiles.
+3. Download the `finite-<profile>-installer` artifact.
+4. Verify it:
+
+   ```console
+   sha256sum --check SHA256SUMS
+   gh attestation verify finite-*.iso --repo closure-labs/finite
+   ```
+
+5. Write the ISO to installation media and complete Anaconda.
+
+The manifest records immutable payload and builder digests, the source commit,
+the embedded reference, and the mutable update reference. See
+[Troubleshooting](troubleshooting.md) for runtime and installer checks.

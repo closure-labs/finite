@@ -7,7 +7,7 @@ trap 'rm -rf -- "${test_root}"' EXIT
 
 printf 'iso\n' >"${test_root}/installer.iso"
 payload_digest='sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
-update_reference='ghcr.io/example/purplefin:base-generic-x86_64'
+update_reference='ghcr.io/example/finite:bluefin-generic'
 sed \
 	-e "s|@@INSTALLER_PAYLOAD_SOURCE_REF@@|${update_reference}|g" \
 	-e "s|@@INSTALLER_PAYLOAD_TARGET_REF@@|${update_reference}|g" \
@@ -74,7 +74,7 @@ fi
 
 case "${FAKE_QEMU_MODE}" in
 	boot-success)
-		echo 'PURPLEFIN_INSTALLED_READY=1'
+		echo 'FINITE_INSTALLED_READY=1'
 		sleep 30 &
 		wait $!
 		;;
@@ -96,14 +96,14 @@ run_e2e() {
 	shift
 	FAKE_QEMU_MODE="${mode}" \
 		FAKE_QEMU_PIDS="${test_root}/qemu-pids" \
-		PURPLEFIN_INSTALLER_DIAGNOSTICS_DIR="${test_root}/diagnostics" \
-		PURPLEFIN_QEMU_IMG="${test_root}/qemu-img" \
-		PURPLEFIN_QEMU="${test_root}/qemu" \
-		PURPLEFIN_XORRISO="${test_root}/xorriso" \
-		PURPLEFIN_INSTALLER_E2E_KICKSTART_TIMEOUT_SECONDS=3 \
-		PURPLEFIN_INSTALLER_E2E_INSTALL_TIMEOUT_SECONDS=1 \
-		PURPLEFIN_INSTALLER_E2E_BOOT_TIMEOUT_SECONDS=1 \
-		PURPLEFIN_INSTALLER_SMOKE_POLL_INTERVAL_SECONDS=0.05 \
+		FINITE_INSTALLER_DIAGNOSTICS_DIR="${test_root}/diagnostics" \
+		FINITE_QEMU_IMG="${test_root}/qemu-img" \
+		FINITE_QEMU="${test_root}/qemu" \
+		FINITE_XORRISO="${test_root}/xorriso" \
+		FINITE_INSTALLER_E2E_KICKSTART_TIMEOUT_SECONDS=3 \
+		FINITE_INSTALLER_E2E_INSTALL_TIMEOUT_SECONDS=1 \
+		FINITE_INSTALLER_E2E_BOOT_TIMEOUT_SECONDS=1 \
+		FINITE_INSTALLER_SMOKE_POLL_INTERVAL_SECONDS=0.05 \
 		"${installer_e2e}" "$@"
 }
 
@@ -134,9 +134,9 @@ success_state="${test_root}/success-state"
 run_e2e success install \
 	"${test_root}/installer.iso" "${test_root}/installer.ks" "${success_state}"
 grep -qF 'Unattended installation complete' "${test_root}/diagnostics/qemu-install.log"
-grep -qF '"GET /purplefin-ci.ks ' "${test_root}/diagnostics/qemu-kickstart-server.log"
+grep -qF '"GET /finite-ci.ks ' "${test_root}/diagnostics/qemu-kickstart-server.log"
 run_e2e boot-success boot "${success_state}"
-grep -qF 'PURPLEFIN_INSTALLED_READY=1' "${test_root}/diagnostics/qemu-installed-boot.log"
+grep -qF 'FINITE_INSTALLED_READY=1' "${test_root}/diagnostics/qemu-installed-boot.log"
 
 assert_status 1 boot-wrong-digest boot "${success_state}"
 grep -qF 'qemu-installed-boot.log' "${test_root}/boot-wrong-digest.out"
@@ -149,10 +149,10 @@ while IFS= read -r pid; do
 	fi
 done <"${test_root}/qemu-pids"
 
-ready_script="${test_root}/purplefin-ci-installed-ready"
+ready_script="${test_root}/finite-ci-installed-ready"
 awk '
 	/^#!\/usr\/bin\/bash$/ { capture = 1 }
-	/^PURPLEFIN_EOF$/ && capture { exit }
+	/^FINITE_EOF$/ && capture { exit }
 	capture { print }
 ' "${test_root}/installer.ks" >"${ready_script}"
 chmod +x "${ready_script}"
@@ -170,33 +170,33 @@ chmod +x "${test_root}/bootc"
 run_ready_script() {
 	FAKE_BOOT_DIGEST=$1 \
 		FAKE_BOOT_REFERENCE=$2 \
-		PURPLEFIN_BOOTC="${test_root}/bootc" \
-		PURPLEFIN_CONSOLE="${test_root}/console" \
-		PURPLEFIN_PYTHON="$(command -v python3)" \
+		FINITE_BOOTC="${test_root}/bootc" \
+		FINITE_CONSOLE="${test_root}/console" \
+		FINITE_PYTHON="$(command -v python3)" \
 		bash "${ready_script}"
 }
 
 : >"${test_root}/console"
 run_ready_script "${payload_digest}" "${update_reference}"
-grep -qF "PURPLEFIN_INSTALLED_DIGEST=${payload_digest}" "${test_root}/console"
-grep -qF "PURPLEFIN_INSTALLED_REFERENCE=${update_reference}" "${test_root}/console"
-grep -qF 'PURPLEFIN_INSTALLED_READY=1' "${test_root}/console"
+grep -qF "FINITE_INSTALLED_DIGEST=${payload_digest}" "${test_root}/console"
+grep -qF "FINITE_INSTALLED_REFERENCE=${update_reference}" "${test_root}/console"
+grep -qF 'FINITE_INSTALLED_READY=1' "${test_root}/console"
 
 if run_ready_script 'sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb' "${update_reference}"; then
 	echo 'Installed readiness accepted the wrong payload digest' >&2
 	exit 1
 fi
-grep -qF 'PURPLEFIN_INSTALLED_ERROR=digest-mismatch' "${test_root}/console"
-if grep -qF 'PURPLEFIN_INSTALLED_READY=1' "${test_root}/console"; then
+grep -qF 'FINITE_INSTALLED_ERROR=digest-mismatch' "${test_root}/console"
+if grep -qF 'FINITE_INSTALLED_READY=1' "${test_root}/console"; then
 	echo 'Installed readiness emitted success for the wrong payload digest' >&2
 	exit 1
 fi
-if run_ready_script "${payload_digest}" 'ghcr.io/example/purplefin:wrong-channel'; then
+if run_ready_script "${payload_digest}" 'ghcr.io/example/finite:wrong-channel'; then
 	echo 'Installed readiness accepted the wrong update reference' >&2
 	exit 1
 fi
-grep -qF 'PURPLEFIN_INSTALLED_ERROR=reference-mismatch' "${test_root}/console"
-if grep -qF 'PURPLEFIN_INSTALLED_READY=1' "${test_root}/console"; then
+grep -qF 'FINITE_INSTALLED_ERROR=reference-mismatch' "${test_root}/console"
+if grep -qF 'FINITE_INSTALLED_READY=1' "${test_root}/console"; then
 	echo 'Installed readiness emitted success for the wrong update reference' >&2
 	exit 1
 fi

@@ -18,7 +18,7 @@ _: {
       enableCompletion = true;
       historySubstringSearch.enable = true;
       syntaxHighlighting.enable = true;
-      initContent = builtins.readFile ./rootfs/usr/share/purplefin/zsh/.zshrc;
+      initContent = builtins.readFile ./rootfs/usr/share/finite/zsh/.zshrc;
     };
 
     programs.fzf = {
@@ -27,12 +27,12 @@ _: {
     };
 
     xdg.configFile = {
-      "ghostty/config".source = ./rootfs/usr/share/purplefin/ghostty/config.ghostty;
-      "zsh/aliases.zsh".source = ./rootfs/usr/share/purplefin/zsh/aliases.zsh;
-      "zsh/bindings.zsh".source = ./rootfs/usr/share/purplefin/zsh/bindings.zsh;
-      "zsh/fzf.zsh".source = ./rootfs/usr/share/purplefin/zsh/fzf.zsh;
-      "zsh/prompt.zsh".source = ./rootfs/usr/share/purplefin/zsh/prompt.zsh;
-      "zsh/starship.toml".source = ./rootfs/usr/share/purplefin/zsh/starship.toml;
+      "ghostty/config".source = ./rootfs/usr/share/finite/ghostty/config.ghostty;
+      "zsh/aliases.zsh".source = ./rootfs/usr/share/finite/zsh/aliases.zsh;
+      "zsh/bindings.zsh".source = ./rootfs/usr/share/finite/zsh/bindings.zsh;
+      "zsh/fzf.zsh".source = ./rootfs/usr/share/finite/zsh/fzf.zsh;
+      "zsh/prompt.zsh".source = ./rootfs/usr/share/finite/zsh/prompt.zsh;
+      "zsh/starship.toml".source = ./rootfs/usr/share/finite/zsh/starship.toml;
     };
   };
 }

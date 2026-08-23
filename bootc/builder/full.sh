@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-build_root="${PURPLEFIN_BUILD_ROOT:-/tmp/purplefin-build}"
-generated_root="${PURPLEFIN_GENERATED_ROOT:-${build_root}}"
+build_root="${FINITE_BUILD_ROOT:-/tmp/finite-build}"
+generated_root="${FINITE_GENERATED_ROOT:-${build_root}}"
 profile="${1:-${BUILD_PROFILE:-bluefin-generic}}"
 profile_catalog="${generated_root}/bootc/generated/profile-catalog.json"
 modules=()
@@ -21,11 +21,11 @@ mapfile -t build_steps < <(
 	jq -er --arg profile "${profile}" '.profiles[$profile].buildSteps[] | [.name, .script] | @tsv' "${profile_catalog}"
 )
 
-# shellcheck source=/tmp/purplefin-build/bootc/builder/lib/authselect-features.sh
+# shellcheck source=/tmp/finite-build/bootc/builder/lib/authselect-features.sh
 source "${build_root}/bootc/builder/lib/authselect-features.sh"
-# shellcheck source=/tmp/purplefin-build/bootc/builder/lib/hardware-security.sh
+# shellcheck source=/tmp/finite-build/bootc/builder/lib/hardware-security.sh
 source "${build_root}/bootc/builder/lib/hardware-security.sh"
-purplefin_authselect_reset
+finite_authselect_reset
 
 hardware_count=0
 declare -A applied_steps=()
@@ -42,7 +42,7 @@ for build_step in "${build_steps[@]}"; do
 	if [[ "${step_name}" == base ]]; then
 		[[ "${#applied_steps[@]}" -eq 0 ]] || { echo "base must be the first build step in ${profile}" >&2; exit 2; }
 	fi
-	echo ":: Applying Purplefin aspect: ${step_name}"
+	echo ":: Applying Finite aspect: ${step_name}"
 	"${step_path}"
 	applied_steps["${step_name}"]=1
 done
@@ -54,7 +54,7 @@ else
 	[[ "${hardware_count}" -eq 1 ]] || { echo "Profile ${profile} must include exactly one hardware aspect" >&2; exit 2; }
 fi
 
-purplefin_authselect_finalize
-# shellcheck source=/tmp/purplefin-build/bootc/builder/lib/finalize-profile.sh
+finite_authselect_finalize
+# shellcheck source=/tmp/finite-build/bootc/builder/lib/finalize-profile.sh
 source "${build_root}/bootc/builder/lib/finalize-profile.sh"
-purplefin_finalize_profile "${profile}" "${profile_catalog}" "${modules[@]}"
+finite_finalize_profile "${profile}" "${profile_catalog}" "${modules[@]}"

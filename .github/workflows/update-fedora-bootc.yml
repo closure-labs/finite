@@ -34,7 +34,7 @@ jobs:
         id: resolve
         run: >-
           nix shell --accept-flake-config .#ci-source-update
-          -c purplefin-source-update fedora-bootc "${GITHUB_OUTPUT}"
+          -c finite-source-update fedora-bootc "${GITHUB_OUTPUT}"
 
       - name: Open or update pull request
         if: steps.resolve.outputs.changed == 'true'
@@ -68,4 +68,4 @@ jobs:
           PR_NUMBER: ${{ steps.update.outputs.pull-request-number }}
         run: >-
           nix shell --accept-flake-config .#ci-trusted-update
-          -c purplefin-trusted-update
+          -c finite-trusted-update

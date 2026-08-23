@@ -1,10 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+finite_logo="modules/aspects/base/rootfs/usr/share/finite/finite-logo.png"
+for icon in os_bluefin os_fedora os_finite os_linux; do
+	cmp -s "${finite_logo}" \
+		"modules/aspects/hardware/dell-xps-9350-intel/rootfs/usr/share/finite/refind/themes/rEFInd-Regular-Dark/icons/${icon}.png"
+done
+
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.." && pwd)"
-battery_helper="${repo_root}/modules/aspects/hardware/dell-xps-9350-intel/rootfs/usr/libexec/purplefin/configure-dell-xps-9350-battery"
-panel_helper="${repo_root}/modules/aspects/hardware/dell-xps-9350-intel/rootfs/usr/libexec/purplefin/dell-xps-9350-panel-policy"
-vendor_battery_config="${repo_root}/modules/aspects/hardware/dell-xps-9350-intel/rootfs/usr/lib/purplefin/dell-xps-9350-battery.conf"
+battery_helper="${repo_root}/modules/aspects/hardware/dell-xps-9350-intel/rootfs/usr/libexec/finite/configure-dell-xps-9350-battery"
+panel_helper="${repo_root}/modules/aspects/hardware/dell-xps-9350-intel/rootfs/usr/libexec/finite/dell-xps-9350-panel-policy"
+vendor_battery_config="${repo_root}/modules/aspects/hardware/dell-xps-9350-intel/rootfs/usr/lib/finite/dell-xps-9350-battery.conf"
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "${tmpdir}"' EXIT
 
@@ -98,12 +104,12 @@ printf '%s\n' 90 >"${tmpdir}/battery/power/BAT0/charge_control_end_threshold"
 : >"${tmpdir}/battery/upower.log"
 
 battery_env=(
-	"PURPLEFIN_DELL_BATTERY_VENDOR_CONFIG=${vendor_battery_config}"
-	"PURPLEFIN_DELL_BATTERY_CONFIG=${tmpdir}/battery/local.conf"
-	"PURPLEFIN_DELL_BATTERY_DMI_ROOT=${tmpdir}/battery/dmi"
-	"PURPLEFIN_DELL_BATTERY_POWER_SUPPLY_ROOT=${tmpdir}/battery/power"
-	"PURPLEFIN_DELL_BATTERY_BUSCTL=${tmpdir}/bin/busctl"
-	"PURPLEFIN_DELL_BATTERY_UPOWER=${tmpdir}/bin/upower"
+	"FINITE_DELL_BATTERY_VENDOR_CONFIG=${vendor_battery_config}"
+	"FINITE_DELL_BATTERY_CONFIG=${tmpdir}/battery/local.conf"
+	"FINITE_DELL_BATTERY_DMI_ROOT=${tmpdir}/battery/dmi"
+	"FINITE_DELL_BATTERY_POWER_SUPPLY_ROOT=${tmpdir}/battery/power"
+	"FINITE_DELL_BATTERY_BUSCTL=${tmpdir}/bin/busctl"
+	"FINITE_DELL_BATTERY_UPOWER=${tmpdir}/bin/upower"
 	"MOCK_UPOWER_LOG=${tmpdir}/battery/upower.log"
 )
 
@@ -164,33 +170,33 @@ panel_env=(
 	"HOME=${tmpdir}/panel/home"
 	"XDG_CONFIG_HOME=${tmpdir}/panel/config"
 	"XDG_STATE_HOME=${tmpdir}/panel/state"
-	"PURPLEFIN_PANEL_DMI_ROOT=${tmpdir}/panel/dmi"
-	"PURPLEFIN_PANEL_DRM_ROOT=${tmpdir}/panel/drm"
-	"PURPLEFIN_PANEL_POWER_SUPPLY_ROOT=${tmpdir}/panel/power"
-	"PURPLEFIN_PANEL_GDCTL=${tmpdir}/bin/gdctl"
-	"PURPLEFIN_PANEL_GDBUS=${tmpdir}/bin/gdbus"
-	"PURPLEFIN_PANEL_GSETTINGS=${tmpdir}/bin/gsettings"
+	"FINITE_PANEL_DMI_ROOT=${tmpdir}/panel/dmi"
+	"FINITE_PANEL_DRM_ROOT=${tmpdir}/panel/drm"
+	"FINITE_PANEL_POWER_SUPPLY_ROOT=${tmpdir}/panel/power"
+	"FINITE_PANEL_GDCTL=${tmpdir}/bin/gdctl"
+	"FINITE_PANEL_GDBUS=${tmpdir}/bin/gdbus"
+	"FINITE_PANEL_GSETTINGS=${tmpdir}/bin/gsettings"
 	"MOCK_GDCTL_STATE=${tmpdir}/panel/gdctl-state"
 	"MOCK_GDCTL_LOG=${tmpdir}/panel/gdctl.log"
 	"MOCK_GSETTINGS_LOG=${tmpdir}/panel/gsettings.log"
 )
 
 write_panel_state 1920x1200@60.000 1920x1200@120.000+vrr
-env "${panel_env[@]}" PURPLEFIN_PANEL_AMBIENT_BRIGHTNESS_MIGRATION_ENABLED=false \
+env "${panel_env[@]}" FINITE_PANEL_AMBIENT_BRIGHTNESS_MIGRATION_ENABLED=false \
 	MOCK_ON_BATTERY=false bash "${panel_helper}" --apply >/dev/null
 grep -qF -- '--scale 1.25 --transform normal --x 0 --y 0 --monitor eDP-1 --mode 1920x1200@120.000+vrr' \
 	"${tmpdir}/panel/gdctl.log"
 
 : >"${tmpdir}/panel/gdctl.log"
 write_panel_state 1920x1200@120.000+vrr 1920x1200@60.000
-env "${panel_env[@]}" PURPLEFIN_PANEL_AMBIENT_BRIGHTNESS_MIGRATION_ENABLED=false \
+env "${panel_env[@]}" FINITE_PANEL_AMBIENT_BRIGHTNESS_MIGRATION_ENABLED=false \
 	MOCK_ON_BATTERY=true bash "${panel_helper}" --apply >/dev/null
 grep -qF -- '--mode 1920x1200@60.000' "${tmpdir}/panel/gdctl.log"
 
 install -d "${tmpdir}/panel/drm/card0-DP-1"
 printf '%s\n' connected >"${tmpdir}/panel/drm/card0-DP-1/status"
 : >"${tmpdir}/panel/gdctl.log"
-env "${panel_env[@]}" PURPLEFIN_PANEL_AMBIENT_BRIGHTNESS_MIGRATION_ENABLED=false \
+env "${panel_env[@]}" FINITE_PANEL_AMBIENT_BRIGHTNESS_MIGRATION_ENABLED=false \
 	MOCK_ON_BATTERY=false bash "${panel_helper}" --apply >/dev/null 2>&1 || true
 test ! -s "${tmpdir}/panel/gdctl.log"
 rm -rf "${tmpdir}/panel/drm/card0-DP-1"
@@ -200,4 +206,4 @@ for _ in 1 2; do
 	env "${panel_env[@]}" MOCK_ON_BATTERY=false bash "${panel_helper}" --apply >/dev/null
 done
 test "$(grep -cF 'set org.gnome.settings-daemon.plugins.power ambient-enabled true' "${tmpdir}/panel/gsettings.log")" -eq 1
-test -f "${tmpdir}/panel/state/purplefin/dell-xps-9350-ambient-brightness-v1"
+test -f "${tmpdir}/panel/state/finite/dell-xps-9350-ambient-brightness-v1"

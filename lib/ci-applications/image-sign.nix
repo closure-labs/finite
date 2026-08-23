@@ -1,31 +1,31 @@
 {pkgs}:
 pkgs.writeShellApplication {
-  name = "purplefin-image-sign";
+  name = "finite-image-sign";
   runtimeInputs = with pkgs; [coreutils cosign];
   text = ''
     : "''${COSIGN_IDENTITY:?COSIGN_IDENTITY is required}"
     : "''${DIGEST:?DIGEST is required}"
     : "''${IMAGE_REF:?IMAGE_REF is required}"
 
-    cosign_command="''${PURPLEFIN_COSIGN:-cosign}"
-    retry_delay="''${PURPLEFIN_COSIGN_RETRY_DELAY_SECONDS:-5}"
-    sign_attempts="''${PURPLEFIN_COSIGN_SIGN_ATTEMPTS:-2}"
-    verify_attempts="''${PURPLEFIN_COSIGN_VERIFY_ATTEMPTS:-6}"
+    cosign_command="''${FINITE_COSIGN:-cosign}"
+    retry_delay="''${FINITE_COSIGN_RETRY_DELAY_SECONDS:-5}"
+    sign_attempts="''${FINITE_COSIGN_SIGN_ATTEMPTS:-2}"
+    verify_attempts="''${FINITE_COSIGN_VERIFY_ATTEMPTS:-6}"
 
     [[ "''${DIGEST}" =~ ^sha256:[0-9a-f]{64}$ ]] || {
       echo "Invalid image digest: ''${DIGEST}" >&2
       exit 2
     }
     [[ "''${retry_delay}" =~ ^[0-9]+$ ]] || {
-      echo "PURPLEFIN_COSIGN_RETRY_DELAY_SECONDS must be a non-negative integer" >&2
+      echo "FINITE_COSIGN_RETRY_DELAY_SECONDS must be a non-negative integer" >&2
       exit 2
     }
     [[ "''${sign_attempts}" =~ ^[1-9][0-9]*$ ]] || {
-      echo "PURPLEFIN_COSIGN_SIGN_ATTEMPTS must be a positive integer" >&2
+      echo "FINITE_COSIGN_SIGN_ATTEMPTS must be a positive integer" >&2
       exit 2
     }
     [[ "''${verify_attempts}" =~ ^[1-9][0-9]*$ ]] || {
-      echo "PURPLEFIN_COSIGN_VERIFY_ATTEMPTS must be a positive integer" >&2
+      echo "FINITE_COSIGN_VERIFY_ATTEMPTS must be a positive integer" >&2
       exit 2
     }
 

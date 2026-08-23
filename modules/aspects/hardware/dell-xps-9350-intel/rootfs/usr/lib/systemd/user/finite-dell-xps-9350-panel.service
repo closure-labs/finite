@@ -1,0 +1,15 @@
+[Unit]
+Description=Apply Dell XPS 13 9350 AC/battery panel policy
+Documentation=file:/usr/share/finite/dell-xps-9350-panel.conf
+After=graphical-session-pre.target
+PartOf=graphical-session.target
+ConditionPathExists=/sys/class/dmi/id/product_name
+
+[Service]
+Type=simple
+ExecStart=/usr/libexec/finite/dell-xps-9350-panel-policy --watch
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+WantedBy=graphical-session.target

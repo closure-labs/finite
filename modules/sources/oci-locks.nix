@@ -39,7 +39,7 @@
     };
   };
 in {
-  options.purplefin.sources = {
+  options.finite.sources = {
     determinateNix = lib.mkOption {
       type = lib.types.submodule {
         options = {
@@ -103,7 +103,7 @@ in {
   };
 
   config = assert bluefinLock.cosign != null && bluefinDxLock.cosign != null; {
-    purplefin.sources = {
+    finite.sources = {
       determinateNix = determinateNixLock;
       bluefin = bluefinLock;
       bluefinDx = bluefinDxLock;

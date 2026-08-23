@@ -4,9 +4,9 @@ set -euo pipefail
 source_version="0.7.1"
 source_sha256="27a6d776bb728bb8bd38c4594ff3ab7fadfce19583427de8442963ef2fe5ad04"
 source_url="https://gitlab.freedesktop.org/camera/libcamera/-/archive/v${source_version}/libcamera-v${source_version}.tar.bz2"
-build_root="${PURPLEFIN_BUILD_ROOT:-/tmp/purplefin-build}"
+build_root="${FINITE_BUILD_ROOT:-/tmp/finite-build}"
 patch_file="${build_root}/modules/aspects/hardware/dell-xps-9350-intel/build/0001-libipa-add-ov02c10-helper.patch"
-install_dir="/usr/lib64/libcamera/ipa-purplefin"
+install_dir="/usr/lib64/libcamera/ipa-finite"
 workdir="$(mktemp -d)"
 temporary_build_packages=()
 
@@ -62,7 +62,7 @@ archive="${workdir}/libcamera.tar.bz2"
 source_root="${workdir}/libcamera-v${source_version}"
 build_root="${workdir}/build"
 
-echo ":: Building Purplefin OV02C10 libcamera IPA helper"
+echo ":: Building Finite OV02C10 libcamera IPA helper"
 curl --fail --location --show-error --silent --retry 8 --retry-all-errors \
 	--retry-delay 5 --retry-max-time 300 \
 	--output "${archive}" "${source_url}"
@@ -124,8 +124,8 @@ if grep -Eq 'not found|undefined symbol' "${workdir}/ldd-output"; then
 	exit 1
 fi
 
-install -d /usr/share/purplefin/dell-ipu7
-cat >"/usr/share/purplefin/dell-ipu7/libcamera-ipa-provenance" <<EOF
+install -d /usr/share/finite/dell-ipu7
+cat >"/usr/share/finite/dell-ipu7/libcamera-ipa-provenance" <<EOF
 source_url=${source_url}
 source_version=${source_version}
 source_sha256=${source_sha256}

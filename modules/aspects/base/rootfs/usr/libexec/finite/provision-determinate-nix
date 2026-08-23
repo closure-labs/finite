@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+seed="${FINITE_NIX_SEED_ROOT:-/usr/lib/finite/determinate-nix-seed}"
+state="${FINITE_NIX_STATE_ROOT:-/var/home/nix}"
+parent="${state%/*}"
+
+valid_installation() {
+	[[ -x "$1/nix-installer" && -f "$1/receipt.json" && -d "$1/store" && -d "$1/var/nix" ]]
+}
+
+valid_installation "${seed}" || {
+	echo "The immutable Determinate Nix seed is incomplete: ${seed}" >&2
+	exit 1
+}
+install -d -m 0755 "${parent}" "${state}"
+
+if find "${state}" -mindepth 1 -print -quit | grep -q .; then
+	valid_installation "${state}" || {
+		echo "Refusing to replace malformed Determinate Nix state: ${state}" >&2
+		exit 1
+	}
+else
+	stage="${parent}/.nix-seed.$$"
+	trap 'rm -rf -- "${stage:-}"' EXIT
+	install -d -m 0755 "${stage}"
+	cp -a --reflink=auto "${seed}/." "${stage}/"
+	valid_installation "${stage}"
+	rmdir "${state}"
+	mv "${stage}" "${state}"
+	trap - EXIT
+fi
+
+if command -v restorecon >/dev/null 2>&1; then
+	restorecon -RF "${state}"
+fi

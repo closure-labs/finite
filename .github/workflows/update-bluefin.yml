@@ -34,13 +34,13 @@ jobs:
         id: pin
         run: >-
           nix shell --accept-flake-config .#ci-source-update
-          -c purplefin-source-update bluefin "${GITHUB_OUTPUT}"
+          -c finite-source-update bluefin "${GITHUB_OUTPUT}"
 
       - name: Refresh and verify Bluefin DX OCI lock
         id: pin_dx
         run: >-
           nix shell --accept-flake-config .#ci-source-update
-          -c purplefin-source-update bluefin-dx "${GITHUB_OUTPUT}"
+          -c finite-source-update bluefin-dx "${GITHUB_OUTPUT}"
 
       - name: Open or update pull request
         if: steps.pin.outputs.changed == 'true' || steps.pin_dx.outputs.changed == 'true'
@@ -74,4 +74,4 @@ jobs:
           PR_NUMBER: ${{ steps.update.outputs.pull-request-number }}
         run: >-
           nix shell --accept-flake-config .#ci-trusted-update
-          -c purplefin-trusted-update
+          -c finite-trusted-update

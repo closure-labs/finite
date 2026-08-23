@@ -3,7 +3,7 @@
   validateCiPlan,
 }:
 pkgs.writeShellApplication {
-  name = "purplefin-ci-gate";
+  name = "finite-ci-gate";
   runtimeInputs = with pkgs; [coreutils jq validateCiPlan];
   text = ''
     set -euo pipefail
@@ -28,10 +28,10 @@ pkgs.writeShellApplication {
 
     require_result prepare "''${PREPARE_RESULT:?}" success
     lifecycle="''${CI_PLAN:?CI_PLAN is required}"
-    plan_file="$(mktemp "''${TMPDIR:-/tmp}/purplefin-ci-gate-plan.XXXXXX.json")"
+    plan_file="$(mktemp "''${TMPDIR:-/tmp}/finite-ci-gate-plan.XXXXXX.json")"
     trap 'rm -f -- "''${plan_file}"' EXIT
     printf '%s\n' "''${lifecycle}" >"''${plan_file}"
-    purplefin-ci-validate-plan "''${plan_file}"
+    finite-ci-validate-plan "''${plan_file}"
     has_root_base="$(jq -r '.publication.builds.root' <<<"''${lifecycle}")"
     has_hardware="$(jq -r '.publication.builds.hardware' <<<"''${lifecycle}")"
     has_roles="$(jq -r '.publication.builds.roles' <<<"''${lifecycle}")"

@@ -1,0 +1,9 @@
+[Unit]
+Description=Install the Determinate Nix SELinux policy
+ConditionSecurity=selinux
+Before=finite-nix-seed.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/finite/install-determinate-nix-selinux-policy
+RemainAfterExit=yes

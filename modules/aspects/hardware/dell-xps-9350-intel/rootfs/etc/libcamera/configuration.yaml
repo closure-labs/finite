@@ -2,8 +2,8 @@
 version: 1
 configuration:
   ipa:
-    # Purplefin's module adds the OV02C10 gain/black-level helper. It is
+    # Finite's module adds the OV02C10 gain/black-level helper. It is
     # deliberately unsigned and therefore remains isolated by libcamera's
     # stock soft_ipa_proxy.
     module_paths:
-      - /usr/lib64/libcamera/ipa-purplefin
+      - /usr/lib64/libcamera/ipa-finite

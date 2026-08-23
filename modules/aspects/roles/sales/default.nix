@@ -6,7 +6,7 @@ _: {
   }: {
     home = {
       packages = [(config.lib.nixGL.wrap pkgs.thunderbird)];
-      sessionVariables.PURPLEFIN_ROLE_SALES = "1";
+      sessionVariables.FINITE_ROLE_SALES = "1";
     };
   };
 }

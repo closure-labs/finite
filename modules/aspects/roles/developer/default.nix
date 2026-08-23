@@ -9,7 +9,7 @@
       home.packages =
         [inputs.devenv.packages.${pkgs.stdenv.hostPlatform.system}.devenv]
         ++ (with pkgs; [rustup cargo-audit cargo-edit cargo-watch]);
-      home.sessionVariables.PURPLEFIN_ROLE_DEVELOPER = "1";
+      home.sessionVariables.FINITE_ROLE_DEVELOPER = "1";
     };
   };
 }

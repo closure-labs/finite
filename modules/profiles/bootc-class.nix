@@ -1,5 +1,19 @@
 {lib, ...}: {
-  options.purplefin = {
+  # Den's host entity pipeline includes its package-policy batteries for every
+  # class. Bootc profiles do not consume these values, but declaring their
+  # namespace lets the disabled policies remain well typed.
+  options.nixpkgs = lib.mkOption {
+    type = lib.types.attrsOf lib.types.anything;
+    default = {};
+    internal = true;
+  };
+
+  options.finite = {
+    foundation = lib.mkOption {
+      type = lib.types.enum ["bluefin" "bluefin-dx"];
+      description = "Authoritative Finite foundation carried by the bootc image.";
+    };
+
     profileName = lib.mkOption {
       type = lib.types.strMatching "[a-z0-9._-]+";
       description = "Stable name used by the bootc build and published image metadata.";
@@ -11,7 +25,7 @@
       description = "Optional staged base profile inherited by this profile.";
     };
 
-    base.enable = lib.mkEnableOption "the shared Purplefin base module";
+    base.enable = lib.mkEnableOption "the shared Finite base module";
 
     upstream = {
       schema = lib.mkOption {
@@ -20,7 +34,7 @@
       };
       image = lib.mkOption {
         type = lib.types.str;
-        description = "OCI repository used as the complete Purplefin base.";
+        description = "OCI repository used as the complete Finite base.";
       };
       tag = lib.mkOption {
         type = lib.types.strMatching "[a-z0-9._-]+";
@@ -46,7 +60,7 @@
       preserve = lib.mkOption {
         type = lib.types.bool;
         default = true;
-        description = "Require the upstream filesystem and policy to remain intact except for additive Purplefin modules.";
+        description = "Require the upstream filesystem and policy to remain intact except for additive Finite modules.";
       };
     };
 

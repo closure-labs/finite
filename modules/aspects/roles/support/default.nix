@@ -6,13 +6,13 @@
       pkgs,
       ...
     }: let
-      # Bluefin and Purplefin desktop sessions are Wayland-only. Keep the
+      # Bluefin and Finite desktop sessions are Wayland-only. Keep the
       # backend choice explicit so Nixpkgs cannot select Espanso's X11 build.
       espanso = config.lib.nixGL.wrap pkgs.espanso-wayland;
     in {
       home = {
         packages = [espanso];
-        sessionVariables.PURPLEFIN_ROLE_SUPPORT = "1";
+        sessionVariables.FINITE_ROLE_SUPPORT = "1";
       };
       services.flatpak.packages = ["io.github.totoshko88.RustConn"];
       systemd.user.services.espanso = {

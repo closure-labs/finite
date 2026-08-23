@@ -1,4 +1,4 @@
-name: Build Purplefin
+name: Build Finite
 
 on:
   push:
@@ -25,7 +25,7 @@ concurrency:
   group: >-
     ${{ (github.event_name == 'push' || github.event_name == 'schedule' ||
     (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
-    'purplefin-publication' || format('{0}-validation-{1}', github.workflow,
+    'finite-publication' || format('{0}-validation-{1}', github.workflow,
     github.event.pull_request.number || github.ref) }}
   cancel-in-progress: >-
     ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' ||
@@ -62,10 +62,10 @@ jobs:
           cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - name: Validate repository and workflows
         env:
-          PURPLEFIN_CACHE_PUSH: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+          FINITE_CACHE_PUSH: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
         run: >-
           nix shell --accept-flake-config .#ci-check
-          -c purplefin-ci-check --no-write-lock-file
+          -c finite-ci-check --no-write-lock-file
       - name: Prepare authoritative downstream CI plan
         id: plan
         env:
@@ -86,7 +86,7 @@ jobs:
           VALIDATE_ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.validate_only || false }}
         run: >-
           nix shell --accept-flake-config .#ci-prepare
-          -c purplefin-ci-prepare
+          -c finite-ci-prepare
 
   build-candidate:
     name: Validate shard ${{ matrix.shard }} (${{ matrix.name }})
@@ -115,7 +115,7 @@ jobs:
           PROFILE_SHARD: ${{ toJSON(matrix.profiles) }}
         run: >-
           nix shell --accept-flake-config .#ci-validate-image-shard
-          -c purplefin-validate-image-shard
+          -c finite-validate-image-shard
 
   installer-candidate:
     name: Validate installer
@@ -137,7 +137,7 @@ jobs:
       - uses: ./.github/actions/build-installer
         with:
           cache-write: false
-          image-tag: base-generic-x86_64
+          image-tag: bluefin-generic
           token: ${{ github.token }}
 
   installer-cache:
@@ -165,7 +165,7 @@ jobs:
         with:
           cache-write: true
           end-to-end: ${{ github.event_name == 'workflow_dispatch' && inputs.force || false }}
-          image-tag: base-generic-x86_64
+          image-tag: bluefin-generic
           token: ${{ github.token }}
 
   base-publish:
@@ -379,7 +379,7 @@ jobs:
           VERSION: ${{ fromJSON(needs.prepare.outputs.plan).source.version }}
         run: >-
           nix shell --accept-flake-config .#ci-promote-images
-          -c purplefin-promote-images
+          -c finite-promote-images
       - name: Log out of GHCR
         if: always()
         run: podman logout --authfile "${REGISTRY_AUTH_FILE:-${HOME}/.docker/config.json}" ghcr.io || true
@@ -415,4 +415,4 @@ jobs:
           VALIDATE_ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.validate_only || false }}
         run: >-
           nix shell --accept-flake-config .#ci-gate
-          -c purplefin-ci-gate
+          -c finite-ci-gate

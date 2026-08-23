@@ -1,6 +1,6 @@
 {pkgs}:
 pkgs.writeShellApplication {
-  name = "purplefin-shard-plan";
+  name = "finite-shard-plan";
   runtimeInputs = [pkgs.jq];
   text = ''
     set -euo pipefail

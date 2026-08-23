@@ -1,19 +1,20 @@
 {
-  den,
   lib,
   profileEntities,
+  profileHosts,
 }: let
   profileNames = builtins.attrNames profileEntities;
 
   evalProfile = name: let
     entity = profileEntities.${name};
+    host = profileHosts.${name};
   in
     lib.evalModules {
       modules = [
         ../modules/profiles/bootc-class.nix
-        (den.lib.aspects.resolve "bootc" entity.aspect)
+        host.mainModule
         {
-          purplefin = {
+          finite = {
             profileName = name;
             inherit (entity) parent tags;
           };
@@ -21,14 +22,14 @@
       ];
     };
 
-  rawProfiles = lib.genAttrs profileNames (name: (evalProfile name).config.purplefin);
+  rawProfiles = lib.genAttrs profileNames (name: (evalProfile name).config.finite);
   orderResult =
     lib.lists.toposort (
       parentName: childName: rawProfiles.${childName}.parent == parentName
     )
     profileNames;
   profileOrder =
-    orderResult.result or (throw "Purplefin profile error: parent cycle: ${
+    orderResult.result or (throw "Finite profile error: parent cycle: ${
       lib.concatStringsSep " -> " orderResult.cycle
     }");
 
@@ -57,7 +58,7 @@
   ensure = condition: message:
     if condition
     then true
-    else throw "Purplefin profile error: ${message}";
+    else throw "Finite profile error: ${message}";
 
   profiles =
     lib.mapAttrs (
@@ -67,6 +68,7 @@
         modules = map (step: step.name) steps;
       in
         assert ensure profile.base.enable "${name} does not include the base aspect";
+        assert ensure (builtins.elem profile.foundation ["bluefin" "bluefin-dx"]) "${name} has an invalid foundation";
         assert ensure (profile.profileName == name) "${name} declares profileName=${profile.profileName}";
         assert ensure (profile.hardware != null) "${name} does not select hardware";
         assert ensure profile.upstream.preserve "${name} must preserve the complete upstream Bluefin base";
@@ -91,7 +93,7 @@
     else let
       parent =
         profiles.${profile.parent}
-            or (throw "Purplefin profile error: ${name} has unknown parent ${profile.parent}");
+            or (throw "Finite profile error: ${name} has unknown parent ${profile.parent}");
       deltaSteps =
         builtins.filter (
           step: !(builtins.elem step.name parent.modules)

@@ -1,4 +1,4 @@
-name: Build one Purplefin profile
+name: Build one Finite profile
 
 on:
   workflow_call:
@@ -127,7 +127,7 @@ jobs:
           trap record_duration EXIT
 
           if digest="$(nix shell --accept-flake-config .#ci-image-reuse \
-            -c purplefin-image-reuse "${CANDIDATE_TAG}")" &&
+            -c finite-image-reuse "${CANDIDATE_TAG}")" &&
             [[ -n "${digest}" ]]; then
             if image_id="$({
               podman pull --quiet \
@@ -158,7 +158,7 @@ jobs:
           }
           trap record_duration EXIT
           nix shell --accept-flake-config .#ci-load-bluefin \
-            -c purplefin-load-bluefin "${UPSTREAM_SOURCE}"
+            -c finite-load-bluefin "${UPSTREAM_SOURCE}"
 
       - name: Build image from immutable parent
         if: steps.reuse.outputs.hit != 'true'
@@ -172,7 +172,7 @@ jobs:
           PARENT_PROFILE: ${{ inputs.parent-profile }}
           PARENT_TAG: ${{ inputs.parent-tag }}
           CACHE_WRITE: "true"
-          PURPLEFIN_VERSION: ${{ inputs.version }}
+          FINITE_VERSION: ${{ inputs.version }}
           UPSTREAM_BASE_DIGEST: ${{ inputs.upstream-base-digest }}
         shell: bash
         run: |
@@ -184,6 +184,9 @@ jobs:
 
           primary_image="${IMAGE_REF}:${BUILD_PROFILE}-candidate"
           created="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          generated_root="$(nix build --accept-flake-config .#generated --no-link --print-out-paths)"
+          foundation="$(jq -er --arg profile "${BUILD_PROFILE}" '.profiles[$profile].foundation' "${generated_root}/bootc/generated/profile-catalog.json")"
+          hardware="$(jq -er --arg profile "${BUILD_PROFILE}" '.profiles[$profile].hardware' "${generated_root}/bootc/generated/profile-catalog.json")"
           containerfile=./bootc/Containerfile
           cache_ref="${IMAGE_REF}-build-cache"
           cache_args=(--layers)
@@ -192,8 +195,8 @@ jobs:
           if [[ -n "${PARENT_PROFILE}" ]]; then
             containerfile=./bootc/Containerfile.derived
             parent_args+=(
-              --label "io.purplefin.parent.digest=${PARENT_DIGEST}"
-              --label "io.purplefin.parent.profile=${PARENT_PROFILE}"
+              --label "io.finite.parent.digest=${PARENT_DIGEST}"
+              --label "io.finite.parent.profile=${PARENT_PROFILE}"
               --build-arg "PARENT_PROFILE=${PARENT_PROFILE}"
             )
           fi
@@ -222,18 +225,20 @@ jobs:
           buildah bud \
             --file "${containerfile}" \
             --pull="${pull_policy}" \
-            --build-context purplefin-generated="$(nix build .#generated --no-link --print-out-paths)" \
+            --build-context finite-generated="${generated_root}" \
             "${cache_args[@]}" \
             "${parent_args[@]}" \
-            --label "io.purplefin.build.input=${BUILD_INPUT}" \
-            --label "io.purplefin.build.profile=${BUILD_PROFILE}" \
-            --label "io.purplefin.upstream.digest=${UPSTREAM_BASE_DIGEST}" \
+            --label "io.finite.build.input=${BUILD_INPUT}" \
+            --label "io.finite.build.profile=${BUILD_PROFILE}" \
+            --label "io.finite.foundation=${foundation}" \
+            --label "io.finite.hardware=${hardware}" \
+            --label "io.finite.upstream.digest=${UPSTREAM_BASE_DIGEST}" \
             --label "org.opencontainers.image.base.digest=${PARENT_DIGEST}" \
             --label "org.opencontainers.image.created=${created}" \
             --label "org.opencontainers.image.revision=${GITHUB_SHA}" \
             --build-arg "BASE_REF=${base_ref}" \
             --build-arg "BUILD_PROFILE=${BUILD_PROFILE}" \
-            --build-arg "PURPLEFIN_VERSION=${PURPLEFIN_VERSION}" \
+            --build-arg "FINITE_VERSION=${FINITE_VERSION}" \
             --format docker \
             --tls-verify=true \
             --tag "${primary_image}" \
@@ -293,9 +298,9 @@ jobs:
             rechunk_args+=(--previous-build "${PREVIOUS_BUILD}")
           fi
           report="$({
-            PURPLEFIN_PODMAN="$(command -v podman)" \
+            FINITE_PODMAN="$(command -v podman)" \
               nix shell --accept-flake-config .#ci-rechunk-image \
-                -c purplefin-rechunk-image "${rechunk_args[@]}"
+                -c finite-rechunk-image "${rechunk_args[@]}"
           })"
           {
             echo "digest=$(jq -er .digest <<<"${report}")"
@@ -333,7 +338,7 @@ jobs:
         shell: bash
         run: >-
           nix shell --accept-flake-config .#ci-image-sign
-          -c purplefin-image-sign
+          -c finite-image-sign
 
       - name: Check for verified build provenance
         id: provenance_check

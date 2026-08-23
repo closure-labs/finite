@@ -14,7 +14,7 @@ configurations, workflows, and tests:
 
 ```bash
 nix fmt
-nix shell --accept-flake-config .#ci-check -c purplefin-ci-check
+nix shell --accept-flake-config .#ci-check -c finite-ci-check
 ```
 
 The CI application explicitly builds only the declared checks in one parallel
@@ -43,7 +43,7 @@ nix run .#local-cache
 
 The `local-cache` app uses SecretSpec profile `local-cache` and scope `cachix`.
 SecretSpec resolves the workstation value from
-`$HOME/.other-fun-things/.cachix-purplefin-auth`, then the app publishes the
+`$HOME/.other-fun-things/.cachix-finite-auth`, then the app publishes the
 evaluated closure-guarded proof outputs.
 
 GitHub-hosted jobs use the separate SecretSpec `github-actions` profile. The
@@ -57,10 +57,10 @@ The image application resolves immutable inputs, generates the build contract,
 and invokes Podman:
 
 ```bash
-nix shell --accept-flake-config .#ci-image-build -c purplefin-image-build \
-  bluefin-generic localhost/purplefin:bluefin-generic
-nix shell --accept-flake-config .#ci-image-build -c purplefin-image-build \
-  bluefin-dx-dell-xps-9350-intel localhost/purplefin:dale
+nix shell --accept-flake-config .#ci-image-build -c finite-image-build \
+  bluefin-generic localhost/finite:bluefin-generic
+nix shell --accept-flake-config .#ci-image-build -c finite-image-build \
+  bluefin-dx-dell-xps-9350-intel localhost/finite:bluefin-dx-dell
 ```
 
 Profile names are declared in `modules/profiles/definitions.nix`.
@@ -83,36 +83,59 @@ The output contains:
 Build consumers receive this store path directly. To make a writable copy for
 inspection, copy the desired files from the `result` symlink.
 
+## Brand assets
+
+The canonical transparent mark is
+`modules/aspects/base/rootfs/usr/share/finite/finite-logo.png`. The same source
+is used for shared image branding and the rEFInd Linux/Finite icons. Plymouth
+and GDM require fixed-size transparent canvases, so their checked-in derivatives
+are centered at 149×43 and 150×61 respectively.
+
+When the canonical artwork changes, regenerate those derivatives with
+ImageMagick and keep both Plymouth filenames identical:
+
+```console
+magick finite-logo.png -resize 37x35 -gravity center -background none \
+  -extent 149x43 watermark.png
+magick finite-logo.png -resize 51x49 -gravity center -background none \
+  -extent 150x61 fedora-gdm-logo.png
+```
+
+The aspect contracts verify the canonical and rEFInd copies and ensure both
+Plymouth watermark names remain identical.
+
 ## Useful outputs
 
 | Command | Result |
 | --- | --- |
 | `nix build .#architecture` | Mermaid rendering of the evaluated Den graph |
-| `nix shell .#ci-source-verify -c purplefin-source-verify bluefin` | Verify the locked digest and Cosign identity |
-| `nix shell .#ci-source-verify -c purplefin-source-verify bluefin-dx` | Verify the locked Bluefin DX digest and Cosign identity |
-| `nix shell .#ci-source-verify -c purplefin-source-verify image-builder` | Verify the locked installer builder digest |
-| `nix shell .#ci-source-verify -c purplefin-source-verify fedora-bootc` | Verify the locked minimal installer live-environment digest |
-| `nix shell .#ci-source-verify -c purplefin-source-verify determinate-nix` | Verify the pinned Determinate installer and SELinux policy hashes |
-| `nix shell .#ci-load-bluefin -c purplefin-load-bluefin bluefin` | Copy the verified digest into container storage |
-| `nix shell .#ci-source-update -c purplefin-source-update bluefin` | Refresh and verify the Bluefin lock |
-| `nix shell .#ci-source-update -c purplefin-source-update bluefin-dx` | Refresh and verify the Bluefin DX lock |
-| `nix shell .#ci-source-update -c purplefin-source-update determinate-nix` | Refresh the stable Determinate Nix release lock |
-| `nix build .#home-dale` | Home Manager activation package for `dale` |
-| `nix build .#home-elad` | All-role Home Manager activation package without the Dell camera layer |
+| `nix shell .#ci-source-verify -c finite-source-verify bluefin` | Verify the locked digest and Cosign identity |
+| `nix shell .#ci-source-verify -c finite-source-verify bluefin-dx` | Verify the locked Bluefin DX digest and Cosign identity |
+| `nix shell .#ci-source-verify -c finite-source-verify image-builder` | Verify the locked installer builder digest |
+| `nix shell .#ci-source-verify -c finite-source-verify fedora-bootc` | Verify the locked minimal installer live-environment digest |
+| `nix shell .#ci-source-verify -c finite-source-verify determinate-nix` | Verify the pinned Determinate installer and SELinux policy hashes |
+| `nix shell .#ci-load-bluefin -c finite-load-bluefin bluefin` | Copy the verified digest into container storage |
+| `nix shell .#ci-source-update -c finite-source-update bluefin` | Refresh and verify the Bluefin lock |
+| `nix shell .#ci-source-update -c finite-source-update bluefin-dx` | Refresh and verify the Bluefin DX lock |
+| `nix shell .#ci-source-update -c finite-source-update determinate-nix` | Refresh the stable Determinate Nix release lock |
+| `nix run .#home-profile -- --help` | Generate a standalone Home Manager profile |
+| `nix run .#home-bootstrap -- --help` | Validate, build, and activate a standalone profile |
+| `nix flake new -t .#home-bluefin PATH` | Create the Bluefin Home Manager template |
+| `nix flake new -t .#home-bluefin-dx PATH` | Create the Bluefin DX Home Manager template |
 | `nix run .#cloud-init -- ...` | Generate a NoCloud Home Manager seed |
 | `nix build .#syft` | Pinned Syft package |
-| `nix shell .#ci-image-sbom -c purplefin-image-sbom validate <file>` | Validate a normalized SPDX image software bill of materials |
-| `nix shell .#ci-rechunk-image -c purplefin-rechunk-image --source <image> --output <transport>` | Rechunk a local bootc image with the shared format-v2 policy |
-| `nix shell .#ci-installer-smoke -c purplefin-installer-smoke <iso>` | QEMU installer boot test |
-| `nix shell .#ci-installer-e2e -c purplefin-installer-e2e install <iso> <kickstart> <state>` | Install through the CI Kickstart onto a disposable disk |
-| `nix shell .#ci-installer-e2e -c purplefin-installer-e2e boot <state>` | Boot and validate the installed disposable disk |
-| `nix shell .#ci-release-notes -c purplefin-release-notes <version> CHANGELOG.md` | Release notes for one version |
+| `nix shell .#ci-image-sbom -c finite-image-sbom validate <file>` | Validate a normalized SPDX image software bill of materials |
+| `nix shell .#ci-rechunk-image -c finite-rechunk-image --source <image> --output <transport>` | Rechunk a local bootc image with the shared format-v2 policy |
+| `nix shell .#ci-installer-smoke -c finite-installer-smoke <iso>` | QEMU installer boot test |
+| `nix shell .#ci-installer-e2e -c finite-installer-e2e install <iso> <kickstart> <state>` | Install through the CI Kickstart onto a disposable disk |
+| `nix shell .#ci-installer-e2e -c finite-installer-e2e boot <state>` | Boot and validate the installed disposable disk |
+| `nix shell .#ci-release-notes -c finite-release-notes <version> CHANGELOG.md` | Release notes for one version |
 
 ## Repository layout
 
 ```text
 modules/aspects/      co-located base, capability, hardware, and role features
-modules/profiles/     profile schema, composition, routing, and bootc class
+modules/profiles/     typed catalogs, composition definitions, and bootc class
 modules/repository/   checks, delivery, and GitHub operation graph
 modules/sources/      typed source-lock module
 sources/              auditable OCI locks for Bluefin, Bluefin DX, and Image Builder

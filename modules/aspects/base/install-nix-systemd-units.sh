@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-unit_root="${PURPLEFIN_NIX_SYSTEMD_UNIT_ROOT:-/usr/lib/systemd/system}"
+unit_root="${FINITE_NIX_SYSTEMD_UNIT_ROOT:-/usr/lib/systemd/system}"
 
 grep -qFx \
 	'ExecStart=@/usr/bin/determinate-nixd determinate-nixd daemon' \

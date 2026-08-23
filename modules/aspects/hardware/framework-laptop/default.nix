@@ -1,5 +1,5 @@
 _: {
-  den.aspects.features.hardware.framework-laptop.bootc.purplefin = {
+  den.aspects.features.hardware.framework-laptop.bootc.finite = {
     hardware = "framework-laptop";
     build = {
       steps = [

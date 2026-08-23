@@ -1,7 +1,7 @@
 _: {
   den.aspects.features.roles.trainer.homeManager = {
-    home.sessionVariables.PURPLEFIN_ROLE_TRAINER = "1";
-    xdg.desktopEntries.purplefin-grist = {
+    home.sessionVariables.FINITE_ROLE_TRAINER = "1";
+    xdg.desktopEntries.finite-grist = {
       name = "Grist";
       comment = "Open Vates Grist in Firefox";
       exec = "firefox --new-window https://grist.vates.tech";

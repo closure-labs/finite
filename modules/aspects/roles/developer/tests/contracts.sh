@@ -6,6 +6,6 @@ module="${aspect_root}/default.nix"
 
 # shellcheck disable=SC2016 # Match the literal Nix interpolation.
 grep -qF 'inputs.devenv.packages.${pkgs.stdenv.hostPlatform.system}.devenv' "${module}"
-grep -qF 'home.sessionVariables.PURPLEFIN_ROLE_DEVELOPER = "1"' "${module}"
+grep -qF 'home.sessionVariables.FINITE_ROLE_DEVELOPER = "1"' "${module}"
 test ! -e "${aspect_root}/apply.sh"
 test ! -e "${aspect_root}/manifests"

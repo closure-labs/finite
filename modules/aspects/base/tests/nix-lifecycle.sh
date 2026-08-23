@@ -2,7 +2,7 @@
 set -euo pipefail
 
 aspect_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-provisioner="${aspect_root}/rootfs/usr/libexec/purplefin/provision-determinate-nix"
+provisioner="${aspect_root}/rootfs/usr/libexec/finite/provision-determinate-nix"
 test_root="$(mktemp -d)"
 trap 'rm -rf -- "${test_root}"' EXIT
 seed="${test_root}/seed"
@@ -16,16 +16,16 @@ printf '#!%s\nexit 0\n' "$(type -P bash)" >"${test_root}/bin/restorecon"
 chmod 0755 "${test_root}/bin/restorecon"
 
 PATH="${test_root}/bin:${PATH}" \
-	PURPLEFIN_NIX_SEED_ROOT="${seed}" \
-	PURPLEFIN_NIX_STATE_ROOT="${state}" \
+	FINITE_NIX_SEED_ROOT="${seed}" \
+	FINITE_NIX_STATE_ROOT="${state}" \
 	bash "${provisioner}"
 test -x "${state}/nix-installer"
 test -d "${state}/store"
 printf '%s\n' preserved >"${state}/user-state"
 
 PATH="${test_root}/bin:${PATH}" \
-	PURPLEFIN_NIX_SEED_ROOT="${seed}" \
-	PURPLEFIN_NIX_STATE_ROOT="${state}" \
+	FINITE_NIX_SEED_ROOT="${seed}" \
+	FINITE_NIX_STATE_ROOT="${state}" \
 	bash "${provisioner}"
 grep -qx preserved "${state}/user-state"
 
@@ -33,8 +33,8 @@ malformed="${test_root}/var/home/malformed"
 install -d "${malformed}"
 printf '%s\n' partial >"${malformed}/unexpected"
 if PATH="${test_root}/bin:${PATH}" \
-	PURPLEFIN_NIX_SEED_ROOT="${seed}" \
-	PURPLEFIN_NIX_STATE_ROOT="${malformed}" \
+	FINITE_NIX_SEED_ROOT="${seed}" \
+	FINITE_NIX_STATE_ROOT="${malformed}" \
 	bash "${provisioner}" >/dev/null 2>&1; then
 	echo 'Malformed Determinate Nix state was unexpectedly replaced' >&2
 	exit 1

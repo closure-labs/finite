@@ -24,22 +24,24 @@ chmod 0755 "${fake_bin}/skopeo" "${fake_bin}/cosign"
 
 export PATH="${fake_bin}:${PATH}"
 export BUILD_INPUT=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-export BUILD_PROFILE=base-generic
-export COSIGN_IDENTITY=https://github.com/example/purplefin/.github/workflows/build-profile.yml@refs/heads/main
+export BUILD_PROFILE=bluefin-generic
+export COSIGN_IDENTITY=https://github.com/example/finite/.github/workflows/build-profile.yml@refs/heads/main
 export EXPECTED_PARENT_DIGEST=sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
 export EXPECTED_REVISION=cccccccccccccccccccccccccccccccccccccccc
 export EXPECTED_UPSTREAM_DIGEST=sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
 export EXPECTED_VERSION=1.2.3
-export IMAGE_REF=ghcr.io/example/purplefin
+export IMAGE_REF=ghcr.io/example/finite
 export FAKE_COSIGN_LOG="${test_root}/cosign.log"
-export PURPLEFIN_COSIGN="${fake_bin}/cosign"
-export PURPLEFIN_SKOPEO="${fake_bin}/skopeo"
+export FINITE_COSIGN="${fake_bin}/cosign"
+export FINITE_SKOPEO="${fake_bin}/skopeo"
 digest=sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
 
 metadata() {
 	jq -cn \
 		--arg build_input "${BUILD_INPUT}" \
 		--arg digest "${digest}" \
+		--arg foundation bluefin \
+		--arg hardware generic-x86_64 \
 		--arg parent_digest "${EXPECTED_PARENT_DIGEST}" \
 		--arg profile "${BUILD_PROFILE}" \
 		--arg revision "${1:-${EXPECTED_REVISION}}" \
@@ -48,9 +50,11 @@ metadata() {
 		{
 			Digest: $digest,
 			Labels: {
-				"io.purplefin.build.input": $build_input,
-				"io.purplefin.build.profile": $profile,
-				"io.purplefin.upstream.digest": $upstream_digest,
+				"io.finite.build.input": $build_input,
+				"io.finite.build.profile": $profile,
+				"io.finite.foundation": $foundation,
+				"io.finite.hardware": $hardware,
+				"io.finite.upstream.digest": $upstream_digest,
 				"org.opencontainers.image.base.digest": $parent_digest,
 				"org.opencontainers.image.revision": $revision,
 				"org.opencontainers.image.version": $version
@@ -60,18 +64,18 @@ metadata() {
 
 FAKE_METADATA="$(metadata)"
 export FAKE_METADATA
-actual="$(purplefin-image-reuse generic-x86_64)"
+actual="$(finite-image-reuse generic-x86_64)"
 test "${actual}" = "${digest}"
 grep -qF -- "--certificate-identity ${COSIGN_IDENTITY}" "${FAKE_COSIGN_LOG}"
 grep -qF "${IMAGE_REF}@${digest}" "${FAKE_COSIGN_LOG}"
 
 FAKE_METADATA="$(metadata old-revision)"
 export FAKE_METADATA
-actual="$(purplefin-image-reuse generic-x86_64)"
+actual="$(finite-image-reuse generic-x86_64)"
 test -z "${actual}"
 
 FAKE_METADATA="$(metadata)"
 export FAKE_METADATA
 export FAKE_COSIGN_FAIL=true
-actual="$(purplefin-image-reuse generic-x86_64)"
+actual="$(finite-image-reuse generic-x86_64)"
 test -z "${actual}"

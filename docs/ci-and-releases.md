@@ -10,13 +10,13 @@ blueprints, or their pinned tools; image-only aspects and repository tests do
 not rebuild the unchanged ISO.
 
 Classification and planning cross the workflow boundary as one schema-versioned,
-strictly validated JSON plan. `purplefin-ci-prepare` is the only workflow-facing
+strictly validated JSON plan. `finite-ci-prepare` is the only workflow-facing
 authority: it records whether the diff is trustworthy and the exact image,
 software-bill-of-materials, promotion, and installer jobs required for the run.
 Profile selection uses the generated
-per-profile build-input fingerprints and parent graph: changed targets expand to
-their descendants, while shard planning adds ancestors only as local build
-dependencies. Publication additionally checks registry state, signatures,
+per-profile build-input fingerprints. The four current image profiles pair each
+foundation with each hardware target and build independently. Publication
+additionally checks registry state, signatures,
 provenance, RPM updates, and repair work before finalizing that lifecycle.
 
 ## Validation layers
@@ -36,24 +36,20 @@ installer job selected for the change. The checked-in branch policy is
 `automation/github/policies/main-merge-queue.json`.
 
 Pull requests and merge groups divide selected profiles among at most four
-dependency-aware shards, co-locating shared lineages while balancing estimated
-build and rechunk cost. Each shard verifies and loads the locked Bluefin digest
-once, builds roots with `Containerfile`, and builds descendants with
-`Containerfile.derived`. Ancestors needed only as local parents skip duplicate
-rechunking; every selected profile remains a fully rechunked target in exactly
-one shard. No mutable image state crosses a job boundary.
+dependency-aware shards while balancing estimated build and rechunk cost. Each
+shard verifies and loads the appropriate locked Bluefin digest, builds its
+foundation-and-hardware profile with `Containerfile`, and fully rechunks every
+selected target. No mutable image state crosses a job boundary.
 
-Installer candidates prefer the current repository's GHCR payload. During a
-repository transfer, they may fall back to the legacy public payload until the
-first trusted main build publishes the new namespace. Signature and attestation
-verification follows the payload's audited OCI source label, so the fallback
-does not weaken provenance checks and becomes dormant automatically.
+Installer candidates use only the current repository's GHCR payload. Signature
+and attestation verification follows the payload's audited OCI source label;
+there is no alternate registry namespace or compatibility fallback.
 
 Publication and pull-request validation share the focused
-`purplefin-rechunk-image` Nix application. It preserves non-generated OCI
+`finite-rechunk-image` Nix application. It preserves non-generated OCI
 labels, format version 2, and the 127-layer ceiling, then validates the output
 digest and labels. On publication, the workflow resolves the current profile
-tag to an immutable digest and accepts it only when Purplefin's trusted
+tag to an immutable digest and accepts it only when Finite's trusted
 `build-profile.yml` identity signed it. When the source image's rpm-ostree
 advertises `--previous-build`, that verified `docker://...@sha256:...` reference
 enables incremental rechunking without downloading the previous image. Missing,
@@ -74,10 +70,11 @@ merge groups, pushes, and validation dispatches retain complete history. Merge
 groups fail safe to all expensive validation when the supplied base is not an
 ancestor of the synthetic head.
 
-The Flake declares the public `purplefin.cachix.org` substituter and key. Every
-Nix job uses the repository's pinned `setup-nix` action for GitHub access and
-read-through Cachix configuration, with automatic store watching disabled.
-`nix shell --accept-flake-config .#ci-check -c purplefin-ci-check` explicitly
+The Flake is the single source of truth for the retained external Cachix
+substituter and key. Every Nix job uses the repository's pinned `setup-nix`
+action for GitHub access and read-through cache configuration, with automatic
+store watching disabled.
+`nix shell --accept-flake-config .#ci-check -c finite-ci-check` explicitly
 builds only the declared checks in one parallel Nix invocation, then validates
 every standard Flake output without additional builds. It resolves the checks'
 reference-free proof outputs, rejects any closure larger than 1 MiB, and pushes
@@ -103,9 +100,9 @@ Profiles build parent-first. Each published digest has:
 - OCI labels for version, source, profile, build input, parent, and upstream
   digests.
 
-Trusted builds first write only profile-specific candidate tags. Ordered base,
-hardware, and role jobs sign those immutable digests and attach provenance;
-tier-specific reusable jobs then attest their software bills of materials. A
+Trusted builds first write only profile-specific candidate tags. The
+foundation-and-hardware jobs sign those immutable digests and attach provenance;
+reusable jobs then attest their software bills of materials. A
 single final promotion job verifies the complete selected graph—including
 parent digests and every signer identity—before moving any public channel tag.
 Normal publication and the release promotion phase share one non-cancelling
@@ -114,7 +111,7 @@ it can wait for or dispatch the exact-source build without deadlocking it.
 An interrupted run is therefore repairable: missing signatures or provenance
 select a rebuild, while a missing software bill of materials attestation selects
 only that attestation job. The signed attestation is also the release asset
-source; Purplefin does not maintain a second unsigned software bill of materials
+source; Finite does not maintain a second unsigned software bill of materials
 cache package. Pull requests and merge candidates validate candidates with
 read-only registry access.
 
@@ -129,7 +126,7 @@ exports, workflows, profile modules, and installer unit tests are validated by
 the contract without rebuilding an unchanged ISO.
 
 Full installer validation builds the live Anaconda environment from a pinned,
-minimal Fedora bootc image. The signed Purplefin image is passed separately as
+minimal Fedora bootc image. The signed Finite image is passed separately as
 Image Builder's installer payload, so desktop and developer packages are not
 duplicated into the live squashfs. The version-3 environment fingerprint covers
 the Fedora base, installer context, and mutable profile tag, but not the
@@ -146,7 +143,7 @@ for both ISO variants; the compatibility override is removed when Image
 Builder exposes a supported compression-level control. The installer manifest
 records the method, level, override checksum, and upstream stage checksum.
 The QEMU smoke test exits as soon as `anaconda.service` emits the
-Purplefin-owned readiness marker instead of waiting for its safety timeout.
+Finite-owned readiness marker instead of waiting for its safety timeout.
 
 Scheduled runs and forced release-candidate builds additionally serve a CI-only
 Kickstart to the release ISO kernel. The guest must fetch it within three
@@ -158,7 +155,7 @@ as a user artifact; the published ISO remains interactive. The action summary
 records cache version/input/hit, update origin, and separate build, smoke,
 install, and installed-boot durations.
 
-Syft scans the final mounted OCI filesystem because Purplefin images are
+Syft scans the final mounted OCI filesystem because Finite images are
 assembled from Bluefin and RPM content rather than from a Nix store closure.
 The Flake pins Syft and wraps generation, normalization, size checks, and
 attestation extraction. `sbomnix` is intentionally not used for this boundary:
@@ -189,7 +186,7 @@ run --mode single --option 'packages:pkgs!' '' ci:prepare`. Hosted jobs invoke t
 leaf packages directly because that avoids cold devenv startup while retaining
 identical pinned commands and Cachix reuse.
 
-Purplefin's package universe follows the stable, seven-day-cooled
+Finite's package universe follows the stable, seven-day-cooled
 `DeterminateSystems/nixpkgs-26.05-chilled/0.1` FlakeHub series. Home Manager is
 constrained to the matching 26.05 series at `nix-community/home-manager/0.2605`
 and follows that same Nixpkgs input; lock validation rejects drift from either
@@ -218,7 +215,7 @@ default.
 
 ## Create a release
 
-Dispatch `Release Purplefin` from `main` and select `auto`, `patch`, `minor`, or
+Dispatch `Release Finite` from `main` and select `auto`, `patch`, `minor`, or
 `major`. The workflow:
 
 1. selects the version and, when needed, merges its stable `VERSION` through a
@@ -235,7 +232,8 @@ Stable changelog entries use `Added`, `Changed`, `Fixed`, and `Security`
 sections.
 
 Release-preparation pull requests may set `VERSION` and the dated changelog
-entry in advance. After that commit reaches `main`, dispatch the release with a
-`patch` bump (or `auto` when the conventional-commit history selects the same
-version). If the stable version is already present, the workflow uses that
-protected `main` commit directly instead of creating an empty version change.
+entry in advance. After that commit reaches `main`, dispatch the release with
+`auto`. When `VERSION` already contains a stable version, the workflow treats it
+as staged, verifies that it is newer than the latest tag, and ignores the bump
+selector. It then uses that protected `main` commit directly instead of creating
+an empty version change.

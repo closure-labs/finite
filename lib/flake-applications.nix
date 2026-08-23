@@ -6,21 +6,16 @@
   fedoraBootc,
   generated,
   imageBuilder,
+  legacyCacheName,
   pkgs,
   secretspec,
-  selfSource,
   version,
 }: let
   upstreamLocks = {
     inherit bluefin;
     bluefin-dx = bluefinDx;
   };
-  upstreamLocksFile = pkgs.writeText "purplefin-upstreams.json" (builtins.toJSON upstreamLocks);
-  # Retain the store-path context so every application embedding this URI also
-  # retains the flake source it evaluates at runtime. Without that reference,
-  # automatic garbage collection can delete the source before home-switch uses
-  # builtins.getFlake.
-  selfFlakeUri = "path:${toString selfSource}";
+  upstreamLocksFile = pkgs.writeText "finite-upstreams.json" (builtins.toJSON upstreamLocks);
 in rec {
   classifyChanges = import ./ci-applications/classify-changes.nix {inherit pkgs;};
   updateLocks = import ./ci-applications/update-locks.nix {
@@ -29,12 +24,12 @@ in rec {
   updateHomeRelease = import ./ci-applications/update-home-release.nix {inherit pkgs;};
 
   githubActionsSecrets = pkgs.writeShellApplication {
-    name = "purplefin-github-actions-secrets";
+    name = "finite-github-actions-secrets";
     runtimeInputs = [secretspec];
     text = ''
-      repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
+      repo_root="''${FINITE_SOURCE_ROOT:-$PWD}"
       [[ -f "''${repo_root}/secretspec.toml" ]] || {
-        echo "Run this command from the Purplefin repository root" >&2
+        echo "Run this command from the Finite repository root" >&2
         exit 2
       }
       exec secretspec export \
@@ -42,7 +37,7 @@ in rec {
         --format gha \
         --profile github-actions \
         --provider github-actions \
-        --reason "Purplefin GitHub Actions secret mapping" \
+        --reason "Finite GitHub Actions secret mapping" \
         --scope github-actions
     '';
   };
@@ -52,14 +47,14 @@ in rec {
     quotedNames = pkgs.lib.concatMapStringsSep " " pkgs.lib.escapeShellArg checkNames;
   in
     pkgs.writeShellApplication {
-      name = "purplefin-ci-check";
+      name = "finite-ci-check";
       # Nix comes from the host's Determinate installation; do not shadow it
       # with the upstream Nixpkgs client inside this application wrapper.
       runtimeInputs = with pkgs; [cachix coreutils jq];
       text = ''
-        repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
+        repo_root="''${FINITE_SOURCE_ROOT:-$PWD}"
         [[ -f "''${repo_root}/flake.nix" ]] || {
-          echo "Run this command from the Purplefin repository root" >&2
+          echo "Run this command from the Finite repository root" >&2
           exit 2
         }
         flake_uri="path:''${repo_root}"
@@ -112,23 +107,23 @@ in rec {
           printf '%s\t%s bytes\t%s\n' "''${name}" "''${closure_size}" "''${path}"
         done
 
-        if [[ "''${PURPLEFIN_CACHE_PUSH:-true}" == true && -n "''${CACHIX_AUTH_TOKEN:-}" ]]; then
+        if [[ "''${FINITE_CACHE_PUSH:-true}" == true && -n "''${CACHIX_AUTH_TOKEN:-}" ]]; then
           for path in "''${check_paths[@]}"; do
-            cachix push --omit-deriver purplefin "''${path}"
+            cachix push --omit-deriver ${pkgs.lib.escapeShellArg legacyCacheName} "''${path}"
           done
-        elif [[ "''${PURPLEFIN_CACHE_PUSH:-true}" == true ]]; then
+        elif [[ "''${FINITE_CACHE_PUSH:-true}" == true ]]; then
           echo "CACHIX_AUTH_TOKEN is unavailable; proof outputs were not pushed" >&2
         fi
       '';
     };
   mkLocalCache = ciApplication:
     pkgs.writeShellApplication {
-      name = "purplefin-local-cache";
+      name = "finite-local-cache";
       runtimeInputs = [devenv secretspec];
       text = ''
-        repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
+        repo_root="''${FINITE_SOURCE_ROOT:-$PWD}"
         [[ -f "''${repo_root}/flake.nix" ]] || {
-          echo "Run this command from the Purplefin repository root" >&2
+          echo "Run this command from the Finite repository root" >&2
           exit 2
         }
         cd "''${repo_root}"
@@ -136,13 +131,13 @@ in rec {
           --file "''${repo_root}/secretspec.toml" \
           --provider local \
           --profile local-cache \
-          --reason "Purplefin local Nix cache" \
+          --reason "Finite local Nix cache" \
           --scope cachix \
-          -- ${ciApplication}/bin/purplefin-ci-check "$@"
+          -- ${ciApplication}/bin/finite-ci-check "$@"
       '';
     };
   verifyBluefin = pkgs.writeShellApplication {
-    name = "purplefin-verify-bluefin";
+    name = "finite-verify-bluefin";
     runtimeInputs = [pkgs.cosign pkgs.jq];
     text = ''
       source_name="''${1:-bluefin}"
@@ -161,19 +156,19 @@ in rec {
     '';
   };
   loadBluefin = pkgs.writeShellApplication {
-    name = "purplefin-load-bluefin";
+    name = "finite-load-bluefin";
     runtimeInputs = with pkgs; [coreutils cosign jq skopeo];
     text = ''
-      if [[ "''${CI:-}" == true && $EUID -ne 0 && -z "''${_PURPLEFIN_IN_USERNS:-}" ]]; then
+      if [[ "''${CI:-}" == true && $EUID -ne 0 && -z "''${_FINITE_IN_USERNS:-}" ]]; then
         host_podman="$(PATH=/usr/local/bin:/usr/bin:/bin command -v podman || true)"
         [[ -n "''${host_podman}" && "''${host_podman}" != /nix/store/* ]] || {
           echo "The CI runner's host Podman is required to enter rootless storage" >&2
           exit 1
         }
-        exec env _PURPLEFIN_IN_USERNS=1 "''${host_podman}" unshare "$0" "$@"
+        exec env _FINITE_IN_USERNS=1 "''${host_podman}" unshare "$0" "$@"
       fi
       source_name="''${1:-bluefin}"
-      ${verifyBluefin}/bin/purplefin-verify-bluefin "''${source_name}" >/dev/null
+      ${verifyBluefin}/bin/finite-verify-bluefin "''${source_name}" >/dev/null
       locked_image="$(jq -er --arg source "''${source_name}" '.[$source].image' ${upstreamLocksFile})"
       locked_digest="$(jq -er --arg source "''${source_name}" '.[$source].digest' ${upstreamLocksFile})"
       locked_tag="$(jq -er --arg source "''${source_name}" '.[$source].tag' ${upstreamLocksFile})"
@@ -210,28 +205,28 @@ in rec {
     '';
   };
   sourceVerify = pkgs.writeShellApplication {
-    name = "purplefin-source-verify";
+    name = "finite-source-verify";
     runtimeInputs = with pkgs; [cosign coreutils curl skopeo];
     text = ''
-      export PURPLEFIN_BLUEFIN_ARCHITECTURE=${bluefin.architecture}
-      export PURPLEFIN_BLUEFIN_DIGEST=${bluefin.digest}
-      export PURPLEFIN_BLUEFIN_IMAGE=${bluefin.image}
-      export PURPLEFIN_BLUEFIN_ISSUER=${bluefin.cosign.issuer}
-      export PURPLEFIN_BLUEFIN_IDENTITY=${bluefin.cosign.identity}
-      export PURPLEFIN_IMAGE_BUILDER_ARCHITECTURE=${imageBuilder.architecture}
-      export PURPLEFIN_IMAGE_BUILDER_DIGEST=${imageBuilder.digest}
-      export PURPLEFIN_IMAGE_BUILDER_IMAGE=${imageBuilder.image}
-      export PURPLEFIN_FEDORA_BOOTC_ARCHITECTURE=${fedoraBootc.architecture}
-      export PURPLEFIN_FEDORA_BOOTC_DIGEST=${fedoraBootc.digest}
-      export PURPLEFIN_FEDORA_BOOTC_IMAGE=${fedoraBootc.image}
-      export PURPLEFIN_DETERMINATE_NIX_INSTALLER_SHA256=${determinateNix.installer.sha256}
-      export PURPLEFIN_DETERMINATE_NIX_INSTALLER_URL=${pkgs.lib.escapeShellArg determinateNix.installer.url}
-      export PURPLEFIN_DETERMINATE_NIX_POLICY_SHA256=${determinateNix.selinuxPolicy.sha256}
-      export PURPLEFIN_DETERMINATE_NIX_POLICY_URL=${pkgs.lib.escapeShellArg determinateNix.selinuxPolicy.url}
-      export PURPLEFIN_DETERMINATE_NIX_FC_SHA256=${determinateNix.selinuxFileContexts.sha256}
-      export PURPLEFIN_DETERMINATE_NIX_FC_URL=${pkgs.lib.escapeShellArg determinateNix.selinuxFileContexts.url}
-      export PURPLEFIN_DETERMINATE_NIX_VERSION=${determinateNix.version}
-      source_name="''${1:?usage: purplefin-source-verify SOURCE}"
+      export FINITE_BLUEFIN_ARCHITECTURE=${bluefin.architecture}
+      export FINITE_BLUEFIN_DIGEST=${bluefin.digest}
+      export FINITE_BLUEFIN_IMAGE=${bluefin.image}
+      export FINITE_BLUEFIN_ISSUER=${bluefin.cosign.issuer}
+      export FINITE_BLUEFIN_IDENTITY=${bluefin.cosign.identity}
+      export FINITE_IMAGE_BUILDER_ARCHITECTURE=${imageBuilder.architecture}
+      export FINITE_IMAGE_BUILDER_DIGEST=${imageBuilder.digest}
+      export FINITE_IMAGE_BUILDER_IMAGE=${imageBuilder.image}
+      export FINITE_FEDORA_BOOTC_ARCHITECTURE=${fedoraBootc.architecture}
+      export FINITE_FEDORA_BOOTC_DIGEST=${fedoraBootc.digest}
+      export FINITE_FEDORA_BOOTC_IMAGE=${fedoraBootc.image}
+      export FINITE_DETERMINATE_NIX_INSTALLER_SHA256=${determinateNix.installer.sha256}
+      export FINITE_DETERMINATE_NIX_INSTALLER_URL=${pkgs.lib.escapeShellArg determinateNix.installer.url}
+      export FINITE_DETERMINATE_NIX_POLICY_SHA256=${determinateNix.selinuxPolicy.sha256}
+      export FINITE_DETERMINATE_NIX_POLICY_URL=${pkgs.lib.escapeShellArg determinateNix.selinuxPolicy.url}
+      export FINITE_DETERMINATE_NIX_FC_SHA256=${determinateNix.selinuxFileContexts.sha256}
+      export FINITE_DETERMINATE_NIX_FC_URL=${pkgs.lib.escapeShellArg determinateNix.selinuxFileContexts.url}
+      export FINITE_DETERMINATE_NIX_VERSION=${determinateNix.version}
+      source_name="''${1:?usage: finite-source-verify SOURCE}"
       case "''${source_name}" in
         bluefin | bluefin-dx)
           image="$(jq -er --arg source "''${source_name}" '.[$source].image' ${upstreamLocksFile})"
@@ -247,16 +242,16 @@ in rec {
             "''${image}@''${digest}" >/dev/null
           ;;
         image-builder)
-          image="''${PURPLEFIN_IMAGE_BUILDER_IMAGE:?}"
-          architecture="''${PURPLEFIN_IMAGE_BUILDER_ARCHITECTURE:?}"
-          digest="''${PURPLEFIN_IMAGE_BUILDER_DIGEST:?}"
+          image="''${FINITE_IMAGE_BUILDER_IMAGE:?}"
+          architecture="''${FINITE_IMAGE_BUILDER_ARCHITECTURE:?}"
+          digest="''${FINITE_IMAGE_BUILDER_DIGEST:?}"
           skopeo inspect --retry-times 3 --override-arch "''${architecture}" \
             "docker://''${image}@''${digest}" >/dev/null
           ;;
         fedora-bootc)
-          image="''${PURPLEFIN_FEDORA_BOOTC_IMAGE:?}"
-          architecture="''${PURPLEFIN_FEDORA_BOOTC_ARCHITECTURE:?}"
-          digest="''${PURPLEFIN_FEDORA_BOOTC_DIGEST:?}"
+          image="''${FINITE_FEDORA_BOOTC_IMAGE:?}"
+          architecture="''${FINITE_FEDORA_BOOTC_ARCHITECTURE:?}"
+          digest="''${FINITE_FEDORA_BOOTC_DIGEST:?}"
           skopeo inspect --retry-times 3 --override-arch "''${architecture}" \
             "docker://''${image}@''${digest}" >/dev/null
           ;;
@@ -266,18 +261,18 @@ in rec {
           file_contexts="$(mktemp)"
           trap 'rm -f -- "''${installer}" "''${policy}" "''${file_contexts}"' EXIT
           curl --fail --location --retry 3 --output "''${installer}" \
-            "''${PURPLEFIN_DETERMINATE_NIX_INSTALLER_URL:?}"
+            "''${FINITE_DETERMINATE_NIX_INSTALLER_URL:?}"
           curl --fail --location --retry 3 --output "''${policy}" \
-            "''${PURPLEFIN_DETERMINATE_NIX_POLICY_URL:?}"
+            "''${FINITE_DETERMINATE_NIX_POLICY_URL:?}"
           curl --fail --location --retry 3 --output "''${file_contexts}" \
-            "''${PURPLEFIN_DETERMINATE_NIX_FC_URL:?}"
-          printf '%s  %s\n' "''${PURPLEFIN_DETERMINATE_NIX_INSTALLER_SHA256:?}" "''${installer}" |
+            "''${FINITE_DETERMINATE_NIX_FC_URL:?}"
+          printf '%s  %s\n' "''${FINITE_DETERMINATE_NIX_INSTALLER_SHA256:?}" "''${installer}" |
             sha256sum --check --status
-          printf '%s  %s\n' "''${PURPLEFIN_DETERMINATE_NIX_POLICY_SHA256:?}" "''${policy}" |
+          printf '%s  %s\n' "''${FINITE_DETERMINATE_NIX_POLICY_SHA256:?}" "''${policy}" |
             sha256sum --check --status
-          printf '%s  %s\n' "''${PURPLEFIN_DETERMINATE_NIX_FC_SHA256:?}" "''${file_contexts}" |
+          printf '%s  %s\n' "''${FINITE_DETERMINATE_NIX_FC_SHA256:?}" "''${file_contexts}" |
             sha256sum --check --status
-          printf 'determinate-nix@%s\n' "''${PURPLEFIN_DETERMINATE_NIX_VERSION:?}"
+          printf 'determinate-nix@%s\n' "''${FINITE_DETERMINATE_NIX_VERSION:?}"
           exit 0
           ;;
         *)
@@ -289,16 +284,16 @@ in rec {
     '';
   };
   sourceUpdate = pkgs.writeShellApplication {
-    name = "purplefin-source-update";
+    name = "finite-source-update";
     runtimeInputs = with pkgs; [coreutils cosign curl diffutils gh jq skopeo];
     text = ''
-      repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
+      repo_root="''${FINITE_SOURCE_ROOT:-$PWD}"
       [[ -f "''${repo_root}/flake.nix" ]] || {
-        echo "Run this command from the Purplefin repository root" >&2
+        echo "Run this command from the Finite repository root" >&2
         exit 2
       }
       cd "''${repo_root}" || exit
-      source_name="''${1:?usage: purplefin-source-update SOURCE [OUTPUT_FILE]}"
+      source_name="''${1:?usage: finite-source-update SOURCE [OUTPUT_FILE]}"
       output_file="''${2:-}"
       case "''${source_name}" in
         bluefin | bluefin-dx | fedora-bootc | image-builder)
@@ -393,12 +388,12 @@ in rec {
     '';
   };
   releaseNotes = pkgs.writeShellApplication {
-    name = "purplefin-release-notes";
+    name = "finite-release-notes";
     runtimeInputs = with pkgs; [bash coreutils gawk gnugrep gnused];
     text = ''
-      repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
+      repo_root="''${FINITE_SOURCE_ROOT:-$PWD}"
       [[ -f "''${repo_root}/flake.nix" ]] || {
-        echo "Run this command from the Purplefin repository root" >&2
+        echo "Run this command from the Finite repository root" >&2
         exit 2
       }
       cd "''${repo_root}"
@@ -463,12 +458,12 @@ in rec {
     '';
   };
   trustedUpdate = pkgs.writeShellApplication {
-    name = "purplefin-trusted-update";
+    name = "finite-trusted-update";
     runtimeInputs = with pkgs; [bash coreutils gh jq];
     text = ''
-          repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
+          repo_root="''${FINITE_SOURCE_ROOT:-$PWD}"
           [[ -f "''${repo_root}/flake.nix" ]] || {
-            echo "Run this command from the Purplefin repository root" >&2
+            echo "Run this command from the Finite repository root" >&2
             exit 2
           }
           cd "''${repo_root}"
@@ -606,12 +601,12 @@ in rec {
     '';
   };
   queueDependabot = pkgs.writeShellApplication {
-    name = "purplefin-queue-dependabot";
+    name = "finite-queue-dependabot";
     runtimeInputs = with pkgs; [bash gh jq];
     text = ''
-      repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
+      repo_root="''${FINITE_SOURCE_ROOT:-$PWD}"
       [[ -f "''${repo_root}/flake.nix" ]] || {
-        echo "Run this command from the Purplefin repository root" >&2
+        echo "Run this command from the Finite repository root" >&2
         exit 2
       }
       cd "''${repo_root}"
@@ -649,12 +644,12 @@ in rec {
     '';
   };
   packageCleanup = pkgs.writeShellApplication {
-    name = "purplefin-package-cleanup";
+    name = "finite-package-cleanup";
     runtimeInputs = with pkgs; [bash gh jq];
     text = ''
-      repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
+      repo_root="''${FINITE_SOURCE_ROOT:-$PWD}"
       [[ -f "''${repo_root}/flake.nix" ]] || {
-        echo "Run this command from the Purplefin repository root" >&2
+        echo "Run this command from the Finite repository root" >&2
         exit 2
       }
       cd "''${repo_root}"
@@ -668,7 +663,7 @@ in rec {
       package="''${GITHUB_REPOSITORY#*/}"
       # Build and installer caches use isolated sibling packages. Querying only
       # the primary image package keeps cache retention outside this cleanup.
-      obsolete_tags='["dale-cosmic","development-desktop-x86_64","support-lenovo-generic"]'
+      obsolete_tags='[]'
 
       delete_version() {
         local package_name="$1"
@@ -710,12 +705,12 @@ in rec {
   };
   imageSign = import ./ci-applications/image-sign.nix {inherit pkgs;};
   imageReuse = pkgs.writeShellApplication {
-    name = "purplefin-image-reuse";
+    name = "finite-image-reuse";
     runtimeInputs = with pkgs; [bash coreutils cosign jq skopeo];
     text = ''
-         repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
+         repo_root="''${FINITE_SOURCE_ROOT:-$PWD}"
          [[ -f "''${repo_root}/flake.nix" ]] || {
-           echo "Run this command from the Purplefin repository root" >&2
+           echo "Run this command from the Finite repository root" >&2
            exit 2
          }
          cd "''${repo_root}"
@@ -730,8 +725,10 @@ in rec {
          : "''${EXPECTED_UPSTREAM_DIGEST:?EXPECTED_UPSTREAM_DIGEST is required}"
          : "''${EXPECTED_VERSION:?EXPECTED_VERSION is required}"
          : "''${IMAGE_REF:?IMAGE_REF is required}"
-      cosign_command="''${PURPLEFIN_COSIGN:-cosign}"
-      skopeo_command="''${PURPLEFIN_SKOPEO:-skopeo}"
+      expected_foundation="$(jq -er --arg profile "''${BUILD_PROFILE}" '.profiles[$profile].foundation' ${generated}/bootc/generated/profile-catalog.json)"
+      expected_hardware="$(jq -er --arg profile "''${BUILD_PROFILE}" '.profiles[$profile].hardware' ${generated}/bootc/generated/profile-catalog.json)"
+      cosign_command="''${FINITE_COSIGN:-cosign}"
+      skopeo_command="''${FINITE_SKOPEO:-skopeo}"
 
          published_ref="''${IMAGE_REF}:''${primary_tag}"
       if ! metadata="$("''${skopeo_command}" inspect --retry-times 3 "docker://''${published_ref}")"; then
@@ -747,15 +744,19 @@ in rec {
 
          if ! jq -e \
            --arg build_input "''${BUILD_INPUT}" \
+           --arg foundation "''${expected_foundation}" \
+           --arg hardware "''${expected_hardware}" \
            --arg parent_digest "''${EXPECTED_PARENT_DIGEST}" \
            --arg profile "''${BUILD_PROFILE}" \
            --arg revision "''${EXPECTED_REVISION}" \
            --arg upstream_digest "''${EXPECTED_UPSTREAM_DIGEST}" \
            --arg version "''${EXPECTED_VERSION}" '
              (.Labels // {}) as $labels |
-             $labels["io.purplefin.build.input"] == $build_input and
-             $labels["io.purplefin.build.profile"] == $profile and
-             $labels["io.purplefin.upstream.digest"] == $upstream_digest and
+             $labels["io.finite.build.input"] == $build_input and
+             $labels["io.finite.build.profile"] == $profile and
+             $labels["io.finite.foundation"] == $foundation and
+             $labels["io.finite.hardware"] == $hardware and
+             $labels["io.finite.upstream.digest"] == $upstream_digest and
              $labels["org.opencontainers.image.base.digest"] == $parent_digest and
              $labels["org.opencontainers.image.revision"] == $revision and
              $labels["org.opencontainers.image.version"] == $version
@@ -787,12 +788,12 @@ in rec {
     inherit fedoraBootc generated imageBuilder pkgs;
   };
   sbomAttestation = pkgs.writeShellApplication {
-    name = "purplefin-sbom-attestation";
+    name = "finite-sbom-attestation";
     runtimeInputs = with pkgs; [coreutils gh jq];
     text = ''
-      repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
+      repo_root="''${FINITE_SOURCE_ROOT:-$PWD}"
       [[ -f "''${repo_root}/flake.nix" ]] || {
-        echo "Run this command from the Purplefin repository root" >&2
+        echo "Run this command from the Finite repository root" >&2
         exit 2
       }
       cd "''${repo_root}"
@@ -870,9 +871,9 @@ in rec {
         [[ "''${SBOM_IMAGE_DIGEST}" =~ ^sha256:[0-9a-f]{64}$ ]]
         [[ "''${SBOM_SOURCE_DIGEST}" =~ ^[0-9a-f]{40}$ ]]
 
-        gh_command="$(resolve_tool "''${PURPLEFIN_GH:-}" gh)"
-        verification="$(mktemp "''${TMPDIR:-/tmp}/purplefin-sbom-verification.XXXXXX")"
-        predicate="$(mktemp "''${TMPDIR:-/tmp}/purplefin-sbom-predicate.XXXXXX")"
+        gh_command="$(resolve_tool "''${FINITE_GH:-}" gh)"
+        verification="$(mktemp "''${TMPDIR:-/tmp}/finite-sbom-verification.XXXXXX")"
+        predicate="$(mktemp "''${TMPDIR:-/tmp}/finite-sbom-predicate.XXXXXX")"
         if ! "''${gh_command}" attestation verify \
           "oci://''${SBOM_IMAGE_REF}@''${SBOM_IMAGE_DIGEST}" \
           --bundle-from-oci \
@@ -920,15 +921,15 @@ in rec {
         : "''${SBOM_IMAGE_DIGEST:?SBOM_IMAGE_DIGEST is required}"
         [[ "''${SBOM_IMAGE_DIGEST}" =~ ^sha256:[0-9a-f]{64}$ ]]
 
-        repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
+        repo_root="''${FINITE_SOURCE_ROOT:-$PWD}"
         [[ -f "''${repo_root}/.github/syft.yaml" ]] || {
-          echo "Run this command from the Purplefin repository root" >&2
+          echo "Run this command from the Finite repository root" >&2
           return 2
         }
-        podman_command="$(resolve_tool "''${PURPLEFIN_PODMAN:-}" podman)"
-        syft_command="$(resolve_tool "''${PURPLEFIN_SYFT:-}" syft)"
-        nix_store_command="$(resolve_tool "''${PURPLEFIN_NIX_STORE:-}" nix-store)"
-        syft_store="''${PURPLEFIN_SYFT_STORE:-$(dirname "$(dirname "$(readlink -f "''${syft_command}")")")}"
+        podman_command="$(resolve_tool "''${FINITE_PODMAN:-}" podman)"
+        syft_command="$(resolve_tool "''${FINITE_SYFT:-}" syft)"
+        nix_store_command="$(resolve_tool "''${FINITE_NIX_STORE:-}" nix-store)"
+        syft_store="''${FINITE_SYFT_STORE:-$(dirname "$(dirname "$(readlink -f "''${syft_command}")")")}"
 
         mapfile -t syft_closure < <(
           "''${nix_store_command}" --query --requisites "''${syft_store}"
@@ -949,7 +950,7 @@ in rec {
             "''${SBOM_IMAGE_REF}@''${SBOM_IMAGE_DIGEST}")"
         fi
 
-        generated="$(mktemp "''${TMPDIR:-/tmp}/purplefin-sbom-generated.XXXXXX")"
+        generated="$(mktemp "''${TMPDIR:-/tmp}/finite-sbom-generated.XXXXXX")"
         if ! "''${podman_command}" run --rm --pull=never \
           --cpus 4 \
           --env SYFT_CACHE_DIR=/tmp/syft-cache \
@@ -957,12 +958,12 @@ in rec {
           --network none \
           --security-opt label=disable \
           --user 0 \
-          --volume "''${repo_root}/.github/syft.yaml:/run/purplefin-syft.yaml:ro" \
+          --volume "''${repo_root}/.github/syft.yaml:/run/finite-syft.yaml:ro" \
           "''${syft_mounts[@]}" \
           --entrypoint "''${syft_command}" \
           "''${scan_image}" \
           scan dir:/ \
-            --config /run/purplefin-syft.yaml \
+            --config /run/finite-syft.yaml \
             --exclude './nix/store/**' \
             --source-name "''${SBOM_IMAGE_REF}" \
             --source-version "''${SBOM_IMAGE_DIGEST}" \
@@ -1021,12 +1022,12 @@ in rec {
     '';
   };
   imageSbom = pkgs.writeShellApplication {
-    name = "purplefin-image-sbom";
+    name = "finite-image-sbom";
     runtimeInputs = with pkgs; [coreutils gh jq syft];
     text = ''
-      repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
+      repo_root="''${FINITE_SOURCE_ROOT:-$PWD}"
       [[ -f "''${repo_root}/flake.nix" ]] || {
-        echo "Run this command from the Purplefin repository root" >&2
+        echo "Run this command from the Finite repository root" >&2
         exit 2
       }
       cd "''${repo_root}"
@@ -1104,9 +1105,9 @@ in rec {
         [[ "''${SBOM_IMAGE_DIGEST}" =~ ^sha256:[0-9a-f]{64}$ ]]
         [[ "''${SBOM_SOURCE_DIGEST}" =~ ^[0-9a-f]{40}$ ]]
 
-        gh_command="$(resolve_tool "''${PURPLEFIN_GH:-}" gh)"
-        verification="$(mktemp "''${TMPDIR:-/tmp}/purplefin-sbom-verification.XXXXXX")"
-        predicate="$(mktemp "''${TMPDIR:-/tmp}/purplefin-sbom-predicate.XXXXXX")"
+        gh_command="$(resolve_tool "''${FINITE_GH:-}" gh)"
+        verification="$(mktemp "''${TMPDIR:-/tmp}/finite-sbom-verification.XXXXXX")"
+        predicate="$(mktemp "''${TMPDIR:-/tmp}/finite-sbom-predicate.XXXXXX")"
         if ! "''${gh_command}" attestation verify \
           "oci://''${SBOM_IMAGE_REF}@''${SBOM_IMAGE_DIGEST}" \
           --bundle-from-oci \
@@ -1154,15 +1155,15 @@ in rec {
         : "''${SBOM_IMAGE_DIGEST:?SBOM_IMAGE_DIGEST is required}"
         [[ "''${SBOM_IMAGE_DIGEST}" =~ ^sha256:[0-9a-f]{64}$ ]]
 
-        repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
+        repo_root="''${FINITE_SOURCE_ROOT:-$PWD}"
         [[ -f "''${repo_root}/.github/syft.yaml" ]] || {
-          echo "Run this command from the Purplefin repository root" >&2
+          echo "Run this command from the Finite repository root" >&2
           return 2
         }
-        podman_command="$(resolve_tool "''${PURPLEFIN_PODMAN:-}" podman)"
-        syft_command="$(resolve_tool "''${PURPLEFIN_SYFT:-}" syft)"
-        nix_store_command="$(resolve_tool "''${PURPLEFIN_NIX_STORE:-}" nix-store)"
-        syft_store="''${PURPLEFIN_SYFT_STORE:-$(dirname "$(dirname "$(readlink -f "''${syft_command}")")")}"
+        podman_command="$(resolve_tool "''${FINITE_PODMAN:-}" podman)"
+        syft_command="$(resolve_tool "''${FINITE_SYFT:-}" syft)"
+        nix_store_command="$(resolve_tool "''${FINITE_NIX_STORE:-}" nix-store)"
+        syft_store="''${FINITE_SYFT_STORE:-$(dirname "$(dirname "$(readlink -f "''${syft_command}")")")}"
 
         mapfile -t syft_closure < <(
           "''${nix_store_command}" --query --requisites "''${syft_store}"
@@ -1183,7 +1184,7 @@ in rec {
             "''${SBOM_IMAGE_REF}@''${SBOM_IMAGE_DIGEST}")"
         fi
 
-        generated="$(mktemp "''${TMPDIR:-/tmp}/purplefin-sbom-generated.XXXXXX")"
+        generated="$(mktemp "''${TMPDIR:-/tmp}/finite-sbom-generated.XXXXXX")"
         if ! "''${podman_command}" run --rm --pull=never \
           --cpus 4 \
           --env SYFT_CACHE_DIR=/tmp/syft-cache \
@@ -1191,12 +1192,12 @@ in rec {
           --network none \
           --security-opt label=disable \
           --user 0 \
-          --volume "''${repo_root}/.github/syft.yaml:/run/purplefin-syft.yaml:ro" \
+          --volume "''${repo_root}/.github/syft.yaml:/run/finite-syft.yaml:ro" \
           "''${syft_mounts[@]}" \
           --entrypoint "''${syft_command}" \
           "''${scan_image}" \
           scan dir:/ \
-            --config /run/purplefin-syft.yaml \
+            --config /run/finite-syft.yaml \
             --exclude './nix/store/**' \
             --source-name "''${SBOM_IMAGE_REF}" \
             --source-version "''${SBOM_IMAGE_DIGEST}" \
@@ -1254,166 +1255,13 @@ in rec {
       esac
     '';
   };
-  homeSwitch = pkgs.writeShellApplication {
-    name = "purplefin-home-switch";
-    runtimeInputs = with pkgs; [coreutils getent jq];
-    text = ''
-      profile=""
-      hardware=""
-      source_flake="github:closure-labs/finite"
-      mode=switch
-      while (( $# > 0 )); do
-        case "$1" in
-          --profile) profile="''${2:?--profile requires a value}"; shift 2 ;;
-          --hardware) hardware="''${2:?--hardware requires a value}"; shift 2 ;;
-          --source) source_flake="''${2:?--source requires a value}"; shift 2 ;;
-          --check) mode=check; shift ;;
-          --switch) mode=switch; shift ;;
-          *) echo "usage: purplefin-home-switch --profile PROFILE [--hardware HARDWARE] [--source FLAKE] [--check|--switch]" >&2; exit 2 ;;
-        esac
-      done
-      [[ "''${profile}" =~ ^[a-z0-9._-]+$ ]] || {
-        echo "A valid --profile is required" >&2
-        exit 2
-      }
-      jq -e --arg profile "''${profile}" '.profiles[$profile]' \
-        ${generated}/bootc/generated/home-profile-catalog.json >/dev/null || {
-        echo "Unknown Home Manager profile: ''${profile}" >&2
-        exit 2
-      }
-      if [[ -z "''${hardware}" && -r /usr/share/purplefin/profile.json ]]; then
-        hardware="$(jq -r '.hardware // empty' /usr/share/purplefin/profile.json)"
-      fi
-      hardware="''${hardware:-generic-x86_64}"
-      jq -e --arg profile "''${profile}" --arg hardware "''${hardware}" \
-        '.profiles[$profile].hardware | index($hardware) != null' \
-        ${generated}/bootc/generated/home-profile-catalog.json >/dev/null || {
-        echo "Profile ''${profile} does not support hardware ''${hardware}" >&2
-        exit 2
-      }
-      if [[ -r /usr/share/purplefin/build-profile && "''${PURPLEFIN_SKIP_FOUNDATION_CHECK:-false}" != true ]]; then
-        foundation="$(</usr/share/purplefin/build-profile)"
-        jq -e --arg profile "''${profile}" --arg foundation "''${foundation}" \
-          '.profiles[$profile].foundations | index($foundation) != null' \
-          ${generated}/bootc/generated/home-profile-catalog.json >/dev/null || {
-          echo "Profile ''${profile} is incompatible with running foundation ''${foundation}" >&2
-          exit 2
-        }
-      fi
-      username="$(id -un)"
-      home_directory="$(getent passwd "''${username}" | cut -d: -f6)"
-      [[ -n "''${home_directory}" ]] || home_directory="''${HOME}"
-      export PURPLEFIN_HOME_PROFILE="''${profile}"
-      export PURPLEFIN_HOME_HARDWARE="''${hardware}"
-      export PURPLEFIN_HOME_USERNAME="''${username}"
-      export PURPLEFIN_HOME_DIRECTORY="''${home_directory}"
-      export PURPLEFIN_HOME_SOURCE="''${source_flake}"
-      expression='let
-        flake = builtins.getFlake "${selfFlakeUri}";
-      in
-        (flake.lib.purplefin.mkHomeConfiguration {
-          name = builtins.getEnv "PURPLEFIN_HOME_PROFILE";
-          hardware = builtins.getEnv "PURPLEFIN_HOME_HARDWARE";
-          username = builtins.getEnv "PURPLEFIN_HOME_USERNAME";
-          homeDirectory = builtins.getEnv "PURPLEFIN_HOME_DIRECTORY";
-          sourceFlake = builtins.getEnv "PURPLEFIN_HOME_SOURCE";
-        }).activationPackage'
-      activation="$(nix --accept-flake-config build --impure --no-link --print-out-paths --expr "''${expression}")"
-      printf 'Home profile %s for %s (%s) builds as %s\n' \
-        "''${profile}" "''${username}" "''${hardware}" "''${activation}"
-      [[ "''${mode}" == check ]] || exec "''${activation}/activate"
-    '';
-  };
-  cloudInit = pkgs.writeShellApplication {
-    name = "purplefin-cloud-init";
-    runtimeInputs = with pkgs; [coreutils jq xorriso yq-go];
-    text = ''
-      profile=""
-      hardware=""
-      username=""
-      output=""
-      flake_uri="github:closure-labs/finite"
-      while (( $# > 0 )); do
-        case "$1" in
-          --profile) profile="''${2:?--profile requires a value}"; shift 2 ;;
-          --hardware) hardware="''${2:?--hardware requires a value}"; shift 2 ;;
-          --user) username="''${2:?--user requires a value}"; shift 2 ;;
-          --output) output="''${2:?--output requires a value}"; shift 2 ;;
-          --flake) flake_uri="''${2:?--flake requires a value}"; shift 2 ;;
-          *) echo "usage: purplefin-cloud-init --profile PROFILE --hardware HARDWARE --user USER --output DIR [--flake URI]" >&2; exit 2 ;;
-        esac
-      done
-      [[ "''${profile}" =~ ^[a-z0-9._-]+$ && "''${hardware}" =~ ^[a-z0-9._-]+$ ]] || {
-        echo "Valid --profile and --hardware values are required" >&2
-        exit 2
-      }
-      [[ "''${username}" =~ ^[a-z_][a-z0-9_-]*[$]?$ ]] || {
-        echo "A valid existing --user is required" >&2
-        exit 2
-      }
-      [[ -n "''${output}" ]] || { echo "--output is required" >&2; exit 2; }
-      [[ ! -e "''${output}" ]] || { echo "Output already exists: ''${output}" >&2; exit 2; }
-      foundation="$(jq -er --arg profile "''${profile}" --arg hardware "''${hardware}" '
-        .profiles[$profile] as $profile |
-        ($profile.hardware | index($hardware)) as $index |
-        select($index != null) |
-        $profile.foundations[$index]
-      ' ${generated}/bootc/generated/home-profile-catalog.json)" || {
-        echo "Profile ''${profile} does not support ''${hardware}" >&2
-        exit 2
-      }
-      home_directory="/var/home/''${username}"
-      workdir="$(mktemp -d)"
-      trap 'rm -rf -- "''${workdir}"' EXIT
-      jq -n \
-        --arg flake "''${flake_uri}" \
-        --arg hardware "''${hardware}" \
-        --arg home "''${home_directory}" \
-        --arg profile "''${profile}" \
-        --arg user "''${username}" '
-        {
-          preserve_hostname: true,
-          ssh_pwauth: false,
-          runcmd: [[
-            "runuser", "-u", $user, "--", "env", "HOME=" + $home,
-            "/nix/var/nix/profiles/default/bin/nix", "run",
-            $flake + "#home-switch", "--",
-            "--profile", $profile, "--hardware", $hardware,
-            "--source", $flake, "--switch"
-          ]]
-        }
-      ' | yq -P >"''${workdir}/user-data.yaml"
-      {
-        printf '#cloud-config\n'
-        cat "''${workdir}/user-data.yaml"
-      } >"''${workdir}/user-data"
-      instance_hash="$(sha256sum "''${workdir}/user-data" | cut -c1-16)"
-      jq -n --arg id "purplefin-''${instance_hash}" --arg hostname purplefin \
-        '{"instance-id": $id, "local-hostname": $hostname}' | yq -P >"''${workdir}/meta-data"
-      jq -n \
-        --arg foundation "''${foundation}" \
-        --arg flake "''${flake_uri}" \
-        --arg hardware "''${hardware}" \
-        --arg profile "''${profile}" \
-        --arg user "''${username}" \
-        '{schema: 1, foundation: $foundation, flake: $flake, hardware: $hardware, profile: $profile, user: $user}' \
-        >"''${workdir}/manifest.json"
-      xorriso -as mkisofs -quiet -V cidata -J -R \
-        -o "''${workdir}/seed.iso" "''${workdir}/user-data" "''${workdir}/meta-data"
-      install -d "''${output}"
-      install -m 0644 "''${workdir}/user-data" "''${workdir}/meta-data" \
-        "''${workdir}/manifest.json" "''${workdir}/seed.iso" "''${output}/"
-      printf 'Generated NoCloud seed for %s on %s at %s\n' \
-        "''${profile}" "''${foundation}" "''${output}"
-    '';
-  };
   imageBuild = pkgs.writeShellApplication {
-    name = "purplefin-image-build";
+    name = "finite-image-build";
     runtimeInputs = with pkgs; [bash coreutils jq podman];
     text = ''
-      repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
+      repo_root="''${FINITE_SOURCE_ROOT:-$PWD}"
       [[ -f "''${repo_root}/flake.nix" ]] || {
-        echo "Run this command from the Purplefin repository root" >&2
+        echo "Run this command from the Finite repository root" >&2
         exit 2
       }
       (( $# == 2 )) || {
@@ -1430,23 +1278,27 @@ in rec {
       }
       upstream_image="$(jq -er --arg profile "''${profile}" '.[] | select(.profile == $profile) | .upstream.image' ${generated}/bootc/generated/image-matrix.json)"
       upstream_digest="$(jq -er --arg profile "''${profile}" '.[] | select(.profile == $profile) | .upstream.digest' ${generated}/bootc/generated/image-matrix.json)"
+      foundation="$(jq -er --arg profile "''${profile}" '.profiles[$profile].foundation' ${generated}/bootc/generated/profile-catalog.json)"
+      hardware="$(jq -er --arg profile "''${profile}" '.profiles[$profile].hardware' ${generated}/bootc/generated/profile-catalog.json)"
       if [[ "''${upstream_image}" == *bluefin-dx ]]; then
         source_name=bluefin-dx
       else
         source_name=bluefin
       fi
-      base_image="$(${loadBluefin}/bin/purplefin-load-bluefin "''${source_name}")"
+      base_image="$(${loadBluefin}/bin/finite-load-bluefin "''${source_name}")"
       exec podman build \
         --file bootc/Containerfile \
         --network host \
         --pull=never \
         --security-opt label=disable \
-        --build-context purplefin-generated=${generated} \
+        --build-context finite-generated=${generated} \
         --build-arg "BASE_REF=''${base_image}" \
         --build-arg "BUILD_PROFILE=''${profile}" \
-        --build-arg "PURPLEFIN_VERSION=${version}" \
-        --label "io.purplefin.build.profile=''${profile}" \
-        --label "io.purplefin.upstream.digest=''${upstream_digest}" \
+        --build-arg "FINITE_VERSION=${version}" \
+        --label "io.finite.build.profile=''${profile}" \
+        --label "io.finite.foundation=''${foundation}" \
+        --label "io.finite.hardware=''${hardware}" \
+        --label "io.finite.upstream.digest=''${upstream_digest}" \
         --label "org.opencontainers.image.base.digest=''${upstream_digest}" \
         --tag "''${tag}" \
       .

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-build_root="${PURPLEFIN_BUILD_ROOT:-/tmp/purplefin-build}"
-generated_root="${PURPLEFIN_GENERATED_ROOT:-${build_root}}"
+build_root="${FINITE_BUILD_ROOT:-/tmp/finite-build}"
+generated_root="${FINITE_GENERATED_ROOT:-${build_root}}"
 profile="${1:?usage: derived.sh PROFILE PARENT_PROFILE}"
 parent_profile="${2:?usage: derived.sh PROFILE PARENT_PROFILE}"
 profile_catalog="${generated_root}/bootc/generated/profile-catalog.json"
@@ -45,27 +45,27 @@ for build_step in "${delta_steps[@]}"; do
 done
 ((hardware_delta_count <= 1)) || { echo "Profile ${profile} adds multiple hardware aspects" >&2; exit 2; }
 
-if [[ "${PURPLEFIN_DERIVED_DRY_RUN:-false}" == true ]]; then
+if [[ "${FINITE_DERIVED_DRY_RUN:-false}" == true ]]; then
 	printf '%s\n' "${delta_names[@]}"
 	exit 0
 fi
 
 if ((hardware_delta_count == 1)); then
-	# shellcheck source=/tmp/purplefin-build/bootc/builder/lib/authselect-features.sh
+	# shellcheck source=/tmp/finite-build/bootc/builder/lib/authselect-features.sh
 	source "${build_root}/bootc/builder/lib/authselect-features.sh"
-	purplefin_authselect_reset
+	finite_authselect_reset
 fi
 
 for build_step in "${delta_steps[@]}"; do
 	IFS=$'\t' read -r step_name step_script <<<"${build_step}"
-	echo ":: Applying Purplefin derived aspect: ${step_name}"
+	echo ":: Applying Finite derived aspect: ${step_name}"
 	"${build_root}/${step_script}"
 done
 
 if ((hardware_delta_count == 1)); then
-	purplefin_authselect_finalize
+	finite_authselect_finalize
 fi
 
-# shellcheck source=/tmp/purplefin-build/bootc/builder/lib/finalize-profile.sh
+# shellcheck source=/tmp/finite-build/bootc/builder/lib/finalize-profile.sh
 source "${build_root}/bootc/builder/lib/finalize-profile.sh"
-purplefin_finalize_profile "${profile}" "${profile_catalog}" "${target_modules[@]}"
+finite_finalize_profile "${profile}" "${profile_catalog}" "${target_modules[@]}"

@@ -8,7 +8,7 @@
   version,
 }:
 pkgs.writeShellApplication {
-  name = "purplefin-ci-build-plan";
+  name = "finite-ci-build-plan";
   runtimeInputs = [pkgs.jq];
   text = ''
     set -euo pipefail
@@ -50,15 +50,15 @@ pkgs.writeShellApplication {
 
     if jq -e '.validation.images.required' <<<"''${classification}" >/dev/null; then
       : "''${IMAGE_REF:?IMAGE_REF is required}"
-      ${verifyBluefin}/bin/purplefin-verify-bluefin bluefin >/dev/null
-      ${verifyBluefin}/bin/purplefin-verify-bluefin bluefin-dx >/dev/null
+      ${verifyBluefin}/bin/finite-verify-bluefin bluefin >/dev/null
+      ${verifyBluefin}/bin/finite-verify-bluefin bluefin-dx >/dev/null
       export EXPECTED_VERSION='${version}'
-      matrix="$(${imagePlan}/bin/purplefin-image-plan "''${profiles}")"
+      matrix="$(${imagePlan}/bin/finite-image-plan "''${profiles}")"
       root_base="$(jq -c 'first(.include[] | select(.stage == "root")) // {}' <<<"''${matrix}")"
       root_matrix="$(jq -c '{include: [.include[] | select(.stage == "root")]}' <<<"''${matrix}")"
       hardware_matrix="$(jq -c '{include: [.include[] | select(.stage == "hardware")]}' <<<"''${matrix}")"
       role_matrix="$(jq -c '{include: [.include[] | select(.stage == "role")]}' <<<"''${matrix}")"
-      candidate_shards="$(${shardPlan}/bin/purplefin-shard-plan "''${profiles}" "''${matrix}" 4)"
+      candidate_shards="$(${shardPlan}/bin/finite-shard-plan "''${profiles}" "''${matrix}" 4)"
       sbom_matrix="$(jq -c --arg source_digest "''${github_sha}" --argjson profiles "''${profiles}" '
         ([.include[] | . + {
           source_digest: $source_digest,

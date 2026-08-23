@@ -1,6 +1,6 @@
 {pkgs}:
 pkgs.writeShellApplication {
-  name = "purplefin-image-plan";
+  name = "finite-image-plan";
   runtimeInputs = with pkgs; [coreutils cosign gh jq skopeo];
   text = ''
     set -euo pipefail
@@ -8,9 +8,9 @@ pkgs.writeShellApplication {
     profiles_json="''${1:?usage: plan-image-builds.sh PROFILES_JSON}"
     : "''${EXPECTED_VERSION:?EXPECTED_VERSION is required}"
     : "''${IMAGE_REF:?IMAGE_REF is required}"
-    cosign_command="''${PURPLEFIN_COSIGN:-cosign}"
-    gh_command="''${PURPLEFIN_GH:-gh}"
-    skopeo_command="''${PURPLEFIN_SKOPEO:-skopeo}"
+    cosign_command="''${FINITE_COSIGN:-cosign}"
+    gh_command="''${FINITE_GH:-gh}"
+    skopeo_command="''${FINITE_SKOPEO:-skopeo}"
 
     force_rebuild="''${FORCE_REBUILD:-false}"
     check_publication_trust="''${CHECK_PUBLICATION_TRUST:-false}"
@@ -65,12 +65,12 @@ pkgs.writeShellApplication {
         continue
       }
       published_digests["''${profile}"]="''${published_digest}"
-      published_parent_digests["''${profile}"]="$(jq -r '.Labels["io.purplefin.parent.digest"] // ""' <<<"''${metadata}")"
+      published_parent_digests["''${profile}"]="$(jq -r '.Labels["io.finite.parent.digest"] // ""' <<<"''${metadata}")"
 
-      published_input="$(jq -r '.Labels["io.purplefin.build.input"] // ""' <<<"''${metadata}")"
-      published_base="$(jq -r '.Labels["io.purplefin.upstream.digest"] // .Labels["org.opencontainers.image.base.digest"] // ""' <<<"''${metadata}")"
-      published_parent_profile="$(jq -r '.Labels["io.purplefin.parent.profile"] // ""' <<<"''${metadata}")"
-      published_profile="$(jq -r '.Labels["io.purplefin.build.profile"] // ""' <<<"''${metadata}")"
+      published_input="$(jq -r '.Labels["io.finite.build.input"] // ""' <<<"''${metadata}")"
+      published_base="$(jq -r '.Labels["io.finite.upstream.digest"] // .Labels["org.opencontainers.image.base.digest"] // ""' <<<"''${metadata}")"
+      published_parent_profile="$(jq -r '.Labels["io.finite.parent.profile"] // ""' <<<"''${metadata}")"
+      published_profile="$(jq -r '.Labels["io.finite.build.profile"] // ""' <<<"''${metadata}")"
       published_revision="$(jq -r '.Labels["org.opencontainers.image.revision"] // ""' <<<"''${metadata}")"
       published_version="$(jq -r '.Labels["org.opencontainers.image.version"] // ""' <<<"''${metadata}")"
       expected_parent_profile="$(jq -r '.parent // ""' <<<"''${entry}")"

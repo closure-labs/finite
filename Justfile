@@ -7,7 +7,7 @@ format:
 
 # Run the complete hermetic validation graph.
 check:
-    nix shell --accept-flake-config .#ci-check -c purplefin-ci-check
+    nix shell --accept-flake-config .#ci-check -c finite-ci-check
 
 # Run repository checks interactively with the pinned toolchain.
 ci:
@@ -15,4 +15,4 @@ ci:
 
 # Build a named profile into a local OCI image.
 build profile tag:
-    nix shell --accept-flake-config .#ci-image-build -c purplefin-image-build {{ profile }} {{ tag }}
+    nix shell --accept-flake-config .#ci-image-build -c finite-image-build {{ profile }} {{ tag }}
