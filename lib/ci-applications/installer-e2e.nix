@@ -1,6 +1,6 @@
 {pkgs}:
 pkgs.writeShellApplication {
-  name = "purplefin-installer-e2e";
+  name = "finite-installer-e2e";
   runtimeInputs = with pkgs; [
     bash
     coreutils
@@ -14,8 +14,8 @@ pkgs.writeShellApplication {
 
     usage() {
       cat >&2 <<'EOF'
-    usage: purplefin-installer-e2e install ISO KICKSTART STATE_ROOT
-           purplefin-installer-e2e boot STATE_ROOT
+    usage: finite-installer-e2e install ISO KICKSTART STATE_ROOT
+           finite-installer-e2e boot STATE_ROOT
     EOF
     }
 
@@ -37,17 +37,17 @@ pkgs.writeShellApplication {
         ;;
     esac
 
-    qemu="''${PURPLEFIN_QEMU:-qemu-system-x86_64}"
-    qemu_img="''${PURPLEFIN_QEMU_IMG:-qemu-img}"
-    python="''${PURPLEFIN_PYTHON:-python3}"
-    xorriso="''${PURPLEFIN_XORRISO:-xorriso}"
-    kickstart_timeout="''${PURPLEFIN_INSTALLER_E2E_KICKSTART_TIMEOUT_SECONDS:-180}"
-    install_timeout="''${PURPLEFIN_INSTALLER_E2E_INSTALL_TIMEOUT_SECONDS:-1200}"
-    boot_timeout="''${PURPLEFIN_INSTALLER_E2E_BOOT_TIMEOUT_SECONDS:-180}"
-    poll_interval="''${PURPLEFIN_INSTALLER_SMOKE_POLL_INTERVAL_SECONDS:-1}"
-    cpus="''${PURPLEFIN_INSTALLER_SMOKE_CPUS:-4}"
-    memory_mb="''${PURPLEFIN_INSTALLER_SMOKE_MEMORY_MB:-4096}"
-    ready_marker='PURPLEFIN_INSTALLED_READY=1'
+    qemu="''${FINITE_QEMU:-qemu-system-x86_64}"
+    qemu_img="''${FINITE_QEMU_IMG:-qemu-img}"
+    python="''${FINITE_PYTHON:-python3}"
+    xorriso="''${FINITE_XORRISO:-xorriso}"
+    kickstart_timeout="''${FINITE_INSTALLER_E2E_KICKSTART_TIMEOUT_SECONDS:-180}"
+    install_timeout="''${FINITE_INSTALLER_E2E_INSTALL_TIMEOUT_SECONDS:-1200}"
+    boot_timeout="''${FINITE_INSTALLER_E2E_BOOT_TIMEOUT_SECONDS:-180}"
+    poll_interval="''${FINITE_INSTALLER_SMOKE_POLL_INTERVAL_SECONDS:-1}"
+    cpus="''${FINITE_INSTALLER_SMOKE_CPUS:-4}"
+    memory_mb="''${FINITE_INSTALLER_SMOKE_MEMORY_MB:-4096}"
+    ready_marker='FINITE_INSTALLED_READY=1'
     for parameter in \
       "''${kickstart_timeout}" \
       "''${install_timeout}" \
@@ -61,12 +61,12 @@ pkgs.writeShellApplication {
     done
 
     install -d -m 0755 "''${state_root}"
-    diagnostics_dir="''${PURPLEFIN_INSTALLER_DIAGNOSTICS_DIR:-''${state_root}}"
+    diagnostics_dir="''${FINITE_INSTALLER_DIAGNOSTICS_DIR:-''${state_root}}"
     install -d -m 0755 "''${diagnostics_dir}"
     disk="''${state_root}/installed.qcow2"
     kernel="''${state_root}/vmlinuz"
     initrd="''${state_root}/initrd.img"
-    served_kickstart="''${state_root}/purplefin-ci.ks"
+    served_kickstart="''${state_root}/finite-ci.ks"
     health_check="''${state_root}/server-ready"
     install_log="''${diagnostics_dir}/qemu-install.log"
     boot_log="''${diagnostics_dir}/qemu-installed-boot.log"
@@ -157,8 +157,8 @@ pkgs.writeShellApplication {
         exit 1
       }
 
-      echo 'Installing Purplefin onto the disposable virtual disk'
-      kernel_cmdline="root=live:CDLABEL=Purplefin-Installer rd.live.image inst.stage2=hd:LABEL=Purplefin-Installer inst.text inst.ksstrict console=tty0 console=ttyS0,115200n8 selinux=0 ip=dhcp rd.neednet=1 inst.ks=http://10.0.2.2:''${port}/purplefin-ci.ks"
+      echo 'Installing Finite onto the disposable virtual disk'
+      kernel_cmdline="root=live:CDLABEL=Finite-Installer rd.live.image inst.stage2=hd:LABEL=Finite-Installer inst.text inst.ksstrict console=tty0 console=ttyS0,115200n8 selinux=0 ip=dhcp rd.neednet=1 inst.ks=http://10.0.2.2:''${port}/finite-ci.ks"
       : >"''${install_log}"
       timeout --signal=TERM --kill-after=20s "''${install_timeout}s" \
         "''${qemu}" "''${common_args[@]}" \
@@ -174,22 +174,22 @@ pkgs.writeShellApplication {
       kickstart_fetched=false
       kickstart_deadline=$((SECONDS + kickstart_timeout))
       while kill -0 "''${qemu_pid}" >/dev/null 2>&1; do
-        if grep -Fq '"GET /purplefin-ci.ks ' "''${server_log}"; then
+        if grep -Fq '"GET /finite-ci.ks ' "''${server_log}"; then
           kickstart_fetched=true
           break
         fi
         if ((SECONDS >= kickstart_deadline)); then
-          echo "The guest did not fetch purplefin-ci.ks within ''${kickstart_timeout}s" >&2
+          echo "The guest did not fetch finite-ci.ks within ''${kickstart_timeout}s" >&2
           exit 1
         fi
         sleep "''${poll_interval}"
       done
       if [[ "''${kickstart_fetched}" != true ]] &&
-        grep -Fq '"GET /purplefin-ci.ks ' "''${server_log}"; then
+        grep -Fq '"GET /finite-ci.ks ' "''${server_log}"; then
         kickstart_fetched=true
       fi
       [[ "''${kickstart_fetched}" == true ]] || {
-        echo 'The installer exited before fetching purplefin-ci.ks' >&2
+        echo 'The installer exited before fetching finite-ci.ks' >&2
         exit 1
       }
 
@@ -224,7 +224,7 @@ pkgs.writeShellApplication {
       echo "Completed installer state is missing: ''${state_root}" >&2
       exit 2
     }
-    echo 'Booting the installed Purplefin system'
+    echo 'Booting the installed Finite system'
     : >"''${boot_log}"
     timeout --signal=TERM --kill-after=10s "''${boot_timeout}s" \
       "''${qemu}" "''${common_args[@]}" -boot c >"''${boot_log}" 2>&1 &

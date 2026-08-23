@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Pinned OSBuild squashfs stage with Purplefin's Zstd-level default.
+"""Pinned OSBuild squashfs stage with Finite's Zstd-level default.
 
 This is the stage shipped by the Image Builder digest recorded in
 sources/image-builder.json, with one compatibility policy: when Image Builder

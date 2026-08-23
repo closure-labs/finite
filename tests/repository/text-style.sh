@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-vendor_theme='!modules/aspects/hardware/dell-xps-9350-intel/rootfs/usr/share/purplefin/refind/themes/rEFInd-Regular-Dark/**'
+vendor_theme='!modules/aspects/hardware/dell-xps-9350-intel/rootfs/usr/share/finite/refind/themes/rEFInd-Regular-Dark/**'
 mapfile -d '' repository_files < <(
 	rg --files --hidden --null \
 		-g '!.git/**' \

@@ -3,9 +3,9 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.." && pwd)"
 profile_root="${repo_root}/modules/aspects/hardware/dell-xps-9350-intel/rootfs"
-helper="${profile_root}/usr/libexec/purplefin/dell-lid-is-open"
-lid_auth="${profile_root}/etc/pam.d/purplefin-dell-lid-auth"
-password_auth="${profile_root}/etc/pam.d/purplefin-dell-password-auth"
+helper="${profile_root}/usr/libexec/finite/dell-lid-is-open"
+lid_auth="${profile_root}/etc/pam.d/finite-dell-lid-auth"
+password_auth="${profile_root}/etc/pam.d/finite-dell-password-auth"
 sudo_auth="${profile_root}/etc/pam.d/sudo"
 polkit_auth="${profile_root}/etc/pam.d/polkit-1"
 tmpdir="$(mktemp -d)"
@@ -88,8 +88,8 @@ if bash "${helper}" --invalid-option "${lid_root}"; then
 	fail 'accepted an unsupported test option'
 fi
 
-grep -qxF 'auth [success=2 ignore=2 default=ignore] pam_exec.so quiet quiet_log /usr/bin/env -i /usr/libexec/purplefin/dell-lid-is-open' "${lid_auth}"
-grep -qxF 'auth substack purplefin-dell-password-auth' "${lid_auth}"
+grep -qxF 'auth [success=2 ignore=2 default=ignore] pam_exec.so quiet quiet_log /usr/bin/env -i /usr/libexec/finite/dell-lid-is-open' "${lid_auth}"
+grep -qxF 'auth substack finite-dell-password-auth' "${lid_auth}"
 grep -qxF 'auth [success=1 default=die] pam_permit.so' "${lid_auth}"
 grep -qxF 'auth substack system-auth' "${lid_auth}"
 test "$(grep -c '^auth ' "${lid_auth}")" -eq 4
@@ -102,12 +102,12 @@ if grep -Eq 'pam_(fprintd|u2f)[.]so|nullok' "${password_auth}"; then
 	exit 1
 fi
 
-grep -qxF 'auth       substack     purplefin-dell-lid-auth' "${sudo_auth}"
+grep -qxF 'auth       substack     finite-dell-lid-auth' "${sudo_auth}"
 grep -qxF 'account    include      system-auth' "${sudo_auth}"
 grep -qxF 'password   include      system-auth' "${sudo_auth}"
 grep -qxF 'session    include      system-auth' "${sudo_auth}"
 
-grep -qxF 'auth       substack     purplefin-dell-lid-auth' "${polkit_auth}"
+grep -qxF 'auth       substack     finite-dell-lid-auth' "${polkit_auth}"
 grep -qxF 'account    include      system-auth' "${polkit_auth}"
 grep -qxF 'password   include      system-auth' "${polkit_auth}"
 grep -qxF 'session    include      system-auth' "${polkit_auth}"

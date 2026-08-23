@@ -39,16 +39,25 @@
     ])
     ++ [treefmtEval.config.build.wrapper];
   profileSet = import ../lib/eval-profile-graph.nix {
-    inherit den lib;
-    profileEntities = config.purplefin.profiles;
+    inherit lib;
+    profileEntities = config.finite.profiles;
+    profileHosts = config.den.hosts.${system};
   };
   inherit (profileSet) profiles;
-  bluefin = config.purplefin.sources.bluefin;
-  bluefinDx = config.purplefin.sources.bluefinDx;
-  fedoraBootc = config.purplefin.sources.fedoraBootc;
-  homeProfiles = config.purplefin.homeProfiles;
-  imageBuilder = config.purplefin.sources.imageBuilder;
-  determinateNix = config.purplefin.sources.determinateNix;
+  bluefin = config.finite.sources.bluefin;
+  bluefinDx = config.finite.sources.bluefinDx;
+  fedoraBootc = config.finite.sources.fedoraBootc;
+  home = config.finite.home;
+  imageBuilder = config.finite.sources.imageBuilder;
+  determinateNix = config.finite.sources.determinateNix;
+  legacyCache = let
+    flakeConfig = (import ../flake.nix).nixConfig;
+    url = builtins.head flakeConfig.extra-substituters;
+  in {
+    inherit url;
+    name = lib.removeSuffix ".cachix.org" (lib.removePrefix "https://" url);
+    publicKey = builtins.head flakeConfig.extra-trusted-public-keys;
+  };
   determinateNixInstaller = pkgs.fetchurl {
     name = "determinate-nix-installer-${determinateNix.version}";
     inherit (determinateNix.installer) url sha256;
@@ -63,7 +72,7 @@
   };
   version = lib.removeSuffix "\n" (builtins.readFile ../VERSION);
   generated = import ../lib/render-profile-artifacts.nix {
-    inherit determinateNixInstaller determinateNixSelinuxFileContexts determinateNixSelinuxPolicy homeProfiles lib pkgs profiles;
+    inherit determinateNixInstaller determinateNixSelinuxFileContexts determinateNixSelinuxPolicy home lib pkgs profiles;
     profileOrder = profileSet.order;
     inherit version;
   };
@@ -71,108 +80,75 @@
     inherit den lib pkgs;
     diagram = inputs.den-diagram.lib;
   };
-  mkHomeConfiguration = {
-    name,
-    username ? "purplefin",
-    homeDirectory ? "/var/home/${username}",
-    hardware ? builtins.head homeProfiles.${name}.hardware,
-    sourceFlake ? "github:closure-labs/finite",
-  }: let
-    profile = homeProfiles.${name};
-    homeDriverFlake = pkgs.writeText "purplefin-home-flake.nix" ''
-      {
-        inputs = {
-          nixpkgs.url = "https://flakehub.com/f/DeterminateSystems/nixpkgs-26.05-chilled/0.1";
-          nixpkgs-weekly.url = "https://flakehub.com/f/DeterminateSystems/nixpkgs-weekly/0.1";
-
-          home-manager = {
-            url = "https://flakehub.com/f/nix-community/home-manager/0.2605";
-            inputs.nixpkgs.follows = "nixpkgs";
-          };
-
-          purplefin = {
-            url = ${builtins.toJSON sourceFlake};
-            inputs.nixpkgs.follows = "nixpkgs";
-            inputs.nixpkgs-weekly.follows = "nixpkgs-weekly";
-            inputs.home-manager.follows = "home-manager";
-          };
-        };
-
-        outputs = { purplefin, ... }: {
-          homeConfigurations = {
-            ${builtins.toJSON username} =
-              purplefin.lib.purplefin.mkHomeConfiguration {
-                name = ${builtins.toJSON name};
-                hardware = ${builtins.toJSON hardware};
-                username = ${builtins.toJSON username};
-                homeDirectory = ${builtins.toJSON homeDirectory};
-                sourceFlake = ${builtins.toJSON sourceFlake};
-              };
-          };
-        };
-      }
-    '';
-    hardwareModule =
-      if hardware == "dell-xps-9350-intel"
-      then [(den.lib.aspects.resolve "homeManager" den.aspects.features.hardware.dell-xps-9350-intel)]
-      else [];
-  in
-    assert builtins.elem hardware profile.hardware;
-      inputs.home-manager.lib.homeManagerConfiguration {
-        inherit pkgs;
-        extraSpecialArgs = {inherit inputs;};
-        modules =
-          [
-            (den.lib.aspects.resolve "homeManager" profile.aspect)
-            ({
-              config,
-              lib,
-              ...
-            }: {
-              home = {
-                inherit homeDirectory username;
-                sessionVariables = {
-                  PURPLEFIN_PROFILE = name;
-                  PURPLEFIN_BASE_CLASS = profile.baseClass;
-                  PURPLEFIN_HARDWARE = hardware;
-                };
-              };
-              home.activation.writeHomeManagerFlake = lib.hm.dag.entryAfter ["linkGeneration"] ''
-                driver_dir=${lib.escapeShellArg "${config.xdg.configHome}/home-manager"}
-                driver_file="''${driver_dir}/flake.nix"
-                run ${pkgs.coreutils}/bin/mkdir -p "''${driver_dir}"
-                if [[ -L "''${driver_file}" ]]; then
-                  run ${pkgs.coreutils}/bin/rm -f "''${driver_file}"
-                fi
-                if ! ${pkgs.diffutils}/bin/cmp -s ${homeDriverFlake} "''${driver_file}"; then
-                  run ${pkgs.coreutils}/bin/install -m 0644 ${homeDriverFlake} "''${driver_file}"
-                fi
-              '';
-              programs.nh.homeFlake = "path:${config.xdg.configHome}/home-manager";
-              xdg.configFile."purplefin/profile.json".text = builtins.toJSON {
-                inherit hardware name;
-                inherit (profile) baseClass roles;
-              };
-            })
-          ]
-          ++ hardwareModule;
-      };
-  homeConfigurations = lib.mapAttrs (name: _: mkHomeConfiguration {inherit name;}) homeProfiles;
-  homeCheck = pkgs.runCommand "purplefin-home-configurations-proof" {} ''
-    ${lib.concatStringsSep "\n" (
-      lib.mapAttrsToList (_name: configuration: ''
-        test -e ${configuration.activationPackage}
-      '')
-      homeConfigurations
-    )}
-    touch "$out"
-  '';
-  applications = import ../lib/flake-applications.nix {
+  baseApplications = import ../lib/flake-applications.nix {
     devenv = inputs.devenv.packages.${system}.devenv;
     inherit bluefin bluefinDx determinateNix fedoraBootc generated imageBuilder pkgs version;
+    legacyCacheName = legacyCache.name;
     secretspec = inputs.nixpkgs-weekly.legacyPackages.${system}.secretspec;
-    selfSource = inputs.self;
   };
+  homeApplications = import ../lib/home-profile-applications.nix {inherit generated pkgs;};
+  applications = baseApplications // homeApplications;
+  homeFlakeModule = {
+    imports = [
+      inputs.den.flakeModule
+      ../modules/sources/oci-locks.nix
+      ../modules/aspects/base/default.nix
+      ../modules/aspects/capabilities/devops/default.nix
+      ../modules/aspects/roles/developer/default.nix
+      ../modules/aspects/roles/executive/default.nix
+      ../modules/aspects/roles/it/default.nix
+      ../modules/aspects/roles/sales/default.nix
+      ../modules/aspects/roles/support/default.nix
+      ../modules/aspects/roles/trainer/default.nix
+      ../modules/aspects/hardware/generic-x86_64/default.nix
+      ../modules/aspects/hardware/dell-xps-9350-intel/default.nix
+      (import ../lib/home-manager-flake-module.nix {
+        finiteInputs = inputs;
+        inherit (applications) homeBootstrap homeProfile;
+      })
+    ];
+  };
+  allRoles = ["developer" "sales" "trainer" "support" "executive" "it"];
+  mkHomeProof = foundation: hardware: roles: let
+    username = "finite-check-${foundation}-${hardware}-${lib.concatStringsSep "-" roles}";
+    evaluated = lib.evalModules {
+      specialArgs = {inherit inputs;};
+      modules = [
+        homeFlakeModule
+        {
+          finite.homeProfile = {
+            schema = 1;
+            inherit foundation hardware roles;
+            identity = {
+              inherit username;
+              homeDirectory = "/var/home/${username}";
+            };
+          };
+        }
+      ];
+    };
+  in
+    evaluated.config.flake.homeConfigurations.finite.activationPackage;
+  foundationProofs = lib.concatMap (
+    foundation:
+      lib.concatMap (hardware: [
+        (mkHomeProof foundation hardware [])
+        (mkHomeProof foundation hardware allRoles)
+      ]) ["generic-x86_64" "dell-xps-9350-intel"]
+  ) ["bluefin" "bluefin-dx"];
+  roleProofs = lib.concatMap (
+    foundation:
+      map (role: mkHomeProof foundation "generic-x86_64" [role]) allRoles
+  ) ["bluefin" "bluefin-dx"];
+  homeProofsEvaluated =
+    builtins.deepSeq (
+      map (activation: activation.drvPath) (foundationProofs ++ roleProofs)
+    )
+    true;
+  homeCheck = assert homeProofsEvaluated;
+    pkgs.runCommand "finite-home-configurations-proof" {} ''
+      touch "$out"
+    '';
   repositoryChecks = import ../lib/repository-checks.nix {
     inherit applications architecture generated lib pkgs;
     secretspec = inputs.nixpkgs-weekly.legacyPackages.${system}.secretspec;
@@ -189,25 +165,28 @@
       && !(lib.hasPrefix ".direnv/" relative);
   };
   formattingValidation = treefmtEval.config.build.check formattingSource;
-  formattingCheck = pkgs.runCommand "purplefin-formatting-proof" {} ''
+  formattingCheck = pkgs.runCommand "finite-formatting-proof" {} ''
     test -e ${formattingValidation}
     touch "$out"
   '';
-  architectureCheck = pkgs.runCommand "purplefin-architecture-proof" {} ''
+  architectureCheck = pkgs.runCommand "finite-architecture-proof" {} ''
     test -f ${architecture}/architecture.md
     test -f ${architecture}/namespace.mmd
     touch "$out"
   '';
-  profileSchemaCheck = pkgs.runCommand "purplefin-profile-schema-proof" {} ''
+  profileSchemaCheck = pkgs.runCommand "finite-profile-schema-proof" {} ''
     test -f ${generated}/bootc/generated/image-matrix.json
     test -f ${generated}/bootc/generated/profile-catalog.json
     test -f ${generated}/bootc/generated/home-profile-catalog.json
-    test -f ${generated}/installer/config/profiles/bluefin-generic.toml
-    test -f ${generated}/installer/config/profiles/base-generic.toml
-    test -f ${generated}/installer/config/profiles/base-generic-x86_64.toml
-    cmp \
-      ${generated}/installer/config/profiles/bluefin-generic.toml \
-      ${generated}/installer/config/profiles/base-generic.toml
+    for profile in \
+      bluefin-generic \
+      bluefin-dell-xps-9350-intel \
+      bluefin-dx-generic \
+      bluefin-dx-dell-xps-9350-intel; do
+      test -f ${generated}/installer/config/profiles/"$profile".toml
+    done
+    # Four canonical profiles plus the `latest` tag alias for Bluefin generic.
+    test "$(find ${generated}/installer/config/profiles -type f -name '*.toml' | wc -l)" = 5
     touch "$out"
   '';
   checks =
@@ -218,7 +197,7 @@
       home-configurations = homeCheck;
       profile-schema = profileSchemaCheck;
     };
-  ciChecks = pkgs.runCommand "purplefin-ci-checks" {} ''
+  ciChecks = pkgs.runCommand "finite-ci-checks" {} ''
     mkdir "$out"
     ${lib.concatStringsSep "\n" (
       lib.mapAttrsToList (name: check: ''
@@ -231,71 +210,82 @@
   localCache = applications.mkLocalCache ciCheck;
 in {
   flake = {
-    lib.purplefin = {
-      inherit homeProfiles mkHomeConfiguration profiles;
+    lib.finite = {
+      inherit home profiles;
+      inherit legacyCache;
       profileOrder = profileSet.order;
     };
-
-    inherit homeConfigurations;
-    packages.${system} =
-      {
-        inherit architecture;
-        ci-check = ciCheck;
-        ci-checks = ciChecks;
-        ci-prepare = applications.ciPrepare;
-        ci-validate-plan = applications.validateCiPlan;
-        ci-gate = applications.ciGate;
-        ci-validate-image-shard = applications.validateImageShard;
-        ci-image-reuse = applications.imageReuse;
-        ci-image-sign = applications.imageSign;
-        ci-rechunk-image = applications.rechunkImage;
-        ci-image-build = applications.imageBuild;
-        ci-image-sbom = applications.imageSbom;
-        ci-sbom-attestation = applications.sbomAttestation;
-        ci-promote-images = applications.promoteImages;
-        ci-installer-build = applications.installerBuild;
-        ci-installer-e2e = applications.installerE2e;
-        ci-installer-smoke = applications.installerSmoke;
-        ci-release-notes = applications.releaseNotes;
-        ci-update-locks = applications.updateLocks;
-        ci-home-release-update = applications.updateHomeRelease;
-        ci-source-update = applications.sourceUpdate;
-        ci-source-verify = applications.sourceVerify;
-        ci-trusted-update = applications.trustedUpdate;
-        ci-queue-dependabot = applications.queueDependabot;
-        ci-package-cleanup = applications.packageCleanup;
-        ci-github-actions-secrets = applications.githubActionsSecrets;
-        ci-load-bluefin = applications.loadBluefin;
-        ci-lock-validate = applications.validateLocks;
-        ci-cosign = pkgs.cosign;
-        ci-oras = pkgs.oras;
-        ci-skopeo = pkgs.skopeo;
-        devenv = inputs.devenv.packages.${system}.devenv;
-        default = generated;
-        inherit generated;
-        inherit (pkgs) syft;
-      }
-      // lib.mapAttrs' (
-        name: configuration: lib.nameValuePair "home-${name}" configuration.activationPackage
-      )
-      homeConfigurations;
+    flakeModules.home = homeFlakeModule;
+    templates = {
+      home-bluefin = {
+        path = ../templates/home-bluefin;
+        description = "Finite Bluefin standalone Home Manager foundation";
+      };
+      home-bluefin-dx = {
+        path = ../templates/home-bluefin-dx;
+        description = "Finite Bluefin DX standalone Home Manager foundation";
+      };
+    };
+    packages.${system} = {
+      inherit architecture;
+      ci-check = ciCheck;
+      ci-checks = ciChecks;
+      ci-prepare = applications.ciPrepare;
+      ci-validate-plan = applications.validateCiPlan;
+      ci-gate = applications.ciGate;
+      ci-validate-image-shard = applications.validateImageShard;
+      ci-image-reuse = applications.imageReuse;
+      ci-image-sign = applications.imageSign;
+      ci-rechunk-image = applications.rechunkImage;
+      ci-image-build = applications.imageBuild;
+      ci-image-sbom = applications.imageSbom;
+      ci-sbom-attestation = applications.sbomAttestation;
+      ci-promote-images = applications.promoteImages;
+      ci-installer-build = applications.installerBuild;
+      ci-installer-e2e = applications.installerE2e;
+      ci-installer-smoke = applications.installerSmoke;
+      ci-release-notes = applications.releaseNotes;
+      ci-update-locks = applications.updateLocks;
+      ci-home-release-update = applications.updateHomeRelease;
+      ci-source-update = applications.sourceUpdate;
+      ci-source-verify = applications.sourceVerify;
+      ci-trusted-update = applications.trustedUpdate;
+      ci-queue-dependabot = applications.queueDependabot;
+      ci-package-cleanup = applications.packageCleanup;
+      ci-github-actions-secrets = applications.githubActionsSecrets;
+      ci-load-bluefin = applications.loadBluefin;
+      ci-lock-validate = applications.validateLocks;
+      ci-cosign = pkgs.cosign;
+      ci-oras = pkgs.oras;
+      ci-skopeo = pkgs.skopeo;
+      devenv = inputs.devenv.packages.${system}.devenv;
+      default = generated;
+      inherit generated;
+      home-profile = applications.homeProfile;
+      home-bootstrap = applications.homeBootstrap;
+      inherit (pkgs) syft;
+    };
 
     apps.${system} = {
       devenv = {
         type = "app";
         program = lib.getExe inputs.devenv.packages.${system}.devenv;
       };
-      home-switch = {
+      home-profile = {
         type = "app";
-        program = "${applications.homeSwitch}/bin/purplefin-home-switch";
+        program = "${applications.homeProfile}/bin/finite-home-profile";
+      };
+      home-bootstrap = {
+        type = "app";
+        program = "${applications.homeBootstrap}/bin/finite-home-bootstrap";
       };
       cloud-init = {
         type = "app";
-        program = "${applications.cloudInit}/bin/purplefin-cloud-init";
+        program = "${applications.cloudInit}/bin/finite-cloud-init";
       };
       local-cache = {
         type = "app";
-        program = "${localCache}/bin/purplefin-local-cache";
+        program = "${localCache}/bin/finite-local-cache";
       };
     };
 

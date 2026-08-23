@@ -18,7 +18,7 @@ def load_stage():
 
     path = pathlib.Path("installer/osbuild-stages/org.osbuild.squashfs")
     sys.dont_write_bytecode = True
-    loader = SourceFileLoader("purplefin_squashfs_stage", str(path))
+    loader = SourceFileLoader("finite_squashfs_stage", str(path))
     spec = importlib.util.spec_from_loader(loader.name, loader)
     module = importlib.util.module_from_spec(spec)
     loader.exec_module(module)

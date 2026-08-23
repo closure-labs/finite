@@ -1,8 +1,0 @@
-[Unit]
-Description=Keep the workstation awake with the lid closed
-Documentation=man:systemd-inhibit(1)
-ConditionACPower=true
-
-[Service]
-Type=simple
-ExecStart=/usr/bin/systemd-inhibit --what=sleep:handle-lid-switch --who=Purplefin "--why=User-requested lid-closed workstation session" --mode=block /usr/bin/sleep infinity

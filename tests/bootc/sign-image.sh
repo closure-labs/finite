@@ -32,20 +32,20 @@ esac
 EOF
 chmod 0755 "${fake_cosign}"
 
-export COSIGN_IDENTITY=https://github.com/example/purplefin/.github/workflows/build-profile.yml@refs/heads/main
+export COSIGN_IDENTITY=https://github.com/example/finite/.github/workflows/build-profile.yml@refs/heads/main
 export DIGEST=sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
-export IMAGE_REF=ghcr.io/example/purplefin
-export PURPLEFIN_COSIGN="${fake_cosign}"
-export PURPLEFIN_COSIGN_RETRY_DELAY_SECONDS=0
-export PURPLEFIN_COSIGN_SIGN_ATTEMPTS=2
-export PURPLEFIN_COSIGN_VERIFY_ATTEMPTS=4
+export IMAGE_REF=ghcr.io/example/finite
+export FINITE_COSIGN="${fake_cosign}"
+export FINITE_COSIGN_RETRY_DELAY_SECONDS=0
+export FINITE_COSIGN_SIGN_ATTEMPTS=2
+export FINITE_COSIGN_VERIFY_ATTEMPTS=4
 export FAKE_SIGN_COUNT="${test_root}/sign-count"
 export FAKE_VERIFY_COUNT="${test_root}/verify-count"
 export FAKE_VERIFY_LOG="${test_root}/verify-log"
 
 export FAKE_SIGN_FAILURES=1
 export FAKE_VERIFY_FAILURES=2
-purplefin-image-sign
+finite-image-sign
 test "$(<"${FAKE_SIGN_COUNT}")" = 2
 test "$(<"${FAKE_VERIFY_COUNT}")" = 3
 grep -qF -- "--certificate-identity ${COSIGN_IDENTITY}" "${FAKE_VERIFY_LOG}"
@@ -55,7 +55,7 @@ printf '0\n' >"${FAKE_SIGN_COUNT}"
 printf '0\n' >"${FAKE_VERIFY_COUNT}"
 export FAKE_SIGN_FAILURES=0
 export FAKE_VERIFY_FAILURES=99
-if purplefin-image-sign; then
+if finite-image-sign; then
 	echo 'Expected permanent signature verification failure' >&2
 	exit 1
 fi
@@ -65,6 +65,6 @@ test "$(<"${FAKE_VERIFY_COUNT}")" = 5
 printf '0\n' >"${FAKE_SIGN_COUNT}"
 printf '0\n' >"${FAKE_VERIFY_COUNT}"
 export FAKE_VERIFY_FAILURES=0
-purplefin-image-sign
+finite-image-sign
 test "$(<"${FAKE_SIGN_COUNT}")" = 0
 test "$(<"${FAKE_VERIFY_COUNT}")" = 1

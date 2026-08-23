@@ -1,27 +1,27 @@
 #!/usr/bin/env bash
 # Aggregate authselect features requested by independently applied role and hardware layers.
 
-purplefin_authselect_state_dir="${PURPLEFIN_AUTHSELECT_STATE_DIR:-/tmp/purplefin-authselect-features.d}"
+finite_authselect_state_dir="${FINITE_AUTHSELECT_STATE_DIR:-/tmp/finite-authselect-features.d}"
 
-purplefin_authselect_reset() {
-	rm -rf "${purplefin_authselect_state_dir}"
-	install -d -m 0755 "${purplefin_authselect_state_dir}"
+finite_authselect_reset() {
+	rm -rf "${finite_authselect_state_dir}"
+	install -d -m 0755 "${finite_authselect_state_dir}"
 }
 
-purplefin_authselect_request() {
+finite_authselect_request() {
 	local feature
 
-	install -d -m 0755 "${purplefin_authselect_state_dir}"
+	install -d -m 0755 "${finite_authselect_state_dir}"
 	for feature in "$@"; do
 		if [[ ! "${feature}" =~ ^with-[a-z0-9-]+$ ]]; then
 			echo "Invalid authselect feature request: ${feature}" >&2
 			return 2
 		fi
-		: > "${purplefin_authselect_state_dir}/${feature}"
+		: > "${finite_authselect_state_dir}/${feature}"
 	done
 }
 
-purplefin_authselect_finalize() {
+finite_authselect_finalize() {
 	local feature
 	local requested_features=()
 	local selected_features=(
@@ -29,14 +29,14 @@ purplefin_authselect_finalize() {
 		with-mdns4
 	)
 
-	if [[ -d "${purplefin_authselect_state_dir}" ]]; then
+	if [[ -d "${finite_authselect_state_dir}" ]]; then
 		mapfile -t requested_features < <(
-			find "${purplefin_authselect_state_dir}" -mindepth 1 -maxdepth 1 -type f -printf '%f\n' | LC_ALL=C sort
+			find "${finite_authselect_state_dir}" -mindepth 1 -maxdepth 1 -type f -printf '%f\n' | LC_ALL=C sort
 		)
 	fi
 	# Requests are now held in memory. Remove build-only marker state before
 	# authselect runs so both successful and failed finalization leave /tmp clean.
-	rm -rf "${purplefin_authselect_state_dir}"
+	rm -rf "${finite_authselect_state_dir}"
 
 	if ((${#requested_features[@]} == 0)); then
 		echo ":: No role or hardware authselect features requested"

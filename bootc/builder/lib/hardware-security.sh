@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Apply authentication hardware support shared by every Purplefin hardware profile.
+# Apply authentication hardware support shared by every Finite hardware profile.
 
-purplefin_apply_hardware_security() {
+finite_apply_hardware_security() {
 	local hardware_profile="${1:-unknown}"
 	local security_packages=(
 		fprintd
@@ -15,7 +15,7 @@ purplefin_apply_hardware_security() {
 		yubikey-manager
 	)
 
-	if [[ "${PURPLEFIN_HARDWARE_SECURITY_APPLIED:-0}" == 1 ]]; then
+	if [[ "${FINITE_HARDWARE_SECURITY_APPLIED:-0}" == 1 ]]; then
 		echo ":: Shared hardware security already applied for ${hardware_profile}"
 		return 0
 	fi
@@ -28,7 +28,7 @@ purplefin_apply_hardware_security() {
 		rpm -q "${package}"
 	done
 
-	purplefin_authselect_request with-fingerprint with-pam-u2f
+	finite_authselect_request with-fingerprint with-pam-u2f
 	systemctl enable pcscd.socket
-	PURPLEFIN_HARDWARE_SECURITY_APPLIED=1
+	FINITE_HARDWARE_SECURITY_APPLIED=1
 }

@@ -2,7 +2,7 @@
   determinateNixInstaller,
   determinateNixSelinuxFileContexts,
   determinateNixSelinuxPolicy,
-  homeProfiles,
+  home,
   lib,
   pkgs,
   profileOrder,
@@ -41,6 +41,7 @@
       inherit
         (profile)
         deltaModules
+        foundation
         hardware
         modules
         parent
@@ -66,7 +67,7 @@
     builtins.hashString "sha256" (lib.concatStringsSep "\n" ([evaluatedProfile] ++ fileHashes));
   matrix =
     map (name: {
-      inherit (profiles.${name}) stage;
+      inherit (profiles.${name}) foundation hardware stage;
       build_input = buildInput name;
       profile = name;
       parent = profiles.${name}.parent;
@@ -83,6 +84,7 @@
         inherit
           (profile)
           deltaModules
+          foundation
           hardware
           modules
           parent
@@ -110,27 +112,34 @@
       })
       profiles;
   };
+  roleNames = lib.sort (left: right: home.roles.${left}.order < home.roles.${right}.order) (builtins.attrNames home.roles);
   homeCatalog = {
-    schema = 1;
+    schema = 2;
     inherit version;
-    profiles =
-      lib.mapAttrs (_: profile: {
-        inherit (profile) baseClass hardware name roles;
-        foundations =
-          map (
-            hardware:
-              if profile.baseClass == "bluefin-dx"
-              then
-                if hardware == "dell-xps-9350-intel"
-                then "bluefin-dx-dell-xps-9350-intel"
-                else "bluefin-dx-generic"
-              else if hardware == "dell-xps-9350-intel"
-              then "bluefin-dell-xps-9350-intel"
-              else "bluefin-generic"
-          )
-          profile.hardware;
+    foundations =
+      lib.mapAttrs (_: foundation: {
+        inherit (foundation) name profiles template;
+        hardware = builtins.attrNames foundation.profiles;
+        roles = roleNames;
       })
-      homeProfiles;
+      home.foundations;
+    hardware =
+      lib.mapAttrs (_: hardware: {
+        inherit (hardware) label name;
+      })
+      home.hardware;
+    roles =
+      lib.mapAttrs (_: role: {
+        inherit (role) label name order;
+        foundations = builtins.attrNames home.foundations;
+      })
+      home.roles;
+    compatibility =
+      lib.mapAttrs (_: foundation: {
+        hardware = builtins.attrNames foundation.profiles;
+        roles = roleNames;
+      })
+      home.foundations;
   };
   matrixFile = pkgs.writeText "image-matrix.json" (builtins.toJSON matrix + "\n");
   catalogFile = pkgs.writeText "profile-catalog.json" (builtins.toJSON catalog + "\n");
@@ -146,7 +155,7 @@
     )
     profiles;
 in
-  pkgs.runCommand "purplefin-generated-${version}" {} ''
+  pkgs.runCommand "finite-generated-${version}" {} ''
     mkdir -p "$out/bootc/generated" "$out/installer/config/profiles"
     cp ${matrixFile} "$out/bootc/generated/image-matrix.json"
     cp ${catalogFile} "$out/bootc/generated/profile-catalog.json"

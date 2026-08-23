@@ -2,8 +2,8 @@
 Description=Determinate Nixd Daemon Socket
 Before=multi-user.target
 RequiresMountsFor=/nix/store /nix/var/determinate
-Requires=purplefin-nix-socket-cleanup.service
-After=purplefin-nix-socket-cleanup.service
+Requires=finite-nix-socket-cleanup.service
+After=finite-nix-socket-cleanup.service
 
 [Socket]
 FileDescriptorName=determinate-nixd.socket

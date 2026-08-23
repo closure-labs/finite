@@ -58,7 +58,7 @@
     (lib.splitString "\n" rendered)
   );
   markdown = pkgs.writeText "architecture.md" ''
-    # Purplefin Den aspect namespace
+    # Finite Den aspect namespace
 
     This view is rendered from the evaluated `den.aspects` registry. Edges are
     aspect `includes` relationships, so the diagram is the architecture rather
@@ -70,7 +70,7 @@
   '';
   source = pkgs.writeText "namespace.mmd" mermaid;
 in
-  pkgs.runCommand "purplefin-architecture" {} ''
+  pkgs.runCommand "finite-architecture" {} ''
     mkdir -p "$out"
     cp ${markdown} "$out/architecture.md"
     cp ${source} "$out/namespace.mmd"

@@ -8,7 +8,7 @@ export MOCK_LOG="${test_root}/gh.log"
 export MOCK_STATE="${test_root}/dispatched"
 export MOCK_PR_STATE="${test_root}/pr-state"
 export MOCK_AUTHOR='github-actions[bot]'
-export MOCK_HEAD_REPOSITORY=example/purplefin
+export MOCK_HEAD_REPOSITORY=example/finite
 
 gh() {
 	{
@@ -26,7 +26,7 @@ gh() {
 			merge_state=CLEAN
 			sha=def456
 		fi
-		printf '{"author":{"login":"%s"},"baseRefName":"main","headRefName":"update-test","headRefOid":"%s","headRepository":{"nameWithOwner":"%s"},"mergeStateStatus":"%s","state":"OPEN","title":"Test update","url":"https://github.com/example/purplefin/pull/1"}\n' "${MOCK_AUTHOR}" "${sha}" "${MOCK_HEAD_REPOSITORY}" "${merge_state}"
+		printf '{"author":{"login":"%s"},"baseRefName":"main","headRefName":"update-test","headRefOid":"%s","headRepository":{"nameWithOwner":"%s"},"mergeStateStatus":"%s","state":"OPEN","title":"Test update","url":"https://github.com/example/finite/pull/1"}\n' "${MOCK_AUTHOR}" "${sha}" "${MOCK_HEAD_REPOSITORY}" "${merge_state}"
 		;;
 	"run list")
 		if [[ " $* " == *' --event pull_request '* ]]; then
@@ -68,10 +68,10 @@ run_validator() {
 		EXPECTED_BRANCH=update-test \
 		EXPECTED_TITLE='Test update' \
 		GH_TOKEN=test-token \
-		GITHUB_REPOSITORY=example/purplefin \
+		GITHUB_REPOSITORY=example/finite \
 		PR_NUMBER=1 \
 		VALIDATE_INSTALLER=false \
-		purplefin-trusted-update
+		finite-trusted-update
 }
 
 export MOCK_MODE=existing
@@ -86,7 +86,7 @@ fi
 : >"${MOCK_LOG}"
 export MOCK_MODE=action-required
 run_validator
-grep -qF 'gh api --method POST repos/example/purplefin/actions/runs/303/approve' "${MOCK_LOG}"
+grep -qF 'gh api --method POST repos/example/finite/actions/runs/303/approve' "${MOCK_LOG}"
 grep -qF 'gh run watch 303' "${MOCK_LOG}"
 grep -qF 'gh pr merge' "${MOCK_LOG}"
 
@@ -111,7 +111,7 @@ fi
 export MOCK_AUTHOR='github-actions[bot]'
 
 : >"${MOCK_LOG}"
-export MOCK_HEAD_REPOSITORY=attacker/purplefin
+export MOCK_HEAD_REPOSITORY=attacker/finite
 if run_validator; then
 	echo 'Validator accepted a pull request from a fork' >&2
 	exit 1
@@ -120,7 +120,7 @@ if grep -qF 'gh pr merge' "${MOCK_LOG}"; then
 	echo 'Validator attempted to merge an update from a fork' >&2
 	exit 1
 fi
-export MOCK_HEAD_REPOSITORY=example/purplefin
+export MOCK_HEAD_REPOSITORY=example/finite
 
 : >"${MOCK_LOG}"
 rm -f "${MOCK_STATE}"

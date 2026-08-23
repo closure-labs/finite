@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-build_root="${PURPLEFIN_BUILD_ROOT:-/tmp/purplefin-build}"
+build_root="${FINITE_BUILD_ROOT:-/tmp/finite-build}"
 base_root="${build_root}/modules/aspects/base"
 
 # Fedora owns the host filesystem and account contracts used to bootstrap Nix.
 # Pin the otherwise-dynamic build identities before installing the packages so
 # Determinate Nix Installer can migrate the upstream installation in place.
-systemd-sysusers "${base_root}/rootfs/usr/lib/sysusers.d/purplefin-nix.conf"
-dnf5 -y install cloud-init nix nix-daemon
-rpm -q cloud-init nix nix-daemon nix-filesystem nix-system
+systemd-sysusers "${base_root}/rootfs/usr/lib/sysusers.d/finite-nix.conf"
+dnf5 -y install cloud-init jq nix nix-daemon yq zenity
+rpm -q cloud-init jq nix nix-daemon nix-filesystem nix-system yq zenity
 
-# Package installation owns the initial filesystem contract. Apply Purplefin's
+# Package installation owns the initial filesystem contract. Apply Finite's
 # rootfs afterwards so its Determinate daemon units cannot be replaced by the
 # Fedora nix-daemon package's upstream units.
 cp -a "${base_root}/rootfs/." /
@@ -19,8 +19,8 @@ cp -a "${base_root}/rootfs/." /
 # Package scriptlets may populate the build container's transient /run tree.
 # Cloud-init recreates this state at boot; it must not enter the bootc commit.
 rm -rf -- /run/cloud-init
-install -m 0644 /usr/lib/sysusers.d/purplefin-nix.conf /usr/lib/sysusers.d/nix.conf
-rm /usr/lib/sysusers.d/purplefin-nix.conf
+install -m 0644 /usr/lib/sysusers.d/finite-nix.conf /usr/lib/sysusers.d/nix.conf
+rm /usr/lib/sysusers.d/finite-nix.conf
 
 # Bake the complete Determinate Nix payload into the immutable image. The
 # Fedora nix-filesystem package supplies /nix; at boot systemd seeds persistent

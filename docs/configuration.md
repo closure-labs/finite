@@ -1,110 +1,78 @@
-# Customize profiles and aspects
+# Configure foundations, hardware, and roles
 
-Purplefin separates the system foundation from user roles. Four typed Den
-profiles produce lightly layered bootc images; eight typed Home Manager
-profiles provide applications and preferences. Nix resolves both registries
-into CI matrices, catalogs, activation packages, and installer Blueprints.
-
-## Profile graph
+Finite separates the immutable bootc foundation from a per-user Home Manager
+composition:
 
 ```text
-Bluefin ──┬── generic-x86_64
-         └── dell-xps-9350-intel
-
-Bluefin DX ──┬── generic-x86_64
-            └── dell-xps-9350-intel
-
-Home Manager
-├── Bluefin: sales, executive
-└── Bluefin DX: developer, support, it, trainer
-    ├── dale: every role combined, Dell XPS 13 9350 only
-    └── elad: every role combined, generic x86-64 without the Dell camera layer
+foundation: bluefin | bluefin-dx
+hardware:   generic-x86_64 | dell-xps-9350-intel
+roles:      any subset of developer, sales, trainer, support, executive, it
 ```
 
-Inspect the evaluated graph and catalog:
+The running image records explicit `foundation` and `hardware` fields in
+`/usr/share/finite/profile.json`. First-login and `finite-configure` treat those
+fields as authoritative; a YAML seed for a different image is rejected.
 
-```bash
-nix build .#architecture
-less result/architecture.md
+## Profile data
 
+Provisioning uses YAML. Bootstrap normalizes it to JSON:
+
+```json
+{
+  "schema": 1,
+  "foundation": "bluefin-dx",
+  "hardware": "dell-xps-9350-intel",
+  "roles": ["developer", "support"],
+  "identity": {
+    "username": "dale",
+    "homeDirectory": "/var/home/dale"
+  }
+}
+```
+
+The account values are discovered with `id` and `getent`. Supplied identity
+values must match. Unknown or duplicate roles, unknown foundations or hardware,
+extra schema fields, malformed documents, and running-image mismatches fail
+before any deployed file changes.
+
+The normalized profile lives at `~/.config/finite/profile.json`. The standalone
+flake, its copy of the normalized profile, and its remote lock live under
+`~/.config/home-manager`. `nh home switch --update-input finite` updates only
+the Finite input. `finite-configure` reopens the role checklist with current
+roles selected and activates only after a successful build.
+
+## Templates and bootstrap
+
+```console
+nix flake new -t github:closure-labs/finite#home-bluefin PATH
+nix flake new -t github:closure-labs/finite#home-bluefin-dx PATH
+```
+
+Both templates expose `home-profile` and `home-bootstrap` before a profile has
+been configured. The deployed flake imports the focused
+`finite.flakeModules.home`, declares one `den.homes` entity, and composes a local
+aspect from the Finite base, selected role aspects, and selected hardware.
+
+To convert a supplied legacy named-profile JSON document whose data includes
+`foundation` (or `baseClass`), `hardware`, and `roles`:
+
+```console
+nix run github:closure-labs/finite#home-bootstrap -- \
+  --legacy-profile ./exported-profile.json
+```
+
+The importer is generic: it does not look in former runtime paths or expose a
+named-preset registry.
+
+## Catalog and aspects
+
+```console
 nix build .#generated
-jq '.profiles' result/bootc/generated/profile-catalog.json
+jq . result/bootc/generated/home-profile-catalog.json
 ```
 
-## Change an aspect
-
-Aspects live below `modules/aspects/<namespace>/<name>/`. A feature directory
-contains its Den declaration and focused tests. Base and hardware features may
-also carry an image build step; role features are Home Manager modules:
-
-```text
-modules/aspects/roles/support/
-├── default.nix
-└── tests/
-```
-
-`default.nix` declares the aspect and its Home Manager configuration. Keep
-files consumed by a module in the same feature directory. Only system and
-hardware necessities belong in bootc source closures.
-
-## Add a profile
-
-In `modules/profiles/definitions.nix`:
-
-1. Add a Home Manager aspect that includes the base and desired roles.
-2. Add the matching `purplefin.homeProfiles` entity with its required
-   `baseClass`, supported hardware, and ordered roles.
-
-Validate and inspect it:
-
-```bash
-nix shell --accept-flake-config .#ci-check -c purplefin-ci-check
-nix build .#generated
-jq '.profiles["your-profile"]' \
-  result/bootc/generated/home-profile-catalog.json
-```
-
-The initial `home-switch` activation writes a standalone per-user flake at
-`~/.config/home-manager/flake.nix`. Its `homeConfigurations.$USER` output
-contains the selected profile, hardware, installer-created username, and the
-absolute home path Home Manager requires. The generated flake pairs the chilled
-Nixpkgs 26.05 series with Home Manager 26.05 and makes Purplefin follow both
-inputs. Its Purplefin input defaults to the canonical GitHub repository instead
-of a local checkout. After bootstrap, use
-the native `nh home switch` workflow; `programs.nh.homeFlake` supplies an
-explicit `path:` URI for the flake automatically. Use `--update-input
-purplefin` when the Purplefin source itself should advance. Pass `--source
-FLAKE` during bootstrap when that update source should be a fork or pinned
-remote reference. A local checkout remains available as an explicit
-development-only override.
-
-## Add an aspect
-
-Create the aspect in one of these namespaces:
-
-- `modules/aspects/capabilities/`
-- `modules/aspects/hardware/`
-- `modules/aspects/roles/`
-
-Register it as `den.aspects.features.<namespace>.<name>` and include it from a
-profile or another feature. The typed bootc class declares its build steps and
-source paths.
-
-## Runtime configuration
-
-Hardware-specific overrides are documented in
-[Dell XPS 13 9350](dell-xps-9350.md). Purplefin also provides a session-scoped
-lid inhibitor for AC-powered laptop use:
-
-```bash
-purplefin-caffeinate on
-purplefin-caffeinate status
-purplefin-caffeinate off
-```
-
-Register a FIDO2/U2F key for PAM authentication with:
-
-```bash
-mkdir -p ~/.config/Yubico
-pamu2fcfg >~/.config/Yubico/u2f_keys
-```
+The schema-2 catalog contains typed `foundations`, `hardware`, `roles`, and
+`compatibility` maps. Aspect implementations live below
+`modules/aspects/{base,capabilities,hardware,roles}`. Add a role to
+`finite.home.roles` in `modules/profiles/definitions.nix`, give it a stable
+ordering key, and validate every foundation with `just check`.

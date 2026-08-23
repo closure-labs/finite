@@ -1,9 +1,9 @@
 {pkgs}:
 pkgs.writeShellApplication {
-  name = "purplefin-classify-changes";
+  name = "finite-classify-changes";
   runtimeInputs = [pkgs.coreutils];
   text = ''
-    component="''${1:?usage: purplefin-classify-changes COMPONENT}"
+    component="''${1:?usage: finite-classify-changes COMPONENT}"
     required=false
     case "''${component}" in
       images | installer) ;;

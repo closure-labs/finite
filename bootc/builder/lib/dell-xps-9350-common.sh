@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # Shared image-build wiring for Dell XPS 13 9350 non-camera policies.
 
-purplefin_configure_dell_xps_9350_common() {
-	local battery_service="purplefin-dell-xps-9350-battery.service"
-	local panel_service="purplefin-dell-xps-9350-panel.service"
+finite_configure_dell_xps_9350_common() {
+	local battery_service="finite-dell-xps-9350-battery.service"
+	local panel_service="finite-dell-xps-9350-panel.service"
 	local panel_wants="/etc/systemd/user/graphical-session.target.wants/${panel_service}"
-	local lid_auth_helper="/usr/libexec/purplefin/dell-lid-is-open"
-	local lid_auth_stack="/etc/pam.d/purplefin-dell-lid-auth"
-	local password_auth_stack="/etc/pam.d/purplefin-dell-password-auth"
+	local lid_auth_helper="/usr/libexec/finite/dell-lid-is-open"
+	local lid_auth_stack="/etc/pam.d/finite-dell-lid-auth"
+	local password_auth_stack="/etc/pam.d/finite-dell-password-auth"
 	local schema_dir="/usr/share/glib-2.0/schemas"
 	local tuned_ppd_conf="/etc/tuned/ppd.conf"
-	local tuned_profile="purplefin-dell-xps-9350-performance"
+	local tuned_profile="finite-dell-xps-9350-performance"
 	local tuned_profile_conf="/usr/lib/tuned/profiles/${tuned_profile}/tuned.conf"
 	local lid_validation_dir schema_validation_dir tuned_ppd_tmp command expected_setting
 
@@ -22,9 +22,9 @@ purplefin_configure_dell_xps_9350_common() {
 	done
 	test -f /usr/lib/systemd/system/upower.service
 
-	chmod 0755 /usr/libexec/purplefin/configure-dell-xps-9350-battery
+	chmod 0755 /usr/libexec/finite/configure-dell-xps-9350-battery
 	chmod 0755 "${lid_auth_helper}"
-	chmod 0755 /usr/libexec/purplefin/dell-xps-9350-panel-policy
+	chmod 0755 /usr/libexec/finite/dell-xps-9350-panel-policy
 	chmod 0644 \
 		/etc/pam.d/polkit-1 \
 		"${lid_auth_stack}" \
@@ -33,10 +33,10 @@ purplefin_configure_dell_xps_9350_common() {
 
 	echo ":: Configuring Dell XPS 9350 lid-aware privilege authentication"
 	test -x "${lid_auth_helper}"
-	grep -qxF 'auth       substack     purplefin-dell-lid-auth' /etc/pam.d/sudo
-	grep -qxF 'auth       substack     purplefin-dell-lid-auth' /etc/pam.d/polkit-1
-	grep -qxF 'auth [success=2 ignore=2 default=ignore] pam_exec.so quiet quiet_log /usr/bin/env -i /usr/libexec/purplefin/dell-lid-is-open' "${lid_auth_stack}"
-	grep -qxF 'auth substack purplefin-dell-password-auth' "${lid_auth_stack}"
+	grep -qxF 'auth       substack     finite-dell-lid-auth' /etc/pam.d/sudo
+	grep -qxF 'auth       substack     finite-dell-lid-auth' /etc/pam.d/polkit-1
+	grep -qxF 'auth [success=2 ignore=2 default=ignore] pam_exec.so quiet quiet_log /usr/bin/env -i /usr/libexec/finite/dell-lid-is-open' "${lid_auth_stack}"
+	grep -qxF 'auth substack finite-dell-password-auth' "${lid_auth_stack}"
 	grep -qxF 'auth substack system-auth' "${lid_auth_stack}"
 	grep -qxF 'auth sufficient pam_unix.so' "${password_auth_stack}"
 	! grep -Eq 'pam_(fprintd|u2f)[.]so' "${password_auth_stack}"
@@ -92,11 +92,11 @@ purplefin_configure_dell_xps_9350_common() {
 
 	echo ":: Configuring Dell XPS 9350 panel and ambient-brightness policy"
 	test -L "${panel_wants}"
-	test "$(readlink "${panel_wants}")" = '../../../../usr/lib/systemd/user/purplefin-dell-xps-9350-panel.service'
+	test "$(readlink "${panel_wants}")" = '../../../../usr/lib/systemd/user/finite-dell-xps-9350-panel.service'
 	schema_validation_dir="$(mktemp -d)"
 	install -m 0644 "${schema_dir}/org.gnome.settings-daemon.enums.xml" "${schema_validation_dir}/"
 	install -m 0644 "${schema_dir}/org.gnome.settings-daemon.plugins.power.gschema.xml" "${schema_validation_dir}/"
-	install -m 0644 "${schema_dir}/zz9-purplefin-dell-xps-9350.gschema.override" "${schema_validation_dir}/"
+	install -m 0644 "${schema_dir}/zz9-finite-dell-xps-9350.gschema.override" "${schema_validation_dir}/"
 	glib-compile-schemas --strict --dry-run "${schema_validation_dir}"
 	rm -rf "${schema_validation_dir}"
 	# The inherited Bluefin schema tree can contain stale Fedora override keys.

@@ -71,7 +71,7 @@ run_gate() {
 		REF=refs/heads/example \
 		ROLE_SBOM_RESULT=skipped \
 		ROLES_PUBLISH_RESULT=skipped \
-		"$@" purplefin-ci-gate
+		"$@" finite-ci-gate
 }
 
 run_gate

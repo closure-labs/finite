@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+helper="${FINITE_FIRSTBOOT_HELPER:-/usr/libexec/finite/lib/rpm-ostree-firstboot.sh}"
+task_dir="${FINITE_FIRSTBOOT_RPM_OSTREE_TASK_DIR:-/usr/libexec/finite/firstboot-rpm-ostree.d}"
+marker_dir="${FINITE_FIRSTBOOT_RPM_OSTREE_MARKER_DIR:-/var/lib/finite/firstboot}"
+reboot_required_file="${FINITE_FIRSTBOOT_REBOOT_REQUIRED_FILE:-/run/finite/firstboot-rpm-ostree/reboot-required}"
+
+# shellcheck source=/usr/libexec/finite/lib/rpm-ostree-firstboot.sh
+source "${helper}"
+
+if ! command -v rpm-ostree >/dev/null 2>&1; then
+	finite_firstboot_log "rpm-ostree is unavailable; skipping first-boot rpm-ostree tasks"
+	exit 0
+fi
+
+install -d -m 0755 "${marker_dir}"
+rm -f "${reboot_required_file}"
+
+if finite_firstboot_pending_deployment_exists; then
+	finite_firstboot_log "pending rpm-ostree deployment exists; waiting until after reboot"
+	exit 0
+fi
+
+shopt -s nullglob
+markers=("${marker_dir}"/*.done)
+for marker in "${markers[@]}"; do
+	task_name="$(basename "${marker}" .done)"
+	task="${task_dir}/${task_name}"
+	if [[ -f "${task}" && -x "${task}" ]]; then
+		continue
+	fi
+
+	rm -f "${marker}"
+	finite_firstboot_log "removed stale marker for retired task ${task_name}"
+done
+
+if [[ ! -d "${task_dir}" ]]; then
+	finite_firstboot_log "task directory ${task_dir} does not exist; nothing to do"
+	exit 0
+fi
+
+tasks=("${task_dir}"/*)
+
+if ((${#tasks[@]} == 0)); then
+	finite_firstboot_log "no first-boot rpm-ostree tasks found"
+	exit 0
+fi
+
+for task in "${tasks[@]}"; do
+	if [[ ! -f "${task}" || ! -x "${task}" ]]; then
+		continue
+	fi
+
+	task_name="$(basename "${task}")"
+	if [[ ! "${task_name}" =~ ^[A-Za-z0-9._-]+$ ]]; then
+		finite_firstboot_log "invalid first-boot task name: ${task_name}"
+		exit 1
+	fi
+
+	marker="${marker_dir}/${task_name}.done"
+	if [[ -e "${marker}" ]]; then
+		finite_firstboot_log "skipping ${task_name}; marker exists"
+		continue
+	fi
+
+	finite_firstboot_log "running ${task_name}"
+	"${task}"
+	touch "${marker}"
+	finite_firstboot_log "completed ${task_name}"
+
+	if [[ -e "${reboot_required_file}" ]] || finite_firstboot_pending_deployment_exists; then
+		finite_firstboot_log "${task_name} staged rpm-ostree changes; stopping remaining tasks until after reboot"
+		exit 0
+	fi
+done

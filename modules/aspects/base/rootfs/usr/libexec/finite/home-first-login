@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+profile="${FINITE_HOME_PROFILE_PATH:-$HOME/.config/finite/profile.json}"
+running="${FINITE_RUNNING_PROFILE_PATH:-/usr/share/finite/profile.json}"
+seed="${FINITE_PROVISIONED_PROFILE_PATH:-/etc/finite/home-profiles/$(id -un).yaml}"
+nix="${FINITE_NIX_COMMAND:-/nix/var/nix/profiles/default/bin/nix}"
+
+[[ ! -r "$profile" ]] || exit 0
+
+show_error() {
+	status=$?
+	trap - ERR
+	message="Finite could not configure your Home Manager environment. Details are in the user journal; Finite will try again at the next graphical login."
+	printf '%s\n' "$message" >&2
+	zenity --error --title='Finite configuration failed' --text="$message" || true
+	exit "$status"
+}
+trap show_error ERR
+
+[[ -x "$nix" ]] || { echo "Finite Nix is unavailable: $nix" >&2; false; }
+[[ -r "$running" ]] || { echo "Finite profile metadata is unavailable: $running" >&2; false; }
+
+if [[ -r "$seed" ]]; then
+	"$nix" --accept-flake-config run github:closure-labs/finite#home-bootstrap -- --profile "$seed"
+	exit 0
+fi
+
+foundation=$(jq -er '.foundation' "$running")
+hardware=$(jq -er '.hardware' "$running")
+if ! roles=$(zenity --list --checklist \
+	--title='Configure Finite' \
+	--text='Select any roles for your Home Manager environment. Leaving every role unchecked installs the base environment.' \
+	--column='Use' --column='Role' --column='id' --hide-column=3 --separator=, \
+	FALSE Developer developer \
+	FALSE Sales sales \
+	FALSE Trainer trainer \
+	FALSE Support support \
+	FALSE Executive executive \
+	FALSE IT it); then
+	trap - ERR
+	exit 0
+fi
+
+generated=$(mktemp)
+trap 'rm -f -- "$generated"' EXIT
+"$nix" --accept-flake-config run github:closure-labs/finite#home-profile -- \
+	--foundation "$foundation" --hardware "$hardware" --roles "$roles" --format yaml >"$generated"
+"$nix" --accept-flake-config run github:closure-labs/finite#home-bootstrap -- --profile "$generated"

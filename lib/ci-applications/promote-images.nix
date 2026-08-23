@@ -1,6 +1,6 @@
 {pkgs}:
 pkgs.writeShellApplication {
-  name = "purplefin-promote-images";
+  name = "finite-promote-images";
   runtimeInputs = with pkgs; [coreutils cosign gh jq oras skopeo];
   text = ''
     set -euo pipefail
@@ -11,10 +11,10 @@ pkgs.writeShellApplication {
     : "''${IMAGE_REF:?IMAGE_REF is required}"
     : "''${REGISTRY_AUTH_FILE:?REGISTRY_AUTH_FILE is required}"
     : "''${VERSION:?VERSION is required}"
-    cosign_command="''${PURPLEFIN_COSIGN:-cosign}"
-    gh_command="''${PURPLEFIN_GH:-gh}"
-    oras_command="''${PURPLEFIN_ORAS:-oras}"
-    skopeo_command="''${PURPLEFIN_SKOPEO:-skopeo}"
+    cosign_command="''${FINITE_COSIGN:-cosign}"
+    gh_command="''${FINITE_GH:-gh}"
+    oras_command="''${FINITE_ORAS:-oras}"
+    skopeo_command="''${FINITE_SKOPEO:-skopeo}"
 
     declare -A digests=()
     while IFS= read -r entry; do
@@ -35,9 +35,9 @@ pkgs.writeShellApplication {
         --arg profile "''${profile}" --arg revision "''${GITHUB_SHA}" \
         --arg upstream_digest "''${upstream_digest}" --arg version "''${VERSION}" '
         (.Labels // {}) as $labels |
-        $labels["io.purplefin.build.input"] == $build_input and
-        $labels["io.purplefin.build.profile"] == $profile and
-        $labels["io.purplefin.upstream.digest"] == $upstream_digest and
+        $labels["io.finite.build.input"] == $build_input and
+        $labels["io.finite.build.profile"] == $profile and
+        $labels["io.finite.upstream.digest"] == $upstream_digest and
         $labels["org.opencontainers.image.base.digest"] == $parent_digest and
         $labels["org.opencontainers.image.revision"] == $revision and
         $labels["org.opencontainers.image.version"] == $version

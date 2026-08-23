@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-build_root="${PURPLEFIN_BUILD_ROOT:-/tmp/purplefin-build}"
+build_root="${FINITE_BUILD_ROOT:-/tmp/finite-build}"
 profile_root="${build_root}/modules/aspects/hardware/dell-xps-9350-intel/rootfs"
 
-# shellcheck source=/tmp/purplefin-build/lib/dell-xps-9350-common.sh
+# shellcheck source=/tmp/finite-build/lib/dell-xps-9350-common.sh
 # shellcheck disable=SC1091
 source "${build_root}/bootc/builder/lib/dell-xps-9350-common.sh"
 
 echo ":: Applying Dell XPS 9350 Intel hardware overlay"
 cp -a "${profile_root}/." /
-chmod 0755 /usr/libexec/purplefin/configure-firefox-pipewire-camera
-chmod 0755 /usr/libexec/purplefin/install-refind-theme
+chmod 0755 /usr/libexec/finite/configure-firefox-pipewire-camera
+chmod 0755 /usr/libexec/finite/install-refind-theme
 
-# shellcheck source=/usr/libexec/purplefin/lib/dell-ipu7.sh
+# shellcheck source=/usr/libexec/finite/lib/dell-ipu7.sh
 # shellcheck disable=SC1091
-source /usr/libexec/purplefin/lib/dell-ipu7.sh
+source /usr/libexec/finite/lib/dell-ipu7.sh
 
 camera_runtime_packages=(
 	libcamera
@@ -44,7 +44,7 @@ install_svp7500_module() {
 	local module_name="${5:-${module_file%.ko}}"
 	local source_path="${source_root}/dkms/${source_dir}"
 	local built_path="${source_path}/${module_file}"
-	local installed_path="/usr/lib/modules/${target_release}/updates/purplefin/${module_file}"
+	local installed_path="/usr/lib/modules/${target_release}/updates/finite/${module_file}"
 	local vermagic
 
 	test -f "${source_path}/Makefile" || {
@@ -79,9 +79,9 @@ assert_external_module_selected() {
 
 	selected="$(modinfo -k "${target_release}" -n "${module_name}")"
 	case "${selected}" in
-		*/updates/purplefin/"${expected_file}") ;;
+		*/updates/finite/"${expected_file}") ;;
 		*)
-			echo "${module_name} resolves to ${selected}, not Purplefin's SVP7500 module" >&2
+			echo "${module_name} resolves to ${selected}, not Finite's SVP7500 module" >&2
 			return 1
 			;;
 	esac
@@ -112,19 +112,19 @@ install_svp7500_stack() {
 	local cleanup_packages=()
 	local package
 
-	ipu7_firmware_path="$(purplefin_dell_ipu7_find_firmware)" || exit 1
+	ipu7_firmware_path="$(finite_dell_ipu7_find_firmware)" || exit 1
 	echo ":: Found Dell IPU7 firmware ${ipu7_firmware_path}"
 
 	inherited_record="$(installed_kernel_core_record)"
 	IFS=$'\t' read -r _ target_evr target_arch <<<"${inherited_record}"
-	target_release="$(purplefin_dell_ipu7_kernel_release_for_evr_arch "${target_evr}" "${target_arch}")"
+	target_release="$(finite_dell_ipu7_kernel_release_for_evr_arch "${target_evr}" "${target_arch}")"
 
-	config_path="$(purplefin_dell_ipu7_find_local_kernel_config "${target_release}")" || {
+	config_path="$(finite_dell_ipu7_find_local_kernel_config "${target_release}")" || {
 		echo "Dell IPU7 kernel config for ${target_release} is missing" >&2
 		exit 1
 	}
-	purplefin_dell_ipu7_validate_kernel_config_file "${config_path}"
-	purplefin_dell_ipu7_assert_replaceable_module "${target_release}" ipu-bridge
+	finite_dell_ipu7_validate_kernel_config_file "${config_path}"
+	finite_dell_ipu7_assert_replaceable_module "${target_release}" ipu-bridge
 	if grep -qxF 'CONFIG_CC_IS_CLANG=y' "${config_path}"; then
 		echo ":: Matching the inherited kernel's Clang/LLVM toolchain"
 		build_packages+=(clang lld llvm)
@@ -156,15 +156,15 @@ install_svp7500_stack() {
 		exit 1
 	}
 
-	source_root="$(mktemp -d /tmp/purplefin-svp7500.XXXXXX)"
+	source_root="$(mktemp -d /tmp/finite-svp7500.XXXXXX)"
 	checkout="${source_root}/fix-pack"
 	git init -q "${checkout}"
-	git -C "${checkout}" remote add origin "$(purplefin_dell_ipu7_fix_pack_repo)"
-	git -C "${checkout}" fetch --depth 1 origin "$(purplefin_dell_ipu7_fix_pack_ref)"
+	git -C "${checkout}" remote add origin "$(finite_dell_ipu7_fix_pack_repo)"
+	git -C "${checkout}" fetch --depth 1 origin "$(finite_dell_ipu7_fix_pack_ref)"
 	git -C "${checkout}" checkout --quiet --detach FETCH_HEAD
 	actual_ref="$(git -C "${checkout}" rev-parse HEAD)"
-	if [[ "${actual_ref}" != "$(purplefin_dell_ipu7_fix_pack_ref)" ]]; then
-		echo "SVP7500 fix pack resolved to ${actual_ref}, expected $(purplefin_dell_ipu7_fix_pack_ref)" >&2
+	if [[ "${actual_ref}" != "$(finite_dell_ipu7_fix_pack_ref)" ]]; then
+		echo "SVP7500 fix pack resolved to ${actual_ref}, expected $(finite_dell_ipu7_fix_pack_ref)" >&2
 		exit 1
 	fi
 
@@ -172,7 +172,7 @@ install_svp7500_stack() {
 	install_svp7500_module "${checkout}" "${target_release}" ipu-bridge-patched-1.0 ipu-bridge.ko ipu_bridge
 	install_svp7500_module "${checkout}" "${target_release}" hm1092-1.0 hm1092.ko hm1092
 
-	if purplefin_dell_ipu7_int3472_patch_needed "${target_release}"; then
+	if finite_dell_ipu7_int3472_patch_needed "${target_release}"; then
 		int3472_provider="svp7500-fix-pack"
 		initramfs_modules+=(
 			intel_skl_int3472_common
@@ -189,11 +189,11 @@ install_svp7500_stack() {
 	fi
 
 	install -D -m 0644 "${checkout}/dkms/intel-cvs-1.0/LICENSE.txt" \
-		/usr/share/licenses/purplefin-svp7500-camera-fix-pack/LICENSE.intel-cvs.txt
-	install -d -m 0755 /usr/share/purplefin/dell-ipu7
-	cat >/usr/share/purplefin/dell-ipu7/source-provenance <<EOF
-source_repo=$(purplefin_dell_ipu7_fix_pack_repo)
-source_version=$(purplefin_dell_ipu7_fix_pack_version)
+		/usr/share/licenses/finite-svp7500-camera-fix-pack/LICENSE.intel-cvs.txt
+	install -d -m 0755 /usr/share/finite/dell-ipu7
+	cat >/usr/share/finite/dell-ipu7/source-provenance <<EOF
+source_repo=$(finite_dell_ipu7_fix_pack_repo)
+source_version=$(finite_dell_ipu7_fix_pack_version)
 source_commit=${actual_ref}
 kernel_release=${target_release}
 modules=intel_cvs ipu_bridge hm1092
@@ -233,8 +233,8 @@ EOF
 		exit 1
 	fi
 	for module in intel_cvs ipu-bridge hm1092; do
-		if ! grep -qF "updates/purplefin/${module}.ko" <<<"${initramfs_listing}"; then
-			echo "Rebuilt initramfs does not contain Purplefin's ${module} replacement" >&2
+		if ! grep -qF "updates/finite/${module}.ko" <<<"${initramfs_listing}"; then
+			echo "Rebuilt initramfs does not contain Finite's ${module} replacement" >&2
 			exit 1
 		fi
 	done
@@ -265,7 +265,7 @@ echo ":: Installing Dell OV02C10 libcamera IPA helper"
 
 install_svp7500_stack
 
-purplefin_configure_dell_xps_9350_common
+finite_configure_dell_xps_9350_common
 
 echo ":: Enabling Dell XPS 9350 Intel rEFInd theme installer"
-systemctl enable purplefin-refind-theme.service
+systemctl enable finite-refind-theme.service

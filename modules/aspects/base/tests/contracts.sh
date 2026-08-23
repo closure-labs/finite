@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+finite_logo="modules/aspects/base/rootfs/usr/share/finite/finite-logo.png"
+test -f "${finite_logo}"
+cmp -s "${finite_logo}" \
+	modules/aspects/base/rootfs/usr/share/ublue-os/bluefin-logos/bluefin.png
+cmp -s \
+	modules/aspects/base/rootfs/usr/share/plymouth/themes/spinner/watermark.png \
+	modules/aspects/base/rootfs/usr/share/plymouth/themes/spinner/silverblue-watermark.png
+
 aspect_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 module="${aspect_root}/default.nix"
 rootfs="${aspect_root}/rootfs"
@@ -9,33 +17,35 @@ test -x "${aspect_root}/apply.sh"
 test -x "${aspect_root}/install-determinate-nix.sh"
 test -f "${aspect_root}/install-nix-systemd-units.sh"
 test -x "${aspect_root}/tests/nix-systemd.sh"
-test -x "${aspect_root}/rootfs/usr/libexec/purplefin/require-determinate-nix-version"
-test -x "${rootfs}/usr/bin/purplefin-caffeinate"
-test -x "${rootfs}/usr/libexec/purplefin/run-firstboot-rpm-ostree"
-test -x "${rootfs}/usr/libexec/purplefin/provision-determinate-nix"
-test -x "${rootfs}/usr/libexec/purplefin/install-determinate-nix-selinux-policy"
+test -x "${aspect_root}/rootfs/usr/libexec/finite/require-determinate-nix-version"
+test -x "${rootfs}/usr/bin/finite-caffeinate"
+test -x "${rootfs}/usr/libexec/finite/run-firstboot-rpm-ostree"
+test -x "${rootfs}/usr/libexec/finite/provision-determinate-nix"
+test -x "${rootfs}/usr/libexec/finite/install-determinate-nix-selinux-policy"
+test -x "${rootfs}/usr/libexec/finite/home-first-login"
+bash -n "${rootfs}/usr/libexec/finite/home-first-login"
 test -f "${rootfs}/usr/lib/systemd/system/nix.mount"
 grep -qF 'd /var/lib/cloud 0755 root root - -' \
-	"${rootfs}/usr/lib/tmpfiles.d/purplefin-cloud-init.conf"
+	"${rootfs}/usr/lib/tmpfiles.d/finite-cloud-init.conf"
 test -f "${rootfs}/usr/lib/systemd/system/nix-daemon.service"
 test -f "${rootfs}/usr/lib/systemd/system/nix-daemon.socket"
 test -f "${rootfs}/usr/lib/systemd/system/determinate-nixd.socket"
-test -f "${rootfs}/usr/lib/systemd/system/purplefin-nix-socket-cleanup.service"
-test -f "${rootfs}/usr/lib/sysusers.d/purplefin-nix.conf"
+test -f "${rootfs}/usr/lib/systemd/system/finite-nix-socket-cleanup.service"
+test -f "${rootfs}/usr/lib/sysusers.d/finite-nix.conf"
 grep -qF 'What=/var/home/nix' "${rootfs}/usr/lib/systemd/system/nix.mount"
 grep -qF 'ExecStart=@/usr/bin/determinate-nixd' "${rootfs}/usr/lib/systemd/system/nix-daemon.service"
-grep -qF 'Requires=purplefin-nix-socket-cleanup.service' \
+grep -qF 'Requires=finite-nix-socket-cleanup.service' \
 	"${rootfs}/usr/lib/systemd/system/nix-daemon.socket"
 grep -qF 'RemoveOnStop=true' "${rootfs}/usr/lib/systemd/system/nix-daemon.socket"
 grep -qF '/nix/var/nix/daemon-socket/socket' \
-	"${rootfs}/usr/lib/systemd/system/purplefin-nix-socket-cleanup.service"
+	"${rootfs}/usr/lib/systemd/system/finite-nix-socket-cleanup.service"
 grep -qF 'install -d -m 0755 /var/usrlocal/bin' "${aspect_root}/install-determinate-nix.sh"
-grep -qF 'dnf5 -y install cloud-init nix nix-daemon' "${aspect_root}/apply.sh"
-dnf_line="$(grep -nF 'dnf5 -y install cloud-init nix nix-daemon' "${aspect_root}/apply.sh" | cut -d: -f1)"
+grep -qF 'dnf5 -y install cloud-init jq nix nix-daemon yq zenity' "${aspect_root}/apply.sh"
+dnf_line="$(grep -nF 'dnf5 -y install cloud-init jq nix nix-daemon yq zenity' "${aspect_root}/apply.sh" | cut -d: -f1)"
 rootfs_overlay="cp -a \"\${base_root}/rootfs/.\" /"
 overlay_line="$(grep -nF "${rootfs_overlay}" "${aspect_root}/apply.sh" | cut -d: -f1)"
 if ((overlay_line <= dnf_line)); then
-	echo 'Purplefin rootfs must overlay Fedora packages after package installation' >&2
+	echo 'Finite rootfs must overlay Fedora packages after package installation' >&2
 	exit 1
 fi
 grep -qF 'rm -rf -- /run/cloud-init' "${aspect_root}/apply.sh"
@@ -55,9 +65,9 @@ if grep -qF 'install -d -m 0755 /nix' \
 	exit 1
 fi
 
-grep -qF 'ConditionACPower=true' "${rootfs}/usr/lib/systemd/user/purplefin-caffeinate.service"
-grep -qF -- '--what=sleep:handle-lid-switch' "${rootfs}/usr/lib/systemd/user/purplefin-caffeinate.service"
-grep -qF 'datasource_list: [NoCloud, None]' "${rootfs}/etc/cloud/cloud.cfg.d/90-purplefin-nocloud.cfg"
+grep -qF 'ConditionACPower=true' "${rootfs}/usr/lib/systemd/user/finite-caffeinate.service"
+grep -qF -- '--what=sleep:handle-lid-switch' "${rootfs}/usr/lib/systemd/user/finite-caffeinate.service"
+grep -qF 'datasource_list: [NoCloud, None]' "${rootfs}/etc/cloud/cloud.cfg.d/90-finite-nocloud.cfg"
 test ! -e "${aspect_root}/manifests/Brewfile"
 test ! -e "${aspect_root}/independently-managed-rpms.list"
 test ! -e "${aspect_root}/packages-bitwarden-cli"
@@ -66,8 +76,11 @@ if grep -qF 'home-manager.enable = true' "${module}"; then
 	echo 'The standalone Home Manager CLI must not shadow nh' >&2
 	exit 1
 fi
-grep -qF 'shellAliases.purplefin-home = "nh home switch --update-input purplefin"' "${module}"
-if grep -qF 'writeShellScriptBin "purplefin-home"' "${module}"; then
-	echo 'purplefin-home must remain an nh alias rather than a wrapper binary' >&2
+test -f "${rootfs}/usr/lib/systemd/user/finite-home-first-login.service"
+test -L "${rootfs}/etc/systemd/user/graphical-session.target.wants/finite-home-first-login.service"
+grep -qF 'ConditionPathExists=!%h/.config/finite/profile.json' \
+	"${rootfs}/usr/lib/systemd/user/finite-home-first-login.service"
+if grep -qF 'finite-home' "${module}"; then
+	echo 'The removed finite-home compatibility alias remains' >&2
 	exit 1
 fi

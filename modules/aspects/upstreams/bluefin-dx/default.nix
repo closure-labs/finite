@@ -5,6 +5,9 @@
 }: {
   den.aspects.features.upstreams.bluefin-dx = {
     includes = [den.aspects.sources.bluefin-dx];
-    bootc.purplefin.upstream = config.purplefin.sources.bluefinDx // {preserve = true;};
+    bootc.finite = {
+      foundation = "bluefin-dx";
+      upstream = config.finite.sources.bluefinDx // {preserve = true;};
+    };
   };
 }

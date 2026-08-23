@@ -4,7 +4,7 @@
       den.aspects.sources.determinate-nix
     ];
     bootc = {
-      purplefin = {
+      finite = {
         base.enable = true;
         build = {
           steps = [
@@ -39,8 +39,8 @@
       ];
 
       home = {
-        username = lib.mkDefault "purplefin";
-        homeDirectory = lib.mkDefault "/var/home/purplefin";
+        username = lib.mkDefault "finite";
+        homeDirectory = lib.mkDefault "/var/home/finite";
         stateVersion = "26.05";
         packages = with pkgs; [
           atuin
@@ -122,10 +122,7 @@
       programs = {
         git.enable = true;
         nh.enable = true;
-        zsh = {
-          enable = true;
-          shellAliases.purplefin-home = "nh home switch --update-input purplefin";
-        };
+        zsh.enable = true;
       };
 
       xdg.enable = true;

@@ -1,15 +1,15 @@
 {pkgs}:
 pkgs.writeShellApplication {
-  name = "purplefin-update-home-release";
+  name = "finite-update-home-release";
   # Preserve the Determinate Nix client supplied by the host instead of
   # shadowing it with the Nixpkgs client inside this application wrapper.
   runtimeInputs = with pkgs; [coreutils curl git gnugrep gnused jq];
   text = ''
     set -euo pipefail
 
-    repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
+    repo_root="''${FINITE_SOURCE_ROOT:-$PWD}"
     [[ -f "''${repo_root}/flake.nix" ]] || {
-      echo "Run this command from the Purplefin repository root" >&2
+      echo "Run this command from the Finite repository root" >&2
       exit 2
     }
     cd "''${repo_root}"
@@ -80,7 +80,6 @@ pkgs.writeShellApplication {
 
     release_files=(
       flake.nix
-      modules/outputs.nix
       lib/ci-applications/validate-locks.nix
       tests/repository/contracts.sh
       docs/ci-and-releases.md

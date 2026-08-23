@@ -1,4 +1,4 @@
-name: Release Purplefin
+name: Release Finite
 
 on:
   workflow_dispatch:
@@ -15,7 +15,7 @@ on:
         default: auto
 
 concurrency:
-  group: purplefin-release
+  group: finite-release
   cancel-in-progress: false
 
 permissions:
@@ -84,7 +84,7 @@ jobs:
               git log "${last_tag}..HEAD" \
                 --format='%H' \
                 --invert-grep \
-                --grep='^Start Purplefin [0-9]\+\.[0-9]\+\.[0-9]\+-dev\.[0-9]\+$'
+                --grep='^Start Finite [0-9]\+\.[0-9]\+\.[0-9]\+-dev\.[0-9]\+$'
             })"
             [[ -n "${meaningful_commits}" ]] || {
               echo "No releasable commits exist after ${last_tag}" >&2
@@ -115,7 +115,7 @@ jobs:
                 git log "${last_tag}..HEAD" \
                   --format='%s%n%b' \
                   --invert-grep \
-                  --grep='^Start Purplefin [0-9]\+\.[0-9]\+\.[0-9]\+-dev\.[0-9]\+$'
+                  --grep='^Start Finite [0-9]\+\.[0-9]\+\.[0-9]\+-dev\.[0-9]\+$'
               })"
               if grep -Eq \
                 '(^[[:alnum:]-]+(\([^)]*\))?!:)|(^BREAKING[ -]CHANGE:)' \
@@ -167,8 +167,8 @@ jobs:
           base: main
           branch: automation/release-${{ steps.version.outputs.tag }}
           delete-branch: true
-          commit-message: Release Purplefin ${{ steps.version.outputs.version }}
-          title: Release Purplefin ${{ steps.version.outputs.version }}
+          commit-message: Release Finite ${{ steps.version.outputs.version }}
+          title: Release Finite ${{ steps.version.outputs.version }}
           body: |
             Sets the stable source version for `${{ steps.version.outputs.tag }}`.
 
@@ -184,12 +184,12 @@ jobs:
           EXPECTED_AUTHOR: app/github-actions
           EXPECTED_BRANCH: automation/release-${{ steps.version.outputs.tag }}
           EXPECTED_FILES: VERSION
-          EXPECTED_TITLE: Release Purplefin ${{ steps.version.outputs.version }}
+          EXPECTED_TITLE: Release Finite ${{ steps.version.outputs.version }}
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ steps.release-version.outputs.pull-request-number }}
         run: >-
           nix shell --accept-flake-config .#ci-trusted-update
-          -c purplefin-trusted-update
+          -c finite-trusted-update
 
       - name: Resolve the protected release source
         id: source
@@ -231,7 +231,7 @@ jobs:
           echo "source_sha=${source_sha}" >>"${GITHUB_OUTPUT}"
 
       - name: Resolve Flake-generated build artifacts
-        run: echo "PURPLEFIN_GENERATED_ROOT=$(nix build .#generated --no-link --print-out-paths)" >>"${GITHUB_ENV}"
+        run: echo "FINITE_GENERATED_ROOT=$(nix build .#generated --no-link --print-out-paths)" >>"${GITHUB_ENV}"
 
       - name: Reuse or dispatch the release-candidate build
         id: build
@@ -315,9 +315,9 @@ jobs:
               })" || return 1
               [[ "$(jq -er '.Labels["org.opencontainers.image.revision"]' <<<"${metadata}")" == "${SOURCE_SHA}" ]] || return 1
               [[ "$(jq -er '.Labels["org.opencontainers.image.version"]' <<<"${metadata}")" == "${VERSION}" ]] || return 1
-              [[ "$(jq -er '.Labels["io.purplefin.build.profile"]' <<<"${metadata}")" == "${profile}" ]] || return 1
-              [[ "$(jq -er '.Labels["io.purplefin.build.input"]' <<<"${metadata}")" == "${expected_input}" ]] || return 1
-            done < <(jq -c '.[]' "${PURPLEFIN_GENERATED_ROOT}/bootc/generated/image-matrix.json")
+              [[ "$(jq -er '.Labels["io.finite.build.profile"]' <<<"${metadata}")" == "${profile}" ]] || return 1
+              [[ "$(jq -er '.Labels["io.finite.build.input"]' <<<"${metadata}")" == "${expected_input}" ]] || return 1
+            done < <(jq -c '.[]' "${FINITE_GENERATED_ROOT}/bootc/generated/image-matrix.json")
           }
 
           if ! profiles_are_current; then
@@ -364,7 +364,7 @@ jobs:
     name: Promote tested digests and release source
     needs: prepare
     concurrency:
-      group: purplefin-publication
+      group: finite-publication
       cancel-in-progress: false
     runs-on: ubuntu-24.04
     timeout-minutes: 180
@@ -387,7 +387,7 @@ jobs:
         uses: ./.github/actions/setup-nix
 
       - name: Resolve Flake-generated build artifacts
-        run: echo "PURPLEFIN_GENERATED_ROOT=$(nix build .#generated --no-link --print-out-paths)" >>"${GITHUB_ENV}"
+        run: echo "FINITE_GENERATED_ROOT=$(nix build .#generated --no-link --print-out-paths)" >>"${GITHUB_ENV}"
 
       - name: Validate release versions and source
         env:
@@ -438,7 +438,7 @@ jobs:
             revision="$(jq -er '.Labels["org.opencontainers.image.revision"]' <<<"${metadata}")"
             image_version="$(jq -er '.Labels["org.opencontainers.image.version"]' <<<"${metadata}")"
             base_digest="$(jq -er '.Labels["org.opencontainers.image.base.digest"]' <<<"${metadata}")"
-            build_input="$(jq -er '.Labels["io.purplefin.build.input"]' <<<"${metadata}")"
+            build_input="$(jq -er '.Labels["io.finite.build.input"]' <<<"${metadata}")"
             [[ "${revision}" == "${SOURCE_SHA}" ]]
             [[ "${image_version}" == "${VERSION}" ]]
 
@@ -465,15 +465,15 @@ jobs:
             })"
             [[ "${release_digest}" == "${digest}" ]]
 
-            sbom_dir="$(mktemp -d -p "${RUNNER_TEMP}" "purplefin-${profile}-sbom.XXXXXX")"
+            sbom_dir="$(mktemp -d -p "${RUNNER_TEMP}" "finite-${profile}-sbom.XXXXXX")"
             sbom="${sbom_dir}/sbom.spdx.json"
             SBOM_IMAGE_DIGEST="${digest}" \
               SBOM_IMAGE_REF="${IMAGE_REF}" \
               SBOM_SIGNER_WORKFLOW="${GITHUB_REPOSITORY}/.github/workflows/attest-software-bill-of-materials.yml" \
               SBOM_SOURCE_DIGEST="${SOURCE_SHA}" \
               nix shell --accept-flake-config .#ci-sbom-attestation \
-                -c purplefin-sbom-attestation extract "${sbom}"
-            sbom_asset="purplefin-${profile}-v${VERSION}.spdx.json.gz"
+                -c finite-sbom-attestation extract "${sbom}"
+            sbom_asset="finite-${profile}-v${VERSION}.spdx.json.gz"
             gzip -9c "${sbom}" >"release-sboms/${sbom_asset}"
             rm -f -- "${sbom}"
             rmdir -- "${sbom_dir}"
@@ -490,7 +490,7 @@ jobs:
                 '{profile: $profile, channel_tag: $channel_tag, release_tag: $release_tag, digest: $digest, base_digest: $base_digest, build_input: $build_input, sbom_asset: $sbom_asset}'
             })"
             images="$(jq -c --argjson image "${image}" '. + [$image]' <<<"${images}")"
-          done < <(jq -c '.[]' "${PURPLEFIN_GENERATED_ROOT}/bootc/generated/image-matrix.json")
+          done < <(jq -c '.[]' "${FINITE_GENERATED_ROOT}/bootc/generated/image-matrix.json")
 
           jq -n \
             --arg version "${VERSION}" \
@@ -508,10 +508,10 @@ jobs:
         shell: bash
         run: |
           mapfile -t sbom_assets < <(find release-sboms -type f -name '*.spdx.json.gz' -print | sort)
-          expected_assets="$(jq 'length' "${PURPLEFIN_GENERATED_ROOT}/bootc/generated/image-matrix.json")"
+          expected_assets="$(jq 'length' "${FINITE_GENERATED_ROOT}/bootc/generated/image-matrix.json")"
           (( ${#sbom_assets[@]} == expected_assets ))
           nix shell --accept-flake-config .#ci-release-notes \
-            -c purplefin-release-notes "${VERSION}" CHANGELOG.md >release-notes.md
+            -c finite-release-notes "${VERSION}" CHANGELOG.md >release-notes.md
           grep -q '[^[:space:]]' release-notes.md
           gh release create "v${VERSION}" \
             release-manifest.json \
@@ -520,7 +520,7 @@ jobs:
             --draft \
             --notes-file release-notes.md \
             --target "${SOURCE_SHA}" \
-            --title "Purplefin ${VERSION}"
+            --title "Finite ${VERSION}"
           gh release edit "v${VERSION}" --draft=false
 
       - name: Clean generated release assets
@@ -554,8 +554,8 @@ jobs:
           base: main
           branch: automation/start-${{ steps.next-version.outputs.next_version }}
           delete-branch: true
-          commit-message: Start Purplefin ${{ steps.next-version.outputs.next_version }}
-          title: Start Purplefin ${{ steps.next-version.outputs.next_version }}
+          commit-message: Start Finite ${{ steps.next-version.outputs.next_version }}
+          title: Start Finite ${{ steps.next-version.outputs.next_version }}
           body: |
             Starts development after the `${{ needs.prepare.outputs.tag }}` release.
 
@@ -570,12 +570,12 @@ jobs:
           EXPECTED_AUTHOR: app/github-actions
           EXPECTED_BRANCH: automation/start-${{ steps.next-version.outputs.next_version }}
           EXPECTED_FILES: VERSION
-          EXPECTED_TITLE: Start Purplefin ${{ steps.next-version.outputs.next_version }}
+          EXPECTED_TITLE: Start Finite ${{ steps.next-version.outputs.next_version }}
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ steps.development-version.outputs.pull-request-number }}
         run: >-
           nix shell --accept-flake-config .#ci-trusted-update
-          -c purplefin-trusted-update
+          -c finite-trusted-update
 
       - name: Wait for the next development version merge
         if: >-

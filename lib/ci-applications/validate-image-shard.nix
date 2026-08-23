@@ -6,15 +6,15 @@
   version,
 }:
 pkgs.writeShellApplication {
-  name = "purplefin-validate-image-shard";
+  name = "finite-validate-image-shard";
   runtimeInputs = with pkgs; [coreutils jq skopeo];
   text = ''
-       export PURPLEFIN_GENERATED_ROOT=${generated}
-       export PURPLEFIN_LOAD_BLUEFIN=${loadBluefin}/bin/purplefin-load-bluefin
-       export PURPLEFIN_RECHUNK_IMAGE=${rechunkImage}/bin/purplefin-rechunk-image
-       export PURPLEFIN_VERSION=${version}
-       export PURPLEFIN_DEFAULT_BUILDAH=${pkgs.buildah}/bin/buildah
-       export PURPLEFIN_DEFAULT_PODMAN=${pkgs.podman}/bin/podman
+       export FINITE_GENERATED_ROOT=${generated}
+       export FINITE_LOAD_BLUEFIN=${loadBluefin}/bin/finite-load-bluefin
+       export FINITE_RECHUNK_IMAGE=${rechunkImage}/bin/finite-rechunk-image
+       export FINITE_VERSION=${version}
+       export FINITE_DEFAULT_BUILDAH=${pkgs.buildah}/bin/buildah
+       export FINITE_DEFAULT_PODMAN=${pkgs.podman}/bin/podman
        set -euo pipefail
 
        if [[ "''${CI:-}" == true ]]; then
@@ -24,24 +24,24 @@ pkgs.writeShellApplication {
            echo "The CI runner's host Buildah and Podman are required" >&2
            exit 1
          }
-         export PURPLEFIN_BUILDAH="''${host_buildah}"
-         export PURPLEFIN_PODMAN="''${host_podman}"
+         export FINITE_BUILDAH="''${host_buildah}"
+         export FINITE_PODMAN="''${host_podman}"
        else
-         export PURPLEFIN_BUILDAH="''${PURPLEFIN_DEFAULT_BUILDAH:?PURPLEFIN_DEFAULT_BUILDAH is required}"
-         export PURPLEFIN_PODMAN="''${PURPLEFIN_DEFAULT_PODMAN:?PURPLEFIN_DEFAULT_PODMAN is required}"
+         export FINITE_BUILDAH="''${FINITE_DEFAULT_BUILDAH:?FINITE_DEFAULT_BUILDAH is required}"
+         export FINITE_PODMAN="''${FINITE_DEFAULT_PODMAN:?FINITE_DEFAULT_PODMAN is required}"
        fi
-       repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
+       repo_root="''${FINITE_SOURCE_ROOT:-$PWD}"
        cd "''${repo_root}" || exit
-       : "''${PURPLEFIN_GENERATED_ROOT:?PURPLEFIN_GENERATED_ROOT is required}"
-       : "''${PURPLEFIN_LOAD_BLUEFIN:?PURPLEFIN_LOAD_BLUEFIN is required}"
-       : "''${PURPLEFIN_RECHUNK_IMAGE:?PURPLEFIN_RECHUNK_IMAGE is required}"
-       : "''${PURPLEFIN_VERSION:?PURPLEFIN_VERSION is required}"
+       : "''${FINITE_GENERATED_ROOT:?FINITE_GENERATED_ROOT is required}"
+       : "''${FINITE_LOAD_BLUEFIN:?FINITE_LOAD_BLUEFIN is required}"
+       : "''${FINITE_RECHUNK_IMAGE:?FINITE_RECHUNK_IMAGE is required}"
+       : "''${FINITE_VERSION:?FINITE_VERSION is required}"
 
-       profile_matrix="''${PURPLEFIN_GENERATED_ROOT}/bootc/generated/image-matrix.json"
+       profile_matrix="''${FINITE_GENERATED_ROOT}/bootc/generated/image-matrix.json"
        profile_shard="''${PROFILE_SHARD:?PROFILE_SHARD is required}"
 
        usage() {
-         echo "usage: purplefin-validate-image-shard [--check]" >&2
+         echo "usage: finite-validate-image-shard [--check]" >&2
        }
 
        declare -A validated_images=()
@@ -50,7 +50,7 @@ pkgs.writeShellApplication {
          status=$?
          set +e
          for image in "''${retained_images[@]:-}"; do
-           [[ -z "''${image}" ]] || "''${PURPLEFIN_PODMAN:-podman}" image rm --force "''${image}" >/dev/null 2>&1
+           [[ -z "''${image}" ]] || "''${FINITE_PODMAN:-podman}" image rm --force "''${image}" >/dev/null 2>&1
          done
          exit "''${status}"
        }
@@ -63,6 +63,8 @@ pkgs.writeShellApplication {
              type == "object" and
              (.profile | type == "string" and length > 0) and
              (.build_input | type == "string" and test("^[0-9a-f]{64}$")) and
+             (.foundation == "bluefin" or .foundation == "bluefin-dx") and
+             (.hardware == "generic-x86_64" or .hardware == "dell-xps-9350-intel") and
              (.tags | type == "string" and length > 0) and
              (.upstream.image | type == "string" and length > 0) and
              (.upstream.digest | type == "string" and test("^sha256:[0-9a-f]{64}$")) and
@@ -79,12 +81,12 @@ pkgs.writeShellApplication {
            profile="$(jq -er '.profile' <<<"''${entry}")"
            expected="$(jq -cer --arg profile "''${profile}" '
              .[] | select(.profile == $profile) |
-             {profile, build_input, tags, stage, parent, upstream}
+             {profile, build_input, foundation, hardware, tags, stage, parent, upstream}
            ' "''${profile_matrix}")" || {
              echo "Unknown profile in shard: ''${profile}" >&2
              return 2
            }
-           actual="$(jq -c '{profile, build_input, tags, stage, parent, upstream}' <<<"''${entry}")"
+           actual="$(jq -c '{profile, build_input, foundation, hardware, tags, stage, parent, upstream}' <<<"''${entry}")"
            [[ "''${actual}" == "''${expected}" ]] || {
              echo "Shard contract for ''${profile} does not match the generated graph" >&2
              return 2
@@ -97,14 +99,16 @@ pkgs.writeShellApplication {
          cache_available="$2"
          profile="$(jq -er '.profile' <<<"''${entry}")"
          build_input="$(jq -er '.build_input' <<<"''${entry}")"
+         foundation="$(jq -er '.foundation' <<<"''${entry}")"
+         hardware="$(jq -er '.hardware' <<<"''${entry}")"
          upstream_digest="$(jq -er '.upstream.digest' <<<"''${entry}")"
          upstream_name="$(jq -er '.upstream.image | if endswith("/bluefin-dx") then "bluefin-dx" else "bluefin" end' <<<"''${entry}")"
-         upstream_image="$("''${PURPLEFIN_LOAD_BLUEFIN}" "''${upstream_name}")"
+         upstream_image="$("''${FINITE_LOAD_BLUEFIN}" "''${upstream_name}")"
          target="$(jq -r '.target | tostring' <<<"''${entry}")"
          started_at="$(date +%s)"
     archive=""
     chunked_image=""
-         primary_image="localhost/purplefin-validation:''${profile}-''${GITHUB_RUN_ID:-local}-''${GITHUB_RUN_ATTEMPT:-0}"
+         primary_image="localhost/finite-validation:''${profile}-''${GITHUB_RUN_ID:-local}-''${GITHUB_RUN_ATTEMPT:-0}"
          parent_profile="$(jq -r '.parent // ""' <<<"''${entry}")"
          containerfile=./bootc/Containerfile
          base_ref="''${upstream_image}"
@@ -121,7 +125,7 @@ pkgs.writeShellApplication {
                return 2
              }
              base_ref="''${IMAGE_REF}@''${parent_digest}"
-             "''${PURPLEFIN_PODMAN}" pull --quiet "''${base_ref}" >/dev/null
+             "''${FINITE_PODMAN}" pull --quiet "''${base_ref}" >/dev/null
            fi
            parent_args+=(--build-arg "PARENT_PROFILE=''${parent_profile}")
          fi
@@ -134,23 +138,25 @@ pkgs.writeShellApplication {
          created="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
          echo "''${profile}: starting image build (target=''${target})"
 
-         "''${PURPLEFIN_BUILDAH}" bud \
+         "''${FINITE_BUILDAH}" bud \
            --file "''${containerfile}" \
            --pull=missing \
            --network host \
            --security-opt label=disable \
-           --build-context "purplefin-generated=''${PURPLEFIN_GENERATED_ROOT}" \
+           --build-context "finite-generated=''${FINITE_GENERATED_ROOT}" \
            "''${cache_args[@]}" \
-           --label "io.purplefin.build.input=''${build_input}" \
-           --label "io.purplefin.build.profile=''${profile}" \
-           --label "io.purplefin.upstream.digest=''${upstream_digest}" \
+           --label "io.finite.build.input=''${build_input}" \
+           --label "io.finite.build.profile=''${profile}" \
+           --label "io.finite.foundation=''${foundation}" \
+           --label "io.finite.hardware=''${hardware}" \
+           --label "io.finite.upstream.digest=''${upstream_digest}" \
            --label "org.opencontainers.image.base.digest=''${upstream_digest}" \
            --label "org.opencontainers.image.created=''${created}" \
            --label "org.opencontainers.image.revision=''${GITHUB_SHA:-local}" \
            "''${parent_args[@]}" \
            --build-arg "BASE_REF=''${base_ref}" \
            --build-arg "BUILD_PROFILE=''${profile}" \
-           --build-arg "PURPLEFIN_VERSION=''${PURPLEFIN_VERSION}" \
+           --build-arg "FINITE_VERSION=''${FINITE_VERSION}" \
            --format docker \
            --tls-verify=true \
            --tag "''${primary_image}" \
@@ -178,19 +184,19 @@ pkgs.writeShellApplication {
 
          rechunk_started_at="$(date +%s)"
          echo "''${profile}: starting target rechunk validation"
-         output_dir="$(mktemp -d -p "''${RUNNER_TEMP:-''${TMPDIR:-/tmp}}" purplefin-rechunk.XXXXXX)"
-         archive="''${output_dir}/purplefin.oci"
+         output_dir="$(mktemp -d -p "''${RUNNER_TEMP:-''${TMPDIR:-/tmp}}" finite-rechunk.XXXXXX)"
+         archive="''${output_dir}/finite.oci"
          rechunk_report="$(
-           PURPLEFIN_PODMAN="''${PURPLEFIN_PODMAN}" \
-             "''${PURPLEFIN_RECHUNK_IMAGE}" \
+           FINITE_PODMAN="''${FINITE_PODMAN}" \
+             "''${FINITE_RECHUNK_IMAGE}" \
                --source "''${primary_image}" \
                --output "oci-archive:''${archive}"
          )"
          rechunk_mode="$(jq -er .mode <<<"''${rechunk_report}")"
 
-         chunked_image="$("''${PURPLEFIN_PODMAN}" pull --quiet "oci-archive:''${archive}")"
+         chunked_image="$("''${FINITE_PODMAN}" pull --quiet "oci-archive:''${archive}")"
          chunked_tag="''${primary_image}-chunked"
-         "''${PURPLEFIN_PODMAN}" tag "''${chunked_image}" "''${chunked_tag}"
+         "''${FINITE_PODMAN}" tag "''${chunked_image}" "''${chunked_tag}"
          validated_images["''${profile}"]="''${chunked_tag}"
          retained_images+=("''${chunked_image}" "''${chunked_tag}")
          rm -f -- "''${archive}"
@@ -226,8 +232,8 @@ pkgs.writeShellApplication {
            ;;
        esac
 
-       : "''${PURPLEFIN_BUILDAH:?PURPLEFIN_BUILDAH is required}"
-       : "''${PURPLEFIN_PODMAN:?PURPLEFIN_PODMAN is required}"
+       : "''${FINITE_BUILDAH:?FINITE_BUILDAH is required}"
+       : "''${FINITE_PODMAN:?FINITE_PODMAN is required}"
        cache_ref="''${IMAGE_REF:?IMAGE_REF is required}-build-cache"
        cache_available=false
        if skopeo list-tags "docker://''${cache_ref}" >/dev/null 2>&1; then

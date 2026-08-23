@@ -35,4 +35,4 @@ jobs:
           GH_TOKEN: ${{ env.MERGE_QUEUE_TOKEN || github.token }}
         run: >-
           nix shell --accept-flake-config .#ci-queue-dependabot
-          -c purplefin-queue-dependabot
+          -c finite-queue-dependabot

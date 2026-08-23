@@ -7,7 +7,6 @@ trap 'rm -rf "${test_root}"' EXIT
 fixture_files=(
 	flake.nix
 	flake.lock
-	modules/outputs.nix
 	lib/ci-applications/validate-locks.nix
 	tests/repository/contracts.sh
 	docs/ci-and-releases.md
@@ -58,13 +57,11 @@ available_fixture="${test_root}/available"
 make_fixture "${available_fixture}"
 export MOCK_LOG="${test_root}/available.log"
 output_file="${test_root}/available.output"
-PURPLEFIN_SOURCE_ROOT="${available_fixture}" purplefin-update-home-release "${output_file}"
+FINITE_SOURCE_ROOT="${available_fixture}" finite-update-home-release "${output_file}"
 grep -qFx 'changed=true' "${output_file}"
 grep -qFx 'release=26.11' "${output_file}"
 grep -qF 'nixpkgs-26.11-chilled/0.1' "${available_fixture}/flake.nix"
 grep -qF 'home-manager/0.2611' "${available_fixture}/flake.nix"
-grep -qF 'nixpkgs-26.11-chilled/0.1' "${available_fixture}/modules/outputs.nix"
-grep -qF 'home-manager/0.2611' "${available_fixture}/modules/outputs.nix"
 grep -qF 'nix --accept-flake-config flake update nixpkgs home-manager' "${MOCK_LOG}"
 
 unavailable_fixture="${test_root}/unavailable"
@@ -73,7 +70,7 @@ export MOCK_LOG="${test_root}/unavailable.log"
 export HOME_MANAGER_UPSTREAM_AVAILABLE=false
 output_file="${test_root}/unavailable.output"
 before="$(sha256sum "${unavailable_fixture}/flake.nix")"
-PURPLEFIN_SOURCE_ROOT="${unavailable_fixture}" purplefin-update-home-release "${output_file}"
+FINITE_SOURCE_ROOT="${unavailable_fixture}" finite-update-home-release "${output_file}"
 after="$(sha256sum "${unavailable_fixture}/flake.nix")"
 grep -qFx 'changed=false' "${output_file}"
 grep -qFx 'release=26.05' "${output_file}"

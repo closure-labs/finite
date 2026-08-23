@@ -4,7 +4,7 @@ set -euo pipefail
 classify() {
 	local component=$1
 	shift
-	printf '%s\n' "$@" | purplefin-classify-changes "${component}"
+	printf '%s\n' "$@" | finite-classify-changes "${component}"
 }
 
 [[ "$(classify installer README.md docs/ci.md artifacts/bootc/generated/image-matrix.json)" == false ]]
@@ -57,7 +57,7 @@ classify() {
 [[ "$(classify images flake.lock)" == true ]]
 [[ "$(classify images README.md bootc/Containerfile docs/ci.md)" == true ]]
 
-if purplefin-classify-changes unknown </dev/null; then
+if finite-classify-changes unknown </dev/null; then
 	echo 'unknown components must fail' >&2
 	exit 1
 fi

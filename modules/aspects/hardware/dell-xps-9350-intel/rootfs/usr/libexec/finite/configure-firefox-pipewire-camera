@@ -1,0 +1,40 @@
+#!/bin/bash
+set -euo pipefail
+
+# Flathub Firefox defaults to the V4L2 WebRTC camera backend. IPU7 exposes its
+# raw ISYS capture nodes through V4L2, so Firefox mistakes those implementation
+# details for webcams. Force Firefox through the camera portal instead; the
+# portal receives the single libcamera source published by WirePlumber.
+profiles_root="${FINITE_FIREFOX_PROFILE_ROOT:-${HOME}/.var/app/org.mozilla.firefox/config/mozilla/firefox}"
+profiles_ini="${profiles_root}/profiles.ini"
+preference='user_pref("media.webrtc.camera.allow-pipewire", true);'
+
+[[ -f "${profiles_ini}" ]] || exit 0
+
+while IFS= read -r profile_path; do
+	[[ -n "${profile_path}" ]] || continue
+	if [[ "${profile_path}" = /* ]]; then
+		profile_dir="${profile_path}"
+	else
+		profile_dir="${profiles_root}/${profile_path}"
+	fi
+	[[ -d "${profile_dir}" ]] || continue
+
+	user_js="${profile_dir}/user.js"
+	tmp="$(mktemp "${profile_dir}/.finite-user.js.XXXXXX")"
+	if [[ -f "${user_js}" ]]; then
+		grep -Ev '^(// Finite: expose the IPU7 libcamera source instead of raw V4L2 nodes\.|[[:space:]]*user_pref\("media\.webrtc\.camera\.allow-pipewire",)' "${user_js}" >"${tmp}" || {
+			status=$?
+			[[ "${status}" -eq 1 ]] || exit "${status}"
+		}
+	fi
+	printf '%s\n' '// Finite: expose the IPU7 libcamera source instead of raw V4L2 nodes.' >>"${tmp}"
+	printf '%s\n' "${preference}" >>"${tmp}"
+
+	if [[ -f "${user_js}" ]] && cmp -s "${tmp}" "${user_js}"; then
+		rm -f "${tmp}"
+	else
+		chmod 0644 "${tmp}"
+		mv -f "${tmp}" "${user_js}"
+	fi
+done < <(sed -n 's/^Path=//p' "${profiles_ini}")

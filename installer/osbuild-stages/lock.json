@@ -1,6 +1,6 @@
 {
   "image_builder_digest": "sha256:27cabea9e504a7c4a7546f287f5d60a4846c62b5a8d18c0f678d25fdc2d7975a",
-  "override_sha256": "155697188436d7428287b45e2cc32a9117a4a9351b922298094880a69b9a3631",
+  "override_sha256": "5f92776b163c5edfbe6d8860668051804bc998aa2ffda1bf006a993298d48673",
   "path": "/usr/lib/osbuild/stages/org.osbuild.squashfs",
   "schema": 1,
   "upstream_sha256": "b7003ffed107c6fd5fd3865c0400216a1c49b227847565203dd55e012b264a21",

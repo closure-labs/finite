@@ -5,10 +5,10 @@ compression level. Squashfs-tools 4.6.1 consequently uses Zstd level 15. The
 same Image Builder version has no CLI, Blueprint, distro-definition, or
 `iso.yaml` option for changing that level.
 
-Purplefin mounts `org.osbuild.squashfs` over the pinned builder's stage only
+Finite mounts `org.osbuild.squashfs` over the pinned builder's stage only
 during ISO construction. The override preserves the upstream stage and adds
 `-Xcompression-level 1` when the manifest requests Zstd without an explicit
-level. It does not change the compressor, the installed Purplefin payload, or
+level. It does not change the compressor, the installed Finite payload, or
 the installer boot contract.
 
 `lock.json` ties the override to the Image Builder digest and to checksums of

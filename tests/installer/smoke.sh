@@ -16,11 +16,11 @@ EOF
 chmod +x "${test_root}/qemu-img"
 
 run_smoke() {
-	PURPLEFIN_SOURCE_ROOT="${test_root}" \
-		PURPLEFIN_QEMU_IMG="${test_root}/qemu-img" \
-		PURPLEFIN_QEMU="${test_root}/qemu" \
-		PURPLEFIN_INSTALLER_SMOKE_TIMEOUT_SECONDS=1 \
-		PURPLEFIN_INSTALLER_SMOKE_POLL_INTERVAL_SECONDS=0.05 \
+	FINITE_SOURCE_ROOT="${test_root}" \
+		FINITE_QEMU_IMG="${test_root}/qemu-img" \
+		FINITE_QEMU="${test_root}/qemu" \
+		FINITE_INSTALLER_SMOKE_TIMEOUT_SECONDS=1 \
+		FINITE_INSTALLER_SMOKE_POLL_INTERVAL_SECONDS=0.05 \
 		"${installer_smoke}" "${test_root}/installer.iso"
 }
 
@@ -41,7 +41,7 @@ fi
 printf '#!%s\n' "$(command -v bash)" >"${test_root}/qemu"
 cat >>"${test_root}/qemu" <<'EOF'
 trap 'exit 143' TERM
-echo 'PURPLEFIN_INSTALLER_READY=1'
+echo 'FINITE_INSTALLER_READY=1'
 sleep 30 &
 wait $!
 EOF
@@ -50,7 +50,7 @@ chmod +x "${test_root}/qemu"
 started="${SECONDS}"
 run_smoke
 ((SECONDS - started < 5))
-grep -qF 'PURPLEFIN_INSTALLER_READY=1' "${test_root}/qemu-boot.log"
+grep -qF 'FINITE_INSTALLER_READY=1' "${test_root}/qemu-boot.log"
 
 printf '#!%s\n' "$(command -v bash)" >"${test_root}/qemu"
 cat >>"${test_root}/qemu" <<'EOF'

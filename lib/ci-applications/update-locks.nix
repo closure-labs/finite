@@ -3,16 +3,16 @@
   pkgs,
 }:
 pkgs.writeShellApplication {
-  name = "purplefin-update-locks";
+  name = "finite-update-locks";
   # Preserve the Determinate Nix client supplied by the host instead of
   # shadowing it with the Nixpkgs client inside this application wrapper.
   runtimeInputs = with pkgs; [coreutils devenv jq];
   text = ''
     set -euo pipefail
 
-    repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
+    repo_root="''${FINITE_SOURCE_ROOT:-$PWD}"
     [[ -f "''${repo_root}/flake.nix" ]] || {
-      echo "Run this command from the Purplefin repository root" >&2
+      echo "Run this command from the Finite repository root" >&2
       exit 2
     }
     cd "''${repo_root}"

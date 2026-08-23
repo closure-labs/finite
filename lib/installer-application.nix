@@ -5,7 +5,7 @@
   pkgs,
 }:
 pkgs.writeShellApplication {
-  name = "purplefin-installer-build";
+  name = "finite-installer-build";
   runtimeInputs = with pkgs; [
     bash
     coreutils
@@ -20,16 +20,16 @@ pkgs.writeShellApplication {
     skopeo
   ];
   text = ''
-    export PURPLEFIN_GENERATED_ROOT=${generated}
-    export PURPLEFIN_INSTALLER_BASE_REF=${fedoraBootc.image}@${fedoraBootc.digest}
-    export PURPLEFIN_IMAGE_BUILDER_REF=${imageBuilder.image}@${imageBuilder.digest}
-    export PURPLEFIN_PODMAN=${pkgs.podman}/bin/podman
+    export FINITE_GENERATED_ROOT=${generated}
+    export FINITE_INSTALLER_BASE_REF=${fedoraBootc.image}@${fedoraBootc.digest}
+    export FINITE_IMAGE_BUILDER_REF=${imageBuilder.image}@${imageBuilder.digest}
+    export FINITE_PODMAN=${pkgs.podman}/bin/podman
     set -euo pipefail
 
     installer_environment_input() {
       local installer_base=$1 installer_context=$2 profile_tag=$3
       printf '%s\n' \
-        'purplefin-installer-environment-v3' \
+        'finite-installer-environment-v3' \
         "base=''${installer_base}" \
         "context=''${installer_context}" \
         "profile-tag=''${profile_tag}" |
@@ -39,31 +39,32 @@ pkgs.writeShellApplication {
 
     if [[ "''${1:-}" == cache-input ]]; then
       [[ $# == 4 ]] || {
-        echo 'usage: purplefin-installer-build cache-input INSTALLER_BASE CONTEXT_DIGEST PROFILE_TAG' >&2
+        echo 'usage: finite-installer-build cache-input INSTALLER_BASE CONTEXT_DIGEST PROFILE_TAG' >&2
         exit 2
       }
       installer_environment_input "$2" "$3" "$4"
       exit
     fi
     [[ $# == 0 ]] || {
-      echo 'usage: purplefin-installer-build [cache-input INSTALLER_BASE CONTEXT_DIGEST PROFILE_TAG]' >&2
+      echo 'usage: finite-installer-build [cache-input INSTALLER_BASE CONTEXT_DIGEST PROFILE_TAG]' >&2
       exit 2
     }
 
-    repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
+    repo_root="''${FINITE_SOURCE_ROOT:-$PWD}"
     [[ -f "''${repo_root}/flake.nix" ]] || {
-      echo 'Run this command from the Purplefin repository root' >&2
+      echo 'Run this command from the Finite repository root' >&2
       exit 2
     }
     cd "''${repo_root}" || exit
 
     : "''${CACHE_WRITE:=false}"
     : "''${GH_TOKEN:?GH_TOKEN is required to verify attestations}"
+    : "''${GHCR_TOKEN:?GHCR_TOKEN is required to read the Finite payload}"
     : "''${GITHUB_ACTOR:?GITHUB_ACTOR is required}"
     : "''${GITHUB_REPOSITORY:?GITHUB_REPOSITORY is required}"
     : "''${GITHUB_SHA:?GITHUB_SHA is required}"
-    image_builder="''${PURPLEFIN_IMAGE_BUILDER_REF:?PURPLEFIN_IMAGE_BUILDER_REF is required}"
-    installer_base="''${PURPLEFIN_INSTALLER_BASE_REF:?PURPLEFIN_INSTALLER_BASE_REF is required}"
+    image_builder="''${FINITE_IMAGE_BUILDER_REF:?FINITE_IMAGE_BUILDER_REF is required}"
+    installer_base="''${FINITE_INSTALLER_BASE_REF:?FINITE_INSTALLER_BASE_REF is required}"
     squashfs_stage="''${repo_root}/installer/osbuild-stages/org.osbuild.squashfs"
     squashfs_stage_lock="''${repo_root}/installer/osbuild-stages/lock.json"
     test -x "''${squashfs_stage}"
@@ -85,13 +86,13 @@ pkgs.writeShellApplication {
     [[ "''${upstream_squashfs_stage_sha256}" =~ ^[0-9a-f]{64}$ ]]
     [[ "''${squashfs_compression_level}" =~ ^[0-9]+$ ]]
     : "''${IMAGE_REF:=ghcr.io/''${GITHUB_REPOSITORY}}"
-    : "''${IMAGE_TAG:=base-generic-x86_64}"
+    : "''${IMAGE_TAG:=bluefin-generic}"
     : "''${RUNNER_TEMP:=/tmp}"
 
     install -d -m 0755 diagnostics output
-    root_podman=(sudo "''${PURPLEFIN_PODMAN:?PURPLEFIN_PODMAN is required}")
-    registry_auth_file="''${RUNNER_TEMP}/purplefin-installer-auth.json"
-    cosign_config_dir="''${RUNNER_TEMP}/purplefin-installer-cosign"
+    root_podman=(sudo "''${FINITE_PODMAN:?FINITE_PODMAN is required}")
+    registry_auth_file="''${RUNNER_TEMP}/finite-installer-auth.json"
+    cosign_config_dir="''${RUNNER_TEMP}/finite-installer-cosign"
     cache_ref="''${IMAGE_REF}-installer-cache"
     environment_cache_hit=false
     environment_cache_ref=unresolved
@@ -99,7 +100,7 @@ pkgs.writeShellApplication {
     environment_seconds=0
     image_builder_seconds=0
     image_builder_pull_pid=
-    image_builder_cache_root="''${RUNNER_TEMP}/purplefin-image-builder-cache"
+    image_builder_cache_root="''${RUNNER_TEMP}/finite-image-builder-cache"
     install -d -m 0755 \
       "''${image_builder_cache_root}/rpmmd" \
       "''${image_builder_cache_root}/store"
@@ -129,27 +130,36 @@ pkgs.writeShellApplication {
       for artifact in installer-manifest.json SHA256SUMS; do
         [[ ! -f "output/''${artifact}" ]] || cp "output/''${artifact}" diagnostics/
       done
-      if [[ "''${CACHE_WRITE}" == true ]]; then
-        "''${root_podman[@]}" logout --authfile "''${registry_auth_file}" ghcr.io >/dev/null 2>&1
-        rm -f "''${registry_auth_file}"
-        rm -rf "''${cosign_config_dir}"
-      fi
+      skopeo logout --authfile "''${registry_auth_file}" ghcr.io >/dev/null 2>&1 || true
+      rm -f "''${registry_auth_file}"
+      rm -rf "''${cosign_config_dir}"
       exit "''${status}"
     }
     trap collect_diagnostics EXIT
 
-    if ! metadata="$(
-      skopeo inspect --retry-times 3 "docker://''${IMAGE_REF}:''${IMAGE_TAG}" \
-        2>diagnostics/payload-inspect-primary.log
-    )"; then
-      : "''${LEGACY_IMAGE_REF:?LEGACY_IMAGE_REF is required when the primary payload is unavailable}"
-      [[ "''${LEGACY_IMAGE_REF}" != "''${IMAGE_REF}" ]]
-      echo "Primary payload ''${IMAGE_REF}:''${IMAGE_TAG} is unavailable; trying ''${LEGACY_IMAGE_REF}" >&2
-      IMAGE_REF="''${LEGACY_IMAGE_REF}"
-      metadata="$(skopeo inspect --retry-times 3 "docker://''${IMAGE_REF}:''${IMAGE_TAG}")"
-    fi
+    printf '%s' "''${GHCR_TOKEN}" |
+      skopeo login \
+        --authfile "''${registry_auth_file}" \
+        ghcr.io \
+        --username "''${GITHUB_ACTOR}" \
+        --password-stdin
+    install -d -m 0700 "''${cosign_config_dir}"
+    printf '%s' "''${GHCR_TOKEN}" |
+      DOCKER_CONFIG="''${cosign_config_dir}" cosign login \
+        ghcr.io \
+        --username "''${GITHUB_ACTOR}" \
+        --password-stdin
+    auth_args=(--authfile "''${registry_auth_file}")
+
+    metadata="$(
+      skopeo inspect \
+        --authfile "''${registry_auth_file}" \
+        --retry-times 3 \
+        "docker://''${IMAGE_REF}:''${IMAGE_TAG}" \
+        2>diagnostics/payload-inspect.log
+    )"
     payload_digest="$(jq -er '.Digest' <<<"''${metadata}")"
-    profile="$(jq -er '.Labels["io.purplefin.build.profile"]' <<<"''${metadata}")"
+    profile="$(jq -er '.Labels["io.finite.build.profile"]' <<<"''${metadata}")"
     source_revision="$(jq -er '.Labels["org.opencontainers.image.revision"]' <<<"''${metadata}")"
     payload_source_url="$(jq -er '.Labels["org.opencontainers.image.source"]' <<<"''${metadata}")"
     payload_source_repository="''${payload_source_url#https://github.com/}"
@@ -157,7 +167,7 @@ pkgs.writeShellApplication {
     [[ "''${payload_digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
     [[ "''${source_revision}" =~ ^[0-9a-f]{40}$ ]]
     [[ "''${payload_source_repository}" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]
-    test -f "''${PURPLEFIN_GENERATED_ROOT:?PURPLEFIN_GENERATED_ROOT is required}/installer/config/profiles/''${profile}.toml"
+    test -f "''${FINITE_GENERATED_ROOT:?FINITE_GENERATED_ROOT is required}/installer/config/profiles/''${profile}.toml"
     payload_ref="''${IMAGE_REF}@''${payload_digest}"
     payload_embed_ref="''${payload_ref}"
     payload_update_ref="''${IMAGE_REF}:''${IMAGE_TAG}"
@@ -186,7 +196,7 @@ pkgs.writeShellApplication {
     environment_cache_ref="''${cache_ref}:environment-''${environment_input}"
     cosign_identity="https://github.com/''${payload_source_repository}/.github/workflows/build-profile.yml@refs/heads/main"
     environment_cache_identity_regex="^https://github.com/''${GITHUB_REPOSITORY}/.github/workflows/(build|build-installer)\\.yml@refs/heads/main$"
-    cosign verify \
+    DOCKER_CONFIG="''${cosign_config_dir}" cosign verify \
       --certificate-oidc-issuer https://token.actions.githubusercontent.com \
       --certificate-identity "''${cosign_identity}" \
       "''${payload_ref}" >/dev/null
@@ -202,25 +212,10 @@ pkgs.writeShellApplication {
       --source-digest "''${source_revision}" \
       --predicate-type https://spdx.dev/Document/v2.3
 
-    auth_args=()
     cache_args=(--layers)
-    if [[ "''${CACHE_WRITE}" == true ]]; then
-      : "''${GHCR_TOKEN:?GHCR_TOKEN is required when CACHE_WRITE=true}"
-      printf '%s' "''${GHCR_TOKEN}" |
-        "''${root_podman[@]}" login \
-          --authfile "''${registry_auth_file}" \
-          ghcr.io \
-          --username "''${GITHUB_ACTOR}" \
-          --password-stdin
-      auth_args+=(--authfile "''${registry_auth_file}")
-      install -d -m 0700 "''${cosign_config_dir}"
-      printf '%s' "''${GHCR_TOKEN}" |
-        DOCKER_CONFIG="''${cosign_config_dir}" cosign login \
-          ghcr.io \
-          --username "''${GITHUB_ACTOR}" \
-          --password-stdin
-    fi
-    if skopeo list-tags "docker://''${cache_ref}" >/dev/null 2>&1; then
+    if skopeo list-tags \
+      --authfile "''${registry_auth_file}" \
+      "docker://''${cache_ref}" >/dev/null 2>&1; then
       cache_args+=(--cache-from "''${cache_ref}" --cache-ttl 336h)
     fi
     if [[ "''${CACHE_WRITE}" == true ]]; then
@@ -246,16 +241,19 @@ pkgs.writeShellApplication {
     # digest-named containers-storage destination.
     "''${root_podman[@]}" tag "''${payload_ref}" "''${payload_update_ref}"
     environment_cache_metadata="$({
-      skopeo inspect --retry-times 3 "docker://''${environment_cache_ref}" 2>/dev/null || true
+      skopeo inspect \
+        --authfile "''${registry_auth_file}" \
+        --retry-times 3 \
+        "docker://''${environment_cache_ref}" 2>/dev/null || true
     })"
     environment_cache_digest="$(jq -r '.Digest // empty' <<<"''${environment_cache_metadata}")"
     immutable_environment_cache_ref="''${cache_ref}@''${environment_cache_digest}"
     if [[ "''${environment_cache_digest}" =~ ^sha256:[0-9a-f]{64}$ ]] &&
       jq -e \
         --arg input "''${environment_input}" \
-        '(.Labels // {})["io.purplefin.installer.input"] == $input' \
+        '(.Labels // {})["io.finite.installer.input"] == $input' \
         <<<"''${environment_cache_metadata}" >/dev/null &&
-      cosign verify \
+      DOCKER_CONFIG="''${cosign_config_dir}" cosign verify \
         --certificate-oidc-issuer https://token.actions.githubusercontent.com \
         --certificate-identity-regexp "''${environment_cache_identity_regex}" \
         "''${immutable_environment_cache_ref}" >/dev/null 2>&1; then
@@ -265,7 +263,7 @@ pkgs.writeShellApplication {
       "''${root_podman[@]}" pull "''${auth_args[@]}" "''${immutable_environment_cache_ref}"
       "''${root_podman[@]}" tag \
         "''${immutable_environment_cache_ref}" \
-        "localhost/purplefin-installer:''${GITHUB_SHA}"
+        "localhost/finite-installer:''${GITHUB_SHA}"
     else
       "''${root_podman[@]}" build "''${auth_args[@]}" "''${cache_args[@]}" \
         --file installer/Containerfile \
@@ -275,19 +273,22 @@ pkgs.writeShellApplication {
         --build-arg "BASE_REF=''${installer_base}" \
         --build-arg "INSTALLER_PAYLOAD_SOURCE_REF=''${payload_update_ref}" \
         --build-arg "INSTALLER_PAYLOAD_TARGET_REF=''${payload_update_ref}" \
-        --label "io.purplefin.installer.input=''${environment_input}" \
-        --tag "localhost/purplefin-installer:''${GITHUB_SHA}" \
+        --label "io.finite.installer.input=''${environment_input}" \
+        --tag "localhost/finite-installer:''${GITHUB_SHA}" \
         installer 2>&1 | tee diagnostics/installer-environment.log
       if [[ "''${CACHE_WRITE}" == true ]]; then
         "''${root_podman[@]}" tag \
-          "localhost/purplefin-installer:''${GITHUB_SHA}" \
+          "localhost/finite-installer:''${GITHUB_SHA}" \
           "''${environment_cache_ref}"
         "''${root_podman[@]}" push \
           "''${auth_args[@]}" \
           "''${environment_cache_ref}" 2>&1 |
           tee -a diagnostics/installer-environment.log
         environment_cache_digest="$(
-          skopeo inspect --retry-times 3 "docker://''${environment_cache_ref}" |
+          skopeo inspect \
+            --authfile "''${registry_auth_file}" \
+            --retry-times 3 \
+            "docker://''${environment_cache_ref}" |
             jq -er .Digest
         )"
         [[ "''${environment_cache_digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
@@ -330,20 +331,20 @@ pkgs.writeShellApplication {
       build \
         --cache /var/cache/image-builder/store \
         --rpmmd-cache /var/cache/image-builder/rpmmd \
-        --bootc-ref "localhost/purplefin-installer:''${GITHUB_SHA}" \
+        --bootc-ref "localhost/finite-installer:''${GITHUB_SHA}" \
         --bootc-installer-payload-ref "''${payload_update_ref}" \
         --bootc-default-fs ext4 \
         bootc-generic-iso 2>&1 | tee diagnostics/image-builder.log
     sudo chown -R "$(id -u):$(id -g)" output
     iso="$(find output -type f -name '*.iso' -print -quit)"
     [[ -n "''${iso}" ]]
-    final_iso="output/purplefin-''${IMAGE_TAG}-$(<VERSION).iso"
+    final_iso="output/finite-''${IMAGE_TAG}-$(<VERSION).iso"
     mv "''${iso}" "''${final_iso}"
     iso_sha256="$(sha256sum "''${final_iso}" | cut -d' ' -f1)"
     installer_image_id="$(
       "''${root_podman[@]}" image inspect \
         --format '{{.Id}}' \
-        "localhost/purplefin-installer:''${GITHUB_SHA}"
+        "localhost/finite-installer:''${GITHUB_SHA}"
     )"
     installer_image_id="''${installer_image_id#sha256:}"
     [[ "''${installer_image_id}" =~ ^[0-9a-f]{64}$ ]]
@@ -411,7 +412,7 @@ pkgs.writeShellApplication {
     } >output/SHA256SUMS
     image_builder_seconds=$((SECONDS - started))
 
-    e2e_kickstart="output/purplefin-ci.ks"
+    e2e_kickstart="output/finite-ci.ks"
     sed \
       -e "s|@@INSTALLER_PAYLOAD_SOURCE_REF@@|''${payload_update_ref}|g" \
       -e "s|@@INSTALLER_PAYLOAD_TARGET_REF@@|''${payload_update_ref}|g" \

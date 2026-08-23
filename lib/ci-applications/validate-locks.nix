@@ -1,10 +1,10 @@
 {pkgs}:
 pkgs.writeShellApplication {
-  name = "purplefin-ci-validate-locks";
+  name = "finite-ci-validate-locks";
   runtimeInputs = [pkgs.jq];
   text = ''
     set -euo pipefail
-    repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
+    repo_root="''${FINITE_SOURCE_ROOT:-$PWD}"
     cd "''${repo_root}"
     for lock in flake.lock devenv.lock; do
       [[ -f "''${lock}" ]] || {

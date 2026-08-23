@@ -3,12 +3,12 @@
   pkgs,
 }:
 pkgs.writeShellApplication {
-  name = "purplefin-classify-ci";
+  name = "finite-classify-ci";
   runtimeInputs = with pkgs; [bash classifyChanges coreutils git jq];
   text = ''
-    repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
+    repo_root="''${FINITE_SOURCE_ROOT:-$PWD}"
     [[ -f "''${repo_root}/flake.nix" ]] || {
-      echo "Run this command from the Purplefin repository root" >&2
+      echo "Run this command from the Finite repository root" >&2
       exit 2
     }
     cd "''${repo_root}"
@@ -90,8 +90,8 @@ pkgs.writeShellApplication {
         return
       fi
 
-      images="$(purplefin-classify-changes images <"''${changed_paths}")"
-      installer="$(purplefin-classify-changes installer <"''${changed_paths}")"
+      images="$(finite-classify-changes images <"''${changed_paths}")"
+      installer="$(finite-classify-changes installer <"''${changed_paths}")"
       if [[ "''${images}" == true ]]; then
         scope=changed
       else

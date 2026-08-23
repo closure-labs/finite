@@ -6,7 +6,7 @@ _: {
   }: {
     home = {
       packages = [(config.lib.nixGL.wrap pkgs.rustdesk-flutter)];
-      sessionVariables.PURPLEFIN_ROLE_IT = "1";
+      sessionVariables.FINITE_ROLE_IT = "1";
     };
   };
 }

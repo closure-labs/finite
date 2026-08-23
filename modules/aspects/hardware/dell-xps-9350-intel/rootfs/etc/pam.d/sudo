@@ -1,5 +1,5 @@
 #%PAM-1.0
-auth       substack     purplefin-dell-lid-auth
+auth       substack     finite-dell-lid-auth
 account    include      system-auth
 password   include      system-auth
 session    optional     pam_keyinit.so revoke

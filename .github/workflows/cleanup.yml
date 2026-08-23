@@ -1,4 +1,4 @@
-name: Clean obsolete Purplefin package versions
+name: Clean obsolete Finite package versions
 
 on:
   workflow_dispatch:
@@ -10,7 +10,7 @@ on:
         type: boolean
 
 concurrency:
-  group: purplefin-package-cleanup
+  group: finite-package-cleanup
   cancel-in-progress: false
 
 permissions:
@@ -39,4 +39,4 @@ jobs:
         shell: bash
         run: >-
           nix shell --accept-flake-config .#ci-package-cleanup
-          -c purplefin-package-cleanup
+          -c finite-package-cleanup

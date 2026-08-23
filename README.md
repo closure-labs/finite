@@ -1,82 +1,107 @@
-# Purplefin
+# Finite
 
-Purplefin turns a typed Nix profile graph into signed, updateable
-[bootc](https://bootc-dev.github.io/bootc/) workstation images based on
-[Bluefin Stable](https://projectbluefin.io/).
+Finite is a signed, updateable Linux workstation built on Bluefin and Bluefin
+DX. The operating-system image supplies a stable foundation; each user chooses
+their own Home Manager roles at first login.
 
-You get four lightly layered foundation images, eight Nix/Home Manager role
-profiles, a graphical installer, verified updates, and signed release
-artifacts. The foundations preserve the complete upstream Bluefin or Bluefin
-DX package set, including Tailscale. Determinate Nix and its SELinux policy are
-installed in every image and are ready after first boot.
+## Choose an image
 
-## Run Purplefin
+| Image tag | Foundation | Hardware |
+| --- | --- | --- |
+| `latest` or `bluefin-generic` | Bluefin | Generic x86-64 |
+| `bluefin-dell-xps-9350-intel` | Bluefin | Dell XPS 13 9350 |
+| `bluefin-dx-generic` | Bluefin DX | Generic x86-64 |
+| `bluefin-dx-dell-xps-9350-intel` | Bluefin DX | Dell XPS 13 9350 |
 
-On an existing bootc system, switch to the generic workstation image:
+Bluefin DX includes the developer-oriented foundation. User roles are separate
+from image tags: Developer, Sales, Trainer, Support, Executive, and IT can be
+combined on either foundation. Selecting no roles gives you the shared base
+environment.
 
-```bash
+## Install or switch
+
+To switch an existing bootc workstation to generic Finite:
+
+```console
 run0 bootc switch ghcr.io/closure-labs/finite:latest
 run0 systemctl reboot
 ```
 
-Stay current with:
+Replace `latest` with another tag from the table when needed. For a new machine
+or installer ISO, follow the [installation guide](docs/installation.md).
 
-```bash
+## Complete first login
+
+After the graphical session opens, Finite shows a role checklist. Choose any
+combination and select **Configure**. It is valid to leave every role unchecked.
+
+Finite then:
+
+1. Discovers your username and home directory.
+2. Confirms the running foundation and hardware.
+3. Generates and locks a standalone flake in `~/.config/home-manager`.
+4. Builds the complete Home Manager activation package.
+5. Saves normalized state in `~/.config/finite/profile.json` and activates only
+   after the build succeeds.
+
+Canceling changes nothing, so the checklist returns at the next graphical
+login. Run `finite-configure` later to reopen it with your current roles
+selected.
+
+## Create a standalone Home Manager configuration
+
+Start from either native template:
+
+```console
+nix flake new -t github:closure-labs/finite#home-bluefin ./home
+nix flake new -t github:closure-labs/finite#home-bluefin-dx ./home-dx
+```
+
+Generate and apply a YAML profile:
+
+```console
+nix run github:closure-labs/finite#home-profile -- \
+  --foundation bluefin-dx \
+  --hardware dell-xps-9350-intel \
+  --roles developer,support \
+  --format yaml >profile.yaml
+
+nix run github:closure-labs/finite#home-bootstrap -- \
+  --profile profile.yaml
+```
+
+Bootstrap rejects malformed data, unknown or duplicate roles, invalid account
+identity, and profiles that do not match the running Finite image.
+
+## Update and troubleshoot
+
+```console
 run0 bootc upgrade
 run0 systemctl reboot
+nh home switch --update-input finite
 ```
 
-For a fresh machine, follow the [graphical installation guide](docs/installation.md).
+See [configuration](docs/configuration.md) for profiles and provisioning, or
+[troubleshooting](docs/troubleshooting.md) for failed image, first-login, and
+Home Manager operations.
 
-## Build Purplefin with Nix
+## Develop Finite
 
-Install Nix with Flakes enabled and rootless Podman, then run:
-
-```bash
+```console
 git clone git@github.com:closure-labs/finite.git
-cd purplefin
-nix shell --accept-flake-config .#ci-image-build \
-  -c purplefin-image-build bluefin-generic localhost/purplefin:bluefin-generic
-```
-
-Format and validate the complete repository with the pinned toolchain:
-
-```bash
+cd finite
 nix develop
 nix fmt
-nix shell --accept-flake-config .#ci-check -c purplefin-ci-check
+just check
 ```
 
-## Choose a foundation and home profile
+Build one image locally:
 
-| Home profile | Foundation | Purpose |
-| --- | --- | --- |
-| `sales`, `executive` | Bluefin | Less technical roles |
-| `developer`, `support`, `it`, `trainer` | Bluefin DX | Technical roles |
-| `dale` | Bluefin DX, Dell XPS 13 9350 | Superset of every role |
-| `elad` | Bluefin DX, generic x86-64 | Every role without the Dell camera layer |
-
-Apply a role to the installer-created user:
-
-```bash
-nix run github:closure-labs/finite#home-switch -- \
-  --profile support --hardware generic-x86_64
+```console
+nix shell --accept-flake-config .#ci-image-build \
+  -c finite-image-build bluefin-generic localhost/finite:bluefin-generic
 ```
 
-After activation, `nh home switch --update-input purplefin` performs later
-manual updates from the generated per-user Home Manager flake. A generated
-NoCloud seed can perform the initial activation; see the
-[installation guide](docs/installation.md).
-
-List every generated profile and published tag with:
-
-```bash
-nix build .#generated
-jq '.profiles | with_entries(.value = .value.tags)' \
-  result/bootc/generated/profile-catalog.json
-```
-
-## Learn more
-
-- [Documentation guide](docs/README.md)
-- [Changelog](CHANGELOG.md)
+The [development guide](docs/development.md) describes generated catalogs,
+focused checks, image tools, and repository layout. Start with the
+[documentation index](docs/README.md) for every guide.

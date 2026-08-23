@@ -51,15 +51,29 @@
   shellSource = sourceFor [shellFiles];
   nixSource = sourceFor [nixFiles];
   repositorySource = sourceFor [
+    ../.github/workflows/build-installer.yml
+    ../.github/workflows/build.yml
+    ../flake.nix
     ../VERSION
     ../bootc/Containerfile
     ../bootc/Containerfile.derived
     ../bootc/builder
+    ../lib/home-manager-flake-module.nix
+    ../lib/home-profile-applications.nix
     ../modules/aspects
     ../modules/outputs.nix
     ../sources
     ../secretspec.toml
     ../tests/repository/contracts.sh
+    ../tests/home
+    ../templates
+  ];
+  homeSource = sourceFor [
+    ../lib/home-manager-flake-module.nix
+    ../lib/home-profile-applications.nix
+    ../modules/aspects/base/rootfs/usr/libexec/finite/home-first-login
+    ../templates
+    ../tests/home
   ];
   documentationSource = sourceFor [textFiles];
   automationSource = sourceFor [
@@ -134,7 +148,7 @@
     source,
     tools ? [],
   }:
-    pkgs.runCommand "purplefin-${name}" {
+    pkgs.runCommand "finite-${name}" {
       nativeBuildInputs = [pkgs.bash pkgs.coreutils] ++ tools;
     } ''
       export HOME="$TMPDIR/home"
@@ -143,10 +157,10 @@
       chmod -R u+w source
       cd source
       ${lib.optionalString (generatedRoot != null) ''
-        export PURPLEFIN_GENERATED_ROOT=${generatedRoot}
+        export FINITE_GENERATED_ROOT=${generatedRoot}
       ''}
-      export PURPLEFIN_HERMETIC_CHECK=true
-      export PURPLEFIN_SOURCE_ROOT="$PWD"
+      export FINITE_HERMETIC_CHECK=true
+      export FINITE_SOURCE_ROOT="$PWD"
       ${commands}
       touch "$out"
     '';
@@ -187,14 +201,11 @@ in {
     name = "repository-contracts";
     source = repositorySource;
     generatedRoot = generated;
-    tools = with pkgs; [gnugrep jq];
+    tools = with pkgs; [findutils gnugrep jq ripgrep];
     commands = ''
       bash tests/repository/contracts.sh
-      for profile in dale elad; do
-        for role in sales executive developer support it trainer; do
-          grep -qF "profiles_home_''${profile} --> features_roles_''${role}" ${architecture}/namespace.mmd
-        done
-      done
+      grep -qF 'features_roles_developer' ${architecture}/namespace.mmd
+      grep -qF 'features_roles_support' ${architecture}/namespace.mmd
       grep -qF 'operations_github_build --> operations_checks_all' ${architecture}/namespace.mmd
       grep -qF 'operations_checks_all --> operations_checks_repository_contracts' ${architecture}/namespace.mmd
       grep -qF 'operations_checks_all --> operations_checks_bootc_engine' ${architecture}/namespace.mmd
@@ -213,10 +224,24 @@ in {
     '';
   };
 
+  home = mkSourceCheck {
+    name = "home-profile-contracts";
+    source = homeSource;
+    generatedRoot = generated;
+    tools = with pkgs; [getent jq yq-go];
+    commands = ''
+      set -euo pipefail
+      bash tests/home/contracts.sh \
+        ${applications.homeProfile}/bin/finite-home-profile \
+        ${applications.homeBootstrap}/bin/finite-home-bootstrap \
+        ${applications.cloudInit}/bin/finite-cloud-init
+    '';
+  };
+
   upstream = mkSourceCheck {
     name = "upstream-contracts";
     source = upstreamSource;
-    tools = with pkgs; [gnugrep jq] ++ [secretspec];
+    tools = with pkgs; [gnugrep jq ripgrep] ++ [secretspec];
     commands = ''
       # shellcheck disable=SC2016,SC2251
       set -euo pipefail
@@ -276,8 +301,7 @@ in {
       grep -qF 'ref = { item = "GITHUB_ACTIONS_CACHIX_AUTH_TOKEN" }' secretspec.toml
       grep -qF 'ref = { item = "GITHUB_ACTIONS_MERGE_QUEUE_TOKEN" }' secretspec.toml
       ! grep -qF 'cachix watch-exec' lib/flake-applications.nix
-      grep -qF 'cachix push --omit-deriver purplefin' lib/flake-applications.nix
-      grep -qF 'selfFlakeUri = "path:''${toString selfSource}"' lib/flake-applications.nix
+      grep -qF 'cachix push --omit-deriver ''${pkgs.lib.escapeShellArg' lib/flake-applications.nix
       ! grep -qF 'unsafeDiscardStringContext' lib/flake-applications.nix
       grep -qF 'nix --accept-flake-config eval --json' lib/flake-applications.nix
       ! grep -qF 'quotedPaths' lib/flake-applications.nix
@@ -297,17 +321,19 @@ in {
       grep -qF 'containers-storage:' lib/flake-applications.nix
       grep -qF 'host_podman' lib/flake-applications.nix
       grep -qF 'unshare "$0"' lib/flake-applications.nix
-      grep -qF -- '--label "io.purplefin.build.profile=' lib/flake-applications.nix
-      grep -qF 'https://purplefin.cachix.org' flake.nix
+      grep -qF -- '--label "io.finite.build.profile=' lib/flake-applications.nix
+      old_product=purple
+      old_product+=fin
+      [[ "$(rg -i -l "''${old_product}" --hidden -g '!.git/**')" == flake.nix ]]
       grep -qF 'https://cachix.cachix.org' flake.nix
       grep -qF 'cachix.cachix.org-1:eWNHQldwUO7G2VkjpnjDbWwy4KQ/HNxht7H4SSoMckM=' flake.nix
-      grep -qF 'cachix.pull = ["cachix" "purplefin"]' devenv.nix
+      grep -qF 'legacyCacheName' devenv.nix
       grep -qF 'provider: local' devenv.yaml
       grep -qF 'local = "file:~/.other-fun-things"' secretspec.toml
       ! grep -qF 'token_file=' lib/flake-applications.nix
       grep -qF 'runtimeInputs = [devenv secretspec];' lib/flake-applications.nix
-      grep -qF 'features.users.dale' modules/profiles/definitions.nix
-      grep -qF 'home.packages = [(lib.lowPrio weeklyPkgs.secretspec)];' modules/profiles/definitions.nix
+      ! grep -qF 'features.users' modules/profiles/definitions.nix
+      grep -qF 'home-bluefin-dx' modules/profiles/definitions.nix
       grep -qFx 'ARG BASE_REF' bootc/Containerfile
       ! grep -qF 'bluefin:stable' bootc/Containerfile
     '';
@@ -377,7 +403,7 @@ in {
       bash tests/bootc/derived-profile.sh
       bash tests/bootc/plan.sh
       bash tests/bootc/rechunk.sh \
-        ${applications.rechunkImage}/bin/purplefin-rechunk-image
+        ${applications.rechunkImage}/bin/finite-rechunk-image
       bash tests/bootc/reuse-image.sh
       bash tests/bootc/sign-image.sh
       bash tests/bootc/sbom.sh
@@ -393,12 +419,12 @@ in {
       set -euo pipefail
 
       bash tests/installer/contracts.sh \
-        ${applications.installerBuild}/bin/purplefin-installer-build
+        ${applications.installerBuild}/bin/finite-installer-build
       python3 tests/installer/squashfs-stage.py
       bash tests/installer/smoke.sh \
-        ${applications.installerSmoke}/bin/purplefin-installer-smoke
+        ${applications.installerSmoke}/bin/finite-installer-smoke
       bash tests/installer/e2e.sh \
-        ${applications.installerE2e}/bin/purplefin-installer-e2e
+        ${applications.installerE2e}/bin/finite-installer-e2e
     '';
   };
 
@@ -431,7 +457,7 @@ in {
           CHANGELOG.md | head -n 1
       })"
       test -n "''${latest_changelog_version}"
-      release_notes="$(purplefin-release-notes "''${latest_changelog_version}" CHANGELOG.md)"
+      release_notes="$(finite-release-notes "''${latest_changelog_version}" CHANGELOG.md)"
       for heading in Added Changed Fixed Security; do
         grep -qF "### ''${heading}" <<<"''${release_notes}"
       done
@@ -482,60 +508,58 @@ in {
         update-image-builder.yml; do
         grep -qF '.#ci-trusted-update' ".github/workflows/''${updater}"
       done
-      [[ "$(grep -cF 'purplefin-trusted-update' .github/workflows/release.yml)" == 2 ]]
+      [[ "$(grep -cF 'finite-trusted-update' .github/workflows/release.yml)" == 2 ]]
       [[ "$(grep -cF 'SOURCE_SHA: ''${{ steps.source.outputs.source_sha }}' .github/workflows/release.yml)" == 2 ]]
       ! grep -qF 'steps.version.outputs.source_sha' .github/workflows/release.yml
       ! grep -qF 'git push origin HEAD:main' .github/workflows/release.yml
       ! grep -R -qF 'github-actions[bot]' .github/workflows
-      grep -qF 'purplefin-source-update bluefin ' .github/workflows/update-bluefin.yml
-      grep -qF 'purplefin-source-update bluefin-dx ' .github/workflows/update-bluefin.yml
-      grep -qF 'purplefin-source-update determinate-nix ' .github/workflows/update-determinate-nix.yml
-      grep -qF 'purplefin-source-update fedora-bootc ' .github/workflows/update-fedora-bootc.yml
-      grep -qF 'purplefin-source-update image-builder ' .github/workflows/update-image-builder.yml
-      grep -qF 'purplefin-update-locks ' .github/workflows/update-flake-lock.yml
-      grep -qF 'purplefin-update-home-release ' .github/workflows/update-home-release.yml
-      grep -qF 'purplefin-load-bluefin' .github/workflows/build-profile.yml
-      grep -qF 'purplefin-ci-prepare' .github/workflows/build.yml
-      grep -qF 'purplefin-validate-image-shard' .github/workflows/build.yml
+      grep -qF 'finite-source-update bluefin ' .github/workflows/update-bluefin.yml
+      grep -qF 'finite-source-update bluefin-dx ' .github/workflows/update-bluefin.yml
+      grep -qF 'finite-source-update determinate-nix ' .github/workflows/update-determinate-nix.yml
+      grep -qF 'finite-source-update fedora-bootc ' .github/workflows/update-fedora-bootc.yml
+      grep -qF 'finite-source-update image-builder ' .github/workflows/update-image-builder.yml
+      grep -qF 'finite-update-locks ' .github/workflows/update-flake-lock.yml
+      grep -qF 'finite-update-home-release ' .github/workflows/update-home-release.yml
+      grep -qF 'finite-load-bluefin' .github/workflows/build-profile.yml
+      grep -qF 'finite-ci-prepare' .github/workflows/build.yml
+      grep -qF 'finite-validate-image-shard' .github/workflows/build.yml
       grep -qF 'candidate_shards' .github/workflows/build.yml
-      ! grep -qF 'purplefin-classify-ci' .github/workflows/build.yml
+      ! grep -qF 'finite-classify-ci' .github/workflows/build.yml
       grep -qF -- '--no-renames' lib/ci-applications/classify-ci.nix
       grep -qF 'fromJSON(needs.prepare.outputs.plan' .github/workflows/build.yml
       grep -qF '.validation.images.required' .github/workflows/build.yml
       grep -qF '.publication.builds.root' .github/workflows/build.yml
-      grep -qF "'purplefin-publication'" .github/workflows/build.yml
-      grep -qF 'group: purplefin-publication' .github/workflows/release.yml
-      grep -qF 'purplefin-image-reuse' .github/workflows/build-profile.yml
-      grep -qF 'purplefin-image-sign' .github/workflows/build-profile.yml
-      grep -qF 'purplefin-rechunk-image' .github/workflows/build-profile.yml
+      grep -qF "'finite-publication'" .github/workflows/build.yml
+      grep -qF 'group: finite-publication' .github/workflows/release.yml
+      grep -qF 'finite-image-reuse' .github/workflows/build-profile.yml
+      grep -qF 'finite-image-sign' .github/workflows/build-profile.yml
+      grep -qF 'finite-rechunk-image' .github/workflows/build-profile.yml
       ! grep -qF 'cosign sign' .github/workflows/build-profile.yml
-      grep -qF 'purplefin-image-sbom' .github/workflows/attest-software-bill-of-materials.yml
-      grep -qF 'LEGACY_IMAGE_REF: ghcr.io/declarative-dale/purplefin' .github/actions/build-installer/action.yml
+      grep -qF 'finite-image-sbom' .github/workflows/attest-software-bill-of-materials.yml
+      ! grep -R -qF 'LEGACY_IMAGE_REF' .github lib
       grep -qF 'payload_source_url#https://github.com/' lib/installer-application.nix
-      grep -qF 'purplefin-sbom-attestation' .github/workflows/release.yml
+      grep -qF 'finite-sbom-attestation' .github/workflows/release.yml
       grep -qF 'SBOM_SIGNER_WORKFLOW' lib/flake-applications.nix
       ! grep -R -qF -- '-sbom-cache' .github automation
       ! grep -R -qF 'Store SBOM cache artifact' .github
-      grep -qF 'purplefin-release-notes' .github/workflows/release.yml
+      grep -qF 'finite-release-notes' .github/workflows/release.yml
       grep -qF 'if [[ "''${source_version}" != *-dev.* ]]; then' .github/workflows/release.yml
       grep -qF 'version="''${source_version}"' .github/workflows/release.yml
       grep -qF 'selected_bump="staged"' .github/workflows/release.yml
       grep -qF 'Staged release ''${version} must be newer than ''${last_version}' \
         .github/workflows/release.yml
       ! grep -R -qF 'toolset:' .github
-      grep -qF 'purplefin-ci-gate' .github/workflows/build.yml
-      grep -qF 'purplefin-promote-images' .github/workflows/build.yml
+      grep -qF 'finite-ci-gate' .github/workflows/build.yml
+      grep -qF 'finite-promote-images' .github/workflows/build.yml
       ! grep -R -Eq 'needs\.(changes|check|plan)|inputs\.publish|publish: true' .github/workflows
       grep -qF 'attest-software-bill-of-materials.yml' .github/workflows/build.yml
       grep -qF 'attest-software-bill-of-materials.yml' lib/installer-application.nix
       grep -qF 'attest-software-bill-of-materials.yml' .github/workflows/release.yml
       grep -qF 'DeterminateSystems/determinate-nix-action@668647a33843b1f280cb2ef4c41736f86b29f826' \
         .github/actions/setup-nix/action.yml
-      grep -qF 'cachix/cachix-action@5f2d7c5294214f71b873db4b969586b980625e71' \
-        .github/actions/setup-nix/action.yml
-      ! grep -qF -- '--out-link /tmp/purplefin-workflow-toolset' .github/actions/setup-nix/action.yml
+      ! grep -qF -- '--out-link /tmp/finite-workflow-toolset' .github/actions/setup-nix/action.yml
       grep -qF '.#ci-github-actions-secrets' .github/actions/setup-nix/action.yml
-      grep -qF 'authToken: ''${{ env.CACHIX_AUTH_TOKEN }}' .github/actions/setup-nix/action.yml
+      grep -qF 'GITHUB_ACTIONS_CACHIX_AUTH_TOKEN' .github/actions/setup-nix/action.yml
       [[ "$(grep -R -h -oF 'secrets.CACHIX_AUTH_TOKEN' .github | wc -l)" == 1 ]]
       [[ "$(grep -R -h -oF 'secrets.MERGE_QUEUE_TOKEN' .github | wc -l)" == 7 ]]
       ! grep -R -qF 'token: ''${{ secrets.MERGE_QUEUE_TOKEN' .github
@@ -549,19 +573,19 @@ in {
       ! grep -qF 'fetch-depth: >-' .github/workflows/build.yml
       grep -qF '"additionalProperties": false' lib/ci-applications/ci-plan.schema.json
       grep -qF -- "--option 'packages:pkgs!'" docs/ci-and-releases.md
-      grep -qF -- '--build-context purplefin-generated=' .github/workflows/build-profile.yml
-      grep -qF 'RUN --mount=type=bind,from=purplefin-generated,source=.,target=/run/purplefin-generated' \
+      grep -qF -- '--build-context finite-generated=' .github/workflows/build-profile.yml
+      grep -qF 'RUN --mount=type=bind,from=finite-generated,source=.,target=/run/finite-generated' \
         bootc/Containerfile
       grep -qF 'containerfile=./bootc/Containerfile' .github/workflows/build-profile.yml
-      grep -qF 'purplefin-installer-build' .github/actions/build-installer/action.yml
+      grep -qF 'finite-installer-build' .github/actions/build-installer/action.yml
       grep -qF 'installer-cache:' .github/workflows/build.yml
       grep -qF 'cache-write: true' .github/workflows/build.yml
       grep -qF 'end-to-end:' .github/actions/build-installer/action.yml
-      grep -qF 'purplefin-installer-e2e install' .github/actions/build-installer/action.yml
-      grep -qF 'purplefin-installer-e2e boot' .github/actions/build-installer/action.yml
+      grep -qF 'finite-installer-e2e install' .github/actions/build-installer/action.yml
+      grep -qF 'finite-installer-e2e boot' .github/actions/build-installer/action.yml
       grep -qF -- '--build-context installer-rootfs=installer/rootfs' lib/installer-application.nix
       grep -qF 'RUN --mount=from=installer-rootfs,target=/run/installer-rootfs' installer/Containerfile
-      grep -qF 'PURPLEFIN_INSTALLER_BASE_REF' lib/installer-application.nix
+      grep -qF 'FINITE_INSTALLER_BASE_REF' lib/installer-application.nix
       grep -qF -- '--build-arg "BASE_REF=' lib/installer-application.nix
       grep -qF -- '--bootc-installer-payload-ref' lib/installer-application.nix
       grep -qF '@@INSTALLER_PAYLOAD_SOURCE_REF@@' \
@@ -570,23 +594,23 @@ in {
       grep -qF 'repositoryChecks' modules/outputs.nix
 
       for executable in \
-        ${applications.ciPrepare}/bin/purplefin-ci-prepare \
-        ${applications.validateCiPlan}/bin/purplefin-ci-validate-plan \
-        ${applications.validateImageShard}/bin/purplefin-validate-image-shard \
-        ${applications.imageReuse}/bin/purplefin-image-reuse \
-        ${applications.imageSign}/bin/purplefin-image-sign \
-        ${applications.rechunkImage}/bin/purplefin-rechunk-image \
-        ${applications.loadBluefin}/bin/purplefin-load-bluefin \
-        ${applications.promoteImages}/bin/purplefin-promote-images \
-        ${applications.installerBuild}/bin/purplefin-installer-build \
-        ${applications.installerE2e}/bin/purplefin-installer-e2e \
-        ${applications.imageSbom}/bin/purplefin-image-sbom \
-        ${applications.releaseNotes}/bin/purplefin-release-notes \
-        ${applications.updateLocks}/bin/purplefin-update-locks \
-        ${applications.updateHomeRelease}/bin/purplefin-update-home-release \
-        ${applications.sbomAttestation}/bin/purplefin-sbom-attestation \
-        ${applications.trustedUpdate}/bin/purplefin-trusted-update \
-        ${applications.ciGate}/bin/purplefin-ci-gate; do
+        ${applications.ciPrepare}/bin/finite-ci-prepare \
+        ${applications.validateCiPlan}/bin/finite-ci-validate-plan \
+        ${applications.validateImageShard}/bin/finite-validate-image-shard \
+        ${applications.imageReuse}/bin/finite-image-reuse \
+        ${applications.imageSign}/bin/finite-image-sign \
+        ${applications.rechunkImage}/bin/finite-rechunk-image \
+        ${applications.loadBluefin}/bin/finite-load-bluefin \
+        ${applications.promoteImages}/bin/finite-promote-images \
+        ${applications.installerBuild}/bin/finite-installer-build \
+        ${applications.installerE2e}/bin/finite-installer-e2e \
+        ${applications.imageSbom}/bin/finite-image-sbom \
+        ${applications.releaseNotes}/bin/finite-release-notes \
+        ${applications.updateLocks}/bin/finite-update-locks \
+        ${applications.updateHomeRelease}/bin/finite-update-home-release \
+        ${applications.sbomAttestation}/bin/finite-sbom-attestation \
+        ${applications.trustedUpdate}/bin/finite-trusted-update \
+        ${applications.ciGate}/bin/finite-ci-gate; do
         test -x "$executable"
       done
       [[ "$(grep -cF 'steps.plan.outputs.plan' .github/workflows/build.yml)" == 1 ]]

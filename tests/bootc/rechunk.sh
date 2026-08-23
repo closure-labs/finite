@@ -11,7 +11,7 @@ cat >>"${test_root}/podman" <<'EOF'
 set -euo pipefail
 if [[ "$1" == inspect ]]; then
 	jq -n '[{Config:{Labels:{
-		"io.purplefin.build.profile":"base-generic-x86_64",
+		"io.finite.build.profile":"bluefin-generic",
 		"org.opencontainers.image.version":"test",
 		"containers.bootc":"1",
 		"ostree.commit":"excluded"
@@ -40,16 +40,16 @@ set -euo pipefail
 jq -n '{
 	Digest:"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
 	Labels:{
-		"io.purplefin.build.profile":"base-generic-x86_64",
+		"io.finite.build.profile":"bluefin-generic",
 		"org.opencontainers.image.version":"test"
 	}
 }'
 EOF
 chmod +x "${test_root}/skopeo"
 
-source_image='localhost/purplefin:test'
-output="oci-archive:${test_root}/purplefin.oci"
-previous='docker://ghcr.io/example/purplefin@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+source_image='localhost/finite:test'
+output="oci-archive:${test_root}/finite.oci"
+previous='docker://ghcr.io/example/finite@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
 
 run_rechunk() {
 	local support=$1 fail=$2 log=$3
@@ -58,8 +58,8 @@ run_rechunk() {
 	FAKE_INCREMENTAL_FAIL="${fail}" \
 		FAKE_PODMAN_LOG="${log}" \
 		FAKE_PREVIOUS_SUPPORT="${support}" \
-		PURPLEFIN_PODMAN="${test_root}/podman" \
-		PURPLEFIN_SKOPEO="${test_root}/skopeo" \
+		FINITE_PODMAN="${test_root}/podman" \
+		FINITE_SKOPEO="${test_root}/skopeo" \
 		"${rechunk_image}" \
 			--source "${source_image}" \
 			--output "${output}" \
@@ -76,10 +76,10 @@ jq -e '
 ' <<<"${report}" >/dev/null
 grep -qF -- '--max-layers 127' "${full_log}"
 grep -qF -- '--format-version=2' "${full_log}"
-grep -qF -- '--label io.purplefin.build.profile=base-generic-x86_64' "${full_log}"
+grep -qF -- '--label io.finite.build.profile=bluefin-generic' "${full_log}"
 grep -qF -- '--bootc --rootfs /rpm-ostree' "${full_log}"
-grep -qF -- "--volume ${test_root}:/run/purplefin-rechunk-output" "${full_log}"
-grep -qF -- '--output oci-archive:/run/purplefin-rechunk-output/purplefin.oci' \
+grep -qF -- "--volume ${test_root}:/run/finite-rechunk-output" "${full_log}"
+grep -qF -- '--output oci-archive:/run/finite-rechunk-output/finite.oci' \
 	"${full_log}"
 if grep -qF -- '--previous-build' "${full_log}"; then
 	echo 'Full rechunk unexpectedly received a previous build' >&2

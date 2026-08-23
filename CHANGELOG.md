@@ -1,10 +1,60 @@
 # Changelog
 
-All notable changes to Purplefin are documented here. The format follows
+All notable changes to Finite are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and releases follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.5.0] - 2026-08-22
+
+### Added
+
+- Native `home-bluefin` and `home-bluefin-dx` templates that compose any subset
+  of the Developer, Sales, Trainer, Support, Executive, and IT role aspects.
+- `finite-home-profile` and `finite-home-bootstrap` applications for validated
+  YAML provisioning, account discovery, normalized JSON state, locked
+  standalone flakes, build-before-activation, and generic legacy JSON import.
+- A per-user first-login Zenity checklist and `finite-configure` command with
+  current-role preselection, base-only configuration, cancellation, graphical
+  errors, and retry behavior.
+- Explicit foundation and hardware metadata plus schema-2 Home Manager catalogs
+  covering both foundations, both hardware targets, and every role.
+
+### Changed
+
+- Renamed the complete active product to Finite, including Nix
+  namespaces, commands, environment variables, OCI labels, runtime paths,
+  systemd units, installer assets, CI, release automation, tests, and docs.
+- Replaced eight fixed Home Manager presets with Den-native standalone homes
+  composed from the Finite base, selected hardware, and selected role aspects.
+- Reduced published images to four foundation-and-hardware combinations;
+  per-user roles no longer create image tags.
+- Updated rEFInd, Plymouth, GDM, and shared image branding to the Finite mark.
+- Cloud-init now writes a YAML Home Manager seed for first-login import instead
+  of invoking a named profile.
+
+### Removed
+
+- Former product command aliases, paths, OCI fallbacks, compatibility shims,
+  fixed named-profile APIs, and production use of Den's internal aspect
+  resolver.
+
+### Fixed
+
+- Bootstrap writes deployed files only after its temporary standalone flake is
+  locked and its activation package builds successfully.
+- Complete Home Manager composition validation is evaluation-only in the normal
+  check graph, avoiding accidental realization of every large role closure on
+  developer workstations.
+
+### Security
+
+- Profile import rejects undeclared fields, malicious source values, malformed
+  identities, duplicate or unknown roles, unsupported foundation/hardware
+  pairs, and running-image mismatches.
+- The legacy external Cachix endpoint and signing key are centralized as the
+  only permitted former-name exception, with a repository-wide rename contract.
 
 ## [0.3.0] - 2026-08-20
 
@@ -57,12 +107,12 @@ All notable changes to Purplefin are documented here. The format follows
 - Bitwarden CLI, Bitwarden Desktop, developer tools, and role applications are
   delivered through Nix/Home Manager instead of custom image layers or Homebrew.
 - Image generation now preserves each signed Bluefin upstream as the foundation
-  and limits Purplefin image changes to boot-critical integration and proven
+  and limits Finite image changes to boot-critical integration and proven
   Dell hardware support.
 
 ### Removed
 
-- The independently managed RPM mechanism and its Tailscale override; Purplefin
+- The independently managed RPM mechanism and its Tailscale override; Finite
   now inherits the complete upstream Bluefin package set, including Tailscale.
 - Image-baked Espanso, Bitwarden, role Flatpak manifests, Homebrew bundle
   automation, and role-specific image scripts.
@@ -173,7 +223,7 @@ All notable changes to Purplefin are documented here. The format follows
 - Consolidated CI on one pinned Nix and Cachix setup, one 13-check validation
   entrypoint, per-check filesets, and event classification from actual changed
   paths.
-- Simplified the project guides around running Purplefin, building with Nix,
+- Simplified the project guides around running Finite, building with Nix,
   customizing profiles, operating CI and releases, and troubleshooting.
 
 ### Fixed
@@ -200,7 +250,7 @@ All notable changes to Purplefin are documented here. The format follows
 - A Nix and Den profile graph that generates the ordered image matrix, semantic
   build inputs, Home Manager configurations, profile catalog, and OSBuild
   Blueprints.
-- A graphical Anaconda installer that embeds a verified Purplefin digest,
+- A graphical Anaconda installer that embeds a verified Finite digest,
   smoke-boots in QEMU, and publishes an attested component manifest.
 - Dell XPS 13 9350 support for the IPU7 camera, lid-aware privilege
   authentication, battery charge thresholds, TuneD power profiles, automatic
@@ -243,7 +293,9 @@ All notable changes to Purplefin are documented here. The format follows
 - The required `CI gate` now validates repository policy, selected image and
   installer jobs, merge candidates, and trusted dependency-update automation.
 
-[Unreleased]: https://github.com/closure-labs/finite/compare/v0.2.4...HEAD
+[Unreleased]: https://github.com/closure-labs/finite/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/closure-labs/finite/compare/v0.3.0...v0.5.0
+[0.3.0]: https://github.com/closure-labs/finite/compare/v0.2.4...v0.3.0
 [0.2.4]: https://github.com/closure-labs/finite/releases/tag/v0.2.4
 [0.2.3]: https://github.com/closure-labs/finite/releases/tag/v0.2.3
 [0.2.2]: https://github.com/closure-labs/finite/releases/tag/v0.2.2

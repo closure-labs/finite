@@ -1,6 +1,8 @@
 {
-  description = "Purplefin bootc profile and user-environment configuration";
+  description = "Finite bootc profile and user-environment configuration";
 
+  # This legacy external Cachix identifier is the sole pre-Finite name retained.
+  # Other consumers derive the cache name from this URL instead of repeating it.
   nixConfig = {
     extra-substituters = [
       "https://purplefin.cachix.org"

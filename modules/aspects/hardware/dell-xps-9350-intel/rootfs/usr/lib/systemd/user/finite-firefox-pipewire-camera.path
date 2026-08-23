@@ -1,0 +1,9 @@
+[Unit]
+Description=Watch for Firefox profiles requiring the IPU7 PipeWire camera
+
+[Path]
+PathChanged=%h/.var/app/org.mozilla.firefox/config/mozilla/firefox/profiles.ini
+Unit=finite-firefox-pipewire-camera.service
+
+[Install]
+WantedBy=default.target

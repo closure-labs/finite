@@ -1,0 +1,11 @@
+[Unit]
+Description=Provision persistent Determinate Nix state
+Requires=finite-nix-selinux.service
+After=finite-nix-selinux.service
+Before=nix.mount
+RequiresMountsFor=/var/home
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/finite/provision-determinate-nix
+RemainAfterExit=yes

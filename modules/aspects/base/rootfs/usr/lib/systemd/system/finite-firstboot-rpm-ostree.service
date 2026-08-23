@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Finite rpm-ostree first-boot tasks
+After=network-online.target rpm-ostreed.service
+Wants=network-online.target rpm-ostreed.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/finite/run-firstboot-rpm-ostree
+
+[Install]
+WantedBy=multi-user.target

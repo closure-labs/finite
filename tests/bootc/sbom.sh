@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-sbom_command=purplefin-image-sbom
+sbom_command=finite-image-sbom
 workdir="$(mktemp -d)"
 trap 'rm -rf -- "${workdir}"' EXIT
 mkdir -p "${workdir}/bin"
@@ -48,12 +48,12 @@ EOF
 chmod +x "${workdir}/bin/gh"
 
 common_env=(
-	GITHUB_REPOSITORY=example/purplefin
+	GITHUB_REPOSITORY=example/finite
 	MOCK_VERIFICATION="${workdir}/verification.json"
-	PURPLEFIN_GH="${workdir}/bin/gh"
+	FINITE_GH="${workdir}/bin/gh"
 	SBOM_IMAGE_DIGEST="${digest}"
-	SBOM_IMAGE_REF=ghcr.io/example/purplefin
-	SBOM_SIGNER_WORKFLOW=example/purplefin/.github/workflows/attest-software-bill-of-materials.yml
+	SBOM_IMAGE_REF=ghcr.io/example/finite
+	SBOM_SIGNER_WORKFLOW=example/finite/.github/workflows/attest-software-bill-of-materials.yml
 	SBOM_SOURCE_DIGEST="${source_digest}"
 )
 env "${common_env[@]}" "${sbom_command}" extract "${workdir}/restored.json"
@@ -91,7 +91,7 @@ fi
 	printf '#!%s\n' "$(command -v bash)"
 	cat <<'EOF'
 set -euo pipefail
-printf '%s\n' "${PURPLEFIN_SYFT_STORE}"
+printf '%s\n' "${FINITE_SYFT_STORE}"
 EOF
 } >"${workdir}/bin/nix-store"
 {
@@ -117,13 +117,13 @@ EOF
 } >"${workdir}/bin/podman"
 chmod +x "${workdir}/bin/nix-store" "${workdir}/bin/podman" "${workdir}/bin/syft"
 env \
-	PURPLEFIN_NIX_STORE="${workdir}/bin/nix-store" \
-	PURPLEFIN_PODMAN="${workdir}/bin/podman" \
-	PURPLEFIN_SOURCE_ROOT="${repo_root}" \
-	PURPLEFIN_SYFT="${workdir}/bin/syft" \
-	PURPLEFIN_SYFT_STORE="${workdir}" \
+	FINITE_NIX_STORE="${workdir}/bin/nix-store" \
+	FINITE_PODMAN="${workdir}/bin/podman" \
+	FINITE_SOURCE_ROOT="${repo_root}" \
+	FINITE_SYFT="${workdir}/bin/syft" \
+	FINITE_SYFT_STORE="${workdir}" \
 	SBOM_IMAGE_DIGEST="${digest}" \
-	SBOM_IMAGE_REF=ghcr.io/example/purplefin \
+	SBOM_IMAGE_REF=ghcr.io/example/finite \
 	"${sbom_command}" generate "${workdir}/generated.json"
 jq -e '
 	.packages[0].name == "generated" and

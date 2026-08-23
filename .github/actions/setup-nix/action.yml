@@ -1,5 +1,5 @@
-name: Set up Nix and Purplefin Cachix
-description: Install Nix with GitHub access and configure the read-through Purplefin cache
+name: Set up Nix and retained cache
+description: Install Nix with GitHub access and accept the repository's centralized cache configuration
 
 inputs:
   merge-queue-token:
@@ -24,11 +24,4 @@ runs:
       shell: bash
       run: >-
         nix shell --accept-flake-config .#ci-github-actions-secrets
-        -c purplefin-github-actions-secrets
-
-    - name: Configure Purplefin Cachix
-      uses: cachix/cachix-action@5f2d7c5294214f71b873db4b969586b980625e71 # v17
-      with:
-        authToken: ${{ env.CACHIX_AUTH_TOKEN }}
-        name: purplefin
-        skipPush: true
+        -c finite-github-actions-secrets

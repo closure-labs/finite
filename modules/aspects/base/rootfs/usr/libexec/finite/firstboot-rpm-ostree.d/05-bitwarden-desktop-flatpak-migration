@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# shellcheck source=/usr/libexec/finite/lib/rpm-ostree-firstboot.sh
+source /usr/libexec/finite/lib/rpm-ostree-firstboot.sh
+
+if ! rpm -q bitwarden >/dev/null 2>&1; then
+	finite_firstboot_log "No legacy Bitwarden desktop RPM layer is installed"
+	exit 0
+fi
+
+finite_firstboot_log "Removing the legacy Bitwarden desktop RPM layer; Home Manager now provides it from Nix"
+run_rpm_ostree uninstall bitwarden

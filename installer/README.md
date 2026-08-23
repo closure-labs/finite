@@ -1,9 +1,9 @@
-# Purplefin installer
+# Finite installer
 
 The installer builds OSBuild's `bootc-generic-iso` with a digest-pinned Image
-Builder container and a published Purplefin image digest.
+Builder container and a published Finite image digest.
 
-`nix shell .#ci-installer-build -c purplefin-installer-build` performs the
+`nix shell .#ci-installer-build -c finite-installer-build` performs the
 build phase used by GitHub Actions:
 
 1. verify the payload's Cosign signature, provenance, and SPDX attestation;
@@ -28,7 +28,7 @@ profile tag. A new signed payload digest under the same tag reuses that
 environment while Image Builder still embeds the exact verified digest.
 
 The QEMU smoke test proves that `anaconda.service` successfully creates its
-installer session and emits `PURPLEFIN_INSTALLER_READY=1`; generic Anaconda boot
+installer session and emits `FINITE_INSTALLER_READY=1`; generic Anaconda boot
 messages are not treated as success.
 
 Weekly runs and forced release-candidate builds also use
@@ -37,7 +37,7 @@ explicit CI Kickstart. It performs a non-interactive installation onto an
 ephemeral disk, reboots from the disk, and waits for
 `bootc status --json --format-version=1` to report both the verified payload
 digest and expected mutable profile tag before it emits
-`PURPLEFIN_INSTALLED_READY=1`. The regular smoke test already covers the ISO's
+`FINITE_INSTALLED_READY=1`. The regular smoke test already covers the ISO's
 bootloader path, so the end-to-end test avoids rebuilding and recompressing a
 second, otherwise identical ISO.
 

@@ -1,4 +1,4 @@
-name: Build and validate Purplefin installer
+name: Build and validate Finite installer
 description: Run the visible Nix-declared installer build and boot-validation phases
 
 inputs:
@@ -11,9 +11,9 @@ inputs:
     required: false
     default: "false"
   image-tag:
-    description: Published Purplefin profile to embed
+    description: Published Finite profile to embed
     required: false
-    default: base-generic-x86_64
+    default: bluefin-generic
   token:
     description: GitHub token used for attestations and trusted cache publication
     required: true
@@ -23,10 +23,10 @@ outputs:
     description: SHA-256 of the completed installer ISO
     value: ${{ steps.installer.outputs.iso-sha256 }}
   payload-digest:
-    description: Immutable digest of the embedded Purplefin payload
+    description: Immutable digest of the embedded Finite payload
     value: ${{ steps.installer.outputs.payload-digest }}
   payload-tag:
-    description: Published Purplefin tag embedded in the installer
+    description: Published Finite tag embedded in the installer
     value: ${{ steps.installer.outputs.payload-tag }}
 
 runs:
@@ -43,11 +43,10 @@ runs:
         GH_TOKEN: ${{ inputs.token }}
         IMAGE_REF: ghcr.io/${{ github.repository }}
         IMAGE_TAG: ${{ inputs.image-tag }}
-        LEGACY_IMAGE_REF: ghcr.io/declarative-dale/purplefin
       shell: bash
       run: >-
         nix shell --accept-flake-config .#ci-installer-build
-        -c purplefin-installer-build
+        -c finite-installer-build
 
     - name: Smoke-test installer ISO bootloader
       id: smoke
@@ -62,7 +61,7 @@ runs:
         }
         trap record_duration EXIT
         nix shell --accept-flake-config .#ci-installer-smoke \
-          -c purplefin-installer-smoke "${ISO_PATH}" 2>&1 |
+          -c finite-installer-smoke "${ISO_PATH}" 2>&1 |
           tee diagnostics/qemu-smoke.log
 
     - name: Perform unattended installation
@@ -71,8 +70,8 @@ runs:
       env:
         ISO_PATH: ${{ steps.installer.outputs.iso-path }}
         KICKSTART_PATH: ${{ steps.installer.outputs.kickstart-path }}
-        PURPLEFIN_INSTALLER_DIAGNOSTICS_DIR: ${{ github.workspace }}/diagnostics
-        STATE_ROOT: ${{ runner.temp }}/purplefin-installer-e2e
+        FINITE_INSTALLER_DIAGNOSTICS_DIR: ${{ github.workspace }}/diagnostics
+        STATE_ROOT: ${{ runner.temp }}/finite-installer-e2e
       shell: bash
       run: |
         set -euo pipefail
@@ -82,15 +81,15 @@ runs:
         }
         trap record_duration EXIT
         nix shell --accept-flake-config .#ci-installer-e2e \
-          -c purplefin-installer-e2e install \
+          -c finite-installer-e2e install \
             "${ISO_PATH}" "${KICKSTART_PATH}" "${STATE_ROOT}"
 
     - name: Boot and validate installed system
       if: inputs.end-to-end == 'true'
       id: boot
       env:
-        PURPLEFIN_INSTALLER_DIAGNOSTICS_DIR: ${{ github.workspace }}/diagnostics
-        STATE_ROOT: ${{ runner.temp }}/purplefin-installer-e2e
+        FINITE_INSTALLER_DIAGNOSTICS_DIR: ${{ github.workspace }}/diagnostics
+        STATE_ROOT: ${{ runner.temp }}/finite-installer-e2e
       shell: bash
       run: |
         set -euo pipefail
@@ -100,7 +99,7 @@ runs:
         }
         trap record_duration EXIT
         nix shell --accept-flake-config .#ci-installer-e2e \
-          -c purplefin-installer-e2e boot "${STATE_ROOT}"
+          -c finite-installer-e2e boot "${STATE_ROOT}"
 
     - name: Summarize installer validation
       if: always()
@@ -154,7 +153,7 @@ runs:
       if: always()
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
-        name: purplefin-${{ steps.installer.outputs.payload-tag || 'unresolved' }}-installer-diagnostics
+        name: finite-${{ steps.installer.outputs.payload-tag || 'unresolved' }}-installer-diagnostics
         path: diagnostics/
         if-no-files-found: warn
         retention-days: 7

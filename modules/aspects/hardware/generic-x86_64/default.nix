@@ -1,5 +1,5 @@
 _: {
-  den.aspects.features.hardware.generic-x86_64.bootc.purplefin = {
+  den.aspects.features.hardware.generic-x86_64.bootc.finite = {
     hardware = "generic-x86_64";
     build = {
       steps = [

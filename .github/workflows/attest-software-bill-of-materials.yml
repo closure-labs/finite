@@ -73,9 +73,9 @@ jobs:
           jq -e --arg build_input "${BUILD_INPUT}" --arg profile "${BUILD_PROFILE}" \
             --arg revision "${EXPECTED_REVISION}" --arg upstream_digest "${EXPECTED_UPSTREAM_DIGEST}" \
             --arg version "${EXPECTED_VERSION}" '
-              .Labels["io.purplefin.build.input"] == $build_input and
-              .Labels["io.purplefin.build.profile"] == $profile and
-              .Labels["io.purplefin.upstream.digest"] == $upstream_digest and
+              .Labels["io.finite.build.input"] == $build_input and
+              .Labels["io.finite.build.profile"] == $profile and
+              .Labels["io.finite.upstream.digest"] == $upstream_digest and
               .Labels["org.opencontainers.image.revision"] == $revision and
               .Labels["org.opencontainers.image.version"] == $version
             ' <<<"${metadata}" >/dev/null
@@ -102,14 +102,14 @@ jobs:
         run: |
           set +e
           nix shell --accept-flake-config .#ci-image-sbom \
-            -c purplefin-image-sbom extract sbom.spdx.json
+            -c finite-image-sbom extract sbom.spdx.json
           status=$?
           set -e
           case "${status}" in
             0) echo 'hit=true' >>"${GITHUB_OUTPUT}" ;;
             3)
               nix shell --accept-flake-config .#ci-image-sbom \
-                -c purplefin-image-sbom generate sbom.spdx.json
+                -c finite-image-sbom generate sbom.spdx.json
               echo 'hit=false' >>"${GITHUB_OUTPUT}"
               ;;
             *) exit "${status}" ;;
@@ -149,9 +149,9 @@ jobs:
         run: |
           for _ in {1..6}; do
             if nix shell --accept-flake-config .#ci-image-sbom \
-              -c purplefin-image-sbom extract verified-sbom.spdx.json &&
+              -c finite-image-sbom extract verified-sbom.spdx.json &&
               nix shell --accept-flake-config .#ci-image-sbom \
-                -c purplefin-image-sbom equivalent sbom.spdx.json verified-sbom.spdx.json; then
+                -c finite-image-sbom equivalent sbom.spdx.json verified-sbom.spdx.json; then
               exit 0
             fi
             sleep 5

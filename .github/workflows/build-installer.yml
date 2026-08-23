@@ -1,4 +1,4 @@
-name: Build and boot-test Purplefin installer ISO
+name: Build and boot-test Finite installer ISO
 
 on:
   schedule:
@@ -11,25 +11,18 @@ on:
         default: false
         type: boolean
       image-tag:
-        description: Published Purplefin profile to embed
+        description: Published Finite profile to embed
         required: true
-        default: base-generic-x86_64
+        default: bluefin-generic
         type: choice
         options:
-          - base-generic-x86_64
-          - base-dell-xps-9350-intel
-          - sales-generic
-          - sales-dell-xps-9350-intel
-          - support-generic
-          - support-dell-xps-9350-intel
-          - dale
-          - developer-generic
-          - trainer-generic
-          - executive-generic
-          - it-generic
+          - bluefin-generic
+          - bluefin-dell-xps-9350-intel
+          - bluefin-dx-generic
+          - bluefin-dx-dell-xps-9350-intel
 
 concurrency:
-  group: installer-${{ github.ref }}-${{ inputs.image-tag || 'base-generic-x86_64' }}
+  group: installer-${{ github.ref }}-${{ inputs.image-tag || 'bluefin-generic' }}
   cancel-in-progress: true
 
 permissions:
@@ -58,7 +51,7 @@ jobs:
             (github.event_name == 'workflow_dispatch' &&
             github.ref == 'refs/heads/main') }}
           end-to-end: ${{ github.event_name == 'schedule' || inputs.end-to-end }}
-          image-tag: ${{ inputs.image-tag || 'base-generic-x86_64' }}
+          image-tag: ${{ inputs.image-tag || 'bluefin-generic' }}
           token: ${{ github.token }}
 
       - name: Attest installer artifacts
@@ -72,7 +65,7 @@ jobs:
       - name: Upload installer artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: purplefin-${{ steps.installer.outputs.payload-tag }}-installer
+          name: finite-${{ steps.installer.outputs.payload-tag }}-installer
           path: |
             output/*.iso
             output/SHA256SUMS

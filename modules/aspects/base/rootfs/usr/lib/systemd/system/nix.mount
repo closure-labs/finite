@@ -1,7 +1,7 @@
 [Unit]
 Description=Mount persistent Determinate Nix state on /nix
-Requires=purplefin-nix-seed.service
-After=purplefin-nix-seed.service
+Requires=finite-nix-seed.service
+After=finite-nix-seed.service
 PropagatesStopTo=nix-daemon.service
 ConditionPathIsDirectory=/nix
 DefaultDependencies=no

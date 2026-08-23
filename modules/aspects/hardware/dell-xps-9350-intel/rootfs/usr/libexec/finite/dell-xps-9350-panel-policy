@@ -1,0 +1,322 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+readonly policy_name="finite-dell-xps-9350-panel"
+readonly default_config="/usr/share/finite/dell-xps-9350-panel.conf"
+
+PANEL_POLICY_ENABLED=true
+PANEL_CONNECTOR=eDP-1
+PANEL_AC_MODE=1920x1200@120.000+vrr
+PANEL_BATTERY_MODE=1920x1200@60.000
+RECONCILE_INTERVAL=15
+AMBIENT_BRIGHTNESS_MIGRATION_ENABLED=true
+
+GDCTL_BIN="${FINITE_PANEL_GDCTL:-gdctl}"
+GDBUS_BIN="${FINITE_PANEL_GDBUS:-gdbus}"
+GSETTINGS_BIN="${FINITE_PANEL_GSETTINGS:-gsettings}"
+DMI_ROOT="${FINITE_PANEL_DMI_ROOT:-/sys/class/dmi/id}"
+DRM_ROOT="${FINITE_PANEL_DRM_ROOT:-/sys/class/drm}"
+POWER_SUPPLY_ROOT="${FINITE_PANEL_POWER_SUPPLY_ROOT:-/sys/class/power_supply}"
+last_notice=
+
+log() {
+	printf '%s: %s\n' "${policy_name}" "$*" >&2
+}
+
+notice_once() {
+	local key="$1"
+	shift
+	if [[ "${last_notice}" != "${key}" ]]; then
+		log "$*"
+		last_notice="${key}"
+	fi
+}
+
+is_true() {
+	case "${1,,}" in
+		1 | true | yes | on) return 0 ;;
+		*) return 1 ;;
+	esac
+}
+
+load_config() {
+	local user_config_home
+
+	if [[ -r "${default_config}" ]]; then
+		# shellcheck source=/usr/share/finite/dell-xps-9350-panel.conf
+		source "${default_config}"
+	fi
+	if [[ -r /etc/finite/dell-xps-9350-panel.conf ]]; then
+		# shellcheck source=/dev/null
+		source /etc/finite/dell-xps-9350-panel.conf
+	fi
+	user_config_home="${XDG_CONFIG_HOME:-${HOME}/.config}"
+	if [[ -r "${user_config_home}/finite/dell-xps-9350-panel.conf" ]]; then
+		# shellcheck source=/dev/null
+		source "${user_config_home}/finite/dell-xps-9350-panel.conf"
+	fi
+
+	PANEL_POLICY_ENABLED="${FINITE_PANEL_POLICY_ENABLED:-${PANEL_POLICY_ENABLED}}"
+	PANEL_CONNECTOR="${FINITE_PANEL_CONNECTOR:-${PANEL_CONNECTOR}}"
+	PANEL_AC_MODE="${FINITE_PANEL_AC_MODE:-${PANEL_AC_MODE}}"
+	PANEL_BATTERY_MODE="${FINITE_PANEL_BATTERY_MODE:-${PANEL_BATTERY_MODE}}"
+	RECONCILE_INTERVAL="${FINITE_PANEL_RECONCILE_INTERVAL:-${RECONCILE_INTERVAL}}"
+	AMBIENT_BRIGHTNESS_MIGRATION_ENABLED="${FINITE_PANEL_AMBIENT_BRIGHTNESS_MIGRATION_ENABLED:-${AMBIENT_BRIGHTNESS_MIGRATION_ENABLED}}"
+}
+
+migrate_ambient_brightness_default() {
+	local marker marker_dir state_home
+
+	is_true "${AMBIENT_BRIGHTNESS_MIGRATION_ENABLED}" || return 0
+	state_home="${XDG_STATE_HOME:-${HOME}/.local/state}"
+	marker_dir="${state_home}/finite"
+	marker="${marker_dir}/dell-xps-9350-ambient-brightness-v1"
+	[[ -e "${marker}" ]] && return 0
+	if ! command -v "${GSETTINGS_BIN}" >/dev/null 2>&1; then
+		notice_once gsettings-missing "gsettings is unavailable; ambient-brightness migration will retry"
+		return 1
+	fi
+	if ! "${GSETTINGS_BIN}" writable org.gnome.settings-daemon.plugins.power ambient-enabled 2>/dev/null | grep -qx true; then
+		notice_once ambient-unwritable "GNOME ambient-brightness setting is unavailable or locked; migration will retry"
+		return 1
+	fi
+	umask 077
+	if ! mkdir -p "${marker_dir}" || ! printf '%s\n' 'pending=true' >"${marker}"; then
+		notice_once ambient-marker-failed "could not prepare the ambient-brightness v1 state marker"
+		return 1
+	fi
+	if ! "${GSETTINGS_BIN}" set org.gnome.settings-daemon.plugins.power ambient-enabled true 2>/dev/null; then
+		rm -f "${marker}"
+		notice_once ambient-set-failed "could not enable GNOME ambient brightness; migration will retry"
+		return 1
+	fi
+	printf '%s\n' 'enabled=true' >"${marker}" || true
+	log "enabled GNOME ambient brightness for the one-time v1 migration"
+	last_notice=
+}
+
+dmi_matches() {
+	local vendor product
+
+	[[ -r "${DMI_ROOT}/sys_vendor" && -r "${DMI_ROOT}/product_name" ]] || return 1
+	vendor="$(<"${DMI_ROOT}/sys_vendor")"
+	product="$(<"${DMI_ROOT}/product_name")"
+	[[ "${vendor}" == "Dell Inc." && "${product}" == "XPS 13 9350" ]]
+}
+
+validate_config() {
+	if [[ ! "${PANEL_CONNECTOR}" =~ ^eDP-[[:alnum:]_.:-]+$ ]]; then
+		log "refusing non-eDP connector '${PANEL_CONNECTOR}'"
+		return 1
+	fi
+	if [[ ! "${RECONCILE_INTERVAL}" =~ ^[1-9][0-9]*$ ]]; then
+		log "RECONCILE_INTERVAL must be a positive integer"
+		return 1
+	fi
+}
+
+external_drm_connector_is_connected() {
+	local connector connector_dir status_file
+	local -a status_files=()
+
+	shopt -s nullglob
+	status_files=("${DRM_ROOT}"/card*-*/status)
+	shopt -u nullglob
+	for status_file in "${status_files[@]}"; do
+		[[ "$(<"${status_file}")" == "connected" ]] || continue
+		connector_dir="${status_file%/status}"
+		connector="${connector_dir##*/}"
+		connector="${connector#card*-}"
+		if [[ "${connector}" != "${PANEL_CONNECTOR}" ]]; then
+			return 0
+		fi
+	done
+	return 1
+}
+
+connected_gdctl_connectors() {
+	local line
+	while IFS= read -r line; do
+		if [[ "${line}" =~ Monitor[[:space:]]+([^[:space:]\(]+) ]]; then
+			printf '%s\n' "${BASH_REMATCH[1]}"
+		fi
+	done
+}
+
+available_gdctl_modes() {
+	grep -oE '[0-9]+x[0-9]+@[0-9]+([.][0-9]+)?([+][[:alnum:]_-]+)?' | sort -u
+}
+
+power_source() {
+	local online output supply type
+	local -a supplies=()
+
+	if command -v "${GDBUS_BIN}" >/dev/null 2>&1; then
+		output="$("${GDBUS_BIN}" call --system \
+			--dest org.freedesktop.UPower \
+			--object-path /org/freedesktop/UPower \
+			--method org.freedesktop.DBus.Properties.Get \
+			org.freedesktop.UPower OnBattery 2>/dev/null)" || output=
+		case "${output}" in
+			*'<true>'*) printf '%s\n' battery; return 0 ;;
+			*'<false>'*) printf '%s\n' ac; return 0 ;;
+		esac
+	fi
+
+	shopt -s nullglob
+	supplies=("${POWER_SUPPLY_ROOT}"/*)
+	shopt -u nullglob
+	for supply in "${supplies[@]}"; do
+		[[ -r "${supply}/type" && -r "${supply}/online" ]] || continue
+		type="$(<"${supply}/type")"
+		case "${type}" in Mains | USB | USB_C | USB_PD) ;; *) continue ;; esac
+		online="$(<"${supply}/online")"
+		if [[ "${online}" == "1" ]]; then
+			printf '%s\n' ac
+			return 0
+		fi
+	done
+	if [[ -r "${POWER_SUPPLY_ROOT}/BAT0/status" ]]; then
+		printf '%s\n' battery
+		return 0
+	fi
+	return 1
+}
+
+current_mode_from_state() {
+	awk '
+		/^Logical monitors:/ { exit }
+		match($0, /[0-9]+x[0-9]+@[0-9]+([.][0-9]+)?([+][[:alnum:]_-]+)?/) {
+			mode = substr($0, RSTART, RLENGTH)
+		}
+		/is-current.*yes/ && mode != "" { print mode; exit }
+	'
+}
+
+logical_property() {
+	local property="$1"
+	awk -v property="${property}" '
+		/Logical monitor #1/ { in_logical = 1; next }
+		in_logical && index($0, property ":") {
+			line = $0
+			sub("^.*" property ":[[:space:]]*", "", line)
+			print line
+			exit
+		}
+	'
+}
+
+apply_policy() {
+	local current_mode desired_selector layout_count position power primary scale state target_mode transform x y
+	local -a command connectors modes
+
+	if ! command -v "${GDCTL_BIN}" >/dev/null 2>&1; then
+		notice_once gdctl-missing "gdctl is unavailable; leaving the display unchanged"
+		return 1
+	fi
+	if external_drm_connector_is_connected; then
+		notice_once external-drm "external DRM connector detected; leaving the display layout unchanged"
+		return 1
+	fi
+	state="$("${GDCTL_BIN}" show --modes --properties 2>/dev/null)" || {
+		notice_once gdctl-unavailable "GNOME DisplayConfig is unavailable; will retry"
+		return 1
+	}
+
+	mapfile -t connectors < <(printf '%s\n' "${state}" | connected_gdctl_connectors)
+	if ((${#connectors[@]} != 1)) || [[ "${connectors[0]:-}" != "${PANEL_CONNECTOR}" ]]; then
+		notice_once external-gdctl "display session is not internal-${PANEL_CONNECTOR}-only; leaving it unchanged"
+		return 1
+	fi
+	layout_count="$(printf '%s\n' "${state}" | grep -cE 'Logical monitor #[0-9]+' || true)"
+	if [[ "${layout_count}" != "1" ]]; then
+		notice_once complex-layout "display session has ${layout_count} logical monitors; leaving it unchanged"
+		return 1
+	fi
+
+	power="$(power_source)" || {
+		notice_once power-unknown "UPower and power-supply state are unavailable; leaving the display unchanged"
+		return 1
+	}
+	if [[ "${power}" == "battery" ]]; then
+		desired_selector="${PANEL_BATTERY_MODE}"
+	else
+		desired_selector="${PANEL_AC_MODE}"
+	fi
+	mapfile -t modes < <(printf '%s\n' "${state}" | available_gdctl_modes)
+	target_mode="${desired_selector}"
+	if ! printf '%s\n' "${modes[@]}" | grep -Fqx -- "${target_mode}"; then
+		notice_once mode-missing "no gdctl mode matches '${desired_selector}' on ${PANEL_CONNECTOR}"
+		return 1
+	fi
+	current_mode="$(printf '%s\n' "${state}" | current_mode_from_state)"
+	if [[ "${current_mode}" == "${target_mode}" ]]; then
+		last_notice=
+		return 0
+	fi
+
+	scale="$(printf '%s\n' "${state}" | logical_property Scale)"
+	transform="$(printf '%s\n' "${state}" | logical_property Transform)"
+	primary="$(printf '%s\n' "${state}" | logical_property Primary)"
+	position="$(printf '%s\n' "${state}" | logical_property Position)"
+	if [[ ! "${scale}" =~ ^[0-9]+([.][0-9]+)?$ ]] ||
+		[[ ! "${transform}" =~ ^(normal|90|180|270|flipped|flipped-90|flipped-180|flipped-270)$ ]] ||
+		[[ ! "${primary}" =~ ^(yes|no)$ ]] ||
+		[[ ! "${position}" =~ ^\((-?[0-9]+),[[:space:]]*(-?[0-9]+)\)$ ]]; then
+		notice_once layout-parse "could not preserve the current scale, transform, position, and primary state; leaving it unchanged"
+		return 1
+	fi
+	x="${BASH_REMATCH[1]}"
+	y="${BASH_REMATCH[2]}"
+
+	# Recheck the kernel connector state immediately before applying the
+	# single-monitor transaction. gdctl receives only the built-in eDP.
+	if external_drm_connector_is_connected; then
+		notice_once external-race "external connector appeared; leaving the display layout unchanged"
+		return 1
+	fi
+	command=("${GDCTL_BIN}" set --logical-monitor)
+	if [[ "${primary}" == "yes" ]]; then
+		command+=(--primary)
+	fi
+	command+=(--scale "${scale}" --transform "${transform}" --x "${x}" --y "${y}")
+	command+=(--monitor "${PANEL_CONNECTOR}" --mode "${target_mode}")
+	if "${command[@]}" >/dev/null 2>&1; then
+		log "selected ${target_mode} on ${power}; preserved scale ${scale} at (${x}, ${y})"
+		last_notice=
+		return 0
+	fi
+	notice_once apply-failed "gdctl rejected ${target_mode}; leaving the current configuration in place"
+	return 1
+}
+
+watch_policy() {
+	while true; do
+		apply_policy || true
+		sleep "${RECONCILE_INTERVAL}"
+	done
+}
+
+main() {
+	local action="${1:---apply}"
+
+	load_config
+	if ! is_true "${PANEL_POLICY_ENABLED}"; then
+		log "disabled by configuration"
+		return 0
+	fi
+	if ! dmi_matches; then
+		log "DMI is not Dell Inc. XPS 13 9350; refusing to manage the panel"
+		return 0
+	fi
+	validate_config || return 1
+	migrate_ambient_brightness_default || true
+
+	case "${action}" in
+		--apply) apply_policy ;;
+		--watch) watch_policy ;;
+		*) log "usage: ${0##*/} [--apply|--watch]"; return 2 ;;
+	esac
+}
+
+main "$@"

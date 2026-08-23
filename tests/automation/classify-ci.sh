@@ -4,8 +4,8 @@ set -euo pipefail
 test_root="$(mktemp -d)"
 trap 'rm -rf -- "${test_root}"' EXIT
 git -C "${test_root}" init --quiet
-git -C "${test_root}" config user.name Purplefin
-git -C "${test_root}" config user.email purplefin@example.invalid
+git -C "${test_root}" config user.name Finite
+git -C "${test_root}" config user.email finite@example.invalid
 
 mkdir -p "${test_root}/docs"
 printf '%s\n' '{}' >"${test_root}/flake.nix"
@@ -46,8 +46,8 @@ classify_event() {
 	shift 2
 	local output
 	output="$(mktemp)"
-	env PURPLEFIN_SOURCE_ROOT="${test_root}" "$@" \
-		purplefin-classify-ci "${output}"
+	env FINITE_SOURCE_ROOT="${test_root}" "$@" \
+		finite-classify-ci "${output}"
 	classification="$(sed -n 's/^classification=//p' "${output}")"
 	[[ -n "${classification}" ]]
 	[[ "$(wc -l <"${output}")" == 1 ]]
@@ -133,8 +133,8 @@ env \
 	GITHUB_SHA="${docs_sha}" \
 	PULL_REQUEST_BASE_SHA="${base_sha}" \
 	PULL_REQUEST_HEAD_SHA="${docs_sha}" \
-	PURPLEFIN_SOURCE_ROOT="${test_root}" \
-	purplefin-ci-prepare
+	FINITE_SOURCE_ROOT="${test_root}" \
+	finite-ci-prepare
 prepared_plan="$(sed -n 's/^plan=//p' "${prepare_output}")"
 [[ -n "${prepared_plan}" ]]
 jq -e '
@@ -166,8 +166,8 @@ env \
 	EVENT_NAME=pull_request \
 	GITHUB_REF=refs/pull/1/merge \
 	GITHUB_SHA=1111111111111111111111111111111111111111 \
-	purplefin-ci-build-plan >"${plan_output}"
-purplefin-ci-validate-plan "${plan_output}"
+	finite-ci-build-plan >"${plan_output}"
+finite-ci-validate-plan "${plan_output}"
 jq -e '
 	.schema_version == 1 and
 	.source == {
@@ -198,7 +198,7 @@ jq -e '
 
 invalid_plan="$(mktemp)"
 jq '.unexpected = true' "${plan_output}" >"${invalid_plan}"
-if purplefin-ci-validate-plan "${invalid_plan}" 2>/dev/null; then
+if finite-ci-validate-plan "${invalid_plan}" 2>/dev/null; then
 	echo 'CI plan schema accepted an undeclared property' >&2
 	exit 1
 fi

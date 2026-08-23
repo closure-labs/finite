@@ -1,0 +1,11 @@
+[Unit]
+Description=Install Finite rEFInd theme
+After=local-fs.target
+ConditionPathExists=/usr/share/finite/refind/themes/rEFInd-Regular-Dark/theme.conf
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/finite/install-refind-theme
+
+[Install]
+WantedBy=multi-user.target

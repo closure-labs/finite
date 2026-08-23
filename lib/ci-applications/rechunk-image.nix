@@ -1,13 +1,13 @@
 {pkgs}:
 pkgs.writeShellApplication {
-  name = "purplefin-rechunk-image";
+  name = "finite-rechunk-image";
   runtimeInputs = with pkgs; [bash coreutils gnugrep jq podman skopeo];
   text = ''
     set -euo pipefail
 
     usage() {
       cat >&2 <<'EOF'
-    usage: purplefin-rechunk-image --source IMAGE --output TRANSPORT \
+    usage: finite-rechunk-image --source IMAGE --output TRANSPORT \
              [--previous-build docker://IMAGE@sha256:DIGEST] [--authfile FILE]
     EOF
     }
@@ -54,8 +54,8 @@ pkgs.writeShellApplication {
       exit 2
     fi
 
-    podman="''${PURPLEFIN_PODMAN:-${pkgs.podman}/bin/podman}"
-    skopeo="''${PURPLEFIN_SKOPEO:-${pkgs.skopeo}/bin/skopeo}"
+    podman="''${FINITE_PODMAN:-${pkgs.podman}/bin/podman}"
+    skopeo="''${FINITE_SKOPEO:-${pkgs.skopeo}/bin/skopeo}"
     preserved_labels="$({
       "''${podman}" inspect "''${source_image}" |
         jq -c '
@@ -90,8 +90,8 @@ pkgs.writeShellApplication {
         exit 2
       }
       archive_name="$(basename -- "''${archive_path}")"
-      container_output="oci-archive:/run/purplefin-rechunk-output/''${archive_name}"
-      run_args+=(--volume "''${archive_dir}:/run/purplefin-rechunk-output")
+      container_output="oci-archive:/run/finite-rechunk-output/''${archive_name}"
+      run_args+=(--volume "''${archive_dir}:/run/finite-rechunk-output")
     fi
     run_args+=(
       --mount "type=image,src=''${source_image},target=/rpm-ostree"

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Shared helpers for applying aspect-owned root filesystems and manifests.
 
-purplefin_apply_overlay() {
+finite_apply_overlay() {
 	local aspect_root="$1"
 	local manifest_name="$2"
-	local build_root="${PURPLEFIN_BUILD_ROOT:-/tmp/purplefin-build}"
+	local build_root="${FINITE_BUILD_ROOT:-/tmp/finite-build}"
 	local source_root="${build_root}/${aspect_root}"
 	local system_root="${source_root}/rootfs"
 	local flatpak_manifest="${source_root}/manifests/flatpaks.preinstall"
@@ -19,14 +19,14 @@ purplefin_apply_overlay() {
 	fi
 }
 
-purplefin_apply_role_overlay() {
+finite_apply_role_overlay() {
 	local role="$1"
-	purplefin_apply_overlay "modules/aspects/roles/${role}" "purplefin-${role}"
+	finite_apply_overlay "modules/aspects/roles/${role}" "finite-${role}"
 }
 
-purplefin_apply_component_overlay() {
+finite_apply_component_overlay() {
 	local component="$1"
-	local build_root="${PURPLEFIN_BUILD_ROOT:-/tmp/purplefin-build}"
+	local build_root="${FINITE_BUILD_ROOT:-/tmp/finite-build}"
 	local component_root="${build_root}/modules/aspects/capabilities/${component}"
 
 	if [[ -d "${component_root}/rootfs" ]]; then
@@ -34,6 +34,6 @@ purplefin_apply_component_overlay() {
 	fi
 	if [[ -f "${component_root}/manifests/flatpaks.preinstall" ]]; then
 		install -D -m 0644 "${component_root}/manifests/flatpaks.preinstall" \
-			"/usr/share/flatpak/preinstall.d/purplefin-component-${component}.preinstall"
+			"/usr/share/flatpak/preinstall.d/finite-component-${component}.preinstall"
 	fi
 }

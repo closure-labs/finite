@@ -6,11 +6,11 @@ module="${aspect_root}/default.nix"
 rootfs="${aspect_root}/rootfs"
 
 for file in .zshrc aliases.zsh bindings.zsh fzf.zsh prompt.zsh starship.toml LICENSE; do
-	test -f "${rootfs}/usr/share/purplefin/zsh/${file}"
+	test -f "${rootfs}/usr/share/finite/zsh/${file}"
 done
 grep -qF 'config.lib.nixGL.wrap ghostty' "${module}"
 grep -qF 'openbao' "${module}"
 grep -qF 'enableZshIntegration = true' "${module}"
-test ! -e "${rootfs}/usr/share/purplefin/zsh/plugins.zsh"
+test ! -e "${rootfs}/usr/share/finite/zsh/plugins.zsh"
 test ! -e "${aspect_root}/apply.sh"
 test ! -e "${aspect_root}/manifests"

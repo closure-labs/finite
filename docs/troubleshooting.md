@@ -26,7 +26,7 @@ run0 systemctl reboot
 Run the complete graph with build logs:
 
 ```bash
-nix shell --accept-flake-config .#ci-check -c purplefin-ci-check
+nix shell --accept-flake-config .#ci-check -c finite-ci-check
 ```
 
 Run a single named check when isolating a failure:
@@ -44,20 +44,20 @@ Confirm formatting independently with `nix fmt`.
 Check the persistent-state provisioning and mount before inspecting the daemon:
 
 ```bash
-systemctl status purplefin-nix-selinux.service purplefin-nix-seed.service nix.mount
+systemctl status finite-nix-selinux.service finite-nix-seed.service nix.mount
 systemctl status nix-daemon.socket nix-daemon.service determinate-nixd.socket
 findmnt /nix
 ```
 
-`/nix` must be a writable bind mount backed by `/var/home/nix`. Purplefin
+`/nix` must be a writable bind mount backed by `/var/home/nix`. Finite
 initializes an empty state from the immutable image seed, but deliberately
 refuses to replace a non-empty malformed state. If
-`purplefin-nix-seed.service` reports malformed state, preserve
+`finite-nix-seed.service` reports malformed state, preserve
 `/var/home/nix` for diagnosis before repairing or restoring it; rebooting or
 upgrading the bootc image will not erase it.
 
 If `/nix/var/nix` is absent and `nix` warns that it is using a per-user chroot
-store, confirm that the active image contains Purplefin's Determinate unit and
+store, confirm that the active image contains Finite's Determinate unit and
 immutable activation links:
 
 ```bash
@@ -69,7 +69,7 @@ readlink /usr/lib/systemd/system/sockets.target.wants/nix-daemon.socket
 
 All three checks should succeed. A corrected image upgrade followed by a reboot
 restores these vendor files without replacing valid state in `/var/home/nix`.
-Purplefin also removes stale daemon socket files after mounting that state and
+Finite also removes stale daemon socket files after mounting that state and
 before systemd binds the new sockets.
 
 ## Diagnose a local image build
@@ -78,7 +78,7 @@ before systemd binds the new sockets.
 podman info
 podman images --digests
 nix shell --accept-flake-config .#ci-image-build \
-  -c purplefin-image-build base-generic localhost/purplefin:debug
+  -c finite-image-build bluefin-generic localhost/finite:debug
 ```
 
 Check that the requested profile exists:
@@ -102,7 +102,7 @@ Check:
 - `qemu-installed-boot.log` for digest, update-reference, or three-minute boot
   readiness failures;
 - `qemu-kickstart-server.log` to confirm that the guest fetched
-  `purplefin-ci.ks` within three minutes;
+  `finite-ci.ks` within three minutes;
 - `runner-capacity-before.txt` and `runner-capacity-after.txt` for storage
   exhaustion.
 
@@ -110,7 +110,7 @@ Verify a completed artifact with:
 
 ```bash
 sha256sum --check SHA256SUMS
-gh attestation verify purplefin-*.iso \
+gh attestation verify finite-*.iso \
   --repo closure-labs/finite
 ```
 

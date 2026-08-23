@@ -34,13 +34,13 @@ jobs:
         id: source
         run: >-
           nix shell --accept-flake-config .#ci-update-locks
-          -c purplefin-update-locks "${GITHUB_OUTPUT}"
+          -c finite-update-locks "${GITHUB_OUTPUT}"
 
       - name: Validate synchronized locks
         if: steps.source.outputs.changed == 'true'
         run: >-
           nix shell --accept-flake-config .#ci-lock-validate
-          -c purplefin-ci-validate-locks
+          -c finite-ci-validate-locks
 
       - name: Open or update pull request
         if: steps.source.outputs.changed == 'true'
@@ -72,4 +72,4 @@ jobs:
           PR_NUMBER: ${{ steps.update.outputs.pull-request-number }}
         run: >-
           nix shell --accept-flake-config .#ci-trusted-update
-          -c purplefin-trusted-update
+          -c finite-trusted-update
