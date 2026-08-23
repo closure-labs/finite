@@ -136,7 +136,7 @@ grep -qF 'nixGL.wrap weeklyPkgs.bitwarden-desktop' modules/aspects/base/default.
 grep -qF "programs.nh.homeFlake = \"path:\${config.xdg.configHome}/home-manager\"" \
 	modules/outputs.nix
 grep -qF 'home.activation.writeHomeManagerFlake' modules/outputs.nix
-grep -qF 'sourceFlake ? "github:declarative-dale/purplefin"' modules/outputs.nix
+grep -qF 'sourceFlake ? "github:closure-labs/finite"' modules/outputs.nix
 grep -qF "sourceFlake = \${builtins.toJSON sourceFlake};" modules/outputs.nix
 grep -qF 'nixpkgs.url = "https://flakehub.com/f/DeterminateSystems/nixpkgs-26.05-chilled/0.1"' \
 	modules/outputs.nix

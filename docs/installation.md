@@ -34,7 +34,7 @@ jq '.profiles | with_entries(.value = .value.tags)' \
 Replace `latest` with the selected profile tag:
 
 ```bash
-run0 bootc switch ghcr.io/declarative-dale/purplefin:latest
+run0 bootc switch ghcr.io/closure-labs/finite:latest
 run0 systemctl reboot
 ```
 
@@ -81,7 +81,7 @@ state is restored and relabeled.
 Run this as the existing desktop user after booting the compatible foundation:
 
 ```bash
-nix run github:declarative-dale/purplefin#home-switch -- \
+nix run github:closure-labs/finite#home-switch -- \
   --profile sales --hardware generic-x86_64
 ```
 
@@ -139,7 +139,7 @@ Use `--flake` to select a fork or pinned flake URI.
    ```bash
    sha256sum --check SHA256SUMS
    gh attestation verify purplefin-*.iso \
-     --repo declarative-dale/purplefin
+     --repo closure-labs/finite
    ```
 
 5. Write the ISO to installation media, boot it, and complete the graphical

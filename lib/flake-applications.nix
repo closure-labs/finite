@@ -1260,7 +1260,7 @@ in rec {
     text = ''
       profile=""
       hardware=""
-      source_flake="github:declarative-dale/purplefin"
+      source_flake="github:closure-labs/finite"
       mode=switch
       while (( $# > 0 )); do
         case "$1" in
@@ -1332,7 +1332,7 @@ in rec {
       hardware=""
       username=""
       output=""
-      flake_uri="github:declarative-dale/purplefin"
+      flake_uri="github:closure-labs/finite"
       while (( $# > 0 )); do
         case "$1" in
           --profile) profile="''${2:?--profile requires a value}"; shift 2 ;;

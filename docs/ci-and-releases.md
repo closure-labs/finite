@@ -33,7 +33,7 @@ provenance, RPM updates, and repair work before finalizing that lifecycle.
 
 `CI gate` is the stable required check. Its result covers every image and
 installer job selected for the change. The checked-in branch policy is
-`automation/github/policies/main-protection.json`.
+`automation/github/policies/main-merge-queue.json`.
 
 Pull requests and merge groups divide selected profiles among at most four
 dependency-aware shards, co-locating shared lineages while balancing estimated

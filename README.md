@@ -15,7 +15,7 @@ installed in every image and are ready after first boot.
 On an existing bootc system, switch to the generic workstation image:
 
 ```bash
-run0 bootc switch ghcr.io/declarative-dale/purplefin:latest
+run0 bootc switch ghcr.io/closure-labs/finite:latest
 run0 systemctl reboot
 ```
 
@@ -33,7 +33,7 @@ For a fresh machine, follow the [graphical installation guide](docs/installation
 Install Nix with Flakes enabled and rootless Podman, then run:
 
 ```bash
-git clone https://github.com/declarative-dale/purplefin.git
+git clone git@github.com:closure-labs/finite.git
 cd purplefin
 nix shell --accept-flake-config .#ci-image-build \
   -c purplefin-image-build bluefin-generic localhost/purplefin:bluefin-generic
@@ -59,7 +59,7 @@ nix shell --accept-flake-config .#ci-check -c purplefin-ci-check
 Apply a role to the installer-created user:
 
 ```bash
-nix run github:declarative-dale/purplefin#home-switch -- \
+nix run github:closure-labs/finite#home-switch -- \
   --profile support --hardware generic-x86_64
 ```
 

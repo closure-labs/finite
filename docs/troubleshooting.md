@@ -111,7 +111,7 @@ Verify a completed artifact with:
 ```bash
 sha256sum --check SHA256SUMS
 gh attestation verify purplefin-*.iso \
-  --repo declarative-dale/purplefin
+  --repo closure-labs/finite
 ```
 
 ## Dell XPS 13 9350

@@ -76,7 +76,7 @@
     username ? "purplefin",
     homeDirectory ? "/var/home/${username}",
     hardware ? builtins.head homeProfiles.${name}.hardware,
-    sourceFlake ? "github:declarative-dale/purplefin",
+    sourceFlake ? "github:closure-labs/finite",
   }: let
     profile = homeProfiles.${name};
     homeDriverFlake = pkgs.writeText "purplefin-home-flake.nix" ''
