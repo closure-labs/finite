@@ -101,8 +101,9 @@ Check:
 - `qemu-install.log` for unattended Anaconda failures or the 20-minute limit;
 - `qemu-installed-boot.log` for UEFI startup, digest, update-reference, or
   three-minute boot readiness failures; an empty guest log indicates a
-  firmware or boot-entry failure before the kernel starts, while a stale
-  `UEFI Misc Device` entry indicates direct-kernel firmware state was reused;
+  firmware or bootloader failure before the kernel starts, while `UEFI Misc
+  Device ... Not Found` with clean variables indicates that bootc finalization
+  did not finish the portable ESP loader;
 - `qemu-kickstart-server.log` to confirm that the guest fetched
   `finite-ci.ks` within three minutes;
 - `runner-capacity-before.txt` and `runner-capacity-after.txt` for storage

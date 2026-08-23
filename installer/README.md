@@ -34,9 +34,11 @@ messages are not treated as success.
 Weekly runs and forced release-candidate builds also use
 `ci-unattended.ks.in` to boot the release ISO kernel and initramfs with an
 explicit CI Kickstart. It performs a non-interactive installation onto an
-ephemeral disk under OVMF UEFI firmware, discards the direct-kernel boot's
-transient firmware entry, reboots from the disk with clean firmware variables,
-and waits for
+ephemeral disk under OVMF UEFI firmware. The Fedora 44 Anaconda runtime carries
+a focused backport of upstream bootc finalization so bootupd finishes the ESP
+before target teardown. The test then reboots from the disk with clean firmware
+variables, proving the portable EFI fallback independently of machine-local
+boot entries, and waits for
 `bootc status --json --format-version=1` to report both the verified payload
 digest and expected mutable profile tag before it emits
 `FINITE_INSTALLED_READY=1`. The regular smoke test already covers the ISO's

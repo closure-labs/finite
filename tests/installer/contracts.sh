@@ -47,7 +47,7 @@ firmware_prepare_count="$(
 	grep -cF 'prepare_firmware_vars' lib/ci-applications/installer-e2e.nix
 )"
 [[ "${firmware_prepare_count}" == 3 ]]
-grep -qF 'transient OVMF Boot#### entry' \
+grep -qF 'portable' \
 	lib/ci-applications/installer-e2e.nix
 grep -qF -- '--bootc-ref' lib/installer-application.nix
 grep -qF -- '--bootc-installer-payload-ref' lib/installer-application.nix
@@ -95,6 +95,14 @@ grep -qF 'ARG INSTALLER_CONTEXT_DIGEST' installer/Containerfile
 # shellcheck disable=SC2016
 grep -qF 'test -n "${INSTALLER_CONTEXT_DIGEST}"' installer/Containerfile
 grep -qF 'ARG BASE_REF=quay.io/fedora/fedora-bootc:44' installer/Containerfile
+test -f installer/patches/anaconda-finalize-bootc.patch
+grep -qF 'anaconda-finalize-bootc.patch' installer/Containerfile
+grep -qF 'patch --batch --fuzz=0' installer/Containerfile
+grep -qF 'FinalizeBootcTask' installer/patches/anaconda-finalize-bootc.patch
+grep -qF 'safe_exec_program("bootc", ["install", "finalize", self._physroot])' \
+	installer/patches/anaconda-finalize-bootc.patch
+grep -qF 'installer/Containerfile installer/patches installer/rootfs' \
+	lib/installer-application.nix
 grep -qF 'certificate-identity-regexp' lib/installer-application.nix
 grep -qF 'workflows/(build|build-installer)' lib/installer-application.nix
 grep -qF 'installer/ci-unattended.ks.in' lib/installer-application.nix
