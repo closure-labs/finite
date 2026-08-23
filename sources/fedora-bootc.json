@@ -3,5 +3,5 @@
   "image": "quay.io/fedora/fedora-bootc",
   "tag": "44",
   "architecture": "amd64",
-  "digest": "sha256:aa286e6cb122f57c68db4e6d23fccc690e1b051751b3d57625bafe25766fc376"
+  "digest": "sha256:3a5e74e668761be9e16c6779950ae154d9dcbb0861d1e92140c0751fed1f5357"
 }
