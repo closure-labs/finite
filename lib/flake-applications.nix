@@ -7,6 +7,7 @@
   generated,
   imageBuilder,
   pkgs,
+  secretspec,
   selfSource,
   version,
 }: let
@@ -29,7 +30,7 @@ in rec {
 
   githubActionsSecrets = pkgs.writeShellApplication {
     name = "purplefin-github-actions-secrets";
-    runtimeInputs = [pkgs.secretspec];
+    runtimeInputs = [secretspec];
     text = ''
       repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
       [[ -f "''${repo_root}/secretspec.toml" ]] || {
@@ -123,7 +124,7 @@ in rec {
   mkLocalCache = ciApplication:
     pkgs.writeShellApplication {
       name = "purplefin-local-cache";
-      runtimeInputs = [devenv];
+      runtimeInputs = [devenv secretspec];
       text = ''
         repo_root="''${PURPLEFIN_SOURCE_ROOT:-$PWD}"
         [[ -f "''${repo_root}/flake.nix" ]] || {

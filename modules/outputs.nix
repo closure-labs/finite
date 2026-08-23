@@ -170,6 +170,7 @@
   applications = import ../lib/flake-applications.nix {
     devenv = inputs.devenv.packages.${system}.devenv;
     inherit bluefin bluefinDx determinateNix fedoraBootc generated imageBuilder pkgs version;
+    secretspec = inputs.nixpkgs-weekly.legacyPackages.${system}.secretspec;
     selfSource = inputs.self;
   };
   repositoryChecks = import ../lib/repository-checks.nix {

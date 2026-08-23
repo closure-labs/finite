@@ -195,9 +195,10 @@ series only after both upstream branches and both corresponding FlakeHub mirrors
 are available. The ordinary weekly lock refresh then remains within that
 selected stable series.
 
-Fast-moving desktop applications that outlive the support window of their
-stable Electron dependency may be selected from the cooled weekly package input
-without changing the stable Nixpkgs instance used to evaluate Home Manager.
+Fast-moving applications and tools, currently Bitwarden Desktop and SecretSpec,
+may be selected from the cooled weekly package input when the stable package is
+insecure or lacks required commands. This does not change the stable Nixpkgs
+instance used to evaluate Home Manager.
 
 The weekly Determinate Nix updater resolves the latest stable upstream
 release, pins both the installer asset and its SELinux policy by SHA-256, and

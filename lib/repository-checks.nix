@@ -304,9 +304,9 @@ in {
       grep -qF 'provider: local' devenv.yaml
       grep -qF 'local = "file:~/.other-fun-things"' secretspec.toml
       ! grep -qF 'token_file=' lib/flake-applications.nix
-      grep -qF 'runtimeInputs = [devenv];' lib/flake-applications.nix
+      grep -qF 'runtimeInputs = [devenv secretspec];' lib/flake-applications.nix
       grep -qF 'features.users.dale' modules/profiles/definitions.nix
-      grep -qF 'home.packages = [(lib.lowPrio pkgs.secretspec)];' modules/profiles/definitions.nix
+      grep -qF 'home.packages = [(lib.lowPrio weeklyPkgs.secretspec)];' modules/profiles/definitions.nix
       grep -qFx 'ARG BASE_REF' bootc/Containerfile
       ! grep -qF 'bluefin:stable' bootc/Containerfile
     '';

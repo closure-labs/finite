@@ -51,11 +51,14 @@ in {
   };
 
   den.aspects.features.users.dale.homeManager = {
+    inputs,
     lib,
     pkgs,
     ...
-  }: {
-    home.packages = [(lib.lowPrio pkgs.secretspec)];
+  }: let
+    weeklyPkgs = inputs.nixpkgs-weekly.legacyPackages.${pkgs.stdenv.hostPlatform.system};
+  in {
+    home.packages = [(lib.lowPrio weeklyPkgs.secretspec)];
   };
 
   purplefin.profiles = {
