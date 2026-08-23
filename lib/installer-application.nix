@@ -182,7 +182,7 @@ pkgs.writeShellApplication {
         --numeric-owner \
         --owner=0 \
         --sort=name \
-        installer/Containerfile installer/rootfs |
+        installer/Containerfile installer/patches installer/rootfs |
         sha256sum |
         cut -d' ' -f1
     )"

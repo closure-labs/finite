@@ -246,9 +246,9 @@ pkgs.writeShellApplication {
       echo "Completed installer state is missing: ''${state_root}" >&2
       exit 2
     }
-    # The direct-kernel installer boot leaves a transient OVMF Boot#### entry
-    # that cannot exist during the disk-only boot. Start the validation boot
-    # from clean firmware variables so OVMF discovers the installed loader.
+    # A clean variable store proves bootc finalization installed the portable
+    # EFI/BOOT loader. The validation must not rely on an Anaconda-created
+    # machine-local Boot#### entry surviving into this separate boot phase.
     prepare_firmware_vars
     echo 'Booting the installed Finite system'
     : >"''${boot_log}"

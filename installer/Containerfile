@@ -11,6 +11,7 @@ RUN dnf5 -y install \
       anaconda anaconda-install-img-deps anaconda-dracut \
       dracut-config-generic dracut-network net-tools \
       grub2-efi-x64-cdboot grub2-pc-modules grub2-tools-extra \
+      patch \
       plymouth default-fonts-core-sans default-fonts-other-sans \
       google-noto-sans-cjk-fonts isomd5sum squashfs-tools xorriso && \
     dnf5 clean all && \
@@ -25,6 +26,20 @@ RUN dnf5 -y install \
     rm -f /usr/lib/systemd/system-generators/systemd-gpt-auto-generator && \
     ln -sf /usr/lib/systemd/system/anaconda-shell@.service /usr/lib/systemd/system/autovt@.service && \
     mkdir -p "$(realpath /root)"
+
+# Fedora 44 Anaconda deploys the bootc payload but tears its target mounts down
+# without the final bootc phase. Backport the accepted upstream lifecycle shape
+# so bootupd finishes the ESP, including the portable EFI/BOOT fallback, before
+# those mounts disappear. The locked Fedora base makes a rejected patch a hard
+# build failure instead of silently carrying a stale workaround forward.
+COPY patches/anaconda-finalize-bootc.patch /tmp/anaconda-finalize-bootc.patch
+RUN site_packages="$(python3 -c \
+      'from pathlib import Path; import pyanaconda; print(Path(pyanaconda.__file__).parent.parent)')" && \
+    patch --batch --fuzz=0 --directory="${site_packages}" --strip=1 \
+      </tmp/anaconda-finalize-bootc.patch && \
+    python3 -m compileall -q \
+      "${site_packages}/pyanaconda/modules/payloads/payload/rpm_ostree" && \
+    rm -f /tmp/anaconda-finalize-bootc.patch
 
 # Installer configuration changes rebuild dracut, but payload-only changes do
 # not. The named context also prevents a broad COPY from invalidating the base.
