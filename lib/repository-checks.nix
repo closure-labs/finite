@@ -510,6 +510,8 @@ in {
       grep -qF 'purplefin-rechunk-image' .github/workflows/build-profile.yml
       ! grep -qF 'cosign sign' .github/workflows/build-profile.yml
       grep -qF 'purplefin-image-sbom' .github/workflows/attest-software-bill-of-materials.yml
+      grep -qF 'LEGACY_IMAGE_REF: ghcr.io/declarative-dale/purplefin' .github/actions/build-installer/action.yml
+      grep -qF 'payload_source_url#https://github.com/' lib/installer-application.nix
       grep -qF 'purplefin-sbom-attestation' .github/workflows/release.yml
       grep -qF 'SBOM_SIGNER_WORKFLOW' lib/flake-applications.nix
       ! grep -R -qF -- '-sbom-cache' .github automation

@@ -43,6 +43,12 @@ once, builds roots with `Containerfile`, and builds descendants with
 rechunking; every selected profile remains a fully rechunked target in exactly
 one shard. No mutable image state crosses a job boundary.
 
+Installer candidates prefer the current repository's GHCR payload. During a
+repository transfer, they may fall back to the legacy public payload until the
+first trusted main build publishes the new namespace. Signature and attestation
+verification follows the payload's audited OCI source label, so the fallback
+does not weaken provenance checks and becomes dormant automatically.
+
 Publication and pull-request validation share the focused
 `purplefin-rechunk-image` Nix application. It preserves non-generated OCI
 labels, format version 2, and the 127-layer ceiling, then validates the output
