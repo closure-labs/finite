@@ -405,7 +405,12 @@ pkgs.writeShellApplication {
     xorriso -osirrox on -indev "''${final_iso}" \
       -extract /images/pxeboot/vmlinuz output/vmlinuz \
       -extract /images/pxeboot/initrd.img output/initrd.img \
+      -extract /EFI/BOOT/grub.cfg diagnostics/iso-grub.cfg \
       >/dev/null 2>&1
+    grep -qF \
+      'linux /images/pxeboot/vmlinuz root=live:LABEL=FINITE_LIVE rd.live.image' \
+      diagnostics/iso-grub.cfg
+    grep -qF 'console=ttyS0,115200n8' diagnostics/iso-grub.cfg
     iso_seconds=$((SECONDS - started))
 
     jq -n \

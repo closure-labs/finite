@@ -50,7 +50,9 @@ grep -qF 'flatpak kill "${app_id}"' installer/live/finite/configure-live.d.sh
 grep -qF 'installer-debug.log' installer/live/finite/configure-live.d.sh
 grep -qF 'label: FINITE_LIVE' installer/live/finite/iso.yaml
 grep -qF 'root=live:LABEL=FINITE_LIVE' installer/live/finite/iso.yaml
-grep -qF 'linux: /images/pxeboot/vmlinuz' installer/live/finite/iso.yaml
+grep -qF \
+	'linux: /images/pxeboot/vmlinuz root=live:LABEL=FINITE_LIVE rd.live.image' \
+	installer/live/finite/iso.yaml
 grep -qF 'Image Builder embeds the verified payload' installer/prepare-bluefin-iso-source
 grep -qF 'ARG FINITE_FEDORA_RELEASE' installer/prepare-bluefin-iso-source
 # Literal generated Containerfile contract.
@@ -115,6 +117,8 @@ grep -qF 'target_bootloader: "grub2"' lib/installer-application.nix
 grep -qF 'target_filesystem: "btrfs"' lib/installer-application.nix
 grep -qF 'offline: true' lib/installer-application.nix
 grep -qF '28732ac11ff8d211ba4b00a0c93ec93b' lib/installer-application.nix
+grep -qF '/EFI/BOOT/grub.cfg diagnostics/iso-grub.cfg' lib/installer-application.nix
+grep -qF 'console=ttyS0,115200n8' lib/installer-application.nix
 
 # The reusable seed is keyed by foundation inputs. The published installer is
 # intentionally limited to that foundation's generic profile.
