@@ -167,7 +167,9 @@
       relative = lib.removePrefix "${toString inputs.self}/" (toString path);
     in
       relative
-      != ".devenv"
+      != ".git"
+      && !(lib.hasPrefix ".git/" relative)
+      && relative != ".devenv"
       && !(lib.hasPrefix ".devenv/" relative)
       && relative != ".direnv"
       && !(lib.hasPrefix ".direnv/" relative);

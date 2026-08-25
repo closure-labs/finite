@@ -7,6 +7,8 @@ matrix="${generated_root}/bootc/generated/image-matrix.json"
 
 test -f VERSION
 grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$' VERSION
+grep -qF '!= ".git"' modules/outputs.nix
+grep -qF 'lib.hasPrefix ".git/" relative' modules/outputs.nix
 test -f "${catalog}"
 test -f "${matrix}"
 home_catalog="${generated_root}/bootc/generated/home-profile-catalog.json"
