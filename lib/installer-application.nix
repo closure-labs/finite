@@ -350,6 +350,12 @@ pkgs.writeShellApplication {
         test -s /boot/efi/EFI/fedora/shimx64.efi
         test -s /boot/efi/EFI/fedora/mmx64.efi
         test -s /boot/efi/EFI/fedora/gcdx64.efi
+        test -x /usr/bin/grub2-mkimage
+        test -x /usr/bin/implantisomd5
+        test -x /usr/bin/mksquashfs
+        test -x /usr/bin/podman
+        test -x /usr/bin/python3
+        test -x /usr/bin/xorriso
         test -x /usr/bin/xorrisofs
         kernel_dir="$(find /usr/lib/modules -mindepth 1 -maxdepth 1 -type d -print -quit)"
         test -n "''${kernel_dir}"

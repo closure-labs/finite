@@ -89,6 +89,7 @@ new_packages = r'''dnf install -y \
             fuse-overlayfs \
             grub2-efi-x64-cdboot \
             grub2-pc-modules \
+            isomd5sum \
             systemd-boot-unsigned \
             xorriso \
         && install -d -m 0755 /boot/efi \
@@ -163,6 +164,7 @@ bash -n \
 	"${variant}/configure-live.d.sh"
 
 grep -qF 'grub2-efi-x64-cdboot' "${destination}/live/Containerfile"
+grep -qF 'isomd5sum' "${destination}/live/Containerfile"
 grep -qF 'xorriso' "${destination}/live/Containerfile"
 grep -qF 'Image Builder embeds the verified payload' "${destination}/live/src/configure-live.sh"
 grep -qF 'label: FINITE_LIVE' "${variant}/iso.yaml"
