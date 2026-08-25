@@ -47,16 +47,16 @@
   bluefin = config.finite.sources.bluefin;
   bluefinDx = config.finite.sources.bluefinDx;
   home = config.finite.home;
-  bluefinInstallerLock = builtins.fromJSON (builtins.readFile ../sources/bluefin-installer.json);
-  bluefinIsoSource = pkgs.fetchFromGitHub {
-    inherit (bluefinInstallerLock.iso_source) owner;
-    repo = bluefinInstallerLock.iso_source.repository;
-    rev = bluefinInstallerLock.iso_source.revision;
-    hash = bluefinInstallerLock.iso_source.hash;
+  dakotaInstallerLock = builtins.fromJSON (builtins.readFile ../sources/dakota-installer.json);
+  dakotaIsoSource = pkgs.fetchFromGitHub {
+    inherit (dakotaInstallerLock.iso_source) owner;
+    repo = dakotaInstallerLock.iso_source.repository;
+    rev = dakotaInstallerLock.iso_source.revision;
+    hash = dakotaInstallerLock.iso_source.hash;
   };
   bootcInstallerBundle = pkgs.fetchurl {
-    name = "finite-bootc-installer-${bluefinInstallerLock.installer.version}.flatpak";
-    inherit (bluefinInstallerLock.installer) url sha256;
+    name = "finite-bootc-installer-${dakotaInstallerLock.installer.version}.flatpak";
+    inherit (dakotaInstallerLock.installer) url sha256;
   };
   determinateNix = config.finite.sources.determinateNix;
   cache = let
@@ -91,7 +91,7 @@
   };
   baseApplications = import ../lib/flake-applications.nix {
     devenv = inputs.devenv.packages.${system}.devenv;
-    inherit bluefin bluefinDx bluefinInstallerLock bluefinIsoSource bootcInstallerBundle determinateNix generated pkgs version;
+    inherit bluefin bluefinDx bootcInstallerBundle dakotaInstallerLock dakotaIsoSource determinateNix generated pkgs version;
     cacheName = cache.name;
     secretspec = inputs.nixpkgs-weekly.legacyPackages.${system}.secretspec;
   };

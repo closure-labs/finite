@@ -9,7 +9,7 @@ classify() {
 
 [[ "$(classify installer README.md docs/ci.md artifacts/bootc/generated/image-matrix.json)" == false ]]
 [[ "$(classify installer installer/live/finite/recipe.json)" == true ]]
-[[ "$(classify installer installer/prepare-bluefin-iso-source)" == true ]]
+[[ "$(classify installer installer/prepare-dakota-iso-source)" == true ]]
 [[ "$(classify installer .github/actions/build-installer/action.yml)" == true ]]
 [[ "$(classify installer .github/workflows/build-installer.yml)" == false ]]
 [[ "$(classify installer .github/workflows/build.yml)" == false ]]
@@ -27,7 +27,7 @@ classify() {
 [[ "$(classify images .github/actions/setup-nix/action.yml)" == true ]]
 [[ "$(classify images tests/automation/classify-ci.sh secretspec.toml)" == false ]]
 [[ "$(classify images sources/bluefin.json)" == true ]]
-[[ "$(classify installer sources/bluefin-installer.json)" == true ]]
+[[ "$(classify installer sources/dakota-installer.json)" == true ]]
 [[ "$(classify installer sources/determinate-nix.json)" == false ]]
 [[ "$(classify installer lib/ci-applications/installer-e2e.nix)" == true ]]
 [[ "$(classify installer lib/ci-applications/installer-smoke.nix)" == true ]]

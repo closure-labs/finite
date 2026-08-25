@@ -1,0 +1,165 @@
+#!/usr/bin/bash
+set -euo pipefail
+
+prepare_stage=startup
+report_prepare_error() {
+	local status=$?
+	printf 'prepare-dakota-iso-source failed: stage=%s line=%s status=%s\n' \
+		"${prepare_stage}" "${BASH_LINENO[0]}" "${status}" >&2
+	exit "${status}"
+}
+trap report_prepare_error ERR
+
+if (($# != 6)); then
+	echo 'usage: prepare-dakota-iso-source SOURCE DEST INSTALLER_BUNDLE INSTALLER_SHA256 LOGO BUILDER_REF' >&2
+	exit 2
+fi
+
+source_root=$1
+destination=$2
+installer_bundle=$3
+installer_sha256=$4
+logo=$5
+builder_ref=$6
+
+prepare_stage=validate-inputs
+test -d "${source_root}/live/src"
+test -s "${installer_bundle}"
+test -s "${logo}"
+[[ "${installer_sha256}" =~ ^[0-9a-f]{64}$ ]]
+[[ "${builder_ref}" =~ ^[a-z0-9._/-]+@sha256:[0-9a-f]{64}$ ]]
+
+install -d -m 0755 "${destination}"
+prepare_stage=copy-source
+cp -a "${source_root}/." "${destination}/"
+chmod -R u+w "${destination}"
+
+# Keep Dakota's cross-initramfs stage immutable even if the pinned source still
+# uses its historical mutable Debian tag.
+prepare_stage=pin-builder
+if grep -qFx 'FROM debian:bookworm AS initramfs-builder' \
+	"${destination}/live/Containerfile"; then
+	sed -i \
+		"s|^FROM debian:bookworm AS initramfs-builder$|FROM ${builder_ref} AS initramfs-builder|" \
+		"${destination}/live/Containerfile"
+else
+	sed -i -E \
+		"s|^FROM (docker\.io/library/)?debian(@sha256:[0-9a-f]{64})? AS initramfs-builder$|FROM ${builder_ref} AS initramfs-builder|" \
+		"${destination}/live/Containerfile"
+fi
+grep -qF "FROM ${builder_ref} AS initramfs-builder" \
+	"${destination}/live/Containerfile"
+
+# TARGET selects Finite's branding/configuration directory. LIVE_ROOT selects
+# the much smaller non-NVIDIA Dakota image used only for the live environment.
+prepare_stage=select-live-root
+sed -i \
+	-e '/^ARG TARGET=dakota-nvidia$/a ARG LIVE_ROOT=dakota' \
+	-e 's|FROM ghcr.io/${REGISTRY}/${TARGET}:${TAG}|FROM ghcr.io/${REGISTRY}/${LIVE_ROOT}:${TAG}|g' \
+	"${destination}/live/Containerfile"
+target_arg_count="$(grep -cFx 'ARG TARGET=dakota-nvidia' "${destination}/live/Containerfile")"
+live_root_arg_count="$(grep -cFx 'ARG LIVE_ROOT=dakota' "${destination}/live/Containerfile")"
+[[ "${target_arg_count}" -gt 0 ]]
+[[ "${live_root_arg_count}" == "${target_arg_count}" ]]
+[[ "$(grep -cF 'FROM ghcr.io/${REGISTRY}/${LIVE_ROOT}:${TAG}' "${destination}/live/Containerfile")" == 2 ]]
+
+variant="${destination}/live/src/finite"
+prepare_stage=install-finite-overlay
+install -d -m 0755 "${variant}"
+cp -a installer/live/finite/. "${variant}/"
+install -m 0644 "${installer_bundle}" "${variant}/installer.flatpak"
+install -m 0644 "${logo}" "${variant}/finite-logo.png"
+printf '%s\n' '@@UPDATE_REFERENCE@@' >"${variant}/base_imgref"
+printf '%s\n' '@@PAYLOAD_REFERENCE@@' >"${variant}/nvidia_imgref"
+printf '%s\n' "${installer_sha256}" >"${variant}/installer.sha256"
+
+prepare_stage=patch-flatpak-install
+python3 - "${destination}/live/src/install-flatpaks.sh" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text()
+start = text.index("# bootc-installer bundle")
+end = text.index("# Import the bundle")
+replacement = r'''# bootc-installer bundle (pinned by Finite)
+VARIANT=$(echo "${TARGET:-finite}" | sed 's/-nvidia-open$//;s/-nvidia$//')
+INSTALLER_APP_ID="org.bootcinstaller.Installer"
+INSTALLER_BUNDLE="/src/${VARIANT}/installer.flatpak"
+INSTALLER_SHA256=$(cat "/src/${VARIANT}/installer.sha256")
+test -s "${INSTALLER_BUNDLE}"
+printf '%s  %s\n' "${INSTALLER_SHA256}" "${INSTALLER_BUNDLE}" | sha256sum --check -
+cp "${INSTALLER_BUNDLE}" /tmp/tuna-installer.flatpak
+
+'''
+path.write_text(text[:start] + replacement + text[end:])
+PY
+
+# The netinstaller has no embedded OCI store. LZ4 trades a modest size increase
+# for much faster ISO construction and decompression of the live root.
+prepare_stage=patch-squashfs
+python3 - "${destination}/scripts/build-live-squashfs.sh" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text()
+old = '''SFS_LEVEL=3; SFS_BLOCK=131072
+[[ "${SUPERISO_COMPRESSION:-}" == "release" ]] && { SFS_LEVEL=15; SFS_BLOCK=1048576; }
+
+echo ">>> [live-squashfs] mksquashfs -> ${OUTPUT_SFS} (zstd-${SFS_LEVEL}) ..."
+mkdir -p "$(dirname "${OUTPUT_SFS}")"
+'''
+new = '''SFS_BLOCK=1048576
+SFS_COMPRESSION="${SUPERISO_COMPRESSION:-lz4}"
+case "${SFS_COMPRESSION}" in
+    lz4) SFS_ARGS=(-comp lz4 -Xhc) ;;
+    zstd-fast) SFS_ARGS=(-comp zstd -Xcompression-level 3) ;;
+    zstd-release) SFS_ARGS=(-comp zstd -Xcompression-level 15) ;;
+    *) echo "ERROR: unsupported SUPERISO_COMPRESSION=${SFS_COMPRESSION}" >&2; exit 2 ;;
+esac
+
+echo ">>> [live-squashfs] mksquashfs -> ${OUTPUT_SFS} (${SFS_COMPRESSION}) ..."
+mkdir -p "$(dirname "${OUTPUT_SFS}")"
+'''
+if old not in text:
+    raise SystemExit(f"missing pinned squashfs compression block in {path}")
+text = text.replace(old, new, 1)
+old_args = '''    -noappend -comp zstd \\
+    -Xcompression-level "${SFS_LEVEL}" \\
+    -b "${SFS_BLOCK}" \\
+'''
+new_args = '''    -noappend "${SFS_ARGS[@]}" \\
+    -b "${SFS_BLOCK}" \\
+'''
+if old_args not in text:
+    raise SystemExit(f"missing pinned mksquashfs argument block in {path}")
+path.write_text(text.replace(old_args, new_args, 1))
+PY
+
+prepare_stage=brand-live-media
+while IFS= read -r -d '' path; do
+	sed -i \
+		-e 's/DAKOTA_LIVE/FINITE_LIVE/g' \
+		-e 's/Dakota Live/Finite Live/g' \
+		"${path}"
+done < <(
+	find "${destination}/live/src" -type f \
+		\( -name '*.sh' -o -name '*.conf' -o -name '*.json' -o -name '*.desktop' \) \
+		-print0
+)
+
+prepare_stage=validate-result
+bash -n \
+	"${destination}/scripts/build-live-squashfs.sh" \
+	"${destination}/live/src/install-flatpaks.sh" \
+	"${destination}/live/src/configure-live.sh" \
+	"${destination}/live/src/build-iso.sh" \
+	"${variant}/configure-live.d.sh"
+
+grep -qF 'ARG LIVE_ROOT=dakota' "${destination}/live/Containerfile"
+grep -qF 'SUPERISO_COMPRESSION:-lz4' "${destination}/scripts/build-live-squashfs.sh"
+grep -qF 'FINITE_INSTALLER_READY=1' "${variant}/configure-live.d.sh"
+grep -qF '@@PAYLOAD_REFERENCE@@' "${variant}/ci-autoinstall.json"
+grep -qF '@@UPDATE_REFERENCE@@' "${variant}/recipe.json"
+grep -qF "${installer_sha256}" "${variant}/installer.sha256"

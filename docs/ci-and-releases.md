@@ -126,16 +126,14 @@ is selected only when the pinned Project Bluefin ISO source, installer bundle,
 Finite live overlay, installer applications, or Nix toolchain changes.
 
 Full validation follows Project Bluefin's `dakota-iso` architecture and embeds
-the pinned `bootc-installer` Flatpak. It first verifies the selected Finite
-payload's signature, provenance, and SPDX attestation. A reusable live seed is
-then selected by foundation image digest, pinned ISO source revision, pinned
-installer checksum, and Finite overlay digest. Trusted `main` builds publish
-and keylessly sign seeds in a sibling GHCR package; pull requests reuse a seed
-only after verifying the `build-installer.yml` identity. Installer publication
-is restricted to each foundation's generic profile, whose recipe is baked into
-that reusable seed. The seed is passed directly to Image Builder, avoiding a
-second container commit that would reserialize the complete live image on
-hosted runners without native overlay diff support.
+the pinned `bootc-installer` Flatpak. It verifies both the selected Finite
+payload and the digest-pinned Dakota live root. A reusable seed is selected by
+the Dakota live digest, pinned ISO source revision, installer checksum, Debian
+builder digest, and Finite overlay digest. Trusted `main` builds publish and
+keylessly sign seeds in a sibling GHCR package; pull requests reuse a seed only
+after verifying the `build-installer.yml` identity. A small final layer pins
+the selected Finite digest and update tag. Dakota then assembles an LZ4,
+systemd-boot network ISO without downloading or embedding the Finite payload.
 
 The smoke phase waits for the Finite-owned live-session readiness marker. The
 end-to-end phase supplies the checked-in unattended JSON recipe, installs onto

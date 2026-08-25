@@ -13,8 +13,8 @@ pkgs.writeShellApplication {
       case "''${component}:''${path}" in
         installer:.github/actions/build-installer/* | \
         installer:flake.lock | \
-        installer:installer/live/* | installer:installer/prepare-bluefin-iso-source | \
-        installer:sources/bluefin-installer.json | \
+        installer:installer/live/* | installer:installer/prepare-dakota-iso-source | \
+        installer:sources/dakota-installer.json | \
         installer:lib/ci-applications/installer-e2e.nix | \
         installer:lib/ci-applications/installer-smoke.nix | \
         installer:lib/installer-application.nix)
@@ -30,7 +30,7 @@ pkgs.writeShellApplication {
         images:.github/workflows/update-bluefin.yml | \
         images:.github/workflows/update-determinate-nix.yml | \
         images:secretspec.toml | \
-        images:installer/* | images:sources/bluefin-installer.json | images:tests/* | \
+        images:installer/* | images:sources/dakota-installer.json | images:tests/* | \
         images:lib/installer-application.nix | \
         images:lib/render-architecture.nix | \
         images:lib/repository-checks.nix | \

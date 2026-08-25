@@ -105,6 +105,11 @@ files before binding the persistent state.
 
 5. Write the ISO to installation media and complete the graphical Finite installer.
 
-The manifest records the immutable payload, signed live-seed identity, pinned
-Project Bluefin installer inputs, source commit, and mutable update reference. See
+The ISO is a network installer. Connect the live GNOME session to the network
+before starting; Dakota then pulls the exact signed Finite digest recorded in
+the manifest. The installed system tracks the selected tag for later updates.
+
+The manifest records the immutable network payload, signed Dakota live-seed
+identity, pinned Project Bluefin installer inputs, source commit, and mutable
+update reference. See
 [Troubleshooting](troubleshooting.md) for runtime and installer checks.

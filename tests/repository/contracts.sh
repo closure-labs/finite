@@ -66,7 +66,7 @@ test -f bootc/Containerfile
 test -f bootc/Containerfile.derived
 test -f sources/bluefin.json
 test -f sources/bluefin-dx.json
-test -f sources/bluefin-installer.json
+test -f sources/dakota-installer.json
 test -f secretspec.toml
 jq -e '
   .schema == 1 and
@@ -85,16 +85,17 @@ jq -e '
   (.cosign.identity | startswith("https://"))
 ' sources/bluefin-dx.json >/dev/null
 jq -e '
-  .schema == 2 and
+  .schema == 3 and
   .iso_source.owner == "projectbluefin" and
   .iso_source.repository == "dakota-iso" and
   (.iso_source.revision | test("^[0-9a-f]{40}$")) and
   (.installer.url | startswith("https://github.com/projectbluefin/bootc-installer/releases/download/")) and
   (.installer.sha256 | test("^[0-9a-f]{64}$")) and
-  .image_builder.image == "ghcr.io/osbuild/image-builder-cli" and
-  .image_builder.architecture == "amd64" and
-  (.image_builder.digest | test("^sha256:[0-9a-f]{64}$"))
-' sources/bluefin-installer.json >/dev/null
+  .live_image.image == "ghcr.io/projectbluefin/dakota" and
+  .live_image.tag == "stable" and
+  .live_image.architecture == "amd64" and
+  (.live_image.digest | test("^sha256:[0-9a-f]{64}$"))
+' sources/dakota-installer.json >/dev/null
 grep -qFx 'ARG BASE_REF' bootc/Containerfile
 if grep -qF 'bluefin:stable' bootc/Containerfile; then
 	echo 'Containerfile contains a mutable Bluefin tag' >&2

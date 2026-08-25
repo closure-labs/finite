@@ -5,11 +5,18 @@ variant_dir=/tmp/src/finite
 logo="${variant_dir}/finite-logo.png"
 installer_app_id=org.bootcinstaller.Installer
 
-install -Dm0644 "${variant_dir}/iso.yaml" /usr/lib/image-builder/bootc/iso.yaml
-install -Dm0644 "${variant_dir}/bootc-install-defaults.toml" \
-	/usr/lib/bootc/install/00-defaults.toml
+install -Dm0644 "${variant_dir}/recipe.json" \
+	/etc/bootc-installer/recipe.json
 install -Dm0644 "${variant_dir}/ci-autoinstall.json" \
 	/etc/bootc-installer/ci-autoinstall.json
+# Dakota's upstream flag means "an offline payload is embedded" to
+# bootc-installer. This ISO is intentionally a network installer.
+rm -f \
+	/etc/bootc-installer/live-iso-mode \
+	/etc/xdg/autostart/tuna-installer.desktop
+touch /etc/bootc-installer/finite-netinstall-mode
+systemctl disable live-ready.service >/dev/null 2>&1 || true
+systemctl mask bluefin-remove-installer.service >/dev/null 2>&1 || true
 install -Dm0644 "${logo}" /usr/share/pixmaps/finite.png
 install -Dm0644 "${logo}" /usr/share/bootc-installer/images/finite-logo.png
 for size in 16 24 32 48 64 128 256 512; do
@@ -69,18 +76,11 @@ if [[ "${unattended}" == true ]]; then
 	sudo umount /var/tmp >/dev/null 2>&1 || true
 	sudo mkfs.ext4 -F "${scratch}" || report_startup_error 'installer-scratch-format-failed'
 	sudo mount "${scratch}" /var/tmp || report_startup_error 'installer-scratch-mount-failed'
-	local_imgref="$(
-		jq -er '.local_imgref | select(startswith("containers-storage:"))' \
+	source_ref="$(
+		jq -er '.image | select(test("@sha256:[0-9a-f]{64}$"))' \
 			/etc/bootc-installer/ci-autoinstall.json
 	)" || report_startup_error 'installer-source-reference-invalid'
-	# Image Builder may rewrite a registry manifest while embedding it in the
-	# offline containers-storage. Hash the exact bytes bootc will import instead
-	# of guessing that digest from the signed registry representation.
-	source_manifest_digest="sha256:$(
-		sudo /usr/bin/skopeo inspect --raw "${local_imgref}" |
-			sha256sum |
-			cut -d' ' -f1
-	)" || report_startup_error 'installer-source-digest-failed'
+	source_manifest_digest="${source_ref##*@}"
 	[[ "${source_manifest_digest}" =~ ^sha256:[0-9a-f]{64}$ ]] ||
 		report_startup_error 'installer-source-digest-invalid'
 	emit_marker "FINITE_INSTALLER_SOURCE_DIGEST=${source_manifest_digest}"
@@ -244,7 +244,7 @@ EOF
 cat >/usr/lib/systemd/user/finite-installer.service <<'EOF'
 [Unit]
 Description=Launch the Finite installer in the live graphical session
-ConditionPathExists=/etc/bootc-installer/live-iso-mode
+ConditionPathExists=/etc/bootc-installer/finite-netinstall-mode
 PartOf=graphical-session.target
 After=graphical-session.target
 
@@ -293,7 +293,7 @@ chmod 0755 /usr/local/sbin/finite-live-session-prepare
 install -d -m 0755 /etc/systemd/system/gdm.service.d
 cat >/etc/systemd/system/gdm.service.d/20-finite-live-session.conf <<'EOF'
 [Unit]
-ConditionPathExists=/etc/bootc-installer/live-iso-mode
+ConditionPathExists=/etc/bootc-installer/finite-netinstall-mode
 
 [Service]
 ExecStartPre=/usr/local/sbin/finite-live-session-prepare
@@ -353,7 +353,7 @@ chmod 0755 /usr/local/sbin/finite-installer-bootstrap
 cat >/usr/lib/systemd/system/finite-installer-bootstrap.service <<'EOF'
 [Unit]
 Description=Start the Finite installer in the live graphical session
-ConditionPathExists=/etc/bootc-installer/live-iso-mode
+ConditionPathExists=/etc/bootc-installer/finite-netinstall-mode
 After=systemd-user-sessions.service gdm.service
 Wants=gdm.service
 

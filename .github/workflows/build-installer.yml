@@ -11,7 +11,7 @@ on:
         default: false
         type: boolean
       image-tag:
-        description: Published Finite profile to embed
+        description: Published Finite profile to install over the network
         required: true
         default: bluefin-generic
         type: choice

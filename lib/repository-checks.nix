@@ -101,7 +101,7 @@
     ../lib/ci-applications/installer-smoke.nix
     ../lib/installer-application.nix
     ../modules/aspects/base/rootfs/usr/lib/bootc/install/00-defaults.toml
-    ../sources/bluefin-installer.json
+    ../sources/dakota-installer.json
     ../tests/installer
   ];
   aspectsSource = sourceFor [
@@ -138,7 +138,7 @@
     ../modules/aspects/base/rootfs/usr/lib/bootc/install/00-defaults.toml
     ../modules/outputs.nix
     ../installer/live
-    ../installer/prepare-bluefin-iso-source
+    ../installer/prepare-dakota-iso-source
     ../tests/installer
     ../tests/repository
   ];
@@ -290,21 +290,24 @@ in {
         (.cosign.identity | startswith("https://"))
       ' sources/bluefin-dx.json >/dev/null
       jq -e '
-        .schema == 2 and
+        .schema == 3 and
         .iso_source.owner == "projectbluefin" and
         .iso_source.repository == "dakota-iso" and
         (.iso_source.revision | test("^[0-9a-f]{40}$")) and
         (.iso_source.hash | startswith("sha256-")) and
         (.installer.url | startswith("https://github.com/projectbluefin/bootc-installer/releases/download/")) and
         (.installer.sha256 | test("^[0-9a-f]{64}$")) and
+        .live_image.image == "ghcr.io/projectbluefin/dakota" and
+        .live_image.tag == "stable" and
+        .live_image.architecture == "amd64" and
+        (.live_image.digest | test("^sha256:[0-9a-f]{64}$")) and
+        .live_image.cosign.issuer == "https://token.actions.githubusercontent.com" and
+        (.live_image.cosign.identity | contains("projectbluefin/dakota/.github/workflows/publish.yml")) and
         .builder.image == "docker.io/library/debian" and
         .builder.tag == "bookworm" and
         .builder.architecture == "amd64" and
-        (.builder.digest | test("^sha256:[0-9a-f]{64}$")) and
-        .image_builder.image == "ghcr.io/osbuild/image-builder-cli" and
-        .image_builder.architecture == "amd64" and
-        (.image_builder.digest | test("^sha256:[0-9a-f]{64}$"))
-      ' sources/bluefin-installer.json >/dev/null
+        (.builder.digest | test("^sha256:[0-9a-f]{64}$"))
+      ' sources/dakota-installer.json >/dev/null
       jq -e '
         .schema == 1 and
         .architecture == "x86_64-linux" and
@@ -621,19 +624,16 @@ in {
       grep -qF 'end-to-end:' .github/actions/build-installer/action.yml
       grep -qF 'finite-installer-e2e install' .github/actions/build-installer/action.yml
       grep -qF 'finite-installer-e2e boot' .github/actions/build-installer/action.yml
-      grep -qF 'finite-bluefin-installer-seed-v1' lib/installer-application.nix
-      grep -qF 'bootc-generic-iso' lib/installer-application.nix
-      grep -qF 'root-mount-spec = "LABEL=root"' \
-        installer/live/finite/bootc-install-defaults.toml
-      cmp -s \
-        installer/live/finite/bootc-install-defaults.toml \
-        modules/aspects/base/rootfs/usr/lib/bootc/install/00-defaults.toml
-      grep -qF -- '--bootc-installer-payload-ref' lib/installer-application.nix
+      grep -qF 'finite-dakota-netinstaller-seed-v1' lib/installer-application.nix
+      grep -qF 'build-live-squashfs.sh' lib/installer-application.nix
+      grep -qF 'live/src/build-iso.sh' lib/installer-application.nix
+      ! grep -qF 'bootc-generic-iso' lib/installer-application.nix
+      ! grep -qF -- '--bootc-installer-payload-ref' lib/installer-application.nix
       ! grep -qF 'oci-archive:' lib/installer-application.nix
       grep -qF 'root_exec=(sudo)' lib/installer-application.nix
       ! grep -qF 'root_exec=(run0)' lib/installer-application.nix
       ! grep -R -qw 'run0' README.md docs
-      grep -qF 'ConditionPathExists=/etc/bootc-installer/live-iso-mode' \
+      grep -qF 'ConditionPathExists=/etc/bootc-installer/finite-netinstall-mode' \
         installer/live/finite/configure-live.d.sh
       grep -qF 'WantedBy=graphical-session.target' \
         installer/live/finite/configure-live.d.sh

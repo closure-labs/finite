@@ -11,7 +11,7 @@ inputs:
     required: false
     default: "false"
   image-tag:
-    description: Published Finite profile to embed
+    description: Published Finite profile to install over the network
     required: false
     default: bluefin-generic
   token:
@@ -23,13 +23,13 @@ outputs:
     description: SHA-256 of the completed installer ISO
     value: ${{ steps.installer.outputs.iso-sha256 }}
   payload-digest:
-    description: Immutable OCI index or image-manifest digest of the embedded Finite payload
+    description: Immutable OCI index or image-manifest digest installed from the network
     value: ${{ steps.installer.outputs.payload-digest }}
   payload-deployment-digest:
     description: Immutable manifest digest verified between the live installer source and installed bootc deployment
     value: ${{ steps.boot.outputs.deployment-digest }}
   payload-tag:
-    description: Published Finite tag embedded in the installer
+    description: Published Finite tag selected by the installer
     value: ${{ steps.installer.outputs.payload-tag }}
   seed-digest:
     description: Immutable digest of the reusable live-installer seed

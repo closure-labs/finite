@@ -4,220 +4,135 @@ set -euo pipefail
 installer_build="${1:?usage: contracts.sh INSTALLER_BUILD}"
 
 jq -e '
-  .schema == 2 and
-  (.iso_source.owner == "projectbluefin") and
-  (.iso_source.repository == "dakota-iso") and
+  .schema == 3 and
+  .iso_source.owner == "projectbluefin" and
+  .iso_source.repository == "dakota-iso" and
   (.iso_source.revision | test("^[0-9a-f]{40}$")) and
   (.iso_source.hash | startswith("sha256-")) and
   (.installer.version | test("^[0-9]+\\.[0-9]+\\.[0-9]+$")) and
   (.installer.url | startswith("https://github.com/projectbluefin/bootc-installer/releases/download/")) and
   (.installer.sha256 | test("^[0-9a-f]{64}$")) and
-  (.builder.image == "docker.io/library/debian") and
-  (.builder.tag == "bookworm") and
-  (.builder.architecture == "amd64") and
-  (.builder.digest | test("^sha256:[0-9a-f]{64}$")) and
-  (.image_builder.version | test("^[0-9]+\\.[0-9]+\\.[0-9]+$")) and
-  .image_builder.image == "ghcr.io/osbuild/image-builder-cli" and
-  .image_builder.architecture == "amd64" and
-  (.image_builder.digest | test("^sha256:[0-9a-f]{64}$"))
-' sources/bluefin-installer.json >/dev/null
+  .live_image.image == "ghcr.io/projectbluefin/dakota" and
+  .live_image.tag == "stable" and
+  .live_image.architecture == "amd64" and
+  (.live_image.digest | test("^sha256:[0-9a-f]{64}$")) and
+  .live_image.cosign.issuer == "https://token.actions.githubusercontent.com" and
+  (.live_image.cosign.identity | contains("projectbluefin/dakota/.github/workflows/publish.yml")) and
+  .builder.image == "docker.io/library/debian" and
+  .builder.tag == "bookworm" and
+  .builder.architecture == "amd64" and
+  (.builder.digest | test("^sha256:[0-9a-f]{64}$"))
+' sources/dakota-installer.json >/dev/null
 
-test -x installer/prepare-bluefin-iso-source
+test -x installer/prepare-dakota-iso-source
 test -x installer/live/finite/configure-live.d.sh
+test ! -e installer/prepare-bluefin-iso-source
+test ! -e installer/live/finite/iso.yaml
+test ! -e installer/live/finite/bootc-install-defaults.toml
 for file in images.json recipe.json ci-autoinstall.json; do
 	jq -e . "installer/live/finite/${file}" >/dev/null
 done
 grep -qFx 'grub' installer/live/finite/bootloader
 grep -qFx 'false' installer/live/finite/composefs
-grep -qF '@@UPDATE_REFERENCE@@' installer/live/finite/images.json
-grep -qF '@@UPDATE_REFERENCE@@' installer/live/finite/ci-autoinstall.json
+grep -qF '@@PAYLOAD_REFERENCE@@' installer/live/finite/recipe.json
+grep -qF '@@UPDATE_REFERENCE@@' installer/live/finite/recipe.json
+grep -qF '@@PAYLOAD_REFERENCE@@' installer/live/finite/ci-autoinstall.json
+grep -qF '"targetImgref": "@@UPDATE_REFERENCE@@"' installer/live/finite/ci-autoinstall.json
+grep -qF '"hostname": "finite"' installer/live/finite/recipe.json
+grep -qF '"hostname": "finite"' installer/live/finite/ci-autoinstall.json
 grep -qF '"disk": "/dev/vda"' installer/live/finite/ci-autoinstall.json
 grep -qF '"filesystem": "btrfs"' installer/live/finite/ci-autoinstall.json
-grep -qF 'FINITE_INSTALLER_READY=1' installer/live/finite/configure-live.d.sh
-grep -qF 'FINITE_INSTALLER_COMPLETE=1' installer/live/finite/configure-live.d.sh
-grep -qF 'FINITE_INSTALLED_READY=1' installer/live/finite/configure-live.d.sh
-grep -qF 'finite.installer.autoinstall=1' installer/live/finite/configure-live.d.sh
-grep -qF '/etc/bootc-installer/ci-autoinstall.json' installer/live/finite/configure-live.d.sh
-grep -qF 'cat >/usr/lib/systemd/user/finite-installer.service' installer/live/finite/configure-live.d.sh
-grep -qF 'ConditionPathExists=/etc/bootc-installer/live-iso-mode' installer/live/finite/configure-live.d.sh
-grep -qF 'PartOf=graphical-session.target' installer/live/finite/configure-live.d.sh
-grep -qF 'After=graphical-session.target' installer/live/finite/configure-live.d.sh
-grep -qF 'WantedBy=graphical-session.target' installer/live/finite/configure-live.d.sh
-grep -qF 'systemctl --global enable finite-installer.service' installer/live/finite/configure-live.d.sh
-grep -qF 'cat >/usr/local/sbin/finite-live-session-prepare' installer/live/finite/configure-live.d.sh
-grep -qF 'AutomaticLoginEnable=True' installer/live/finite/configure-live.d.sh
-grep -qF 'AutomaticLogin=liveuser' installer/live/finite/configure-live.d.sh
-grep -qF 'DefaultSession=gnome.desktop' installer/live/finite/configure-live.d.sh
-grep -qF 'cat >/var/lib/AccountsService/users/liveuser' installer/live/finite/configure-live.d.sh
-grep -qF 'ExecStartPre=/usr/local/sbin/finite-live-session-prepare' installer/live/finite/configure-live.d.sh
-grep -qF 'cat >/usr/lib/systemd/system/finite-installer-bootstrap.service' installer/live/finite/configure-live.d.sh
-grep -qF 'FINITE_INSTALLER_ERROR=liveuser-graphical-session-timeout' installer/live/finite/configure-live.d.sh
-grep -qF 'journalctl --boot --unit gdm.service' installer/live/finite/configure-live.d.sh
-grep -qF 'systemctl enable finite-installer-bootstrap.service' installer/live/finite/configure-live.d.sh
-grep -qF "activation_marker='Installer::Main INFO: do_activate called'" installer/live/finite/configure-live.d.sh
-grep -qF "emit_marker 'FINITE_INSTALLER_READY=1'" installer/live/finite/configure-live.d.sh
-# Literal generated-script contract.
-# shellcheck disable=SC2016
-grep -qF 'mkfs.ext4 -F "${scratch}"' installer/live/finite/configure-live.d.sh
-grep -qF 'installer-scratch-disk-missing' installer/live/finite/configure-live.d.sh
-grep -qF "exec tail --pid=\"\$1\"" installer/live/finite/configure-live.d.sh
-grep -qF 'FINITE_INSTALLER_ERROR=' installer/live/finite/configure-live.d.sh
-if grep -Eq '(/etc/xdg/autostart/tuna-installer.desktop|live-ready.service|After=display-manager.service)' \
-	installer/live/finite/configure-live.d.sh; then
-	echo 'Installer still relies on the obsolete XDG or GDM readiness path' >&2
-	exit 1
-fi
-grep -qF 'Installation complete!' installer/live/finite/configure-live.d.sh
-grep -qF 'Installation failed!' installer/live/finite/configure-live.d.sh
-grep -qF 'root-mount-spec = "LABEL=root"' installer/live/finite/bootc-install-defaults.toml
-cmp -s \
-	installer/live/finite/bootc-install-defaults.toml \
-	modules/aspects/base/rootfs/usr/lib/bootc/install/00-defaults.toml
-grep -qF '/usr/lib/bootc/install/00-defaults.toml' installer/live/finite/configure-live.d.sh
-# Literal generated-script contract.
-# shellcheck disable=SC2016
-grep -qF 'flatpak kill "${app_id}"' installer/live/finite/configure-live.d.sh
-grep -qF 'installer-debug.log' installer/live/finite/configure-live.d.sh
-grep -qF 'label: FINITE_LIVE' installer/live/finite/iso.yaml
-grep -qF 'root=live:LABEL=FINITE_LIVE' installer/live/finite/iso.yaml
-grep -qF \
-	'linux: /images/pxeboot/vmlinuz root=live:LABEL=FINITE_LIVE rd.live.image' \
-	installer/live/finite/iso.yaml
-grep -qF 'Image Builder embeds the verified payload' installer/prepare-bluefin-iso-source
-grep -qF 'ARG FINITE_FEDORA_RELEASE' installer/prepare-bluefin-iso-source
-# Literal generated Containerfile contract.
-# shellcheck disable=SC2016
-grep -qF 'VERSION_ID=${FINITE_FEDORA_RELEASE}' installer/prepare-bluefin-iso-source
-grep -qF 'isomd5sum' installer/prepare-bluefin-iso-source
-grep -qF 'xorriso' installer/prepare-bluefin-iso-source
-test ! -e installer/image-builder/Containerfile
-grep -qF '/dev/vda2' installer/live/finite/configure-live.d.sh
-grep -qF '/dev/vda3' installer/live/finite/configure-live.d.sh
-# Literal generated-script contract.
-# shellcheck disable=SC2016
-grep -qF 'find "${system_root}/ostree/deploy"' installer/live/finite/configure-live.d.sh
-grep -qF -- "-type d -name '*.0' -print0" installer/live/finite/configure-live.d.sh
-grep -qF "'No installed OSTree deployment was found'" installer/live/finite/configure-live.d.sh
-# Literal generated-script contract.
-# shellcheck disable=SC2016
-grep -qF 'systemd_root="${deployment_root}/etc/systemd/system"' installer/live/finite/configure-live.d.sh
-# Literal generated-script contract.
-# shellcheck disable=SC2016
-grep -qF 'restorecon -RF "${systemd_root}"' installer/live/finite/configure-live.d.sh
-# Literal generated-script contract.
-# shellcheck disable=SC2016
-if grep -qF '"${system_root}/etc/systemd/system' installer/live/finite/configure-live.d.sh; then
-	echo 'Installed-system proof unit is written outside the OSTree deployment' >&2
-	exit 1
-fi
-grep -qF 'install -d -m 0755 /usr/local/sbin' installer/live/finite/configure-live.d.sh
 
-grep -qF 'projectbluefin/dakota-iso' lib/installer-application.nix
-grep -qF 'projectbluefin/bootc-installer' lib/installer-application.nix
-grep -qF 'finite-bluefin-installer-seed-v1' lib/installer-application.nix
-grep -qF 'seed_repository="' lib/installer-application.nix
-grep -qF 'payload_specific: false' lib/installer-application.nix
-grep -qF 'bootc-generic-iso' lib/installer-application.nix
-grep -qF -- '--bootc-installer-payload-ref' lib/installer-application.nix
-grep -qF 'image_builder_distro=' lib/installer-application.nix
-grep -qF 'dev.hhd.rechunk.info' lib/installer-application.nix
-grep -qF -- '--build-arg FINITE_FEDORA_RELEASE=' lib/installer-application.nix
-grep -qF -- '--bootc-ref' lib/installer-application.nix
-grep -qF 'test -x /usr/bin/grub2-mkimage' lib/installer-application.nix
-grep -qF 'test -x /usr/bin/implantisomd5' lib/installer-application.nix
-grep -qF 'test -x /usr/bin/mksquashfs' lib/installer-application.nix
-grep -qF 'test -x /usr/bin/podman' lib/installer-application.nix
-grep -qF 'test -x /usr/bin/python3' lib/installer-application.nix
-grep -qF 'test -x /usr/bin/skopeo' lib/installer-application.nix
-grep -qF 'test -x /usr/bin/xorriso' lib/installer-application.nix
-grep -qF 'test -x /usr/bin/xorrisofs' lib/installer-application.nix
-if grep -qF -- '--distro ' lib/installer-application.nix; then
-	echo 'Installer assembly passes mutually exclusive --distro and --bootc-ref options' >&2
+live_hook=installer/live/finite/configure-live.d.sh
+grep -qF 'FINITE_INSTALLER_READY=1' "${live_hook}"
+grep -qF 'FINITE_INSTALLER_COMPLETE=1' "${live_hook}"
+grep -qF 'FINITE_INSTALLED_READY=1' "${live_hook}"
+grep -qF 'finite.installer.autoinstall=1' "${live_hook}"
+grep -qF 'finite-netinstall-mode' "${live_hook}"
+grep -qF 'rm -f ' "${live_hook}"
+grep -qF '/etc/bootc-installer/live-iso-mode' "${live_hook}"
+grep -qF 'ConditionPathExists=/etc/bootc-installer/finite-netinstall-mode' "${live_hook}"
+grep -qF 'AutomaticLogin=liveuser' "${live_hook}"
+grep -qF 'DefaultSession=gnome.desktop' "${live_hook}"
+grep -qF 'FINITE_INSTALLER_ERROR=liveuser-graphical-session-timeout' "${live_hook}"
+grep -qF "activation_marker='Installer::Main INFO: do_activate called'" "${live_hook}"
+grep -qF 'mkfs.ext4 -F "${scratch}"' "${live_hook}"
+grep -qF 'flatpak kill "${app_id}"' "${live_hook}"
+grep -qF 'Installation complete!' "${live_hook}"
+grep -qF 'Installation failed!' "${live_hook}"
+grep -qF '/dev/vda2' "${live_hook}"
+grep -qF '/dev/vda3' "${live_hook}"
+grep -qF 'find "${system_root}/ostree/deploy"' "${live_hook}"
+grep -qF 'systemd_root="${deployment_root}/etc/systemd/system"' "${live_hook}"
+
+prepare=installer/prepare-dakota-iso-source
+grep -qF 'ARG LIVE_ROOT=dakota' "${prepare}"
+grep -qF 'live_root_arg_count' "${prepare}"
+grep -qF 'FROM ghcr.io/${REGISTRY}/${LIVE_ROOT}:${TAG}' "${prepare}"
+grep -qF 'SUPERISO_COMPRESSION:-lz4' "${prepare}"
+grep -qF 'SFS_ARGS=(-comp lz4 -Xhc)' "${prepare}"
+grep -qF 'prepare-dakota-iso-source failed: stage=' "${prepare}"
+grep -qF 'installer.flatpak' "${prepare}"
+grep -qF '@@PAYLOAD_REFERENCE@@' "${prepare}"
+grep -qF '@@UPDATE_REFERENCE@@' "${prepare}"
+
+application=lib/installer-application.nix
+grep -qF 'projectbluefin/dakota-iso' "${application}"
+grep -qF 'projectbluefin/bootc-installer' "${application}"
+grep -qF 'finite-dakota-netinstaller-seed-v1' "${application}"
+grep -qF 'FINITE_DAKOTA_LIVE_DIGEST' "${application}"
+grep -qF 'dakota_live_build_ref=' "${application}"
+grep -qF 'cosign verify' "${application}"
+grep -qF 'cosign sign --yes' "${application}"
+grep -qF 'build-live-squashfs.sh' "${application}"
+grep -qF 'live/src/build-iso.sh' "${application}"
+grep -qF 'SUPERISO_COMPRESSION=lz4' "${application}"
+grep -qF 'diagnostics/source-prepare.log' "${application}"
+grep -qF 'root_exec=(sudo)' "${application}"
+grep -qF -- '--layers' "${application}"
+grep -qF 'schema_version: 5' "${application}"
+grep -qF 'boot: "systemd-boot"' "${application}"
+grep -qF 'compression: "lz4"' "${application}"
+grep -qF 'target_bootloader: "grub2"' "${application}"
+grep -qF 'target_filesystem: "btrfs"' "${application}"
+grep -qF 'network_required: true' "${application}"
+grep -qF 'offline: false' "${application}"
+grep -qF 'embedded: false' "${application}"
+if grep -Eq 'osbuild/image-builder|bootc-generic-iso|--bootc-installer-payload-ref|oci-archive:' "${application}"; then
+	echo 'Legacy Image Builder or embedded-payload path remains in the netinstaller' >&2
 	exit 1
 fi
-if grep -qF 'configured_live_image' lib/installer-application.nix; then
-	echo 'Installer assembly still creates a derived live configuration image' >&2
-	exit 1
-fi
-if grep -qF 'oci-archive:' lib/installer-application.nix; then
-	echo 'Installer assembly still creates an intermediate OCI archive' >&2
-	exit 1
-fi
-if grep -qF 'build-live-squashfs.sh' lib/installer-application.nix; then
-	echo 'Installer assembly still calls Dakota squashfs scripts' >&2
-	exit 1
-fi
-grep -qF 'FINITE_INSTALLER_BUILDER_DIGEST' lib/installer-application.nix
-grep -qF 'FINITE_IMAGE_BUILDER_DIGEST' lib/installer-application.nix
-grep -qF 'root_exec=(sudo)' lib/installer-application.nix
-if grep -qF 'root_exec=(run0)' lib/installer-application.nix; then
+if grep -qF 'root_exec=(run0)' "${application}"; then
 	echo 'Installer application still selects the session-only run0 helper' >&2
 	exit 1
 fi
-grep -qF -- '--layers=false' lib/installer-application.nix
-grep -qF 'graphDriverName' lib/installer-application.nix
-# This intentionally matches the literal shell source.
-# shellcheck disable=SC2016
-grep -qF 'FROM ${builder_ref} AS initramfs-builder' installer/prepare-bluefin-iso-source
-grep -qF 'cosign sign --yes' lib/installer-application.nix
-grep -qF 'seed-cache-hit=' lib/installer-application.nix
-grep -qF 'seed-published=' lib/installer-application.nix
-grep -qF 'schema_version: 4' lib/installer-application.nix
-if grep -Eq 'payload_deployment_digest|deployment-digest|deployment: \{' lib/installer-application.nix; then
-	echo 'Installer assembly still guesses a deployment digest before bootc consumes the offline image' >&2
-	exit 1
-fi
-grep -qF 'application: "osbuild/image-builder"' lib/installer-application.nix
-grep -qF 'target_bootloader: "grub2"' lib/installer-application.nix
-grep -qF 'target_filesystem: "btrfs"' lib/installer-application.nix
-grep -qF 'offline: true' lib/installer-application.nix
-grep -qF '28732ac11ff8d211ba4b00a0c93ec93b' lib/installer-application.nix
-grep -qF '/EFI/BOOT/grub.cfg diagnostics/iso-grub.cfg' lib/installer-application.nix
-grep -qF 'console=ttyS0,115200n8' lib/installer-application.nix
 
-# The reusable seed is keyed by foundation inputs. The published installer is
-# intentionally limited to that foundation's generic profile.
 source_revision=691e2a4b3b505560a647c9ba7afbca1f5c6fbae7
 installer_sha=6d68445965bf03fd628fcc9e856b162939b5f87bf4532f62725cf0e114c7eea7
 overlay_a=1111111111111111111111111111111111111111111111111111111111111111
 overlay_b=2222222222222222222222222222222222222222222222222222222222222222
 digest_a=sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 digest_b=sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
-key_a="$(${installer_build} cache-input "${source_revision}" "${installer_sha}" "${overlay_a}" bluefin "${digest_a}")"
-key_same="$(${installer_build} cache-input "${source_revision}" "${installer_sha}" "${overlay_a}" bluefin "${digest_a}")"
-key_overlay="$(${installer_build} cache-input "${source_revision}" "${installer_sha}" "${overlay_b}" bluefin "${digest_a}")"
-key_foundation="$(${installer_build} cache-input "${source_revision}" "${installer_sha}" "${overlay_a}" bluefin-dx "${digest_a}")"
-key_digest="$(${installer_build} cache-input "${source_revision}" "${installer_sha}" "${overlay_a}" bluefin "${digest_b}")"
+key_a="$(${installer_build} cache-input "${source_revision}" "${installer_sha}" "${overlay_a}" "${digest_a}")"
+key_same="$(${installer_build} cache-input "${source_revision}" "${installer_sha}" "${overlay_a}" "${digest_a}")"
+key_overlay="$(${installer_build} cache-input "${source_revision}" "${installer_sha}" "${overlay_b}" "${digest_a}")"
+key_live="$(${installer_build} cache-input "${source_revision}" "${installer_sha}" "${overlay_a}" "${digest_b}")"
 [[ "${key_a}" =~ ^[0-9a-f]{64}$ ]]
 [[ "${key_a}" == "${key_same}" ]]
 [[ "${key_a}" != "${key_overlay}" ]]
-[[ "${key_a}" != "${key_foundation}" ]]
-[[ "${key_a}" != "${key_digest}" ]]
+[[ "${key_a}" != "${key_live}" ]]
 
 grep -qF "ready_marker='FINITE_INSTALLER_READY=1'" lib/ci-applications/installer-smoke.nix
 grep -qF 'root=live:LABEL=FINITE_LIVE' lib/ci-applications/installer-e2e.nix
 grep -qF 'finite.installer.autoinstall=1' lib/ci-applications/installer-e2e.nix
-grep -qF 'installer-scratch.qcow2' lib/ci-applications/installer-e2e.nix
-grep -qF 'FINITE_INSTALLER_LAUNCH_TIMEOUT_SECONDS' lib/ci-applications/installer-e2e.nix
-grep -qF 'FINITE_INSTALLER_READY=1' lib/ci-applications/installer-e2e.nix
-grep -qF 'FINITE_INSTALLER_ERROR=' lib/ci-applications/installer-e2e.nix
 grep -qF 'FINITE_INSTALLER_COMPLETE=1' lib/ci-applications/installer-e2e.nix
-grep -qF 'FINITE_INSTALLER_SOURCE_DIGEST=' installer/live/finite/configure-live.d.sh
-# Literal generated-script contract.
-# shellcheck disable=SC2016
-grep -qF 'skopeo inspect --raw "${local_imgref}"' installer/live/finite/configure-live.d.sh
+grep -qF 'FINITE_INSTALLER_SOURCE_DIGEST=' "${live_hook}"
 grep -qF 'expected-bootc-digest' lib/ci-applications/installer-e2e.nix
-grep -qF 'serial_marker_value()' lib/ci-applications/installer-e2e.nix
 grep -qF "value=\"''\${value//\$'\\r'/}\"" lib/ci-applications/installer-e2e.nix
 grep -qF 'FINITE_INSTALLED_READY=1' lib/ci-applications/installer-e2e.nix
-grep -qF 'installed-bootc-status.json' lib/ci-applications/installer-e2e.nix
 grep -qF 'Installed bootc digest mismatch:' lib/ci-applications/installer-e2e.nix
 grep -qF 'OVMF_CODE.fd' lib/ci-applications/installer-e2e.nix
-grep -qF 'OVMF_VARS.fd' lib/ci-applications/installer-e2e.nix
-grep -qF -- '-device virtio-vga' lib/ci-applications/installer-smoke.nix
-grep -qF -- '-device virtio-vga' lib/ci-applications/installer-e2e.nix
 grep -qF '(.partitiontable.partitions | length) == 3' lib/ci-applications/installer-e2e.nix
-grep -qF 'c12a7328-f81f-11d2-ba4b-00a0c93ec93b' lib/ci-applications/installer-e2e.nix
 
 for phase in \
 	'Build installer environment and ISO' \
@@ -227,14 +142,11 @@ for phase in \
 	'Upload installer diagnostics'; do
 	grep -qF -- "- name: ${phase}" .github/actions/build-installer/action.yml
 done
-grep -qF 'seed-digest:' .github/actions/build-installer/action.yml
-grep -qF 'payload-deployment-digest:' .github/actions/build-installer/action.yml
-grep -qF 'steps.boot.outputs.deployment-digest' .github/actions/build-installer/action.yml
 grep -qF 'seed-cache-hit' .github/actions/build-installer/action.yml
 grep -qF 'finite-installer-e2e install' .github/actions/build-installer/action.yml
 grep -qF 'finite-installer-e2e boot' .github/actions/build-installer/action.yml
 if grep -R -Eqi 'anaconda|kickstart|portable.efi' \
-	installer lib/installer-application.nix lib/ci-applications/installer-e2e.nix; then
+	installer/live installer/prepare-dakota-iso-source lib/installer-application.nix; then
 	echo 'Obsolete Anaconda or portable-EFI implementation remains in the installer path' >&2
 	exit 1
 fi

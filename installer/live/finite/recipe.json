@@ -3,6 +3,10 @@
   "distro_name": "Finite",
   "welcome_title": "Welcome to Finite",
   "distro_logo": "/run/host/usr/share/pixmaps/finite.png",
+  "imgref": "@@UPDATE_REFERENCE@@",
+  "local_imgref": "@@PAYLOAD_REFERENCE@@",
+  "targetImgref": "@@UPDATE_REFERENCE@@",
+  "hostname": "finite",
   "bootloader": "grub2",
   "composeFsBackend": false,
   "filesystem": "btrfs",
@@ -10,7 +14,7 @@
     "welcome": {
       "image": "/run/host/usr/share/bootc-installer/images/finite-logo.png",
       "title": "Welcome to Finite",
-      "description": "Install a verified Finite workstation from this offline image."
+      "description": "Install a verified Finite workstation over the network."
     },
     "features": {
       "image": "/run/host/usr/share/bootc-installer/images/finite-logo.png",
@@ -19,8 +23,8 @@
     },
     "community": {
       "image": "/run/host/usr/share/bootc-installer/images/finite-logo.png",
-      "title": "Offline and reproducible",
-      "description": "The exact signed OCI payload is embedded in this installer; installation does not require a registry pull."
+      "title": "Verified and current",
+      "description": "The installer pulls the exact signed Finite image selected when this ISO was built."
     },
     "developer": {
       "image": "/run/host/usr/share/bootc-installer/images/finite-logo.png",
@@ -35,7 +39,7 @@
   },
   "steps": {
     "welcome": {"template": "welcome", "protected": true},
-    "image": {"template": "image", "protected": true},
+    "connection": {"template": "conn-check"},
     "disk": {"template": "disk"},
     "encryption": {"template": "encryption"}
   }

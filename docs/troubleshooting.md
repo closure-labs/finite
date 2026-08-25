@@ -94,9 +94,10 @@ Download both the installer and diagnostics artifacts from the workflow run.
 Check:
 
 - `installer-manifest.json` for the payload, seed, and pinned installer inputs;
-- `foundation-inspect.log` and `seed-inspect.log` for GHCR resolution failures;
+- `payload-inspect.log` and `seed-inspect.log` for GHCR resolution failures;
+- `source-prepare.log` for the exact pinned Dakota source-patching stage;
 - `live-environment.log` for live-seed construction failures;
-- `iso-build.log` for squashfs, offline-store, or ISO assembly failures;
+- `squashfs-build.log` and `iso-build.log` for LZ4 or ISO assembly failures;
 - `qemu-smoke.log` or `qemu-boot.log` for boot-test failures;
 - `qemu-install.log` for unattended bootc-installer failures or the 30-minute
   limit; `FINITE_INSTALLER_ERROR=` is fatal and identifies early Flatpak exits,

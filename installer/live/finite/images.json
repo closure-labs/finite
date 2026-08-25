@@ -5,7 +5,7 @@
     {
       "name": "Finite",
       "imgref": "@@UPDATE_REFERENCE@@",
-      "desc": "Finite — a composable Bluefin workstation",
+      "desc": "Finite — a verified, network-installed Bluefin workstation",
       "icon": "/usr/share/pixmaps/finite.png",
       "bootloader": "grub2",
       "filesystem": "btrfs",
