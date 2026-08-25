@@ -64,10 +64,13 @@ grep -qF 'seed_repository="' lib/installer-application.nix
 grep -qF 'payload_specific: false' lib/installer-application.nix
 grep -qF 'bootc-generic-iso' lib/installer-application.nix
 grep -qF -- '--bootc-installer-payload-ref' lib/installer-application.nix
-grep -qF -- '--distro' lib/installer-application.nix
 grep -qF 'image_builder_distro=' lib/installer-application.nix
 grep -qF 'dev.hhd.rechunk.info' lib/installer-application.nix
 grep -qF -- '--bootc-ref' lib/installer-application.nix
+if grep -qF -- '--distro ' lib/installer-application.nix; then
+	echo 'Installer assembly passes mutually exclusive --distro and --bootc-ref options' >&2
+	exit 1
+fi
 if grep -qF 'configured_live_image' lib/installer-application.nix; then
 	echo 'Installer assembly still creates a derived live configuration image' >&2
 	exit 1

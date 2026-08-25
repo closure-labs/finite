@@ -367,7 +367,6 @@ pkgs.writeShellApplication {
       "''${image_builder_ref}" \
       --output-dir /output \
       build \
-      --distro "''${image_builder_distro}" \
       --bootc-ref "''${live_image}" \
       --bootc-installer-payload-ref "''${payload_update_ref}" \
       --bootc-default-fs btrfs \
