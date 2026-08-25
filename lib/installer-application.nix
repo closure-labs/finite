@@ -310,6 +310,7 @@ pkgs.writeShellApplication {
           --pull=never \
           --build-arg CACHE_BUST="''${installer_seed_input}" \
           --build-arg DEBUG=0 \
+          --build-arg FINITE_FEDORA_RELEASE="''${foundation_fedora_release}" \
           --build-arg INSTALLER_CHANNEL=stable \
           --build-arg REGISTRY=closure-labs \
           --build-arg TAG="''${foundation_live_ref#*:}" \

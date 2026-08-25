@@ -95,7 +95,21 @@ new_packages = r'''dnf install -y \
         && dnf clean all;'''
 if old_packages not in text:
     raise SystemExit(f"missing pinned live boot package block in {containerfile}")
-containerfile.write_text(text.replace(old_packages, new_packages, 1))
+text = text.replace(old_packages, new_packages, 1)
+
+# Image Builder derives its internal distro ID from the seed's os-release and
+# requires VERSION_ID to begin with a numeric major version. Bluefin publishes
+# VERSION_ID=latest, so normalize only this disposable live seed to the Fedora
+# release supplied by the verified foundation metadata. The installed payload
+# remains the original digest-pinned image embedded below.
+text += r'''
+
+ARG FINITE_FEDORA_RELEASE
+RUN test -n "${FINITE_FEDORA_RELEASE}" \
+    && sed -i -E "s/^VERSION_ID=.*/VERSION_ID=${FINITE_FEDORA_RELEASE}/" /usr/lib/os-release \
+    && grep -qFx "VERSION_ID=${FINITE_FEDORA_RELEASE}" /usr/lib/os-release
+'''
+containerfile.write_text(text)
 
 configure = Path(sys.argv[2])
 text = configure.read_text()
