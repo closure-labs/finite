@@ -226,5 +226,67 @@ WantedBy=graphical-session.target
 EOF
 systemctl --global enable finite-installer.service
 
+# GDM can establish the live graphical session without activating the generic
+# graphical-session.target in the user's systemd manager.  Keep the user unit
+# as the normal desktop integration, but also have the system manager start it
+# once GNOME has imported a usable display into the live user's environment.
+cat >/usr/local/sbin/finite-installer-bootstrap <<'EOF'
+#!/usr/bin/bash
+set -euo pipefail
+
+live_user=liveuser
+live_uid="$(id -u "${live_user}")"
+runtime_dir="/run/user/${live_uid}"
+deadline=$((SECONDS + 90))
+user_systemctl=(
+	runuser --user "${live_user}" --
+	env
+	"XDG_RUNTIME_DIR=${runtime_dir}"
+	"DBUS_SESSION_BUS_ADDRESS=unix:path=${runtime_dir}/bus"
+	systemctl --user
+)
+
+while ((SECONDS < deadline)); do
+	if [[ -S "${runtime_dir}/bus" ]]; then
+		user_environment="$("${user_systemctl[@]}" show-environment 2>/dev/null || true)"
+		if grep -Eq '^(DISPLAY|WAYLAND_DISPLAY)=' <<<"${user_environment}"; then
+			if "${user_systemctl[@]}" start finite-installer.service; then
+				exit 0
+			fi
+		fi
+	fi
+	sleep 1
+done
+
+{
+	echo 'Finite installer bootstrap timed out waiting for a graphical live-user session'
+	loginctl list-sessions --no-legend || true
+	systemctl --no-pager --full status gdm.service "user@${live_uid}.service" || true
+} >/dev/ttyS0 2>&1
+printf '%s\n' 'FINITE_INSTALLER_ERROR=liveuser-graphical-session-timeout' >/dev/ttyS0
+exit 1
+EOF
+chmod 0755 /usr/local/sbin/finite-installer-bootstrap
+
+cat >/usr/lib/systemd/system/finite-installer-bootstrap.service <<'EOF'
+[Unit]
+Description=Start the Finite installer in the live graphical session
+ConditionPathExists=/etc/bootc-installer/live-iso-mode
+After=systemd-user-sessions.service gdm.service
+Wants=gdm.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/finite-installer-bootstrap
+RemainAfterExit=yes
+TimeoutStartSec=100
+StandardOutput=journal+console
+StandardError=journal+console
+
+[Install]
+WantedBy=graphical.target
+EOF
+systemctl enable finite-installer-bootstrap.service
+
 printf 'f /etc/hostname 0644 - - - finite-live\n' \
 	>/usr/lib/tmpfiles.d/live-hostname.conf

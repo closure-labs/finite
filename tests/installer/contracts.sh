@@ -44,6 +44,9 @@ grep -qF 'PartOf=graphical-session.target' installer/live/finite/configure-live.
 grep -qF 'After=graphical-session.target' installer/live/finite/configure-live.d.sh
 grep -qF 'WantedBy=graphical-session.target' installer/live/finite/configure-live.d.sh
 grep -qF 'systemctl --global enable finite-installer.service' installer/live/finite/configure-live.d.sh
+grep -qF 'cat >/usr/lib/systemd/system/finite-installer-bootstrap.service' installer/live/finite/configure-live.d.sh
+grep -qF 'FINITE_INSTALLER_ERROR=liveuser-graphical-session-timeout' installer/live/finite/configure-live.d.sh
+grep -qF 'systemctl enable finite-installer-bootstrap.service' installer/live/finite/configure-live.d.sh
 grep -qF "activation_marker='Installer::Main INFO: do_activate called'" installer/live/finite/configure-live.d.sh
 grep -qF "emit_marker 'FINITE_INSTALLER_READY=1'" installer/live/finite/configure-live.d.sh
 # Literal generated-script contract.
@@ -170,6 +173,8 @@ grep -qF 'FINITE_INSTALLER_COMPLETE=1' lib/ci-applications/installer-e2e.nix
 grep -qF 'FINITE_INSTALLED_READY=1' lib/ci-applications/installer-e2e.nix
 grep -qF 'OVMF_CODE.fd' lib/ci-applications/installer-e2e.nix
 grep -qF 'OVMF_VARS.fd' lib/ci-applications/installer-e2e.nix
+grep -qF -- '-device virtio-vga' lib/ci-applications/installer-smoke.nix
+grep -qF -- '-device virtio-vga' lib/ci-applications/installer-e2e.nix
 grep -qF '(.partitiontable.partitions | length) == 3' lib/ci-applications/installer-e2e.nix
 grep -qF 'c12a7328-f81f-11d2-ba4b-00a0c93ec93b' lib/ci-applications/installer-e2e.nix
 

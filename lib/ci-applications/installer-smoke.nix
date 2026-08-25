@@ -69,6 +69,8 @@ pkgs.writeShellApplication {
         -drive "if=pflash,format=raw,unit=0,readonly=on,file=''${ovmf_code}" \
         -drive "if=pflash,format=raw,unit=1,file=''${firmware_vars}" \
         -drive "file=''${disk},if=virtio,format=qcow2" \
+        -vga none \
+        -device virtio-vga \
         -cdrom "''${iso}" \
         -boot d \
         -display none \
