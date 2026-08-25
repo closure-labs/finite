@@ -90,6 +90,7 @@ new_packages = r'''dnf install -y \
             grub2-efi-x64-cdboot \
             grub2-pc-modules \
             systemd-boot-unsigned \
+            xorriso \
         && install -d -m 0755 /boot/efi \
         && cp -a /usr/lib/efi/*/*/EFI /boot/efi/ \
         && dnf clean all;'''
@@ -162,6 +163,7 @@ bash -n \
 	"${variant}/configure-live.d.sh"
 
 grep -qF 'grub2-efi-x64-cdboot' "${destination}/live/Containerfile"
+grep -qF 'xorriso' "${destination}/live/Containerfile"
 grep -qF 'Image Builder embeds the verified payload' "${destination}/live/src/configure-live.sh"
 grep -qF 'label: FINITE_LIVE' "${variant}/iso.yaml"
 grep -qF 'FINITE_INSTALLER_READY=1' "${variant}/configure-live.d.sh"

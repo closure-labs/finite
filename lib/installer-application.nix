@@ -350,6 +350,7 @@ pkgs.writeShellApplication {
         test -s /boot/efi/EFI/fedora/shimx64.efi
         test -s /boot/efi/EFI/fedora/mmx64.efi
         test -s /boot/efi/EFI/fedora/gcdx64.efi
+        test -x /usr/bin/xorrisofs
         kernel_dir="$(find /usr/lib/modules -mindepth 1 -maxdepth 1 -type d -print -quit)"
         test -n "''${kernel_dir}"
         test -s "''${kernel_dir}/vmlinuz"

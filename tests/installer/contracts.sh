@@ -53,7 +53,10 @@ grep -qF 'root=live:LABEL=FINITE_LIVE' installer/live/finite/iso.yaml
 grep -qF 'linux: /images/pxeboot/vmlinuz' installer/live/finite/iso.yaml
 grep -qF 'Image Builder embeds the verified payload' installer/prepare-bluefin-iso-source
 grep -qF 'ARG FINITE_FEDORA_RELEASE' installer/prepare-bluefin-iso-source
+# Literal generated Containerfile contract.
+# shellcheck disable=SC2016
 grep -qF 'VERSION_ID=${FINITE_FEDORA_RELEASE}' installer/prepare-bluefin-iso-source
+grep -qF 'xorriso' installer/prepare-bluefin-iso-source
 test ! -e installer/image-builder/Containerfile
 grep -qF '/dev/vda2' installer/live/finite/configure-live.d.sh
 grep -qF '/dev/vda3' installer/live/finite/configure-live.d.sh
@@ -70,6 +73,7 @@ grep -qF 'image_builder_distro=' lib/installer-application.nix
 grep -qF 'dev.hhd.rechunk.info' lib/installer-application.nix
 grep -qF -- '--build-arg FINITE_FEDORA_RELEASE=' lib/installer-application.nix
 grep -qF -- '--bootc-ref' lib/installer-application.nix
+grep -qF 'test -x /usr/bin/xorrisofs' lib/installer-application.nix
 if grep -qF -- '--distro ' lib/installer-application.nix; then
 	echo 'Installer assembly passes mutually exclusive --distro and --bootc-ref options' >&2
 	exit 1
