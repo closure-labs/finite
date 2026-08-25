@@ -46,6 +46,8 @@ grep -qF 'WantedBy=graphical-session.target' installer/live/finite/configure-liv
 grep -qF 'systemctl --global enable finite-installer.service' installer/live/finite/configure-live.d.sh
 grep -qF "activation_marker='Installer::Main INFO: do_activate called'" installer/live/finite/configure-live.d.sh
 grep -qF "emit_marker 'FINITE_INSTALLER_READY=1'" installer/live/finite/configure-live.d.sh
+# Literal generated-script contract.
+# shellcheck disable=SC2016
 grep -qF 'mkfs.ext4 -F "${scratch}"' installer/live/finite/configure-live.d.sh
 grep -qF 'installer-scratch-disk-missing' installer/live/finite/configure-live.d.sh
 grep -qF "exec tail --pid=\"\$1\"" installer/live/finite/configure-live.d.sh
