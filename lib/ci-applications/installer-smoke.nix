@@ -79,9 +79,15 @@ pkgs.writeShellApplication {
     tail_pid=$!
 
     reached_installer=false
+    installer_error=false
     while kill -0 "''${qemu_pid}" >/dev/null 2>&1; do
       if grep -Fq "''${ready_marker}" "''${log}"; then
         reached_installer=true
+        kill -TERM "''${qemu_pid}" >/dev/null 2>&1 || true
+        break
+      fi
+      if grep -Fq 'FINITE_INSTALLER_ERROR=' "''${log}"; then
+        installer_error=true
         kill -TERM "''${qemu_pid}" >/dev/null 2>&1 || true
         break
       fi
@@ -96,6 +102,11 @@ pkgs.writeShellApplication {
     set -e
     qemu_pid=
     tail_pid=
+
+    if [[ "''${installer_error}" == true ]]; then
+      echo 'The live installer launcher reported an error' >&2
+      exit 1
+    fi
 
     [[ "''${tail_status}" == 0 ]] || {
       echo "QEMU log follower failed with status ''${tail_status}" >&2

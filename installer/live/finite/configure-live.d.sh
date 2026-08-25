@@ -8,6 +8,8 @@ installer_app_id=org.bootcinstaller.Installer
 install -Dm0644 "${variant_dir}/iso.yaml" /usr/lib/image-builder/bootc/iso.yaml
 install -Dm0644 "${variant_dir}/bootc-install-defaults.toml" \
 	/usr/lib/bootc/install/00-defaults.toml
+install -Dm0644 "${variant_dir}/ci-autoinstall.json" \
+	/etc/bootc-installer/ci-autoinstall.json
 install -Dm0644 "${logo}" /usr/share/pixmaps/finite.png
 install -Dm0644 "${logo}" /usr/share/bootc-installer/images/finite-logo.png
 for size in 16 24 32 48 64 128 256 512; do
@@ -22,24 +24,95 @@ set -euo pipefail
 
 app_id=org.bootcinstaller.Installer
 recipe=/run/host/etc/bootc-installer/recipe.json
+installer_log="${HOME}/.var/app/${app_id}/cache/bootc-installer/installer-debug.log"
+activation_marker='Installer::Main INFO: do_activate called'
+activation_timeout_seconds=60
+serial=/dev/ttyS0
 command=(flatpak run --env="BOOTC_CUSTOM_RECIPE=${recipe}" "${app_id}")
-if ! grep -qw 'finite.installer.autoinstall=1' /proc/cmdline; then
-	exec "${command[@]}"
+unattended=false
+if grep -qw 'finite.installer.autoinstall=1' /proc/cmdline; then
+	unattended=true
+	command+=(--autoinstall /run/host/etc/bootc-installer/ci-autoinstall.json)
 fi
 
-command+=(--autoinstall /run/host/etc/bootc-installer/ci-autoinstall.json)
-installer_log="${HOME}/.var/app/${app_id}/cache/bootc-installer/installer-debug.log"
 install -d -m 0755 "$(dirname "${installer_log}")"
 rm -f "${installer_log}"
 
-# bootc-installer intentionally remains open on its Done screen.  Treat its
-# own result log as the unattended completion contract instead of waiting for
-# flatpak run to exit, which would leave CI at the live login screen forever.
+emit_marker() {
+	printf '%s\n' "$1" | sudo tee "${serial}" >/dev/null
+}
+
+stop_installer() {
+	[[ -n "${installer_pid:-}" ]] || return 0
+	flatpak kill "${app_id}" >/dev/null 2>&1 ||
+		kill -TERM "${installer_pid}" >/dev/null 2>&1 || true
+	wait "${installer_pid}" >/dev/null 2>&1 || true
+}
+
+report_startup_error() {
+	emit_marker "FINITE_INSTALLER_ERROR=$1"
+	stop_installer
+	if [[ "${unattended}" == true ]]; then
+		sudo systemctl poweroff
+	fi
+	exit 1
+}
+
+if [[ "${unattended}" == true ]]; then
+	scratch=/dev/vdb
+	for _ in {1..30}; do
+		[[ -b "${scratch}" ]] && break
+		sleep 1
+	done
+	[[ -b "${scratch}" ]] || report_startup_error 'installer-scratch-disk-missing'
+	sudo umount /var/tmp >/dev/null 2>&1 || true
+	sudo mkfs.ext4 -F "${scratch}" || report_startup_error 'installer-scratch-format-failed'
+	sudo mount "${scratch}" /var/tmp || report_startup_error 'installer-scratch-mount-failed'
+fi
+
 "${command[@]}" &
 installer_pid=$!
-sudo tail --pid="${installer_pid}" --retry -n +1 -F "${installer_log}" \
-	>/dev/ttyS0 2>&1 &
+sudo /usr/bin/bash -c \
+	'exec tail --pid="$1" --retry -n +1 -F "$2" >"$3" 2>&1' \
+	-- "${installer_pid}" "${installer_log}" "${serial}" &
 log_tail_pid=$!
+cleanup() {
+	kill -TERM "${log_tail_pid}" >/dev/null 2>&1 || true
+	wait "${log_tail_pid}" >/dev/null 2>&1 || true
+}
+trap cleanup EXIT
+
+activation_deadline=$((SECONDS + activation_timeout_seconds))
+while ! grep -Fq "${activation_marker}" "${installer_log}" 2>/dev/null; do
+	if ! kill -0 "${installer_pid}" >/dev/null 2>&1; then
+		set +e
+		wait "${installer_pid}"
+		installer_status=$?
+		set -e
+		report_startup_error "bootc-installer exited-before-activation status=${installer_status}"
+	fi
+	if ((SECONDS >= activation_deadline)); then
+		if [[ -e "${installer_log}" ]]; then
+			report_startup_error 'bootc-installer activation-timeout'
+		else
+			report_startup_error 'bootc-installer log-not-created'
+		fi
+	fi
+	sleep 1
+done
+emit_marker 'FINITE_INSTALLER_READY=1'
+
+if [[ "${unattended}" != true ]]; then
+	set +e
+	wait "${installer_pid}"
+	installer_status=$?
+	set -e
+	exit "${installer_status}"
+fi
+
+# bootc-installer intentionally remains open on its Done screen. Treat its
+# own result log as the unattended completion contract instead of waiting for
+# flatpak run to exit, which would leave CI at the live login screen forever.
 result=
 while kill -0 "${installer_pid}" >/dev/null 2>&1; do
 	if grep -Fq 'Installation complete!' "${installer_log}" 2>/dev/null; then
@@ -58,24 +131,19 @@ if [[ -z "${result}" ]]; then
 	wait "${installer_pid}"
 	installer_status=$?
 	set -e
-	printf 'FINITE_INSTALLER_ERROR=bootc-installer exited-before-result status=%s\n' "${installer_status}" |
-		sudo tee /dev/ttyS0 >/dev/null
+	emit_marker "FINITE_INSTALLER_ERROR=bootc-installer exited-before-result status=${installer_status}"
 	status=1
 else
-	flatpak kill "${app_id}" >/dev/null 2>&1 || kill -TERM "${installer_pid}" >/dev/null 2>&1 || true
-	wait "${installer_pid}" >/dev/null 2>&1 || true
+	stop_installer
 	if [[ "${result}" == complete ]]; then
 		sudo /usr/local/sbin/finite-ci-post-install
-		printf 'FINITE_INSTALLER_COMPLETE=1\n' | sudo tee /dev/ttyS0 >/dev/null
+		emit_marker 'FINITE_INSTALLER_COMPLETE=1'
 		status=0
 	else
-		printf 'FINITE_INSTALLER_ERROR=bootc-installer reported-failure\n' |
-			sudo tee /dev/ttyS0 >/dev/null
+		emit_marker 'FINITE_INSTALLER_ERROR=bootc-installer reported-failure'
 		status=1
 	fi
 fi
-kill -TERM "${log_tail_pid}" >/dev/null 2>&1 || true
-wait "${log_tail_pid}" >/dev/null 2>&1 || true
 sudo systemctl poweroff
 exit "${status}"
 EOF
@@ -142,31 +210,21 @@ StartupNotify=true
 X-Flatpak=${installer_app_id}
 EOF
 
-cat >/etc/xdg/autostart/tuna-installer.desktop <<'EOF'
-[Desktop Entry]
-Name=Finite Installer
-Exec=/usr/local/bin/finite-installer-launch
-Icon=finite
-Type=Application
-X-GNOME-Autostart-enabled=true
-EOF
-
-cat >/usr/lib/systemd/system/live-ready.service <<'EOF'
+cat >/usr/lib/systemd/user/finite-installer.service <<'EOF'
 [Unit]
-Description=Finite live installer ready marker
-After=display-manager.service
-Requires=display-manager.service
+Description=Launch the Finite installer in the live graphical session
+ConditionPathExists=/etc/bootc-installer/live-iso-mode
+PartOf=graphical-session.target
+After=graphical-session.target
 
 [Service]
-Type=oneshot
-ExecStart=/bin/echo FINITE_INSTALLER_READY=1
-StandardOutput=tty
-TTYPath=/dev/ttyS0
+Type=simple
+ExecStart=/usr/local/bin/finite-installer-launch
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=graphical-session.target
 EOF
-systemctl enable live-ready.service
+systemctl --global enable finite-installer.service
 
 printf 'f /etc/hostname 0644 - - - finite-live\n' \
 	>/usr/lib/tmpfiles.d/live-hostname.conf

@@ -99,7 +99,12 @@ Check:
 - `iso-build.log` for squashfs, offline-store, or ISO assembly failures;
 - `qemu-smoke.log` or `qemu-boot.log` for boot-test failures;
 - `qemu-install.log` for unattended bootc-installer failures or the 30-minute
-  limit; `FINITE_INSTALLER_ERROR=` is fatal and stops the guest immediately;
+  limit; `FINITE_INSTALLER_ERROR=` is fatal and identifies early Flatpak exits,
+  a missing application log, an activation timeout, or a reported install
+  failure;
+- `FINITE_INSTALLER_READY=1` in the serial log to confirm the Flatpak's own
+  `installer-debug.log` reached `do_activate`; this marker does not merely mean
+  GDM started;
 - `FINITE_INSTALLER_COMPLETE=1` in that log to confirm the installer returned
   successfully and the CI first-boot probe was written;
 - `qemu-installed-boot.log` for UEFI startup, digest, update-reference, or
@@ -109,6 +114,13 @@ Check:
   separate `/boot`, and Btrfs system partition;
 - `runner-capacity-before.txt` and `runner-capacity-after.txt` for storage
   exhaustion.
+
+If the live guest reaches GDM or a login prompt without either installer
+marker, inspect the globally enabled `finite-installer.service` user unit and
+the live user's graphical session. The former XDG autostart plus
+`live-ready.service` path could report readiness as soon as GDM started while
+never creating a live-user installer process; the host now fails this case at
+the short launcher deadline instead of waiting for the 30-minute install limit.
 
 Verify a completed artifact with:
 

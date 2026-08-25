@@ -43,11 +43,12 @@ pkgs.writeShellApplication {
     ovmf_code=${pkgs.OVMF.fd}/FV/OVMF_CODE.fd
     ovmf_vars_template=${pkgs.OVMF.fd}/FV/OVMF_VARS.fd
     install_timeout="''${FINITE_INSTALLER_E2E_INSTALL_TIMEOUT_SECONDS:-1800}"
+    launcher_timeout="''${FINITE_INSTALLER_LAUNCH_TIMEOUT_SECONDS:-120}"
     boot_timeout="''${FINITE_INSTALLER_E2E_BOOT_TIMEOUT_SECONDS:-300}"
     poll_interval="''${FINITE_INSTALLER_SMOKE_POLL_INTERVAL_SECONDS:-1}"
     cpus="''${FINITE_INSTALLER_SMOKE_CPUS:-4}"
     memory_mb="''${FINITE_INSTALLER_SMOKE_MEMORY_MB:-6144}"
-    for parameter in "''${install_timeout}" "''${boot_timeout}" "''${cpus}" "''${memory_mb}"; do
+    for parameter in "''${install_timeout}" "''${launcher_timeout}" "''${boot_timeout}" "''${cpus}" "''${memory_mb}"; do
       [[ "''${parameter}" =~ ^[1-9][0-9]*$ ]] || {
         echo 'Installer E2E numeric parameters must be positive integers' >&2
         exit 2
@@ -58,6 +59,7 @@ pkgs.writeShellApplication {
     diagnostics_dir="''${FINITE_INSTALLER_DIAGNOSTICS_DIR:-''${state_root}}"
     install -d -m 0755 "''${diagnostics_dir}"
     disk="''${state_root}/installed.qcow2"
+    scratch_disk="''${state_root}/installer-scratch.qcow2"
     firmware_vars="''${state_root}/OVMF_VARS.fd"
     kernel="''${state_root}/vmlinuz"
     initrd="''${state_root}/initrd.img"
@@ -114,9 +116,10 @@ pkgs.writeShellApplication {
 
     if [[ "''${phase}" == install ]]; then
       [[ -s "''${iso}" ]] || { echo "Installer ISO is missing: ''${iso}" >&2; exit 2; }
-      rm -f -- "''${disk}" "''${firmware_vars}" "''${kernel}" "''${initrd}" "''${state_root}/install-complete"
+      rm -f -- "''${disk}" "''${scratch_disk}" "''${firmware_vars}" "''${kernel}" "''${initrd}" "''${state_root}/install-complete"
       prepare_firmware
       "''${qemu_img}" create -q -f qcow2 "''${disk}" 64G
+      "''${qemu_img}" create -q -f qcow2 "''${scratch_disk}" 16G
       xorriso -osirrox on -indev "''${iso}" \
         -extract /images/pxeboot/vmlinuz "''${kernel}" \
         -extract /images/pxeboot/initrd.img "''${initrd}" >/dev/null 2>&1
@@ -126,6 +129,7 @@ pkgs.writeShellApplication {
       : >"''${install_log}"
       timeout --signal=TERM --kill-after=20s "''${install_timeout}s" \
         "''${qemu}" "''${common_args[@]}" \
+          -drive "file=''${scratch_disk},if=virtio,format=qcow2" \
           -cdrom "''${iso}" \
           -kernel "''${kernel}" \
           -initrd "''${initrd}" \
@@ -134,9 +138,17 @@ pkgs.writeShellApplication {
       qemu_pid=$!
       tail --pid="''${qemu_pid}" -n +1 -F "''${install_log}" &
       tail_pid=$!
+      launcher_deadline=$((SECONDS + launcher_timeout))
+      launcher_ready=false
       while kill -0 "''${qemu_pid}" >/dev/null 2>&1; do
         if grep -Fq 'FINITE_INSTALLER_ERROR=' "''${install_log}"; then
           echo 'The bootc installer reported an error' >&2
+          exit 1
+        fi
+        if grep -Fq 'FINITE_INSTALLER_READY=1' "''${install_log}"; then
+          launcher_ready=true
+        elif ((SECONDS >= launcher_deadline)); then
+          echo "The graphical installer did not activate within ''${launcher_timeout} seconds" >&2
           exit 1
         fi
         sleep "''${poll_interval}"
@@ -150,6 +162,11 @@ pkgs.writeShellApplication {
         echo "Installer VM failed with status ''${qemu_status}" >&2
         exit "''${qemu_status}"
       }
+      [[ "''${launcher_ready}" == true ]] ||
+        grep -Fq 'FINITE_INSTALLER_READY=1' "''${install_log}" || {
+          echo 'The installer VM exited without its application-ready marker' >&2
+          exit 1
+        }
       grep -Fq 'FINITE_INSTALLER_COMPLETE=1' "''${install_log}" || {
         echo 'The installer VM exited without its completion marker' >&2
         exit 1

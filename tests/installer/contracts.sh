@@ -37,6 +37,24 @@ grep -qF 'FINITE_INSTALLER_READY=1' installer/live/finite/configure-live.d.sh
 grep -qF 'FINITE_INSTALLER_COMPLETE=1' installer/live/finite/configure-live.d.sh
 grep -qF 'FINITE_INSTALLED_READY=1' installer/live/finite/configure-live.d.sh
 grep -qF 'finite.installer.autoinstall=1' installer/live/finite/configure-live.d.sh
+grep -qF '/etc/bootc-installer/ci-autoinstall.json' installer/live/finite/configure-live.d.sh
+grep -qF 'cat >/usr/lib/systemd/user/finite-installer.service' installer/live/finite/configure-live.d.sh
+grep -qF 'ConditionPathExists=/etc/bootc-installer/live-iso-mode' installer/live/finite/configure-live.d.sh
+grep -qF 'PartOf=graphical-session.target' installer/live/finite/configure-live.d.sh
+grep -qF 'After=graphical-session.target' installer/live/finite/configure-live.d.sh
+grep -qF 'WantedBy=graphical-session.target' installer/live/finite/configure-live.d.sh
+grep -qF 'systemctl --global enable finite-installer.service' installer/live/finite/configure-live.d.sh
+grep -qF "activation_marker='Installer::Main INFO: do_activate called'" installer/live/finite/configure-live.d.sh
+grep -qF "emit_marker 'FINITE_INSTALLER_READY=1'" installer/live/finite/configure-live.d.sh
+grep -qF 'mkfs.ext4 -F "${scratch}"' installer/live/finite/configure-live.d.sh
+grep -qF 'installer-scratch-disk-missing' installer/live/finite/configure-live.d.sh
+grep -qF "exec tail --pid=\"\$1\"" installer/live/finite/configure-live.d.sh
+grep -qF 'FINITE_INSTALLER_ERROR=' installer/live/finite/configure-live.d.sh
+if grep -Eq '(/etc/xdg/autostart/tuna-installer.desktop|live-ready.service|After=display-manager.service)' \
+	installer/live/finite/configure-live.d.sh; then
+	echo 'Installer still relies on the obsolete XDG or GDM readiness path' >&2
+	exit 1
+fi
 grep -qF 'Installation complete!' installer/live/finite/configure-live.d.sh
 grep -qF 'Installation failed!' installer/live/finite/configure-live.d.sh
 grep -qF 'root-mount-spec = "LABEL=root"' installer/live/finite/bootc-install-defaults.toml
@@ -142,6 +160,9 @@ key_digest="$(${installer_build} cache-input "${source_revision}" "${installer_s
 grep -qF "ready_marker='FINITE_INSTALLER_READY=1'" lib/ci-applications/installer-smoke.nix
 grep -qF 'root=live:LABEL=FINITE_LIVE' lib/ci-applications/installer-e2e.nix
 grep -qF 'finite.installer.autoinstall=1' lib/ci-applications/installer-e2e.nix
+grep -qF 'installer-scratch.qcow2' lib/ci-applications/installer-e2e.nix
+grep -qF 'FINITE_INSTALLER_LAUNCH_TIMEOUT_SECONDS' lib/ci-applications/installer-e2e.nix
+grep -qF 'FINITE_INSTALLER_READY=1' lib/ci-applications/installer-e2e.nix
 grep -qF 'FINITE_INSTALLER_ERROR=' lib/ci-applications/installer-e2e.nix
 grep -qF 'FINITE_INSTALLER_COMPLETE=1' lib/ci-applications/installer-e2e.nix
 grep -qF 'FINITE_INSTALLED_READY=1' lib/ci-applications/installer-e2e.nix

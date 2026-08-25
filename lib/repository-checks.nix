@@ -631,6 +631,16 @@ in {
       grep -qF -- '--bootc-installer-payload-ref' lib/installer-application.nix
       ! grep -qF 'oci-archive:' lib/installer-application.nix
       grep -qF 'root_exec=(run0)' lib/installer-application.nix
+      grep -qF 'root_exec=(sudo)' lib/installer-application.nix
+      grep -qF 'ConditionPathExists=/etc/bootc-installer/live-iso-mode' \
+        installer/live/finite/configure-live.d.sh
+      grep -qF 'WantedBy=graphical-session.target' \
+        installer/live/finite/configure-live.d.sh
+      grep -qF 'Installer::Main INFO: do_activate called' \
+        installer/live/finite/configure-live.d.sh
+      ! grep -qF '/etc/xdg/autostart/tuna-installer.desktop' \
+        installer/live/finite/configure-live.d.sh
+      ! grep -qF 'live-ready.service' installer/live/finite/configure-live.d.sh
       grep -qF 'projectbluefin/bootc-installer' lib/installer-application.nix
       grep -qF 'seed-cache-hit=' lib/installer-application.nix
       grep -qF 'checks.' modules/outputs.nix

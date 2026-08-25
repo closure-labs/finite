@@ -46,7 +46,8 @@ live image even when the added configuration is only a few files.
 The composite action exposes three separate phases:
 
 - smoke boot the live ISO under OVMF and wait for
-  `FINITE_INSTALLER_READY=1`;
+  `FINITE_INSTALLER_READY=1`, which is emitted only after the Flatpak's own
+  `installer-debug.log` records application activation;
 - run the installer's unattended JSON recipe against a disposable disk and
   stream the installer's result log to the serial diagnostics, close its
   persistent Done screen, and wait for `FINITE_INSTALLER_COMPLETE=1`;
@@ -60,6 +61,14 @@ timing and assembly inputs remain inspectable.
 The installed disk contract is Project Bluefin's GRUB2 layout: a GPT with an
 EFI system partition, separate `/boot`, and a Btrfs system partition. CI keeps
 the serial logs and the normalized partition table as diagnostics.
+
+The installer is launched by a globally enabled systemd user service attached
+to `graphical-session.target` and conditioned on
+`/etc/bootc-installer/live-iso-mode`. `FINITE_INSTALLER_ERROR=` reports a
+Flatpak exit, a missing application log, an activation timeout, or an installer
+result failure. The host-side unattended check separately limits activation to
+120 seconds so a missing live-user session cannot consume the full installation
+timeout.
 
 See [Installation](../docs/installation.md) for user-facing installation and
 artifact verification instructions.
