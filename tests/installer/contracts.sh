@@ -44,8 +44,15 @@ grep -qF 'PartOf=graphical-session.target' installer/live/finite/configure-live.
 grep -qF 'After=graphical-session.target' installer/live/finite/configure-live.d.sh
 grep -qF 'WantedBy=graphical-session.target' installer/live/finite/configure-live.d.sh
 grep -qF 'systemctl --global enable finite-installer.service' installer/live/finite/configure-live.d.sh
+grep -qF 'cat >/usr/local/sbin/finite-live-session-prepare' installer/live/finite/configure-live.d.sh
+grep -qF 'AutomaticLoginEnable=True' installer/live/finite/configure-live.d.sh
+grep -qF 'AutomaticLogin=liveuser' installer/live/finite/configure-live.d.sh
+grep -qF 'DefaultSession=gnome.desktop' installer/live/finite/configure-live.d.sh
+grep -qF 'cat >/var/lib/AccountsService/users/liveuser' installer/live/finite/configure-live.d.sh
+grep -qF 'ExecStartPre=/usr/local/sbin/finite-live-session-prepare' installer/live/finite/configure-live.d.sh
 grep -qF 'cat >/usr/lib/systemd/system/finite-installer-bootstrap.service' installer/live/finite/configure-live.d.sh
 grep -qF 'FINITE_INSTALLER_ERROR=liveuser-graphical-session-timeout' installer/live/finite/configure-live.d.sh
+grep -qF 'journalctl --boot --unit gdm.service' installer/live/finite/configure-live.d.sh
 grep -qF 'systemctl enable finite-installer-bootstrap.service' installer/live/finite/configure-live.d.sh
 grep -qF "activation_marker='Installer::Main INFO: do_activate called'" installer/live/finite/configure-live.d.sh
 grep -qF "emit_marker 'FINITE_INSTALLER_READY=1'" installer/live/finite/configure-live.d.sh
@@ -86,6 +93,23 @@ grep -qF 'xorriso' installer/prepare-bluefin-iso-source
 test ! -e installer/image-builder/Containerfile
 grep -qF '/dev/vda2' installer/live/finite/configure-live.d.sh
 grep -qF '/dev/vda3' installer/live/finite/configure-live.d.sh
+# Literal generated-script contract.
+# shellcheck disable=SC2016
+grep -qF 'find "${system_root}/ostree/deploy"' installer/live/finite/configure-live.d.sh
+grep -qF -- "-type d -name '*.0' -print0" installer/live/finite/configure-live.d.sh
+grep -qF "'No installed OSTree deployment was found'" installer/live/finite/configure-live.d.sh
+# Literal generated-script contract.
+# shellcheck disable=SC2016
+grep -qF 'systemd_root="${deployment_root}/etc/systemd/system"' installer/live/finite/configure-live.d.sh
+# Literal generated-script contract.
+# shellcheck disable=SC2016
+grep -qF 'restorecon -RF "${systemd_root}"' installer/live/finite/configure-live.d.sh
+# Literal generated-script contract.
+# shellcheck disable=SC2016
+if grep -qF '"${system_root}/etc/systemd/system' installer/live/finite/configure-live.d.sh; then
+	echo 'Installed-system proof unit is written outside the OSTree deployment' >&2
+	exit 1
+fi
 grep -qF 'install -d -m 0755 /usr/local/sbin' installer/live/finite/configure-live.d.sh
 
 grep -qF 'projectbluefin/dakota-iso' lib/installer-application.nix
@@ -104,6 +128,7 @@ grep -qF 'test -x /usr/bin/implantisomd5' lib/installer-application.nix
 grep -qF 'test -x /usr/bin/mksquashfs' lib/installer-application.nix
 grep -qF 'test -x /usr/bin/podman' lib/installer-application.nix
 grep -qF 'test -x /usr/bin/python3' lib/installer-application.nix
+grep -qF 'test -x /usr/bin/skopeo' lib/installer-application.nix
 grep -qF 'test -x /usr/bin/xorriso' lib/installer-application.nix
 grep -qF 'test -x /usr/bin/xorrisofs' lib/installer-application.nix
 if grep -qF -- '--distro ' lib/installer-application.nix; then
@@ -124,8 +149,11 @@ if grep -qF 'build-live-squashfs.sh' lib/installer-application.nix; then
 fi
 grep -qF 'FINITE_INSTALLER_BUILDER_DIGEST' lib/installer-application.nix
 grep -qF 'FINITE_IMAGE_BUILDER_DIGEST' lib/installer-application.nix
-grep -qF 'root_exec=(run0)' lib/installer-application.nix
 grep -qF 'root_exec=(sudo)' lib/installer-application.nix
+if grep -qF 'root_exec=(run0)' lib/installer-application.nix; then
+	echo 'Installer application still selects the session-only run0 helper' >&2
+	exit 1
+fi
 grep -qF -- '--layers=false' lib/installer-application.nix
 grep -qF 'graphDriverName' lib/installer-application.nix
 # This intentionally matches the literal shell source.
@@ -135,6 +163,10 @@ grep -qF 'cosign sign --yes' lib/installer-application.nix
 grep -qF 'seed-cache-hit=' lib/installer-application.nix
 grep -qF 'seed-published=' lib/installer-application.nix
 grep -qF 'schema_version: 4' lib/installer-application.nix
+if grep -Eq 'payload_deployment_digest|deployment-digest|deployment: \{' lib/installer-application.nix; then
+	echo 'Installer assembly still guesses a deployment digest before bootc consumes the offline image' >&2
+	exit 1
+fi
 grep -qF 'application: "osbuild/image-builder"' lib/installer-application.nix
 grep -qF 'target_bootloader: "grub2"' lib/installer-application.nix
 grep -qF 'target_filesystem: "btrfs"' lib/installer-application.nix
@@ -170,7 +202,16 @@ grep -qF 'FINITE_INSTALLER_LAUNCH_TIMEOUT_SECONDS' lib/ci-applications/installer
 grep -qF 'FINITE_INSTALLER_READY=1' lib/ci-applications/installer-e2e.nix
 grep -qF 'FINITE_INSTALLER_ERROR=' lib/ci-applications/installer-e2e.nix
 grep -qF 'FINITE_INSTALLER_COMPLETE=1' lib/ci-applications/installer-e2e.nix
+grep -qF 'FINITE_INSTALLER_SOURCE_DIGEST=' installer/live/finite/configure-live.d.sh
+# Literal generated-script contract.
+# shellcheck disable=SC2016
+grep -qF 'skopeo inspect --raw "${local_imgref}"' installer/live/finite/configure-live.d.sh
+grep -qF 'expected-bootc-digest' lib/ci-applications/installer-e2e.nix
+grep -qF 'serial_marker_value()' lib/ci-applications/installer-e2e.nix
+grep -qF "value=\"''\${value//\$'\\r'/}\"" lib/ci-applications/installer-e2e.nix
 grep -qF 'FINITE_INSTALLED_READY=1' lib/ci-applications/installer-e2e.nix
+grep -qF 'installed-bootc-status.json' lib/ci-applications/installer-e2e.nix
+grep -qF 'Installed bootc digest mismatch:' lib/ci-applications/installer-e2e.nix
 grep -qF 'OVMF_CODE.fd' lib/ci-applications/installer-e2e.nix
 grep -qF 'OVMF_VARS.fd' lib/ci-applications/installer-e2e.nix
 grep -qF -- '-device virtio-vga' lib/ci-applications/installer-smoke.nix
@@ -187,6 +228,8 @@ for phase in \
 	grep -qF -- "- name: ${phase}" .github/actions/build-installer/action.yml
 done
 grep -qF 'seed-digest:' .github/actions/build-installer/action.yml
+grep -qF 'payload-deployment-digest:' .github/actions/build-installer/action.yml
+grep -qF 'steps.boot.outputs.deployment-digest' .github/actions/build-installer/action.yml
 grep -qF 'seed-cache-hit' .github/actions/build-installer/action.yml
 grep -qF 'finite-installer-e2e install' .github/actions/build-installer/action.yml
 grep -qF 'finite-installer-e2e boot' .github/actions/build-installer/action.yml

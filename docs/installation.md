@@ -19,19 +19,19 @@ is selected.
 ## Switch an existing bootc system
 
 ```console
-run0 bootc switch ghcr.io/closure-labs/finite:latest
-run0 systemctl reboot
+sudo bootc switch ghcr.io/closure-labs/finite:latest
+sudo systemctl reboot
 bootc status
 ```
 
 Use another tag from the table when appropriate. Update or roll back with:
 
 ```console
-run0 bootc upgrade
-run0 systemctl reboot
+sudo bootc upgrade
+sudo systemctl reboot
 # or
-run0 bootc rollback
-run0 systemctl reboot
+sudo bootc rollback
+sudo systemctl reboot
 ```
 
 ## First graphical login

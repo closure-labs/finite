@@ -84,15 +84,11 @@ pkgs.writeShellApplication {
     : "''${IMAGE_TAG:=bluefin-generic}"
     : "''${RUNNER_TEMP:=/tmp}"
     install -d -m 0755 diagnostics output
-    if command -v run0 >/dev/null 2>&1; then
-      root_exec=(run0)
-    elif command -v sudo >/dev/null 2>&1; then
-      # GitHub's Ubuntu 24.04 image currently ships systemd 255, before run0.
-      root_exec=(sudo)
-    else
-      echo 'A root executor is required (run0 preferred; sudo supported for CI)' >&2
+    if ! command -v sudo >/dev/null 2>&1; then
+      echo 'sudo is required to build the installer' >&2
       exit 1
     fi
+    root_exec=(sudo)
     root_podman=("''${root_exec[@]}" "''${FINITE_PODMAN}")
     registry_auth_file="''${RUNNER_TEMP}/finite-installer-auth.json"
     cosign_config_dir="''${RUNNER_TEMP}/finite-installer-cosign"
@@ -158,6 +154,7 @@ pkgs.writeShellApplication {
         2>diagnostics/payload-inspect.log
     )"
     payload_digest="$(jq -er '.Digest' <<<"''${metadata}")"
+    payload_architecture="$(jq -er '.Architecture' <<<"''${metadata}")"
     profile="$(jq -er '.Labels["io.finite.build.profile"]' <<<"''${metadata}")"
     foundation="$(jq -er '.Labels["io.finite.foundation"]' <<<"''${metadata}")"
     source_revision="$(jq -er '.Labels["org.opencontainers.image.revision"]' <<<"''${metadata}")"
@@ -165,6 +162,7 @@ pkgs.writeShellApplication {
     payload_source_repository="''${payload_source_url#https://github.com/}"
     payload_source_repository="''${payload_source_repository%.git}"
     [[ "''${payload_digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
+    [[ "''${payload_architecture}" == amd64 ]]
     [[ "''${source_revision}" =~ ^[0-9a-f]{40}$ ]]
     [[ "''${payload_source_repository}" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]
     [[ "''${foundation}" == bluefin || "''${foundation}" == bluefin-dx ]]
@@ -172,6 +170,12 @@ pkgs.writeShellApplication {
       "''${FINITE_GENERATED_ROOT}/bootc/generated/profile-catalog.json" >/dev/null
     payload_ref="''${IMAGE_REF}@''${payload_digest}"
     payload_update_ref="''${IMAGE_REF}:''${IMAGE_TAG}"
+    skopeo inspect \
+      --authfile "''${registry_auth_file}" \
+      --retry-times 3 \
+      --raw \
+      "docker://''${payload_ref}" \
+      >diagnostics/payload-manifest.json
     foundation_tag="''${foundation}-generic"
     foundation_update_ref="''${IMAGE_REF}:''${foundation_tag}"
 
@@ -355,6 +359,7 @@ pkgs.writeShellApplication {
         test -x /usr/bin/mksquashfs
         test -x /usr/bin/podman
         test -x /usr/bin/python3
+        test -x /usr/bin/skopeo
         test -x /usr/bin/xorriso
         test -x /usr/bin/xorrisofs
         kernel_dir="$(find /usr/lib/modules -mindepth 1 -maxdepth 1 -type d -print -quit)"

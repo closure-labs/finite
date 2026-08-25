@@ -23,8 +23,11 @@ outputs:
     description: SHA-256 of the completed installer ISO
     value: ${{ steps.installer.outputs.iso-sha256 }}
   payload-digest:
-    description: Immutable digest of the embedded Finite payload
+    description: Immutable OCI index or image-manifest digest of the embedded Finite payload
     value: ${{ steps.installer.outputs.payload-digest }}
+  payload-deployment-digest:
+    description: Immutable manifest digest verified between the live installer source and installed bootc deployment
+    value: ${{ steps.boot.outputs.deployment-digest }}
   payload-tag:
     description: Published Finite tag embedded in the installer
     value: ${{ steps.installer.outputs.payload-tag }}
@@ -91,7 +94,6 @@ runs:
       id: boot
       env:
         FINITE_INSTALLER_DIAGNOSTICS_DIR: ${{ github.workspace }}/diagnostics
-        EXPECTED_DIGEST: ${{ steps.installer.outputs.payload-digest }}
         EXPECTED_REFERENCE: ${{ steps.installer.outputs.update-reference }}
         STATE_ROOT: ${{ runner.temp }}/finite-installer-e2e
       shell: bash
@@ -104,7 +106,10 @@ runs:
         trap record_duration EXIT
         nix shell --accept-flake-config .#ci-installer-e2e \
           -c finite-installer-e2e boot \
-            "${STATE_ROOT}" "${EXPECTED_DIGEST}" "${EXPECTED_REFERENCE}"
+            "${STATE_ROOT}" "${EXPECTED_REFERENCE}"
+        deployment_digest="$(jq -er '.status.booted.image.imageDigest' \
+          "${FINITE_INSTALLER_DIAGNOSTICS_DIR}/installed-bootc-status.json")"
+        echo "deployment-digest=${deployment_digest}" >>"${GITHUB_OUTPUT}"
 
     - name: Summarize installer validation
       if: always()
@@ -124,6 +129,7 @@ runs:
         INSTALL_SECONDS: ${{ steps.install.outputs.seconds }}
         ISO_SHA256: ${{ steps.installer.outputs.iso-sha256 }}
         PAYLOAD_DIGEST: ${{ steps.installer.outputs.payload-digest }}
+        PAYLOAD_DEPLOYMENT_DIGEST: ${{ steps.boot.outputs.deployment-digest }}
         PAYLOAD_TAG: ${{ steps.installer.outputs.payload-tag }}
         SMOKE_OUTCOME: ${{ steps.smoke.outcome }}
         SMOKE_SECONDS: ${{ steps.smoke.outputs.seconds }}
@@ -137,6 +143,7 @@ runs:
           echo '| --- | --- |'
           echo "| Payload tag | \`${PAYLOAD_TAG:-unresolved}\` |"
           echo "| Payload digest | \`${PAYLOAD_DIGEST:-unresolved}\` |"
+          echo "| Payload deployment digest | \`${PAYLOAD_DEPLOYMENT_DIGEST:-unresolved}\` |"
           echo "| Update origin | \`${UPDATE_REFERENCE:-unresolved}\` |"
           echo "| Installer seed input | \`${INSTALLER_INPUT:-unresolved}\` |"
           echo "| Installer seed | \`${SEED_REFERENCE:-unresolved}\` |"

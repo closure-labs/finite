@@ -11,14 +11,14 @@ journalctl -b -p warning
 If an upgrade fails, retry with the image reference shown by `bootc status`:
 
 ```bash
-run0 bootc upgrade
+sudo bootc upgrade
 ```
 
 Return to the previous deployment with:
 
 ```bash
-run0 bootc rollback
-run0 systemctl reboot
+sudo bootc rollback
+sudo systemctl reboot
 ```
 
 ## Diagnose repository checks

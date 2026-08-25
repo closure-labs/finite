@@ -51,8 +51,12 @@ The composite action exposes three separate phases:
 - run the installer's unattended JSON recipe against a disposable disk and
   stream the installer's result log to the serial diagnostics, close its
   persistent Done screen, and wait for `FINITE_INSTALLER_COMPLETE=1`;
-- boot the installed disk with a fresh OVMF variable store and require its
-  reported bootc digest and update reference to match the verified payload.
+- boot the installed disk with a fresh OVMF variable store, parse its reported
+  bootc status, and require the update reference plus the linux/amd64 manifest
+  digest to match the raw `containers-storage:` source consumed by bootc in the
+  live environment. The signed registry digest remains the provenance identity;
+  the source-manifest comparison accounts for Image Builder's offline storage
+  conversion without weakening the installed-image check.
 
 Image Builder owns SquashFS and hybrid GRUB2 ISO construction. Its OSBuild
 manifest and build log are retained with the validation diagnostics so stage

@@ -30,6 +30,7 @@ activation_timeout_seconds=60
 serial=/dev/ttyS0
 command=(flatpak run --env="BOOTC_CUSTOM_RECIPE=${recipe}" "${app_id}")
 unattended=false
+source_manifest_digest=
 if grep -qw 'finite.installer.autoinstall=1' /proc/cmdline; then
 	unattended=true
 	command+=(--autoinstall /run/host/etc/bootc-installer/ci-autoinstall.json)
@@ -68,6 +69,21 @@ if [[ "${unattended}" == true ]]; then
 	sudo umount /var/tmp >/dev/null 2>&1 || true
 	sudo mkfs.ext4 -F "${scratch}" || report_startup_error 'installer-scratch-format-failed'
 	sudo mount "${scratch}" /var/tmp || report_startup_error 'installer-scratch-mount-failed'
+	local_imgref="$(
+		jq -er '.local_imgref | select(startswith("containers-storage:"))' \
+			/etc/bootc-installer/ci-autoinstall.json
+	)" || report_startup_error 'installer-source-reference-invalid'
+	# Image Builder may rewrite a registry manifest while embedding it in the
+	# offline containers-storage. Hash the exact bytes bootc will import instead
+	# of guessing that digest from the signed registry representation.
+	source_manifest_digest="sha256:$(
+		sudo /usr/bin/skopeo inspect --raw "${local_imgref}" |
+			sha256sum |
+			cut -d' ' -f1
+	)" || report_startup_error 'installer-source-digest-failed'
+	[[ "${source_manifest_digest}" =~ ^sha256:[0-9a-f]{64}$ ]] ||
+		report_startup_error 'installer-source-digest-invalid'
+	emit_marker "FINITE_INSTALLER_SOURCE_DIGEST=${source_manifest_digest}"
 fi
 
 "${command[@]}" &
@@ -173,10 +189,21 @@ for entry in "${boot_root}"/loader/entries/*.conf "${boot_root}"/EFI/loader/entr
 done
 
 mount /dev/vda3 "${system_root}"
-install -d -m 0755 \
-	"${system_root}/etc/systemd/system" \
-	"${system_root}/etc/systemd/system/multi-user.target.wants"
-cat >"${system_root}/etc/systemd/system/finite-ci-installed-ready.service" <<'UNIT'
+mapfile -d '' deployment_roots < <(
+	find "${system_root}/ostree/deploy" \
+		-mindepth 3 -maxdepth 3 -type d -name '*.0' -print0
+)
+((${#deployment_roots[@]} > 0)) || {
+	echo 'No installed OSTree deployment was found' >&2
+	exit 1
+}
+
+for deployment_root in "${deployment_roots[@]}"; do
+	systemd_root="${deployment_root}/etc/systemd/system"
+	install -d -m 0755 \
+		"${systemd_root}" \
+		"${systemd_root}/multi-user.target.wants"
+	cat >"${systemd_root}/finite-ci-installed-ready.service" <<'UNIT'
 [Unit]
 Description=Finite installed-system validation marker
 After=systemd-user-sessions.service
@@ -191,8 +218,12 @@ TTYPath=/dev/ttyS0
 [Install]
 WantedBy=multi-user.target
 UNIT
-ln -sfn ../finite-ci-installed-ready.service \
-	"${system_root}/etc/systemd/system/multi-user.target.wants/finite-ci-installed-ready.service"
+	ln -sfn ../finite-ci-installed-ready.service \
+		"${systemd_root}/multi-user.target.wants/finite-ci-installed-ready.service"
+	if command -v restorecon >/dev/null 2>&1; then
+		restorecon -RF "${systemd_root}" || true
+	fi
+done
 sync
 EOF
 chmod 0755 /usr/local/sbin/finite-ci-post-install
@@ -225,6 +256,48 @@ ExecStart=/usr/local/bin/finite-installer-launch
 WantedBy=graphical-session.target
 EOF
 systemctl --global enable finite-installer.service
+
+# Reassert the live-session identity immediately before GDM starts.  Dakota
+# writes the same autologin keys while assembling the container, but bootc's
+# first-boot /etc and /var setup can replace those image-time defaults.  The
+# AccountsService record also removes any ambiguity about the default GNOME
+# session for the manually-created live user.
+cat >/usr/local/sbin/finite-live-session-prepare <<'EOF'
+#!/usr/bin/bash
+set -euo pipefail
+
+live_user=liveuser
+id "${live_user}" >/dev/null
+passwd --delete "${live_user}" >/dev/null
+
+install -d -m 0755 /etc/gdm /var/lib/AccountsService/users
+cat >/etc/gdm/custom.conf <<'GDM'
+[daemon]
+AutomaticLoginEnable=True
+AutomaticLogin=liveuser
+DefaultSession=gnome.desktop
+GDM
+chmod 0644 /etc/gdm/custom.conf
+
+cat >/var/lib/AccountsService/users/liveuser <<'ACCOUNT'
+[User]
+Session=gnome
+XSession=gnome
+SystemAccount=false
+ACCOUNT
+chmod 0600 /var/lib/AccountsService/users/liveuser
+EOF
+chmod 0755 /usr/local/sbin/finite-live-session-prepare
+/usr/local/sbin/finite-live-session-prepare
+
+install -d -m 0755 /etc/systemd/system/gdm.service.d
+cat >/etc/systemd/system/gdm.service.d/20-finite-live-session.conf <<'EOF'
+[Unit]
+ConditionPathExists=/etc/bootc-installer/live-iso-mode
+
+[Service]
+ExecStartPre=/usr/local/sbin/finite-live-session-prepare
+EOF
 
 # GDM can establish the live graphical session without activating the generic
 # graphical-session.target in the user's systemd manager.  Keep the user unit
@@ -261,7 +334,16 @@ done
 {
 	echo 'Finite installer bootstrap timed out waiting for a graphical live-user session'
 	loginctl list-sessions --no-legend || true
+	loginctl user-status "${live_user}" --no-pager || true
+	getent passwd "${live_user}" || true
+	passwd --status "${live_user}" || true
+	echo '--- /etc/gdm/custom.conf ---'
+	cat /etc/gdm/custom.conf || true
 	systemctl --no-pager --full status gdm.service "user@${live_uid}.service" || true
+	echo '--- GDM journal ---'
+	journalctl --boot --unit gdm.service --no-pager --lines 200 || true
+	echo '--- live-user journal ---'
+	journalctl --boot "_UID=${live_uid}" --no-pager --lines 200 || true
 } >/dev/ttyS0 2>&1
 printf '%s\n' 'FINITE_INSTALLER_ERROR=liveuser-graphical-session-timeout' >/dev/ttyS0
 exit 1

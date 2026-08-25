@@ -18,7 +18,7 @@ pkgs.writeShellApplication {
     usage() {
       cat >&2 <<'EOF'
     usage: finite-installer-e2e install ISO STATE_ROOT
-           finite-installer-e2e boot STATE_ROOT EXPECTED_DIGEST EXPECTED_REFERENCE
+           finite-installer-e2e boot STATE_ROOT EXPECTED_REFERENCE
     EOF
     }
 
@@ -30,10 +30,9 @@ pkgs.writeShellApplication {
         state_root=$3
         ;;
       boot)
-        [[ $# == 4 ]] || { usage; exit 2; }
+        [[ $# == 3 ]] || { usage; exit 2; }
         state_root=$2
-        expected_digest=$3
-        expected_reference=$4
+        expected_reference=$3
         ;;
       *) usage; exit 2 ;;
     esac
@@ -74,10 +73,22 @@ pkgs.writeShellApplication {
       kill -TERM "''${pid}" >/dev/null 2>&1 || true
       wait "''${pid}" >/dev/null 2>&1 || true
     }
+    serial_marker_value() {
+      local marker=$1 log=$2 line value
+      line="$(grep -aF "''${marker}=" "''${log}" | tail -n 1)"
+      value="''${line#*"''${marker}="}"
+      # QEMU's emulated serial TTY writes CRLF. Keep marker contracts strict
+      # after normalizing the transport framing.
+      value="''${value//$'\r'/}"
+      printf '%s\n' "''${value}"
+    }
     print_logs() {
       local log
       for log in "''${install_log}" "''${boot_log}"; do
-        [[ ! -f "''${log}" ]] || { echo "===== ''${log##*/} =====" >&2; cat "''${log}" >&2; }
+        [[ ! -f "''${log}" ]] || {
+          echo "===== last 400 lines of ''${log##*/}; complete log is in installer diagnostics =====" >&2
+          tail -n 400 "''${log}" >&2
+        }
       done
     }
     cleanup() {
@@ -118,7 +129,14 @@ pkgs.writeShellApplication {
 
     if [[ "''${phase}" == install ]]; then
       [[ -s "''${iso}" ]] || { echo "Installer ISO is missing: ''${iso}" >&2; exit 2; }
-      rm -f -- "''${disk}" "''${scratch_disk}" "''${firmware_vars}" "''${kernel}" "''${initrd}" "''${state_root}/install-complete"
+      rm -f -- \
+        "''${disk}" \
+        "''${scratch_disk}" \
+        "''${firmware_vars}" \
+        "''${kernel}" \
+        "''${initrd}" \
+        "''${state_root}/install-complete" \
+        "''${state_root}/expected-bootc-digest"
       prepare_firmware
       "''${qemu_img}" create -q -f qcow2 "''${disk}" 64G
       "''${qemu_img}" create -q -f qcow2 "''${scratch_disk}" 16G
@@ -173,14 +191,27 @@ pkgs.writeShellApplication {
         echo 'The installer VM exited without its completion marker' >&2
         exit 1
       }
+      source_digest="$(
+        serial_marker_value FINITE_INSTALLER_SOURCE_DIGEST "''${install_log}"
+      )"
+      [[ "''${source_digest}" =~ ^sha256:[0-9a-f]{64}$ ]] || {
+        echo 'The installer VM did not report a valid source manifest digest' >&2
+        exit 1
+      }
+      printf '%s\n' "''${source_digest}" >"''${state_root}/expected-bootc-digest"
       touch "''${state_root}/install-complete"
       exit 0
     fi
 
-    [[ -s "''${disk}" && -f "''${state_root}/install-complete" ]] || {
+    [[ \
+      -s "''${disk}" && \
+      -f "''${state_root}/install-complete" && \
+      -s "''${state_root}/expected-bootc-digest" \
+    ]] || {
       echo "Completed installer state is missing: ''${state_root}" >&2
       exit 2
     }
+    expected_digest="$(<"''${state_root}/expected-bootc-digest")"
     [[ "''${expected_digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
     [[ "''${expected_reference}" =~ ^[a-z0-9._/-]+:[A-Za-z0-9._-]+$ ]]
 
@@ -223,7 +254,23 @@ pkgs.writeShellApplication {
       echo 'The installed system did not emit its ready marker' >&2
       exit 1
     }
-    grep -Fq "''${expected_digest}" "''${boot_log}"
-    grep -Fq "''${expected_reference}" "''${boot_log}"
+    bootc_status="$(serial_marker_value FINITE_BOOTC_STATUS "''${boot_log}")"
+    printf '%s\n' "''${bootc_status}" | jq . >"''${diagnostics_dir}/installed-bootc-status.json"
+    actual_digest="$(jq -er '.status.booted.image.imageDigest' <<<"''${bootc_status}")"
+    actual_reference="$(jq -er '.status.booted.image.image.image' <<<"''${bootc_status}")"
+    actual_architecture="$(jq -er '.status.booted.image.architecture' <<<"''${bootc_status}")"
+    [[ "''${actual_architecture}" == amd64 ]] || {
+      echo "Installed bootc architecture mismatch: expected amd64, got ''${actual_architecture}" >&2
+      exit 1
+    }
+    [[ "''${actual_digest}" == "''${expected_digest}" ]] || {
+      echo "Installed bootc digest mismatch: expected ''${expected_digest}, got ''${actual_digest}" >&2
+      exit 1
+    }
+    [[ "''${actual_reference}" == "''${expected_reference}" ]] || {
+      echo "Installed bootc reference mismatch: expected ''${expected_reference}, got ''${actual_reference}" >&2
+      exit 1
+    }
+    echo "Validated installed bootc deployment ''${actual_reference}@''${actual_digest} (''${actual_architecture})"
   '';
 }

@@ -630,8 +630,9 @@ in {
         modules/aspects/base/rootfs/usr/lib/bootc/install/00-defaults.toml
       grep -qF -- '--bootc-installer-payload-ref' lib/installer-application.nix
       ! grep -qF 'oci-archive:' lib/installer-application.nix
-      grep -qF 'root_exec=(run0)' lib/installer-application.nix
       grep -qF 'root_exec=(sudo)' lib/installer-application.nix
+      ! grep -qF 'root_exec=(run0)' lib/installer-application.nix
+      ! grep -R -qw 'run0' README.md docs
       grep -qF 'ConditionPathExists=/etc/bootc-installer/live-iso-mode' \
         installer/live/finite/configure-live.d.sh
       grep -qF 'WantedBy=graphical-session.target' \
