@@ -4,7 +4,7 @@
     "identity": "https://github.com/ublue-os/bluefin/.github/workflows/reusable-build.yml@refs/heads/main",
     "issuer": "https://token.actions.githubusercontent.com"
   },
-  "digest": "sha256:5dcc701ba2d446829b33267e668bc50bac38404136c7a4f9a6c8b59132803ecd",
+  "digest": "sha256:a97bdb9d3efe9c65769d36f887155973ba0d9675e3d1d12aaaeaa6f15cd66429",
   "image": "ghcr.io/ublue-os/bluefin-dx",
   "schema": 1,
   "tag": "stable"
