@@ -96,13 +96,19 @@ Check:
 - `installer-manifest.json` for the payload, seed, and pinned installer inputs;
 - `payload-inspect.log` and `seed-inspect.log` for GHCR resolution failures;
 - `source-prepare.log` for the exact pinned Dakota source-patching stage;
-- `live-environment.log` for live-seed construction failures;
+- `live-environment.log` for the single-commit live-seed construction;
+- `seed-preflight.log` for missing Btrfs or other Fisherman executables, recipe
+  validation, registry resolution, payload inspection, and scratch capacity;
+- `seed-pull.log` or `seed-push.log` for signed SquashFS artifact transfer;
 - `squashfs-build.log` and `iso-build.log` for LZ4 or ISO assembly failures;
 - `qemu-smoke.log` or `qemu-boot.log` for boot-test failures;
 - `qemu-install.log` for unattended bootc-installer failures or the 30-minute
   limit; `FINITE_INSTALLER_ERROR=` is fatal and identifies early Flatpak exits,
   a missing application log, an activation timeout, or a reported install
   failure;
+- `installer-debug.log`, `fisherman-output.log`, `preflight.log`, and
+  `system-state.log` for the complete guest-side failure evidence extracted
+  from the serial stream before poweroff;
 - `FINITE_INSTALLER_READY=1` in the serial log to confirm the Flatpak's own
   `installer-debug.log` reached `do_activate`; this marker does not merely mean
   GDM started;
@@ -114,7 +120,8 @@ Check:
 - `installed-partitions.json` for the required GPT, EFI system partition,
   separate `/boot`, and Btrfs system partition;
 - `runner-capacity-before.txt` and `runner-capacity-after.txt` for storage
-  exhaustion.
+  exhaustion. On a cache hit, Dakota and SquashFS construction are skipped;
+  the action summary identifies `github-actions` or `ghcr` as the cache source.
 
 If the live guest reaches GDM or a login prompt without either installer
 marker, inspect the globally enabled `finite-installer.service` user unit and

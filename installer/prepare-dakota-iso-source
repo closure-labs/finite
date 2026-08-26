@@ -53,6 +53,8 @@ grep -qF "FROM ${builder_ref} AS initramfs-builder" \
 # TARGET selects Finite's branding/configuration directory. LIVE_ROOT selects
 # the much smaller non-NVIDIA Dakota image used only for the live environment.
 prepare_stage=select-live-root
+# Literal Containerfile variables are rewritten, not expanded by this script.
+# shellcheck disable=SC2016
 sed -i \
 	-e '/^ARG TARGET=dakota-nvidia$/a ARG LIVE_ROOT=dakota' \
 	-e 's|FROM ghcr.io/${REGISTRY}/${TARGET}:${TAG}|FROM ghcr.io/${REGISTRY}/${LIVE_ROOT}:${TAG}|g' \
@@ -61,7 +63,116 @@ target_arg_count="$(grep -cFx 'ARG TARGET=dakota-nvidia' "${destination}/live/Co
 live_root_arg_count="$(grep -cFx 'ARG LIVE_ROOT=dakota' "${destination}/live/Containerfile")"
 [[ "${target_arg_count}" -gt 0 ]]
 [[ "${live_root_arg_count}" == "${target_arg_count}" ]]
+# shellcheck disable=SC2016
 [[ "$(grep -cF 'FROM ghcr.io/${REGISTRY}/${LIVE_ROOT}:${TAG}' "${destination}/live/Containerfile")" == 2 ]]
+
+# Dakota's live root does not have a package manager. Stage the Btrfs tools and
+# their Debian runtime closure in a private directory, then replace Dakota's
+# many final-stage COPY/RUN instructions with one mounted RUN. With Buildah's
+# layer cache disabled below, this produces one commit of the large live root
+# instead of snapshotting it after every tiny customization instruction.
+prepare_stage=patch-live-container
+python3 - "${destination}/live/Containerfile" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text()
+old_package = """        systemd-boot-efi \\
+        xfsprogs \\
+        zstd \\
+"""
+new_package = """        systemd-boot-efi \\
+        btrfs-progs \\
+        xfsprogs \\
+        zstd \\
+"""
+if old_package not in text:
+    raise SystemExit(f"missing pinned initramfs package block in {path}")
+text = text.replace(old_package, new_package, 1)
+
+stage_marker = "# ── Stage 3: Final live image "
+stage_start = text.find(stage_marker)
+if stage_start < 0:
+    raise SystemExit(f"missing pinned final-stage marker in {path}")
+
+staging = r'''
+# Stage the exact Btrfs executables and every resolved shared-library
+# dependency without replacing Dakota's newer system libraries globally.
+RUN set -eux; \
+    stage=/opt/finite-btrfs; \
+    install -Dm0755 /usr/bin/btrfs "${stage}/usr/libexec/finite-btrfs/btrfs"; \
+    install -Dm0755 /usr/sbin/mkfs.btrfs "${stage}/usr/libexec/finite-btrfs/mkfs.btrfs"; \
+    loader=$({ ldd /usr/bin/btrfs; ldd /usr/sbin/mkfs.btrfs; } \
+      | awk '/ld-linux/ { if ($2 == "=>") print $3; else print $1; exit }'); \
+    test -f "${loader}"; \
+    install -Dm0755 "${loader}" "${stage}/usr/libexec/finite-btrfs/ld-linux"; \
+    { ldd /usr/bin/btrfs; ldd /usr/sbin/mkfs.btrfs; } \
+      | awk '/=> \/[^ ]+/ { print $3 } /^[[:space:]]*\/[^ ]+/ { print $1 }' \
+      | sort -u > /tmp/finite-btrfs-libraries; \
+    while IFS= read -r library; do \
+      test -f "${library}" || continue; \
+      install -Dm0755 "${library}" "${stage}/usr/lib/finite-btrfs/${library##*/}"; \
+    done < /tmp/finite-btrfs-libraries; \
+    rm -f /tmp/finite-btrfs-libraries
+
+'''
+
+final = r'''# ── Stage 3: Final live image ────────────────────────────────────────────────────────────────
+ARG TARGET=dakota-nvidia
+ARG LIVE_ROOT=dakota
+ARG TAG=stable
+ARG REGISTRY=projectbluefin
+FROM ghcr.io/${REGISTRY}/${LIVE_ROOT}:${TAG}
+
+ARG TARGET=dakota-nvidia
+ARG INSTALLER_CHANNEL=stable
+ARG DEBUG=0
+ENV TARGET=${TARGET} INSTALLER_CHANNEL=${INSTALLER_CHANNEL} DEBUG=${DEBUG}
+
+RUN --mount=type=bind,from=initramfs-builder,source=/,target=/run/finite-builder,ro \
+    --mount=type=bind,source=src,target=/src,ro \
+    --mount=type=cache,target=/var/cache/flatpak-dl,id=dakota-flatpak-${TARGET} \
+    set -eux; \
+    builder=/run/finite-builder; \
+    if command -v dnf >/dev/null 2>&1; then \
+      dnf install -y systemd-boot-unsigned fuse-overlayfs; \
+      dnf clean all; \
+    fi; \
+    install -Dm0755 "${builder}/usr/lib/x86_64-linux-gnu/libinih.so.1" /usr/lib/x86_64-linux-gnu/libinih.so.1; \
+    install -Dm0755 "${builder}/usr/lib/x86_64-linux-gnu/liburcu.so.8" /usr/lib/x86_64-linux-gnu/liburcu.so.8; \
+    install -Dm0755 "${builder}/usr/lib/x86_64-linux-gnu/libinih.so.1" /usr/lib64/libinih.so.1; \
+    install -Dm0755 "${builder}/usr/lib/x86_64-linux-gnu/liburcu.so.8" /usr/lib64/liburcu.so.8; \
+    if grep -q debian "${builder}/tmp/dracut-status" 2>/dev/null; then \
+      install -Dm0755 "${builder}/usr/sbin/mkfs.xfs" /usr/sbin/mkfs.xfs; \
+      install -Dm0755 "${builder}/usr/sbin/xfs_repair" /usr/sbin/xfs_repair; \
+    fi; \
+    cp -a "${builder}/opt/finite-btrfs/." /; \
+    rm -f /usr/bin/btrfs /usr/sbin/mkfs.btrfs; \
+    printf '%s\n' \
+      '#!/usr/bin/bash' \
+      'exec /usr/libexec/finite-btrfs/ld-linux --library-path /usr/lib/finite-btrfs /usr/libexec/finite-btrfs/btrfs "$@"' \
+      > /usr/bin/btrfs; \
+    printf '%s\n' \
+      '#!/usr/bin/bash' \
+      'exec /usr/libexec/finite-btrfs/ld-linux --library-path /usr/lib/finite-btrfs /usr/libexec/finite-btrfs/mkfs.btrfs "$@"' \
+      > /usr/sbin/mkfs.btrfs; \
+    chmod 0755 /usr/bin/btrfs /usr/sbin/mkfs.btrfs; \
+    cp -a "${builder}/usr/lib/systemd/boot" /usr/lib/systemd/; \
+    kernel=$(ls /usr/lib/modules | sort -V | tail -1); \
+    install -Dm0644 "${builder}/tmp/initramfs.img" "/usr/lib/modules/${kernel}/initramfs.img"; \
+    install -Dm0644 /src/flatpaks /tmp/flatpaks-list; \
+    /src/install-flatpaks.sh; \
+    rm -f /tmp/flatpaks-list; \
+    cp -a /src /tmp/src; \
+    chmod +x /tmp/src/configure-live.sh; \
+    /tmp/src/configure-live.sh; \
+    btrfs --version; \
+    mkfs.btrfs --version
+'''
+
+path.write_text(text[:stage_start] + staging + final)
+PY
 
 variant="${destination}/live/src/finite"
 prepare_stage=install-finite-overlay
@@ -113,7 +224,7 @@ mkdir -p "$(dirname "${OUTPUT_SFS}")"
 new = '''SFS_BLOCK=1048576
 SFS_COMPRESSION="${SUPERISO_COMPRESSION:-lz4}"
 case "${SFS_COMPRESSION}" in
-    lz4) SFS_ARGS=(-comp lz4 -Xhc) ;;
+    lz4) SFS_ARGS=(-comp lz4) ;;
     zstd-fast) SFS_ARGS=(-comp zstd -Xcompression-level 3) ;;
     zstd-release) SFS_ARGS=(-comp zstd -Xcompression-level 15) ;;
     *) echo "ERROR: unsupported SUPERISO_COMPRESSION=${SFS_COMPRESSION}" >&2; exit 2 ;;
@@ -135,6 +246,29 @@ new_args = '''    -noappend "${SFS_ARGS[@]}" \\
 if old_args not in text:
     raise SystemExit(f"missing pinned mksquashfs argument block in {path}")
 path.write_text(text.replace(old_args, new_args, 1))
+PY
+
+# Carry the payload selection as a tiny ISO-root file. The cached squashfs and
+# boot tar remain independent of the selected Finite tag and digest.
+prepare_stage=patch-iso-target-config
+python3 - "${destination}/live/src/build-iso.sh" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text()
+needle = '''mkdir -p "${ISO_ROOT}/EFI" "${ISO_ROOT}/LiveOS"
+mkdir -p \\
+'''
+replacement = '''mkdir -p "${ISO_ROOT}/EFI" "${ISO_ROOT}/LiveOS"
+TARGET_CONFIG="${FINITE_TARGET_CONFIG:?FINITE_TARGET_CONFIG must name the resolved target JSON}"
+test -s "${TARGET_CONFIG}"
+install -Dm0644 "${TARGET_CONFIG}" "${ISO_ROOT}/finite/target.json"
+mkdir -p \\
+'''
+if needle not in text:
+    raise SystemExit(f"missing pinned ISO root creation block in {path}")
+path.write_text(text.replace(needle, replacement, 1))
 PY
 
 prepare_stage=brand-live-media
@@ -159,6 +293,15 @@ bash -n \
 
 grep -qF 'ARG LIVE_ROOT=dakota' "${destination}/live/Containerfile"
 grep -qF 'SUPERISO_COMPRESSION:-lz4' "${destination}/scripts/build-live-squashfs.sh"
+grep -qF 'SFS_ARGS=(-comp lz4)' "${destination}/scripts/build-live-squashfs.sh"
+grep -qF 'btrfs-progs' "${destination}/live/Containerfile"
+grep -qF 'mkfs.btrfs' "${destination}/live/Containerfile"
+grep -qF 'source=/,target=/run/finite-builder,ro' "${destination}/live/Containerfile"
+[[ "$(grep -c '^RUN --mount=' "${destination}/live/Containerfile")" == 1 ]]
+[[ "$(sed -n '/^# ── Stage 3: Final live image /,$p' \
+	"${destination}/live/Containerfile" | grep -Ec '^(ADD|COPY|RUN)([[:space:]]|$)')" == 1 ]]
+grep -qF 'FINITE_TARGET_CONFIG must name the resolved target JSON' \
+	"${destination}/live/src/build-iso.sh"
 grep -qF 'FINITE_INSTALLER_READY=1' "${variant}/configure-live.d.sh"
 grep -qF '@@PAYLOAD_REFERENCE@@' "${variant}/ci-autoinstall.json"
 grep -qF '@@UPDATE_REFERENCE@@' "${variant}/recipe.json"

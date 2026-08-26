@@ -129,17 +129,26 @@ Full validation follows Project Bluefin's `dakota-iso` architecture and embeds
 the pinned `bootc-installer` Flatpak. It verifies both the selected Finite
 payload and the digest-pinned Dakota live root. A reusable seed is selected by
 the Dakota live digest, pinned ISO source revision, installer checksum, Debian
-builder digest, and Finite overlay digest. Trusted `main` builds publish and
-keylessly sign seeds in a sibling GHCR package; pull requests reuse a seed only
-after verifying the `build-installer.yml` identity. A small final layer pins
-the selected Finite digest and update tag. Dakota then assembles an LZ4,
-systemd-boot network ISO without downloading or embedding the Finite payload.
+builder digest, Finite overlay and logo, and seed-builder digest. The seed is
+the completed payload-independent LZ4 SquashFS, boot tar, and preflight proof—not a large
+Podman store. Trusted `main` and scheduled builds publish and keylessly sign
+those files as an OCI artifact in the sibling GHCR package; pull requests reuse
+only artifacts signed by either trusted installer-producing workflow. An exact
+GitHub Actions cache key accelerates retries in the same pull request. The
+selected Finite digest and update tag are a small JSON file on the ISO, applied
+to the writable live overlay by a pre-installer service. Dakota therefore
+assembles the systemd-boot network ISO without rebuilding the live image,
+recompressing its SquashFS, or embedding the Finite payload.
 
-The smoke phase waits for the Finite-owned live-session readiness marker. The
-end-to-end phase supplies the checked-in unattended JSON recipe, installs onto
-a disposable disk, validates Project Bluefin's three-partition GPT layout, and
-boots with a fresh OVMF variable store. The installed system must report both
-the verified digest and expected mutable update reference through bootc status.
+The smoke phase waits for the Finite-owned live-session readiness marker. Before
+Fisherman can touch the target disk, preflight validates its recipe, required
+executables, exact network reference, registry resolution, and disk-backed
+scratch capacity. The end-to-end phase supplies the checked-in unattended JSON
+recipe, installs onto a 64 GiB disposable disk, validates Project Bluefin's
+three-partition GPT layout, and boots with a fresh OVMF variable store. The
+installed system must report Fedora 44, hostname `finite`, a Btrfs root, a
+working GRUB2 configuration, the verified digest, and the expected mutable
+update reference through bootc status.
 The action summary records seed identity/hit/publication state plus separate
 seed, ISO, smoke, install, and installed-boot durations.
 

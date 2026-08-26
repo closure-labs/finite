@@ -109,7 +109,8 @@ The ISO is a network installer. Connect the live GNOME session to the network
 before starting; Dakota then pulls the exact signed Finite digest recorded in
 the manifest. The installed system tracks the selected tag for later updates.
 
-The manifest records the immutable network payload, signed Dakota live-seed
-identity, pinned Project Bluefin installer inputs, source commit, and mutable
-update reference. See
+The manifest records the immutable network payload, signed Dakota SquashFS-seed
+identity, cache source, pinned Project Bluefin installer inputs, source commit,
+and mutable update reference. The payload selection is stored in a small JSON
+file on the ISO and validated again before the graphical installer starts. See
 [Troubleshooting](troubleshooting.md) for runtime and installer checks.

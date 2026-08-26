@@ -3,7 +3,7 @@ description: Run the visible Nix-declared installer build and boot-validation ph
 
 inputs:
   cache-write:
-    description: Publish matching installer layers to the trusted GHCR cache
+    description: Publish matching SquashFS seed artifacts to the trusted GHCR cache
     required: false
     default: "false"
   end-to-end:
@@ -41,6 +41,23 @@ runs:
     - name: Set up Nix and Cachix
       uses: ./.github/actions/setup-nix
 
+    - name: Resolve installer seed cache key
+      id: seed-key
+      shell: bash
+      run: |
+        set -euo pipefail
+        key="$(nix shell --accept-flake-config .#ci-installer-build \
+          -c finite-installer-build cache-key)"
+        [[ "${key}" =~ ^[0-9a-f]{64}$ ]]
+        echo "key=${key}" >>"${GITHUB_OUTPUT}"
+
+    - name: Restore exact installer seed artifacts
+      id: seed-actions-cache
+      uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+      with:
+        path: ${{ runner.temp }}/finite-installer-seed-cache
+        key: finite-installer-seed-v2-${{ runner.os }}-${{ steps.seed-key.outputs.key }}
+
     - name: Build installer environment and ISO
       id: installer
       env:
@@ -49,6 +66,7 @@ runs:
         GH_TOKEN: ${{ inputs.token }}
         IMAGE_REF: ghcr.io/${{ github.repository }}
         IMAGE_TAG: ${{ inputs.image-tag }}
+        FINITE_INSTALLER_SEED_CACHE_DIR: ${{ runner.temp }}/finite-installer-seed-cache
       shell: bash
       run: >-
         nix shell --accept-flake-config .#ci-installer-build
@@ -119,6 +137,7 @@ runs:
         BUILD_OUTCOME: ${{ steps.installer.outcome }}
         BUILD_SECONDS: ${{ steps.installer.outputs.build-seconds }}
         SEED_CACHE_HIT: ${{ steps.installer.outputs.seed-cache-hit }}
+        SEED_CACHE_SOURCE: ${{ steps.installer.outputs.seed-cache-source }}
         SEED_DIGEST: ${{ steps.installer.outputs.seed-digest }}
         SEED_PUBLISHED: ${{ steps.installer.outputs.seed-published }}
         SEED_REFERENCE: ${{ steps.installer.outputs.seed-reference }}
@@ -149,6 +168,7 @@ runs:
           echo "| Installer seed | \`${SEED_REFERENCE:-unresolved}\` |"
           echo "| Installer seed digest | \`${SEED_DIGEST:-unresolved}\` |"
           echo "| Installer seed cache hit | \`${SEED_CACHE_HIT:-false}\` |"
+          echo "| Installer seed cache source | \`${SEED_CACHE_SOURCE:-miss}\` |"
           echo "| Installer seed published | \`${SEED_PUBLISHED:-false}\` |"
           echo "| ISO SHA-256 | \`${ISO_SHA256:-unresolved}\` |"
           echo "| Build | \`${BUILD_OUTCOME:-skipped}\` (${BUILD_SECONDS:-0}s; seed ${ENVIRONMENT_SECONDS:-0}s, ISO ${ISO_SECONDS:-0}s) |"

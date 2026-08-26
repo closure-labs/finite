@@ -9,7 +9,6 @@ pkgs.writeShellApplication {
   name = "finite-installer-build";
   runtimeInputs = with pkgs; [
     bash
-    buildah
     coreutils
     cosign
     dosfstools
@@ -22,6 +21,7 @@ pkgs.writeShellApplication {
     isomd5sum
     jq
     mtools
+    oras
     podman
     python3
     rsync
@@ -50,7 +50,7 @@ pkgs.writeShellApplication {
     seed_input() {
       local source_revision=$1 installer_sha256=$2 overlay_digest=$3 live_digest=$4
       printf '%s\n' \
-        'finite-dakota-netinstaller-seed-v1' \
+        'finite-dakota-netinstaller-seed-v2' \
         "source-revision=''${source_revision}" \
         "installer-sha256=''${installer_sha256}" \
         "builder-digest=''${FINITE_INSTALLER_BUILDER_DIGEST}" \
@@ -68,10 +68,12 @@ pkgs.writeShellApplication {
       seed_input "$2" "$3" "$4" "$5"
       exit
     fi
-    [[ $# == 0 ]] || {
-      echo 'usage: finite-installer-build [cache-input SOURCE_REVISION INSTALLER_SHA256 OVERLAY_DIGEST LIVE_DIGEST]' >&2
+    mode="''${1:-build}"
+    [[ "''${mode}" == build || "''${mode}" == cache-key ]] || {
+      echo 'usage: finite-installer-build [cache-key | cache-input SOURCE_REVISION INSTALLER_SHA256 OVERLAY_DIGEST LIVE_DIGEST]' >&2
       exit 2
     }
+    [[ $# -le 1 ]]
 
     repo_root="''${FINITE_SOURCE_ROOT:-$PWD}"
     [[ -f "''${repo_root}/flake.nix" ]] || {
@@ -79,6 +81,20 @@ pkgs.writeShellApplication {
       exit 2
     }
     cd "''${repo_root}"
+
+    overlay_digest="$({
+      tar --create --file=- --format=gnu --group=0 --mtime='UTC 1970-01-01' \
+        --numeric-owner --owner=0 --sort=name \
+        installer/live installer/prepare-dakota-iso-source \
+        lib/installer-application.nix \
+        modules/aspects/base/rootfs/usr/share/finite/finite-logo.png
+    } | sha256sum | cut -d' ' -f1)"
+    if [[ "''${mode}" == cache-key ]]; then
+      seed_input "''${FINITE_DAKOTA_ISO_REVISION}" \
+        "''${FINITE_BOOTC_INSTALLER_SHA256}" "''${overlay_digest}" \
+        "''${FINITE_DAKOTA_LIVE_DIGEST}"
+      exit
+    fi
 
     : "''${CACHE_WRITE:=false}"
     : "''${GH_TOKEN:?GH_TOKEN is required to verify attestations}"
@@ -101,13 +117,14 @@ pkgs.writeShellApplication {
     source_root="''${RUNNER_TEMP}/finite-dakota-iso-source"
     work_root="''${RUNNER_TEMP}/finite-dakota-iso-work"
     seed_local="localhost/finite-netinstaller-seed:''${GITHUB_SHA}"
-    live_image="localhost/finite-netinstaller:''${GITHUB_SHA}"
     seed_repository="''${IMAGE_REF}-installer-seed"
     environment_seconds=0
     iso_seconds=0
     seed_cache_hit=false
+    seed_cache_source=miss
     seed_published=false
     seed_digest=unresolved
+    seed_registry_digest=
     payload_digest=unresolved
     payload_tag="''${IMAGE_TAG}"
 
@@ -191,13 +208,6 @@ pkgs.writeShellApplication {
       --certificate-identity "''${FINITE_DAKOTA_LIVE_IDENTITY}" \
       "''${dakota_live_ref}" >/dev/null
 
-    overlay_digest="$(
-      tar --create --file=- --format=gnu --group=0 --mtime='UTC 1970-01-01' \
-        --numeric-owner --owner=0 --sort=name \
-        installer/live installer/prepare-dakota-iso-source |
-        sha256sum |
-        cut -d' ' -f1
-    )"
     installer_seed_input="$(
       seed_input "''${FINITE_DAKOTA_ISO_REVISION}" \
         "''${FINITE_BOOTC_INSTALLER_SHA256}" "''${overlay_digest}" \
@@ -224,28 +234,92 @@ pkgs.writeShellApplication {
       "''${FINITE_INSTALLER_BUILDER_IMAGE}@''${FINITE_INSTALLER_BUILDER_DIGEST}" \
       2>&1 | tee diagnostics/source-prepare.log
 
+    target_config="''${work_root}/target.json"
+    jq -n \
+      --arg payload_reference "''${payload_ref}" \
+      --arg payload_digest "''${payload_digest}" \
+      --arg update_reference "''${payload_update_ref}" \
+      '{
+        schema: 1,
+        payload_reference: $payload_reference,
+        payload_digest: $payload_digest,
+        update_reference: $update_reference
+      }' >"''${target_config}"
+    jq -e '
+      .schema == 1 and
+      ((.payload_reference | split("@")[1]) == .payload_digest) and
+      (.update_reference | test(":[A-Za-z0-9._-]+$"))
+    ' "''${target_config}" >/dev/null
+
+    seed_cache_dir="''${FINITE_INSTALLER_SEED_CACHE_DIR:-''${work_root}/seed-cache}"
+    install -d -m 0755 "''${seed_cache_dir}"
+    squashfs="''${seed_cache_dir}/finite-live.squashfs"
+    boot_tar="''${seed_cache_dir}/finite-boot-files.tar"
+    seed_manifest="''${seed_cache_dir}/seed-manifest.json"
+    seed_preflight="''${seed_cache_dir}/seed-preflight.log"
+
+    validate_seed_cache() {
+      local directory=$1 expected actual name
+      jq -e --arg input "''${installer_seed_input}" '
+        .schema == 1 and
+        .input == $input and
+        .compression == "lz4-fast" and
+        .payload_specific == false and
+        (.files["finite-live.squashfs"] | test("^[0-9a-f]{64}$")) and
+        (.files["finite-boot-files.tar"] | test("^[0-9a-f]{64}$")) and
+        (.files["seed-preflight.log"] | test("^[0-9a-f]{64}$"))
+      ' "''${directory}/seed-manifest.json" >/dev/null || return 1
+      for name in finite-live.squashfs finite-boot-files.tar seed-preflight.log; do
+        [[ -s "''${directory}/''${name}" ]] || return 1
+        expected="$(jq -er --arg name "''${name}" '.files[$name]' \
+          "''${directory}/seed-manifest.json")"
+        actual="$(sha256sum "''${directory}/''${name}" | cut -d' ' -f1)"
+        [[ "''${actual}" == "''${expected}" ]] || return 1
+      done
+      grep -qF 'FINITE_INSTALLER_PREFLIGHT=ok mode=assembly' \
+        "''${directory}/seed-preflight.log"
+    }
+
     started="''${SECONDS}"
-    if seed_metadata="$(skopeo inspect --authfile "''${registry_auth_file}" --retry-times 3 "docker://''${seed_tag_ref}" 2>diagnostics/seed-inspect.log)"; then
-      seed_digest="$(jq -er '.Digest' <<<"''${seed_metadata}")"
-      seed_ref="''${seed_repository}@''${seed_digest}"
+    local_seed_available=false
+    if validate_seed_cache "''${seed_cache_dir}"; then
+      local_seed_available=true
+      seed_cache_hit=true
+      seed_cache_source=github-actions
+    else
+      rm -f -- "''${squashfs}" "''${boot_tar}" "''${seed_manifest}" "''${seed_preflight}"
+    fi
+
+    registry_seed_available=false
+    if seed_registry_digest="$(oras resolve --registry-config "''${registry_auth_file}" \
+      "''${seed_tag_ref}" 2>diagnostics/seed-inspect.log)"; then
+      [[ "''${seed_registry_digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
+      seed_registry_ref="''${seed_repository}@''${seed_registry_digest}"
       DOCKER_CONFIG="''${cosign_config_dir}" cosign verify \
         --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-        --certificate-identity "https://github.com/''${GITHUB_REPOSITORY}/.github/workflows/build-installer.yml@refs/heads/main" \
-        "''${seed_ref}" >/dev/null
-      "''${root_podman[@]}" pull "''${auth_args[@]}" "''${seed_ref}"
-      "''${root_podman[@]}" tag "''${seed_ref}" "''${seed_local}"
+        --certificate-identity-regexp \
+          "^https://github.com/''${GITHUB_REPOSITORY}/\\.github/workflows/(build|build-installer)\\.yml@refs/heads/main$" \
+        "''${seed_registry_ref}" >/dev/null
+      registry_seed_available=true
+    fi
+
+    if [[ "''${local_seed_available}" != true && "''${registry_seed_available}" == true ]]; then
+      oras pull --registry-config "''${registry_auth_file}" \
+        --output "''${seed_cache_dir}" "''${seed_registry_ref}" \
+        2>&1 | tee diagnostics/seed-pull.log
+      validate_seed_cache "''${seed_cache_dir}"
       seed_cache_hit=true
-    else
+      seed_cache_source=ghcr
+    elif [[ "''${local_seed_available}" != true ]]; then
       # Pull the exact tag+digest spelling used by the Containerfile so
-      # --pull=never can resolve it from local storage without a name mismatch.
+      # --pull=never resolves it without a mutable-name fallback.
       "''${root_podman[@]}" pull --retry 3 "''${dakota_live_build_ref}"
       "''${root_podman[@]}" pull --retry 3 \
         "''${FINITE_INSTALLER_BUILDER_IMAGE}@''${FINITE_INSTALLER_BUILDER_DIGEST}"
       (
         cd "''${source_root}"
-        "''${root_podman[@]}" build "''${auth_args[@]}" --layers \
+        "''${root_podman[@]}" build "''${auth_args[@]}" --layers=false \
           --cap-add sys_admin --security-opt label=disable --pull=never \
-          --build-arg CACHE_BUST="''${installer_seed_input}" \
           --build-arg DEBUG=0 --build-arg INSTALLER_CHANNEL=stable \
           --build-arg LIVE_ROOT=dakota --build-arg REGISTRY=projectbluefin \
           --build-arg TAG="''${FINITE_DAKOTA_LIVE_TAG}@''${FINITE_DAKOTA_LIVE_DIGEST}" \
@@ -254,71 +328,79 @@ pkgs.writeShellApplication {
           --label 'io.finite.installer.network-required=true' \
           --tag "''${seed_local}" --file live/Containerfile live
       ) 2>&1 | tee diagnostics/live-environment.log
-      if [[ "''${CACHE_WRITE}" == true ]]; then
-        "''${root_podman[@]}" push "''${auth_args[@]}" "''${seed_local}" "''${seed_tag_ref}"
-        seed_digest="$(skopeo inspect --authfile "''${registry_auth_file}" --retry-times 3 \
-          "docker://''${seed_tag_ref}" | jq -er '.Digest')"
-        DOCKER_CONFIG="''${cosign_config_dir}" cosign sign --yes \
-          "''${seed_repository}@''${seed_digest}"
-        seed_published=true
-      else
-        seed_digest="$("''${root_podman[@]}" image inspect "''${seed_local}" --format '{{.Id}}')"
-      fi
+
+      "''${root_podman[@]}" run --rm --network host \
+        --security-opt label=disable \
+        --volume "''${target_config}:/run/finite-installer-target.json:ro" \
+        --entrypoint /usr/bin/bash "''${seed_local}" -ceu \
+        '/usr/local/sbin/finite-installer-apply-target /run/finite-installer-target.json
+         /usr/local/sbin/finite-installer-preflight assembly \
+           /etc/bootc-installer/ci-autoinstall.json' \
+        2>&1 | tee diagnostics/seed-preflight.log "''${seed_preflight}"
+
+      "''${root_exec[@]}" env PATH="''${PATH}" SUPERISO_COMPRESSION=lz4 \
+        SUPERISO_TMPDIR="''${work_root}" \
+        bash "''${source_root}/scripts/build-live-squashfs.sh" \
+          "''${seed_local}" "''${squashfs}" "''${boot_tar}" \
+        2>&1 | tee diagnostics/squashfs-build.log
+      "''${root_exec[@]}" chown "$(id -u):$(id -g)" \
+        "''${squashfs}" "''${boot_tar}"
+
+      jq -n \
+        --arg input "''${installer_seed_input}" \
+        --arg squashfs_sha256 "$(sha256sum "''${squashfs}" | cut -d' ' -f1)" \
+        --arg boot_sha256 "$(sha256sum "''${boot_tar}" | cut -d' ' -f1)" \
+        --arg preflight_sha256 "$(sha256sum "''${seed_preflight}" | cut -d' ' -f1)" \
+        '{
+          schema: 1,
+          input: $input,
+          compression: "lz4-fast",
+          payload_specific: false,
+          preflight: "fisherman-validate-v1",
+          files: {
+            "finite-live.squashfs": $squashfs_sha256,
+            "finite-boot-files.tar": $boot_sha256,
+            "seed-preflight.log": $preflight_sha256
+          }
+        }' >"''${seed_manifest}"
+      validate_seed_cache "''${seed_cache_dir}"
+      seed_cache_source=built
     fi
 
-    target_layer="''${work_root}/target-layer"
-    install -d -m 0755 "''${target_layer}"
-    cat >"''${target_layer}/configure-target.py" <<'PY'
-    from pathlib import Path
-    import sys
+    cp "''${seed_preflight}" diagnostics/seed-preflight.log
+    seed_digest="sha256:$(sha256sum "''${seed_manifest}" | cut -d' ' -f1)"
 
-    payload, update = sys.argv[1:]
-    replacements = {"@@PAYLOAD_REFERENCE@@": payload, "@@UPDATE_REFERENCE@@": update}
-    for name in ("recipe.json", "ci-autoinstall.json", "images.json"):
-        path = Path("/etc/bootc-installer") / name
-        text = path.read_text()
-        for old, new in replacements.items():
-            text = text.replace(old, new)
-        if "@@" in text:
-            raise SystemExit(f"unresolved installer placeholder in {path}")
-        path.write_text(text)
-    PY
-    cat >"''${target_layer}/Containerfile" <<EOF
-    FROM ''${seed_local}
-    COPY configure-target.py /tmp/configure-target.py
-    ARG PAYLOAD_REFERENCE
-    ARG UPDATE_REFERENCE
-    RUN python3 /tmp/configure-target.py "\''${PAYLOAD_REFERENCE}" "\''${UPDATE_REFERENCE}" && rm /tmp/configure-target.py
-    EOF
-    "''${root_podman[@]}" build --layers --pull=never \
-      --build-arg PAYLOAD_REFERENCE="''${payload_ref}" \
-      --build-arg UPDATE_REFERENCE="''${payload_update_ref}" \
-      --label "io.finite.installer.payload.digest=''${payload_digest}" \
-      --tag "''${live_image}" --file "''${target_layer}/Containerfile" \
-      "''${target_layer}" 2>&1 | tee diagnostics/target-layer.log
-    # The single-quoted validation program is evaluated inside the container.
-    # shellcheck disable=SC2016
-    "''${root_podman[@]}" run --rm --entrypoint /usr/bin/bash \
-      "''${live_image}" -ceu \
-      'test ! -e /etc/bootc-installer/live-iso-mode
-       test -e /etc/bootc-installer/finite-netinstall-mode
-       ! grep -R -Fq "@@" /etc/bootc-installer
-       test "$(jq -r .image /etc/bootc-installer/ci-autoinstall.json)" = "$1"' \
-      -- "''${payload_ref}"
+    if [[ "''${CACHE_WRITE}" == true && "''${registry_seed_available}" != true ]]; then
+      (
+        cd "''${seed_cache_dir}"
+        oras push --no-tty --registry-config "''${registry_auth_file}" \
+          --artifact-type application/vnd.finite.installer.seed.v1 \
+          "''${seed_tag_ref}" \
+          'finite-live.squashfs:application/vnd.finite.installer.squashfs.v1' \
+          'finite-boot-files.tar:application/vnd.finite.installer.boot-files.v1.tar' \
+          'seed-manifest.json:application/vnd.finite.installer.seed-manifest.v1+json' \
+          'seed-preflight.log:text/plain'
+      ) 2>&1 | tee diagnostics/seed-push.log
+      seed_registry_digest="$(oras resolve --registry-config "''${registry_auth_file}" \
+        "''${seed_tag_ref}")"
+      [[ "''${seed_registry_digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
+      seed_registry_ref="''${seed_repository}@''${seed_registry_digest}"
+      DOCKER_CONFIG="''${cosign_config_dir}" cosign sign --yes "''${seed_registry_ref}"
+      seed_published=true
+      registry_seed_available=true
+    fi
+    seed_reference="''${seed_tag_ref}"
+    [[ "''${registry_seed_available}" != true ]] || seed_reference="''${seed_registry_ref}"
     environment_seconds=$((SECONDS - started))
 
     started="''${SECONDS}"
-    squashfs="''${work_root}/finite-live.squashfs"
-    boot_tar="''${work_root}/finite-boot-files.tar"
-    "''${root_exec[@]}" env PATH="''${PATH}" SUPERISO_COMPRESSION=lz4 \
-      SUPERISO_TMPDIR="''${work_root}" \
-      bash "''${source_root}/scripts/build-live-squashfs.sh" \
-        "''${live_image}" "''${squashfs}" "''${boot_tar}" \
-      2>&1 | tee diagnostics/squashfs-build.log
-    "''${root_exec[@]}" chown "$(id -u):$(id -g)" "''${squashfs}" "''${boot_tar}"
+    # A cache hit reuses the proof generated with this exact seed input. A miss
+    # ran Fisherman's own validator above before any squashfs or ISO assembly.
+    validate_seed_cache "''${seed_cache_dir}"
 
     final_iso="output/finite-''${IMAGE_TAG}-$(<VERSION).iso"
-    LIVE_TITLE='Finite Live' bash "''${source_root}/live/src/build-iso.sh" \
+    FINITE_TARGET_CONFIG="''${target_config}" LIVE_TITLE='Finite Live' \
+      bash "''${source_root}/live/src/build-iso.sh" \
       "''${boot_tar}" "''${squashfs}" "''${final_iso}" \
       2>&1 | tee diagnostics/iso-build.log
     iso_sha256="$(sha256sum "''${final_iso}" | cut -d' ' -f1)"
@@ -329,7 +411,9 @@ pkgs.writeShellApplication {
       -extract /images/pxeboot/vmlinuz output/vmlinuz \
       -extract /images/pxeboot/initrd.img output/initrd.img \
       -extract /boot/grub/loopback.cfg diagnostics/iso-loopback.cfg \
+      -extract /finite/target.json diagnostics/iso-target.json \
       -extract /EFI/efi.img diagnostics/efi.img >/dev/null 2>&1
+    cmp --silent "''${target_config}" diagnostics/iso-target.json
     mcopy -i diagnostics/efi.img ::/loader/entries/dakota-live.conf \
       diagnostics/systemd-boot-entry.conf
     grep -qF 'title   Finite Live' diagnostics/systemd-boot-entry.conf
@@ -345,7 +429,9 @@ pkgs.writeShellApplication {
       --arg installer_input "''${installer_seed_input}" \
       --arg live_reference "''${dakota_live_build_ref}" \
       --arg live_digest "''${FINITE_DAKOTA_LIVE_DIGEST}" \
-      --arg seed_digest "''${seed_digest}" --arg seed_reference "''${seed_tag_ref}" \
+      --arg seed_digest "''${seed_digest}" --arg seed_reference "''${seed_reference}" \
+      --arg seed_registry_digest "''${seed_registry_digest}" \
+      --arg seed_cache_source "''${seed_cache_source}" \
       --argjson seed_cache_hit "''${seed_cache_hit}" \
       --arg payload "''${payload_ref}" --arg payload_digest "''${payload_digest}" \
       --arg payload_update_reference "''${payload_update_ref}" \
@@ -353,7 +439,7 @@ pkgs.writeShellApplication {
       --arg source_commit "''${GITHUB_SHA}" --arg source_repository "''${GITHUB_REPOSITORY}" \
       --arg version "$(<VERSION)" \
       '{
-        schema_version: 5,
+        schema_version: 6,
         source: {repository: $source_repository, commit: $source_commit},
         version: $version,
         iso: {name: $iso, sha256: $iso_sha256, compression: "lz4", boot: "systemd-boot", volume_label: "FINITE_LIVE", efi_partition_type: "C12A7328-F81F-11D2-BA4B-00A0C93EC93B"},
@@ -366,7 +452,12 @@ pkgs.writeShellApplication {
           target_bootloader: "grub2", target_filesystem: "btrfs",
           network_required: true, offline: false
         },
-        seed: {reference: $seed_reference, digest: $seed_digest, cache_hit: $seed_cache_hit, payload_specific: false},
+        seed: {
+          reference: $seed_reference, digest: $seed_digest,
+          registry_digest: (if $seed_registry_digest == "" then null else $seed_registry_digest end),
+          cache_hit: $seed_cache_hit, cache_source: $seed_cache_source,
+          payload_specific: false, artifact: "application/vnd.finite.installer.seed.v1"
+        },
         payload: {
           reference: $payload, digest: $payload_digest, install_source: $payload,
           update_reference: $payload_update_reference, embedded: false,
@@ -389,9 +480,10 @@ pkgs.writeShellApplication {
         echo "iso-path=''${iso_path}"
         echo "installer-input=''${installer_seed_input}"
         echo "seed-cache-hit=''${seed_cache_hit}"
+        echo "seed-cache-source=''${seed_cache_source}"
         echo "seed-digest=''${seed_digest}"
         echo "seed-published=''${seed_published}"
-        echo "seed-reference=''${seed_tag_ref}"
+        echo "seed-reference=''${seed_reference}"
         echo "update-reference=''${payload_update_ref}"
         echo "environment-seconds=''${environment_seconds}"
         echo "iso-seconds=''${iso_seconds}"

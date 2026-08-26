@@ -25,6 +25,158 @@ for size in 16 24 32 48 64 128 256 512; do
 done
 gtk-update-icon-cache /usr/share/icons/hicolor || true
 
+install -d -m 0755 /usr/local/sbin
+cat >/usr/local/sbin/finite-installer-apply-target <<'EOF'
+#!/usr/bin/bash
+set -euo pipefail
+
+target_source=${1:-}
+if [[ -z "${target_source}" ]]; then
+	while IFS= read -r mountpoint; do
+		candidate="${mountpoint}/finite/target.json"
+		if [[ -s "${candidate}" ]]; then
+			target_source=${candidate}
+			break
+		fi
+	done < <(findmnt --raw --noheadings --types iso9660 --output TARGET)
+fi
+[[ -n "${target_source}" && -s "${target_source}" ]] || {
+	echo 'Finite installer target configuration is missing from the ISO' >&2
+	exit 1
+}
+
+install -d -m 0755 /run/finite-installer
+install -m 0644 "${target_source}" /run/finite-installer/target.json
+jq -e '
+	.schema == 1 and
+	(.payload_reference | test("^[a-z0-9.-]+(:[0-9]+)?/[A-Za-z0-9._/-]+@sha256:[0-9a-f]{64}$")) and
+	(.payload_digest | test("^sha256:[0-9a-f]{64}$")) and
+	(.update_reference | test("^[a-z0-9.-]+(:[0-9]+)?/[A-Za-z0-9._/-]+:[A-Za-z0-9._-]+$")) and
+	((.payload_reference | split("@")[1]) == .payload_digest)
+' /run/finite-installer/target.json >/dev/null
+
+payload_reference="$(jq -er .payload_reference /run/finite-installer/target.json)"
+update_reference="$(jq -er .update_reference /run/finite-installer/target.json)"
+python3 - "${payload_reference}" "${update_reference}" <<'PY'
+from pathlib import Path
+import sys
+
+payload, update = sys.argv[1:]
+replacements = {"@@PAYLOAD_REFERENCE@@": payload, "@@UPDATE_REFERENCE@@": update}
+for name in ("recipe.json", "ci-autoinstall.json", "images.json"):
+    path = Path("/etc/bootc-installer") / name
+    text = path.read_text()
+    for old, new in replacements.items():
+        text = text.replace(old, new)
+    if "@@" in text:
+        raise SystemExit(f"unresolved installer placeholder in {path}")
+    temporary = path.with_suffix(path.suffix + ".finite-new")
+    temporary.write_text(text)
+    temporary.chmod(0o644)
+    temporary.replace(path)
+PY
+
+jq -e --arg payload "${payload_reference}" --arg update "${update_reference}" '
+	.image == $payload and
+	.targetImgref == $update and
+	.filesystem == "btrfs" and
+	.bootloader == "grub2" and
+	.composeFsBackend == false
+' /etc/bootc-installer/ci-autoinstall.json >/dev/null
+EOF
+chmod 0755 /usr/local/sbin/finite-installer-apply-target
+
+cat >/usr/local/sbin/finite-installer-preflight <<'EOF'
+#!/usr/bin/bash
+set -euo pipefail
+
+mode=${1:-runtime}
+recipe=${2:-/etc/bootc-installer/ci-autoinstall.json}
+minimum_scratch_bytes=${FINITE_INSTALLER_MIN_SCRATCH_BYTES:-8589934592}
+[[ "${minimum_scratch_bytes}" =~ ^[1-9][0-9]*$ ]]
+[[ "${mode}" == runtime || "${mode}" == interactive || "${mode}" == assembly ]] || {
+	echo "Unsupported Finite installer preflight mode: ${mode}" >&2
+	exit 2
+}
+
+required_executables=(
+	blkid
+	btrfs
+	bootc
+	efibootmgr
+	findmnt
+	fisherman
+	getent
+	jq
+	lsblk
+	mkfs.btrfs
+	mkfs.ext4
+	mkfs.fat
+	mkfs.xfs
+	mount
+	partprobe
+	podman
+	sfdisk
+	skopeo
+	udevadm
+	umount
+	wipefs
+	xfs_repair
+)
+missing=()
+for executable in "${required_executables[@]}"; do
+	command -v "${executable}" >/dev/null 2>&1 || missing+=("${executable}")
+done
+((${#missing[@]} == 0)) || {
+	printf 'Finite installer preflight: missing executable(s): %s\n' "${missing[*]}" >&2
+	exit 1
+}
+btrfs --version
+mkfs.btrfs --version
+
+payload_reference="$(jq -er '
+	.image | select(test("^[a-z0-9.-]+(:[0-9]+)?/[A-Za-z0-9._/-]+@sha256:[0-9a-f]{64}$"))
+' "${recipe}")"
+update_reference="$(jq -er '
+	.targetImgref | select(test("^[a-z0-9.-]+(:[0-9]+)?/[A-Za-z0-9._/-]+:[A-Za-z0-9._-]+$"))
+' "${recipe}")"
+jq -e '
+	.filesystem == "btrfs" and
+	.bootloader == "grub2" and
+	.composeFsBackend == false and
+	.hostname == "finite"
+' "${recipe}" >/dev/null
+
+validation_recipe=${recipe}
+temporary_recipe=
+cleanup() {
+	[[ -z "${temporary_recipe}" ]] || rm -f -- "${temporary_recipe}"
+}
+trap cleanup EXIT
+if [[ "${mode}" != runtime ]]; then
+	temporary_recipe="$(mktemp /var/tmp/finite-fisherman-preflight.XXXXXX.json)"
+	jq '.disk = "/dev/null"' "${recipe}" >"${temporary_recipe}"
+	validation_recipe=${temporary_recipe}
+fi
+fisherman validate "${validation_recipe}"
+
+registry=${payload_reference%%/*}
+getent ahosts "${registry}" >/dev/null
+skopeo inspect --retry-times 3 "docker://${payload_reference}" >/dev/null
+
+available_scratch_bytes="$(df --block-size=1 --output=avail /var/tmp | tail -n 1 | tr -d '[:space:]')"
+[[ "${available_scratch_bytes}" =~ ^[0-9]+$ ]]
+if ((available_scratch_bytes < minimum_scratch_bytes)); then
+	printf 'Finite installer preflight: /var/tmp has %s bytes free; %s required\n' \
+		"${available_scratch_bytes}" "${minimum_scratch_bytes}" >&2
+	exit 1
+fi
+
+printf 'FINITE_INSTALLER_PREFLIGHT=ok mode=%s payload=%s update=%s scratch_bytes=%s\n' \
+	"${mode}" "${payload_reference}" "${update_reference}" "${available_scratch_bytes}"
+EOF
+chmod 0755 /usr/local/sbin/finite-installer-preflight
+
 cat >/usr/local/bin/finite-installer-launch <<'EOF'
 #!/usr/bin/bash
 set -euo pipefail
@@ -32,6 +184,8 @@ set -euo pipefail
 app_id=org.bootcinstaller.Installer
 recipe=/run/host/etc/bootc-installer/recipe.json
 installer_log="${HOME}/.var/app/${app_id}/cache/bootc-installer/installer-debug.log"
+fisherman_log="${HOME}/.cache/bootc-installer/fisherman-output.log"
+preflight_log="${HOME}/.cache/bootc-installer/preflight.log"
 activation_marker='Installer::Main INFO: do_activate called'
 activation_timeout_seconds=60
 serial=/dev/ttyS0
@@ -43,8 +197,10 @@ if grep -qw 'finite.installer.autoinstall=1' /proc/cmdline; then
 	command+=(--autoinstall /run/host/etc/bootc-installer/ci-autoinstall.json)
 fi
 
-install -d -m 0755 "$(dirname "${installer_log}")"
-rm -f "${installer_log}"
+install -d -m 0755 \
+	"$(dirname "${installer_log}")" \
+	"$(dirname "${fisherman_log}")"
+rm -f "${installer_log}" "${fisherman_log}" "${preflight_log}"
 
 emit_marker() {
 	printf '%s\n' "$1" | sudo tee "${serial}" >/dev/null
@@ -57,9 +213,47 @@ stop_installer() {
 	wait "${installer_pid}" >/dev/null 2>&1 || true
 }
 
+dump_guest_diagnostics() {
+	local reason=$1 name path
+	{
+		echo "FINITE_DIAGNOSTICS_REASON=${reason}"
+		for name in installer-debug.log fisherman-output.log preflight.log; do
+			case "${name}" in
+				installer-debug.log) path=${installer_log} ;;
+				fisherman-output.log) path=${fisherman_log} ;;
+				preflight.log) path=${preflight_log} ;;
+			esac
+			echo "FINITE_DIAGNOSTIC_BEGIN=${name}"
+			if [[ -f "${path}" ]]; then
+				cat "${path}"
+			else
+				echo "Log was not created: ${path}"
+			fi
+			echo "FINITE_DIAGNOSTIC_END=${name}"
+		done
+		echo 'FINITE_DIAGNOSTIC_BEGIN=system-state.log'
+		echo '--- lsblk ---'
+		lsblk --fs --output-all || true
+		echo '--- mounts ---'
+		findmnt --real --output-all || true
+		echo '--- disk space ---'
+		df -hT || true
+		echo '--- Podman storage ---'
+		sudo podman system df || true
+		echo '--- installer journals ---'
+		sudo journalctl --boot --no-pager --lines 500 \
+			--unit=finite-installer-bootstrap.service \
+			--unit=finite-installer-target-config.service \
+			--unit=gdm.service || true
+		echo 'FINITE_DIAGNOSTIC_END=system-state.log'
+	} | sudo tee "${serial}" >/dev/null
+}
+
 report_startup_error() {
-	emit_marker "FINITE_INSTALLER_ERROR=$1"
+	local error=$1
 	stop_installer
+	dump_guest_diagnostics "${error}"
+	emit_marker "FINITE_INSTALLER_ERROR=${error}"
 	if [[ "${unattended}" == true ]]; then
 		sudo systemctl poweroff
 	fi
@@ -86,11 +280,19 @@ if [[ "${unattended}" == true ]]; then
 	emit_marker "FINITE_INSTALLER_SOURCE_DIGEST=${source_manifest_digest}"
 fi
 
+preflight_mode=interactive
+[[ "${unattended}" != true ]] || preflight_mode=runtime
+if ! sudo /usr/local/sbin/finite-installer-preflight \
+	"${preflight_mode}" /etc/bootc-installer/ci-autoinstall.json \
+	> >(tee "${preflight_log}" | sudo tee "${serial}" >/dev/null) 2>&1; then
+	report_startup_error 'fisherman-preflight-failed'
+fi
+
 "${command[@]}" &
 installer_pid=$!
 sudo /usr/bin/bash -c \
-	'exec tail --pid="$1" --retry -n +1 -F "$2" >"$3" 2>&1' \
-	-- "${installer_pid}" "${installer_log}" "${serial}" &
+	'exec tail --pid="$1" --retry -n +1 -F "$2" "$3" >"$4" 2>&1' \
+	-- "${installer_pid}" "${installer_log}" "${fisherman_log}" "${serial}" &
 log_tail_pid=$!
 cleanup() {
 	kill -TERM "${log_tail_pid}" >/dev/null 2>&1 || true
@@ -123,6 +325,10 @@ if [[ "${unattended}" != true ]]; then
 	wait "${installer_pid}"
 	installer_status=$?
 	set -e
+	if ((installer_status != 0)); then
+		dump_guest_diagnostics "bootc-installer exited status=${installer_status}"
+		emit_marker "FINITE_INSTALLER_ERROR=bootc-installer exited status=${installer_status}"
+	fi
 	exit "${installer_status}"
 fi
 
@@ -147,15 +353,24 @@ if [[ -z "${result}" ]]; then
 	wait "${installer_pid}"
 	installer_status=$?
 	set -e
+	dump_guest_diagnostics "bootc-installer exited-before-result status=${installer_status}"
 	emit_marker "FINITE_INSTALLER_ERROR=bootc-installer exited-before-result status=${installer_status}"
 	status=1
 else
 	stop_installer
 	if [[ "${result}" == complete ]]; then
-		sudo /usr/local/sbin/finite-ci-post-install
-		emit_marker 'FINITE_INSTALLER_COMPLETE=1'
-		status=0
+		if sudo /usr/local/sbin/finite-ci-post-install \
+			> >(sudo tee "${serial}" >/dev/null) 2>&1; then
+			dump_guest_diagnostics success
+			emit_marker 'FINITE_INSTALLER_COMPLETE=1'
+			status=0
+		else
+			dump_guest_diagnostics post-install-failed
+			emit_marker 'FINITE_INSTALLER_ERROR=post-install-failed'
+			status=1
+		fi
 	else
+		dump_guest_diagnostics bootc-installer-reported-failure
 		emit_marker 'FINITE_INSTALLER_ERROR=bootc-installer reported-failure'
 		status=1
 	fi
@@ -165,7 +380,6 @@ exit "${status}"
 EOF
 chmod 0755 /usr/local/bin/finite-installer-launch
 
-install -d -m 0755 /usr/local/sbin
 cat >/usr/local/sbin/finite-ci-post-install <<'EOF'
 #!/usr/bin/bash
 set -euo pipefail
@@ -203,6 +417,24 @@ for deployment_root in "${deployment_roots[@]}"; do
 	install -d -m 0755 \
 		"${systemd_root}" \
 		"${systemd_root}/multi-user.target.wants"
+	cat >"${systemd_root}/finite-ci-installed-ready" <<'SCRIPT'
+#!/usr/bin/bash
+set -euo pipefail
+
+status="$(/usr/bin/bootc status --json --format-version=1)"
+hostname_value="$(hostname)"
+root_fstype="$(findmnt --noheadings --output FSTYPE / | tr -d '[:space:]')"
+os_version="$(. /usr/lib/os-release; printf '%s' "${VERSION_ID}")"
+grub2_ready=false
+[[ -s /boot/grub2/grub.cfg ]] && grub2_ready=true
+printf 'FINITE_BOOTC_STATUS=%s\n' "${status}"
+printf 'FINITE_HOSTNAME=%s\n' "${hostname_value}"
+printf 'FINITE_ROOT_FSTYPE=%s\n' "${root_fstype}"
+printf 'FINITE_OS_VERSION=%s\n' "${os_version}"
+printf 'FINITE_GRUB2_READY=%s\n' "${grub2_ready}"
+printf 'FINITE_INSTALLED_READY=1\n'
+SCRIPT
+	chmod 0755 "${systemd_root}/finite-ci-installed-ready"
 	cat >"${systemd_root}/finite-ci-installed-ready.service" <<'UNIT'
 [Unit]
 Description=Finite installed-system validation marker
@@ -210,7 +442,7 @@ After=systemd-user-sessions.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/bash -c 'status="$(/usr/bin/bootc status --json --format-version=1)"; printf "FINITE_BOOTC_STATUS=%%s\nFINITE_INSTALLED_READY=1\n" "$status"'
+ExecStart=/etc/systemd/system/finite-ci-installed-ready
 StandardOutput=tty
 StandardError=tty
 TTYPath=/dev/ttyS0
@@ -294,10 +526,30 @@ install -d -m 0755 /etc/systemd/system/gdm.service.d
 cat >/etc/systemd/system/gdm.service.d/20-finite-live-session.conf <<'EOF'
 [Unit]
 ConditionPathExists=/etc/bootc-installer/finite-netinstall-mode
+Requires=finite-installer-target-config.service
+After=finite-installer-target-config.service
 
 [Service]
 ExecStartPre=/usr/local/sbin/finite-live-session-prepare
 EOF
+
+cat >/usr/lib/systemd/system/finite-installer-target-config.service <<'EOF'
+[Unit]
+Description=Apply the Finite installer target from the live ISO
+ConditionPathExists=/etc/bootc-installer/finite-netinstall-mode
+Before=gdm.service finite-installer-bootstrap.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/finite-installer-apply-target
+RemainAfterExit=yes
+StandardOutput=journal+console
+StandardError=journal+console
+
+[Install]
+WantedBy=graphical.target
+EOF
+systemctl enable finite-installer-target-config.service
 
 # GDM can establish the live graphical session without activating the generic
 # graphical-session.target in the user's systemd manager.  Keep the user unit
@@ -356,6 +608,7 @@ Description=Start the Finite installer in the live graphical session
 ConditionPathExists=/etc/bootc-installer/finite-netinstall-mode
 After=systemd-user-sessions.service gdm.service
 Wants=gdm.service
+Requires=finite-installer-target-config.service
 
 [Service]
 Type=oneshot

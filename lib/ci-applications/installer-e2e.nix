@@ -82,6 +82,21 @@ pkgs.writeShellApplication {
       value="''${value//$'\r'/}"
       printf '%s\n' "''${value}"
     }
+    extract_guest_diagnostics() {
+      local name output
+      [[ -f "''${install_log}" ]] || return 0
+      for name in installer-debug.log fisherman-output.log preflight.log system-state.log; do
+        output="''${diagnostics_dir}/''${name}"
+        awk -v begin="FINITE_DIAGNOSTIC_BEGIN=''${name}" \
+          -v end="FINITE_DIAGNOSTIC_END=''${name}" '
+            { sub(/\r$/, "") }
+            $0 == begin { capture = 1; next }
+            $0 == end { capture = 0; found = 1; next }
+            capture { print }
+            END { if (!found) exit 1 }
+          ' "''${install_log}" >"''${output}" || rm -f -- "''${output}"
+      done
+    }
     print_logs() {
       local log
       for log in "''${install_log}" "''${boot_log}"; do
@@ -96,6 +111,7 @@ pkgs.writeShellApplication {
       set +e
       terminate_and_reap "''${qemu_pid}"
       terminate_and_reap "''${tail_pid}"
+      extract_guest_diagnostics
       ((status == 0)) || print_logs
       exit "''${status}"
     }
@@ -259,6 +275,10 @@ pkgs.writeShellApplication {
     actual_digest="$(jq -er '.status.booted.image.imageDigest' <<<"''${bootc_status}")"
     actual_reference="$(jq -er '.status.booted.image.image.image' <<<"''${bootc_status}")"
     actual_architecture="$(jq -er '.status.booted.image.architecture' <<<"''${bootc_status}")"
+    installed_hostname="$(serial_marker_value FINITE_HOSTNAME "''${boot_log}")"
+    installed_root_fstype="$(serial_marker_value FINITE_ROOT_FSTYPE "''${boot_log}")"
+    installed_os_version="$(serial_marker_value FINITE_OS_VERSION "''${boot_log}")"
+    installed_grub2_ready="$(serial_marker_value FINITE_GRUB2_READY "''${boot_log}")"
     [[ "''${actual_architecture}" == amd64 ]] || {
       echo "Installed bootc architecture mismatch: expected amd64, got ''${actual_architecture}" >&2
       exit 1
@@ -269,6 +289,22 @@ pkgs.writeShellApplication {
     }
     [[ "''${actual_reference}" == "''${expected_reference}" ]] || {
       echo "Installed bootc reference mismatch: expected ''${expected_reference}, got ''${actual_reference}" >&2
+      exit 1
+    }
+    [[ "''${installed_hostname}" == finite ]] || {
+      echo "Installed hostname mismatch: expected finite, got ''${installed_hostname}" >&2
+      exit 1
+    }
+    [[ "''${installed_root_fstype}" == btrfs ]] || {
+      echo "Installed root filesystem mismatch: expected btrfs, got ''${installed_root_fstype}" >&2
+      exit 1
+    }
+    [[ "''${installed_os_version}" == 44 ]] || {
+      echo "Installed Fedora version mismatch: expected 44, got ''${installed_os_version}" >&2
+      exit 1
+    }
+    [[ "''${installed_grub2_ready}" == true ]] || {
+      echo 'Installed GRUB2 configuration is missing' >&2
       exit 1
     }
     echo "Validated installed bootc deployment ''${actual_reference}@''${actual_digest} (''${actual_architecture})"

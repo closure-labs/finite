@@ -125,10 +125,11 @@
   ];
   workflowSource = sourceFor [
     ../.github
+    ../README.md
     ../devenv-tasks.nix
     ../devenv.nix
     ../devenv.yaml
-    ../docs/ci-and-releases.md
+    ../docs
     ../lib/ci-applications
     ../lib/flake-applications.nix
     ../automation/github/policies
@@ -624,9 +625,12 @@ in {
       grep -qF 'end-to-end:' .github/actions/build-installer/action.yml
       grep -qF 'finite-installer-e2e install' .github/actions/build-installer/action.yml
       grep -qF 'finite-installer-e2e boot' .github/actions/build-installer/action.yml
-      grep -qF 'finite-dakota-netinstaller-seed-v1' lib/installer-application.nix
+      grep -qF 'finite-dakota-netinstaller-seed-v2' lib/installer-application.nix
       grep -qF 'build-live-squashfs.sh' lib/installer-application.nix
       grep -qF 'live/src/build-iso.sh' lib/installer-application.nix
+      grep -qF -- '--layers=false' lib/installer-application.nix
+      grep -qF 'oras push' lib/installer-application.nix
+      grep -qF 'Restore exact installer seed artifacts' .github/actions/build-installer/action.yml
       ! grep -qF 'bootc-generic-iso' lib/installer-application.nix
       ! grep -qF -- '--bootc-installer-payload-ref' lib/installer-application.nix
       ! grep -qF 'oci-archive:' lib/installer-application.nix
@@ -639,9 +643,11 @@ in {
         installer/live/finite/configure-live.d.sh
       grep -qF 'Installer::Main INFO: do_activate called' \
         installer/live/finite/configure-live.d.sh
-      ! grep -qF '/etc/xdg/autostart/tuna-installer.desktop' \
+      grep -qF '/etc/xdg/autostart/tuna-installer.desktop' \
         installer/live/finite/configure-live.d.sh
-      ! grep -qF 'live-ready.service' installer/live/finite/configure-live.d.sh
+      grep -qF 'systemctl disable live-ready.service' installer/live/finite/configure-live.d.sh
+      grep -qF 'finite-installer-target-config.service' \
+        installer/live/finite/configure-live.d.sh
       grep -qF 'projectbluefin/bootc-installer' lib/installer-application.nix
       grep -qF 'seed-cache-hit=' lib/installer-application.nix
       grep -qF 'checks.' modules/outputs.nix
