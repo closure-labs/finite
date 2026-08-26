@@ -23,6 +23,10 @@ in rec {
     inherit devenv pkgs;
   };
   updateHomeRelease = import ./ci-applications/update-home-release.nix {inherit pkgs;};
+  repositorySecurityAudit = import ./ci-applications/repository-security-audit.nix {
+    inherit pkgs;
+    policy = ../automation/github/repository-security.json;
+  };
 
   githubActionsSecrets = pkgs.writeShellApplication {
     name = "finite-github-actions-secrets";
@@ -61,8 +65,10 @@ in rec {
         flake_uri="path:''${repo_root}"
         if [[ "''${GITHUB_ACTIONS:-false}" == true ]]; then
           # Keep checkout metadata out of checks such as treefmt, which create
-          # their own temporary Git repository from the flake source.
-          flake_uri="git+file://''${repo_root}"
+          # their own temporary Git repository from the flake source. Declare
+          # the CI checkout shallow so Nix does not attempt to compute a
+          # revCount that is unavailable at fetch-depth 1.
+          flake_uri="git+file://''${repo_root}?shallow=1"
         fi
 
         check_names=(${quotedNames})

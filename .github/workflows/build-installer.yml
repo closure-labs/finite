@@ -47,9 +47,10 @@ jobs:
         uses: ./.github/actions/build-installer
         with:
           cache-write: >-
-            ${{ github.event_name == 'schedule' ||
+            ${{ github.ref == 'refs/heads/main' &&
+            (github.event_name == 'schedule' ||
             (github.event_name == 'workflow_dispatch' &&
-            github.ref == 'refs/heads/main') }}
+            github.ref == 'refs/heads/main')) }}
           end-to-end: ${{ github.event_name == 'schedule' || inputs.end-to-end }}
           image-tag: ${{ inputs.image-tag || 'bluefin-generic' }}
           token: ${{ github.token }}

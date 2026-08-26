@@ -74,6 +74,12 @@ pkgs.writeShellApplication {
       label_args+=(--label "''${label}")
     done < <(jq -r 'to_entries[] | "\(.key)=\(.value)"' <<<"''${preserved_labels}")
 
+    # rpm-ostree's full and --previous-build paths require more than the
+    # ordinary rootless Podman capability set. A 2026-08-26 fixture run proved
+    # SYS_ADMIN alone fails while both privileged paths succeed. Keep the
+    # privileged container constrained to the read-only image mount below,
+    # one isolated output mount, and the optional read-only auth file. No host
+    # devices or other host paths are exposed.
     run_args=(--rm --pull=never --privileged)
     if [[ -n "''${authfile}" ]]; then
       run_args+=(
@@ -94,6 +100,7 @@ pkgs.writeShellApplication {
       run_args+=(--volume "''${archive_dir}:/run/finite-rechunk-output")
     fi
     run_args+=(
+      # Podman image mounts are read-only unless rw=true is specified.
       --mount "type=image,src=''${source_image},target=/rpm-ostree"
       --entrypoint /usr/bin/rpm-ostree
       "''${source_image}"

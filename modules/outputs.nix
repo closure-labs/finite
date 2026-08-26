@@ -253,6 +253,7 @@ in {
       ci-trusted-update = applications.trustedUpdate;
       ci-queue-dependabot = applications.queueDependabot;
       ci-package-cleanup = applications.packageCleanup;
+      ci-repository-security-audit = applications.repositorySecurityAudit;
       ci-github-actions-secrets = applications.githubActionsSecrets;
       ci-load-bluefin = applications.loadBluefin;
       ci-lock-validate = applications.validateLocks;
@@ -287,6 +288,10 @@ in {
       local-cache = {
         type = "app";
         program = "${localCache}/bin/finite-local-cache";
+      };
+      repository-security-audit = {
+        type = "app";
+        program = lib.getExe applications.repositorySecurityAudit;
       };
     };
 
