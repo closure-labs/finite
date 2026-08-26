@@ -236,7 +236,9 @@ in {
       ci-gate = applications.ciGate;
       ci-validate-image-shard = applications.validateImageShard;
       ci-image-reuse = applications.imageReuse;
+      ci-image-verify = applications.imageVerify;
       ci-image-sign = applications.imageSign;
+      ci-profile-stage = applications.profileStage;
       ci-rechunk-image = applications.rechunkImage;
       ci-image-build = applications.imageBuild;
       ci-image-sbom = applications.imageSbom;
@@ -246,6 +248,8 @@ in {
       ci-installer-e2e = applications.installerE2e;
       ci-installer-smoke = applications.installerSmoke;
       ci-release-notes = applications.releaseNotes;
+      ci-release-control = applications.releaseControl;
+      ci-github-output = applications.githubOutput;
       ci-update-locks = applications.updateLocks;
       ci-home-release-update = applications.updateHomeRelease;
       ci-source-update = applications.sourceUpdate;

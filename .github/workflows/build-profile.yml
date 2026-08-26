@@ -78,263 +78,36 @@ jobs:
               --password-stdin
           echo "REGISTRY_AUTH_FILE=${registry_auth_file}" >>"${GITHUB_ENV}"
 
-      - name: Resolve immutable build inputs
-        id: inputs
-        env:
-          PARENT_DIGEST: ${{ inputs.parent-digest }}
-          PARENT_IMAGE: ${{ inputs.parent-image }}
-          PARENT_PROFILE: ${{ inputs.parent-profile }}
-          PARENT_TAG: ${{ inputs.parent-tag }}
-        shell: bash
-        run: |
-          if [[ -n "${PARENT_PROFILE}" && -z "${PARENT_DIGEST}" ]]; then
-            [[ -n "${PARENT_TAG}" ]] || {
-              echo 'A parent digest or tag is required for derived builds' >&2
-              exit 2
-            }
-            PARENT_DIGEST="$(
-              nix shell --accept-flake-config .#ci-skopeo \
-                -c skopeo inspect --retry-times 3 --format '{{.Digest}}' \
-                  "docker://${PARENT_IMAGE}:${PARENT_TAG}"
-            )"
-          fi
-          [[ "${PARENT_DIGEST}" =~ ^sha256:[0-9a-f]{64}$ ]] || {
-            echo "Invalid parent digest: ${PARENT_DIGEST}" >&2
-            exit 2
-          }
-          {
-            echo "parent_digest=${PARENT_DIGEST}"
-          } >>"${GITHUB_OUTPUT}"
-
-      - name: Reuse matching staged image
-        if: inputs.reuse-existing
-        id: reuse
+      - name: Stage immutable profile image
+        id: stage
         env:
           BUILD_INPUT: ${{ inputs.build-input }}
           BUILD_PROFILE: ${{ inputs.profile }}
+          CACHE_WRITE: "true"
           COSIGN_IDENTITY: https://github.com/${{ github.repository }}/.github/workflows/build-profile.yml@refs/heads/main
-          EXPECTED_PARENT_DIGEST: ${{ steps.inputs.outputs.parent_digest }}
           EXPECTED_REVISION: ${{ github.sha }}
           EXPECTED_UPSTREAM_DIGEST: ${{ inputs.upstream-base-digest }}
           EXPECTED_VERSION: ${{ inputs.version }}
-          CANDIDATE_TAG: ${{ format('{0}-candidate', inputs.profile) }}
-        shell: bash
-        run: |
-          started=${SECONDS}
-          record_duration() {
-            echo "seconds=$((SECONDS - started))" >>"${GITHUB_OUTPUT}"
-          }
-          trap record_duration EXIT
-
-          if digest="$(nix shell --accept-flake-config .#ci-image-reuse \
-            -c finite-image-reuse "${CANDIDATE_TAG}")" &&
-            [[ -n "${digest}" ]]; then
-            if image_id="$({
-              podman pull --quiet \
-                --authfile "${REGISTRY_AUTH_FILE}" \
-                "${IMAGE_REF}@${digest}"
-            })"; then
-              podman tag "${image_id}" "${IMAGE_REF}:${CANDIDATE_TAG}"
-              {
-                echo 'hit=true'
-                echo "digest=${digest}"
-              } >>"${GITHUB_OUTPUT}"
-              exit 0
-            fi
-            echo "${BUILD_PROFILE}: matching image could not be pulled; building it again" >&2
-          fi
-          echo 'hit=false' >>"${GITHUB_OUTPUT}"
-
-      - name: Load locked upstream image
-        if: inputs.parent-from-lock && steps.reuse.outputs.hit != 'true'
-        id: upstream_load
-        env:
-          UPSTREAM_SOURCE: ${{ inputs.upstream-source }}
-        shell: bash
-        run: |
-          started=${SECONDS}
-          record_duration() {
-            echo "seconds=$((SECONDS - started))" >>"${GITHUB_OUTPUT}"
-          }
-          trap record_duration EXIT
-          nix shell --accept-flake-config .#ci-load-bluefin \
-            -c finite-load-bluefin "${UPSTREAM_SOURCE}"
-
-      - name: Build image from immutable parent
-        if: steps.reuse.outputs.hit != 'true'
-        id: build
-        env:
-          BUILD_INPUT: ${{ inputs.build-input }}
-          BUILD_PROFILE: ${{ inputs.profile }}
-          PARENT_DIGEST: ${{ steps.inputs.outputs.parent_digest }}
+          PARENT_DIGEST: ${{ inputs.parent-digest }}
           PARENT_FROM_LOCK: ${{ inputs.parent-from-lock }}
           PARENT_IMAGE: ${{ inputs.parent-image }}
           PARENT_PROFILE: ${{ inputs.parent-profile }}
           PARENT_TAG: ${{ inputs.parent-tag }}
-          CACHE_WRITE: "true"
-          FINITE_VERSION: ${{ inputs.version }}
-          UPSTREAM_BASE_DIGEST: ${{ inputs.upstream-base-digest }}
+          REUSE_EXISTING: ${{ inputs.reuse-existing }}
+          UPSTREAM_SOURCE: ${{ inputs.upstream-source }}
         shell: bash
         run: |
-          started=${SECONDS}
-          record_duration() {
-            echo "seconds=$((SECONDS - started))" >>"${GITHUB_OUTPUT}"
-          }
-          trap record_duration EXIT
-
-          primary_image="${IMAGE_REF}:${BUILD_PROFILE}-candidate"
-          created="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-          generated_root="$(nix build --accept-flake-config .#generated --no-link --print-out-paths)"
-          foundation="$(jq -er --arg profile "${BUILD_PROFILE}" '.profiles[$profile].foundation' "${generated_root}/bootc/generated/profile-catalog.json")"
-          hardware="$(jq -er --arg profile "${BUILD_PROFILE}" '.profiles[$profile].hardware' "${generated_root}/bootc/generated/profile-catalog.json")"
-          containerfile=./bootc/Containerfile
-          cache_ref="${IMAGE_REF}-build-cache"
-          cache_args=(--layers)
-          parent_args=()
-
-          if [[ -n "${PARENT_PROFILE}" ]]; then
-            containerfile=./bootc/Containerfile.derived
-            parent_args+=(
-              --label "io.finite.parent.digest=${PARENT_DIGEST}"
-              --label "io.finite.parent.profile=${PARENT_PROFILE}"
-              --build-arg "PARENT_PROFILE=${PARENT_PROFILE}"
-            )
-          fi
-          base_ref="${PARENT_IMAGE}@${PARENT_DIGEST}"
-          pull_policy=always
-          if [[ "${PARENT_FROM_LOCK}" == true ]]; then
-            [[ -n "${PARENT_TAG}" ]]
-            base_ref="${PARENT_IMAGE}:${PARENT_TAG}"
-            pull_policy=never
-          fi
-          cache_available=false
-          if nix shell --accept-flake-config .#ci-skopeo \
-            -c skopeo list-tags "docker://${cache_ref}" >/dev/null 2>&1; then
-            cache_available=true
-            cache_args+=(--cache-from "${cache_ref}" --cache-ttl 168h)
-          fi
-          if [[ "${CACHE_WRITE}" == true ]]; then
-            cache_args+=(--cache-to "${cache_ref}")
-          fi
-          {
-            echo "cache_available=${cache_available}"
-            echo "cache_ref=${cache_ref}"
-            echo "cache_write=${CACHE_WRITE}"
-          } >>"${GITHUB_OUTPUT}"
-
-          buildah bud \
-            --file "${containerfile}" \
-            --pull="${pull_policy}" \
-            --build-context finite-generated="${generated_root}" \
-            "${cache_args[@]}" \
-            "${parent_args[@]}" \
-            --label "io.finite.build.input=${BUILD_INPUT}" \
-            --label "io.finite.build.profile=${BUILD_PROFILE}" \
-            --label "io.finite.foundation=${foundation}" \
-            --label "io.finite.hardware=${hardware}" \
-            --label "io.finite.upstream.digest=${UPSTREAM_BASE_DIGEST}" \
-            --label "org.opencontainers.image.base.digest=${PARENT_DIGEST}" \
-            --label "org.opencontainers.image.created=${created}" \
-            --label "org.opencontainers.image.revision=${GITHUB_SHA}" \
-            --build-arg "BASE_REF=${base_ref}" \
-            --build-arg "BUILD_PROFILE=${BUILD_PROFILE}" \
-            --build-arg "FINITE_VERSION=${FINITE_VERSION}" \
-            --format docker \
-            --tls-verify=true \
-            --tag "${primary_image}" \
-            .
-
-      - name: Resolve verified previous profile build
-        if: steps.reuse.outputs.hit != 'true'
-        id: previous_build
-        env:
-          BUILD_PROFILE: ${{ inputs.profile }}
-          COSIGN_IDENTITY: https://github.com/${{ github.repository }}/.github/workflows/build-profile.yml@refs/heads/main
-        shell: bash
-        run: |
-          set -euo pipefail
-          mutable_ref="${IMAGE_REF}:${BUILD_PROFILE}"
-          metadata="$({
-            nix shell --accept-flake-config .#ci-skopeo \
-              -c skopeo inspect --retry-times 3 "docker://${mutable_ref}" 2>/dev/null || true
-          })"
-          digest="$(jq -r '.Digest // empty' <<<"${metadata}")"
-          if [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]] &&
-            nix shell --accept-flake-config .#ci-cosign \
-              -c cosign verify \
-                --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-                --certificate-identity "${COSIGN_IDENTITY}" \
-                "${IMAGE_REF}@${digest}" >/dev/null 2>&1; then
-            {
-              echo 'available=true'
-              echo "digest=${digest}"
-              echo "reference=docker://${IMAGE_REF}@${digest}"
-            } >>"${GITHUB_OUTPUT}"
-          else
-            {
-              echo 'available=false'
-              echo 'digest=none'
-            } >>"${GITHUB_OUTPUT}"
-            echo "${BUILD_PROFILE}: no verifiable previous profile build; using a full rechunk" >&2
-          fi
-
-      - name: Rechunk bootc image for efficient updates
-        if: steps.reuse.outputs.hit != 'true'
-        id: rechunk
-        env:
-          BUILD_PROFILE: ${{ inputs.profile }}
-          PREVIOUS_BUILD: ${{ steps.previous_build.outputs.reference }}
-        shell: bash
-        run: |
-          primary_image="${IMAGE_REF}:${BUILD_PROFILE}-candidate"
-          remote_ref="${primary_image}"
-          output="docker://${remote_ref}"
-          rechunk_args=(
-            --source "${primary_image}"
-            --output "${output}"
-            --authfile "${REGISTRY_AUTH_FILE}"
-          )
-          if [[ -n "${PREVIOUS_BUILD}" ]]; then
-            rechunk_args+=(--previous-build "${PREVIOUS_BUILD}")
-          fi
-          report="$({
-            FINITE_PODMAN="$(command -v podman)" \
-              nix shell --accept-flake-config .#ci-rechunk-image \
-                -c finite-rechunk-image "${rechunk_args[@]}"
-          })"
-          {
-            echo "digest=$(jq -er .digest <<<"${report}")"
-            echo "mode=$(jq -er .mode <<<"${report}")"
-            echo "previous_build_digest=$(jq -er .previous_build_digest <<<"${report}")"
-            echo "seconds=$(jq -er .rechunk_seconds <<<"${report}")"
-          } >>"${GITHUB_OUTPUT}"
-
-      - name: Record staged candidate digest
-        id: push
-        env:
-          BUILD_PROFILE: ${{ inputs.profile }}
-          RECHUNK_DIGEST: ${{ steps.rechunk.outputs.digest }}
-          REUSED_DIGEST: ${{ steps.reuse.outputs.digest }}
-        shell: bash
-        run: |
-          primary_ref="${IMAGE_REF}:${BUILD_PROFILE}-candidate"
-          digest="${REUSED_DIGEST:-${RECHUNK_DIGEST}}"
-          [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
-
-          published_digest="$({
-            nix shell --accept-flake-config .#ci-skopeo \
-              -c skopeo inspect --retry-times 3 --format '{{.Digest}}' \
-                "docker://${primary_ref}"
-          })"
-          [[ "${published_digest}" == "${digest}" ]]
-
-          echo "digest=${digest}" >>"${GITHUB_OUTPUT}"
+          report="${RUNNER_TEMP}/finite-profile-stage.json"
+          nix shell --accept-flake-config .#ci-profile-stage \
+            -c finite-profile-stage >"${report}"
+          nix shell --accept-flake-config .#ci-github-output \
+            -c finite-github-output "${report}" >/dev/null
 
       - name: Sign and verify immutable image
-        if: steps.reuse.outputs.hit != 'true'
+        if: steps.stage.outputs.reuse_hit != 'true'
         env:
           COSIGN_IDENTITY: https://github.com/${{ github.repository }}/.github/workflows/build-profile.yml@refs/heads/main
-          DIGEST: ${{ steps.push.outputs.digest }}
+          DIGEST: ${{ steps.stage.outputs.digest }}
         shell: bash
         run: >-
           nix shell --accept-flake-config .#ci-image-sign
@@ -343,16 +116,16 @@ jobs:
       - name: Check for verified build provenance
         id: provenance_check
         env:
-          DIGEST: ${{ steps.push.outputs.digest }}
+          COSIGN_IDENTITY: https://github.com/${{ github.repository }}/.github/workflows/build-profile.yml@refs/heads/main
+          DIGEST: ${{ steps.stage.outputs.digest }}
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          if gh attestation verify "oci://${IMAGE_REF}@${DIGEST}" \
-            --bundle-from-oci \
-            --repo "${GITHUB_REPOSITORY}" \
-            --signer-workflow "${GITHUB_REPOSITORY}/.github/workflows/build-profile.yml" \
-            --source-digest "${GITHUB_SHA}" \
-            --predicate-type https://slsa.dev/provenance/v1 >/dev/null 2>&1; then
+          if nix shell --accept-flake-config .#ci-image-verify -c finite-image-verify \
+            --image "${IMAGE_REF}" --digest "${DIGEST}" \
+            --cosign-identity "${COSIGN_IDENTITY}" --source-sha "${GITHUB_SHA}" \
+            --provenance-workflow "${GITHUB_REPOSITORY}/.github/workflows/build-profile.yml" \
+            --attempts 1 >/dev/null 2>&1; then
             echo 'hit=true' >>"${GITHUB_OUTPUT}"
           else
             echo 'hit=false' >>"${GITHUB_OUTPUT}"
@@ -365,7 +138,7 @@ jobs:
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           push-to-registry: true
-          subject-digest: ${{ steps.push.outputs.digest }}
+          subject-digest: ${{ steps.stage.outputs.digest }}
           subject-name: ${{ env.IMAGE_REF }}
           subject-version: ${{ inputs.version }}
 
@@ -377,53 +150,45 @@ jobs:
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           push-to-registry: true
-          subject-digest: ${{ steps.push.outputs.digest }}
+          subject-digest: ${{ steps.stage.outputs.digest }}
           subject-name: ${{ env.IMAGE_REF }}
           subject-version: ${{ inputs.version }}
 
       - name: Verify build provenance
         env:
-          DIGEST: ${{ steps.push.outputs.digest }}
+          COSIGN_IDENTITY: https://github.com/${{ github.repository }}/.github/workflows/build-profile.yml@refs/heads/main
+          DIGEST: ${{ steps.stage.outputs.digest }}
           GH_TOKEN: ${{ github.token }}
         shell: bash
-        run: |
-          for _ in {1..6}; do
-            if gh attestation verify "oci://${IMAGE_REF}@${DIGEST}" \
-              --bundle-from-oci \
-              --repo "${GITHUB_REPOSITORY}" \
-              --signer-workflow "${GITHUB_REPOSITORY}/.github/workflows/build-profile.yml" \
-              --source-digest "${GITHUB_SHA}" \
-              --predicate-type https://slsa.dev/provenance/v1 >/dev/null; then
-              exit 0
-            fi
-            sleep 5
-          done
-          echo 'The published build provenance could not be verified' >&2
-          exit 1
+        run: >-
+          nix shell --accept-flake-config .#ci-image-verify -c finite-image-verify
+          --image "${IMAGE_REF}" --digest "${DIGEST}"
+          --cosign-identity "${COSIGN_IDENTITY}" --source-sha "${GITHUB_SHA}"
+          --provenance-workflow "${GITHUB_REPOSITORY}/.github/workflows/build-profile.yml"
 
       - name: Summarize profile build
         if: always()
         env:
           BUILD_INPUT: ${{ inputs.build-input }}
-          BUILD_OUTCOME: ${{ steps.build.outcome }}
+          BUILD_OUTCOME: ${{ steps.stage.outputs.build_outcome }}
           BUILD_PROFILE: ${{ inputs.profile }}
-          BUILD_SECONDS: ${{ steps.build.outputs.seconds }}
-          CACHE_AVAILABLE: ${{ steps.build.outputs.cache_available }}
-          CACHE_REF: ${{ steps.build.outputs.cache_ref }}
-          CACHE_WRITE: ${{ steps.build.outputs.cache_write }}
-          IMAGE_DIGEST: ${{ steps.push.outputs.digest }}
-          PARENT_DIGEST: ${{ steps.inputs.outputs.parent_digest }}
+          BUILD_SECONDS: ${{ steps.stage.outputs.build_seconds }}
+          CACHE_AVAILABLE: ${{ steps.stage.outputs.cache_available }}
+          CACHE_REF: ${{ steps.stage.outputs.cache_ref }}
+          CACHE_WRITE: ${{ steps.stage.outputs.cache_write }}
+          IMAGE_DIGEST: ${{ steps.stage.outputs.digest }}
+          PARENT_DIGEST: ${{ steps.stage.outputs.parent_digest }}
           PROVENANCE_FIRST_OUTCOME: ${{ steps.provenance_first.outcome }}
           PROVENANCE_HIT: ${{ steps.provenance_check.outputs.hit }}
           PROVENANCE_RETRY_OUTCOME: ${{ steps.provenance_retry.outcome }}
-          RECHUNK_OUTCOME: ${{ steps.rechunk.outcome }}
-          RECHUNK_MODE: ${{ steps.rechunk.outputs.mode }}
-          RECHUNK_PREVIOUS_DIGEST: ${{ steps.rechunk.outputs.previous_build_digest }}
-          RECHUNK_SECONDS: ${{ steps.rechunk.outputs.seconds }}
-          REUSE_DIGEST: ${{ steps.reuse.outputs.digest }}
-          REUSE_HIT: ${{ steps.reuse.outputs.hit }}
-          REUSE_SECONDS: ${{ steps.reuse.outputs.seconds }}
-          UPSTREAM_LOAD_SECONDS: ${{ steps.upstream_load.outputs.seconds }}
+          RECHUNK_OUTCOME: ${{ steps.stage.outputs.rechunk_outcome }}
+          RECHUNK_MODE: ${{ steps.stage.outputs.rechunk_mode }}
+          RECHUNK_PREVIOUS_DIGEST: ${{ steps.stage.outputs.previous_build_digest }}
+          RECHUNK_SECONDS: ${{ steps.stage.outputs.rechunk_seconds }}
+          REUSE_DIGEST: ${{ steps.stage.outputs.reuse_digest }}
+          REUSE_HIT: ${{ steps.stage.outputs.reuse_hit }}
+          REUSE_SECONDS: ${{ steps.stage.outputs.reuse_seconds }}
+          UPSTREAM_LOAD_SECONDS: ${{ steps.stage.outputs.upstream_load_seconds }}
         shell: bash
         run: |
           finished_at="$(date +%s)"

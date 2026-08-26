@@ -67,28 +67,21 @@ jobs:
           SUBJECT_TAG: ${{ inputs.subject-tag }}
         shell: bash
         run: |
-          metadata="$(nix shell --accept-flake-config .#ci-skopeo \
-            -c skopeo inspect --retry-times 3 "docker://${IMAGE_REF}:${SUBJECT_TAG}")"
-          digest="$(jq -er '.Digest' <<<"${metadata}")"
-          jq -e --arg build_input "${BUILD_INPUT}" --arg profile "${BUILD_PROFILE}" \
-            --arg revision "${EXPECTED_REVISION}" --arg upstream_digest "${EXPECTED_UPSTREAM_DIGEST}" \
-            --arg version "${EXPECTED_VERSION}" '
-              .Labels["io.finite.build.input"] == $build_input and
-              .Labels["io.finite.build.profile"] == $profile and
-              .Labels["io.finite.upstream.digest"] == $upstream_digest and
-              .Labels["org.opencontainers.image.revision"] == $revision and
-              .Labels["org.opencontainers.image.version"] == $version
-            ' <<<"${metadata}" >/dev/null
-          nix shell --accept-flake-config .#ci-cosign -c cosign verify \
-            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-            --certificate-identity "https://github.com/${GITHUB_REPOSITORY}/.github/workflows/build-profile.yml@refs/heads/main" \
-            "${IMAGE_REF}@${digest}" >/dev/null
-          gh attestation verify "oci://${IMAGE_REF}@${digest}" \
-            --bundle-from-oci --repo "${GITHUB_REPOSITORY}" \
-            --signer-workflow "${GITHUB_REPOSITORY}/.github/workflows/build-profile.yml" \
-            --source-digest "${EXPECTED_REVISION}" \
-            --predicate-type https://slsa.dev/provenance/v1 >/dev/null
-          echo "digest=${digest}" >>"${GITHUB_OUTPUT}"
+          digest="$(nix shell --accept-flake-config .#ci-skopeo -c skopeo inspect \
+            --retry-times 3 --format '{{.Digest}}' "docker://${IMAGE_REF}:${SUBJECT_TAG}")"
+          report="${RUNNER_TEMP}/finite-image-verify.json"
+          nix shell --accept-flake-config .#ci-image-verify -c finite-image-verify \
+            --image "${IMAGE_REF}" --digest "${digest}" \
+            --cosign-identity "https://github.com/${GITHUB_REPOSITORY}/.github/workflows/build-profile.yml@refs/heads/main" \
+            --source-sha "${EXPECTED_REVISION}" \
+            --provenance-workflow "${GITHUB_REPOSITORY}/.github/workflows/build-profile.yml" \
+            --expect-label "io.finite.build.input=${BUILD_INPUT}" \
+            --expect-label "io.finite.build.profile=${BUILD_PROFILE}" \
+            --expect-label "io.finite.upstream.digest=${EXPECTED_UPSTREAM_DIGEST}" \
+            --expect-label "org.opencontainers.image.revision=${EXPECTED_REVISION}" \
+            --expect-label "org.opencontainers.image.version=${EXPECTED_VERSION}" >"${report}"
+          nix shell --accept-flake-config .#ci-github-output \
+            -c finite-github-output "${report}" >/dev/null
 
       - name: Restore or generate software bill of materials
         id: sbom
@@ -147,17 +140,15 @@ jobs:
           SBOM_SOURCE_DIGEST: ${{ inputs.source-digest }}
         shell: bash
         run: |
-          for _ in {1..6}; do
-            if nix shell --accept-flake-config .#ci-image-sbom \
-              -c finite-image-sbom extract verified-sbom.spdx.json &&
-              nix shell --accept-flake-config .#ci-image-sbom \
-                -c finite-image-sbom equivalent sbom.spdx.json verified-sbom.spdx.json; then
-              exit 0
-            fi
-            sleep 5
-          done
-          echo 'The published software bill of materials attestation could not be verified' >&2
-          exit 1
+          nix shell --accept-flake-config .#ci-image-verify -c finite-image-verify \
+            --image "${IMAGE_REF}" --digest "${SBOM_IMAGE_DIGEST}" \
+            --cosign-identity "https://github.com/${GITHUB_REPOSITORY}/.github/workflows/build-profile.yml@refs/heads/main" \
+            --source-sha "${SBOM_SOURCE_DIGEST}" \
+            --sbom-workflow "${SBOM_SIGNER_WORKFLOW}" >/dev/null
+          nix shell --accept-flake-config .#ci-image-sbom \
+            -c finite-image-sbom extract verified-sbom.spdx.json
+          nix shell --accept-flake-config .#ci-image-sbom \
+            -c finite-image-sbom equivalent sbom.spdx.json verified-sbom.spdx.json
 
       - name: Clean up
         if: always()

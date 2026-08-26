@@ -1,0 +1,9 @@
+{
+  "Digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "Labels": {
+    "io.finite.build.input": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "io.finite.build.profile": "bluefin-generic",
+    "org.opencontainers.image.revision": "cccccccccccccccccccccccccccccccccccccccc",
+    "org.opencontainers.image.version": "1.2.3"
+  }
+}

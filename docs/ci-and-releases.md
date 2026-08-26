@@ -200,6 +200,13 @@ GitHub keeps triggers, permissions, environments, matrices, pull request
 creation, and attestations visible in workflow YAML. Operational planning,
 validation, gating, and promotion are focused Nix packages invoked with
 `nix shell`; no mutable runner profile or workflow-wide toolset is installed.
+`finite-profile-stage` owns immutable profile staging, `finite-image-verify`
+provides the shared label/signature/provenance/SBOM verifier, and
+`finite-release-control` owns the release state machine. These applications
+emit schema-versioned strict JSON on standard output and diagnostics on standard
+error. `finite-github-output` is the only adapter from validated scalar report
+fields to `GITHUB_OUTPUT`. Their package definitions are split by domain under
+`lib/ci-applications` and assembled with a scoped `callPackageWith` interface.
 The remaining third-party Actions perform GitHub-native work such as checkout,
 attestation, artifact transfer, and pull-request creation.
 

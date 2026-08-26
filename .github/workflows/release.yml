@@ -58,109 +58,11 @@ jobs:
           REQUESTED_BUMP: ${{ inputs.bump }}
         shell: bash
         run: |
-          [[ "${GITHUB_REF}" == refs/heads/main ]] || {
-            echo "Releases may run only from main" >&2
-            exit 1
-          }
-          initial_sha="$(git rev-parse HEAD)"
-          [[ "${initial_sha}" == "${GITHUB_SHA}" ]] || {
-            echo "Checkout does not match the dispatched commit" >&2
-            exit 1
-          }
-          source_version="$(<VERSION)"
-          [[ "${source_version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-dev\.[0-9]+)?$ ]] || {
-            echo "VERSION must contain X.Y.Z or X.Y.Z-dev.N" >&2
-            exit 1
-          }
-
-          last_tag="$({
-            git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname |
-              grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' |
-              head -n 1 || true
-          })"
-          if [[ -n "${last_tag}" ]]; then
-            git merge-base --is-ancestor "${last_tag}" HEAD || {
-              echo "Latest release tag ${last_tag} is not an ancestor of main" >&2
-              exit 1
-            }
-            meaningful_commits="$({
-              git log "${last_tag}..HEAD" \
-                --format='%H' \
-                --invert-grep \
-                --grep='^Start Finite [0-9]\+\.[0-9]\+\.[0-9]\+-dev\.[0-9]\+$'
-            })"
-            [[ -n "${meaningful_commits}" ]] || {
-              echo "No releasable commits exist after ${last_tag}" >&2
-              exit 1
-            }
-          fi
-
-          if [[ "${source_version}" != *-dev.* ]]; then
-            version="${source_version}"
-            selected_bump="staged"
-            if [[ -n "${last_tag}" ]]; then
-              last_version="${last_tag#v}"
-              newest_version="$(printf '%s\n' "${last_version}" "${version}" | sort -V | tail -n 1)"
-              [[ "${version}" != "${last_version}" && "${newest_version}" == "${version}" ]] || {
-                echo "Staged release ${version} must be newer than ${last_version}" >&2
-                exit 1
-              }
-            fi
-          elif [[ -z "${last_tag}" ]]; then
-            version="${source_version%%-dev.*}"
-            selected_bump="initial"
-          else
-            base_version="${last_tag#v}"
-            IFS=. read -r major minor patch <<<"${base_version}"
-            selected_bump="${REQUESTED_BUMP}"
-            if [[ "${selected_bump}" == auto ]]; then
-              release_log="$({
-                git log "${last_tag}..HEAD" \
-                  --format='%s%n%b' \
-                  --invert-grep \
-                  --grep='^Start Finite [0-9]\+\.[0-9]\+\.[0-9]\+-dev\.[0-9]\+$'
-              })"
-              if grep -Eq \
-                '(^[[:alnum:]-]+(\([^)]*\))?!:)|(^BREAKING[ -]CHANGE:)' \
-                <<<"${release_log}"; then
-                selected_bump="major"
-              elif grep -Eq '^feat(\([^)]*\))?:' <<<"${release_log}"; then
-                selected_bump="minor"
-              else
-                selected_bump="patch"
-              fi
-            fi
-            case "${selected_bump}" in
-              major) version="$((major + 1)).0.0" ;;
-              minor) version="${major}.$((minor + 1)).0" ;;
-              patch) version="${major}.${minor}.$((patch + 1))" ;;
-              *)
-                echo "Unsupported release bump: ${selected_bump}" >&2
-                exit 1
-                ;;
-            esac
-          fi
-
-          tag="v${version}"
-          if git rev-parse --verify --quiet "refs/tags/${tag}"; then
-            echo "Release tag ${tag} already exists" >&2
-            exit 1
-          fi
-
-          remote_sha="$(gh api "repos/${GITHUB_REPOSITORY}/commits/main" --jq .sha)"
-          [[ "${remote_sha}" == "${initial_sha}" ]] || {
-            echo "Main advanced after this release was dispatched" >&2
-            exit 1
-          }
-          printf '%s\n' "${version}" >VERSION
-          {
-            echo "initial_sha=${initial_sha}"
-            echo "source_version=${source_version}"
-            echo "tag=${tag}"
-            echo "version=${version}"
-          } >>"${GITHUB_OUTPUT}"
-          printf 'Selected %s with a %s bump from %s\n' \
-            "${tag}" "${selected_bump}" "${last_tag:-VERSION seed}"
+          report="${RUNNER_TEMP}/finite-release-version.json"
+          nix shell --accept-flake-config .#ci-release-control \
+            -c finite-release-control select-version >"${report}"
+          nix shell --accept-flake-config .#ci-github-output \
+            -c finite-github-output "${report}" >/dev/null
 
       - name: Open the release version pull request
         id: release-version
@@ -203,35 +105,11 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         shell: bash
         run: |
-          source_sha=''
-          if [[ -n "${PR_NUMBER}" && "${PR_OPERATION}" != closed ]]; then
-            for _ in {1..480}; do
-              pull_request="$(gh pr view "${PR_NUMBER}" --json mergeCommit,mergedAt,state)"
-              source_sha="$(jq -r '.mergeCommit.oid // empty' <<<"${pull_request}")"
-              [[ -z "$(jq -r '.mergedAt // empty' <<<"${pull_request}")" ]] || break
-              [[ "$(jq -r '.state' <<<"${pull_request}")" == OPEN ]] || {
-                echo "Release version pull request closed without merging" >&2
-                exit 1
-              }
-              sleep 15
-            done
-            [[ -n "${source_sha}" ]] || {
-              echo "Timed out waiting for the release version pull request" >&2
-              exit 1
-            }
-          else
-            source_sha="$(gh api "repos/${GITHUB_REPOSITORY}/commits/main" --jq .sha)"
-            [[ "${source_sha}" == "${INITIAL_SHA}" ]] || {
-              echo "Main advanced without the release version pull request" >&2
-              exit 1
-            }
-          fi
-
-          git fetch origin main
-          [[ "$(git rev-parse origin/main)" == "${source_sha}" ]]
-          git checkout --detach "${source_sha}"
-          [[ "$(<VERSION)" == "${VERSION}" ]]
-          echo "source_sha=${source_sha}" >>"${GITHUB_OUTPUT}"
+          report="${RUNNER_TEMP}/finite-release-source.json"
+          nix shell --accept-flake-config .#ci-release-control \
+            -c finite-release-control resolve-source >"${report}"
+          nix shell --accept-flake-config .#ci-github-output \
+            -c finite-github-output "${report}" >/dev/null
 
       - name: Resolve Flake-generated build artifacts
         run: echo "FINITE_GENERATED_ROOT=$(nix build .#generated --no-link --print-out-paths)" >>"${GITHUB_ENV}"
@@ -242,60 +120,15 @@ jobs:
           SOURCE_SHA: ${{ steps.source.outputs.source_sha }}
         shell: bash
         run: |
-          run_id=''
-          for _ in {1..6}; do
-            run_id="$({
-              gh run list \
-                --workflow build.yml \
-                --commit "${SOURCE_SHA}" \
-                --limit 20 \
-                --json conclusion,databaseId,status \
-                --jq '.[] | select(.status == "queued" or .status == "in_progress" or .conclusion == "success") | .databaseId' |
-                head -n 1
-            })"
-            [[ -z "${run_id}" ]] || break
-            sleep 5
-          done
-          if [[ -z "${run_id}" ]]; then
-            remote_sha="$(gh api "repos/${GITHUB_REPOSITORY}/commits/main" --jq .sha)"
-            [[ "${remote_sha}" == "${SOURCE_SHA}" ]] || {
-              echo "Main advanced before the candidate build was dispatched" >&2
-              exit 1
-            }
-            previous_run_id="$({
-              gh run list \
-                --workflow build.yml \
-                --event workflow_dispatch \
-                --commit "${SOURCE_SHA}" \
-                --limit 1 \
-                --json databaseId \
-                --jq '.[0].databaseId // empty'
-            })"
-            gh workflow run build.yml --ref main -f force=true
-            for _ in {1..24}; do
-              run_id="$({
-                gh run list \
-                  --workflow build.yml \
-                  --event workflow_dispatch \
-                  --commit "${SOURCE_SHA}" \
-                  --limit 5 \
-                  --json databaseId \
-                  --jq ".[] | select((.databaseId | tostring) != \"${previous_run_id}\") | .databaseId" |
-                  head -n 1
-              })"
-              [[ -z "${run_id}" ]] || break
-              sleep 5
-            done
-            [[ -n "${run_id}" ]] || {
-              echo "Could not locate the release-candidate build" >&2
-              exit 1
-            }
-          fi
-          echo "run-id=${run_id}" >>"${GITHUB_OUTPUT}"
+          report="${RUNNER_TEMP}/finite-candidate-run.json"
+          nix shell --accept-flake-config .#ci-release-control \
+            -c finite-release-control candidate-run >"${report}"
+          nix shell --accept-flake-config .#ci-github-output \
+            -c finite-github-output "${report}" >/dev/null
 
       - name: Wait for the release-candidate build
         env:
-          RUN_ID: ${{ steps.build.outputs.run-id }}
+          RUN_ID: ${{ steps.build.outputs.run_id }}
         shell: bash
         run: gh run watch "${RUN_ID}" --exit-status
 
@@ -303,65 +136,10 @@ jobs:
         env:
           SOURCE_SHA: ${{ steps.source.outputs.source_sha }}
           VERSION: ${{ steps.version.outputs.version }}
-        shell: bash
-        run: |
-          profiles_are_current() {
-            local entry expected_input metadata primary_tag profile
-            while IFS= read -r entry; do
-              profile="$(jq -r '.profile' <<<"${entry}")"
-              primary_tag="$(jq -r '.tags | split(" ")[0]' <<<"${entry}")"
-              expected_input="$(jq -r '.build_input' <<<"${entry}")"
-              metadata="$({
-                nix shell --accept-flake-config .#ci-skopeo \
-                  -c skopeo inspect --retry-times 3 \
-                    "docker://${IMAGE_REF}:${primary_tag}"
-              })" || return 1
-              [[ "$(jq -er '.Labels["org.opencontainers.image.revision"]' <<<"${metadata}")" == "${SOURCE_SHA}" ]] || return 1
-              [[ "$(jq -er '.Labels["org.opencontainers.image.version"]' <<<"${metadata}")" == "${VERSION}" ]] || return 1
-              [[ "$(jq -er '.Labels["io.finite.build.profile"]' <<<"${metadata}")" == "${profile}" ]] || return 1
-              [[ "$(jq -er '.Labels["io.finite.build.input"]' <<<"${metadata}")" == "${expected_input}" ]] || return 1
-            done < <(jq -c '.[]' "${FINITE_GENERATED_ROOT}/bootc/generated/image-matrix.json")
-          }
+        run: >-
+          nix shell --accept-flake-config .#ci-release-control
+          -c finite-release-control verify-graph
 
-          if ! profiles_are_current; then
-            echo "The reusable build did not publish every release profile; forcing a complete candidate build"
-            remote_sha="$(gh api "repos/${GITHUB_REPOSITORY}/commits/main" --jq .sha)"
-            [[ "${remote_sha}" == "${SOURCE_SHA}" ]] || {
-              echo "Main advanced before the complete candidate build" >&2
-              exit 1
-            }
-            previous_run_id="$({
-              gh run list \
-                --workflow build.yml \
-                --event workflow_dispatch \
-                --commit "${SOURCE_SHA}" \
-                --limit 1 \
-                --json databaseId \
-                --jq '.[0].databaseId // empty'
-            })"
-            gh workflow run build.yml --ref main -f force=true
-            run_id=''
-            for _ in {1..24}; do
-              run_id="$({
-                gh run list \
-                  --workflow build.yml \
-                  --event workflow_dispatch \
-                  --commit "${SOURCE_SHA}" \
-                  --limit 5 \
-                  --json databaseId \
-                  --jq ".[] | select((.databaseId | tostring) != \"${previous_run_id}\") | .databaseId" |
-                  head -n 1
-              })"
-              [[ -z "${run_id}" ]] || break
-              sleep 5
-            done
-            [[ -n "${run_id}" ]] || {
-              echo "Could not locate the complete candidate build" >&2
-              exit 1
-            }
-            gh run watch "${run_id}" --exit-status
-            profiles_are_current
-          fi
 
   release:
     name: Promote tested digests and release source
@@ -382,7 +160,7 @@ jobs:
       - name: Checkout release source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
+          fetch-depth: 1
           persist-credentials: false
           ref: ${{ needs.prepare.outputs.source_sha }}
 
@@ -399,18 +177,9 @@ jobs:
         env:
           SOURCE_SHA: ${{ needs.prepare.outputs.source_sha }}
           VERSION: ${{ needs.prepare.outputs.version }}
-        shell: bash
-        run: |
-          release_pattern='^[0-9]+\.[0-9]+\.[0-9]+$'
-          [[ "${VERSION}" =~ ${release_pattern} ]]
-          [[ "$(<VERSION)" == "${VERSION}" ]]
-          [[ "${SOURCE_SHA}" == "$(git rev-parse HEAD)" ]]
-          remote_sha="$(gh api "repos/${GITHUB_REPOSITORY}/commits/main" --jq .sha)"
-          [[ "${remote_sha}" == "${SOURCE_SHA}" ]]
-          if git rev-parse --verify --quiet "refs/tags/v${VERSION}"; then
-            echo "Release tag v${VERSION} already exists" >&2
-            exit 1
-          fi
+        run: >-
+          nix shell --accept-flake-config .#ci-release-control
+          -c finite-release-control resolve-source
 
       - name: Log in to GHCR
         shell: bash
@@ -426,86 +195,19 @@ jobs:
           echo "REGISTRY_AUTH_FILE=${registry_auth_file}" >>"${GITHUB_ENV}"
 
       - name: Verify and promote existing image digests
+        id: promotion
         env:
           COSIGN_IDENTITY: https://github.com/${{ github.repository }}/.github/workflows/build-profile.yml@refs/heads/main
+          SBOM_SIGNER_WORKFLOW: ${{ github.repository }}/.github/workflows/attest-software-bill-of-materials.yml
           SOURCE_SHA: ${{ needs.prepare.outputs.source_sha }}
           VERSION: ${{ needs.prepare.outputs.version }}
         shell: bash
         run: |
-          images='[]'
-          install -d -m 0755 release-sboms
-          while IFS= read -r entry; do
-            profile="$(jq -r '.profile' <<<"${entry}")"
-            primary_tag="$(jq -r '.tags | split(" ")[0]' <<<"${entry}")"
-            source_ref="${IMAGE_REF}:${primary_tag}"
-            metadata="$(nix shell --accept-flake-config .#ci-skopeo \
-              -c skopeo inspect --retry-times 3 "docker://${source_ref}")"
-            digest="$(jq -er '.Digest' <<<"${metadata}")"
-            revision="$(jq -er '.Labels["org.opencontainers.image.revision"]' <<<"${metadata}")"
-            image_version="$(jq -er '.Labels["org.opencontainers.image.version"]' <<<"${metadata}")"
-            base_digest="$(jq -er '.Labels["org.opencontainers.image.base.digest"]' <<<"${metadata}")"
-            build_input="$(jq -er '.Labels["io.finite.build.input"]' <<<"${metadata}")"
-            [[ "${revision}" == "${SOURCE_SHA}" ]]
-            [[ "${image_version}" == "${VERSION}" ]]
-
-            immutable_ref="${IMAGE_REF}@${digest}"
-            nix shell --accept-flake-config .#ci-cosign -c cosign verify \
-              --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-              --certificate-identity "${COSIGN_IDENTITY}" \
-              "${immutable_ref}" >/dev/null
-            gh attestation verify "oci://${immutable_ref}" \
-              --bundle-from-oci \
-              --repo "${GITHUB_REPOSITORY}" \
-              --signer-workflow "${GITHUB_REPOSITORY}/.github/workflows/build-profile.yml" \
-              --source-digest "${SOURCE_SHA}"
-
-            release_tag="${profile}-v${VERSION}"
-            nix shell --accept-flake-config .#ci-oras -c oras tag \
-              --registry-config "${REGISTRY_AUTH_FILE}" \
-              "${immutable_ref}" \
-              "${release_tag}"
-            release_digest="$({
-              nix shell --accept-flake-config .#ci-skopeo \
-                -c skopeo inspect --retry-times 3 --format '{{.Digest}}' \
-                "docker://${IMAGE_REF}:${release_tag}"
-            })"
-            [[ "${release_digest}" == "${digest}" ]]
-
-            sbom_dir="$(mktemp -d -p "${RUNNER_TEMP}" "finite-${profile}-sbom.XXXXXX")"
-            sbom="${sbom_dir}/sbom.spdx.json"
-            SBOM_IMAGE_DIGEST="${digest}" \
-              SBOM_IMAGE_REF="${IMAGE_REF}" \
-              SBOM_SIGNER_WORKFLOW="${GITHUB_REPOSITORY}/.github/workflows/attest-software-bill-of-materials.yml" \
-              SBOM_SOURCE_DIGEST="${SOURCE_SHA}" \
-              nix shell --accept-flake-config .#ci-sbom-attestation \
-                -c finite-sbom-attestation extract "${sbom}"
-            sbom_asset="finite-${profile}-v${VERSION}.spdx.json.gz"
-            gzip -9c "${sbom}" >"release-sboms/${sbom_asset}"
-            rm -f -- "${sbom}"
-            rmdir -- "${sbom_dir}"
-
-            image="$({
-              jq -cn \
-                --arg profile "${profile}" \
-                --arg channel_tag "${primary_tag}" \
-                --arg release_tag "${release_tag}" \
-                --arg digest "${digest}" \
-                --arg base_digest "${base_digest}" \
-                --arg build_input "${build_input}" \
-                --arg sbom_asset "${sbom_asset}" \
-                '{profile: $profile, channel_tag: $channel_tag, release_tag: $release_tag, digest: $digest, base_digest: $base_digest, build_input: $build_input, sbom_asset: $sbom_asset}'
-            })"
-            images="$(jq -c --argjson image "${image}" '. + [$image]' <<<"${images}")"
-          done < <(jq -c '.[]' "${FINITE_GENERATED_ROOT}/bootc/generated/image-matrix.json")
-
-          jq -n \
-            --arg version "${VERSION}" \
-            --arg source_commit "${SOURCE_SHA}" \
-            --arg image "${IMAGE_REF}" \
-            --argjson images "${images}" \
-            '{version: $version, source_commit: $source_commit, image: $image, images: $images}' \
-            >release-manifest.json
-          sha256sum release-manifest.json >release-manifest.json.sha256
+          report="${RUNNER_TEMP}/finite-release-promotion.json"
+          nix shell --accept-flake-config .#ci-release-control \
+            -c finite-release-control promote >"${report}"
+          nix shell --accept-flake-config .#ci-github-output \
+            -c finite-github-output "${report}" >/dev/null
 
       - name: Create Git tag and GitHub release
         env:
@@ -542,15 +244,11 @@ jobs:
           VERSION: ${{ needs.prepare.outputs.version }}
         shell: bash
         run: |
-          IFS=. read -r major minor patch <<<"${VERSION}"
-          next_version="${major}.${minor}.$((patch + 1))-dev.0"
-          remote_sha="$(gh api "repos/${GITHUB_REPOSITORY}/commits/main" --jq .sha)"
-          [[ "${remote_sha}" == "${SOURCE_SHA}" ]] || {
-            echo "Main advanced before the post-release version commit" >&2
-            exit 1
-          }
-          printf '%s\n' "${next_version}" >VERSION
-          echo "next_version=${next_version}" >>"${GITHUB_OUTPUT}"
+          report="${RUNNER_TEMP}/finite-next-version.json"
+          nix shell --accept-flake-config .#ci-release-control \
+            -c finite-release-control next-version >"${report}"
+          nix shell --accept-flake-config .#ci-github-output \
+            -c finite-github-output "${report}" >/dev/null
 
       - name: Open the next development version pull request
         id: development-version
@@ -589,19 +287,9 @@ jobs:
           steps.development-version.outputs.pull-request-operation != 'closed'
         env:
           PR_NUMBER: ${{ steps.development-version.outputs.pull-request-number }}
-        shell: bash
-        run: |
-          for _ in {1..480}; do
-            pull_request="$(gh pr view "${PR_NUMBER}" --json mergedAt,state)"
-            [[ -z "$(jq -r '.mergedAt // empty' <<<"${pull_request}")" ]] || exit 0
-            [[ "$(jq -r '.state' <<<"${pull_request}")" == OPEN ]] || {
-              echo "Development version pull request closed without merging" >&2
-              exit 1
-            }
-            sleep 15
-          done
-          echo "Timed out waiting for the development version pull request" >&2
-          exit 1
+        run: >-
+          nix shell --accept-flake-config .#ci-release-control
+          -c finite-release-control wait-pr
 
       - name: Log out of GHCR
         if: always()
