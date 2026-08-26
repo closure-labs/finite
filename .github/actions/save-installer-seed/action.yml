@@ -1,0 +1,31 @@
+name: Save trusted installer seed cache
+description: Save an exact installer seed only from an authorized main publication event
+
+inputs:
+  cache-hit:
+    description: Whether the exact installer seed key was restored
+    required: true
+  cache-key:
+    description: Exact Actions cache key resolved by the restore step
+    required: true
+  cache-write:
+    description: Whether the caller authorizes trusted cache publication
+    required: true
+  path:
+    description: Directory containing the validated installer seed artifacts
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Save exact installer seed artifacts
+      if: >-
+        inputs.cache-write == 'true' &&
+        inputs.cache-hit != 'true' &&
+        github.ref == 'refs/heads/main' &&
+        (github.event_name == 'push' || github.event_name == 'schedule' ||
+        github.event_name == 'workflow_dispatch')
+      uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+      with:
+        path: ${{ inputs.path }}
+        key: ${{ inputs.cache-key }}

@@ -261,16 +261,39 @@ grep -qF "finite-installer-seed-v2-\${{ runner.os }}-\${{ steps.seed-key.outputs
 	.github/actions/build-installer/action.yml
 grep -qF 'actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25' \
 	.github/actions/build-installer/action.yml
-grep -qF 'actions/cache/save@caa296126883cff596d87d8935842f9db880ef25' \
-	.github/actions/build-installer/action.yml
-grep -qF "inputs.cache-write == 'true' &&" \
-	.github/actions/build-installer/action.yml
-grep -qF "github.ref == 'refs/heads/main' &&" \
+if grep -qF 'actions/cache/save@' .github/actions/build-installer/action.yml; then
+	echo 'Trusted seed cache-save policy must remain isolated from installer build inputs' >&2
+	exit 1
+fi
+grep -qF 'uses: ./.github/actions/save-installer-seed' \
 	.github/actions/build-installer/action.yml
 # The GitHub expression is intentionally matched literally.
 # shellcheck disable=SC2016
-grep -qF 'key: ${{ steps.seed-actions-cache.outputs.cache-primary-key }}' \
+grep -qF 'cache-hit: ${{ steps.seed-actions-cache.outputs.cache-hit }}' \
 	.github/actions/build-installer/action.yml
+# The GitHub expression is intentionally matched literally.
+# shellcheck disable=SC2016
+grep -qF 'cache-key: ${{ steps.seed-actions-cache.outputs.cache-primary-key }}' \
+	.github/actions/build-installer/action.yml
+# The GitHub expression is intentionally matched literally.
+# shellcheck disable=SC2016
+grep -qF 'cache-write: ${{ inputs.cache-write }}' \
+	.github/actions/build-installer/action.yml
+
+seed_cache_save=.github/actions/save-installer-seed/action.yml
+grep -qF 'actions/cache/save@caa296126883cff596d87d8935842f9db880ef25' \
+	"${seed_cache_save}"
+grep -qF "inputs.cache-write == 'true' &&" \
+	"${seed_cache_save}"
+grep -qF "inputs.cache-hit != 'true' &&" \
+	"${seed_cache_save}"
+grep -qF "github.ref == 'refs/heads/main' &&" \
+	"${seed_cache_save}"
+grep -qF "github.event_name == 'push' || github.event_name == 'schedule' ||" \
+	"${seed_cache_save}"
+# The GitHub expression is intentionally matched literally.
+# shellcheck disable=SC2016
+grep -qF 'key: ${{ inputs.cache-key }}' "${seed_cache_save}"
 grep -qF 'finite-installer-e2e install' .github/actions/build-installer/action.yml
 grep -qF 'finite-installer-e2e boot' .github/actions/build-installer/action.yml
 # The GitHub expression is intentionally matched literally.

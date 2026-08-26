@@ -19,8 +19,10 @@ pkgs.writeShellApplication {
         installer:lib/ci-applications/installer-smoke.nix | \
         installer:lib/installer-application.nix)
           required=true; break ;;
+        installer:.github/actions/save-installer-seed/* | \
         images:README.md | images:LICENSE | images:docs/* | \
         images:.editorconfig | images:.github/actions/build-installer/* | \
+        images:.github/actions/save-installer-seed/* | \
         images:.github/dependabot.yml | \
         images:.github/workflows/build-installer.yml | \
         images:.github/workflows/cleanup.yml | \
