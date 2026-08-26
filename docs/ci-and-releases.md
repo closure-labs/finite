@@ -65,10 +65,11 @@ less for that baseline). Otherwise only the workflow's previous-build input is
 removed; the centralized application, validation, and timing remain.
 
 Events whose classification is predetermined (scheduled runs and publishing
-workflow dispatches) use a shallow checkout. Diff-classified pull requests,
-merge groups, pushes, and validation dispatches retain complete history. Merge
-groups fail safe to all expensive validation when the supplied base is not an
-ancestor of the synthetic head.
+workflow dispatches) use a shallow checkout. Repository checks are also
+shallow because their result is independent of Git history. Diff-classified
+pull requests, merge groups, pushes, and validation dispatches retain complete
+history. Merge groups fail safe to all expensive validation when the supplied
+base is not an ancestor of the synthetic head.
 
 The Flake is the single source of truth for the Finite Cachix
 substituter and key. Every Nix job uses the repository's pinned `setup-nix`
@@ -134,11 +135,33 @@ the completed payload-independent LZ4 SquashFS, boot tar, and preflight proof—
 Podman store. Trusted `main` and scheduled builds publish and keylessly sign
 those files as an OCI artifact in the sibling GHCR package; pull requests reuse
 only artifacts signed by either trusted installer-producing workflow. An exact
-GitHub Actions cache key accelerates retries in the same pull request. The
-selected Finite digest and update tag are a small JSON file on the ISO, applied
-to the writable live overlay by a pre-installer service. Dakota therefore
-assembles the systemd-boot network ISO without rebuilding the live image,
-recompressing its SquashFS, or embedding the Finite payload.
+GitHub Actions cache populated only by trusted `main` accelerates all exact
+matches. Pull requests and merge groups may restore that key but cannot save a
+branch-scoped copy; a miss falls back to the signed, checksum-validated GHCR
+seed. The selected Finite digest and update tag are a small JSON file on the
+ISO, applied to the writable live overlay by a pre-installer service. Dakota
+therefore assembles the systemd-boot network ISO without rebuilding the live
+image, recompressing its SquashFS, or embedding the Finite payload.
+
+## Repository security policy
+
+`automation/github/repository-security.json` is the reviewable source of truth
+for Actions allowlisting and SHA pinning, default token permissions, security
+features, and the protected `release` and `package-cleanup` environments. Both
+environments allow the solo maintainer to approve their own run, require
+`declarative-dale`, accept deployments only from `main`, and deny administrator
+bypass.
+
+Audit the live read-only settings without placing mutation credentials in CI:
+
+```console
+nix run .#repository-security-audit
+```
+
+The command writes one strict JSON result to standard output and diagnostics to
+standard error. Vulnerability alerts, Dependabot security updates, secret
+scanning, and push protection remain enabled alongside Finite's Nix and OCI
+updaters because GitHub's dependency graph does not cover those lock formats.
 
 The smoke phase waits for the Finite-owned live-session readiness marker. Before
 Fisherman can touch the target disk, preflight validates its recipe, required

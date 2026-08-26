@@ -263,7 +263,9 @@ grep -qF 'actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25' \
 	.github/actions/build-installer/action.yml
 grep -qF 'actions/cache/save@caa296126883cff596d87d8935842f9db880ef25' \
 	.github/actions/build-installer/action.yml
-grep -qF "if: steps.seed-actions-cache.outputs.cache-hit != 'true'" \
+grep -qF "inputs.cache-write == 'true' &&" \
+	.github/actions/build-installer/action.yml
+grep -qF "github.ref == 'refs/heads/main' &&" \
 	.github/actions/build-installer/action.yml
 # The GitHub expression is intentionally matched literally.
 # shellcheck disable=SC2016

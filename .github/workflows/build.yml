@@ -54,8 +54,11 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # Flake metadata, including revCount, requires complete Git history.
-          fetch-depth: 0
+          # Scheduled publication and predetermined main dispatches need no diff.
+          # Diff-classified events retain history for merge-base validation.
+          fetch-depth: >-
+            ${{ (github.event_name == 'schedule' ||
+            (github.event_name == 'workflow_dispatch' && !inputs.validate_only)) && 1 || 0 }}
           persist-credentials: false
       - uses: ./.github/actions/setup-nix
       - name: Prepare authoritative downstream CI plan
@@ -89,8 +92,6 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # Flake metadata, including revCount, requires complete Git history.
-          fetch-depth: 0
           persist-credentials: false
       - uses: ./.github/actions/setup-nix
         with:

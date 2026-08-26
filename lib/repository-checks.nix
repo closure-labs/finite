@@ -76,6 +76,7 @@
   ];
   documentationSource = sourceFor [textFiles];
   automationSource = sourceFor [
+    ../automation/github/repository-security.json
     ../docs/ci-and-releases.md
     ../docs/configuration.md
     ../docs/installation.md
@@ -84,6 +85,7 @@
     ../lib/ci-applications/validate-locks.nix
     ../modules/outputs.nix
     ../tests/automation
+    ../tests/fixtures/repository-security
     ../tests/repository/contracts.sh
   ];
   bootcSource = sourceFor [
@@ -133,6 +135,7 @@
     ../lib/ci-applications
     ../lib/flake-applications.nix
     ../automation/github/policies
+    ../automation/github/repository-security.json
     ../bootc/Containerfile
     ../flake.nix
     ../lib/installer-application.nix
@@ -340,6 +343,7 @@ in {
       grep -qF 'nix --accept-flake-config eval --json' lib/flake-applications.nix
       ! grep -qF 'quotedPaths' lib/flake-applications.nix
       grep -qF 'flake_uri="git+file://' lib/flake-applications.nix
+      grep -qF '?shallow=1"' lib/flake-applications.nix
       grep -qF -- '--no-build' lib/flake-applications.nix
       grep -qF 'nix --accept-flake-config build' lib/flake-applications.nix
       grep -qF -- '--no-link' lib/flake-applications.nix
@@ -400,6 +404,7 @@ in {
       applications.validateCiPlan
       applications.ciGate
       applications.promoteImages
+      applications.repositorySecurityAudit
       applications.trustedUpdate
       applications.updateHomeRelease
       git
@@ -412,6 +417,10 @@ in {
       bash tests/automation/classify-ci.sh
       bash tests/automation/ci-gate.sh
       bash tests/automation/promote-images.sh
+      bash tests/automation/repository-security.sh \
+        ${applications.repositorySecurityAudit}/bin/finite-repository-security-audit \
+        automation/github/repository-security.json \
+        tests/fixtures/repository-security
       bash tests/automation/trusted-update.sh
       bash tests/automation/update-home-release.sh
     '';
@@ -537,6 +546,28 @@ in {
           any(.parameters.required_status_checks[];
             .context == "CI gate" and .integration_id == 15368))
       ' automation/github/policies/main-protection.json >/dev/null
+      jq -e '
+        .schema == 1 and
+        .repository == "closure-labs/finite" and
+        .actions.allowed_actions == "selected" and
+        .actions.sha_pinning_required == true and
+        .actions.selected_actions.github_owned_allowed == true and
+        .actions.selected_actions.verified_allowed == false and
+        (.actions.selected_actions.patterns_allowed | sort) == [
+          "DeterminateSystems/determinate-nix-action@*",
+          "DeterminateSystems/nix-installer-action@*",
+          "peter-evans/create-pull-request@*"
+        ] and
+        .actions.workflow_permissions.default_workflow_permissions == "read" and
+        .actions.workflow_permissions.can_approve_pull_request_reviews == false and
+        all(.security[]; . == true) and
+        (.environments | keys | sort) == ["package-cleanup", "release"] and
+        all(.environments[];
+          .can_admins_bypass == false and
+          .prevent_self_review == false and
+          .required_reviewers == ["declarative-dale"] and
+          .deployment_branch_policy.branches == ["main"])
+      ' automation/github/repository-security.json >/dev/null
 
       grep -qF 'nix shell --accept-flake-config .#ci-check' .github/workflows/build.yml
       grep -qF 'nix shell --accept-flake-config .#ci-prepare' .github/workflows/build.yml
@@ -622,8 +653,27 @@ in {
       ! grep -R -Eq 'runtimeInputs[[:space:]]*=.*[^[:alnum:]_-]nix([^[:alnum:]_-]|$)' \
         lib/ci-applications lib/flake-applications.nix
       grep -qF 'timeout-minutes: 15' .github/workflows/build.yml
-      [[ "$(grep -cF 'fetch-depth: 0' .github/workflows/build.yml)" == 2 ]]
-      ! grep -qF 'fetch-depth: >-' .github/workflows/build.yml
+      yq -e '
+        .jobs.prepare.steps[] |
+        select(.uses == "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1") |
+        .with["fetch-depth"] != 0
+      ' .github/workflows/build.yml >/dev/null
+      yq -e '
+        .jobs.checks.steps[] |
+        select(.uses == "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1") |
+        (.with | has("fetch-depth") | not)
+      ' .github/workflows/build.yml >/dev/null
+      for cache_assertion in \
+        '.if | contains("inputs.cache-write")' \
+        '.if | contains("github.ref")' \
+        '.if | contains("refs/heads/main")' \
+        '.if | contains("pull_request") | not' \
+        '.with | has("restore-keys") | not'; do
+        yq -e ".runs.steps[] |
+          select(.name == \"Save exact installer seed artifacts\") |
+          ''${cache_assertion}" \
+          .github/actions/build-installer/action.yml >/dev/null
+      done
       grep -qF '"additionalProperties": false' lib/ci-applications/ci-plan.schema.json
       grep -qF -- "--option 'packages:pkgs!'" docs/ci-and-releases.md
       grep -qF -- '--build-context finite-generated=' .github/workflows/build-profile.yml
