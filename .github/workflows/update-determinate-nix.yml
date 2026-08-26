@@ -29,6 +29,7 @@ jobs:
         uses: ./.github/actions/setup-nix
         with:
           merge-queue-token: ${{ secrets.MERGE_QUEUE_TOKEN }}
+          require-merge-queue-token: "true"
 
       - name: Resolve latest Determinate Nix release
         id: resolve
@@ -41,7 +42,7 @@ jobs:
         id: update
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
-          token: ${{ env.MERGE_QUEUE_TOKEN || github.token }}
+          token: ${{ env.MERGE_QUEUE_TOKEN }}
           branch: automation/update-determinate-nix
           delete-branch: true
           commit-message: "sources: update Determinate Nix"
@@ -63,7 +64,7 @@ jobs:
           EXPECTED_BRANCH: automation/update-determinate-nix
           EXPECTED_FILES: sources/determinate-nix.json
           EXPECTED_TITLE: "sources: update Determinate Nix"
-          GH_TOKEN: ${{ env.MERGE_QUEUE_TOKEN || github.token }}
+          GH_TOKEN: ${{ env.MERGE_QUEUE_TOKEN }}
           PR_NUMBER: ${{ steps.update.outputs.pull-request-number }}
         run: >-
           nix shell --accept-flake-config .#ci-trusted-update

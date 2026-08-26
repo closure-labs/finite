@@ -208,11 +208,18 @@ The weekly Determinate Nix updater resolves the latest stable upstream
 release, pins both the installer asset and its SELinux policy by SHA-256, and
 opens the same trusted-update pull-request path used by the OCI source locks.
 
-When configured, the SecretSpec-mapped `MERGE_QUEUE_TOKEN` advances trusted
-update pull requests through the merge queue with repository-scoped Contents
-and Pull requests read/write access. `AUTOMATION_UPDATE_LOGIN` names that
-token's pull request author; the GitHub Actions app identity is trusted by
-default.
+The SecretSpec-mapped `MERGE_QUEUE_TOKEN` advances trusted update pull requests
+through the merge queue. Scope a fine-grained token to the Finite repository
+with Actions, Contents, and Pull requests read/write access;
+`AUTOMATION_UPDATE_LOGIN` names that token's pull request author. Merge-queue
+workflows fail during setup when the credential is unavailable instead of
+falling back to the workflow's built-in token.
+
+Releases require that credential before either job can publish or modify a
+version. Both protected `VERSION` handoffs use it because pull requests queued
+with the workflow's built-in `GITHUB_TOKEN` cannot emit the `merge_group` event
+needed to start required validation. Each handoff may wait for up to 120 minutes,
+matching the repository merge queue's response timeout.
 
 ## Create a release
 

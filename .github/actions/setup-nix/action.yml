@@ -6,6 +6,10 @@ inputs:
     description: Optional GitHub Actions secret used for trusted update pull requests
     required: false
     default: ""
+  require-merge-queue-token:
+    description: Fail setup when protected-branch automation has no dedicated credential
+    required: false
+    default: "false"
   cachix-auth-token:
     description: Optional token used only by explicit guarded Cachix pushes
     required: false
@@ -29,3 +33,12 @@ runs:
       run: >-
         nix shell --accept-flake-config .#ci-github-actions-secrets
         -c finite-github-actions-secrets
+
+    - name: Require protected-branch automation credential
+      if: inputs.require-merge-queue-token == 'true'
+      shell: bash
+      run: |
+        [[ -n "${MERGE_QUEUE_TOKEN:-}" ]] || {
+          echo "::error::MERGE_QUEUE_TOKEN is required for protected-branch automation"
+          exit 1
+        }

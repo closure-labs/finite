@@ -28,11 +28,12 @@ jobs:
         uses: ./.github/actions/setup-nix
         with:
           merge-queue-token: ${{ secrets.MERGE_QUEUE_TOKEN }}
+          require-merge-queue-token: "true"
 
       - name: Verify and enqueue open Dependabot pull requests
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-          GH_TOKEN: ${{ env.MERGE_QUEUE_TOKEN || github.token }}
+          GH_TOKEN: ${{ env.MERGE_QUEUE_TOKEN }}
         run: >-
           nix shell --accept-flake-config .#ci-queue-dependabot
           -c finite-queue-dependabot

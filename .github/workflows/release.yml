@@ -29,7 +29,7 @@ jobs:
   prepare:
     name: Select version and build every profile
     runs-on: ubuntu-24.04
-    timeout-minutes: 180
+    timeout-minutes: 240
     permissions:
       actions: write
       contents: write
@@ -48,6 +48,9 @@ jobs:
 
       - name: Set up Nix and Cachix
         uses: ./.github/actions/setup-nix
+        with:
+          merge-queue-token: ${{ secrets.MERGE_QUEUE_TOKEN }}
+          require-merge-queue-token: "true"
 
       - name: Calculate the release version
         id: version
@@ -163,7 +166,7 @@ jobs:
         id: release-version
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
-          token: ${{ github.token }}
+          token: ${{ env.MERGE_QUEUE_TOKEN }}
           base: main
           branch: automation/release-${{ steps.version.outputs.tag }}
           delete-branch: true
@@ -181,11 +184,11 @@ jobs:
           steps.release-version.outputs.pull-request-operation != 'closed'
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-          EXPECTED_AUTHOR: app/github-actions
+          EXPECTED_AUTHOR: ${{ vars.AUTOMATION_UPDATE_LOGIN || 'app/github-actions' }}
           EXPECTED_BRANCH: automation/release-${{ steps.version.outputs.tag }}
           EXPECTED_FILES: VERSION
           EXPECTED_TITLE: Release Finite ${{ steps.version.outputs.version }}
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ env.MERGE_QUEUE_TOKEN }}
           PR_NUMBER: ${{ steps.release-version.outputs.pull-request-number }}
         run: >-
           nix shell --accept-flake-config .#ci-trusted-update
@@ -202,7 +205,7 @@ jobs:
         run: |
           source_sha=''
           if [[ -n "${PR_NUMBER}" && "${PR_OPERATION}" != closed ]]; then
-            for _ in {1..60}; do
+            for _ in {1..480}; do
               pull_request="$(gh pr view "${PR_NUMBER}" --json mergeCommit,mergedAt,state)"
               source_sha="$(jq -r '.mergeCommit.oid // empty' <<<"${pull_request}")"
               [[ -z "$(jq -r '.mergedAt // empty' <<<"${pull_request}")" ]] || break
@@ -210,7 +213,7 @@ jobs:
                 echo "Release version pull request closed without merging" >&2
                 exit 1
               }
-              sleep 5
+              sleep 15
             done
             [[ -n "${source_sha}" ]] || {
               echo "Timed out waiting for the release version pull request" >&2
@@ -367,7 +370,7 @@ jobs:
       group: finite-publication
       cancel-in-progress: false
     runs-on: ubuntu-24.04
-    timeout-minutes: 180
+    timeout-minutes: 240
     environment: release
     permissions:
       actions: write
@@ -385,6 +388,9 @@ jobs:
 
       - name: Set up Nix and Cachix
         uses: ./.github/actions/setup-nix
+        with:
+          merge-queue-token: ${{ secrets.MERGE_QUEUE_TOKEN }}
+          require-merge-queue-token: "true"
 
       - name: Resolve Flake-generated build artifacts
         run: echo "FINITE_GENERATED_ROOT=$(nix build .#generated --no-link --print-out-paths)" >>"${GITHUB_ENV}"
@@ -550,7 +556,7 @@ jobs:
         id: development-version
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
-          token: ${{ github.token }}
+          token: ${{ env.MERGE_QUEUE_TOKEN }}
           base: main
           branch: automation/start-${{ steps.next-version.outputs.next_version }}
           delete-branch: true
@@ -567,11 +573,11 @@ jobs:
           steps.development-version.outputs.pull-request-operation != 'closed'
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-          EXPECTED_AUTHOR: app/github-actions
+          EXPECTED_AUTHOR: ${{ vars.AUTOMATION_UPDATE_LOGIN || 'app/github-actions' }}
           EXPECTED_BRANCH: automation/start-${{ steps.next-version.outputs.next_version }}
           EXPECTED_FILES: VERSION
           EXPECTED_TITLE: Start Finite ${{ steps.next-version.outputs.next_version }}
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ env.MERGE_QUEUE_TOKEN }}
           PR_NUMBER: ${{ steps.development-version.outputs.pull-request-number }}
         run: >-
           nix shell --accept-flake-config .#ci-trusted-update
@@ -585,14 +591,14 @@ jobs:
           PR_NUMBER: ${{ steps.development-version.outputs.pull-request-number }}
         shell: bash
         run: |
-          for _ in {1..60}; do
+          for _ in {1..480}; do
             pull_request="$(gh pr view "${PR_NUMBER}" --json mergedAt,state)"
             [[ -z "$(jq -r '.mergedAt // empty' <<<"${pull_request}")" ]] || exit 0
             [[ "$(jq -r '.state' <<<"${pull_request}")" == OPEN ]] || {
               echo "Development version pull request closed without merging" >&2
               exit 1
             }
-            sleep 5
+            sleep 15
           done
           echo "Timed out waiting for the development version pull request" >&2
           exit 1
