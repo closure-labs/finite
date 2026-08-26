@@ -63,6 +63,7 @@ grep -qF 'finite-installer-target-config.service' "${live_hook}"
 grep -qF 'findmnt --raw --noheadings --types iso9660' "${live_hook}"
 grep -qF 'payload_reference' "${live_hook}"
 grep -qF "fisherman validate \"\${validation_recipe}\"" "${live_hook}"
+grep -qF "report_startup_error 'installer-preflight-failed'" "${live_hook}"
 grep -qF 'required_executables=(' "${live_hook}"
 grep -qF 'mkfs.btrfs' "${live_hook}"
 grep -qF $'\tpodman' "${live_hook}"
@@ -181,6 +182,8 @@ grep -qF 'Installed Fedora version mismatch:' lib/ci-applications/installer-e2e.
 grep -qF 'Installed GRUB2 configuration is missing' lib/ci-applications/installer-e2e.nix
 grep -qF 'extract_guest_diagnostics()' lib/ci-applications/installer-e2e.nix
 grep -qF 'OVMF_CODE.fd' lib/ci-applications/installer-e2e.nix
+grep -qF 'FINITE_INSTALLER_SMOKE_MEMORY_MB:-11264' \
+	lib/ci-applications/installer-smoke.nix
 grep -qF '(.partitiontable.partitions | length) == 3' lib/ci-applications/installer-e2e.nix
 
 for phase in \

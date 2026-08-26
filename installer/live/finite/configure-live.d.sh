@@ -285,7 +285,7 @@ preflight_mode=interactive
 if ! sudo /usr/local/sbin/finite-installer-preflight \
 	"${preflight_mode}" /etc/bootc-installer/ci-autoinstall.json \
 	> >(tee "${preflight_log}" | sudo tee "${serial}" >/dev/null) 2>&1; then
-	report_startup_error 'fisherman-preflight-failed'
+	report_startup_error 'installer-preflight-failed'
 fi
 
 "${command[@]}" &

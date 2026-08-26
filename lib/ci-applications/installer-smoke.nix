@@ -18,7 +18,7 @@ pkgs.writeShellApplication {
     timeout_seconds="''${FINITE_INSTALLER_SMOKE_TIMEOUT_SECONDS:-300}"
     poll_interval="''${FINITE_INSTALLER_SMOKE_POLL_INTERVAL_SECONDS:-1}"
     cpus="''${FINITE_INSTALLER_SMOKE_CPUS:-4}"
-    memory_mb="''${FINITE_INSTALLER_SMOKE_MEMORY_MB:-4096}"
+    memory_mb="''${FINITE_INSTALLER_SMOKE_MEMORY_MB:-11264}"
     ready_marker='FINITE_INSTALLER_READY=1'
     ovmf_code="${pkgs.OVMF.fd}/FV/OVMF_CODE.fd"
     ovmf_vars_template="${pkgs.OVMF.fd}/FV/OVMF_VARS.fd"
