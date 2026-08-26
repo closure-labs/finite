@@ -2,7 +2,7 @@
   determinateNixInstaller,
   determinateNixSelinuxFileContexts,
   determinateNixSelinuxPolicy,
-  home,
+  domainCatalog,
   lib,
   pkgs,
   profileOrder,
@@ -108,34 +108,39 @@
       })
       profiles;
   };
-  roleNames = lib.sort (left: right: home.roles.${left}.order < home.roles.${right}.order) (builtins.attrNames home.roles);
+  inherit (domainCatalog) roleNames;
   homeCatalog = {
     schema = 2;
     inherit version;
     foundations =
-      lib.mapAttrs (_: foundation: {
-        inherit (foundation) name profiles template;
-        hardware = builtins.attrNames foundation.profiles;
-        roles = roleNames;
-      })
-      home.foundations;
-    hardware =
-      lib.mapAttrs (_: hardware: {
-        inherit (hardware) label name;
-      })
-      home.hardware;
+      lib.mapAttrs (
+        _: foundation: {
+          inherit (foundation) name template;
+          profiles = lib.mapAttrs (_: profile: profile.name) foundation.profiles;
+          hardware = builtins.attrNames foundation.profiles;
+          roles = roleNames;
+        }
+      )
+      domainCatalog.foundationsByName;
+    hardware = lib.genAttrs domainCatalog.homeHardwareNames (
+      name: {
+        inherit (domainCatalog.hardwareByName.${name}) label name;
+      }
+    );
     roles =
-      lib.mapAttrs (_: role: {
-        inherit (role) label name order;
-        foundations = builtins.attrNames home.foundations;
-      })
-      home.roles;
+      lib.mapAttrs (
+        _: role: {
+          inherit (role) label name order;
+          foundations = domainCatalog.foundationNames;
+        }
+      )
+      domainCatalog.rolesByName;
     compatibility =
       lib.mapAttrs (_: foundation: {
         hardware = builtins.attrNames foundation.profiles;
         roles = roleNames;
       })
-      home.foundations;
+      domainCatalog.foundationsByName;
   };
   matrixFile = pkgs.writeText "image-matrix.json" (builtins.toJSON matrix + "\n");
   catalogFile = pkgs.writeText "profile-catalog.json" (builtins.toJSON catalog + "\n");

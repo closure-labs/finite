@@ -1,16 +1,24 @@
 {
+  catalog,
   lib,
   profileEntities,
   profileHosts,
+  project,
 }: let
-  profileNames = builtins.attrNames profileEntities;
+  profileNames = catalog.profileOrder;
+  profileEntityNames = builtins.attrNames profileEntities;
+  profileHostNames = builtins.attrNames profileHosts;
 
   evalProfile = name: let
     entity = profileEntities.${name};
     host = profileHosts.${name};
   in
     lib.evalModules {
+      class = "bootc";
       modules = [
+        {
+          _module.args = {inherit catalog project;};
+        }
         ../modules/profiles/bootc-class.nix
         host.mainModule
         {
@@ -23,31 +31,12 @@
     };
 
   rawProfiles = lib.genAttrs profileNames (name: (evalProfile name).config.finite);
-  orderResult =
-    lib.lists.toposort (
-      parentName: childName: rawProfiles.${childName}.parent == parentName
-    )
-    profileNames;
-  profileOrder =
-    orderResult.result or (throw "Finite profile error: parent cycle: ${
-      lib.concatStringsSep " -> " orderResult.cycle
-    }");
-
-  roleOrder = [
-    "developer"
-    "sales"
-    "trainer"
-    "support"
-    "executive"
-    "it"
-  ];
+  profileOrder = profileNames;
+  profileIndex = name: lib.lists.findFirstIndex (candidate: candidate == name) 999 profileOrder;
+  roleOrder = catalog.roleNames;
   roleIndex = role: lib.lists.findFirstIndex (candidate: candidate == role) 999 roleOrder;
   sortRoles = roles: lib.sort (left: right: roleIndex left < roleIndex right) roles;
-  homeRoles = [
-    "sales"
-    "support"
-    "trainer"
-  ];
+  homeRoles = catalog.homeCompatibleRoleNames;
   sortSteps = lib.sort (
     left: right:
       if left.order == right.order
@@ -68,7 +57,7 @@
         modules = map (step: step.name) steps;
       in
         assert ensure profile.base.enable "${name} does not include the base aspect";
-        assert ensure (builtins.elem profile.foundation ["bluefin" "bluefin-dx"]) "${name} has an invalid foundation";
+        assert ensure (builtins.elem profile.foundation catalog.foundationNames) "${name} has an invalid foundation";
         assert ensure (profile.profileName == name) "${name} declares profileName=${profile.profileName}";
         assert ensure (profile.hardware != null) "${name} does not select hardware";
         assert ensure profile.upstream.preserve "${name} must preserve the complete upstream Bluefin base";
@@ -104,6 +93,9 @@
         parent.hardware == null || parent.hardware == profile.hardware
       ) "${name} hardware differs from parent ${profile.parent}";
       assert ensure (
+        profileIndex profile.parent < profileIndex name
+      ) "${name} appears before its parent ${profile.parent} in the domain catalog";
+      assert ensure (
         lib.all (module: builtins.elem module profile.modules) parent.modules
       ) "${name} does not contain every build step inherited from ${profile.parent}";
       assert ensure (parent.upstream == profile.upstream) "${name} upstream differs from parent ${profile.parent}";
@@ -133,6 +125,8 @@
     profiles;
   allTags = lib.concatMap (name: validatedProfiles.${name}.tags) profileOrder;
 in
+  assert ensure (profileEntityNames == builtins.sort builtins.lessThan profileNames) "domain catalog profiles differ from finite.profiles";
+  assert ensure (profileHostNames == profileEntityNames) "bootc hosts differ from finite.profiles";
   assert ensure (
     lib.length allTags == lib.length (lib.unique allTags)
   ) "registry tags must be globally unique"; {

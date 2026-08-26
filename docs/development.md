@@ -71,7 +71,9 @@ nix shell --accept-flake-config .#ci-image-build -c finite-image-build \
   bluefin-dx-dell-xps-9350-intel localhost/finite:bluefin-dx-dell
 ```
 
-Profile names are declared in `modules/profiles/definitions.nix`.
+Profile names and their stable ordering are declared in
+`lib/domain-catalog.nix`; `modules/profiles/definitions.nix` maps that pure data
+onto Den aspects.
 
 ## Generated outputs
 

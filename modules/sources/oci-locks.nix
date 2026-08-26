@@ -1,4 +1,8 @@
-{lib, ...}: let
+{
+  lib,
+  project,
+  ...
+}: let
   bluefinLock = builtins.fromJSON (builtins.readFile ../../sources/bluefin.json);
   bluefinDxLock = builtins.fromJSON (builtins.readFile ../../sources/bluefin-dx.json);
   determinateNixLock = builtins.fromJSON (builtins.readFile ../../sources/determinate-nix.json);
@@ -17,7 +21,7 @@
         description = "Mutable discovery tag; never used as the immutable build boundary.";
       };
       architecture = lib.mkOption {
-        type = lib.types.enum ["amd64"];
+        type = lib.types.enum [project.platform.ociArchitecture];
         description = "OCI architecture selected while resolving the manifest.";
       };
       digest = lib.mkOption {
@@ -47,7 +51,7 @@ in {
             type = lib.types.strMatching "[0-9]+\\.[0-9]+\\.[0-9]+";
             description = "Oldest Determinate Nix runtime accepted in a published image seed.";
           };
-          architecture = lib.mkOption {type = lib.types.enum ["x86_64-linux"];};
+          architecture = lib.mkOption {type = lib.types.enum [project.platform.system];};
           installer = lib.mkOption {
             type = lib.types.submodule {
               options = {

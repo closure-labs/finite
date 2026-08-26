@@ -1,7 +1,11 @@
 {
-  finiteInputs,
+  catalog,
   homeBootstrap,
+  homeDependencies,
+  homeManagerLib,
   homeProfile,
+  mkPkgs,
+  project,
 }: {
   config,
   den,
@@ -9,9 +13,18 @@
   ...
 }: let
   cfg = config.finite.homeProfile;
-  system = "x86_64-linux";
-  roleOrder = ["developer" "sales" "trainer" "support" "executive" "it"];
+  system = project.platform.system;
+  roleOrder = catalog.roleNames;
   canonicalRoles = builtins.filter (role: builtins.elem role cfg.roles) roleOrder;
+  configureRoleRows =
+    lib.concatMapStringsSep "\n" (
+      role: ''
+        checked=FALSE
+        (( ''${selected[(Ie)${role.name}]} )) && checked=TRUE
+        rows+=("$checked" ${lib.escapeShellArg role.label} ${lib.escapeShellArg role.name})
+      ''
+    )
+    catalog.roles;
   configure = cfgPkgs.writeTextFile {
     name = "finite-configure";
     destination = "/bin/finite-configure";
@@ -34,14 +47,7 @@
         selected=($(jq -r '.roles[]' $current))
       fi
       rows=()
-      for entry in \
-        developer:Developer sales:Sales trainer:Trainer support:Support executive:Executive it:IT; do
-        role=''${entry%%:*}
-        label=''${entry#*:}
-        checked=FALSE
-        (( ''${selected[(Ie)$role]} )) && checked=TRUE
-        rows+=("$checked" "$label" "$role")
-      done
+      ${configureRoleRows}
       roles=$(zenity --list --checklist \
         --title='Configure Finite' \
         --text='Select any roles to compose with your Finite foundation.' \
@@ -55,18 +61,15 @@
       exec ${homeBootstrap}/bin/finite-home-bootstrap --profile "$profile"
     '';
   };
-  cfgPkgs = import finiteInputs.nixpkgs {
-    inherit system;
-    config.allowUnfree = true;
-  };
+  cfgPkgs = mkPkgs system;
 in {
   options.finite.homeProfile = lib.mkOption {
     description = "Normalized Finite standalone Home Manager profile.";
     type = lib.types.submodule {
       options = {
         schema = lib.mkOption {type = lib.types.enum [1];};
-        foundation = lib.mkOption {type = lib.types.enum ["bluefin" "bluefin-dx"];};
-        hardware = lib.mkOption {type = lib.types.enum ["generic-x86_64" "dell-xps-9350-intel"];};
+        foundation = lib.mkOption {type = lib.types.enum catalog.foundationNames;};
+        hardware = lib.mkOption {type = lib.types.enum catalog.homeHardwareNames;};
         roles = lib.mkOption {
           type = lib.types.listOf (lib.types.enum roleOrder);
           default = [];
@@ -89,9 +92,11 @@ in {
         pkgs,
         modules,
       }:
-        finiteInputs.home-manager.lib.homeManagerConfiguration {
+        homeManagerLib.homeManagerConfiguration {
           inherit modules pkgs;
-          extraSpecialArgs.inputs = finiteInputs;
+          extraSpecialArgs = {
+            finiteHomeDependencies = homeDependencies;
+          };
         };
     };
 

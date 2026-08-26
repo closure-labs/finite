@@ -74,5 +74,7 @@ jq . result/bootc/generated/home-profile-catalog.json
 The schema-2 catalog contains typed `foundations`, `hardware`, `roles`, and
 `compatibility` maps. Aspect implementations live below
 `modules/aspects/{base,capabilities,hardware,roles}`. Add a role to
-`finite.home.roles` in `modules/profiles/definitions.nix`, give it a stable
-ordering key, and validate every foundation with `just check`.
+`lib/domain-catalog.nix`, give it a stable ordering key and label, add its
+aspect implementation, and validate every foundation with `just check`. The
+same pure catalog drives module enums, profile ordering, generated catalogs,
+Home Manager proofs, and the `finite-configure` checklist.

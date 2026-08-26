@@ -1,16 +1,17 @@
 {
+  catalog,
   config,
-  inputs,
+  homeDependencies,
   lib,
+  mkPkgs,
+  outputDependencies,
+  project,
   ...
 }: let
   inherit (config) den;
-  system = "x86_64-linux";
-  pkgs = import inputs.nixpkgs {
-    inherit system;
-    config.allowUnfree = true;
-  };
-  treefmtEval = inputs.treefmt-nix.lib.evalModule pkgs ../treefmt.nix;
+  system = project.platform.system;
+  pkgs = mkPkgs system;
+  treefmtEval = outputDependencies.treefmt.evalModule pkgs ../treefmt.nix;
   repositoryToolchain =
     (with pkgs; [
       actionlint
@@ -39,7 +40,7 @@
     ])
     ++ [treefmtEval.config.build.wrapper];
   profileSet = import ../lib/eval-profile-graph.nix {
-    inherit lib;
+    inherit catalog lib project;
     profileEntities = config.finite.profiles;
     profileHosts = config.den.hosts.${system};
   };
@@ -59,14 +60,7 @@
     inherit (dakotaInstallerLock.installer) url sha256;
   };
   determinateNix = config.finite.sources.determinateNix;
-  cache = let
-    flakeConfig = (import ../flake.nix).nixConfig;
-    url = builtins.head flakeConfig.extra-substituters;
-  in {
-    inherit url;
-    name = lib.removeSuffix ".cachix.org" (lib.removePrefix "https://" url);
-    publicKey = builtins.head flakeConfig.extra-trusted-public-keys;
-  };
+  inherit (project) cache;
   determinateNixInstaller = pkgs.fetchurl {
     name = "determinate-nix-installer-${determinateNix.version}";
     inherit (determinateNix.installer) url sha256;
@@ -81,47 +75,49 @@
   };
   version = lib.removeSuffix "\n" (builtins.readFile ../VERSION);
   generated = import ../lib/render-profile-artifacts.nix {
-    inherit determinateNixInstaller determinateNixSelinuxFileContexts determinateNixSelinuxPolicy home lib pkgs profiles;
+    inherit determinateNixInstaller determinateNixSelinuxFileContexts determinateNixSelinuxPolicy lib pkgs profiles;
+    domainCatalog = catalog;
     profileOrder = profileSet.order;
     inherit version;
   };
   architecture = import ../lib/render-architecture.nix {
     inherit den lib pkgs;
-    diagram = inputs.den-diagram.lib;
+    inherit (outputDependencies) diagram;
   };
   baseApplications = import ../lib/flake-applications.nix {
-    devenv = inputs.devenv.packages.${system}.devenv;
+    devenv = outputDependencies.devenvPackage;
     inherit bluefin bluefinDx bootcInstallerBundle dakotaInstallerLock dakotaIsoSource determinateNix generated pkgs version;
     cacheName = cache.name;
-    secretspec = inputs.nixpkgs-weekly.legacyPackages.${system}.secretspec;
+    secretspec = outputDependencies.weeklySecretspec;
   };
   homeApplications = import ../lib/home-profile-applications.nix {inherit generated pkgs;};
   applications = baseApplications // homeApplications;
+  roleModules = map (name: ../modules/aspects/roles + "/${name}/default.nix") catalog.roleNames;
+  hardwareModules = map (name: ../modules/aspects/hardware + "/${name}/default.nix") catalog.homeHardwareNames;
   homeFlakeModule = {
-    imports = [
-      inputs.den.flakeModule
-      ../modules/sources/oci-locks.nix
-      ../modules/aspects/base/default.nix
-      ../modules/aspects/capabilities/devops/default.nix
-      ../modules/aspects/roles/developer/default.nix
-      ../modules/aspects/roles/executive/default.nix
-      ../modules/aspects/roles/it/default.nix
-      ../modules/aspects/roles/sales/default.nix
-      ../modules/aspects/roles/support/default.nix
-      ../modules/aspects/roles/trainer/default.nix
-      ../modules/aspects/hardware/generic-x86_64/default.nix
-      ../modules/aspects/hardware/dell-xps-9350-intel/default.nix
-      (import ../lib/home-manager-flake-module.nix {
-        finiteInputs = inputs;
-        inherit (applications) homeBootstrap homeProfile;
-      })
-    ];
+    imports =
+      [
+        outputDependencies.denFlakeModule
+        ../modules/sources/oci-locks.nix
+        ../modules/aspects/base/default.nix
+        ../modules/aspects/capabilities/devops/default.nix
+      ]
+      ++ roleModules
+      ++ hardwareModules
+      ++ [
+        (import ../lib/home-manager-flake-module.nix {
+          inherit catalog homeDependencies mkPkgs project;
+          inherit (outputDependencies) homeManagerLib;
+          inherit (applications) homeBootstrap homeProfile;
+        })
+      ];
   };
-  allRoles = ["developer" "sales" "trainer" "support" "executive" "it"];
+  allRoles = catalog.roleNames;
   mkHomeProof = foundation: hardware: roles: let
     username = "finite-check-${foundation}-${hardware}-${lib.concatStringsSep "-" roles}";
     evaluated = lib.evalModules {
-      specialArgs = {inherit inputs;};
+      # Den resolves its generated module imports from these Flake inputs.
+      specialArgs.inputs = outputDependencies.homeModuleInputs;
       modules = [
         homeFlakeModule
         {
@@ -138,20 +134,29 @@
     };
   in
     evaluated.config.flake.homeConfigurations.finite.activationPackage;
-  foundationProofs = lib.concatMap (
-    foundation:
-      lib.concatMap (hardware: [
-        (mkHomeProof foundation hardware [])
-        (mkHomeProof foundation hardware allRoles)
-      ]) ["generic-x86_64" "dell-xps-9350-intel"]
-  ) ["bluefin" "bluefin-dx"];
-  roleProofs = lib.concatMap (
-    foundation:
-      map (role: mkHomeProof foundation "generic-x86_64" [role]) allRoles
-  ) ["bluefin" "bluefin-dx"];
+  foundationHardwareProofs =
+    lib.concatMap (
+      foundation:
+        map (hardware: mkHomeProof foundation hardware []) catalog.homeHardwareNames
+    )
+    catalog.foundationNames;
+  roleProofs =
+    map (
+      role:
+        mkHomeProof
+        (builtins.head catalog.foundationNames)
+        (builtins.head catalog.homeHardwareNames)
+        [role]
+    )
+    allRoles;
+  allRolesProof =
+    mkHomeProof
+    (lib.last catalog.foundationNames)
+    (lib.last catalog.homeHardwareNames)
+    allRoles;
   homeProofsEvaluated =
     builtins.deepSeq (
-      map (activation: activation.drvPath) (foundationProofs ++ roleProofs)
+      map (activation: activation.drvPath) (foundationHardwareProofs ++ roleProofs ++ [allRolesProof])
     )
     true;
   homeCheck = assert homeProofsEvaluated;
@@ -162,9 +167,9 @@
     inherit applications architecture generated lib pkgs;
   };
   formattingSource = lib.cleanSourceWith {
-    src = inputs.self;
+    src = outputDependencies.self;
     filter = path: _type: let
-      relative = lib.removePrefix "${toString inputs.self}/" (toString path);
+      relative = lib.removePrefix "${toString outputDependencies.self}/" (toString path);
     in
       relative
       != ".git"
@@ -209,11 +214,76 @@
   '';
   ciCheck = applications.mkCheck checks;
   localCache = applications.mkLocalCache ciCheck;
+  exportTable = {
+    architecture.package = architecture;
+    ci-check.package = ciCheck;
+    ci-checks.package = ciChecks;
+    ci-prepare.package = applications.ciPrepare;
+    ci-validate-plan.package = applications.validateCiPlan;
+    ci-gate.package = applications.ciGate;
+    ci-validate-image-shard.package = applications.validateImageShard;
+    ci-image-reuse.package = applications.imageReuse;
+    ci-image-verify.package = applications.imageVerify;
+    ci-image-sign.package = applications.imageSign;
+    ci-profile-stage.package = applications.profileStage;
+    ci-rechunk-image.package = applications.rechunkImage;
+    ci-image-build.package = applications.imageBuild;
+    ci-image-sbom.package = applications.imageSbom;
+    ci-sbom-attestation.package = applications.sbomAttestation;
+    ci-promote-images.package = applications.promoteImages;
+    ci-installer-build.package = applications.installerBuild;
+    ci-installer-e2e.package = applications.installerE2e;
+    ci-installer-smoke.package = applications.installerSmoke;
+    ci-release-notes.package = applications.releaseNotes;
+    ci-release-control.package = applications.releaseControl;
+    ci-github-output.package = applications.githubOutput;
+    ci-update-locks.package = applications.updateLocks;
+    ci-home-release-update.package = applications.updateHomeRelease;
+    ci-source-update.package = applications.sourceUpdate;
+    ci-source-verify.package = applications.sourceVerify;
+    ci-trusted-update.package = applications.trustedUpdate;
+    ci-queue-dependabot.package = applications.queueDependabot;
+    ci-package-cleanup.package = applications.packageCleanup;
+    ci-repository-security-audit.package = applications.repositorySecurityAudit;
+    ci-github-actions-secrets.package = applications.githubActionsSecrets;
+    ci-load-bluefin.package = applications.loadBluefin;
+    ci-lock-validate.package = applications.validateLocks;
+    ci-cosign.package = pkgs.cosign;
+    ci-oras.package = pkgs.oras;
+    ci-skopeo.package = pkgs.skopeo;
+    devenv = {
+      package = outputDependencies.devenvPackage;
+      appProgram = lib.getExe outputDependencies.devenvPackage;
+    };
+    default.package = generated;
+    generated.package = generated;
+    home-profile = {
+      package = applications.homeProfile;
+      appProgram = "${applications.homeProfile}/bin/finite-home-profile";
+    };
+    home-bootstrap = {
+      package = applications.homeBootstrap;
+      appProgram = "${applications.homeBootstrap}/bin/finite-home-bootstrap";
+    };
+    syft.package = pkgs.syft;
+    cloud-init.appProgram = "${applications.cloudInit}/bin/finite-cloud-init";
+    local-cache.appProgram = "${localCache}/bin/finite-local-cache";
+    repository-security-audit.appProgram = lib.getExe applications.repositorySecurityAudit;
+  };
+  packageExports = lib.mapAttrs (_: export: export.package) (
+    lib.filterAttrs (_: export: export ? package) exportTable
+  );
+  appExports = lib.mapAttrs (
+    _: export: {
+      type = "app";
+      program = export.appProgram;
+    }
+  ) (lib.filterAttrs (_: export: export ? appProgram) exportTable);
 in {
   flake = {
     lib.finite = {
       inherit home profiles;
-      inherit cache;
+      inherit cache catalog;
       profileOrder = profileSet.order;
     };
     flakeModules.home = homeFlakeModule;
@@ -227,77 +297,9 @@ in {
         description = "Finite Bluefin DX standalone Home Manager foundation";
       };
     };
-    packages.${system} = {
-      inherit architecture;
-      ci-check = ciCheck;
-      ci-checks = ciChecks;
-      ci-prepare = applications.ciPrepare;
-      ci-validate-plan = applications.validateCiPlan;
-      ci-gate = applications.ciGate;
-      ci-validate-image-shard = applications.validateImageShard;
-      ci-image-reuse = applications.imageReuse;
-      ci-image-verify = applications.imageVerify;
-      ci-image-sign = applications.imageSign;
-      ci-profile-stage = applications.profileStage;
-      ci-rechunk-image = applications.rechunkImage;
-      ci-image-build = applications.imageBuild;
-      ci-image-sbom = applications.imageSbom;
-      ci-sbom-attestation = applications.sbomAttestation;
-      ci-promote-images = applications.promoteImages;
-      ci-installer-build = applications.installerBuild;
-      ci-installer-e2e = applications.installerE2e;
-      ci-installer-smoke = applications.installerSmoke;
-      ci-release-notes = applications.releaseNotes;
-      ci-release-control = applications.releaseControl;
-      ci-github-output = applications.githubOutput;
-      ci-update-locks = applications.updateLocks;
-      ci-home-release-update = applications.updateHomeRelease;
-      ci-source-update = applications.sourceUpdate;
-      ci-source-verify = applications.sourceVerify;
-      ci-trusted-update = applications.trustedUpdate;
-      ci-queue-dependabot = applications.queueDependabot;
-      ci-package-cleanup = applications.packageCleanup;
-      ci-repository-security-audit = applications.repositorySecurityAudit;
-      ci-github-actions-secrets = applications.githubActionsSecrets;
-      ci-load-bluefin = applications.loadBluefin;
-      ci-lock-validate = applications.validateLocks;
-      ci-cosign = pkgs.cosign;
-      ci-oras = pkgs.oras;
-      ci-skopeo = pkgs.skopeo;
-      devenv = inputs.devenv.packages.${system}.devenv;
-      default = generated;
-      inherit generated;
-      home-profile = applications.homeProfile;
-      home-bootstrap = applications.homeBootstrap;
-      inherit (pkgs) syft;
-    };
+    packages.${system} = packageExports;
 
-    apps.${system} = {
-      devenv = {
-        type = "app";
-        program = lib.getExe inputs.devenv.packages.${system}.devenv;
-      };
-      home-profile = {
-        type = "app";
-        program = "${applications.homeProfile}/bin/finite-home-profile";
-      };
-      home-bootstrap = {
-        type = "app";
-        program = "${applications.homeBootstrap}/bin/finite-home-bootstrap";
-      };
-      cloud-init = {
-        type = "app";
-        program = "${applications.cloudInit}/bin/finite-cloud-init";
-      };
-      local-cache = {
-        type = "app";
-        program = "${localCache}/bin/finite-local-cache";
-      };
-      repository-security-audit = {
-        type = "app";
-        program = lib.getExe applications.repositorySecurityAudit;
-      };
-    };
+    apps.${system} = appExports;
 
     checks.${system} = checks;
 

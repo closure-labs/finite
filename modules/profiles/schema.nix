@@ -1,7 +1,9 @@
 {
+  catalog,
   config,
   den,
   lib,
+  project,
   ...
 }: let
   profileType = lib.types.submodule (
@@ -34,16 +36,16 @@
     {name, ...}: {
       options = {
         name = lib.mkOption {
-          type = lib.types.enum ["bluefin" "bluefin-dx"];
+          type = lib.types.enum catalog.foundationNames;
           default = name;
           description = "Finite foundation identifier.";
         };
         template = lib.mkOption {
-          type = lib.types.enum ["home-bluefin" "home-bluefin-dx"];
+          type = lib.types.enum catalog.templateNames;
           description = "Native standalone Home Manager template.";
         };
         profiles = lib.mkOption {
-          type = lib.types.attrsOf (lib.types.strMatching "[a-z0-9._-]+");
+          type = lib.types.attrsOf (lib.types.enum catalog.profileOrder);
           description = "Bootc profile selected for each supported hardware target.";
         };
       };
@@ -53,7 +55,7 @@
     {name, ...}: {
       options = {
         name = lib.mkOption {
-          type = lib.types.enum ["generic-x86_64" "dell-xps-9350-intel"];
+          type = lib.types.enum catalog.homeHardwareNames;
           default = name;
           description = "Finite hardware aspect identifier.";
         };
@@ -72,7 +74,7 @@
     {name, ...}: {
       options = {
         name = lib.mkOption {
-          type = lib.types.enum ["developer" "executive" "it" "sales" "support" "trainer"];
+          type = lib.types.enum catalog.roleNames;
           default = name;
           description = "Finite role aspect identifier.";
         };
@@ -117,7 +119,7 @@ in {
     };
   };
 
-  config.den.hosts.x86_64-linux =
+  config.den.hosts.${project.platform.system} =
     lib.mapAttrs (
       name: profile: {
         class = "bootc";
@@ -127,7 +129,15 @@ in {
         intoAttr = [];
         instantiate = {modules, ...}:
           lib.evalModules {
-            modules = [./bootc-class.nix] ++ modules;
+            class = "bootc";
+            modules =
+              [
+                {
+                  _module.args = {inherit catalog project;};
+                }
+                ./bootc-class.nix
+              ]
+              ++ modules;
           };
       }
     )

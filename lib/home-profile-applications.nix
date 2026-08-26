@@ -201,7 +201,7 @@
         printf '%s\n' '  inputs.devenv.follows = "finite/devenv";'
         printf '%s\n' '  outputs = inputs@{ finite, nixpkgs, ... }:'
         printf '%s\n' '    (nixpkgs.lib.evalModules {'
-        printf '%s\n' '      specialArgs = { inherit inputs; };'
+        printf '%s\n' '      specialArgs.inputs = { inherit (inputs) den home-manager nixpkgs; };'
         printf '%s\n' '      modules = ['
         printf '%s\n' '        finite.flakeModules.home'
         printf '%s\n' '        { finite.homeProfile = builtins.fromJSON (builtins.readFile ./profile.json); }'

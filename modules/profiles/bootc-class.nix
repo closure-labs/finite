@@ -1,4 +1,11 @@
-{lib, ...}: {
+{
+  catalog,
+  lib,
+  project,
+  ...
+}: {
+  _class = "bootc";
+
   # Den's host entity pipeline includes its package-policy batteries for every
   # class. Bootc profiles do not consume these values, but declaring their
   # namespace lets the disabled policies remain well typed.
@@ -10,7 +17,7 @@
 
   options.finite = {
     foundation = lib.mkOption {
-      type = lib.types.enum ["bluefin" "bluefin-dx"];
+      type = lib.types.enum catalog.foundationNames;
       description = "Authoritative Finite foundation carried by the bootc image.";
     };
 
@@ -41,7 +48,7 @@
         description = "Mutable upstream channel used only by the source updater.";
       };
       architecture = lib.mkOption {
-        type = lib.types.enum ["amd64"];
+        type = lib.types.enum [project.platform.ociArchitecture];
         description = "OCI architecture selected by the locked upstream source.";
       };
       digest = lib.mkOption {
@@ -65,28 +72,13 @@
     };
 
     roles = lib.mkOption {
-      type = lib.types.listOf (
-        lib.types.enum [
-          "developer"
-          "executive"
-          "it"
-          "sales"
-          "support"
-          "trainer"
-        ]
-      );
+      type = lib.types.listOf (lib.types.enum catalog.roleNames);
       default = [];
       description = "Ordered role modules applied between base and hardware.";
     };
 
     hardware = lib.mkOption {
-      type = lib.types.nullOr (
-        lib.types.enum [
-          "dell-xps-9350-intel"
-          "framework-laptop"
-          "generic-x86_64"
-        ]
-      );
+      type = lib.types.nullOr (lib.types.enum catalog.bootcHardwareNames);
       default = null;
       description = "Exactly one hardware target for the composed image.";
     };
