@@ -86,6 +86,7 @@
     ../modules/outputs.nix
     ../tests/automation
     ../tests/fixtures/repository-security
+    ../tests/fixtures/ci-applications
     ../tests/repository/contracts.sh
   ];
   bootcSource = sourceFor [
@@ -119,6 +120,9 @@
     ../devenv.nix
     ../devenv.yaml
     ../flake.nix
+    ../lib/ci-applications/image-operations.nix
+    ../lib/ci-applications/repository-operations.nix
+    ../lib/ci-applications/source-operations.nix
     ../lib/flake-applications.nix
     ../modules/outputs.nix
     ../modules/profiles/definitions.nix
@@ -174,7 +178,9 @@
     "validateCiPlan"
     "validateImageShard"
     "imageReuse"
+    "imageVerify"
     "imageSign"
+    "profileStage"
     "rechunkImage"
     "loadBluefin"
     "promoteImages"
@@ -182,6 +188,8 @@
     "installerE2e"
     "imageSbom"
     "releaseNotes"
+    "releaseControl"
+    "githubOutput"
     "updateLocks"
     "updateHomeRelease"
     "sbomAttestation"
@@ -337,28 +345,34 @@ in {
       grep -qF 'github-actions = "env"' secretspec.toml
       grep -qF 'ref = { item = "GITHUB_ACTIONS_CACHIX_AUTH_TOKEN" }' secretspec.toml
       grep -qF 'ref = { item = "GITHUB_ACTIONS_MERGE_QUEUE_TOKEN" }' secretspec.toml
-      ! grep -qF 'cachix watch-exec' lib/flake-applications.nix
-      grep -qF 'cachix push --omit-deriver ''${pkgs.lib.escapeShellArg' lib/flake-applications.nix
-      ! grep -qF 'unsafeDiscardStringContext' lib/flake-applications.nix
-      grep -qF 'nix --accept-flake-config eval --json' lib/flake-applications.nix
-      ! grep -qF 'quotedPaths' lib/flake-applications.nix
-      grep -qF 'flake_uri="git+file://' lib/flake-applications.nix
-      grep -qF '?shallow=1"' lib/flake-applications.nix
-      grep -qF -- '--no-build' lib/flake-applications.nix
-      grep -qF 'nix --accept-flake-config build' lib/flake-applications.nix
-      grep -qF -- '--no-link' lib/flake-applications.nix
-      [[ "$(grep -m1 -nF 'nix --accept-flake-config build' lib/flake-applications.nix | cut -d: -f1)" -lt \
-        "$(grep -m1 -nF 'nix --accept-flake-config flake check' lib/flake-applications.nix | cut -d: -f1)" ]]
+      ! rg -qF 'cachix watch-exec' lib/ci-applications lib/flake-applications.nix
+      grep -qF 'cachix push --omit-deriver ''${pkgs.lib.escapeShellArg' \
+        lib/ci-applications/repository-operations.nix
+      ! rg -qF 'unsafeDiscardStringContext' lib/ci-applications lib/flake-applications.nix
+      grep -qF 'nix --accept-flake-config eval --json' \
+        lib/ci-applications/repository-operations.nix
+      ! rg -qF 'quotedPaths' lib/ci-applications lib/flake-applications.nix
+      grep -qF 'flake_uri="git+file://' lib/ci-applications/repository-operations.nix
+      grep -qF '?shallow=1"' lib/ci-applications/repository-operations.nix
+      grep -qF -- '--no-build' lib/ci-applications/repository-operations.nix
+      grep -qF 'nix --accept-flake-config build' lib/ci-applications/repository-operations.nix
+      grep -qF -- '--no-link' lib/ci-applications/repository-operations.nix
+      [[ "$(grep -m1 -nF 'nix --accept-flake-config build' \
+        lib/ci-applications/repository-operations.nix | cut -d: -f1)" -lt \
+        "$(grep -m1 -nF 'nix --accept-flake-config flake check' \
+        lib/ci-applications/repository-operations.nix | cut -d: -f1)" ]]
       grep -qF 'ci-checks = ciChecks' modules/outputs.nix
       grep -qF 'ln -s' modules/outputs.nix
-      grep -qF 'max_closure_size=$((1024 * 1024))' lib/flake-applications.nix
+      grep -qF 'max_closure_size=$((1024 * 1024))' \
+        lib/ci-applications/repository-operations.nix
       ! grep -qF 'dockerTools.pullImage' modules/outputs.nix
       ! grep -qF 'bluefin-upstream' modules/outputs.nix
-      grep -qF 'skopeo copy' lib/flake-applications.nix
-      grep -qF 'containers-storage:' lib/flake-applications.nix
-      grep -qF 'host_podman' lib/flake-applications.nix
-      grep -qF 'unshare "$0"' lib/flake-applications.nix
-      grep -qF -- '--label "io.finite.build.profile=' lib/flake-applications.nix
+      grep -qF 'skopeo copy' lib/ci-applications/source-operations.nix
+      grep -qF 'containers-storage:' lib/ci-applications/source-operations.nix
+      grep -qF 'host_podman' lib/ci-applications/source-operations.nix
+      grep -qF 'unshare "$0"' lib/ci-applications/source-operations.nix
+      grep -qF -- '--label "io.finite.build.profile=' \
+        lib/ci-applications/image-operations.nix
       old_product=purple
       old_product+=fin
       ! rg -i "''${old_product}" --hidden -g '!.git/**'
@@ -370,10 +384,11 @@ in {
       grep -qF 'provider: local' devenv.yaml
       grep -qF 'local = "file:~/.other-fun-things"' secretspec.toml
       grep -qF '.cachix-auth-finite' secretspec.toml
-      ! grep -qF 'token_file=' lib/flake-applications.nix
-      grep -qF 'runtimeInputs = [devenv secretspec];' lib/flake-applications.nix
-      grep -qF '#ci-checks.drvPath' lib/flake-applications.nix
-      grep -qF 'ci_checks_drv}^*' lib/flake-applications.nix
+      ! rg -qF 'token_file=' lib/ci-applications lib/flake-applications.nix
+      grep -qF 'runtimeInputs = [devenv secretspec];' \
+        lib/ci-applications/repository-operations.nix
+      grep -qF '#ci-checks.drvPath' lib/ci-applications/repository-operations.nix
+      grep -qF 'ci_checks_drv}^*' lib/ci-applications/repository-operations.nix
       ! grep -qF 'features.users' modules/profiles/definitions.nix
       grep -qF 'home-bluefin-dx' modules/profiles/definitions.nix
       grep -qFx 'ARG BASE_REF' bootc/Containerfile
@@ -403,7 +418,11 @@ in {
       applications.ciPrepare
       applications.validateCiPlan
       applications.ciGate
+      applications.githubOutput
+      applications.imageVerify
+      applications.profileStage
       applications.promoteImages
+      applications.releaseControl
       applications.repositorySecurityAudit
       applications.trustedUpdate
       applications.updateHomeRelease
@@ -416,6 +435,12 @@ in {
       bash tests/automation/classify-changes.sh
       bash tests/automation/classify-ci.sh
       bash tests/automation/ci-gate.sh
+      bash tests/automation/ci-applications.sh \
+        ${applications.githubOutput}/bin/finite-github-output \
+        ${applications.imageVerify}/bin/finite-image-verify \
+        ${applications.profileStage}/bin/finite-profile-stage \
+        ${applications.releaseControl}/bin/finite-release-control \
+        tests/fixtures/ci-applications
       bash tests/automation/promote-images.sh
       bash tests/automation/repository-security.sh \
         ${applications.repositorySecurityAudit}/bin/finite-repository-security-audit \
@@ -578,18 +603,45 @@ in {
         update-home-release.yml; do
         grep -qF '.#ci-trusted-update' ".github/workflows/''${updater}"
       done
-      [[ "$(grep -cF 'finite-trusted-update' .github/workflows/release.yml)" == 2 ]]
-      [[ "$(grep -cF 'merge-queue-token: ''${{ secrets.MERGE_QUEUE_TOKEN }}' \
-        .github/workflows/release.yml)" == 2 ]]
-      [[ "$(grep -cF 'token: ''${{ env.MERGE_QUEUE_TOKEN }}' \
-        .github/workflows/release.yml)" == 2 ]]
-      [[ "$(grep -cF 'GH_TOKEN: ''${{ env.MERGE_QUEUE_TOKEN }}' \
-        .github/workflows/release.yml)" == 2 ]]
-      [[ "$(grep -cF 'EXPECTED_AUTHOR: ''${{ vars.AUTOMATION_UPDATE_LOGIN ||' \
-        .github/workflows/release.yml)" == 2 ]]
-      [[ "$(grep -cF 'for _ in {1..480}' .github/workflows/release.yml)" == 2 ]]
-      [[ "$(grep -cF 'timeout-minutes: 240' .github/workflows/release.yml)" == 2 ]]
-      [[ "$(grep -cF 'SOURCE_SHA: ''${{ steps.source.outputs.source_sha }}' .github/workflows/release.yml)" == 2 ]]
+      yq -e '
+        [(.jobs.prepare.steps + .jobs.release.steps)[] |
+          select(.run != null and (.run | contains("finite-trusted-update")))] |
+        length | select(. == 2)
+      ' .github/workflows/release.yml >/dev/null
+      yq -e '
+        [(.jobs.prepare.steps + .jobs.release.steps)[] |
+          select(.uses == "peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1")] |
+        length | select(. == 2)
+      ' .github/workflows/release.yml >/dev/null
+      yq -e '
+        [(.jobs.prepare.steps + .jobs.release.steps)[] |
+          select(.run != null and (.run | contains("finite-release-control")))] |
+        length | select(. == 8)
+      ' .github/workflows/release.yml >/dev/null
+      yq -e '
+        [(.jobs.prepare.steps + .jobs.release.steps)[] |
+          select(.run != null and (.run | contains("finite-github-output")))] |
+        length | select(. == 5)
+      ' .github/workflows/release.yml >/dev/null
+      yq -e '.jobs.prepare["timeout-minutes"] | select(. == 240)' \
+        .github/workflows/release.yml >/dev/null
+      yq -e '.jobs.release["timeout-minutes"] | select(. == 240)' \
+        .github/workflows/release.yml >/dev/null
+      yq -e '
+        .jobs.prepare.steps[] |
+        select(.name == "Checkout release source") |
+        .with["fetch-depth"] | select(. == 0)
+      ' .github/workflows/release.yml >/dev/null
+      yq -e '
+        .jobs.release.steps[] |
+        select(.name == "Checkout release source") |
+        .with["fetch-depth"] | select(. == 1)
+      ' .github/workflows/release.yml >/dev/null
+      yq -e '
+        .jobs.prepare.steps[] |
+        select(.name == "Reuse or dispatch the release-candidate build") |
+        .env.SOURCE_SHA | select(contains("steps.source.outputs.source_sha"))
+      ' .github/workflows/release.yml >/dev/null
       ! grep -qF 'steps.version.outputs.source_sha' .github/workflows/release.yml
       ! grep -qF 'git push origin HEAD:main' .github/workflows/release.yml
       ! grep -R -qF 'github-actions[bot]' .github/workflows
@@ -599,7 +651,21 @@ in {
       grep -qF 'finite-source-update determinate-nix ' .github/workflows/update-determinate-nix.yml
       grep -qF 'finite-update-locks ' .github/workflows/update-flake-lock.yml
       grep -qF 'finite-update-home-release ' .github/workflows/update-home-release.yml
-      grep -qF 'finite-load-bluefin' .github/workflows/build-profile.yml
+      yq -e '
+        .jobs.build.steps[] |
+        select(.name == "Stage immutable profile image") |
+        .run | select(contains("finite-profile-stage"))
+      ' .github/workflows/build-profile.yml >/dev/null
+      yq -e '
+        [.jobs.build.steps[] |
+          select(.run != null and (.run | contains("finite-image-verify")))] |
+        length | select(. == 2)
+      ' .github/workflows/build-profile.yml >/dev/null
+      yq -e '
+        [.jobs.build.steps[] |
+          select(.uses == "actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6")] |
+        length | select(. == 2)
+      ' .github/workflows/build-profile.yml >/dev/null
       grep -qF 'finite-ci-prepare' .github/workflows/build.yml
       grep -qF 'finite-validate-image-shard' .github/workflows/build.yml
       grep -qF 'candidate_shards' .github/workflows/build.yml
@@ -610,23 +676,29 @@ in {
       grep -qF '.publication.builds.root' .github/workflows/build.yml
       grep -qF "'finite-publication'" .github/workflows/build.yml
       grep -qF 'group: finite-publication' .github/workflows/release.yml
-      grep -qF 'finite-image-reuse' .github/workflows/build-profile.yml
       grep -qF 'finite-image-sign' .github/workflows/build-profile.yml
-      grep -qF 'finite-rechunk-image' .github/workflows/build-profile.yml
       ! grep -qF 'cosign sign' .github/workflows/build-profile.yml
-      grep -qF 'finite-image-sbom' .github/workflows/attest-software-bill-of-materials.yml
+      yq -e '
+        .jobs.attest.steps[] |
+        select(.name == "Restore or generate software bill of materials") |
+        .run | select(contains("finite-image-sbom"))
+      ' .github/workflows/attest-software-bill-of-materials.yml >/dev/null
+      yq -e '
+        [.jobs.attest.steps[] |
+          select(.uses == "actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6")] |
+        length | select(. == 2)
+      ' .github/workflows/attest-software-bill-of-materials.yml >/dev/null
       ! grep -R -qF 'LEGACY_IMAGE_REF' .github lib
       grep -qF 'payload_source_url#https://github.com/' lib/installer-application.nix
-      grep -qF 'finite-sbom-attestation' .github/workflows/release.yml
-      grep -qF 'SBOM_SIGNER_WORKFLOW' lib/flake-applications.nix
+      grep -qF 'finite-sbom-attestation' lib/ci-applications/release-control.nix
+      grep -qF 'SBOM_SIGNER_WORKFLOW' lib/ci-applications/sbom-operations.nix
       ! grep -R -qF -- '-sbom-cache' .github automation
       ! grep -R -qF 'Store SBOM cache artifact' .github
       grep -qF 'finite-release-notes' .github/workflows/release.yml
-      grep -qF 'if [[ "''${source_version}" != *-dev.* ]]; then' .github/workflows/release.yml
-      grep -qF 'version="''${source_version}"' .github/workflows/release.yml
-      grep -qF 'selected_bump="staged"' .github/workflows/release.yml
-      grep -qF 'Staged release ''${version} must be newer than ''${last_version}' \
-        .github/workflows/release.yml
+      grep -qF '!= *-dev.*' lib/ci-applications/release-control.nix
+      grep -qF 'source_version%%-dev.*' lib/ci-applications/release-control.nix
+      grep -qF 'selected_bump=staged' lib/ci-applications/release-control.nix
+      grep -qF 'must be newer than' lib/ci-applications/release-control.nix
       ! grep -R -qF 'toolset:' .github
       grep -qF 'finite-ci-gate' .github/workflows/build.yml
       grep -qF 'finite-promote-images' .github/workflows/build.yml
@@ -676,10 +748,10 @@ in {
       done
       grep -qF '"additionalProperties": false' lib/ci-applications/ci-plan.schema.json
       grep -qF -- "--option 'packages:pkgs!'" docs/ci-and-releases.md
-      grep -qF -- '--build-context finite-generated=' .github/workflows/build-profile.yml
+      grep -qF -- '--build-context "finite-generated=' lib/ci-applications/profile-stage.nix
       grep -qF 'RUN --mount=type=bind,from=finite-generated,source=.,target=/run/finite-generated' \
         bootc/Containerfile
-      grep -qF 'containerfile=./bootc/Containerfile' .github/workflows/build-profile.yml
+      grep -qF 'containerfile=./bootc/Containerfile' lib/ci-applications/profile-stage.nix
       grep -qF 'finite-installer-build' .github/actions/build-installer/action.yml
       grep -qF 'name: Classify and plan' .github/workflows/build.yml
       grep -qF 'name: Validate repository and workflows' .github/workflows/build.yml
@@ -736,12 +808,13 @@ in {
         yq -e 'has("jobs") and (.jobs | length > 0)' "''${workflow}" >/dev/null
       done
 
-      for verifier in lib/installer-application.nix .github/workflows/release.yml; do
-        [[ "$(grep -cF 'gh attestation verify "oci://' "''${verifier}")" == \
-          "$(grep -cF -- '--bundle-from-oci' "''${verifier}")" ]]
-      done
-      grep -qF 'gh_command}" attestation verify' lib/flake-applications.nix
-      grep -qF -- '--bundle-from-oci' lib/flake-applications.nix
+      [[ "$(grep -cF 'gh attestation verify "oci://' lib/installer-application.nix)" == \
+        "$(grep -cF -- '--bundle-from-oci' lib/installer-application.nix)" ]]
+      [[ "$(grep -cF 'gh_command}" attestation verify' \
+        lib/ci-applications/image-verify.nix)" == \
+        "$(grep -cF -- '--bundle-from-oci' lib/ci-applications/image-verify.nix)" ]]
+      grep -qF 'gh_command}" attestation verify' lib/ci-applications/image-verify.nix
+      grep -qF -- '--bundle-from-oci' lib/ci-applications/image-verify.nix
 
       actionlint -color .github/workflows/*.yml
       zizmor --offline --no-config --collect=all .github
