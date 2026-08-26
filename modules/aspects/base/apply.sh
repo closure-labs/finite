@@ -27,3 +27,7 @@ rm /usr/lib/sysusers.d/finite-nix.conf
 # /var state and bind-mounts it on that mountpoint.
 bash "${base_root}/install-determinate-nix.sh"
 systemctl enable cloud-init.target
+
+# Package and installer scriptlets can both add systemd activation links.
+# Normalize the final merged image only after every producer has finished.
+bash "${base_root}/install-nix-systemd-units.sh"

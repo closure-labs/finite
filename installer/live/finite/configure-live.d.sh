@@ -546,6 +546,25 @@ grub2_ready=false
 [[ -s /boot/grub2/grub.cfg ]] && grub2_ready=true
 selinux_mode="$(getenforce)"
 [[ "${selinux_mode}" == Enforcing ]]
+# The currently published payload can enter an early-boot ordering cycle when
+# its Nix sockets require /nix while sockets.target is ordered before the
+# services that seed and mount it. Run after cloud-final has settled, then
+# recover whichever Nix jobs systemd dropped while breaking that cycle. Newer
+# payloads already have the corrected graph, so these starts are idempotent.
+systemctl start nix.mount
+# The published payload predates the persistent Nix file-context equivalence,
+# so its seed restore labels the bind-mount backing tree as user home content.
+# Register the standard SELinux path substitution and restore the complete
+# tree before systemd needs to replace either persistent daemon socket.
+if ! semanage fcontext -a -e /nix /var/home/nix 2>/dev/null; then
+	semanage fcontext -m -e /nix /var/home/nix
+fi
+restorecon -RF /var/home/nix
+# The legacy graph may have won the opposite side of the cycle and started the
+# daemon directly while dropping both socket jobs. Stop that direct instance
+# before normalizing on the socket-activated model used by the repaired image.
+systemctl stop nix-daemon.service
+systemctl start nix-daemon.socket determinate-nixd.socket
 required_units=(
 	dbus.service
 	cloud-final.service
@@ -589,8 +608,8 @@ SCRIPT
 	cat >"${systemd_root}/finite-ci-installed-ready.service" <<'UNIT'
 [Unit]
 Description=Finite installed-system validation marker
-Wants=dbus.service cloud-final.service nix-daemon.socket determinate-nixd.socket
-After=dbus.service cloud-final.service nix-daemon.socket determinate-nixd.socket systemd-user-sessions.service
+Wants=dbus.service cloud-final.service
+After=dbus.service cloud-final.service systemd-user-sessions.service
 
 [Service]
 Type=oneshot

@@ -129,6 +129,18 @@ grep -qF '((cloud_status_exit == 0 || cloud_status_exit == 2))' "${live_hook}"
 grep -qF 'matchpathcon -V /etc/passwd /etc/group /var/home/finiteci' "${live_hook}"
 grep -qF 'cloud-final.service' "${live_hook}"
 grep -qF 'nix-daemon.service' "${live_hook}"
+grep -qF 'systemctl start nix.mount' "${live_hook}"
+grep -qF 'semanage fcontext -a -e /nix /var/home/nix' "${live_hook}"
+grep -qF 'semanage fcontext -m -e /nix /var/home/nix' "${live_hook}"
+grep -qF 'restorecon -RF /var/home/nix' "${live_hook}"
+grep -qF 'systemctl stop nix-daemon.service' "${live_hook}"
+grep -qF 'systemctl start nix-daemon.socket determinate-nixd.socket' "${live_hook}"
+grep -qF 'Wants=dbus.service cloud-final.service' "${live_hook}"
+grep -qF 'After=dbus.service cloud-final.service systemd-user-sessions.service' "${live_hook}"
+if grep -qF 'Wants=dbus.service cloud-final.service nix-daemon.socket' "${live_hook}"; then
+	echo 'Installed readiness must not pull Nix sockets into the initial boot transaction' >&2
+	exit 1
+fi
 grep -qF '/usr/bin/jq -c .' "${live_hook}"
 
 prepare=installer/prepare-dakota-iso-source

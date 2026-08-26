@@ -6,3 +6,11 @@ test -s "${policy}"
 if ! semodule -l | awk '$1 == "nix" { found = 1 } END { exit !found }'; then
 	semodule -i "${policy}"
 fi
+
+# /nix is a bind mount backed by persistent state below /var/home. Teach the
+# SELinux label lookup to treat that backing tree exactly like /nix before the
+# seed service restores its contexts. Otherwise the home-directory rules win,
+# including for the daemon sockets that systemd must be able to replace.
+if ! semanage fcontext -a -e /nix /var/home/nix 2>/dev/null; then
+	semanage fcontext -m -e /nix /var/home/nix
+fi

@@ -12,6 +12,7 @@ trap 'rm -rf -- "${test_root}"' EXIT
 install -d \
   "${test_root}/usr/bin" \
   "${test_root}/usr/lib/systemd/system" \
+  "${test_root}/etc/systemd/system" \
   "${test_root}/usr/libexec/finite"
 printf '%s\n' \
   '[Unit]' \
@@ -58,23 +59,36 @@ install -m 0755 "$(type -P rm)" "${test_root}/usr/bin/rm"
 # socket links alongside them.
 install -d \
   "${test_root}/usr/lib/systemd/system/sockets.target.wants" \
-  "${test_root}/usr/lib/systemd/system/multi-user.target.wants"
+  "${test_root}/usr/lib/systemd/system/multi-user.target.wants" \
+  "${test_root}/etc/systemd/system/sockets.target.wants" \
+  "${test_root}/etc/systemd/system/multi-user.target.wants"
 ln -s ../nix-daemon.socket \
   "${test_root}/usr/lib/systemd/system/sockets.target.wants/nix-daemon.socket"
 ln -s ../determinate-nixd.socket \
   "${test_root}/usr/lib/systemd/system/sockets.target.wants/determinate-nixd.socket"
 ln -s ../nix-daemon.service \
   "${test_root}/usr/lib/systemd/system/multi-user.target.wants/nix-daemon.service"
+ln -s /usr/lib/systemd/system/nix-daemon.socket \
+  "${test_root}/etc/systemd/system/sockets.target.wants/nix-daemon.socket"
+ln -s ../../../usr/lib/systemd/system/determinate-nixd.socket \
+  "${test_root}/etc/systemd/system/sockets.target.wants/determinate-nixd.socket"
+ln -s /etc/systemd/system/nix-daemon.service \
+  "${test_root}/etc/systemd/system/multi-user.target.wants/nix-daemon.service"
 
 FINITE_NIX_SYSTEMD_UNIT_ROOT="${test_root}/usr/lib/systemd/system" \
+  FINITE_NIX_SYSTEMD_CONFIG_ROOT="${test_root}/etc/systemd/system" \
   bash "${aspect_root}/install-nix-systemd-units.sh"
 
-test ! -L \
-  "${test_root}/usr/lib/systemd/system/sockets.target.wants/nix-daemon.socket"
-test ! -L \
-  "${test_root}/usr/lib/systemd/system/sockets.target.wants/determinate-nixd.socket"
-test ! -L \
-  "${test_root}/usr/lib/systemd/system/multi-user.target.wants/nix-daemon.service"
+for root in \
+  "${test_root}/usr/lib/systemd/system" \
+  "${test_root}/etc/systemd/system"; do
+  test ! -e "${root}/sockets.target.wants/nix-daemon.socket"
+  test ! -L "${root}/sockets.target.wants/nix-daemon.socket"
+  test ! -e "${root}/sockets.target.wants/determinate-nixd.socket"
+  test ! -L "${root}/sockets.target.wants/determinate-nixd.socket"
+  test ! -e "${root}/multi-user.target.wants/nix-daemon.service"
+  test ! -L "${root}/multi-user.target.wants/nix-daemon.service"
+done
 test "$(readlink "${test_root}/usr/lib/systemd/system/multi-user.target.wants/nix-daemon.socket")" = \
   ../nix-daemon.socket
 test "$(readlink "${test_root}/usr/lib/systemd/system/multi-user.target.wants/determinate-nixd.socket")" = \
