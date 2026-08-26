@@ -548,6 +548,16 @@ in {
         grep -qF '.#ci-trusted-update' ".github/workflows/''${updater}"
       done
       [[ "$(grep -cF 'finite-trusted-update' .github/workflows/release.yml)" == 2 ]]
+      [[ "$(grep -cF 'merge-queue-token: ''${{ secrets.MERGE_QUEUE_TOKEN }}' \
+        .github/workflows/release.yml)" == 2 ]]
+      [[ "$(grep -cF 'token: ''${{ env.MERGE_QUEUE_TOKEN }}' \
+        .github/workflows/release.yml)" == 2 ]]
+      [[ "$(grep -cF 'GH_TOKEN: ''${{ env.MERGE_QUEUE_TOKEN }}' \
+        .github/workflows/release.yml)" == 2 ]]
+      [[ "$(grep -cF 'EXPECTED_AUTHOR: ''${{ vars.AUTOMATION_UPDATE_LOGIN ||' \
+        .github/workflows/release.yml)" == 2 ]]
+      [[ "$(grep -cF 'for _ in {1..480}' .github/workflows/release.yml)" == 2 ]]
+      [[ "$(grep -cF 'timeout-minutes: 240' .github/workflows/release.yml)" == 2 ]]
       [[ "$(grep -cF 'SOURCE_SHA: ''${{ steps.source.outputs.source_sha }}' .github/workflows/release.yml)" == 2 ]]
       ! grep -qF 'steps.version.outputs.source_sha' .github/workflows/release.yml
       ! grep -qF 'git push origin HEAD:main' .github/workflows/release.yml
@@ -601,9 +611,12 @@ in {
       grep -qF '.#ci-github-actions-secrets' .github/actions/setup-nix/action.yml
       grep -qF 'GITHUB_ACTIONS_CACHIX_AUTH_TOKEN' .github/actions/setup-nix/action.yml
       [[ "$(grep -R -h -oF 'secrets.CACHIX_AUTH_TOKEN' .github | wc -l)" == 1 ]]
-      [[ "$(grep -R -h -oF 'secrets.MERGE_QUEUE_TOKEN' .github | wc -l)" == 5 ]]
+      [[ "$(grep -R -h -oF 'secrets.MERGE_QUEUE_TOKEN' .github | wc -l)" == 7 ]]
+      [[ "$(grep -R -h -oF 'require-merge-queue-token: "true"' \
+        .github/workflows | wc -l)" == 7 ]]
       ! grep -R -qF 'token: ''${{ secrets.MERGE_QUEUE_TOKEN' .github
-      grep -qF 'GH_TOKEN: ''${{ env.MERGE_QUEUE_TOKEN || github.token }}' \
+      ! grep -R -qF 'MERGE_QUEUE_TOKEN || github.token' .github/workflows
+      grep -qF 'GH_TOKEN: ''${{ env.MERGE_QUEUE_TOKEN }}' \
         .github/workflows/queue-dependabot.yml
       ! grep -qF 'nix profile add' .github/actions/setup-nix/action.yml
       ! grep -R -Eq 'runtimeInputs[[:space:]]*=.*[^[:alnum:]_-]nix([^[:alnum:]_-]|$)' \
