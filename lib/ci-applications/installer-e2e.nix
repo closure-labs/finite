@@ -17,7 +17,7 @@ pkgs.writeShellApplication {
 
     usage() {
       cat >&2 <<'EOF'
-    usage: finite-installer-e2e install ISO STATE_ROOT
+    usage: finite-installer-e2e install ISO STATE_ROOT EXPECTED_SOURCE_DIGEST
            finite-installer-e2e boot STATE_ROOT EXPECTED_REFERENCE
     EOF
     }
@@ -25,9 +25,10 @@ pkgs.writeShellApplication {
     phase="''${1:-}"
     case "''${phase}" in
       install)
-        [[ $# == 3 ]] || { usage; exit 2; }
+        [[ $# == 4 ]] || { usage; exit 2; }
         iso=$2
         state_root=$3
+        expected_source_digest=$4
         ;;
       boot)
         [[ $# == 3 ]] || { usage; exit 2; }
@@ -85,7 +86,7 @@ pkgs.writeShellApplication {
     extract_guest_diagnostics() {
       local name output
       [[ -f "''${install_log}" ]] || return 0
-      for name in installer-debug.log fisherman-output.log preflight.log system-state.log; do
+      for name in installer-debug.log finite-installer.log fisherman-output.log preflight.log system-state.log; do
         output="''${diagnostics_dir}/''${name}"
         awk -v begin="FINITE_DIAGNOSTIC_BEGIN=''${name}" \
           -v end="FINITE_DIAGNOSTIC_END=''${name}" '
@@ -152,7 +153,12 @@ pkgs.writeShellApplication {
         "''${kernel}" \
         "''${initrd}" \
         "''${state_root}/install-complete" \
-        "''${state_root}/expected-bootc-digest"
+        "''${state_root}/expected-source-digest" \
+        "''${state_root}/expected-ostree-checksum"
+      [[ "''${expected_source_digest}" =~ ^sha256:[0-9a-f]{64}$ ]] || {
+        echo 'Expected installer source digest is invalid' >&2
+        exit 2
+      }
       prepare_firmware
       "''${qemu_img}" create -q -f qcow2 "''${disk}" 64G
       "''${qemu_img}" create -q -f qcow2 "''${scratch_disk}" 16G
@@ -214,7 +220,19 @@ pkgs.writeShellApplication {
         echo 'The installer VM did not report a valid source manifest digest' >&2
         exit 1
       }
-      printf '%s\n' "''${source_digest}" >"''${state_root}/expected-bootc-digest"
+      [[ "''${source_digest}" == "''${expected_source_digest}" ]] || {
+        echo "Installer source digest mismatch: expected ''${expected_source_digest}, got ''${source_digest}" >&2
+        exit 1
+      }
+      deployment_checksum="$(
+        serial_marker_value FINITE_INSTALLER_DEPLOYMENT_CHECKSUM "''${install_log}"
+      )"
+      [[ "''${deployment_checksum}" =~ ^[0-9a-f]{64}$ ]] || {
+        echo 'The installer VM did not report a valid OSTree deployment checksum' >&2
+        exit 1
+      }
+      printf '%s\n' "''${source_digest}" >"''${state_root}/expected-source-digest"
+      printf '%s\n' "''${deployment_checksum}" >"''${state_root}/expected-ostree-checksum"
       touch "''${state_root}/install-complete"
       exit 0
     fi
@@ -222,13 +240,16 @@ pkgs.writeShellApplication {
     [[ \
       -s "''${disk}" && \
       -f "''${state_root}/install-complete" && \
-      -s "''${state_root}/expected-bootc-digest" \
+      -s "''${state_root}/expected-source-digest" && \
+      -s "''${state_root}/expected-ostree-checksum" \
     ]] || {
       echo "Completed installer state is missing: ''${state_root}" >&2
       exit 2
     }
-    expected_digest="$(<"''${state_root}/expected-bootc-digest")"
-    [[ "''${expected_digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
+    expected_source_digest="$(<"''${state_root}/expected-source-digest")"
+    expected_ostree_checksum="$(<"''${state_root}/expected-ostree-checksum")"
+    [[ "''${expected_source_digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
+    [[ "''${expected_ostree_checksum}" =~ ^[0-9a-f]{64}$ ]]
     [[ "''${expected_reference}" =~ ^[a-z0-9._/-]+:[A-Za-z0-9._-]+$ ]]
 
     raw_disk="''${state_root}/installed.raw"
@@ -253,7 +274,10 @@ pkgs.writeShellApplication {
     tail_pid=$!
     reached=false
     while kill -0 "''${qemu_pid}" >/dev/null 2>&1; do
-      if grep -Fq 'FINITE_INSTALLED_READY=1' "''${boot_log}"; then
+      if grep -Fq 'FINITE_INSTALLED_ERROR=' "''${boot_log}"; then
+        echo 'The installed-system validation probe reported an error' >&2
+        exit 1
+      elif grep -Fq 'FINITE_INSTALLED_READY=1' "''${boot_log}"; then
         reached=true
         terminate_and_reap "''${qemu_pid}"
         qemu_pid=
@@ -273,18 +297,27 @@ pkgs.writeShellApplication {
     bootc_status="$(serial_marker_value FINITE_BOOTC_STATUS "''${boot_log}")"
     printf '%s\n' "''${bootc_status}" | jq . >"''${diagnostics_dir}/installed-bootc-status.json"
     actual_digest="$(jq -er '.status.booted.image.imageDigest' <<<"''${bootc_status}")"
+    actual_ostree_checksum="$(jq -er '.status.booted.ostree.checksum' <<<"''${bootc_status}")"
     actual_reference="$(jq -er '.status.booted.image.image.image' <<<"''${bootc_status}")"
     actual_architecture="$(jq -er '.status.booted.image.architecture' <<<"''${bootc_status}")"
     installed_hostname="$(serial_marker_value FINITE_HOSTNAME "''${boot_log}")"
-    installed_root_fstype="$(serial_marker_value FINITE_ROOT_FSTYPE "''${boot_log}")"
+    installed_sysroot_fstype="$(serial_marker_value FINITE_SYSROOT_FSTYPE "''${boot_log}")"
     installed_os_version="$(serial_marker_value FINITE_OS_VERSION "''${boot_log}")"
     installed_grub2_ready="$(serial_marker_value FINITE_GRUB2_READY "''${boot_log}")"
+    installed_selinux_mode="$(serial_marker_value FINITE_SELINUX_MODE "''${boot_log}")"
+    installed_dbus_active="$(serial_marker_value FINITE_DBUS_ACTIVE "''${boot_log}")"
+    installed_cloud_init_status="$(serial_marker_value FINITE_CLOUD_INIT_STATUS "''${boot_log}")"
+    installed_nix_version="$(serial_marker_value FINITE_NIX_VERSION "''${boot_log}")"
     [[ "''${actual_architecture}" == amd64 ]] || {
       echo "Installed bootc architecture mismatch: expected amd64, got ''${actual_architecture}" >&2
       exit 1
     }
-    [[ "''${actual_digest}" == "''${expected_digest}" ]] || {
-      echo "Installed bootc digest mismatch: expected ''${expected_digest}, got ''${actual_digest}" >&2
+    [[ "''${actual_digest}" =~ ^sha256:[0-9a-f]{64}$ ]] || {
+      echo "Installed bootc manifest digest is invalid: ''${actual_digest}" >&2
+      exit 1
+    }
+    [[ "''${actual_ostree_checksum}" == "''${expected_ostree_checksum}" ]] || {
+      echo "Installed OSTree deployment mismatch: expected ''${expected_ostree_checksum}, got ''${actual_ostree_checksum}" >&2
       exit 1
     }
     [[ "''${actual_reference}" == "''${expected_reference}" ]] || {
@@ -295,8 +328,8 @@ pkgs.writeShellApplication {
       echo "Installed hostname mismatch: expected finite, got ''${installed_hostname}" >&2
       exit 1
     }
-    [[ "''${installed_root_fstype}" == btrfs ]] || {
-      echo "Installed root filesystem mismatch: expected btrfs, got ''${installed_root_fstype}" >&2
+    [[ "''${installed_sysroot_fstype}" == btrfs ]] || {
+      echo "Installed sysroot filesystem mismatch: expected btrfs, got ''${installed_sysroot_fstype}" >&2
       exit 1
     }
     [[ "''${installed_os_version}" == 44 ]] || {
@@ -307,6 +340,22 @@ pkgs.writeShellApplication {
       echo 'Installed GRUB2 configuration is missing' >&2
       exit 1
     }
-    echo "Validated installed bootc deployment ''${actual_reference}@''${actual_digest} (''${actual_architecture})"
+    [[ "''${installed_selinux_mode}" == Enforcing ]] || {
+      echo "Installed SELinux mode mismatch: expected Enforcing, got ''${installed_selinux_mode}" >&2
+      exit 1
+    }
+    [[ "''${installed_dbus_active}" == true ]] || {
+      echo 'Installed D-Bus service is not active' >&2
+      exit 1
+    }
+    [[ "''${installed_cloud_init_status}" == "done" ]] || {
+      echo "Installed cloud-init status mismatch: expected done, got ''${installed_cloud_init_status}" >&2
+      exit 1
+    }
+    [[ "''${installed_nix_version}" == 'nix (Determinate Nix '* ]] || {
+      echo "Installed Determinate Nix version is invalid: ''${installed_nix_version}" >&2
+      exit 1
+    }
+    echo "Validated signed source ''${actual_reference}@''${expected_source_digest} as OSTree deployment ''${actual_ostree_checksum}; bootc recorded local manifest ''${actual_digest} (''${actual_architecture})"
   '';
 }

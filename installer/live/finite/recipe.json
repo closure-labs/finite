@@ -1,5 +1,5 @@
 {
-  "log_file": "/var/home/liveuser/.cache/finite-installer.log",
+  "log_file": "/home/liveuser/.cache/finite-installer/finite-installer.log",
   "distro_name": "Finite",
   "welcome_title": "Welcome to Finite",
   "distro_logo": "/run/host/usr/share/pixmaps/finite.png",

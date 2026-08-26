@@ -132,8 +132,8 @@ Plymouth watermark names remain identical.
 | `nix shell .#ci-image-sbom -c finite-image-sbom validate <file>` | Validate a normalized SPDX image software bill of materials |
 | `nix shell .#ci-rechunk-image -c finite-rechunk-image --source <image> --output <transport>` | Rechunk a local bootc image with the shared format-v2 policy |
 | `nix shell .#ci-installer-smoke -c finite-installer-smoke <iso>` | QEMU installer boot test |
-| `nix shell .#ci-installer-e2e -c finite-installer-e2e install <iso> <state>` | Install through bootc-installer onto a disposable disk |
-| `nix shell .#ci-installer-e2e -c finite-installer-e2e boot <state> <digest> <reference>` | Boot and validate the installed disposable disk |
+| `nix shell .#ci-installer-e2e -c finite-installer-e2e install <iso> <state> <source-digest>` | Install the signed source into a disposable disk |
+| `nix shell .#ci-installer-e2e -c finite-installer-e2e boot <state> <reference>` | Boot and validate the installed disposable disk and exact OSTree deployment |
 | `nix shell .#ci-release-notes -c finite-release-notes <version> CHANGELOG.md` | Release notes for one version |
 
 ## Repository layout

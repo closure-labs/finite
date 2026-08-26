@@ -26,8 +26,11 @@ outputs:
     description: Immutable OCI index or image-manifest digest installed from the network
     value: ${{ steps.installer.outputs.payload-digest }}
   payload-deployment-digest:
-    description: Immutable manifest digest verified between the live installer source and installed bootc deployment
+    description: Manifest digest recorded by bootc after the installer's local OCI-layout conversion
     value: ${{ steps.boot.outputs.deployment-digest }}
+  payload-ostree-checksum:
+    description: OSTree deployment checksum verified across installation and first boot
+    value: ${{ steps.boot.outputs.deployment-checksum }}
   payload-tag:
     description: Published Finite tag selected by the installer
     value: ${{ steps.installer.outputs.payload-tag }}
@@ -53,7 +56,7 @@ runs:
 
     - name: Restore exact installer seed artifacts
       id: seed-actions-cache
-      uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+      uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
       with:
         path: ${{ runner.temp }}/finite-installer-seed-cache
         key: finite-installer-seed-v2-${{ runner.os }}-${{ steps.seed-key.outputs.key }}
@@ -71,6 +74,13 @@ runs:
       run: >-
         nix shell --accept-flake-config .#ci-installer-build
         -c finite-installer-build
+
+    - name: Save exact installer seed artifacts
+      if: steps.seed-actions-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+      with:
+        path: ${{ runner.temp }}/finite-installer-seed-cache
+        key: ${{ steps.seed-actions-cache.outputs.cache-primary-key }}
 
     - name: Smoke-test installer ISO bootloader
       id: smoke
@@ -92,6 +102,7 @@ runs:
       if: inputs.end-to-end == 'true'
       id: install
       env:
+        EXPECTED_SOURCE_DIGEST: ${{ steps.installer.outputs.payload-digest }}
         ISO_PATH: ${{ steps.installer.outputs.iso-path }}
         FINITE_INSTALLER_DIAGNOSTICS_DIR: ${{ github.workspace }}/diagnostics
         STATE_ROOT: ${{ runner.temp }}/finite-installer-e2e
@@ -105,7 +116,7 @@ runs:
         trap record_duration EXIT
         nix shell --accept-flake-config .#ci-installer-e2e \
           -c finite-installer-e2e install \
-            "${ISO_PATH}" "${STATE_ROOT}"
+            "${ISO_PATH}" "${STATE_ROOT}" "${EXPECTED_SOURCE_DIGEST}"
 
     - name: Boot and validate installed system
       if: inputs.end-to-end == 'true'
@@ -127,7 +138,10 @@ runs:
             "${STATE_ROOT}" "${EXPECTED_REFERENCE}"
         deployment_digest="$(jq -er '.status.booted.image.imageDigest' \
           "${FINITE_INSTALLER_DIAGNOSTICS_DIR}/installed-bootc-status.json")"
+        deployment_checksum="$(jq -er '.status.booted.ostree.checksum' \
+          "${FINITE_INSTALLER_DIAGNOSTICS_DIR}/installed-bootc-status.json")"
         echo "deployment-digest=${deployment_digest}" >>"${GITHUB_OUTPUT}"
+        echo "deployment-checksum=${deployment_checksum}" >>"${GITHUB_OUTPUT}"
 
     - name: Summarize installer validation
       if: always()
@@ -149,6 +163,7 @@ runs:
         ISO_SHA256: ${{ steps.installer.outputs.iso-sha256 }}
         PAYLOAD_DIGEST: ${{ steps.installer.outputs.payload-digest }}
         PAYLOAD_DEPLOYMENT_DIGEST: ${{ steps.boot.outputs.deployment-digest }}
+        PAYLOAD_OSTREE_CHECKSUM: ${{ steps.boot.outputs.deployment-checksum }}
         PAYLOAD_TAG: ${{ steps.installer.outputs.payload-tag }}
         SMOKE_OUTCOME: ${{ steps.smoke.outcome }}
         SMOKE_SECONDS: ${{ steps.smoke.outputs.seconds }}
@@ -163,6 +178,7 @@ runs:
           echo "| Payload tag | \`${PAYLOAD_TAG:-unresolved}\` |"
           echo "| Payload digest | \`${PAYLOAD_DIGEST:-unresolved}\` |"
           echo "| Payload deployment digest | \`${PAYLOAD_DEPLOYMENT_DIGEST:-unresolved}\` |"
+          echo "| Payload OSTree checksum | \`${PAYLOAD_OSTREE_CHECKSUM:-unresolved}\` |"
           echo "| Update origin | \`${UPDATE_REFERENCE:-unresolved}\` |"
           echo "| Installer seed input | \`${INSTALLER_INPUT:-unresolved}\` |"
           echo "| Installer seed | \`${SEED_REFERENCE:-unresolved}\` |"

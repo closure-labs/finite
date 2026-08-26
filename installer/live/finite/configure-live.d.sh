@@ -103,6 +103,7 @@ required_executables=(
 	blkid
 	btrfs
 	bootc
+	chroot
 	efibootmgr
 	findmnt
 	fisherman
@@ -184,23 +185,48 @@ set -euo pipefail
 app_id=org.bootcinstaller.Installer
 recipe=/run/host/etc/bootc-installer/recipe.json
 installer_log="${HOME}/.var/app/${app_id}/cache/bootc-installer/installer-debug.log"
+recipe_log="${HOME}/.cache/finite-installer/finite-installer.log"
 fisherman_log="${HOME}/.cache/bootc-installer/fisherman-output.log"
 preflight_log="${HOME}/.cache/bootc-installer/preflight.log"
+autoinstall_host="${HOME}/.cache/finite-installer/ci-autoinstall.json"
+autoinstall_sandbox="${HOME}/.cache/finite-installer/ci-autoinstall.json"
 activation_marker='Installer::Main INFO: do_activate called'
 activation_timeout_seconds=60
 serial=/dev/ttyS0
-command=(flatpak run --env="BOOTC_CUSTOM_RECIPE=${recipe}" "${app_id}")
+command=(
+	flatpak run
+	--env=BOOTC_INSTALLER_DEBUG=1
+	--env="BOOTC_CUSTOM_RECIPE=${recipe}"
+	"${app_id}"
+)
 unattended=false
 source_manifest_digest=
 if grep -qw 'finite.installer.autoinstall=1' /proc/cmdline; then
 	unattended=true
-	command+=(--autoinstall /run/host/etc/bootc-installer/ci-autoinstall.json)
 fi
 
 install -d -m 0755 \
 	"$(dirname "${installer_log}")" \
+	"$(dirname "${recipe_log}")" \
 	"$(dirname "${fisherman_log}")"
-rm -f "${installer_log}" "${fisherman_log}" "${preflight_log}"
+rm -f \
+	"${installer_log}" \
+	"${recipe_log}" \
+	"${fisherman_log}" \
+	"${preflight_log}" \
+	"${autoinstall_host}"
+: >"${installer_log}"
+: >"${recipe_log}"
+: >"${fisherman_log}"
+if [[ "${unattended}" == true ]]; then
+	# The installer Flatpak has host filesystem access and launches Fisherman
+	# on the host with this same absolute path. Keep the writable one-shot
+	# recipe outside both Flatpak's private XDG cache and bootc-installer's own
+	# cache so both processes see it until upstream securely removes it.
+	install -m 0644 \
+		/etc/bootc-installer/ci-autoinstall.json "${autoinstall_host}"
+	command+=(--autoinstall "${autoinstall_sandbox}")
+fi
 
 emit_marker() {
 	printf '%s\n' "$1" | sudo tee "${serial}" >/dev/null
@@ -217,9 +243,10 @@ dump_guest_diagnostics() {
 	local reason=$1 name path
 	{
 		echo "FINITE_DIAGNOSTICS_REASON=${reason}"
-		for name in installer-debug.log fisherman-output.log preflight.log; do
+		for name in installer-debug.log finite-installer.log fisherman-output.log preflight.log; do
 			case "${name}" in
 				installer-debug.log) path=${installer_log} ;;
+				finite-installer.log) path=${recipe_log} ;;
 				fisherman-output.log) path=${fisherman_log} ;;
 				preflight.log) path=${preflight_log} ;;
 			esac
@@ -291,8 +318,9 @@ fi
 "${command[@]}" &
 installer_pid=$!
 sudo /usr/bin/bash -c \
-	'exec tail --pid="$1" --retry -n +1 -F "$2" "$3" >"$4" 2>&1' \
-	-- "${installer_pid}" "${installer_log}" "${fisherman_log}" "${serial}" &
+	'exec tail --pid="$1" --retry -n +1 -F "$2" "$3" "$4" >"$5" 2>&1' \
+	-- "${installer_pid}" "${installer_log}" "${recipe_log}" \
+	"${fisherman_log}" "${serial}" &
 log_tail_pid=$!
 cleanup() {
 	kill -TERM "${log_tail_pid}" >/dev/null 2>&1 || true
@@ -389,6 +417,8 @@ boot_root="${work_root}/boot"
 system_root="${work_root}/system"
 install -d -m 0755 "${boot_root}" "${system_root}"
 cleanup() {
+	[[ -z "${bound_var:-}" ]] || umount "${bound_var}" >/dev/null 2>&1 || true
+	[[ -z "${file_contexts_tmp:-}" ]] || rm -f "${file_contexts_tmp}"
 	umount "${system_root}" >/dev/null 2>&1 || true
 	umount "${boot_root}" >/dev/null 2>&1 || true
 	rmdir "${system_root}" "${boot_root}" "${work_root}" >/dev/null 2>&1 || true
@@ -403,59 +433,195 @@ for entry in "${boot_root}"/loader/entries/*.conf "${boot_root}"/EFI/loader/entr
 done
 
 mount /dev/vda3 "${system_root}"
+deployment_checksum=
 mapfile -d '' deployment_roots < <(
 	find "${system_root}/ostree/deploy" \
-		-mindepth 3 -maxdepth 3 -type d -name '*.0' -print0
+		-mindepth 3 -maxdepth 3 -type d \
+		-path "${system_root}/ostree/deploy/*/deploy/*" -print0
 )
-((${#deployment_roots[@]} > 0)) || {
-	echo 'No installed OSTree deployment was found' >&2
+((${#deployment_roots[@]} == 1)) || {
+	printf 'Expected exactly one installed OSTree deployment; found %s\n' \
+		"${#deployment_roots[@]}" >&2
 	exit 1
 }
 
 for deployment_root in "${deployment_roots[@]}"; do
+	deployment_name=${deployment_root##*/}
+	[[ "${deployment_name}" =~ ^[0-9a-f]{64}\.[0-9]+$ ]] || {
+		echo "Invalid installed OSTree deployment name: ${deployment_name}" >&2
+		exit 1
+	}
+	deployment_checksum=${deployment_name%%.*}
 	systemd_root="${deployment_root}/etc/systemd/system"
+	policy_root="${deployment_root}/etc/selinux/targeted"
+	contexts_root="${policy_root}/contexts/files"
+	policy="${contexts_root}/file_contexts"
+	home_policy="${contexts_root}/file_contexts.homedirs"
+	local_policy="${contexts_root}/file_contexts.local"
+	var_root="${deployment_root%/deploy/*}/var"
+	[[ -s "${policy}" ]] || {
+		echo "Installed SELinux file-context policy is missing: ${policy}" >&2
+		exit 1
+	}
+	[[ -s "${home_policy}" ]] || {
+		echo "Installed SELinux home-context policy is missing: ${home_policy}" >&2
+		exit 1
+	}
+	mapfile -d '' policy_binaries < <(
+		find "${policy_root}/policy" -maxdepth 1 -type f -name 'policy.*' -print0
+	)
+	((${#policy_binaries[@]} == 1)) || {
+		printf 'Expected exactly one installed SELinux binary policy; found %s\n' \
+			"${#policy_binaries[@]}" >&2
+		exit 1
+	}
+	policy_binary=${policy_binaries[0]}
+	policy_binary_chroot=${policy_binary#"${deployment_root}"}
+	[[ -x "${deployment_root}/usr/bin/setfiles" ]] || {
+		echo 'Installed SELinux setfiles executable is missing' >&2
+		exit 1
+	}
+	file_contexts_tmp=$(mktemp "${contexts_root}/finite-ci-file-contexts.XXXXXX")
+	file_contexts_chroot=${file_contexts_tmp#"${deployment_root}"}
+	cat "${policy}" "${home_policy}" >"${file_contexts_tmp}"
+	[[ ! -f "${local_policy}" ]] || cat "${local_policy}" >>"${file_contexts_tmp}"
+	# Fisherman creates the target user through an offline chroot after bootc
+	# deploys the image. The resulting account database and home directory do
+	# not inherit the target policy labels, which prevents dbus-broker from
+	# reading /etc/passwd on the first enforcing boot. restorecon intentionally
+	# exits successfully when SELinux appears disabled, as it does inside a bare
+	# deployment chroot without selinuxfs. Invoke the installed deployment's
+	# setfiles name explicitly so it performs an offline relabel against that
+	# deployment's own contexts and binary policy without requiring setfiles in
+	# the smaller Dakota live root.
+	# The stateful OSTree var tree lives outside the deployment, so bind it into
+	# the alternate root while relabeling its home tree.
 	install -d -m 0755 \
 		"${systemd_root}" \
-		"${systemd_root}/multi-user.target.wants"
+		"${systemd_root}/cloud-init.target.wants"
 	cat >"${systemd_root}/finite-ci-installed-ready" <<'SCRIPT'
 #!/usr/bin/bash
-set -euo pipefail
+set -Eeuo pipefail
 
-status="$(/usr/bin/bootc status --json --format-version=1)"
+report_installed_error() {
+	local status=$1 line=$2 unit
+	trap - ERR
+	set +e
+	echo 'FINITE_INSTALLED_DIAGNOSTICS_BEGIN=1'
+	printf 'failure_status=%s failure_line=%s\n' "${status}" "${line}"
+	echo '--- failed units ---'
+	systemctl --failed --no-pager
+	echo '--- required unit status ---'
+	for unit in \
+		dbus.service \
+		cloud-final.service \
+		finite-nix-selinux.service \
+		finite-nix-seed.service \
+		nix.mount \
+		nix-daemon.service \
+		nix-daemon.socket \
+		determinate-nixd.socket; do
+		systemctl status --no-pager --lines 80 "${unit}"
+	done
+	echo '--- mounts ---'
+	findmnt --real --output-all
+	echo '--- SELinux contexts ---'
+	getenforce
+	ls -ldZ /etc /etc/passwd /etc/group /var/home /var/home/finiteci /nix
+	echo '--- cloud-init ---'
+	cloud-init status --long
+	echo '--- journal ---'
+	journalctl --boot --no-pager --lines 500
+	echo 'FINITE_INSTALLED_DIAGNOSTICS_END=1'
+	printf 'FINITE_INSTALLED_ERROR=status=%s line=%s\n' "${status}" "${line}"
+	exit "${status}"
+}
+trap 'report_installed_error "$?" "${LINENO}"' ERR
+
+status="$(/usr/bin/bootc status --json --format-version=1 | /usr/bin/jq -c .)"
 hostname_value="$(hostname)"
-root_fstype="$(findmnt --noheadings --output FSTYPE / | tr -d '[:space:]')"
+sysroot_fstype="$(findmnt --noheadings --output FSTYPE /sysroot | tr -d '[:space:]')"
 os_version="$(. /usr/lib/os-release; printf '%s' "${VERSION_ID}")"
 grub2_ready=false
 [[ -s /boot/grub2/grub.cfg ]] && grub2_ready=true
+selinux_mode="$(getenforce)"
+[[ "${selinux_mode}" == Enforcing ]]
+required_units=(
+	dbus.service
+	cloud-final.service
+	finite-nix-selinux.service
+	finite-nix-seed.service
+	nix.mount
+	nix-daemon.socket
+	determinate-nixd.socket
+)
+systemctl is-active --quiet "${required_units[@]}"
+cloud_status_exit=0
+cloud_status="$(cloud-init status --format json)" || cloud_status_exit=$?
+((cloud_status_exit == 0 || cloud_status_exit == 2))
+jq -e '.status == "done" and (.errors | length) == 0' <<<"${cloud_status}" >/dev/null
+finite_passwd="$(getent passwd finiteci)"
+[[ -n "${finite_passwd}" ]]
+finite_home="$(cut -d: -f6 <<<"${finite_passwd}")"
+[[ "${finite_home}" == /var/home/finiteci ]]
+[[ -d /var/home/finiteci ]]
+matchpathcon -V /etc/passwd /etc/group /var/home/finiteci
+mountpoint --quiet /nix
+nix_executable=/nix/var/nix/profiles/default/bin/nix
+[[ -x "${nix_executable}" ]]
+nix_version="$("${nix_executable}" --version)"
+[[ "${nix_version}" == 'nix (Determinate Nix '* ]]
+"${nix_executable}" --max-jobs 2 --cores 4 store info --store daemon >/dev/null
+systemctl is-active --quiet nix-daemon.service
 printf 'FINITE_BOOTC_STATUS=%s\n' "${status}"
 printf 'FINITE_HOSTNAME=%s\n' "${hostname_value}"
-printf 'FINITE_ROOT_FSTYPE=%s\n' "${root_fstype}"
+printf 'FINITE_USER_HOME=%s\n' "${finite_home}"
+printf 'FINITE_SYSROOT_FSTYPE=%s\n' "${sysroot_fstype}"
 printf 'FINITE_OS_VERSION=%s\n' "${os_version}"
 printf 'FINITE_GRUB2_READY=%s\n' "${grub2_ready}"
+printf 'FINITE_SELINUX_MODE=%s\n' "${selinux_mode}"
+printf 'FINITE_DBUS_ACTIVE=true\n'
+printf 'FINITE_CLOUD_INIT_STATUS=%s\n' "$(jq -r .status <<<"${cloud_status}")"
+printf 'FINITE_NIX_VERSION=%s\n' "${nix_version}"
 printf 'FINITE_INSTALLED_READY=1\n'
 SCRIPT
 	chmod 0755 "${systemd_root}/finite-ci-installed-ready"
 	cat >"${systemd_root}/finite-ci-installed-ready.service" <<'UNIT'
 [Unit]
 Description=Finite installed-system validation marker
-After=systemd-user-sessions.service
+Wants=dbus.service cloud-final.service nix-daemon.socket determinate-nixd.socket
+After=dbus.service cloud-final.service nix-daemon.socket determinate-nixd.socket systemd-user-sessions.service
 
 [Service]
 Type=oneshot
-ExecStart=/etc/systemd/system/finite-ci-installed-ready
+ExecStart=/usr/bin/bash /etc/systemd/system/finite-ci-installed-ready
 StandardOutput=tty
 StandardError=tty
 TTYPath=/dev/ttyS0
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=cloud-init.target
 UNIT
 	ln -sfn ../finite-ci-installed-ready.service \
-		"${systemd_root}/multi-user.target.wants/finite-ci-installed-ready.service"
-	if command -v restorecon >/dev/null 2>&1; then
-		restorecon -RF "${systemd_root}" || true
+		"${systemd_root}/cloud-init.target.wants/finite-ci-installed-ready.service"
+	chroot "${deployment_root}" /usr/bin/setfiles -C -F -m -v \
+		-c "${policy_binary_chroot}" \
+		"${file_contexts_chroot}" \
+		/etc
+	if [[ -d "${var_root}/home" ]]; then
+		mount --bind "${var_root}" "${deployment_root}/var"
+		bound_var="${deployment_root}/var"
+		chroot "${deployment_root}" /usr/bin/setfiles -C -F -m -v \
+			-c "${policy_binary_chroot}" \
+			"${file_contexts_chroot}" \
+			/var/home
+		umount "${bound_var}"
+		bound_var=
 	fi
+	rm -f "${file_contexts_tmp}"
+	file_contexts_tmp=
 done
+printf 'FINITE_INSTALLER_DEPLOYMENT_CHECKSUM=%s\n' "${deployment_checksum}"
 sync
 EOF
 chmod 0755 /usr/local/sbin/finite-ci-post-install
@@ -564,7 +730,7 @@ live_uid="$(id -u "${live_user}")"
 runtime_dir="/run/user/${live_uid}"
 deadline=$((SECONDS + 90))
 user_systemctl=(
-	runuser --user "${live_user}" --
+	sudo --user "${live_user}" --
 	env
 	"XDG_RUNTIME_DIR=${runtime_dir}"
 	"DBUS_SESSION_BUS_ADDRESS=unix:path=${runtime_dir}/bus"

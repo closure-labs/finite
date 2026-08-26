@@ -63,11 +63,13 @@ immutable activation links:
 ```bash
 grep -F 'ExecStart=@/usr/bin/determinate-nixd' \
   /usr/lib/systemd/system/nix-daemon.service
-readlink /usr/lib/systemd/system/multi-user.target.wants/nix-daemon.service
-readlink /usr/lib/systemd/system/sockets.target.wants/nix-daemon.socket
+readlink /usr/lib/systemd/system/multi-user.target.wants/nix-daemon.socket
+readlink /usr/lib/systemd/system/multi-user.target.wants/determinate-nixd.socket
+test ! -e /usr/lib/systemd/system/sockets.target.wants/nix-daemon.socket
 ```
 
-All three checks should succeed. A corrected image upgrade followed by a reboot
+All four checks should succeed. The daemon itself is socket-activated; it must
+not also be enabled directly under `multi-user.target`. A corrected image upgrade followed by a reboot
 restores these vendor files without replacing valid state in `/var/home/nix`.
 Finite also removes stale daemon socket files after mounting that state and
 before systemd binds the new sockets.

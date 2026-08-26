@@ -452,6 +452,7 @@ in {
     name = "installer-contracts";
     source = installerSource;
     tools = [
+      applications.installerE2e
       pkgs.gnugrep
       pkgs.gnused
       pkgs.jq
@@ -477,6 +478,7 @@ in {
       bash modules/aspects/base/tests/contracts.sh
       bash modules/aspects/base/tests/determinate-version.sh
       bash modules/aspects/base/tests/nix-lifecycle.sh
+      bash modules/aspects/base/tests/nix-systemd.sh
       bash modules/aspects/capabilities/devops/tests/contracts.sh
       bash modules/aspects/roles/support/tests/contracts.sh
       bash modules/aspects/hardware/dell-xps-9350-intel/tests/lid-auth.sh

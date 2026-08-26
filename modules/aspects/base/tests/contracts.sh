@@ -53,12 +53,25 @@ grep -qF 'rpm -qf' "${aspect_root}/install-determinate-nix.sh"
 grep -qF 'native_nix_env=/usr/bin/nix-env' "${aspect_root}/install-determinate-nix.sh"
 grep -qF 'generated/nix.fc' "${aspect_root}/install-determinate-nix.sh"
 grep -qF '/etc/tmpfiles.d/nix-daemon.conf' "${aspect_root}/install-determinate-nix.sh"
+grep -qF 'install -m 0644 /dev/null /etc/tmpfiles.d/nix-daemon.conf' \
+	"${aspect_root}/install-determinate-nix.sh"
+grep -qF 'install -m 0644 /dev/null /etc/tmpfiles.d/nix-filesystem.conf' \
+	"${aspect_root}/install-determinate-nix.sh"
 grep -qF -- '--no-modify-profile' "${aspect_root}/install-determinate-nix.sh"
 grep -qF -- '--nix-build-user-prefix nixbld-' "${aspect_root}/install-determinate-nix.sh"
 grep -qF '.minimumRuntimeVersion' "${aspect_root}/install-determinate-nix.sh"
 grep -qF 'install-nix-systemd-units.sh' "${aspect_root}/install-determinate-nix.sh"
 grep -qF 'multi-user.target.wants' "${aspect_root}/install-nix-systemd-units.sh"
-grep -qF 'sockets.target.wants' "${aspect_root}/install-nix-systemd-units.sh"
+grep -qF 'remove_vendor_want nix-daemon.socket sockets.target.wants' \
+	"${aspect_root}/install-nix-systemd-units.sh"
+grep -qF 'remove_vendor_want determinate-nixd.socket sockets.target.wants' \
+	"${aspect_root}/install-nix-systemd-units.sh"
+grep -qF 'remove_vendor_want nix-daemon.service multi-user.target.wants' \
+	"${aspect_root}/install-nix-systemd-units.sh"
+grep -qF 'install_vendor_want nix-daemon.socket multi-user.target.wants' \
+	"${aspect_root}/install-nix-systemd-units.sh"
+grep -qF 'install_vendor_want determinate-nixd.socket multi-user.target.wants' \
+	"${aspect_root}/install-nix-systemd-units.sh"
 if grep -qF 'install -d -m 0755 /nix' \
 	"${aspect_root}/apply.sh" "${aspect_root}/install-determinate-nix.sh"; then
 	echo 'Fedora nix-filesystem must own creation of /nix' >&2
@@ -68,6 +81,8 @@ fi
 grep -qF 'ConditionACPower=true' "${rootfs}/usr/lib/systemd/user/finite-caffeinate.service"
 grep -qF -- '--what=sleep:handle-lid-switch' "${rootfs}/usr/lib/systemd/user/finite-caffeinate.service"
 grep -qF 'datasource_list: [NoCloud, None]' "${rootfs}/etc/cloud/cloud.cfg.d/90-finite-nocloud.cfg"
+grep -qF "mode: 'off'" "${rootfs}/etc/cloud/cloud.cfg.d/90-finite-nocloud.cfg"
+grep -qF 'resize_rootfs: false' "${rootfs}/etc/cloud/cloud.cfg.d/90-finite-nocloud.cfg"
 test ! -e "${aspect_root}/manifests/Brewfile"
 test ! -e "${aspect_root}/independently-managed-rpms.list"
 test ! -e "${aspect_root}/packages-bitwarden-cli"
@@ -80,6 +95,10 @@ test -f "${rootfs}/usr/lib/systemd/user/finite-home-first-login.service"
 test -L "${rootfs}/etc/systemd/user/graphical-session.target.wants/finite-home-first-login.service"
 grep -qF 'ConditionPathExists=!%h/.config/finite/profile.json' \
 	"${rootfs}/usr/lib/systemd/user/finite-home-first-login.service"
+grep -qF 'FINITE_NIX_WAIT_SECONDS:-120' \
+	"${rootfs}/usr/libexec/finite/home-first-login"
+grep -qF 'systemctl is-active --quiet nix-daemon.socket determinate-nixd.socket' \
+	"${rootfs}/usr/libexec/finite/home-first-login"
 if grep -qF 'finite-home' "${module}"; then
 	echo 'The removed finite-home compatibility alias remains' >&2
 	exit 1

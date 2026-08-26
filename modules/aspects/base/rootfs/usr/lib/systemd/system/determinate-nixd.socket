@@ -1,9 +1,13 @@
 [Unit]
 Description=Determinate Nixd Daemon Socket
-Before=multi-user.target
+# See nix-daemon.socket: bootc provisions the persistent /nix backing tree
+# after basic.target, so these sockets intentionally join the later boot phase.
+DefaultDependencies=no
+After=basic.target finite-nix-socket-cleanup.service
+Before=nix-daemon.service multi-user.target shutdown.target
+Conflicts=shutdown.target
 RequiresMountsFor=/nix/store /nix/var/determinate
 Requires=finite-nix-socket-cleanup.service
-After=finite-nix-socket-cleanup.service
 
 [Socket]
 FileDescriptorName=determinate-nixd.socket
@@ -13,4 +17,4 @@ Service=nix-daemon.service
 RemoveOnStop=true
 
 [Install]
-WantedBy=sockets.target
+WantedBy=multi-user.target

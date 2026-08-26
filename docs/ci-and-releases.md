@@ -147,8 +147,10 @@ scratch capacity. The end-to-end phase supplies the checked-in unattended JSON
 recipe, installs onto a 64 GiB disposable disk, validates Project Bluefin's
 three-partition GPT layout, and boots with a fresh OVMF variable store. The
 installed system must report Fedora 44, hostname `finite`, a Btrfs root, a
-working GRUB2 configuration, the verified digest, and the expected mutable
-update reference through bootc status.
+working GRUB2 configuration, the verified signed source digest, the exact
+OSTree deployment checksum recorded during installation, and the expected
+mutable update reference. The bootc manifest digest is recorded separately
+because Fisherman's registry-to-OCI-layout copy may change manifest bytes.
 The action summary records seed identity/hit/publication state plus separate
 seed, ISO, smoke, install, and installed-boot durations.
 

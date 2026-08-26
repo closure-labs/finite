@@ -46,8 +46,13 @@ high-compression LZ4 option is deliberately disabled.
 
 The composite action smoke-boots the live ISO under OVMF, performs an unattended
 Dakota installation onto a disposable disk, then boots the installed system.
-The final proof requires the installed bootc digest to equal the signed digest
-selected before ISO assembly and the update reference to equal the selected tag.
+The final proof first requires the source marker emitted by the live system to
+equal the signed registry digest selected before ISO assembly. Fisherman's exact
+installed OSTree deployment checksum is then recorded before shutdown and must
+equal the checksum reported by the independently booted system. The update
+reference must equal the selected tag. The bootc manifest digest is retained as
+diagnostics but may differ because Fisherman copies the registry image through
+a local OCI layout before installation.
 
 The live ISO uses systemd-boot. The installed Fedora/Bluefin target deliberately
 keeps Project Bluefin's GRUB2 layout: GPT, EFI system partition, separate

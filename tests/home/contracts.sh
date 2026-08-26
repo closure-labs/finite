@@ -159,7 +159,17 @@ elif [[ "${FINITE_TEST_BUILD_FAIL:-false}" == true ]]; then
 fi
 EOF
 } >"${test_root}/login-bin/nix"
-chmod +x "${test_root}/login-bin/zenity" "${test_root}/login-bin/nix"
+{
+	printf '#!%s\n' "${BASH}"
+	cat <<'EOF'
+set -euo pipefail
+[[ "${FINITE_TEST_NIX_READY:-true}" == true ]]
+EOF
+} >"${test_root}/login-bin/systemctl"
+chmod +x \
+	"${test_root}/login-bin/zenity" \
+	"${test_root}/login-bin/nix" \
+	"${test_root}/login-bin/systemctl"
 printf '%s\n' '{"foundation":"bluefin","hardware":"generic-x86_64"}' >"${test_root}/running.json"
 export PATH="${test_root}/login-bin:${PATH}"
 export FINITE_NIX_COMMAND="${test_root}/login-bin/nix"
@@ -172,6 +182,14 @@ export FINITE_TEST_ZENITY_LOG="${test_root}/zenity.log"
 FINITE_TEST_CANCEL=true bash "${first_login}"
 test ! -s "${FINITE_TEST_NIX_LOG}"
 test ! -e "${FINITE_HOME_PROFILE_PATH}"
+
+: >"${FINITE_TEST_ZENITY_LOG}"
+if FINITE_TEST_NIX_READY=false FINITE_NIX_WAIT_SECONDS=0 \
+	bash "${first_login}" >/dev/null 2>&1; then
+	echo 'First-login succeeded before Nix became ready' >&2
+	exit 1
+fi
+grep -qF -- '--error' "${FINITE_TEST_ZENITY_LOG}"
 
 : >"${FINITE_TEST_NIX_LOG}"
 FINITE_TEST_SELECTED_ROLES='' bash "${first_login}"
