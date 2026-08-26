@@ -44,6 +44,13 @@ selected target. No mutable image state crosses a job boundary.
 Installer candidates use only the current repository's GHCR payload. Signature
 and attestation verification follows the payload's audited OCI source label;
 there is no alternate registry namespace or compatibility fallback.
+Functional installer inputs and trusted cache-save policy are classified
+separately. Changes to the build action, live environment, locked Dakota
+source, or installer applications select the full candidate validation. The
+cache-save-only action is instead covered by repository and installer
+contracts, so cache-policy edits do not schedule installer E2E or image
+shards. The build action invokes that policy only after it has produced and
+validated the exact seed artifacts.
 
 Publication and pull-request validation share the focused
 `finite-rechunk-image` Nix application. It preserves non-generated OCI

@@ -75,17 +75,13 @@ runs:
         nix shell --accept-flake-config .#ci-installer-build
         -c finite-installer-build
 
-    - name: Save exact installer seed artifacts
-      if: >-
-        inputs.cache-write == 'true' &&
-        steps.seed-actions-cache.outputs.cache-hit != 'true' &&
-        github.ref == 'refs/heads/main' &&
-        (github.event_name == 'push' || github.event_name == 'schedule' ||
-        github.event_name == 'workflow_dispatch')
-      uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+    - name: Apply trusted installer seed cache-save policy
+      uses: ./.github/actions/save-installer-seed
       with:
+        cache-hit: ${{ steps.seed-actions-cache.outputs.cache-hit }}
+        cache-key: ${{ steps.seed-actions-cache.outputs.cache-primary-key }}
+        cache-write: ${{ inputs.cache-write }}
         path: ${{ runner.temp }}/finite-installer-seed-cache
-        key: ${{ steps.seed-actions-cache.outputs.cache-primary-key }}
 
     - name: Smoke-test installer ISO bootloader
       id: smoke

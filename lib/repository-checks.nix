@@ -102,6 +102,7 @@
   ];
   installerSource = sourceFor [
     ../.github/actions/build-installer
+    ../.github/actions/save-installer-seed
     ../flake.nix
     ../installer
     ../lib/ci-applications/installer-e2e.nix
@@ -759,8 +760,16 @@ in {
         yq -e ".runs.steps[] |
           select(.name == \"Save exact installer seed artifacts\") |
           ''${cache_assertion}" \
-          .github/actions/build-installer/action.yml >/dev/null
+          .github/actions/save-installer-seed/action.yml >/dev/null
       done
+      yq -e '
+        .runs.steps[] |
+        select(.name == "Apply trusted installer seed cache-save policy") |
+        (.uses == "./.github/actions/save-installer-seed" and
+          .with["cache-hit"] == "''${{ steps.seed-actions-cache.outputs.cache-hit }}" and
+          .with["cache-key"] == "''${{ steps.seed-actions-cache.outputs.cache-primary-key }}" and
+          .with["cache-write"] == "''${{ inputs.cache-write }}")
+      ' .github/actions/build-installer/action.yml >/dev/null
       grep -qF '"additionalProperties": false' lib/ci-applications/ci-plan.schema.json
       grep -qF -- "--option 'packages:pkgs!'" docs/ci-and-releases.md
       grep -qF -- '--build-context "finite-generated=' lib/ci-applications/profile-stage.nix
