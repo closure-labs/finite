@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-build_root="${FINITE_BUILD_ROOT:-/tmp/finite-build}"
 generated_root="${FINITE_GENERATED_ROOT:?FINITE_GENERATED_ROOT is required}"
 installer="${generated_root}/bootc/generated/determinate-nix-installer"
 lock="${generated_root}/bootc/generated/determinate-nix.json"
@@ -77,13 +76,23 @@ install -D -m 0444 "${file_contexts}" /usr/share/finite/selinux/nix.fc
 # unit contracts under /usr/lib/systemd/system and owns the bootc mount order.
 rm -f \
 	/etc/tmpfiles.d/nix-daemon.conf \
+	/etc/tmpfiles.d/nix-filesystem.conf \
 	/etc/systemd/system/determinate-nixd.socket \
 	/etc/systemd/system/nix-daemon.service \
 	/etc/systemd/system/nix-daemon.socket
 
-# Determinate's tmpfiles entry is an absolute symlink into /nix. That is valid
-# after the boot mount but escapes bootc's image root during lint. Fedora's
-# nix-daemon package already vendors the equivalent native tmpfiles contract.
+# Finite provisions the complete persistent tree below /var/home/nix before
+# bind-mounting it on /nix. The Fedora package tmpfiles entries run earlier
+# against the immutable /nix placeholder and only produce read-only-filesystem
+# errors. Override both vendor files with empty higher-priority /etc files.
+# Regular files keep bootc's image-root lint from following /dev/null outside
+# the container filesystem, as it would with systemd's usual symlink mask.
+install -m 0644 /dev/null /etc/tmpfiles.d/nix-daemon.conf
+install -m 0644 /dev/null /etc/tmpfiles.d/nix-filesystem.conf
+
+# Determinate's systemd links target mutable-host overrides that Finite removes
+# above. Delete the associated enablement links before installing Finite's
+# immutable vendor units.
 find /etc/systemd/system -type l \( \
 	-lname '/etc/systemd/system/determinate-nixd.socket' -o \
 	-lname '/etc/systemd/system/nix-daemon.service' -o \
@@ -107,8 +116,3 @@ test -x "${seed}/nix-installer"
 test -f "${seed}/receipt.json"
 test -d "${seed}/store"
 test -d "${seed}/var/nix"
-
-# Assert that the Fedora package did not replace Finite's Determinate units,
-# then activate them from the immutable vendor tree. This also repairs upgrades
-# from hosts where the equivalent /etc enablement links were locally absent.
-bash "${build_root}/modules/aspects/base/install-nix-systemd-units.sh"

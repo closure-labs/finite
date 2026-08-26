@@ -1,9 +1,14 @@
 [Unit]
 Description=Determinate Nix Daemon Socket
-Before=multi-user.target
+# The bootc-backed /nix mount is populated by regular services after
+# basic.target. Starting this socket from sockets.target would order it before
+# basic.target and create a cycle through nix.mount and finite-nix-seed.service.
+DefaultDependencies=no
+After=basic.target finite-nix-socket-cleanup.service
+Before=nix-daemon.service multi-user.target shutdown.target
+Conflicts=shutdown.target
 RequiresMountsFor=/nix/store /nix/var /nix/var/nix/db
 Requires=finite-nix-socket-cleanup.service
-After=finite-nix-socket-cleanup.service
 ConditionPathIsReadWrite=/nix/var/nix/daemon-socket
 
 [Socket]
@@ -12,4 +17,4 @@ ListenStream=/nix/var/nix/daemon-socket/socket
 RemoveOnStop=true
 
 [Install]
-WantedBy=sockets.target
+WantedBy=multi-user.target

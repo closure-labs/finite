@@ -1,9 +1,9 @@
 {lib, ...}: let
   flakeConfig = (import ./flake.nix).nixConfig;
-  legacyCacheUrl = builtins.head flakeConfig.extra-substituters;
-  legacyCacheName = lib.removeSuffix ".cachix.org" (lib.removePrefix "https://" legacyCacheUrl);
+  cacheUrl = builtins.head flakeConfig.extra-substituters;
+  cacheName = lib.removeSuffix ".cachix.org" (lib.removePrefix "https://" cacheUrl);
 in {
   imports = [./devenv-tasks.nix];
 
-  cachix.pull = ["cachix" legacyCacheName];
+  cachix.pull = ["cachix" cacheName];
 }

@@ -46,11 +46,20 @@
   inherit (profileSet) profiles;
   bluefin = config.finite.sources.bluefin;
   bluefinDx = config.finite.sources.bluefinDx;
-  fedoraBootc = config.finite.sources.fedoraBootc;
   home = config.finite.home;
-  imageBuilder = config.finite.sources.imageBuilder;
+  dakotaInstallerLock = builtins.fromJSON (builtins.readFile ../sources/dakota-installer.json);
+  dakotaIsoSource = pkgs.fetchFromGitHub {
+    inherit (dakotaInstallerLock.iso_source) owner;
+    repo = dakotaInstallerLock.iso_source.repository;
+    rev = dakotaInstallerLock.iso_source.revision;
+    hash = dakotaInstallerLock.iso_source.hash;
+  };
+  bootcInstallerBundle = pkgs.fetchurl {
+    name = "finite-bootc-installer-${dakotaInstallerLock.installer.version}.flatpak";
+    inherit (dakotaInstallerLock.installer) url sha256;
+  };
   determinateNix = config.finite.sources.determinateNix;
-  legacyCache = let
+  cache = let
     flakeConfig = (import ../flake.nix).nixConfig;
     url = builtins.head flakeConfig.extra-substituters;
   in {
@@ -82,8 +91,8 @@
   };
   baseApplications = import ../lib/flake-applications.nix {
     devenv = inputs.devenv.packages.${system}.devenv;
-    inherit bluefin bluefinDx determinateNix fedoraBootc generated imageBuilder pkgs version;
-    legacyCacheName = legacyCache.name;
+    inherit bluefin bluefinDx bootcInstallerBundle dakotaInstallerLock dakotaIsoSource determinateNix generated pkgs version;
+    cacheName = cache.name;
     secretspec = inputs.nixpkgs-weekly.legacyPackages.${system}.secretspec;
   };
   homeApplications = import ../lib/home-profile-applications.nix {inherit generated pkgs;};
@@ -151,7 +160,6 @@
     '';
   repositoryChecks = import ../lib/repository-checks.nix {
     inherit applications architecture generated lib pkgs;
-    secretspec = inputs.nixpkgs-weekly.legacyPackages.${system}.secretspec;
   };
   formattingSource = lib.cleanSourceWith {
     src = inputs.self;
@@ -159,7 +167,9 @@
       relative = lib.removePrefix "${toString inputs.self}/" (toString path);
     in
       relative
-      != ".devenv"
+      != ".git"
+      && !(lib.hasPrefix ".git/" relative)
+      && relative != ".devenv"
       && !(lib.hasPrefix ".devenv/" relative)
       && relative != ".direnv"
       && !(lib.hasPrefix ".direnv/" relative);
@@ -178,15 +188,6 @@
     test -f ${generated}/bootc/generated/image-matrix.json
     test -f ${generated}/bootc/generated/profile-catalog.json
     test -f ${generated}/bootc/generated/home-profile-catalog.json
-    for profile in \
-      bluefin-generic \
-      bluefin-dell-xps-9350-intel \
-      bluefin-dx-generic \
-      bluefin-dx-dell-xps-9350-intel; do
-      test -f ${generated}/installer/config/profiles/"$profile".toml
-    done
-    # Four canonical profiles plus the `latest` tag alias for Bluefin generic.
-    test "$(find ${generated}/installer/config/profiles -type f -name '*.toml' | wc -l)" = 5
     touch "$out"
   '';
   checks =
@@ -212,7 +213,7 @@ in {
   flake = {
     lib.finite = {
       inherit home profiles;
-      inherit legacyCache;
+      inherit cache;
       profileOrder = profileSet.order;
     };
     flakeModules.home = homeFlakeModule;

@@ -19,19 +19,19 @@ is selected.
 ## Switch an existing bootc system
 
 ```console
-run0 bootc switch ghcr.io/closure-labs/finite:latest
-run0 systemctl reboot
+sudo bootc switch ghcr.io/closure-labs/finite:latest
+sudo systemctl reboot
 bootc status
 ```
 
 Use another tag from the table when appropriate. Update or roll back with:
 
 ```console
-run0 bootc upgrade
-run0 systemctl reboot
+sudo bootc upgrade
+sudo systemctl reboot
 # or
-run0 bootc rollback
-run0 systemctl reboot
+sudo bootc rollback
+sudo systemctl reboot
 ```
 
 ## First graphical login
@@ -103,8 +103,14 @@ files before binding the persistent state.
    gh attestation verify finite-*.iso --repo closure-labs/finite
    ```
 
-5. Write the ISO to installation media and complete Anaconda.
+5. Write the ISO to installation media and complete the graphical Finite installer.
 
-The manifest records immutable payload and builder digests, the source commit,
-the embedded reference, and the mutable update reference. See
+The ISO is a network installer. Connect the live GNOME session to the network
+before starting; Dakota then pulls the exact signed Finite digest recorded in
+the manifest. The installed system tracks the selected tag for later updates.
+
+The manifest records the immutable network payload, signed Dakota SquashFS-seed
+identity, cache source, pinned Project Bluefin installer inputs, source commit,
+and mutable update reference. The payload selection is stored in a small JSON
+file on the ISO and validated again before the graphical installer starts. See
 [Troubleshooting](troubleshooting.md) for runtime and installer checks.

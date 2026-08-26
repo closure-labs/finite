@@ -1,0 +1,46 @@
+{
+  "log_file": "/home/liveuser/.cache/finite-installer/finite-installer.log",
+  "distro_name": "Finite",
+  "welcome_title": "Welcome to Finite",
+  "distro_logo": "/run/host/usr/share/pixmaps/finite.png",
+  "imgref": "@@UPDATE_REFERENCE@@",
+  "local_imgref": "@@PAYLOAD_REFERENCE@@",
+  "targetImgref": "@@UPDATE_REFERENCE@@",
+  "hostname": "finite",
+  "bootloader": "grub2",
+  "composeFsBackend": false,
+  "filesystem": "btrfs",
+  "tour": {
+    "welcome": {
+      "image": "/run/host/usr/share/bootc-installer/images/finite-logo.png",
+      "title": "Welcome to Finite",
+      "description": "Install a verified Finite workstation over the network."
+    },
+    "features": {
+      "image": "/run/host/usr/share/bootc-installer/images/finite-logo.png",
+      "title": "Choose your foundation",
+      "description": "Finite supports Bluefin and Bluefin DX foundations with composable Home Manager roles."
+    },
+    "community": {
+      "image": "/run/host/usr/share/bootc-installer/images/finite-logo.png",
+      "title": "Verified and current",
+      "description": "The installer pulls the exact signed Finite image selected when this ISO was built."
+    },
+    "developer": {
+      "image": "/run/host/usr/share/bootc-installer/images/finite-logo.png",
+      "title": "Configure after first login",
+      "description": "Select any combination of roles on first login, or reopen the selector later with finite-configure."
+    },
+    "completed": {
+      "image": "/run/host/usr/share/bootc-installer/images/finite-logo.png",
+      "title": "Finite is installed",
+      "description": "Restart into Finite and complete your personal configuration."
+    }
+  },
+  "steps": {
+    "welcome": {"template": "welcome", "protected": true},
+    "connection": {"template": "conn-check"},
+    "disk": {"template": "disk"},
+    "encryption": {"template": "encryption"}
+  }
+}

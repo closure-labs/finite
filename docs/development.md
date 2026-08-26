@@ -17,9 +17,11 @@ nix fmt
 nix shell --accept-flake-config .#ci-check -c finite-ci-check
 ```
 
-The CI application explicitly builds only the declared checks in one parallel
-invocation, then runs the canonical `nix flake check --no-build` and verifies
-that every check produces a reference-free proof closure below 1 MiB.
+The CI application explicitly builds only the declared checks in one bounded
+Nix invocation, then runs the canonical `nix flake check --no-build` and
+verifies that every check produces a reference-free proof closure below 1 MiB.
+The shared GitHub setup limits Nix to four simultaneous jobs and one core per
+derivation so runner CPU and memory usage remain predictable.
 Authorized workstations and trusted GitHub events publish those proofs to
 Cachix.
 
@@ -38,12 +40,18 @@ loads the verified digest into the same storage.
 On the primary workstation, run the check graph with Cachix upload enabled:
 
 ```bash
-nix run .#local-cache
+nix run .#local-cache -- --max-jobs 2 --cores 2
 ```
+
+On a 16 GiB or thermally constrained workstation, use `--max-jobs 1` while
+keeping `--cores 2`; already-realized checks are reused on the next run. The
+wrapper resolves the aggregate check derivation in a short-lived Nix process
+before starting builders so the large Flake evaluator heap is not retained for
+the duration of the build.
 
 The `local-cache` app uses SecretSpec profile `local-cache` and scope `cachix`.
 SecretSpec resolves the workstation value from
-`$HOME/.other-fun-things/.cachix-finite-auth`, then the app publishes the
+`$HOME/.other-fun-things/.cachix-auth-finite`, then the app publishes the
 evaluated closure-guarded proof outputs.
 
 GitHub-hosted jobs use the separate SecretSpec `github-actions` profile. The
@@ -78,7 +86,6 @@ The output contains:
 - `bootc/generated/profile-catalog.json`
 - `bootc/generated/upstreams.json`
 - `bootc/generated/home-profile-catalog.json`
-- `installer/config/profiles/*.toml`
 
 Build consumers receive this store path directly. To make a writable copy for
 inspection, copy the desired files from the `result` symlink.
@@ -111,8 +118,6 @@ Plymouth watermark names remain identical.
 | `nix build .#architecture` | Mermaid rendering of the evaluated Den graph |
 | `nix shell .#ci-source-verify -c finite-source-verify bluefin` | Verify the locked digest and Cosign identity |
 | `nix shell .#ci-source-verify -c finite-source-verify bluefin-dx` | Verify the locked Bluefin DX digest and Cosign identity |
-| `nix shell .#ci-source-verify -c finite-source-verify image-builder` | Verify the locked installer builder digest |
-| `nix shell .#ci-source-verify -c finite-source-verify fedora-bootc` | Verify the locked minimal installer live-environment digest |
 | `nix shell .#ci-source-verify -c finite-source-verify determinate-nix` | Verify the pinned Determinate installer and SELinux policy hashes |
 | `nix shell .#ci-load-bluefin -c finite-load-bluefin bluefin` | Copy the verified digest into container storage |
 | `nix shell .#ci-source-update -c finite-source-update bluefin` | Refresh and verify the Bluefin lock |
@@ -127,8 +132,8 @@ Plymouth watermark names remain identical.
 | `nix shell .#ci-image-sbom -c finite-image-sbom validate <file>` | Validate a normalized SPDX image software bill of materials |
 | `nix shell .#ci-rechunk-image -c finite-rechunk-image --source <image> --output <transport>` | Rechunk a local bootc image with the shared format-v2 policy |
 | `nix shell .#ci-installer-smoke -c finite-installer-smoke <iso>` | QEMU installer boot test |
-| `nix shell .#ci-installer-e2e -c finite-installer-e2e install <iso> <kickstart> <state>` | Install through the CI Kickstart onto a disposable disk |
-| `nix shell .#ci-installer-e2e -c finite-installer-e2e boot <state>` | Boot and validate the installed disposable disk |
+| `nix shell .#ci-installer-e2e -c finite-installer-e2e install <iso> <state> <source-digest>` | Install the signed source into a disposable disk |
+| `nix shell .#ci-installer-e2e -c finite-installer-e2e boot <state> <reference>` | Boot and validate the installed disposable disk and exact OSTree deployment |
 | `nix shell .#ci-release-notes -c finite-release-notes <version> CHANGELOG.md` | Release notes for one version |
 
 ## Repository layout
@@ -138,10 +143,10 @@ modules/aspects/      co-located base, capability, hardware, and role features
 modules/profiles/     typed catalogs, composition definitions, and bootc class
 modules/repository/   checks, delivery, and GitHub operation graph
 modules/sources/      typed source-lock module
-sources/              auditable OCI locks for Bluefin, Bluefin DX, and Image Builder
+sources/              auditable Bluefin, installer-source, and tool locks
 bootc/builder/        container build entrypoints and shared shell libraries
 lib/                  Flake-owned applications, checks, and artifact rendering
-installer/            installer container and root filesystem
+installer/            Project Bluefin live overlay and source-preparation script
 automation/           declarative GitHub repository policies
 tests/                focused repository and build contracts
 ```

@@ -1,0 +1,2 @@
+[install]
+root-mount-spec = "LABEL=root"

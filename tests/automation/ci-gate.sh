@@ -61,6 +61,7 @@ run_gate() {
 		BASE_PUBLISH_RESULT=skipped \
 		BASE_SBOM_RESULT=skipped \
 		BUILD_CANDIDATE_RESULT=skipped \
+		CHECKS_RESULT=success \
 		EVENT_NAME=pull_request \
 		HARDWARE_PUBLISH_RESULT=skipped \
 		HARDWARE_SBOM_RESULT=skipped \
@@ -94,6 +95,10 @@ run_gate \
 
 if run_gate PREPARE_RESULT=failure 2>/dev/null; then
 	echo 'A failed preparation job unexpectedly passed the gate' >&2
+	exit 1
+fi
+if run_gate CHECKS_RESULT=failure 2>/dev/null; then
+	echo 'A failed repository-check job unexpectedly passed the gate' >&2
 	exit 1
 fi
 if run_gate CI_PLAN="$(make_plan true false false false false false false false false)" \

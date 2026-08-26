@@ -97,48 +97,6 @@
       description = "Ordered registry tags; the first tag is canonical.";
     };
 
-    imageBuilder = {
-      rootFilesystem = lib.mkOption {
-        type = lib.types.enum [
-          "btrfs"
-          "ext4"
-          "xfs"
-        ];
-        default = "ext4";
-        description = "Default filesystem passed to image-builder for bootc artifacts.";
-      };
-
-      filesystems = lib.mkOption {
-        type = lib.types.listOf (
-          lib.types.submodule {
-            options = {
-              mountpoint = lib.mkOption {
-                type = lib.types.enum [
-                  "/"
-                  "/boot"
-                ];
-              };
-              minsize = lib.mkOption {
-                type = lib.types.ints.positive;
-                description = "Minimum filesystem size in bytes.";
-              };
-            };
-          }
-        );
-        default = [
-          {
-            mountpoint = "/";
-            minsize = 21474836480;
-          }
-          {
-            mountpoint = "/boot";
-            minsize = 2147483648;
-          }
-        ];
-        description = "Bootc-supported filesystem Blueprint customizations.";
-      };
-    };
-
     build = {
       steps = lib.mkOption {
         type = lib.types.listOf (

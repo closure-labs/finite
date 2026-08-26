@@ -2,7 +2,7 @@ name: Update Bluefin stable pin
 
 on:
   schedule:
-    - cron: "7 7 * * *"
+    - cron: "7 7,19 * * *"
   workflow_dispatch:
 
 concurrency:

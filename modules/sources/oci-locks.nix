@@ -1,8 +1,6 @@
 {lib, ...}: let
   bluefinLock = builtins.fromJSON (builtins.readFile ../../sources/bluefin.json);
   bluefinDxLock = builtins.fromJSON (builtins.readFile ../../sources/bluefin-dx.json);
-  fedoraBootcLock = builtins.fromJSON (builtins.readFile ../../sources/fedora-bootc.json);
-  imageBuilderLock = builtins.fromJSON (builtins.readFile ../../sources/image-builder.json);
   determinateNixLock = builtins.fromJSON (builtins.readFile ../../sources/determinate-nix.json);
   ociSourceType = lib.types.submodule {
     options = {
@@ -90,16 +88,6 @@ in {
       readOnly = true;
       description = "Typed, signed Bluefin DX OCI lock.";
     };
-    imageBuilder = lib.mkOption {
-      type = ociSourceType;
-      readOnly = true;
-      description = "Typed OSBuild Image Builder OCI lock.";
-    };
-    fedoraBootc = lib.mkOption {
-      type = ociSourceType;
-      readOnly = true;
-      description = "Typed Fedora bootc lock for the minimal installer live environment.";
-    };
   };
 
   config = assert bluefinLock.cosign != null && bluefinDxLock.cosign != null; {
@@ -107,16 +95,12 @@ in {
       determinateNix = determinateNixLock;
       bluefin = bluefinLock;
       bluefinDx = bluefinDxLock;
-      fedoraBootc = fedoraBootcLock // {cosign = null;};
-      imageBuilder = imageBuilderLock // {cosign = null;};
     };
 
     den.aspects.sources = {
       determinate-nix = {};
       bluefin = {};
       bluefin-dx = {};
-      fedora-bootc = {};
-      image-builder = {};
     };
   };
 }

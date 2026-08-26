@@ -42,9 +42,9 @@ env:
 
 jobs:
   prepare:
-    name: Check, classify, and plan
+    name: Classify and plan
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
+    timeout-minutes: 15
     permissions:
       attestations: read
       contents: read
@@ -58,14 +58,6 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - uses: ./.github/actions/setup-nix
-        with:
-          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      - name: Validate repository and workflows
-        env:
-          FINITE_CACHE_PUSH: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
-        run: >-
-          nix shell --accept-flake-config .#ci-check
-          -c finite-ci-check --no-write-lock-file
       - name: Prepare authoritative downstream CI plan
         id: plan
         env:
@@ -87,6 +79,28 @@ jobs:
         run: >-
           nix shell --accept-flake-config .#ci-prepare
           -c finite-ci-prepare
+
+  checks:
+    name: Validate repository and workflows
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Flake metadata, including revCount, requires complete Git history.
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+        with:
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Build and validate repository checks
+        env:
+          FINITE_CACHE_PUSH: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+        run: >-
+          nix shell --accept-flake-config .#ci-check
+          -c finite-ci-check --no-write-lock-file
 
   build-candidate:
     name: Validate shard ${{ matrix.shard }} (${{ matrix.name }})
@@ -125,7 +139,7 @@ jobs:
       fromJSON(needs.prepare.outputs.plan || '{}').validation.installer.required == true
     needs: prepare
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 120
     permissions:
       attestations: read
       contents: read
@@ -137,6 +151,7 @@ jobs:
       - uses: ./.github/actions/build-installer
         with:
           cache-write: false
+          end-to-end: true
           image-tag: bluefin-generic
           token: ${{ github.token }}
 
@@ -146,10 +161,11 @@ jobs:
       always() && (github.event_name == 'push' ||
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
       needs.prepare.result == 'success' &&
+      needs.checks.result == 'success' &&
       (fromJSON(needs.prepare.outputs.plan || '{}').validation.installer.required == true ||
       fromJSON(needs.prepare.outputs.plan || '{}').publication.builds.root == true) &&
       (needs.promote.result == 'success' || needs.promote.result == 'skipped')
-    needs: [prepare, promote]
+    needs: [prepare, checks, promote]
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     permissions:
@@ -173,8 +189,9 @@ jobs:
     if: >-
       (github.event_name == 'push' || github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
+      needs.checks.result == 'success' &&
       fromJSON(needs.prepare.outputs.plan || '{}').publication.builds.root == true
-    needs: prepare
+    needs: [prepare, checks]
     uses: ./.github/workflows/build-profile.yml
     permissions:
       attestations: write
@@ -203,9 +220,10 @@ jobs:
       always() && (github.event_name == 'push' || github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
       needs.prepare.result == 'success' &&
+      needs.checks.result == 'success' &&
       fromJSON(needs.prepare.outputs.plan || '{}').publication.builds.hardware == true &&
       (needs.base-publish.result == 'success' || needs.base-publish.result == 'skipped')
-    needs: [prepare, base-publish]
+    needs: [prepare, checks, base-publish]
     strategy:
       fail-fast: false
       max-parallel: 4
@@ -233,10 +251,11 @@ jobs:
       always() && (github.event_name == 'push' || github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
       needs.prepare.result == 'success' &&
+      needs.checks.result == 'success' &&
       fromJSON(needs.prepare.outputs.plan || '{}').publication.builds.roles == true &&
       (needs.base-publish.result == 'success' || needs.base-publish.result == 'skipped') &&
       (needs.hardware-publish.result == 'success' || needs.hardware-publish.result == 'skipped')
-    needs: [prepare, base-publish, hardware-publish]
+    needs: [prepare, checks, base-publish, hardware-publish]
     strategy:
       fail-fast: false
       max-parallel: 4
@@ -264,9 +283,10 @@ jobs:
       always() && (github.event_name == 'push' || github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
       needs.prepare.result == 'success' &&
+      needs.checks.result == 'success' &&
       fromJSON(needs.prepare.outputs.plan || '{}').publication.sbom.base == true &&
       (needs.base-publish.result == 'success' || needs.base-publish.result == 'skipped')
-    needs: [prepare, base-publish]
+    needs: [prepare, checks, base-publish]
     strategy:
       matrix: ${{ fromJSON(needs.prepare.outputs.plan).matrices.sbom.base }}
     uses: ./.github/workflows/attest-software-bill-of-materials.yml
@@ -289,9 +309,10 @@ jobs:
       always() && (github.event_name == 'push' || github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
       needs.prepare.result == 'success' &&
+      needs.checks.result == 'success' &&
       fromJSON(needs.prepare.outputs.plan || '{}').publication.sbom.hardware == true &&
       (needs.hardware-publish.result == 'success' || needs.hardware-publish.result == 'skipped')
-    needs: [prepare, hardware-publish]
+    needs: [prepare, checks, hardware-publish]
     strategy:
       fail-fast: false
       max-parallel: 4
@@ -316,9 +337,10 @@ jobs:
       always() && (github.event_name == 'push' || github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
       needs.prepare.result == 'success' &&
+      needs.checks.result == 'success' &&
       fromJSON(needs.prepare.outputs.plan || '{}').publication.sbom.roles == true &&
       (needs.roles-publish.result == 'success' || needs.roles-publish.result == 'skipped')
-    needs: [prepare, roles-publish]
+    needs: [prepare, checks, roles-publish]
     strategy:
       fail-fast: false
       max-parallel: 4
@@ -343,6 +365,7 @@ jobs:
       always() && (github.event_name == 'push' || github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
       needs.prepare.result == 'success' &&
+      needs.checks.result == 'success' &&
       fromJSON(needs.prepare.outputs.plan || '{}').publication.promote == true &&
       (needs.base-publish.result == 'success' || needs.base-publish.result == 'skipped') &&
       (needs.hardware-publish.result == 'success' || needs.hardware-publish.result == 'skipped') &&
@@ -350,7 +373,7 @@ jobs:
       (needs.base-sbom.result == 'success' || needs.base-sbom.result == 'skipped') &&
       (needs.hardware-sbom.result == 'success' || needs.hardware-sbom.result == 'skipped') &&
       (needs.role-sbom.result == 'success' || needs.role-sbom.result == 'skipped')
-    needs: [prepare, base-publish, hardware-publish, roles-publish, base-sbom, hardware-sbom, role-sbom]
+    needs: [prepare, checks, base-publish, hardware-publish, roles-publish, base-sbom, hardware-sbom, role-sbom]
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
@@ -387,7 +410,7 @@ jobs:
   ci-gate:
     name: CI gate
     if: always()
-    needs: [prepare, build-candidate, installer-candidate, base-publish, hardware-publish, roles-publish, base-sbom, hardware-sbom, role-sbom, promote]
+    needs: [prepare, checks, build-candidate, installer-candidate, base-publish, hardware-publish, roles-publish, base-sbom, hardware-sbom, role-sbom, promote]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
@@ -402,6 +425,7 @@ jobs:
           BASE_PUBLISH_RESULT: ${{ needs.base-publish.result }}
           BASE_SBOM_RESULT: ${{ needs.base-sbom.result }}
           BUILD_CANDIDATE_RESULT: ${{ needs.build-candidate.result }}
+          CHECKS_RESULT: ${{ needs.checks.result }}
           EVENT_NAME: ${{ github.event_name }}
           HARDWARE_PUBLISH_RESULT: ${{ needs.hardware-publish.result }}
           HARDWARE_SBOM_RESULT: ${{ needs.hardware-sbom.result }}

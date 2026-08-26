@@ -4,7 +4,6 @@
   generated,
   lib,
   pkgs,
-  secretspec,
 }: let
   root = ../.;
   inherit (lib) fileset;
@@ -101,7 +100,8 @@
     ../lib/ci-applications/installer-e2e.nix
     ../lib/ci-applications/installer-smoke.nix
     ../lib/installer-application.nix
-    ../sources/image-builder.json
+    ../modules/aspects/base/rootfs/usr/lib/bootc/install/00-defaults.toml
+    ../sources/dakota-installer.json
     ../tests/installer
   ];
   aspectsSource = sourceFor [
@@ -125,19 +125,21 @@
   ];
   workflowSource = sourceFor [
     ../.github
+    ../README.md
     ../devenv-tasks.nix
     ../devenv.nix
     ../devenv.yaml
-    ../docs/ci-and-releases.md
+    ../docs
     ../lib/ci-applications
     ../lib/flake-applications.nix
     ../automation/github/policies
     ../bootc/Containerfile
     ../flake.nix
     ../lib/installer-application.nix
+    ../modules/aspects/base/rootfs/usr/lib/bootc/install/00-defaults.toml
     ../modules/outputs.nix
-    ../installer/Containerfile
-    ../installer/rootfs/usr/share/anaconda/interactive-defaults.ks
+    ../installer/live
+    ../installer/prepare-dakota-iso-source
     ../tests/installer
     ../tests/repository
   ];
@@ -164,6 +166,33 @@
       ${commands}
       touch "$out"
     '';
+  workflowApplicationNames = [
+    "ciPrepare"
+    "validateCiPlan"
+    "validateImageShard"
+    "imageReuse"
+    "imageSign"
+    "rechunkImage"
+    "loadBluefin"
+    "promoteImages"
+    "installerBuild"
+    "installerE2e"
+    "imageSbom"
+    "releaseNotes"
+    "updateLocks"
+    "updateHomeRelease"
+    "sbomAttestation"
+    "trustedUpdate"
+    "ciGate"
+  ];
+  # lib.getExe checks each application's executable contract during Flake
+  # evaluation without making the workflow source check realize every runtime
+  # closure merely to run `test -x` on its store path.
+  workflowApplicationsEvaluated =
+    builtins.deepSeq (
+      map (name: lib.getExe applications.${name}) workflowApplicationNames
+    )
+    true;
 in {
   shell = mkSourceCheck {
     name = "shell-checks";
@@ -186,6 +215,7 @@ in {
       while IFS= read -r shell_file; do
         case "''${shell_file}" in
           ./bootc/builder/derived.sh | ./bootc/builder/full.sh | ./bootc/builder/lib/*.sh | \
+          ./installer/**/*.sh | \
           ./modules/aspects/*.sh | ./modules/aspects/**/*.sh | ./tests/*.sh | ./tests/**/*.sh)
             ;;
           *)
@@ -216,11 +246,7 @@ in {
       grep -qF 'operations_updates_determinate_nix --> sources_determinate_nix' ${architecture}/namespace.mmd
       grep -qF 'operations_github_determinate_nix_update --> operations_updates_determinate_nix' \
         ${architecture}/namespace.mmd
-      grep -qF 'operations_delivery_installer --> sources_fedora_bootc' ${architecture}/namespace.mmd
-      grep -qF 'operations_delivery_installer --> sources_image_builder' ${architecture}/namespace.mmd
-      grep -qF 'operations_updates_fedora_bootc --> sources_fedora_bootc' ${architecture}/namespace.mmd
-      grep -qF 'operations_github_fedora_bootc_update --> operations_updates_fedora_bootc' \
-        ${architecture}/namespace.mmd
+      grep -qF 'operations_delivery_installer --> operations_delivery_images' ${architecture}/namespace.mmd
     '';
   };
 
@@ -241,7 +267,7 @@ in {
   upstream = mkSourceCheck {
     name = "upstream-contracts";
     source = upstreamSource;
-    tools = with pkgs; [gnugrep jq ripgrep] ++ [secretspec];
+    tools = with pkgs; [gnugrep jq ripgrep yq-go];
     commands = ''
       # shellcheck disable=SC2016,SC2251
       set -euo pipefail
@@ -265,19 +291,24 @@ in {
         (.cosign.identity | startswith("https://"))
       ' sources/bluefin-dx.json >/dev/null
       jq -e '
-        .schema == 1 and
-        .image == "ghcr.io/osbuild/image-builder-cli" and
-        .tag == "latest" and
-        .architecture == "amd64" and
-        (.digest | test("^sha256:[0-9a-f]{64}$"))
-      ' sources/image-builder.json >/dev/null
-      jq -e '
-        .schema == 1 and
-        .image == "quay.io/fedora/fedora-bootc" and
-        .tag == "44" and
-        .architecture == "amd64" and
-        (.digest | test("^sha256:[0-9a-f]{64}$"))
-      ' sources/fedora-bootc.json >/dev/null
+        .schema == 3 and
+        .iso_source.owner == "projectbluefin" and
+        .iso_source.repository == "dakota-iso" and
+        (.iso_source.revision | test("^[0-9a-f]{40}$")) and
+        (.iso_source.hash | startswith("sha256-")) and
+        (.installer.url | startswith("https://github.com/projectbluefin/bootc-installer/releases/download/")) and
+        (.installer.sha256 | test("^[0-9a-f]{64}$")) and
+        .live_image.image == "ghcr.io/projectbluefin/dakota" and
+        .live_image.tag == "stable" and
+        .live_image.architecture == "amd64" and
+        (.live_image.digest | test("^sha256:[0-9a-f]{64}$")) and
+        .live_image.cosign.issuer == "https://token.actions.githubusercontent.com" and
+        (.live_image.cosign.identity | contains("projectbluefin/dakota/.github/workflows/publish.yml")) and
+        .builder.image == "docker.io/library/debian" and
+        .builder.tag == "bookworm" and
+        .builder.architecture == "amd64" and
+        (.builder.digest | test("^sha256:[0-9a-f]{64}$"))
+      ' sources/dakota-installer.json >/dev/null
       jq -e '
         .schema == 1 and
         .architecture == "x86_64-linux" and
@@ -290,12 +321,15 @@ in {
         (.selinuxFileContexts.url | endswith("/nix.fc")) and
         (.selinuxFileContexts.sha256 | test("^[0-9a-f]{64}$"))
       ' sources/determinate-nix.json >/dev/null
-      secretspec schema --file secretspec.toml --profile local-cache |
-        jq -e '.required == ["CACHIX_AUTH_TOKEN"]' >/dev/null
-      secretspec schema --file secretspec.toml --profile github-actions |
+      yq -p toml -o json '.' secretspec.toml |
         jq -e '
-          .required == [] and
-          (.properties | keys == ["CACHIX_AUTH_TOKEN", "MERGE_QUEUE_TOKEN"])
+          .project.name == "finite" and
+          .providers["github-actions"] == "env" and
+          .profiles["local-cache"].CACHIX_AUTH_TOKEN.required == true and
+          (.profiles["github-actions"] | keys) == ["CACHIX_AUTH_TOKEN", "MERGE_QUEUE_TOKEN"] and
+          all(.profiles["github-actions"][]; .required == false) and
+          .scopes.cachix.secrets == ["CACHIX_AUTH_TOKEN"] and
+          .scopes["github-actions"].secrets == ["CACHIX_AUTH_TOKEN", "MERGE_QUEUE_TOKEN"]
         ' >/dev/null
       grep -qF 'github-actions = "env"' secretspec.toml
       grep -qF 'ref = { item = "GITHUB_ACTIONS_CACHIX_AUTH_TOKEN" }' secretspec.toml
@@ -309,7 +343,6 @@ in {
       grep -qF -- '--no-build' lib/flake-applications.nix
       grep -qF 'nix --accept-flake-config build' lib/flake-applications.nix
       grep -qF -- '--no-link' lib/flake-applications.nix
-      grep -qF '#ci-checks"' lib/flake-applications.nix
       [[ "$(grep -m1 -nF 'nix --accept-flake-config build' lib/flake-applications.nix | cut -d: -f1)" -lt \
         "$(grep -m1 -nF 'nix --accept-flake-config flake check' lib/flake-applications.nix | cut -d: -f1)" ]]
       grep -qF 'ci-checks = ciChecks' modules/outputs.nix
@@ -324,14 +357,19 @@ in {
       grep -qF -- '--label "io.finite.build.profile=' lib/flake-applications.nix
       old_product=purple
       old_product+=fin
-      [[ "$(rg -i -l "''${old_product}" --hidden -g '!.git/**')" == flake.nix ]]
+      ! rg -i "''${old_product}" --hidden -g '!.git/**'
+      grep -qF 'https://finite-os.cachix.org' flake.nix
+      grep -qF 'finite-os.cachix.org-1:iwOc148wD1hSWnyNwhP3DsMxBv8WcL+ppMwcRIvx4Ko=' flake.nix
       grep -qF 'https://cachix.cachix.org' flake.nix
       grep -qF 'cachix.cachix.org-1:eWNHQldwUO7G2VkjpnjDbWwy4KQ/HNxht7H4SSoMckM=' flake.nix
-      grep -qF 'legacyCacheName' devenv.nix
+      grep -qF 'cacheName' devenv.nix
       grep -qF 'provider: local' devenv.yaml
       grep -qF 'local = "file:~/.other-fun-things"' secretspec.toml
+      grep -qF '.cachix-auth-finite' secretspec.toml
       ! grep -qF 'token_file=' lib/flake-applications.nix
       grep -qF 'runtimeInputs = [devenv secretspec];' lib/flake-applications.nix
+      grep -qF '#ci-checks.drvPath' lib/flake-applications.nix
+      grep -qF 'ci_checks_drv}^*' lib/flake-applications.nix
       ! grep -qF 'features.users' modules/profiles/definitions.nix
       grep -qF 'home-bluefin-dx' modules/profiles/definitions.nix
       grep -qFx 'ARG BASE_REF' bootc/Containerfile
@@ -370,7 +408,6 @@ in {
     ];
     commands = ''
       set -euo pipefail
-
       bash tests/automation/classify-changes.sh
       bash tests/automation/classify-ci.sh
       bash tests/automation/ci-gate.sh
@@ -414,17 +451,20 @@ in {
   installer = mkSourceCheck {
     name = "installer-contracts";
     source = installerSource;
-    tools = [pkgs.gnugrep pkgs.gnused pkgs.jq pkgs.pykickstart pkgs.python3];
+    tools = [
+      applications.installerE2e
+      pkgs.gnugrep
+      pkgs.gnused
+      pkgs.jq
+      pkgs.util-linux
+    ];
     commands = ''
       set -euo pipefail
 
       bash tests/installer/contracts.sh \
         ${applications.installerBuild}/bin/finite-installer-build
-      python3 tests/installer/squashfs-stage.py
       bash tests/installer/smoke.sh \
         ${applications.installerSmoke}/bin/finite-installer-smoke
-      bash tests/installer/e2e.sh \
-        ${applications.installerE2e}/bin/finite-installer-e2e
     '';
   };
 
@@ -438,6 +478,7 @@ in {
       bash modules/aspects/base/tests/contracts.sh
       bash modules/aspects/base/tests/determinate-version.sh
       bash modules/aspects/base/tests/nix-lifecycle.sh
+      bash modules/aspects/base/tests/nix-systemd.sh
       bash modules/aspects/capabilities/devops/tests/contracts.sh
       bash modules/aspects/roles/support/tests/contracts.sh
       bash modules/aspects/hardware/dell-xps-9350-intel/tests/lid-auth.sh
@@ -473,7 +514,7 @@ in {
 
   workflows = mkSourceCheck {
     name = "workflow-checks";
-    source = workflowSource;
+    source = assert workflowApplicationsEvaluated; workflowSource;
     tools = with pkgs; [actionlint findutils gnugrep jq yq-go zizmor];
     commands = ''
       # shellcheck disable=SC2016,SC2251
@@ -502,10 +543,8 @@ in {
       for updater in \
         update-bluefin.yml \
         update-determinate-nix.yml \
-        update-fedora-bootc.yml \
         update-flake-lock.yml \
-        update-home-release.yml \
-        update-image-builder.yml; do
+        update-home-release.yml; do
         grep -qF '.#ci-trusted-update' ".github/workflows/''${updater}"
       done
       [[ "$(grep -cF 'finite-trusted-update' .github/workflows/release.yml)" == 2 ]]
@@ -513,11 +552,10 @@ in {
       ! grep -qF 'steps.version.outputs.source_sha' .github/workflows/release.yml
       ! grep -qF 'git push origin HEAD:main' .github/workflows/release.yml
       ! grep -R -qF 'github-actions[bot]' .github/workflows
+      grep -qF 'cron: "7 7,19 * * *"' .github/workflows/update-bluefin.yml
       grep -qF 'finite-source-update bluefin ' .github/workflows/update-bluefin.yml
       grep -qF 'finite-source-update bluefin-dx ' .github/workflows/update-bluefin.yml
       grep -qF 'finite-source-update determinate-nix ' .github/workflows/update-determinate-nix.yml
-      grep -qF 'finite-source-update fedora-bootc ' .github/workflows/update-fedora-bootc.yml
-      grep -qF 'finite-source-update image-builder ' .github/workflows/update-image-builder.yml
       grep -qF 'finite-update-locks ' .github/workflows/update-flake-lock.yml
       grep -qF 'finite-update-home-release ' .github/workflows/update-home-release.yml
       grep -qF 'finite-load-bluefin' .github/workflows/build-profile.yml
@@ -555,13 +593,15 @@ in {
       grep -qF 'attest-software-bill-of-materials.yml' .github/workflows/build.yml
       grep -qF 'attest-software-bill-of-materials.yml' lib/installer-application.nix
       grep -qF 'attest-software-bill-of-materials.yml' .github/workflows/release.yml
-      grep -qF 'DeterminateSystems/determinate-nix-action@668647a33843b1f280cb2ef4c41736f86b29f826' \
+      grep -qF 'DeterminateSystems/determinate-nix-action@527f17dd63d2d60d3e5552934bc84b9a33a14d11' \
         .github/actions/setup-nix/action.yml
+      grep -qF 'max-jobs = 4' .github/actions/setup-nix/action.yml
+      grep -qF 'cores = 1' .github/actions/setup-nix/action.yml
       ! grep -qF -- '--out-link /tmp/finite-workflow-toolset' .github/actions/setup-nix/action.yml
       grep -qF '.#ci-github-actions-secrets' .github/actions/setup-nix/action.yml
       grep -qF 'GITHUB_ACTIONS_CACHIX_AUTH_TOKEN' .github/actions/setup-nix/action.yml
       [[ "$(grep -R -h -oF 'secrets.CACHIX_AUTH_TOKEN' .github | wc -l)" == 1 ]]
-      [[ "$(grep -R -h -oF 'secrets.MERGE_QUEUE_TOKEN' .github | wc -l)" == 7 ]]
+      [[ "$(grep -R -h -oF 'secrets.MERGE_QUEUE_TOKEN' .github | wc -l)" == 5 ]]
       ! grep -R -qF 'token: ''${{ secrets.MERGE_QUEUE_TOKEN' .github
       grep -qF 'GH_TOKEN: ''${{ env.MERGE_QUEUE_TOKEN || github.token }}' \
         .github/workflows/queue-dependabot.yml
@@ -569,7 +609,7 @@ in {
       ! grep -R -Eq 'runtimeInputs[[:space:]]*=.*[^[:alnum:]_-]nix([^[:alnum:]_-]|$)' \
         lib/ci-applications lib/flake-applications.nix
       grep -qF 'timeout-minutes: 15' .github/workflows/build.yml
-      [[ "$(grep -cF 'fetch-depth: 0' .github/workflows/build.yml)" == 1 ]]
+      [[ "$(grep -cF 'fetch-depth: 0' .github/workflows/build.yml)" == 2 ]]
       ! grep -qF 'fetch-depth: >-' .github/workflows/build.yml
       grep -qF '"additionalProperties": false' lib/ci-applications/ci-plan.schema.json
       grep -qF -- "--option 'packages:pkgs!'" docs/ci-and-releases.md
@@ -578,41 +618,42 @@ in {
         bootc/Containerfile
       grep -qF 'containerfile=./bootc/Containerfile' .github/workflows/build-profile.yml
       grep -qF 'finite-installer-build' .github/actions/build-installer/action.yml
+      grep -qF 'name: Classify and plan' .github/workflows/build.yml
+      grep -qF 'name: Validate repository and workflows' .github/workflows/build.yml
+      grep -qF 'needs: [prepare, checks, build-candidate' .github/workflows/build.yml
+      grep -qF 'CHECKS_RESULT: ''${{ needs.checks.result }}' .github/workflows/build.yml
       grep -qF 'installer-cache:' .github/workflows/build.yml
       grep -qF 'cache-write: true' .github/workflows/build.yml
       grep -qF 'end-to-end:' .github/actions/build-installer/action.yml
       grep -qF 'finite-installer-e2e install' .github/actions/build-installer/action.yml
       grep -qF 'finite-installer-e2e boot' .github/actions/build-installer/action.yml
-      grep -qF -- '--build-context installer-rootfs=installer/rootfs' lib/installer-application.nix
-      grep -qF 'RUN --mount=from=installer-rootfs,target=/run/installer-rootfs' installer/Containerfile
-      grep -qF 'FINITE_INSTALLER_BASE_REF' lib/installer-application.nix
-      grep -qF -- '--build-arg "BASE_REF=' lib/installer-application.nix
-      grep -qF -- '--bootc-installer-payload-ref' lib/installer-application.nix
-      grep -qF '@@INSTALLER_PAYLOAD_SOURCE_REF@@' \
-        installer/rootfs/usr/share/anaconda/interactive-defaults.ks
+      grep -qF 'finite-dakota-netinstaller-seed-v2' lib/installer-application.nix
+      grep -qF 'build-live-squashfs.sh' lib/installer-application.nix
+      grep -qF 'live/src/build-iso.sh' lib/installer-application.nix
+      grep -qF -- '--layers=false' lib/installer-application.nix
+      grep -qF 'oras push' lib/installer-application.nix
+      grep -qF 'Restore exact installer seed artifacts' .github/actions/build-installer/action.yml
+      ! grep -qF 'bootc-generic-iso' lib/installer-application.nix
+      ! grep -qF -- '--bootc-installer-payload-ref' lib/installer-application.nix
+      ! grep -qF 'oci-archive:' lib/installer-application.nix
+      grep -qF 'root_exec=(sudo)' lib/installer-application.nix
+      ! grep -qF 'root_exec=(run0)' lib/installer-application.nix
+      ! grep -R -qw 'run0' README.md docs
+      grep -qF 'ConditionPathExists=/etc/bootc-installer/finite-netinstall-mode' \
+        installer/live/finite/configure-live.d.sh
+      grep -qF 'WantedBy=graphical-session.target' \
+        installer/live/finite/configure-live.d.sh
+      grep -qF 'Installer::Main INFO: do_activate called' \
+        installer/live/finite/configure-live.d.sh
+      grep -qF '/etc/xdg/autostart/tuna-installer.desktop' \
+        installer/live/finite/configure-live.d.sh
+      grep -qF 'systemctl disable live-ready.service' installer/live/finite/configure-live.d.sh
+      grep -qF 'finite-installer-target-config.service' \
+        installer/live/finite/configure-live.d.sh
+      grep -qF 'projectbluefin/bootc-installer' lib/installer-application.nix
+      grep -qF 'seed-cache-hit=' lib/installer-application.nix
       grep -qF 'checks.' modules/outputs.nix
       grep -qF 'repositoryChecks' modules/outputs.nix
-
-      for executable in \
-        ${applications.ciPrepare}/bin/finite-ci-prepare \
-        ${applications.validateCiPlan}/bin/finite-ci-validate-plan \
-        ${applications.validateImageShard}/bin/finite-validate-image-shard \
-        ${applications.imageReuse}/bin/finite-image-reuse \
-        ${applications.imageSign}/bin/finite-image-sign \
-        ${applications.rechunkImage}/bin/finite-rechunk-image \
-        ${applications.loadBluefin}/bin/finite-load-bluefin \
-        ${applications.promoteImages}/bin/finite-promote-images \
-        ${applications.installerBuild}/bin/finite-installer-build \
-        ${applications.installerE2e}/bin/finite-installer-e2e \
-        ${applications.imageSbom}/bin/finite-image-sbom \
-        ${applications.releaseNotes}/bin/finite-release-notes \
-        ${applications.updateLocks}/bin/finite-update-locks \
-        ${applications.updateHomeRelease}/bin/finite-update-home-release \
-        ${applications.sbomAttestation}/bin/finite-sbom-attestation \
-        ${applications.trustedUpdate}/bin/finite-trusted-update \
-        ${applications.ciGate}/bin/finite-ci-gate; do
-        test -x "$executable"
-      done
       [[ "$(grep -cF 'steps.plan.outputs.plan' .github/workflows/build.yml)" == 1 ]]
       ! grep -Eq 'outputs\.(lifecycle|matrix|root_matrix|hardware_matrix|role_matrix)' \
         .github/workflows/build.yml

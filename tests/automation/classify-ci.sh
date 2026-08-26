@@ -24,9 +24,9 @@ git -C "${test_root}" add bootc/Containerfile
 git -C "${test_root}" commit --quiet -m image
 image_sha="$(git -C "${test_root}" rev-parse HEAD)"
 
-mkdir -p "${test_root}/installer"
-printf '%s\n' 'FROM scratch' >"${test_root}/installer/Containerfile"
-git -C "${test_root}" add installer/Containerfile
+mkdir -p "${test_root}/installer/live/finite"
+printf '%s\n' '{}' >"${test_root}/installer/live/finite/recipe.json"
+git -C "${test_root}" add installer/live/finite/recipe.json
 git -C "${test_root}" commit --quiet -m installer
 installer_sha="$(git -C "${test_root}" rev-parse HEAD)"
 
@@ -148,7 +148,7 @@ rm -f -- "${prepare_output}"
 
 git -C "${test_root}" switch --quiet --detach "${installer_sha}"
 git -C "${test_root}" mv bootc/Containerfile docs/old-bootc-containerfile.md
-git -C "${test_root}" mv installer/Containerfile docs/old-installer-containerfile.md
+git -C "${test_root}" mv installer/live/finite/recipe.json docs/old-installer-recipe.json
 git -C "${test_root}" commit --quiet -m renamed-into-ignored-directory
 renamed_sha="$(git -C "${test_root}" rev-parse HEAD)"
 classify_event true true \

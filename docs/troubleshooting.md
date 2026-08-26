@@ -11,14 +11,14 @@ journalctl -b -p warning
 If an upgrade fails, retry with the image reference shown by `bootc status`:
 
 ```bash
-run0 bootc upgrade
+sudo bootc upgrade
 ```
 
 Return to the previous deployment with:
 
 ```bash
-run0 bootc rollback
-run0 systemctl reboot
+sudo bootc rollback
+sudo systemctl reboot
 ```
 
 ## Diagnose repository checks
@@ -63,11 +63,13 @@ immutable activation links:
 ```bash
 grep -F 'ExecStart=@/usr/bin/determinate-nixd' \
   /usr/lib/systemd/system/nix-daemon.service
-readlink /usr/lib/systemd/system/multi-user.target.wants/nix-daemon.service
-readlink /usr/lib/systemd/system/sockets.target.wants/nix-daemon.socket
+readlink /usr/lib/systemd/system/multi-user.target.wants/nix-daemon.socket
+readlink /usr/lib/systemd/system/multi-user.target.wants/determinate-nixd.socket
+test ! -e /usr/lib/systemd/system/sockets.target.wants/nix-daemon.socket
 ```
 
-All three checks should succeed. A corrected image upgrade followed by a reboot
+All four checks should succeed. The daemon itself is socket-activated; it must
+not also be enabled directly under `multi-user.target`. A corrected image upgrade followed by a reboot
 restores these vendor files without replacing valid state in `/var/home/nix`.
 Finite also removes stale daemon socket files after mounting that state and
 before systemd binds the new sockets.
@@ -93,21 +95,42 @@ jq '.profiles | keys' result/bootc/generated/profile-catalog.json
 Download both the installer and diagnostics artifacts from the workflow run.
 Check:
 
-- `installer-manifest.json` for the payload and Image Builder digests;
-- `installer-environment.log` for container construction failures;
-- `image-builder-pull.log` for pinned Image Builder image pull failures;
-- `image-builder.log` for ISO generation failures;
+- `installer-manifest.json` for the payload, seed, and pinned installer inputs;
+- `payload-inspect.log` and `seed-inspect.log` for GHCR resolution failures;
+- `source-prepare.log` for the exact pinned Dakota source-patching stage;
+- `live-environment.log` for the single-commit live-seed construction;
+- `seed-preflight.log` for missing Btrfs or other Fisherman executables, recipe
+  validation, registry resolution, payload inspection, and scratch capacity;
+- `seed-pull.log` or `seed-push.log` for signed SquashFS artifact transfer;
+- `squashfs-build.log` and `iso-build.log` for LZ4 or ISO assembly failures;
 - `qemu-smoke.log` or `qemu-boot.log` for boot-test failures;
-- `qemu-install.log` for unattended Anaconda failures or the 20-minute limit;
+- `qemu-install.log` for unattended bootc-installer failures or the 30-minute
+  limit; `FINITE_INSTALLER_ERROR=` is fatal and identifies early Flatpak exits,
+  a missing application log, an activation timeout, or a reported install
+  failure;
+- `installer-debug.log`, `fisherman-output.log`, `preflight.log`, and
+  `system-state.log` for the complete guest-side failure evidence extracted
+  from the serial stream before poweroff;
+- `FINITE_INSTALLER_READY=1` in the serial log to confirm the Flatpak's own
+  `installer-debug.log` reached `do_activate`; this marker does not merely mean
+  GDM started;
+- `FINITE_INSTALLER_COMPLETE=1` in that log to confirm the installer returned
+  successfully and the CI first-boot probe was written;
 - `qemu-installed-boot.log` for UEFI startup, digest, update-reference, or
-  three-minute boot readiness failures; an empty guest log indicates a
-  firmware or bootloader failure before the kernel starts, while `UEFI Misc
-  Device ... Not Found` with clean variables indicates that bootc finalization
-  did not finish the portable ESP loader;
-- `qemu-kickstart-server.log` to confirm that the guest fetched
-  `finite-ci.ks` within three minutes;
+  five-minute boot readiness failures; an empty guest log indicates a firmware
+  or GRUB failure before the kernel starts;
+- `installed-partitions.json` for the required GPT, EFI system partition,
+  separate `/boot`, and Btrfs system partition;
 - `runner-capacity-before.txt` and `runner-capacity-after.txt` for storage
-  exhaustion.
+  exhaustion. On a cache hit, Dakota and SquashFS construction are skipped;
+  the action summary identifies `github-actions` or `ghcr` as the cache source.
+
+If the live guest reaches GDM or a login prompt without either installer
+marker, inspect the globally enabled `finite-installer.service` user unit and
+the live user's graphical session. The former XDG autostart plus
+`live-ready.service` path could report readiness as soon as GDM started while
+never creating a live-user installer process; the host now fails this case at
+the short launcher deadline instead of waiting for the 30-minute install limit.
 
 Verify a completed artifact with:
 

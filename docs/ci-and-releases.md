@@ -5,8 +5,8 @@ graph. The Flake supplies the check and build applications; workflows supply
 events, permissions, runners, environments, attestations, and artifact upload.
 Path classification treats renames as a deletion plus an addition, so moving a
 build input into a documentation directory cannot hide its original impact.
-Installer validation is selected only by the installer graph, generated profile
-blueprints, or their pinned tools; image-only aspects and repository tests do
+Installer validation is selected only by the installer graph, live overlay,
+or pinned installer inputs; image-only aspects and repository tests do
 not rebuild the unchanged ISO.
 
 Classification and planning cross the workflow boundary as one schema-versioned,
@@ -25,9 +25,9 @@ provenance, RPM updates, and repair work before finalizing that lifecycle.
 | --- | --- | --- |
 | Repository | Every pull request and main build | Flake checks, generated data, source, tests, and workflows |
 | Candidate images | Image inputs change | Selected profiles and descendants in four read-only, runner-local shards |
-| Installer contract | Every pull request and main build | Nix wiring, generated Blueprints, rootfs contract, and smoke-test behavior |
+| Installer contract | Every pull request and main build | Pinned Project Bluefin inputs, live overlay, seed boundary, and smoke-test behavior |
 | Installer image | Installer inputs change, a base payload is published, or on schedule | Payload attestations, ISO build, manifest, and QEMU boot |
-| Installer installation | Weekly schedule and forced release candidate | Non-interactive Kickstart install, disk reboot, and installed-system readiness |
+| Installer installation | Installer-changing pull requests and merge groups, weekly schedule, and forced release candidate | Unattended bootc installation, three-partition GPT validation, clean-firmware UEFI boot, and installed-system identity |
 | Publication | Trusted main runs | Images, tags, signatures, provenance, SPDX software bills of materials, and caches |
 | Release | Manual release dispatch | Exact source candidate and every promoted digest and attestation |
 
@@ -70,13 +70,15 @@ merge groups, pushes, and validation dispatches retain complete history. Merge
 groups fail safe to all expensive validation when the supplied base is not an
 ancestor of the synthetic head.
 
-The Flake is the single source of truth for the retained external Cachix
+The Flake is the single source of truth for the Finite Cachix
 substituter and key. Every Nix job uses the repository's pinned `setup-nix`
 action for GitHub access and read-through cache configuration, with automatic
 store watching disabled.
 `nix shell --accept-flake-config .#ci-check -c finite-ci-check` explicitly
-builds only the declared checks in one parallel Nix invocation, then validates
-every standard Flake output without additional builds. It resolves the checks'
+builds only the declared checks in one bounded Nix invocation, then validates
+every standard Flake output without additional builds. The shared setup caps
+Nix at four simultaneous jobs and one core per derivation on GitHub-hosted
+runners. It resolves the checks'
 reference-free proof outputs, rejects any closure larger than 1 MiB, and pushes
 only those proofs. The `CACHIX_AUTH_TOKEN` repository secret enables writes on
 protected events and same-repository pull requests. Fork pull requests use the
@@ -120,45 +122,37 @@ and installer caches live in isolated sibling packages and are intentionally
 outside its deletion scope.
 
 The fast installer contract is part of the ordinary Nix check graph. A full ISO
-is selected only for the installer container/rootfs, its build or smoke
-applications, the Image Builder lock, or the Nix toolchain lock. Shared Flake
-exports, workflows, profile modules, and installer unit tests are validated by
-the contract without rebuilding an unchanged ISO.
+is selected only when the pinned Project Bluefin ISO source, installer bundle,
+Finite live overlay, installer applications, or Nix toolchain changes.
 
-Full installer validation builds the live Anaconda environment from a pinned,
-minimal Fedora bootc image. The signed Finite image is passed separately as
-Image Builder's installer payload, so desktop and developer packages are not
-duplicated into the live squashfs. The version-3 environment fingerprint covers
-the Fedora base, installer context, and mutable profile tag, but not the
-changing payload digest. Trusted `main` builds publish and keylessly sign that
-environment; pull requests reuse it only after verifying the main
-installer-workflow identity. Exact-source integrity remains independent: the
-selected digest must pass signature, provenance, and SPDX checks before Image
-Builder embeds it, while the installed bootc update origin tracks the profile
-tag. The pinned Image Builder image is pulled in parallel with environment
-preparation. OSBuild stage and RPM metadata caches are mounted explicitly. The pinned
-builder's generic-ISO path otherwise leaves squashfs-tools at its Zstd
-level-15 default. An audited, digest-locked stage drop-in selects Zstd level 1
-for both ISO variants; the compatibility override is removed when Image
-Builder exposes a supported compression-level control. The installer manifest
-records the method, level, override checksum, and upstream stage checksum.
-The QEMU smoke test exits as soon as `anaconda.service` emits the
-Finite-owned readiness marker instead of waiting for its safety timeout.
+Full validation follows Project Bluefin's `dakota-iso` architecture and embeds
+the pinned `bootc-installer` Flatpak. It verifies both the selected Finite
+payload and the digest-pinned Dakota live root. A reusable seed is selected by
+the Dakota live digest, pinned ISO source revision, installer checksum, Debian
+builder digest, Finite overlay and logo, and seed-builder digest. The seed is
+the completed payload-independent LZ4 SquashFS, boot tar, and preflight proof—not a large
+Podman store. Trusted `main` and scheduled builds publish and keylessly sign
+those files as an OCI artifact in the sibling GHCR package; pull requests reuse
+only artifacts signed by either trusted installer-producing workflow. An exact
+GitHub Actions cache key accelerates retries in the same pull request. The
+selected Finite digest and update tag are a small JSON file on the ISO, applied
+to the writable live overlay by a pre-installer service. Dakota therefore
+assembles the systemd-boot network ISO without rebuilding the live image,
+recompressing its SquashFS, or embedding the Finite payload.
 
-Scheduled runs and forced release-candidate builds additionally serve a CI-only
-Kickstart to the release ISO kernel. The guest must fetch it within three
-minutes and finish installing to a disposable disk within twenty minutes. A
-focused Fedora 44 Anaconda backport runs `bootc install finalize` after all
-install-time mutations and before target teardown, allowing bootupd to finish
-the ESP. A separate visible step reboots without the ISO from clean UEFI
-firmware variables. This proves the portable fallback loader rather than a
-machine-local boot entry, then has three minutes to prove, through bootc status
-v1, that the booted digest is the verified payload and the update origin is the
-mutable profile tag. CI
-Kickstart state is never uploaded as a user artifact; the published ISO
-remains interactive. The action summary records cache version/input/hit,
-update origin, and separate build, smoke, install, and installed-boot
-durations.
+The smoke phase waits for the Finite-owned live-session readiness marker. Before
+Fisherman can touch the target disk, preflight validates its recipe, required
+executables, exact network reference, registry resolution, and disk-backed
+scratch capacity. The end-to-end phase supplies the checked-in unattended JSON
+recipe, installs onto a 64 GiB disposable disk, validates Project Bluefin's
+three-partition GPT layout, and boots with a fresh OVMF variable store. The
+installed system must report Fedora 44, hostname `finite`, a Btrfs root, a
+working GRUB2 configuration, the verified signed source digest, the exact
+OSTree deployment checksum recorded during installation, and the expected
+mutable update reference. The bootc manifest digest is recorded separately
+because Fisherman's registry-to-OCI-layout copy may change manifest bytes.
+The action summary records seed identity/hit/publication state plus separate
+seed, ISO, smoke, install, and installed-boot durations.
 
 Syft scans the final mounted OCI filesystem because Finite images are
 assembled from Bluefin and RPM content rather than from a Nix store closure.
@@ -169,13 +163,15 @@ it describes Nix derivation closures, which would omit the runtime RPM payload.
 ## Trusted updates
 
 Dependabot updates pinned GitHub Actions. Scheduled workflows update
-`flake.lock`, the digest-pinned Image Builder container, and the Bluefin stable
-OCI lock through validated pull requests. Both OCI locks record an explicit
-architecture and immutable manifest digest. The Bluefin updater additionally
-verifies its committed Cosign issuer and identity. Nix-provided Skopeo streams
-that exact digest directly into container storage without creating a container
-archive in the Nix store. The daily build also checks independently managed
-RPMs for updates against the committed Bluefin base.
+`flake.lock`, Determinate Nix, Home Manager, and the Bluefin stable OCI locks
+through validated pull requests. Bluefin and Bluefin DX are checked twice
+daily at 07:07 and 19:07 UTC. Every OCI lock records an explicit architecture
+and immutable manifest digest. The
+Bluefin updater additionally verifies its committed Cosign issuer and
+identity. Nix-provided Skopeo streams that exact digest directly into container
+storage without creating a container archive in the Nix store. The daily build
+also checks independently managed RPMs for updates against the committed
+Bluefin base.
 
 GitHub keeps triggers, permissions, environments, matrices, pull request
 creation, and attestations visible in workflow YAML. Operational planning,

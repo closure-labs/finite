@@ -1,0 +1,2 @@
+# The live environment contains only the installer. Finite applications are
+# supplied by the installed OCI image and Home Manager after first login.

@@ -5,8 +5,13 @@ profile="${FINITE_HOME_PROFILE_PATH:-$HOME/.config/finite/profile.json}"
 running="${FINITE_RUNNING_PROFILE_PATH:-/usr/share/finite/profile.json}"
 seed="${FINITE_PROVISIONED_PROFILE_PATH:-/etc/finite/home-profiles/$(id -un).yaml}"
 nix="${FINITE_NIX_COMMAND:-/nix/var/nix/profiles/default/bin/nix}"
+nix_wait_seconds="${FINITE_NIX_WAIT_SECONDS:-120}"
 
 [[ ! -r "$profile" ]] || exit 0
+[[ "$nix_wait_seconds" =~ ^[0-9]+$ ]] || {
+	echo "Invalid Finite Nix wait timeout: $nix_wait_seconds" >&2
+	exit 2
+}
 
 show_error() {
 	status=$?
@@ -18,7 +23,15 @@ show_error() {
 }
 trap show_error ERR
 
-[[ -x "$nix" ]] || { echo "Finite Nix is unavailable: $nix" >&2; false; }
+nix_deadline=$((SECONDS + nix_wait_seconds))
+until [[ -x "$nix" ]] &&
+	systemctl is-active --quiet nix-daemon.socket determinate-nixd.socket; do
+	if ((SECONDS >= nix_deadline)); then
+		echo "Finite Nix did not become ready within ${nix_wait_seconds}s: $nix" >&2
+		false
+	fi
+	sleep 1
+done
 [[ -r "$running" ]] || { echo "Finite profile metadata is unavailable: $running" >&2; false; }
 
 if [[ -r "$seed" ]]; then

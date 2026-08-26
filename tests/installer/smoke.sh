@@ -27,14 +27,14 @@ run_smoke() {
 printf '#!%s\n' "$(command -v bash)" >"${test_root}/qemu"
 cat >>"${test_root}/qemu" <<'EOF'
 trap 'exit 143' TERM
-echo 'Starting anaconda-pre.service'
+echo 'Starting graphical live session'
 sleep 30 &
 wait $!
 EOF
 chmod +x "${test_root}/qemu"
 
 if run_smoke; then
-	echo 'Smoke test accepted a generic Anaconda boot message' >&2
+	echo 'Smoke test accepted a generic live-session boot message' >&2
 	exit 1
 fi
 
@@ -51,6 +51,20 @@ started="${SECONDS}"
 run_smoke
 ((SECONDS - started < 5))
 grep -qF 'FINITE_INSTALLER_READY=1' "${test_root}/qemu-boot.log"
+
+printf '#!%s\n' "$(command -v bash)" >"${test_root}/qemu"
+cat >>"${test_root}/qemu" <<'EOF'
+trap 'exit 143' TERM
+echo 'FINITE_INSTALLER_ERROR=bootc-installer log-not-created'
+sleep 30 &
+wait $!
+EOF
+chmod +x "${test_root}/qemu"
+
+if run_smoke; then
+	echo 'Smoke test accepted an installer launcher failure marker' >&2
+	exit 1
+fi
 
 printf '#!%s\n' "$(command -v bash)" >"${test_root}/qemu"
 cat >>"${test_root}/qemu" <<'EOF'

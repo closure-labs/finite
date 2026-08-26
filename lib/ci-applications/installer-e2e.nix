@@ -5,9 +5,11 @@ pkgs.writeShellApplication {
     bash
     coreutils
     gnugrep
+    jq
+    mtools
     OVMF.fd
-    python3
     qemu_kvm
+    util-linux
     xorriso
   ];
   text = ''
@@ -15,8 +17,8 @@ pkgs.writeShellApplication {
 
     usage() {
       cat >&2 <<'EOF'
-    usage: finite-installer-e2e install ISO KICKSTART STATE_ROOT
-           finite-installer-e2e boot STATE_ROOT
+    usage: finite-installer-e2e install ISO STATE_ROOT EXPECTED_SOURCE_DIGEST
+           finite-installer-e2e boot STATE_ROOT EXPECTED_REFERENCE
     EOF
     }
 
@@ -25,38 +27,28 @@ pkgs.writeShellApplication {
       install)
         [[ $# == 4 ]] || { usage; exit 2; }
         iso=$2
-        kickstart=$3
-        state_root=$4
+        state_root=$3
+        expected_source_digest=$4
         ;;
       boot)
-        [[ $# == 2 ]] || { usage; exit 2; }
+        [[ $# == 3 ]] || { usage; exit 2; }
         state_root=$2
+        expected_reference=$3
         ;;
-      *)
-        usage
-        exit 2
-        ;;
+      *) usage; exit 2 ;;
     esac
 
     qemu="''${FINITE_QEMU:-qemu-system-x86_64}"
     qemu_img="''${FINITE_QEMU_IMG:-qemu-img}"
-    python="''${FINITE_PYTHON:-python3}"
-    xorriso="''${FINITE_XORRISO:-xorriso}"
-    ovmf_code="${pkgs.OVMF.fd}/FV/OVMF_CODE.fd"
-    ovmf_vars_template="${pkgs.OVMF.fd}/FV/OVMF_VARS.fd"
-    kickstart_timeout="''${FINITE_INSTALLER_E2E_KICKSTART_TIMEOUT_SECONDS:-180}"
-    install_timeout="''${FINITE_INSTALLER_E2E_INSTALL_TIMEOUT_SECONDS:-1200}"
-    boot_timeout="''${FINITE_INSTALLER_E2E_BOOT_TIMEOUT_SECONDS:-180}"
+    ovmf_code=${pkgs.OVMF.fd}/FV/OVMF_CODE.fd
+    ovmf_vars_template=${pkgs.OVMF.fd}/FV/OVMF_VARS.fd
+    install_timeout="''${FINITE_INSTALLER_E2E_INSTALL_TIMEOUT_SECONDS:-1800}"
+    launcher_timeout="''${FINITE_INSTALLER_LAUNCH_TIMEOUT_SECONDS:-120}"
+    boot_timeout="''${FINITE_INSTALLER_E2E_BOOT_TIMEOUT_SECONDS:-300}"
     poll_interval="''${FINITE_INSTALLER_SMOKE_POLL_INTERVAL_SECONDS:-1}"
     cpus="''${FINITE_INSTALLER_SMOKE_CPUS:-4}"
-    memory_mb="''${FINITE_INSTALLER_SMOKE_MEMORY_MB:-4096}"
-    ready_marker='FINITE_INSTALLED_READY=1'
-    for parameter in \
-      "''${kickstart_timeout}" \
-      "''${install_timeout}" \
-      "''${boot_timeout}" \
-      "''${cpus}" \
-      "''${memory_mb}"; do
+    memory_mb="''${FINITE_INSTALLER_SMOKE_MEMORY_MB:-6144}"
+    for parameter in "''${install_timeout}" "''${launcher_timeout}" "''${boot_timeout}" "''${cpus}" "''${memory_mb}"; do
       [[ "''${parameter}" =~ ^[1-9][0-9]*$ ]] || {
         echo 'Installer E2E numeric parameters must be positive integers' >&2
         exit 2
@@ -67,17 +59,14 @@ pkgs.writeShellApplication {
     diagnostics_dir="''${FINITE_INSTALLER_DIAGNOSTICS_DIR:-''${state_root}}"
     install -d -m 0755 "''${diagnostics_dir}"
     disk="''${state_root}/installed.qcow2"
+    scratch_disk="''${state_root}/installer-scratch.qcow2"
     firmware_vars="''${state_root}/OVMF_VARS.fd"
     kernel="''${state_root}/vmlinuz"
     initrd="''${state_root}/initrd.img"
-    served_kickstart="''${state_root}/finite-ci.ks"
-    health_check="''${state_root}/server-ready"
     install_log="''${diagnostics_dir}/qemu-install.log"
     boot_log="''${diagnostics_dir}/qemu-installed-boot.log"
-    server_log="''${diagnostics_dir}/qemu-kickstart-server.log"
     qemu_pid=
     tail_pid=
-    server_pid=
 
     terminate_and_reap() {
       local pid=$1
@@ -85,55 +74,71 @@ pkgs.writeShellApplication {
       kill -TERM "''${pid}" >/dev/null 2>&1 || true
       wait "''${pid}" >/dev/null 2>&1 || true
     }
-
-    prepare_firmware_vars() {
-      cp --force -- "''${ovmf_vars_template}" "''${firmware_vars}"
-      chmod u+w "''${firmware_vars}"
+    serial_marker_value() {
+      local marker=$1 log=$2 line value
+      line="$(grep -aF "''${marker}=" "''${log}" | tail -n 1)"
+      value="''${line#*"''${marker}="}"
+      # QEMU's emulated serial TTY writes CRLF. Keep marker contracts strict
+      # after normalizing the transport framing.
+      value="''${value//$'\r'/}"
+      printf '%s\n' "''${value}"
     }
-
-    print_phase_logs() {
-      local log
-      for log in "''${install_log}" "''${boot_log}" "''${server_log}"; do
-        if [[ -f "''${log}" ]]; then
-          echo "===== ''${log##*/} =====" >&2
-          cat "''${log}" >&2
-        fi
+    extract_guest_diagnostics() {
+      local name output
+      [[ -f "''${install_log}" ]] || return 0
+      for name in installer-debug.log finite-installer.log fisherman-output.log preflight.log system-state.log; do
+        output="''${diagnostics_dir}/''${name}"
+        awk -v begin="FINITE_DIAGNOSTIC_BEGIN=''${name}" \
+          -v end="FINITE_DIAGNOSTIC_END=''${name}" '
+            { sub(/\r$/, "") }
+            $0 == begin { capture = 1; next }
+            $0 == end { capture = 0; found = 1; next }
+            capture { print }
+            END { if (!found) exit 1 }
+          ' "''${install_log}" >"''${output}" || rm -f -- "''${output}"
       done
     }
-
-    # Invoked indirectly by the EXIT trap.
-    # shellcheck disable=SC2329
-    cleanup_installer_e2e() {
+    print_logs() {
+      local log
+      for log in "''${install_log}" "''${boot_log}"; do
+        [[ ! -f "''${log}" ]] || {
+          echo "===== last 400 lines of ''${log##*/}; complete log is in installer diagnostics =====" >&2
+          tail -n 400 "''${log}" >&2
+        }
+      done
+    }
+    cleanup() {
       local status=$?
       set +e
       terminate_and_reap "''${qemu_pid}"
       terminate_and_reap "''${tail_pid}"
-      terminate_and_reap "''${server_pid}"
-      if ((status != 0)); then
-        print_phase_logs
-      fi
+      extract_guest_diagnostics
+      ((status == 0)) || print_logs
       exit "''${status}"
     }
-    trap cleanup_installer_e2e EXIT
+    trap cleanup EXIT
 
+    prepare_firmware() {
+      cp --force -- "''${ovmf_vars_template}" "''${firmware_vars}"
+      chmod u+w "''${firmware_vars}"
+    }
     acceleration=(-accel "tcg,thread=multi")
-    if [[ -r /dev/kvm && -w /dev/kvm ]]; then
-      acceleration=(-accel kvm)
-    fi
-    common_args=("''${acceleration[@]}")
-    common_args+=(
+    [[ ! -r /dev/kvm || ! -w /dev/kvm ]] || acceleration=(-accel kvm)
+    common_args=(
+      "''${acceleration[@]}"
       -machine q35
       -m "''${memory_mb}"
       -smp "''${cpus}"
       -drive "if=pflash,format=raw,unit=0,readonly=on,file=''${ovmf_code}"
       -drive "if=pflash,format=raw,unit=1,file=''${firmware_vars}"
       -drive "file=''${disk},if=virtio,format=qcow2"
+      -vga none
+      -device virtio-vga
       -display none
       -serial stdio
       -nic "user,model=virtio-net-pci"
       -no-reboot
     )
-
     [[ -s "''${ovmf_code}" && -s "''${ovmf_vars_template}" ]] || {
       echo 'OVMF firmware is missing from the installer E2E environment' >&2
       exit 2
@@ -141,49 +146,32 @@ pkgs.writeShellApplication {
 
     if [[ "''${phase}" == install ]]; then
       [[ -s "''${iso}" ]] || { echo "Installer ISO is missing: ''${iso}" >&2; exit 2; }
-      [[ -s "''${kickstart}" ]] || { echo "Kickstart is missing: ''${kickstart}" >&2; exit 2; }
       rm -f -- \
         "''${disk}" \
+        "''${scratch_disk}" \
         "''${firmware_vars}" \
         "''${kernel}" \
         "''${initrd}" \
-        "''${state_root}/install-complete"
-      prepare_firmware_vars
-      "''${qemu_img}" create -q -f qcow2 "''${disk}" 32G
-      "''${xorriso}" -osirrox on -indev "''${iso}" \
+        "''${state_root}/install-complete" \
+        "''${state_root}/expected-source-digest" \
+        "''${state_root}/expected-ostree-checksum"
+      [[ "''${expected_source_digest}" =~ ^sha256:[0-9a-f]{64}$ ]] || {
+        echo 'Expected installer source digest is invalid' >&2
+        exit 2
+      }
+      prepare_firmware
+      "''${qemu_img}" create -q -f qcow2 "''${disk}" 64G
+      "''${qemu_img}" create -q -f qcow2 "''${scratch_disk}" 16G
+      xorriso -osirrox on -indev "''${iso}" \
         -extract /images/pxeboot/vmlinuz "''${kernel}" \
         -extract /images/pxeboot/initrd.img "''${initrd}" >/dev/null 2>&1
-      cp -- "''${kickstart}" "''${served_kickstart}"
-      printf 'ready\n' >"''${health_check}"
 
-      port="$(
-        "''${python}" -c \
-          'import socket; s = socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1]); s.close()'
-      )"
-      : >"''${server_log}"
-      "''${python}" -m http.server "''${port}" \
-        --bind 0.0.0.0 --directory "''${state_root}" >"''${server_log}" 2>&1 &
-      server_pid=$!
-      server_ready=false
-      for _ in {1..50}; do
-        if "''${python}" -c \
-          'import sys, urllib.request; urllib.request.urlopen(sys.argv[1], timeout=1).read()' \
-          "http://127.0.0.1:''${port}/server-ready" >/dev/null 2>&1; then
-          server_ready=true
-          break
-        fi
-        sleep 0.1
-      done
-      [[ "''${server_ready}" == true ]] || {
-        echo 'Kickstart HTTP server did not become ready' >&2
-        exit 1
-      }
-
-      echo 'Installing Finite onto the disposable virtual disk'
-      kernel_cmdline="root=live:CDLABEL=Finite-Installer rd.live.image inst.stage2=hd:LABEL=Finite-Installer inst.text inst.ksstrict console=tty0 console=ttyS0,115200n8 selinux=0 ip=dhcp rd.neednet=1 inst.ks=http://10.0.2.2:''${port}/finite-ci.ks"
+      echo 'Installing Finite with the Project Bluefin bootc installer'
+      kernel_cmdline='root=live:LABEL=FINITE_LIVE rd.live.image rd.live.overlay.overlayfs=1 enforcing=0 console=tty0 console=ttyS0,115200n8 finite.installer.autoinstall=1'
       : >"''${install_log}"
       timeout --signal=TERM --kill-after=20s "''${install_timeout}s" \
         "''${qemu}" "''${common_args[@]}" \
+          -drive "file=''${scratch_disk},if=virtio,format=qcow2" \
           -cdrom "''${iso}" \
           -kernel "''${kernel}" \
           -initrd "''${initrd}" \
@@ -192,64 +180,91 @@ pkgs.writeShellApplication {
       qemu_pid=$!
       tail --pid="''${qemu_pid}" -n +1 -F "''${install_log}" &
       tail_pid=$!
-
-      kickstart_fetched=false
-      kickstart_deadline=$((SECONDS + kickstart_timeout))
+      launcher_deadline=$((SECONDS + launcher_timeout))
+      launcher_ready=false
       while kill -0 "''${qemu_pid}" >/dev/null 2>&1; do
-        if grep -Fq '"GET /finite-ci.ks ' "''${server_log}"; then
-          kickstart_fetched=true
-          break
+        if grep -Fq 'FINITE_INSTALLER_ERROR=' "''${install_log}"; then
+          echo 'The bootc installer reported an error' >&2
+          exit 1
         fi
-        if ((SECONDS >= kickstart_deadline)); then
-          echo "The guest did not fetch finite-ci.ks within ''${kickstart_timeout}s" >&2
+        if grep -Fq 'FINITE_INSTALLER_READY=1' "''${install_log}"; then
+          launcher_ready=true
+        elif ((SECONDS >= launcher_deadline)); then
+          echo "The graphical installer did not activate within ''${launcher_timeout} seconds" >&2
           exit 1
         fi
         sleep "''${poll_interval}"
       done
-      if [[ "''${kickstart_fetched}" != true ]] &&
-        grep -Fq '"GET /finite-ci.ks ' "''${server_log}"; then
-        kickstart_fetched=true
-      fi
-      [[ "''${kickstart_fetched}" == true ]] || {
-        echo 'The installer exited before fetching finite-ci.ks' >&2
-        exit 1
-      }
-
       set +e
-      wait "''${qemu_pid}"
-      qemu_status=$?
-      wait "''${tail_pid}"
-      tail_status=$?
+      wait "''${qemu_pid}"; qemu_status=$?; qemu_pid=
+      wait "''${tail_pid}"; tail_status=$?; tail_pid=
       set -e
-      qemu_pid=
-      tail_pid=
-      terminate_and_reap "''${server_pid}"
-      server_pid=
-      [[ "''${tail_status}" == 0 ]] || {
-        echo "Installer log follower failed with status ''${tail_status}" >&2
-        exit "''${tail_status}"
-      }
-      if [[ "''${qemu_status}" == 124 ]]; then
-        echo "Unattended installation timed out after ''${install_timeout}s" >&2
-        exit 124
-      fi
+      [[ "''${tail_status}" == 0 ]]
       [[ "''${qemu_status}" == 0 ]] || {
-        echo "Unattended installer failed with status ''${qemu_status}" >&2
+        echo "Installer VM failed with status ''${qemu_status}" >&2
         exit "''${qemu_status}"
       }
+      [[ "''${launcher_ready}" == true ]] ||
+        grep -Fq 'FINITE_INSTALLER_READY=1' "''${install_log}" || {
+          echo 'The installer VM exited without its application-ready marker' >&2
+          exit 1
+        }
+      grep -Fq 'FINITE_INSTALLER_COMPLETE=1' "''${install_log}" || {
+        echo 'The installer VM exited without its completion marker' >&2
+        exit 1
+      }
+      source_digest="$(
+        serial_marker_value FINITE_INSTALLER_SOURCE_DIGEST "''${install_log}"
+      )"
+      [[ "''${source_digest}" =~ ^sha256:[0-9a-f]{64}$ ]] || {
+        echo 'The installer VM did not report a valid source manifest digest' >&2
+        exit 1
+      }
+      [[ "''${source_digest}" == "''${expected_source_digest}" ]] || {
+        echo "Installer source digest mismatch: expected ''${expected_source_digest}, got ''${source_digest}" >&2
+        exit 1
+      }
+      deployment_checksum="$(
+        serial_marker_value FINITE_INSTALLER_DEPLOYMENT_CHECKSUM "''${install_log}"
+      )"
+      [[ "''${deployment_checksum}" =~ ^[0-9a-f]{64}$ ]] || {
+        echo 'The installer VM did not report a valid OSTree deployment checksum' >&2
+        exit 1
+      }
+      printf '%s\n' "''${source_digest}" >"''${state_root}/expected-source-digest"
+      printf '%s\n' "''${deployment_checksum}" >"''${state_root}/expected-ostree-checksum"
       touch "''${state_root}/install-complete"
-      print_phase_logs
       exit 0
     fi
 
-    [[ -s "''${disk}" && -f "''${state_root}/install-complete" ]] || {
+    [[ \
+      -s "''${disk}" && \
+      -f "''${state_root}/install-complete" && \
+      -s "''${state_root}/expected-source-digest" && \
+      -s "''${state_root}/expected-ostree-checksum" \
+    ]] || {
       echo "Completed installer state is missing: ''${state_root}" >&2
       exit 2
     }
-    # A clean variable store proves bootc finalization installed the portable
-    # EFI/BOOT loader. The validation must not rely on an Anaconda-created
-    # machine-local Boot#### entry surviving into this separate boot phase.
-    prepare_firmware_vars
+    expected_source_digest="$(<"''${state_root}/expected-source-digest")"
+    expected_ostree_checksum="$(<"''${state_root}/expected-ostree-checksum")"
+    [[ "''${expected_source_digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
+    [[ "''${expected_ostree_checksum}" =~ ^[0-9a-f]{64}$ ]]
+    [[ "''${expected_reference}" =~ ^[a-z0-9._/-]+:[A-Za-z0-9._-]+$ ]]
+
+    raw_disk="''${state_root}/installed.raw"
+    "''${qemu_img}" convert -q -f qcow2 -O raw "''${disk}" "''${raw_disk}"
+    sfdisk --json "''${raw_disk}" >"''${diagnostics_dir}/installed-partitions.json"
+    jq -e '
+      .partitiontable.label == "gpt" and
+      (.partitiontable.partitions | length) == 3 and
+      (.partitiontable.partitions[0].type | ascii_downcase) == "c12a7328-f81f-11d2-ba4b-00a0c93ec93b"
+    ' "''${diagnostics_dir}/installed-partitions.json" >/dev/null
+    rm -f "''${raw_disk}"
+
+    # A fresh variable store proves the installed disk is independently UEFI
+    # bootable instead of relying on state left by the live environment.
+    prepare_firmware
     echo 'Booting the installed Finite system'
     : >"''${boot_log}"
     timeout --signal=TERM --kill-after=10s "''${boot_timeout}s" \
@@ -257,49 +272,90 @@ pkgs.writeShellApplication {
     qemu_pid=$!
     tail --pid="''${qemu_pid}" -n +1 -F "''${boot_log}" &
     tail_pid=$!
-
-    reached_installed_system=false
+    reached=false
     while kill -0 "''${qemu_pid}" >/dev/null 2>&1; do
-      if grep -Fq "''${ready_marker}" "''${boot_log}"; then
-        reached_installed_system=true
+      if grep -Fq 'FINITE_INSTALLED_ERROR=' "''${boot_log}"; then
+        echo 'The installed-system validation probe reported an error' >&2
+        exit 1
+      elif grep -Fq 'FINITE_INSTALLED_READY=1' "''${boot_log}"; then
+        reached=true
         terminate_and_reap "''${qemu_pid}"
         qemu_pid=
         break
       fi
       sleep "''${poll_interval}"
     done
-
     set +e
-    if [[ -n "''${qemu_pid}" ]]; then
-      wait "''${qemu_pid}"
-      qemu_status=$?
-      qemu_pid=
-    else
-      qemu_status=143
-    fi
-    wait "''${tail_pid}"
-    tail_status=$?
+    [[ -z "''${qemu_pid}" ]] || { wait "''${qemu_pid}"; qemu_status=$?; qemu_pid=; }
+    wait "''${tail_pid}"; tail_status=$?; tail_pid=
     set -e
-    tail_pid=
-
-    [[ "''${tail_status}" == 0 ]] || {
-      echo "Installed-system log follower failed with status ''${tail_status}" >&2
-      exit "''${tail_status}"
+    [[ "''${tail_status}" == 0 ]]
+    [[ "''${reached}" == true ]] || {
+      echo 'The installed system did not emit its ready marker' >&2
+      exit 1
     }
-    if [[ "''${reached_installed_system}" == true ]] ||
-      grep -Fq "''${ready_marker}" "''${boot_log}"; then
-      print_phase_logs
-      exit 0
-    fi
-    if [[ "''${qemu_status}" == 124 ]]; then
-      echo "Installed-system boot timed out after ''${boot_timeout}s" >&2
-      exit 124
-    fi
-    case "''${qemu_status}" in
-      0 | 143) ;;
-      *) echo "Installed-system QEMU failed with status ''${qemu_status}" >&2; exit "''${qemu_status}" ;;
-    esac
-    echo "The installed system did not emit ''${ready_marker}" >&2
-    exit 1
+    bootc_status="$(serial_marker_value FINITE_BOOTC_STATUS "''${boot_log}")"
+    printf '%s\n' "''${bootc_status}" | jq . >"''${diagnostics_dir}/installed-bootc-status.json"
+    actual_digest="$(jq -er '.status.booted.image.imageDigest' <<<"''${bootc_status}")"
+    actual_ostree_checksum="$(jq -er '.status.booted.ostree.checksum' <<<"''${bootc_status}")"
+    actual_reference="$(jq -er '.status.booted.image.image.image' <<<"''${bootc_status}")"
+    actual_architecture="$(jq -er '.status.booted.image.architecture' <<<"''${bootc_status}")"
+    installed_hostname="$(serial_marker_value FINITE_HOSTNAME "''${boot_log}")"
+    installed_sysroot_fstype="$(serial_marker_value FINITE_SYSROOT_FSTYPE "''${boot_log}")"
+    installed_os_version="$(serial_marker_value FINITE_OS_VERSION "''${boot_log}")"
+    installed_grub2_ready="$(serial_marker_value FINITE_GRUB2_READY "''${boot_log}")"
+    installed_selinux_mode="$(serial_marker_value FINITE_SELINUX_MODE "''${boot_log}")"
+    installed_dbus_active="$(serial_marker_value FINITE_DBUS_ACTIVE "''${boot_log}")"
+    installed_cloud_init_status="$(serial_marker_value FINITE_CLOUD_INIT_STATUS "''${boot_log}")"
+    installed_nix_version="$(serial_marker_value FINITE_NIX_VERSION "''${boot_log}")"
+    [[ "''${actual_architecture}" == amd64 ]] || {
+      echo "Installed bootc architecture mismatch: expected amd64, got ''${actual_architecture}" >&2
+      exit 1
+    }
+    [[ "''${actual_digest}" =~ ^sha256:[0-9a-f]{64}$ ]] || {
+      echo "Installed bootc manifest digest is invalid: ''${actual_digest}" >&2
+      exit 1
+    }
+    [[ "''${actual_ostree_checksum}" == "''${expected_ostree_checksum}" ]] || {
+      echo "Installed OSTree deployment mismatch: expected ''${expected_ostree_checksum}, got ''${actual_ostree_checksum}" >&2
+      exit 1
+    }
+    [[ "''${actual_reference}" == "''${expected_reference}" ]] || {
+      echo "Installed bootc reference mismatch: expected ''${expected_reference}, got ''${actual_reference}" >&2
+      exit 1
+    }
+    [[ "''${installed_hostname}" == finite ]] || {
+      echo "Installed hostname mismatch: expected finite, got ''${installed_hostname}" >&2
+      exit 1
+    }
+    [[ "''${installed_sysroot_fstype}" == btrfs ]] || {
+      echo "Installed sysroot filesystem mismatch: expected btrfs, got ''${installed_sysroot_fstype}" >&2
+      exit 1
+    }
+    [[ "''${installed_os_version}" == 44 ]] || {
+      echo "Installed Fedora version mismatch: expected 44, got ''${installed_os_version}" >&2
+      exit 1
+    }
+    [[ "''${installed_grub2_ready}" == true ]] || {
+      echo 'Installed GRUB2 configuration is missing' >&2
+      exit 1
+    }
+    [[ "''${installed_selinux_mode}" == Enforcing ]] || {
+      echo "Installed SELinux mode mismatch: expected Enforcing, got ''${installed_selinux_mode}" >&2
+      exit 1
+    }
+    [[ "''${installed_dbus_active}" == true ]] || {
+      echo 'Installed D-Bus service is not active' >&2
+      exit 1
+    }
+    [[ "''${installed_cloud_init_status}" == "done" ]] || {
+      echo "Installed cloud-init status mismatch: expected done, got ''${installed_cloud_init_status}" >&2
+      exit 1
+    }
+    [[ "''${installed_nix_version}" == 'nix (Determinate Nix '* ]] || {
+      echo "Installed Determinate Nix version is invalid: ''${installed_nix_version}" >&2
+      exit 1
+    }
+    echo "Validated signed source ''${actual_reference}@''${expected_source_digest} as OSTree deployment ''${actual_ostree_checksum}; bootc recorded local manifest ''${actual_digest} (''${actual_architecture})"
   '';
 }

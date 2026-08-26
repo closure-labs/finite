@@ -23,12 +23,14 @@ environment.
 To switch an existing bootc workstation to generic Finite:
 
 ```console
-run0 bootc switch ghcr.io/closure-labs/finite:latest
-run0 systemctl reboot
+sudo bootc switch ghcr.io/closure-labs/finite:latest
+sudo systemctl reboot
 ```
 
 Replace `latest` with another tag from the table when needed. For a new machine
-or installer ISO, follow the [installation guide](docs/installation.md).
+or installer ISO, follow the [installation guide](docs/installation.md). Finite
+uses Project Bluefin's native graphical bootc installer, keeps GRUB2 on
+installed Bluefin systems, and pulls the verified image by digest during setup.
 
 ## Complete first login
 
@@ -76,8 +78,8 @@ identity, and profiles that do not match the running Finite image.
 ## Update and troubleshoot
 
 ```console
-run0 bootc upgrade
-run0 systemctl reboot
+sudo bootc upgrade
+sudo systemctl reboot
 nh home switch --update-input finite
 ```
 

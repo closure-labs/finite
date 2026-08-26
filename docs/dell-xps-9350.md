@@ -49,7 +49,7 @@ END_THRESHOLD=80
 Apply and inspect it:
 
 ```bash
-run0 systemctl restart finite-dell-xps-9350-battery.service
+sudo systemctl restart finite-dell-xps-9350-battery.service
 upower -i /org/freedesktop/UPower/devices/battery_BAT0 | \
   rg 'charge-(start|end)-threshold|charge-threshold-enabled'
 cat /sys/class/power_supply/BAT0/charge_control_{start,end}_threshold

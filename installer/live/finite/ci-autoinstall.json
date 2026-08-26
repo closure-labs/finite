@@ -1,0 +1,20 @@
+{
+  "disk": "/dev/vda",
+  "filesystem": "btrfs",
+  "btrfsSubvolumes": false,
+  "encryption": {"type": "none"},
+  "image": "@@PAYLOAD_REFERENCE@@",
+  "targetImgref": "@@UPDATE_REFERENCE@@",
+  "selinuxDisabled": false,
+  "unifiedStorage": true,
+  "composeFsBackend": false,
+  "bootloader": "grub2",
+  "hostname": "finite",
+  "flatpaks": [],
+  "user": {
+    "username": "finiteci",
+    "fullname": "Finite CI",
+    "password": "finiteci",
+    "groups": ["wheel"]
+  }
+}
