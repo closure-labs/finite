@@ -6,6 +6,8 @@ catalog="${generated_root}/bootc/generated/profile-catalog.json"
 matrix="${generated_root}/bootc/generated/image-matrix.json"
 
 test -f VERSION
+test -f lib/domain-catalog.nix
+test -f lib/project-policy.nix
 grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$' VERSION
 grep -qF '!= ".git"' modules/outputs.nix
 grep -qF 'lib.hasPrefix ".git/" relative' modules/outputs.nix
@@ -20,10 +22,18 @@ jq -e '
   .profiles["bluefin-generic"].modules == ["base", "hardware-generic-x86_64"] and
   .profiles["bluefin-dx-dell-xps-9350-intel"].modules == ["base", "hardware-dell-xps-9350-intel"]
 ' "${catalog}" >/dev/null
-jq -e 'length == 4 and all(.[];
-  .stage == "root" and
-  (.build_input | test("^[0-9a-f]{64}$")) and
-  (.upstream.digest | test("^sha256:[0-9a-f]{64}$")))' "${matrix}" >/dev/null
+jq -e '
+  map(.profile) == [
+    "bluefin-dell-xps-9350-intel",
+    "bluefin-dx-dell-xps-9350-intel",
+    "bluefin-dx-generic",
+    "bluefin-generic"
+  ] and
+  all(.[];
+    .stage == "root" and
+    (.build_input | test("^[0-9a-f]{64}$")) and
+    (.upstream.digest | test("^sha256:[0-9a-f]{64}$")))
+' "${matrix}" >/dev/null
 jq -e '
   .schema == 2 and
   (.foundations | keys) == ["bluefin", "bluefin-dx"] and
@@ -152,7 +162,8 @@ test ! -e modules/aspects/base/manifests/Brewfile
 test ! -e modules/aspects/base/independently-managed-rpms.list
 test ! -e bootc/builder/lib/independently-managed-rpms.sh
 grep -qF 'bitwarden-cli' modules/aspects/base/default.nix
-grep -qF 'nixGL.wrap weeklyPkgs.bitwarden-desktop' modules/aspects/base/default.nix
+grep -qF 'nixGL.wrap finiteHomeDependencies.weeklyPackages.bitwarden-desktop' \
+	modules/aspects/base/default.nix
 # shellcheck disable=SC2016
 grep -qF 'den.homes.${system}.finite' lib/home-manager-flake-module.nix
 grep -qF 'den.aspects.finite-home' lib/home-manager-flake-module.nix

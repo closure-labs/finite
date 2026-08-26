@@ -58,12 +58,16 @@
             "''${flake_uri}#ci-checks.drvPath"
         )"
         [[ "''${ci_checks_drv}" == /nix/store/*.drv ]]
-        nix --accept-flake-config build \
-          --keep-going \
-          --no-link \
-          --print-build-logs \
-          "$@" \
-          "''${ci_checks_drv}^*"
+        ci_checks_out="$(
+          nix --accept-flake-config build \
+            --keep-going \
+            --no-link \
+            --print-build-logs \
+            --print-out-paths \
+            "$@" \
+            "''${ci_checks_drv}^*"
+        )"
+        [[ "''${ci_checks_out}" == /nix/store/* ]]
 
         # Validate every standard output after realizing the IFD-backed checks.
         # This is a separate process so its evaluator heap is released before
@@ -73,24 +77,24 @@
           --no-build \
           "$@"
 
-        check_paths_json="$(
-          nix --accept-flake-config eval --json \
-            --apply 'checks: builtins.mapAttrs (_: check: check.outPath) checks' \
-            "''${flake_uri}#checks.${pkgs.stdenv.hostPlatform.system}"
-        )"
         max_closure_size=$((1024 * 1024))
         check_paths=()
         for name in "''${check_names[@]}"; do
-          path="$(jq -er --arg name "''${name}" '.[$name]' <<<"''${check_paths_json}")"
+          path="$(readlink -f "''${ci_checks_out}/''${name}")"
           check_paths+=("''${path}")
           [[ -e "''${path}" ]] || {
             echo "The explicit check build did not realize ''${name}: ''${path}" >&2
             exit 1
           }
-          closure_size="$(
-            nix path-info --json --json-format 1 --closure-size "''${path}" |
-              jq -er 'to_entries[0].value.closureSize'
-          )"
+        done
+        closure_sizes_json="$(
+          nix path-info --json --json-format 1 --closure-size "''${check_paths[@]}"
+        )"
+        for index in "''${!check_names[@]}"; do
+          name="''${check_names[''${index}]}"
+          path="''${check_paths[''${index}]}"
+          closure_size="$(jq -er --arg path "''${path}" '.[$path].closureSize' \
+            <<<"''${closure_sizes_json}")"
           if (( closure_size > max_closure_size )); then
             printf '%s proof closure is %s bytes; cache limit is %s bytes\n' \
               "''${name}" "''${closure_size}" "''${max_closure_size}" >&2

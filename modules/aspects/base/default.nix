@@ -26,16 +26,14 @@
     };
     homeManager = {
       config,
-      inputs,
+      finiteHomeDependencies,
       lib,
       pkgs,
       ...
-    }: let
-      weeklyPkgs = inputs.nixpkgs-weekly.legacyPackages.${pkgs.stdenv.hostPlatform.system};
-    in {
+    }: {
       imports = [
-        inputs.determinate.homeManagerModules.default
-        inputs.nix-flatpak.homeManagerModules.nix-flatpak
+        finiteHomeDependencies.determinateModule
+        finiteHomeDependencies.flatpakModule
       ];
 
       home = {
@@ -47,7 +45,7 @@
           bash-preexec
           bat
           bitwarden-cli
-          (config.lib.nixGL.wrap weeklyPkgs.bitwarden-desktop)
+          (config.lib.nixGL.wrap finiteHomeDependencies.weeklyPackages.bitwarden-desktop)
           chezmoi
           codex
           direnv
@@ -80,7 +78,7 @@
       targets.genericLinux = {
         enable = true;
         nixGL = {
-          packages = inputs.nixgl.packages.${pkgs.stdenv.hostPlatform.system};
+          packages = finiteHomeDependencies.nixglPackages;
           # Home Manager's current "mesa" wrapper is the NixGL Intel/Mesa
           # auto profile and works with Intel, AMD, and Nouveau host drivers.
           defaultWrapper = "mesa";

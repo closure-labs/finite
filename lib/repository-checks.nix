@@ -57,8 +57,11 @@
     ../bootc/Containerfile
     ../bootc/Containerfile.derived
     ../bootc/builder
+    ../lib/domain-catalog.nix
     ../lib/home-manager-flake-module.nix
     ../lib/home-profile-applications.nix
+    ../lib/mk-pkgs.nix
+    ../lib/project-policy.nix
     ../modules/aspects
     ../modules/outputs.nix
     ../sources
@@ -68,6 +71,7 @@
     ../templates
   ];
   homeSource = sourceFor [
+    ../lib/domain-catalog.nix
     ../lib/home-manager-flake-module.nix
     ../lib/home-profile-applications.nix
     ../modules/aspects/base/rootfs/usr/libexec/finite/home-first-login
@@ -123,6 +127,7 @@
     ../lib/ci-applications/image-operations.nix
     ../lib/ci-applications/repository-operations.nix
     ../lib/ci-applications/source-operations.nix
+    ../lib/project-policy.nix
     ../lib/flake-applications.nix
     ../modules/outputs.nix
     ../modules/profiles/definitions.nix
@@ -137,7 +142,9 @@
     ../devenv.yaml
     ../docs
     ../lib/ci-applications
+    ../lib/domain-catalog.nix
     ../lib/flake-applications.nix
+    ../lib/project-policy.nix
     ../automation/github/policies
     ../automation/github/repository-security.json
     ../bootc/Containerfile
@@ -349,7 +356,7 @@ in {
       grep -qF 'cachix push --omit-deriver ''${pkgs.lib.escapeShellArg' \
         lib/ci-applications/repository-operations.nix
       ! rg -qF 'unsafeDiscardStringContext' lib/ci-applications lib/flake-applications.nix
-      grep -qF 'nix --accept-flake-config eval --json' \
+      ! grep -qF 'nix --accept-flake-config eval --json' \
         lib/ci-applications/repository-operations.nix
       ! rg -qF 'quotedPaths' lib/ci-applications lib/flake-applications.nix
       grep -qF 'flake_uri="git+file://' lib/ci-applications/repository-operations.nix
@@ -357,11 +364,15 @@ in {
       grep -qF -- '--no-build' lib/ci-applications/repository-operations.nix
       grep -qF 'nix --accept-flake-config build' lib/ci-applications/repository-operations.nix
       grep -qF -- '--no-link' lib/ci-applications/repository-operations.nix
+      grep -qF -- '--print-out-paths' lib/ci-applications/repository-operations.nix
+      grep -qF 'readlink -f' lib/ci-applications/repository-operations.nix
+      [[ "$(grep -cF 'nix path-info --json' \
+        lib/ci-applications/repository-operations.nix)" == 1 ]]
       [[ "$(grep -m1 -nF 'nix --accept-flake-config build' \
         lib/ci-applications/repository-operations.nix | cut -d: -f1)" -lt \
         "$(grep -m1 -nF 'nix --accept-flake-config flake check' \
         lib/ci-applications/repository-operations.nix | cut -d: -f1)" ]]
-      grep -qF 'ci-checks = ciChecks' modules/outputs.nix
+      grep -qF 'ci-checks.package = ciChecks' modules/outputs.nix
       grep -qF 'ln -s' modules/outputs.nix
       grep -qF 'max_closure_size=$((1024 * 1024))' \
         lib/ci-applications/repository-operations.nix
@@ -380,6 +391,12 @@ in {
       grep -qF 'finite-os.cachix.org-1:iwOc148wD1hSWnyNwhP3DsMxBv8WcL+ppMwcRIvx4Ko=' flake.nix
       grep -qF 'https://cachix.cachix.org' flake.nix
       grep -qF 'cachix.cachix.org-1:eWNHQldwUO7G2VkjpnjDbWwy4KQ/HNxht7H4SSoMckM=' flake.nix
+      grep -qF 'https://finite-os.cachix.org' lib/project-policy.nix
+      grep -qF 'finite-os.cachix.org-1:iwOc148wD1hSWnyNwhP3DsMxBv8WcL+ppMwcRIvx4Ko=' \
+        lib/project-policy.nix
+      grep -qF 'https://cachix.cachix.org' lib/project-policy.nix
+      grep -qF 'cachix.cachix.org-1:eWNHQldwUO7G2VkjpnjDbWwy4KQ/HNxht7H4SSoMckM=' \
+        lib/project-policy.nix
       grep -qF 'cacheName' devenv.nix
       grep -qF 'provider: local' devenv.yaml
       grep -qF 'local = "file:~/.other-fun-things"' secretspec.toml
@@ -389,8 +406,6 @@ in {
         lib/ci-applications/repository-operations.nix
       grep -qF '#ci-checks.drvPath' lib/ci-applications/repository-operations.nix
       grep -qF 'ci_checks_drv}^*' lib/ci-applications/repository-operations.nix
-      ! grep -qF 'features.users' modules/profiles/definitions.nix
-      grep -qF 'home-bluefin-dx' modules/profiles/definitions.nix
       grep -qFx 'ARG BASE_REF' bootc/Containerfile
       ! grep -qF 'bluefin:stable' bootc/Containerfile
     '';
@@ -824,11 +839,29 @@ in {
   nix = mkSourceCheck {
     name = "nix-checks";
     source = nixSource;
-    tools = [pkgs.statix];
+    tools = with pkgs; [gnugrep ripgrep statix];
     commands = ''
       set -euo pipefail
 
       statix check .
+      ! grep -qF 'features.users' modules/profiles/definitions.nix
+      grep -qF 'home-bluefin-dx' lib/domain-catalog.nix
+      ! grep -qF 'import ../flake.nix' modules/outputs.nix
+      ! grep -qF 'import inputs.nixpkgs' modules/outputs.nix
+      ! grep -qF 'import finiteInputs.nixpkgs' lib/home-manager-flake-module.nix
+      grep -qF 'mkPkgs system' modules/outputs.nix
+      grep -qF 'mkPkgs system' lib/home-manager-flake-module.nix
+      ! rg -qF 'extraSpecialArgs.inputs' lib modules
+      grep -qF 'finiteHomeDependencies = homeDependencies' lib/home-manager-flake-module.nix
+      grep -qF '_module.args' modules/den.nix
+      grep -qF 'class = "bootc"' modules/profiles/schema.nix
+      grep -qF 'class = "bootc"' lib/eval-profile-graph.nix
+      grep -qF '_class = "bootc"' modules/profiles/bootc-class.nix
+      grep -qF 'exportTable = {' modules/outputs.nix
+      grep -qF 'packages.''${system} = packageExports' modules/outputs.nix
+      grep -qF 'apps.''${system} = appExports' modules/outputs.nix
+      grep -qF 'foundationHardwareProofs' modules/outputs.nix
+      grep -qF 'allRolesProof' modules/outputs.nix
     '';
   };
 }

@@ -2,6 +2,9 @@
   description = "Finite bootc profile and user-environment configuration";
 
   # Consumers derive the Finite cache name from this centralized URL.
+  # Flake configuration rejects imported values as thunks. Project evaluation
+  # consumes lib/project-policy.nix directly, and repository checks keep this
+  # required concrete copy synchronized with that policy.
   nixConfig = {
     extra-substituters = [
       "https://finite-os.cachix.org"

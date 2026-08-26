@@ -71,8 +71,10 @@ pull requests, merge groups, pushes, and validation dispatches retain complete
 history. Merge groups fail safe to all expensive validation when the supplied
 base is not an ancestor of the synthetic head.
 
-The Flake is the single source of truth for the Finite Cachix
-substituter and key. Every Nix job uses the repository's pinned `setup-nix`
+`lib/project-policy.nix` is the evaluation source of truth for the target
+platform and Finite Cachix name, substituter, and key. `flake.nix` retains the
+concrete mirror required by Flake configuration, and repository contracts keep
+the two synchronized. Every Nix job uses the repository's pinned `setup-nix`
 action for GitHub access and read-through cache configuration, with automatic
 store watching disabled.
 `nix shell --accept-flake-config .#ci-check -c finite-ci-check` explicitly
