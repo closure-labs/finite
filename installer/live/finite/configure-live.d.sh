@@ -573,6 +573,11 @@ user_systemctl=(
 
 while ((SECONDS < deadline)); do
 	if [[ -S "${runtime_dir}/bus" ]]; then
+		# graphical-session.target can start the globally enabled user unit
+		# before this system-level fallback observes a display variable.
+		if "${user_systemctl[@]}" is-active --quiet finite-installer.service; then
+			exit 0
+		fi
 		user_environment="$("${user_systemctl[@]}" show-environment 2>/dev/null || true)"
 		if grep -Eq '^(DISPLAY|WAYLAND_DISPLAY)=' <<<"${user_environment}"; then
 			if "${user_systemctl[@]}" start finite-installer.service; then

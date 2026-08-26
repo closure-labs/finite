@@ -57,6 +57,7 @@ grep -qF 'ConditionPathExists=/etc/bootc-installer/finite-netinstall-mode' "${li
 grep -qF 'AutomaticLogin=liveuser' "${live_hook}"
 grep -qF 'DefaultSession=gnome.desktop' "${live_hook}"
 grep -qF 'FINITE_INSTALLER_ERROR=liveuser-graphical-session-timeout' "${live_hook}"
+grep -qF '"${user_systemctl[@]}" is-active --quiet finite-installer.service' "${live_hook}"
 grep -qF "activation_marker='Installer::Main INFO: do_activate called'" "${live_hook}"
 grep -qF 'finite-installer-apply-target' "${live_hook}"
 grep -qF 'finite-installer-target-config.service' "${live_hook}"
