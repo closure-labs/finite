@@ -117,8 +117,3 @@ test -x "${seed}/nix-installer"
 test -f "${seed}/receipt.json"
 test -d "${seed}/store"
 test -d "${seed}/var/nix"
-
-# Assert that the Fedora package did not replace Finite's Determinate units,
-# then activate them from the immutable vendor tree. This also repairs upgrades
-# from hosts where the equivalent /etc enablement links were locally absent.
-bash "${build_root}/modules/aspects/base/install-nix-systemd-units.sh"

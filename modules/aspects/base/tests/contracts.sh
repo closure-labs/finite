@@ -60,13 +60,23 @@ grep -qF 'install -m 0644 /dev/null /etc/tmpfiles.d/nix-filesystem.conf' \
 grep -qF -- '--no-modify-profile' "${aspect_root}/install-determinate-nix.sh"
 grep -qF -- '--nix-build-user-prefix nixbld-' "${aspect_root}/install-determinate-nix.sh"
 grep -qF '.minimumRuntimeVersion' "${aspect_root}/install-determinate-nix.sh"
-grep -qF 'install-nix-systemd-units.sh' "${aspect_root}/install-determinate-nix.sh"
+if grep -qF 'install-nix-systemd-units.sh' "${aspect_root}/install-determinate-nix.sh"; then
+	echo 'Nix systemd activation must be normalized after all build steps' >&2
+	exit 1
+fi
+grep -qF 'install-nix-systemd-units.sh' "${aspect_root}/apply.sh"
+cloud_enable_line="$(grep -nF 'systemctl enable cloud-init.target' "${aspect_root}/apply.sh" | cut -d: -f1)"
+nix_units_line="$(grep -nF 'install-nix-systemd-units.sh' "${aspect_root}/apply.sh" | cut -d: -f1)"
+if ((nix_units_line <= cloud_enable_line)); then
+	echo 'Nix systemd activation must be the final image normalization step' >&2
+	exit 1
+fi
 grep -qF 'multi-user.target.wants' "${aspect_root}/install-nix-systemd-units.sh"
-grep -qF 'remove_vendor_want nix-daemon.socket sockets.target.wants' \
+grep -qF 'remove_activation_link "${root}" nix-daemon.socket sockets.target.wants' \
 	"${aspect_root}/install-nix-systemd-units.sh"
-grep -qF 'remove_vendor_want determinate-nixd.socket sockets.target.wants' \
+grep -qF 'remove_activation_link "${root}" determinate-nixd.socket sockets.target.wants' \
 	"${aspect_root}/install-nix-systemd-units.sh"
-grep -qF 'remove_vendor_want nix-daemon.service multi-user.target.wants' \
+grep -qF 'remove_activation_link "${root}" nix-daemon.service multi-user.target.wants' \
 	"${aspect_root}/install-nix-systemd-units.sh"
 grep -qF 'install_vendor_want nix-daemon.socket multi-user.target.wants' \
 	"${aspect_root}/install-nix-systemd-units.sh"
