@@ -1,109 +1,107 @@
-# Finite
+<h1 align="center"><img src="modules/aspects/base/rootfs/usr/share/finite/finite-logo.png" alt="Finite logo" width="72" align="absmiddle"> Finite</h1>
 
-Finite is a signed, updateable Linux workstation built on Bluefin and Bluefin
-DX. The operating-system image supplies a stable foundation; each user chooses
-their own Home Manager roles at first login.
+<p align="center"><strong>Your workstation, finished.</strong></p>
 
-## Choose an image
+<p align="center">
+  A signed, atomic Linux desktop built on Bluefin.<br>
+  Reliable enough to forget about. Personal enough to make your own.
+</p>
 
-| Image tag | Foundation | Hardware |
-| --- | --- | --- |
-| `latest` or `bluefin-generic` | Bluefin | Generic x86-64 |
-| `bluefin-dell-xps-9350-intel` | Bluefin | Dell XPS 13 9350 |
-| `bluefin-dx-generic` | Bluefin DX | Generic x86-64 |
-| `bluefin-dx-dell-xps-9350-intel` | Bluefin DX | Dell XPS 13 9350 |
+<p align="center">
+  <a href="docs/installation.md">Install Finite</a> ·
+  <a href="docs/configuration.md">Make it yours</a> ·
+  <a href="docs/README.md">Technical documentation</a>
+</p>
 
-Bluefin DX includes the developer-oriented foundation. User roles are separate
-from image tags: Developer, Sales, Trainer, Support, Executive, and IT can be
-combined on either foundation. Selecting no roles gives you the shared base
-environment.
+---
 
-## Install or switch
+## Calm by default
 
-To switch an existing bootc workstation to generic Finite:
+Finite keeps the operating system and your workspace separate. The system is a
+signed, transactional image; your tools and preferences are a declarative Home
+Manager profile. Updates are predictable, rollbacks are built in, and changing
+how you work never means rebuilding the whole machine.
+
+**Safe underneath.** Atomic bootc updates replace the system as a unit instead
+of modifying it package by package.
+
+**Yours on top.** Choose any mix of Developer, Sales, Trainer, Support,
+Executive, and IT roles—or start with a clean base.
+
+**Ready for real hardware.** Use the generic image on most x86-64 computers, or
+the tailored image for the Dell XPS 13 9350.
+
+## Start simply
+
+### Bring an existing bootc system
+
+Switch to the standard Finite image and reboot:
 
 ```console
 sudo bootc switch ghcr.io/closure-labs/finite:latest
 sudo systemctl reboot
 ```
 
-Replace `latest` with another tag from the table when needed. For a new machine
-or installer ISO, follow the [installation guide](docs/installation.md). Finite
-uses Project Bluefin's native graphical bootc installer, keeps GRUB2 on
-installed Bluefin systems, and pulls the verified image by digest during setup.
+On first login, Finite asks how you use your computer. Select the roles you
+want, choose **Configure**, and it builds your personal environment. You can
+change that selection at any time with `finite-configure`.
 
-## Complete first login
+### Set up a new machine
 
-After the graphical session opens, Finite shows a role checklist. Choose any
-combination and select **Configure**. It is valid to leave every role unchecked.
+The Finite installer provides a familiar graphical setup while installing the
+exact signed image recorded in its manifest. Follow the
+[installation guide](docs/installation.md) to choose an image, verify the ISO,
+and install it.
 
-Finite then:
+## Choose your foundation
 
-1. Discovers your username and home directory.
-2. Confirms the running foundation and hardware.
-3. Generates and locks a standalone flake in `~/.config/home-manager`.
-4. Builds the complete Home Manager activation package.
-5. Saves normalized state in `~/.config/finite/profile.json` and activates only
-   after the build succeeds.
+For most people, `latest` is the right place to begin. It tracks the standard
+Bluefin foundation on generic x86-64 hardware.
 
-Canceling changes nothing, so the checklist returns at the next graphical
-login. Run `finite-configure` later to reopen it with your current roles
-selected.
+| If you want… | Start with… |
+| --- | --- |
+| A focused everyday workstation | `latest` or `bluefin-generic` |
+| Developer tools in the system foundation | `bluefin-dx-generic` |
+| Dell XPS 13 9350 hardware integration | the matching `dell-xps-9350-intel` image |
 
-## Create a standalone Home Manager configuration
+Bluefin and Bluefin DX can both use every Finite role. The image chooses the
+system foundation and hardware support; your roles choose the workspace.
 
-Start from either native template:
+## Keep moving
 
-```console
-nix flake new -t github:closure-labs/finite#home-bluefin ./home
-nix flake new -t github:closure-labs/finite#home-bluefin-dx ./home-dx
-```
-
-Generate and apply a YAML profile:
-
-```console
-nix run github:closure-labs/finite#home-profile -- \
-  --foundation bluefin-dx \
-  --hardware dell-xps-9350-intel \
-  --roles developer,support \
-  --format yaml >profile.yaml
-
-nix run github:closure-labs/finite#home-bootstrap -- \
-  --profile profile.yaml
-```
-
-Bootstrap rejects malformed data, unknown or duplicate roles, invalid account
-identity, and profiles that do not match the running Finite image.
-
-## Update and troubleshoot
+Update the operating system when it suits you:
 
 ```console
 sudo bootc upgrade
 sudo systemctl reboot
+```
+
+Update your personal environment independently:
+
+```console
 nh home switch --update-input finite
 ```
 
-See [configuration](docs/configuration.md) for profiles and provisioning, or
-[troubleshooting](docs/troubleshooting.md) for failed image, first-login, and
-Home Manager operations.
+If a system deployment does not work for you, `sudo bootc rollback` selects the
+previous image for the next boot. The [installation and update
+reference](docs/installation.md) covers image selection, provisioning, ISO
+verification, and recovery in detail.
 
-## Develop Finite
+## Built in the open
 
-```console
-git clone git@github.com:closure-labs/finite.git
-cd finite
-nix develop
-nix fmt
-just check
-```
+Finite is composed with Nix, built as bootc images, signed with keyless Sigstore
+identity, and published with provenance and software-bill-of-materials
+attestations. The repository is both the product definition and the record of
+how each image was assembled.
 
-Build one image locally:
+Want to work on Finite itself? The [development guide](docs/development.md)
+covers the development shell, focused checks, generated outputs, local image
+builds, and repository layout.
 
-```console
-nix shell --accept-flake-config .#ci-image-build \
-  -c finite-image-build bluefin-generic localhost/finite:bluefin-generic
-```
+---
 
-The [development guide](docs/development.md) describes generated catalogs,
-focused checks, image tools, and repository layout. Start with the
-[documentation index](docs/README.md) for every guide.
+## Documentation
+
+This README is the quick tour. Installation, configuration, architecture,
+operations, security boundaries, and troubleshooting live in the
+**[Finite technical documentation](docs/README.md)**.
