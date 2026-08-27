@@ -2,6 +2,7 @@
   catalog,
   homeBootstrap,
   homeDependencies,
+  homeInputs,
   homeManagerLib,
   homeProfile,
   mkPkgs,
@@ -34,13 +35,8 @@
       set -euo pipefail
       export PATH=${lib.makeBinPath [cfgPkgs.coreutils cfgPkgs.jq cfgPkgs.zenity]}
 
-      running=/usr/share/finite/profile.json
-      if [[ ! -r $running ]]; then
-        zenity --error --title='Finite configuration' --text='The running Finite profile metadata is unavailable.'
-        exit 1
-      fi
-      foundation=$(jq -er '.foundation' $running)
-      hardware=$(jq -er '.hardware' $running)
+      foundation=${lib.escapeShellArg cfg.foundation}
+      hardware=${lib.escapeShellArg cfg.hardware}
       current=$HOME/.config/finite/profile.json
       selected=()
       if [[ -r $current ]]; then
@@ -52,7 +48,7 @@
         --title='Configure Finite' \
         --text='Select any roles to compose with your Finite foundation.' \
         --column='Use' --column='Role' --column='id' \
-        --hide-column=3 --separator=, "''${rows[@]}") || exit 0
+        --hide-column=3 --print-column=3 --separator=, "''${rows[@]}") || exit 0
       profile=$(mktemp)
       trap 'rm -f -- "$profile"' EXIT
       ${homeProfile}/bin/finite-home-profile \
@@ -96,6 +92,10 @@ in {
           inherit modules pkgs;
           extraSpecialArgs = {
             finiteHomeDependencies = homeDependencies;
+            finiteHomeAssets = {
+              devops = ../templates/home-manager/modules/aspects/capabilities/devops/rootfs/usr/share/finite;
+            };
+            inputs = homeInputs;
           };
         };
     };

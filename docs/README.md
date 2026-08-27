@@ -13,11 +13,10 @@ for installing, configuring, developing, and operating Finite.
 
 ## Hardware reference
 
-- [Dell XPS 13 9350](dell-xps-9350.md) documents the hardware-specific image,
-  boot presentation, authentication, battery, display, power, and camera
-  behavior.
-- [Dell XPS 13 9350 Secure Boot](dell-xps-9350-secure-boot.md) records the trust
-  boundary between the signed kernel and external camera modules.
+- [Dell XPS 13 9350](dell-xps-9350.md) documents the vendor-neutral next image,
+  optional Home Manager display policy, and IPU7 camera checks.
+- [Dell XPS 13 9350 Secure Boot](dell-xps-9350-secure-boot.md) records the Fedora
+  7.2 in-tree module and signature contract.
 
 ## Engineering reference
 

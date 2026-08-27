@@ -2,7 +2,6 @@
 Description=Configure Finite Home Manager on first graphical login
 After=graphical-session.target
 PartOf=graphical-session.target
-ConditionPathExists=!%h/.config/finite/profile.json
 
 [Service]
 Type=oneshot

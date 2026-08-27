@@ -21,6 +21,3 @@ indent_size = 4
 [Justfile]
 indent_style = space
 indent_size = 4
-
-[modules/aspects/hardware/dell-xps-9350-intel/rootfs/usr/share/finite/refind/themes/rEFInd-Regular-Dark/**]
-trim_trailing_whitespace = false

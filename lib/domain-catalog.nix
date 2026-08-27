@@ -11,10 +11,10 @@ let
           order = 40;
           tags = ["bluefin-generic" "latest"];
         };
-        dell-xps-9350-intel = {
-          name = "bluefin-dell-xps-9350-intel";
+        next-x86_64 = {
+          name = "bluefin-next";
           order = 10;
-          tags = ["bluefin-dell-xps-9350-intel"];
+          tags = ["bluefin-next"];
         };
       };
     }
@@ -29,10 +29,10 @@ let
           order = 30;
           tags = ["bluefin-dx-generic"];
         };
-        dell-xps-9350-intel = {
-          name = "bluefin-dx-dell-xps-9350-intel";
+        next-x86_64 = {
+          name = "bluefin-dx-next";
           order = 20;
-          tags = ["bluefin-dx-dell-xps-9350-intel"];
+          tags = ["bluefin-dx-next"];
         };
       };
     }
@@ -44,20 +44,31 @@ let
       order = 10;
       bootc = true;
       homeManager = true;
+      imageHardware = ["generic-x86_64" "next-x86_64"];
+    }
+    {
+      name = "next-x86_64";
+      label = "Next kernel x86-64";
+      order = 20;
+      bootc = true;
+      homeManager = false;
+      imageHardware = [];
     }
     {
       name = "dell-xps-9350-intel";
       label = "Dell XPS 13 9350 (Intel)";
-      order = 20;
-      bootc = true;
+      order = 30;
+      bootc = false;
       homeManager = true;
+      imageHardware = ["generic-x86_64" "next-x86_64"];
     }
     {
       name = "framework-laptop";
       label = "Framework Laptop";
-      order = 30;
+      order = 40;
       bootc = true;
       homeManager = false;
+      imageHardware = [];
     }
   ];
   roles = [
@@ -113,18 +124,18 @@ let
     builtins.concatLists (
       map (
         foundation:
-          map (
-            hardwareName: let
-              profile = foundation.profiles.${hardwareName};
-            in
-              profile
-              // {
-                foundation = foundation.name;
-                hardware = hardwareName;
-                parent = null;
-              }
+          builtins.attrValues (
+            builtins.mapAttrs (
+              hardwareName: profile:
+                profile
+                // {
+                  foundation = foundation.name;
+                  hardware = hardwareName;
+                  parent = null;
+                }
+            )
+            foundation.profiles
           )
-          (names homeHardware)
       )
       foundations
     )

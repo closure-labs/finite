@@ -17,9 +17,9 @@ on:
         type: choice
         options:
           - bluefin-generic
-          - bluefin-dell-xps-9350-intel
+          - bluefin-next
           - bluefin-dx-generic
-          - bluefin-dx-dell-xps-9350-intel
+          - bluefin-dx-next
 
 concurrency:
   group: installer-${{ github.ref }}-${{ inputs.image-tag || 'bluefin-generic' }}

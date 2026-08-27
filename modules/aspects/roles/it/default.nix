@@ -1,12 +1,3 @@
 _: {
-  den.aspects.features.roles.it.homeManager = {
-    config,
-    pkgs,
-    ...
-  }: {
-    home = {
-      packages = [(config.lib.nixGL.wrap pkgs.rustdesk-flutter)];
-      sessionVariables.FINITE_ROLE_IT = "1";
-    };
-  };
+  den.aspects.features.roles.it.homeManager.imports = [../../../../templates/home-manager/modules/aspects/roles/it/home.nix];
 }

@@ -142,6 +142,6 @@ gh attestation verify finite-*.iso \
 
 ## Dell XPS 13 9350
 
-Use [Dell XPS 13 9350](dell-xps-9350.md) for battery, display, authentication,
-power, and camera checks. The out-of-tree camera-module signature policy is in
-[Dell XPS 13 9350 Secure Boot status](dell-xps-9350-secure-boot.md).
+Use [Dell XPS 13 9350](dell-xps-9350.md) for the optional Home Manager display
+policy and Fedora 7.2 IPU7 camera checks. The in-tree module signature contract
+is in [Dell XPS 13 9350 Secure Boot status](dell-xps-9350-secure-boot.md).

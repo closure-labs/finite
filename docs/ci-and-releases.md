@@ -15,7 +15,7 @@ authority: it records whether the diff is trustworthy and the exact image,
 software-bill-of-materials, promotion, and installer jobs required for the run.
 Profile selection uses the generated
 per-profile build-input fingerprints. The four current image profiles pair each
-foundation with each hardware target and build independently. Publication
+foundation with the generic or next-kernel target and build independently. Publication
 additionally checks registry state, signatures,
 provenance, RPM updates, and repair work before finalizing that lifecycle.
 
@@ -65,7 +65,7 @@ full rechunk used by validation.
 
 Each profile summary records upstream-load, container-build, and rechunk
 durations, incremental/full mode, and the previous-build digest. The rollout
-comparison uses the v0.3.0 baseline and, in particular, Bluefin DX Dell's
+comparison uses the v0.3.0 baseline and, in particular, the former Bluefin DX Dell profile's
 547-second rechunk. After the next three comparable base builds, incremental
 mode remains enabled only if its median is at least 15% faster (465 seconds or
 less for that baseline). Otherwise only the workflow's previous-build input is

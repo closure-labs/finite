@@ -57,9 +57,13 @@
     ../bootc/Containerfile
     ../bootc/Containerfile.derived
     ../bootc/builder
+    ../lib/ci-applications/image-operations.nix
+    ../lib/ci-applications/profile-stage.nix
+    ../lib/ci-applications/validate-image-shard.nix
     ../lib/domain-catalog.nix
     ../lib/home-manager-flake-module.nix
     ../lib/home-profile-applications.nix
+    ../lib/render-home-scaffold.nix
     ../lib/mk-pkgs.nix
     ../lib/project-policy.nix
     ../modules/aspects
@@ -74,6 +78,8 @@
     ../lib/domain-catalog.nix
     ../lib/home-manager-flake-module.nix
     ../lib/home-profile-applications.nix
+    ../lib/render-home-scaffold.nix
+    ../modules/aspects/base/rootfs/usr/libexec/finite/home-init
     ../modules/aspects/base/rootfs/usr/libexec/finite/home-first-login
     ../templates
     ../tests/home
@@ -114,6 +120,8 @@
   ];
   aspectsSource = sourceFor [
     ../modules/aspects
+    ../sources/kernel-next.json
+    ../templates/home-manager/modules/aspects
   ];
   releaseSource = sourceFor [
     ../CHANGELOG.md
@@ -273,13 +281,15 @@ in {
     name = "home-profile-contracts";
     source = homeSource;
     generatedRoot = generated;
-    tools = with pkgs; [getent jq yq-go];
+    tools = with pkgs; [gawk getent gnugrep jq ripgrep yq-go];
     commands = ''
       set -euo pipefail
       bash tests/home/contracts.sh \
         ${applications.homeProfile}/bin/finite-home-profile \
-        ${applications.homeBootstrap}/bin/finite-home-bootstrap \
-        ${applications.cloudInit}/bin/finite-cloud-init
+        ${applications.homeInit}/bin/finite-home-init \
+        ${applications.cloudInit}/bin/finite-cloud-init \
+        ${generated}/home-manager-template
+      bash tests/home/dell-panel-policy.sh
     '';
   };
 
@@ -521,7 +531,7 @@ in {
   aspects = mkSourceCheck {
     name = "aspect-contracts";
     source = aspectsSource;
-    tools = with pkgs; [gnugrep systemd util-linux];
+    tools = with pkgs; [gnugrep jq ripgrep systemd util-linux];
     commands = ''
       set -euo pipefail
 
@@ -531,8 +541,7 @@ in {
       bash modules/aspects/base/tests/nix-systemd.sh
       bash modules/aspects/capabilities/devops/tests/contracts.sh
       bash modules/aspects/roles/support/tests/contracts.sh
-      bash modules/aspects/hardware/dell-xps-9350-intel/tests/lid-auth.sh
-      bash modules/aspects/hardware/dell-xps-9350-intel/tests/policies.sh
+      bash modules/aspects/hardware/next-x86_64/tests/contracts.sh
     '';
   };
 

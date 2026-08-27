@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "foundation": "bluefin",
+  "hardware": "generic-x86_64",
+  "roles": [],
+  "identity": {
+    "username": "finite",
+    "homeDirectory": "/var/home/finite"
+  }
+}

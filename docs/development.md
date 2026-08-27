@@ -68,7 +68,7 @@ and invokes Podman:
 nix shell --accept-flake-config .#ci-image-build -c finite-image-build \
   bluefin-generic localhost/finite:bluefin-generic
 nix shell --accept-flake-config .#ci-image-build -c finite-image-build \
-  bluefin-dx-dell-xps-9350-intel localhost/finite:bluefin-dx-dell
+  bluefin-dx-next localhost/finite:bluefin-dx-next
 ```
 
 Profile names and their stable ordering are declared in
@@ -88,6 +88,7 @@ The output contains:
 - `bootc/generated/profile-catalog.json`
 - `bootc/generated/upstreams.json`
 - `bootc/generated/home-profile-catalog.json`
+- `bootc/generated/kernel-next/` with the hash-locked Fedora 7.2 RPM set
 
 Build consumers receive this store path directly. To make a writable copy for
 inspection, copy the desired files from the `result` symlink.
@@ -126,9 +127,10 @@ Plymouth watermark names remain identical.
 | `nix shell .#ci-source-update -c finite-source-update bluefin-dx` | Refresh and verify the Bluefin DX lock |
 | `nix shell .#ci-source-update -c finite-source-update determinate-nix` | Refresh the stable Determinate Nix release lock |
 | `nix run .#home-profile -- --help` | Generate a standalone Home Manager profile |
-| `nix run .#home-bootstrap -- --help` | Validate, build, and activate a standalone profile |
-| `nix flake new -t .#home-bluefin PATH` | Create the Bluefin Home Manager template |
-| `nix flake new -t .#home-bluefin-dx PATH` | Create the Bluefin DX Home Manager template |
+| `nix run .#home-init -- --help` | Validate, stage, build, and install the self-contained Home Manager flake |
+| `nix flake new -t .#home-manager PATH` | Create the canonical standalone Home Manager template |
+| `nix flake new -t .#home-bluefin PATH` | Compatibility alias; bootstrap writes the selected profile variables |
+| `nix flake new -t .#home-bluefin-dx PATH` | Compatibility alias; bootstrap writes the selected profile variables |
 | `nix run .#cloud-init -- ...` | Generate a NoCloud Home Manager seed |
 | `nix build .#syft` | Pinned Syft package |
 | `nix shell .#ci-image-sbom -c finite-image-sbom validate <file>` | Validate a normalized SPDX image software bill of materials |

@@ -1,3 +1,1 @@
-bootc/builder/plan.sh
-bootc/generated/image-matrix.json
-bootc/generated/upstream.json
+bootc/generated/

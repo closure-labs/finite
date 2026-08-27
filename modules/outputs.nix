@@ -74,8 +74,11 @@
     inherit (determinateNix.selinuxFileContexts) url sha256;
   };
   version = lib.removeSuffix "\n" (builtins.readFile ../VERSION);
+  homeScaffold = import ../lib/render-home-scaffold.nix {
+    inherit pkgs version;
+  };
   generated = import ../lib/render-profile-artifacts.nix {
-    inherit determinateNixInstaller determinateNixSelinuxFileContexts determinateNixSelinuxPolicy lib pkgs profiles;
+    inherit determinateNixInstaller determinateNixSelinuxFileContexts determinateNixSelinuxPolicy homeScaffold lib pkgs profiles;
     domainCatalog = catalog;
     profileOrder = profileSet.order;
     inherit version;
@@ -90,7 +93,7 @@
     cacheName = cache.name;
     secretspec = outputDependencies.weeklySecretspec;
   };
-  homeApplications = import ../lib/home-profile-applications.nix {inherit generated pkgs;};
+  homeApplications = import ../lib/home-profile-applications.nix {inherit generated homeScaffold pkgs;};
   applications = baseApplications // homeApplications;
   roleModules = map (name: ../modules/aspects/roles + "/${name}/default.nix") catalog.roleNames;
   hardwareModules = map (name: ../modules/aspects/hardware + "/${name}/default.nix") catalog.homeHardwareNames;
@@ -107,6 +110,7 @@
       ++ [
         (import ../lib/home-manager-flake-module.nix {
           inherit catalog homeDependencies mkPkgs project;
+          homeInputs = outputDependencies.homeModuleInputs;
           inherit (outputDependencies) homeManagerLib;
           inherit (applications) homeBootstrap homeProfile;
         })
@@ -257,6 +261,7 @@
     };
     default.package = generated;
     generated.package = generated;
+    home-manager-template.package = homeScaffold;
     home-profile = {
       package = applications.homeProfile;
       appProgram = "${applications.homeProfile}/bin/finite-home-profile";
@@ -264,6 +269,10 @@
     home-bootstrap = {
       package = applications.homeBootstrap;
       appProgram = "${applications.homeBootstrap}/bin/finite-home-bootstrap";
+    };
+    home-init = {
+      package = applications.homeInit;
+      appProgram = "${applications.homeInit}/bin/finite-home-init";
     };
     syft.package = pkgs.syft;
     cloud-init.appProgram = "${applications.cloudInit}/bin/finite-cloud-init";
@@ -288,13 +297,17 @@ in {
     };
     flakeModules.home = homeFlakeModule;
     templates = {
+      home-manager = {
+        path = ../templates/home-manager;
+        description = "Canonical self-contained Finite Home Manager configuration";
+      };
       home-bluefin = {
-        path = ../templates/home-bluefin;
-        description = "Finite Bluefin standalone Home Manager foundation";
+        path = ../templates/home-manager;
+        description = "Finite Home Manager template; bootstrap sets the Bluefin profile variables";
       };
       home-bluefin-dx = {
-        path = ../templates/home-bluefin-dx;
-        description = "Finite Bluefin DX standalone Home Manager foundation";
+        path = ../templates/home-manager;
+        description = "Finite Home Manager template; bootstrap sets the Bluefin DX profile variables";
       };
     };
     packages.${system} = packageExports;

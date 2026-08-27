@@ -64,7 +64,9 @@ pkgs.writeShellApplication {
              (.profile | type == "string" and length > 0) and
              (.build_input | type == "string" and test("^[0-9a-f]{64}$")) and
              (.foundation == "bluefin" or .foundation == "bluefin-dx") and
-             (.hardware == "generic-x86_64" or .hardware == "dell-xps-9350-intel") and
+             (.hardware == "generic-x86_64" or .hardware == "next-x86_64") and
+             (.kernelRelease == null or
+               (.kernelRelease | type == "string" and test("^[0-9]+\\.[0-9]+\\.[0-9]+-[0-9]+\\.fc[0-9]+\\.x86_64$"))) and
              (.tags | type == "string" and length > 0) and
              (.upstream.image | type == "string" and length > 0) and
              (.upstream.digest | type == "string" and test("^sha256:[0-9a-f]{64}$")) and
@@ -81,12 +83,12 @@ pkgs.writeShellApplication {
            profile="$(jq -er '.profile' <<<"''${entry}")"
            expected="$(jq -cer --arg profile "''${profile}" '
              .[] | select(.profile == $profile) |
-             {profile, build_input, foundation, hardware, tags, stage, parent, upstream}
+             {profile, build_input, foundation, hardware, kernelRelease, tags, stage, parent, upstream}
            ' "''${profile_matrix}")" || {
              echo "Unknown profile in shard: ''${profile}" >&2
              return 2
            }
-           actual="$(jq -c '{profile, build_input, foundation, hardware, tags, stage, parent, upstream}' <<<"''${entry}")"
+           actual="$(jq -c '{profile, build_input, foundation, hardware, kernelRelease, tags, stage, parent, upstream}' <<<"''${entry}")"
            [[ "''${actual}" == "''${expected}" ]] || {
              echo "Shard contract for ''${profile} does not match the generated graph" >&2
              return 2
@@ -101,6 +103,7 @@ pkgs.writeShellApplication {
          build_input="$(jq -er '.build_input' <<<"''${entry}")"
          foundation="$(jq -er '.foundation' <<<"''${entry}")"
          hardware="$(jq -er '.hardware' <<<"''${entry}")"
+         kernel_release="$(jq -r '.kernelRelease // empty' <<<"''${entry}")"
          upstream_digest="$(jq -er '.upstream.digest' <<<"''${entry}")"
          upstream_name="$(jq -er '.upstream.image | if endswith("/bluefin-dx") then "bluefin-dx" else "bluefin" end' <<<"''${entry}")"
          upstream_image="$("''${FINITE_LOAD_BLUEFIN}" "''${upstream_name}")"
@@ -113,6 +116,10 @@ pkgs.writeShellApplication {
          containerfile=./bootc/Containerfile
          base_ref="''${upstream_image}"
          parent_args=()
+         kernel_label=()
+         if [[ -n "''${kernel_release}" ]]; then
+           kernel_label+=(--label "ostree.linux=''${kernel_release}")
+         fi
          if [[ -n "''${parent_profile}" ]]; then
            containerfile=./bootc/Containerfile.derived
            if [[ -n "''${validated_images["''${parent_profile}"]:-}" ]]; then
@@ -149,6 +156,7 @@ pkgs.writeShellApplication {
            --label "io.finite.build.profile=''${profile}" \
            --label "io.finite.foundation=''${foundation}" \
            --label "io.finite.hardware=''${hardware}" \
+           "''${kernel_label[@]}" \
            --label "io.finite.upstream.digest=''${upstream_digest}" \
            --label "org.opencontainers.image.base.digest=''${upstream_digest}" \
            --label "org.opencontainers.image.created=''${created}" \

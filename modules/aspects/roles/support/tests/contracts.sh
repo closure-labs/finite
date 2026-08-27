@@ -2,7 +2,7 @@
 set -euo pipefail
 
 aspect_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-module="${aspect_root}/default.nix"
+module="templates/home-manager/modules/aspects/roles/support/home.nix"
 
 grep -qF 'espanso = config.lib.nixGL.wrap pkgs.espanso-wayland' "${module}"
 if grep -qF 'config.lib.nixGL.wrap pkgs.espanso;' "${module}"; then
