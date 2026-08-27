@@ -1,4 +1,0 @@
-# This changes only the schema default. A value chosen by the user in GNOME
-# Settings remains authoritative.
-[org.gnome.settings-daemon.plugins.power]
-ambient-enabled=true

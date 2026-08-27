@@ -63,6 +63,10 @@
           type = lib.types.str;
           description = "Human-readable hardware label.";
         };
+        imageHardware = lib.mkOption {
+          type = lib.types.listOf (lib.types.enum catalog.bootcHardwareNames);
+          description = "Bootc hardware targets compatible with this Home Manager aspect.";
+        };
         aspect = lib.mkOption {
           type = lib.types.raw;
           description = "Den hardware aspect used by standalone homes.";

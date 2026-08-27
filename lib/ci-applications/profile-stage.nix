@@ -75,6 +75,8 @@ pkgs.writeShellApplication {
       '.profiles[$profile].foundation' "''${profile_catalog}")"
     hardware="$(jq -er --arg profile "''${BUILD_PROFILE}" \
       '.profiles[$profile].hardware' "''${profile_catalog}")"
+    kernel_release="$(jq -r --arg profile "''${BUILD_PROFILE}" \
+      '.profiles[$profile].kernelRelease // empty' "''${profile_catalog}")"
     candidate_tag="''${BUILD_PROFILE}-candidate"
     primary_image="''${IMAGE_REF}:''${candidate_tag}"
 
@@ -129,6 +131,10 @@ pkgs.writeShellApplication {
       containerfile=./bootc/Containerfile
       cache_args=(--layers)
       parent_args=()
+      kernel_label=()
+      if [[ -n "''${kernel_release}" ]]; then
+        kernel_label+=(--label "ostree.linux=''${kernel_release}")
+      fi
       if [[ -n "''${parent_profile}" ]]; then
         containerfile=./bootc/Containerfile.derived
         parent_args+=(
@@ -162,6 +168,7 @@ pkgs.writeShellApplication {
         --label "io.finite.build.profile=''${BUILD_PROFILE}" \
         --label "io.finite.foundation=''${foundation}" \
         --label "io.finite.hardware=''${hardware}" \
+        "''${kernel_label[@]}" \
         --label "io.finite.upstream.digest=''${EXPECTED_UPSTREAM_DIGEST}" \
         --label "org.opencontainers.image.base.digest=''${parent_digest}" \
         --label "org.opencontainers.image.created=''${created}" \

@@ -8,11 +8,20 @@ All notable changes to Finite are documented here. The format follows
 
 ### Changed
 
+- Replaced the Dell-specific Bluefin images with vendor-neutral `bluefin-next`
+  and `bluefin-dx-next` images pinned to Fedora's signed 7.2 runtime kernel.
+- Decoupled boot-image hardware from Home Manager hardware compatibility, so
+  the Dell display policy remains available without a Dell-specific image.
 - Migrated Nix substitutions and proof publication to the Finite-owned
   `finite-os.cachix.org` cache and removed the last active former-name
   exception from the repository.
 - Increased GitHub-hosted Nix capacity to four jobs with four cores per
   derivation; workstation examples remain capped at two jobs.
+
+### Removed
+
+- Removed the Dell bootc overlay, external camera-module and libcamera builds,
+  Firefox camera workaround, and other image-level Dell customizations.
 
 ## [0.5.0] - 2026-08-26
 

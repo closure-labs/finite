@@ -27,6 +27,7 @@
          : "''${IMAGE_REF:?IMAGE_REF is required}"
       expected_foundation="$(jq -er --arg profile "''${BUILD_PROFILE}" '.profiles[$profile].foundation' ${generated}/bootc/generated/profile-catalog.json)"
       expected_hardware="$(jq -er --arg profile "''${BUILD_PROFILE}" '.profiles[$profile].hardware' ${generated}/bootc/generated/profile-catalog.json)"
+      expected_kernel_release="$(jq -r --arg profile "''${BUILD_PROFILE}" '.profiles[$profile].kernelRelease // empty' ${generated}/bootc/generated/profile-catalog.json)"
       cosign_command="''${FINITE_COSIGN:-cosign}"
       skopeo_command="''${FINITE_SKOPEO:-skopeo}"
 
@@ -46,6 +47,7 @@
            --arg build_input "''${BUILD_INPUT}" \
            --arg foundation "''${expected_foundation}" \
            --arg hardware "''${expected_hardware}" \
+           --arg kernel_release "''${expected_kernel_release}" \
            --arg parent_digest "''${EXPECTED_PARENT_DIGEST}" \
            --arg profile "''${BUILD_PROFILE}" \
            --arg revision "''${EXPECTED_REVISION}" \
@@ -56,6 +58,7 @@
              $labels["io.finite.build.profile"] == $profile and
              $labels["io.finite.foundation"] == $foundation and
              $labels["io.finite.hardware"] == $hardware and
+             ($kernel_release == "" or $labels["ostree.linux"] == $kernel_release) and
              $labels["io.finite.upstream.digest"] == $upstream_digest and
              $labels["org.opencontainers.image.base.digest"] == $parent_digest and
              $labels["org.opencontainers.image.revision"] == $revision and
@@ -103,6 +106,11 @@
       upstream_digest="$(jq -er --arg profile "''${profile}" '.[] | select(.profile == $profile) | .upstream.digest' ${generated}/bootc/generated/image-matrix.json)"
       foundation="$(jq -er --arg profile "''${profile}" '.profiles[$profile].foundation' ${generated}/bootc/generated/profile-catalog.json)"
       hardware="$(jq -er --arg profile "''${profile}" '.profiles[$profile].hardware' ${generated}/bootc/generated/profile-catalog.json)"
+      kernel_release="$(jq -r --arg profile "''${profile}" '.profiles[$profile].kernelRelease // empty' ${generated}/bootc/generated/profile-catalog.json)"
+      kernel_label=()
+      if [[ -n "''${kernel_release}" ]]; then
+        kernel_label+=(--label "ostree.linux=''${kernel_release}")
+      fi
       if [[ "''${upstream_image}" == *bluefin-dx ]]; then
         source_name=bluefin-dx
       else
@@ -121,6 +129,7 @@
         --label "io.finite.build.profile=''${profile}" \
         --label "io.finite.foundation=''${foundation}" \
         --label "io.finite.hardware=''${hardware}" \
+        "''${kernel_label[@]}" \
         --label "io.finite.upstream.digest=''${upstream_digest}" \
         --label "org.opencontainers.image.base.digest=''${upstream_digest}" \
         --tag "''${tag}" \

@@ -61,10 +61,13 @@
       if [[ -r "$running" && "''${FINITE_SKIP_FOUNDATION_CHECK:-false}" != true ]]; then
         running_foundation=$(jq -er '.foundation' "$running")
         running_hardware=$(jq -er '.hardware' "$running")
-        [[ "$foundation" == "$running_foundation" && "$hardware" == "$running_hardware" ]] || {
-          echo "Requested $foundation/$hardware does not match running Finite foundation $running_foundation/$running_hardware" >&2
+        if [[ "$foundation" != "$running_foundation" ]] ||
+          ! jq -e --arg hardware "$hardware" --arg image_hardware "$running_hardware" '
+            .hardware[$hardware].imageHardware | index($image_hardware) != null
+          ' ${catalog} >/dev/null; then
+          echo "Requested $foundation/$hardware is incompatible with running Finite image $running_foundation/$running_hardware" >&2
           exit 2
-        }
+        fi
       fi
 
       jq -n \

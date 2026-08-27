@@ -2,7 +2,7 @@
 set -uo pipefail
 
 readonly policy_name="finite-dell-xps-9350-panel"
-readonly default_config="/usr/share/finite/dell-xps-9350-panel.conf"
+readonly default_config="${FINITE_PANEL_DEFAULT_CONFIG:-/usr/share/finite/dell-xps-9350-panel.conf}"
 
 PANEL_POLICY_ENABLED=true
 PANEL_CONNECTOR=eDP-1

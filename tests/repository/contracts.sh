@@ -20,17 +20,23 @@ jq -e '
   (.profiles | length) == 4 and
   all(.profiles[]; .parent == null and .roles == [] and (.foundation == "bluefin" or .foundation == "bluefin-dx")) and
   .profiles["bluefin-generic"].modules == ["base", "hardware-generic-x86_64"] and
-  .profiles["bluefin-dx-dell-xps-9350-intel"].modules == ["base", "hardware-dell-xps-9350-intel"]
+  .profiles["bluefin-generic"].kernelRelease == null and
+  .profiles["bluefin-next"].modules == ["base", "hardware-next-x86_64"] and
+  .profiles["bluefin-next"].kernelRelease == "7.2.0-61.fc45.x86_64" and
+  .profiles["bluefin-dx-next"].modules == ["base", "hardware-next-x86_64"] and
+  .profiles["bluefin-dx-next"].kernelRelease == "7.2.0-61.fc45.x86_64"
 ' "${catalog}" >/dev/null
 jq -e '
   map(.profile) == [
-    "bluefin-dell-xps-9350-intel",
-    "bluefin-dx-dell-xps-9350-intel",
+    "bluefin-next",
+    "bluefin-dx-next",
     "bluefin-dx-generic",
     "bluefin-generic"
   ] and
   all(.[];
     .stage == "root" and
+    ((.hardware == "next-x86_64" and .kernelRelease == "7.2.0-61.fc45.x86_64") or
+      (.hardware == "generic-x86_64" and .kernelRelease == null)) and
     (.build_input | test("^[0-9a-f]{64}$")) and
     (.upstream.digest | test("^sha256:[0-9a-f]{64}$")))
 ' "${matrix}" >/dev/null
@@ -41,21 +47,28 @@ jq -e '
   (.roles | keys) == ["developer", "executive", "it", "sales", "support", "trainer"] and
   .foundations.bluefin.template == "home-bluefin" and
   .foundations["bluefin-dx"].template == "home-bluefin-dx" and
+  .foundations.bluefin.profiles == {
+    "generic-x86_64": "bluefin-generic", "next-x86_64": "bluefin-next"
+  } and
+  .foundations["bluefin-dx"].profiles == {
+    "generic-x86_64": "bluefin-dx-generic", "next-x86_64": "bluefin-dx-next"
+  } and
+  all(.hardware[]; .imageHardware == ["generic-x86_64", "next-x86_64"]) and
   all(.compatibility[]; (.hardware | length) == 2 and (.roles | length) == 6) and
   all(.roles[]; (.foundations | sort) == ["bluefin", "bluefin-dx"])
 ' "${home_catalog}" >/dev/null
 
 for profile in \
 	bluefin-generic \
-	bluefin-dell-xps-9350-intel \
+	bluefin-next \
 	bluefin-dx-generic \
-	bluefin-dx-dell-xps-9350-intel; do
+	bluefin-dx-next; do
 	grep -qF -- "- ${profile}" .github/workflows/build-installer.yml
 done
 grep -A24 -F 'name: Validate installer' .github/workflows/build.yml |
 	grep -qF 'end-to-end: true'
 if rg -q \
-	'base-generic-x86_64|base-dell-xps-9350-intel|sales-generic|sales-dell|support-generic|support-dell|developer-generic|trainer-generic|executive-generic|it-generic' \
+	'bluefin-(dx-)?dell-xps-9350-intel|base-generic-x86_64|base-dell-xps-9350-intel|sales-generic|sales-dell|support-generic|support-dell|developer-generic|trainer-generic|executive-generic|it-generic' \
 	.github/workflows; then
 	echo 'A removed fixed profile tag remains in the workflows' >&2
 	exit 1
@@ -77,6 +90,7 @@ test -f bootc/Containerfile.derived
 test -f sources/bluefin.json
 test -f sources/bluefin-dx.json
 test -f sources/dakota-installer.json
+test -f sources/kernel-next.json
 test -f secretspec.toml
 jq -e '
   .schema == 1 and
@@ -106,6 +120,24 @@ jq -e '
   .live_image.architecture == "amd64" and
   (.live_image.digest | test("^sha256:[0-9a-f]{64}$"))
 ' sources/dakota-installer.json >/dev/null
+jq -e '
+  .schema == 1 and
+  .release == "7.2.0-61.fc45.x86_64" and
+  (.baseUrl | startswith("https://kojipkgs.fedoraproject.org/packages/kernel/7.2.0/61.fc45/")) and
+  (.packages | map(.name)) == [
+    "kernel", "kernel-core", "kernel-modules-core", "kernel-modules", "kernel-modules-extra"
+  ] and
+  all(.packages[]; (.sha256 | test("^[0-9a-f]{64}$"))) and
+  (.requiredModules | sort) == [
+    "intel_cvs", "intel_ipu7", "intel_ipu7_isys", "ipu_bridge", "ov02c10"
+  ]
+' sources/kernel-next.json >/dev/null
+kernel_root="${generated_root}/bootc/generated/kernel-next"
+test -f "${kernel_root}/kernel-next.json"
+while IFS=$'\t' read -r file sha256; do
+	test -f "${kernel_root}/${file}"
+	printf '%s  %s\n' "${sha256}" "${kernel_root}/${file}" | sha256sum --check --strict
+done < <(jq -r '.packages[] | [.file, .sha256] | @tsv' sources/kernel-next.json)
 grep -qFx 'ARG BASE_REF' bootc/Containerfile
 if grep -qF 'bluefin:stable' bootc/Containerfile; then
 	echo 'Containerfile contains a mutable Bluefin tag' >&2
@@ -114,6 +146,15 @@ fi
 grep -qF 'COPY modules/aspects/' bootc/Containerfile
 grep -qF '/tmp/finite-build/bootc/builder/full.sh' bootc/Containerfile
 grep -qF '/tmp/finite-build/bootc/builder/derived.sh' bootc/Containerfile.derived
+for build_driver in \
+	lib/ci-applications/image-operations.nix \
+	lib/ci-applications/profile-stage.nix \
+	lib/ci-applications/validate-image-shard.nix; do
+	grep -qF 'kernel_label+=(--label "ostree.linux=' "${build_driver}"
+done
+# shellcheck disable=SC2016
+grep -qF '$labels["ostree.linux"] == $kernel_release' \
+	lib/ci-applications/image-operations.nix
 grep -qF 'name: Classify and plan' .github/workflows/build.yml
 grep -qF 'name: Validate repository and workflows' .github/workflows/build.yml
 grep -qF 'needs: [prepare, checks, build-candidate' .github/workflows/build.yml
@@ -137,14 +178,25 @@ grep -qF "local profile_catalog=\"\$2\"" bootc/builder/lib/finalize-profile.sh
 test -x modules/aspects/base/apply.sh
 test -d modules/aspects/base/rootfs
 test -f modules/aspects/capabilities/devops/default.nix
-test -x modules/aspects/hardware/dell-xps-9350-intel/apply.sh
-test -d modules/aspects/hardware/dell-xps-9350-intel/rootfs
-grep -qF 'export CCACHE_DISABLE=1' \
-	modules/aspects/hardware/dell-xps-9350-intel/build/install-libcamera-ov02c10-ipa.sh
-grep -qF -- "--add \"\${required_initramfs_dracut_modules[*]}\"" \
-	modules/aspects/hardware/dell-xps-9350-intel/configure.sh
-grep -qF 'local build_packages=(dracut-live git make)' \
-	modules/aspects/hardware/dell-xps-9350-intel/configure.sh
+test -x modules/aspects/hardware/next-x86_64/apply.sh
+test -f modules/aspects/hardware/next-x86_64/default.nix
+test -f modules/aspects/hardware/dell-xps-9350-intel/default.nix
+test ! -e modules/aspects/hardware/dell-xps-9350-intel/apply.sh
+test ! -e modules/aspects/hardware/dell-xps-9350-intel/rootfs
+# shellcheck disable=SC2016
+grep -qF 'dnf5 -y install --allowerasing "${rpms[@]}"' \
+	modules/aspects/hardware/next-x86_64/apply.sh
+# shellcheck disable=SC2016
+grep -qF 'modinfo -k "${release}" -F intree' \
+	modules/aspects/hardware/next-x86_64/apply.sh
+if rg -n 'libcamera|hm1092|updates/finite|configure-firefox-pipewire-camera' \
+	modules/aspects/hardware/next-x86_64/apply.sh \
+	modules/aspects/hardware/next-x86_64/default.nix \
+	templates/home-manager/modules/aspects/hardware/dell-xps-9350-intel/home.nix \
+	templates/home-manager/modules/aspects/hardware/dell-xps-9350-intel/dell-xps-9350-panel-policy; then
+	echo 'The next image or Dell Home Manager aspect retains a camera workaround' >&2
+	exit 1
+fi
 test -f modules/aspects/roles/support/default.nix
 
 if find modules/aspects/roles -type d \( -path '*/rootfs/files' -o -path '*/rootfs/manifests' \) | grep -q .; then

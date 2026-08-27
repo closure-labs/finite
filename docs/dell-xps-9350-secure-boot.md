@@ -1,38 +1,35 @@
 # Dell XPS 13 9350 Secure Boot status
 
-The `dell-xps-9350-intel` image installs unsigned out-of-tree camera modules
-from the pinned SVP7500 fix pack. Keep Secure Boot and kernel module-signature
-enforcement disabled for this profile.
-
-Finite selects the fix pack's `intel_cvs`, patched `ipu_bridge`, and HM1092
-modules. It keeps the in-tree INT3472 driver when that driver exposes the IR
-flood LED interface.
+The next images use Fedora's signed `7.2.0-61.fc45` kernel and its in-tree IPU7
+camera drivers. Finite does not install modules under `updates/`, compile a
+kernel module, or weaken module-signature enforcement. Secure Boot can remain
+enabled under the normal Bluefin/Fedora trust model.
 
 ## Verify installed modules
 
-```bash
-uname -r
-cat /usr/share/finite/dell-ipu7/source-provenance
-
-for module in intel_cvs ipu_bridge hm1092; do
-  modinfo -n "$module"
-  modinfo -F vermagic "$module"
-  modinfo -F signer "$module"
+```console
+release=$(uname -r)
+for module in intel_cvs ipu_bridge intel_ipu7 intel_ipu7_isys ov02c10; do
+  path=$(modinfo -k "$release" -F filename "$module")
+  printf '%s: %s\n' "$module" "$path"
+  modinfo -k "$release" -F intree "$module"
+  modinfo -k "$release" -F signer "$module"
 done
 ```
 
-Expected module paths contain `updates/finite`. The recorded kernel release
-and each module's vermagic must match `uname -r`; the signer is empty.
+Every path must start with `/lib/modules/$release/kernel/`, every `intree` value
+must be `Y`, and every signer must identify the Fedora kernel signing key.
 
 ## Verify runtime binding
 
-```bash
+```console
 readlink -f /sys/bus/i2c/devices/i2c-INTC10DE:00/driver
 readlink -f /sys/bus/i2c/devices/i2c-OVTI02C1:00/driver
 cam -l
 journalctl -k -b --no-pager | \
-  rg -i 'ipu7|intel.cvs|ipu-bridge|hm1092|ov02c10|module verification'
+  rg -i 'ipu7|intel.cvs|ipu-bridge|ov02c10|module verification'
 ```
 
-Recheck paths, vermagic, provider selection, and camera operation after every
-kernel update.
+The expected camera path contains no HM1092 or external Finite module. Recheck
+the release, provider paths, signatures, and capture after changing the pinned
+kernel source lock.

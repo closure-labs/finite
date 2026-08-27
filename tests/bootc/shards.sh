@@ -102,6 +102,7 @@ fi
 
 for invalid_shard in \
 	'{}' \
+	"$(jq -c '.[0] | .kernelRelease = "7.1.6-201.fc44.x86_64" | [.]' "${generated_root}/bootc/generated/image-matrix.json")" \
 	"$(jq -c '.[0] | .build_input = ("c" * 64) | [.]' "${generated_root}/bootc/generated/image-matrix.json")"; do
 	if PROFILE_SHARD="${invalid_shard}" \
 		FINITE_GENERATED_ROOT="${generated_root}" \

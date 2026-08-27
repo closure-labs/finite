@@ -5,13 +5,17 @@ composition:
 
 ```text
 foundation: bluefin | bluefin-dx
-hardware:   generic-x86_64 | dell-xps-9350-intel
+image:      generic-x86_64 | next-x86_64
+home:       generic-x86_64 | dell-xps-9350-intel
 roles:      any subset of developer, sales, trainer, support, executive, it
 ```
 
-The running image records explicit `foundation` and `hardware` fields in
-`/usr/share/finite/profile.json`. First-login and `finite-configure` treat those
-fields as authoritative; a YAML seed for a different image is rejected.
+The running image records explicit `foundation` and image `hardware` fields in
+`/usr/share/finite/profile.json`. A user's profile records the selected Home
+Manager hardware aspect instead. First-login keeps the foundation authoritative
+and accepts only Home Manager hardware declared compatible with the running
+generic or next image. On an XPS 13 9350 it selects the Dell Home Manager aspect
+automatically; that aspect does not change the boot image or camera stack.
 
 ## Profile data
 
@@ -32,8 +36,9 @@ Provisioning accepts YAML or JSON. `finite-home-init` normalizes it to JSON:
 
 The account values are discovered with `id` and `getent`. Supplied identity
 values must match. Unknown or duplicate roles, unknown foundations or hardware,
-extra schema fields, malformed documents, and running-image mismatches fail
-before any deployed file changes.
+incompatible image/Home Manager hardware pairs, extra schema fields, malformed
+documents, and running-foundation mismatches fail before any deployed file
+changes.
 
 The normalized profile lives at `~/.config/finite/profile.json`. The complete
 standalone flake lives at `~/.config/home-manager`: its Den module, every Finite

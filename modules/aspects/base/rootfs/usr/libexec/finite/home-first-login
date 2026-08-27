@@ -65,7 +65,18 @@ if [[ -r "$profile" ]] && jq -e '
 fi
 
 foundation=$(jq -er '.foundation' "$running")
-hardware=$(jq -er '.hardware' "$running")
+image_hardware=$(jq -er '.hardware' "$running")
+hardware=generic-x86_64
+dmi_root="${FINITE_DMI_ROOT:-/sys/class/dmi/id}"
+if [[ -r "${dmi_root}/sys_vendor" && -r "${dmi_root}/product_name" ]] &&
+	[[ "$(<"${dmi_root}/sys_vendor")" == "Dell Inc." ]] &&
+	[[ "$(<"${dmi_root}/product_name")" == "XPS 13 9350" ]]; then
+	hardware=dell-xps-9350-intel
+fi
+case "${image_hardware}" in
+	generic-x86_64 | next-x86_64) ;;
+	*) echo "Unsupported Finite image hardware: ${image_hardware}" >&2; false ;;
+esac
 if ! roles=$(zenity --list --checklist \
 	--title='Configure Finite' \
 	--text='Select any roles for your Home Manager environment. Leaving every role unchecked installs the base environment.' \

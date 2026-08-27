@@ -11,6 +11,25 @@
   version,
 }: let
   sourceRoot = ./..;
+  kernelNextLockFile = sourceRoot + "/sources/kernel-next.json";
+  kernelNextLock = builtins.fromJSON (builtins.readFile kernelNextLockFile);
+  kernelReleaseFor = profile:
+    if profile.hardware == "next-x86_64"
+    then kernelNextLock.release
+    else null;
+  kernelNextRpms =
+    map (
+      package:
+        package
+        // {
+          source = pkgs.fetchurl {
+            name = package.file;
+            url = "${kernelNextLock.baseUrl}/${package.file}";
+            inherit (package) sha256;
+          };
+        }
+    )
+    kernelNextLock.packages;
   relativePath = path:
     lib.removePrefix "${toString sourceRoot}/" (toString path);
   pathKind = path: let
@@ -52,6 +71,7 @@
         tags
         upstream
         ;
+      kernelRelease = kernelReleaseFor profile;
       buildSteps =
         map (step: {
           inherit (step) name order;
@@ -67,13 +87,14 @@
   in
     builtins.hashString "sha256" (lib.concatStringsSep "\n" ([evaluatedProfile] ++ fileHashes));
   matrix =
-    map (name: {
-      inherit (profiles.${name}) foundation hardware stage;
+    map (name: let
+      profile = profiles.${name};
+    in {
+      inherit (profile) foundation hardware parent stage upstream;
       build_input = buildInput name;
+      kernelRelease = kernelReleaseFor profile;
       profile = name;
-      parent = profiles.${name}.parent;
-      tags = profiles.${name}.tagsString;
-      upstream = profiles.${name}.upstream;
+      tags = profile.tagsString;
     })
     profileOrder;
   catalog = {
@@ -93,6 +114,7 @@
           stage
           tags
           ;
+        kernelRelease = kernelReleaseFor profile;
         buildSteps =
           map (step: {
             inherit (step) name order;
@@ -118,14 +140,14 @@
         _: foundation: {
           inherit (foundation) name template;
           profiles = lib.mapAttrs (_: profile: profile.name) foundation.profiles;
-          hardware = builtins.attrNames foundation.profiles;
+          hardware = domainCatalog.homeHardwareNames;
           roles = roleNames;
         }
       )
       domainCatalog.foundationsByName;
     hardware = lib.genAttrs domainCatalog.homeHardwareNames (
       name: {
-        inherit (domainCatalog.hardwareByName.${name}) label name;
+        inherit (domainCatalog.hardwareByName.${name}) imageHardware label name;
       }
     );
     roles =
@@ -137,8 +159,8 @@
       )
       domainCatalog.rolesByName;
     compatibility =
-      lib.mapAttrs (_: foundation: {
-        hardware = builtins.attrNames foundation.profiles;
+      lib.mapAttrs (_: _foundation: {
+        hardware = domainCatalog.homeHardwareNames;
         roles = roleNames;
       })
       domainCatalog.foundationsByName;
@@ -150,11 +172,17 @@
 in
   pkgs.runCommand "finite-generated-${version}" {} ''
     mkdir -p "$out/bootc/generated"
+    mkdir -p "$out/bootc/generated/kernel-next"
     mkdir -p "$out/home-manager-template"
     cp ${matrixFile} "$out/bootc/generated/image-matrix.json"
     cp ${catalogFile} "$out/bootc/generated/profile-catalog.json"
     cp ${homeCatalogFile} "$out/bootc/generated/home-profile-catalog.json"
     cp ${upstreamFile} "$out/bootc/generated/upstreams.json"
+    cp ${kernelNextLockFile} "$out/bootc/generated/kernel-next/kernel-next.json"
+    ${lib.concatMapStringsSep "\n" (package: ''
+        cp ${package.source} "$out/bootc/generated/kernel-next/${package.file}"
+      '')
+      kernelNextRpms}
     cp ${../sources/determinate-nix.json} "$out/bootc/generated/determinate-nix.json"
     cp ${determinateNixInstaller} "$out/bootc/generated/determinate-nix-installer"
     cp ${determinateNixSelinuxPolicy} "$out/bootc/generated/determinate-nix.pp"

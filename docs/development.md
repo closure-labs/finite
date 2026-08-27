@@ -68,7 +68,7 @@ and invokes Podman:
 nix shell --accept-flake-config .#ci-image-build -c finite-image-build \
   bluefin-generic localhost/finite:bluefin-generic
 nix shell --accept-flake-config .#ci-image-build -c finite-image-build \
-  bluefin-dx-dell-xps-9350-intel localhost/finite:bluefin-dx-dell
+  bluefin-dx-next localhost/finite:bluefin-dx-next
 ```
 
 Profile names and their stable ordering are declared in
@@ -88,6 +88,7 @@ The output contains:
 - `bootc/generated/profile-catalog.json`
 - `bootc/generated/upstreams.json`
 - `bootc/generated/home-profile-catalog.json`
+- `bootc/generated/kernel-next/` with the hash-locked Fedora 7.2 RPM set
 
 Build consumers receive this store path directly. To make a writable copy for
 inspection, copy the desired files from the `result` symlink.

@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "release": "7.2.0-61.fc45.x86_64",
+  "baseUrl": "https://kojipkgs.fedoraproject.org/packages/kernel/7.2.0/61.fc45/x86_64",
+  "packages": [
+    {
+      "name": "kernel",
+      "file": "kernel-7.2.0-61.fc45.x86_64.rpm",
+      "sha256": "27de6f58b9796bf767b6898b202213bd35b662559c72e04c2854f7a8e2cf349f"
+    },
+    {
+      "name": "kernel-core",
+      "file": "kernel-core-7.2.0-61.fc45.x86_64.rpm",
+      "sha256": "7ea91c79720b45ba0c44a819eb013e14e810dd296e5a40244327413b0c6c902e"
+    },
+    {
+      "name": "kernel-modules-core",
+      "file": "kernel-modules-core-7.2.0-61.fc45.x86_64.rpm",
+      "sha256": "43daad0987e15facdfa7c6e43579576785455f7c87cb33e524ade782cfb6f55d"
+    },
+    {
+      "name": "kernel-modules",
+      "file": "kernel-modules-7.2.0-61.fc45.x86_64.rpm",
+      "sha256": "e62698a9d331f374efba8f1d4c1de7a0499fb2ddcfdd8f0ac5c6ed68b5712aed"
+    },
+    {
+      "name": "kernel-modules-extra",
+      "file": "kernel-modules-extra-7.2.0-61.fc45.x86_64.rpm",
+      "sha256": "f4a359fb6ade896aac98f46f5bb96e3e407e41ade63deb431d3c39aac511c78b"
+    }
+  ],
+  "requiredModules": [
+    "intel_cvs",
+    "ipu_bridge",
+    "intel_ipu7",
+    "intel_ipu7_isys",
+    "ov02c10"
+  ]
+}

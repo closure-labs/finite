@@ -33,6 +33,19 @@ jq -e \
   .roles == ["developer", "support"] and
   .identity == {username: $username, homeDirectory: $home}
 ' "${test_root}/profile.json" >/dev/null
+printf '%s\n' '{"foundation":"bluefin-dx","hardware":"next-x86_64"}' \
+	>"${test_root}/running-next.json"
+FINITE_SKIP_FOUNDATION_CHECK=false \
+	FINITE_RUNNING_PROFILE_PATH="${test_root}/running-next.json" \
+	"${profile_command}" \
+	--foundation bluefin-dx --hardware dell-xps-9350-intel \
+	--format yaml >/dev/null
+if "${profile_command}" \
+	--foundation bluefin --hardware next-x86_64 \
+	--format yaml >/dev/null 2>&1; then
+	echo 'Profile generator accepted boot-only next-x86_64 as Home Manager hardware' >&2
+	exit 1
+fi
 
 for invalid_roles in developer,developer unknown; do
 	if "${profile_command}" \
@@ -62,7 +75,8 @@ for required in \
 	flake.nix flake.lock finite-template.json profile.json \
 	modules/finite.nix modules/finite-configure modules/finite-home-apply \
 	modules/aspects/base/home.nix \
-	modules/aspects/hardware/dell-xps-9350-intel/home.nix; do
+	modules/aspects/hardware/dell-xps-9350-intel/home.nix \
+	modules/aspects/hardware/dell-xps-9350-intel/dell-xps-9350-panel-policy; do
 	test -f "${template}/${required}"
 done
 jq -e '.schema == 1 and .generator == "finite-home-init" and (.version | length > 0)' \
@@ -234,10 +248,14 @@ chmod +x "${test_root}/login-bin/"*
 
 printf '%s\n' '{"foundation":"bluefin","hardware":"generic-x86_64"}' \
 	>"${test_root}/running.json"
+mkdir -p "${test_root}/dmi"
+printf '%s\n' 'Finite Test Vendor' >"${test_root}/dmi/sys_vendor"
+printf '%s\n' 'Finite Test System' >"${test_root}/dmi/product_name"
 export PATH="${test_root}/login-bin:${PATH}"
 export FINITE_NIX_COMMAND="${test_root}/login-bin/nix"
 export FINITE_HOME_INIT_COMMAND="${test_root}/login-bin/home-init"
 export FINITE_RUNNING_PROFILE_PATH="${test_root}/running.json"
+export FINITE_DMI_ROOT="${test_root}/dmi"
 export FINITE_HOME_PROFILE_PATH="${test_root}/login-profile.json"
 export FINITE_HOME_FLAKE_PATH="${test_root}/login-home-manager"
 export FINITE_PROVISIONED_PROFILE_PATH="${test_root}/no-seed.yaml"
@@ -259,7 +277,20 @@ grep -qF -- '--error' "${FINITE_TEST_ZENITY_LOG}"
 FINITE_TEST_SELECTED_ROLES='developer,it' bash "${first_login}"
 grep -qF -- '--profile ' "${FINITE_TEST_INIT_LOG}"
 tail -n 1 "${FINITE_TEST_INIT_LOG}" |
-	jq -e '.roles == ["developer", "it"] and .identity == {}' >/dev/null
+	jq -e '.hardware == "generic-x86_64" and .roles == ["developer", "it"] and .identity == {}' >/dev/null
+
+printf '%s\n' '{"foundation":"bluefin","hardware":"next-x86_64"}' \
+	>"${test_root}/running.json"
+printf '%s\n' 'Dell Inc.' >"${test_root}/dmi/sys_vendor"
+printf '%s\n' 'XPS 13 9350' >"${test_root}/dmi/product_name"
+: >"${FINITE_TEST_INIT_LOG}"
+FINITE_TEST_SELECTED_ROLES='' bash "${first_login}"
+tail -n 1 "${FINITE_TEST_INIT_LOG}" |
+	jq -e '.foundation == "bluefin" and .hardware == "dell-xps-9350-intel" and .roles == []' >/dev/null
+printf '%s\n' '{"foundation":"bluefin","hardware":"generic-x86_64"}' \
+	>"${test_root}/running.json"
+printf '%s\n' 'Finite Test Vendor' >"${test_root}/dmi/sys_vendor"
+printf '%s\n' 'Finite Test System' >"${test_root}/dmi/product_name"
 
 printf '%s\n' 'schema: 1' >"${test_root}/seed.yaml"
 export FINITE_PROVISIONED_PROFILE_PATH="${test_root}/seed.yaml"
@@ -298,8 +329,14 @@ if grep -qF 'FINITE_RUNNING_PROFILE_PATH' "${template}/modules/finite-home-apply
 	echo 'Local role changes must preserve bootstrap-set foundation and hardware variables' >&2
 	exit 1
 fi
-grep -qF 'ConditionPathIsExecutable = "/usr/libexec/finite/dell-xps-9350-panel-policy"' \
+# shellcheck disable=SC2016
+grep -qF 'ExecStart = "${lib.getExe panelPolicy} --watch"' \
 	"${template}/modules/aspects/hardware/dell-xps-9350-intel/home.nix"
+if rg -n 'firefox|pipewire|camera' \
+	"${template}/modules/aspects/hardware/dell-xps-9350-intel"; then
+	echo 'Dell Home Manager aspect retains the obsolete camera workaround' >&2
+	exit 1
+fi
 # Match literal shell and jq expressions.
 # shellcheck disable=SC2016
 grep -qF 'jq -e --arg role "$role" '\''.roles | index($role) != null'\'' "$current"' \
@@ -312,3 +349,4 @@ fi
 
 bash -n "${first_login}" modules/aspects/base/rootfs/usr/libexec/finite/home-init \
 	"${template}/modules/finite-configure" "${template}/modules/finite-home-apply"
+bash -n "${template}/modules/aspects/hardware/dell-xps-9350-intel/dell-xps-9350-panel-policy"

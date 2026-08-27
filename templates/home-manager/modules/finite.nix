@@ -52,7 +52,6 @@ in
             inherit inputs;
             finiteHomeAssets = {
               devops = ./aspects/capabilities/devops/rootfs/usr/share/finite;
-              dell = ./aspects/hardware/dell-xps-9350-intel/rootfs/usr/share/finite;
             };
           };
         };

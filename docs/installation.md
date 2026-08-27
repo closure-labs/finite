@@ -5,16 +5,16 @@ Finite publishes four foundation images:
 | Tag | Foundation and hardware |
 | --- | --- |
 | `bluefin-generic` (`latest`) | Bluefin, generic x86-64 |
-| `bluefin-dell-xps-9350-intel` | Bluefin, Dell XPS 13 9350 |
+| `bluefin-next` | Bluefin, vendor-neutral x86-64 with Fedora 7.2 |
 | `bluefin-dx-generic` | Bluefin DX, generic x86-64 |
-| `bluefin-dx-dell-xps-9350-intel` | Bluefin DX, Dell XPS 13 9350 |
+| `bluefin-dx-next` | Bluefin DX, vendor-neutral x86-64 with Fedora 7.2 |
 
 Roles are not image tags. Every combination of the six roles is selected per
 user through Home Manager after the foundation boots.
 
-Finite-branded rEFInd entries are installed by the Dell hardware image. All
-four images display the Finite mark in the Plymouth splash after a boot entry
-is selected.
+The next images pin Fedora's `7.2.0-61.fc45` runtime kernel packages. They do
+not install vendor-specific rootfs overlays, external kernel modules, or custom
+camera userspace.
 
 ## Switch an existing bootc system
 
@@ -47,8 +47,9 @@ Choosing Configure with no roles creates the base-only environment. Canceling
 or closing the dialog writes nothing, and the selector returns at the next
 graphical login. Build or activation errors are shown graphically, recorded in
 the user journal, and retried on a later login. Run `finite-configure` at any
-time to change the selected roles; the running image remains authoritative for
-foundation and hardware.
+time to change the selected roles. The running image remains authoritative for
+the foundation, while Home Manager hardware tuning must declare compatibility
+with its generic or next image hardware.
 
 ## Provision with cloud-init
 

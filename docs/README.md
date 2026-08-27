@@ -1,30 +1,38 @@
-# Finite documentation
+# Finite technical documentation
 
-Start with the guide that matches what you want to accomplish.
+The project README is the short introduction. This directory is the reference
+for installing, configuring, developing, and operating Finite.
 
-## Use Finite
+## Start here
 
-- [Install and update Finite](installation.md) on an existing bootc system
-  or with the graphical installer.
-- [Use Finite on a Dell XPS 13 9350](dell-xps-9350.md), including
-  boot branding, authentication, battery, display, power, and camera behavior.
+| Goal | Guide | What it covers |
+| --- | --- | --- |
+| Install or update a workstation | [Installation and updates](installation.md) | Image tags, bootc switching and rollback, first login, provisioning, ISO verification, and the Determinate Nix lifecycle |
+| Configure a user environment | [Foundations, hardware, and roles](configuration.md) | Profile schema, Home Manager bootstrap, templates, compatibility, and the domain catalog |
+| Diagnose a problem | [Troubleshooting](troubleshooting.md) | Deployment state, user services, image builds, the network installer, and hardware diagnostics |
 
-## Build and customize Finite
+## Hardware reference
 
-- [Build and develop with Nix](development.md) using the pinned development
-  shell, brand assets, image applications, generated outputs, and repository
-  checks.
-- [Customize profiles and aspects](configuration.md) in the typed Den graph,
-  including runtime configuration and new profile composition.
+- [Dell XPS 13 9350](dell-xps-9350.md) documents the vendor-neutral next image,
+  optional Home Manager display policy, and IPU7 camera checks.
+- [Dell XPS 13 9350 Secure Boot](dell-xps-9350-secure-boot.md) records the Fedora
+  7.2 in-tree module and signature contract.
 
-## Operate and maintain Finite
+## Engineering reference
 
-- [Understand CI, publication, and releases](ci-and-releases.md), including
-  sharded candidate validation, signed images, trusted updates, and release
-  promotion.
-- [Troubleshoot Finite](troubleshooting.md) with deployment, repository,
-  image-build, installer, and Dell hardware diagnostics.
-- [Review Dell Secure Boot status](dell-xps-9350-secure-boot.md) for the signed
-  kernel and external camera-module boundary.
+- [Development](development.md) covers the pinned Nix shell, repository layout,
+  generated catalogs, focused checks, image applications, and brand assets.
+- [CI and releases](ci-and-releases.md) describes change classification,
+  sharded candidate validation, installer caching, attestations, trusted update
+  automation, promotion, and release controls.
 
-Release history is maintained in the project [changelog](../CHANGELOG.md).
+## Project records
+
+- [Changelog](../CHANGELOG.md) records user-visible changes by release.
+- [Repository security policy](ci-and-releases.md#repository-security-policy)
+  explains the checked-in GitHub Actions, token, scanning, and environment
+  settings and how to audit them.
+
+Documentation should explain behavior and interfaces; the Nix modules,
+schemas, tests, and checked-in GitHub policy remain the executable source of
+truth.

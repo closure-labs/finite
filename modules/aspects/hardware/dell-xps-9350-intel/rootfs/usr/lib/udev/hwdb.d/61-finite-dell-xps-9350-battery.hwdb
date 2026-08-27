@@ -1,3 +1,0 @@
-# Keep UPower's default 75-80% charge policy explicit for the Dell XPS 13 9350.
-battery:*:*:dmi:*:svnDellInc.:pnXPS139350:*
- CHARGE_LIMIT=75,80

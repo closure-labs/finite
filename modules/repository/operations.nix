@@ -16,6 +16,7 @@ in {
         features.base
         features.capabilities.devops
         features.hardware.dell-xps-9350-intel
+        features.hardware.next-x86_64
         features.roles.support
       ];
       workflows.includes = [operations.source];
@@ -43,9 +44,9 @@ in {
         sources.bluefin
         sources.bluefin-dx
         profiles.bluefin-generic
-        profiles.bluefin-dell-xps-9350-intel
+        profiles.bluefin-next
         profiles.bluefin-dx-generic
-        profiles.bluefin-dx-dell-xps-9350-intel
+        profiles.bluefin-dx-next
       ];
       installer.includes = [operations.delivery.images];
       release.includes = [

@@ -33,7 +33,7 @@
     catalog.foundationsByName;
   hardware = lib.genAttrs catalog.homeHardwareNames (
     name: {
-      inherit (catalog.hardwareByName.${name}) label;
+      inherit (catalog.hardwareByName.${name}) imageHardware label;
       aspect = features.hardware.${name};
     }
   );

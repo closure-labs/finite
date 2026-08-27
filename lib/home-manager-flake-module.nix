@@ -94,7 +94,6 @@ in {
             finiteHomeDependencies = homeDependencies;
             finiteHomeAssets = {
               devops = ../templates/home-manager/modules/aspects/capabilities/devops/rootfs/usr/share/finite;
-              dell = ../modules/aspects/hardware/dell-xps-9350-intel/rootfs/usr/share/finite;
             };
             inputs = homeInputs;
           };
