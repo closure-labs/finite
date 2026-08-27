@@ -37,9 +37,11 @@ sudo systemctl reboot
 ## First graphical login
 
 `finite-home-first-login.service` runs independently for every local graphical
-user. If `~/.config/finite/profile.json` already exists it exits immediately.
-Otherwise it imports `/etc/finite/home-profiles/$USER.yaml` without prompting,
-or shows a Zenity checklist with all roles initially unchecked.
+user. It exits immediately only when the installed Home Manager flake is
+complete and matches the image template marker. Otherwise it reuses a valid
+`~/.config/finite/profile.json`, imports
+`/etc/finite/home-profiles/$USER.yaml` without prompting, or shows a Zenity
+checklist with all roles initially unchecked.
 
 Choosing Configure with no roles creates the base-only environment. Canceling
 or closing the dialog writes nothing, and the selector returns at the next
@@ -66,21 +68,22 @@ Attach `seed.iso` as a NoCloud configuration drive. Cloud-init writes only
 users, replace networking, or change the installer hostname. First-login
 validates and imports the seed.
 
-## Bootstrap manually
+## Initialize Home Manager manually on Finite
 
 ```console
 nix run github:closure-labs/finite#home-profile -- \
   --foundation bluefin-dx --hardware generic-x86_64 \
   --roles developer,support --format yaml >profile.yaml
-nix run github:closure-labs/finite#home-bootstrap -- --profile profile.yaml
+/usr/libexec/finite/home-init --profile profile.yaml
 ```
 
-Bootstrap validates before writing, generates a remote-input lock, builds the
-activation package, atomically replaces the managed files, and activates only
-after the build succeeds. Later updates use:
+The initializer validates before writing, copies the complete pinned flake from
+the immutable image, builds the activation package without rewriting its lock,
+swaps aside any older or incomplete Home Manager directory, and activates only
+after the build succeeds. Later local rebuilds use:
 
 ```console
-nh home switch --update-input finite
+nh home switch
 ```
 
 ## Determinate Nix lifecycle

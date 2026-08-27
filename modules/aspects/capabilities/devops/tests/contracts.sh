@@ -2,8 +2,8 @@
 set -euo pipefail
 
 aspect_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-module="${aspect_root}/default.nix"
-rootfs="${aspect_root}/rootfs"
+module="templates/home-manager/modules/aspects/capabilities/devops/home.nix"
+rootfs="templates/home-manager/modules/aspects/capabilities/devops/rootfs"
 
 for file in .zshrc aliases.zsh bindings.zsh fzf.zsh prompt.zsh starship.toml LICENSE; do
 	test -f "${rootfs}/usr/share/finite/zsh/${file}"

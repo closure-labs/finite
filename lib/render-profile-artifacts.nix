@@ -3,6 +3,7 @@
   determinateNixSelinuxFileContexts,
   determinateNixSelinuxPolicy,
   domainCatalog,
+  homeScaffold,
   lib,
   pkgs,
   profileOrder,
@@ -149,6 +150,7 @@
 in
   pkgs.runCommand "finite-generated-${version}" {} ''
     mkdir -p "$out/bootc/generated"
+    mkdir -p "$out/home-manager-template"
     cp ${matrixFile} "$out/bootc/generated/image-matrix.json"
     cp ${catalogFile} "$out/bootc/generated/profile-catalog.json"
     cp ${homeCatalogFile} "$out/bootc/generated/home-profile-catalog.json"
@@ -157,6 +159,7 @@ in
     cp ${determinateNixInstaller} "$out/bootc/generated/determinate-nix-installer"
     cp ${determinateNixSelinuxPolicy} "$out/bootc/generated/determinate-nix.pp"
     cp ${determinateNixSelinuxFileContexts} "$out/bootc/generated/nix.fc"
+    cp -R ${homeScaffold}/. "$out/home-manager-template/"
     chmod 0555 "$out/bootc/generated/determinate-nix-installer"
     chmod 0444 "$out/bootc/generated/determinate-nix.pp"
     chmod 0444 "$out/bootc/generated/nix.fc"

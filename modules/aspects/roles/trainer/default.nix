@@ -1,12 +1,3 @@
 _: {
-  den.aspects.features.roles.trainer.homeManager = {
-    home.sessionVariables.FINITE_ROLE_TRAINER = "1";
-    xdg.desktopEntries.finite-grist = {
-      name = "Grist";
-      comment = "Open Vates Grist in Firefox";
-      exec = "firefox --new-window https://grist.vates.tech";
-      icon = "firefox";
-      categories = ["Office" "WebBrowser"];
-    };
-  };
+  den.aspects.features.roles.trainer.homeManager.imports = [../../../../templates/home-manager/modules/aspects/roles/trainer/home.nix];
 }

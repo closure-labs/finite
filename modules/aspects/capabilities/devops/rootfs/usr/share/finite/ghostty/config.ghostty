@@ -1,8 +1,0 @@
-# Copy selected text to both the selection clipboard and system clipboard.
-copy-on-select = clipboard
-
-# Paste from the clipboard when right-clicking the terminal surface.
-right-click-action = paste
-
-# Use the Finite zsh shell configuration.
-command = /usr/bin/zsh

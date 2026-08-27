@@ -126,9 +126,10 @@ Plymouth watermark names remain identical.
 | `nix shell .#ci-source-update -c finite-source-update bluefin-dx` | Refresh and verify the Bluefin DX lock |
 | `nix shell .#ci-source-update -c finite-source-update determinate-nix` | Refresh the stable Determinate Nix release lock |
 | `nix run .#home-profile -- --help` | Generate a standalone Home Manager profile |
-| `nix run .#home-bootstrap -- --help` | Validate, build, and activate a standalone profile |
-| `nix flake new -t .#home-bluefin PATH` | Create the Bluefin Home Manager template |
-| `nix flake new -t .#home-bluefin-dx PATH` | Create the Bluefin DX Home Manager template |
+| `nix run .#home-init -- --help` | Validate, stage, build, and install the self-contained Home Manager flake |
+| `nix flake new -t .#home-manager PATH` | Create the canonical standalone Home Manager template |
+| `nix flake new -t .#home-bluefin PATH` | Compatibility alias; bootstrap writes the selected profile variables |
+| `nix flake new -t .#home-bluefin-dx PATH` | Compatibility alias; bootstrap writes the selected profile variables |
 | `nix run .#cloud-init -- ...` | Generate a NoCloud Home Manager seed |
 | `nix build .#syft` | Pinned Syft package |
 | `nix shell .#ci-image-sbom -c finite-image-sbom validate <file>` | Validate a normalized SPDX image software bill of materials |

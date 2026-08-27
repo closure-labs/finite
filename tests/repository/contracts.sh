@@ -161,20 +161,27 @@ fi
 test ! -e modules/aspects/base/manifests/Brewfile
 test ! -e modules/aspects/base/independently-managed-rpms.list
 test ! -e bootc/builder/lib/independently-managed-rpms.sh
-grep -qF 'bitwarden-cli' modules/aspects/base/default.nix
-grep -qF 'nixGL.wrap finiteHomeDependencies.weeklyPackages.bitwarden-desktop' \
-	modules/aspects/base/default.nix
+grep -qF 'bitwarden-cli' templates/home-manager/modules/aspects/base/home.nix
+grep -qF 'nixGL.wrap inputs.nixpkgs-weekly.legacyPackages' \
+	templates/home-manager/modules/aspects/base/home.nix
 # shellcheck disable=SC2016
 grep -qF 'den.homes.${system}.finite' lib/home-manager-flake-module.nix
 grep -qF 'den.aspects.finite-home' lib/home-manager-flake-module.nix
 grep -qF 'nh.homeFlake' lib/home-manager-flake-module.nix
 grep -qF 'zsh.shellAliases.finite-configure' lib/home-manager-flake-module.nix
-grep -qF 'finite.flakeModules.home' lib/home-profile-applications.nix
-# shellcheck disable=SC2016
-grep -qF '"$nix_command" --accept-flake-config flake lock "$workflake"' lib/home-profile-applications.nix
-grep -qF 'homeConfigurations.finite.activationPackage' lib/home-profile-applications.nix
-grep -qF 'ConditionPathExists=!%h/.config/finite/profile.json' \
-	modules/aspects/base/rootfs/usr/lib/systemd/user/finite-home-first-login.service
+grep -qF 'FINITE_HOME_TEMPLATE_PATH' lib/home-profile-applications.nix
+grep -qF 'homeConfigurations.finite.activationPackage' \
+	modules/aspects/base/rootfs/usr/libexec/finite/home-init
+grep -qF 'home-manager.previous.' \
+	modules/aspects/base/rootfs/usr/libexec/finite/home-init
+test -f templates/home-manager/finite-template.json
+test -f templates/home-manager/flake.lock
+test -f templates/home-manager/modules/aspects/base/home.nix
+if grep -qF 'ConditionPathExists=' \
+	modules/aspects/base/rootfs/usr/lib/systemd/user/finite-home-first-login.service; then
+	echo 'The login service cannot detect and replace an older Home Manager scaffold' >&2
+	exit 1
+fi
 test -L modules/aspects/base/rootfs/etc/systemd/user/graphical-session.target.wants/finite-home-first-login.service
 test -x modules/aspects/base/rootfs/usr/libexec/finite/home-first-login
 if rg -n 'den\.lib\.aspects\.resolve' --glob '*.nix' lib modules; then

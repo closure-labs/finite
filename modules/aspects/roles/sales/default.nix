@@ -1,12 +1,3 @@
 _: {
-  den.aspects.features.roles.sales.homeManager = {
-    config,
-    pkgs,
-    ...
-  }: {
-    home = {
-      packages = [(config.lib.nixGL.wrap pkgs.thunderbird)];
-      sessionVariables.FINITE_ROLE_SALES = "1";
-    };
-  };
+  den.aspects.features.roles.sales.homeManager.imports = [../../../../templates/home-manager/modules/aspects/roles/sales/home.nix];
 }

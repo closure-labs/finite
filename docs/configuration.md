@@ -15,7 +15,7 @@ fields as authoritative; a YAML seed for a different image is rejected.
 
 ## Profile data
 
-Provisioning uses YAML. Bootstrap normalizes it to JSON:
+Provisioning accepts YAML or JSON. `finite-home-init` normalizes it to JSON:
 
 ```json
 {
@@ -35,34 +35,38 @@ values must match. Unknown or duplicate roles, unknown foundations or hardware,
 extra schema fields, malformed documents, and running-image mismatches fail
 before any deployed file changes.
 
-The normalized profile lives at `~/.config/finite/profile.json`. The standalone
-flake, its copy of the normalized profile, and its remote lock live under
-`~/.config/home-manager`. `nh home switch --update-input finite` updates only
-the Finite input. `finite-configure` reopens the role checklist with current
-roles selected and activates only after a successful build.
+The normalized profile lives at `~/.config/finite/profile.json`. The complete
+standalone flake lives at `~/.config/home-manager`: its Den module, every Finite
+Home Manager aspect, referenced assets, helper scripts, profile, and pinned
+third-party input lock are all local to that directory. It has no `finite`
+input and no path back to a source checkout. Run `nh home switch` to rebuild it,
+or `nix flake update ~/.config/home-manager` to refresh its independent pinned
+inputs. `finite-configure` reopens the role checklist with current roles
+selected and activates only after a successful build.
 
-## Templates and bootstrap
+## Self-contained templates and initialization
 
 ```console
+nix flake new -t github:closure-labs/finite#home-manager PATH
 nix flake new -t github:closure-labs/finite#home-bluefin PATH
 nix flake new -t github:closure-labs/finite#home-bluefin-dx PATH
 ```
 
-Both templates expose `home-profile` and `home-bootstrap` before a profile has
-been configured. The deployed flake imports the focused
-`finite.flakeModules.home`, declares one `den.homes` entity, and composes a local
-aspect from the Finite base, selected role aspects, and selected hardware.
+All three names expose the same canonical, complete template. The two
+foundation-specific names are compatibility aliases; bootstrap does not select
+a different template tree. Instead it writes the normalized foundation,
+hardware, roles, and account identity to the generated flake's local
+`profile.json`. `modules/finite.nix` reads those variables and uses Den's
+standalone `den.homes` output to compose the matching local aspects.
 
-To convert a supplied legacy named-profile JSON document whose data includes
-`foundation` (or `baseClass`), `hardware`, and `roles`:
-
-```console
-nix run github:closure-labs/finite#home-bootstrap -- \
-  --legacy-profile ./exported-profile.json
-```
-
-The importer is generic: it does not look in former runtime paths or expose a
-named-preset registry.
+On Finite, `/usr/libexec/finite/home-init --profile PROFILE` copies the image's
+pinned template to a staging directory, injects the account identity and
+canonical role order, and builds it without changing the lock. Only a
+successful build is installed. Any existing missing, partial, invalid, or
+older scaffold is moved to a timestamped `home-manager.previous.*` directory
+and the complete staged directory takes its place. The first-login service
+compares the installed template marker with the image marker, so the same path
+also performs simple release-to-release replacement.
 
 ## Catalog and aspects
 
@@ -72,9 +76,12 @@ jq . result/bootc/generated/home-profile-catalog.json
 ```
 
 The schema-2 catalog contains typed `foundations`, `hardware`, `roles`, and
-`compatibility` maps. Aspect implementations live below
-`modules/aspects/{base,capabilities,hardware,roles}`. Add a role to
-`lib/domain-catalog.nix`, give it a stable ordering key and label, add its
-aspect implementation, and validate every foundation with `just check`. The
-same pure catalog drives module enums, profile ordering, generated catalogs,
-Home Manager proofs, and the `finite-configure` checklist.
+`compatibility` maps. Bootc aspect implementations live below
+`modules/aspects/{base,capabilities,hardware,roles}`. The canonical portable
+Home Manager modules and assets live below
+`templates/home-manager/modules/aspects`; that same tree is copied intact into
+the final flake. Add a role to `lib/domain-catalog.nix`, give it a stable
+ordering key and label, add its aspect implementation, and validate every
+foundation with `just check`. The same pure catalog drives module enums,
+profile ordering, generated catalogs, Home Manager proofs, and the
+`finite-configure` checklist.

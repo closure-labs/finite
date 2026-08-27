@@ -15,6 +15,11 @@ rpm -q cloud-init jq nix nix-daemon nix-filesystem nix-system yq zenity
 # rootfs afterwards so its Determinate daemon units cannot be replaced by the
 # Fedora nix-daemon package's upstream units.
 cp -a "${base_root}/rootfs/." /
+install -d -m 0755 /usr/share/finite/home-manager-template
+cp -a "${FINITE_GENERATED_ROOT}/home-manager-template/." /usr/share/finite/home-manager-template/
+install -m 0644 \
+  "${FINITE_GENERATED_ROOT}/bootc/generated/home-profile-catalog.json" \
+  /usr/share/finite/home-profile-catalog.json
 
 # Package scriptlets may populate the build container's transient /run tree.
 # Cloud-init recreates this state at boot; it must not enter the bootc commit.

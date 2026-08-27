@@ -2,12 +2,25 @@
 set -euo pipefail
 
 profile="${FINITE_HOME_PROFILE_PATH:-$HOME/.config/finite/profile.json}"
+home_flake="${FINITE_HOME_FLAKE_PATH:-$HOME/.config/home-manager}"
+home_template="${FINITE_HOME_TEMPLATE_PATH:-/usr/share/finite/home-manager-template}"
 running="${FINITE_RUNNING_PROFILE_PATH:-/usr/share/finite/profile.json}"
 seed="${FINITE_PROVISIONED_PROFILE_PATH:-/etc/finite/home-profiles/$(id -un).yaml}"
 nix="${FINITE_NIX_COMMAND:-/nix/var/nix/profiles/default/bin/nix}"
 nix_wait_seconds="${FINITE_NIX_WAIT_SECONDS:-120}"
+home_init="${FINITE_HOME_INIT_COMMAND:-/usr/libexec/finite/home-init}"
 
-[[ ! -r "$profile" ]] || exit 0
+current=true
+for required in flake.nix flake.lock finite-template.json profile.json modules/finite.nix; do
+	[[ -e "$home_flake/$required" ]] || current=false
+done
+if [[ "$current" == true ]] &&
+	cmp -s "$home_flake/finite-template.json" "$home_template/finite-template.json" &&
+	jq -e '.schema == 1 and .generator == "finite-home-init"' "$home_flake/finite-template.json" >/dev/null 2>&1 &&
+	jq -e '[.nodes[].locked? | select(. != null) | .type] | all(. != "path")' "$home_flake/flake.lock" >/dev/null 2>&1 &&
+	jq -e '.schema == 1 and (.roles | type == "array") and (.identity | type == "object")' "$home_flake/profile.json" >/dev/null 2>&1; then
+	exit 0
+fi
 [[ "$nix_wait_seconds" =~ ^[0-9]+$ ]] || {
 	echo "Invalid Finite Nix wait timeout: $nix_wait_seconds" >&2
 	exit 2
@@ -35,7 +48,19 @@ done
 [[ -r "$running" ]] || { echo "Finite profile metadata is unavailable: $running" >&2; false; }
 
 if [[ -r "$seed" ]]; then
-	"$nix" --accept-flake-config run github:closure-labs/finite#home-bootstrap -- --profile "$seed"
+	FINITE_NIX_COMMAND="$nix" "$home_init" --profile "$seed"
+	exit 0
+fi
+
+if [[ -r "$profile" ]] && jq -e '
+  .schema == 1 and
+  (.foundation == "bluefin" or .foundation == "bluefin-dx") and
+  (.hardware == "generic-x86_64" or .hardware == "dell-xps-9350-intel") and
+  (.roles | type == "array") and
+  all(.roles[]; . == "developer" or . == "sales" or . == "trainer" or
+    . == "support" or . == "executive" or . == "it")
+' "$profile" >/dev/null 2>&1; then
+	FINITE_NIX_COMMAND="$nix" "$home_init" --profile "$profile"
 	exit 0
 fi
 
@@ -44,7 +69,7 @@ hardware=$(jq -er '.hardware' "$running")
 if ! roles=$(zenity --list --checklist \
 	--title='Configure Finite' \
 	--text='Select any roles for your Home Manager environment. Leaving every role unchecked installs the base environment.' \
-	--column='Use' --column='Role' --column='id' --hide-column=3 --separator=, \
+	--column='Use' --column='Role' --column='id' --hide-column=3 --print-column=3 --separator=, \
 	FALSE Developer developer \
 	FALSE Sales sales \
 	FALSE Trainer trainer \
@@ -57,6 +82,11 @@ fi
 
 generated=$(mktemp)
 trap 'rm -f -- "$generated"' EXIT
-"$nix" --accept-flake-config run github:closure-labs/finite#home-profile -- \
-	--foundation "$foundation" --hardware "$hardware" --roles "$roles" --format yaml >"$generated"
-"$nix" --accept-flake-config run github:closure-labs/finite#home-bootstrap -- --profile "$generated"
+jq -n \
+	--arg foundation "$foundation" \
+	--arg hardware "$hardware" \
+	--arg roles "$roles" \
+	'{schema: 1, foundation: $foundation, hardware: $hardware,
+    roles: (if $roles == "" then [] else ($roles | split(",")) end), identity: {}}' \
+	>"$generated"
+FINITE_NIX_COMMAND="$nix" "$home_init" --profile "$generated"

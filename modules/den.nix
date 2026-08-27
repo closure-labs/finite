@@ -16,7 +16,7 @@
     diagram = inputs.den-diagram.lib;
     homeManagerLib = inputs.home-manager.lib;
     homeModuleInputs = {
-      inherit (inputs) den home-manager nixpkgs;
+      inherit (inputs) den determinate devenv home-manager nix-flatpak nixgl nixpkgs nixpkgs-weekly;
     };
     treefmt = inputs.treefmt-nix.lib;
     weeklySecretspec = homeDependencies.weeklyPackages.secretspec;

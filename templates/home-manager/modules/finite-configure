@@ -1,0 +1,29 @@
+set -euo pipefail
+
+current="${FINITE_HOME_PROFILE_PATH:-$HOME/.config/home-manager/profile.json}"
+if [[ ! -r "$current" ]]; then
+  zenity --error \
+    --title='Finite configuration' \
+    --text='The local Finite Home Manager profile is unavailable.'
+  exit 1
+fi
+
+rows=()
+for entry in \
+  developer:Developer sales:Sales trainer:Trainer support:Support executive:Executive it:IT; do
+  role="${entry%%:*}"
+  label="${entry#*:}"
+  checked=FALSE
+  if jq -e --arg role "$role" '.roles | index($role) != null' "$current" >/dev/null; then
+    checked=TRUE
+  fi
+  rows+=("$checked" "$label" "$role")
+done
+
+roles=$(zenity --list --checklist \
+  --title='Configure Finite' \
+  --text='Select any roles to compose in this Home Manager configuration.' \
+  --column='Use' --column='Role' --column='id' \
+  --hide-column=3 --print-column=3 --separator=, "${rows[@]}") || exit 0
+
+exec finite-home-apply --roles "$roles"

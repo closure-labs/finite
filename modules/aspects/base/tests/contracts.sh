@@ -11,6 +11,7 @@ cmp -s \
 
 aspect_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 module="${aspect_root}/default.nix"
+home_module="templates/home-manager/modules/aspects/base/home.nix"
 rootfs="${aspect_root}/rootfs"
 
 test -x "${aspect_root}/apply.sh"
@@ -100,15 +101,15 @@ grep -qF 'resize_rootfs: false' "${rootfs}/etc/cloud/cloud.cfg.d/90-finite-noclo
 test ! -e "${aspect_root}/manifests/Brewfile"
 test ! -e "${aspect_root}/independently-managed-rpms.list"
 test ! -e "${aspect_root}/packages-bitwarden-cli"
-grep -qF 'nh.enable = true' "${module}"
-if grep -qF 'home-manager.enable = true' "${module}"; then
+grep -qF 'nh.enable = true' "${home_module}"
+if grep -qF 'home-manager.enable = true' "${home_module}"; then
 	echo 'The standalone Home Manager CLI must not shadow nh' >&2
 	exit 1
 fi
 test -f "${rootfs}/usr/lib/systemd/user/finite-home-first-login.service"
 test -L "${rootfs}/etc/systemd/user/graphical-session.target.wants/finite-home-first-login.service"
-grep -qF 'ConditionPathExists=!%h/.config/finite/profile.json' \
-	"${rootfs}/usr/lib/systemd/user/finite-home-first-login.service"
+test -x "${rootfs}/usr/libexec/finite/home-init"
+bash -n "${rootfs}/usr/libexec/finite/home-init"
 grep -qF 'FINITE_NIX_WAIT_SECONDS:-120' \
 	"${rootfs}/usr/libexec/finite/home-first-login"
 grep -qF 'systemctl is-active --quiet nix-daemon.socket determinate-nixd.socket' \

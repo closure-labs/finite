@@ -60,6 +60,7 @@
     ../lib/domain-catalog.nix
     ../lib/home-manager-flake-module.nix
     ../lib/home-profile-applications.nix
+    ../lib/render-home-scaffold.nix
     ../lib/mk-pkgs.nix
     ../lib/project-policy.nix
     ../modules/aspects
@@ -74,6 +75,8 @@
     ../lib/domain-catalog.nix
     ../lib/home-manager-flake-module.nix
     ../lib/home-profile-applications.nix
+    ../lib/render-home-scaffold.nix
+    ../modules/aspects/base/rootfs/usr/libexec/finite/home-init
     ../modules/aspects/base/rootfs/usr/libexec/finite/home-first-login
     ../templates
     ../tests/home
@@ -114,6 +117,7 @@
   ];
   aspectsSource = sourceFor [
     ../modules/aspects
+    ../templates/home-manager/modules/aspects
   ];
   releaseSource = sourceFor [
     ../CHANGELOG.md
@@ -273,13 +277,14 @@ in {
     name = "home-profile-contracts";
     source = homeSource;
     generatedRoot = generated;
-    tools = with pkgs; [getent jq yq-go];
+    tools = with pkgs; [getent jq ripgrep yq-go];
     commands = ''
       set -euo pipefail
       bash tests/home/contracts.sh \
         ${applications.homeProfile}/bin/finite-home-profile \
-        ${applications.homeBootstrap}/bin/finite-home-bootstrap \
-        ${applications.cloudInit}/bin/finite-cloud-init
+        ${applications.homeInit}/bin/finite-home-init \
+        ${applications.cloudInit}/bin/finite-cloud-init \
+        ${generated}/home-manager-template
     '';
   };
 
