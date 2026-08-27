@@ -678,6 +678,11 @@ in {
       grep -qF 'finite-update-home-release ' .github/workflows/update-home-release.yml
       yq -e '
         .jobs.build.steps[] |
+        select(.name == "Allow rootless container user namespaces") |
+        .run | select(contains("sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0"))
+      ' .github/workflows/build-profile.yml >/dev/null
+      yq -e '
+        .jobs.build.steps[] |
         select(.name == "Stage immutable profile image") |
         .run | select(contains("finite-profile-stage"))
       ' .github/workflows/build-profile.yml >/dev/null

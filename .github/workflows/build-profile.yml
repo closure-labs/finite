@@ -63,6 +63,13 @@ jobs:
       - name: Set up Nix and Cachix
         uses: ./.github/actions/setup-nix
 
+      - name: Allow rootless container user namespaces
+        shell: bash
+        run: |
+          if [[ -e /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]]; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
+
       - name: Log in to GHCR for staging and build cache
         env:
           GHCR_TOKEN: ${{ github.token }}
