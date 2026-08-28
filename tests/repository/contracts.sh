@@ -41,9 +41,10 @@ jq -e '
     (.upstream.digest | test("^sha256:[0-9a-f]{64}$")))
 ' "${matrix}" >/dev/null
 jq -e '
-  .schema == 2 and
+  .schema == 3 and
   (.foundations | keys) == ["bluefin", "bluefin-dx"] and
   (.hardware | keys) == ["dell-xps-9350-intel", "generic-x86_64"] and
+  (.packages | keys) == ["hack-font", "herdr", "jj", "opencode", "uv"] and
   (.roles | keys) == ["developer", "executive", "it", "sales", "support", "trainer"] and
   .foundations.bluefin.template == "home-bluefin" and
   .foundations["bluefin-dx"].template == "home-bluefin-dx" and
@@ -54,7 +55,10 @@ jq -e '
     "generic-x86_64": "bluefin-dx-generic", "next-x86_64": "bluefin-dx-next"
   } and
   all(.hardware[]; .imageHardware == ["generic-x86_64", "next-x86_64"]) and
-  all(.compatibility[]; (.hardware | length) == 2 and (.roles | length) == 6) and
+  all(.foundations[]; .packages == ["hack-font", "herdr", "jj", "opencode", "uv"]) and
+  all(.compatibility[];
+    (.hardware | length) == 2 and (.packages | length) == 5 and (.roles | length) == 6) and
+  all(.packages[]; (.foundations | sort) == ["bluefin", "bluefin-dx"]) and
   all(.roles[]; (.foundations | sort) == ["bluefin", "bluefin-dx"])
 ' "${home_catalog}" >/dev/null
 
@@ -213,21 +217,62 @@ fi
 test ! -e modules/aspects/base/manifests/Brewfile
 test ! -e modules/aspects/base/independently-managed-rpms.list
 test ! -e bootc/builder/lib/independently-managed-rpms.sh
-grep -qF 'bitwarden-cli' templates/home-manager/modules/aspects/base/home.nix
-grep -qF 'nixGL.wrap inputs.nixpkgs-weekly.legacyPackages' \
+grep -qF 'weekly.bitwarden-cli' templates/home-manager/modules/aspects/base/home.nix
+grep -qF 'config.lib.nixGL.wrap weekly.bitwarden-desktop' \
 	templates/home-manager/modules/aspects/base/home.nix
+grep -qF 'config.lib.nixGL.wrap weekly.firefox' \
+	templates/home-manager/modules/aspects/base/home.nix
+for package in element-desktop libreoffice nextcloud-client; do
+	grep -qF "config.lib.nixGL.wrap weekly.${package}" \
+		templates/home-manager/modules/aspects/base/home.nix
+done
+for package in thunderbird vlc; do
+	grep -qF "config.lib.nixGL.wrap pkgs.${package}" \
+		templates/home-manager/modules/aspects/base/home.nix
+done
+grep -qF 'config.lib.nixGL.wrap pkgs.vscodium' \
+	templates/home-manager/modules/aspects/roles/developer/home.nix
+if grep -qF 'pkgs.thunderbird' templates/home-manager/modules/aspects/roles/sales/home.nix; then
+	echo 'Thunderbird must be supplied by the all-role base, not the sales role' >&2
+	exit 1
+fi
+if grep -Eq 'com\.nextcloud\.desktopclient\.nextcloud|com\.spotify\.Client|im\.riot\.Riot|org\.libreoffice\.LibreOffice|org\.signal\.Signal' \
+	templates/home-manager/modules/aspects/base/home.nix; then
+	echo 'Nix desktop replacements must not remain in the managed Flatpak list' >&2
+	exit 1
+fi
+if grep -Eq '(^|[[:space:]])bitwarden-cli([[:space:]]|$)|wrap pkgs\.bitwarden-desktop' \
+	templates/home-manager/modules/aspects/base/home.nix; then
+	echo 'Bitwarden Desktop and CLI must come from the weekly input' >&2
+	exit 1
+fi
+grep -qF 'fzf.enable = true' templates/home-manager/modules/aspects/base/home.nix
+grep -qF 'weekly.bbrew' templates/home-manager/modules/aspects/base/home.nix
+grep -qF 'weekly.mise' templates/home-manager/modules/aspects/base/home.nix
+if rg -n '\b(codex|awscli)\b' \
+	lib/domain-catalog.nix templates/home-manager/modules/aspects/base/home.nix \
+	templates/home-manager/modules/finite.nix; then
+	echo 'Codex or AWS CLI leaked into the Finite base Home Manager configuration' >&2
+	exit 1
+fi
 # shellcheck disable=SC2016
-grep -qF 'den.homes.${system}.finite' lib/home-manager-flake-module.nix
+grep -qF 'den.homes.${system}.${cfg.identity.username}' lib/home-manager-flake-module.nix
+# shellcheck disable=SC2016
+grep -qF 'den.homes.${system}.${vars.identity.username}' \
+	templates/home-manager/modules/finite.nix
 grep -qF 'den.aspects.finite-home' lib/home-manager-flake-module.nix
 grep -qF 'nh.homeFlake' lib/home-manager-flake-module.nix
 grep -qF 'zsh.shellAliases.finite-configure' lib/home-manager-flake-module.nix
 grep -qF 'FINITE_HOME_TEMPLATE_PATH' lib/home-profile-applications.nix
-grep -qF 'homeConfigurations.finite.activationPackage' \
+# shellcheck disable=SC2016
+grep -qF 'homeConfigurations.${username}.activationPackage' \
 	modules/aspects/base/rootfs/usr/libexec/finite/home-init
 grep -qF 'home-manager.previous.' \
 	modules/aspects/base/rootfs/usr/libexec/finite/home-init
 test -f templates/home-manager/finite-template.json
 test -f templates/home-manager/flake.lock
+test -f templates/home-manager/customize.nix
+test -f templates/home-manager/modules/finite-brew-migration-status
 test -f templates/home-manager/modules/aspects/base/home.nix
 if grep -qF 'ConditionPathExists=' \
 	modules/aspects/base/rootfs/usr/lib/systemd/user/finite-home-first-login.service; then

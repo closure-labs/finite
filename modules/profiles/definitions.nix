@@ -45,12 +45,19 @@
       }
     )
     catalog.rolesByName;
+  packages =
+    lib.mapAttrs (
+      _: package: {
+        inherit (package) description label order;
+      }
+    )
+    catalog.packagesByName;
 in {
   den.aspects.profiles = profileAspects;
 
   finite.profiles = profileEntities;
 
   finite.home = {
-    inherit foundations hardware roles;
+    inherit foundations hardware packages roles;
   };
 }

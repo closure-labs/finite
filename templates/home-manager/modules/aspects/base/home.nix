@@ -6,6 +6,7 @@
   ...
 }: let
   system = pkgs.stdenv.hostPlatform.system;
+  weekly = inputs.nixpkgs-weekly.legacyPackages.${system};
 in {
   imports = [
     inputs.determinate.homeManagerModules.default
@@ -16,38 +17,44 @@ in {
     username = lib.mkDefault "finite";
     homeDirectory = lib.mkDefault "/var/home/finite";
     stateVersion = "26.05";
-    packages = with pkgs; [
-      atuin
-      bash-preexec
-      bat
-      bitwarden-cli
-      (config.lib.nixGL.wrap inputs.nixpkgs-weekly.legacyPackages.${system}.bitwarden-desktop)
-      chezmoi
-      codex
-      direnv
-      dysk
-      eza
-      fd
-      fzf
-      gh
-      marp-cli
-      mise
-      neovim
-      podman-tui
-      ripgrep
-      starship
-      tealdeer
-      trash-cli
-      ugrep
-      uutils-coreutils-noprefix
-      yq-go
-      zoxide
-      zsh-autosuggestions
-      zsh-fast-syntax-highlighting
-      zsh-history-substring-search
-      zsh-vi-mode
-    ];
+    packages =
+      (with pkgs; [
+        atuin
+        bash-preexec
+        bat
+        chezmoi
+        direnv
+        dysk
+        eza
+        fd
+        gh
+        marp-cli
+        neovim
+        podman-tui
+        ripgrep
+        starship
+        tealdeer
+        trash-cli
+        ugrep
+        uutils-coreutils-noprefix
+        yq-go
+        zoxide
+      ])
+      ++ [
+        (config.lib.nixGL.wrap weekly.bitwarden-desktop)
+        (config.lib.nixGL.wrap weekly.element-desktop)
+        (config.lib.nixGL.wrap weekly.firefox)
+        (config.lib.nixGL.wrap weekly.libreoffice)
+        (config.lib.nixGL.wrap weekly.nextcloud-client)
+        (config.lib.nixGL.wrap pkgs.thunderbird)
+        (config.lib.nixGL.wrap pkgs.vlc)
+        weekly.bbrew
+        weekly.bitwarden-cli
+        weekly.mise
+      ];
   };
+
+  fonts.fontconfig.enable = true;
 
   nix.package = null;
 
@@ -72,11 +79,8 @@ in {
       "com.github.PintaProject.Pinta"
       "com.github.tchx84.Flatseal"
       "com.mattjakeman.ExtensionManager"
-      "com.nextcloud.desktopclient.nextcloud"
       "com.ranfdev.DistroShelf"
-      "com.spotify.Client"
       "hu.irl.cameractrls"
-      "im.riot.Riot"
       "io.github.flattool.Ignition"
       "io.github.flattool.Warehouse"
       "io.github.pleromix.IceBox"
@@ -87,13 +91,12 @@ in {
       "it.mijorus.smile"
       "net.cozic.joplin_desktop"
       "org.chromium.Chromium"
-      "org.libreoffice.LibreOffice"
-      "org.signal.Signal"
       "page.tesk.Refine"
     ];
   };
 
   programs = {
+    fzf.enable = true;
     git.enable = true;
     nh.enable = true;
     zsh.enable = true;

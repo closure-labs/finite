@@ -26,4 +26,25 @@ roles=$(zenity --list --checklist \
   --column='Use' --column='Role' --column='id' \
   --hide-column=3 --print-column=3 --separator=, "${rows[@]}") || exit 0
 
-exec finite-home-apply --roles "$roles"
+rows=()
+while IFS='|' read -r package label description; do
+  checked=FALSE
+  if jq -e --arg package "$package" '(.packages // []) | index($package) != null' "$current" >/dev/null; then
+    checked=TRUE
+  fi
+  rows+=("$checked" "$label" "$description" "$package")
+done <<'EOF'
+hack-font|Hack Nerd Font|Hack font patched with Nerd Fonts glyphs
+herdr|Herdr|Terminal process manager
+jj|Jujutsu|Jujutsu version-control system (jj)
+opencode|OpenCode|Open-source coding agent
+uv|uv|Python package and project manager
+EOF
+
+packages=$(zenity --list --checklist \
+  --title='Configure Finite packages' \
+  --text='Select optional Nix packages. Finite builds the complete Home Manager generation before changing your profile.' \
+  --column='Use' --column='Package' --column='Description' --column='id' \
+  --hide-column=4 --print-column=4 --separator=, "${rows[@]}") || exit 0
+
+exec finite-home-apply --roles "$roles" --packages "$packages"

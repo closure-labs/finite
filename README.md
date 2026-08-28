@@ -44,7 +44,8 @@ sudo systemctl reboot
 
 On first login, Finite asks how you use your computer. Select the roles you
 want, choose **Configure**, and it builds your personal environment. You can
-change that selection at any time with `finite-configure`.
+change the roles and curated optional Nix packages at any time with
+`finite-configure`.
 
 ### Set up a new machine
 
@@ -80,7 +81,8 @@ sudo systemctl reboot
 Update your personal environment independently:
 
 ```console
-nh home switch --update-input finite
+nix flake update --flake ~/.config/home-manager
+nh home switch
 ```
 
 If a system deployment does not work for you, `sudo bootc rollback` selects the

@@ -885,6 +885,7 @@ in {
       grep -qF 'apps.''${system} = appExports' modules/outputs.nix
       grep -qF 'foundationHardwareProofs' modules/outputs.nix
       grep -qF 'allRolesProof' modules/outputs.nix
+      grep -qF 'allPackagesProof' modules/outputs.nix
     '';
   };
 }

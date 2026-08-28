@@ -47,9 +47,10 @@ Choosing Configure with no roles creates the base-only environment. Canceling
 or closing the dialog writes nothing, and the selector returns at the next
 graphical login. Build or activation errors are shown graphically, recorded in
 the user journal, and retried on a later login. Run `finite-configure` at any
-time to change the selected roles. The running image remains authoritative for
-the foundation, while Home Manager hardware tuning must declare compatibility
-with its generic or next image hardware.
+time to change the selected roles and curated optional Nix packages. The
+running image remains authoritative for the foundation, while Home Manager
+hardware tuning must declare compatibility with its generic or next image
+hardware.
 
 ## Provision with cloud-init
 
@@ -59,6 +60,7 @@ Generate a NoCloud seed containing YAML for an installer-created account:
 nix run .#cloud-init -- \
   --foundation bluefin-dx \
   --hardware generic-x86_64 \
+  --packages jj,uv \
   --roles developer,support \
   --user dale \
   --output result/cloud-init-dale
@@ -74,6 +76,7 @@ validates and imports the seed.
 ```console
 nix run github:closure-labs/finite#home-profile -- \
   --foundation bluefin-dx --hardware generic-x86_64 \
+  --packages jj,uv \
   --roles developer,support --format yaml >profile.yaml
 /usr/libexec/finite/home-init --profile profile.yaml
 ```
@@ -86,6 +89,10 @@ after the build succeeds. Later local rebuilds use:
 ```console
 nh home switch
 ```
+
+See [Staged Homebrew migration](homebrew-migration.md) before removing any
+formula or cask. The first migration release intentionally leaves every Brew
+fallback installed.
 
 ## Determinate Nix lifecycle
 

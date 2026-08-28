@@ -97,6 +97,29 @@
       };
     }
   );
+  packageType = lib.types.submodule (
+    {name, ...}: {
+      options = {
+        name = lib.mkOption {
+          type = lib.types.enum catalog.packageNames;
+          default = name;
+          description = "Finite optional Home Manager package identifier.";
+        };
+        label = lib.mkOption {
+          type = lib.types.str;
+          description = "Human-readable package label.";
+        };
+        description = lib.mkOption {
+          type = lib.types.str;
+          description = "Short package description shown by finite-configure.";
+        };
+        order = lib.mkOption {
+          type = lib.types.ints.unsigned;
+          description = "Canonical package ordering key.";
+        };
+      };
+    }
+  );
 in {
   options.finite = {
     profiles = lib.mkOption {
@@ -119,6 +142,11 @@ in {
         type = lib.types.attrsOf roleType;
         default = {};
         description = "Typed composable Home Manager role catalog.";
+      };
+      packages = lib.mkOption {
+        type = lib.types.attrsOf packageType;
+        default = {};
+        description = "Typed optional Home Manager package catalog.";
       };
     };
   };

@@ -6,8 +6,31 @@ All notable changes to Finite are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- A schema-2 per-user package selection, exposed through the graphical
+  `finite-configure` flow, for Hack Nerd Font, Herdr, Jujutsu, OpenCode, and
+  uv. Codex and AWS CLI remain workstation customizations rather than Finite
+  base packages.
+- A preserved, additive `~/.config/home-manager/customize.nix` module for local
+  Nix packages, Flatpaks, and other Home Manager settings.
+- A read-only `finite-brew-migration-status` report and documented migration
+  gates for progressively replacing Homebrew commands with Nix packages.
+- NixGL-wrapped LibreOffice, Nextcloud, and Element from weekly plus VLC and
+  Thunderbird from chilled in the all-role Home Manager base, with VSCodium
+  from chilled for developers.
+
 ### Changed
 
+- Added Firefox, Bitwarden Desktop, and Bitwarden CLI from the weekly nixpkgs
+  input to the all-role Home Manager base.
+- Moved the first Homebrew migration layer to Nixpkgs while retaining every
+  Brew fallback: chilled is preferred, weekly is used for Herdr, and Bluefin's
+  direct Bash `bash-preexec` integration remains untouched.
+- Replaced the managed Flatpak declarations for the new base applications with
+  Nix package delivery, and retired the base Spotify and Signal declarations so
+  those applications can remain workstation-only customizations. Existing
+  unmanaged installations and their data remain available for manual removal.
 - Replaced the Dell-specific Bluefin images with vendor-neutral `bluefin-next`
   and `bluefin-dx-next` images pinned to Fedora's signed 7.2 runtime kernel.
 - Decoupled boot-image hardware from Home Manager hardware compatibility, so
@@ -22,6 +45,17 @@ All notable changes to Finite are documented here. The format follows
 
 - Removed the Dell bootc overlay, external camera-module and libcamera builds,
   Firefox camera workaround, and other image-level Dell customizations.
+
+### Fixed
+
+- Installed Bitwarden's Linux Polkit unlock action in the immutable base image
+  so the Nix desktop application can use PAM-backed fingerprint authentication.
+- Made GNOME launch the nixGL-wrapped Ghostty executable directly instead of
+  attempting unsupported D-Bus activation, and consolidated its generated
+  settings under `config.ghostty`.
+- Allowed the Dell Home Manager panel helper to load its documented runtime
+  defaults without failing the package build on ShellCheck's external-source
+  warning.
 
 ## [0.5.0] - 2026-08-26
 

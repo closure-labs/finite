@@ -43,7 +43,7 @@ load_config() {
 	local user_config_home
 
 	if [[ -r "${default_config}" ]]; then
-		# shellcheck source=/usr/share/finite/dell-xps-9350-panel.conf
+		# shellcheck source=/dev/null
 		source "${default_config}"
 	fi
 	if [[ -r /etc/finite/dell-xps-9350-panel.conf ]]; then

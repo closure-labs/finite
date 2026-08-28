@@ -109,6 +109,38 @@ let
       homeCompatible = false;
     }
   ];
+  packages = [
+    {
+      name = "hack-font";
+      label = "Hack Nerd Font";
+      description = "Hack font patched with Nerd Fonts glyphs";
+      order = 10;
+    }
+    {
+      name = "herdr";
+      label = "Herdr";
+      description = "Terminal process manager";
+      order = 20;
+    }
+    {
+      name = "jj";
+      label = "Jujutsu";
+      description = "Jujutsu version-control system (jj)";
+      order = 30;
+    }
+    {
+      name = "opencode";
+      label = "OpenCode";
+      description = "Open-source coding agent";
+      order = 40;
+    }
+    {
+      name = "uv";
+      label = "uv";
+      description = "Python package and project manager";
+      order = 50;
+    }
+  ];
   names = entries: map (entry: entry.name) entries;
   toAttrs = entries:
     builtins.listToAttrs (
@@ -141,15 +173,17 @@ let
     )
   );
 in {
-  inherit foundations hardware roles;
+  inherit foundations hardware packages roles;
   foundationsByName = toAttrs foundations;
   hardwareByName = toAttrs hardware;
+  packagesByName = toAttrs packages;
   rolesByName = toAttrs roles;
   profilesByName = toAttrs profileEntries;
   foundationNames = names foundations;
   templateNames = map (foundation: foundation.template) foundations;
   bootcHardwareNames = names bootcHardware;
   homeHardwareNames = names homeHardware;
+  packageNames = names packages;
   roleNames = names roles;
   homeCompatibleRoleNames = names (builtins.filter (role: role.homeCompatible) roles);
   profileOrder = names profileEntries;
