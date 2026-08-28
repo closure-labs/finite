@@ -77,16 +77,12 @@ pkgs.writeShellApplication {
     # rpm-ostree's full and --previous-build paths require more than the
     # ordinary rootless Podman capability set. A 2026-08-26 fixture run proved
     # SYS_ADMIN alone fails while both privileged paths succeed. Keep the
-    # privileged container constrained to the read-only image mount below,
-    # one isolated output mount, and the optional read-only auth file. No host
-    # devices or other host paths are exposed.
+    # privileged container constrained to the read-only image mount below and
+    # one isolated output mount. Incremental builds additionally receive the
+    # registry auth file read-only because rpm-ostree must fetch the immutable
+    # previous build. Full rechunks and staged publication stay registry-free.
+    # No host devices or other host paths are exposed.
     run_args=(--rm --pull=never --privileged)
-    if [[ -n "''${authfile}" ]]; then
-      run_args+=(
-        --env REGISTRY_AUTH_FILE=/run/registry-auth.json
-        --volume "''${authfile}:/run/registry-auth.json:ro"
-      )
-    fi
     container_output="''${output}"
     staged_archive=
     if [[ "''${output}" == oci-archive:/* ]]; then
@@ -100,7 +96,12 @@ pkgs.writeShellApplication {
       container_output="oci-archive:/run/finite-rechunk-output/''${archive_name}"
       run_args+=(--volume "''${archive_dir}:/run/finite-rechunk-output")
     elif [[ "''${output}" == docker://* ]]; then
-      archive_dir="$(mktemp -d)"
+      staging_root="''${FINITE_RECHUNK_TMPDIR:-''${RUNNER_TEMP:-''${TMPDIR:-/tmp}}}"
+      [[ -d "''${staging_root}" ]] || {
+        echo "Rechunk staging directory is missing: ''${staging_root}" >&2
+        exit 2
+      }
+      archive_dir="$(mktemp -d -p "''${staging_root}" finite-rechunk.XXXXXX)"
       trap 'rm -rf -- "''${archive_dir}"' EXIT
       staged_archive="''${archive_dir}/finite.oci"
       container_output=oci-archive:/run/finite-rechunk-output/finite.oci
@@ -137,11 +138,18 @@ pkgs.writeShellApplication {
 
     run_rechunk() {
       local incremental=$1
+      local auth_args=()
       local previous_args=()
       if [[ "''${incremental}" == true ]]; then
         previous_args+=(--previous-build "''${previous_build}")
+        if [[ -n "''${authfile}" ]]; then
+          auth_args+=(
+            --env REGISTRY_AUTH_FILE=/run/registry-auth.json
+            --volume "''${authfile}:/run/registry-auth.json:ro"
+          )
+        fi
       fi
-      "''${podman}" run "''${run_args[@]}" \
+      "''${podman}" run "''${run_args[@]}" "''${auth_args[@]}" \
         compose build-chunked-oci \
           --max-layers 127 \
           --format-version=2 \

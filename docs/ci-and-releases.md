@@ -56,7 +56,10 @@ Publication and pull-request validation share the focused
 `finite-rechunk-image` Nix application. It preserves non-generated OCI
 labels, format version 2, and the 127-layer ceiling, then validates the output
 digest and labels. Registry-bound rechunks are first written to an isolated
-local OCI archive, then uploaded with Skopeo's authenticated retry path. On
+local OCI archive under the runner's validated temporary filesystem, then
+uploaded with Skopeo's authenticated retry path. Full local rechunks do not
+mount registry credentials; only incremental rechunks receive read-only auth
+to fetch their verified previous build. On
 publication, the workflow resolves the current profile tag to an immutable
 digest and accepts it only when Finite's trusted
 `build-profile.yml` identity signed it. When the source image's rpm-ostree
