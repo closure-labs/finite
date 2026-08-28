@@ -22,14 +22,16 @@ export FINITE_SKIP_FOUNDATION_CHECK=true
 "${profile_command}" \
 	--foundation bluefin-dx \
 	--hardware dell-xps-9350-intel \
+	--packages uv,jj \
 	--roles support,developer \
 	--format yaml >"${test_root}/profile.yaml"
 yq -o=json '.' "${test_root}/profile.yaml" >"${test_root}/profile.json"
 jq -e \
 	--arg username "$(id -un)" \
 	--arg home "$(getent passwd "$(id -un)" | cut -d: -f6)" '
-  .schema == 1 and .foundation == "bluefin-dx" and
+  .schema == 2 and .foundation == "bluefin-dx" and
   .hardware == "dell-xps-9350-intel" and
+  .packages == ["jj", "uv"] and
   .roles == ["developer", "support"] and
   .identity == {username: $username, homeDirectory: $home}
 ' "${test_root}/profile.json" >/dev/null
@@ -55,6 +57,14 @@ for invalid_roles in developer,developer unknown; do
 		exit 1
 	fi
 done
+for invalid_packages in uv,uv unknown; do
+	if "${profile_command}" \
+		--foundation bluefin --hardware generic-x86_64 \
+		--packages "${invalid_packages}" --format yaml >/dev/null 2>&1; then
+		echo "Profile generator accepted invalid packages: ${invalid_packages}" >&2
+		exit 1
+	fi
+done
 if "${profile_command}" \
 	--foundation unknown --hardware generic-x86_64 \
 	--roles '' --format yaml >/dev/null 2>&1; then
@@ -64,16 +74,21 @@ fi
 
 "${cloud_init_command}" \
 	--foundation bluefin --hardware generic-x86_64 \
+	--packages uv,herdr \
 	--roles support,developer --user provisioned \
 	--output "${test_root}/cloud-init"
 yq -o=json '.' "${test_root}/cloud-init/profile.yaml" |
-	jq -e '.roles == ["developer", "support"] and .identity.username == "provisioned"' >/dev/null
+	jq -e '
+    .schema == 2 and .packages == ["herdr", "uv"] and
+    .roles == ["developer", "support"] and .identity.username == "provisioned"
+  ' >/dev/null
 grep -qF '/etc/finite/home-profiles/provisioned.yaml' "${test_root}/cloud-init/user-data"
 test -s "${test_root}/cloud-init/seed.iso"
 
 for required in \
-	flake.nix flake.lock finite-template.json profile.json \
+	customize.nix flake.nix flake.lock finite-template.json profile.json \
 	modules/finite.nix modules/finite-configure modules/finite-home-apply \
+	modules/finite-brew-migration-status \
 	modules/aspects/base/home.nix \
 	modules/aspects/hardware/dell-xps-9350-intel/home.nix \
 	modules/aspects/hardware/dell-xps-9350-intel/dell-xps-9350-panel-policy; do
@@ -121,6 +136,7 @@ export FINITE_TEST_ACTIVATION="${test_root}/activation"
 export FINITE_TEST_ACTIVATION_LOG="${test_root}/activation.log"
 export FINITE_TEST_NIX_LOG="${test_root}/nix.log"
 export XDG_CONFIG_HOME="${test_root}/config"
+expected_home_configuration="homeConfigurations.$(id -un).activationPackage"
 
 printf '%s\n' 'not: [valid' >"${test_root}/malformed.yaml"
 if "${init_command}" --profile "${test_root}/malformed.yaml" --check >/dev/null 2>&1; then
@@ -139,6 +155,18 @@ if "${init_command}" --profile "${test_root}/duplicate.yaml" --check >/dev/null 
 	echo 'Home initializer accepted duplicate roles' >&2
 	exit 1
 fi
+jq '.packages = ["uv", "uv"]' "${test_root}/profile.json" |
+	yq -P >"${test_root}/duplicate-package.yaml"
+if "${init_command}" --profile "${test_root}/duplicate-package.yaml" --check >/dev/null 2>&1; then
+	echo 'Home initializer accepted duplicate packages' >&2
+	exit 1
+fi
+jq '.packages = ["unknown"]' "${test_root}/profile.json" |
+	yq -P >"${test_root}/unknown-package.yaml"
+if "${init_command}" --profile "${test_root}/unknown-package.yaml" --check >/dev/null 2>&1; then
+	echo 'Home initializer accepted an unknown package' >&2
+	exit 1
+fi
 jq '.payload = "unexpected"' "${test_root}/profile.json" |
 	yq -P >"${test_root}/extra-key.yaml"
 if "${init_command}" --profile "${test_root}/extra-key.yaml" --check >/dev/null 2>&1; then
@@ -150,6 +178,7 @@ fi
 "${init_command}" --profile "${test_root}/profile.yaml" --check >/dev/null
 test ! -e "${XDG_CONFIG_HOME}/home-manager"
 grep -qF -- '--no-update-lock-file' "${FINITE_TEST_NIX_LOG}"
+grep -qF "${expected_home_configuration}" "${FINITE_TEST_NIX_LOG}"
 if grep -qF 'flake lock' "${FINITE_TEST_NIX_LOG}"; then
 	echo 'Home initializer attempted to rewrite its pinned lock' >&2
 	exit 1
@@ -163,7 +192,10 @@ hm_dir="${XDG_CONFIG_HOME}/home-manager"
 test -f "${hm_dir}/finite-template.json"
 test ! -e "${hm_dir}/partial-old-config"
 test -w "${hm_dir}/flake.nix"
-jq -e '.roles == ["developer", "support"]' "${hm_dir}/profile.json" >/dev/null
+jq -e '
+  .schema == 2 and .packages == ["jj", "uv"] and
+  .roles == ["developer", "support"]
+' "${hm_dir}/profile.json" >/dev/null
 jq -e '.roles == ["developer", "support"]' \
 	"${XDG_CONFIG_HOME}/finite/profile.json" >/dev/null
 grep -qF 'activated' "${FINITE_TEST_ACTIVATION_LOG}"
@@ -174,6 +206,13 @@ if rg -n '/var/home/.*/projects|inputs\.finite|github:closure-labs/finite' "${hm
 	echo 'Installed Home Manager flake references an external Finite checkout' >&2
 	exit 1
 fi
+
+printf '%s\n' '{pkgs, ...}: { home.packages = [pkgs.jq]; }' >"${hm_dir}/customize.nix"
+printf '%s\n' '{...}: { home.sessionVariables.FINITE_LOCAL_TEST = "preserved"; }' \
+	>"${hm_dir}/modules/local.nix"
+"${init_command}" --profile "${test_root}/profile.yaml" >/dev/null
+grep -qF 'home.packages = [pkgs.jq]' "${hm_dir}/customize.nix"
+grep -qF 'FINITE_LOCAL_TEST = "preserved"' "${hm_dir}/modules/local.nix"
 
 printf 'preserve\n' >"${hm_dir}/preserve-on-failure"
 if FINITE_TEST_BUILD_FAIL=true \
@@ -198,11 +237,24 @@ fi
 apply="${hm_dir}/modules/finite-home-apply"
 FINITE_HOME_FLAKE_ROOT="${hm_dir}" bash "${apply}" \
 	--roles it,developer,sales,trainer,support,executive >/dev/null
-jq -e '.roles == ["developer", "sales", "trainer", "support", "executive", "it"]' \
+jq -e '
+  .packages == ["jj", "uv"] and
+  .roles == ["developer", "sales", "trainer", "support", "executive", "it"]
+' \
 	"${hm_dir}/profile.json" >/dev/null
+FINITE_HOME_FLAKE_ROOT="${hm_dir}" bash "${apply}" \
+	--roles developer --packages uv,herdr >/dev/null
+jq -e '.packages == ["herdr", "uv"] and .roles == ["developer"]' \
+	"${hm_dir}/profile.json" >/dev/null
+grep -qF "${expected_home_configuration}" "${FINITE_TEST_NIX_LOG}"
 if FINITE_HOME_FLAKE_ROOT="${hm_dir}" bash "${apply}" \
 	--roles developer,unknown --check >/dev/null 2>&1; then
 	echo 'Local role application accepted an unknown role' >&2
+	exit 1
+fi
+if FINITE_HOME_FLAKE_ROOT="${hm_dir}" bash "${apply}" \
+	--roles developer --packages unknown --check >/dev/null 2>&1; then
+	echo 'Local package application accepted an unknown package' >&2
 	exit 1
 fi
 cp "${hm_dir}/profile.json" "${test_root}/profile-before-failed-apply.json"
@@ -277,7 +329,10 @@ grep -qF -- '--error' "${FINITE_TEST_ZENITY_LOG}"
 FINITE_TEST_SELECTED_ROLES='developer,it' bash "${first_login}"
 grep -qF -- '--profile ' "${FINITE_TEST_INIT_LOG}"
 tail -n 1 "${FINITE_TEST_INIT_LOG}" |
-	jq -e '.hardware == "generic-x86_64" and .roles == ["developer", "it"] and .identity == {}' >/dev/null
+	jq -e '
+    .schema == 2 and .hardware == "generic-x86_64" and .packages == [] and
+    .roles == ["developer", "it"] and .identity == {}
+  ' >/dev/null
 
 printf '%s\n' '{"foundation":"bluefin","hardware":"next-x86_64"}' \
 	>"${test_root}/running.json"
@@ -286,7 +341,10 @@ printf '%s\n' 'XPS 13 9350' >"${test_root}/dmi/product_name"
 : >"${FINITE_TEST_INIT_LOG}"
 FINITE_TEST_SELECTED_ROLES='' bash "${first_login}"
 tail -n 1 "${FINITE_TEST_INIT_LOG}" |
-	jq -e '.foundation == "bluefin" and .hardware == "dell-xps-9350-intel" and .roles == []' >/dev/null
+	jq -e '
+    .schema == 2 and .foundation == "bluefin" and
+    .hardware == "dell-xps-9350-intel" and .packages == [] and .roles == []
+  ' >/dev/null
 printf '%s\n' '{"foundation":"bluefin","hardware":"generic-x86_64"}' \
 	>"${test_root}/running.json"
 printf '%s\n' 'Finite Test Vendor' >"${test_root}/dmi/sys_vendor"
@@ -313,7 +371,8 @@ fi
 grep -qF -- '--error' "${FINITE_TEST_ZENITY_LOG}"
 
 mkdir -p "${FINITE_HOME_FLAKE_PATH}/modules"
-touch "${FINITE_HOME_FLAKE_PATH}/flake.nix" "${FINITE_HOME_FLAKE_PATH}/modules/finite.nix"
+touch "${FINITE_HOME_FLAKE_PATH}/customize.nix" "${FINITE_HOME_FLAKE_PATH}/flake.nix" \
+	"${FINITE_HOME_FLAKE_PATH}/modules/finite.nix"
 cp "${template}/finite-template.json" "${FINITE_HOME_FLAKE_PATH}/finite-template.json"
 printf '%s\n' '{"nodes":{"root":{}},"root":"root","version":7}' \
 	>"${FINITE_HOME_FLAKE_PATH}/flake.lock"
@@ -341,6 +400,9 @@ fi
 # shellcheck disable=SC2016
 grep -qF 'jq -e --arg role "$role" '\''.roles | index($role) != null'\'' "$current"' \
 	"${template}/modules/finite-configure"
+# shellcheck disable=SC2016
+grep -qF 'jq -e --arg package "$package" '\''(.packages // []) | index($package) != null'\'' "$current"' \
+	"${template}/modules/finite-configure"
 if rg -n 'github:closure-labs/finite|nix.*flake lock' \
 	"${first_login}" modules/aspects/base/rootfs/usr/libexec/finite/home-init; then
 	echo 'First-login provisioning still depends on a remote Finite flake' >&2
@@ -348,5 +410,6 @@ if rg -n 'github:closure-labs/finite|nix.*flake lock' \
 fi
 
 bash -n "${first_login}" modules/aspects/base/rootfs/usr/libexec/finite/home-init \
+	"${template}/modules/finite-brew-migration-status" \
 	"${template}/modules/finite-configure" "${template}/modules/finite-home-apply"
 bash -n "${template}/modules/aspects/hardware/dell-xps-9350-intel/dell-xps-9350-panel-policy"

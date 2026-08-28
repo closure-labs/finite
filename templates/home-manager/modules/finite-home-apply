@@ -1,12 +1,15 @@
 set -euo pipefail
 
 roles=""
+packages=""
+packages_set=false
 activate=true
 while (($# > 0)); do
   case "$1" in
     --roles) roles="${2:?--roles requires a value}"; shift 2 ;;
+    --packages) packages="${2:?--packages requires a value}"; packages_set=true; shift 2 ;;
     --check) activate=false; shift ;;
-    *) echo "usage: finite-home-apply --roles ROLE,... [--check]" >&2; exit 2 ;;
+    *) echo "usage: finite-home-apply --roles ROLE,... [--packages PACKAGE,...] [--check]" >&2; exit 2 ;;
   esac
 done
 
@@ -23,7 +26,7 @@ flake_root="${FINITE_HOME_FLAKE_ROOT:-$config_parent/home-manager}"
 profile="$flake_root/profile.json"
 nix_command="${FINITE_NIX_COMMAND:-nix}"
 
-for required in flake.nix flake.lock finite-template.json profile.json modules/finite.nix; do
+for required in customize.nix flake.nix flake.lock finite-template.json profile.json modules/finite.nix; do
   [[ -e "$flake_root/$required" ]] || {
     echo "Finite Home Manager configuration is incomplete: $flake_root/$required" >&2
     exit 2
@@ -40,10 +43,11 @@ jq -e 'all(.nodes[]; ((.locked.type? // "") != "path"))' \
   exit 2
 }
 jq -e --arg username "$username" --arg home "$home_directory" '
-  .schema == 1 and
+  .schema == 2 and
   (.foundation == "bluefin" or .foundation == "bluefin-dx") and
   (.hardware == "generic-x86_64" or .hardware == "dell-xps-9350-intel") and
   (.roles | type == "array") and all(.roles[]; type == "string") and
+  (.packages | type == "array") and all(.packages[]; type == "string") and
   .identity == {username: $username, homeDirectory: $home}
 ' "$profile" >/dev/null || {
   echo "The installed Finite profile is invalid" >&2
@@ -70,16 +74,40 @@ canonical=$(jq -cn --argjson requested "$requested" '
   [.[] | select(. as $role | $requested | index($role) != null)]
 ')
 
+if [[ "$packages_set" == false ]]; then
+  packages=$(jq -r '.packages | join(",")' "$profile")
+fi
+requested_packages='[]'
+if [[ -n "$packages" ]]; then
+  IFS=, read -ra package_list <<<"$packages"
+  for package in "${package_list[@]}"; do
+    case "$package" in
+      hack-font|herdr|jj|opencode|uv) ;;
+      *) echo "Unknown package: $package" >&2; exit 2 ;;
+    esac
+    if jq -e --arg package "$package" 'index($package) != null' <<<"$requested_packages" >/dev/null; then
+      echo "Duplicate package: $package" >&2
+      exit 2
+    fi
+    requested_packages=$(jq -c --arg package "$package" '. + [$package]' <<<"$requested_packages")
+  done
+fi
+canonical_packages=$(jq -cn --argjson requested "$requested_packages" '
+  ["hack-font", "herdr", "jj", "opencode", "uv"] |
+  [.[] | select(. as $package | $requested | index($package) != null)]
+')
+
 workdir=$(mktemp -d "$config_parent/.finite-home-apply.XXXXXX")
 trap 'rm -rf -- "$workdir"' EXIT
 cp -a -- "$flake_root/." "$workdir/"
-jq --argjson roles "$canonical" '.roles = $roles' "$profile" >"$workdir/.profile.json.new"
+jq --argjson packages "$canonical_packages" --argjson roles "$canonical" \
+  '.schema = 2 | .packages = $packages | .roles = $roles' "$profile" >"$workdir/.profile.json.new"
 mv -f "$workdir/.profile.json.new" "$workdir/profile.json"
 
 activation=$(
   "$nix_command" --accept-flake-config build \
     --no-update-lock-file \
-    "path:$workdir#homeConfigurations.finite.activationPackage" \
+    "path:$workdir#homeConfigurations.${username}.activationPackage" \
     --no-link --print-build-logs --print-out-paths
 )
 printf 'Finite Home Manager configuration for %s builds as %s\n' "$username" "$activation"

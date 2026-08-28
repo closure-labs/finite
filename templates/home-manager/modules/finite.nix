@@ -8,21 +8,33 @@
   vars = builtins.fromJSON (builtins.readFile ../profile.json);
   system = "x86_64-linux";
   roleOrder = ["developer" "sales" "trainer" "support" "executive" "it"];
+  packageOrder = ["hack-font" "herdr" "jj" "opencode" "uv"];
   hardwareNames = ["generic-x86_64" "dell-xps-9350-intel"];
   canonicalRoles = builtins.filter (role: builtins.elem role vars.roles) roleOrder;
+  canonicalPackages = builtins.filter (package: builtins.elem package vars.packages) packageOrder;
   validProfile =
     vars.schema
-    == 1
+    == 2
     && builtins.elem vars.foundation ["bluefin" "bluefin-dx"]
     && builtins.elem vars.hardware hardwareNames
     && builtins.length vars.roles == builtins.length canonicalRoles
     && builtins.length vars.roles == builtins.length (lib.unique vars.roles)
+    && builtins.length vars.packages == builtins.length canonicalPackages
+    && builtins.length vars.packages == builtins.length (lib.unique vars.packages)
     && builtins.match "[a-z_][a-z0-9_-]*[$]?" vars.identity.username != null
     && builtins.match "/.+" vars.identity.homeDirectory != null;
   pkgs = import inputs.nixpkgs {
     inherit system;
     config.allowUnfree = true;
   };
+  weekly = inputs.nixpkgs-weekly.legacyPackages.${system};
+  optionalPackages = {
+    "hack-font" = pkgs.nerd-fonts.hack;
+    inherit (weekly) herdr;
+    jj = pkgs.jujutsu;
+    inherit (pkgs) opencode uv;
+  };
+  selectedPackages = map (name: optionalPackages.${name}) canonicalPackages;
   homeApply = pkgs.writeShellApplication {
     name = "finite-home-apply";
     runtimeInputs = with pkgs; [coreutils getent jq];
@@ -33,11 +45,16 @@
     runtimeInputs = with pkgs; [coreutils jq zenity homeApply];
     text = builtins.readFile ./finite-configure;
   };
+  brewMigrationStatus = pkgs.writeShellApplication {
+    name = "finite-brew-migration-status";
+    runtimeInputs = with pkgs; [coreutils gnugrep];
+    text = builtins.readFile ./finite-brew-migration-status;
+  };
 in
   if !validProfile
   then throw "The local Finite profile is invalid or is not canonically ordered."
   else {
-    den.homes.${system}.finite = {
+    den.homes.${system}.${vars.identity.username} = {
       userName = vars.identity.username;
       inherit pkgs;
       aspect = den.aspects.finite-home;
@@ -67,14 +84,15 @@ in
           home = {
             username = lib.mkForce vars.identity.username;
             homeDirectory = lib.mkForce vars.identity.homeDirectory;
-            packages = [configure homeApply];
+            packages = [brewMigrationStatus configure homeApply] ++ selectedPackages;
             sessionVariables = {
               FINITE_FOUNDATION = vars.foundation;
               FINITE_HARDWARE = vars.hardware;
+              FINITE_PACKAGES = lib.concatStringsSep "," canonicalPackages;
               FINITE_ROLES = lib.concatStringsSep "," canonicalRoles;
             };
           };
-          imports = [./local.nix];
+          imports = [../customize.nix ./local.nix];
           programs = {
             nh.homeFlake = "path:${vars.identity.homeDirectory}/.config/home-manager";
             zsh.shellAliases.finite-configure = "${configure}/bin/finite-configure";

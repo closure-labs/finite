@@ -3,9 +3,24 @@
   finiteHomeAssets,
   pkgs,
   ...
-}: {
+}: let
+  ghosttyNixGL = config.lib.nixGL.wrap pkgs.ghostty;
+  ghostty = pkgs.symlinkJoin {
+    name = "finite-ghostty-${pkgs.ghostty.version}";
+    paths = [ghosttyNixGL];
+    postBuild = ''
+      desktop="$out/share/applications/com.mitchellh.ghostty.desktop"
+      desktop_source=$(readlink -f "$desktop")
+      install -m 0444 "$desktop_source" "$desktop.new"
+      substituteInPlace "$desktop.new" \
+        --replace-fail 'DBusActivatable=true' 'DBusActivatable=false'
+      mv -f "$desktop.new" "$desktop"
+    '';
+    meta.mainProgram = "ghostty";
+  };
+in {
   home.packages = with pkgs; [
-    (config.lib.nixGL.wrap ghostty)
+    ghostty
     ansible
     openbao
     opentofu
@@ -17,6 +32,13 @@
     autosuggestion.enable = true;
     enableCompletion = true;
     historySubstringSearch.enable = true;
+    plugins = [
+      {
+        name = "zsh-vi-mode";
+        file = "share/zsh-vi-mode/zsh-vi-mode.plugin.zsh";
+        src = pkgs.zsh-vi-mode;
+      }
+    ];
     syntaxHighlighting.enable = true;
     initContent = builtins.readFile (finiteHomeAssets.devops + "/zsh/.zshrc");
   };
@@ -27,7 +49,7 @@
   };
 
   xdg.configFile = {
-    "ghostty/config".source = finiteHomeAssets.devops + "/ghostty/config.ghostty";
+    "ghostty/config.ghostty".source = finiteHomeAssets.devops + "/ghostty/config.ghostty";
     "zsh/aliases.zsh".source = finiteHomeAssets.devops + "/zsh/aliases.zsh";
     "zsh/bindings.zsh".source = finiteHomeAssets.devops + "/zsh/bindings.zsh";
     "zsh/fzf.zsh".source = finiteHomeAssets.devops + "/zsh/fzf.zsh";

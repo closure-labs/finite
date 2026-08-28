@@ -6,3 +6,6 @@ right-click-action = paste
 
 # Use the Finite zsh shell configuration.
 command = /usr/bin/zsh
+
+# Use the standard, widely supported 256-color terminal type.
+term = xterm-256color

@@ -37,7 +37,7 @@ template="${FINITE_HOME_TEMPLATE_PATH:-/usr/share/finite/home-manager-template}"
 catalog="${FINITE_HOME_CATALOG_PATH:-/usr/share/finite/home-profile-catalog.json}"
 running="${FINITE_RUNNING_PROFILE_PATH:-/usr/share/finite/profile.json}"
 nix_command="${FINITE_NIX_COMMAND:-nix}"
-for required in flake.nix flake.lock finite-template.json modules/finite.nix; do
+for required in customize.nix flake.nix flake.lock finite-template.json modules/finite.nix; do
 	[[ -e "$template/$required" ]] || {
 		echo "Finite Home Manager template is incomplete: $template/$required" >&2
 		exit 2
@@ -59,32 +59,47 @@ yq -o=json '.' "$profile_file" >"$workdir/.input.json" || {
 }
 jq -e '
   type == "object" and
-  ((keys | sort) == ["foundation", "hardware", "identity", "roles", "schema"]) and
-  .schema == 1 and
+  (((.schema == 1) and
+    ((keys | sort) == ["foundation", "hardware", "identity", "roles", "schema"])) or
+   ((.schema == 2) and
+    ((keys | sort) == ["foundation", "hardware", "identity", "packages", "roles", "schema"]))) and
   (.foundation | type == "string") and
   (.hardware | type == "string") and
   (.roles | type == "array") and all(.roles[]; type == "string") and
+  ((.packages // []) | type == "array") and all((.packages // [])[]; type == "string") and
   (.identity | type == "object") and
   ((.identity | keys) - ["homeDirectory", "username"] | length == 0)
 ' "$workdir/.input.json" >/dev/null || {
-	echo "Profile does not match Finite schema 1" >&2
+	echo "Profile does not match a supported Finite schema" >&2
 	exit 2
 }
 
 foundation=$(jq -er '.foundation' "$workdir/.input.json")
 hardware=$(jq -er '.hardware' "$workdir/.input.json")
 roles=$(jq -c '.roles' "$workdir/.input.json")
-jq -e --arg foundation "$foundation" --arg hardware "$hardware" --argjson roles "$roles" '
+if [[ "$(jq -r '.schema' "$workdir/.input.json")" == 1 ]]; then
+	packages='[]'
+else
+	packages=$(jq -c '.packages' "$workdir/.input.json")
+fi
+jq -e --arg foundation "$foundation" --arg hardware "$hardware" \
+	--argjson packages "$packages" --argjson roles "$roles" '
   (.foundations[$foundation].hardware | index($hardware) != null) and
+  (. as $catalog | all($packages[]; $catalog.packages[.] != null)) and
+  (($packages | unique | length) == ($packages | length)) and
   (. as $catalog | all($roles[]; $catalog.roles[.] != null)) and
   (($roles | unique | length) == ($roles | length))
 ' "$catalog" >/dev/null || {
-	echo "Profile contains an unknown or incompatible foundation, hardware profile, or role" >&2
+	echo "Profile contains an unknown or incompatible foundation, hardware profile, package, or role" >&2
 	exit 2
 }
 canonical=$(jq -c --argjson requested "$roles" '
   [.roles | to_entries | sort_by(.value.order)[] | .key |
     select(. as $role | $requested | index($role) != null)]
+' "$catalog")
+canonical_packages=$(jq -c --argjson requested "$packages" '
+  [.packages | to_entries | sort_by(.value.order)[] | .key |
+    select(. as $package | $requested | index($package) != null)]
 ' "$catalog")
 
 supplied_username=$(jq -r '.identity.username // empty' "$workdir/.input.json")
@@ -113,11 +128,26 @@ fi
 jq -n \
 	--arg foundation "$foundation" --arg hardware "$hardware" \
 	--arg username "$username" --arg home "$home_directory" \
+	--argjson packages "$canonical_packages" \
 	--argjson roles "$canonical" \
-	'{schema: 1, foundation: $foundation, hardware: $hardware, roles: $roles,
+	'{schema: 2, foundation: $foundation, hardware: $hardware, packages: $packages, roles: $roles,
     identity: {username: $username, homeDirectory: $home}}' \
 	>"$workdir/profile.json"
 rm -f -- "$workdir/.input.json"
+
+hm_dir="$config_parent/home-manager"
+preserve_customization() {
+	relative_path="${1:?relative customization path is required}"
+	source_path="$hm_dir/$relative_path"
+	[[ -e "$source_path" || -L "$source_path" ]] || return 0
+	[[ -f "$source_path" && ! -L "$source_path" ]] || {
+		echo "Refusing to preserve non-regular customization: $source_path" >&2
+		exit 2
+	}
+	install -m 0600 "$source_path" "$workdir/$relative_path"
+}
+preserve_customization customize.nix
+preserve_customization modules/local.nix
 
 jq -e '.schema == 1 and .generator == "finite-home-init"' \
 	"$workdir/finite-template.json" >/dev/null || {
@@ -133,13 +163,12 @@ jq -e '[.nodes[].locked? | select(. != null) | .type] | all(. != "path")' \
 activation=$(
 	"$nix_command" --accept-flake-config build \
 		--no-update-lock-file \
-		"path:$workdir#homeConfigurations.finite.activationPackage" \
+		"path:$workdir#homeConfigurations.${username}.activationPackage" \
 		--no-link --print-build-logs --print-out-paths
 )
 printf 'Finite Home Manager configuration for %s builds as %s\n' "$username" "$activation"
 [[ "$activate" == false ]] && exit 0
 
-hm_dir="$config_parent/home-manager"
 backup=""
 if [[ -e "$hm_dir" || -L "$hm_dir" ]]; then
 	backup="$config_parent/home-manager.previous.$(date -u +%Y%m%dT%H%M%SZ).$$"

@@ -131,9 +131,9 @@
       })
       profiles;
   };
-  inherit (domainCatalog) roleNames;
+  inherit (domainCatalog) packageNames roleNames;
   homeCatalog = {
-    schema = 2;
+    schema = 3;
     inherit version;
     foundations =
       lib.mapAttrs (
@@ -141,6 +141,7 @@
           inherit (foundation) name template;
           profiles = lib.mapAttrs (_: profile: profile.name) foundation.profiles;
           hardware = domainCatalog.homeHardwareNames;
+          packages = packageNames;
           roles = roleNames;
         }
       )
@@ -158,9 +159,18 @@
         }
       )
       domainCatalog.rolesByName;
+    packages =
+      lib.mapAttrs (
+        _: package: {
+          inherit (package) description label name order;
+          foundations = domainCatalog.foundationNames;
+        }
+      )
+      domainCatalog.packagesByName;
     compatibility =
       lib.mapAttrs (_: _foundation: {
         hardware = domainCatalog.homeHardwareNames;
+        packages = packageNames;
         roles = roleNames;
       })
       domainCatalog.foundationsByName;

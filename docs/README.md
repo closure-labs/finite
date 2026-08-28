@@ -8,7 +8,8 @@ for installing, configuring, developing, and operating Finite.
 | Goal | Guide | What it covers |
 | --- | --- | --- |
 | Install or update a workstation | [Installation and updates](installation.md) | Image tags, bootc switching and rollback, first login, provisioning, ISO verification, and the Determinate Nix lifecycle |
-| Configure a user environment | [Foundations, hardware, and roles](configuration.md) | Profile schema, Home Manager bootstrap, templates, compatibility, and the domain catalog |
+| Configure a user environment | [Foundations, hardware, roles, and packages](configuration.md) | Profile schema, Home Manager bootstrap, customization, graphical selection, templates, compatibility, and the domain catalog |
+| Reduce Homebrew safely | [Staged Homebrew migration](homebrew-migration.md) | Bluefin-owned formulas, Nix replacements, fallback layers, and removal gates |
 | Diagnose a problem | [Troubleshooting](troubleshooting.md) | Deployment state, user services, image builds, the network installer, and hardware diagnostics |
 
 ## Hardware reference

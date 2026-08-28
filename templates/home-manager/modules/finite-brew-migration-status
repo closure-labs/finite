@@ -1,0 +1,61 @@
+set -euo pipefail
+
+brew_command="${FINITE_BREW_COMMAND:-/home/linuxbrew/.linuxbrew/bin/brew}"
+[[ -x "$brew_command" ]] || {
+  echo "Bluefin Homebrew is unavailable: $brew_command" >&2
+  exit 2
+}
+
+printf '%-12s %-34s %-18s %s\n' LAYER BREW_PACKAGE COMMAND ACTIVE_PROVIDER
+printf '%-12s %-34s %-18s %s\n' ----- ------------ ------- ---------------
+
+while IFS='|' read -r layer formula command; do
+  "$brew_command" list --formula --versions "$formula" >/dev/null 2>&1 || continue
+  active=$(command -v "$command" 2>/dev/null || true)
+  if [[ -z "$active" ]]; then
+    provider=missing
+  else
+    resolved=$(readlink -f "$active")
+    case "$resolved" in
+      /nix/store/*) provider="nix:$resolved" ;;
+      /home/linuxbrew/.linuxbrew/*|/var/home/linuxbrew/.linuxbrew/*) provider="brew:$resolved" ;;
+      *) provider="host:$resolved" ;;
+    esac
+  fi
+  printf '%-12s %-34s %-18s %s\n' "$layer" "$formula" "$command" "$provider"
+done <<'EOF'
+non-stock|awscli|aws
+non-stock|fzf|fzf
+non-stock|herdr|herdr
+non-stock|jj|jj
+non-stock|marp-cli|marp
+non-stock|neovim|nvim
+non-stock|opencode|opencode
+non-stock|uv|uv
+bluefin-cli|atuin|atuin
+bluefin-cli|bat|bat
+bluefin-cli|valkyrie00/bbrew/bbrew|bbrew
+bluefin-cli|chezmoi|chezmoi
+bluefin-cli|direnv|direnv
+bluefin-cli|dysk|dysk
+bluefin-cli|eza|eza
+bluefin-cli|fd|fd
+bluefin-cli|gh|gh
+bluefin-cli|mise|mise
+bluefin-cli|podman-tui|podman-tui
+bluefin-cli|ripgrep|rg
+bluefin-cli|starship|starship
+bluefin-cli|tealdeer|tldr
+bluefin-cli|trash-cli|trash
+bluefin-cli|ugrep|ugrep
+bluefin-cli|uutils-coreutils|coreutils
+bluefin-cli|yq|yq
+bluefin-cli|zoxide|zoxide
+EOF
+
+printf '\nExceptions requiring manual verification:\n'
+printf '  bash-preexec: Bluefin sources the Brew file directly. Keep it through the fallback stage.\n'
+printf '  zsh plugins: Home Manager owns active Zsh integrations; Brew plugin formulae are fallback only.\n'
+printf '  fonts: verify with: fc-list | grep -F "Hack Nerd Font"\n'
+printf '  casks: %s\n' "$($brew_command list --cask 2>/dev/null | paste -sd, -)"
+printf '\nThis command is read-only. Do not remove Brew packages until every required command reports nix:.\n'

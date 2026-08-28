@@ -11,14 +11,27 @@ nix_wait_seconds="${FINITE_NIX_WAIT_SECONDS:-120}"
 home_init="${FINITE_HOME_INIT_COMMAND:-/usr/libexec/finite/home-init}"
 
 current=true
-for required in flake.nix flake.lock finite-template.json profile.json modules/finite.nix; do
+for required in customize.nix flake.nix flake.lock finite-template.json profile.json modules/finite.nix; do
 	[[ -e "$home_flake/$required" ]] || current=false
 done
 if [[ "$current" == true ]] &&
 	cmp -s "$home_flake/finite-template.json" "$home_template/finite-template.json" &&
 	jq -e '.schema == 1 and .generator == "finite-home-init"' "$home_flake/finite-template.json" >/dev/null 2>&1 &&
 	jq -e '[.nodes[].locked? | select(. != null) | .type] | all(. != "path")' "$home_flake/flake.lock" >/dev/null 2>&1 &&
-	jq -e '.schema == 1 and (.roles | type == "array") and (.identity | type == "object")' "$home_flake/profile.json" >/dev/null 2>&1; then
+	jq -e '
+    .schema == 2 and
+    (.foundation == "bluefin" or .foundation == "bluefin-dx") and
+    (.hardware == "generic-x86_64" or .hardware == "dell-xps-9350-intel") and
+    (.packages | type == "array") and
+    all(.packages[]; . == "hack-font" or . == "herdr" or . == "jj" or
+      . == "opencode" or . == "uv") and
+    ((.packages | unique | length) == (.packages | length)) and
+    (.roles | type == "array") and
+    all(.roles[]; . == "developer" or . == "sales" or . == "trainer" or
+      . == "support" or . == "executive" or . == "it") and
+    ((.roles | unique | length) == (.roles | length)) and
+    (.identity | type == "object")
+  ' "$home_flake/profile.json" >/dev/null 2>&1; then
 	exit 0
 fi
 [[ "$nix_wait_seconds" =~ ^[0-9]+$ ]] || {
@@ -53,7 +66,11 @@ if [[ -r "$seed" ]]; then
 fi
 
 if [[ -r "$profile" ]] && jq -e '
-  .schema == 1 and
+  ((.schema == 1 and (.packages? == null)) or
+    (.schema == 2 and (.packages | type == "array") and
+      all(.packages[]; . == "hack-font" or . == "herdr" or . == "jj" or
+        . == "opencode" or . == "uv") and
+      ((.packages | unique | length) == (.packages | length)))) and
   (.foundation == "bluefin" or .foundation == "bluefin-dx") and
   (.hardware == "generic-x86_64" or .hardware == "dell-xps-9350-intel") and
   (.roles | type == "array") and
@@ -97,7 +114,7 @@ jq -n \
 	--arg foundation "$foundation" \
 	--arg hardware "$hardware" \
 	--arg roles "$roles" \
-	'{schema: 1, foundation: $foundation, hardware: $hardware,
+	'{schema: 2, foundation: $foundation, hardware: $hardware, packages: [],
     roles: (if $roles == "" then [] else ($roles | split(",")) end), identity: {}}' \
 	>"$generated"
 FINITE_NIX_COMMAND="$nix" "$home_init" --profile "$generated"

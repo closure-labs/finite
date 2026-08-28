@@ -117,8 +117,8 @@
       ];
   };
   allRoles = catalog.roleNames;
-  mkHomeProof = foundation: hardware: roles: let
-    username = "finite-check-${foundation}-${hardware}-${lib.concatStringsSep "-" roles}";
+  mkHomeProof = foundation: hardware: packages: roles: let
+    username = "finite-check-${foundation}-${hardware}-${lib.concatStringsSep "-" packages}-${lib.concatStringsSep "-" roles}";
     evaluated = lib.evalModules {
       # Den resolves its generated module imports from these Flake inputs.
       specialArgs.inputs = outputDependencies.homeModuleInputs;
@@ -126,8 +126,8 @@
         homeFlakeModule
         {
           finite.homeProfile = {
-            schema = 1;
-            inherit foundation hardware roles;
+            schema = 2;
+            inherit foundation hardware packages roles;
             identity = {
               inherit username;
               homeDirectory = "/var/home/${username}";
@@ -137,11 +137,11 @@
       ];
     };
   in
-    evaluated.config.flake.homeConfigurations.finite.activationPackage;
+    evaluated.config.flake.homeConfigurations.${username}.activationPackage;
   foundationHardwareProofs =
     lib.concatMap (
       foundation:
-        map (hardware: mkHomeProof foundation hardware []) catalog.homeHardwareNames
+        map (hardware: mkHomeProof foundation hardware [] []) catalog.homeHardwareNames
     )
     catalog.foundationNames;
   roleProofs =
@@ -150,6 +150,7 @@
         mkHomeProof
         (builtins.head catalog.foundationNames)
         (builtins.head catalog.homeHardwareNames)
+        []
         [role]
     )
     allRoles;
@@ -157,10 +158,17 @@
     mkHomeProof
     (lib.last catalog.foundationNames)
     (lib.last catalog.homeHardwareNames)
+    []
     allRoles;
+  allPackagesProof =
+    mkHomeProof
+    (builtins.head catalog.foundationNames)
+    (builtins.head catalog.homeHardwareNames)
+    catalog.packageNames
+    [];
   homeProofsEvaluated =
     builtins.deepSeq (
-      map (activation: activation.drvPath) (foundationHardwareProofs ++ roleProofs ++ [allRolesProof])
+      map (activation: activation.drvPath) (foundationHardwareProofs ++ roleProofs ++ [allRolesProof allPackagesProof])
     )
     true;
   homeCheck = assert homeProofsEvaluated;
