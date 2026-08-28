@@ -5,9 +5,9 @@ Finite publishes four foundation images:
 | Tag | Foundation and hardware |
 | --- | --- |
 | `bluefin-generic` (`latest`) | Bluefin, generic x86-64 |
-| `bluefin-next` | Bluefin, vendor-neutral x86-64 with Fedora 7.2 |
+| `next` | Bluefin, vendor-neutral x86-64 with Fedora 7.2 |
 | `bluefin-dx-generic` | Bluefin DX, generic x86-64 |
-| `bluefin-dx-next` | Bluefin DX, vendor-neutral x86-64 with Fedora 7.2 |
+| `dev-next` | Bluefin DX, vendor-neutral x86-64 with Fedora 7.2 |
 
 Roles are not image tags. Every combination of the six roles is selected per
 user through Home Manager after the foundation boots.

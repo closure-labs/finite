@@ -23,8 +23,10 @@ jq -e '
   .profiles["bluefin-generic"].kernelRelease == null and
   .profiles["bluefin-next"].modules == ["base", "hardware-next-x86_64"] and
   .profiles["bluefin-next"].kernelRelease == "7.2.0-61.fc45.x86_64" and
+  .profiles["bluefin-next"].tags == ["next"] and
   .profiles["bluefin-dx-next"].modules == ["base", "hardware-next-x86_64"] and
-  .profiles["bluefin-dx-next"].kernelRelease == "7.2.0-61.fc45.x86_64"
+  .profiles["bluefin-dx-next"].kernelRelease == "7.2.0-61.fc45.x86_64" and
+  .profiles["bluefin-dx-next"].tags == ["dev-next"]
 ' "${catalog}" >/dev/null
 jq -e '
   map(.profile) == [

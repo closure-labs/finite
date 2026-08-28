@@ -63,7 +63,7 @@ Bluefin foundation on generic x86-64 hardware.
 | --- | --- |
 | A focused everyday workstation | `latest` or `bluefin-generic` |
 | Developer tools in the system foundation | `bluefin-dx-generic` |
-| Fedora 7.2 hardware support, including Intel IPU7 | `bluefin-next` or `bluefin-dx-next` |
+| Fedora 7.2 hardware support, including Intel IPU7 | `next` or `dev-next` |
 
 Bluefin and Bluefin DX can both use every Finite role. The image chooses the
 system foundation and kernel channel; your roles and optional Home Manager

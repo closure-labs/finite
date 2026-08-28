@@ -1,11 +1,11 @@
 # Dell XPS 13 9350
 
-Use `bluefin-next` or `bluefin-dx-next` on the XPS 13 9350. These are
+Use `next` or `dev-next` on the XPS 13 9350. These are
 vendor-neutral images: their only hardware delta from the corresponding generic
 image is the pinned Fedora 7.2 runtime kernel.
 
 ```console
-sudo bootc switch ghcr.io/closure-labs/finite:bluefin-dx-next
+sudo bootc switch ghcr.io/closure-labs/finite:dev-next
 sudo systemctl reboot
 uname -r
 ```
