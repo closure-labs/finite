@@ -48,6 +48,8 @@ All notable changes to Finite are documented here. The format follows
 
 ### Fixed
 
+- Prevented the Vates Notes and Grist fixed-URL launchers from advertising
+  themselves as web browsers and becoming GNOME's default URL handler.
 - Installed Bitwarden's Linux Polkit unlock action in the immutable base image
   so the Nix desktop application can use PAM-backed fingerprint authentication.
 - Made GNOME launch the nixGL-wrapped Ghostty executable directly instead of
