@@ -74,17 +74,60 @@ pkgs.writeShellApplication {
       label_args+=(--label "''${label}")
     done < <(jq -r 'to_entries[] | "\(.key)=\(.value)"' <<<"''${preserved_labels}")
 
+    skopeo_args=(--retry-times 3)
+    if [[ -n "''${authfile}" ]]; then
+      skopeo_args+=(--authfile "''${authfile}")
+    fi
+
+    # The image produced by the Containerfile is already a valid bootc image:
+    # the build runs bootc container lint and ostree container commit, and it
+    # retains the chunked Bluefin base layers. Rechunking that complete desktop
+    # rootfs from scratch is only an update-size optimization, while doing so on
+    # an ephemeral GitHub runner requires several additional full-size copies
+    # and can exhaust the runner without making progress. Preserve the validated
+    # layer graph for trusted registry publication. Local OCI-archive outputs
+    # continue through rpm-ostree below so pull-request validation still checks
+    # the optional rechunk path.
+    if [[ "''${output}" == docker://* ]]; then
+      started="''${SECONDS}"
+      echo 'Publishing validated bootc layer graph without a full rechunk' >&2
+      "''${skopeo}" copy "''${skopeo_args[@]}" \
+        --all \
+        --preserve-digests \
+        "containers-storage:''${source_image}" \
+        "''${output}" >&2
+      rechunk_seconds=$((SECONDS - started))
+
+      metadata="$("''${skopeo}" inspect "''${skopeo_args[@]}" "''${output}")"
+      jq -e --argjson expected "''${preserved_labels}" '
+        (.Labels // {}) as $actual |
+        $expected | to_entries | all(.[]; $actual[.key] == .value)
+      ' <<<"''${metadata}" >/dev/null
+      digest="$(jq -er '.Digest' <<<"''${metadata}")"
+      [[ "''${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
+
+      jq -cn \
+        --arg digest "''${digest}" \
+        --argjson publish_seconds "''${rechunk_seconds}" \
+        '{
+          digest: $digest,
+          mode: "passthrough",
+          previous_build_digest: "none",
+          rechunk_seconds: $publish_seconds
+        }'
+      exit 0
+    fi
+
     # rpm-ostree's full and --previous-build paths require more than the
     # ordinary rootless Podman capability set. A 2026-08-26 fixture run proved
     # SYS_ADMIN alone fails while both privileged paths succeed. Keep the
     # privileged container constrained to the read-only image mount below and
     # one isolated output mount. Incremental builds additionally receive the
     # registry auth file read-only because rpm-ostree must fetch the immutable
-    # previous build. Full rechunks and staged publication stay registry-free.
+    # previous build. Full local validation rechunks stay registry-free.
     # No host devices or other host paths are exposed.
     run_args=(--rm --pull=never --privileged)
     container_output="''${output}"
-    staged_archive=
     if [[ "''${output}" == oci-archive:/* ]]; then
       archive_path="''${output#oci-archive:}"
       archive_dir="$(dirname -- "''${archive_path}")"
@@ -95,18 +138,6 @@ pkgs.writeShellApplication {
       archive_name="$(basename -- "''${archive_path}")"
       container_output="oci-archive:/run/finite-rechunk-output/''${archive_name}"
       run_args+=(--volume "''${archive_dir}:/run/finite-rechunk-output")
-    elif [[ "''${output}" == docker://* ]]; then
-      staging_root="''${FINITE_RECHUNK_TMPDIR:-''${RUNNER_TEMP:-''${TMPDIR:-/tmp}}}"
-      [[ -d "''${staging_root}" ]] || {
-        echo "Rechunk staging directory is missing: ''${staging_root}" >&2
-        exit 2
-      }
-      archive_dir="$(mktemp -d -p "''${staging_root}" finite-rechunk.XXXXXX)"
-      trap 'rm -rf -- "''${archive_dir}"' EXIT
-      staged_archive="''${archive_dir}/finite.oci"
-      container_output=oci-archive:/run/finite-rechunk-output/finite.oci
-      run_args+=(--volume "''${archive_dir}:/run/finite-rechunk-output")
-      echo 'Staging registry-bound rechunk in a local OCI archive' >&2
     fi
     run_args+=(
       # Podman image mounts are read-only unless rw=true is specified.
@@ -174,18 +205,6 @@ pkgs.writeShellApplication {
     fi
     rechunk_seconds=$((SECONDS - started))
 
-    skopeo_args=(--retry-times 3)
-    if [[ -n "''${authfile}" ]]; then
-      skopeo_args+=(--authfile "''${authfile}")
-    fi
-    if [[ -n "''${staged_archive}" ]]; then
-      echo "Publishing staged OCI archive to ''${output}" >&2
-      "''${skopeo}" copy "''${skopeo_args[@]}" \
-        --all \
-        --preserve-digests \
-        "oci-archive:''${staged_archive}" \
-        "''${output}" >&2
-    fi
     metadata="$("''${skopeo}" inspect "''${skopeo_args[@]}" "''${output}")"
     jq -e --argjson expected "''${preserved_labels}" '
       (.Labels // {}) as $actual |

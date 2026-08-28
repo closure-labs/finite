@@ -121,8 +121,6 @@ grep -qF -- "--previous-build ${previous}" "${fallback_log}"
 
 remote_output='docker://ghcr.io/example/finite:test'
 remote_log="${test_root}/remote.log"
-runner_temp="${test_root}/runner-temp"
-mkdir "${runner_temp}"
 : >"${remote_log}"
 : >"${skopeo_log}"
 report="$(
@@ -132,21 +130,18 @@ report="$(
 		FAKE_SKOPEO_LOG="${skopeo_log}" \
 		FINITE_PODMAN="${test_root}/podman" \
 		FINITE_SKOPEO="${test_root}/skopeo" \
-		RUNNER_TEMP="${runner_temp}" \
 		"${rechunk_image}" \
 			--source "${source_image}" \
 			--output "${remote_output}" \
+			--previous-build "${previous}" \
 			--authfile "${test_root}/auth.json"
 )"
-jq -e '.mode == "full"' <<<"${report}" >/dev/null
-grep -Eq -- "--volume ${runner_temp}/finite-rechunk\..+:/run/finite-rechunk-output" \
-	"${remote_log}"
-grep -qF -- '--output oci-archive:/run/finite-rechunk-output/finite.oci' \
-	"${remote_log}"
-if grep -qF -- '/run/registry-auth.json' "${remote_log}"; then
-	echo 'Full registry-bound rechunk unexpectedly received registry auth' >&2
+jq -e '.mode == "passthrough" and .previous_build_digest == "none"' \
+	<<<"${report}" >/dev/null
+if [[ -s "${remote_log}" ]]; then
+	echo 'Registry publication unexpectedly invoked rpm-ostree' >&2
 	exit 1
 fi
-grep -qF -- "copy --retry-times 3 --authfile ${test_root}/auth.json --all --preserve-digests oci-archive:" \
+grep -qF -- "copy --retry-times 3 --authfile ${test_root}/auth.json --all --preserve-digests containers-storage:${source_image}" \
 	"${skopeo_log}"
 grep -qF -- " ${remote_output}" "${skopeo_log}"
