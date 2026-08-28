@@ -31,8 +31,8 @@ All notable changes to Finite are documented here. The format follows
   Nix package delivery, and retired the base Spotify and Signal declarations so
   those applications can remain workstation-only customizations. Existing
   unmanaged installations and their data remain available for manual removal.
-- Replaced the Dell-specific Bluefin images with vendor-neutral `bluefin-next`
-  and `bluefin-dx-next` images pinned to Fedora's signed 7.2 runtime kernel.
+- Replaced the Dell-specific Bluefin images with vendor-neutral `next` and
+  `dev-next` images pinned to Fedora's signed 7.2 runtime kernel.
 - Decoupled boot-image hardware from Home Manager hardware compatibility, so
   the Dell display policy remains available without a Dell-specific image.
 - Migrated Nix substitutions and proof publication to the Finite-owned

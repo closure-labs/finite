@@ -14,7 +14,7 @@ let
         next-x86_64 = {
           name = "bluefin-next";
           order = 10;
-          tags = ["bluefin-next"];
+          tags = ["next"];
         };
       };
     }
@@ -32,7 +32,7 @@ let
         next-x86_64 = {
           name = "bluefin-dx-next";
           order = 20;
-          tags = ["bluefin-dx-next"];
+          tags = ["dev-next"];
         };
       };
     }

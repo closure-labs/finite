@@ -68,7 +68,7 @@ and invokes Podman:
 nix shell --accept-flake-config .#ci-image-build -c finite-image-build \
   bluefin-generic localhost/finite:bluefin-generic
 nix shell --accept-flake-config .#ci-image-build -c finite-image-build \
-  bluefin-dx-next localhost/finite:bluefin-dx-next
+  bluefin-dx-next localhost/finite:dev-next
 ```
 
 Profile names and their stable ordering are declared in
