@@ -55,8 +55,10 @@ validated the exact seed artifacts.
 Publication and pull-request validation share the focused
 `finite-rechunk-image` Nix application. It preserves non-generated OCI
 labels, format version 2, and the 127-layer ceiling, then validates the output
-digest and labels. On publication, the workflow resolves the current profile
-tag to an immutable digest and accepts it only when Finite's trusted
+digest and labels. Registry-bound rechunks are first written to an isolated
+local OCI archive, then uploaded with Skopeo's authenticated retry path. On
+publication, the workflow resolves the current profile tag to an immutable
+digest and accepts it only when Finite's trusted
 `build-profile.yml` identity signed it. When the source image's rpm-ostree
 advertises `--previous-build`, that verified `docker://...@sha256:...` reference
 enables incremental rechunking without downloading the previous image. Missing,

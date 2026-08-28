@@ -37,6 +37,11 @@ chmod +x "${test_root}/podman"
 printf '#!%s\n' "$(command -v bash)" >"${test_root}/skopeo"
 cat >>"${test_root}/skopeo" <<'EOF'
 set -euo pipefail
+if [[ "$1" == copy ]]; then
+	printf '%s\n' "$*" >>"${FAKE_SKOPEO_LOG}"
+	exit 0
+fi
+[[ "$1" == inspect ]]
 jq -n '{
 	Digest:"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
 	Labels:{
@@ -50,6 +55,8 @@ chmod +x "${test_root}/skopeo"
 source_image='localhost/finite:test'
 output="oci-archive:${test_root}/finite.oci"
 previous='docker://ghcr.io/example/finite@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+skopeo_log="${test_root}/skopeo.log"
+: >"${skopeo_log}"
 
 run_rechunk() {
 	local support=$1 fail=$2 log=$3
@@ -58,6 +65,7 @@ run_rechunk() {
 	FAKE_INCREMENTAL_FAIL="${fail}" \
 		FAKE_PODMAN_LOG="${log}" \
 		FAKE_PREVIOUS_SUPPORT="${support}" \
+		FAKE_SKOPEO_LOG="${skopeo_log}" \
 		FINITE_PODMAN="${test_root}/podman" \
 		FINITE_SKOPEO="${test_root}/skopeo" \
 		"${rechunk_image}" \
@@ -110,3 +118,27 @@ jq -e '.mode == "full"' <<<"${report}" >/dev/null
 [[ "$(wc -l <"${fallback_log}")" == 2 ]]
 grep -qF -- "--previous-build ${previous}" "${fallback_log}"
 [[ "$(grep -cF -- '--previous-build' "${fallback_log}")" == 1 ]]
+
+remote_output='docker://ghcr.io/example/finite:test'
+remote_log="${test_root}/remote.log"
+: >"${remote_log}"
+: >"${skopeo_log}"
+report="$(
+	FAKE_INCREMENTAL_FAIL=false \
+		FAKE_PODMAN_LOG="${remote_log}" \
+		FAKE_PREVIOUS_SUPPORT=false \
+		FAKE_SKOPEO_LOG="${skopeo_log}" \
+		FINITE_PODMAN="${test_root}/podman" \
+		FINITE_SKOPEO="${test_root}/skopeo" \
+		"${rechunk_image}" \
+			--source "${source_image}" \
+			--output "${remote_output}" \
+			--authfile "${test_root}/auth.json"
+)"
+jq -e '.mode == "full"' <<<"${report}" >/dev/null
+grep -Eq -- '--volume .+:/run/finite-rechunk-output' "${remote_log}"
+grep -qF -- '--output oci-archive:/run/finite-rechunk-output/finite.oci' \
+	"${remote_log}"
+grep -qF -- "copy --retry-times 3 --authfile ${test_root}/auth.json --all --preserve-digests oci-archive:" \
+	"${skopeo_log}"
+grep -qF -- " ${remote_output}" "${skopeo_log}"

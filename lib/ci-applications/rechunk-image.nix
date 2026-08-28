@@ -88,6 +88,7 @@ pkgs.writeShellApplication {
       )
     fi
     container_output="''${output}"
+    staged_archive=
     if [[ "''${output}" == oci-archive:/* ]]; then
       archive_path="''${output#oci-archive:}"
       archive_dir="$(dirname -- "''${archive_path}")"
@@ -98,6 +99,13 @@ pkgs.writeShellApplication {
       archive_name="$(basename -- "''${archive_path}")"
       container_output="oci-archive:/run/finite-rechunk-output/''${archive_name}"
       run_args+=(--volume "''${archive_dir}:/run/finite-rechunk-output")
+    elif [[ "''${output}" == docker://* ]]; then
+      archive_dir="$(mktemp -d)"
+      trap 'rm -rf -- "''${archive_dir}"' EXIT
+      staged_archive="''${archive_dir}/finite.oci"
+      container_output=oci-archive:/run/finite-rechunk-output/finite.oci
+      run_args+=(--volume "''${archive_dir}:/run/finite-rechunk-output")
+      echo 'Staging registry-bound rechunk in a local OCI archive' >&2
     fi
     run_args+=(
       # Podman image mounts are read-only unless rw=true is specified.
@@ -161,6 +169,14 @@ pkgs.writeShellApplication {
     skopeo_args=(--retry-times 3)
     if [[ -n "''${authfile}" ]]; then
       skopeo_args+=(--authfile "''${authfile}")
+    fi
+    if [[ -n "''${staged_archive}" ]]; then
+      echo "Publishing staged OCI archive to ''${output}" >&2
+      "''${skopeo}" copy "''${skopeo_args[@]}" \
+        --all \
+        --preserve-digests \
+        "oci-archive:''${staged_archive}" \
+        "''${output}" >&2
     fi
     metadata="$("''${skopeo}" inspect "''${skopeo_args[@]}" "''${output}")"
     jq -e --argjson expected "''${preserved_labels}" '
