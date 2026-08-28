@@ -205,6 +205,14 @@ if rg -n 'libcamera|hm1092|updates/finite|configure-firefox-pipewire-camera' \
 fi
 test -f modules/aspects/roles/support/default.nix
 
+while IFS= read -r fixed_web_shortcut; do
+	if grep -Eq '^[[:space:]]*(exec[[:space:]]*=|Exec=).*https?://' "${fixed_web_shortcut}" &&
+		grep -qF 'WebBrowser' "${fixed_web_shortcut}"; then
+		echo "Fixed-URL shortcut claims to be a web browser: ${fixed_web_shortcut}" >&2
+		exit 1
+	fi
+done < <(find modules templates -type f \( -name '*.desktop' -o -name '*.nix' \) -print)
+
 if find modules/aspects/roles -type d \( -path '*/rootfs/files' -o -path '*/rootfs/manifests' \) | grep -q .; then
 	echo 'Role aspects retain a legacy rootfs/files or rootfs/manifests wrapper' >&2
 	exit 1

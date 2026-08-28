@@ -4,5 +4,5 @@ Name=Grist
 Comment=Open Vates Grist in Firefox
 Exec=firefox --new-window https://grist.vates.tech
 Icon=firefox
-Categories=Office;WebBrowser;
+Categories=Office;
 Terminal=false
