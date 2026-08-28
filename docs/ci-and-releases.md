@@ -53,28 +53,20 @@ shards. The build action invokes that policy only after it has produced and
 validated the exact seed artifacts.
 
 Publication and pull-request validation share the focused
-`finite-rechunk-image` Nix application. It preserves non-generated OCI
-labels, format version 2, and the 127-layer ceiling, then validates the output
-digest and labels. Registry-bound rechunks are first written to an isolated
-local OCI archive under the runner's validated temporary filesystem, then
-uploaded with Skopeo's authenticated retry path. Full local rechunks do not
-mount registry credentials; only incremental rechunks receive read-only auth
-to fetch their verified previous build. On
-publication, the workflow resolves the current profile tag to an immutable
-digest and accepts it only when Finite's trusted
-`build-profile.yml` identity signed it. When the source image's rpm-ostree
-advertises `--previous-build`, that verified `docker://...@sha256:...` reference
-enables incremental rechunking without downloading the previous image. Missing,
-unverifiable, unsupported, or failed incremental inputs fall back to the same
-full rechunk used by validation.
+`finite-rechunk-image` Nix application. The Containerfile already preserves
+Bluefin's layer graph, runs `bootc container lint`, and finishes with
+`ostree container commit`. Trusted registry publication therefore copies that
+validated local image directly with Skopeo and verifies its digest and labels.
+It does not create another full-size rootfs, OSTree repository, and OCI archive
+on the ephemeral runner merely to optimize layer boundaries. Pull-request
+validation still exercises rpm-ostree's local OCI-archive path with format
+version 2 and the 127-layer ceiling. Those local full rechunks do not receive
+registry credentials; only an explicitly requested incremental local rechunk
+receives read-only auth for its immutable previous build.
 
-Each profile summary records upstream-load, container-build, and rechunk
-durations, incremental/full mode, and the previous-build digest. The rollout
-comparison uses the v0.3.0 baseline and, in particular, the former Bluefin DX Dell profile's
-547-second rechunk. After the next three comparable base builds, incremental
-mode remains enabled only if its median is at least 15% faster (465 seconds or
-less for that baseline). Otherwise only the workflow's previous-build input is
-removed; the centralized application, validation, and timing remain.
+Each profile summary records upstream-load, container-build, and publication
+durations. Registry publication reports `passthrough`; local validation reports
+incremental or full rechunk mode and the previous-build digest.
 
 Events whose classification is predetermined (scheduled runs and publishing
 workflow dispatches) use a shallow checkout. Repository checks are also

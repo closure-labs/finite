@@ -46,7 +46,6 @@ pkgs.writeShellApplication {
     podman_command="''${FINITE_PODMAN:-podman}"
     buildah_command="''${FINITE_BUILDAH:-buildah}"
     skopeo_command="''${FINITE_SKOPEO:-skopeo}"
-    cosign_command="''${FINITE_COSIGN:-cosign}"
     reuse_command="''${FINITE_IMAGE_REUSE:-${imageReuse}/bin/finite-image-reuse}"
     load_command="''${FINITE_LOAD_BLUEFIN:-${loadBluefin}/bin/finite-load-bluefin}"
     rechunk_command="''${FINITE_RECHUNK_IMAGE:-${rechunkImage}/bin/finite-rechunk-image}"
@@ -183,29 +182,11 @@ pkgs.writeShellApplication {
       build_seconds=$((SECONDS - build_started))
       build_outcome=success
 
-      previous_reference=
-      previous_metadata="$("''${skopeo_command}" inspect --retry-times 3 \
-        "docker://''${IMAGE_REF}:''${BUILD_PROFILE}" 2>/dev/null || true)"
-      candidate_previous_digest="$(jq -r '.Digest // empty' <<<"''${previous_metadata}")"
-      if [[ "''${candidate_previous_digest}" =~ ^sha256:[0-9a-f]{64}$ ]] &&
-        "''${cosign_command}" verify \
-          --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-          --certificate-identity "''${COSIGN_IDENTITY}" \
-          "''${IMAGE_REF}@''${candidate_previous_digest}" >/dev/null 2>&1; then
-        previous_build_digest="''${candidate_previous_digest}"
-        previous_reference="docker://''${IMAGE_REF}@''${candidate_previous_digest}"
-      else
-        echo "''${BUILD_PROFILE}: no verifiable previous build; using a full rechunk" >&2
-      fi
-
       rechunk_args=(
         --source "''${primary_image}"
         --output "docker://''${primary_image}"
         --authfile "''${REGISTRY_AUTH_FILE}"
       )
-      if [[ -n "''${previous_reference}" ]]; then
-        rechunk_args+=(--previous-build "''${previous_reference}")
-      fi
       rechunk_report="$(FINITE_PODMAN="''${podman_command}" \
         "''${rechunk_command}" "''${rechunk_args[@]}")"
       staged_digest="$(jq -er '.digest' <<<"''${rechunk_report}")"

@@ -116,7 +116,7 @@ fi
 EOF
 cat >"${test_root}/rechunk" <<'EOF'
 #!/usr/bin/env bash
-jq -cn '{digest:"sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",mode:"full",previous_build_digest:"none",rechunk_seconds:0}'
+jq -cn '{digest:"sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",mode:"passthrough",previous_build_digest:"none",rechunk_seconds:0}'
 EOF
 make_executable "${test_root}/empty-reuse" "${test_root}/success" \
 	"${test_root}/stage-skopeo" "${test_root}/rechunk"
