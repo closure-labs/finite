@@ -26,6 +26,7 @@ in {
 
     "automation:update-locks".exec = runLeaf "ci-update-locks" "finite-update-locks" "";
     "automation:validate-locks".exec = runLeaf "ci-lock-validate" "finite-ci-validate-locks" "";
+    "automation:fix-hashes".exec = runLeaf "ci-fix-nix-hashes" "finite-fix-nix-hashes" "";
     "automation:trusted-update".exec = runLeaf "ci-trusted-update" "finite-trusted-update" "";
     "automation:queue".exec = runLeaf "ci-queue-dependabot" "finite-queue-dependabot" "";
     "automation:cleanup".exec = runLeaf "ci-package-cleanup" "finite-package-cleanup" "";

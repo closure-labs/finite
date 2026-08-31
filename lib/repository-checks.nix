@@ -206,6 +206,7 @@
     "releaseNotes"
     "releaseControl"
     "githubOutput"
+    "fixNixHashes"
     "updateLocks"
     "updateHomeRelease"
     "sbomAttestation"
@@ -444,6 +445,7 @@ in {
       applications.ciPrepare
       applications.validateCiPlan
       applications.ciGate
+      applications.fixNixHashes
       applications.githubOutput
       applications.imageVerify
       applications.profileStage
@@ -461,6 +463,7 @@ in {
       bash tests/automation/classify-changes.sh
       bash tests/automation/classify-ci.sh
       bash tests/automation/ci-gate.sh
+      bash tests/automation/fix-nix-hashes.sh
       bash tests/automation/ci-applications.sh \
         ${applications.githubOutput}/bin/finite-github-output \
         ${applications.imageVerify}/bin/finite-image-verify \
@@ -621,6 +624,25 @@ in {
 
       grep -qF 'nix shell --accept-flake-config .#ci-check' .github/workflows/build.yml
       grep -qF 'nix shell --accept-flake-config .#ci-prepare' .github/workflows/build.yml
+      yq -e '
+        .jobs."fix-hashes".needs == "checks" and
+        .jobs."fix-hashes".permissions.contents == "write" and
+        (.jobs."fix-hashes".if | contains("dependabot[bot]")) and
+        (.jobs."fix-hashes".if | contains("head.repo.full_name == github.repository")) and
+        (.jobs."fix-hashes".steps[0].with.ref == "''${{ github.event.pull_request.base.sha }}") and
+        (.jobs."fix-hashes".steps[0].with."persist-credentials" == false) and
+        ([.jobs."fix-hashes".steps[] |
+          select(.run != null and
+            (.run | contains(".#ci-fix-nix-hashes")) and
+            (.run | contains("finite-fix-nix-hashes")))] |
+          length == 1)
+      ' .github/workflows/build.yml >/dev/null
+      grep -qF 'determinate-nixd fix hashes --auto-apply' \
+        ${lib.getExe applications.fixNixHashes}
+      grep -qF 'unset GH_TOKEN GITHUB_TOKEN' \
+        ${lib.getExe applications.fixNixHashes}
+      grep -qF -- '--force-with-lease="refs/heads/''${PR_HEAD_REF}:''${PR_HEAD_SHA}"' \
+        ${lib.getExe applications.fixNixHashes}
       for updater in \
         update-bluefin.yml \
         update-determinate-nix.yml \
@@ -732,7 +754,9 @@ in {
       ! grep -R -qF 'toolset:' .github
       grep -qF 'finite-ci-gate' .github/workflows/build.yml
       grep -qF 'finite-promote-images' .github/workflows/build.yml
-      ! grep -R -Eq 'needs\.(changes|check|plan)|inputs\.publish|publish: true' .github/workflows
+      ! grep -R -Eq \
+        'needs\.(changes|check|plan)([^[:alnum:]_-]|$)|inputs\.publish|publish: true' \
+        .github/workflows
       grep -qF 'attest-software-bill-of-materials.yml' .github/workflows/build.yml
       grep -qF 'attest-software-bill-of-materials.yml' lib/installer-application.nix
       grep -qF 'attest-software-bill-of-materials.yml' .github/workflows/release.yml

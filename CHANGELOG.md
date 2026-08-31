@@ -48,6 +48,9 @@ All notable changes to Finite are documented here. The format follows
 
 ### Fixed
 
+- Automatically repaired stale Nix hashes after failed same-repository
+  Dependabot validation through a Flake-packaged, token-isolated command with
+  exact-head and force-with-lease push protection.
 - Prevented the Vates Notes and Grist fixed-URL launchers from advertising
   themselves as web browsers and becoming GNOME's default URL handler.
 - Installed Bitwarden's Linux Polkit unlock action in the immutable base image
