@@ -249,6 +249,7 @@
     ci-release-notes.package = applications.releaseNotes;
     ci-release-control.package = applications.releaseControl;
     ci-github-output.package = applications.githubOutput;
+    ci-fix-nix-hashes.package = applications.fixNixHashes;
     ci-update-locks.package = applications.updateLocks;
     ci-home-release-update.package = applications.updateHomeRelease;
     ci-source-update.package = applications.sourceUpdate;

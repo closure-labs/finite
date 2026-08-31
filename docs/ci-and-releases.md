@@ -202,6 +202,15 @@ storage without creating a container archive in the Nix store. The daily build
 also checks independently managed RPMs for updates against the committed
 Bluefin base.
 
+When repository validation fails on a same-repository Dependabot pull request,
+the build workflow invokes the Flake-packaged `finite-fix-nix-hashes`
+application from the trusted base revision. The application verifies the bot,
+repository, branch, and exact fetched head before evaluating the pull request
+with `determinate-nixd fix hashes --auto-apply`. GitHub tokens are absent during
+that evaluation. A tracked repair is committed by `github-actions[bot]` and
+pushed only when the branch still points to the evaluated head; a no-op or a
+concurrent branch update leaves the pull request untouched.
+
 GitHub keeps triggers, permissions, environments, matrices, pull request
 creation, and attestations visible in workflow YAML. Operational planning,
 validation, gating, and promotion are focused Nix packages invoked with
