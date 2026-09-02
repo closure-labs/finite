@@ -7,6 +7,23 @@
 }: let
   system = pkgs.stdenv.hostPlatform.system;
   weekly = inputs.nixpkgs-weekly.legacyPackages.${system};
+  pipewireCameraPolicies =
+    # Upstream Firefox keeps the PipeWire camera backend disabled because it
+    # replaces V4L2 without a reliable fallback. Restrict it to the Dell IPU7
+    # hardware, whose usable libcamera source is exposed through PipeWire.
+    lib.optionalAttrs
+    ((config.home.sessionVariables.FINITE_HARDWARE or "") == "dell-xps-9350-intel")
+    {
+      Preferences."media.webrtc.camera.allow-pipewire" = {
+        Value = true;
+        Status = "locked";
+      };
+    };
+  finiteFirefox = weekly.firefox.override {
+    # Apply Firefox policies before nixGL wraps the package. The nixGL wrapper
+    # is not a reconfigurable Firefox derivation and would drop later policies.
+    extraPolicies = pipewireCameraPolicies;
+  };
 in {
   imports = [
     inputs.determinate.homeManagerModules.default
@@ -43,7 +60,6 @@ in {
       ++ [
         (config.lib.nixGL.wrap weekly.bitwarden-desktop)
         (config.lib.nixGL.wrap weekly.element-desktop)
-        (config.lib.nixGL.wrap weekly.firefox)
         (config.lib.nixGL.wrap weekly.libreoffice)
         (config.lib.nixGL.wrap weekly.nextcloud-client)
         (config.lib.nixGL.wrap pkgs.thunderbird)
@@ -96,6 +112,10 @@ in {
   };
 
   programs = {
+    firefox = {
+      enable = true;
+      package = config.lib.nixGL.wrap finiteFirefox;
+    };
     fzf.enable = true;
     git.enable = true;
     nh.enable = true;

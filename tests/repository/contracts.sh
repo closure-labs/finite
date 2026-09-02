@@ -230,7 +230,10 @@ test ! -e bootc/builder/lib/independently-managed-rpms.sh
 grep -qF 'weekly.bitwarden-cli' templates/home-manager/modules/aspects/base/home.nix
 grep -qF 'config.lib.nixGL.wrap weekly.bitwarden-desktop' \
 	templates/home-manager/modules/aspects/base/home.nix
-grep -qF 'config.lib.nixGL.wrap weekly.firefox' \
+grep -qF 'weekly.firefox.override' templates/home-manager/modules/aspects/base/home.nix
+grep -qF 'package = config.lib.nixGL.wrap finiteFirefox;' \
+	templates/home-manager/modules/aspects/base/home.nix
+grep -qF '"media.webrtc.camera.allow-pipewire"' \
 	templates/home-manager/modules/aspects/base/home.nix
 for package in element-desktop libreoffice nextcloud-client; do
 	grep -qF "config.lib.nixGL.wrap weekly.${package}" \
