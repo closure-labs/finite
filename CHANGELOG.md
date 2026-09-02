@@ -44,10 +44,14 @@ All notable changes to Finite are documented here. The format follows
 ### Removed
 
 - Removed the Dell bootc overlay, external camera-module and libcamera builds,
-  Firefox camera workaround, and other image-level Dell customizations.
+  profile-mutating Firefox camera workaround, and other image-level Dell
+  customizations.
 
 ### Fixed
 
+- Routed the Nix Firefox package through PipeWire camera capture on Dell IPU7
+  systems so a failed raw camera endpoint cannot tear down Google Meet's
+  otherwise-working microphone stream.
 - Automatically repaired stale Nix hashes after failed same-repository
   Dependabot validation through a Flake-packaged, token-isolated command with
   exact-head and force-with-lease push protection.

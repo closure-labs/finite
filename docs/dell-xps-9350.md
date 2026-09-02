@@ -35,8 +35,10 @@ systemctl --user status finite-dell-xps-9350-panel.service
 gdctl show --modes --properties
 ```
 
-There is no Home Manager Firefox or camera workaround. Firefox uses Bluefin's
-normal PipeWire camera path.
+Home Manager configures Finite's Nix Firefox package to use PipeWire for camera
+capture on this hardware. This package-level preference leaves existing
+Firefox profiles intact and makes WebRTC consume WirePlumber's usable libcamera
+source instead of the raw IPU7 V4L2 capture endpoints.
 
 ## IPU7 camera
 
@@ -54,6 +56,10 @@ journalctl -k -b | rg -i 'ipu7|intel.cvs|ipu-bridge|ov02c10|camera'
 cam -l
 wpctl status
 ```
+
+In Firefox, `media.webrtc.camera.allow-pipewire` must be `true` in
+`about:config`. The setting is supplied by the Home Manager package policy; it
+does not require a profile-specific `user.js` or a user service.
 
 Module paths must be below the running release's `kernel/` directory, `intree`
 must be `Y`, and the signer must be the Fedora kernel signing key. See
