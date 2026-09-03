@@ -16,12 +16,14 @@ All notable changes to Finite are documented here. The format follows
   Nix packages, Flatpaks, and other Home Manager settings.
 - A read-only `finite-brew-migration-status` report and documented migration
   gates for progressively replacing Homebrew commands with Nix packages.
-- NixGL-wrapped LibreOffice, Nextcloud, and Element from weekly plus VLC and
-  Thunderbird from chilled in the all-role Home Manager base, with VSCodium
-  from chilled for developers.
+- LibreOffice, Nextcloud, and Element from weekly plus VLC and Thunderbird from
+  chilled in the all-role Home Manager base, with VSCodium from chilled for
+  developers.
 
 ### Changed
 
+- Replaced per-application NixGL wrappers with Home Manager's non-NixOS GPU
+  driver integration and its persistent systemd-tmpfiles setup.
 - Added Firefox, Bitwarden Desktop, and Bitwarden CLI from the weekly nixpkgs
   input to the all-role Home Manager base.
 - Moved the first Homebrew migration layer to Nixpkgs while retaining every
@@ -59,7 +61,7 @@ All notable changes to Finite are documented here. The format follows
   themselves as web browsers and becoming GNOME's default URL handler.
 - Installed Bitwarden's Linux Polkit unlock action in the immutable base image
   so the Nix desktop application can use PAM-backed fingerprint authentication.
-- Made GNOME launch the nixGL-wrapped Ghostty executable directly instead of
+- Made GNOME launch the customized Ghostty executable directly instead of
   attempting unsupported D-Bus activation, and consolidated its generated
   settings under `config.ghostty`.
 - Allowed the Dell Home Manager panel helper to load its documented runtime

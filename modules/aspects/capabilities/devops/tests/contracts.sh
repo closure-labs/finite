@@ -8,7 +8,7 @@ rootfs="templates/home-manager/modules/aspects/capabilities/devops/rootfs"
 for file in .zshrc aliases.zsh bindings.zsh fzf.zsh prompt.zsh starship.toml LICENSE; do
 	test -f "${rootfs}/usr/share/finite/zsh/${file}"
 done
-grep -qF 'config.lib.nixGL.wrap pkgs.ghostty' "${module}"
+grep -qF 'paths = [pkgs.ghostty];' "${module}"
 grep -qF -- "--replace-fail 'DBusActivatable=true' 'DBusActivatable=false'" "${module}"
 grep -qF '"ghostty/config.ghostty".source' "${module}"
 if grep -qF '"ghostty/config".source' "${module}"; then

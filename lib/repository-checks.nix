@@ -460,6 +460,8 @@ in {
     ];
     commands = ''
       set -euo pipefail
+      jq -e '.nodes.nixgl == null and .nodes["flake-utils"] == null and .nodes.systems == null' \
+        flake.lock >/dev/null
       bash tests/automation/classify-changes.sh
       bash tests/automation/classify-ci.sh
       bash tests/automation/ci-gate.sh
@@ -901,6 +903,9 @@ in {
       ! rg -qF 'extraSpecialArgs.inputs' lib modules
       grep -qF 'finiteHomeDependencies = homeDependencies' lib/home-manager-flake-module.nix
       grep -qF '_module.args' modules/den.nix
+      ! rg -ni '\bnixgl\b' \
+        flake.nix modules/den.nix templates/home-manager/flake.nix \
+        templates/home-manager/modules
       grep -qF 'class = "bootc"' modules/profiles/schema.nix
       grep -qF 'class = "bootc"' lib/eval-profile-graph.nix
       grep -qF '_class = "bootc"' modules/profiles/bootc-class.nix

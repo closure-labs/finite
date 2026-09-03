@@ -228,23 +228,32 @@ test ! -e modules/aspects/base/manifests/Brewfile
 test ! -e modules/aspects/base/independently-managed-rpms.list
 test ! -e bootc/builder/lib/independently-managed-rpms.sh
 grep -qF 'weekly.bitwarden-cli' templates/home-manager/modules/aspects/base/home.nix
-grep -qF 'config.lib.nixGL.wrap weekly.bitwarden-desktop' \
+grep -qF 'weekly.bitwarden-desktop' \
 	templates/home-manager/modules/aspects/base/home.nix
 grep -qF 'weekly.firefox.override' templates/home-manager/modules/aspects/base/home.nix
-grep -qF 'package = config.lib.nixGL.wrap finiteFirefox;' \
+grep -qF 'package = finiteFirefox;' \
 	templates/home-manager/modules/aspects/base/home.nix
 grep -qF '"media.webrtc.camera.allow-pipewire"' \
 	templates/home-manager/modules/aspects/base/home.nix
 for package in element-desktop libreoffice nextcloud-client; do
-	grep -qF "config.lib.nixGL.wrap weekly.${package}" \
+	grep -qF "weekly.${package}" \
 		templates/home-manager/modules/aspects/base/home.nix
 done
 for package in thunderbird vlc; do
-	grep -qF "config.lib.nixGL.wrap pkgs.${package}" \
+	grep -qF "pkgs.${package}" \
 		templates/home-manager/modules/aspects/base/home.nix
 done
-grep -qF 'config.lib.nixGL.wrap pkgs.vscodium' \
+grep -qF 'pkgs.vscodium' \
 	templates/home-manager/modules/aspects/roles/developer/home.nix
+grep -qF 'gpu.enable = true;' templates/home-manager/modules/aspects/base/home.nix
+if rg -ni '\bnixgl\b' \
+	flake.nix templates/home-manager/flake.nix \
+	templates/home-manager/modules; then
+	echo 'Finite configuration retains the removed NixGL integration' >&2
+	exit 1
+fi
+jq -e '.nodes.nixgl == null and .nodes["flake-utils"] == null and .nodes.systems == null' \
+	templates/home-manager/flake.lock >/dev/null
 if grep -qF 'pkgs.thunderbird' templates/home-manager/modules/aspects/roles/sales/home.nix; then
 	echo 'Thunderbird must be supplied by the all-role base, not the sales role' >&2
 	exit 1

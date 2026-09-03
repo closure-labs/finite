@@ -6,7 +6,6 @@
   homeDependencies = {
     determinateModule = inputs.determinate.homeManagerModules.default;
     flatpakModule = inputs.nix-flatpak.homeManagerModules.nix-flatpak;
-    nixglPackages = inputs.nixgl.packages.${system};
     weeklyPackages = inputs.nixpkgs-weekly.legacyPackages.${system};
     devenvPackage = inputs.devenv.packages.${system}.devenv;
   };
@@ -16,7 +15,7 @@
     diagram = inputs.den-diagram.lib;
     homeManagerLib = inputs.home-manager.lib;
     homeModuleInputs = {
-      inherit (inputs) den determinate devenv home-manager nix-flatpak nixgl nixpkgs nixpkgs-weekly;
+      inherit (inputs) den determinate devenv home-manager nix-flatpak nixpkgs nixpkgs-weekly;
     };
     treefmt = inputs.treefmt-nix.lib;
     weeklySecretspec = homeDependencies.weeklyPackages.secretspec;

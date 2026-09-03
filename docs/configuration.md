@@ -94,6 +94,30 @@ weekly Nixpkgs inputs. They are not Homebrew package names or representations
 of Homebrew state. Homebrew may still contain a second copy during the staged
 migration, but the Nix profile normally appears first on `PATH`.
 
+## GPU acceleration for Nix packages
+
+Finite uses Home Manager's non-NixOS GPU integration instead of wrapping each
+graphical application with NixGL. After the first Home Manager activation, run
+the setup command printed by Home Manager:
+
+```bash
+sudo "$(command -v non-nixos-gpu-setup)"
+readlink /run/opengl-driver
+```
+
+The helper installs `/etc/tmpfiles.d/non-nixos-gpu.conf`, protects its Nix
+driver closure with `/nix/var/nix/gcroots/non-nixos-gpu.conf`, and immediately
+creates `/run/opengl-driver`. Bluefin's immutable `/usr` is not modified and no
+RPM or bootc layer is added. `/etc` and `/nix` persist across bootc upgrades;
+systemd-tmpfiles recreates the volatile `/run` link at each boot.
+
+Run the helper again only when a later `nh home switch` reports that the GPU
+drivers require an update. Finite supports the 64-bit Mesa path used by Intel,
+AMD, and Nouveau systems. Proprietary NVIDIA and 32-bit driver integration are
+not currently supported. NixGL remains available upstream as an unmanaged
+escape hatch for systems where administrator access is unavailable, but it is
+not a supported Finite configuration.
+
 ## Graphical package management
 
 `finite-configure` is the supported graphical interface for Finite's curated

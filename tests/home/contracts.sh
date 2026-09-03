@@ -394,7 +394,8 @@ grep -qF 'ExecStart = "${lib.getExe panelPolicy} --watch"' \
 base_home="${template}/modules/aspects/base/home.nix"
 grep -qF 'weekly.firefox.override' "${base_home}"
 grep -qF '"media.webrtc.camera.allow-pipewire"' "${base_home}"
-grep -qF 'package = config.lib.nixGL.wrap finiteFirefox;' "${base_home}"
+grep -qF 'package = finiteFirefox;' "${base_home}"
+grep -qF 'gpu.enable = true;' "${base_home}"
 if rg -n 'systemd.*firefox|user[.]js|configure-firefox-pipewire-camera' \
 	"${template}/modules/aspects/hardware/dell-xps-9350-intel"; then
 	echo 'Dell Home Manager aspect retains the obsolete profile-mutating camera workaround' >&2
