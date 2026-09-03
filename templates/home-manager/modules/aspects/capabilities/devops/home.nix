@@ -1,13 +1,11 @@
 {
-  config,
   finiteHomeAssets,
   pkgs,
   ...
 }: let
-  ghosttyNixGL = config.lib.nixGL.wrap pkgs.ghostty;
   ghostty = pkgs.symlinkJoin {
     name = "finite-ghostty-${pkgs.ghostty.version}";
-    paths = [ghosttyNixGL];
+    paths = [pkgs.ghostty];
     postBuild = ''
       desktop="$out/share/applications/com.mitchellh.ghostty.desktop"
       desktop_source=$(readlink -f "$desktop")

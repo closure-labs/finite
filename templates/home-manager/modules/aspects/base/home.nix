@@ -20,8 +20,6 @@
       };
     };
   finiteFirefox = weekly.firefox.override {
-    # Apply Firefox policies before nixGL wraps the package. The nixGL wrapper
-    # is not a reconfigurable Firefox derivation and would drop later policies.
     extraPolicies = pipewireCameraPolicies;
   };
 in {
@@ -58,12 +56,12 @@ in {
         zoxide
       ])
       ++ [
-        (config.lib.nixGL.wrap weekly.bitwarden-desktop)
-        (config.lib.nixGL.wrap weekly.element-desktop)
-        (config.lib.nixGL.wrap weekly.libreoffice)
-        (config.lib.nixGL.wrap weekly.nextcloud-client)
-        (config.lib.nixGL.wrap pkgs.thunderbird)
-        (config.lib.nixGL.wrap pkgs.vlc)
+        weekly.bitwarden-desktop
+        weekly.element-desktop
+        weekly.libreoffice
+        weekly.nextcloud-client
+        pkgs.thunderbird
+        pkgs.vlc
         weekly.bbrew
         weekly.bitwarden-cli
         weekly.mise
@@ -76,13 +74,7 @@ in {
 
   targets.genericLinux = {
     enable = true;
-    nixGL = {
-      packages = inputs.nixgl.packages.${system};
-      # Home Manager's current "mesa" wrapper is the NixGL Intel/Mesa auto
-      # profile and works with Intel, AMD, and Nouveau host drivers.
-      defaultWrapper = "mesa";
-      installScripts = ["mesa"];
-    };
+    gpu.enable = true;
   };
 
   services.flatpak = {
@@ -114,7 +106,7 @@ in {
   programs = {
     firefox = {
       enable = true;
-      package = config.lib.nixGL.wrap finiteFirefox;
+      package = finiteFirefox;
     };
     fzf.enable = true;
     git.enable = true;

@@ -74,6 +74,27 @@ restores these vendor files without replacing valid state in `/var/home/nix`.
 Finite also removes stale daemon socket files after mounting that state and
 before systemd binds the new sockets.
 
+## Nix applications do not use the GPU
+
+Confirm that the Home Manager driver link exists and that its target remains in
+the Nix store:
+
+```bash
+readlink /run/opengl-driver
+readlink /etc/tmpfiles.d/non-nixos-gpu.conf
+readlink /nix/var/nix/gcroots/non-nixos-gpu.conf
+```
+
+If `/run/opengl-driver` is absent or `nh home switch` reports driver drift, run
+the setup package from the current Home Manager profile:
+
+```bash
+sudo "$(command -v non-nixos-gpu-setup)"
+```
+
+This updates only the tmpfiles rule, its GC root, and the runtime driver link;
+it does not modify the immutable bootc filesystem.
+
 ## Diagnose a local image build
 
 ```bash

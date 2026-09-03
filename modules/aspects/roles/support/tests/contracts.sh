@@ -4,8 +4,8 @@ set -euo pipefail
 aspect_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 module="templates/home-manager/modules/aspects/roles/support/home.nix"
 
-grep -qF 'espanso = config.lib.nixGL.wrap pkgs.espanso-wayland' "${module}"
-if grep -qF 'config.lib.nixGL.wrap pkgs.espanso;' "${module}"; then
+grep -qF 'espanso = pkgs.espanso-wayland' "${module}"
+if grep -qF 'espanso = pkgs.espanso;' "${module}"; then
 	echo 'Wayland-only Finite profiles must not install X11 Espanso' >&2
 	exit 1
 fi

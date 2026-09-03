@@ -1,10 +1,6 @@
-{
-  config,
-  pkgs,
-  ...
-}: {
+{pkgs, ...}: {
   home = {
-    packages = [(config.lib.nixGL.wrap pkgs.rustdesk-flutter)];
+    packages = [pkgs.rustdesk-flutter];
     sessionVariables.FINITE_ROLE_IT = "1";
   };
 }
