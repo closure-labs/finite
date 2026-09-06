@@ -51,7 +51,7 @@ jobs:
             Refreshes the pinned Determinate Nix installer and SELinux policy
             from the latest stable upstream release.
 
-            The candidate validates the complete repository and image graph
+            The candidate validates the repository and all four recipes
             before auto-merge is enabled.
 
       - name: Validate and enable auto-merge

@@ -1,0 +1,42 @@
+## --interpreter=/usr/bin/bash
+# bootc's physical root is selected in the initramfs. Reapplying its filesystem
+# options to the composefs overlay at / fails (bootc issue 971).
+set -euo pipefail
+install_root=/
+if [ "$#" -gt 0 ]; then install_root=$1; fi
+fstab="$install_root/etc/fstab"
+test -x "$install_root/usr/bin/bootc"
+test -f "$fstab"
+if ! awk '$1 !~ /^#/ && $2 == "/" {found=1} END {exit !found}' "$fstab"; then
+  exit 0
+fi
+# Refuse to remove storage configuration unless every boot entry already
+# identifies the physical root, including the subvolume when one is specified.
+subvolume=$(awk '$1 !~ /^#/ && $2 == "/" && $3 == "btrfs" {
+  n=split($4,opts,","); for(i=1;i<=n;i++) if(opts[i] ~ /^subvol(id)?=/) print opts[i]
+}' "$fstab")
+for entry in "$install_root"/boot/loader/entries/*.conf; do
+  test -f "$entry"
+  awk -v expected="$subvolume" '
+    $1 == "options" {
+      for(i=2;i<=NF;i++) {
+        if($i ~ /^root=.+/) root=1
+        if($i ~ /^rootflags=/) {
+          n=split(substr($i,11),opts,",")
+          for(j=1;j<=n;j++) if(opts[j] == expected) subvol=1
+        }
+      }
+    }
+    END {exit !(root && (expected == "" || subvol))}
+  ' "$entry" || {
+    echo "Cannot finalize fstab: physical root arguments are incomplete in $entry" >&2
+    exit 1
+  }
+done
+temporary=$(mktemp "$fstab.XXXXXX")
+trap 'rm -f "$temporary"' EXIT
+awk '!($1 !~ /^#/ && $2 == "/")' "$fstab" >"$temporary"
+chmod --reference="$fstab" "$temporary"
+mv "$temporary" "$fstab"
+restorecon "$fstab"
+echo 'Retained physical root kernel arguments and removed its composefs-incompatible fstab entry'

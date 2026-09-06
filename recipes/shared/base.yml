@@ -1,0 +1,48 @@
+modules:
+  - type: script@v1
+    scripts:
+      - nix-identities.sh
+  - type: dnf@v1
+    repos:
+      files:
+        - terra.repo
+    install:
+      packages:
+        - cloud-init
+        - jq
+        - nix
+        - nix-daemon
+        - yq
+        - zenity
+        - fprintd
+        - fprintd-pam
+        - libfprint
+        - pam-u2f
+        - pamu2fcfg
+        - libfido2
+        - opensc
+        - pcsc-lite
+        - yubikey-manager
+  - type: files@v1
+    files:
+      - source: system
+        destination: /
+      - source: payload/home-manager-template
+        destination: /usr/share/finite/home-manager-template
+      - source: payload/home-profile-catalog.json
+        destination: /usr/share/finite/home-profile-catalog.json
+      - source: payload/version
+        destination: /usr/share/finite/version
+  - type: script@v1
+    scripts:
+      - nix-install.sh
+      - authselect.sh
+  - type: systemd@v1
+    system:
+      enabled:
+        - cloud-init.target
+        - pcscd.socket
+        - finite-firstboot-rpm-ostree.service
+    user:
+      enabled:
+        - finite-home-first-login.service

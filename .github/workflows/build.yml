@@ -1,474 +1,96 @@
 name: Build Finite
 
 on:
-  push:
-    branches: [main]
   pull_request:
   merge_group:
     types: [checks_requested]
+  push:
+    branches: [main]
   schedule:
     - cron: "17 8 * * *"
   workflow_dispatch:
-    inputs:
-      force:
-        description: Rebuild every image even when its inputs are current
-        required: false
-        default: false
-        type: boolean
-      validate_only:
-        description: Validate a bot branch without publishing
-        required: false
-        default: false
-        type: boolean
-
-concurrency:
-  group: >-
-    ${{ (github.event_name == 'push' || github.event_name == 'schedule' ||
-    (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
-    'finite-publication' || format('{0}-validation-{1}', github.workflow,
-    github.event.pull_request.number || github.ref) }}
-  cancel-in-progress: >-
-    ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' ||
-    (github.event_name == 'workflow_dispatch' && inputs.validate_only) }}
 
 permissions:
-  attestations: read
   contents: read
-  packages: read
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+concurrency:
+  group: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && 'finite-publication' || format('finite-validation-{0}', github.ref) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
 
 jobs:
-  prepare:
-    name: Classify and plan
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    permissions:
-      attestations: read
-      contents: read
-      packages: read
-    outputs:
-      plan: ${{ steps.plan.outputs.plan }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          # Scheduled publication and predetermined main dispatches need no diff.
-          # Diff-classified events retain history for merge-base validation.
-          fetch-depth: >-
-            ${{ (github.event_name == 'schedule' ||
-            (github.event_name == 'workflow_dispatch' && !inputs.validate_only)) && 1 || 0 }}
-          persist-credentials: false
-      - uses: ./.github/actions/setup-nix
-      - name: Prepare authoritative downstream CI plan
-        id: plan
-        env:
-          CHECK_PUBLICATION_TRUST: >-
-            ${{ github.event_name == 'push' || github.event_name == 'schedule' ||
-            (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only) }}
-          DEFAULT_BRANCH_REF: origin/${{ github.event.repository.default_branch }}
-          EVENT_NAME: ${{ github.event_name }}
-          FORCE_REBUILD: ${{ github.event_name == 'workflow_dispatch' && inputs.force || false }}
-          GH_TOKEN: ${{ github.token }}
-          IMAGE_REF: ${{ format('{0}/{1}', env.REGISTRY, env.IMAGE_NAME) }}
-          MERGE_GROUP_BASE_SHA: ${{ github.event.merge_group.base_sha }}
-          MERGE_GROUP_HEAD_SHA: ${{ github.event.merge_group.head_sha }}
-          PULL_REQUEST_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          PULL_REQUEST_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          PUSH_AFTER_SHA: ${{ github.sha }}
-          PUSH_BEFORE_SHA: ${{ github.event.before }}
-          VALIDATE_ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.validate_only || false }}
-        run: >-
-          nix shell --accept-flake-config .#ci-prepare
-          -c finite-ci-prepare
-
   checks:
-    name: Validate repository and workflows
+    name: Nix and runtime contracts
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
-    permissions:
-      contents: read
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-nix
-        with:
-          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      - name: Build and validate repository checks
-        env:
-          FINITE_CACHE_PUSH: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
-        run: >-
-          nix shell --accept-flake-config .#ci-check
-          -c finite-ci-check --no-write-lock-file
+      - run: nix build --accept-flake-config --no-link .#ci-checks
 
-  fix-hashes:
-    name: Repair Dependabot Nix hashes
-    needs: checks
-    if: >-
-      always() &&
-      needs.checks.result == 'failure' &&
-      github.event_name == 'pull_request' &&
-      github.event.pull_request.user.login == 'dependabot[bot]' &&
-      github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-24.04
-    timeout-minutes: 20
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout trusted hash-fixer automation
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          ref: ${{ github.event.pull_request.base.sha }}
-      - uses: ./.github/actions/setup-nix
-      - name: Repair and push tracked Nix hashes
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
-          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
-          PR_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
-          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: >-
-          nix shell --accept-flake-config .#ci-fix-nix-hashes
-          -c finite-fix-nix-hashes
-
-  build-candidate:
-    name: Validate shard ${{ matrix.shard }} (${{ matrix.name }})
-    if: >-
-      (github.event_name == 'pull_request' || github.event_name == 'merge_group' ||
-      (github.event_name == 'workflow_dispatch' && inputs.validate_only)) &&
-      fromJSON(needs.prepare.outputs.plan || '{}').validation.images.required == true
-    needs: prepare
-    strategy:
-      fail-fast: false
-      max-parallel: 4
-      matrix: ${{ fromJSON(needs.prepare.outputs.plan).matrices.candidate_shards }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 120
+  images:
+    name: Validate (${{ matrix.profile }})
+    if: ${{ !(github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')) }}
     permissions:
       contents: read
       packages: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/setup-nix
-      - name: Validate profiles from one locked base
-        env:
-          IMAGE_REF: ${{ format('{0}/{1}', env.REGISTRY, env.IMAGE_NAME) }}
-          PROFILE_SHARD: ${{ toJSON(matrix.profiles) }}
-        run: >-
-          nix shell --accept-flake-config .#ci-validate-image-shard
-          -c finite-validate-image-shard
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - profile: bluefin-generic
+            channel: bluefin-generic
+          - profile: bluefin-next
+            channel: next
+          - profile: bluefin-dx-generic
+            channel: bluefin-dx-generic
+          - profile: bluefin-dx-next
+            channel: dev-next
+    uses: ./.github/workflows/image.yml
+    with:
+      profile: ${{ matrix.profile }}
+      channel: ${{ matrix.channel }}
+      publish: false
 
-  installer-candidate:
-    name: Validate installer
-    if: >-
-      (github.event_name == 'pull_request' || github.event_name == 'merge_group' ||
-      (github.event_name == 'workflow_dispatch' && inputs.validate_only)) &&
-      fromJSON(needs.prepare.outputs.plan || '{}').validation.installer.required == true
-    needs: prepare
-    runs-on: ubuntu-24.04
-    timeout-minutes: 120
+  publish:
+    name: Publish (${{ matrix.profile }})
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     permissions:
-      attestations: read
       contents: read
-      packages: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/build-installer
-        with:
-          cache-write: false
-          end-to-end: true
-          image-tag: bluefin-generic
-          token: ${{ github.token }}
-
-  installer-cache:
-    name: Validate installer and warm trusted cache
-    if: >-
-      always() && (github.event_name == 'push' ||
-      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
-      needs.prepare.result == 'success' &&
-      needs.checks.result == 'success' &&
-      (fromJSON(needs.prepare.outputs.plan || '{}').validation.installer.required == true ||
-      fromJSON(needs.prepare.outputs.plan || '{}').publication.builds.root == true) &&
-      (needs.promote.result == 'success' || needs.promote.result == 'skipped')
-    needs: [prepare, checks, promote]
-    runs-on: ubuntu-24.04
-    timeout-minutes: 120
-    permissions:
-      attestations: read
-      contents: read
-      id-token: write
-      packages: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/build-installer
-        with:
-          cache-write: true
-          end-to-end: ${{ github.event_name == 'workflow_dispatch' && inputs.force || false }}
-          image-tag: bluefin-generic
-          token: ${{ github.token }}
-
-  base-publish:
-    name: Build and publish common base
-    if: >-
-      (github.event_name == 'push' || github.event_name == 'schedule' ||
-      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
-      needs.checks.result == 'success' &&
-      fromJSON(needs.prepare.outputs.plan || '{}').publication.builds.root == true
-    needs: [prepare, checks]
-    uses: ./.github/workflows/build-profile.yml
-    permissions:
-      attestations: write
-      contents: read
-      id-token: write
       packages: write
     strategy:
       fail-fast: false
-      max-parallel: 4
-      matrix: ${{ fromJSON(needs.prepare.outputs.plan).matrices.root }}
+      matrix:
+        include:
+          - profile: bluefin-generic
+            channel: bluefin-generic
+          - profile: bluefin-next
+            channel: next
+          - profile: bluefin-dx-generic
+            channel: bluefin-dx-generic
+          - profile: bluefin-dx-next
+            channel: dev-next
+    uses: ./.github/workflows/image.yml
     with:
-      build-input: ${{ matrix.build_input }}
-      parent-digest: ${{ matrix.upstream.digest }}
-      parent-from-lock: true
-      parent-image: ${{ matrix.upstream.image }}
-      parent-tag: ${{ matrix.upstream.tag }}
       profile: ${{ matrix.profile }}
-      reuse-existing: ${{ matrix.reuse_existing }}
-      upstream-base-digest: ${{ matrix.upstream.digest }}
-      upstream-source: ${{ endsWith(matrix.upstream.image, '/bluefin-dx') && 'bluefin-dx' || 'bluefin' }}
-      version: ${{ fromJSON(needs.prepare.outputs.plan).source.version }}
+      channel: ${{ matrix.channel }}
+      publish: true
+    secrets:
+      cosign_private_key: ${{ secrets.COSIGN_PRIVATE_KEY }}
 
-  hardware-publish:
-    name: Build and publish ${{ matrix.profile }}
-    if: >-
-      always() && (github.event_name == 'push' || github.event_name == 'schedule' ||
-      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
-      needs.prepare.result == 'success' &&
-      needs.checks.result == 'success' &&
-      fromJSON(needs.prepare.outputs.plan || '{}').publication.builds.hardware == true &&
-      (needs.base-publish.result == 'success' || needs.base-publish.result == 'skipped')
-    needs: [prepare, checks, base-publish]
-    strategy:
-      fail-fast: false
-      max-parallel: 4
-      matrix: ${{ fromJSON(needs.prepare.outputs.plan).matrices.hardware }}
-    uses: ./.github/workflows/build-profile.yml
-    permissions:
-      attestations: write
-      contents: read
-      id-token: write
-      packages: write
-    with:
-      build-input: ${{ matrix.build_input }}
-      parent-digest: ${{ matrix.parent_digest || '' }}
-      parent-image: ${{ format('ghcr.io/{0}', github.repository) }}
-      parent-profile: ${{ matrix.parent }}
-      parent-tag: ${{ matrix.parent_tag }}
-      profile: ${{ matrix.profile }}
-      reuse-existing: ${{ matrix.reuse_existing }}
-      upstream-base-digest: ${{ matrix.upstream.digest }}
-      version: ${{ fromJSON(needs.prepare.outputs.plan).source.version }}
-
-  roles-publish:
-    name: Build and publish ${{ matrix.profile }}
-    if: >-
-      always() && (github.event_name == 'push' || github.event_name == 'schedule' ||
-      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
-      needs.prepare.result == 'success' &&
-      needs.checks.result == 'success' &&
-      fromJSON(needs.prepare.outputs.plan || '{}').publication.builds.roles == true &&
-      (needs.base-publish.result == 'success' || needs.base-publish.result == 'skipped') &&
-      (needs.hardware-publish.result == 'success' || needs.hardware-publish.result == 'skipped')
-    needs: [prepare, checks, base-publish, hardware-publish]
-    strategy:
-      fail-fast: false
-      max-parallel: 4
-      matrix: ${{ fromJSON(needs.prepare.outputs.plan).matrices.roles }}
-    uses: ./.github/workflows/build-profile.yml
-    permissions:
-      attestations: write
-      contents: read
-      id-token: write
-      packages: write
-    with:
-      build-input: ${{ matrix.build_input }}
-      parent-digest: ${{ matrix.parent_digest || '' }}
-      parent-image: ${{ format('ghcr.io/{0}', github.repository) }}
-      parent-profile: ${{ matrix.parent }}
-      parent-tag: ${{ matrix.parent_tag }}
-      profile: ${{ matrix.profile }}
-      reuse-existing: ${{ matrix.reuse_existing }}
-      upstream-base-digest: ${{ matrix.upstream.digest }}
-      version: ${{ fromJSON(needs.prepare.outputs.plan).source.version }}
-
-  base-sbom:
-    name: Attest base software bill of materials
-    if: >-
-      always() && (github.event_name == 'push' || github.event_name == 'schedule' ||
-      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
-      needs.prepare.result == 'success' &&
-      needs.checks.result == 'success' &&
-      fromJSON(needs.prepare.outputs.plan || '{}').publication.sbom.base == true &&
-      (needs.base-publish.result == 'success' || needs.base-publish.result == 'skipped')
-    needs: [prepare, checks, base-publish]
-    strategy:
-      matrix: ${{ fromJSON(needs.prepare.outputs.plan).matrices.sbom.base }}
-    uses: ./.github/workflows/attest-software-bill-of-materials.yml
-    permissions:
-      attestations: write
-      contents: read
-      id-token: write
-      packages: write
-    with:
-      build-input: ${{ matrix.build_input }}
-      profile: ${{ matrix.profile }}
-      source-digest: ${{ matrix.source_digest }}
-      subject-tag: ${{ matrix.subject_tag }}
-      upstream-base-digest: ${{ matrix.upstream.digest }}
-      version: ${{ fromJSON(needs.prepare.outputs.plan).source.version }}
-
-  hardware-sbom:
-    name: Attest hardware software bill of materials for ${{ matrix.profile }}
-    if: >-
-      always() && (github.event_name == 'push' || github.event_name == 'schedule' ||
-      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
-      needs.prepare.result == 'success' &&
-      needs.checks.result == 'success' &&
-      fromJSON(needs.prepare.outputs.plan || '{}').publication.sbom.hardware == true &&
-      (needs.hardware-publish.result == 'success' || needs.hardware-publish.result == 'skipped')
-    needs: [prepare, checks, hardware-publish]
-    strategy:
-      fail-fast: false
-      max-parallel: 4
-      matrix: ${{ fromJSON(needs.prepare.outputs.plan).matrices.sbom.hardware }}
-    uses: ./.github/workflows/attest-software-bill-of-materials.yml
-    permissions:
-      attestations: write
-      contents: read
-      id-token: write
-      packages: write
-    with:
-      build-input: ${{ matrix.build_input }}
-      profile: ${{ matrix.profile }}
-      source-digest: ${{ matrix.source_digest }}
-      subject-tag: ${{ matrix.subject_tag }}
-      upstream-base-digest: ${{ matrix.upstream.digest }}
-      version: ${{ fromJSON(needs.prepare.outputs.plan).source.version }}
-
-  role-sbom:
-    name: Attest role software bill of materials for ${{ matrix.profile }}
-    if: >-
-      always() && (github.event_name == 'push' || github.event_name == 'schedule' ||
-      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
-      needs.prepare.result == 'success' &&
-      needs.checks.result == 'success' &&
-      fromJSON(needs.prepare.outputs.plan || '{}').publication.sbom.roles == true &&
-      (needs.roles-publish.result == 'success' || needs.roles-publish.result == 'skipped')
-    needs: [prepare, checks, roles-publish]
-    strategy:
-      fail-fast: false
-      max-parallel: 4
-      matrix: ${{ fromJSON(needs.prepare.outputs.plan).matrices.sbom.roles }}
-    uses: ./.github/workflows/attest-software-bill-of-materials.yml
-    permissions:
-      attestations: write
-      contents: read
-      id-token: write
-      packages: write
-    with:
-      build-input: ${{ matrix.build_input }}
-      profile: ${{ matrix.profile }}
-      source-digest: ${{ matrix.source_digest }}
-      subject-tag: ${{ matrix.subject_tag }}
-      upstream-base-digest: ${{ matrix.upstream.digest }}
-      version: ${{ fromJSON(needs.prepare.outputs.plan).source.version }}
-
-  promote:
-    name: Promote verified image graph
-    if: >-
-      always() && (github.event_name == 'push' || github.event_name == 'schedule' ||
-      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.validate_only)) &&
-      needs.prepare.result == 'success' &&
-      needs.checks.result == 'success' &&
-      fromJSON(needs.prepare.outputs.plan || '{}').publication.promote == true &&
-      (needs.base-publish.result == 'success' || needs.base-publish.result == 'skipped') &&
-      (needs.hardware-publish.result == 'success' || needs.hardware-publish.result == 'skipped') &&
-      (needs.roles-publish.result == 'success' || needs.roles-publish.result == 'skipped') &&
-      (needs.base-sbom.result == 'success' || needs.base-sbom.result == 'skipped') &&
-      (needs.hardware-sbom.result == 'success' || needs.hardware-sbom.result == 'skipped') &&
-      (needs.role-sbom.result == 'success' || needs.role-sbom.result == 'skipped')
-    needs: [prepare, checks, base-publish, hardware-publish, roles-publish, base-sbom, hardware-sbom, role-sbom]
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    permissions:
-      attestations: read
-      contents: read
-      packages: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/setup-nix
-      - name: Log in to GHCR
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          install -d -m 0700 "${HOME}/.docker"
-          registry_auth_file="${HOME}/.docker/config.json"
-          printf '%s' "${GH_TOKEN}" | podman login --authfile "${registry_auth_file}" ghcr.io \
-            --username "${GITHUB_ACTOR}" --password-stdin
-          echo "REGISTRY_AUTH_FILE=${registry_auth_file}" >>"${GITHUB_ENV}"
-      - name: Verify and promote the complete selected graph
-        env:
-          BUILD_MATRIX: ${{ toJSON(fromJSON(needs.prepare.outputs.plan).matrices.all) }}
-          GH_TOKEN: ${{ github.token }}
-          IMAGE_REF: ${{ format('{0}/{1}', env.REGISTRY, env.IMAGE_NAME) }}
-          VERSION: ${{ fromJSON(needs.prepare.outputs.plan).source.version }}
-        run: >-
-          nix shell --accept-flake-config .#ci-promote-images
-          -c finite-promote-images
-      - name: Log out of GHCR
-        if: always()
-        run: podman logout --authfile "${REGISTRY_AUTH_FILE:-${HOME}/.docker/config.json}" ghcr.io || true
-
-  ci-gate:
+  gate:
     name: CI gate
     if: always()
-    needs: [prepare, checks, build-candidate, installer-candidate, base-publish, hardware-publish, roles-publish, base-sbom, hardware-sbom, role-sbom, promote]
+    needs: [checks, images, publish]
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    permissions:
-      contents: read
+    timeout-minutes: 5
+    env:
+      CHECKS: ${{ needs.checks.result }}
+      IMAGES: ${{ needs.images.result }}
+      PUBLISH: ${{ needs.publish.result }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/setup-nix
-      - name: Require the complete event-appropriate build graph
-        env:
-          BASE_PUBLISH_RESULT: ${{ needs.base-publish.result }}
-          BASE_SBOM_RESULT: ${{ needs.base-sbom.result }}
-          BUILD_CANDIDATE_RESULT: ${{ needs.build-candidate.result }}
-          CHECKS_RESULT: ${{ needs.checks.result }}
-          EVENT_NAME: ${{ github.event_name }}
-          HARDWARE_PUBLISH_RESULT: ${{ needs.hardware-publish.result }}
-          HARDWARE_SBOM_RESULT: ${{ needs.hardware-sbom.result }}
-          INSTALLER_CANDIDATE_RESULT: ${{ needs.installer-candidate.result }}
-          CI_PLAN: ${{ needs.prepare.outputs.plan }}
-          PREPARE_RESULT: ${{ needs.prepare.result }}
-          PROMOTE_RESULT: ${{ needs.promote.result }}
-          REF: ${{ github.ref }}
-          ROLE_SBOM_RESULT: ${{ needs.role-sbom.result }}
-          ROLES_PUBLISH_RESULT: ${{ needs.roles-publish.result }}
-          VALIDATE_ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.validate_only || false }}
-        run: >-
-          nix shell --accept-flake-config .#ci-gate
-          -c finite-ci-gate
+      - run: |
+          [[ "$CHECKS" == success ]]
+          [[ ("$IMAGES" == success && "$PUBLISH" == skipped) ||
+             ("$IMAGES" == skipped && "$PUBLISH" == success) ]]

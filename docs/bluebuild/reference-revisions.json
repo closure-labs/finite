@@ -1,0 +1,65 @@
+{
+  "cli": {
+    "url": "https://github.com/blue-build/cli.git",
+    "revision": "b01c4d22d9c5e12cfe9e09087d21e6050642ad56",
+    "reviewedRevision": "513065f998825e2de59f2e51ad1647fd0666f652",
+    "installerAmd64Digest": "sha256:7d881ae7764cd3afeb3337066a596f262bf0691192a23d5b6766b07c044378d1"
+  },
+  "modules": {
+    "url": "https://github.com/blue-build/modules.git",
+    "revision": "5efbffb1792788afec318dcf729fa99186189803"
+  },
+  "schema": {
+    "url": "https://github.com/blue-build/schema.git",
+    "revision": "e49249af77e30de45e035fdb8025031e17140046"
+  },
+  "github-action": {
+    "url": "https://github.com/blue-build/github-action.git",
+    "revision": "2f3ad44fe1c1f09d5144f69dc118baee7ca6b008",
+    "reviewedRevision": "836161eb076426a451e6a0054f722b1153b8b3ad"
+  },
+  "template": {
+    "url": "https://github.com/blue-build/template.git",
+    "revision": "ff24fd989e9525bc49bd537d344ce6e0142f5544"
+  },
+  "website": {
+    "url": "https://github.com/blue-build/website.git",
+    "revision": "ab52dc44976943178ae2d584618cec4708fbaba9"
+  },
+  "examples": {
+    "url": "https://github.com/blue-build/examples.git",
+    "revision": "5f1342dacec24c25cd036efbd9a564bb80177d22"
+  },
+  "base-images": {
+    "url": "https://github.com/blue-build/base-images.git",
+    "revision": "9f6d041980917b1576dd234c7fa5492704b6f99a"
+  },
+  "workshop": {
+    "url": "https://github.com/blue-build/workshop.git",
+    "revision": "c4764a421ce01cca9513c948197e7556e9a4c670"
+  },
+  "earthly-lib": {
+    "url": "https://github.com/blue-build/earthly-lib.git",
+    "revision": "c5240e281c929d0f03556db17b710035524caaa4"
+  },
+  "nushell-image": {
+    "url": "https://github.com/blue-build/nushell-image.git",
+    "revision": "94181a3f5122f5480f519150439ecf980e9098af"
+  },
+  "rpm-ostree-container": {
+    "url": "https://github.com/blue-build/rpm-ostree-container.git",
+    "revision": "94e32517fe413552903acbc1344a714fe0b571df"
+  },
+  "renovate-config": {
+    "url": "https://github.com/blue-build/renovate-config.git",
+    "revision": "ce36b370fba1ace5f6dd378438b9aff64364e0de"
+  },
+  "wasm-cosign-keygen": {
+    "url": "https://github.com/blue-build/wasm-cosign-keygen.git",
+    "revision": "846bd4fe3d340185c812e27d0c19f1025ec16d83"
+  },
+  ".github": {
+    "url": "https://github.com/blue-build/.github.git",
+    "revision": "e0d2f0ef12f50835c5d7b6b51a128c7df6a7369a"
+  }
+}

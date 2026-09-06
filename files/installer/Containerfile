@@ -1,0 +1,3 @@
+ARG INSTALLER
+FROM ${INSTALLER}
+COPY install_finite_fstab /build-container-installer/lorax_templates/scripts/post/install_finite_fstab

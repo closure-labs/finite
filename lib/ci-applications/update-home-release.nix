@@ -81,7 +81,6 @@ pkgs.writeShellApplication {
     release_files=(
       flake.nix
       lib/ci-applications/validate-locks.nix
-      tests/repository/contracts.sh
       docs/ci-and-releases.md
       docs/configuration.md
       docs/installation.md

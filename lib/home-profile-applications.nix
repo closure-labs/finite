@@ -1,9 +1,9 @@
 {
-  generated,
+  homeCatalog,
   homeScaffold,
   pkgs,
 }: let
-  catalog = "${generated}/bootc/generated/home-profile-catalog.json";
+  catalog = homeCatalog;
   profileRuntimeInputs = with pkgs; [coreutils getent gnugrep jq yq-go];
   homeProfile = pkgs.writeShellApplication {
     name = "finite-home-profile";
@@ -103,7 +103,7 @@
     '';
   };
   homeInitBody = pkgs.lib.removePrefix "#!/usr/bin/env bash\n" (
-    builtins.readFile ../modules/aspects/base/rootfs/usr/libexec/finite/home-init
+    builtins.readFile ../files/system/usr/libexec/finite/home-init
   );
   homeInit = pkgs.writeShellApplication {
     name = "finite-home-init";

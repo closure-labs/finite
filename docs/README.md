@@ -22,15 +22,14 @@ for installing, configuring, developing, and operating Finite.
 ## Engineering reference
 
 - [Development](development.md) covers the pinned Nix shell, repository layout,
-  generated catalogs, focused checks, image applications, and brand assets.
-- [CI and releases](ci-and-releases.md) describes change classification,
-  sharded candidate validation, installer caching, attestations, trusted update
-  automation, promotion, and release controls.
+  staged catalogs, focused checks, recipes, and brand assets.
+- [CI and releases](ci-and-releases.md) describes the four-recipe matrix, signed image publication, retained
+  Nix checks and on-demand ISO generation.
 
 ## Project records
 
 - [Changelog](../CHANGELOG.md) records user-visible changes by release.
-- [Repository security policy](ci-and-releases.md#repository-security-policy)
+- [Repository security policy](ci-and-releases.md)
   explains the checked-in GitHub Actions, token, scanning, and environment
   settings and how to audit them.
 

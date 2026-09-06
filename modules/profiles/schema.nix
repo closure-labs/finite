@@ -1,37 +1,8 @@
 {
   catalog,
-  config,
-  den,
   lib,
-  project,
   ...
 }: let
-  profileType = lib.types.submodule (
-    {name, ...}: {
-      options = {
-        name = lib.mkOption {
-          type = lib.types.strMatching "[a-z0-9._-]+";
-          default = name;
-          description = "Published Finite profile identifier.";
-        };
-        parent = lib.mkOption {
-          type = lib.types.nullOr (lib.types.strMatching "[a-z0-9._-]+");
-          default = null;
-          description = "Optional parent profile used for staged bootc builds.";
-        };
-        tags = lib.mkOption {
-          type = lib.types.listOf (lib.types.strMatching "[a-z0-9._-]+");
-          description = "Registry tags, with the canonical tag first.";
-        };
-        aspect = lib.mkOption {
-          type = lib.types.raw;
-          default = den.aspects.profiles.${name};
-          defaultText = "den.aspects.profiles.<name>";
-          description = "Den composition aspect for this profile entity.";
-        };
-      };
-    }
-  );
   foundationType = lib.types.submodule (
     {name, ...}: {
       options = {
@@ -122,11 +93,6 @@
   );
 in {
   options.finite = {
-    profiles = lib.mkOption {
-      type = lib.types.attrsOf profileType;
-      default = {};
-      description = "Typed registry of published Finite bootc profile entities.";
-    };
     home = {
       foundations = lib.mkOption {
         type = lib.types.attrsOf foundationType;
@@ -150,28 +116,4 @@ in {
       };
     };
   };
-
-  config.den.hosts.${project.platform.system} =
-    lib.mapAttrs (
-      name: profile: {
-        class = "bootc";
-        hostName = name;
-        inherit (profile) aspect;
-        excludes = [den.default];
-        intoAttr = [];
-        instantiate = {modules, ...}:
-          lib.evalModules {
-            class = "bootc";
-            modules =
-              [
-                {
-                  _module.args = {inherit catalog project;};
-                }
-                ./bootc-class.nix
-              ]
-              ++ modules;
-          };
-      }
-    )
-    config.finite.profiles;
 }

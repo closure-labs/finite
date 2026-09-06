@@ -1,5 +1,5 @@
 {
-  description = "Finite bootc profile and user-environment configuration";
+  description = "Finite BlueBuild payload and Home Manager configuration";
 
   # Consumers derive the Finite cache name from this centralized URL.
   # Flake configuration rejects imported values as thunks. Project evaluation
@@ -23,11 +23,6 @@
 
     devenv.url = "github:cachix/devenv/v2.2.2";
 
-    den-diagram = {
-      url = "github:denful/den-diagram";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     import-tree.url = "github:vic/import-tree";
 
     nixpkgs.url = "https://flakehub.com/f/DeterminateSystems/nixpkgs-26.05-chilled/0.1";
@@ -48,8 +43,7 @@
     };
   };
 
-  # Den's minimal dendritic entrypoint: feature/profile aspects and output
-  # definitions are discovered as independent flake modules.
+  # Den composes Home Manager aspects; BlueBuild owns image configuration.
   outputs = inputs:
     (inputs.nixpkgs.lib.evalModules {
       specialArgs = {inherit inputs;};

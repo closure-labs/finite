@@ -1,0 +1,55 @@
+name: Test ISO in UEFI VM
+on:
+  workflow_dispatch:
+    inputs:
+      iso_run:
+        description: Successful Build installation ISO run ID
+        type: string
+        required: true
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: finite-vm-acceptance
+  cancel-in-progress: false
+jobs:
+  vm:
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
+        with:
+          skip-if-available: "80G"
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+      - name: Download verified ISO artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISO_RUN: ${{ inputs.iso_run }}
+        run: |
+          [[ "$ISO_RUN" =~ ^[0-9]+$ ]]
+          gh run view "$ISO_RUN" --json workflowName,conclusion,headBranch | \
+            jq -e '.workflowName == "Build installation ISO" and .conclusion == "success" and .headBranch == "main"'
+          mapfile -t artifacts < <(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ISO_RUN/artifacts" \
+            --jq '.artifacts[] | select(.name | startswith("finite-iso-")) | .name')
+          [[ ${#artifacts[@]} == 1 ]]
+          gh run download "$ISO_RUN" --name "${artifacts[0]}" --dir .bluebuild/iso
+      - name: Install VM tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-x86 qemu-utils ovmf xorriso skopeo mtools
+      - name: Install, boot, activate Home Manager, update and roll back
+        run: bash scripts/bluebuild/vm-acceptance.sh .bluebuild/iso
+      - name: Save acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: vm-acceptance-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .bluebuild/vm/*.log
+            .bluebuild/vm/*.json
+          include-hidden-files: true
+          retention-days: 14

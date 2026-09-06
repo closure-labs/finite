@@ -1,0 +1,23 @@
+---
+# yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
+version: 1
+name: finite
+description: Finite bluefin with Home Manager and generic-x86_64
+base-image: ghcr.io/ublue-os/bluefin
+image-version: stable
+blue-build-tag: v0.9.37
+alt-tags: [bluefin-generic, latest]
+labels:
+  org.opencontainers.image.title: Finite
+  org.opencontainers.image.vendor: Closure Labs
+  org.opencontainers.image.url: https://github.com/closure-labs/finite
+  org.opencontainers.image.revision: "${GITHUB_SHA:-local}"
+  io.finite.profile: bluefin-generic
+  io.finite.foundation: bluefin
+  io.finite.hardware: generic-x86_64
+modules:
+  - from-file: shared/base.yml
+  - type: script@v1
+    snippets:
+      - bash "$CONFIG_DIRECTORY/scripts/profile.sh" bluefin-generic bluefin generic-x86_64 bluefin-generic
+  - from-file: shared/final.yml

@@ -12,7 +12,6 @@
   outputDependencies = {
     inherit (inputs) self;
     denFlakeModule = inputs.den.flakeModule;
-    diagram = inputs.den-diagram.lib;
     homeManagerLib = inputs.home-manager.lib;
     homeModuleInputs = {
       inherit (inputs) den determinate devenv home-manager nix-flatpak nixpkgs nixpkgs-weekly;
@@ -27,6 +26,4 @@ in {
   _module.args = {
     inherit catalog homeDependencies mkPkgs outputDependencies project;
   };
-
-  den.classes.bootc.description = "Finite bootc image composition";
 }

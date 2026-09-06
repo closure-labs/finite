@@ -5,7 +5,7 @@ profile_command="${1:?profile command is required}"
 init_command="${2:?home init command is required}"
 cloud_init_command="${3:?cloud-init command is required}"
 template="${4:?rendered home template is required}"
-first_login="modules/aspects/base/rootfs/usr/libexec/finite/home-first-login"
+first_login="files/system/usr/libexec/finite/home-first-login"
 test_root="$(mktemp -d)"
 trap 'rm -rf -- "${test_root}"' EXIT
 
@@ -130,7 +130,7 @@ patch_test_shebang "${test_root}/fake-bin/nix"
 chmod +x "${test_root}/activation/activate" "${test_root}/fake-bin/nix"
 
 export FINITE_HOME_TEMPLATE_PATH="${template}"
-export FINITE_HOME_CATALOG_PATH="${FINITE_GENERATED_ROOT}/bootc/generated/home-profile-catalog.json"
+export FINITE_HOME_CATALOG_PATH="${FINITE_HOME_CATALOG_PATH:?Home catalog path is required}"
 export FINITE_NIX_COMMAND="${test_root}/fake-bin/nix"
 export FINITE_TEST_ACTIVATION="${test_root}/activation"
 export FINITE_TEST_ACTIVATION_LOG="${test_root}/activation.log"
@@ -409,12 +409,12 @@ grep -qF 'jq -e --arg role "$role" '\''.roles | index($role) != null'\'' "$curre
 grep -qF 'jq -e --arg package "$package" '\''(.packages // []) | index($package) != null'\'' "$current"' \
 	"${template}/modules/finite-configure"
 if rg -n 'github:closure-labs/finite|nix.*flake lock' \
-	"${first_login}" modules/aspects/base/rootfs/usr/libexec/finite/home-init; then
+	"${first_login}" files/system/usr/libexec/finite/home-init; then
 	echo 'First-login provisioning still depends on a remote Finite flake' >&2
 	exit 1
 fi
 
-bash -n "${first_login}" modules/aspects/base/rootfs/usr/libexec/finite/home-init \
+bash -n "${first_login}" files/system/usr/libexec/finite/home-init \
 	"${template}/modules/finite-brew-migration-status" \
 	"${template}/modules/finite-configure" "${template}/modules/finite-home-apply"
 bash -n "${template}/modules/aspects/hardware/dell-xps-9350-intel/dell-xps-9350-panel-policy"

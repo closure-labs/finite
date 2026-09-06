@@ -5,24 +5,6 @@
   ...
 }: let
   inherit (den.aspects) features;
-  profileAspects =
-    lib.mapAttrs (
-      _: profile: {
-        includes = [
-          features.base
-          features.upstreams.${profile.foundation}
-          features.hardware.${profile.hardware}
-        ];
-      }
-    )
-    catalog.profilesByName;
-  profileEntities =
-    lib.mapAttrs (
-      _: profile: {
-        inherit (profile) parent tags;
-      }
-    )
-    catalog.profilesByName;
   foundations =
     lib.mapAttrs (
       _: foundation: {
@@ -53,10 +35,6 @@
     )
     catalog.packagesByName;
 in {
-  den.aspects.profiles = profileAspects;
-
-  finite.profiles = profileEntities;
-
   finite.home = {
     inherit foundations hardware packages roles;
   };
