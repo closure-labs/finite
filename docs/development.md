@@ -17,6 +17,7 @@ validation are the lightweight development path.
 | Profile choices and compatibility | `lib/domain-catalog.nix` |
 | Determinate, kernel and installer pins | `sources/` |
 | Build, ISO and VM integration | `scripts/bluebuild/` and `.github/workflows/` |
+| CI change selection and required gate | `scripts/ci/` and `tests/ci/` |
 
 The four handwritten recipes are the image configuration. Shared `from-file`
 modules keep common packages, assets and services together. Nix produces the
@@ -39,6 +40,13 @@ repository policy. For a focused run:
 ```bash
 nix build --accept-flake-config --max-jobs 1 --cores 1 \
   --no-link .#checks.x86_64-linux.bluebuild --print-build-logs
+```
+
+Use the pinned development shell for Python tests and workflow tools:
+
+```bash
+nix develop --accept-flake-config --command python3 tests/ci/selection.py
+nix develop --accept-flake-config --command python3 tests/bluebuild/contracts.py
 ```
 
 Validate a recipe and inspect its generated Containerfile:

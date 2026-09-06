@@ -53,7 +53,7 @@ class BlueBuildContracts(unittest.TestCase):
         workflow = read('.github/workflows/build.yml')
         images = workflow['jobs']['images']
         self.assertFalse(images['strategy']['fail-fast'])
-        self.assertEqual({p['profile'] for p in images['strategy']['matrix']['include']}, set(EXPECTED))
+        self.assertIn('needs.checks.outputs.matrix', images['strategy']['matrix'])
         self.assertEqual(images['permissions']['packages'], 'read')
         self.assertNotIn('secrets', images)
         self.assertFalse(images['with']['publish'])
@@ -82,7 +82,7 @@ class BlueBuildContracts(unittest.TestCase):
         gate = workflow['jobs']['gate']
         self.assertEqual(gate['name'], 'CI gate')
         self.assertEqual(gate['if'], 'always()')
-        self.assertEqual(set(gate['needs']), {'checks', 'images', 'publish'})
+        self.assertEqual(set(gate['needs']), {'impact', 'docs', 'checks', 'images', 'publish'})
 
     def test_runtime_catalog_has_no_build_graph(self):
         source = (ROOT / 'lib/image-payload.nix').read_text()
