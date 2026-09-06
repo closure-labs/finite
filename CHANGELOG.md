@@ -52,8 +52,8 @@ All notable changes to Finite are documented here. The format follows
 - Bitwarden Desktop can use the image's Polkit action for PAM-backed unlocking.
 - GNOME launches the customized Ghostty executable directly, and Vates Notes
   and Grist advertise their application roles correctly.
-- Trusted dependency automation repairs stale Nix hashes with isolated tokens
-  and verifies the pull-request revision before pushing.
+- Trusted dependency updates verify the pull-request author, revision and file
+  scope before enabling merge-queue validation.
 
 ## [0.5.0] - 2026-08-26
 
