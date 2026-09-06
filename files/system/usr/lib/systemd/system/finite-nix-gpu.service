@@ -1,0 +1,14 @@
+[Unit]
+Description=Restore Nix GPU drivers after the persistent store is mounted
+Requires=nix.mount
+After=nix.mount
+Before=display-manager.service
+ConditionPathExists=/etc/tmpfiles.d/non-nixos-gpu.conf
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/systemd-tmpfiles --create /etc/tmpfiles.d/non-nixos-gpu.conf
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

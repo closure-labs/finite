@@ -73,7 +73,9 @@ sudo systemctl reboot
 
 Your home directory and persistent Nix state carry across image updates.
 Finite refreshes the managed Home Manager template at login while preserving
-`customize.nix` and `modules/local.nix`.
+your `flake.nix`, `flake.lock`, `customize.nix` and `modules/local.nix`.
+Custom inputs and dependency pins survive image upgrades; see
+[custom flake inputs](configuration.md#add-custom-flake-inputs).
 
 To refresh the independent package inputs in your Home Manager configuration:
 

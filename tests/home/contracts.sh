@@ -123,6 +123,16 @@ printf '\n' >>"${FINITE_TEST_NIX_LOG}"
 	exit 1
 }
 [[ "${FINITE_TEST_BUILD_FAIL:-false}" != true ]]
+if [[ -n "${FINITE_TEST_PRESERVED_FLAKE:-}" ]]; then
+	for argument in "$@"; do
+		if [[ "$argument" == path:*#homeConfigurations.* ]]; then
+			staged="${argument#path:}"
+			staged="${staged%%#*}"
+			cmp "${FINITE_TEST_PRESERVED_FLAKE}/flake.nix" "$staged/flake.nix"
+			cmp "${FINITE_TEST_PRESERVED_FLAKE}/flake.lock" "$staged/flake.lock"
+		fi
+	done
+fi
 printf '%s\n' "${FINITE_TEST_ACTIVATION}"
 EOF
 patch_test_shebang "${test_root}/activation/activate"
@@ -213,6 +223,42 @@ printf '%s\n' '{...}: { home.sessionVariables.FINITE_LOCAL_TEST = "preserved"; }
 "${init_command}" --profile "${test_root}/profile.yaml" >/dev/null
 grep -qF 'home.packages = [pkgs.jq]' "${hm_dir}/customize.nix"
 grep -qF 'FINITE_LOCAL_TEST = "preserved"' "${hm_dir}/modules/local.nix"
+
+# Reproduce an image upgrade with a customization that needs a user input.
+# The staged build must see both its declaration and the original lock pins.
+awk '{print} /inputs = \{/ {print "    user-package.url = \"github:example/user-package\";"}' \
+	"${hm_dir}/flake.nix" >"${hm_dir}/flake.nix.new"
+mv "${hm_dir}/flake.nix.new" "${hm_dir}/flake.nix"
+jq '.nodes.root.inputs["user-package"] = "user-package" |
+  .nodes["user-package"] = {locked: {type: "github", owner: "example", repo: "user-package",
+    rev: "0123456789012345678901234567890123456789"}}' \
+	"${hm_dir}/flake.lock" >"${hm_dir}/flake.lock.new"
+mv "${hm_dir}/flake.lock.new" "${hm_dir}/flake.lock"
+# shellcheck disable=SC2016
+printf '%s\n' '{inputs, pkgs, ...}: { home.packages = [inputs.user-package.packages.${pkgs.stdenv.hostPlatform.system}.default]; }' \
+	>"${hm_dir}/customize.nix"
+mkdir "${test_root}/user-flake"
+cp "${hm_dir}/flake.nix" "${hm_dir}/flake.lock" "${test_root}/user-flake/"
+export FINITE_TEST_PRESERVED_FLAKE="${test_root}/user-flake"
+printf '%s\n' '{"schema":1,"generator":"finite-home-init","version":"old"}' \
+	>"${hm_dir}/finite-template.json"
+"${init_command}" --profile "${test_root}/profile.yaml" --check >/dev/null
+"${init_command}" --profile "${test_root}/profile.yaml" >/dev/null
+cmp "${template}/finite-template.json" "${hm_dir}/finite-template.json"
+cmp "${test_root}/user-flake/flake.nix" "${hm_dir}/flake.nix"
+cmp "${test_root}/user-flake/flake.lock" "${hm_dir}/flake.lock"
+grep -qF 'inputs.user-package.packages' "${hm_dir}/customize.nix"
+unset FINITE_TEST_PRESERVED_FLAKE
+
+for missing in flake.nix flake.lock; do
+	mv "${hm_dir}/${missing}" "${test_root}/${missing}.saved"
+	if "${init_command}" --profile "${test_root}/profile.yaml" --check >/dev/null 2>&1; then
+		echo "Home initializer mixed a partial user flake with the template: ${missing}" >&2
+		exit 1
+	fi
+	test ! -e "${hm_dir}/${missing}"
+	mv "${test_root}/${missing}.saved" "${hm_dir}/${missing}"
+done
 
 printf 'preserve\n' >"${hm_dir}/preserve-on-failure"
 if FINITE_TEST_BUILD_FAIL=true \

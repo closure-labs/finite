@@ -40,6 +40,7 @@ cp \
   "${unit_source}/finite-nix-selinux.service" \
   "${unit_source}/finite-nix-seed.service" \
   "${unit_source}/finite-nix-socket-cleanup.service" \
+  "${unit_source}/finite-nix-gpu.service" \
   "${unit_source}/nix.mount" \
   "${unit_source}/nix-daemon.service" \
   "${unit_source}/nix-daemon.socket" \
@@ -53,6 +54,7 @@ install -m 0755 "${true_command}" \
   "${test_root}/usr/libexec/finite/provision-determinate-nix"
 install -m 0755 "${true_command}" "${test_root}/usr/bin/determinate-nixd"
 install -m 0755 "$(type -P rm)" "${test_root}/usr/bin/rm"
+install -m 0755 "${true_command}" "${test_root}/usr/bin/systemd-tmpfiles"
 
 # Reproduce the activation layout inherited from Fedora/Determinate. The
 # Finite helper must remove these early/direct links, not merely add its later
@@ -93,6 +95,17 @@ test "$(readlink "${test_root}/usr/lib/systemd/system/multi-user.target.wants/ni
   ../nix-daemon.socket
 test "$(readlink "${test_root}/usr/lib/systemd/system/multi-user.target.wants/determinate-nixd.socket")" = \
   ../determinate-nixd.socket
+test "$(readlink "${test_root}/usr/lib/systemd/system/multi-user.target.wants/finite-nix-gpu.service")" = \
+  ../finite-nix-gpu.service
+
+# The store is deliberately mounted after early tmpfiles setup. Reapply only
+# the GPU rule once its store-backed configuration is available, before login.
+grep -qFx 'Requires=nix.mount' "${unit_source}/finite-nix-gpu.service"
+grep -qFx 'After=nix.mount' "${unit_source}/finite-nix-gpu.service"
+grep -qFx 'Before=display-manager.service' "${unit_source}/finite-nix-gpu.service"
+grep -qFx 'ConditionPathExists=/etc/tmpfiles.d/non-nixos-gpu.conf' "${unit_source}/finite-nix-gpu.service"
+grep -qFx 'ExecStart=/usr/bin/systemd-tmpfiles --create /etc/tmpfiles.d/non-nixos-gpu.conf' \
+  "${unit_source}/finite-nix-gpu.service"
 
 grep -qFx 'DefaultDependencies=no' \
   "${test_root}/usr/lib/systemd/system/nix-daemon.socket"
@@ -123,6 +136,7 @@ if [[ -d /run/systemd ]]; then
     finite-nix-selinux.service \
     finite-nix-seed.service \
     finite-nix-socket-cleanup.service \
+    finite-nix-gpu.service \
     nix.mount \
     nix-daemon.service \
     nix-daemon.socket \

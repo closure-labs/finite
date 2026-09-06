@@ -6,6 +6,13 @@ All notable changes to Finite are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- Home Manager template upgrades preserve the user's flake entry point and
+  dependency lock, keeping custom inputs available to preserved modules.
+- Restore the Nix GPU driver link after the persistent store mounts at boot,
+  fixing Ghostty and other Nix graphics applications after reboot.
+
 ### Changed
 
 - CI selects documentation, Nix/runtime and image checks from changed inputs.

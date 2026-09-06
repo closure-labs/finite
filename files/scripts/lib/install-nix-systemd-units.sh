@@ -54,6 +54,7 @@ for root in "${unit_root}" "${config_root}"; do
 done
 install_vendor_want nix-daemon.socket multi-user.target.wants
 install_vendor_want determinate-nixd.socket multi-user.target.wants
+install_vendor_want finite-nix-gpu.service multi-user.target.wants
 
 for root in "${unit_root}" "${config_root}"; do
 	test ! -e "${root}/sockets.target.wants/nix-daemon.socket"
