@@ -37,7 +37,10 @@
       zizmor
       zsh
     ])
-    ++ [treefmtEval.config.build.wrapper];
+    ++ [
+      (pkgs.python3.withPackages (p: [p.pyyaml]))
+      treefmtEval.config.build.wrapper
+    ];
   home = config.finite.home;
   inherit (project) cache;
   version = lib.removeSuffix "\n" (builtins.readFile ../VERSION);

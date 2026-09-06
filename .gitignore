@@ -2,6 +2,8 @@
 /*.oci
 /.devenv/
 /.direnv/
+__pycache__/
+*.pyc
 
 # BlueBuild staging (recipes and authored scripts are tracked).
 /files/payload/

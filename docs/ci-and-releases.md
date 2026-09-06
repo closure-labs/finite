@@ -7,8 +7,39 @@ channels. Each profile publishes independently to `ghcr.io/closure-labs/finite`.
 
 [Build Finite](https://github.com/closure-labs/finite/actions/workflows/build.yml)
 runs on pull requests, merge groups, main pushes, daily schedules and manual
-dispatches. The required `CI gate` combines the Nix/runtime checks with every
-image job.
+dispatches. It selects work from the complete Git diff for each event:
+
+| Changed inputs | Required work |
+| --- | --- |
+| README, changelog, license or `docs/` only | Text style and local Markdown links |
+| Tests, automation or installer/dependency workflows | Documentation and Nix/runtime checks |
+| Nix modules, Home Manager, locks or version | Documentation, Nix/runtime checks and images whose payload derivation changed |
+| One recipe | Checks and that recipe's image |
+| Shared next-kernel recipe or kernel script | Checks and both next-kernel images |
+| Shared system files, signing, build CI or other paths | Checks and all four images |
+| Daily schedule or manual dispatch | All checks and all four images |
+
+Fast checks finish before image builds start. A documentation-only main push
+runs documentation checks; the daily schedule refreshes upstream inputs.
+Missing comparison data selects full validation. Renames include both paths,
+so moving an image input into documentation still triggers image builds.
+
+For Nix changes, CI evaluates `image-payload.drvPath` and
+`image-payload-next.drvPath` at the base revision and the actual checked-out
+PR, merge-queue or main revision. These identities include their declared Nix
+dependencies. Matching identities skip the corresponding image rebuilds;
+changed identities select the two generic or two next
+profiles. Evaluation uses the committed lock file and records both identities
+in the job summary. It evaluates the dependency graph without building payloads.
+
+The Nix comparison adds to images selected by recipe and system-file changes.
+An evaluation failure selects all four images. The daily full build also
+checks upstream Bluefin and BlueBuild inputs outside Nix's dependency graph.
+
+The required `CI gate` runs for every event. It requires success from selected
+jobs and verifies that other jobs were explicitly skipped. Failures,
+cancellations and missing selection outputs block merging. Merge-queue checks
+use the queue's base and proposed merge revisions.
 
 | Run | Registry permissions | Signing |
 | --- | --- | --- |

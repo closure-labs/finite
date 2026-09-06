@@ -16,6 +16,7 @@
       ../files/system
       ../files/dnf
       ../scripts/bluebuild
+      ../scripts/ci
       ../tests
       ../modules/aspects
       ../templates
@@ -57,7 +58,8 @@ in {
     bash tests/nix/nix-lifecycle.sh
     bash tests/nix/nix-systemd.sh
   '';
-  bluebuild = check "bluebuild-contracts" [pkgs.jq (pkgs.python3.withPackages (p: [p.pyyaml]))] ''
+  bluebuild = check "bluebuild-contracts" [pkgs.git pkgs.jq (pkgs.python3.withPackages (p: [p.pyyaml]))] ''
+    python3 tests/ci/selection.py
     python3 tests/bluebuild/contracts.py
     python3 tests/bluebuild/iso.py
     python3 tests/bluebuild/kernel.py

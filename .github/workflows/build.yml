@@ -18,35 +18,70 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
 
 jobs:
-  checks:
-    name: Nix and runtime contracts
+  impact:
+    name: Select checks
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 5
+    outputs:
+      checks: ${{ steps.impact.outputs.checks }}
+      nix: ${{ steps.impact.outputs.nix }}
+      profiles: ${{ steps.impact.outputs.profiles }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
+      - id: impact
+        run: python3 scripts/ci/impact.py
+
+  docs:
+    name: Documentation checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install documentation check tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y ripgrep file
+      - run: |
+          bash tests/repository/text-style.sh
+          bash tests/repository/markdown-links.sh
+
+  checks:
+    name: Nix and runtime contracts
+    needs: [impact, docs]
+    if: needs.impact.outputs.checks == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    outputs:
+      images: ${{ steps.selection.outputs.images }}
+      matrix: ${{ steps.selection.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
       - uses: ./.github/actions/setup-nix
       - run: nix build --accept-flake-config --no-link .#ci-checks
+      - name: Select images from payload dependencies
+        id: selection
+        env:
+          IMPACT: ${{ toJSON(needs.impact.outputs) }}
+        run: nix develop --accept-flake-config --command python3 scripts/ci/payloads.py
 
   images:
     name: Validate (${{ matrix.profile }})
-    if: ${{ !(github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')) }}
+    needs: [impact, docs, checks]
+    if: ${{ needs.checks.outputs.images == 'true' && !(github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')) }}
     permissions:
       contents: read
       packages: read
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - profile: bluefin-generic
-            channel: bluefin-generic
-          - profile: bluefin-next
-            channel: next
-          - profile: bluefin-dx-generic
-            channel: bluefin-dx-generic
-          - profile: bluefin-dx-next
-            channel: dev-next
+      matrix: ${{ fromJSON(needs.checks.outputs.matrix || '{"include":[]}') }}
     uses: ./.github/workflows/image.yml
     with:
       profile: ${{ matrix.profile }}
@@ -55,22 +90,14 @@ jobs:
 
   publish:
     name: Publish (${{ matrix.profile }})
-    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    needs: [impact, docs, checks]
+    if: needs.checks.outputs.images == 'true' && github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     permissions:
       contents: read
       packages: write
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - profile: bluefin-generic
-            channel: bluefin-generic
-          - profile: bluefin-next
-            channel: next
-          - profile: bluefin-dx-generic
-            channel: bluefin-dx-generic
-          - profile: bluefin-dx-next
-            channel: dev-next
+      matrix: ${{ fromJSON(needs.checks.outputs.matrix || '{"include":[]}') }}
     uses: ./.github/workflows/image.yml
     with:
       profile: ${{ matrix.profile }}
@@ -82,15 +109,14 @@ jobs:
   gate:
     name: CI gate
     if: always()
-    needs: [checks, images, publish]
+    needs: [impact, docs, checks, images, publish]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     env:
-      CHECKS: ${{ needs.checks.result }}
-      IMAGES: ${{ needs.images.result }}
-      PUBLISH: ${{ needs.publish.result }}
+      NEEDS: ${{ toJSON(needs) }}
+      TRUSTED_PUBLICATION: ${{ github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
     steps:
-      - run: |
-          [[ "$CHECKS" == success ]]
-          [[ ("$IMAGES" == success && "$PUBLISH" == skipped) ||
-             ("$IMAGES" == skipped && "$PUBLISH" == success) ]]
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: python3 scripts/ci/gate.py
