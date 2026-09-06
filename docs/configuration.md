@@ -1,177 +1,114 @@
-# Configure foundations, hardware, and roles
+# Configure your environment
 
-Finite separates the immutable bootc foundation from a per-user Home Manager
-composition:
+Start with `finite-configure`. It opens the role and optional-package selectors,
+shows your current choices, builds the selected environment, and activates it
+after the build succeeds.
 
-```text
-foundation: bluefin | bluefin-dx
-image:      generic-x86_64 | next-x86_64
-home:       generic-x86_64 | dell-xps-9350-intel
-roles:      any subset of developer, sales, trainer, support, executive, it
-packages:   any subset of hack-font, herdr, jj, opencode, uv
-```
+You can combine Developer, Sales, Trainer, Support, Executive and IT roles.
+Optional packages include Hack Nerd Font, Herdr, Jujutsu, OpenCode and uv.
+Every combination includes Finite's base desktop apps and command-line tools.
 
-The running image records explicit `foundation` and image `hardware` fields in
-`/usr/share/finite/profile.json`. A user's profile records the selected Home
-Manager hardware aspect instead. First-login keeps the foundation authoritative
-and accepts only Home Manager hardware declared compatible with the running
-generic or next image. On an XPS 13 9350 it selects the Dell Home Manager aspect
-automatically; that aspect does not change the boot image or camera stack.
+## Add packages and personal settings
 
-## Profile data
+Edit `~/.config/home-manager/customize.nix`. It is a Home Manager module, so you
+can add Nix packages, Flatpaks and other settings together:
 
-Provisioning accepts YAML or JSON. `finite-home-init` normalizes it to JSON:
-
-```json
-{
-  "schema": 2,
-  "foundation": "bluefin-dx",
-  "hardware": "dell-xps-9350-intel",
-  "packages": ["jj", "uv"],
-  "roles": ["developer", "support"],
-  "identity": {
-    "username": "dale",
-    "homeDirectory": "/var/home/dale"
-  }
+```nix
+{pkgs, ...}: {
+  home.packages = with pkgs; [jq];
+  services.flatpak.packages = ["org.gimp.GIMP"];
 }
 ```
 
-The account values are discovered with `id` and `getent`. Supplied identity
-values must match. Unknown or duplicate packages or roles, unknown foundations
-or hardware, incompatible image/Home Manager hardware pairs, extra schema
-fields, malformed documents, and running-foundation mismatches fail before any
-deployed file changes. Schema-1 profiles remain valid initializer input and are
-normalized to schema 2 with an empty package selection.
+Build your changes, then activate them:
 
-The normalized profile lives at `~/.config/finite/profile.json`. The complete
-standalone flake lives at `~/.config/home-manager`: its Den module, every Finite
-Home Manager aspect, referenced assets, helper scripts, profile, and pinned
-third-party input lock are all local to that directory. It has no `finite`
-input and no path back to a source checkout. Run `nh home switch` to rebuild it,
-or `nix flake update --flake ~/.config/home-manager` to refresh its independent pinned
-inputs. `finite-configure` opens graphical role and optional-package checklists
-with the current selections preselected and activates only after a successful
-build.
+```bash
+nh home build
+nh home switch
+```
 
-The flake exports `homeConfigurations.<username>`, where `<username>` is the
-validated local account recorded during installation or first login. This
-matches `nh`'s automatic Home Manager configuration lookup, so no `-c` argument
-is required.
+Lists merge with the Finite defaults. Finite preserves `customize.nix` and
+`modules/local.nix` when it refreshes the managed configuration.
 
-## Add your own packages and Flatpaks
-
-Edit `~/.config/home-manager/customize.nix`. It is a normal additive Home
-Manager module imported after Finite's generated modules. Finite preserves this
-file, along with `modules/local.nix`, when an image update replaces the rest of
-the generated scaffold.
+Most packages come from the pinned chilled Nixpkgs input. For a package that
+needs the weekly input, use its package set explicitly:
 
 ```nix
 {inputs, pkgs, ...}: {
-  home.packages =
-    (with pkgs; [
-      jq
-    ])
-    ++ [
-      inputs.nixpkgs-weekly.legacyPackages.${pkgs.stdenv.hostPlatform.system}.example
-    ];
-
-  services.flatpak.packages = [
-    "org.gimp.GIMP"
+  home.packages = [
+    inputs.nixpkgs-weekly.legacyPackages.${pkgs.stdenv.hostPlatform.system}.jq
   ];
 }
 ```
 
-Use the weekly half of the list only when the chilled package set lacks what
-you need or a newer version is deliberately required.
+See [Application sources](application-sources.md) for choosing package providers.
 
-List-valued options such as `home.packages` and `services.flatpak.packages`
-merge with Finite's lists; they do not replace the generated module. Validate
-the result before activation with `nh home build`, then apply it with
-`nh home switch`.
+## Enable GPU access for Nix apps
 
-The entries in `home.packages` are Nix derivations from the pinned chilled or
-weekly Nixpkgs inputs. They are not Homebrew package names or representations
-of Homebrew state. Homebrew may still contain a second copy during the staged
-migration, but the Nix profile normally appears first on `PATH`.
-
-## GPU acceleration for Nix packages
-
-Finite uses Home Manager's non-NixOS GPU integration instead of wrapping each
-graphical application with NixGL. After the first Home Manager activation, run
-the setup command printed by Home Manager:
+After the first Home Manager activation, run its GPU setup command:
 
 ```bash
 sudo "$(command -v non-nixos-gpu-setup)"
 readlink /run/opengl-driver
 ```
 
-The helper installs `/etc/tmpfiles.d/non-nixos-gpu.conf`, protects its Nix
-driver closure with `/nix/var/nix/gcroots/non-nixos-gpu.conf`, and immediately
-creates `/run/opengl-driver`. Bluefin's immutable `/usr` is not modified and no
-RPM or bootc layer is added. `/etc` and `/nix` persist across bootc upgrades;
-systemd-tmpfiles recreates the volatile `/run` link at each boot.
+The helper connects Nix applications to the graphics drivers and creates a
+persistent tmpfiles rule and Nix garbage-collection root. Run it again when
+Home Manager reports that the driver setup needs an update.
 
-Run the helper again only when a later `nh home switch` reports that the GPU
-drivers require an update. Finite supports the 64-bit Mesa path used by Intel,
-AMD, and Nouveau systems. Proprietary NVIDIA and 32-bit driver integration are
-not currently supported. NixGL remains available upstream as an unmanaged
-escape hatch for systems where administrator access is unavailable, but it is
-not a supported Finite configuration.
+The supported path covers 64-bit Mesa on Intel, AMD and Nouveau. Systems using
+proprietary NVIDIA or 32-bit graphics need additional integration.
 
-## Graphical package management
+## Your configuration files
 
-`finite-configure` is the supported graphical interface for Finite's curated
-roles and optional Nix packages. Arbitrary additions remain declarative in
-`customize.nix`; Flathub applications can also be explored graphically with
-Bluefin's Flatpak software tools and then recorded by application ID in that
-file.
+| Location | Purpose |
+| --- | --- |
+| `~/.config/finite/profile.json` | Selected foundation, hardware, roles, packages and account |
+| `~/.config/home-manager/` | Complete standalone Home Manager configuration and lock |
+| `~/.config/home-manager/customize.nix` | Your additional packages and settings |
+| `/usr/share/finite/profile.json` | Running image's foundation, hardware, channel and kernel |
 
-General Nix GUIs exist, but they do not edit Finite's standalone Home Manager
-module safely. [Nix Software Center](https://github.com/snowfallorg/nix-software-center)
-targets `configuration.nix` or imperative `nix profile` installs, while
-[Nix-Gui](https://github.com/nix-gui/nix-gui) describes itself as a work in
-progress for NixOS configurations. Finite does not install either in the base
-environment.
+The image selects the foundation: `bluefin` or `bluefin-dx`. Home Manager selects
+compatible user hardware settings. On an XPS 13 9350, first login detects the
+machine and selects the [Dell display policy](dell-xps-9350.md).
 
-## Self-contained templates and initialization
+The standalone flake includes its Finite modules, assets, helper scripts and
+pinned dependencies. It exports `homeConfigurations.<username>`, which `nh`
+selects for your account. Update its inputs with
+`nix flake update --flake ~/.config/home-manager`.
 
-```console
-nix flake new -t github:closure-labs/finite#home-manager PATH
-nix flake new -t github:closure-labs/finite#home-bluefin PATH
-nix flake new -t github:closure-labs/finite#home-bluefin-dx PATH
+## Provision an environment
+
+For scripted setup, provide YAML or JSON to
+`/usr/libexec/finite/home-init --profile PROFILE`. For example:
+
+```json
+{
+  "schema": 2,
+  "foundation": "bluefin-dx",
+  "hardware": "generic-x86_64",
+  "packages": ["jj", "uv"],
+  "roles": ["developer", "support"],
+  "identity": {}
+}
 ```
 
-All three names expose the same canonical, complete template. The two
-foundation-specific names are compatibility aliases; bootstrap does not select
-a different template tree. Instead it writes the normalized foundation,
-hardware, packages, roles, and account identity to the generated flake's local
-`profile.json`. `modules/finite.nix` reads those variables and uses Den's
-standalone `den.homes` output to compose the matching local aspects.
+The initializer discovers the current account, validates the selected options
+against the image, and builds a staged configuration. After success, it installs
+the complete configuration and keeps a timestamped copy of the previous one.
+An explicit identity must match the current account.
 
-On Finite, `/usr/libexec/finite/home-init --profile PROFILE` copies the image's
-pinned template to a staging directory, preserves the two customization
-modules, injects the account identity and canonical package and role order, and
-builds it without changing the lock. Only a successful build is installed. Any
-existing missing, partial, invalid, or older scaffold is moved to a timestamped
-`home-manager.previous.*` directory and the complete staged directory takes its
-place. The first-login service compares the installed template marker with the
-image marker, so the same path also performs simple release-to-release
-replacement.
+## Start from a template
 
-## Catalog and aspects
+Create a standalone configuration in a new directory:
 
-```console
-nix build .#home-profile-catalog
-jq . result
+```bash
+nix flake new -t github:closure-labs/finite#home-manager my-home
 ```
 
-The schema-3 catalog contains typed `foundations`, `hardware`, `packages`,
-`roles`, and `compatibility` maps. BlueBuild image configuration lives under `recipes/`; its files and specialized
-scripts stage from the retained system assets under `modules/aspects/base`. The canonical portable
-Home Manager modules and assets live below
-`templates/home-manager/modules/aspects`; that same tree is copied intact into
-the final flake. Add a role to `lib/domain-catalog.nix`, give it a stable
-ordering key and label, add its aspect implementation, and validate every
-foundation with `just check`. The same pure catalog drives module enums,
-profile ordering, generated catalogs, Home Manager proofs, and the
-`finite-configure` checklist.
+The `home-bluefin` and `home-bluefin-dx` template names expose the same complete
+template. Its local `profile.json` selects the foundation, hardware, roles,
+packages and account. The image's first-login initializer supplies these values
+when creating a workstation configuration.
+
+For the implementation and catalog layout, see [Development](development.md).

@@ -1,65 +1,105 @@
-# Development
+# Develop Finite
 
-Edit the four recipes directly. Shared modules live under `recipes/shared`.
-System files live in `files/system`, repository definitions in `files/dnf`, and
-Nix lifecycle helpers in `files/scripts/lib`. BlueBuild copies these authored
-assets into the image.
+Use a Finite checkout with Nix and BlueBuild CLI v0.9.37. Keep full image builds,
+ISO generation and VM tests on GitHub-hosted runners; local checks and recipe
+validation are the lightweight development path.
+
+## Choose where to make a change
+
+| Change | Files |
+| --- | --- |
+| Image foundation, tags or profile identity | `recipes/*.yml` |
+| Shared image packages and modules | `recipes/shared/` |
+| System configuration and vendor units | `files/system/` |
+| RPM repository definitions | `files/dnf/` |
+| Nix lifecycle and kernel installation | `files/scripts/` |
+| Home Manager apps, roles and settings | `templates/home-manager/modules/aspects/` |
+| Profile choices and compatibility | `lib/domain-catalog.nix` |
+| Determinate, kernel and installer pins | `sources/` |
+| Build, ISO and VM integration | `scripts/bluebuild/` and `.github/workflows/` |
+
+The four handwritten recipes are the image configuration. Shared `from-file`
+modules keep common packages, assets and services together. Nix produces the
+Home Manager template/catalog and pinned installation payload.
+
+## Run local checks
+
+Inspect downloads before starting a build, then cap local jobs and cores:
 
 ```bash
-nix build --accept-flake-config --no-link .#ci-checks
-bash scripts/bluebuild/stage.sh bluefin-generic
+nix build --accept-flake-config --dry-run .#ci-checks
+nix build --accept-flake-config --max-jobs 1 --cores 1 --no-link .#ci-checks
+nix fmt
+```
+
+The checks cover Home Manager configurations, Nix lifecycle, kernel and installer
+contracts, UEFI ISO layout, dependency updates, formatting, workflow linting and
+repository policy. For a focused run:
+
+```bash
+nix build --accept-flake-config --max-jobs 1 --cores 1 \
+  --no-link .#checks.x86_64-linux.bluebuild --print-build-logs
+```
+
+Validate a recipe and inspect its generated Containerfile:
+
+```bash
 bluebuild validate recipes/bluefin-generic.yml
 bluebuild generate --registry ghcr.io --registry-namespace closure-labs \
   recipes/bluefin-generic.yml
 ```
 
-Use CLI v0.9.37. `stage.sh` creates the ignored `files/payload` directory from Nix.
-Stage the selected profile before each build; next profiles include the locked
-kernel RPMs. Home Manager first-login consumers use
-foundation and hardware from the compact `/usr/share/finite/profile.json`.
+Before an image build, run `bash scripts/bluebuild/stage.sh PROFILE`. This stages
+`files/payload` for the selected recipe. The next profiles include the locked
+kernel RPMs. The hosted build workflow performs staging automatically.
 
-Prefer hosted GitHub Actions for full image builds and ISO generation. Local
-schema validation, shell/workflow linting and lifecycle fixture tests are small;
-four Bluefin images and UEFI VMs require substantial storage. Inspect a Nix dry
-run before fetching large dependencies and avoid concurrent local image builds.
+## Work on Home Manager
 
-The reference checkout revisions used for implementation are recorded in
-[reference-revisions.json](bluebuild/reference-revisions.json). Workshop is an
-optional reference, not a development dependency.
+The portable modules and assets live in `templates/home-manager`. To add a role
+or optional package, update `lib/domain-catalog.nix`, implement its aspect, and
+run the checks. The catalog supplies the selectors, profile validation and
+Home Manager configuration proofs.
 
-Before deploying image or installer changes, verify all four signed images and install generic and
-next variants with the manual **Test ISO in UEFI VM** workflow. Check first boot, Nix SELinux setup, Home
-Manager activation, persistence over upgrades, signature rejection and rollback.
-Install an upstream ISO and confirm subsequent bootc updating. A separate
-hardware cutover must retain the previous
-workstation deployment and verify graphics, PipeWire camera, Espanso,
-suspend/resume and authentication.
+Inspect the runtime catalog with:
 
-## Sandbox acceptance evidence
+```bash
+nix build .#home-profile-catalog
+jq . result
+```
 
-Verified runs for the BlueBuild replacement:
+The image records its foundation, hardware, channel and kernel in
+`/usr/share/finite/profile.json`. First login combines that identity with the
+user's selected Home Manager environment.
 
-| Check | Result | Evidence |
-| --- | --- | --- |
-| Four signed profiles, final-image assertions and `CI gate` | Passed | [Build 34006442823](https://github.com/closure-labs/finbox/actions/runs/34006442823) |
-| Four profiles with read-only publication permissions and no signing secret | Passed | [Validation 33999999603](https://github.com/closure-labs/finbox/actions/runs/33999999603) |
-| Generic ISO generation with installer v1.5.0 and root finalization | Passed | [ISO 34005801360](https://github.com/closure-labs/finbox/actions/runs/34005801360) |
-| Generic UEFI installation, Nix/SELinux, Home Manager, signature rejection, update and rollback | Passed | [VM 34006462352](https://github.com/closure-labs/finbox/actions/runs/34006462352) |
-| Next-kernel ISO generation with installer v1.5.0 and root finalization | Passed | [ISO 34006463272](https://github.com/closure-labs/finbox/actions/runs/34006463272) |
-| Next UEFI installation, expected kernel, Nix/SELinux, Home Manager, signature rejection, update and rollback | Passed | [VM 34007158009](https://github.com/closure-labs/finbox/actions/runs/34007158009) |
-| Root remounting on first boot, update and rollback, both variants | Passed | Both VM runs above |
+## Validate an ISO
 
-The generic VM installed signed index
-`sha256:c2ad1b5523074eddf9ed2d07dd3d396e6f1c5475e43aeba514aaf46d37b7eaba`,
-switched to the signature-enforced `bluefin-generic` channel, and rolled back to
-its original deployment checksum. Run artifacts contain the architecture
-manifest digests, bootc status records and service logs. Production and physical
-workstation acceptance remain separate gates.
+Dispatch [Test ISO in UEFI VM](https://github.com/closure-labs/finite/actions/workflows/vm-acceptance.yml)
+with a successful ISO run ID. The hosted test verifies the artifact and
+signature, installs in a disposable UEFI VM, activates Home Manager, tests
+wrong-key rejection, updates the signed channel and rolls back. It checks Nix
+persistence, the running kernel and root remounting on each boot.
 
-The earlier functional runs also reported `systemd-remount-fs.service` failing at boot.
-The next VM's journal and fstab confirmed [bootc issue 971](https://github.com/bootc-dev/bootc/issues/971):
-physical Btrfs root options were reapplied to the composefs overlay. Installer
-root finalization now removes that entry after verifying the boot arguments.
-Both corrected ISOs passed all three boots with successful remounting.
-The hosted AMD runners also report the inherited `mcelog` service as unsupported
-on their processors; the Nix and root mount service assertions pass.
+The Actions log streams the guest console. The installer has a 45-minute limit;
+Nix initialization has a three-minute readiness window after SSH starts.
+Artifacts retain service logs, kernel reports, mount layouts and bootc status.
+
+Run generic and next acceptance tests for image or installer changes. Validate
+graphics, PipeWire camera, Espanso, suspend/resume and authentication separately
+on the target workstation, retaining its previous deployment.
+
+## Verified BlueBuild baseline
+
+| Check | Evidence |
+| --- | --- |
+| Four signed sandbox images and final-image assertions | [Build 34007974907](https://github.com/closure-labs/finbox/actions/runs/34007974907) |
+| Four images built with read-only publication permissions | [Validation 33999999603](https://github.com/closure-labs/finbox/actions/runs/33999999603) |
+| Generic ISO and complete UEFI acceptance | [ISO](https://github.com/closure-labs/finbox/actions/runs/34005801360), [VM](https://github.com/closure-labs/finbox/actions/runs/34006462352) |
+| Next-kernel ISO and complete UEFI acceptance | [ISO](https://github.com/closure-labs/finbox/actions/runs/34006463272), [VM](https://github.com/closure-labs/finbox/actions/runs/34007158009) |
+
+Both VM runs passed first boot, Nix/SELinux, Home Manager, signature rejection,
+updating, persistence and rollback. The hosted AMD processors report the
+inherited `mcelog` diagnostic service as unsupported. Physical hardware checks
+form a separate acceptance step.
+
+The upstream reference revisions used for this implementation are recorded in
+[reference-revisions.json](bluebuild/reference-revisions.json).

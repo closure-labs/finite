@@ -1,80 +1,115 @@
-# Installation
+# Install and update
 
-Build an on-demand ISO from a verified Finite image using GitHub Actions.
+Finite installs the Bluefin GNOME desktop on an x86_64 UEFI system. Choose
+`bluefin-generic` for Bluefin or `bluefin-dx-generic` for Bluefin DX. Choose
+`next` or `dev-next` when you need the pinned next kernel; the
+[Dell guide](dell-xps-9350.md) covers the XPS 13 9350.
 
-1. Open a successful **Build Finite** run in `closure-labs/finite`. Select a
-   profile's image evidence, obtain its digest and verify it with the tracked key:
-   `cosign verify --key cosign.pub ghcr.io/closure-labs/finite@sha256:…`.
-2. Dispatch **Build installation ISO** on `main` with that digest and its channel
-   (`bluefin-generic`, `next`, `bluefin-dx-generic` or `dev-next`). The signed digest
-   must belong to the selected profile; daily builds may advance the channel
-   while the ISO request is queued.
-3. Download the ISO artifact, then run `sha256sum -c SHA256SUMS` beside the ISO
-   and `installation.json`. Check the source and update channel in that record.
-4. Boot the ISO in a disposable UEFI VM and install. The Kinoite variant selects
-   the installer interface; the installed desktop remains Bluefin/GNOME.
-5. After installation, compare `bootc status --json` with the recorded source
-   digest and inspect `/usr/share/finite/profile.json`. Test first login and Nix
-   persistence before selecting the continuing update channel.
+## Get an ISO
 
-Each ISO uses a short random tag, checked against existing registry tags before
-copying. Its length fits the installer's 32-byte volume-label limit. CLI
-v0.9.37 loses digest-only references when constructing installer arguments; the
-workflow verifies a digest, copies it to this unique tag with digest preservation,
-and passes the tag to `generate-iso`. Do not use that one-time tag as a permanent
-update channel.
+ISOs are generated on demand from a signed image. Repository maintainers can
+start the workflows below; the resulting download appears in the run's
+**Artifacts** section.
 
-The workflow uses upstream installer v1.5.0, pinned by digest in
-`sources/bluebuild-installer.json`. CLI v0.9.37 hardcodes the older v1.4.0 image,
-so the ephemeral ISO runner builds a small derivative containing Finite's
-post-install hook and gives it that local alias. It explicitly uses Docker and
-changes no upstream registry tags. `installation.json` records the upstream
-version and digest, local image ID, hook checksum, Finite revision and alias.
-This avoids the older Lorax cleanup that removes `load_policy`, causing
-Anaconda to fail at shutdown after installation reports completion. A preflight
-check rejects an installer that still removes this SELinux utility.
+1. Open a successful [Build Finite run](https://github.com/closure-labs/finite/actions/workflows/build.yml)
+   and download the selected profile's small image evidence artifact.
+   Its `*-image-ref.txt` contains the image digest. From a Finite checkout with
+   Cosign installed, verify that reference with `cosign verify --key cosign.pub IMAGE_REFERENCE`.
+2. Open [Build installation ISO](https://github.com/closure-labs/finite/actions/workflows/iso.yml),
+   choose **Run workflow** on `main`, and enter the digest and matching update
+   channel. The digest starts with `sha256:`.
+3. Download and extract the finished ISO artifact. In its directory, verify:
 
-The hook uses the installer's supported `install_*` post-script mechanism. It
-removes only `/` from the installed `fstab`, after checking that every boot entry
-already identifies the physical root and any required Btrfs subvolume. Other
-mounts remain intact. This follows [bootc's physical-root guidance](https://github.com/bootc-dev/bootc/blob/main/docs/src/bootc-install.md)
-and avoids [the composefs remount conflict](https://github.com/bootc-dev/bootc/issues/971).
+   ```bash
+   sha256sum -c SHA256SUMS
+   ```
 
-After validating the installed image and its signing policy, select the channel
-recorded in `installation.json`. For example, in the disposable generic VM:
+4. Read `installation.json` to confirm the image, profile and continuing update
+   channel. Write the ISO to installation media with your preferred image writer.
+
+The ISO uses the Kinoite installer interface and installs the selected Bluefin
+GNOME image. Back up the target system before choosing its installation disk.
+
+## Install and sign in
+
+Boot the installation media in UEFI mode, follow the installer, and boot the
+installed system. At first login, Finite prepares Nix and opens the environment
+selector. Choose any combination of roles and optional packages, or keep the
+base environment. You can open the selector again with `finite-configure`.
+
+If Home Manager prints a GPU setup command, follow the
+[GPU setup steps](configuration.md#enable-gpu-access-for-nix-apps).
+
+The ISO records a one-time installation source. After installation, confirm the
+running profile and choose the continuing channel listed in `installation.json`:
+
+```bash
+sudo bootc status
+cat /usr/share/finite/profile.json
+cat /usr/share/finite/update-image
+```
+
+For a generic Bluefin installation:
 
 ```bash
 sudo bootc switch --enforce-container-sigpolicy \
   ghcr.io/closure-labs/finite:bluefin-generic
+sudo bootc status
 sudo systemctl reboot
 ```
 
-Verify the staged digest and signature policy before rebooting. Then test an
-upgrade, confirm Home Manager and `/var/home/nix` persist, and test rollback.
-The image also records its canonical update reference in
-`/usr/share/finite/update-image`.
+Review the staged image in `bootc status` before rebooting. Use your selected
+channel in the command; for example, the DX next channel is `dev-next`.
 
-The Nix seed lives under `/usr/lib/finite/determinate-nix-seed`. First boot copies
-it into persistent `/var/home/nix`, installs the SELinux policy and mounts `/nix`
-before enabling daemon sockets. Home Manager's first-login flow and standalone
-configuration templates remain available; see [configuration](configuration.md).
+## Update your system
 
-Switch the running workstation separately after sandbox acceptance, retaining
-its previous deployment.
+Fetch and stage the next image on your current channel:
 
-## Hosted VM acceptance
+```bash
+sudo bootc upgrade
+sudo bootc status
+sudo systemctl reboot
+```
 
-Dispatch **Test ISO in UEFI VM** with a successful ISO workflow run ID. It verifies
-the artifact checksums and source signature, installs a temporary unattended ISO
-copy in a disposable UEFI VM, checks SELinux and the Nix daemon, activates the
-base Home Manager environment, tests rejection with a wrong signing key, selects
-the continuing channel, checks persistent Nix state/customization after updating,
-and rolls back. It uploads logs and status records; disks and SSH keys stay on
-the ephemeral runner and are removed. Run this for generic and next ISOs when validating changes to the image or installer. The script refuses local execution outside finite Actions.
+Your home directory and persistent Nix state carry across image updates.
+Finite refreshes the managed Home Manager template at login while preserving
+`customize.nix` and `modules/local.nix`.
 
-The Actions log streams the guest console and timestamps each boot phase. The
-unattended installer kernel must start within three minutes; installation has
-a 45-minute limit. After SSH becomes available, the test waits up to three
-minutes for every Nix initialization unit and daemon socket to become active.
-It also requires the root remount service to succeed on each boot. Artifacts
-retain console and service logs, fstab, and mount layouts for diagnosis.
+To refresh the independent package inputs in your Home Manager configuration:
+
+```bash
+nix flake update --flake ~/.config/home-manager
+nh home build
+nh home switch
+```
+
+## Return to a previous system
+
+Stage the previous deployment, review it, then reboot:
+
+```bash
+sudo bootc rollback
+sudo bootc status
+sudo systemctl reboot
+```
+
+Before a hardware or channel transition, retain the current deployment with
+`sudo ostree admin pin booted`. Check graphics, camera, Espanso, suspend/resume
+and authentication after booting the new image. Existing installations need
+the [current signing key and registry policy](ci-and-releases.md#image-signing)
+before selecting signature-enforced updates.
+
+## How the installer is built
+
+The workflow verifies an image digest and copies it to a unique short tag for
+BlueBuild's `generate-iso`. `installation.json` records the source digest,
+update channel and installer inputs; `SHA256SUMS` covers the ISO and that record.
+
+`sources/bluebuild-installer.json` pins upstream installer v1.5.0. The ephemeral
+runner adds Finite's post-install hook and supplies the local alias expected by
+CLI v0.9.37. The hook verifies the physical-root boot arguments and finalizes
+`fstab` for composefs, preserving the other mounts. See the
+[bootc installation reference](https://github.com/bootc-dev/bootc/blob/main/docs/src/bootc-install.md).
+
+The [hosted VM test](development.md#validate-an-iso) checks installation, first
+boot, signed updating, persistent configuration and rollback.

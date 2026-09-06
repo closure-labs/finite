@@ -1,28 +1,18 @@
 # Dell XPS 13 9350
 
-Use `next` or `dev-next` on the XPS 13 9350. These are
-vendor-neutral images: their only hardware delta from the corresponding generic
-image is the pinned Fedora 7.2 runtime kernel.
-
-```console
-sudo bootc switch ghcr.io/closure-labs/finite:dev-next
-sudo systemctl reboot
-uname -r
-```
-
-The expected kernel release is `7.2.0-61.fc45.x86_64`. The image does not ship
-an XPS rootfs overlay, external modules, a custom libcamera build, camera udev
-rules, PAM changes, charging policy, TuneD profile, or rEFInd theme.
+Choose `next` for Bluefin or `dev-next` for Bluefin DX on the XPS 13 9350.
+Both provide the pinned Fedora kernel `7.2.0-61.fc45.x86_64`. Follow the
+[installation and update guide](installation.md) to select the signed channel
+and retain the previous deployment. Check the running kernel with `uname -r`.
 
 ## Optional Home Manager display policy
 
 At first login, Finite recognizes the Dell/XPS DMI identity and selects the
-`dell-xps-9350-intel` Home Manager aspect. This is separate from the image's
-`next-x86_64` identity. The aspect preserves the internal-panel policy:
+`dell-xps-9350-intel` Home Manager aspect. The user environment applies this internal-panel policy:
 
 - `1920x1200@120.000+vrr` on AC;
 - `1920x1200@60.000` on battery;
-- a one-time migration that enables GNOME ambient brightness.
+- automatic GNOME ambient brightness setup.
 
 The policy verifies the DMI identity before changing the display and leaves
 external or complex monitor layouts alone. Its configuration is local to the
@@ -36,9 +26,7 @@ gdctl show --modes --properties
 ```
 
 Home Manager configures Finite's Nix Firefox package to use PipeWire for camera
-capture on this hardware. This package-level preference leaves existing
-Firefox profiles intact and makes WebRTC consume WirePlumber's usable libcamera
-source instead of the raw IPU7 V4L2 capture endpoints.
+capture on this hardware. WebRTC uses the libcamera source exposed by WirePlumber.
 
 ## IPU7 camera
 
@@ -58,8 +46,7 @@ wpctl status
 ```
 
 In Firefox, `media.webrtc.camera.allow-pipewire` must be `true` in
-`about:config`. The setting is supplied by the Home Manager package policy; it
-does not require a profile-specific `user.js` or a user service.
+`about:config`. Home Manager supplies this setting through the Firefox package policy.
 
 Module paths must be below the running release's `kernel/` directory, `intree`
 must be `Y`, and the signer must be the Fedora kernel signing key. See
