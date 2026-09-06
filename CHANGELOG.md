@@ -6,6 +6,12 @@ All notable changes to Finite are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- CI selects documentation, Nix/runtime and image checks from changed inputs.
+  Nix payload dependency comparisons select the affected generic or next images.
+- The README displays the Finite logo beside its title.
+
 ## [0.6.0] - 2026-09-06
 
 ### Added
