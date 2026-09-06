@@ -1,0 +1,71 @@
+name: Build one BlueBuild image
+on:
+  workflow_call:
+    inputs:
+      profile:
+        type: string
+        required: true
+      channel:
+        type: string
+        required: true
+      publish:
+        type: boolean
+        default: false
+    secrets:
+      cosign_private_key:
+        required: false
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      PROFILE: ${{ inputs.profile }}
+      CHANNEL: ${{ inputs.channel }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+      - name: Stage pinned payload
+        run: bash scripts/bluebuild/stage.sh "$PROFILE"
+      - name: Make validation images available for final inspection
+        # CLI v0.9.37 omits --load in Actions. Its named builder can opt in;
+        # publication's explicit registry output still takes precedence.
+        run: >-
+          docker buildx create --name bluebuild --driver docker-container
+          --driver-opt default-load=true
+      - name: Build with BlueBuild
+        uses: blue-build/github-action@836161eb076426a451e6a0054f722b1153b8b3ad # v1.12.0
+        with:
+          recipe: ${{ inputs.profile }}.yml
+          cli_version: v0.9.37
+          registry: ghcr.io
+          registry_namespace: closure-labs
+          registry_token: ${{ github.token }}
+          cosign_private_key: ${{ inputs.publish && secrets.cosign_private_key || '' }}
+          pr_event_number: ${{ github.event.number || '' }}
+          push: ${{ inputs.publish }}
+          skip_checkout: true
+          use_cache: true
+          rechunk: false
+          chunkah: false
+          build_chunked_oci: false
+          build_opts: --build-driver docker --run-driver docker
+      - name: Validate recipes and record generated Containerfile
+        run: |
+          mkdir -p .bluebuild
+          bluebuild validate "recipes/$PROFILE.yml"
+          bluebuild generate --registry ghcr.io --registry-namespace closure-labs \
+            -o ".bluebuild/$PROFILE.Containerfile" "recipes/$PROFILE.yml"
+      - name: Verify assembled image after upstream cleanup
+        env:
+          PUBLISH: ${{ inputs.publish }}
+        run: bash scripts/bluebuild/inspect-built.sh "$PROFILE" "$CHANNEL" "$PUBLISH"
+      - name: Save build evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: image-${{ inputs.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/
+          include-hidden-files: true
+          retention-days: 14

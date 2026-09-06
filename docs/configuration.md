@@ -161,13 +161,13 @@ replacement.
 ## Catalog and aspects
 
 ```console
-nix build .#generated
-jq . result/bootc/generated/home-profile-catalog.json
+nix build .#home-profile-catalog
+jq . result
 ```
 
 The schema-3 catalog contains typed `foundations`, `hardware`, `packages`,
-`roles`, and `compatibility` maps. Bootc aspect implementations live below
-`modules/aspects/{base,capabilities,hardware,roles}`. The canonical portable
+`roles`, and `compatibility` maps. BlueBuild image configuration lives under `recipes/`; its files and specialized
+scripts stage from the retained system assets under `modules/aspects/base`. The canonical portable
 Home Manager modules and assets live below
 `templates/home-manager/modules/aspects`; that same tree is copied intact into
 the final flake. Add a role to `lib/domain-catalog.nix`, give it a stable

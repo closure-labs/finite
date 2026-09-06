@@ -70,7 +70,6 @@ run_validator() {
 		GH_TOKEN=test-token \
 		GITHUB_REPOSITORY=example/finite \
 		PR_NUMBER=1 \
-		VALIDATE_INSTALLER=false \
 		finite-trusted-update
 }
 

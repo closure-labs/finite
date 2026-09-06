@@ -8,7 +8,6 @@ fixture_files=(
 	flake.nix
 	flake.lock
 	lib/ci-applications/validate-locks.nix
-	tests/repository/contracts.sh
 	docs/ci-and-releases.md
 	docs/configuration.md
 	docs/installation.md

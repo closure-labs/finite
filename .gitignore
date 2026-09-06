@@ -2,9 +2,10 @@
 /*.oci
 /.devenv/
 /.direnv/
-/bootc/generated/
-/installer/config/profiles/
-/release-manifest.json
-/release-manifest.json.sha256
-/release-notes.md
-/release-sboms/
+
+# BlueBuild staging (recipes and authored scripts are tracked).
+/files/payload/
+/.bluebuild/
+/cosign.key
+/.bluebuild-scripts_*
+/.bluebuild-scripts_*/

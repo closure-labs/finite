@@ -8,7 +8,6 @@
   project,
   ...
 }: let
-  inherit (config) den;
   system = project.platform.system;
   pkgs = mkPkgs system;
   treefmtEval = outputDependencies.treefmt.evalModule pkgs ../treefmt.nix;
@@ -39,61 +38,25 @@
       zsh
     ])
     ++ [treefmtEval.config.build.wrapper];
-  profileSet = import ../lib/eval-profile-graph.nix {
-    inherit catalog lib project;
-    profileEntities = config.finite.profiles;
-    profileHosts = config.den.hosts.${system};
-  };
-  inherit (profileSet) profiles;
-  bluefin = config.finite.sources.bluefin;
-  bluefinDx = config.finite.sources.bluefinDx;
   home = config.finite.home;
-  dakotaInstallerLock = builtins.fromJSON (builtins.readFile ../sources/dakota-installer.json);
-  dakotaIsoSource = pkgs.fetchFromGitHub {
-    inherit (dakotaInstallerLock.iso_source) owner;
-    repo = dakotaInstallerLock.iso_source.repository;
-    rev = dakotaInstallerLock.iso_source.revision;
-    hash = dakotaInstallerLock.iso_source.hash;
-  };
-  bootcInstallerBundle = pkgs.fetchurl {
-    name = "finite-bootc-installer-${dakotaInstallerLock.installer.version}.flatpak";
-    inherit (dakotaInstallerLock.installer) url sha256;
-  };
-  determinateNix = config.finite.sources.determinateNix;
   inherit (project) cache;
-  determinateNixInstaller = pkgs.fetchurl {
-    name = "determinate-nix-installer-${determinateNix.version}";
-    inherit (determinateNix.installer) url sha256;
-  };
-  determinateNixSelinuxPolicy = pkgs.fetchurl {
-    name = "determinate-nix-selinux-policy-${determinateNix.version}";
-    inherit (determinateNix.selinuxPolicy) url sha256;
-  };
-  determinateNixSelinuxFileContexts = pkgs.fetchurl {
-    name = "determinate-nix-selinux-file-contexts-${determinateNix.version}";
-    inherit (determinateNix.selinuxFileContexts) url sha256;
-  };
   version = lib.removeSuffix "\n" (builtins.readFile ../VERSION);
   homeScaffold = import ../lib/render-home-scaffold.nix {
     inherit pkgs version;
   };
-  generated = import ../lib/render-profile-artifacts.nix {
-    inherit determinateNixInstaller determinateNixSelinuxFileContexts determinateNixSelinuxPolicy homeScaffold lib pkgs profiles;
-    domainCatalog = catalog;
-    profileOrder = profileSet.order;
-    inherit version;
-  };
-  architecture = import ../lib/render-architecture.nix {
-    inherit den lib pkgs;
-    inherit (outputDependencies) diagram;
+  imagePayload = import ../lib/image-payload.nix {
+    inherit pkgs lib catalog homeScaffold version;
   };
   baseApplications = import ../lib/flake-applications.nix {
     devenv = outputDependencies.devenvPackage;
-    inherit bluefin bluefinDx bootcInstallerBundle dakotaInstallerLock dakotaIsoSource determinateNix generated pkgs version;
+    inherit pkgs;
     cacheName = cache.name;
     secretspec = outputDependencies.weeklySecretspec;
   };
-  homeApplications = import ../lib/home-profile-applications.nix {inherit generated homeScaffold pkgs;};
+  homeApplications = import ../lib/home-profile-applications.nix {
+    inherit homeScaffold pkgs;
+    inherit (imagePayload) homeCatalog;
+  };
   applications = baseApplications // homeApplications;
   roleModules = map (name: ../modules/aspects/roles + "/${name}/default.nix") catalog.roleNames;
   hardwareModules = map (name: ../modules/aspects/hardware + "/${name}/default.nix") catalog.homeHardwareNames;
@@ -101,7 +64,6 @@
     imports =
       [
         outputDependencies.denFlakeModule
-        ../modules/sources/oci-locks.nix
         ../modules/aspects/base/default.nix
         ../modules/aspects/capabilities/devops/default.nix
       ]
@@ -175,8 +137,9 @@
     pkgs.runCommand "finite-home-configurations-proof" {} ''
       touch "$out"
     '';
-  repositoryChecks = import ../lib/repository-checks.nix {
-    inherit applications architecture generated lib pkgs;
+  repositoryChecks = import ../lib/bluebuild-checks.nix {
+    inherit applications homeScaffold lib pkgs;
+    inherit (imagePayload) homeCatalog;
   };
   formattingSource = lib.cleanSourceWith {
     src = outputDependencies.self;
@@ -196,24 +159,16 @@
     test -e ${formattingValidation}
     touch "$out"
   '';
-  architectureCheck = pkgs.runCommand "finite-architecture-proof" {} ''
-    test -f ${architecture}/architecture.md
-    test -f ${architecture}/namespace.mmd
-    touch "$out"
-  '';
-  profileSchemaCheck = pkgs.runCommand "finite-profile-schema-proof" {} ''
-    test -f ${generated}/bootc/generated/image-matrix.json
-    test -f ${generated}/bootc/generated/profile-catalog.json
-    test -f ${generated}/bootc/generated/home-profile-catalog.json
-    touch "$out"
-  '';
   checks =
     repositoryChecks
     // {
       formatting = formattingCheck;
-      architecture = architectureCheck;
       home-configurations = homeCheck;
-      profile-schema = profileSchemaCheck;
+      cache-configuration = assert lib.assertMsg ((import ../flake.nix).nixConfig == project.nixConfig)
+      "Keep the concrete flake cache configuration synchronized with project-policy.nix";
+        pkgs.runCommand "finite-cache-configuration" {} ''
+          touch "$out"
+        '';
     };
   ciChecks = pkgs.runCommand "finite-ci-checks" {} ''
     mkdir "$out"
@@ -227,49 +182,27 @@
   ciCheck = applications.mkCheck checks;
   localCache = applications.mkLocalCache ciCheck;
   exportTable = {
-    architecture.package = architecture;
     ci-check.package = ciCheck;
     ci-checks.package = ciChecks;
-    ci-prepare.package = applications.ciPrepare;
-    ci-validate-plan.package = applications.validateCiPlan;
-    ci-gate.package = applications.ciGate;
-    ci-validate-image-shard.package = applications.validateImageShard;
-    ci-image-reuse.package = applications.imageReuse;
-    ci-image-verify.package = applications.imageVerify;
-    ci-image-sign.package = applications.imageSign;
-    ci-profile-stage.package = applications.profileStage;
-    ci-rechunk-image.package = applications.rechunkImage;
-    ci-image-build.package = applications.imageBuild;
-    ci-image-sbom.package = applications.imageSbom;
-    ci-sbom-attestation.package = applications.sbomAttestation;
-    ci-promote-images.package = applications.promoteImages;
-    ci-installer-build.package = applications.installerBuild;
-    ci-installer-e2e.package = applications.installerE2e;
-    ci-installer-smoke.package = applications.installerSmoke;
-    ci-release-notes.package = applications.releaseNotes;
-    ci-release-control.package = applications.releaseControl;
-    ci-github-output.package = applications.githubOutput;
     ci-fix-nix-hashes.package = applications.fixNixHashes;
     ci-update-locks.package = applications.updateLocks;
     ci-home-release-update.package = applications.updateHomeRelease;
     ci-source-update.package = applications.sourceUpdate;
-    ci-source-verify.package = applications.sourceVerify;
     ci-trusted-update.package = applications.trustedUpdate;
     ci-queue-dependabot.package = applications.queueDependabot;
-    ci-package-cleanup.package = applications.packageCleanup;
     ci-repository-security-audit.package = applications.repositorySecurityAudit;
     ci-github-actions-secrets.package = applications.githubActionsSecrets;
-    ci-load-bluefin.package = applications.loadBluefin;
     ci-lock-validate.package = applications.validateLocks;
     ci-cosign.package = pkgs.cosign;
-    ci-oras.package = pkgs.oras;
     ci-skopeo.package = pkgs.skopeo;
     devenv = {
       package = outputDependencies.devenvPackage;
       appProgram = lib.getExe outputDependencies.devenvPackage;
     };
-    default.package = generated;
-    generated.package = generated;
+    default.package = imagePayload.payload;
+    image-payload.package = imagePayload.payload;
+    image-payload-next.package = imagePayload.next;
+    home-profile-catalog.package = imagePayload.homeCatalog;
     home-manager-template.package = homeScaffold;
     home-profile = {
       package = applications.homeProfile;
@@ -283,7 +216,6 @@
       package = applications.homeInit;
       appProgram = "${applications.homeInit}/bin/finite-home-init";
     };
-    syft.package = pkgs.syft;
     cloud-init.appProgram = "${applications.cloudInit}/bin/finite-cloud-init";
     local-cache.appProgram = "${localCache}/bin/finite-local-cache";
     repository-security-audit.appProgram = lib.getExe applications.repositorySecurityAudit;
@@ -300,9 +232,8 @@
 in {
   flake = {
     lib.finite = {
-      inherit home profiles;
+      inherit home;
       inherit cache catalog;
-      profileOrder = profileSet.order;
     };
     flakeModules.home = homeFlakeModule;
     templates = {
@@ -328,9 +259,6 @@ in {
     devShells.${system} = {
       default = pkgs.mkShell {
         packages = repositoryToolchain;
-      };
-      installer = pkgs.mkShell {
-        packages = [pkgs.qemu];
       };
     };
 

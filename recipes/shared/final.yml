@@ -1,0 +1,12 @@
+modules:
+  - type: os-release@v1
+    properties:
+      NAME: Finite
+      PRETTY_NAME: Finite
+      # Keep ID, ID_LIKE, VERSION_ID and PLATFORM_ID from Fedora/Bluefin.
+      HOME_URL: https://github.com/closure-labs/finite
+      SUPPORT_URL: https://github.com/closure-labs/finite/issues
+  - type: signing@v1
+  - type: script@v1
+    scripts:
+      - finalize.sh

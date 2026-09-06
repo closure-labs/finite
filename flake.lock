@@ -62,26 +62,6 @@
         "type": "github"
       }
     },
-    "den-diagram": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1787428934,
-        "narHash": "sha256-yoNA6amBBRU1A0xGd4Sdcwht6ljuBBXKhs5sAnEUVuw=",
-        "owner": "denful",
-        "repo": "den-diagram",
-        "rev": "9648e2f64e68b26af73cdd5c575d462e3737e4cb",
-        "type": "github"
-      },
-      "original": {
-        "owner": "denful",
-        "repo": "den-diagram",
-        "type": "github"
-      }
-    },
     "determinate": {
       "inputs": {
         "determinate-nixd-aarch64-darwin": "determinate-nixd-aarch64-darwin",
@@ -583,7 +563,6 @@
     "root": {
       "inputs": {
         "den": "den",
-        "den-diagram": "den-diagram",
         "determinate": "determinate",
         "devenv": "devenv",
         "home-manager": "home-manager",

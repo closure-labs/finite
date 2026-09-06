@@ -13,6 +13,16 @@ jq -e '
 	.drift == []
 ' <<<"${report}" >/dev/null
 
+extra_action=$(mktemp)
+trap 'rm -f "$extra_action"' EXIT
+jq '.actions.selected_actions.patterns_allowed += ["*"]' "${fixtures}/pass.json" >"$extra_action"
+set +e
+extra_report=$("${audit}" --policy "${policy}" --snapshot "$extra_action")
+extra_status=$?
+set -e
+[[ $extra_status -eq 1 ]]
+jq -e '.drift | index("actions.selected_actions.patterns_allowed") != null' <<<"$extra_report" >/dev/null
+
 set +e
 drift_report="$("${audit}" --policy "${policy}" --snapshot "${fixtures}/drift.json")"
 drift_status=$?
@@ -21,8 +31,7 @@ set -e
 jq -e '
 	.status == "drift" and
 	(.drift | index("actions.allowed_actions")) != null and
-	(.drift | index("security.secret_scanning_push_protection")) != null and
-	(.drift | index("environments.release.can_admins_bypass")) != null
+	(.drift | index("security.secret_scanning_push_protection")) != null
 ' <<<"${drift_report}" >/dev/null
 
 set +e

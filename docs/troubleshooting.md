@@ -95,71 +95,35 @@ sudo "$(command -v non-nixos-gpu-setup)"
 This updates only the tmpfiles rule, its GC root, and the runtime driver link;
 it does not modify the immutable bootc filesystem.
 
-## Diagnose a local image build
+## Diagnose an image build
 
-```bash
-podman info
-podman images --digests
-nix shell --accept-flake-config .#ci-image-build \
-  -c finite-image-build bluefin-generic localhost/finite:debug
+Use the profile job's BlueBuild log and image evidence in finite Actions. Check
+its generated Containerfile, resolved base digest and profile labels. The
+assembled-image verification runs after upstream cleanup and checks the Nix
+seed, signing policy, packages, kernel and bootc lint.
+
+For lightweight local inspection:
+
+```console
+bluebuild validate recipes/bluefin-next.yml
+bluebuild generate --registry ghcr.io --registry-namespace closure-labs recipes/bluefin-next.yml
+nix build .#home-profile-catalog
+jq . result
 ```
 
-Check that the requested profile exists:
+Stage the selected profile with `scripts/bluebuild/stage.sh` before a local
+image build. Prefer hosted runners for the four full builds.
 
-```bash
-nix build .#generated
-jq '.profiles | keys' result/bootc/generated/profile-catalog.json
-```
+## Diagnose an ISO build
 
-## Diagnose an installer build
-
-Download both the installer and diagnostics artifacts from the workflow run.
-Check:
-
-- `installer-manifest.json` for the payload, seed, and pinned installer inputs;
-- `payload-inspect.log` and `seed-inspect.log` for GHCR resolution failures;
-- `source-prepare.log` for the exact pinned Dakota source-patching stage;
-- `live-environment.log` for the single-commit live-seed construction;
-- `seed-preflight.log` for missing Btrfs or other Fisherman executables, recipe
-  validation, registry resolution, payload inspection, and scratch capacity;
-- `seed-pull.log` or `seed-push.log` for signed SquashFS artifact transfer;
-- `squashfs-build.log` and `iso-build.log` for LZ4 or ISO assembly failures;
-- `qemu-smoke.log` or `qemu-boot.log` for boot-test failures;
-- `qemu-install.log` for unattended bootc-installer failures or the 30-minute
-  limit; `FINITE_INSTALLER_ERROR=` is fatal and identifies early Flatpak exits,
-  a missing application log, an activation timeout, or a reported install
-  failure;
-- `installer-debug.log`, `fisherman-output.log`, `preflight.log`, and
-  `system-state.log` for the complete guest-side failure evidence extracted
-  from the serial stream before poweroff;
-- `FINITE_INSTALLER_READY=1` in the serial log to confirm the Flatpak's own
-  `installer-debug.log` reached `do_activate`; this marker does not merely mean
-  GDM started;
-- `FINITE_INSTALLER_COMPLETE=1` in that log to confirm the installer returned
-  successfully and the CI first-boot probe was written;
-- `qemu-installed-boot.log` for UEFI startup, digest, update-reference, or
-  five-minute boot readiness failures; an empty guest log indicates a firmware
-  or GRUB failure before the kernel starts;
-- `installed-partitions.json` for the required GPT, EFI system partition,
-  separate `/boot`, and Btrfs system partition;
-- `runner-capacity-before.txt` and `runner-capacity-after.txt` for storage
-  exhaustion. On a cache hit, Dakota and SquashFS construction are skipped;
-  the action summary identifies `github-actions` or `ghcr` as the cache source.
-
-If the live guest reaches GDM or a login prompt without either installer
-marker, inspect the globally enabled `finite-installer.service` user unit and
-the live user's graphical session. The former XDG autostart plus
-`live-ready.service` path could report readiness as soon as GDM started while
-never creating a live-user installer process; the host now fails this case at
-the short launcher deadline instead of waiting for the 30-minute install limit.
-
-Verify a completed artifact with:
-
-```bash
-sha256sum --check SHA256SUMS
-gh attestation verify finite-*.iso \
-  --repo closure-labs/finite
-```
+The manual ISO workflow validates its source digest and signature before creating
+a unique installation tag. A profile/channel mismatch means the selected image
+belongs to a different recipe. Advancing a channel does not change a queued ISO
+request: generation uses the explicit verified digest.
+Inspect the workflow log, `installation.json`, `signature.json` and `SHA256SUMS`.
+The package must be readable by the installer. After a disposable VM installation,
+compare `bootc status --json` with the source record and explicitly switch to the
+selected continuing update channel. See [installation](installation.md).
 
 ## Dell XPS 13 9350
 

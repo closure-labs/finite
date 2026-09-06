@@ -13,6 +13,12 @@ check:
 ci:
     just check
 
-# Build a named profile into a local OCI image.
-build profile tag:
-    nix shell --accept-flake-config .#ci-image-build -c finite-image-build {{ profile }} {{ tag }}
+# Stage and validate a handwritten recipe without building an OS image.
+validate profile:
+    bash scripts/bluebuild/stage.sh {{ profile }}
+    bluebuild validate recipes/{{ profile }}.yml
+
+# Build a named recipe locally (requires substantial storage).
+build profile:
+    bash scripts/bluebuild/stage.sh {{ profile }}
+    bluebuild build --build-driver docker --run-driver docker --registry ghcr.io --registry-namespace closure-labs recipes/{{ profile }}.yml

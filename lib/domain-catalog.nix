@@ -9,12 +9,10 @@ let
         generic-x86_64 = {
           name = "bluefin-generic";
           order = 40;
-          tags = ["bluefin-generic" "latest"];
         };
         next-x86_64 = {
           name = "bluefin-next";
           order = 10;
-          tags = ["next"];
         };
       };
     }
@@ -27,12 +25,10 @@ let
         generic-x86_64 = {
           name = "bluefin-dx-generic";
           order = 30;
-          tags = ["bluefin-dx-generic"];
         };
         next-x86_64 = {
           name = "bluefin-dx-next";
           order = 20;
-          tags = ["dev-next"];
         };
       };
     }
@@ -61,14 +57,6 @@ let
       bootc = false;
       homeManager = true;
       imageHardware = ["generic-x86_64" "next-x86_64"];
-    }
-    {
-      name = "framework-laptop";
-      label = "Framework Laptop";
-      order = 40;
-      bootc = true;
-      homeManager = false;
-      imageHardware = [];
     }
   ];
   roles = [
@@ -163,7 +151,6 @@ let
                 // {
                   foundation = foundation.name;
                   hardware = hardwareName;
-                  parent = null;
                 }
             )
             foundation.profiles

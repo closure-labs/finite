@@ -1,0 +1,4 @@
+modules:
+  - type: script@v1
+    scripts:
+      - kernel-next.sh

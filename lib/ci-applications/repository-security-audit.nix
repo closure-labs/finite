@@ -74,14 +74,7 @@ pkgs.writeShellApplication {
       .security.dependabot_security_updates == true and
       .security.secret_scanning == true and
       .security.secret_scanning_push_protection == true and
-      (.environments | keys | sort) == ["package-cleanup", "release"] and
-      all(.environments[];
-        .can_admins_bypass == false and
-        .prevent_self_review == false and
-        .required_reviewers == ["declarative-dale"] and
-        .deployment_branch_policy.protected_branches == false and
-        .deployment_branch_policy.custom_branch_policies == true and
-        .deployment_branch_policy.branches == ["main"])
+      .environments == {}
     ' <<<"''${policy_json}" >/dev/null || emit_invalid "Repository security policy violates the Finite schema"
 
     policy_repository="$(jq -r '.repository' <<<"''${policy_json}")"
@@ -109,43 +102,6 @@ pkgs.writeShellApplication {
       fi
 
       environment_json='{}'
-      for environment in package-cleanup release; do
-        definition="$(gh api "repos/''${repository}/environments/''${environment}")"
-        branches="$(gh api "repos/''${repository}/environments/''${environment}/deployment-branch-policies")"
-        normalized="$(
-          jq -cn \
-            --argjson definition "''${definition}" \
-            --argjson branches "''${branches}" '
-              ($definition.protection_rules // [] |
-                map(select(.type == "required_reviewers")) | first // {}) as $reviewers |
-              {
-                can_admins_bypass: (
-                  if ($definition | has("can_admins_bypass"))
-                  then $definition.can_admins_bypass
-                  else true
-                  end
-                ),
-                prevent_self_review: ($reviewers.prevent_self_review // false),
-                required_reviewers: (
-                  [$reviewers.reviewers[]? |
-                    select(.type == "User") | .reviewer.login] | sort
-                ),
-                deployment_branch_policy: {
-                  protected_branches: $definition.deployment_branch_policy.protected_branches,
-                  custom_branch_policies: $definition.deployment_branch_policy.custom_branch_policies,
-                  branches: ([$branches.branch_policies[]?.name] | sort)
-                }
-              }
-            '
-        )"
-        environment_json="$(
-          jq -cn \
-            --arg environment "''${environment}" \
-            --argjson environments "''${environment_json}" \
-            --argjson normalized "''${normalized}" \
-            '$environments + {($environment): $normalized}'
-        )"
-      done
 
       actual_json="$(
         jq -cn \
@@ -197,7 +153,7 @@ pkgs.writeShellApplication {
         --argjson actual "''${actual_json}" '
           [($expected | paths) as $path |
             ($expected | getpath($path)) as $value |
-            select(($value | type) != "array" and ($value | type) != "object") |
+            select(($value | type) != "object") |
             select($value != ($actual | getpath($path))) |
             ($path | map(tostring) | join("."))] |
           unique | sort
