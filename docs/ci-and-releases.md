@@ -46,7 +46,7 @@ with these files:
 | --- | --- |
 | `/etc/pki/containers/finite.pub` | Finite public key |
 | `/etc/containers/policy.json` | `sigstoreSigned` policy with `matchRepository` identity |
-| `/etc/containers/registries.d/ghcr.io-finite.yaml` | Enables Sigstore attachments for the repository |
+| `/etc/containers/registries.d/closure-labs-finite.yaml` | Enables Sigstore attachments for the repository |
 
 When preparing an existing workstation for a new key, verify the published
 image with the reviewed public key, install that key, and update the Finite
