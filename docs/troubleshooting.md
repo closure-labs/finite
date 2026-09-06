@@ -1,83 +1,58 @@
 # Troubleshooting
 
-## Inspect the active deployment
+Start with the section matching the problem. Include the running image and
+relevant logs when reporting an issue.
+
+## Check the running system
 
 ```bash
-bootc status
+sudo bootc status
 rpm-ostree status
+cat /usr/share/finite/profile.json
 journalctl -b -p warning
 ```
 
-If an upgrade fails, retry with the image reference shown by `bootc status`:
+`bootc status` shows the booted, staged and rollback deployments. See
+[Install and update](installation.md#update-your-system) for upgrade and
+rollback commands.
+
+## First-login setup or app activation fails
+
+Open the selector again with `finite-configure`. Check its user service and
+build your current configuration to see the underlying error:
 
 ```bash
-sudo bootc upgrade
+systemctl --user status finite-home-first-login.service
+journalctl --user -b -u finite-home-first-login.service
+nh home build
 ```
 
-Return to the previous deployment with:
+Your choices are in `~/.config/finite/profile.json`; personal settings are in
+`~/.config/home-manager/customize.nix`. The initializer keeps timestamped
+`home-manager.previous.*` directories when replacing a configuration.
+
+## Nix does not start
+
+Inspect persistent-state initialization, its mount, and the daemon sockets:
 
 ```bash
-sudo bootc rollback
-sudo systemctl reboot
-```
-
-## Diagnose repository checks
-
-Run the complete graph with build logs:
-
-```bash
-nix shell --accept-flake-config .#ci-check -c finite-ci-check
-```
-
-Run a single named check when isolating a failure:
-
-```bash
-nix build .#checks.x86_64-linux.shell --print-build-logs
-nix build .#checks.x86_64-linux.workflows --print-build-logs
-nix build .#checks.x86_64-linux.bootc --print-build-logs
-```
-
-Confirm formatting independently with `nix fmt`.
-
-## Determinate Nix does not start
-
-Check the persistent-state provisioning and mount before inspecting the daemon:
-
-```bash
-systemctl status finite-nix-selinux.service finite-nix-seed.service nix.mount
+systemctl status finite-nix-seed.service finite-nix-selinux.service nix.mount
 systemctl status nix-daemon.socket nix-daemon.service determinate-nixd.socket
+journalctl -b -u finite-nix-seed -u finite-nix-selinux -u nix-daemon
 findmnt /nix
 ```
 
-`/nix` must be a writable bind mount backed by `/var/home/nix`. Finite
-initializes an empty state from the immutable image seed, but deliberately
-refuses to replace a non-empty malformed state. If
-`finite-nix-seed.service` reports malformed state, preserve
-`/var/home/nix` for diagnosis before repairing or restoring it; rebooting or
-upgrading the bootc image will not erase it.
+`/nix` is a writable bind mount backed by `/var/home/nix`. First boot initializes
+it from `/usr/lib/finite/determinate-nix-seed` and installs the SELinux policy
+before starting the daemon sockets. Allow this initialization to complete.
 
-If `/nix/var/nix` is absent and `nix` warns that it is using a per-user chroot
-store, confirm that the active image contains Finite's Determinate unit and
-immutable activation links:
+If the seed service reports malformed persistent state, preserve `/var/home/nix`
+for diagnosis and restore or repair that state before retrying. The service
+protects existing data by stopping on an invalid nonempty directory.
 
-```bash
-grep -F 'ExecStart=@/usr/bin/determinate-nixd' \
-  /usr/lib/systemd/system/nix-daemon.service
-readlink /usr/lib/systemd/system/multi-user.target.wants/nix-daemon.socket
-readlink /usr/lib/systemd/system/multi-user.target.wants/determinate-nixd.socket
-test ! -e /usr/lib/systemd/system/sockets.target.wants/nix-daemon.socket
-```
+## Nix apps need GPU setup
 
-All four checks should succeed. The daemon itself is socket-activated; it must
-not also be enabled directly under `multi-user.target`. A corrected image upgrade followed by a reboot
-restores these vendor files without replacing valid state in `/var/home/nix`.
-Finite also removes stale daemon socket files after mounting that state and
-before systemd binds the new sockets.
-
-## Nix applications do not use the GPU
-
-Confirm that the Home Manager driver link exists and that its target remains in
-the Nix store:
+Check the driver link and its persistent configuration:
 
 ```bash
 readlink /run/opengl-driver
@@ -85,48 +60,56 @@ readlink /etc/tmpfiles.d/non-nixos-gpu.conf
 readlink /nix/var/nix/gcroots/non-nixos-gpu.conf
 ```
 
-If `/run/opengl-driver` is absent or `nh home switch` reports driver drift, run
-the setup package from the current Home Manager profile:
+Run the helper from the current Home Manager profile when activation requests it:
 
 ```bash
 sudo "$(command -v non-nixos-gpu-setup)"
 ```
 
-This updates only the tmpfiles rule, its GC root, and the runtime driver link;
-it does not modify the immutable bootc filesystem.
+See [GPU configuration](configuration.md#enable-gpu-access-for-nix-apps) for the
+supported graphics path.
 
-## Diagnose an image build
+## An update fails signature verification
 
-Use the profile job's BlueBuild log and image evidence in finite Actions. Check
-its generated Containerfile, resolved base digest and profile labels. The
-assembled-image verification runs after upstream cleanup and checks the Nix
-seed, signing policy, packages, kernel and bootc lint.
+Compare the image reference and public key with the successful build's evidence.
+Check the Finite entry in `/etc/containers/policy.json`, its public-key file,
+and the registry's `use-sigstore-attachments` setting. The
+[signing reference](ci-and-releases.md#image-signing) lists the expected files.
 
-For lightweight local inspection:
+In the hosted acceptance test, a cryptographic rejection immediately after
+**Testing rejection with the wrong signing key** is the expected result. The
+next phase restores the correct policy and selects the signed update channel.
 
-```console
-bluebuild validate recipes/bluefin-next.yml
-bluebuild generate --registry ghcr.io --registry-namespace closure-labs recipes/bluefin-next.yml
-nix build .#home-profile-catalog
-jq . result
+## A repository check fails
+
+Run the suite with build logs and bounded local resources:
+
+```bash
+nix build --accept-flake-config --max-jobs 1 --cores 1 \
+  --no-link .#ci-checks --print-build-logs
 ```
 
-Stage the selected profile with `scripts/bluebuild/stage.sh` before a local
-image build. Prefer hosted runners for the four full builds.
+For a focused check, use an exported name such as
+`.#checks.x86_64-linux.workflows`, `.#checks.x86_64-linux.nix-lifecycle` or
+`.#checks.x86_64-linux.bluebuild`. Run `nix fmt` to apply formatting.
 
-## Diagnose an ISO build
+## An image or ISO build fails
 
-The manual ISO workflow validates its source digest and signature before creating
-a unique installation tag. A profile/channel mismatch means the selected image
-belongs to a different recipe. Advancing a channel does not change a queued ISO
-request: generation uses the explicit verified digest.
-Inspect the workflow log, `installation.json`, `signature.json` and `SHA256SUMS`.
-The package must be readable by the installer. After a disposable VM installation,
-compare `bootc status --json` with the source record and explicitly switch to the
-selected continuing update channel. See [installation](installation.md).
+Open the profile job in [Finite Actions](https://github.com/closure-labs/finite/actions).
+For image builds, inspect the generated Containerfile, base digest, labels and
+final-image verification log. For ISOs, inspect `installation.json`,
+`signature.json`, `SHA256SUMS` and the installer log.
 
-## Dell XPS 13 9350
+A profile/channel mismatch means the requested digest belongs to a different
+recipe. Select a matching digest from a successful image build. ISO generation
+uses that verified digest throughout the run.
 
-Use [Dell XPS 13 9350](dell-xps-9350.md) for the optional Home Manager display
-policy and Fedora 7.2 IPU7 camera checks. The in-tree module signature contract
-is in [Dell XPS 13 9350 Secure Boot status](dell-xps-9350-secure-boot.md).
+The VM test streams the guest console and timestamps each phase. Its evidence
+includes kernel versions, Nix readiness, mount layouts and bootc status across
+first boot, updating and rollback.
+
+## Dell camera or display issues
+
+Use the [Dell XPS 13 9350 guide](dell-xps-9350.md) for display settings, PipeWire
+camera checks and kernel diagnostics. The [Secure Boot checks](dell-xps-9350-secure-boot.md)
+cover module paths and signatures.

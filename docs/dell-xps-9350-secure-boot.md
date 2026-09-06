@@ -1,9 +1,8 @@
 # Dell XPS 13 9350 Secure Boot status
 
 The next images use Fedora's signed `7.2.0-61.fc45` kernel and its in-tree IPU7
-camera drivers. Finite does not install modules under `updates/`, compile a
-kernel module, or weaken module-signature enforcement. Secure Boot can remain
-enabled under the normal Bluefin/Fedora trust model.
+camera drivers. Secure Boot uses the Bluefin/Fedora trust model. Check the
+installed kernel and module signatures on the target hardware.
 
 ## Verify installed modules
 
@@ -30,6 +29,5 @@ journalctl -k -b --no-pager | \
   rg -i 'ipu7|intel.cvs|ipu-bridge|ov02c10|module verification'
 ```
 
-The expected camera path contains no HM1092 or external Finite module. Recheck
-the release, provider paths, signatures, and capture after changing the pinned
-kernel source lock.
+Recheck the release, provider paths, signatures and camera capture after
+changing the pinned kernel source lock.

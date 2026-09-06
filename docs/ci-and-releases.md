@@ -1,47 +1,92 @@
-# CI and publishing
+# CI and releases
 
-`recipes/*.yml` authoritatively define four independent BlueBuild images. The
-workflow builds Bluefin and Bluefin DX `stable` channels daily and on main pushes,
-PRs, merge groups and manual dispatches. The pinned action is BlueBuild v1.12.0
-(`836161eb076426a451e6a0054f722b1153b8b3ad`) and the CLI is v0.9.37.
+BlueBuild builds the four recipes against Bluefin and Bluefin DX `stable`
+channels. Each profile publishes independently to `ghcr.io/closure-labs/finite`.
 
-The `CI gate` requires both the Nix/runtime checks and every image job to pass.
-Read-only validation and trusted publication each call the same four-profile
-reusable workflow with fixed inputs and token permissions. They use the same
-Docker build mode; rechunking is disabled. Failed
-profiles do not cancel the others. Only trusted main runs in `closure-labs/finite`
-receive registry write permissions and `COSIGN_PRIVATE_KEY`. Validation uses its
-read-only job token for registry authentication. PR and merge-group builds
-neither publish nor receive signing secrets. Publication runs serialize
-under `finite-publication`; successful profiles publish independently through
-the upstream action, including its cache and signature handling.
+## Build and validate
 
-The CLI's named Docker builder uses `default-load=true`, making nonpublishing
-builds available for final inspection on the runner. Publication uses the
-upstream action's explicit registry output with the same builder configuration.
+[Build Finite](https://github.com/closure-labs/finite/actions/workflows/build.yml)
+runs on pull requests, merge groups, main pushes, daily schedules and manual
+dispatches. The required `CI gate` combines the Nix/runtime checks with every
+image job.
 
-BlueBuild resolves upstream digests during generation/build. Image evidence
-artifacts retain final labels (including base digests), image references,
-signature verification and generated Containerfiles for review. The generated
-review Containerfile resolves the current stable digest; the final image's
-base-digest label records the actual build input if upstream changes mid-run.
-Checks run inside the assembled image after BlueBuild cleanup, explicitly
-verifying the immutable Nix seed under `/usr` and running `bootc container lint`.
+| Run | Registry permissions | Signing |
+| --- | --- | --- |
+| Pull request or merge group | Read | Public key available for policy assembly |
+| Trusted main build | Write | `COSIGN_PRIVATE_KEY` supplies the signing key |
 
-Cosign uses a key pair. `cosign.pub` is tracked; the private key is an Actions
-secret and must never enter Git, Nix derivations, build contexts or artifacts.
-To rotate the signing key, generate it outside this repository with
-`COSIGN_PASSWORD='' cosign generate-key-pair`, install its private half with
-`gh secret set COSIGN_PRIVATE_KEY --repo closure-labs/finite < cosign.key`, and
-replace the public half in the repository. Validate signatures and host policy
-before any signature-enforced bootc switch. Package visibility must
-permit the installer to pull the image.
+Both paths use the same Docker builder and pinned BlueBuild Action v1.12.0
+(`836161eb076426a451e6a0054f722b1153b8b3ad`) with CLI v0.9.37. Publication runs
+serialize; successful profiles publish their own channel tags. The upstream
+action manages building, caching, pushing and signing.
 
-Nix dependency updates and the Determinate checksum lock update remain
-available. The repository policy allows
-the pinned BlueBuild action and its transitive actions.
+The builder's `default-load=true` setting makes validation images available for
+inspection. The final-image step runs after upstream cleanup and checks the
+Nix seed, packages, profile, signing policy, kernel and `bootc container lint`.
 
-Use the manual **Build installation ISO** workflow with a channel and a verified
-image digest. Each ISO gets a unique immutable-intent installation tag, source
-record, signature evidence and SHA-256 checksums. See
-[installation](installation.md) for selecting the ongoing update channel.
+Each profile's evidence artifact contains its image reference, labels, generated
+Containerfile and signature verification. The final image's base-digest label
+records the actual Bluefin input. Its source revision identifies the Finite
+commit that was built.
+
+## Image signing
+
+`cosign.pub` is the public trust key. The matching private key belongs in the
+repository's `COSIGN_PRIVATE_KEY` Actions secret. Verify a published digest from
+a trusted checkout:
+
+```bash
+cosign verify --key cosign.pub IMAGE_REFERENCE
+```
+
+The image configures signature verification for `ghcr.io/closure-labs/finite`
+with these files:
+
+| File | Purpose |
+| --- | --- |
+| `/etc/pki/containers/finite.pub` | Finite public key |
+| `/etc/containers/policy.json` | `sigstoreSigned` policy with `matchRepository` identity |
+| `/etc/containers/registries.d/closure-labs-finite.yaml` | Enables Sigstore attachments for the repository |
+
+When preparing an existing workstation for a new key, verify the published
+image with the reviewed public key, install that key, and update the Finite
+entry in the container policy and registry configuration. Preserve the
+existing policies for other registries. Then use
+`bootc switch --enforce-container-sigpolicy` and review the staged deployment
+before rebooting.
+
+Generate replacement key pairs in a private directory outside the source
+checkout. Upload the private half with
+`gh secret set COSIGN_PRIVATE_KEY --repo closure-labs/finite < cosign.key`
+and commit the public half. Validate the resulting image and host policy as
+part of key rotation.
+
+## Publish a release
+
+1. Update `VERSION` and add a dated entry to `CHANGELOG.md` in a PR. The version
+   also identifies the staged Home Manager template.
+2. Pass `CI gate` and merge through the queue. Wait for all four signed main
+   image builds and their final-image checks to succeed.
+3. Record the successful build revision and each profile's digest. Create the
+   `vVERSION` Git tag at that exact revision, then publish the GitHub release
+   with the changelog notes and image evidence.
+4. Use the [ISO workflow](installation.md#get-an-iso) for any requested installer
+   artifacts, and validate them with the [hosted VM test](development.md#validate-an-iso).
+
+The channel tags continue to receive daily builds. Release records identify
+specific source revisions and image digests for reproducibility.
+
+## Maintain dependencies and repository policy
+
+Nix lock updates, coordinated Home Manager/Nixpkgs release updates and the
+Determinate checksum update use the retained dependency workflows. Their
+protected-branch automation uses `MERGE_QUEUE_TOKEN`.
+
+The checked-in policy at `automation/github/repository-security.json` describes
+the action allowlist, SHA pinning, default read-only token and repository
+security settings. Audit the live repository from a checkout with GitHub CLI
+access:
+
+```bash
+nix run --accept-flake-config .#repository-security-audit
+```

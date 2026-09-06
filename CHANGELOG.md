@@ -6,67 +6,54 @@ All notable changes to Finite are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-06
+
 ### Added
 
-- A schema-2 per-user package selection, exposed through the graphical
-  `finite-configure` flow, for Hack Nerd Font, Herdr, Jujutsu, OpenCode, and
-  uv. Codex and AWS CLI remain workstation customizations rather than Finite
-  base packages.
-- A preserved, additive `~/.config/home-manager/customize.nix` module for local
-  Nix packages, Flatpaks, and other Home Manager settings.
-- A read-only `finite-brew-migration-status` report and documented migration
-  gates for progressively replacing Homebrew commands with Nix packages.
-- LibreOffice, Nextcloud, and Element from weekly plus VLC and Thunderbird from
-  chilled in the all-role Home Manager base, with VSCodium from chilled for
-  developers.
+- Four handwritten BlueBuild recipes for Bluefin and Bluefin DX, each with
+  generic and pinned next-kernel variants.
+- On-demand signed-image ISO generation with recorded digests and checksums,
+  plus hosted UEFI installation, update and rollback tests.
+- A task-oriented README and guides for installation, app selection,
+  customization, updates, troubleshooting and development.
+- Per-user package selection through `finite-configure` for Hack Nerd Font,
+  Herdr, Jujutsu, OpenCode and uv.
+- A preserved `customize.nix` module for additional Nix packages, Flatpaks and
+  Home Manager settings, plus a package-provider status report.
 
 ### Changed
 
-- Replaced per-application NixGL wrappers with Home Manager's non-NixOS GPU
-  driver integration and its persistent systemd-tmpfiles setup.
-- Added Firefox, Bitwarden Desktop, and Bitwarden CLI from the weekly nixpkgs
-  input to the all-role Home Manager base.
-- Moved the first Homebrew migration layer to Nixpkgs while retaining every
-  Brew fallback: chilled is preferred, weekly is used for Herdr, and Bluefin's
-  direct Bash `bash-preexec` integration remains untouched.
-- Replaced the managed Flatpak declarations for the new base applications with
-  Nix package delivery, and retired the base Spotify and Signal declarations so
-  those applications can remain workstation-only customizations. Existing
-  unmanaged installations and their data remain available for manual removal.
-- Replaced the Dell-specific Bluefin images with vendor-neutral `next` and
-  `dev-next` images pinned to Fedora's signed 7.2 runtime kernel.
-- Decoupled boot-image hardware from Home Manager hardware compatibility, so
-  the Dell display policy remains available without a Dell-specific image.
-- Migrated Nix substitutions and proof publication to the Finite-owned
-  `finite-os.cachix.org` cache and removed the last active former-name
-  exception from the repository.
-- Increased GitHub-hosted Nix capacity to four jobs with four cores per
-  derivation; workstation examples remain capped at two jobs.
-
-### Removed
-
-- Removed the Dell bootc overlay, external camera-module and libcamera builds,
-  profile-mutating Firefox camera workaround, and other image-level Dell
-  customizations.
+- Image builds use the pinned BlueBuild Action and CLI, explicit update channels,
+  Cosign key-pair signatures and final-image bootability checks. Each successful
+  profile publishes independently.
+- Nix stages the Home Manager template/catalog and pinned Determinate/kernel
+  assets. Home Manager composes the user's roles, packages and hardware settings.
+- The `next` and `dev-next` channels provide Fedora's signed 7.2 kernel and
+  in-tree camera modules. The Dell display policy follows the user's Home
+  Manager hardware selection.
+- The base Nix environment includes Firefox, Bitwarden, LibreOffice, Nextcloud,
+  Element, VLC and Thunderbird. Developers receive VSCodium.
+- Nix supplies the primary command-line environment, with pinned chilled and
+  weekly package inputs and existing Homebrew integrations available alongside it.
+- Hosted Nix builds use four jobs with one core per derivation. Development
+  examples bound local builds to one job and one core.
+- Nix substitutions use the Finite-owned `finite-os.cachix.org` cache.
 
 ### Fixed
 
-- Routed the Nix Firefox package through PipeWire camera capture on Dell IPU7
-  systems so a failed raw camera endpoint cannot tear down Google Meet's
-  otherwise-working microphone stream.
-- Automatically repaired stale Nix hashes after failed same-repository
-  Dependabot validation through a Flake-packaged, token-isolated command with
-  exact-head and force-with-lease push protection.
-- Prevented the Vates Notes and Grist fixed-URL launchers from advertising
-  themselves as web browsers and becoming GNOME's default URL handler.
-- Installed Bitwarden's Linux Polkit unlock action in the immutable base image
-  so the Nix desktop application can use PAM-backed fingerprint authentication.
-- Made GNOME launch the customized Ghostty executable directly instead of
-  attempting unsupported D-Bus activation, and consolidated its generated
-  settings under `config.ghostty`.
-- Allowed the Dell Home Manager panel helper to load its documented runtime
-  defaults without failing the package build on ShellCheck's external-source
-  warning.
+- Home Manager's non-NixOS GPU integration provides a persistent driver setup
+  for Nix graphical applications.
+- System-wide input permissions support Espanso in graphical sessions.
+- Firefox uses PipeWire camera capture on Dell IPU7 systems, preserving the
+  working microphone stream during WebRTC calls.
+- The pinned installer completes Anaconda shutdown and finalizes the physical
+  root configuration for successful composefs remounting.
+- Nix daemon startup waits for persistent state and SELinux initialization.
+- Bitwarden Desktop can use the image's Polkit action for PAM-backed unlocking.
+- GNOME launches the customized Ghostty executable directly, and Vates Notes
+  and Grist advertise their application roles correctly.
+- Trusted dependency updates verify the pull-request author, revision and file
+  scope before enabling merge-queue validation.
 
 ## [0.5.0] - 2026-08-26
 
@@ -385,7 +372,8 @@ All notable changes to Finite are documented here. The format follows
 - The required `CI gate` now validates repository policy, selected image and
   installer jobs, merge candidates, and trusted dependency-update automation.
 
-[Unreleased]: https://github.com/closure-labs/finite/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/closure-labs/finite/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/closure-labs/finite/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/closure-labs/finite/compare/v0.3.0...v0.5.0
 [0.3.0]: https://github.com/closure-labs/finite/compare/v0.2.4...v0.3.0
 [0.2.4]: https://github.com/closure-labs/finite/releases/tag/v0.2.4
