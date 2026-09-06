@@ -52,6 +52,19 @@ protects existing data by stopping on an invalid nonempty directory.
 
 ## Nix apps need GPU setup
 
+If Ghostty reports `Failed to create EGL display`, check whether
+`/run/opengl-driver` is missing even though the tmpfiles configuration exists.
+The store-backed configuration cannot be read during the early tmpfiles pass.
+Finite restores it after mounting `/nix`:
+
+```bash
+systemctl status finite-nix-gpu.service
+journalctl -b -u finite-nix-gpu.service
+sudo systemctl restart finite-nix-gpu.service
+```
+
+Close and reopen the affected application after restoring the driver link.
+
 Check the driver link and its persistent configuration:
 
 ```bash
@@ -68,6 +81,20 @@ sudo "$(command -v non-nixos-gpu-setup)"
 
 See [GPU configuration](configuration.md#enable-gpu-access-for-nix-apps) for the
 supported graphics path.
+
+## Home Manager reports a missing custom input
+
+Check `journalctl --user -b -u finite-home-first-login.service`. If the error
+names an input used by `customize.nix`, verify its declaration in
+`~/.config/home-manager/flake.nix` and its pin in `flake.lock`. Older Finite
+initializers preserved the customization module but replaced the flake and
+lock during image upgrades. The corrected initializer preserves all three.
+
+Restore a missing flake or lock from the timestamped
+`~/.config/home-manager.previous.*` backups before retrying. A failed staged
+build leaves the existing configuration in place. For a newly added input,
+run `nix flake lock ~/.config/home-manager`, then `nh home build` and
+`nh home switch`. See [custom flake inputs](configuration.md#add-custom-flake-inputs).
 
 ## An update fails signature verification
 

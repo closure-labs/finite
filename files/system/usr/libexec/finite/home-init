@@ -136,6 +136,12 @@ jq -n \
 rm -f -- "$workdir/.input.json"
 
 hm_dir="$config_parent/home-manager"
+# Validate the shipped lock before overlaying the user's dependency pins.
+jq -e '[.nodes[].locked? | select(. != null) | .type] | all(. != "path")' \
+	"$workdir/flake.lock" >/dev/null || {
+	echo "Finite Home Manager template lock contains a forbidden local path input" >&2
+	exit 2
+}
 preserve_customization() {
 	relative_path="${1:?relative customization path is required}"
 	source_path="$hm_dir/$relative_path"
@@ -148,6 +154,18 @@ preserve_customization() {
 }
 preserve_customization customize.nix
 preserve_customization modules/local.nix
+
+# The flake and its lock belong to the user after initialization. Keep them
+# together: replacing either can drop custom inputs or silently change pins.
+if [[ -e "$hm_dir/flake.nix" || -L "$hm_dir/flake.nix" ||
+	-e "$hm_dir/flake.lock" || -L "$hm_dir/flake.lock" ]]; then
+	[[ -f "$hm_dir/flake.nix" && -f "$hm_dir/flake.lock" ]] || {
+		echo "Existing Home Manager flake.nix and flake.lock must both be present; restore the missing file before retrying" >&2
+		exit 2
+	}
+	preserve_customization flake.nix
+	preserve_customization flake.lock
+fi
 
 jq -e '.schema == 1 and .generator == "finite-home-init"' \
 	"$workdir/finite-template.json" >/dev/null || {

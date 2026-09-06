@@ -30,6 +30,7 @@ test -s /usr/share/finite/home-manager-template/customize.nix
 test -s /usr/share/finite/home-profile-catalog.json
 test -s /usr/lib/udev/rules.d/70-finite-espanso-input.rules
 test -L /usr/lib/systemd/system/multi-user.target.wants/nix-daemon.socket
+test -L /usr/lib/systemd/system/multi-user.target.wants/finite-nix-gpu.service
 test ! -L /etc/systemd/system/sockets.target.wants/nix-daemon.socket
 test ! -L /usr/lib/systemd/system/sockets.target.wants/nix-daemon.socket
 key=$(jq -er --arg repo "$repository" '

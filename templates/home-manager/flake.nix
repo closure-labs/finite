@@ -1,6 +1,8 @@
 {
   description = "Finite standalone Home Manager configuration";
 
+  # This entry point and flake.lock are user-owned after initialization.
+  # Add custom inputs here; Den passes them to customize.nix and modules/local.nix.
   inputs = {
     den.url = "github:denful/den";
     devenv.url = "github:cachix/devenv/v2.2.2";
