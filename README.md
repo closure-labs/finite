@@ -1,4 +1,4 @@
-# Finite
+# <img src="files/system/usr/share/finite/finite-logo.png" width="56" height="56" align="middle" alt=""> Finite
 
 A GNOME desktop built on Bluefin, with your apps and personal settings managed
 by Nix and Home Manager. Choose the environment that fits your work, add your
