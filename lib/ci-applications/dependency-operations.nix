@@ -56,6 +56,19 @@
           head_sha="$(jq -er '.headRefOid' <<<"''${pr}")"
           pr_url="$(jq -er '.url' <<<"''${pr}")"
 
+          watch_run() {
+            local run_id=$1 status
+            echo "Validation: https://github.com/''${GITHUB_REPOSITORY}/actions/runs/$run_id"
+            if timeout 180m gh run watch "$run_id" \
+              --repo "''${GITHUB_REPOSITORY}" --interval 15 --exit-status; then
+              return 0
+            else
+              status=$?
+            fi
+            echo "::error::Validation failed or timed out (exit $status): https://github.com/''${GITHUB_REPOSITORY}/actions/runs/$run_id" >&2
+            exit "$status"
+          }
+
           dispatch_and_wait() {
             local workflow="$1"
             shift
@@ -88,7 +101,7 @@
                   --commit "''${head_sha}" \
                   --limit 5 \
                   --json databaseId \
-                  --jq ".[] | select((.databaseId | tostring) != \"''${previous_run_id}\") | .databaseId" |
+                  --jq ".[] | select(.databaseId > (\"''${previous_run_id:-0}\" | tonumber)) | .databaseId" |
                   head -n 1
               })"
               [[ -z "''${run_id}" ]] || break
@@ -99,9 +112,7 @@
               exit 1
             }
 
-            gh run watch "''${run_id}" \
-              --repo "''${GITHUB_REPOSITORY}" \
-              --exit-status
+            watch_run "''${run_id}"
           }
 
       existing_ci_run=""
@@ -121,6 +132,14 @@
             sleep 5
           done
 
+          if [[ -z "''${existing_ci_run}" ]]; then
+            existing_ci_run="$(gh run list \
+              --repo "''${GITHUB_REPOSITORY}" \
+              --workflow build.yml --event workflow_dispatch \
+              --branch "''${branch}" --commit "''${head_sha}" --limit 1 \
+              --json conclusion,databaseId,status --jq '.[0] // empty')"
+          fi
+
           if [[ -n "''${existing_ci_run}" ]]; then
             existing_ci_run_id="$(jq -er '.databaseId' <<<"''${existing_ci_run}")"
             if [[ "$(jq -r '.conclusion // empty' <<<"''${existing_ci_run}")" == action_required ]]; then
@@ -128,9 +147,7 @@
                 --method POST \
                 "repos/''${GITHUB_REPOSITORY}/actions/runs/''${existing_ci_run_id}/approve"
             fi
-            gh run watch "''${existing_ci_run_id}" \
-              --repo "''${GITHUB_REPOSITORY}" \
-              --exit-status
+            watch_run "''${existing_ci_run_id}"
           else
             dispatch_and_wait build.yml
           fi

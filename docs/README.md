@@ -14,4 +14,5 @@ your desktop.
 | Check the Dell kernel and module signatures | [Secure Boot checks](dell-xps-9350-secure-boot.md) |
 | Work on recipes or Home Manager modules | [Development](development.md) |
 | Build, sign and release images | [CI and releases](ci-and-releases.md) |
+| Review CI reliability and optimization evidence | [CI optimization review](ci-optimization-review.md) |
 | See changes by version | [Changelog](../CHANGELOG.md) |

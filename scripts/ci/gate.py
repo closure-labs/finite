@@ -11,12 +11,17 @@ def failures(needs, publish):
     for job in ('impact', 'docs'):
         if needs[job]['result'] != 'success':
             errors.append(f'{job}: expected success, got {needs[job]["result"]}')
+    # Dependent jobs cannot emit selections after a prerequisite failed.
+    if errors:
+        return errors
     outputs = needs['impact'].get('outputs', {})
     for name in ('checks', 'nix'):
         if outputs.get(name) not in ('true', 'false'):
             errors.append(f'Missing or invalid selection: {name}')
     checks = outputs.get('checks') == 'true'
     images = False
+    if checks and needs['checks']['result'] != 'success':
+        return [f"checks: expected success, got {needs['checks']['result']}"]
     try:
         explicit = json.loads(outputs['profiles'])
         if not isinstance(explicit, list) or not set(explicit) <= set(PROFILES):

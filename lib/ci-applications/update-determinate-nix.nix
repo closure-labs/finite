@@ -1,7 +1,7 @@
 {pkgs}:
 pkgs.writeShellApplication {
   name = "finite-source-update";
-  runtimeInputs = with pkgs; [coreutils curl diffutils gh jq];
+  runtimeInputs = with pkgs; [coreutils diffutils gh jq python3];
   text = ''
     repo_root="''${FINITE_SOURCE_ROOT:-$PWD}"
     [[ -f "''${repo_root}/flake.nix" ]] || {
@@ -15,12 +15,21 @@ pkgs.writeShellApplication {
       determinate-nix)
         lock="''${repo_root}/sources/determinate-nix.json"
         [[ -f "''${lock}" ]]
-        release="$(gh api repos/DeterminateSystems/nix-installer/releases/latest)"
+        if [[ -z "''${GH_TOKEN:-''${GITHUB_TOKEN:-}}" ]]; then
+          if [[ "''${GITHUB_ACTIONS:-}" == true ]]; then
+            echo 'Release lookup requires GH_TOKEN or GITHUB_TOKEN in GitHub Actions' >&2
+            exit 4
+          fi
+          GH_TOKEN="$(gh auth token)"
+          export GH_TOKEN
+        fi
+        release="$(python3 ${../../scripts/ci/http-get.py} --github \
+          https://api.github.com/repos/DeterminateSystems/nix-installer/releases/latest)"
         jq -e '.draft == false and .prerelease == false' <<<"''${release}" >/dev/null
         tag="$(jq -er '.tag_name | select(test("^v[0-9]+\\.[0-9]+\\.[0-9]+$"))' <<<"''${release}")"
         version="''${tag#v}"
-        asset="$(jq -ec '.assets[] | select(.name == "nix-installer-x86_64-linux")' <<<"''${release}")"
-        installer_url="$(jq -er .browser_download_url <<<"''${asset}")"
+        asset="$(jq -ec '[.assets[] | select(.name == "nix-installer-x86_64-linux")] | select(length == 1) | .[0]' <<<"''${release}")"
+        installer_url="$(jq -er --arg tag "''${tag}" '.browser_download_url | select(. == ("https://github.com/DeterminateSystems/nix-installer/releases/download/" + $tag + "/nix-installer-x86_64-linux"))' <<<"''${asset}")"
         digest="$(jq -er '.digest | select(test("^sha256:[0-9a-f]{64}$"))' <<<"''${asset}")"
         installer_sha256="''${digest#sha256:}"
         policy_url="https://raw.githubusercontent.com/DeterminateSystems/nix-installer/''${tag}/src/action/linux/selinux/determinate-nix.pp"
@@ -29,8 +38,12 @@ pkgs.writeShellApplication {
         file_contexts_file="$(mktemp)"
         temporary="$(mktemp "''${lock}.XXXXXX")"
         trap 'rm -f -- "''${policy_file}" "''${file_contexts_file}" "''${temporary}"' EXIT
-        curl --fail --location --retry 3 --output "''${policy_file}" "''${policy_url}"
-        curl --fail --location --retry 3 --output "''${file_contexts_file}" "''${file_contexts_url}"
+        python3 ${../../scripts/ci/http-get.py} --output "''${policy_file}" "''${policy_url}"
+        python3 ${../../scripts/ci/http-get.py} --output "''${file_contexts_file}" "''${file_contexts_url}"
+        [[ -s "''${policy_file}" && -s "''${file_contexts_file}" ]] || {
+          echo 'Downloaded SELinux assets must not be empty' >&2
+          exit 1
+        }
         policy_sha256="$(sha256sum "''${policy_file}" | cut -d' ' -f1)"
         file_contexts_sha256="$(sha256sum "''${file_contexts_file}" | cut -d' ' -f1)"
         jq \

@@ -21,6 +21,12 @@ pkgs.writeShellApplication {
     before="$({ sha256sum flake.lock; [[ ! -f devenv.lock ]] || sha256sum devenv.lock; } | sha256sum | cut -d' ' -f1)"
     nix --accept-flake-config flake update
     devenv update
+    for lock in flake.lock devenv.lock; do
+      jq -e 'type == "object"' "$lock" >/dev/null
+      if [[ "$(tail -c 1 "$lock" | od -An -tx1 | tr -d '[:space:]')" != 0a ]]; then
+        printf '\n' >>"$lock"
+      fi
+    done
     after="$({ sha256sum flake.lock; sha256sum devenv.lock; } | sha256sum | cut -d' ' -f1)"
     changed=false
     [[ "''${before}" == "''${after}" ]] || changed=true

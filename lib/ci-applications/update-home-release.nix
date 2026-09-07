@@ -3,7 +3,7 @@ pkgs.writeShellApplication {
   name = "finite-update-home-release";
   # Preserve the Determinate Nix client supplied by the host instead of
   # shadowing it with the Nixpkgs client inside this application wrapper.
-  runtimeInputs = with pkgs; [coreutils curl git gnugrep gnused jq];
+  runtimeInputs = with pkgs; [coreutils git gnugrep gnused jq python3];
   text = ''
     set -euo pipefail
 
@@ -50,33 +50,41 @@ pkgs.writeShellApplication {
       fi
     }
 
-    if ! git ls-remote --exit-code --heads \
-      https://github.com/NixOS/nixpkgs.git \
-      "refs/heads/nixos-''${candidate_release}" >/dev/null; then
-      echo "Nixpkgs ''${candidate_release} is not available upstream yet"
-      emit_result false "''${current_release}"
-      exit 0
-    fi
-    if ! git ls-remote --exit-code --heads \
-      https://github.com/nix-community/home-manager.git \
-      "refs/heads/release-''${candidate_release}" >/dev/null; then
-      echo "Home Manager ''${candidate_release} is not available upstream yet"
-      emit_result false "''${current_release}"
-      exit 0
-    fi
+    branch_available() {
+      local status
+      if timeout 30s git ls-remote --exit-code --heads "$1" "$2" >/dev/null; then
+        return 0
+      else
+        status=$?
+      fi
+      if [[ "$status" == 2 ]]; then
+        echo "$2 is not available upstream yet"
+        emit_result false "''${current_release}"
+        exit 0
+      fi
+      echo "Could not check $2 upstream (exit $status); refusing to report no change" >&2
+      exit "$status"
+    }
+    branch_available https://github.com/NixOS/nixpkgs.git "refs/heads/nixos-''${candidate_release}"
+    branch_available https://github.com/nix-community/home-manager.git "refs/heads/release-''${candidate_release}"
 
-    nixpkgs_url="https://flakehub.com/f/DeterminateSystems/nixpkgs-''${candidate_release}-chilled/0.1"
-    home_manager_url="https://flakehub.com/f/nix-community/home-manager/0.''${candidate_compact}"
-    if ! curl -fsSL --output /dev/null "''${nixpkgs_url}"; then
-      echo "The chilled Nixpkgs ''${candidate_release} mirror is not available yet"
-      emit_result false "''${current_release}"
-      exit 0
-    fi
-    if ! curl -fsSL --output /dev/null "''${home_manager_url}"; then
-      echo "The Home Manager ''${candidate_release} mirror is not available yet"
-      emit_result false "''${current_release}"
-      exit 0
-    fi
+    mirror_available() {
+      local status
+      if python3 ${../../scripts/ci/http-get.py} --allow-missing --output /dev/null "$1"; then
+        return 0
+      else
+        status=$?
+      fi
+      if [[ "$status" == 3 ]]; then
+        echo "$1 is not available yet"
+        emit_result false "''${current_release}"
+        exit 0
+      fi
+      echo "Could not check $1; refusing to report no change" >&2
+      exit "$status"
+    }
+    mirror_available "https://flakehub.com/f/DeterminateSystems/nixpkgs-''${candidate_release}-chilled/0.1"
+    mirror_available "https://flakehub.com/f/nix-community/home-manager/0.''${candidate_compact}"
 
     release_files=(
       flake.nix
