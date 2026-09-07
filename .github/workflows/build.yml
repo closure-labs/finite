@@ -14,6 +14,10 @@ on:
         description: Rebuild only channels that differ from approved Bluefin digests
         type: boolean
         default: false
+      qualify:
+        description: Force Secure Boot qualification for every selected profile
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -43,7 +47,7 @@ jobs:
         if: inputs.reconcile
       - id: reconcile
         if: inputs.reconcile
-        run: nix develop --accept-flake-config --command python3 scripts/ci/bluefin-upstream.py reconcile
+        run: nix develop .#ci --accept-flake-config --command python3 scripts/ci/bluefin-upstream.py reconcile
 
   docs:
     name: Documentation checks
@@ -76,12 +80,19 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
       - uses: ./.github/actions/setup-nix
-      - run: nix build --accept-flake-config --no-link .#ci-checks
+      - name: Build checks, retrying transient fetch failures
+        run: |
+          for attempt in 1 2 3; do
+            nix build --accept-flake-config --no-link .#ci-checks && break
+            [[ $attempt == 3 ]] && exit 1
+            echo "::warning::ci-checks build failed (attempt $attempt/3), retrying after backoff"
+            sleep $((attempt * 30))
+          done
       - name: Select images from payload dependencies
         id: selection
         env:
           IMPACT: ${{ toJSON(needs.impact.outputs) }}
-        run: nix develop --accept-flake-config --command python3 scripts/ci/payloads.py
+        run: nix develop .#ci --accept-flake-config --command python3 scripts/ci/payloads.py
 
   images:
     name: Validate (${{ matrix.profile }})
@@ -106,14 +117,15 @@ jobs:
     permissions:
       contents: read
       packages: write
+      actions: read
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.checks.outputs.matrix || '{"include":[]}') }}
-    uses: ./.github/workflows/image.yml
+    uses: ./.github/workflows/publication.yml
     with:
       profile: ${{ matrix.profile }}
       channel: ${{ matrix.channel }}
-      publish: true
+      force_qualification: ${{ inputs.qualify || false }}
     secrets:
       cosign_private_key: ${{ secrets.COSIGN_PRIVATE_KEY }}
 

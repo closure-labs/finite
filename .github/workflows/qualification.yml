@@ -1,0 +1,88 @@
+name: Qualify candidate in Secure Boot VM
+on:
+  workflow_call:
+    inputs:
+      profile:
+        type: string
+        required: true
+      channel:
+        type: string
+        required: true
+      digest:
+        type: string
+        required: true
+      previous:
+        type: string
+        default: ""
+      identity:
+        type: string
+        required: true
+      enforce:
+        type: boolean
+        default: false
+    outputs:
+      evidence:
+        value: ${{ jobs.qualify.outputs.evidence }}
+permissions:
+  contents: read
+  packages: write
+jobs:
+  qualify:
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    outputs:
+      evidence: ${{ steps.outcome.outputs.evidence }}
+    env:
+      PROFILE: ${{ inputs.profile }}
+      CHANNEL: ${{ inputs.channel }}
+      CANDIDATE_DIGEST: ${{ inputs.digest }}
+      PREVIOUS_DIGEST: ${{ inputs.previous }}
+      BUILD_IDENTITY: ${{ inputs.identity }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
+        with:
+          skip-if-available: "80G"
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+      - name: Install qualification tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-x86 qemu-utils ovmf xorriso skopeo mtools
+      - name: Qualify immutable candidate
+        id: acceptance
+        continue-on-error: ${{ !inputs.enforce }}
+        env:
+          REGISTRY_TOKEN: ${{ github.token }}
+          REGISTRY_USER: ${{ github.actor }}
+        run: |
+          printf '%s' "$REGISTRY_TOKEN" | skopeo login --username "$REGISTRY_USER" --password-stdin ghcr.io
+          printf '%s' "$REGISTRY_TOKEN" | docker login --username "$REGISTRY_USER" --password-stdin ghcr.io
+          bash scripts/bluebuild/install-cli.sh
+          bash scripts/bluebuild/qualify.sh
+      - name: Record shadow outcome
+        id: outcome
+        if: always()
+        env:
+          OUTCOME: ${{ steps.acceptance.outcome }}
+        run: |
+          mkdir -p .bluebuild
+          jq -n --arg outcome "$OUTCOME" '{outcome: $outcome}' >".bluebuild/$PROFILE-qualification-outcome.json"
+          echo "Qualification outcome: $OUTCOME" >>"$GITHUB_STEP_SUMMARY"
+          echo "evidence=qualification-$PROFILE-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >>"$GITHUB_OUTPUT"
+      - name: Save qualification evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: qualification-${{ inputs.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .bluebuild/*acceptance.json
+            .bluebuild/*outcome.json
+            .bluebuild/vm*/**/*.json
+            .bluebuild/vm*/**/*.log
+            .bluebuild/iso/*.json
+            .bluebuild/iso/SHA256SUMS
+          include-hidden-files: true
+          retention-days: 90

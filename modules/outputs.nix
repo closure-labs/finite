@@ -262,6 +262,12 @@ in {
     checks.${system} = checks;
 
     devShells.${system} = {
+      release = pkgs.mkShell {
+        packages = with pkgs; [bash coreutils cosign gh jq skopeo syft grype];
+      };
+      ci = pkgs.mkShell {
+        packages = (with pkgs; [bash coreutils cosign git gh jq skopeo]) ++ [(pkgs.python3.withPackages (packages: [packages.pyyaml]))];
+      };
       default = pkgs.mkShell {
         packages = repositoryToolchain;
       };

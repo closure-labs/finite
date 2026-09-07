@@ -3,7 +3,7 @@ set -euo pipefail
 channel="${1:?update channel required}"
 digest="${2:?verified image digest required}"
 case "$channel" in
-bluefin-generic|latest|next|bluefin-dx-generic|dev-next) ;;
+finite|latest|finite-next|finite-dev|finite-dev-next) ;;
 *) echo 'Unsupported update channel' >&2; exit 2 ;;
 esac
 [[ $digest =~ ^sha256:[0-9a-f]{64}$ ]]
@@ -25,7 +25,7 @@ skopeo inspect "docker://$source" >.bluebuild/iso/source.json
 [[ $(jq -r .Digest .bluebuild/iso/source.json) == "$digest" ]]
 profile=$(jq -er '.Labels["io.finite.profile"]' .bluebuild/iso/source.json)
 case "$channel:$profile" in
-bluefin-generic:bluefin-generic|latest:bluefin-generic|next:bluefin-next|bluefin-dx-generic:bluefin-dx-generic|dev-next:bluefin-dx-next) ;;
+finite:bluefin-generic|latest:bluefin-generic|finite-next:bluefin-next|finite-dev:bluefin-dx-generic|finite-dev-next:bluefin-dx-next) ;;
 *) echo 'Image profile does not match the requested channel' >&2; exit 1 ;;
 esac
 bash "$(dirname "${BASH_SOURCE[0]}")/prepare-installer.sh"

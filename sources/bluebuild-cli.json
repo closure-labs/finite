@@ -1,0 +1,6 @@
+{
+  "schema": 1,
+  "version": "v0.9.37",
+  "image": "ghcr.io/blue-build/cli",
+  "digest": "sha256:281d3152c1a4e30e75e777f78b07a8c5c1e5130cb44092f4b4b507402556ec0a"
+}

@@ -1,0 +1,90 @@
+name: Publish qualified BlueBuild image
+on:
+  workflow_call:
+    inputs:
+      profile:
+        type: string
+        required: true
+      channel:
+        type: string
+        required: true
+      force_qualification:
+        type: boolean
+        default: false
+    secrets:
+      cosign_private_key:
+        required: true
+permissions:
+  contents: read
+  packages: write
+  actions: read
+jobs:
+  build:
+    uses: ./.github/workflows/image.yml
+    permissions:
+      contents: read
+      packages: write
+    with:
+      profile: ${{ inputs.profile }}
+      channel: ${{ inputs.channel }}
+      publish: true
+      force_qualification: ${{ inputs.force_qualification }}
+    secrets:
+      cosign_private_key: ${{ secrets.cosign_private_key }}
+
+  qualification:
+    needs: build
+    if: needs.build.outputs.qualify == 'true'
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/qualification.yml
+    with:
+      profile: ${{ inputs.profile }}
+      channel: ${{ inputs.channel }}
+      digest: ${{ needs.build.outputs.digest }}
+      previous: ${{ needs.build.outputs.previous }}
+      identity: ${{ needs.build.outputs.identity }}
+      enforce: ${{ vars.FINITE_QUALIFICATION_MODE == 'enforce' }}
+
+  promote:
+    needs: [build, qualification]
+    if: >-
+      always() && !cancelled() && needs.build.result == 'success' &&
+      (needs.qualification.result == 'success' || needs.qualification.result == 'skipped')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PROFILE: ${{ inputs.profile }}
+      FINITE_QUALIFICATION_MODE: ${{ vars.FINITE_QUALIFICATION_MODE || 'shadow' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+      - name: Download candidate and qualification evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+          QUALIFY: ${{ needs.build.outputs.qualify }}
+          IMAGE_ARTIFACT: ${{ needs.build.outputs.evidence }}
+          QUALIFICATION_ARTIFACT: ${{ needs.qualification.outputs.evidence }}
+        run: |
+          gh run download "$GITHUB_RUN_ID" --name "$IMAGE_ARTIFACT" --dir .bluebuild
+          if [[ $QUALIFY == true ]]; then
+            gh run download "$GITHUB_RUN_ID" --name "$QUALIFICATION_ARTIFACT" --dir .bluebuild
+          fi
+      - name: Promote verified digest to public channels
+        env:
+          REGISTRY_TOKEN: ${{ github.token }}
+          REGISTRY_USER: ${{ github.actor }}
+        run: |
+          printf '%s' "$REGISTRY_TOKEN" | nix develop .#ci --accept-flake-config --command skopeo login --username "$REGISTRY_USER" --password-stdin ghcr.io
+          nix develop .#ci --accept-flake-config --command python3 scripts/bluebuild/publication.py promote "$PROFILE"
+      - name: Save promotion evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: promotion-${{ inputs.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/*.json
+          include-hidden-files: true
+          retention-days: 90

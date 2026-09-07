@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "series": "7.2",
+  "fedora": 45,
+  "kojiTag": "f45",
+  "architecture": "x86_64",
+  "keyId": "f577861e",
+  "keySha256": "846912c73a910dab32da8ef0c0d68cb89d11ff514f598d2d1dd96d04d58b2425",
+  "maxLagDays": 7
+}

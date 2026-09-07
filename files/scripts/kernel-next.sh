@@ -3,14 +3,19 @@ set -euo pipefail
 
 kernel_root="${CONFIG_DIRECTORY}/payload/kernel-next"
 lock="${kernel_root}/kernel-next.json"
+policy="${kernel_root}/kernel-policy.json"
+series=$(jq -er .series "$policy")
+fedora=$(jq -er .fedora "$policy")
+[[ $series =~ ^[0-9]+\.[0-9]+$ && $fedora =~ ^[0-9]+$ ]]
 
 [[ -r "${lock}" ]] || {
 	echo "Missing next-kernel source lock: ${lock}" >&2
 	exit 1
 }
-jq -e '
+jq -e --arg series "$series" --arg fedora "$fedora" '
   .schema == 1 and
-  (.release | test("^7[.]2[.][0-9]+-[0-9]+[.]fc45[.]x86_64$")) and
+  (.release | startswith($series + ".")) and
+  (.release | endswith(".fc" + $fedora + ".x86_64")) and
   (.packages | map(.name)) == [
     "kernel", "kernel-core", "kernel-modules-core",
     "kernel-modules", "kernel-modules-extra"
@@ -21,6 +26,10 @@ jq -e '
 ' "${lock}" >/dev/null
 
 release=$(jq -er '.release' "${lock}")
+printf '%s  %s\n' "$(jq -er .keySha256 "$policy")" "$kernel_root/kernel-signing.pub" | sha256sum --check --strict
+keydb=$(mktemp -d)
+trap 'rm -rf "$keydb"' EXIT
+rpmkeys --dbpath "$keydb" --import "$kernel_root/kernel-signing.pub"
 rpms=()
 while IFS=$'\t' read -r name file sha256; do
 	rpm_file="${kernel_root}/${file}"
@@ -29,6 +38,7 @@ while IFS=$'\t' read -r name file sha256; do
 		exit 1
 	}
 	printf '%s  %s\n' "${sha256}" "${rpm_file}" | sha256sum --check --strict
+	LC_ALL=C rpmkeys --dbpath "$keydb" --checksig --verbose "$rpm_file" | grep -Ei 'signature.*: OK$'
 	[[ "$(rpm -qp --qf '%{NAME}' "${rpm_file}")" == "${name}" ]]
 	[[ "$(rpm -qp --qf '%{EVR}.%{ARCH}' "${rpm_file}")" == "${release}" ]]
 	rpms+=("${rpm_file}")
@@ -72,4 +82,3 @@ while IFS= read -r module; do
 	[[ "$(modinfo -k "${release}" -F intree "${module}")" == Y ]]
 	[[ "$(modinfo -k "${release}" -F signer "${module}")" == *Fedora* ]]
 done < <(jq -r '.requiredModules[]' "${lock}")
-

@@ -6,7 +6,7 @@ description: Finite bluefin-dx with Home Manager and generic-x86_64
 base-image: ghcr.io/ublue-os/bluefin-dx
 image-version: stable@sha256:5e5d036561a12f531ddcdb039cf09f66d8fd594f55a63920ca85045509dc4017
 blue-build-tag: v0.9.37
-alt-tags: [bluefin-dx-generic]
+alt-tags: [finite-dev]
 labels:
   org.opencontainers.image.title: Finite
   org.opencontainers.image.vendor: Closure Labs
@@ -19,5 +19,5 @@ modules:
   - from-file: shared/base.yml
   - type: script@v1
     snippets:
-      - bash "$CONFIG_DIRECTORY/scripts/profile.sh" bluefin-dx-generic bluefin-dx generic-x86_64 bluefin-dx-generic
+      - bash "$CONFIG_DIRECTORY/scripts/profile.sh" bluefin-dx-generic bluefin-dx generic-x86_64 finite-dev
   - from-file: shared/final.yml

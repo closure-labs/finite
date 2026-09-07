@@ -33,6 +33,7 @@ elif name == 'docker':
             'org.opencontainers.image.revision': 'local',
             'org.opencontainers.image.base.digest': os.environ['DIGEST'],
             'io.finite.profile': 'bluefin-dx-generic',
+            'io.finite.build-inputs': 'v1:' + 'b' * 64,
             'org.opencontainers.image.source': 'https://github.com/closure-labs/finite',
         }}}]))
 elif name == 'cosign':
@@ -55,6 +56,7 @@ class CandidatePull(unittest.TestCase):
         (root / '.bluebuild/bluefin-dx-generic-publication.json').write_text(json.dumps({
             'profile': 'bluefin-dx-generic', 'tags': ['finite-dev'],
             'digest': DIGEST, 'candidate': 'candidate-test',
+            'buildIdentity': 'v1:' + 'b' * 64,
         }))
         (root / 'sources').mkdir()
         (root / 'sources/kernel-next.json').write_text(json.dumps({'release': 'test'}))

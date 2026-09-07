@@ -38,11 +38,13 @@ class Selection(unittest.TestCase):
             self.assertEqual(impact.classify([path])['profiles'], sorted(impact.NEXT))
 
     def test_check_only_inputs_and_full_rebuild_fallback(self):
-        for path in ['tests/home/contracts.sh', 'automation/github/repository-security.json', '.github/workflows/iso.yml', 'devenv.lock', 'scripts/ci/http-get.py',
+        for path in ['tests/home/contracts.sh', 'automation/github/repository-security.json', '.github/workflows/release.yml', 'devenv.lock', 'scripts/ci/http-get.py',
                      '.github/workflows/update-bluefin.yml',
                      '.github/workflows/upstream-health.yml']:
             self.assertEqual(impact.classify([path]), {'checks': True, 'nix': False, 'profiles': []})
         self.assertEqual(impact.classify([])['profiles'], sorted(impact.PROFILES))
+        for path in ['.github/workflows/iso.yml', '.github/workflows/vm-acceptance.yml', '.github/workflows/qualification.yml']:
+            self.assertEqual(impact.classify([path])['profiles'], sorted(impact.PROFILES))
         for event in ['schedule', 'workflow_dispatch', 'unknown']:
             self.assertIsNone(impact.changed_paths(event, {}))
         self.assertIsNone(impact.changed_paths('push', {'before': '0' * 40, 'after': 'a' * 40}))

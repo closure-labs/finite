@@ -21,10 +21,10 @@ if name=='cosign':
  if os.environ.get('BAD_SIGNATURE'): sys.exit(1)
  print('[]')
 elif name=='skopeo':
- if args[0]=='list-tags': print('{"Tags": ["bluefin-generic"]}')
+ if args[0]=='list-tags': print('{"Tags": ["finite"]}')
  elif args[0]=='inspect':
   digest=os.environ['DIGEST']
-  if os.environ.get('MOVED_CHANNEL') and args[-1].endswith(':bluefin-generic'): digest='sha256:'+'b'*64
+  if os.environ.get('MOVED_CHANNEL') and args[-1].endswith(':finite'): digest='sha256:'+'b'*64
   if '--format' in args: print(digest)
   else: print(json.dumps({'Digest':digest,'Labels':{'io.finite.profile':'bluefin-next' if os.environ.get('MISMATCH_PROFILE') else 'bluefin-generic'}}))
 elif name=='sudo':
@@ -67,7 +67,7 @@ class IsoBoundary(unittest.TestCase):
         env = dict(os.environ, PATH=str(bindir)+':'+os.environ['PATH'], DIGEST=DIGEST,
                    GITHUB_ACTIONS='true', GITHUB_REPOSITORY='closure-labs/finite',
                    GITHUB_RUN_ID='123', GITHUB_RUN_ATTEMPT='2', GITHUB_SHA='d'*40, **extra)
-        result = subprocess.run(['bash',str(SCRIPT),'bluefin-generic',DIGEST],cwd=root,env=env,capture_output=True,text=True)
+        result = subprocess.run(['bash',str(SCRIPT),'finite',DIGEST],cwd=root,env=env,capture_output=True,text=True)
         self.assertTrue((root/'calls.jsonl').exists(), result.stderr)
         calls=[json.loads(l) for l in (root/'calls.jsonl').read_text().splitlines()]
         return root,result,calls
@@ -79,7 +79,7 @@ class IsoBoundary(unittest.TestCase):
         self.assertEqual(record['image'],'ghcr.io/closure-labs/finite@'+DIGEST)
         self.assertRegex(record['installationTag'],r':i[a-f0-9]{16}$')
         self.assertLessEqual(len('finite-x86_64-'+record['installationTag'].split(':')[-1]),32)
-        self.assertEqual(record['updateChannel'],'ghcr.io/closure-labs/finite:bluefin-generic')
+        self.assertEqual(record['updateChannel'],'ghcr.io/closure-labs/finite:finite')
         self.assertEqual(record['installer']['version'],'v1.5.0')
         self.assertIn('@sha256:',record['installer']['resolvedImage'])
         build=next(c for c in calls if c[:2]==['docker','build'])
@@ -116,7 +116,7 @@ class IsoBoundary(unittest.TestCase):
         self.assertEqual(result.returncode,0,result.stderr)
         record=json.loads((root/'.bluebuild/iso/installation.json').read_text())
         self.assertEqual(record['image'],'ghcr.io/closure-labs/finite@'+DIGEST)
-        self.assertFalse(any(c[:2]==['skopeo','inspect'] and c[-1].endswith(':bluefin-generic') for c in calls))
+        self.assertFalse(any(c[:2]==['skopeo','inspect'] and c[-1].endswith(':finite') for c in calls))
 
     def test_wrong_profile_never_copies_or_builds(self):
         _,result,calls=self.run_iso(MISMATCH_PROFILE='1')

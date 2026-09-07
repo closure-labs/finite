@@ -11,6 +11,20 @@ on:
       publish:
         type: boolean
         default: false
+      force_qualification:
+        type: boolean
+        default: false
+    outputs:
+      digest:
+        value: ${{ jobs.build.outputs.digest }}
+      previous:
+        value: ${{ jobs.build.outputs.previous }}
+      identity:
+        value: ${{ jobs.build.outputs.identity }}
+      qualify:
+        value: ${{ jobs.build.outputs.qualify }}
+      evidence:
+        value: ${{ jobs.build.outputs.evidence }}
     secrets:
       cosign_private_key:
         required: false
@@ -18,24 +32,39 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     timeout-minutes: 120
+    outputs:
+      digest: ${{ steps.inspect.outputs.digest }}
+      previous: ${{ steps.prepare.outputs.previous }}
+      identity: ${{ steps.prepare.outputs.identity }}
+      qualify: ${{ steps.prepare.outputs.qualify }}
+      evidence: ${{ steps.prepare.outputs.evidence }}
     env:
       PROFILE: ${{ inputs.profile }}
       CHANNEL: ${{ inputs.channel }}
+      FINITE_QUALIFICATION_MODE: ${{ vars.FINITE_QUALIFICATION_MODE || 'shadow' }}
+      FORCE_QUALIFICATION: ${{ inputs.force_qualification }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-nix
       - name: Prepare candidate publication
+        id: prepare
         env:
           PUBLISH: ${{ inputs.publish }}
         run: |
           args=()
           if [[ $PUBLISH == true ]]; then args+=(--publish); fi
-          nix develop --accept-flake-config --command python3 \
+          nix develop .#ci --accept-flake-config --command python3 \
             scripts/bluebuild/publication.py prepare "$PROFILE" "${args[@]}"
+          echo "evidence=image-$PROFILE-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >>"$GITHUB_OUTPUT"
+      - name: Read locked BlueBuild version
+        id: cli
+        run: |
+          echo "version=$(jq -er .version sources/bluebuild-cli.json)" >>"$GITHUB_OUTPUT"
+          nix develop .#ci --accept-flake-config --command bash scripts/bluebuild/install-cli.sh
       - name: Stage pinned payload
-        run: bash scripts/bluebuild/stage.sh "$PROFILE"
+        run: python3 scripts/bluebuild/measure.py payload-staging bash scripts/bluebuild/stage.sh "$PROFILE"
       - name: Make validation images available for final inspection
         # CLI v0.9.37 omits --load in Actions. Its named builder can opt in;
         # publication's explicit registry output still takes precedence.
@@ -46,7 +75,8 @@ jobs:
         uses: blue-build/github-action@836161eb076426a451e6a0054f722b1153b8b3ad # v1.12.0
         with:
           recipe: ${{ inputs.profile }}.yml
-          cli_version: v0.9.37
+          cli_version: ${{ steps.cli.outputs.version }}
+          verify_install: true
           registry: ghcr.io
           registry_namespace: closure-labs
           registry_token: ${{ github.token }}
@@ -66,14 +96,10 @@ jobs:
           bluebuild generate --registry ghcr.io --registry-namespace closure-labs \
             -o ".bluebuild/$PROFILE.Containerfile" "recipes/$PROFILE.yml"
       - name: Verify assembled image after upstream cleanup
+        id: inspect
         env:
           PUBLISH: ${{ inputs.publish }}
-        run: nix develop --accept-flake-config --command bash scripts/bluebuild/inspect-built.sh "$PROFILE" "$CHANNEL" "$PUBLISH"
-      - name: Promote verified digest to public channels
-        if: inputs.publish
-        run: >-
-          nix develop --accept-flake-config --command python3
-          scripts/bluebuild/publication.py promote "$PROFILE"
+        run: nix develop .#ci --accept-flake-config --command bash scripts/bluebuild/inspect-built.sh "$PROFILE" "$CHANNEL" "$PUBLISH"
       - name: Save build evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

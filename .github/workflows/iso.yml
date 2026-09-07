@@ -1,13 +1,21 @@
 name: Build installation ISO
 on:
+  workflow_call:
+    inputs:
+      channel:
+        type: string
+        required: true
+      digest:
+        type: string
+        required: true
   workflow_dispatch:
     inputs:
       channel:
         description: Ongoing update channel
         type: choice
         required: true
-        default: bluefin-generic
-        options: [bluefin-generic, next, bluefin-dx-generic, dev-next]
+        default: finite
+        options: [finite, finite-next, finite-dev, finite-dev-next]
       digest:
         description: Verified image digest (sha256 followed by 64 hex digits)
         type: string
@@ -37,11 +45,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y skopeo
-          docker create --name bluebuild-cli ghcr.io/blue-build/cli:v0.9.37-installer
-          docker cp bluebuild-cli:/out/bluebuild /tmp/bluebuild
-          sudo install -m 0755 /tmp/bluebuild /usr/local/bin/bluebuild
-          docker rm bluebuild-cli
-          bluebuild --version
+          bash scripts/bluebuild/install-cli.sh
       - name: Authenticate and generate ISO
         env:
           CHANNEL: ${{ inputs.channel }}

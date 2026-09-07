@@ -28,6 +28,8 @@
     mkdir -p "$out/kernel-next"
     cp -R ${payload}/. "$out/"
     cp ${../sources/kernel-next.json} "$out/kernel-next/kernel-next.json"
+    cp ${../sources/kernel-policy.json} "$out/kernel-next/kernel-policy.json"
+    cp ${../sources/fedora-45.pub} "$out/kernel-next/kernel-signing.pub"
     ${lib.concatMapStringsSep "\n" (package: ''
         cp ${fetch {
           url = "${kernel.baseUrl}/${package.file}";

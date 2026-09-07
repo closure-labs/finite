@@ -14,13 +14,18 @@ import time
 
 import yaml
 
+identity_spec = importlib.util.spec_from_file_location('image_identity', Path(__file__).with_name('image_identity.py'))
+identity_module = importlib.util.module_from_spec(identity_spec)
+identity_spec.loader.exec_module(identity_module)
+image_identity = identity_module.identity
+
 ROOT = Path(__file__).resolve().parents[2]
 REPOSITORY = 'ghcr.io/closure-labs/finite'
 PROFILES = {
-    'bluefin-generic': ('bluefin', ['bluefin-generic', 'latest']),
-    'bluefin-next': ('bluefin', ['next']),
-    'bluefin-dx-generic': ('bluefin-dx', ['bluefin-dx-generic']),
-    'bluefin-dx-next': ('bluefin-dx', ['dev-next']),
+    'bluefin-generic': ('bluefin', ['finite', 'latest']),
+    'bluefin-next': ('bluefin', ['finite-next']),
+    'bluefin-dx-generic': ('bluefin-dx', ['finite-dev']),
+    'bluefin-dx-next': ('bluefin-dx', ['finite-dev-next']),
 }
 DIGEST = re.compile(r'sha256:[0-9a-f]{64}')
 TRANSIENT = re.compile(r'too many requests|429|50[0-9]|timeout|timed out|connection reset|connection refused|temporary failure|no such host|server misbehaving|network is unreachable|unexpected EOF|TLS handshake', re.I)
@@ -124,6 +129,7 @@ def update(root=ROOT, observed=None):
 def reconcile(root=ROOT):
     pending = []
     for profile, recipe in recipes(root).items():
+        expected_identity = image_identity(profile, root)
         images = [inspect(REPOSITORY + ':' + tag, allow_missing=True) for tag in recipe['tags']]
         valid = True
         for info in images:
@@ -131,6 +137,7 @@ def reconcile(root=ROOT):
             valid = valid and bool(info) and all((
                 labels.get('org.opencontainers.image.base.digest') == recipe['digest'],
                 labels.get('io.finite.profile') == profile,
+                labels.get('io.finite.build-inputs') == expected_identity,
                 labels.get('org.opencontainers.image.source') == 'https://github.com/closure-labs/finite',
             ))
         # Also recover interrupted promotion of the generic/latest aliases.

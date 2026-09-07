@@ -22,6 +22,7 @@
       ../templates
       ../lib
       ../sources
+      ../cosign.pub
       ../VERSION
       ../flake.nix
       ../flake.lock
@@ -66,6 +67,7 @@ in {
     python3 tests/bluebuild/iso.py
     python3 tests/bluebuild/kernel.py
     python3 tests/bluebuild/installer.py
+    python3 tests/bluebuild/reliability.py
   '';
   vm-iso = check "vm-iso-layout" (with pkgs; [diffutils gnugrep gnused libisoburn mtools]) ''
     bash tests/bluebuild/vm-iso.sh
