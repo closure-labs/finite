@@ -26,6 +26,7 @@ def classify(paths):
             continue
         if path in {
             'devenv.lock', 'scripts/ci/http-get.py',
+            '.github/workflows/update-bluefin.yml', '.github/workflows/upstream-health.yml',
             '.github/dependabot.yml', '.github/workflows/iso.yml',
             '.github/workflows/vm-acceptance.yml', '.github/workflows/update-home-release.yml',
             '.github/workflows/update-flake-lock.yml', '.github/workflows/update-determinate-nix.yml',

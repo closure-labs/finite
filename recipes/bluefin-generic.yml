@@ -4,7 +4,7 @@ version: 1
 name: finite
 description: Finite bluefin with Home Manager and generic-x86_64
 base-image: ghcr.io/ublue-os/bluefin
-image-version: stable
+image-version: stable@sha256:64001b955e90be9254e23e2a81f2dab88652f2158df73f45eee85cf248c01b99
 blue-build-tag: v0.9.37
 alt-tags: [bluefin-generic, latest]
 labels:

@@ -21,6 +21,7 @@
       file
       findutils
       gawk
+      gh
       git
       glib
       gnugrep
@@ -31,6 +32,7 @@
       ripgrep
       secretspec
       shellcheck
+      skopeo
       statix
       systemd
       util-linux

@@ -1,0 +1,106 @@
+name: Update Bluefin upstream
+
+on:
+  schedule:
+    - cron: "43 */4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: update-bluefin
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Resolve Bluefin upstream
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      changed: ${{ steps.resolve.outputs.changed }}
+      observed: ${{ steps.resolve.outputs.observed }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+      - name: Resolve stable linux/amd64 digests
+        id: resolve
+        run: nix develop --accept-flake-config --command python3 scripts/ci/bluefin-upstream.py update
+      - name: Save successful check evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: bluefin-upstream-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/upstream-check.json
+          include-hidden-files: true
+          retention-days: 14
+
+  update:
+    name: Propose and validate approved digest changes
+    needs: check
+    if: needs.check.outputs.changed == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 210
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+        with:
+          merge-queue-token: ${{ secrets.MERGE_QUEUE_TOKEN }}
+          require-merge-queue-token: "true"
+      - name: Apply the observed immutable digests
+        env:
+          OBSERVED_DIGESTS: ${{ needs.check.outputs.observed }}
+        run: |
+          nix develop --accept-flake-config --command python3 scripts/ci/bluefin-upstream.py apply
+          nix develop --accept-flake-config --command bash tests/repository/text-style.sh
+      - name: Open or update the Bluefin pull request
+        id: update
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ env.MERGE_QUEUE_TOKEN }}
+          branch: automation/update-bluefin
+          delete-branch: true
+          add-paths: recipes/bluefin-*.yml
+          commit-message: "sources: update Bluefin base digests"
+          title: "sources: update Bluefin base digests"
+          body: |
+            Pins the current stable linux/amd64 Bluefin and Bluefin DX manifests.
+            Only profiles whose approved base digest changed are rebuilt.
+
+            Validation builds use these exact digests. The protected merge queue
+            must pass before publication verifies and promotes candidate images.
+      - name: Validate and enable auto-merge
+        if: >-
+          steps.update.outputs.pull-request-number != '' &&
+          steps.update.outputs.pull-request-operation != 'closed'
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          EXPECTED_AUTHOR: ${{ vars.AUTOMATION_UPDATE_LOGIN || 'app/github-actions' }}
+          EXPECTED_BRANCH: automation/update-bluefin
+          EXPECTED_FILES: recipes/bluefin-generic.yml,recipes/bluefin-next.yml,recipes/bluefin-dx-generic.yml,recipes/bluefin-dx-next.yml
+          EXPECTED_TITLE: "sources: update Bluefin base digests"
+          GH_TOKEN: ${{ env.MERGE_QUEUE_TOKEN }}
+          PR_NUMBER: ${{ steps.update.outputs.pull-request-number }}
+        run: nix shell --accept-flake-config .#ci-trusted-update -c finite-trusted-update
+
+  recover:
+    name: Reconcile approved public channels
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+      - name: Dispatch recovery when published channels lag approved digests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: nix develop --accept-flake-config --command python3 scripts/ci/bluefin-upstream.py recover

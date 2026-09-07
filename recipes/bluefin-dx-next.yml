@@ -4,7 +4,7 @@ version: 1
 name: finite
 description: Finite bluefin-dx with Home Manager and next-x86_64
 base-image: ghcr.io/ublue-os/bluefin-dx
-image-version: stable
+image-version: stable@sha256:4e2bb9d423803505a484b41b03a55e68fd235dabd0f5a9fdfac7e175447c319a
 blue-build-tag: v0.9.37
 alt-tags: [dev-next]
 labels:

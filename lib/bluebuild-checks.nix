@@ -59,6 +59,7 @@ in {
     bash tests/nix/nix-systemd.sh
   '';
   bluebuild = check "bluebuild-contracts" [pkgs.git pkgs.jq (pkgs.python3.withPackages (p: [p.pyyaml]))] ''
+    python3 tests/automation/bluefin-upstream.py
     python3 tests/ci/selection.py
     python3 tests/bluebuild/contracts.py
     python3 tests/bluebuild/iso.py

@@ -23,7 +23,7 @@ class Selection(unittest.TestCase):
         self.assertEqual(impact.classify(['README.md', 'docs/installation.md']), {'checks': False, 'nix': False, 'profiles': []})
         for path in ['files/system/usr/share/finite/finite-logo.png', '.github/workflows/build.yml',
                      '.github/workflows/image.yml', '.github/actions/setup-nix/action.yml', 'scripts/ci/impact.py',
-                     'new-image-input', 'docs-like/file']:
+                     'scripts/bluebuild/publication.py', 'scripts/ci/bluefin-upstream.py', 'new-image-input', 'docs-like/file']:
             with self.subTest(path=path):
                 self.assertEqual(impact.classify(['README.md', path]), {'checks': True, 'nix': False, 'profiles': sorted(impact.PROFILES)})
 
@@ -38,7 +38,9 @@ class Selection(unittest.TestCase):
             self.assertEqual(impact.classify([path])['profiles'], sorted(impact.NEXT))
 
     def test_check_only_inputs_and_full_rebuild_fallback(self):
-        for path in ['tests/home/contracts.sh', 'automation/github/repository-security.json', '.github/workflows/iso.yml', 'devenv.lock', 'scripts/ci/http-get.py']:
+        for path in ['tests/home/contracts.sh', 'automation/github/repository-security.json', '.github/workflows/iso.yml', 'devenv.lock', 'scripts/ci/http-get.py',
+                     '.github/workflows/update-bluefin.yml',
+                     '.github/workflows/upstream-health.yml']:
             self.assertEqual(impact.classify([path]), {'checks': True, 'nix': False, 'profiles': []})
         self.assertEqual(impact.classify([])['profiles'], sorted(impact.PROFILES))
         for event in ['schedule', 'workflow_dispatch', 'unknown']:
