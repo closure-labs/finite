@@ -12,8 +12,8 @@ dispatches. It selects work from the complete Git diff for each event:
 | Changed inputs | Required work |
 | --- | --- |
 | README, changelog, license or `docs/` only | Text style and local Markdown links |
-| Tests, automation or installer/dependency workflows | Documentation and Nix/runtime checks |
-| Nix modules, Home Manager, locks or version | Documentation, Nix/runtime checks and images whose payload derivation changed |
+| Tests, automation, devenv lock or installer/dependency workflows | Documentation and Nix/runtime checks |
+| Nix modules, Home Manager, flake lock or version | Documentation, Nix/runtime checks and images whose payload derivation changed |
 | One recipe | Checks and that recipe's image |
 | Shared next-kernel recipe or kernel script | Checks and both next-kernel images |
 | Shared system files, signing, build CI or other paths | Checks and all four images |
@@ -121,3 +121,27 @@ access:
 ```bash
 nix run --accept-flake-config .#repository-security-audit
 ```
+
+## Update reliability and measurement
+
+Source lookups use at most four GET attempts, with a 30-second attempt timeout,
+10-second socket timeout and 150-second total retry budget. Retry delays start
+at 2, 4 and 8 seconds; a larger `Retry-After` is honored only if it fits within
+the budget. Authentication, permission and malformed-release errors fail without
+retrying. Missing future branches or HTTP 404 mirrors report no change; outages
+fail the update. Existing Determinate pins are replaced only after complete,
+nonempty asset downloads and metadata validation.
+
+Lock generation preserves file content and appends a missing final newline
+before computing change outputs. Generated updates pass text checks before a
+PR is created. Dedicated credentials remain scoped to existing PR/merge steps;
+the default workflow token has contents-read permission.
+
+Updater jobs allow 210 minutes, including a bounded 180-minute wait for child
+validation. Existing PR and manual runs are reused only for the same branch
+and commit. Failures include a direct run link and never enable auto-merge.
+A fresh dispatch after integration uses the corrected workflow; rerunning an
+older run uses its older revision.
+
+The [CI optimization review](ci-optimization-review.md) records the 30-day
+baseline, confirmed causes, current bottlenecks and ranked follow-up work.

@@ -38,7 +38,7 @@ class Selection(unittest.TestCase):
             self.assertEqual(impact.classify([path])['profiles'], sorted(impact.NEXT))
 
     def test_check_only_inputs_and_full_rebuild_fallback(self):
-        for path in ['tests/home/contracts.sh', 'automation/github/repository-security.json', '.github/workflows/iso.yml']:
+        for path in ['tests/home/contracts.sh', 'automation/github/repository-security.json', '.github/workflows/iso.yml', 'devenv.lock', 'scripts/ci/http-get.py']:
             self.assertEqual(impact.classify([path]), {'checks': True, 'nix': False, 'profiles': []})
         self.assertEqual(impact.classify([])['profiles'], sorted(impact.PROFILES))
         for event in ['schedule', 'workflow_dispatch', 'unknown']:
@@ -161,6 +161,29 @@ class Gate(unittest.TestCase):
         needs = self.needs(False, [])
         needs['publish']['result'] = 'success'
         self.assertTrue(gate.failures(needs, False))
+
+    def test_prerequisite_failure_has_no_cascading_selection_errors(self):
+        needs = self.needs(True, ['bluefin-next'])
+        needs['docs']['result'] = 'failure'
+        needs['checks'] = {'result': 'skipped', 'outputs': {}}
+        self.assertEqual(gate.failures(needs, False), ['docs: expected success, got failure'])
+        needs['docs']['result'] = 'success'
+        needs['checks']['result'] = 'failure'
+        self.assertEqual(gate.failures(needs, False), ['checks: expected success, got failure'])
+
+    def test_updater_authentication_and_preflight(self):
+        import yaml
+        workflow = yaml.safe_load((ROOT / '.github/workflows/update-determinate-nix.yml').read_text())
+        steps = workflow['jobs']['update']['steps']
+        resolve = next(step for step in steps if step.get('id') == 'resolve')
+        self.assertEqual(resolve['env']['GH_TOKEN'], '${{ github.token }}')
+        for name in ['update-determinate-nix', 'update-flake-lock', 'update-home-release']:
+            workflow = yaml.safe_load((ROOT / f'.github/workflows/{name}.yml').read_text())
+            self.assertEqual(workflow['permissions'], {'contents': 'read'})
+            steps = workflow['jobs']['update']['steps']
+            names = [step.get('name') for step in steps]
+            self.assertLess(names.index('Validate generated text'), names.index('Open or update pull request'))
+            self.assertGreaterEqual(workflow['jobs']['update']['timeout-minutes'], 210)
 
     def test_missing_matrix_and_omitted_explicit_image_block(self):
         needs = self.needs(True, ['bluefin-next'])

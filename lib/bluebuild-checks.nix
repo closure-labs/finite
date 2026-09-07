@@ -71,14 +71,22 @@ in {
   dependency-updates =
     check "dependency-update-contracts" (with pkgs; [
       gnugrep
+      gnused
+      diffutils
+      python3
       jq
       applications.fixNixHashes
       applications.trustedUpdate
+      applications.sourceUpdate
+      applications.updateLocks
       applications.updateHomeRelease
     ]) ''
       bash tests/automation/fix-nix-hashes.sh
       bash tests/automation/trusted-update.sh
       bash tests/automation/update-home-release.sh
+      bash tests/automation/source-update.sh
+      bash tests/automation/update-locks.sh
+      python3 tests/automation/http-get.py
     '';
   dependency-locks = check "dependency-locks" [applications.validateLocks] ''
     ${lib.getExe applications.validateLocks}

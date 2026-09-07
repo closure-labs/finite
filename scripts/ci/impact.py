@@ -25,6 +25,7 @@ def classify(paths):
         if path.startswith(('tests/', 'automation/')):
             continue
         if path in {
+            'devenv.lock', 'scripts/ci/http-get.py',
             '.github/dependabot.yml', '.github/workflows/iso.yml',
             '.github/workflows/vm-acceptance.yml', '.github/workflows/update-home-release.yml',
             '.github/workflows/update-flake-lock.yml', '.github/workflows/update-determinate-nix.yml',

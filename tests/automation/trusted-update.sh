@@ -30,12 +30,14 @@ gh() {
 		;;
 	"run list")
 		if [[ " $* " == *' --event pull_request '* ]]; then
-			if [[ "${MOCK_MODE}" == existing ]]; then
+			if [[ "${MOCK_MODE}" == existing || "${MOCK_MODE}" == failed ]]; then
 				printf '%s\n' '{"conclusion":null,"databaseId":101,"status":"in_progress"}'
 			elif [[ "${MOCK_MODE}" == action-required ]]; then
 				printf '%s\n' '{"conclusion":"action_required","databaseId":303,"status":"completed"}'
 			fi
-		elif [[ -e "${MOCK_STATE}" ]]; then
+		elif [[ "$MOCK_MODE" == existing-dispatch && "$*" == *conclusion,databaseId,status* ]]; then
+			printf '%s\n' '{"conclusion":null,"databaseId":404,"status":"in_progress"}'
+		elif [[ -e "${MOCK_STATE}" && "$*" != *conclusion,databaseId,status* ]]; then
 			printf '%s\n' 202
 		fi
 		:
@@ -46,7 +48,10 @@ gh() {
 	"pr update-branch")
 		: >"${MOCK_PR_STATE}"
 		;;
-	"api --method" | "run watch" | "pr merge")
+	"run watch")
+		[[ "${MOCK_MODE}" != failed ]] || return 1
+		;;
+	"api --method" | "pr merge")
 		;;
 	*)
 		echo "Unexpected gh command: $*" >&2
@@ -59,7 +64,8 @@ sleep() {
 	:
 }
 
-export -f gh sleep
+timeout() { shift; "$@"; }
+export -f gh sleep timeout
 
 run_validator() {
 	env \
@@ -128,3 +134,16 @@ run_validator
 grep -qF 'gh workflow run build.yml' "${MOCK_LOG}"
 grep -qF 'gh run watch 202' "${MOCK_LOG}"
 grep -qF 'gh pr merge' "${MOCK_LOG}"
+
+: >"${MOCK_LOG}"
+export MOCK_MODE=failed
+if run_validator 2>"${test_root}/failure"; then exit 1; fi
+grep -qF 'https://github.com/example/finite/actions/runs/101' "${test_root}/failure"
+! grep -qF 'gh pr merge' "${MOCK_LOG}"
+grep -qF -- '--commit def456' "${MOCK_LOG}"
+
+: >"${MOCK_LOG}"
+export MOCK_MODE=existing-dispatch
+run_validator
+grep -qF 'gh run watch 404' "${MOCK_LOG}"
+! grep -qF 'gh workflow run' "${MOCK_LOG}"

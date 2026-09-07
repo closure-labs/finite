@@ -10,15 +10,13 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  actions: write
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   update:
     name: Refresh and validate Determinate Nix
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 210
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -33,9 +31,15 @@ jobs:
 
       - name: Resolve latest Determinate Nix release
         id: resolve
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: >-
           nix shell --accept-flake-config .#ci-source-update
           -c finite-source-update determinate-nix "${GITHUB_OUTPUT}"
+
+      - name: Validate generated text
+        if: steps.resolve.outputs.changed == 'true'
+        run: nix develop --accept-flake-config --command bash tests/repository/text-style.sh
 
       - name: Open or update pull request
         if: steps.resolve.outputs.changed == 'true'
