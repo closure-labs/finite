@@ -1,5 +1,49 @@
 # CI reliability and optimization review
 
+## September 21 follow-up
+
+The September 1-21 sample contains 225 runs: Build Finite has 79 successes,
+15 failures and seven cancellations. The kernel updater has one success and
+three failures. Bluefin upstream polling has 69 successes and one failure.
+These counts include development PR failures and do not imply that every
+failure has the same cause.
+
+| Evidence | Cause | Remediation |
+| --- | --- | --- |
+| [September 21 image build](https://github.com/closure-labs/finite/actions/runs/35616511283) | HTTP 504 downloading cosign and SLSA verifier provenance inside the BlueBuild action, after the locked CLI was already installed successfully | Invoke the authenticated, digest-pinned CLI directly with the Nix toolchain; retain cache, signing, inspection and promotion checks |
+| [Kernel PR 112](https://github.com/closure-labs/finite/actions/runs/35340872796) | Five tests read the advancing production lock but assume a fixed older kernel, then reject their fixture as a downgrade | Use independent kernel/policy/key fixtures and exercise freshness boundaries and failed downloads |
+| [September 21 kernel monitor](https://github.com/closure-labs/finite/actions/runs/35604164790) | The blocked kernel PR leaves an approved update unapplied beyond seven days; September 19-20 fail for the same reason | Preserve the alarm, report versions and age, fix PR validation, then review and merge the update |
+| [September 14 checks](https://github.com/closure-labs/finite/actions/runs/34859232944) | GitHub returned HTTP 504 for a pinned Nix input archive | Retry recognized transport failures up to three times; fail tests, evaluation, authentication and integrity errors promptly |
+| [September 10 inspection](https://github.com/closure-labs/finite/actions/runs/34479360647) | Pulling the DX image exceeded the old timeout, returning 124 | The existing checkout already allows three 15-minute pulls and records phase timings; retain and measure that change |
+
+The follow-up also fixes ISO selection after reruns: VM acceptance chooses the
+newest nonexpired attempt for the verified ISO run, instead of requiring exactly
+one artifact. Kernel update jobs no longer install Nix only to map a secret;
+that step took 41 seconds in the September 21 run. The token remains restricted
+to credential validation and PR creation.
+
+Keep the daily full image build: floating DNF and BlueBuild module inputs are
+outside Nix payload identities. Keep conservative selection, serialized channel
+promotion, signature checks and the required gate. Gather cold/warm phase
+timings before adding caches or runner capacity; the sampled bootstrap failures
+do not justify either expense.
+
+Two follow-ups remain: a queued main publication can be superseded by a later
+documentation-only push, leaving image reconciliation to the next four-hour
+poll; consider selecting trusted main builds from public image identities to
+close that delay. Also, the CLI's Docker signing retry does not retry Buildx
+registry transfers. Measure actual transfer failures before adding a bounded
+build/export retry. Neither issue is fixed by increasing blanket test retries.
+
+These changes are based on current main and incorporate the kernel 7.2.5 lock
+from PR 112 without restoring that branch's older flake inputs. Validate the
+combined revision before merging. Repeating an old failed run uses its old
+source. Local regression/lint checks cannot establish that hosted image
+publication or Secure Boot acceptance passes; exercise the four profiles on
+GitHub before claiming rollout success.
+
+## September 7 baseline
+
 Baseline collected September 7, 2026, for `closure-labs/finite`. The review
 covers all 572 runs returned for August 8 through collection time, including
 572 successful job-list queries. Much of this history predates the current

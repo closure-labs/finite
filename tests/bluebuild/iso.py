@@ -10,6 +10,8 @@ import sys
 import tempfile
 import unittest
 
+import yaml
+
 SCRIPT = Path(__file__).resolve().parents[2] / 'scripts/bluebuild/iso.sh'
 DIGEST = 'sha256:' + 'a' * 64
 MOCK = '''#!/usr/bin/env python3
@@ -122,5 +124,79 @@ class IsoBoundary(unittest.TestCase):
         _,result,calls=self.run_iso(MISMATCH_PROFILE='1')
         self.assertNotEqual(result.returncode,0)
         self.assertFalse(any(c[:2]==['skopeo','copy'] or c[0]=='sudo' for c in calls))
+
+
+class IsoArtifactSelection(unittest.TestCase):
+    def download(self, artifacts, **extra):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name)
+        tool = root / 'gh'
+        tool.write_text('#!' + sys.executable + '\n' + '''
+import json, os, pathlib, sys
+args = sys.argv[1:]
+if args[0] == 'api':
+    if '/artifacts?' in args[-1]:
+        if os.environ.get('ARTIFACT_API_FAILURE'):
+            sys.exit(1)
+        assert '--paginate' in args and '--slurp' in args
+        print(os.environ['ARTIFACTS'])
+    else:
+        run = {'path': '.github/workflows/iso.yml', 'conclusion': 'success',
+               'head_branch': 'main', 'head_sha': os.environ['GITHUB_SHA'],
+               'head_repository': {'full_name': os.environ['GITHUB_REPOSITORY']}}
+        run.update(json.loads(os.environ.get('RUN_OVERRIDE', '{}')))
+        print(json.dumps(run))
+else:
+    assert args[:2] == ['run', 'download']
+    pathlib.Path('download.json').write_text(json.dumps(args))
+''')
+        tool.chmod(0o755)
+        workflow = yaml.safe_load((SCRIPT.parents[2] / '.github/workflows/vm-acceptance.yml').read_text())
+        command = next(step['run'] for step in workflow['jobs']['vm']['steps']
+                       if step.get('name') == 'Download verified ISO artifact')
+        env = dict(os.environ, PATH=str(root) + ':' + os.environ['PATH'],
+                   GITHUB_REPOSITORY='closure-labs/finite', GITHUB_SHA='d' * 40, ISO_RUN='123',
+                   ARTIFACTS=json.dumps(artifacts), **extra)
+        result = subprocess.run(['bash', '-euo', 'pipefail', '-c', command],
+                                cwd=root, env=env, capture_output=True, text=True)
+        selected = json.loads((root / 'download.json').read_text()) if (root / 'download.json').exists() else None
+        return result, selected
+
+    def artifact(self, attempt, *, channel='finite', expired=False, run='123'):
+        return {'name': f'finite-iso-{channel}-{run}-{attempt}', 'expired': expired}
+
+    def test_reruns_select_highest_available_attempt_across_pages(self):
+        pages = [{'artifacts': [self.artifact(2), self.artifact(99, run='456')]},
+                 {'artifacts': [self.artifact(10), self.artifact(11, expired=True),
+                                {'name': 'unrelated', 'expired': False}]}]
+        result, selected = self.download(pages)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(selected, ['run', 'download', '123', '--name', 'finite-iso-finite-123-10',
+                                    '--dir', '.bluebuild/iso'])
+
+    def test_missing_expired_and_ambiguous_evidence_cannot_download(self):
+        for artifacts in [[], [self.artifact(1, expired=True)],
+                          [self.artifact(1), self.artifact(2, channel='finite-next')]]:
+            with self.subTest(artifacts=artifacts):
+                result, selected = self.download([{'artifacts': artifacts}])
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIsNone(selected)
+
+    def test_failed_artifact_api_cannot_download(self):
+        result, selected = self.download([{'artifacts': [self.artifact(1)]}], ARTIFACT_API_FAILURE='1')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIsNone(selected)
+
+    def test_untrusted_run_cannot_download(self):
+        for override in [{'path': '.github/workflows/build.yml'}, {'conclusion': 'failure'},
+                         {'head_branch': 'feature'}, {'head_sha': 'a' * 40},
+                         {'head_repository': {'full_name': 'other/finite'}}]:
+            with self.subTest(override=override):
+                result, selected = self.download([{'artifacts': [self.artifact(1)]}],
+                                                 RUN_OVERRIDE=json.dumps(override))
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIsNone(selected)
+
 
 if __name__=='__main__': unittest.main()

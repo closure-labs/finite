@@ -1,7 +1,6 @@
 {
   config,
   finiteHomeAssets,
-  lib,
   pkgs,
   ...
 }: let
@@ -55,14 +54,8 @@ in {
       }
     ];
     syntaxHighlighting.enable = true;
-    initContent = lib.mkMerge [
-      (lib.mkBefore ''
-        # Bluefin's global rc prepends Brew's uutils directory. Prefer the
-        # declarative user profile once the global configuration has run.
-        path=("${config.home.profileDirectory}/bin" $path)
-      '')
-      (builtins.readFile (finiteHomeAssets.devops + "/zsh/.zshrc"))
-    ];
+    # The common base sets Brew precedence. Home Manager owns Zsh integrations.
+    initContent = builtins.readFile (finiteHomeAssets.devops + "/zsh/.zshrc");
   };
 
   programs.fzf = {

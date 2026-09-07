@@ -69,22 +69,24 @@ class BlueBuildContracts(unittest.TestCase):
         reusable = read('.github/workflows/image.yml')
         build = reusable['jobs']['build']
         self.assertNotIn('permissions', build)  # inherits the caller's token scope
-        action = next(s for s in build['steps'] if s.get('uses', '').startswith('blue-build/'))
-        self.assertEqual(action['uses'], 'blue-build/github-action@836161eb076426a451e6a0054f722b1153b8b3ad')
-        self.assertEqual(action['with']['cli_version'], '${{ steps.cli.outputs.version }}')
-        self.assertTrue(action['with']['verify_install'])
-        self.assertEqual(action['with']['push'], '${{ inputs.publish }}')
-        self.assertEqual(action['with']['registry_token'], '${{ github.token }}')
-        secret = action['with']['cosign_private_key']
+        steps = build['steps']
+        self.assertFalse(any(s.get('uses', '').startswith('blue-build/') for s in steps))
+        action = next(s for s in steps if s.get('name') == 'Build with BlueBuild')
+        self.assertIn('nix develop .#ci', action['run'])
+        self.assertIn('scripts/bluebuild/build.sh "$PROFILE" "$PUBLISH"', action['run'])
+        self.assertEqual(action['env']['PUBLISH'], '${{ inputs.publish }}')
+        self.assertEqual(action['env']['BB_PASSWORD'], '${{ github.token }}')
+        secret = action['env']['COSIGN_PRIVATE_KEY']
         self.assertIn('inputs.publish', secret)
         self.assertNotIn('env.', secret)
         self.assertIn("|| ''", secret)
-        for key in ['rechunk', 'chunkah', 'build_chunked_oci']:
-            self.assertFalse(action['with'][key])
-        steps = build['steps']
+        builder = next(s for s in steps if s.get('uses', '').startswith('docker/setup-buildx-action@'))
+        self.assertEqual(builder['with']['name'], 'bluebuild')
+        self.assertEqual(builder['with']['driver-opts'], 'default-load=true')
         names = [s.get('name', '') for s in steps]
         self.assertLess(names.index('Prepare candidate publication'), names.index('Build with BlueBuild'))
-        self.assertIn('Verify assembled image after upstream cleanup', names)
+        self.assertLess(names.index('Install the verified locked BlueBuild CLI'), names.index('Build with BlueBuild'))
+        self.assertIn('Verify assembled image', names)
         publication = read('.github/workflows/publication.yml')
         promotion = publication['jobs']['promote']
         self.assertEqual(promotion['needs'], ['build', 'qualification'])

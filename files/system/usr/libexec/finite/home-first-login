@@ -11,7 +11,8 @@ nix_wait_seconds="${FINITE_NIX_WAIT_SECONDS:-120}"
 home_init="${FINITE_HOME_INIT_COMMAND:-/usr/libexec/finite/home-init}"
 
 current=true
-for required in customize.nix flake.nix flake.lock finite-template.json profile.json modules/finite.nix; do
+for required in customize.nix flake.nix flake.lock finite-template.json profile.json modules/finite.nix \
+	modules/finite-brew-bootstrap modules/finite-brew-migration-status modules/aspects/base/brew-packages.json; do
 	[[ -e "$home_flake/$required" ]] || current=false
 done
 if [[ "$current" == true ]] &&

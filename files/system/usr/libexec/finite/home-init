@@ -37,7 +37,8 @@ template="${FINITE_HOME_TEMPLATE_PATH:-/usr/share/finite/home-manager-template}"
 catalog="${FINITE_HOME_CATALOG_PATH:-/usr/share/finite/home-profile-catalog.json}"
 running="${FINITE_RUNNING_PROFILE_PATH:-/usr/share/finite/profile.json}"
 nix_command="${FINITE_NIX_COMMAND:-nix}"
-for required in customize.nix flake.nix flake.lock finite-template.json modules/finite.nix; do
+for required in customize.nix flake.nix flake.lock finite-template.json modules/finite.nix \
+	modules/finite-brew-bootstrap modules/finite-brew-migration-status modules/aspects/base/brew-packages.json; do
 	[[ -e "$template/$required" ]] || {
 		echo "Finite Home Manager template is incomplete: $template/$required" >&2
 		exit 2
@@ -186,6 +187,9 @@ activation=$(
 )
 printf 'Finite Home Manager configuration for %s builds as %s\n' "$username" "$activation"
 [[ "$activate" == false ]] && exit 0
+
+FINITE_BREW_POLICY="$workdir/modules/aspects/base/brew-packages.json" \
+	"$BASH" "${FINITE_BREW_BOOTSTRAP_COMMAND:-$workdir/modules/finite-brew-bootstrap}"
 
 backup=""
 if [[ -e "$hm_dir" || -L "$hm_dir" ]]; then

@@ -48,15 +48,17 @@ use the queue's base and proposed merge revisions.
 | Pull request or merge group | Read | Public key available for policy assembly |
 | Trusted main build | Write | `COSIGN_PRIVATE_KEY` supplies the signing key |
 
-Both paths use the same Docker builder and pinned BlueBuild Action v1.12.0
-(`836161eb076426a451e6a0054f722b1153b8b3ad`) with CLI v0.9.37. Publication runs
-serialize. The upstream action builds, caches, pushes and signs a
+Both paths use the same Docker builder and BlueBuild CLI v0.9.37, installed
+from the digest in `sources/bluebuild-cli.json` after signature verification.
+The Nix CI shell supplies the supporting tools. Invoking the verified CLI
+directly avoids duplicate cosign, SLSA verifier and CLI downloads during each
+image build. Publication runs serialize. The CLI builds, caches, pushes and signs a
 `candidate-PROFILE` tag and its generated candidate aliases. Stable candidate
 tags preserve per-profile layer caches; they are diagnostic outputs, not release
 channels. Public channel tags change only after verification succeeds.
 
 The builder's `default-load=true` setting makes validation images available for
-inspection. The final-image step runs after upstream cleanup and checks the
+inspection. The final-image step runs after the build and checks the
 Nix seed, packages, profile, signing policy, kernel and `bootc container lint`.
 Publication resolves the candidate once and verifies its immutable digest,
 signature, exact approved base digest and source revision. It then copies that

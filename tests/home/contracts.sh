@@ -88,8 +88,9 @@ test -s "${test_root}/cloud-init/seed.iso"
 for required in \
 	customize.nix flake.nix flake.lock finite-template.json profile.json \
 	modules/finite.nix modules/finite-configure modules/finite-home-apply \
-	modules/finite-brew-migration-status \
+	modules/finite-brew-migration-status modules/finite-brew-bootstrap \
 	modules/aspects/base/home.nix \
+	modules/aspects/base/brew-packages.json \
 	modules/aspects/hardware/dell-xps-9350-intel/home.nix \
 	modules/aspects/hardware/dell-xps-9350-intel/dell-xps-9350-panel-policy; do
 	test -f "${template}/${required}"
@@ -138,6 +139,11 @@ EOF
 patch_test_shebang "${test_root}/activation/activate"
 patch_test_shebang "${test_root}/fake-bin/nix"
 chmod +x "${test_root}/activation/activate" "${test_root}/fake-bin/nix"
+cat >"${test_root}/fake-bin/brew-bootstrap" <<'EOF'
+set -euo pipefail
+printf 'brew-bootstrap\n' >>"${FINITE_TEST_BREW_LOG}"
+[[ "${FINITE_TEST_BREW_FAIL:-false}" != true ]]
+EOF
 
 export FINITE_HOME_TEMPLATE_PATH="${template}"
 export FINITE_HOME_CATALOG_PATH="${FINITE_HOME_CATALOG_PATH:?Home catalog path is required}"
@@ -145,6 +151,8 @@ export FINITE_NIX_COMMAND="${test_root}/fake-bin/nix"
 export FINITE_TEST_ACTIVATION="${test_root}/activation"
 export FINITE_TEST_ACTIVATION_LOG="${test_root}/activation.log"
 export FINITE_TEST_NIX_LOG="${test_root}/nix.log"
+export FINITE_BREW_BOOTSTRAP_COMMAND="${test_root}/fake-bin/brew-bootstrap"
+export FINITE_TEST_BREW_LOG="${test_root}/brew.log"
 export XDG_CONFIG_HOME="${test_root}/config"
 expected_home_configuration="homeConfigurations.$(id -un).activationPackage"
 
@@ -187,6 +195,7 @@ fi
 : >"${FINITE_TEST_NIX_LOG}"
 "${init_command}" --profile "${test_root}/profile.yaml" --check >/dev/null
 test ! -e "${XDG_CONFIG_HOME}/home-manager"
+test ! -e "${FINITE_TEST_BREW_LOG}"
 grep -qF -- '--no-update-lock-file' "${FINITE_TEST_NIX_LOG}"
 grep -qF "${expected_home_configuration}" "${FINITE_TEST_NIX_LOG}"
 if grep -qF 'flake lock' "${FINITE_TEST_NIX_LOG}"; then
@@ -209,6 +218,7 @@ jq -e '
 jq -e '.roles == ["developer", "support"]' \
 	"${XDG_CONFIG_HOME}/finite/profile.json" >/dev/null
 grep -qF 'activated' "${FINITE_TEST_ACTIVATION_LOG}"
+grep -qF 'brew-bootstrap' "${FINITE_TEST_BREW_LOG}"
 backups=("${XDG_CONFIG_HOME}"/home-manager.previous.*)
 [[ "${#backups[@]}" == 1 ]]
 test -f "${backups[0]}/partial-old-config"
@@ -261,12 +271,22 @@ for missing in flake.nix flake.lock; do
 done
 
 printf 'preserve\n' >"${hm_dir}/preserve-on-failure"
+cp "${FINITE_TEST_BREW_LOG}" "${test_root}/brew-before-build-failure.log"
 if FINITE_TEST_BUILD_FAIL=true \
 	"${init_command}" --profile "${test_root}/profile.yaml" >/dev/null 2>&1; then
 	echo 'Home initializer replaced a configuration after a failed build' >&2
 	exit 1
 fi
 grep -qF 'preserve' "${hm_dir}/preserve-on-failure"
+cmp "${FINITE_TEST_BREW_LOG}" "${test_root}/brew-before-build-failure.log"
+cp "${FINITE_TEST_ACTIVATION_LOG}" "${test_root}/activation-before-brew-failure.log"
+if FINITE_TEST_BREW_FAIL=true \
+	"${init_command}" --profile "${test_root}/profile.yaml" >/dev/null 2>&1; then
+	echo 'Home initializer replaced a configuration after failed Brew provisioning' >&2
+	exit 1
+fi
+grep -qF 'preserve' "${hm_dir}/preserve-on-failure"
+cmp "${FINITE_TEST_ACTIVATION_LOG}" "${test_root}/activation-before-brew-failure.log"
 
 bad_template="${test_root}/bad-template"
 cp -a "${template}" "${bad_template}"
@@ -307,6 +327,12 @@ cp "${hm_dir}/profile.json" "${test_root}/profile-before-failed-apply.json"
 if FINITE_TEST_BUILD_FAIL=true FINITE_HOME_FLAKE_ROOT="${hm_dir}" \
 	bash "${apply}" --roles developer >/dev/null 2>&1; then
 	echo 'Local role application changed configuration after a failed build' >&2
+	exit 1
+fi
+cmp "${test_root}/profile-before-failed-apply.json" "${hm_dir}/profile.json"
+if FINITE_TEST_BREW_FAIL=true FINITE_HOME_FLAKE_ROOT="${hm_dir}" \
+	bash "${apply}" --roles it >/dev/null 2>&1; then
+	echo 'Local role application changed configuration after failed Brew provisioning' >&2
 	exit 1
 fi
 cmp "${test_root}/profile-before-failed-apply.json" "${hm_dir}/profile.json"
@@ -416,9 +442,12 @@ if FINITE_TEST_INIT_FAIL=true bash "${first_login}" >/dev/null 2>&1; then
 fi
 grep -qF -- '--error' "${FINITE_TEST_ZENITY_LOG}"
 
-mkdir -p "${FINITE_HOME_FLAKE_PATH}/modules"
+mkdir -p "${FINITE_HOME_FLAKE_PATH}/modules/aspects/base"
 touch "${FINITE_HOME_FLAKE_PATH}/customize.nix" "${FINITE_HOME_FLAKE_PATH}/flake.nix" \
-	"${FINITE_HOME_FLAKE_PATH}/modules/finite.nix"
+	"${FINITE_HOME_FLAKE_PATH}/modules/finite.nix" \
+	"${FINITE_HOME_FLAKE_PATH}/modules/finite-brew-bootstrap" \
+	"${FINITE_HOME_FLAKE_PATH}/modules/finite-brew-migration-status" \
+	"${FINITE_HOME_FLAKE_PATH}/modules/aspects/base/brew-packages.json"
 cp "${template}/finite-template.json" "${FINITE_HOME_FLAKE_PATH}/finite-template.json"
 printf '%s\n' '{"nodes":{"root":{}},"root":"root","version":7}' \
 	>"${FINITE_HOME_FLAKE_PATH}/flake.lock"
@@ -426,6 +455,9 @@ cp "${test_root}/profile.json" "${FINITE_HOME_FLAKE_PATH}/profile.json"
 : >"${FINITE_TEST_INIT_LOG}"
 FINITE_TEST_NIX_READY=false bash "${first_login}"
 test ! -s "${FINITE_TEST_INIT_LOG}"
+rm "${FINITE_HOME_FLAKE_PATH}/modules/finite-brew-bootstrap"
+bash "${first_login}"
+test -s "${FINITE_TEST_INIT_LOG}"
 
 grep -qF -- '--hide-column=3 --print-column=3' \
 	"${template}/modules/finite-configure" "${first_login}"
@@ -461,6 +493,7 @@ if rg -n 'github:closure-labs/finite|nix.*flake lock' \
 fi
 
 bash -n "${first_login}" files/system/usr/libexec/finite/home-init \
-	"${template}/modules/finite-brew-migration-status" \
+	"${template}/modules/finite-brew-migration-status" "${template}/modules/finite-brew-bootstrap" \
 	"${template}/modules/finite-configure" "${template}/modules/finite-home-apply"
 bash -n "${template}/modules/aspects/hardware/dell-xps-9350-intel/dell-xps-9350-panel-policy"
+bash tests/home/brew-providers.sh "${template}/modules/finite-brew-migration-status"

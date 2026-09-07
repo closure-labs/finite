@@ -12,4 +12,6 @@ fi
 grep -qF 'services.flatpak.packages = ["io.github.totoshko88.RustConn"]' "${module}"
 grep -qF "ExecStart = \"\${espanso}/bin/espanso launcher\"" "${module}"
 test ! -e "${aspect_root}/apply.sh"
-test ! -e "${aspect_root}/manifests"
+shopt -s nullglob dotglob
+manifests=("${aspect_root}"/manifests/*)
+test "${#manifests[@]}" -eq 0

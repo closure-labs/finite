@@ -52,6 +52,9 @@ in {
       ${applications.cloudInit}/bin/finite-cloud-init \
       ${homeScaffold}
     bash tests/home/dell-panel-policy.sh
+    bash modules/aspects/capabilities/devops/tests/contracts.sh
+    bash modules/aspects/roles/developer/tests/contracts.sh
+    bash modules/aspects/roles/support/tests/contracts.sh
   '';
   nix-lifecycle = check "nix-lifecycle" (with pkgs; [gnugrep jq systemd util-linux]) ''
     bash tests/bluebuild/nix-readiness.sh
@@ -62,7 +65,9 @@ in {
   bluebuild = check "bluebuild-contracts" [pkgs.git pkgs.jq (pkgs.python3.withPackages (p: [p.pyyaml]))] ''
     python3 tests/automation/bluefin-upstream.py
     python3 tests/ci/selection.py
+    python3 tests/ci/nix-checks.py
     python3 tests/bluebuild/contracts.py
+    python3 tests/bluebuild/build.py
     python3 tests/bluebuild/inspect-built.py
     python3 tests/bluebuild/iso.py
     python3 tests/bluebuild/kernel.py
