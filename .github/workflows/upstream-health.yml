@@ -1,0 +1,25 @@
+name: Bluefin upstream check freshness
+
+on:
+  schedule:
+    - cron: "11 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  freshness:
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+      - name: Require a successful digest check in the last 24 hours
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: nix develop --accept-flake-config --command python3 scripts/ci/bluefin-upstream.py freshness

@@ -34,7 +34,7 @@ class BlueBuildContracts(unittest.TestCase):
             self.assertEqual(recipe['version'], 1)
             self.assertEqual(recipe['name'], 'finite')
             self.assertEqual(recipe['base-image'], 'ghcr.io/ublue-os/' + foundation)
-            self.assertEqual(recipe['image-version'], 'stable')
+            self.assertRegex(recipe['image-version'], r'^stable@sha256:[0-9a-f]{64}$')
             self.assertEqual(recipe['alt-tags'], expected_tags)
             self.assertEqual(recipe['labels']['io.finite.hardware'], hardware)
             tags.extend(recipe['alt-tags'])
@@ -79,10 +79,33 @@ class BlueBuildContracts(unittest.TestCase):
         self.assertIn("|| ''", secret)
         for key in ['rechunk', 'chunkah', 'build_chunked_oci']:
             self.assertFalse(action['with'][key])
+        steps = build['steps']
+        names = [s.get('name', '') for s in steps]
+        self.assertLess(names.index('Prepare candidate publication'), names.index('Build with BlueBuild'))
+        self.assertLess(names.index('Verify assembled image after upstream cleanup'), names.index('Promote verified digest to public channels'))
+        promotion = next(s for s in steps if s.get('name') == 'Promote verified digest to public channels')
+        self.assertEqual(promotion['if'], 'inputs.publish')
         gate = workflow['jobs']['gate']
         self.assertEqual(gate['name'], 'CI gate')
         self.assertEqual(gate['if'], 'always()')
         self.assertEqual(set(gate['needs']), {'impact', 'docs', 'checks', 'images', 'publish'})
+
+    def test_upstream_recovery_and_health_are_independent_of_update_prs(self):
+        workflow = read('.github/workflows/update-bluefin.yml')
+        self.assertEqual(workflow['permissions'], {'contents': 'read'})
+        check, update, recover = (workflow['jobs'][key] for key in ('check', 'update', 'recover'))
+        self.assertEqual(check['name'], 'Resolve Bluefin upstream')
+        self.assertEqual(update['needs'], 'check')
+        self.assertNotIn('needs', recover)
+        self.assertEqual(recover['permissions'], {'contents': 'read', 'actions': 'write'})
+        for job in (check, recover):
+            self.assertIn("github.ref == 'refs/heads/main'", job['if'])
+            self.assertIn("github.repository == 'closure-labs/finite'", job['if'])
+        pr = next(step for step in update['steps'] if step.get('uses', '').startswith('peter-evans/'))
+        self.assertEqual(pr['with']['branch'], 'automation/update-bluefin')
+        self.assertEqual(pr['with']['add-paths'], 'recipes/bluefin-*.yml')
+        health = read('.github/workflows/upstream-health.yml')
+        self.assertEqual(health['permissions'], {'contents': 'read', 'actions': 'read'})
 
     def test_runtime_catalog_has_no_build_graph(self):
         source = (ROOT / 'lib/image-payload.nix').read_text()

@@ -9,6 +9,11 @@ on:
   schedule:
     - cron: "17 8 * * *"
   workflow_dispatch:
+    inputs:
+      reconcile:
+        description: Rebuild only channels that differ from approved Bluefin digests
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -21,18 +26,24 @@ jobs:
   impact:
     name: Select checks
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 15
     outputs:
-      checks: ${{ steps.impact.outputs.checks }}
-      nix: ${{ steps.impact.outputs.nix }}
-      profiles: ${{ steps.impact.outputs.profiles }}
+      checks: ${{ steps.reconcile.outputs.checks || steps.impact.outputs.checks }}
+      nix: ${{ steps.reconcile.outputs.nix || steps.impact.outputs.nix }}
+      profiles: ${{ steps.reconcile.outputs.profiles || steps.impact.outputs.profiles }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: 0
       - id: impact
+        if: ${{ !inputs.reconcile }}
         run: python3 scripts/ci/impact.py
+      - uses: ./.github/actions/setup-nix
+        if: inputs.reconcile
+      - id: reconcile
+        if: inputs.reconcile
+        run: nix develop --accept-flake-config --command python3 scripts/ci/bluefin-upstream.py reconcile
 
   docs:
     name: Documentation checks

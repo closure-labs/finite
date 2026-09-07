@@ -26,6 +26,14 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-nix
+      - name: Prepare candidate publication
+        env:
+          PUBLISH: ${{ inputs.publish }}
+        run: |
+          args=()
+          if [[ $PUBLISH == true ]]; then args+=(--publish); fi
+          nix develop --accept-flake-config --command python3 \
+            scripts/bluebuild/publication.py prepare "$PROFILE" "${args[@]}"
       - name: Stage pinned payload
         run: bash scripts/bluebuild/stage.sh "$PROFILE"
       - name: Make validation images available for final inspection
@@ -60,7 +68,12 @@ jobs:
       - name: Verify assembled image after upstream cleanup
         env:
           PUBLISH: ${{ inputs.publish }}
-        run: bash scripts/bluebuild/inspect-built.sh "$PROFILE" "$CHANNEL" "$PUBLISH"
+        run: nix develop --accept-flake-config --command bash scripts/bluebuild/inspect-built.sh "$PROFILE" "$CHANNEL" "$PUBLISH"
+      - name: Promote verified digest to public channels
+        if: inputs.publish
+        run: >-
+          nix develop --accept-flake-config --command python3
+          scripts/bluebuild/publication.py promote "$PROFILE"
       - name: Save build evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
