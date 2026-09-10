@@ -44,6 +44,11 @@ needs the weekly input, use its package set explicitly:
 
 See [Application sources](application-sources.md) for choosing package providers.
 
+Home Manager installs Flatpaks for the current user and removes unused runtimes
+when its managed installation service runs. Apps installed separately are
+preserved (`services.flatpak.uninstallUnmanaged = false`). To retain unused
+runtimes too, set `services.flatpak.uninstallUnused = false` in `customize.nix`.
+
 ## Add custom flake inputs
 
 Your `~/.config/home-manager/flake.nix` is yours to edit. Add dependencies to

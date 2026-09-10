@@ -80,6 +80,8 @@ in {
   services.flatpak = {
     enable = true;
     uninstallUnmanaged = false;
+    # Drop runtimes no installed application needs while preserving extra apps.
+    uninstallUnused = true;
     update.auto.enable = false;
     packages = [
       "app.drey.Damask"
