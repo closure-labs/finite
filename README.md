@@ -6,9 +6,10 @@ own packages, and keep your configuration across system updates.
 
 ## Get started
 
-1. **Choose an image.** Start with `bluefin-generic` for everyday use, or
-   `bluefin-dx-generic` for Bluefin's developer environment. The `next` variants
-   provide a pinned newer Fedora kernel for hardware that needs it.
+1. **Choose an image.** Start with `finite` for everyday use, or
+   `finite-dev` for Bluefin's developer environment. The `finite-next` and
+   `finite-dev-next` variants provide a pinned newer Fedora kernel for hardware
+   that needs it.
 2. **Install Finite.** Follow the [installation guide](docs/installation.md) to
    get a verified ISO and install it. Every image runs the Bluefin GNOME desktop.
 3. **Set up your apps.** At first login, select your roles and optional packages.
@@ -16,10 +17,10 @@ own packages, and keep your configuration across system updates.
 
 | Your environment | Update channel |
 | --- | --- |
-| Bluefin | `bluefin-generic` (also `latest`) |
-| Bluefin with the next kernel | `next` |
-| Bluefin DX | `bluefin-dx-generic` |
-| Bluefin DX with the next kernel | `dev-next` |
+| Bluefin | `finite` (also `latest`) |
+| Bluefin with the next kernel | `finite-next` |
+| Bluefin DX | `finite-dev` |
+| Bluefin DX with the next kernel | `finite-dev-next` |
 
 Images are published at `ghcr.io/closure-labs/finite`. For the Dell XPS 13 9350,
 see the [hardware guide](docs/dell-xps-9350.md).

@@ -12,13 +12,13 @@ dispatches. It selects work from the complete Git diff for each event:
 | Changed inputs | Required work |
 | --- | --- |
 | README, changelog, license or `docs/` only | Text style and local Markdown links |
-| Tests, automation, devenv lock or installer/dependency workflows | Documentation and Nix/runtime checks |
+| Tests, automation, devenv lock or dependency workflows | Documentation and Nix/runtime checks |
 | Nix modules, Home Manager, flake lock or version | Documentation, Nix/runtime checks and images whose payload derivation changed |
 | One recipe | Checks and that recipe's image |
 | Shared next-kernel recipe or kernel script | Checks and both next-kernel images |
 | Shared system files, signing, build CI or other paths | Checks and all four images |
 | Daily schedule or ordinary manual dispatch | All checks and all four images |
-| Manual dispatch with `reconcile=true` | All checks and only channels that differ from approved base digests |
+| Manual dispatch with `reconcile=true` | All checks and only channels that differ from approved image-input identities or base digests |
 
 Fast checks finish before image builds start. A documentation-only main push
 runs documentation checks; the daily schedule refreshes floating DNF and
@@ -66,10 +66,17 @@ channel tags share the same repository and image digest. A failed verification
 leaves the public channels unchanged. Tag updates are individually atomic;
 reconciliation detects and repairs interrupted promotion of aliases.
 
-Each profile's evidence artifact contains its image reference, labels, generated
-Containerfile, publication plan, promotion receipt and signature verification. The final image's base-digest label
+Each profile's build artifact contains its image reference, labels, generated
+Containerfile, publication plan and signature verification. Separate artifacts
+record qualification and promotion. The final image's base-digest label
 records the actual Bluefin input. Its source revision identifies the Finite
 commit that was built.
+
+Candidate publication now runs boot qualification in shadow mode by default.
+See [workstation qualification](workstation-qualification.md) for enforcement,
+weekly/manual coverage, signed kernel maintenance and durable release bundles.
+Use Build Finite's `qualify=true` dispatch input to force fresh acceptance even
+when the declared image inputs are unchanged.
 
 ## Bluefin updates and recovery
 
@@ -89,7 +96,8 @@ independently of the longer PR validation job.
 
 A separate job reconciles all five public tags against the approved digests on
 main, even if upstream resolution or PR validation fails. Missing tags, a wrong
-base or profile, and divergent `bluefin-generic`/`latest` aliases require recovery.
+base or profile, stale or missing image-input identity, and divergent
+`finite`/`latest` aliases require recovery.
 If a main publication is already active, recovery waits for the next poll;
 otherwise it dispatches Build Finite with `reconcile=true`. That run recomputes
 the affected profiles before building. Observing an upstream update never marks

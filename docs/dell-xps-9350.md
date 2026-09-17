@@ -1,6 +1,6 @@
 # Dell XPS 13 9350
 
-Choose `next` for Bluefin or `dev-next` for Bluefin DX on the XPS 13 9350.
+Choose `finite-next` for Bluefin or `finite-dev-next` for Bluefin DX on the XPS 13 9350.
 Both provide the pinned Fedora kernel `7.2.0-61.fc45.x86_64`. Follow the
 [installation and update guide](installation.md) to select the signed channel
 and retain the previous deployment. Check the running kernel with `uname -r`.

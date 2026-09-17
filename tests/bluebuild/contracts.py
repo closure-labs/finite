@@ -7,10 +7,10 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 EXPECTED = {
-    'bluefin-generic': ('bluefin', 'generic-x86_64', ['bluefin-generic', 'latest']),
-    'bluefin-next': ('bluefin', 'next-x86_64', ['next']),
-    'bluefin-dx-generic': ('bluefin-dx', 'generic-x86_64', ['bluefin-dx-generic']),
-    'bluefin-dx-next': ('bluefin-dx', 'next-x86_64', ['dev-next']),
+    'bluefin-generic': ('bluefin', 'generic-x86_64', ['finite', 'latest']),
+    'bluefin-next': ('bluefin', 'next-x86_64', ['finite-next']),
+    'bluefin-dx-generic': ('bluefin-dx', 'generic-x86_64', ['finite-dev']),
+    'bluefin-dx-next': ('bluefin-dx', 'next-x86_64', ['finite-dev-next']),
 }
 
 def read(path):
@@ -33,6 +33,7 @@ class BlueBuildContracts(unittest.TestCase):
             recipe = read('recipes/' + profile + '.yml')
             self.assertEqual(recipe['version'], 1)
             self.assertEqual(recipe['name'], 'finite')
+            self.assertEqual(recipe['blue-build-tag'], json.loads((ROOT / 'sources/bluebuild-cli.json').read_text())['version'])
             self.assertEqual(recipe['base-image'], 'ghcr.io/ublue-os/' + foundation)
             self.assertRegex(recipe['image-version'], r'^stable@sha256:[0-9a-f]{64}$')
             self.assertEqual(recipe['alt-tags'], expected_tags)
@@ -63,14 +64,15 @@ class BlueBuildContracts(unittest.TestCase):
             self.assertIn(required, trust)
             self.assertIn(required, images['if'])
         self.assertEqual(publish['strategy'], images['strategy'])
-        self.assertTrue(publish['with']['publish'])
+        self.assertEqual(publish['uses'], './.github/workflows/publication.yml')
         self.assertEqual(publish['permissions']['packages'], 'write')
         reusable = read('.github/workflows/image.yml')
         build = reusable['jobs']['build']
         self.assertNotIn('permissions', build)  # inherits the caller's token scope
         action = next(s for s in build['steps'] if s.get('uses', '').startswith('blue-build/'))
         self.assertEqual(action['uses'], 'blue-build/github-action@836161eb076426a451e6a0054f722b1153b8b3ad')
-        self.assertEqual(action['with']['cli_version'], 'v0.9.37')
+        self.assertEqual(action['with']['cli_version'], '${{ steps.cli.outputs.version }}')
+        self.assertTrue(action['with']['verify_install'])
         self.assertEqual(action['with']['push'], '${{ inputs.publish }}')
         self.assertEqual(action['with']['registry_token'], '${{ github.token }}')
         secret = action['with']['cosign_private_key']
@@ -82,9 +84,13 @@ class BlueBuildContracts(unittest.TestCase):
         steps = build['steps']
         names = [s.get('name', '') for s in steps]
         self.assertLess(names.index('Prepare candidate publication'), names.index('Build with BlueBuild'))
-        self.assertLess(names.index('Verify assembled image after upstream cleanup'), names.index('Promote verified digest to public channels'))
-        promotion = next(s for s in steps if s.get('name') == 'Promote verified digest to public channels')
-        self.assertEqual(promotion['if'], 'inputs.publish')
+        self.assertIn('Verify assembled image after upstream cleanup', names)
+        publication = read('.github/workflows/publication.yml')
+        promotion = publication['jobs']['promote']
+        self.assertEqual(promotion['needs'], ['build', 'qualification'])
+        self.assertIn("needs.build.result == 'success'", promotion['if'])
+        self.assertIn('!cancelled()', promotion['if'])
+        self.assertEqual(publication['jobs']['qualification']['needs'], 'build')
         gate = workflow['jobs']['gate']
         self.assertEqual(gate['name'], 'CI gate')
         self.assertEqual(gate['if'], 'always()')

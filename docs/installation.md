@@ -1,8 +1,8 @@
 # Install and update
 
 Finite installs the Bluefin GNOME desktop on an x86_64 UEFI system. Choose
-`bluefin-generic` for Bluefin or `bluefin-dx-generic` for Bluefin DX. Choose
-`next` or `dev-next` when you need the pinned next kernel; the
+`finite` for Bluefin or `finite-dev` for Bluefin DX. Choose
+`finite-next` or `finite-dev-next` when you need the pinned next kernel; the
 [Dell guide](dell-xps-9350.md) covers the XPS 13 9350.
 
 ## Get an ISO
@@ -53,13 +53,13 @@ For a generic Bluefin installation:
 
 ```bash
 sudo bootc switch --enforce-container-sigpolicy \
-  ghcr.io/closure-labs/finite:bluefin-generic
+  ghcr.io/closure-labs/finite:finite
 sudo bootc status
 sudo systemctl reboot
 ```
 
 Review the staged image in `bootc status` before rebooting. Use your selected
-channel in the command; for example, the DX next channel is `dev-next`.
+channel in the command; for example, the DX next channel is `finite-dev-next`.
 
 ## Update your system
 

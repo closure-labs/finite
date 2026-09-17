@@ -7,10 +7,10 @@ import re
 import subprocess
 
 PROFILES = {
-    'bluefin-generic': 'bluefin-generic',
-    'bluefin-next': 'next',
-    'bluefin-dx-generic': 'bluefin-dx-generic',
-    'bluefin-dx-next': 'dev-next',
+    'bluefin-generic': 'finite',
+    'bluefin-next': 'finite-next',
+    'bluefin-dx-generic': 'finite-dev',
+    'bluefin-dx-next': 'finite-dev-next',
 }
 NEXT = {'bluefin-next', 'bluefin-dx-next'}
 
@@ -27,14 +27,16 @@ def classify(paths):
         if path in {
             'devenv.lock', 'scripts/ci/http-get.py',
             '.github/workflows/update-bluefin.yml', '.github/workflows/upstream-health.yml',
-            '.github/dependabot.yml', '.github/workflows/iso.yml',
-            '.github/workflows/vm-acceptance.yml', '.github/workflows/update-home-release.yml',
+            '.github/dependabot.yml', '.github/workflows/update-home-release.yml',
             '.github/workflows/update-flake-lock.yml', '.github/workflows/update-determinate-nix.yml',
             '.github/workflows/queue-dependabot.yml',
+            '.github/workflows/update-kernel.yml', '.github/workflows/release.yml',
+            'scripts/ci/kernel-update.py',
         }:
             continue
         if path.startswith(('lib/', 'modules/', 'templates/')) or path in {
             'flake.nix', 'flake.lock', 'VERSION', 'sources/determinate-nix.json', 'sources/kernel-next.json',
+            'sources/kernel-policy.json', 'sources/fedora-45.pub',
         }:
             nix = True
         elif path in {f'recipes/{profile}.yml' for profile in PROFILES}:

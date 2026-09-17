@@ -41,6 +41,10 @@ elif name=='modinfo':
  field=args[args.index('-F')+1]
  if os.environ.get('MISSING_MODULE'): sys.exit(1)
  print({'filename':'/lib/modules/'+release+'/kernel/fixture.ko.xz','intree':'Y','signer':'Fedora kernel signing key'}[field])
+elif name=='rpmkeys':
+ if os.environ.get('BAD_RPM_SIGNATURE'): sys.exit(1)
+ if '--checksig' in args:
+  print('Header SHA256 digest: OK' if os.environ.get('UNSIGNED_RPM') else 'RSA signature: OK')
 '''
 
 class KernelReplacement(unittest.TestCase):
@@ -51,6 +55,8 @@ class KernelReplacement(unittest.TestCase):
         kernel=root/'payload/kernel-next'
         kernel.mkdir(parents=True)
         lock=json.loads((ROOT/'sources/kernel-next.json').read_text())
+        (kernel/'kernel-policy.json').write_bytes((ROOT/'sources/kernel-policy.json').read_bytes())
+        (kernel/'kernel-signing.pub').write_bytes((ROOT/'sources/fedora-45.pub').read_bytes())
         for package in lock['packages']:
             data=package['name'].encode()
             package['sha256']=hashlib.sha256(data).hexdigest()
@@ -59,7 +65,7 @@ class KernelReplacement(unittest.TestCase):
         if tamper: (kernel/lock['packages'][0]['file']).write_bytes(b'corrupt')
         bindir=root/'bin'
         bindir.mkdir()
-        for name in ['rpm','dnf5','depmod','modinfo']:
+        for name in ['rpm','rpmkeys','dnf5','depmod','modinfo']:
             tool=bindir/name
             tool.write_text(MOCK.replace('#!/usr/bin/env python3','#!'+sys.executable,1))
             tool.chmod(0o755)
@@ -92,5 +98,11 @@ class KernelReplacement(unittest.TestCase):
     def test_missing_required_module_rejects_image(self):
         result,_=self.run_kernel(MISSING_MODULE='1')
         self.assertNotEqual(result.returncode,0)
+
+    def test_untrusted_or_unsigned_rpm_never_changes_installed_packages(self):
+        for failure in ['BAD_RPM_SIGNATURE', 'UNSIGNED_RPM']:
+            result,calls=self.run_kernel(**{failure:'1'})
+            self.assertNotEqual(result.returncode,0)
+            self.assertFalse(any(call[0]=='dnf5' for call in calls))
 
 if __name__=='__main__': unittest.main()

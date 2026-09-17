@@ -1,5 +1,10 @@
 name: Test ISO in UEFI VM
 on:
+  workflow_call:
+    inputs:
+      iso_run:
+        type: string
+        required: true
   workflow_dispatch:
     inputs:
       iso_run:
@@ -31,8 +36,11 @@ jobs:
           ISO_RUN: ${{ inputs.iso_run }}
         run: |
           [[ "$ISO_RUN" =~ ^[0-9]+$ ]]
-          gh run view "$ISO_RUN" --json workflowName,conclusion,headBranch | \
-            jq -e '.workflowName == "Build installation ISO" and .conclusion == "success" and .headBranch == "main"'
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ISO_RUN" | \
+            jq -e --arg repository "$GITHUB_REPOSITORY" --arg revision "$GITHUB_SHA" '
+              .path == ".github/workflows/iso.yml" and .conclusion == "success" and
+              .head_branch == "main" and .head_sha == $revision and
+              .head_repository.full_name == $repository'
           mapfile -t artifacts < <(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ISO_RUN/artifacts" \
             --jq '.artifacts[] | select(.name | startswith("finite-iso-")) | .name')
           [[ ${#artifacts[@]} == 1 ]]
@@ -49,7 +57,7 @@ jobs:
         with:
           name: vm-acceptance-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
-            .bluebuild/vm/*.log
-            .bluebuild/vm/*.json
+            .bluebuild/vm-*/*.log
+            .bluebuild/vm-*/*.json
           include-hidden-files: true
           retention-days: 14

@@ -1,0 +1,73 @@
+name: Prepare qualified release
+on:
+  workflow_dispatch:
+    inputs:
+      channel:
+        type: choice
+        required: true
+        options: [finite, finite-next, finite-dev, finite-dev-next]
+      iso_run:
+        description: Successful ISO run at this revision
+        type: string
+        required: true
+      build_run:
+        description: Successful build run with Secure Boot acceptance at this revision
+        type: string
+        required: true
+      tag:
+        description: New per-channel release tag (finite-CHANNEL-VERSION)
+        type: string
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: finite-release
+  cancel-in-progress: false
+jobs:
+  release:
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    permissions:
+      contents: write
+      actions: read
+      packages: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
+        with:
+          skip-if-available: "80G"
+      - uses: ./.github/actions/setup-nix
+      - name: Validate and collect qualified evidence
+        id: evidence
+        env:
+          CHANNEL: ${{ inputs.channel }}
+          ISO_RUN: ${{ inputs.iso_run }}
+          BUILD_RUN: ${{ inputs.build_run }}
+        run: nix develop .#ci --accept-flake-config --command python3 scripts/bluebuild/release-evidence.py "$CHANNEL" "$ISO_RUN" "$BUILD_RUN"
+      - name: Generate image SBOM
+        env:
+          IMAGE: ${{ steps.evidence.outputs.image }}
+        run: nix develop .#release --accept-flake-config --command syft "registry:$IMAGE" -o spdx-json=.bluebuild/release/sbom.spdx.json
+      - name: Advisory vulnerability scan
+        id: scan
+        continue-on-error: true
+        run: nix develop .#release --accept-flake-config --command grype sbom:.bluebuild/release/sbom.spdx.json -o json >.bluebuild/release/vulnerabilities.json
+      - name: Sign release manifest
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          SCAN_OUTCOME: ${{ steps.scan.outcome }}
+        run: |
+          jq -n --arg outcome "$SCAN_OUTCOME" '{advisory:true,outcome:$outcome}' >.bluebuild/release/scan-status.json
+          nix develop .#release --accept-flake-config --command bash scripts/bluebuild/sign-release.sh
+      - name: Create draft release with durable evidence
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          [[ $RELEASE_TAG =~ ^finite-[a-z0-9][a-z0-9.-]*$ ]]
+          gh release create "$RELEASE_TAG" .bluebuild/release/* --draft --target "$GITHUB_SHA" \
+            --title "$RELEASE_TAG" --notes 'Qualified image, signed checksums, SBOM, provenance and acceptance evidence. Review before publishing. Large ISO images are split; concatenate parts in filename order before use.'

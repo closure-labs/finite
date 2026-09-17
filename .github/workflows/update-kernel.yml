@@ -1,0 +1,55 @@
+name: Maintain approved next kernel
+on:
+  schedule:
+    - cron: "37 6 * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: finite-kernel-update
+  cancel-in-progress: false
+jobs:
+  freshness:
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: python3 scripts/ci/kernel-update.py --check
+  update:
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+        with:
+          merge-queue-token: ${{ secrets.MERGE_QUEUE_TOKEN }}
+          require-merge-queue-token: "true"
+      - name: Install RPM verification tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rpm
+      - name: Resolve and authenticate kernel update
+        id: update
+        run: python3 scripts/ci/kernel-update.py
+      - name: Propose reviewed kernel update
+        if: steps.update.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ env.MERGE_QUEUE_TOKEN }}
+          branch: automation/update-kernel
+          delete-branch: true
+          add-paths: sources/kernel-next.json
+          commit-message: "sources: update approved Fedora kernel"
+          title: "sources: update approved Fedora kernel"
+          body: |
+            Authenticated all five RPMs against the reviewed Fedora key.
+            This update remains within the approved kernel/Fedora stream.
+            Review and merge only after image checks; publication requires
+            Secure Boot qualification when enforcement is enabled.
+            Kernel stream changes and auto-merge are intentionally excluded.

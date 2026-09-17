@@ -28,7 +28,7 @@ jobs:
       - uses: ./.github/actions/setup-nix
       - name: Resolve stable linux/amd64 digests
         id: resolve
-        run: nix develop --accept-flake-config --command python3 scripts/ci/bluefin-upstream.py update
+        run: nix develop .#ci --accept-flake-config --command python3 scripts/ci/bluefin-upstream.py update
       - name: Save successful check evidence
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -55,7 +55,7 @@ jobs:
         env:
           OBSERVED_DIGESTS: ${{ needs.check.outputs.observed }}
         run: |
-          nix develop --accept-flake-config --command python3 scripts/ci/bluefin-upstream.py apply
+          nix develop .#ci --accept-flake-config --command python3 scripts/ci/bluefin-upstream.py apply
           nix develop --accept-flake-config --command bash tests/repository/text-style.sh
       - name: Open or update the Bluefin pull request
         id: update
@@ -103,4 +103,10 @@ jobs:
       - name: Dispatch recovery when published channels lag approved digests
         env:
           GH_TOKEN: ${{ github.token }}
-        run: nix develop --accept-flake-config --command python3 scripts/ci/bluefin-upstream.py recover
+        run: |
+          for attempt in 1 2 3; do
+            nix develop .#ci --accept-flake-config --command python3 scripts/ci/bluefin-upstream.py recover && break
+            [[ $attempt == 3 ]] && exit 1
+            echo "::warning::recover failed (attempt $attempt/3), retrying after backoff"
+            sleep $((attempt * 30))
+          done

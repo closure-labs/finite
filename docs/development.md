@@ -29,7 +29,7 @@ Inspect downloads before starting a build, then cap local jobs and cores:
 
 ```bash
 nix build --accept-flake-config --dry-run .#ci-checks
-nix build --accept-flake-config --max-jobs 1 --cores 1 --no-link .#ci-checks
+nix build --accept-flake-config --max-jobs 3 --cores 2 --no-link .#ci-checks
 nix fmt
 ```
 
@@ -38,7 +38,7 @@ contracts, UEFI ISO layout, dependency updates, formatting, workflow linting and
 repository policy. For a focused run:
 
 ```bash
-nix build --accept-flake-config --max-jobs 1 --cores 1 \
+nix build --accept-flake-config --max-jobs 3 --cores 2 \
   --no-link .#checks.x86_64-linux.bluebuild --print-build-logs
 ```
 

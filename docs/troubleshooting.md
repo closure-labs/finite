@@ -112,7 +112,7 @@ next phase restores the correct policy and selects the signed update channel.
 Run the suite with build logs and bounded local resources:
 
 ```bash
-nix build --accept-flake-config --max-jobs 1 --cores 1 \
+nix build --accept-flake-config --max-jobs 3 --cores 2 \
   --no-link .#ci-checks --print-build-logs
 ```
 

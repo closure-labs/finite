@@ -1,5 +1,7 @@
 {
+  config,
   finiteHomeAssets,
+  lib,
   pkgs,
   ...
 }: let
@@ -27,8 +29,23 @@ in {
 
   programs.zsh = {
     enable = true;
+    dotDir = "${config.xdg.configHome}/zsh";
+    envExtra = builtins.readFile (finiteHomeAssets.devops + "/zsh/.zshenv");
     autosuggestion.enable = true;
     enableCompletion = true;
+    completionInit = ''
+      mkdir -p "${config.xdg.cacheHome}/zsh"
+      autoload -Uz compinit
+      compinit -d "${config.xdg.cacheHome}/zsh/zcompdump"
+    '';
+    history = {
+      path = "${config.xdg.stateHome}/zsh/history";
+      size = 100000;
+      save = 100000;
+      append = true;
+      expireDuplicatesFirst = true;
+      findNoDups = true;
+    };
     historySubstringSearch.enable = true;
     plugins = [
       {
@@ -38,7 +55,14 @@ in {
       }
     ];
     syntaxHighlighting.enable = true;
-    initContent = builtins.readFile (finiteHomeAssets.devops + "/zsh/.zshrc");
+    initContent = lib.mkMerge [
+      (lib.mkBefore ''
+        # Bluefin's global rc prepends Brew's uutils directory. Prefer the
+        # declarative user profile once the global configuration has run.
+        path=("${config.home.profileDirectory}/bin" $path)
+      '')
+      (builtins.readFile (finiteHomeAssets.devops + "/zsh/.zshrc"))
+    ];
   };
 
   programs.fzf = {
@@ -47,7 +71,11 @@ in {
   };
 
   xdg.configFile = {
-    "ghostty/config.ghostty".source = finiteHomeAssets.devops + "/ghostty/config.ghostty";
+    "ghostty/config.ghostty".text =
+      builtins.replaceStrings
+      ["command = /usr/bin/zsh"]
+      ["command = ${config.programs.zsh.package}/bin/zsh"]
+      (builtins.readFile (finiteHomeAssets.devops + "/ghostty/config.ghostty"));
     "zsh/aliases.zsh".source = finiteHomeAssets.devops + "/zsh/aliases.zsh";
     "zsh/bindings.zsh".source = finiteHomeAssets.devops + "/zsh/bindings.zsh";
     "zsh/fzf.zsh".source = finiteHomeAssets.devops + "/zsh/fzf.zsh";

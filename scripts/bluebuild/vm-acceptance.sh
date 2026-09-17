@@ -6,8 +6,11 @@ set -euo pipefail
   exit 2
 }
 artifact=$(realpath "${1:?ISO artifact directory required}")
-state="$PWD/.bluebuild/vm"
+phase_name="${3:-manual}"
+[[ $phase_name =~ ^(manual|fresh|upgrade)$ ]]
+state="$PWD/.bluebuild/vm-$phase_name"
 mkdir -p "$state"
+rm -f "$state/acceptance.json"
 (cd "$artifact" && sha256sum -c SHA256SUMS)
 hook_sha=$(sha256sum files/installer/install_finite_fstab | cut -d' ' -f1)
 jq -e --slurpfile expected sources/bluebuild-installer.json --arg hash "$hook_sha" '
@@ -21,13 +24,31 @@ source=$(jq -er .image "$artifact/installation.json")
 channel=$(jq -er .updateChannel "$artifact/installation.json")
 installation_tag=$(jq -er .installationTag "$artifact/installation.json")
 profile=$(jq -er .profile "$artifact/installation.json")
+target="${2-$channel}"
+if [[ -n $target ]]; then
+  if [[ $target == "$channel" ]]; then
+    target="ghcr.io/closure-labs/finite@$(skopeo inspect --format '{{.Digest}}' "docker://$channel")"
+  fi
+  [[ $target =~ ^ghcr.io/closure-labs/finite@sha256:[0-9a-f]{64}$ ]]
+  cosign verify --key cosign.pub "$target" >"$state/target-signature.json"
+  skopeo inspect --raw "docker://$target" >"$state/target-manifest.json"
+fi
 [[ $source =~ ^ghcr.io/closure-labs/finite@sha256:[0-9a-f]{64}$ ]]
-[[ $channel =~ ^ghcr.io/closure-labs/finite:(bluefin-generic|next|bluefin-dx-generic|dev-next)$ ]]
+[[ $channel =~ ^ghcr.io/closure-labs/finite:(finite|finite-next|finite-dev|finite-dev-next)$ ]]
 cosign verify --key cosign.pub "$source" >"$state/signature.json"
 skopeo inspect --raw "docker://$source" >"$state/source-manifest.json"
 mapfile -t isos < <(find "$artifact" -maxdepth 1 -name '*.iso' -type f)
 [[ ${#isos[@]} == 1 ]]
-test -r /usr/share/OVMF/OVMF_CODE_4M.fd
+firmware=/usr/share/OVMF/OVMF_CODE_4M.fd
+variables=/usr/share/OVMF/OVMF_VARS_4M.fd
+secure_args=()
+if [[ ${FINITE_SECURE_BOOT:-false} == true ]]; then
+  firmware=/usr/share/OVMF/OVMF_CODE_4M.secboot.fd
+  variables=/usr/share/OVMF/OVMF_VARS_4M.ms.fd
+  secure_args=(-global 'driver=cfi.pflash01,property=secure,value=on')
+fi
+test -r "$firmware"
+test -r "$variables"
 test -e /dev/kvm
 sudo chmod a+rw /dev/kvm
 ssh-keygen -q -t ed25519 -N '' -f "$state/ssh-key"
@@ -51,11 +72,12 @@ systemctl enable sshd
 %end
 KS
 bash scripts/bluebuild/prepare-vm-iso.sh "${isos[0]}" "$state/ks.cfg" "$state"
-cp /usr/share/OVMF/OVMF_VARS_4M.fd "$state/OVMF_VARS.fd"
+cp "$variables" "$state/OVMF_VARS.fd"
 qemu-img create -f qcow2 "$state/disk.qcow2" 64G
 qemu_args=(
-  -enable-kvm -machine q35 -cpu host -smp 2 -m 4096 -display none -no-reboot
-  -drive "if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE_4M.fd"
+  -enable-kvm -machine 'q35,smm=on' -cpu host -smp 2 -m 4096 -display none -no-reboot
+  "${secure_args[@]}"
+  -drive "if=pflash,format=raw,readonly=on,file=$firmware"
   -drive "if=pflash,format=raw,file=$state/OVMF_VARS.fd"
   -drive "if=virtio,format=qcow2,file=$state/disk.qcow2"
   -netdev "user,id=net0,hostfwd=tcp:127.0.0.1:2222-:22" -device "virtio-net-pci,netdev=net0"
@@ -68,6 +90,11 @@ stream_console() {
   log_pid=$!
 }
 cleanup() {
+  if [[ -n $pid && -f $state/ssh-key ]]; then
+    timeout 20s ssh -i "$state/ssh-key" -p 2222 -o BatchMode=yes -o StrictHostKeyChecking=no \
+      -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 finite-test@127.0.0.1 \
+      sudo journalctl --no-pager -b >"$state/final-journal.log" 2>&1 || true
+  fi
   if [[ -n $pid ]]; then kill "$pid" 2>/dev/null || true; wait "$pid" 2>/dev/null || true; fi
   if [[ -n $log_pid ]]; then kill "$log_pid" 2>/dev/null || true; wait "$log_pid" 2>/dev/null || true; fi
   rm -f "$state/ssh-key" "$state/install.iso" "$state/disk.qcow2"
@@ -127,6 +154,9 @@ boot_vm() {
       ssh "${ssh_args[@]}" cat /etc/fstab >"$state/$phase-fstab.log"
       ssh "${ssh_args[@]}" findmnt --json >"$state/$phase-mounts.json"
       ssh "${ssh_args[@]}" systemctl is-active --quiet systemd-remount-fs.service
+      if [[ ${FINITE_SECURE_BOOT:-false} == true ]]; then
+        ssh "${ssh_args[@]}" env LC_ALL=C mokutil --sb-state | tee "$state/$phase-secure-boot.log" | grep -Fx 'SecureBoot enabled'
+      fi
       ssh "${ssh_args[@]}" bash -s <<'KERNEL' | tee "$state/$phase-kernel.log"
 set -euo pipefail
 expected=$(jq -er .kernelRelease /usr/share/finite/profile.json)
@@ -182,9 +212,16 @@ echo 'Building and activating the base Home Manager environment'
 /usr/libexec/finite/home-init --profile "$HOME/profile.json"
 printf '\n# VM acceptance customization\n' >>"$HOME/.config/home-manager/customize.nix"
 GUEST
+if [[ -z $target ]]; then
+  poweroff_vm
+  jq -n --arg source "$source" --arg profile "$profile" \
+    --argjson secure "${FINITE_SECURE_BOOT:-false}" \
+    '{source:$source,profile:$profile,secureBoot:$secure,accepted:true}' >"$state/acceptance.json"
+  exit 0
+fi
 # Use a deliberately wrong public key, then restore policy even if the test fails.
 echo 'Testing rejection with the wrong signing key'
-ssh "${ssh_args[@]}" bash -s -- "$channel" <<'GUEST'
+ssh "${ssh_args[@]}" bash -s -- "$target" <<'GUEST'
 set -euo pipefail
 work=$(mktemp -d)
 trap 'sudo cp "$work/policy.json" /etc/containers/policy.json; sudo rm -f /etc/pki/containers/finite-acceptance-wrong.pub; rm -rf "$work"' EXIT
@@ -203,14 +240,18 @@ fi
 grep -Ei 'invalid signature|no matching signatures|none of the signatures|signature verification failed' "$work/rejection.log"
 GUEST
 echo 'Selecting the signed ongoing update channel'
-ssh "${ssh_args[@]}" sudo bootc switch --enforce-container-sigpolicy "$channel"
+ssh "${ssh_args[@]}" sudo bootc switch --enforce-container-sigpolicy "$target"
 ssh "${ssh_args[@]}" sudo bootc status --json >"$state/staged.json"
 jq -e '.status.staged != null' "$state/staged.json" >/dev/null
 poweroff_vm
 boot_vm updated
 ssh "${ssh_args[@]}" sudo bootc status --json >"$state/updated.json"
-jq -e --arg channel "$channel" '.status.booted.image.image.image == $channel' \
+jq -e --arg channel "$target" '.status.booted.image.image.image == $channel' \
   "$state/updated.json" >/dev/null
+updated_digest=$(jq -er '.status.booted.image.imageDigest' "$state/updated.json")
+jq -e --arg installed "$updated_digest" --arg index "${target##*@}" \
+  '$installed == $index or any(.manifests[]?; .digest == $installed)' \
+  "$state/target-manifest.json" >/dev/null
 ssh "${ssh_args[@]}" bash -s <<'GUEST'
 set -euo pipefail
 [[ $(cat /var/home/nix/finite-acceptance) == persistent-nix-state ]]
@@ -229,4 +270,6 @@ ssh "${ssh_args[@]}" sudo journalctl -b -u finite-nix-seed -u finite-nix-selinux
   >"$state/nix-journal.log"
 poweroff_vm
 jq -n --arg source "$source" --arg channel "$channel" --arg profile "$profile" \
-  '{source:$source,updateChannel:$channel,profile:$profile,uefi:true,accepted:true}' >"$state/acceptance.json"
+  --arg target "$target" --argjson secure "${FINITE_SECURE_BOOT:-false}" \
+  '{source:$source,target:$target,updateChannel:$channel,profile:$profile,
+    uefi:true,secureBoot:$secure,accepted:true}' >"$state/acceptance.json"
