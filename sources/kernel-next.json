@@ -1,32 +1,32 @@
 {
   "schema": 1,
-  "release": "7.2.0-61.fc45.x86_64",
-  "baseUrl": "https://kojipkgs.fedoraproject.org/packages/kernel/7.2.0/61.fc45/data/signed/f577861e/x86_64",
+  "release": "7.2.5-300.fc45.x86_64",
+  "baseUrl": "https://kojipkgs.fedoraproject.org/packages/kernel/7.2.5/300.fc45/data/signed/f577861e/x86_64",
   "packages": [
     {
       "name": "kernel",
-      "file": "kernel-7.2.0-61.fc45.x86_64.rpm",
-      "sha256": "8b779159b0afa16a1dfde301cfb7ed8bb12e053ada8f48f6de1dd5f7aba8d6e9"
+      "file": "kernel-7.2.5-300.fc45.x86_64.rpm",
+      "sha256": "d320c1ac217a9ef1c2b723bedd0ade3a8a7a880ed530a7f1de974c33110967ab"
     },
     {
       "name": "kernel-core",
-      "file": "kernel-core-7.2.0-61.fc45.x86_64.rpm",
-      "sha256": "6ef3986695d53fd9c65e5a4aad780002b54c74f4eee6cae336d0aff5e1de6817"
+      "file": "kernel-core-7.2.5-300.fc45.x86_64.rpm",
+      "sha256": "5325bed30f486be39168bb6c89ff56ceb364291a6f5a83f4bd5e188ebe5f5dd8"
     },
     {
       "name": "kernel-modules-core",
-      "file": "kernel-modules-core-7.2.0-61.fc45.x86_64.rpm",
-      "sha256": "9e3493d6adae698681fe5bd825f7c4123c57a7398a68c3f1275ca7d67087b022"
+      "file": "kernel-modules-core-7.2.5-300.fc45.x86_64.rpm",
+      "sha256": "eac826cdeba95ea28d567c24b8bd85402221702e89e046044c41abdadbd2b6ef"
     },
     {
       "name": "kernel-modules",
-      "file": "kernel-modules-7.2.0-61.fc45.x86_64.rpm",
-      "sha256": "fb97f742e80dee72565f0073adac08fab428be9d40ae57ef9f950169ebc71eb0"
+      "file": "kernel-modules-7.2.5-300.fc45.x86_64.rpm",
+      "sha256": "ae40f234e334a69245ce93fd23d7e00cbab5f14d6ce071ba692c2136a1de837d"
     },
     {
       "name": "kernel-modules-extra",
-      "file": "kernel-modules-extra-7.2.0-61.fc45.x86_64.rpm",
-      "sha256": "c32fb8f69d5115ff859eea741aae53a64b559b9d1dbf12a062674df09a4847a2"
+      "file": "kernel-modules-extra-7.2.5-300.fc45.x86_64.rpm",
+      "sha256": "3c6cc64f98ecc649bb3b011dd567b2193fd41cb3fd879cbf5acde46d718afe3d"
     }
   ],
   "requiredModules": [
