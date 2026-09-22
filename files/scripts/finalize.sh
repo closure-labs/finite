@@ -9,6 +9,7 @@ test -s /usr/share/finite/home-manager-template/customize.nix
 test -s /usr/share/finite/home-profile-catalog.json
 mapfile -t kernels < <(rpm -q --qf '%{EVR}.%{ARCH}\n' kernel-core)
 [[ ${#kernels[@]} == 1 ]]
+bash /usr/libexec/finite/check-initramfs "${kernels[0]}"
 authselect check
 find /usr/libexec/finite/firstboot-rpm-ostree.d -maxdepth 1 -type f -exec chmod 0755 {} +
 rm -f /boot/symvers-*.xz

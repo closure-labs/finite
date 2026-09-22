@@ -45,7 +45,6 @@ jobs:
       digest: ${{ needs.build.outputs.digest }}
       previous: ${{ needs.build.outputs.previous }}
       identity: ${{ needs.build.outputs.identity }}
-      enforce: ${{ vars.FINITE_QUALIFICATION_MODE == 'enforce' }}
 
   promote:
     needs: [build, qualification]
@@ -56,7 +55,7 @@ jobs:
     timeout-minutes: 15
     env:
       PROFILE: ${{ inputs.profile }}
-      FINITE_QUALIFICATION_MODE: ${{ vars.FINITE_QUALIFICATION_MODE || 'shadow' }}
+      FINITE_QUALIFICATION_MODE: enforce
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

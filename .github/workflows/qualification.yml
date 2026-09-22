@@ -17,9 +17,6 @@ on:
       identity:
         type: string
         required: true
-      enforce:
-        type: boolean
-        default: false
     outputs:
       evidence:
         value: ${{ jobs.qualify.outputs.evidence }}
@@ -53,7 +50,6 @@ jobs:
           sudo apt-get install -y qemu-system-x86 qemu-utils ovmf xorriso skopeo mtools
       - name: Qualify immutable candidate
         id: acceptance
-        continue-on-error: ${{ !inputs.enforce }}
         env:
           REGISTRY_TOKEN: ${{ github.token }}
           REGISTRY_USER: ${{ github.actor }}
@@ -62,7 +58,7 @@ jobs:
           printf '%s' "$REGISTRY_TOKEN" | docker login --username "$REGISTRY_USER" --password-stdin ghcr.io
           bash scripts/bluebuild/install-cli.sh
           bash scripts/bluebuild/qualify.sh
-      - name: Record shadow outcome
+      - name: Record qualification outcome
         id: outcome
         if: always()
         env:

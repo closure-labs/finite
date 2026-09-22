@@ -3,29 +3,26 @@
 ## Rollout policy
 
 Candidate build, boot qualification and channel promotion are separate jobs.
-The repository variable `FINITE_QUALIFICATION_MODE` accepts `shadow` or `enforce`.
-An unset variable means `shadow`; other values fail preparation.
+Boot qualification is mandatory when the image input identity changes and on
+Monday's scheduled build. The workflows enforce it directly; repository variables
+cannot turn a failed qualification into a successful publication. Local publication
+tools default to enforcement and reject the former `shadow` mode.
 
-In shadow mode, the existing signature and container checks remain mandatory.
-Boot qualification runs when the image input identity changes and on Monday's
-scheduled build, but a failed VM test does not block normal channel promotion.
-The qualification outcome and promotion receipt disclose this explicitly.
-Infrastructure failures can still fail the workflow.
+A failed qualification or missing, stale or mismatched acceptance record prevents
+promotion. Cancelled publication does not promote. The candidate remains available
+for diagnosis while public channel tags retain their previous image.
 
-Before enabling enforcement:
+The assembled image must include a nonempty kernel and matching initramfs with
+`/init`, OSTree, LUKS and FIDO2 support. Both build finalization and inspection of
+the final image check this before qualification. Next-kernel recipes explicitly
+regenerate the initramfs after replacing the kernel RPMs.
 
-1. Dispatch Build Finite with `qualify=true` and collect successful qualification
-   for each of the four profiles.
-2. Verify the fresh-install and previous-image upgrade/rollback logs.
-3. Verify each boot reports `SecureBoot enabled` and SELinux is enforcing.
-4. Confirm an injected acceptance failure leaves public tags unchanged.
-5. Set `FINITE_QUALIFICATION_MODE=enforce` in repository Actions variables.
-
-Changing this variable is an operator action, not part of a build. Do not enable
-it based only on contract tests. A failed enforced qualification or missing,
-stale or mismatched acceptance record prevents promotion. Cancelled publication
-does not promote. If rollout needs to pause, return to the documented shadow
-policy; image signatures are never optional.
+The September 22, 2026 `finite-dev-next` incident exposed the former shadow-mode
+gap: the VM qualification failed at MOK management, but publication proceeded with
+`accepted: false`. The image also lacked its replacement kernel's initramfs,
+causing encrypted workstations to panic before LUKS unlock. A green historical
+workflow alone is therefore insufficient evidence of a successful boot; inspect
+the acceptance and promotion records.
 
 ## What is qualified
 
@@ -81,8 +78,7 @@ do not remove the fallback channel during an unrelated dependency update.
 Run **Prepare qualified release** on main with an ISO run, a Build Finite run,
 the matching channel, and a new `finite-...` release tag. Both source runs must
 be successful main-branch runs at the release workflow's source revision. The
-qualification must match the ISO's exact image digest and input identity, even
-when ordinary channel publication is still in shadow mode.
+qualification must match the ISO's exact image digest and input identity.
 
 The workflow creates a draft release, not an automatic public announcement.
 Review and publish the draft to make its assets available to users. Retain

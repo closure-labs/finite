@@ -46,6 +46,13 @@ class BlueBuildContracts(unittest.TestCase):
             for script in scripts:
                 self.assertTrue((ROOT / 'files/scripts' / script).is_file())
             kinds = [m['type'].split('@')[0] for m in expanded]
+            if hardware == 'next-x86_64':
+                kernel_step = next(i for i, m in enumerate(expanded)
+                                   if 'kernel-next.sh' in m.get('scripts', []))
+                finalize_step = next(i for i, m in enumerate(expanded)
+                                     if 'finalize.sh' in m.get('scripts', []))
+                self.assertLess(kernel_step, kinds.index('initramfs'))
+                self.assertLess(kinds.index('initramfs'), finalize_step)
             self.assertLess(kinds.index('dnf'), kinds.index('files'))
             self.assertLess(kinds.index('signing'), len(kinds)-1)
         self.assertEqual(len(tags), len(set(tags)))
@@ -93,6 +100,12 @@ class BlueBuildContracts(unittest.TestCase):
         self.assertIn("needs.build.result == 'success'", promotion['if'])
         self.assertIn('!cancelled()', promotion['if'])
         self.assertEqual(publication['jobs']['qualification']['needs'], 'build')
+        qualification = read('.github/workflows/qualification.yml')
+        acceptance = next(s for s in qualification['jobs']['qualify']['steps']
+                          if s.get('id') == 'acceptance')
+        self.assertNotIn('continue-on-error', acceptance)
+        self.assertEqual(promotion['env']['FINITE_QUALIFICATION_MODE'], 'enforce')
+        self.assertEqual(build['env']['FINITE_QUALIFICATION_MODE'], 'enforce')
         gate = workflow['jobs']['gate']
         self.assertEqual(gate['name'], 'CI gate')
         self.assertEqual(gate['if'], 'always()')

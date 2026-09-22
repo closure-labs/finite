@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Validate the image's boot payload, including encrypted-root and FIDO2 support.
+set -euo pipefail
+release="${1:?kernel release required}"
+modules="${2:-/usr/lib/modules}"
+image="$modules/$release/initramfs.img"
+for file in "$modules/$release/vmlinuz" "$image"; do
+  if [[ ! -s $file ]]; then
+    echo "Missing or empty boot payload: $file" >&2
+    exit 1
+  fi
+done
+included=$(lsinitrd -m "$image")
+for module in ostree crypt systemd-cryptsetup fido2; do
+  if ! grep -Fx "$module" <<<"$included" >/dev/null; then
+    echo "Initramfs for $release lacks required dracut module: $module" >&2
+    exit 1
+  fi
+done
+contents=$(lsinitrd "$image")
+grep -E ' init( -> .*)?$' <<<"$contents" >/dev/null || {
+  echo "Initramfs for $release lacks /init" >&2
+  exit 1
+}
+grep -F "lib/modules/$release/" <<<"$contents" >/dev/null || {
+  echo "Initramfs lacks modules for kernel $release" >&2
+  exit 1
+}

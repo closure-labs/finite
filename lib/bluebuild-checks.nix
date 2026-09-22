@@ -72,6 +72,7 @@ in {
     python3 tests/bluebuild/inspect-built.py
     python3 tests/bluebuild/iso.py
     python3 tests/bluebuild/kernel.py
+    python3 tests/bluebuild/initramfs.py
     python3 tests/bluebuild/installer.py
     python3 tests/bluebuild/reliability.py
   '';
@@ -106,6 +107,7 @@ in {
     zizmor --offline --no-config --collect=all .github
     shellcheck --exclude=SC1091 files/scripts/*.sh scripts/bluebuild/*.sh
     shellcheck -s bash files/installer/install_finite_fstab
+    shellcheck files/system/usr/libexec/finite/check-initramfs
   '';
   repository-security = check "repository-security" (with pkgs; [jq applications.repositorySecurityAudit]) ''
     bash tests/automation/repository-security.sh \

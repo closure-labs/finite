@@ -3,6 +3,24 @@
 Start with the section matching the problem. Include the running image and
 relevant logs when reporting an issue.
 
+## Kernel panic before LUKS unlock
+
+If boot stops with `VFS: Unable to mount root fs on unknown-block(0,0)` before
+the passphrase or security-key prompt, select the previous working Finite
+deployment in the boot menu. Retain that deployment until the replacement has
+booted successfully.
+
+On the affected workstation, inspect `/boot/loader/entries/*.conf`. Each Finite
+entry should reference both its kernel (`linux`) and initramfs (`initrd`). The
+September 22, 2026 next-kernel image lacked
+`/usr/lib/modules/7.2.6-300.fc45.x86_64/initramfs.img`, producing an entry with no
+`initrd` line. Without that early userspace, encrypted root cannot be unlocked.
+Changing YubiKey enrollment does not repair the missing boot payload.
+
+The image build now regenerates the replacement kernel's initramfs and verifies
+its OSTree, LUKS and FIDO2 support. See
+[qualification policy](workstation-qualification.md) for the associated CI fix.
+
 ## Check the running system
 
 ```bash
