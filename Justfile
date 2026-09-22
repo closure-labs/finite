@@ -21,4 +21,4 @@ validate profile:
 # Build a named recipe locally (requires substantial storage).
 build profile:
     bash scripts/bluebuild/stage.sh {{ profile }}
-    bluebuild build --build-driver docker --run-driver docker --registry ghcr.io --registry-namespace closure-labs recipes/{{ profile }}.yml
+    bash scripts/bluebuild/build.sh {{ profile }}

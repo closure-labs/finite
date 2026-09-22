@@ -24,7 +24,8 @@ with open('calls.jsonl', 'a') as output:
     print(json.dumps({'command': [name, *sys.argv[1:]],
                       'key': os.environ.get('COSIGN_PRIVATE_KEY'),
                       'push': os.environ.get('BB_BUILD_PUSH'),
-                      'no_sign': os.environ.get('BB_BUILD_NO_SIGN')}), file=output)
+                      'no_sign': os.environ.get('BB_BUILD_NO_SIGN'),
+                      'source_date_epoch': os.environ.get('SOURCE_DATE_EPOCH')}), file=output)
 sys.exit(int(os.environ.get('BUILD_STATUS' if name == 'bluebuild' else 'LOGOUT_STATUS', '0')))
 '''
             for name in ('bluebuild', 'docker'):
@@ -70,6 +71,13 @@ sys.exit(int(os.environ.get('BUILD_STATUS' if name == 'bluebuild' else 'LOGOUT_S
                 result, calls = self.invoke(publish='true', **{missing: ''})
                 self.assertNotEqual(result.returncode, 0)
                 self.assertEqual(calls, [])
+
+    def test_nix_epoch_does_not_backdate_validation_or_published_images(self):
+        for publish in ('false', 'true'):
+            with self.subTest(publish=publish):
+                result, calls = self.invoke(publish=publish, SOURCE_DATE_EPOCH='315532800')
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIsNone(calls[0]['source_date_epoch'])
 
     def test_cleanup_preserves_build_failure_even_when_logout_fails(self):
         result, calls = self.invoke(publish='true', BUILD_STATUS='42', LOGOUT_STATUS='1')

@@ -11,6 +11,11 @@ case "$publish" in
   *) echo "Publish must be true or false" >&2; exit 1 ;;
 esac
 
+# Nix shells export a reproducible epoch (1980-01-01). Buildx inherits it
+# into the image's creation time, making bootc/rpm-ostree reject upgrades.
+# OS images need their actual build time; keep Nix payload builds reproducible.
+unset SOURCE_DATE_EPOCH
+
 # Use the CLI installed from sources/bluebuild-cli.json and the flake's cosign.
 # Explicit flags avoid clap's surprising treatment of false boolean env values.
 unset BB_BUILD_PUSH BB_BUILD_NO_SIGN BB_SQUASH BB_BUILD_CHUNKAH BB_BUILD_CHUNKED_OCI BB_BUILD_RECHUNK
