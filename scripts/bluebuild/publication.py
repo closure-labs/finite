@@ -17,9 +17,9 @@ spec.loader.exec_module(upstream)
 def prepare(profile, publish, root=upstream.ROOT):
     recipe = upstream.recipes(root)[profile]
     build_identity = upstream.image_identity(profile, root)
-    mode = os.environ.get('FINITE_QUALIFICATION_MODE', 'shadow')
-    if mode not in ('shadow', 'enforce'):
-        raise ValueError('Qualification mode must be shadow or enforce')
+    mode = os.environ.get('FINITE_QUALIFICATION_MODE', 'enforce')
+    if mode != 'enforce':
+        raise ValueError('Boot qualification must be enforced')
     previous = upstream.inspect(upstream.REPOSITORY + ':' + recipe['tags'][0], allow_missing=True) if publish else None
     previous_digest = upstream.digest(previous['Digest']) if previous else ''
     if previous_digest:
@@ -71,8 +71,8 @@ def promote(profile, root=upstream.ROOT):
     if not image.startswith(prefix):
         raise ValueError('Verified image must belong to the Finite repository')
     expected = upstream.digest(image.removeprefix(prefix))
-    if record['qualificationMode'] != os.environ.get('FINITE_QUALIFICATION_MODE', 'shadow'):
-        raise ValueError('Qualification policy changed between build and promotion')
+    if record['qualificationMode'] != 'enforce' or os.environ.get('FINITE_QUALIFICATION_MODE', 'enforce') != 'enforce':
+        raise ValueError('Boot qualification must be enforced')
     acceptance_path = evidence / f'{profile}-acceptance.json'
     accepted = False
     if record['qualify'] and acceptance_path.exists():
@@ -85,9 +85,7 @@ def promote(profile, root=upstream.ROOT):
                         acceptance.get('buildIdentity') == record['buildIdentity'],
                         acceptance.get('secureBoot') is True))
     if record['qualify'] and not accepted:
-        if record['qualificationMode'] == 'enforce':
-            raise ValueError('Candidate lacks matching successful Secure Boot qualification')
-        print('::warning::Shadow qualification did not pass; mandatory gating is not enabled')
+        raise ValueError('Candidate lacks matching successful Secure Boot qualification')
     for tag in record['tags']:
         target = upstream.REPOSITORY + ':' + tag
         subprocess.run(['skopeo', '--command-timeout', '90s', 'copy', '--retry-times', '3',

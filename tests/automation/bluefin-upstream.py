@@ -316,6 +316,33 @@ class BluefinTests(unittest.TestCase):
                 publication.promote('bluefin-generic', self.root)
             self.assertEqual(run.call_count, 2)
 
+    def test_shadow_mode_cannot_prepare_or_promote(self):
+        with patch.dict(os.environ, FINITE_QUALIFICATION_MODE='shadow'):
+            with self.assertRaisesRegex(ValueError, 'must be enforced'):
+                self.prepare()
+        self.prepare()
+        evidence = self.root / '.bluebuild'
+        path = evidence / 'bluefin-generic-publication.json'
+        record = json.loads(path.read_text())
+        record.update(qualify=True, qualificationMode='shadow')
+        path.write_text(json.dumps(record))
+        (evidence / 'bluefin-generic-image-ref.txt').write_text(upstream.REPOSITORY + '@' + IMAGE)
+        with patch.dict(os.environ, GITHUB_SHA='f' * 40), patch.object(publication.subprocess, 'run') as run:
+            with self.assertRaisesRegex(ValueError, 'must be enforced'):
+                publication.promote('bluefin-generic', self.root)
+            run.assert_not_called()
+
+    def test_default_policy_rejects_failed_qualification(self):
+        with patch.dict(os.environ, FORCE_QUALIFICATION='true'):
+            self.prepare()
+        evidence = self.root / '.bluebuild'
+        (evidence / 'bluefin-generic-image-ref.txt').write_text(upstream.REPOSITORY + '@' + IMAGE)
+        (evidence / 'bluefin-generic-qualification-outcome.json').write_text('{"outcome":"failure"}')
+        with patch.dict(os.environ, GITHUB_SHA='f' * 40), patch.object(publication.subprocess, 'run') as run:
+            with self.assertRaisesRegex(ValueError, 'lacks matching successful'):
+                publication.promote('bluefin-generic', self.root)
+            run.assert_not_called()
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -13,6 +13,7 @@ rpm -q cloud-init jq nix nix-daemon nix-filesystem nix-system yq zenity \
   fprintd fprintd-pam libfprint pam-u2f pamu2fcfg libfido2 opensc pcsc-lite yubikey-manager
 mapfile -t kernels < <(rpm -q --qf '%{EVR}.%{ARCH}\n' kernel-core)
 [[ ${#kernels[@]} == 1 ]]
+bash /usr/libexec/finite/check-initramfs "${kernels[0]}"
 if [[ $expected == *-next ]]; then
   [[ -n $expected_kernel && ${kernels[0]} == "$expected_kernel" ]]
   [[ ${kernels[0]} == "$(jq -r .kernelRelease /usr/share/finite/profile.json)" ]]

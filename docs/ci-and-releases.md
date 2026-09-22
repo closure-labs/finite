@@ -85,7 +85,8 @@ channels. Public channel tags change only after verification succeeds.
 
 The builder's `default-load=true` setting makes validation images available for
 inspection. The final-image step runs after the build and checks the
-Nix seed, packages, profile, signing policy, kernel and `bootc container lint`.
+Nix seed, packages, profile, signing policy, kernel, matching initramfs with
+LUKS/FIDO2 support, and `bootc container lint`.
 Publication resolves the candidate once and verifies its immutable digest,
 signature, exact approved base digest and source revision. It then copies that
 same manifest to the profile's channel tags with `--preserve-digests`, and
@@ -100,7 +101,7 @@ record qualification and promotion. The final image's base-digest label
 records the actual Bluefin input. Its source revision identifies the Finite
 commit that was built.
 
-Candidate publication now runs boot qualification in shadow mode by default.
+Candidate publication blocks promotion when required boot qualification fails.
 See [workstation qualification](workstation-qualification.md) for enforcement,
 weekly/manual coverage, signed kernel maintenance and durable release bundles.
 Use Build Finite's `qualify=true` dispatch input to force fresh acceptance even

@@ -82,3 +82,14 @@ while IFS= read -r module; do
 	[[ "$(modinfo -k "${release}" -F intree "${module}")" == Y ]]
 	[[ "$(modinfo -k "${release}" -F signer "${module}")" == *Fedora* ]]
 done < <(jq -r '.requiredModules[]' "${lock}")
+
+# RPM removal leaves generated initramfs files and module directories behind.
+# BlueBuild regenerates every directory under /usr/lib/modules, so an orphan
+# from the inherited kernel would fail dracut before it reaches our replacement.
+# Only prune after the replacement packages and required modules are verified.
+modules_root=/usr/lib/modules
+[[ -s "$modules_root/$release/vmlinuz" && -s "$modules_root/$release/modules.dep" ]]
+for module_dir in "$modules_root"/*; do
+	[[ -d $module_dir ]] || continue
+	[[ ${module_dir##*/} == "$release" ]] || rm -rf -- "$module_dir"
+done
