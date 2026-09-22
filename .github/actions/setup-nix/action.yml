@@ -24,6 +24,25 @@ runs:
           max-jobs = 4
           cores = 1
 
+    # Cache the fetcher's content as well as its index. Store-path metadata
+    # alone cannot prevent fresh runners from downloading the same sources.
+    # Separate jobs so a small maintenance cache cannot replace the full check
+    # graph; restore across lock revisions to reuse unchanged immutable inputs.
+    - name: Cache Nix source downloads
+      uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+      with:
+        path: |
+          ~/.cache/nix/tarball-cache-v2
+          ~/.cache/nix/gitv3
+          ~/.cache/nix/fetcher-cache-v4.sqlite*
+        key: nix-sources-v1-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('flake.lock', 'devenv.lock', 'templates/home-manager/flake.lock') }}
+        restore-keys: |
+          nix-sources-v1-${{ runner.os }}-${{ runner.arch }}-checks-${{ hashFiles('flake.lock', 'devenv.lock', 'templates/home-manager/flake.lock') }}
+          nix-sources-v1-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-
+          nix-sources-v1-${{ runner.os }}-${{ runner.arch }}-checks-
+      env:
+        SEGMENT_DOWNLOAD_TIMEOUT_MINS: "2"
+
     - name: Map declared GitHub Actions secrets
       if: inputs.cachix-auth-token != '' || inputs.merge-queue-token != ''
       env:
@@ -31,7 +50,7 @@ runs:
         GITHUB_ACTIONS_MERGE_QUEUE_TOKEN: ${{ inputs.merge-queue-token }}
       shell: bash
       run: >-
-        nix shell --accept-flake-config .#ci-github-actions-secrets
+        nix shell --file lib/ci-tools.nix ci-github-actions-secrets
         -c finite-github-actions-secrets
 
     - name: Require protected-branch automation credential

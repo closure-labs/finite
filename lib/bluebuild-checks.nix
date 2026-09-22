@@ -66,6 +66,7 @@ in {
     python3 tests/automation/bluefin-upstream.py
     python3 tests/ci/selection.py
     python3 tests/ci/nix-checks.py
+    python3 tests/ci/toolchain.py
     python3 tests/bluebuild/contracts.py
     python3 tests/bluebuild/build.py
     python3 tests/bluebuild/inspect-built.py

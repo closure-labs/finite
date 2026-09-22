@@ -47,7 +47,7 @@ jobs:
         if: inputs.reconcile
       - id: reconcile
         if: inputs.reconcile
-        run: nix develop .#ci --accept-flake-config --command python3 scripts/ci/bluefin-upstream.py reconcile
+        run: nix develop --file lib/ci-tools.nix shell --command python3 scripts/ci/bluefin-upstream.py reconcile
 
   docs:
     name: Documentation checks
@@ -70,7 +70,9 @@ jobs:
     needs: [impact, docs]
     if: needs.impact.outputs.checks == 'true'
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    # Allow the first uncached full dependency evaluation to seed the source
+    # cache; later PR and merge-queue checks restore those immutable inputs.
+    timeout-minutes: 60
     outputs:
       images: ${{ steps.selection.outputs.images }}
       matrix: ${{ steps.selection.outputs.matrix }}
@@ -86,7 +88,7 @@ jobs:
         id: selection
         env:
           IMPACT: ${{ toJSON(needs.impact.outputs) }}
-        run: nix develop .#ci --accept-flake-config --command python3 scripts/ci/payloads.py
+        run: nix develop --file lib/ci-tools.nix shell --command python3 scripts/ci/payloads.py
 
   images:
     name: Validate (${{ matrix.profile }})

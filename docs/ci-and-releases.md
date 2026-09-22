@@ -26,6 +26,19 @@ BlueBuild module inputs while retaining the approved base digests.
 Missing comparison data selects full validation. Renames include both paths,
 so moving an image input into documentation still triggers image builds.
 
+Maintenance, registry and publication commands use `lib/ci-tools.nix`, which
+reads the existing `flake.lock` directly. Its shells share package definitions
+with the flake's CI and release shells without evaluating the Home Manager/Den
+configuration. SecretSpec mapping and trusted PR validation use the same
+lightweight entry point and retain their existing credential and review checks.
+
+The shared Nix setup caches downloaded source trees and the fetcher index by
+runner platform, job and lock-file hashes. Image and maintenance jobs can also
+restore the full check job's source cache. Unchanged inputs can be reused after
+lock updates. Full Nix/runtime checks still evaluate the complete configuration;
+their 60-minute limit allows a first uncached run to populate the source cache.
+The cache does not contain registry credentials or replace any validation.
+
 For Nix changes, CI evaluates `image-payload.drvPath` and
 `image-payload-next.drvPath` at the base revision and the actual checked-out
 PR, merge-queue or main revision. These identities include their declared Nix

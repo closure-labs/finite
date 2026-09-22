@@ -28,7 +28,7 @@ jobs:
       - uses: ./.github/actions/setup-nix
       - name: Resolve stable linux/amd64 digests
         id: resolve
-        run: nix develop .#ci --accept-flake-config --command python3 scripts/ci/bluefin-upstream.py update
+        run: nix develop --file lib/ci-tools.nix shell --command python3 scripts/ci/bluefin-upstream.py update
       - name: Save successful check evidence
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -55,8 +55,8 @@ jobs:
         env:
           OBSERVED_DIGESTS: ${{ needs.check.outputs.observed }}
         run: |
-          nix develop .#ci --accept-flake-config --command python3 scripts/ci/bluefin-upstream.py apply
-          nix develop --accept-flake-config --command bash tests/repository/text-style.sh
+          nix develop --file lib/ci-tools.nix shell --command python3 scripts/ci/bluefin-upstream.py apply
+          nix develop --file lib/ci-tools.nix shell --command bash tests/repository/text-style.sh
       - name: Open or update the Bluefin pull request
         id: update
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
@@ -85,7 +85,7 @@ jobs:
           EXPECTED_TITLE: "sources: update Bluefin base digests"
           GH_TOKEN: ${{ env.MERGE_QUEUE_TOKEN }}
           PR_NUMBER: ${{ steps.update.outputs.pull-request-number }}
-        run: nix shell --accept-flake-config .#ci-trusted-update -c finite-trusted-update
+        run: nix shell --file lib/ci-tools.nix ci-trusted-update -c finite-trusted-update
 
   recover:
     name: Reconcile approved public channels
@@ -105,7 +105,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           for attempt in 1 2 3; do
-            nix develop .#ci --accept-flake-config --command python3 scripts/ci/bluefin-upstream.py recover && break
+            nix develop --file lib/ci-tools.nix shell --command python3 scripts/ci/bluefin-upstream.py recover && break
             [[ $attempt == 3 ]] && exit 1
             echo "::warning::recover failed (attempt $attempt/3), retrying after backoff"
             sleep $((attempt * 30))

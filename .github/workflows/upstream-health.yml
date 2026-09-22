@@ -22,4 +22,4 @@ jobs:
       - name: Require a successful digest check in the last 24 hours
         env:
           GH_TOKEN: ${{ github.token }}
-        run: nix develop .#ci --accept-flake-config --command python3 scripts/ci/bluefin-upstream.py freshness
+        run: nix develop --file lib/ci-tools.nix shell --command python3 scripts/ci/bluefin-upstream.py freshness
