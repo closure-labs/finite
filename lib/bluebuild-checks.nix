@@ -79,6 +79,9 @@ in {
   vm-iso = check "vm-iso-layout" (with pkgs; [diffutils gnugrep gnused libisoburn mtools]) ''
     bash tests/bluebuild/vm-iso.sh
   '';
+  vm-firmware = check "vm-firmware" (with pkgs; [libisoburn openssl python3 python3Packages.virt-firmware]) ''
+    bash tests/bluebuild/vm-firmware.sh ${pkgs.OVMF.fd}/FV/OVMF_VARS.fd
+  '';
   dependency-updates =
     check "dependency-update-contracts" (with pkgs; [
       gnugrep

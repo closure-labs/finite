@@ -41,7 +41,15 @@ the weekly qualification exercises their resulting image. Reproducible identity
 does not claim bit-for-bit reproducible image output.
 
 Qualification first installs and boots the candidate ISO with enrolled Microsoft
-UEFI keys. It activates Home Manager, checks Nix and captures diagnostics.
+UEFI keys. The harness also pre-enrolls the public module-signing certificate
+bundled in the verified ISO into the VM's MOK database. This models a workstation
+that has completed key enrollment and avoids the installer's interactive MOK
+screen. It preserves Secure Boot settings and verifies both Secure Boot status
+and certificate enrollment on each boot. Firmware-variable and certificate
+records are retained with the VM evidence. Interactive enrollment itself is not
+covered by this unattended test.
+
+The VM activates Home Manager, checks Nix and captures diagnostics.
 When a previous channel digest exists, a second installation starts from that
 digest, rejects a wrong signing key, upgrades to the exact candidate digest,
 and rolls back while preserving Nix state and user customization. Both the
