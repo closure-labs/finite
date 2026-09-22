@@ -47,4 +47,4 @@ def build(command, attempts=3, delay=30):
 
 if __name__ == '__main__':
     sys.exit(build(['nix', 'build', '--accept-flake-config', '--no-link',
-                    '--print-build-logs', '.#ci-checks']))
+                    '--verbose', '--print-build-logs', '.#ci-checks']))

@@ -5,6 +5,9 @@
   # Add custom inputs here; Den passes them to customize.nix and modules/local.nix.
   inputs = {
     den.url = "github:denful/den";
+    # Match the repository's tested hub and deduplicate its sibling libraries.
+    gen.url = "github:sini/gen/0004f3c9dfd5634f47ee72575e56c54883450bcf";
+    gen.inputs.nixpkgs.follows = "nixpkgs";
     devenv.url = "github:cachix/devenv/v2.2.2";
     nixpkgs.url = "https://flakehub.com/f/DeterminateSystems/nixpkgs-26.05-chilled/0.1";
     nixpkgs-weekly.url = "https://flakehub.com/f/DeterminateSystems/nixpkgs-weekly/0.1";

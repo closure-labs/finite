@@ -21,6 +21,12 @@
   inputs = {
     den.url = "github:denful/den";
 
+    # Use Den's tested gen hub through flake inputs, so sibling libraries share
+    # revisions via follows instead of recursively fetching standalone roots.
+    gen.url = "github:sini/gen/0004f3c9dfd5634f47ee72575e56c54883450bcf";
+    gen.inputs.nixpkgs.follows = "nixpkgs";
+    gen.inputs.import-tree.follows = "import-tree";
+
     devenv.url = "github:cachix/devenv/v2.2.2";
 
     import-tree.url = "github:vic/import-tree";

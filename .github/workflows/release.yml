@@ -48,22 +48,22 @@ jobs:
           CHANNEL: ${{ inputs.channel }}
           ISO_RUN: ${{ inputs.iso_run }}
           BUILD_RUN: ${{ inputs.build_run }}
-        run: nix develop .#ci --accept-flake-config --command python3 scripts/bluebuild/release-evidence.py "$CHANNEL" "$ISO_RUN" "$BUILD_RUN"
+        run: nix develop --file lib/ci-tools.nix shell --command python3 scripts/bluebuild/release-evidence.py "$CHANNEL" "$ISO_RUN" "$BUILD_RUN"
       - name: Generate image SBOM
         env:
           IMAGE: ${{ steps.evidence.outputs.image }}
-        run: nix develop .#release --accept-flake-config --command syft "registry:$IMAGE" -o spdx-json=.bluebuild/release/sbom.spdx.json
+        run: nix develop --file lib/ci-tools.nix release --command syft "registry:$IMAGE" -o spdx-json=.bluebuild/release/sbom.spdx.json
       - name: Advisory vulnerability scan
         id: scan
         continue-on-error: true
-        run: nix develop .#release --accept-flake-config --command grype sbom:.bluebuild/release/sbom.spdx.json -o json >.bluebuild/release/vulnerabilities.json
+        run: nix develop --file lib/ci-tools.nix release --command grype sbom:.bluebuild/release/sbom.spdx.json -o json >.bluebuild/release/vulnerabilities.json
       - name: Sign release manifest
         env:
           COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
           SCAN_OUTCOME: ${{ steps.scan.outcome }}
         run: |
           jq -n --arg outcome "$SCAN_OUTCOME" '{advisory:true,outcome:$outcome}' >.bluebuild/release/scan-status.json
-          nix develop .#release --accept-flake-config --command bash scripts/bluebuild/sign-release.sh
+          nix develop --file lib/ci-tools.nix release --command bash scripts/bluebuild/sign-release.sh
       - name: Create draft release with durable evidence
         env:
           RELEASE_TAG: ${{ inputs.tag }}

@@ -26,6 +26,32 @@ BlueBuild module inputs while retaining the approved base digests.
 Missing comparison data selects full validation. Renames include both paths,
 so moving an image input into documentation still triggers image builds.
 
+Maintenance, registry and publication commands use `lib/ci-tools.nix`, which
+reads the existing `flake.lock` directly. Its shells share package definitions
+with the flake's CI and release shells without evaluating the Home Manager/Den
+configuration. SecretSpec mapping and trusted PR validation use the same
+lightweight entry point and retain their existing credential and review checks.
+
+Den receives an explicit `gen` hub input, pinned to the revision tested by Den,
+in both the repository and standalone Home Manager flakes. The hub's `follows`
+relationships share one revision per library and avoid recursive standalone
+fetches. Review the hub pin when updating Den.
+
+The shared Nix setup uses `nix-community/cache-nix-action` to preserve the Nix
+store together with downloaded source trees and the fetcher index, keyed by
+runner platform and lock-file hashes. Only full checks save this cache; image
+and maintenance jobs restore it. Garbage collection before saving is disabled
+so evaluation sources survive. GitHub permits restores from the same ref and
+base/default branches; a PR cache does not seed a separate merge-queue ref.
+Unchanged inputs can be reused after lock updates. Full Nix/runtime checks still
+evaluate the complete configuration, with a 60-minute limit for cold runs.
+Registry credentials remain outside the cached paths.
+
+Nix uses its native 15-second connection timeout, 60-second stalled-download
+timeout and three download attempts. The stall timeout measures inactivity,
+not total transfer duration. Verbose Nix output reports fetch and evaluation
+activity during checks; test and evaluation failures remain fatal.
+
 For Nix changes, CI evaluates `image-payload.drvPath` and
 `image-payload-next.drvPath` at the base revision and the actual checked-out
 PR, merge-queue or main revision. These identities include their declared Nix

@@ -59,11 +59,11 @@ jobs:
         run: |
           args=()
           if [[ $PUBLISH == true ]]; then args+=(--publish); fi
-          nix develop .#ci --accept-flake-config --command python3 \
+          nix develop --file lib/ci-tools.nix shell --command python3 \
             scripts/bluebuild/publication.py prepare "$PROFILE" "${args[@]}"
           echo "evidence=image-$PROFILE-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >>"$GITHUB_OUTPUT"
       - name: Install the verified locked BlueBuild CLI
-        run: nix develop .#ci --accept-flake-config --command bash scripts/bluebuild/install-cli.sh
+        run: nix develop --file lib/ci-tools.nix shell --command bash scripts/bluebuild/install-cli.sh
       - name: Stage pinned payload
         run: python3 scripts/bluebuild/measure.py payload-staging bash scripts/bluebuild/stage.sh "$PROFILE"
       - name: Set up the BlueBuild builder
@@ -89,19 +89,19 @@ jobs:
           RUST_LOG_STYLE: always
           CLICOLOR_FORCE: "1"
         run: >-
-          nix develop .#ci --accept-flake-config --command python3
+          nix develop --file lib/ci-tools.nix shell --command python3
           scripts/bluebuild/measure.py image-build bash scripts/bluebuild/build.sh "$PROFILE" "$PUBLISH"
       - name: Validate recipes and record generated Containerfile
         run: |
           mkdir -p .bluebuild
-          nix develop .#ci --accept-flake-config --command bluebuild validate "recipes/$PROFILE.yml"
-          nix develop .#ci --accept-flake-config --command bluebuild generate --registry ghcr.io --registry-namespace closure-labs \
+          nix develop --file lib/ci-tools.nix shell --command bluebuild validate "recipes/$PROFILE.yml"
+          nix develop --file lib/ci-tools.nix shell --command bluebuild generate --registry ghcr.io --registry-namespace closure-labs \
             -o ".bluebuild/$PROFILE.Containerfile" "recipes/$PROFILE.yml"
       - name: Verify assembled image
         id: inspect
         env:
           PUBLISH: ${{ inputs.publish }}
-        run: nix develop .#ci --accept-flake-config --command bash scripts/bluebuild/inspect-built.sh "$PROFILE" "$CHANNEL" "$PUBLISH"
+        run: nix develop --file lib/ci-tools.nix shell --command bash scripts/bluebuild/inspect-built.sh "$PROFILE" "$CHANNEL" "$PUBLISH"
       - name: Save build evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

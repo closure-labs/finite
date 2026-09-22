@@ -14,7 +14,7 @@
     denFlakeModule = inputs.den.flakeModule;
     homeManagerLib = inputs.home-manager.lib;
     homeModuleInputs = {
-      inherit (inputs) den determinate devenv home-manager nix-flatpak nixpkgs nixpkgs-weekly;
+      inherit (inputs) den determinate devenv gen home-manager nix-flatpak nixpkgs nixpkgs-weekly;
     };
     treefmt = inputs.treefmt-nix.lib;
     weeklySecretspec = homeDependencies.weeklyPackages.secretspec;

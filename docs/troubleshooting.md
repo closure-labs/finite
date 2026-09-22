@@ -96,6 +96,25 @@ build leaves the existing configuration in place. For a newly added input,
 run `nix flake lock ~/.config/home-manager`, then `nh home build` and
 `nh home switch`. See [custom flake inputs](configuration.md#add-custom-flake-inputs).
 
+## An update reports a 1980 timestamp
+
+An error saying the target is dated `Tue 01 Jan 1980` and is chronologically
+older than the installed deployment indicates an image build timestamp problem.
+Nix development shells export `SOURCE_DATE_EPOCH=315532800`; Docker Buildx
+inherits it and dates the image to 1980. Finite's build wrapper clears that
+variable before invoking BlueBuild. Rebuild and publish the affected channel
+with the corrected wrapper, then retry the update.
+
+For an already published image you intend to install, the one-time workaround
+for this rpm-ostree timestamp check is:
+
+```bash
+sudo rpm-ostree upgrade --allow-downgrade
+```
+
+After the upgrade succeeds, reboot to activate it. The flag permits an older
+deployment timestamp; it belongs to `rpm-ostree`, not `bootc`.
+
 ## An update fails signature verification
 
 Compare the image reference and public key with the successful build's evidence.

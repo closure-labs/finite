@@ -43,7 +43,7 @@ jobs:
 
       - name: Validate generated text
         if: steps.source.outputs.changed == 'true'
-        run: nix develop --accept-flake-config --command bash tests/repository/text-style.sh
+        run: nix develop --file lib/ci-tools.nix shell --command bash tests/repository/text-style.sh
 
       - name: Open or update pull request
         if: steps.source.outputs.changed == 'true'
@@ -74,5 +74,5 @@ jobs:
           GH_TOKEN: ${{ env.MERGE_QUEUE_TOKEN }}
           PR_NUMBER: ${{ steps.update.outputs.pull-request-number }}
         run: >-
-          nix shell --accept-flake-config .#ci-trusted-update
+          nix shell --file lib/ci-tools.nix ci-trusted-update
           -c finite-trusted-update
