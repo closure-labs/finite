@@ -55,7 +55,7 @@ jobs:
       - name: Install VM tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y qemu-system-x86 qemu-utils ovmf xorriso skopeo mtools
+          sudo apt-get install -y qemu-system-x86 qemu-utils ovmf xorriso skopeo mtools openssl python3-virt-firmware
       - name: Install, boot, activate Home Manager, update and roll back
         run: bash scripts/bluebuild/vm-acceptance.sh .bluebuild/iso
       - name: Save acceptance evidence

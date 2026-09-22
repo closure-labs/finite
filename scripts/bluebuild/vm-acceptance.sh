@@ -72,7 +72,7 @@ systemctl enable sshd
 %end
 KS
 bash scripts/bluebuild/prepare-vm-iso.sh "${isos[0]}" "$state/ks.cfg" "$state"
-cp "$variables" "$state/OVMF_VARS.fd"
+bash scripts/bluebuild/prepare-vm-firmware.sh "${isos[0]}" "$variables" "$state"
 qemu-img create -f qcow2 "$state/disk.qcow2" 64G
 qemu_args=(
   -enable-kvm -machine 'q35,smm=on' -cpu host -smp 2 -m 4096 -display none -no-reboot
@@ -143,7 +143,14 @@ boot_vm() {
   pid=$!
   stream_console "$state/$phase.log"
   for _ in {1..120}; do
-    kill -0 "$pid"
+    if ! kill -0 "$pid" 2>/dev/null; then
+      echo "VM exited during $phase; see $state/$phase.log" >&2
+      return 1
+    fi
+    if grep -qF 'Perform MOK management' "$state/$phase.log"; then
+      echo "Unexpected interactive MOK enrollment during $phase; check firmware-certificate.log" >&2
+      return 1
+    fi
     if ssh "${ssh_args[@]}" true 2>/dev/null; then
       printf 'SSH ready for %s at %s\n' "$phase" "$(date -u +%FT%TZ)"
       ssh "${ssh_args[@]}" sudo bash -s <scripts/bluebuild/wait-nix.sh | tee "$state/$phase-nix.log"
@@ -157,6 +164,8 @@ boot_vm() {
       if [[ ${FINITE_SECURE_BOOT:-false} == true ]]; then
         ssh "${ssh_args[@]}" env LC_ALL=C mokutil --sb-state | tee "$state/$phase-secure-boot.log" | grep -Fx 'SecureBoot enabled'
       fi
+      ssh "${ssh_args[@]}" 'set -eu; key=$(mktemp); trap '\''rm -f "$key"'\'' EXIT; cat >"$key"; sudo mokutil --test-key "$key"' \
+        <"$state/sb_pubkey.der" >"$state/$phase-mok.log"
       ssh "${ssh_args[@]}" bash -s <<'KERNEL' | tee "$state/$phase-kernel.log"
 set -euo pipefail
 expected=$(jq -er .kernelRelease /usr/share/finite/profile.json)
