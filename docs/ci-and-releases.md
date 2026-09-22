@@ -32,12 +32,25 @@ with the flake's CI and release shells without evaluating the Home Manager/Den
 configuration. SecretSpec mapping and trusted PR validation use the same
 lightweight entry point and retain their existing credential and review checks.
 
-The shared Nix setup caches downloaded source trees and the fetcher index by
-runner platform, job and lock-file hashes. Image and maintenance jobs can also
-restore the full check job's source cache. Unchanged inputs can be reused after
-lock updates. Full Nix/runtime checks still evaluate the complete configuration;
-their 60-minute limit allows a first uncached run to populate the source cache.
-The cache does not contain registry credentials or replace any validation.
+Den receives an explicit `gen` hub input, pinned to the revision tested by Den,
+in both the repository and standalone Home Manager flakes. The hub's `follows`
+relationships share one revision per library and avoid recursive standalone
+fetches. Review the hub pin when updating Den.
+
+The shared Nix setup uses `nix-community/cache-nix-action` to preserve the Nix
+store together with downloaded source trees and the fetcher index, keyed by
+runner platform and lock-file hashes. Only full checks save this cache; image
+and maintenance jobs restore it. Garbage collection before saving is disabled
+so evaluation sources survive. GitHub permits restores from the same ref and
+base/default branches; a PR cache does not seed a separate merge-queue ref.
+Unchanged inputs can be reused after lock updates. Full Nix/runtime checks still
+evaluate the complete configuration, with a 60-minute limit for cold runs.
+Registry credentials remain outside the cached paths.
+
+Nix uses its native 15-second connection timeout, 60-second stalled-download
+timeout and three download attempts. The stall timeout measures inactivity,
+not total transfer duration. Verbose Nix output reports fetch and evaluation
+activity during checks; test and evaluation failures remain fatal.
 
 For Nix changes, CI evaluates `image-payload.drvPath` and
 `image-payload-next.drvPath` at the base revision and the actual checked-out

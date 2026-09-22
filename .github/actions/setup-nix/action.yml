@@ -23,23 +23,23 @@ runs:
         extra-conf: |
           max-jobs = 4
           cores = 1
+          connect-timeout = 15
+          stalled-download-timeout = 60
+          download-attempts = 3
 
-    # Cache the fetcher's content as well as its index. Store-path metadata
-    # alone cannot prevent fresh runners from downloading the same sources.
-    # Separate jobs so a small maintenance cache cannot replace the full check
-    # graph; restore across lock revisions to reuse unchanged immutable inputs.
-    - name: Cache Nix source downloads
-      uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+    # Preserve store sources as well as the fetcher's content and index.
+    # Only full checks save: smaller jobs must not win the immutable cache key,
+    # and image jobs should not upload their much larger payload stores.
+    - name: Restore Nix store and source downloads
+      uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
       with:
-        path: |
+        primary-key: nix-store-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock', 'devenv.lock', 'templates/home-manager/flake.lock') }}
+        restore-prefixes-first-match: nix-store-v1-${{ runner.os }}-${{ runner.arch }}-
+        save: ${{ github.job == 'checks' }}
+        paths: |
           ~/.cache/nix/tarball-cache-v2
           ~/.cache/nix/gitv3
           ~/.cache/nix/fetcher-cache-v4.sqlite*
-        key: nix-sources-v1-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('flake.lock', 'devenv.lock', 'templates/home-manager/flake.lock') }}
-        restore-keys: |
-          nix-sources-v1-${{ runner.os }}-${{ runner.arch }}-checks-${{ hashFiles('flake.lock', 'devenv.lock', 'templates/home-manager/flake.lock') }}
-          nix-sources-v1-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-
-          nix-sources-v1-${{ runner.os }}-${{ runner.arch }}-checks-
       env:
         SEGMENT_DOWNLOAD_TIMEOUT_MINS: "2"
 

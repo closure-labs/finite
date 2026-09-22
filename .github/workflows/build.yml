@@ -70,8 +70,8 @@ jobs:
     needs: [impact, docs]
     if: needs.impact.outputs.checks == 'true'
     runs-on: ubuntu-24.04
-    # Allow the first uncached full dependency evaluation to seed the source
-    # cache; later PR and merge-queue checks restore those immutable inputs.
+    # Allow cold evaluation to seed the Nix store cache. GitHub permits restores
+    # from the same ref and base/default branches, not unrelated PR refs.
     timeout-minutes: 60
     outputs:
       images: ${{ steps.selection.outputs.images }}
