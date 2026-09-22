@@ -45,11 +45,6 @@
     runtimeInputs = with pkgs; [coreutils jq zenity homeApply];
     text = builtins.readFile ./finite-configure;
   };
-  brewMigrationStatus = pkgs.writeShellApplication {
-    name = "finite-brew-migration-status";
-    runtimeInputs = with pkgs; [coreutils gnugrep];
-    text = builtins.readFile ./finite-brew-migration-status;
-  };
 in
   if !validProfile
   then throw "The local Finite profile is invalid or is not canonically ordered."
@@ -84,7 +79,7 @@ in
           home = {
             username = lib.mkForce vars.identity.username;
             homeDirectory = lib.mkForce vars.identity.homeDirectory;
-            packages = [brewMigrationStatus configure homeApply] ++ selectedPackages;
+            packages = [configure homeApply] ++ selectedPackages;
             sessionVariables = {
               FINITE_FOUNDATION = vars.foundation;
               FINITE_HARDWARE = vars.hardware;

@@ -26,10 +26,14 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: ./.github/actions/setup-nix
-        with:
-          merge-queue-token: ${{ secrets.MERGE_QUEUE_TOKEN }}
-          require-merge-queue-token: "true"
+      - name: Require protected-branch automation credential
+        env:
+          MERGE_QUEUE_TOKEN: ${{ secrets.MERGE_QUEUE_TOKEN }}
+        run: |
+          [[ -n "${MERGE_QUEUE_TOKEN:-}" ]] || {
+            echo "::error::MERGE_QUEUE_TOKEN is required for protected-branch automation"
+            exit 1
+          }
       - name: Install RPM verification tools
         run: |
           sudo apt-get update
@@ -41,7 +45,7 @@ jobs:
         if: steps.update.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
-          token: ${{ env.MERGE_QUEUE_TOKEN }}
+          token: ${{ secrets.MERGE_QUEUE_TOKEN }}
           branch: automation/update-kernel
           delete-branch: true
           add-paths: sources/kernel-next.json

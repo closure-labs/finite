@@ -140,3 +140,23 @@ first boot, updating and rollback.
 Use the [Dell XPS 13 9350 guide](dell-xps-9350.md) for display settings, PipeWire
 camera checks and kernel diagnostics. The [Secure Boot checks](dell-xps-9350-secure-boot.md)
 cover module paths and signatures.
+
+Inspect the libcamera module and sensor tuning selected during camera enumeration:
+
+```bash
+LIBCAMERA_LOG_LEVELS='IPAManager:DEBUG,IPAProxy:DEBUG' cam -l
+```
+
+This lists cameras without capturing frames. A migrated workstation may retain
+an OV02C10 helper in `/var/lib/finite/libcamera/ipa` and sensor calibration in
+`/etc/libcamera/ipa/simple/ov02c10.yaml`. Keep both until the distribution's IPA
+provides compatible sensor support. Camera enumeration alone does not establish
+equivalent exposure or color handling: `Failed to create camera sensor helper`
+indicates that the replacement lacks sensor-specific support.
+
+When retiring an older module-path override in
+`/etc/libcamera/configuration.yaml`, back up the module and tuning first. Remove
+missing paths and migrate a still-needed helper to the Finite-owned location;
+verify enumeration and the selected module before removing its old copy.
+Existing camera sessions keep their loaded module until they close. Avoid
+restarting PipeWire or WirePlumber during calls.

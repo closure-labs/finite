@@ -81,13 +81,7 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/actions/setup-nix
       - name: Build checks, retrying transient fetch failures
-        run: |
-          for attempt in 1 2 3; do
-            nix build --accept-flake-config --no-link .#ci-checks && break
-            [[ $attempt == 3 ]] && exit 1
-            echo "::warning::ci-checks build failed (attempt $attempt/3), retrying after backoff"
-            sleep $((attempt * 30))
-          done
+        run: python3 scripts/ci/nix-checks.py
       - name: Select images from payload dependencies
         id: selection
         env:

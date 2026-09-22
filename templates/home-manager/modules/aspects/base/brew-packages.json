@@ -1,0 +1,25 @@
+{
+  "taps": ["valkyrie00/bbrew"],
+  "packages": [
+    {"formula": "atuin", "command": "atuin"},
+    {"formula": "bash-preexec", "file": "opt/bash-preexec/etc/profile.d/bash-preexec.sh"},
+    {"formula": "bat", "command": "bat"},
+    {"formula": "valkyrie00/bbrew/bbrew", "command": "bbrew"},
+    {"formula": "chezmoi", "command": "chezmoi"},
+    {"formula": "direnv", "command": "direnv"},
+    {"formula": "dysk", "command": "dysk"},
+    {"formula": "eza", "command": "eza"},
+    {"formula": "fd", "command": "fd"},
+    {"formula": "gh", "command": "gh"},
+    {"formula": "mise", "command": "mise"},
+    {"formula": "podman-tui", "command": "podman-tui"},
+    {"formula": "ripgrep", "command": "rg"},
+    {"formula": "starship", "command": "starship"},
+    {"formula": "tealdeer", "command": "tldr"},
+    {"formula": "trash-cli", "command": "trash"},
+    {"formula": "ugrep", "command": "ugrep"},
+    {"formula": "uutils-coreutils", "command": "ls", "binary": "opt/uutils-coreutils/libexec/uubin/ls"},
+    {"formula": "yq", "command": "yq"},
+    {"formula": "zoxide", "command": "zoxide"}
+  ]
+}

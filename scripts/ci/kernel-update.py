@@ -92,20 +92,43 @@ def main():
     build = latest(policy)
     proposed = candidate(policy, current, build)
     changed = proposed is not None
+    status = {'changed': changed, 'current': current['release'],
+              'available': proposed['release'] if proposed else current['release']}
+    freshness_error = None
     if proposed and args.check:
-        completed = datetime.fromisoformat(build['completion_time']).replace(tzinfo=timezone.utc)
-        if datetime.now(timezone.utc) - completed > timedelta(days=policy['maxLagDays']):
-            raise RuntimeError('Approved kernel update has remained unapplied for more than seven days')
+        completed = datetime.fromisoformat(build['completion_time'])
+        if completed.tzinfo is None:
+            completed = completed.replace(tzinfo=timezone.utc)
+        age = datetime.now(timezone.utc) - completed
+        status.update(availableSince=completed.isoformat(), ageDays=round(age.total_seconds() / 86400, 2),
+                      maxLagDays=policy['maxLagDays'])
+        if age > timedelta(days=policy['maxLagDays']):
+            freshness_error = (
+                f"Approved kernel {proposed['release']} has remained unapplied for "
+                f"{status['ageDays']} days (limit: {policy['maxLagDays']}); "
+                f"current lock: {current['release']}. Resolve CI failures on the "
+                'automation/update-kernel pull request, then review and merge it.'
+            )
     elif proposed:
         authenticated = authenticate(proposed, policy, ROOT)
         temporary = path.with_suffix('.json.tmp')
         temporary.write_text(json.dumps(authenticated, indent=2) + '\n')
         temporary.replace(path)
-    print(json.dumps({'changed': changed, 'current': current['release'],
-                      'available': proposed['release'] if proposed else current['release']}))
+    print(json.dumps(status))
     if output := os.environ.get('GITHUB_OUTPUT'):
         with open(output, 'a') as stream:
             print('changed=' + str(changed).lower(), file=stream)
+    if summary := os.environ.get('GITHUB_STEP_SUMMARY'):
+        with open(summary, 'a') as stream:
+            stream.write('### Approved kernel update\n\n')
+            stream.write(f"- Current lock: `{status['current']}`\n")
+            stream.write(f"- Available: `{status['available']}`\n")
+            if 'ageDays' in status:
+                stream.write(f"- Update age: {status['ageDays']} days; limit: {policy['maxLagDays']} days\n")
+            if freshness_error:
+                stream.write(f'\n{freshness_error}\n')
+    if freshness_error:
+        raise RuntimeError(freshness_error)
 
 
 if __name__ == '__main__':

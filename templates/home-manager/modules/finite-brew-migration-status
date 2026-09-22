@@ -1,61 +1,80 @@
+# shellcheck shell=bash
 set -euo pipefail
 
+check=false
+installed_only=false
+case "${1:-}" in
+  --check) check=true ;;
+  --check-installed) check=true; installed_only=true ;;
+  '') ;;
+  *) echo 'usage: finite-brew-migration-status [--check|--check-installed]' >&2; exit 2 ;;
+esac
+
 brew_command="${FINITE_BREW_COMMAND:-/home/linuxbrew/.linuxbrew/bin/brew}"
+policy="${FINITE_BREW_POLICY:-${XDG_CONFIG_HOME:-$HOME/.config}/finite/brew-packages.json}"
+jq_command="${FINITE_BREW_JQ:-jq}"
+readlink_command="${FINITE_BREW_READLINK:-readlink}"
 [[ -x "$brew_command" ]] || {
   echo "Bluefin Homebrew is unavailable: $brew_command" >&2
   exit 2
 }
+[[ -r "$policy" ]] || {
+  echo "Finite Homebrew policy is unavailable: $policy" >&2
+  exit 2
+}
 
-printf '%-12s %-34s %-18s %s\n' LAYER BREW_PACKAGE COMMAND ACTIVE_PROVIDER
-printf '%-12s %-34s %-18s %s\n' ----- ------------ ------- ---------------
+prefix=$("$brew_command" --prefix)
+resolved_prefix=$("$readlink_command" -f "$prefix")
+installed=$("$brew_command" list --formula -1)
+rows=$("$jq_command" -r '.packages[] | [.formula, (.command // "-"), (.file // "-"), (.binary // ("bin/" + (.command // "")))] | @tsv' "$policy")
+failures=0
 
-while IFS='|' read -r layer formula command; do
-  "$brew_command" list --formula --versions "$formula" >/dev/null 2>&1 || continue
-  active=$(command -v "$command" 2>/dev/null || true)
-  if [[ -z "$active" ]]; then
-    provider=missing
+printf '%-34s %-18s %s\n' BREW_PACKAGE COMMAND ACTIVE_PROVIDER
+printf '%-34s %-18s %s\n' ------------ ------- ---------------
+
+while IFS=$'\t' read -r formula command file binary; do
+  case $'\n'"$installed"$'\n' in
+    *$'\n'"${formula##*/}"$'\n'*|*$'\n'"$formula"$'\n'*) available=true ;;
+    *) available=false ;;
+  esac
+  if [[ "$available" == false ]]; then
+    provider=brew-missing
+    failures=$((failures + 1))
+  elif [[ "$file" != '-' ]]; then
+    if [[ -r "$prefix/$file" ]]; then
+      provider="brew:$prefix/$file"
+    else
+      provider=brew-file-missing
+      failures=$((failures + 1))
+    fi
+  elif [[ "$installed_only" == true ]]; then
+    if [[ -x "$prefix/$binary" ]]; then
+      provider="brew:$prefix/$binary"
+    else
+      provider=brew-command-missing
+      failures=$((failures + 1))
+    fi
   else
-    resolved=$(readlink -f "$active")
-    case "$resolved" in
-      /nix/store/*) provider="nix:$resolved" ;;
-      /home/linuxbrew/.linuxbrew/*|/var/home/linuxbrew/.linuxbrew/*) provider="brew:$resolved" ;;
-      *) provider="host:$resolved" ;;
-    esac
+    active=$(command -v "$command" 2>/dev/null || true)
+    if [[ -z "$active" ]]; then
+      provider='command-missing'
+    else
+      resolved=$("$readlink_command" -f "$active")
+      case "$resolved" in
+        "$resolved_prefix"/*) provider="brew:$resolved" ;;
+        /nix/store/*) provider="nix:$resolved" ;;
+        *) provider="host:$resolved" ;;
+      esac
+    fi
+    [[ "$provider" == brew:* ]] || failures=$((failures + 1))
   fi
-  printf '%-12s %-34s %-18s %s\n' "$layer" "$formula" "$command" "$provider"
-done <<'EOF'
-non-stock|awscli|aws
-non-stock|fzf|fzf
-non-stock|herdr|herdr
-non-stock|jj|jj
-non-stock|marp-cli|marp
-non-stock|neovim|nvim
-non-stock|opencode|opencode
-non-stock|uv|uv
-bluefin-cli|atuin|atuin
-bluefin-cli|bat|bat
-bluefin-cli|valkyrie00/bbrew/bbrew|bbrew
-bluefin-cli|chezmoi|chezmoi
-bluefin-cli|direnv|direnv
-bluefin-cli|dysk|dysk
-bluefin-cli|eza|eza
-bluefin-cli|fd|fd
-bluefin-cli|gh|gh
-bluefin-cli|mise|mise
-bluefin-cli|podman-tui|podman-tui
-bluefin-cli|ripgrep|rg
-bluefin-cli|starship|starship
-bluefin-cli|tealdeer|tldr
-bluefin-cli|trash-cli|trash
-bluefin-cli|ugrep|ugrep
-bluefin-cli|uutils-coreutils|coreutils
-bluefin-cli|yq|yq
-bluefin-cli|zoxide|zoxide
-EOF
+  printf '%-34s %-18s %s\n' "$formula" "$command" "$provider"
+done <<<"$rows"
 
-printf '\nExceptions requiring manual verification:\n'
-printf '  bash-preexec: Bluefin sources the Brew file directly. Keep it through the fallback stage.\n'
-printf '  zsh plugins: Home Manager owns active Zsh integrations; Brew plugin formulae are fallback only.\n'
-printf '  fonts: verify with: fc-list | grep -F "Hack Nerd Font"\n'
-printf '  casks: %s\n' "$($brew_command list --cask 2>/dev/null | paste -sd, -)"
-printf '\nThis command is read-only. Do not remove Brew packages until every required command reports nix:.\n'
+printf '\nHomebrew owns these shared CLI tools. Nix owns the remaining profile applications and Finite helper dependencies.\n'
+printf 'Install missing tools with: brew bundle install --no-upgrade --file=%q\n' "${XDG_CONFIG_HOME:-$HOME/.config}/finite/Brewfile"
+printf 'Check providers in a fresh login shell after applying the Home Manager profile.\n'
+printf 'This command is read-only; it does not install, upgrade, or remove packages.\n'
+if [[ "$check" == true && "$failures" -gt 0 ]]; then
+  exit 1
+fi

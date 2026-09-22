@@ -10,7 +10,9 @@ for file in .zshrc aliases.zsh bindings.zsh fzf.zsh prompt.zsh starship.toml LIC
 done
 grep -qF 'paths = [pkgs.ghostty];' "${module}"
 grep -qF -- "--replace-fail 'DBusActivatable=true' 'DBusActivatable=false'" "${module}"
-grep -qF '"ghostty/config.ghostty".source' "${module}"
+grep -qF '"ghostty/config.ghostty".text' "${module}"
+# shellcheck disable=SC2016 # Ghostty must start the Home Manager Zsh package.
+grep -qF '"command = ${config.programs.zsh.package}/bin/zsh"' "${module}"
 if grep -qF '"ghostty/config".source' "${module}"; then
 	echo 'The devops aspect still deploys the superseded Ghostty config path' >&2
 	exit 1
@@ -20,4 +22,6 @@ grep -qF 'enableZshIntegration = true' "${module}"
 grep -qF 'src = pkgs.zsh-vi-mode' "${module}"
 test ! -e "${rootfs}/usr/share/finite/zsh/plugins.zsh"
 test ! -e "${aspect_root}/apply.sh"
-test ! -e "${aspect_root}/manifests"
+shopt -s nullglob dotglob
+manifests=("${aspect_root}"/manifests/*)
+test "${#manifests[@]}" -eq 0

@@ -41,10 +41,17 @@ jobs:
               .path == ".github/workflows/iso.yml" and .conclusion == "success" and
               .head_branch == "main" and .head_sha == $revision and
               .head_repository.full_name == $repository'
-          mapfile -t artifacts < <(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ISO_RUN/artifacts" \
-            --jq '.artifacts[] | select(.name | startswith("finite-iso-")) | .name')
-          [[ ${#artifacts[@]} == 1 ]]
-          gh run download "$ISO_RUN" --name "${artifacts[0]}" --dir .bluebuild/iso
+          artifact=$(gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/actions/runs/$ISO_RUN/artifacts?per_page=100" | \
+            jq -er --arg run "$ISO_RUN" '
+              [.[].artifacts[] | select(.expired == false) | .name as $name | $name |
+                capture("^finite-iso-(?<channel>finite(?:-next|-dev(?:-next)?)?)-" + $run + "-(?<attempt>[0-9]+)$") |
+                {name: $name, channel: .channel, attempt: (.attempt | tonumber)}] |
+              if (map(.channel) | unique | length) == 1 then
+                max_by(.attempt).name
+              else
+                error("Expected ISO evidence for exactly one channel")
+              end')
+          gh run download "$ISO_RUN" --name "$artifact" --dir .bluebuild/iso
       - name: Install VM tools
         run: |
           sudo apt-get update
