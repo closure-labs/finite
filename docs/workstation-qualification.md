@@ -74,6 +74,17 @@ is mandatory, but no prior-image upgrade is claimed. Qualification takes up to
 240 minutes per profile and uses ephemeral GitHub-hosted runners. No private
 SSH keys or VM disks are included in evidence artifacts.
 
+### Acceptance VM desktop user
+
+The unattended VM installer creates `finite-test` with UID and GID 1000, matching
+Bluefin's first desktop user and its shared Homebrew installation. Without explicit
+IDs, Anaconda allocated UID 30011 after the image's Nix build users; Home Manager
+activation then failed because Homebrew belongs to `1000:1000`. Qualification waits
+for `brew-setup.service` and checks that the test user can write the Homebrew
+repository and Cellar before activation. These settings apply only to the test VM.
+
+The explicit IDs use the documented Kickstart [`user` options](https://pykickstart.readthedocs.io/en/latest/kickstart-docs.html#user).
+
 ## Kernel maintenance
 
 `sources/kernel-policy.json` defines the approved Fedora tag, kernel series,

@@ -63,7 +63,8 @@ clearpart --all --initlabel --drives=vda
 autopart
 poweroff
 rootpw --lock
-user --name=finite-test --groups=wheel --lock
+# Bluefin initializes the shared Homebrew prefix for the first desktop user.
+user --name=finite-test --uid=1000 --gid=1000 --groups=wheel --lock
 sshkey --username=finite-test "$key"
 %include /usr/share/anaconda/interactive-defaults.ks
 %post --erroronfail
@@ -245,6 +246,11 @@ jq -n --arg foundation "$(jq -r .foundation /usr/share/finite/profile.json)" \
 export XDG_RUNTIME_DIR="/run/user/$(id -u)"
 export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
 export FINITE_NIX_COMMAND=/nix/var/nix/profiles/default/bin/nix
+echo 'Checking the desktop user and shared Homebrew initialization'
+[[ $(id -u) == 1000 && $(id -g) == 1000 ]]
+sudo systemctl start brew-setup.service
+stat -c '%u:%g %a %n' /home/linuxbrew/.linuxbrew /home/linuxbrew/.linuxbrew/Homebrew
+[[ -w /home/linuxbrew/.linuxbrew/Homebrew && -w /home/linuxbrew/.linuxbrew/Cellar ]]
 echo 'Building and activating the base Home Manager environment'
 /usr/libexec/finite/home-init --profile "$HOME/profile.json"
 printf '\n# VM acceptance customization\n' >>"$HOME/.config/home-manager/customize.nix"
