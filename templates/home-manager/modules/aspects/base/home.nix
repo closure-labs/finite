@@ -24,7 +24,7 @@
   };
   brewPolicy = builtins.fromJSON (builtins.readFile ./brew-packages.json);
   brewFile = pkgs.writeText "finite.Brewfile" (
-    lib.concatMapStrings (tap: "tap ${builtins.toJSON tap}\n") brewPolicy.taps
+    lib.concatMapStrings (tap: "tap ${builtins.toJSON tap.name}, trusted: ${builtins.toJSON tap.trusted}\n") brewPolicy.taps
     + lib.concatMapStrings (package: "brew ${builtins.toJSON package.formula}\n") brewPolicy.packages
   );
   brewMigrationStatus = pkgs.writeShellApplication {
