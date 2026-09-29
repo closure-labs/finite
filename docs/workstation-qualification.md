@@ -85,6 +85,13 @@ repository and Cellar before activation. These settings apply only to the test V
 
 The explicit IDs use the documented Kickstart [`user` options](https://pykickstart.readthedocs.io/en/latest/kickstart-docs.html#user).
 
+The DX fixture also booted with `default_t` labels on the account's home and SSH
+key files, preventing public-key authentication despite correct ownership and
+sshd settings. A VM-only prerequisite now restores and verifies the account's
+labels using the booted image's policy before starting SSH. Its output is retained
+on the serial console; a relabeling failure prevents SSH from starting. SELinux
+remains enforcing and the SSH authentication policy is unchanged.
+
 ## Kernel maintenance
 
 `sources/kernel-policy.json` defines the approved Fedora tag, kernel series,
