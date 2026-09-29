@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "profiles": {
+    "bluefin-next": {
+      "publishedDigest": "sha256:140e041484ed425c38f917ee3272a069c86c0af51f4794876bca1c16fe215bb7",
+      "baselineDigest": "sha256:e6815d2d5b55d3f919fcfaebc310b675cbc244e3b980b8b09ca3b977e4c226ca",
+      "reason": "The September 22 next-kernel build omitted its initramfs. Test recovery from the signed September 18 predecessor, retaining fresh boot, upgrade, and rollback qualification."
+    },
+    "bluefin-dx-next": {
+      "publishedDigest": "sha256:a8398813f080deb0e2c99ac1a1d50fbb0322ff242335f4daffdaf4e7fca506dc",
+      "baselineDigest": "sha256:888d7e75a439651097dfa682d4b218d4ff1dcb446a05aa685bf0721dbf3b55d2",
+      "reason": "The September 22 next-kernel build omitted its initramfs. Test recovery from the signed September 18 image matching the pinned working workstation deployment, retaining fresh boot, upgrade, and rollback qualification."
+    }
+  }
+}
