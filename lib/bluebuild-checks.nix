@@ -73,6 +73,7 @@ in {
     python3 tests/bluebuild/iso.py
     python3 tests/bluebuild/kernel.py
     python3 tests/bluebuild/initramfs.py
+    python3 tests/bluebuild/vm-mok.py
     python3 tests/bluebuild/installer.py
     python3 tests/bluebuild/reliability.py
   '';

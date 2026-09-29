@@ -49,6 +49,19 @@ and certificate enrollment on each boot. Firmware-variable and certificate
 records are retained with the VM evidence. Interactive enrollment itself is not
 covered by this unattended test.
 
+Enrollment is checked by exporting the guest's enrolled MOK certificates and
+matching the ISO certificate's SHA-256. Do not use `mokutil --test-key` exit
+status for this assertion: older releases return one for an enrolled key.
+The September 29, 2026 generic-image qualification stopped on that successful
+enrollment result even though the guest had booted with Secure Boot enabled.
+
+The same run's DX guests reached SSH but rejected the test account's public key.
+Authentication errors are retained separately from connection failures. An
+acceptance-only timer writes account status, effective SSH policy, key
+fingerprints, file labels and service logs to the serial console after 90 seconds,
+so diagnosis does not depend on working SSH. It does not print password hashes
+or private keys, or alter the image's authentication policy.
+
 The VM activates Home Manager, checks Nix and captures diagnostics.
 When a previous channel digest exists, a second installation starts from that
 digest, rejects a wrong signing key, upgrades to the exact candidate digest,
