@@ -68,6 +68,24 @@ If the seed service reports malformed persistent state, preserve `/var/home/nix`
 for diagnosis and restore or repair that state before retrying. The service
 protects existing data by stopping on an invalid nonempty directory.
 
+## Login screen is slow after unlocking LUKS
+
+Use `systemd-analyze critical-chain gdm.service` to identify the dependency
+holding up the display manager. On the affected workstation, Nix provisioning
+took 44 seconds because it recursively checked every persistent store file's
+SELinux context on every boot. GDM waits for that store through Nix GPU setup.
+
+Provisioning now uses `restorecon -D` to cache successful labeling of each
+immutable store path using SELinux's file-context digest. New store paths and
+changed file-context rules still require a scan; subsequent boots reuse the
+cache for existing paths. Mutable Nix state is checked on every boot, and
+labeling errors still prevent Nix startup.
+
+To force a store relabel after manual changes or suspected label damage, run
+`sudo restorecon -RFI /var/home/nix/store`. This deliberately ignores the cache
+and can take time on a large store. See the
+[restorecon reference](https://github.com/SELinuxProject/selinux/blob/main/policycoreutils/setfiles/restorecon.8).
+
 ## Nix apps need GPU setup
 
 If Ghostty reports `Failed to create EGL display`, check whether
