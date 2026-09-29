@@ -56,11 +56,12 @@ key=$(cat "$state/ssh-key.pub")
 diagnostics=$(base64 -w0 scripts/bluebuild/vm-diagnostics.sh)
 user_labels=$(base64 -w0 scripts/bluebuild/check-vm-user-labels.sh)
 home_contexts=$(base64 -w0 files/system/usr/libexec/finite/fix-home-selinux-contexts)
-predecessor_labels=''
+nix_policy=$(base64 -w0 files/system/usr/libexec/finite/install-determinate-nix-selinux-policy)
+predecessor_policy=$(base64 -w0 scripts/bluebuild/prepare-vm-predecessor-policy.sh)
+predecessor_home=$(base64 -w0 scripts/bluebuild/prepare-vm-predecessor-home.sh)
+predecessor_enabled=false
 if [[ $phase_name == upgrade ]]; then
-  # Historical images predate the home-policy fix. Repair only their disposable
-  # test account setup; fresh candidate testing must exercise the image's fix.
-  predecessor_labels='ExecStartPre=/usr/bin/bash /var/lib/finite-vm/prepare-predecessor-labels'
+  predecessor_enabled=true
 fi
 cat >"$state/ks.cfg" <<KS
 lang en_US.UTF-8
@@ -81,14 +82,29 @@ chmod 0440 /etc/sudoers.d/finite-test
 mkdir -p /var/lib/finite-vm
 printf '%s' '$user_labels' | base64 -d >/var/lib/finite-vm/check-user-labels.sh
 printf '%s' '$home_contexts' | base64 -d >/var/lib/finite-vm/fix-home-contexts
-cat >/var/lib/finite-vm/prepare-predecessor-labels <<'PREDECESSOR'
-set -euo pipefail
-if [[ ! -e /var/lib/finite-vm/predecessor-labels-prepared ]]; then
-  echo 'Preparing historical predecessor home labels for the test account'
-  bash /var/lib/finite-vm/fix-home-contexts
-  touch /var/lib/finite-vm/predecessor-labels-prepared
+chmod 0755 /var/lib/finite-vm/fix-home-contexts
+printf '%s' '$nix_policy' | base64 -d >/var/lib/finite-vm/install-nix-policy
+printf '%s' '$predecessor_policy' | base64 -d >/var/lib/finite-vm/prepare-predecessor-policy
+printf '%s' '$predecessor_home' | base64 -d >/var/lib/finite-vm/prepare-predecessor-home
+if [[ '$predecessor_enabled' == true ]]; then
+cat >/etc/systemd/system/finite-vm-predecessor-policy.service <<'UNIT'
+[Unit]
+Description=Prepare historical Finite VM policy once
+After=local-fs.target
+Before=finite-nix-selinux.service
+RequiresMountsFor=/var/lib/finite-vm
+ConditionPathExists=!/var/lib/finite-vm/predecessor-labels-prepared
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/bash /var/lib/finite-vm/prepare-predecessor-policy
+RemainAfterExit=yes
+StandardOutput=journal+console
+StandardError=journal+console
+[Install]
+RequiredBy=finite-nix-selinux.service
+UNIT
+systemctl enable finite-vm-predecessor-policy.service
 fi
-PREDECESSOR
 # Label the installer-created account with the booted image's SELinux policy.
 # A dedicated prerequisite fails closed instead of starting SSH with default_t keys.
 cat >/etc/systemd/system/finite-vm-user-labels.service <<'UNIT'
@@ -99,7 +115,6 @@ Before=sshd.service
 RequiresMountsFor=/home/finite-test
 [Service]
 Type=oneshot
-$predecessor_labels
 ExecStart=/usr/bin/bash /var/lib/finite-vm/check-user-labels.sh
 RemainAfterExit=yes
 StandardOutput=journal+console
@@ -270,7 +285,7 @@ installed_digest=$(jq -er '.status.booted.image.imageDigest' "$state/first-boot.
 jq -e --arg installed "$installed_digest" --arg index "${source##*@}" \
   '$installed == $index or any(.manifests[]?; .digest == $installed)' \
   "$state/source-manifest.json" >/dev/null
-ssh "${ssh_args[@]}" bash -s -- "$profile" <<'GUEST'
+ssh "${ssh_args[@]}" bash -s -- "$profile" "$phase_name" <<'GUEST'
 set -euo pipefail
 echo 'Checking profile, SELinux and Nix daemon startup'
 [[ $(cat /usr/share/finite/build-profile) == "$1" ]]
@@ -288,6 +303,9 @@ echo 'Checking the desktop user and shared Homebrew initialization'
 sudo systemctl start brew-setup.service
 stat -c '%u:%g %a %n' /home/linuxbrew/.linuxbrew /home/linuxbrew/.linuxbrew/Homebrew
 [[ -w /home/linuxbrew/.linuxbrew/Homebrew && -w /home/linuxbrew/.linuxbrew/Cellar ]]
+if [[ $2 == upgrade ]]; then
+  bash /var/lib/finite-vm/prepare-predecessor-home
+fi
 echo 'Building and activating the base Home Manager environment'
 /usr/libexec/finite/home-init --profile "$HOME/profile.json"
 printf '\n# VM acceptance customization\n' >>"$HOME/.config/home-manager/customize.nix"

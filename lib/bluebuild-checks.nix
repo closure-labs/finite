@@ -62,6 +62,8 @@ in {
     bash tests/nix/nix-lifecycle.sh
     bash tests/nix/nix-systemd.sh
     bash tests/nix/home-selinux-contexts.sh
+    bash tests/nix/nix-selinux.sh
+    bash tests/bluebuild/vm-predecessor-home.sh
   '';
   bluebuild = check "bluebuild-contracts" [pkgs.git pkgs.jq (pkgs.python3.withPackages (p: [p.pyyaml]))] ''
     python3 tests/automation/bluefin-upstream.py
