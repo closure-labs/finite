@@ -16,7 +16,7 @@ fi
 
 brewfile=$(mktemp)
 trap 'rm -f -- "$brewfile"' EXIT
-jq -r '(.taps // [])[] | "tap " + tojson' "$FINITE_BREW_POLICY" >"$brewfile"
+jq -r '(.taps // [])[] | "tap " + (.name | tojson) + ", trusted: " + (.trusted | tojson)' "$FINITE_BREW_POLICY" >"$brewfile"
 jq -r '.packages[] | "brew " + (.formula | tojson)' "$FINITE_BREW_POLICY" >>"$brewfile"
 printf 'Installing the shared Homebrew CLI tools before activating Home Manager\n'
 "$brew_command" bundle install --no-upgrade --file "$brewfile"

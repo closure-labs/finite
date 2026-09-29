@@ -1,5 +1,5 @@
 {
-  "taps": ["valkyrie00/bbrew"],
+  "taps": [{"name": "valkyrie00/bbrew", "trusted": true}],
   "packages": [
     {"formula": "atuin", "command": "atuin"},
     {"formula": "bash-preexec", "file": "opt/bash-preexec/etc/profile.d/bash-preexec.sh"},

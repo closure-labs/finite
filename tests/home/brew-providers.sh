@@ -14,7 +14,7 @@ export FINITE_BREW_POLICY="$test_root/policy.json"
 mkdir -p "$TEST_BREW_PREFIX/bin" "$TEST_BREW_PREFIX/opt/bash-preexec/etc/profile.d" \
   "$TEST_BREW_PREFIX/opt/uutils-coreutils/libexec/uubin" "$test_root/host"
 cat >"$FINITE_BREW_POLICY" <<'EOF'
-{"packages":[
+{"taps":[{"name":"valkyrie00/bbrew","trusted":true}],"packages":[
   {"formula":"gh","command":"gh"},
   {"formula":"valkyrie00/bbrew/bbrew","command":"bbrew"},
   {"formula":"bash-preexec","file":"opt/bash-preexec/etc/profile.d/bash-preexec.sh"},
@@ -37,6 +37,7 @@ case "$*" in
   'bundle install --no-upgrade --file '*)
     [[ "${FINITE_TEST_BREW_INSTALL_FAIL:-false}" != true ]] || exit 1
     [[ "$HOMEBREW_NO_AUTO_UPDATE" == 1 ]]
+    grep -qxF 'tap "valkyrie00/bbrew", trusted: true' "$5" || exit 1
     grep -qF 'brew "valkyrie00/bbrew/bbrew"' "$5"
     printf '#!%s\nexit 0\n' "$BASH" >"$TEST_BREW_PREFIX/bin/gh"
     chmod +x "$TEST_BREW_PREFIX/bin/gh"
