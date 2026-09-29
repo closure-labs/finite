@@ -55,6 +55,21 @@ install -m 0755 "${true_command}" \
 install -m 0755 "${true_command}" "${test_root}/usr/bin/determinate-nixd"
 install -m 0755 "$(type -P rm)" "${test_root}/usr/bin/rm"
 install -m 0755 "${true_command}" "${test_root}/usr/bin/systemd-tmpfiles"
+install -m 0755 "${true_command}" "${test_root}/usr/bin/bash"
+
+# Include the historical VM prerequisite in the boot transaction so placing it
+# after the Nix service it prepares cannot silently introduce an ordering cycle.
+awk '
+  /^cat >\/etc\/systemd\/system\/finite-vm-predecessor-policy.service / { capture = 1; next }
+  capture && /^UNIT$/ { exit }
+  capture { print }
+' "${repo_root}/scripts/bluebuild/vm-acceptance.sh" > \
+  "${test_root}/usr/lib/systemd/system/finite-vm-predecessor-policy.service"
+grep -qxF 'Before=finite-nix-selinux.service' \
+  "${test_root}/usr/lib/systemd/system/finite-vm-predecessor-policy.service"
+install -d "${test_root}/usr/lib/systemd/system/finite-nix-selinux.service.requires"
+ln -s ../finite-vm-predecessor-policy.service \
+  "${test_root}/usr/lib/systemd/system/finite-nix-selinux.service.requires/finite-vm-predecessor-policy.service"
 
 # Reproduce the activation layout inherited from Fedora/Determinate. The
 # Finite helper must remove these early/direct links, not merely add its later
@@ -134,6 +149,7 @@ if [[ -d /run/systemd ]]; then
     verify \
     multi-user.target \
     finite-nix-selinux.service \
+    finite-vm-predecessor-policy.service \
     finite-nix-seed.service \
     finite-nix-socket-cleanup.service \
     finite-nix-gpu.service \
