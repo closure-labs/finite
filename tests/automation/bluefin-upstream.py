@@ -270,6 +270,17 @@ class BluefinTests(unittest.TestCase):
                 publication.promote('bluefin-generic', self.root)
             self.assertEqual(run.call_count, 2)
 
+    def test_recovery_record_cannot_skip_or_change_reviewed_baseline(self):
+        evidence = self.prepare_recovery()
+        path = evidence / 'bluefin-generic-publication.json'
+        original = json.loads(path.read_text())
+        with patch.dict(os.environ, GITHUB_SHA='f' * 40), patch.object(publication.subprocess, 'run') as run:
+            for key, value in [('qualify', False), ('previousDigest', IMAGE), ('recoveryReason', '')]:
+                path.write_text(json.dumps({**original, key: value}))
+                with self.assertRaisesRegex(ValueError, 'reviewed recovery baseline'):
+                    publication.promote('bluefin-generic', self.root)
+            run.assert_not_called()
+
     def test_candidate_preparation_never_exposes_channel_tags(self):
         self.prepare()
         recipe = upstream.yaml.safe_load((self.root / 'recipes/bluefin-generic.yml').read_text())

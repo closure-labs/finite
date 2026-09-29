@@ -24,6 +24,27 @@ causing encrypted workstations to panic before LUKS unlock. A green historical
 workflow alone is therefore insufficient evidence of a successful boot; inspect
 the acceptance and promotion records.
 
+`automation/qualification-recovery.json` records an explicit signed predecessor
+for an unbootable public digest. It applies only to the named profile while that
+exact digest remains published, and always forces qualification. The September 22
+next-kernel images use their signed September 18 predecessors; the DX predecessor
+matches the pinned working workstation deployment. Historical signatures do not
+constitute VM acceptance: the selected predecessor must boot, upgrade to the new
+candidate, and roll back in the current run, alongside a fresh candidate install.
+
+Publication evidence records `publishedDigest` for the image being replaced and
+`previousDigest` for the predecessor actually tested, plus `recoveryReason`.
+Promotion rejects a changed public digest, altered recovery selection, or missing
+matching Secure Boot acceptance. Once a replacement is promoted, the old entry
+no longer applies and normal predecessor selection resumes.
+
+Historical predecessor VMs receive the home-policy mapping correction once in
+their disposable installer-created SSH fixture, before their first SSH connection.
+The fixture does not repeat the correction after upgrade or rollback. This allows the upgrade test to
+access old images affected by the known labeling bug. Fresh candidate VMs receive
+no such policy repair and must pass with the image's native policy setup. Kernel,
+initramfs, Secure Boot, signature, upgrade and rollback checks remain unchanged.
+
 ## What is qualified
 
 Each candidate is identified by immutable digest, profile, source revision and
