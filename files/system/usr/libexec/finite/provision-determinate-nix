@@ -32,5 +32,11 @@ else
 fi
 
 if command -v restorecon >/dev/null 2>&1; then
-	restorecon -RF "${state}"
+	# Mutable profiles, sockets and database state still need a check every boot.
+	# Cache each immutable store path, not the store root: newly installed paths
+	# must still be labeled even when the policy has not changed. restorecon
+	# invalidates each digest when its matching file-context rules change.
+	restorecon -RF -e "${state}/store" "${state}"
+	restorecon -F "${state}/store"
+	find "${state}/store" -mindepth 1 -maxdepth 1 -exec restorecon -RFD {} +
 fi
