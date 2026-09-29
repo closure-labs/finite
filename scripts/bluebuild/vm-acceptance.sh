@@ -63,13 +63,33 @@ clearpart --all --initlabel --drives=vda
 autopart
 poweroff
 rootpw --lock
-user --name=finite-test --groups=wheel --lock
+# Bluefin initializes the shared Homebrew prefix for the first desktop user.
+user --name=finite-test --uid=1000 --gid=1000 --groups=wheel --lock
 sshkey --username=finite-test "$key"
 %include /usr/share/anaconda/interactive-defaults.ks
 %post --erroronfail
 printf 'finite-test ALL=(ALL) NOPASSWD: ALL\n' >/etc/sudoers.d/finite-test
 chmod 0440 /etc/sudoers.d/finite-test
-systemctl enable sshd
+# Label the installer-created account with the booted image's SELinux policy.
+# A dedicated prerequisite fails closed instead of starting SSH with default_t keys.
+cat >/etc/systemd/system/finite-vm-user-labels.service <<'UNIT'
+[Unit]
+Description=Label the Finite acceptance VM account
+After=local-fs.target finite-nix-selinux.service
+Before=sshd.service
+RequiresMountsFor=/home/finite-test
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/restorecon -RF /home/finite-test
+ExecStart=/usr/sbin/matchpathcon -V /home/finite-test /home/finite-test/.ssh /home/finite-test/.ssh/authorized_keys
+ExecStart=/usr/bin/ls -ldZ /home/finite-test /home/finite-test/.ssh /home/finite-test/.ssh/authorized_keys
+RemainAfterExit=yes
+StandardOutput=journal+console
+StandardError=journal+console
+[Install]
+RequiredBy=sshd.service
+UNIT
+systemctl enable sshd finite-vm-user-labels.service
 mkdir -p /var/lib/finite-vm
 printf '%s' '$diagnostics' | base64 -d >/var/lib/finite-vm/diagnostics.sh
 cat >/etc/systemd/system/finite-vm-diagnostics.service <<'UNIT'
@@ -245,6 +265,11 @@ jq -n --arg foundation "$(jq -r .foundation /usr/share/finite/profile.json)" \
 export XDG_RUNTIME_DIR="/run/user/$(id -u)"
 export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
 export FINITE_NIX_COMMAND=/nix/var/nix/profiles/default/bin/nix
+echo 'Checking the desktop user and shared Homebrew initialization'
+[[ $(id -u) == 1000 && $(id -g) == 1000 ]]
+sudo systemctl start brew-setup.service
+stat -c '%u:%g %a %n' /home/linuxbrew/.linuxbrew /home/linuxbrew/.linuxbrew/Homebrew
+[[ -w /home/linuxbrew/.linuxbrew/Homebrew && -w /home/linuxbrew/.linuxbrew/Cellar ]]
 echo 'Building and activating the base Home Manager environment'
 /usr/libexec/finite/home-init --profile "$HOME/profile.json"
 printf '\n# VM acceptance customization\n' >>"$HOME/.config/home-manager/customize.nix"

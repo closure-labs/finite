@@ -15,6 +15,6 @@ if [[ -n $home ]]; then
   done
   ssh-keygen -lf "$home/.ssh/authorized_keys"
 fi
-systemctl --no-pager --full status sshd cloud-init-local cloud-init cloud-config cloud-final
-journalctl --no-pager -b -u sshd -u cloud-init-local -u cloud-init -u cloud-config -u cloud-final -n 150
+systemctl --no-pager --full status finite-vm-user-labels sshd cloud-init-local cloud-init cloud-config cloud-final
+journalctl --no-pager -b -u finite-vm-user-labels -u sshd -u cloud-init-local -u cloud-init -u cloud-config -u cloud-final -n 150
 echo 'END Finite VM authentication diagnostics'
