@@ -11,6 +11,7 @@ mapfile -t kernels < <(rpm -q --qf '%{EVR}.%{ARCH}\n' kernel-core)
 [[ ${#kernels[@]} == 1 ]]
 bash /usr/libexec/finite/check-initramfs "${kernels[0]}"
 authselect check
+bash /usr/libexec/finite/fix-home-selinux-contexts
 find /usr/libexec/finite/firstboot-rpm-ostree.d -maxdepth 1 -type f -exec chmod 0755 {} +
 rm -f /boot/symvers-*.xz
 rm -rf /run/dnf /var/lib/rpm-state
