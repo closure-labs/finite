@@ -14,3 +14,6 @@ fi
 if ! semanage fcontext -a -e /nix /var/home/nix 2>/dev/null; then
 	semanage fcontext -m -e /nix /var/home/nix
 fi
+
+# Policy transactions regenerate home rules using the OSTree useradd defaults.
+/usr/libexec/finite/fix-home-selinux-contexts

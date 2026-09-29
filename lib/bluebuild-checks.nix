@@ -56,11 +56,12 @@ in {
     bash modules/aspects/roles/developer/tests/contracts.sh
     bash modules/aspects/roles/support/tests/contracts.sh
   '';
-  nix-lifecycle = check "nix-lifecycle" (with pkgs; [gnugrep jq systemd util-linux]) ''
+  nix-lifecycle = check "nix-lifecycle" (with pkgs; [diffutils gawk gnugrep jq systemd util-linux]) ''
     bash tests/bluebuild/nix-readiness.sh
     bash tests/nix/determinate-version.sh
     bash tests/nix/nix-lifecycle.sh
     bash tests/nix/nix-systemd.sh
+    bash tests/nix/home-selinux-contexts.sh
   '';
   bluebuild = check "bluebuild-contracts" [pkgs.git pkgs.jq (pkgs.python3.withPackages (p: [p.pyyaml]))] ''
     python3 tests/automation/bluefin-upstream.py

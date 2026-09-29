@@ -5,6 +5,10 @@ echo 'BEGIN Finite VM authentication diagnostics'
 date -u
 getent passwd finite-test
 id finite-test
+getenforce
+grep '^HOME=' /etc/default/useradd
+cat /etc/selinux/targeted/contexts/files/file_contexts.subs{,_dist}
+matchpathcon /home/finite-test /var/home/finite-test /var/home/finite-test/.ssh/authorized_keys
 passwd -S finite-test
 sshd -T -C user=finite-test,host=bluefin,addr=10.0.2.2 | \
   grep -E '^(authorizedkeys|authentication|pubkey|usepam|allowusers|allowgroups|denyusers|denygroups)'

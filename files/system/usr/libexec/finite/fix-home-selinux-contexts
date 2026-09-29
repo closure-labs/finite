@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+contexts=${1:-/etc/selinux/targeted/contexts/files}
+homedirs="$contexts/file_contexts.homedirs"
+substitutions="$contexts/file_contexts.subs_dist"
+test -s "$homedirs"
+test -f "$substitutions"
+
+# OSTree generates home rules from HOME=/var/home in /etc/default/useradd.
+# The conventional Fedora substitution in the opposite direction then makes
+# those rules unreachable. Match rpm-ostree's canonical /var/home mapping.
+# Images whose generated rules still use /home keep their existing mapping.
+grep -q '^/var/home/' "$homedirs" || exit 0
+if grep -q '^/home/' "$homedirs"; then
+  echo 'Ambiguous SELinux home roots; refusing to rewrite path substitutions.' >&2
+  exit 1
+fi
+
+temporary=$(mktemp)
+trap 'rm -f -- "$temporary"' EXIT
+awk '
+  $1 == "/var/home" && $2 == "/home" { next }
+  $1 == "/home" && $2 == "/var/home" { next }
+  { print }
+  END { print "/home /var/home" }
+' "$substitutions" >"$temporary"
+# Preserve the existing file's ownership, mode and SELinux label.
+if ! cmp -s "$temporary" "$substitutions"; then
+  cat "$temporary" >"$substitutions"
+fi

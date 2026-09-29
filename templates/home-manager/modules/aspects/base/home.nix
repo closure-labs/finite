@@ -77,6 +77,10 @@ in {
 
   nix.package = null;
 
+  # A cold Flatpak install exceeded sd-switch's two-minute default in the VM.
+  # Keep activation synchronous so installation failures still fail the switch.
+  systemd.user.servicesStartTimeoutMs = 15 * 60 * 1000;
+
   targets.genericLinux = {
     enable = true;
     gpu.enable = true;

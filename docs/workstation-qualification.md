@@ -92,6 +92,21 @@ labels using the booted image's policy before starting SSH. Its output is retain
 on the serial console; a relabeling failure prevents SSH from starting. SELinux
 remains enforcing and the SSH authentication policy is unchanged.
 
+Subsequent DX evidence showed that `restorecon` and `matchpathcon -V` both
+accepted `default_t`: generated home rules used `/var/home`, but the vendor
+substitution redirected that path to `/home`. Image finalization and the Nix
+policy setup now align the substitution with the generated rules, following
+the [OSTree home mapping correction](https://github.com/coreos/rpm-ostree/pull/1754).
+Policies generated for `/home` retain their existing mapping. The VM additionally
+requires `user_home_dir_t` for the account and `ssh_home_t` for its SSH files;
+agreement with an incorrect default label cannot pass this prerequisite.
+
+Home Manager activation waits up to fifteen minutes for user services. A cold
+Flatpak installation in the September 29 generic VM completed successfully in
+126 seconds, just after sd-switch's default two-minute wait had failed activation.
+The longer bounded wait preserves synchronous failure reporting; it does not
+skip application installation or treat a failed service as successful.
+
 ## Kernel maintenance
 
 `sources/kernel-policy.json` defines the approved Fedora tag, kernel series,

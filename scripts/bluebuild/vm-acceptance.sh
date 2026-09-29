@@ -54,6 +54,7 @@ sudo chmod a+rw /dev/kvm
 ssh-keygen -q -t ed25519 -N '' -f "$state/ssh-key"
 key=$(cat "$state/ssh-key.pub")
 diagnostics=$(base64 -w0 scripts/bluebuild/vm-diagnostics.sh)
+user_labels=$(base64 -w0 scripts/bluebuild/check-vm-user-labels.sh)
 cat >"$state/ks.cfg" <<KS
 lang en_US.UTF-8
 keyboard us
@@ -70,6 +71,8 @@ sshkey --username=finite-test "$key"
 %post --erroronfail
 printf 'finite-test ALL=(ALL) NOPASSWD: ALL\n' >/etc/sudoers.d/finite-test
 chmod 0440 /etc/sudoers.d/finite-test
+mkdir -p /var/lib/finite-vm
+printf '%s' '$user_labels' | base64 -d >/var/lib/finite-vm/check-user-labels.sh
 # Label the installer-created account with the booted image's SELinux policy.
 # A dedicated prerequisite fails closed instead of starting SSH with default_t keys.
 cat >/etc/systemd/system/finite-vm-user-labels.service <<'UNIT'
@@ -80,9 +83,7 @@ Before=sshd.service
 RequiresMountsFor=/home/finite-test
 [Service]
 Type=oneshot
-ExecStart=/usr/sbin/restorecon -RF /home/finite-test
-ExecStart=/usr/sbin/matchpathcon -V /home/finite-test /home/finite-test/.ssh /home/finite-test/.ssh/authorized_keys
-ExecStart=/usr/bin/ls -ldZ /home/finite-test /home/finite-test/.ssh /home/finite-test/.ssh/authorized_keys
+ExecStart=/usr/bin/bash /var/lib/finite-vm/check-user-labels.sh
 RemainAfterExit=yes
 StandardOutput=journal+console
 StandardError=journal+console
