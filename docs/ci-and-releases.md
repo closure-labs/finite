@@ -35,7 +35,10 @@ lightweight entry point and retain their existing credential and review checks.
 Den receives an explicit `gen` hub input, pinned to the revision tested by Den,
 in both the repository and standalone Home Manager flakes. The hub's `follows`
 relationships share one revision per library and avoid recursive standalone
-fetches. Review the hub pin when updating Den.
+fetches. Den is also pinned to the compatible revision; update Den and the hub
+together and evaluate the refreshed locks before merging. The September 28,
+2026 weekly refresh advanced Den beyond the pinned schema API and failed with
+`mkSchemaOption` rejecting `specialArgs`.
 
 The shared Nix setup uses `nix-community/cache-nix-action` to preserve the Nix
 store together with downloaded source trees and the fetcher index, keyed by

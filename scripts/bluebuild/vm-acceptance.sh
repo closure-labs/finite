@@ -53,6 +53,7 @@ test -e /dev/kvm
 sudo chmod a+rw /dev/kvm
 ssh-keygen -q -t ed25519 -N '' -f "$state/ssh-key"
 key=$(cat "$state/ssh-key.pub")
+diagnostics=$(base64 -w0 scripts/bluebuild/vm-diagnostics.sh)
 cat >"$state/ks.cfg" <<KS
 lang en_US.UTF-8
 keyboard us
@@ -69,6 +70,27 @@ sshkey --username=finite-test "$key"
 printf 'finite-test ALL=(ALL) NOPASSWD: ALL\n' >/etc/sudoers.d/finite-test
 chmod 0440 /etc/sudoers.d/finite-test
 systemctl enable sshd
+mkdir -p /var/lib/finite-vm
+printf '%s' '$diagnostics' | base64 -d >/var/lib/finite-vm/diagnostics.sh
+cat >/etc/systemd/system/finite-vm-diagnostics.service <<'UNIT'
+[Unit]
+Description=Finite acceptance VM serial diagnostics
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/bash /var/lib/finite-vm/diagnostics.sh
+StandardOutput=journal+console
+StandardError=journal+console
+TimeoutStartSec=30
+UNIT
+cat >/etc/systemd/system/finite-vm-diagnostics.timer <<'UNIT'
+[Unit]
+Description=Collect Finite acceptance VM diagnostics after first boot
+[Timer]
+OnBootSec=90
+[Install]
+WantedBy=timers.target
+UNIT
+systemctl enable finite-vm-diagnostics.timer
 %end
 KS
 bash scripts/bluebuild/prepare-vm-iso.sh "${isos[0]}" "$state/ks.cfg" "$state"
@@ -151,7 +173,7 @@ boot_vm() {
       echo "Unexpected interactive MOK enrollment during $phase; check firmware-certificate.log" >&2
       return 1
     fi
-    if ssh "${ssh_args[@]}" true 2>/dev/null; then
+    if ssh "${ssh_args[@]}" true 2>"$state/$phase-ssh.log"; then
       printf 'SSH ready for %s at %s\n' "$phase" "$(date -u +%FT%TZ)"
       ssh "${ssh_args[@]}" sudo bash -s <scripts/bluebuild/wait-nix.sh | tee "$state/$phase-nix.log"
       ssh "${ssh_args[@]}" sudo journalctl --no-pager -b -u systemd-remount-fs \
@@ -164,8 +186,9 @@ boot_vm() {
       if [[ ${FINITE_SECURE_BOOT:-false} == true ]]; then
         ssh "${ssh_args[@]}" env LC_ALL=C mokutil --sb-state | tee "$state/$phase-secure-boot.log" | grep -Fx 'SecureBoot enabled'
       fi
-      ssh "${ssh_args[@]}" 'set -eu; key=$(mktemp); trap '\''rm -f "$key"'\'' EXIT; cat >"$key"; sudo mokutil --test-key "$key"' \
-        <"$state/sb_pubkey.der" >"$state/$phase-mok.log"
+      certificate_sha=$(sha256sum "$state/sb_pubkey.der" | cut -d' ' -f1)
+      ssh "${ssh_args[@]}" sudo bash -s -- "$certificate_sha" \
+        <scripts/bluebuild/check-vm-mok.sh >"$state/$phase-mok.log" 2>&1
       ssh "${ssh_args[@]}" bash -s <<'KERNEL' | tee "$state/$phase-kernel.log"
 set -euo pipefail
 expected=$(jq -er .kernelRelease /usr/share/finite/profile.json)
@@ -177,7 +200,12 @@ KERNEL
     fi
     sleep 5
   done
-  echo "SSH did not become available during $phase" >&2
+  if grep -qF 'Permission denied' "$state/$phase-ssh.log"; then
+    echo "SSH authentication rejected during $phase; see $phase-ssh.log and serial authentication diagnostics" >&2
+  else
+    echo "SSH did not become available during $phase; see $phase-ssh.log" >&2
+  fi
+  ssh -vv "${ssh_args[@]}" true >"$state/$phase-ssh-debug.log" 2>&1 || true
   return 1
 }
 poweroff_vm() {

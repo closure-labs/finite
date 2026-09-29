@@ -19,7 +19,8 @@
   };
 
   inputs = {
-    den.url = "github:denful/den";
+    # Update Den and the gen hub together: newer Den APIs may require a newer schema.
+    den.url = "github:denful/den/90c303be407632d3983fb619e714c53b2349b8e6";
 
     # Use Den's tested gen hub through flake inputs, so sibling libraries share
     # revisions via follows instead of recursively fetching standalone roots.
