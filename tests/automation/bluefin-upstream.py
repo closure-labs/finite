@@ -188,6 +188,88 @@ class BluefinTests(unittest.TestCase):
         with patch.dict(os.environ, GITHUB_SHA='f' * 40), patch.object(publication.upstream, 'inspect', side_effect=self.published), patch.object(publication.subprocess, 'run'):
             publication.prepare('bluefin-generic', publish, self.root)
 
+    def recovery_policy(self):
+        path = self.root / 'automation/qualification-recovery.json'
+        path.parent.mkdir(exist_ok=True)
+        policy = {'schema': 1, 'profiles': {'bluefin-generic': {
+            'publishedDigest': IMAGE, 'baselineDigest': NEW, 'reason': 'Missing initramfs'}}}
+        path.write_text(json.dumps(policy))
+        return path, policy
+
+    def prepare_recovery(self):
+        self.recovery_policy()
+        baseline = {'Digest': NEW, 'Labels': {'io.finite.profile': 'bluefin-generic'}}
+        with patch.dict(os.environ, GITHUB_SHA='f' * 40), \
+                patch.object(publication.upstream, 'inspect', side_effect=[self.published(upstream.REPOSITORY + ':finite'), baseline]), \
+                patch.object(publication.subprocess, 'run') as run:
+            publication.prepare('bluefin-generic', True, self.root)
+        self.assertEqual([call.args[0][-1] for call in run.call_args_list],
+                         [upstream.REPOSITORY + '@' + IMAGE, upstream.REPOSITORY + '@' + NEW])
+        return self.root / '.bluebuild'
+
+    def test_recovery_only_applies_to_exact_profile_and_broken_digest(self):
+        self.recovery_policy()
+        self.assertEqual(publication.recovery_baseline('bluefin-generic', IMAGE, self.root),
+                         (NEW, 'Missing initramfs'))
+        self.assertEqual(publication.recovery_baseline('bluefin-generic', NEW, self.root), (NEW, ''))
+        self.assertEqual(publication.recovery_baseline('bluefin-next', IMAGE, self.root), (IMAGE, ''))
+
+    def test_invalid_recovery_policy_fails_closed(self):
+        path, policy = self.recovery_policy()
+        for key, value in [('publishedDigest', ''), ('baselineDigest', IMAGE), ('reason', '')]:
+            invalid = json.loads(json.dumps(policy))
+            invalid['profiles']['bluefin-generic'][key] = value
+            path.write_text(json.dumps(invalid))
+            with self.assertRaises(ValueError):
+                publication.recovery_baseline('bluefin-generic', IMAGE, self.root)
+
+    def test_recovery_forces_qualification_and_records_both_digests(self):
+        evidence = self.prepare_recovery()
+        record = json.loads((evidence / 'bluefin-generic-publication.json').read_text())
+        self.assertTrue(record['qualify'])
+        self.assertEqual(record['publishedDigest'], IMAGE)
+        self.assertEqual(record['previousDigest'], NEW)
+        self.assertEqual(record['recoveryReason'], 'Missing initramfs')
+
+    def test_wrong_profile_or_unsigned_recovery_never_mutates_recipe(self):
+        self.recovery_policy()
+        before = self.snapshot()
+        wrong = {'Digest': NEW, 'Labels': {'io.finite.profile': 'bluefin-next'}}
+        with patch.object(publication.upstream, 'inspect', side_effect=[self.published(upstream.REPOSITORY + ':finite'), wrong]), \
+                patch.object(publication.subprocess, 'run'):
+            with self.assertRaisesRegex(ValueError, 'different profile'):
+                publication.prepare('bluefin-generic', True, self.root)
+        with patch.object(publication.upstream, 'inspect', return_value=self.published(upstream.REPOSITORY + ':finite')), \
+                patch.object(publication.subprocess, 'run', side_effect=[None, subprocess.CalledProcessError(1, 'cosign')]):
+            with self.assertRaises(subprocess.CalledProcessError):
+                publication.prepare('bluefin-generic', True, self.root)
+        self.assertEqual(self.snapshot(), before)
+
+    def test_recovery_promotion_requires_exact_acceptance_and_unchanged_channel(self):
+        evidence = self.prepare_recovery()
+        candidate = upstream.REPOSITORY + '@sha256:' + 'd' * 64
+        (evidence / 'bluefin-generic-image-ref.txt').write_text(candidate)
+        acceptance = {'accepted': True, 'candidate': candidate, 'previousDigest': NEW,
+                      'profile': 'bluefin-generic', 'revision': 'f' * 40,
+                      'buildIdentity': IDENTITY, 'secureBoot': True}
+        path = evidence / 'bluefin-generic-acceptance.json'
+        with patch.dict(os.environ, GITHUB_SHA='f' * 40), patch.object(publication.subprocess, 'run') as run:
+            with self.assertRaisesRegex(ValueError, 'lacks matching successful'):
+                publication.promote('bluefin-generic', self.root)
+            for key, value in [('accepted', False), ('previousDigest', IMAGE), ('secureBoot', False)]:
+                path.write_text(json.dumps({**acceptance, key: value}))
+                with self.assertRaisesRegex(ValueError, 'lacks matching successful'):
+                    publication.promote('bluefin-generic', self.root)
+            path.write_text(json.dumps(acceptance))
+            with patch.object(publication.upstream, 'inspect', return_value={'Digest': NEW}):
+                with self.assertRaisesRegex(ValueError, 'Public channel changed'):
+                    publication.promote('bluefin-generic', self.root)
+            run.assert_not_called()
+            with patch.object(publication.upstream, 'inspect', side_effect=[{'Digest': IMAGE},
+                    {'Digest': candidate.split('@')[1]}, {'Digest': candidate.split('@')[1]}]):
+                publication.promote('bluefin-generic', self.root)
+            self.assertEqual(run.call_count, 2)
+
     def test_candidate_preparation_never_exposes_channel_tags(self):
         self.prepare()
         recipe = upstream.yaml.safe_load((self.root / 'recipes/bluefin-generic.yml').read_text())

@@ -14,6 +14,28 @@ upstream = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(upstream)
 
 
+def recovery_baseline(profile, published_digest, root):
+    """Use a reviewed baseline only while its exact broken digest is published."""
+    path = root / 'automation/qualification-recovery.json'
+    if not path.exists():
+        return published_digest, ''
+    policy = json.loads(path.read_text())
+    if (not isinstance(policy, dict) or set(policy) != {'schema', 'profiles'} or
+            type(policy['schema']) is not int or policy['schema'] != 1 or not isinstance(policy['profiles'], dict)):
+        raise ValueError('Invalid qualification recovery policy')
+    for name, entry in policy['profiles'].items():
+        if name not in upstream.PROFILES or not isinstance(entry, dict) or set(entry) != {'publishedDigest', 'baselineDigest', 'reason'}:
+            raise ValueError('Invalid qualification recovery entry')
+        replaced = upstream.digest(entry['publishedDigest'])
+        baseline = upstream.digest(entry['baselineDigest'])
+        if replaced == baseline or not isinstance(entry['reason'], str) or not entry['reason'].strip():
+            raise ValueError('Recovery requires a distinct baseline and a reason')
+    entry = policy['profiles'].get(profile)
+    if entry and published_digest == entry['publishedDigest']:
+        return entry['baselineDigest'], entry['reason']
+    return published_digest, ''
+
+
 def prepare(profile, publish, root=upstream.ROOT):
     recipe = upstream.recipes(root)[profile]
     build_identity = upstream.image_identity(profile, root)
@@ -26,8 +48,16 @@ def prepare(profile, publish, root=upstream.ROOT):
         subprocess.run(['cosign', 'verify', '--key', str(root / 'cosign.pub'),
                         upstream.REPOSITORY + '@' + previous_digest],
                        check=True, stdout=subprocess.DEVNULL, timeout=150)
+    published_digest = previous_digest
+    previous_digest, recovery_reason = recovery_baseline(profile, published_digest, root)
+    if recovery_reason:
+        baseline = upstream.REPOSITORY + '@' + previous_digest
+        subprocess.run(['cosign', 'verify', '--key', str(root / 'cosign.pub'), baseline],
+                       check=True, stdout=subprocess.DEVNULL, timeout=150)
+        if (upstream.inspect(baseline).get('Labels') or {}).get('io.finite.profile') != profile:
+            raise ValueError('Recovery baseline belongs to a different profile')
     weekly = os.environ.get('GITHUB_EVENT_NAME') == 'schedule' and datetime.now(timezone.utc).weekday() == 0
-    qualify = publish and (os.environ.get('FORCE_QUALIFICATION') == 'true' or weekly or not previous or
+    qualify = publish and (bool(recovery_reason) or os.environ.get('FORCE_QUALIFICATION') == 'true' or weekly or not previous or
                           (previous.get('Labels') or {}).get('io.finite.build-inputs') != build_identity)
     evidence = root / '.bluebuild'
     evidence.mkdir(exist_ok=True)
@@ -39,6 +69,7 @@ def prepare(profile, publish, root=upstream.ROOT):
     record = {**recipe, 'profile': profile, 'candidate': candidate,
               'revision': os.environ.get('GITHUB_SHA', 'local'), 'publish': publish,
               'buildIdentity': build_identity, 'previousDigest': previous_digest,
+              'publishedDigest': published_digest, 'recoveryReason': recovery_reason,
               'qualify': qualify, 'qualificationMode': mode}
     (evidence / f'{profile}-publication.json').write_text(json.dumps(record, indent=2) + '\n')
     if publish:
@@ -64,6 +95,10 @@ def promote(profile, root=upstream.ROOT):
         raise ValueError('Invalid publication record')
     if record['revision'] != os.environ['GITHUB_SHA']:
         raise ValueError('Publication record is from a different revision')
+    baseline, reason = recovery_baseline(profile, record['publishedDigest'], root)
+    if (record['previousDigest'] != baseline or record.get('recoveryReason') != reason or
+            (reason and record.get('qualify') is not True)):
+        raise ValueError('Publication record does not match the reviewed recovery baseline')
     # This file is written only after signature, provenance and runtime checks
     # succeed. Never resolve the mutable candidate tag again for promotion.
     image = (evidence / f'{profile}-image-ref.txt').read_text().strip()
@@ -86,6 +121,10 @@ def promote(profile, root=upstream.ROOT):
                         acceptance.get('secureBoot') is True))
     if record['qualify'] and not accepted:
         raise ValueError('Candidate lacks matching successful Secure Boot qualification')
+    if reason:
+        current = upstream.inspect(upstream.REPOSITORY + ':' + record['tags'][0])
+        if upstream.digest(current['Digest']) != record['publishedDigest']:
+            raise ValueError('Public channel changed after recovery qualification was prepared')
     for tag in record['tags']:
         target = upstream.REPOSITORY + ':' + tag
         subprocess.run(['skopeo', '--command-timeout', '90s', 'copy', '--retry-times', '3',
