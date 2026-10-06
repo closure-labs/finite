@@ -107,7 +107,7 @@
   );
   homeInit = pkgs.writeShellApplication {
     name = "finite-home-init";
-    runtimeInputs = with pkgs; [coreutils findutils getent jq yq-go];
+    runtimeInputs = with pkgs; [coreutils findutils getent gnugrep jq yq-go];
     text =
       ''
         export FINITE_HOME_TEMPLATE_PATH="''${FINITE_HOME_TEMPLATE_PATH:-${homeScaffold}}"

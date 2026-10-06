@@ -113,6 +113,7 @@ cat >"${test_root}/activation/activate" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 printf 'activated\n' >>"${FINITE_TEST_ACTIVATION_LOG}"
+[[ "${FINITE_TEST_ACTIVATION_FAIL:-false}" != true ]]
 EOF
 cat >"${test_root}/fake-bin/nix" <<'EOF'
 #!/usr/bin/env bash
@@ -124,6 +125,12 @@ printf '\n' >>"${FINITE_TEST_NIX_LOG}"
 	exit 1
 }
 [[ "${FINITE_TEST_BUILD_FAIL:-false}" != true ]]
+if [[ -n "${FINITE_TEST_DOWNLOAD_ERROR:-}" ]] &&
+	(( $(wc -l <"${FINITE_TEST_NIX_LOG}") <= ${FINITE_TEST_DOWNLOAD_FAILURES:-1} )); then
+	cat "$FINITE_TEST_DOWNLOAD_ERROR" >&2
+	printf 'failed-attempt-stdout-must-not-be-used\n'
+	exit "${FINITE_TEST_DOWNLOAD_STATUS:-1}"
+fi
 if [[ -n "${FINITE_TEST_PRESERVED_FLAKE:-}" ]]; then
 	for argument in "$@"; do
 		if [[ "$argument" == path:*#homeConfigurations.* ]]; then
@@ -287,6 +294,77 @@ if FINITE_TEST_BREW_FAIL=true \
 fi
 grep -qF 'preserve' "${hm_dir}/preserve-on-failure"
 cmp "${FINITE_TEST_ACTIVATION_LOG}" "${test_root}/activation-before-brew-failure.log"
+
+# Exercise the real initializer without network access or retry delays.
+(
+	# Exported to the initializer's child shell to record backoff without waiting.
+	# shellcheck disable=SC2329
+	sleep() { printf '%s\n' "$1" >>"${test_root}/sleeps"; }
+	export -f sleep
+	export test_root
+	export FINITE_TEST_DOWNLOAD_ERROR="${test_root}/download-error"
+	interrupted="warning: unable to download 'https://cache.nixos.org/nar/test.nar.zst': HTTP error 200 (curl error: Failure when receiving data from the peer); retrying from offset 20378154"
+	for scenario in recover unavailable exhausted builder evaluation auth integrity bare-416 unknown signal; do
+		printf '%s\n' "$interrupted" 'error: unable to download archive: HTTP error 416' >"$FINITE_TEST_DOWNLOAD_ERROR"
+		export FINITE_TEST_DOWNLOAD_FAILURES=3
+		export FINITE_TEST_DOWNLOAD_STATUS=1
+		case "$scenario" in
+		recover) export FINITE_TEST_DOWNLOAD_FAILURES=2 ;;
+		unavailable)
+			export FINITE_TEST_DOWNLOAD_FAILURES=2
+			echo 'error: unable to download archive: HTTP error 503' >"$FINITE_TEST_DOWNLOAD_ERROR"
+			;;
+		builder) echo 'Reason: builder failed with exit code 1' >>"$FINITE_TEST_DOWNLOAD_ERROR" ;;
+		evaluation) echo "error: attribute 'package' missing" >>"$FINITE_TEST_DOWNLOAD_ERROR" ;;
+		auth) echo 'error: HTTP error 403' >>"$FINITE_TEST_DOWNLOAD_ERROR" ;;
+		integrity) echo 'error: hash mismatch' >>"$FINITE_TEST_DOWNLOAD_ERROR" ;;
+		bare-416) echo 'error: unable to download archive: HTTP error 416' >"$FINITE_TEST_DOWNLOAD_ERROR" ;;
+		unknown) echo 'error: unexpected failure' >"$FINITE_TEST_DOWNLOAD_ERROR" ;;
+		signal) export FINITE_TEST_DOWNLOAD_STATUS=143 ;;
+		esac
+		: >"$FINITE_TEST_NIX_LOG"
+		: >"${test_root}/sleeps"
+		before_activation=$(wc -l <"$FINITE_TEST_ACTIVATION_LOG")
+		before_brew=$(wc -l <"$FINITE_TEST_BREW_LOG")
+		printf 'preserve\n' >"${hm_dir}/preserve-on-failure"
+		if "${init_command}" --profile "${test_root}/profile.yaml" >"${test_root}/retry.stdout" 2>"${test_root}/retry.stderr"; then
+			[[ $scenario == recover || $scenario == unavailable ]]
+			[[ $(wc -l <"$FINITE_TEST_ACTIVATION_LOG") == $((before_activation + 1)) ]]
+			[[ $(wc -l <"$FINITE_TEST_BREW_LOG") == $((before_brew + 1)) ]]
+			test ! -e "${hm_dir}/preserve-on-failure"
+			test ! -e "${hm_dir}/.build.stderr"
+		else
+			[[ $? == "$FINITE_TEST_DOWNLOAD_STATUS" ]]
+			[[ $scenario != recover && $scenario != unavailable ]]
+			[[ $(wc -l <"$FINITE_TEST_ACTIVATION_LOG") == "$before_activation" ]]
+			[[ $(wc -l <"$FINITE_TEST_BREW_LOG") == "$before_brew" ]]
+			grep -qF preserve "${hm_dir}/preserve-on-failure"
+		fi
+		if [[ $scenario == recover || $scenario == unavailable || $scenario == exhausted ]]; then
+			[[ $(wc -l <"$FINITE_TEST_NIX_LOG") == 3 ]]
+			[[ $(cat "${test_root}/sleeps") == $'30\n60' ]]
+			grep -qF 'retrying in' "${test_root}/retry.stderr"
+		else
+			[[ $(wc -l <"$FINITE_TEST_NIX_LOG") == 1 ]]
+			test ! -s "${test_root}/sleeps"
+		fi
+		if grep -Eq 'retrying|failed-attempt-stdout' "${test_root}/retry.stdout"; then
+			echo 'Retry diagnostics contaminated build stdout' >&2
+			exit 1
+		fi
+	done
+	unset FINITE_TEST_DOWNLOAD_ERROR
+	: >"$FINITE_TEST_NIX_LOG"
+	: >"${test_root}/sleeps"
+	before_activation=$(wc -l <"$FINITE_TEST_ACTIVATION_LOG")
+	if FINITE_TEST_ACTIVATION_FAIL=true "${init_command}" --profile "${test_root}/profile.yaml" >/dev/null 2>&1; then
+		echo 'Home initializer ignored an activation failure' >&2
+		exit 1
+	fi
+	[[ $(wc -l <"$FINITE_TEST_NIX_LOG") == 1 ]]
+	[[ $(wc -l <"$FINITE_TEST_ACTIVATION_LOG") == $((before_activation + 1)) ]]
+	test ! -s "${test_root}/sleeps"
+)
 
 bad_template="${test_root}/bad-template"
 cp -a "${template}" "${bad_template}"

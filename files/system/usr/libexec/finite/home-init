@@ -179,12 +179,39 @@ jq -e '[.nodes[].locked? | select(. != null) | .type] | all(. != "path")' \
 	exit 2
 }
 
-activation=$(
-	"$nix_command" --accept-flake-config build \
+# Retry only realization: configuration replacement, Brew and activation below
+# must run once, after a successful build. Keep stdout free of diagnostics.
+build_logs=$(mktemp -d)
+trap 'rm -rf -- "$workdir" "$build_logs"' EXIT
+for attempt in 1 2 3; do
+	if "$nix_command" --accept-flake-config build \
 		--no-update-lock-file \
 		"path:$workdir#homeConfigurations.${username}.activationPackage" \
-		--no-link --print-build-logs --print-out-paths
-)
+		--no-link --print-build-logs --print-out-paths \
+		>"$build_logs/stdout" 2>"$build_logs/stderr"; then
+		cat "$build_logs/stderr" >&2
+		activation=$(cat "$build_logs/stdout")
+		break
+	else
+		status=$?
+	fi
+	cat "$build_logs/stderr" >&2
+	# A preceding transport warning must not mask a deterministic failure.
+	permanent='builder (for .* failed|failed) with exit code|hash mismatch|NAR hash|signature.*(invalid|missing)|syntax error|undefined variable|attribute .* missing|while evaluating|assertion .*failed|cannot coerce|infinite recursion|HTTP (error |response:? )?(400|401|403|404)\b|Permission denied|unauthorized|forbidden'
+	transport='HTTP (error |response:? )?(408|429|500|502|503|504)\b|(could not|couldn.t) resolve (host|hostname)|(connection|network) (reset|timed out|is unreachable)|(unable|failed) to download .*(timed out|Timeout)|Temporary failure in name resolution|TLS connect error'
+	interrupted='(unable|failed) to download .*(Failure when receiving data from the peer|Failed sending data to the peer|SSL_ERROR_SYSCALL)'
+	if ((attempt == 3 || status >= 128)) ||
+		grep -Ei "$permanent" "$build_logs/stderr" >/dev/null; then
+		exit "$status"
+	fi
+	# A bare 416 is not transient: require evidence of an interrupted download.
+	if ! grep -Ei "$transport|$interrupted" "$build_logs/stderr" >/dev/null; then
+		exit "$status"
+	fi
+	printf 'Nix download failed (attempt %s/3); retrying in %ss.\n' "$attempt" "$((attempt * 30))" >&2
+	sleep "$((attempt * 30))"
+done
+rm -rf -- "$build_logs"
 printf 'Finite Home Manager configuration for %s builds as %s\n' "$username" "$activation"
 [[ "$activate" == false ]] && exit 0
 
