@@ -1,32 +1,32 @@
 {
   "schema": 1,
-  "release": "7.2.8-300.fc45.x86_64",
-  "baseUrl": "https://kojipkgs.fedoraproject.org/packages/kernel/7.2.8/300.fc45/data/signed/f577861e/x86_64",
+  "release": "7.2.9-300.fc45.x86_64",
+  "baseUrl": "https://kojipkgs.fedoraproject.org/packages/kernel/7.2.9/300.fc45/data/signed/f577861e/x86_64",
   "packages": [
     {
       "name": "kernel",
-      "file": "kernel-7.2.8-300.fc45.x86_64.rpm",
-      "sha256": "636dc01cc0da401b2cb1b98729f2251140663b339d675bfaaec7b2c45ea19122"
+      "file": "kernel-7.2.9-300.fc45.x86_64.rpm",
+      "sha256": "834e59d50339c5dea234f2c255203db9a97eb91d5e5b2ef4cb4439a5a9fa8830"
     },
     {
       "name": "kernel-core",
-      "file": "kernel-core-7.2.8-300.fc45.x86_64.rpm",
-      "sha256": "ac0fd768d484af9b231985877738725082c89b1374cb6174af2933d85d042f57"
+      "file": "kernel-core-7.2.9-300.fc45.x86_64.rpm",
+      "sha256": "adef1a7365ccca5b90cd5e38b470d32bf8e7971d795b698b05d11d1ee8a17f16"
     },
     {
       "name": "kernel-modules-core",
-      "file": "kernel-modules-core-7.2.8-300.fc45.x86_64.rpm",
-      "sha256": "383c8ba37e997cad3116d1661eb159d11a36566e87a0d7f01a63f1754016fd2f"
+      "file": "kernel-modules-core-7.2.9-300.fc45.x86_64.rpm",
+      "sha256": "4d62bf386b58943448004fe92b1a9be4b56803fbbb76901ad9863d0477e34365"
     },
     {
       "name": "kernel-modules",
-      "file": "kernel-modules-7.2.8-300.fc45.x86_64.rpm",
-      "sha256": "296c854c5025cb45a43b8daccdf7d7dbb4509ece0e2ff8e8385a865e33ae625f"
+      "file": "kernel-modules-7.2.9-300.fc45.x86_64.rpm",
+      "sha256": "5197ffdaacd3115fe56095e8599b25783fb27a0b7c9d399d72e4430595c69ede"
     },
     {
       "name": "kernel-modules-extra",
-      "file": "kernel-modules-extra-7.2.8-300.fc45.x86_64.rpm",
-      "sha256": "a4828622383ccada706a2f907985e13ed264209b81ab8c9657aec74d41de8c7a"
+      "file": "kernel-modules-extra-7.2.9-300.fc45.x86_64.rpm",
+      "sha256": "b0849db0bc01439301d05c9f6c53747f0f835418b2819d874db3033d281355e6"
     }
   ],
   "requiredModules": [
