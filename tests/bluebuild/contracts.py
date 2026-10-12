@@ -79,7 +79,10 @@ class BlueBuildContracts(unittest.TestCase):
         steps = build['steps']
         self.assertFalse(any(s.get('uses', '').startswith('blue-build/') for s in steps))
         action = next(s for s in steps if s.get('name') == 'Build with BlueBuild')
-        self.assertIn('nix develop --file lib/ci-tools.nix shell', action['run'])
+        self.assertNotIn('nix develop', action['run'])
+        tools = next(step for step in reusable['jobs']['build']['steps']
+                     if 'image-tools --no-link' in step.get('run', ''))
+        self.assertIn('echo "$tools/bin" >>"$GITHUB_PATH"', tools['run'])
         self.assertIn('scripts/bluebuild/build.sh "$PROFILE" "$PUBLISH"', action['run'])
         self.assertEqual(action['env']['PUBLISH'], '${{ inputs.publish }}')
         self.assertEqual(action['env']['BB_PASSWORD'], '${{ github.token }}')

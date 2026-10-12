@@ -1,8 +1,15 @@
-{pkgs}: {
-  ci = pkgs.mkShell {
-    packages =
-      (with pkgs; [bash coreutils cosign file git gh jq ripgrep skopeo])
-      ++ [(pkgs.python3.withPackages (packages: [packages.pyyaml]))];
+{pkgs}: let
+  # One package list keeps the interactive shell and hosted image tools aligned.
+  # Neither entry installs a Nix client: use the host's Determinate client.
+  ciPackages =
+    (with pkgs; [bash coreutils cosign file git gh jq ripgrep skopeo])
+    ++ [(pkgs.python3.withPackages (packages: [packages.pyyaml]))];
+in {
+  ci = pkgs.mkShell {packages = ciPackages;};
+  imageTools = pkgs.buildEnv {
+    name = "finite-ci-image-tools";
+    paths = ciPackages;
+    pathsToLink = ["/bin"];
   };
   release = pkgs.mkShell {
     packages = with pkgs; [bash coreutils cosign gh jq python3 skopeo syft grype umoci];

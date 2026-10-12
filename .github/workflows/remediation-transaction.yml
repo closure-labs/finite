@@ -1,0 +1,63 @@
+name: Validate targeted RPM transaction
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  transaction:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+      - name: Authenticate the pinned generic base
+        id: base
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, re, subprocess
+          from pathlib import Path
+          recipe = Path('recipes/bluefin-generic.yml').read_text()
+          match = re.findall(r'^image-version: stable@(sha256:[a-f0-9]{64})$', recipe, re.M)
+          assert len(match) == 1
+          assert re.findall(r'^base-image: (.+)$', recipe, re.M) == ['ghcr.io/ublue-os/bluefin']
+          policy = json.loads(Path('sources/bluefin-trust.json').read_text())
+          assert hashlib.sha256(Path('sources/bluefin.pub').read_bytes()).hexdigest() == policy['keySha256']
+          image = 'ghcr.io/ublue-os/bluefin@' + match[0]
+          subprocess.run(['cosign', 'verify', '--new-bundle-format=false', '--key', 'sources/bluefin.pub', image], check=True, stdout=subprocess.DEVNULL, timeout=150)
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+              print('image=' + image, file=out)
+          PY
+      - name: Make room for the base image
+        uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
+        with:
+          skip-if-available: "80G"
+      - name: Validate the actual bounded transaction
+        env:
+          BASE_IMAGE: ${{ steps.base.outputs.image }}
+        run: |
+          mkdir -p .bluebuild/transaction
+          set -o pipefail
+          docker run --name finite-rpm-transaction --entrypoint python3 \
+            --env CONFIG_DIRECTORY=/probe --volume "$PWD/files:/probe:ro" \
+            "$BASE_IMAGE" /probe/scripts/security-remediate.py 2>&1 | tee .bluebuild/transaction/transaction.log
+          docker start --attach finite-rpm-transaction 2>&1 | tee .bluebuild/transaction/noop.log
+          test "$(docker inspect --format '{{.State.ExitCode}}' finite-rpm-transaction)" = 0
+          grep -F 'already satisfied; no repository access required' .bluebuild/transaction/noop.log
+      - name: Remove the test container
+        if: always()
+        run: docker rm --force finite-rpm-transaction || true
+      - name: Retain transaction evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: remediation-transaction-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/transaction/*.log
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 30

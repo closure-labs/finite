@@ -1,0 +1,162 @@
+{
+  "schema": 1,
+  "fedora": 44,
+  "sourceImage": "ghcr.io/closure-labs/finite@sha256:302f05b64f6d38ce3747de84342fedd519495efa6b195f5f0dccfbe887f25d8d",
+  "sourceRun": 38290632761,
+  "packages": {
+    "hplip": {
+      "minimumEVR": "0:3.26.6-1.fc44",
+      "advisories": [
+        "CVE-2026-91105",
+        "CVE-2026-91097",
+        "CVE-2026-91098",
+        "CVE-2026-91099",
+        "CVE-2026-91101",
+        "CVE-2026-91103",
+        "CVE-2026-91102",
+        "CVE-2026-91100"
+      ],
+      "source": "https://bodhi.fedoraproject.org/updates/FEDORA-2026-9e80aed94f"
+    },
+    "hplip-common": {
+      "minimumEVR": "0:3.26.6-1.fc44",
+      "advisories": [
+        "CVE-2026-91105",
+        "CVE-2026-91097",
+        "CVE-2026-91098",
+        "CVE-2026-91099",
+        "CVE-2026-91101",
+        "CVE-2026-91103",
+        "CVE-2026-91102",
+        "CVE-2026-91100"
+      ],
+      "source": "https://bodhi.fedoraproject.org/updates/FEDORA-2026-9e80aed94f"
+    },
+    "hplip-libs": {
+      "minimumEVR": "0:3.26.6-1.fc44",
+      "advisories": [
+        "CVE-2026-91105",
+        "CVE-2026-91097",
+        "CVE-2026-91098",
+        "CVE-2026-91099",
+        "CVE-2026-91101",
+        "CVE-2026-91103",
+        "CVE-2026-91102",
+        "CVE-2026-91100"
+      ],
+      "source": "https://bodhi.fedoraproject.org/updates/FEDORA-2026-9e80aed94f"
+    },
+    "libsane-hpaio": {
+      "minimumEVR": "0:3.26.6-1.fc44",
+      "advisories": [
+        "CVE-2026-91105",
+        "CVE-2026-91097",
+        "CVE-2026-91098",
+        "CVE-2026-91099",
+        "CVE-2026-91101",
+        "CVE-2026-91103",
+        "CVE-2026-91102",
+        "CVE-2026-91100"
+      ],
+      "source": "https://bodhi.fedoraproject.org/updates/FEDORA-2026-9e80aed94f"
+    },
+    "python-unversioned-command": {
+      "minimumEVR": "0:3.14.8-1.fc44",
+      "advisories": [
+        "CVE-2026-19445"
+      ],
+      "source": "https://bodhi.fedoraproject.org/updates/FEDORA-2026-6261b26f4e"
+    },
+    "python3": {
+      "minimumEVR": "0:3.14.8-1.fc44",
+      "advisories": [
+        "CVE-2026-19445"
+      ],
+      "source": "https://bodhi.fedoraproject.org/updates/FEDORA-2026-6261b26f4e"
+    },
+    "python3-libs": {
+      "minimumEVR": "0:3.14.8-1.fc44",
+      "advisories": [
+        "CVE-2026-19445"
+      ],
+      "source": "https://bodhi.fedoraproject.org/updates/FEDORA-2026-6261b26f4e"
+    },
+    "libX11": {
+      "minimumEVR": "0:1.8.13-3.fc44",
+      "advisories": [
+        "CVE-2026-88806"
+      ],
+      "source": "https://bodhi.fedoraproject.org/updates/FEDORA-2026-0d57b0d529"
+    },
+    "libX11-common": {
+      "minimumEVR": "0:1.8.13-3.fc44",
+      "advisories": [
+        "CVE-2026-88806"
+      ],
+      "source": "https://bodhi.fedoraproject.org/updates/FEDORA-2026-0d57b0d529"
+    },
+    "libX11-xcb": {
+      "minimumEVR": "0:1.8.13-3.fc44",
+      "advisories": [
+        "CVE-2026-88806"
+      ],
+      "source": "https://bodhi.fedoraproject.org/updates/FEDORA-2026-0d57b0d529"
+    },
+    "tesseract-common": {
+      "minimumEVR": "0:5.5.3-2.fc44",
+      "advisories": [
+        "CVE-2026-88052",
+        "CVE-2026-88053",
+        "CVE-2026-88048",
+        "CVE-2026-88051",
+        "CVE-2026-88054",
+        "CVE-2026-88049",
+        "CVE-2026-88050",
+        "CVE-2026-88047"
+      ],
+      "source": "https://bodhi.fedoraproject.org/updates/FEDORA-2026-fc27f09459"
+    },
+    "tesseract-libs": {
+      "minimumEVR": "0:5.5.3-2.fc44",
+      "advisories": [
+        "CVE-2026-88052",
+        "CVE-2026-88053",
+        "CVE-2026-88048",
+        "CVE-2026-88051",
+        "CVE-2026-88054",
+        "CVE-2026-88049",
+        "CVE-2026-88050",
+        "CVE-2026-88047"
+      ],
+      "source": "https://bodhi.fedoraproject.org/updates/FEDORA-2026-fc27f09459"
+    },
+    "freerdp-libs": {
+      "minimumEVR": "2:3.32.1-1.fc44",
+      "advisories": [
+        "FEDORA-2026-9aca5215f2"
+      ],
+      "source": "https://bodhi.fedoraproject.org/updates/FEDORA-2026-9aca5215f2"
+    },
+    "libwinpr": {
+      "minimumEVR": "2:3.32.1-1.fc44",
+      "advisories": [
+        "FEDORA-2026-9aca5215f2"
+      ],
+      "source": "https://bodhi.fedoraproject.org/updates/FEDORA-2026-9aca5215f2"
+    },
+    "sudo": {
+      "minimumEVR": "0:1.9.17-10.p2.fc44",
+      "advisories": [
+        "FEDORA-2026-7d4732cbab"
+      ],
+      "source": "https://bodhi.fedoraproject.org/updates/FEDORA-2026-7d4732cbab"
+    },
+    "sudo-python-plugin": {
+      "minimumEVR": "0:1.9.17-10.p2.fc44",
+      "advisories": [
+        "FEDORA-2026-7d4732cbab"
+      ],
+      "source": "https://bodhi.fedoraproject.org/updates/FEDORA-2026-7d4732cbab"
+    }
+  }
+}

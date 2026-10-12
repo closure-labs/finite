@@ -17,12 +17,15 @@ let
   shells = import ./ci-shells.nix {inherit pkgs;};
 in {
   shell = shells.ci;
+  image-tools = shells.imageTools;
   release = shells.release;
   ci-github-actions-secrets = repository.githubActionsSecrets;
   ci-repository-security-audit = import ./ci-applications/repository-security-audit.nix {
     inherit pkgs;
     policy = ../automation/github/repository-security.json;
   };
+  ci-source-update = import ./ci-applications/update-determinate-nix.nix {inherit pkgs;};
+  ci-lock-validate = import ./ci-applications/validate-locks.nix {inherit pkgs;};
   ci-trusted-update = updates.trustedUpdate;
   ci-queue-dependabot = updates.queueDependabot;
 }

@@ -1,0 +1,43 @@
+name: Benchmark image tool setup
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [baseline, candidate]
+    env:
+      BENCHMARK_MODE: ${{ matrix.mode }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # Each matrix job gets a separate runner. Deliberately avoid setup-nix's
+      # Actions cache so the first pass is cold and the second reuses only itself.
+      - uses: DeterminateSystems/determinate-nix-action@527f17dd63d2d60d3e5552934bc84b9a33a14d11 # v3.22.2
+        with:
+          extra-conf: |
+            max-jobs = 4
+            cores = 1
+            connect-timeout = 15
+            stalled-download-timeout = 60
+            download-attempts = 3
+      - name: Measure cold and warm tool setup
+        run: python3 scripts/ci/benchmark-image-tools.py "$BENCHMARK_MODE" ".bluebuild/benchmark-$BENCHMARK_MODE.json"
+      - name: Retain measurements including failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: image-tools-${{ matrix.mode }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/benchmark-${{ matrix.mode }}.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14

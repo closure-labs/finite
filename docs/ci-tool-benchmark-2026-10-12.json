@@ -1,0 +1,443 @@
+{
+  "schema": 1,
+  "run": "https://github.com/closure-labs/finite/actions/runs/38294108271",
+  "source": "JSON printed by benchmark-image-tools.py in hosted job logs; uploaded artifacts were absent because hidden files were excluded. Exact artifact upload configuration is fixed for subsequent runs.",
+  "limits": [
+    "Two baseline/candidate pairs on separate hosted runners; both show reduced cold and warm setup time. Cold timing includes network and runner variation; two pairs are not a statistical performance guarantee.",
+    "Warm means second pass within the same job, not an Actions cache restore.",
+    "Measures tool setup and seven no-op commands, not image build, scan or complete workflow duration.",
+    "Environment closure measurement occurs after timed passes; store delta counts unique NAR bytes, not download transfer bytes."
+  ],
+  "baseline": {
+    "schema": 1,
+    "mode": "baseline",
+    "revision": "d592a2f3199cbaf18c4f73297ec3c585fb80c646",
+    "lockSha256": "699461bfe7bc7f3e4f9dbbdcf6d4a38b39770cb62e939805acf96120ca0346cf",
+    "runner": {
+      "os": "Linux",
+      "arch": "X64",
+      "image": "20261004.327.1"
+    },
+    "nix": "/nix/var/nix/profiles/default/bin/nix",
+    "passes": [
+      {
+        "phase": "cold",
+        "seconds": 37.634840737000005,
+        "stages": [
+          {
+            "stage": "command-1",
+            "seconds": 29.833215183
+          },
+          {
+            "stage": "command-2",
+            "seconds": 1.317034343000003
+          },
+          {
+            "stage": "command-3",
+            "seconds": 1.3169485640000005
+          },
+          {
+            "stage": "command-4",
+            "seconds": 1.316901908999995
+          },
+          {
+            "stage": "command-5",
+            "seconds": 1.3169692429999884
+          },
+          {
+            "stage": "command-6",
+            "seconds": 1.2667484940000122
+          },
+          {
+            "stage": "command-7",
+            "seconds": 1.2670054450000094
+          }
+        ]
+      },
+      {
+        "phase": "warm",
+        "seconds": 9.11845189200001,
+        "stages": [
+          {
+            "stage": "command-1",
+            "seconds": 1.266665302000007
+          },
+          {
+            "stage": "command-2",
+            "seconds": 1.2668703100000016
+          },
+          {
+            "stage": "command-3",
+            "seconds": 1.316888512999995
+          },
+          {
+            "stage": "command-4",
+            "seconds": 1.3169869070000004
+          },
+          {
+            "stage": "command-5",
+            "seconds": 1.3169719409999914
+          },
+          {
+            "stage": "command-6",
+            "seconds": 1.316941369999995
+          },
+          {
+            "stage": "command-7",
+            "seconds": 1.3171127680000012
+          }
+        ]
+      }
+    ],
+    "cache": "No Actions cache restore/save; warm pass reuses first-pass store and evaluator downloads.",
+    "nixVersion": "nix (Determinate Nix 3.22.2) 2.35.2",
+    "storeBefore": {
+      "paths": 80,
+      "narBytes": 139110760
+    },
+    "storeAfter": {
+      "paths": 3076,
+      "narBytes": 1410273480
+    },
+    "addedStoreNarBytes": 1271162720,
+    "environmentClosureNarBytes": 1006620328,
+    "closureMeasurementExcludedFromTimings": true,
+    "status": "success"
+  },
+  "candidate": {
+    "schema": 1,
+    "mode": "candidate",
+    "revision": "d592a2f3199cbaf18c4f73297ec3c585fb80c646",
+    "lockSha256": "699461bfe7bc7f3e4f9dbbdcf6d4a38b39770cb62e939805acf96120ca0346cf",
+    "runner": {
+      "os": "Linux",
+      "arch": "X64",
+      "image": "20261004.327.1"
+    },
+    "nix": "/nix/var/nix/profiles/default/bin/nix",
+    "passes": [
+      {
+        "phase": "cold",
+        "seconds": 12.776678863999997,
+        "stages": [
+          {
+            "stage": "realize-tools",
+            "seconds": 12.765729645
+          },
+          {
+            "stage": "command-1",
+            "seconds": 0.001981112999999368
+          },
+          {
+            "stage": "command-2",
+            "seconds": 0.0016140730000060444
+          },
+          {
+            "stage": "command-3",
+            "seconds": 0.0015645209999988197
+          },
+          {
+            "stage": "command-4",
+            "seconds": 0.0014806629999952747
+          },
+          {
+            "stage": "command-5",
+            "seconds": 0.001455135000000496
+          },
+          {
+            "stage": "command-6",
+            "seconds": 0.0014448860000015884
+          },
+          {
+            "stage": "command-7",
+            "seconds": 0.0013981580000006488
+          }
+        ]
+      },
+      {
+        "phase": "warm",
+        "seconds": 1.0752044649999988,
+        "stages": [
+          {
+            "stage": "realize-tools",
+            "seconds": 1.0625038730000043
+          },
+          {
+            "stage": "command-1",
+            "seconds": 0.003951116000003196
+          },
+          {
+            "stage": "command-2",
+            "seconds": 0.001510638999995706
+          },
+          {
+            "stage": "command-3",
+            "seconds": 0.0014512380000013536
+          },
+          {
+            "stage": "command-4",
+            "seconds": 0.0014353980000052502
+          },
+          {
+            "stage": "command-5",
+            "seconds": 0.001452089000004264
+          },
+          {
+            "stage": "command-6",
+            "seconds": 0.0014420900000047254
+          },
+          {
+            "stage": "command-7",
+            "seconds": 0.0014437940000036065
+          }
+        ]
+      }
+    ],
+    "cache": "No Actions cache restore/save; warm pass reuses first-pass store and evaluator downloads.",
+    "nixVersion": "nix (Determinate Nix 3.22.2) 2.35.2",
+    "storeBefore": {
+      "paths": 80,
+      "narBytes": 139110760
+    },
+    "storeAfter": {
+      "paths": 2571,
+      "narBytes": 1027254936
+    },
+    "addedStoreNarBytes": 888144176,
+    "environmentClosureNarBytes": 651023016,
+    "closureMeasurementExcludedFromTimings": true,
+    "status": "success"
+  },
+  "comparison": {
+    "cold": {
+      "savedSeconds": 24.858161873000007,
+      "reductionPercent": 66.05092883669668
+    },
+    "warm": {
+      "savedSeconds": 8.043247427000011,
+      "reductionPercent": 88.20847576173189
+    },
+    "environmentClosureNarBytes": {
+      "savedBytes": 355597312,
+      "reductionPercent": 35.325862404002635
+    },
+    "addedStoreNarBytes": {
+      "savedBytes": 383018544,
+      "reductionPercent": 30.13135438710789
+    }
+  },
+  "repeatRun": {
+    "run": "https://github.com/closure-labs/finite/actions/runs/38294546850",
+    "source": "Downloaded native JSON artifacts; exact hidden-file upload fixed and successful.",
+    "baseline": {
+      "schema": 1,
+      "mode": "baseline",
+      "revision": "59b7c7921dcbde415411bcd344beb4d83b185467",
+      "lockSha256": "699461bfe7bc7f3e4f9dbbdcf6d4a38b39770cb62e939805acf96120ca0346cf",
+      "runner": {
+        "os": "Linux",
+        "arch": "X64",
+        "image": "20261004.327.1"
+      },
+      "nix": "/nix/var/nix/profiles/default/bin/nix",
+      "passes": [
+        {
+          "phase": "cold",
+          "seconds": 32.494764191,
+          "stages": [
+            {
+              "stage": "command-1",
+              "seconds": 25.597136855000002
+            },
+            {
+              "stage": "command-2",
+              "seconds": 1.8176689459999977
+            },
+            {
+              "stage": "command-3",
+              "seconds": 1.0159834939999826
+            },
+            {
+              "stage": "command-4",
+              "seconds": 1.015886082999998
+            },
+            {
+              "stage": "command-5",
+              "seconds": 1.0159809650000113
+            },
+            {
+              "stage": "command-6",
+              "seconds": 1.0160136590000093
+            },
+            {
+              "stage": "command-7",
+              "seconds": 1.0160793260000105
+            }
+          ]
+        },
+        {
+          "phase": "warm",
+          "seconds": 7.112040497999999,
+          "stages": [
+            {
+              "stage": "command-1",
+              "seconds": 1.0159314250000193
+            },
+            {
+              "stage": "command-2",
+              "seconds": 1.0160519579999914
+            },
+            {
+              "stage": "command-3",
+              "seconds": 1.0159063430000117
+            },
+            {
+              "stage": "command-4",
+              "seconds": 1.0160267960000056
+            },
+            {
+              "stage": "command-5",
+              "seconds": 1.016117204000011
+            },
+            {
+              "stage": "command-6",
+              "seconds": 1.0160332099999891
+            },
+            {
+              "stage": "command-7",
+              "seconds": 1.0159600819999923
+            }
+          ]
+        }
+      ],
+      "cache": "No Actions cache restore/save; warm pass reuses first-pass store and evaluator downloads.",
+      "nixVersion": "nix (Determinate Nix 3.22.2) 2.35.2",
+      "storeBefore": {
+        "paths": 80,
+        "narBytes": 139110760
+      },
+      "storeAfter": {
+        "paths": 3076,
+        "narBytes": 1410273480
+      },
+      "addedStoreNarBytes": 1271162720,
+      "environmentClosureNarBytes": 1006620328,
+      "closureMeasurementExcludedFromTimings": true,
+      "status": "success"
+    },
+    "candidate": {
+      "schema": 1,
+      "mode": "candidate",
+      "revision": "59b7c7921dcbde415411bcd344beb4d83b185467",
+      "lockSha256": "699461bfe7bc7f3e4f9dbbdcf6d4a38b39770cb62e939805acf96120ca0346cf",
+      "runner": {
+        "os": "Linux",
+        "arch": "X64",
+        "image": "20261004.327.1"
+      },
+      "nix": "/nix/var/nix/profiles/default/bin/nix",
+      "passes": [
+        {
+          "phase": "cold",
+          "seconds": 9.170380737000002,
+          "stages": [
+            {
+              "stage": "realize-tools",
+              "seconds": 9.160065023999998
+            },
+            {
+              "stage": "command-1",
+              "seconds": 0.0019053619999951366
+            },
+            {
+              "stage": "command-2",
+              "seconds": 0.0015263210000000527
+            },
+            {
+              "stage": "command-3",
+              "seconds": 0.0013872549999973671
+            },
+            {
+              "stage": "command-4",
+              "seconds": 0.0014745129999980122
+            },
+            {
+              "stage": "command-5",
+              "seconds": 0.0013818520000015155
+            },
+            {
+              "stage": "command-6",
+              "seconds": 0.0013051160000046025
+            },
+            {
+              "stage": "command-7",
+              "seconds": 0.001323972999998091
+            }
+          ]
+        },
+        {
+          "phase": "warm",
+          "seconds": 2.106476354999998,
+          "stages": [
+            {
+              "stage": "realize-tools",
+              "seconds": 2.0964850330000004
+            },
+            {
+              "stage": "command-1",
+              "seconds": 0.002088734000004422
+            },
+            {
+              "stage": "command-2",
+              "seconds": 0.0014663919999975406
+            },
+            {
+              "stage": "command-3",
+              "seconds": 0.001296852000002957
+            },
+            {
+              "stage": "command-4",
+              "seconds": 0.0012743569999997817
+            },
+            {
+              "stage": "command-5",
+              "seconds": 0.0013044840000020486
+            },
+            {
+              "stage": "command-6",
+              "seconds": 0.0012726669999949536
+            },
+            {
+              "stage": "command-7",
+              "seconds": 0.0012788900000018089
+            }
+          ]
+        }
+      ],
+      "cache": "No Actions cache restore/save; warm pass reuses first-pass store and evaluator downloads.",
+      "nixVersion": "nix (Determinate Nix 3.22.2) 2.35.2",
+      "storeBefore": {
+        "paths": 80,
+        "narBytes": 139110760
+      },
+      "storeAfter": {
+        "paths": 2571,
+        "narBytes": 1027254936
+      },
+      "addedStoreNarBytes": 888144176,
+      "environmentClosureNarBytes": 651023016,
+      "closureMeasurementExcludedFromTimings": true,
+      "status": "success"
+    },
+    "comparison": {
+      "cold": {
+        "savedSeconds": 23.324383454,
+        "reductionPercent": 71.77889741529529
+      },
+      "warm": {
+        "savedSeconds": 5.005564143000001,
+        "reductionPercent": 70.38154724242125
+      }
+    }
+  }
+}

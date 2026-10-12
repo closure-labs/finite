@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "fedora": 44,
+  "sourceImage": "ghcr.io/closure-labs/finite@sha256:302f05b64f6d38ce3747de84342fedd519495efa6b195f5f0dccfbe887f25d8d",
+  "packages": {
+    "python3-anyio": {
+      "component": "pkg:pypi/anyio@4.13.0",
+      "minimumUpstreamVersion": "4.14.2",
+      "advisories": ["GHSA-82r6-8w77-94w6"]
+    },
+    "python3-msgpack": {
+      "component": "pkg:pypi/msgpack@1.1.2",
+      "minimumUpstreamVersion": "1.2.1",
+      "advisories": ["GHSA-6v7p-g79w-8964"]
+    },
+    "rclone": {
+      "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+      "minimumUpstreamVersion": "1.75.1",
+      "advisories": ["GHSA-p569-5gjg-9cmj", "GHSA-xwwr-4h3p-r22c"]
+    }
+  }
+}
