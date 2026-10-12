@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "maxDatabaseAgeHours": 48,
+  "maxEvidenceAgeHours": 24,
+  "maxExceptionDays": 30,
+  "distributionAliases": {
+    "fedora": "fedora",
+    "bluefin": "fedora"
+  },
+  "requiredReleasePackage": "fedora-release-common",
+  "minimumRpmPackages": 100,
+  "requiredProviders": [
+    "fedora",
+    "kev"
+  ],
+  "blockedFixableSeverities": [
+    "High",
+    "Critical"
+  ],
+  "blockKnownExploited": true,
+  "exceptions": [],
+  "coverageProbePackage": "openssl"
+}

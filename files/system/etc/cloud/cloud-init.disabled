@@ -1,0 +1,2 @@
+# Finite disables general-purpose provisioning on ordinary desktop installs.
+# See docs/security-implementation.md before deliberately opting in as administrator.

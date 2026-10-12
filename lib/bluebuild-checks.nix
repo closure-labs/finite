@@ -66,7 +66,7 @@ in {
     bash tests/nix/nix-selinux.sh
     bash tests/bluebuild/vm-predecessor-home.sh
   '';
-  bluebuild = check "bluebuild-contracts" [pkgs.git pkgs.jq (pkgs.python3.withPackages (p: [p.pyyaml]))] ''
+  bluebuild = check "bluebuild-contracts" [pkgs.gawk pkgs.git pkgs.jq pkgs.yq-go (pkgs.python3.withPackages (p: [p.pyyaml]))] ''
     python3 tests/automation/bluefin-upstream.py
     python3 tests/ci/selection.py
     python3 tests/ci/nix-checks.py
@@ -80,6 +80,8 @@ in {
     python3 tests/bluebuild/initramfs.py
     python3 tests/bluebuild/vm-mok.py
     python3 tests/bluebuild/installer.py
+    python3 tests/bluebuild/provisioning.py
+    python3 tests/bluebuild/security-policy.py
     python3 tests/bluebuild/reliability.py
   '';
   vm-iso = check "vm-iso-layout" (with pkgs; [diffutils gnugrep gnused libisoburn mtools]) ''
@@ -118,7 +120,7 @@ in {
     shellcheck -s bash files/installer/install_finite_fstab
     shellcheck files/system/usr/libexec/finite/check-initramfs
   '';
-  repository-security = check "repository-security" (with pkgs; [jq applications.repositorySecurityAudit]) ''
+  repository-security = check "repository-security" (with pkgs; [jq python3 applications.repositorySecurityAudit]) ''
     bash tests/automation/repository-security.sh \
       ${lib.getExe applications.repositorySecurityAudit} \
       automation/github/repository-security.json tests/fixtures/repository-security

@@ -42,7 +42,6 @@ modules:
   - type: systemd@v1
     system:
       enabled:
-        - cloud-init.target
         - pcscd.socket
         - finite-firstboot-rpm-ostree.service
     user:

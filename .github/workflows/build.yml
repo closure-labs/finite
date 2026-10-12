@@ -126,8 +126,6 @@ jobs:
       profile: ${{ matrix.profile }}
       channel: ${{ matrix.channel }}
       force_qualification: ${{ inputs.qualify || false }}
-    secrets:
-      cosign_private_key: ${{ secrets.COSIGN_PRIVATE_KEY }}
 
   gate:
     name: CI gate

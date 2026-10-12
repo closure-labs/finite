@@ -11,6 +11,9 @@ import subprocess
 spec = importlib.util.spec_from_file_location('bluefin_upstream', Path(__file__).resolve().parents[1] / 'ci/bluefin-upstream.py')
 upstream = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(upstream)
+security_spec = importlib.util.spec_from_file_location('security_policy', Path(__file__).with_name('security-policy.py'))
+security = importlib.util.module_from_spec(security_spec)
+security_spec.loader.exec_module(security)
 
 
 def recovery_baseline(profile, published_digest, root):
@@ -44,14 +47,14 @@ def prepare(profile, publish, root=upstream.ROOT):
     previous = upstream.inspect(upstream.REPOSITORY + ':' + recipe['tags'][0], allow_missing=True) if publish else None
     previous_digest = upstream.digest(previous['Digest']) if previous else ''
     if previous_digest:
-        subprocess.run(['cosign', 'verify', '--key', str(root / 'cosign.pub'),
+        subprocess.run(['cosign', 'verify', '--new-bundle-format=false', '--key', str(root / 'cosign.pub'),
                         upstream.REPOSITORY + '@' + previous_digest],
                        check=True, stdout=subprocess.DEVNULL, timeout=150)
     published_digest = previous_digest
     previous_digest, recovery_reason = recovery_baseline(profile, published_digest, root)
     if recovery_reason:
         baseline = upstream.REPOSITORY + '@' + previous_digest
-        subprocess.run(['cosign', 'verify', '--key', str(root / 'cosign.pub'), baseline],
+        subprocess.run(['cosign', 'verify', '--new-bundle-format=false', '--key', str(root / 'cosign.pub'), baseline],
                        check=True, stdout=subprocess.DEVNULL, timeout=150)
         if (upstream.inspect(baseline).get('Labels') or {}).get('io.finite.profile') != profile:
             raise ValueError('Recovery baseline belongs to a different profile')
@@ -98,8 +101,8 @@ def promote(profile, root=upstream.ROOT):
     if (record['previousDigest'] != baseline or record.get('recoveryReason') != reason or
             (reason and record.get('qualify') is not True)):
         raise ValueError('Publication record does not match the reviewed recovery baseline')
-    # This file is written only after signature, provenance and runtime checks
-    # succeed. Never resolve the mutable candidate tag again for promotion.
+    # Build evidence is unsigned. Recheck scan policy and the registry signature
+    # independently below; never resolve the mutable candidate tag again.
     image = (evidence / f'{profile}-image-ref.txt').read_text().strip()
     prefix = upstream.REPOSITORY + '@'
     if not image.startswith(prefix):
@@ -125,6 +128,9 @@ def promote(profile, root=upstream.ROOT):
         current = upstream.inspect(upstream.REPOSITORY + ':' + record['tags'][0])
         if upstream.digest(current['Digest']) != record['publishedDigest']:
             raise ValueError('Public channel changed after recovery qualification was prepared')
+    security.verify(evidence / ('security-' + profile), image, root / 'automation/security/image-policy.json')
+    subprocess.run(['cosign', 'verify', '--new-bundle-format=false', '--key', str(root / 'cosign.pub'), image],
+                   check=True, stdout=subprocess.DEVNULL, timeout=150)
     for tag in record['tags']:
         target = upstream.REPOSITORY + ':' + tag
         subprocess.run(['skopeo', '--command-timeout', '90s', 'copy', '--retry-times', '3',

@@ -87,7 +87,7 @@ class CandidatePull(unittest.TestCase):
         self.assertEqual(sum(c[0] == 'skopeo' for c in calls), 1)
         self.assertIn('timed out after 15m', result.stderr)
         self.assertIn('failed with exit code 1', result.stderr)
-        verification = next(i for i, c in enumerate(calls) if c[0] == 'cosign')
+        verification = next(i for i, c in enumerate(calls) if c[:2] == ['docker', 'inspect'])
         last_pull = max(i for i, c in enumerate(calls) if c[:2] == ['docker', 'pull'])
         self.assertGreater(verification, last_pull)
 
@@ -103,11 +103,11 @@ class CandidatePull(unittest.TestCase):
                 self.assertFalse((root / '.bluebuild/bluefin-dx-generic-image-ref.txt').exists())
                 self.assertIn('verification cannot continue', result.stderr)
 
-    def test_signature_failure_after_recovery_still_stops_verification(self):
-        root, result, calls = self.run_inspection([124, 0], signature_status=1)
-        self.assertEqual(result.returncode, 1, result.stderr)
-        self.assertFalse(any(c[:2] == ['docker', 'run'] for c in calls))
-        self.assertFalse((root / '.bluebuild/bluefin-dx-generic-image-ref.txt').exists())
+    def test_candidate_inspection_does_not_claim_a_signature(self):
+        root, result, calls = self.run_inspection([0], signature_status=1)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse(any(c[0] == 'cosign' for c in calls))
+        self.assertFalse((root / '.bluebuild/bluefin-dx-generic-signature.json').exists())
 
 
 if __name__ == '__main__':

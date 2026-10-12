@@ -4,9 +4,16 @@ set -euo pipefail
 policy=${FINITE_NIX_SELINUX_POLICY:-/usr/share/selinux/packages/determinate-nix.pp}
 home_contexts=${FINITE_HOME_CONTEXTS_COMMAND:-/usr/libexec/finite/fix-home-selinux-contexts}
 test -s "${policy}"
-if ! semodule -l | awk '$1 == "nix" { found = 1 } END { exit !found }'; then
-	semodule -i "${policy}"
-fi
+# The module store persists across bootc upgrades and rollbacks. Its name (or
+# a separate digest marker) cannot prove that its policy matches this image.
+# Reinstall transactionally on every service start, including rollback, and
+# propagate failure before the Nix seed/daemon can start.
+semodule -i "${policy}"
+modules=$(semodule -l)
+awk '$1 == "nix" { found = 1 } END { exit !found }' <<<"$modules" || {
+	echo 'Installed SELinux policy did not provide the required nix module' >&2
+	exit 1
+}
 
 # semodule can regenerate /var/home rules while the old /var/home -> /home
 # substitution remains. Correct it before adding a nested Nix equivalence;

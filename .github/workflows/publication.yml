@@ -11,9 +11,6 @@ on:
       force_qualification:
         type: boolean
         default: false
-    secrets:
-      cosign_private_key:
-        required: true
 permissions:
   contents: read
   packages: write
@@ -29,11 +26,80 @@ jobs:
       channel: ${{ inputs.channel }}
       publish: true
       force_qualification: ${{ inputs.force_qualification }}
-    secrets:
-      cosign_private_key: ${{ secrets.cosign_private_key }}
+
+  security:
+    needs: build
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: read
+    outputs:
+      digest: ${{ steps.scan.outputs.digest }}
+      evidence: ${{ steps.scan.outputs.evidence }}
+    env:
+      PROFILE: ${{ inputs.profile }}
+      CANDIDATE_DIGEST: ${{ needs.build.outputs.digest }}
+      BUILD_IDENTITY: ${{ needs.build.outputs.identity }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+      - name: Make room for the immutable image inventory
+        uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
+        with:
+          skip-if-available: "80G"
+      - name: Scan exact candidate and enforce image security policy
+        id: scan
+        run: |
+          nix develop --file lib/ci-tools.nix release --command bash scripts/bluebuild/security-run.sh \
+            "ghcr.io/closure-labs/finite@$CANDIDATE_DIGEST" ".bluebuild/security-$PROFILE" \
+            --profile "$PROFILE" --identity "$BUILD_IDENTITY"
+          echo "digest=$CANDIDATE_DIGEST" >>"$GITHUB_OUTPUT"
+          echo "evidence=security-$PROFILE-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >>"$GITHUB_OUTPUT"
+      - name: Retain scanner evidence including failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: security-${{ inputs.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/security-${{ inputs.profile }}/
+          include-hidden-files: true
+          retention-days: 90
+
+  sign:
+    needs: security
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
+    environment: image-signing
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: cosign.pub
+          sparse-checkout-cone-mode: false
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+      - name: Sign the independently scanned immutable digest
+        env:
+          CANDIDATE_DIGEST: ${{ needs.security.outputs.digest }}
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          REGISTRY_TOKEN: ${{ github.token }}
+          REGISTRY_USER: ${{ github.actor }}
+        run: |
+          [[ $CANDIDATE_DIGEST =~ ^sha256:[0-9a-f]{64}$ ]]
+          image="ghcr.io/closure-labs/finite@$CANDIDATE_DIGEST"
+          trap 'docker logout ghcr.io >/dev/null 2>&1 || true' EXIT
+          printf '%s' "$REGISTRY_TOKEN" | docker login --username "$REGISTRY_USER" --password-stdin ghcr.io
+          cosign sign --yes --new-bundle-format=false --key env://COSIGN_PRIVATE_KEY "$image"
+          cosign verify --new-bundle-format=false --key cosign.pub "$image"
 
   qualification:
-    needs: build
+    needs: [build, sign]
     permissions:
       contents: read
       packages: write
@@ -46,9 +112,10 @@ jobs:
       identity: ${{ needs.build.outputs.identity }}
 
   promote:
-    needs: [build, qualification]
+    needs: [build, security, sign, qualification]
     if: >-
       always() && !cancelled() && needs.build.result == 'success' &&
+      needs.security.result == 'success' && needs.sign.result == 'success' &&
       needs.qualification.result == 'success'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -64,10 +131,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           IMAGE_ARTIFACT: ${{ needs.build.outputs.evidence }}
+          SECURITY_ARTIFACT: ${{ needs.security.outputs.evidence }}
           QUALIFICATION_ARTIFACT: ${{ needs.qualification.outputs.evidence }}
         run: |
           gh run download "$GITHUB_RUN_ID" --name "$IMAGE_ARTIFACT" --dir .bluebuild
           gh run download "$GITHUB_RUN_ID" --name "$QUALIFICATION_ARTIFACT" --dir .bluebuild
+          gh run download "$GITHUB_RUN_ID" --name "$SECURITY_ARTIFACT" --dir ".bluebuild/security-$PROFILE"
       - name: Promote verified digest to public channels
         env:
           REGISTRY_TOKEN: ${{ github.token }}

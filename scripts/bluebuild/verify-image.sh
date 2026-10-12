@@ -27,6 +27,9 @@ test -x /usr/lib/finite/determinate-nix-seed/nix-installer
 test -d /usr/lib/finite/determinate-nix-seed/store
 test -d /usr/lib/finite/determinate-nix-seed/var/nix
 test -s /usr/share/selinux/packages/determinate-nix.pp
+# Both controls are intentional: no generator activation and no datasource scan.
+test -f /etc/cloud/cloud-init.disabled
+yq -o=json '.' /etc/cloud/cloud.cfg.d/90-finite-nocloud.cfg | jq -se 'length == 1 and .[0].datasource_list == ["None"]' >/dev/null
 test -s /usr/share/finite/home-manager-template/customize.nix
 test -s /usr/share/finite/home-profile-catalog.json
 test ! -e /usr/lib/udev/rules.d/70-finite-espanso-input.rules

@@ -5,7 +5,7 @@ candidate="ghcr.io/closure-labs/finite@${CANDIDATE_DIGEST:?}"
 [[ ${BUILD_IDENTITY:?} =~ ^v1:[0-9a-f]{64}$ ]]
 [[ ${PROFILE:?} =~ ^bluefin(-dx)?-(generic|next)$ ]]
 rm -f ".bluebuild/$PROFILE-acceptance.json"
-cosign verify --key cosign.pub "$candidate" >/dev/null
+cosign verify --new-bundle-format=false --key cosign.pub "$candidate" >/dev/null
 skopeo inspect "docker://$candidate" | jq -e --arg identity "$BUILD_IDENTITY" \
   --arg profile "$PROFILE" --arg revision "${GITHUB_SHA:?}" '
   .Labels["io.finite.build-inputs"] == $identity and

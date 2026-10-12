@@ -25,9 +25,6 @@ on:
         value: ${{ jobs.build.outputs.qualify }}
       evidence:
         value: ${{ jobs.build.outputs.evidence }}
-    secrets:
-      cosign_private_key:
-        required: false
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -64,6 +61,8 @@ jobs:
           echo "evidence=image-$PROFILE-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >>"$GITHUB_OUTPUT"
       - name: Install the verified locked BlueBuild CLI
         run: nix develop --file lib/ci-tools.nix shell --command bash scripts/bluebuild/install-cli.sh
+      - name: Authenticate pinned upstream publishers
+        run: nix develop --file lib/ci-tools.nix shell --command python3 scripts/ci/bluefin-upstream.py verify
       - name: Stage pinned payload
         run: python3 scripts/bluebuild/measure.py payload-staging bash scripts/bluebuild/stage.sh "$PROFILE"
       - name: Set up the BlueBuild builder
@@ -81,7 +80,6 @@ jobs:
         # The upstream composite action downloads and installs both a second time.
         env:
           PUBLISH: ${{ inputs.publish }}
-          COSIGN_PRIVATE_KEY: ${{ inputs.publish && secrets.cosign_private_key || '' }}
           GH_TOKEN: ${{ github.token }}
           BB_PASSWORD: ${{ github.token }}
           BB_USERNAME: ${{ github.repository_owner }}

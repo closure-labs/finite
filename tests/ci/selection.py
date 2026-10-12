@@ -23,7 +23,8 @@ class Selection(unittest.TestCase):
         self.assertEqual(impact.classify(['README.md', 'docs/installation.md']), {'checks': False, 'nix': False, 'profiles': []})
         for path in ['files/system/usr/share/finite/finite-logo.png', '.github/workflows/build.yml',
                      '.github/workflows/image.yml', '.github/actions/setup-nix/action.yml', 'scripts/ci/impact.py',
-                     'scripts/bluebuild/publication.py', 'scripts/ci/bluefin-upstream.py', 'new-image-input', 'docs-like/file']:
+                     'scripts/bluebuild/publication.py', 'scripts/ci/bluefin-upstream.py', 'new-image-input', 'docs-like/file',
+                     'automation/security/vulnerability-policy.json', 'sources/bluefin.pub', 'sources/bluefin-trust.json']:
             with self.subTest(path=path):
                 self.assertEqual(impact.classify(['README.md', path]), {'checks': True, 'nix': False, 'profiles': sorted(impact.PROFILES)})
 

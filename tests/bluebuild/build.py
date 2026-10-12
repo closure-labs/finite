@@ -53,20 +53,20 @@ sys.exit(int(os.environ.get('BUILD_STATUS' if name == 'bluebuild' else 'LOGOUT_S
         self.assertIsNone(call['push'])
         self.assertIsNone(call['key'])
 
-    def test_publication_keeps_caching_signing_and_registry_cleanup(self):
+    def test_publication_is_unsigned_and_keeps_cache_and_registry_cleanup(self):
         result, calls = self.invoke(publish='true')
         self.assertEqual(result.returncode, 0, result.stderr)
         call = calls[0]
         self.assertIn('--push', call['command'])
         self.assertIn('--cache-layers', call['command'])
         self.assertIn('--retry-push', call['command'])
-        self.assertNotIn('--no-sign', call['command'])
+        self.assertIn('--no-sign', call['command'])
         self.assertIsNone(call['no_sign'])
-        self.assertEqual(call['key'], 'test-key')
+        self.assertIsNone(call['key'])
         self.assertEqual(calls[-1]['command'], ['docker', 'logout', 'ghcr.io'])
 
     def test_missing_credentials_prevent_any_build(self):
-        for missing in ('BB_USERNAME', 'BB_PASSWORD', 'COSIGN_PRIVATE_KEY'):
+        for missing in ('BB_USERNAME', 'BB_PASSWORD'):
             with self.subTest(missing=missing):
                 result, calls = self.invoke(publish='true', **{missing: ''})
                 self.assertNotEqual(result.returncode, 0)

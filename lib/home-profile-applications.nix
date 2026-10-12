@@ -176,6 +176,7 @@
       xorriso -as mkisofs -quiet -V cidata -J -R -o "$workdir/seed.iso" "$workdir/user-data" "$workdir/meta-data"
       install -d "$output"
       install -m 0644 "$workdir/user-data" "$workdir/meta-data" "$workdir/profile.yaml" "$workdir/seed.iso" "$output/"
+      echo "Seed generated; cloud-init is disabled by default on Finite. This ISO is inert unless an administrator explicitly enables full provisioning. Prefer importing profile.yaml with finite-home-init --profile." >&2
     '';
   };
 in {
