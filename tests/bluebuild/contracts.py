@@ -46,13 +46,14 @@ class BlueBuildContracts(unittest.TestCase):
             for script in scripts:
                 self.assertTrue((ROOT / 'files/scripts' / script).is_file())
             kinds = [m['type'].split('@')[0] for m in expanded]
-            if hardware == 'next-x86_64':
-                kernel_step = next(i for i, m in enumerate(expanded)
-                                   if 'kernel-next.sh' in m.get('scripts', []))
-                finalize_step = next(i for i, m in enumerate(expanded)
-                                     if 'finalize.sh' in m.get('scripts', []))
-                self.assertLess(kernel_step, kinds.index('initramfs'))
-                self.assertLess(kinds.index('initramfs'), finalize_step)
+            kernel_step = next(i for i, m in enumerate(expanded)
+                               if ('kernel-next.sh' in m.get('scripts', []) if hardware == 'next-x86_64'
+                                   else any('kernel-generic-security.py' in snippet for snippet in m.get('snippets', []))))
+            finalize_step = next(i for i, m in enumerate(expanded)
+                                 if 'finalize.sh' in m.get('scripts', []))
+            self.assertEqual(kinds.count('initramfs'), 1)
+            self.assertLess(kernel_step, kinds.index('initramfs'))
+            self.assertLess(kinds.index('initramfs'), finalize_step)
             self.assertLess(kinds.index('dnf'), kinds.index('files'))
             self.assertLess(kinds.index('signing'), len(kinds)-1)
         self.assertEqual(len(tags), len(set(tags)))

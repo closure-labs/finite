@@ -13,10 +13,20 @@ rpm -q cloud-init jq nix nix-daemon nix-filesystem nix-system yq zenity \
   fprintd fprintd-pam libfprint pam-u2f pamu2fcfg libfido2 opensc pcsc-lite yubikey-manager
 mapfile -t kernels < <(rpm -q --qf '%{EVR}.%{ARCH}\n' kernel-core)
 [[ ${#kernels[@]} == 1 ]]
+[[ -n $expected_kernel && ${kernels[0]} == "$expected_kernel" ]]
+[[ ${kernels[0]} == "$(jq -r .kernelRelease /usr/share/finite/profile.json)" ]]
+for package in kmod-v4l2loopback v4l2loopback kmod-zfs zfs python3-pyzfs; do
+  if rpm -q "$package" >/dev/null 2>&1; then
+    echo "Unsupported host kernel/storage package remains installed: $package" >&2
+    exit 1
+  fi
+done
+if modinfo -k "${kernels[0]}" -F filename zfs >/dev/null 2>&1; then
+  echo 'Unsupported ZFS kernel module remains available' >&2
+  exit 1
+fi
 bash /usr/libexec/finite/check-initramfs "${kernels[0]}"
 if [[ $expected == *-next ]]; then
-  [[ -n $expected_kernel && ${kernels[0]} == "$expected_kernel" ]]
-  [[ ${kernels[0]} == "$(jq -r .kernelRelease /usr/share/finite/profile.json)" ]]
   for module in intel_cvs intel_ipu7 intel_ipu7_isys ipu_bridge ov02c10; do
     [[ $(modinfo -k "${kernels[0]}" -F intree "$module") == Y ]]
     [[ $(modinfo -k "${kernels[0]}" -F signer "$module") == *Fedora* ]]

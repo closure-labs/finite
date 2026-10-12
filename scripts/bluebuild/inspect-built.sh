@@ -55,7 +55,11 @@ jq -e --arg revision "${GITHUB_SHA:-local}" --arg base "$expected_base" --arg pr
   .["io.finite.build-inputs"] == $identity and
   .["org.opencontainers.image.source"] == "https://github.com/closure-labs/finite"
 ' ".bluebuild/$profile-image.json" >/dev/null
-expected_kernel=$(jq -r .release sources/kernel-next.json)
+case "$profile" in
+  bluefin-next|bluefin-dx-next) expected_kernel=$(jq -er .release sources/kernel-next.json) ;;
+  bluefin-generic|bluefin-dx-generic) expected_kernel=$(jq -er .release files/security/kernel-generic.json) ;;
+  *) echo "Unsupported image profile" >&2; exit 2 ;;
+esac
 "${measure[@]}" runtime-checks docker run --rm --privileged --entrypoint /bin/bash \
   -v "$PWD/scripts/bluebuild/verify-image.sh:/run/verify-image.sh:ro" \
   "$image" /run/verify-image.sh "$profile" "$repository" "$expected_kernel"

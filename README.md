@@ -23,7 +23,10 @@ own packages, and keep your configuration across system updates.
 | Bluefin DX with the next kernel | `finite-dev-next` |
 
 Images are published at `ghcr.io/closure-labs/finite`. For the Dell XPS 13 9350,
-see the [hardware guide](docs/dell-xps-9350.md).
+see the [hardware guide](docs/dell-xps-9350.md). Physical webcams use their
+hardware drivers; optional v4l2loopback virtual-camera support is not included.
+Host ZFS support is not included. Use Btrfs or another supported host filesystem;
+ZFS storage can run in a separate virtual machine.
 
 ## Make it yours
 

@@ -1,0 +1,1233 @@
+{
+  "schema": 1,
+  "purpose": "Desktop diagnostic and remediation evidence; no automatic finding resolution or release approval",
+  "baseline": {
+    "image": "ghcr.io/closure-labs/finite@sha256:302f05b64f6d38ce3747de84342fedd519495efa6b195f5f0dccfbe887f25d8d",
+    "scanRun": "https://github.com/closure-labs/finite/actions/runs/38290632761",
+    "sourceResultSha256": "0fb5adc9cd892b159f259be47df22506dd7898ac784e812180e48f2f4154bcbf",
+    "ledgerSha256": "ceb238e1adba59b7a83e00f95380691e50bcdcc1c2662e4baebf5c783f0cfc8e",
+    "findingPairs": 281,
+    "findingStatuses": "unchanged; pending-rescan"
+  },
+  "historicalIntegration": {
+    "pr": 140,
+    "mergedRevisionPrefix": "1bf562527742",
+    "run": "https://github.com/closure-labs/finite/actions/runs/38300840732",
+    "sourceRevisionPrefix": "a83a210baf2d",
+    "status": "passed-four-profiles; predates current desktop/kernel changes"
+  },
+  "historicalDocumentation": {
+    "pr": 143,
+    "mergedRevisionPrefix": "be90c0a83126",
+    "run": "https://github.com/closure-labs/finite/actions/runs/38305327730"
+  },
+  "goDiagnostics": {
+    "run": "https://github.com/closure-labs/finite/actions/runs/38310504908",
+    "sourceRevision": "e1d7a1e5a13e17995d6da0bdc0708bca5f8ccbee",
+    "image": "ghcr.io/closure-labs/finite@sha256:302f05b64f6d38ce3747de84342fedd519495efa6b195f5f0dccfbe887f25d8d",
+    "observedAt": "2026-10-12T21:26:30.800858+00:00",
+    "summarySha256": "e40ca75c2811cc16ad63bb85695e0cb1dc267bf9614a40ed12cf89fcb34d0c01",
+    "status": "diagnostic-complete-with-unknowns",
+    "scope": "selected live executables; excludes historical OSTree objects",
+    "selectedImage": {
+      "configDigest": "sha256:4ca37a16f531aba5fc1435ae11e55874a73e789567014506b88c3f20fd71f1d4",
+      "os": "linux",
+      "arch": "amd64",
+      "repoDigests": [
+        "ghcr.io/closure-labs/finite@sha256:302f05b64f6d38ce3747de84342fedd519495efa6b195f5f0dccfbe887f25d8d"
+      ]
+    },
+    "signatureSha256": "b5934f577d3eabc5dacda30c8a80652f79c6c48828ce89c1aef8c13354f25d78",
+    "inspectorSha256": "607c0ed7890016645ec9df36121a1ed3be97b497955237ac8e8a3c64ba7228ab",
+    "govulncheckSha256": "102feecbb1c242c9dcb2a89b57d19a64071239e5051e4132725c5075c63570be",
+    "requestedPathCount": 22,
+    "completedPathCount": 22,
+    "symbolCoverageCounts": {
+      "unknown": 21,
+      "pclntab-functions-only": 1
+    },
+    "moduleCoverageCounts": {
+      "recorded": 9,
+      "unknown": 13
+    },
+    "stdlibCoverageCounts": {
+      "unknown-compiler-version-format": 18,
+      "version-recognized; binary-symbol-coverage-not-proven": 4
+    },
+    "binaries": [
+      {
+        "path": "/usr/bin/buildah",
+        "status": "diagnostic-complete",
+        "binarySha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+        "metadataSha256": "5686588c66721a86ca95b2ab831d2ca2c7b011b5ff4c04bd55dba3ab6ecc82f7",
+        "metadataExitCode": 1,
+        "metadataError": "pclntab text address is unused or unrelocated; exact runtime.text is unknown for this build",
+        "os": "linux",
+        "arch": "amd64",
+        "goVersion": "go1.26.8-X:nodwarf5",
+        "moduleCoverage": "recorded",
+        "symbolCount": 0,
+        "symbolCoverage": "unknown",
+        "absenceNotProof": true,
+        "stdlibCoverage": "unknown-compiler-version-format",
+        "govulncheckExitCode": 0,
+        "govulncheckSha256": "e81d74e901ed2244f3393d6e0ff269979c18de009e807e5bab2c7b09b9ec4450",
+        "componentAdvisoryCount": 39,
+        "findingCount": 1712,
+        "coverage": "diagnostic-only; silent module fallback and incomplete provenance remain possible",
+        "recordedModuleCount": 122
+      },
+      {
+        "path": "/usr/bin/containerd",
+        "status": "diagnostic-complete",
+        "binarySha256": "0bfb5b5f841d37373a4207f309883802c5b8c6e8074362cd3a7443952fb30d9d",
+        "metadataSha256": "6d5f60843ef0198f62874f8d4ee4ad99ae258e3fe314baa6a2912e7af0cdab84",
+        "metadataExitCode": 1,
+        "metadataError": "pclntab text address is unused or unrelocated; exact runtime.text is unknown for this build",
+        "os": "linux",
+        "arch": "amd64",
+        "goVersion": "go1.26.7-X:nodwarf5",
+        "moduleCoverage": "unknown",
+        "symbolCount": 0,
+        "symbolCoverage": "unknown",
+        "absenceNotProof": true,
+        "stdlibCoverage": "unknown-compiler-version-format",
+        "govulncheckExitCode": 0,
+        "govulncheckSha256": "eeb64ebb463d243687bbb9d2a71c44ffa6d3c7e9d155b0b5b0e91d61c4fc92dd",
+        "componentAdvisoryCount": 25,
+        "findingCount": 1594,
+        "coverage": "diagnostic-only; silent module fallback and incomplete provenance remain possible",
+        "recordedModuleCount": 129
+      },
+      {
+        "path": "/usr/bin/containerd-shim-runc-v2",
+        "status": "diagnostic-complete",
+        "binarySha256": "22e1268f1dc6b1a6c84202ccf1fd02a510f4a1f2e3f96b49ff4a82c1a6a03eb3",
+        "metadataSha256": "fab2009526729c081fa323019724e16aff45b32780684a1b0974fe056f48548a",
+        "metadataExitCode": 1,
+        "metadataError": "pclntab text address is unused or unrelocated; exact runtime.text is unknown for this build",
+        "os": "linux",
+        "arch": "amd64",
+        "goVersion": "go1.26.7-X:nodwarf5",
+        "moduleCoverage": "unknown",
+        "symbolCount": 0,
+        "symbolCoverage": "unknown",
+        "absenceNotProof": true,
+        "stdlibCoverage": "unknown-compiler-version-format",
+        "govulncheckExitCode": 0,
+        "govulncheckSha256": "8ed2bbe160e99d98cef14d59dfb9ce52bd3304eeb81cdfd1a318dc85dc3d1d14",
+        "componentAdvisoryCount": 11,
+        "findingCount": 1493,
+        "coverage": "diagnostic-only; silent module fallback and incomplete provenance remain possible",
+        "recordedModuleCount": 33
+      },
+      {
+        "path": "/usr/bin/containerd-stress",
+        "status": "diagnostic-complete",
+        "binarySha256": "6958e85239ae901ec6e6c7ac822cfcb60dde6e8eb12f7d9b25b67ba305f213a8",
+        "metadataSha256": "bdab529806cc21032c78f021216ddd7682ac81bc09aa1eb87e7c692000de34b8",
+        "metadataExitCode": 1,
+        "metadataError": "pclntab text address is unused or unrelocated; exact runtime.text is unknown for this build",
+        "os": "linux",
+        "arch": "amd64",
+        "goVersion": "go1.26.7-X:nodwarf5",
+        "moduleCoverage": "unknown",
+        "symbolCount": 0,
+        "symbolCoverage": "unknown",
+        "absenceNotProof": true,
+        "stdlibCoverage": "unknown-compiler-version-format",
+        "govulncheckExitCode": 0,
+        "govulncheckSha256": "a53848299db1467603f0cea4b56370c63d894e2f9079dfa758b999385cd8a94a",
+        "componentAdvisoryCount": 14,
+        "findingCount": 1528,
+        "coverage": "diagnostic-only; silent module fallback and incomplete provenance remain possible",
+        "recordedModuleCount": 56
+      },
+      {
+        "path": "/usr/bin/cosign",
+        "status": "diagnostic-complete",
+        "binarySha256": "ed7b55523cb37fa603e4dd9b967dcde09c27e557a0fc4dc36ce380d4828fd6f3",
+        "metadataSha256": "e1f554cbce35f6dfe50b2ea54ae070719cdbab67d045413e30f17526e07059c7",
+        "metadataExitCode": 0,
+        "os": "linux",
+        "arch": "amd64",
+        "goVersion": "go1.26.3",
+        "moduleCoverage": "recorded",
+        "symbolCount": 121158,
+        "symbolCoverage": "pclntab-functions-only",
+        "absenceNotProof": true,
+        "stdlibCoverage": "version-recognized; binary-symbol-coverage-not-proven",
+        "govulncheckExitCode": 0,
+        "govulncheckSha256": "fbd6a3c1ed25f234704705f275af93f744b045c62075dd2e8b3f017d34786e86",
+        "componentAdvisoryCount": 46,
+        "findingCount": 2435,
+        "coverage": "diagnostic-only; silent module fallback and incomplete provenance remain possible",
+        "recordedModuleCount": 253
+      },
+      {
+        "path": "/usr/bin/ctr",
+        "status": "diagnostic-complete",
+        "binarySha256": "c61fc4f14d1d32a16134a0d221b6cf4147d1e88838dd337ab0a08cca8ddceb3e",
+        "metadataSha256": "412b737b5366c56e8b65340c76d9eff6be32aa772a3d96cb605c0baf83785b8f",
+        "metadataExitCode": 1,
+        "metadataError": "pclntab text address is unused or unrelocated; exact runtime.text is unknown for this build",
+        "os": "linux",
+        "arch": "amd64",
+        "goVersion": "go1.26.7-X:nodwarf5",
+        "moduleCoverage": "unknown",
+        "symbolCount": 0,
+        "symbolCoverage": "unknown",
+        "absenceNotProof": true,
+        "stdlibCoverage": "unknown-compiler-version-format",
+        "govulncheckExitCode": 0,
+        "govulncheckSha256": "82f44fc2f5745d940a8e59d56a0241af68624606d9d46b1edb2a38ffa3871399",
+        "componentAdvisoryCount": 17,
+        "findingCount": 1547,
+        "coverage": "diagnostic-only; silent module fallback and incomplete provenance remain possible",
+        "recordedModuleCount": 71
+      },
+      {
+        "path": "/usr/bin/glow",
+        "status": "diagnostic-complete",
+        "binarySha256": "7351cbd5777996ba06f6f0c39b96ece7787a84d11bcfbeb80ab26237f1a9231b",
+        "metadataSha256": "d25598fdb1e168fbd32e6519a88993d41c0b8cb5b7a1637891d8cf12caa76555",
+        "metadataExitCode": 1,
+        "metadataError": "pclntab text address is unused or unrelocated; exact runtime.text is unknown for this build",
+        "os": "linux",
+        "arch": "amd64",
+        "goVersion": "go1.26.1-X:nodwarf5",
+        "moduleCoverage": "unknown",
+        "symbolCount": 0,
+        "symbolCoverage": "unknown",
+        "absenceNotProof": true,
+        "stdlibCoverage": "unknown-compiler-version-format",
+        "govulncheckExitCode": 0,
+        "govulncheckSha256": "dcd91bebf3748e010258b0abf1b688db95fd371ec9a7502e26b36a00ab110590",
+        "componentAdvisoryCount": 17,
+        "findingCount": 1723,
+        "coverage": "diagnostic-only; silent module fallback and incomplete provenance remain possible",
+        "recordedModuleCount": 60
+      },
+      {
+        "path": "/usr/bin/gum",
+        "status": "diagnostic-complete",
+        "binarySha256": "daf0e61d21542bcea5e45832f80c459defe5940ed9c0c64771c8c03234b3dcdc",
+        "metadataSha256": "6081910b92ddce653d271191877c5761485a0227bcb214188288ecb8b69b95b2",
+        "metadataExitCode": 1,
+        "metadataError": "pclntab text address is unused or unrelocated; exact runtime.text is unknown for this build",
+        "os": "linux",
+        "arch": "amd64",
+        "goVersion": "go1.26.1-X:nodwarf5",
+        "moduleCoverage": "unknown",
+        "symbolCount": 0,
+        "symbolCoverage": "unknown",
+        "absenceNotProof": true,
+        "stdlibCoverage": "unknown-compiler-version-format",
+        "govulncheckExitCode": 0,
+        "govulncheckSha256": "44f51214e2673742004c6c652b5187ec231c610896ee3c50c0b2ba38b195c275",
+        "componentAdvisoryCount": 17,
+        "findingCount": 1723,
+        "coverage": "diagnostic-only; silent module fallback and incomplete provenance remain possible",
+        "recordedModuleCount": 48
+      },
+      {
+        "path": "/usr/bin/ipp-usb",
+        "status": "diagnostic-complete",
+        "binarySha256": "b8bb8429467cc551f84e8978c3b7bfaa88b895013a60643bd09d13c0cc90c53a",
+        "metadataSha256": "09e09b7107c0d9aae5d937ed754b1059166b50a4399e4cf43d060b10f8b755f3",
+        "metadataExitCode": 1,
+        "metadataError": "pclntab text address is unused or unrelocated; exact runtime.text is unknown for this build",
+        "os": "linux",
+        "arch": "amd64",
+        "goVersion": "go1.26.4-X:nodwarf5",
+        "moduleCoverage": "unknown",
+        "symbolCount": 0,
+        "symbolCoverage": "unknown",
+        "absenceNotProof": true,
+        "stdlibCoverage": "unknown-compiler-version-format",
+        "govulncheckExitCode": 0,
+        "govulncheckSha256": "294a149aee2e5ff42c4b22b5bdf6cba6494e8c5ff2ca895cc24f808c9ebe56f1",
+        "componentAdvisoryCount": 0,
+        "findingCount": 0,
+        "coverage": "diagnostic-only; silent module fallback and incomplete provenance remain possible",
+        "recordedModuleCount": 2
+      },
+      {
+        "path": "/usr/bin/podman",
+        "status": "diagnostic-complete",
+        "binarySha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+        "metadataSha256": "65556e3afa861ef06df6d4a3832ad61dc75c6e69469085be53cbddfafc680c9d",
+        "metadataExitCode": 1,
+        "metadataError": "pclntab text address is unused or unrelocated; exact runtime.text is unknown for this build",
+        "os": "linux",
+        "arch": "amd64",
+        "goVersion": "go1.26.8-X:nodwarf5",
+        "moduleCoverage": "recorded",
+        "symbolCount": 0,
+        "symbolCoverage": "unknown",
+        "absenceNotProof": true,
+        "stdlibCoverage": "unknown-compiler-version-format",
+        "govulncheckExitCode": 0,
+        "govulncheckSha256": "182f0dbe3165a665736e37b484b7723a203fa3bd6f63647036738e629479335e",
+        "componentAdvisoryCount": 40,
+        "findingCount": 1672,
+        "coverage": "diagnostic-only; silent module fallback and incomplete provenance remain possible",
+        "recordedModuleCount": 156
+      },
+      {
+        "path": "/usr/bin/rclone",
+        "status": "diagnostic-complete",
+        "binarySha256": "a73b05ecb4d0af28a2da2ee91235733e8d87ffd8d43e8d3ea72831fdb96c258d",
+        "metadataSha256": "2856ade320ad1b4998d14a61e73012ea0462dbe2590324f62c529bce0e76ab93",
+        "metadataExitCode": 1,
+        "metadataError": "pclntab text address is unused or unrelocated; exact runtime.text is unknown for this build",
+        "os": "linux",
+        "arch": "amd64",
+        "goVersion": "go1.26.4-X:nodwarf5",
+        "moduleCoverage": "unknown",
+        "symbolCount": 0,
+        "symbolCoverage": "unknown",
+        "absenceNotProof": true,
+        "stdlibCoverage": "unknown-compiler-version-format",
+        "govulncheckExitCode": 0,
+        "govulncheckSha256": "290193e7af2b0d7308d7e6933eb6d636a2d6d77b14a34b7c6bb3e8add679f032",
+        "componentAdvisoryCount": 27,
+        "findingCount": 1613,
+        "coverage": "diagnostic-only; silent module fallback and incomplete provenance remain possible",
+        "recordedModuleCount": 245
+      },
+      {
+        "path": "/usr/bin/restic",
+        "status": "diagnostic-complete",
+        "binarySha256": "b49f2d88cb0407b782081b14ec7393f9e83a9e43be73e4560fe0bd4c1a4f2bad",
+        "metadataSha256": "9ba74f592f3871e4aac99905f0fe4c83a5f415124d4505bcb457a8ca8f9d972b",
+        "metadataExitCode": 1,
+        "metadataError": "pclntab text address is unused or unrelocated; exact runtime.text is unknown for this build",
+        "os": "linux",
+        "arch": "amd64",
+        "goVersion": "go1.26.5-X:nodwarf5",
+        "moduleCoverage": "unknown",
+        "symbolCount": 0,
+        "symbolCoverage": "unknown",
+        "absenceNotProof": true,
+        "stdlibCoverage": "unknown-compiler-version-format",
+        "govulncheckExitCode": 0,
+        "govulncheckSha256": "8dd639556d513bf8eee5d68b9fbcb546bdbce959d0ee2720b4b2a2a96f17975d",
+        "componentAdvisoryCount": 19,
+        "findingCount": 1572,
+        "coverage": "diagnostic-only; silent module fallback and incomplete provenance remain possible",
+        "recordedModuleCount": 86
+      },
+      {
+        "path": "/usr/bin/runc",
+        "status": "diagnostic-complete",
+        "binarySha256": "0c0f374f4f288c3f7196980495ad9dc56182f71df8eb1c591a369a581815cce9",
+        "metadataSha256": "988323678a15dd379db81f7382cdf85566f89aa09e29acdae5fba1009f089b7c",
+        "metadataExitCode": 1,
+        "metadataError": "pclntab text address is unused or unrelocated; exact runtime.text is unknown for this build",
+        "os": "linux",
+        "arch": "amd64",
+        "goVersion": "go1.26.8-X:nodwarf5",
+        "moduleCoverage": "unknown",
+        "symbolCount": 0,
+        "symbolCoverage": "unknown",
+        "absenceNotProof": true,
+        "stdlibCoverage": "unknown-compiler-version-format",
+        "govulncheckExitCode": 0,
+        "govulncheckSha256": "07cde4ec8a94084b212051a5fd90b009a2e56947470cdbdd12650b42e86cc686",
+        "componentAdvisoryCount": 7,
+        "findingCount": 1391,
+        "coverage": "diagnostic-only; silent module fallback and incomplete provenance remain possible",
+        "recordedModuleCount": 27
+      },
+      {
+        "path": "/usr/bin/skopeo",
+        "status": "diagnostic-complete",
+        "binarySha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+        "metadataSha256": "3063cf52afa669efd401e39c88535558b74515cbe9d59617a34f2f0a1031ac3d",
+        "metadataExitCode": 1,
+        "metadataError": "pclntab text address is unused or unrelocated; exact runtime.text is unknown for this build",
+        "os": "linux",
+        "arch": "amd64",
+        "goVersion": "go1.26.8-X:nodwarf5",
+        "moduleCoverage": "recorded",
+        "symbolCount": 0,
+        "symbolCoverage": "unknown",
+        "absenceNotProof": true,
+        "stdlibCoverage": "unknown-compiler-version-format",
+        "govulncheckExitCode": 0,
+        "govulncheckSha256": "a31de1d3b208989da10ee7bb506ff3d60e4a1de8b88386fc8d8cefc5b05f86b4",
+        "componentAdvisoryCount": 48,
+        "findingCount": 2139,
+        "coverage": "diagnostic-only; silent module fallback and incomplete provenance remain possible",
+        "recordedModuleCount": 91
+      },
+      {
+        "path": "/usr/bin/tailscale",
+        "status": "diagnostic-complete",
+        "binarySha256": "68319a525cbc2f786dff430ba0ae56a609218ed86dd163879df719809c381f36",
+        "metadataSha256": "570f92cad31f862d4a147754fe13cede4a14eda038964c5e77a5527e05c477e2",
+        "metadataExitCode": 1,
+        "metadataError": "pclntab text address is unused or unrelocated; exact runtime.text is unknown for this build",
+        "os": "linux",
+        "arch": "amd64",
+        "goVersion": "go1.26.6",
+        "moduleCoverage": "recorded",
+        "symbolCount": 0,
+        "symbolCoverage": "unknown",
+        "absenceNotProof": true,
+        "stdlibCoverage": "version-recognized; binary-symbol-coverage-not-proven",
+        "govulncheckExitCode": 0,
+        "govulncheckSha256": "4a1df4208b086e1f2f2e80e5832bc06458909f026a6b92d964727e0c2ddb8ae5",
+        "componentAdvisoryCount": 27,
+        "findingCount": 1761,
+        "coverage": "diagnostic-only; silent module fallback and incomplete provenance remain possible",
+        "recordedModuleCount": 62
+      },
+      {
+        "path": "/usr/bin/tailscaled",
+        "status": "diagnostic-complete",
+        "binarySha256": "8bd285756b4c6a9f5534a37b6eff078bd4c8533bb7aea97178c50825f72da70f",
+        "metadataSha256": "e3f57a679a2e729d547173a38a5fddc9783a2d96ff52c8d445f9f5e824ee5c96",
+        "metadataExitCode": 1,
+        "metadataError": "pclntab text address is unused or unrelocated; exact runtime.text is unknown for this build",
+        "os": "linux",
+        "arch": "amd64",
+        "goVersion": "go1.26.6",
+        "moduleCoverage": "recorded",
+        "symbolCount": 0,
+        "symbolCoverage": "unknown",
+        "absenceNotProof": true,
+        "stdlibCoverage": "version-recognized; binary-symbol-coverage-not-proven",
+        "govulncheckExitCode": 0,
+        "govulncheckSha256": "758e4082eca746266c4dabe1156520eb305bad77adf053a972cf40161ccc7e86",
+        "componentAdvisoryCount": 23,
+        "findingCount": 1513,
+        "coverage": "diagnostic-only; silent module fallback and incomplete provenance remain possible",
+        "recordedModuleCount": 73
+      },
+      {
+        "path": "/usr/sbin/tailscaled",
+        "status": "diagnostic-complete",
+        "binarySha256": "8bd285756b4c6a9f5534a37b6eff078bd4c8533bb7aea97178c50825f72da70f",
+        "metadataSha256": "e3f57a679a2e729d547173a38a5fddc9783a2d96ff52c8d445f9f5e824ee5c96",
+        "metadataExitCode": 1,
+        "metadataError": "pclntab text address is unused or unrelocated; exact runtime.text is unknown for this build",
+        "os": "linux",
+        "arch": "amd64",
+        "goVersion": "go1.26.6",
+        "moduleCoverage": "recorded",
+        "symbolCount": 0,
+        "symbolCoverage": "unknown",
+        "absenceNotProof": true,
+        "stdlibCoverage": "version-recognized; binary-symbol-coverage-not-proven",
+        "govulncheckExitCode": 0,
+        "govulncheckSha256": "17668c4980891b66bc73615756fe0a90379ce98141b02af9cf6331334b287c9e",
+        "componentAdvisoryCount": 23,
+        "findingCount": 1513,
+        "coverage": "diagnostic-only; silent module fallback and incomplete provenance remain possible",
+        "recordedModuleCount": 73
+      },
+      {
+        "path": "/usr/bin/toolbox",
+        "status": "diagnostic-complete",
+        "binarySha256": "15106e80b4ef8564255e51e50936b0b6ac8c9d5b0e2ad41c207fbe29a95e43c8",
+        "metadataSha256": "55aaf4c49050a75d9391514ce5182d1a8333b5c20285b86579507ea85f3020df",
+        "metadataExitCode": 1,
+        "metadataError": "unsupported Go version \"go1.26rc2-X:nodwarf5\"; reviewed releases are Go 1.18 through 1.27 and the exact Go 1.26 nodwarf5 variant",
+        "os": "linux",
+        "arch": "amd64",
+        "goVersion": "go1.26rc2-X:nodwarf5",
+        "moduleCoverage": "unknown",
+        "symbolCount": 0,
+        "symbolCoverage": "unknown",
+        "absenceNotProof": true,
+        "stdlibCoverage": "unknown-compiler-version-format",
+        "govulncheckExitCode": 0,
+        "govulncheckSha256": "726cb84307c130ff62c393e4f4102a1257bafd742a0884a11436f7a492b1433f",
+        "componentAdvisoryCount": 4,
+        "findingCount": 45,
+        "coverage": "diagnostic-only; silent module fallback and incomplete provenance remain possible",
+        "recordedModuleCount": 39
+      },
+      {
+        "path": "/usr/bin/uupd",
+        "status": "diagnostic-complete",
+        "binarySha256": "91b9cd87d0c80913d1da60d08a5cb9550dcb73a64d72b595a608efc03c5689a2",
+        "metadataSha256": "9c9d1c7a4dfdeff36a6082df0176875605220a2c9b95b068161d044087457a4c",
+        "metadataExitCode": 1,
+        "metadataError": "pclntab text address is unused or unrelocated; exact runtime.text is unknown for this build",
+        "os": "linux",
+        "arch": "amd64",
+        "goVersion": "go1.26.3-X:nodwarf5",
+        "moduleCoverage": "unknown",
+        "symbolCount": 0,
+        "symbolCoverage": "unknown",
+        "absenceNotProof": true,
+        "stdlibCoverage": "unknown-compiler-version-format",
+        "govulncheckExitCode": 0,
+        "govulncheckSha256": "2b8bb9e488bd8d0dc124365b34b83b6f393691618ad2a215ca5fd0202e50e27b",
+        "componentAdvisoryCount": 2,
+        "findingCount": 3,
+        "coverage": "diagnostic-only; silent module fallback and incomplete provenance remain possible",
+        "recordedModuleCount": 21
+      },
+      {
+        "path": "/usr/bin/yq",
+        "status": "diagnostic-complete",
+        "binarySha256": "37facce04adab94c6362d94fb2002e4e9e0bb475d88b3c5d6d90dbd63ef42bc8",
+        "metadataSha256": "dec351da0306dd190b66e6107dc37c9152a7e463e5398a143114d18d6b72c0f9",
+        "metadataExitCode": 1,
+        "metadataError": "pclntab text address is unused or unrelocated; exact runtime.text is unknown for this build",
+        "os": "linux",
+        "arch": "amd64",
+        "goVersion": "go1.26.5-X:nodwarf5",
+        "moduleCoverage": "unknown",
+        "symbolCount": 0,
+        "symbolCoverage": "unknown",
+        "absenceNotProof": true,
+        "stdlibCoverage": "unknown-compiler-version-format",
+        "govulncheckExitCode": 0,
+        "govulncheckSha256": "af16a99c3c235fa296fc2b770bd895a2377bb92a69b89653719e48cd454a4e2c",
+        "componentAdvisoryCount": 8,
+        "findingCount": 1417,
+        "coverage": "diagnostic-only; silent module fallback and incomplete provenance remain possible",
+        "recordedModuleCount": 27
+      },
+      {
+        "path": "/usr/libexec/podman/quadlet",
+        "status": "diagnostic-complete",
+        "binarySha256": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454",
+        "metadataSha256": "d4844ba36911142296ad5fcedca303703f793e25b75f60125a8c84c3ed7b77ed",
+        "metadataExitCode": 1,
+        "metadataError": "pclntab text address is unused or unrelocated; exact runtime.text is unknown for this build",
+        "os": "linux",
+        "arch": "amd64",
+        "goVersion": "go1.26.8-X:nodwarf5",
+        "moduleCoverage": "recorded",
+        "symbolCount": 0,
+        "symbolCoverage": "unknown",
+        "absenceNotProof": true,
+        "stdlibCoverage": "unknown-compiler-version-format",
+        "govulncheckExitCode": 0,
+        "govulncheckSha256": "651144285dc59b3ed3f43d588a2394d10a81747fa8145987d229d34c4c60c720",
+        "componentAdvisoryCount": 8,
+        "findingCount": 8,
+        "coverage": "diagnostic-only; silent module fallback and incomplete provenance remain possible",
+        "recordedModuleCount": 2
+      },
+      {
+        "path": "/usr/libexec/podman/rootlessport",
+        "status": "diagnostic-complete",
+        "binarySha256": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd",
+        "metadataSha256": "665963f5bbb61dd9adc1df32b9853e2aeacd462a680a69201dcbc197efb1184a",
+        "metadataExitCode": 1,
+        "metadataError": "pclntab text address is unused or unrelocated; exact runtime.text is unknown for this build",
+        "os": "linux",
+        "arch": "amd64",
+        "goVersion": "go1.26.8-X:nodwarf5",
+        "moduleCoverage": "recorded",
+        "symbolCount": 0,
+        "symbolCoverage": "unknown",
+        "absenceNotProof": true,
+        "stdlibCoverage": "unknown-compiler-version-format",
+        "govulncheckExitCode": 0,
+        "govulncheckSha256": "a438688385b29264bc0623cb1928a71d1331f6fae9abfac12858fd975fa00f17",
+        "componentAdvisoryCount": 9,
+        "findingCount": 9,
+        "coverage": "diagnostic-only; silent module fallback and incomplete provenance remain possible",
+        "recordedModuleCount": 7
+      }
+    ],
+    "limitations": [
+      "Selected live executables only; historical OSTree object reachability remains unassessed",
+      "Binary scanner has no call graph; silent module fallback is possible",
+      "pclntab function coverage excludes some inline functions; symbol absence is not proof",
+      "Compiler suffix and dirty main-module metadata can leave coverage unknown",
+      "Finding counts include repeated traces and are not a unique vulnerability total"
+    ],
+    "vulnerabilityClearance": "not-assessed"
+  },
+  "cosignRuntime": {
+    "sourcePolicy": {
+      "schema": 1,
+      "version": "3.1.3",
+      "repository": "ghcr.io/sigstore/cosign/cosign",
+      "indexDigest": "sha256:9e5c2f2edc34351160407ca3416c61855bdf9403c3c5936e0f0be7fc261611b8",
+      "platformDigest": "sha256:6ca1127dc1e9ff19f3f2bfa214936813a86fbbf52919652eda49d393c888ad3c",
+      "platform": {
+        "os": "linux",
+        "architecture": "amd64"
+      },
+      "certificateIdentity": "keyless@projectsigstore.iam.gserviceaccount.com",
+      "certificateOidcIssuer": "https://accounts.google.com",
+      "annotations": {
+        "GIT_VERSION": "v3.1.3",
+        "GIT_HASH": "11926fa5bbbbde47e88fc006b625a17769b743b2"
+      }
+    },
+    "sourcePolicySha256": "c4dab4189150c505cd09e08e8760a5e97dbc64c25c420e3dc66f8860640fe236",
+    "actualExecutable": {
+      "image": "ghcr.io/sigstore/cosign/cosign@sha256:9e5c2f2edc34351160407ca3416c61855bdf9403c3c5936e0f0be7fc261611b8",
+      "platformDigest": "sha256:6ca1127dc1e9ff19f3f2bfa214936813a86fbbf52919652eda49d393c888ad3c",
+      "binarySha256": "a57926e24b07f02b5baf3be81f9a5988e9e45d8a1ca8ca500cdf56d10e69f887",
+      "metadataExitCode": 0,
+      "metadataSha256": "c395a27335850b7355ed0eb0197e42fe7519afaf2270d63cc46c28373ab3295f",
+      "goVersion": "go1.26.4",
+      "symbolCoverage": "pclntab-functions-only",
+      "absenceNotProof": true,
+      "vulnerabilityClearance": "not-assessed"
+    },
+    "actualSummarySha256": "be307675e4db3592ed3556c6b3f8c14f81e78a7475619b9590fb1e5f582e1d23",
+    "selectedModules": [
+      {
+        "kind": "main",
+        "path": "github.com/sigstore/cosign/v3",
+        "version": "v3.1.3"
+      },
+      {
+        "kind": "dependency",
+        "path": "golang.org/x/crypto",
+        "version": "v0.53.0"
+      },
+      {
+        "kind": "dependency",
+        "path": "golang.org/x/net",
+        "version": "v0.56.0"
+      },
+      {
+        "kind": "dependency",
+        "path": "golang.org/x/text",
+        "version": "v0.38.0"
+      },
+      {
+        "kind": "dependency",
+        "path": "google.golang.org/grpc",
+        "version": "v1.82.0"
+      }
+    ],
+    "remediation": "partial GHSA-fx35-mq7g-6g98 legacy-bundle verification fix; not Go/module clearance",
+    "sourceMechanism": "Pinned BlueBuild0.9.37 stage-bins copies official Cosign OCI executable into /usr/bin; baseline ownership report has no identified RPM owner for this file"
+  },
+  "genericKernel": {
+    "authorization": "User approved optional generic virtual-camera removal and now host ZFS removal across all four profiles; no unrelated package removal",
+    "sourcePolicy": {
+      "schema": 1,
+      "fedora": 44,
+      "release": "7.2.9-201.fc44.x86_64",
+      "keySHA256": "93642aec521a1e5e96dd715f7ae0ec0850ebc9de09a94ce03cae5263f26cc18a",
+      "keyFingerprint": "36F612DCF27F7D1A48A835E4DBFCF71C6D9F90A6",
+      "source": "https://bodhi.fedoraproject.org/updates/FEDORA-2026-c2d6603acd",
+      "packages": [
+        {
+          "name": "kernel",
+          "file": "kernel-7.2.9-201.fc44.x86_64.rpm",
+          "url": "https://kojipkgs.fedoraproject.org/packages/kernel/7.2.9/201.fc44/data/signed/6d9f90a6/x86_64/kernel-7.2.9-201.fc44.x86_64.rpm",
+          "sha256": "80fe202b417fe6fc1ca8669f5e8e715a52c6448e5671ebeccbeb4a894eb9304a"
+        },
+        {
+          "name": "kernel-core",
+          "file": "kernel-core-7.2.9-201.fc44.x86_64.rpm",
+          "url": "https://kojipkgs.fedoraproject.org/packages/kernel/7.2.9/201.fc44/data/signed/6d9f90a6/x86_64/kernel-core-7.2.9-201.fc44.x86_64.rpm",
+          "sha256": "37a879e76a894fe32c19a13607a118ae4f006572370b9ddaf689ca2698e3be20"
+        },
+        {
+          "name": "kernel-modules-core",
+          "file": "kernel-modules-core-7.2.9-201.fc44.x86_64.rpm",
+          "url": "https://kojipkgs.fedoraproject.org/packages/kernel/7.2.9/201.fc44/data/signed/6d9f90a6/x86_64/kernel-modules-core-7.2.9-201.fc44.x86_64.rpm",
+          "sha256": "01277433853490efb2d907b95ac9f1923c1c0ab0d467a7fb7e5d49ebf8123179"
+        },
+        {
+          "name": "kernel-modules",
+          "file": "kernel-modules-7.2.9-201.fc44.x86_64.rpm",
+          "url": "https://kojipkgs.fedoraproject.org/packages/kernel/7.2.9/201.fc44/data/signed/6d9f90a6/x86_64/kernel-modules-7.2.9-201.fc44.x86_64.rpm",
+          "sha256": "8ad8b1bca78532130f8ff7e10baa010518ef8a6c9edfabb087078af2a93ddc4f"
+        },
+        {
+          "name": "kernel-modules-extra",
+          "file": "kernel-modules-extra-7.2.9-201.fc44.x86_64.rpm",
+          "url": "https://kojipkgs.fedoraproject.org/packages/kernel/7.2.9/201.fc44/data/signed/6d9f90a6/x86_64/kernel-modules-extra-7.2.9-201.fc44.x86_64.rpm",
+          "sha256": "542cdab5cccbee23fc3ff57a9c5a1f6fa4ae9d87aef1b1994a27eb233f324544"
+        },
+        {
+          "name": "kernel-devel",
+          "file": "kernel-devel-7.2.9-201.fc44.x86_64.rpm",
+          "url": "https://kojipkgs.fedoraproject.org/packages/kernel/7.2.9/201.fc44/data/signed/6d9f90a6/x86_64/kernel-devel-7.2.9-201.fc44.x86_64.rpm",
+          "sha256": "7076e36392df24687da7c16a6dfb568b0af6ccf67689aa714d7e98377283b9d7"
+        },
+        {
+          "name": "kernel-devel-matched",
+          "file": "kernel-devel-matched-7.2.9-201.fc44.x86_64.rpm",
+          "url": "https://kojipkgs.fedoraproject.org/packages/kernel/7.2.9/201.fc44/data/signed/6d9f90a6/x86_64/kernel-devel-matched-7.2.9-201.fc44.x86_64.rpm",
+          "sha256": "8653b4703af81b1f20f2da6f4033be7c559ac274e312c93a546c869b3b90a0a5"
+        }
+      ]
+    },
+    "sourcePolicySha256": "17d85394c0cfe26b8ac2cd76ee9f34c14114b0ca559c7f3fb8cbb22a85d18be0",
+    "transactionRun": "https://github.com/closure-labs/finite/actions/runs/38311107555",
+    "sourceRevisionPrefix": "5b961c8d",
+    "transactions": [
+      {
+        "profile": "bluefin-generic",
+        "status": "passed",
+        "repeat": "passed-offline",
+        "artifacts": {
+          "transaction.log": {
+            "sha256": "9693fb1a802f2f76dd65eca1dcc0e6d67158370e8278ee0330741402289481fd",
+            "bytes": 20327
+          },
+          "noop.log": {
+            "sha256": "a4d4df7fe630482e9e9f545a21670eaf2138e9fce912f2191a5fa4a3dad79a2a",
+            "bytes": 218
+          }
+        }
+      },
+      {
+        "profile": "bluefin-dx-generic",
+        "status": "passed",
+        "repeat": "passed-offline",
+        "artifacts": {
+          "transaction.log": {
+            "sha256": "905d706bf357ce66f58290996337dc4124fa4a06ec52e497aeb6ef99b1fd1d8f",
+            "bytes": 20503
+          },
+          "noop.log": {
+            "sha256": "a4d4df7fe630482e9e9f545a21670eaf2138e9fce912f2191a5fa4a3dad79a2a",
+            "bytes": 218
+          }
+        }
+      }
+    ],
+    "initramfs": {
+      "status": "implemented-in-both-generic-recipes; assembled-image-validation-pending",
+      "recipeContractTests": 4,
+      "initramfsTests": 4,
+      "sequence": "replacement kernel, profile metadata, initramfs regeneration, finalization",
+      "reason": "RPM installation in a container does not create the required boot initramfs"
+    },
+    "bootQualification": "pending; signed RPMs and package transaction do not prove UEFI/kernel/module runtime acceptance",
+    "historicalPruningGuard": {
+      "status": "Hosted guard correctly rejected a retained RPM-owned ZFS module; image transaction incomplete",
+      "focusedTests": 25,
+      "helperSnapshotSha256": "8b0d53c166717acac9f5fcc2f7f52581c763fccc73f076bdf4dfc4933fcd79ee",
+      "limits": "Retire only recorded old kernel trees; refuse still-owned files, unexpected unowned files, symlinks and unknown directories before any deletion",
+      "hostedPlan": "Confirm one representative standard generic transaction; final all-profile CI covers DX. Reuse passed DX transaction evidence without another standalone DX probe.",
+      "run": "https://github.com/closure-labs/finite/actions/runs/38314613864",
+      "sourceRevision": "0759a023ecda94e33dd27625670fc043ced4c794",
+      "transactionLogSha256": "cc87577fd2fde8e4de33f4612051009970b5cdf668c97c4152eb52ab4e913e91",
+      "blockingFile": "/usr/lib/modules/7.2.5-200.fc44.x86_64/extra/zfs/spl.ko",
+      "owningRpm": "kmod-zfs-2.4.4-1.fc44.x86_64"
+    },
+    "latestPruningGuard": {
+      "status": "New explicit ZFS removal source changing; focused and hosted confirmation pending",
+      "limits": "Preserve unrelated package inventory; never prune still-owned, unexpected or symlinked stale files",
+      "hostedPlan": "Cheap focused/source checks, one representative changed candidate, then all four image integration jobs; no repeated unchanged DX probe"
+    }
+  },
+  "nextKernel": {
+    "currentlyPinnedRelease": "7.2.9-300.fc45.x86_64",
+    "securityGap": "Later October XFS/AMD fixes are not present in the300 build",
+    "candidate": "7.2.9-301.fc45.x86_64",
+    "bodhiResponseSha256": "d70d9bc3f6c7d50bee095dbb432cac0ae5feb53414d7566ca201fe864cb5ee6d",
+    "bodhi": {
+      "alias": "FEDORA-2026-d4b8c35afa",
+      "title": "kernel-7.2.9-301.fc45",
+      "status": "testing",
+      "request": "stable",
+      "test_gating_status": "passed",
+      "karma": 9,
+      "date_stable": null,
+      "date_submitted": "2026-10-09 18:29:08"
+    },
+    "decision": "pending user preference; no testing override implemented",
+    "excludedCandidate": "7.2.10 pending/gating-failed build",
+    "stableUpdater": {
+      "tags": [
+        "f45",
+        "f45-updates"
+      ],
+      "focusedTests": 12,
+      "guards": "Exact Fedora tags only; reject testing/pending/candidate tags, malformed/oversized responses, stream transitions and downgrades; authentication/module/freshness checks preserved",
+      "approvedLatestObservation": {
+        "queriedAt": "2026-10-12T22:02:21.148548+00:00",
+        "endpoint": "https://koji.fedoraproject.org/kojihub",
+        "method": "getLatestBuilds",
+        "tags": {
+          "f45": {
+            "buildId": 3113055,
+            "release": "7.2.9-300.fc45"
+          },
+          "f45-updates": {
+            "buildId": 3113055,
+            "release": "7.2.9-300.fc45",
+            "resolvedTag": "f45"
+          }
+        },
+        "scope": "Lightweight official publisher metadata only; stable301 not selected, no payload download or lock update"
+      },
+      "latestFollowupObservation": {
+        "queriedAt": "2026-10-12T23:17:49.859464+00:00",
+        "tag": "f45-updates",
+        "builds": [
+          {
+            "build_id": 3113055,
+            "completion_time": "2026-10-03 19:41:20.260924+00:00",
+            "create_event": 180128624,
+            "creation_event_id": 180002531,
+            "creation_time": "2026-10-03 15:58:57.814362+00:00",
+            "draft": false,
+            "epoch": null,
+            "id": 3113055,
+            "name": "kernel",
+            "nvr": "kernel-7.2.9-300.fc45",
+            "owner_id": 926,
+            "owner_name": "jforbes",
+            "package_id": 8,
+            "package_name": "kernel",
+            "promoter_id": null,
+            "promoter_name": null,
+            "promotion_time": null,
+            "release": "300.fc45",
+            "start_time": "2026-10-03 15:58:57.807465+00:00",
+            "state": 1,
+            "tag_id": 128147,
+            "tag_name": "f45",
+            "task_id": 150868499,
+            "version": "7.2.9",
+            "volume_id": 0,
+            "volume_name": "DEFAULT"
+          }
+        ]
+      }
+    }
+  },
+  "publicationOrder": {
+    "status": "implemented; final-integration-pending",
+    "focusedTests": 10,
+    "sequence": "Authenticate all four canonical recipe identities before mutating candidate tags",
+    "failedHistoricalRun": "https://github.com/closure-labs/finite/actions/runs/38306934392",
+    "failureProducedCandidateOrScan": false
+  },
+  "localCandidate": {
+    "status": "Hosted representative transaction and native scan in progress",
+    "focusedTests": 17,
+    "publicationEligibility": false,
+    "productionPolicyTests": 27,
+    "promotionDefense": "Production verify rejects explicit releaseEligible=false or sourceType=locally-built-unpublished in extraction, provenance or result before full release verification",
+    "run": "https://github.com/closure-labs/finite/actions/runs/38321177037",
+    "sourceRevision": "371b7f17bc02ab84da119e73becbdb4d6c87e2bc",
+    "imageDigest": null,
+    "resultSha256": null,
+    "comparisonSha256": null,
+    "historicalFailedAttempt": {
+      "status": "Representative patch attempt rejected before image commit or native scan",
+      "run": "https://github.com/closure-labs/finite/actions/runs/38314613864",
+      "sourceRevision": "0759a023ecda94e33dd27625670fc043ced4c794",
+      "reason": "Retained kmod-zfs owns a module in the inherited kernel tree; guard must not be bypassed",
+      "imageDigest": null,
+      "resultSha256": null,
+      "comparisonSha256": null
+    },
+    "focusedTestsScope": "17 helper fixtures passed before the new authorized removal source; changed-source validation pending",
+    "remediationSourceRevision": "c29532e7ea06bb4cb8fb3118c3cf71039fe3a76b"
+  },
+  "historicalPackagePrerequisites": {
+    "run": "https://github.com/closure-labs/finite/actions/runs/38299553401",
+    "statusAtObservation": "blocked; all16 implemented floors available; known owning fixes unavailable",
+    "packages": [
+      {
+        "name": "python3-anyio",
+        "availableVersion": "4.13.0",
+        "fixedVersion": "4.14.2"
+      },
+      {
+        "name": "python3-msgpack",
+        "availableVersion": "1.1.2",
+        "fixedVersion": "1.2.1"
+      },
+      {
+        "name": "rclone",
+        "availableVersion": "1.74.3",
+        "fixedVersion": "1.75.1"
+      }
+    ],
+    "nextAction": "Refresh lightweight metadata before asserting later availability or extending floors"
+  },
+  "threatModel": {
+    "profiles": [
+      "bluefin-generic",
+      "bluefin-next",
+      "bluefin-dx-generic",
+      "bluefin-dx-next"
+    ],
+    "scope": [
+      "malicious websites/downloads/files",
+      "host takeover/privilege escalation",
+      "data theft or corruption",
+      "TLS/authentication failures",
+      "archive/path escape",
+      "rootless and privileged container/build/import workflows",
+      "development-tool inputs",
+      "VPN and remote-desktop listeners"
+    ],
+    "selinuxHostObservations": {
+      "enforcement": "enforcing",
+      "FirefoxAndGnome": "unconfined_t",
+      "Tailscale": "unconfined_service_t",
+      "SSH": "sshd_t",
+      "evidenceLimit": "Host observations only; candidate enforcement/domains/listeners/container behavior need boot qualification"
+    },
+    "waivers": "none introduced; preserve KEV blockers and unknowns",
+    "hostZfsSupport": "Removed by explicit user decision across all four profiles; separate FreeBSD VM alternative not validated"
+  },
+  "finalIntegration": {
+    "status": "Pending changed runtime source after approved all-profile host ZFS removal",
+    "pr": "https://github.com/closure-labs/finite/pull/144",
+    "prState": "draft",
+    "lastPostedHeadPrefix": "9a65",
+    "sourceRevision": null,
+    "run": null,
+    "profileResults": {},
+    "bootQualificationRun": null,
+    "sourceContracts": {
+      "status": "pending changed-source focused and pinned Nix contracts",
+      "run": null,
+      "validatedRevision": null
+    },
+    "imageValidation": "New all-four-profile evidence pending after cheap checks and one useful changed candidate; no reuse of historical4bc source pass as current proof"
+  },
+  "verdicts": {
+    "sourceBuild": "Historical source contracts38317182847 passed4bc79ded; new all-profile host ZFS removal code requires fresh focused/Nix and image integration validation",
+    "vulnerabilityClearance": "BLOCKED; no new changed-source image digest/native comparison; remaining Go/Python/rclone and next300 XFS/AMD findings unresolved",
+    "releaseEligibility": "INELIGIBLE; new source/build, production native security, isolated signing and applicable boot gates not established"
+  },
+  "remainingBlockers": [
+    {
+      "scope": "Approved Fedora44 Python/rclone package fixes",
+      "owners": [
+        "Fedora python-anyio maintainers",
+        "Fedora python-msgpack maintainers",
+        "Fedora rclone maintainers",
+        "Finite dependency/security review"
+      ],
+      "status": "Fresh approved Fedora44 metadata remains blocked in run38314613864; no probe error",
+      "unblockEvents": [
+        "Approved signed Fedora44 NEVR providing AnyIO>=4.14.2, msgpack>=1.2.1 and rclone>=1.75.1, or exact reviewed authenticated source/backport proof for the corresponding advisories",
+        "Refresh approved repository metadata, authenticate payloads and validate compatible owning-RPM transaction before extending floors"
+      ]
+    },
+    {
+      "scope": "Remaining shipped embedded Go/compiler fixes and ownership gaps",
+      "owners": [
+        "Owning Fedora package maintainers",
+        "Tailscale stable publisher",
+        "Sigstore Cosign publisher",
+        "Finite artifact/ownership review"
+      ],
+      "status": "Blocked; partial Tailscale/Cosign updates do not clear all findings",
+      "unblockEvents": [
+        "Publisher rebuilds of actual shipped owning executables with required compiler and embedded-module fixes; upgrading an installed compiler alone is insufficient",
+        "Authenticate exact binaries and reassess every affected live path/profile and historical OSTree location or prove its reachability/applicability with reviewed evidence",
+        "Fresh native scan and ledger comparison preserve new/persistent findings, unknown coverage and KEV enforcement"
+      ]
+    },
+    {
+      "scope": "Fedora45 next-kernel security fixes",
+      "owners": [
+        "Fedora45 kernel stable-update publisher",
+        "Finite source/boot qualification",
+        "User for the separate pending testing preference"
+      ],
+      "status": "301 testing/gating-passed/stable-requested; no stable date or implemented exception",
+      "unblockEvents": [
+        "Approved stable-tag promotion of a same-stream kernel containing the October XFS/AMD fixes, or a separately explicit reviewed testing exception",
+        "Authenticate all five exact signed RPMs and required module manifests, validate replacement/initramfs and affected-profile Secure Boot/LUKS install/upgrade/rollback",
+        "Pending/gating-failed7.2.10 is excluded; stable request and karma are not publication proof"
+      ]
+    },
+    {
+      "scope": "Latest-source candidate/build/security/signing/boot qualification",
+      "owners": [
+        "Finite implementation and independent QA/security review"
+      ],
+      "status": "Pending new ZFS-removal source; historical source checks cannot validate changed code",
+      "unblockEvents": [
+        "Validate changed all-profile ZFS-removal source with focused and pinned Nix contracts; then one representative patched copy and all four exact-source builds",
+        "Complete first unpublished patched-copy native scan and honest baseline comparison without release eligibility; retain exact manifest/source/result hashes",
+        "Obtain passing production digest-bound security policy, isolated signing and affected-profile boot qualification before release eligibility"
+      ]
+    },
+    {
+      "scope": "Retirement of retained repository signing-key copy",
+      "owners": [
+        "Finite administrator and delivery workflow review"
+      ],
+      "status": "Deferred; isolated environments retain migrated signing keys",
+      "unblockEvents": [
+        "Successful protected-main signing through the image-signing/release environment secrets and evidence that old workflows/runs no longer need the repository copy",
+        "Retire the repository copy only after environment-based signing succeeds and old dependent runs retire; no secret re-export or retirement is performed by this continuation"
+      ]
+    },
+    {
+      "scope": "Authorized removal of host ZFS across all four profiles",
+      "owners": [
+        "Finite kernel/filesystem implementation",
+        "Finite independent QA/security validation"
+      ],
+      "status": "User decision completed; explicit removal implementation and fresh validation pending",
+      "unblockEvents": [
+        "Remove only the reviewed ZFS package names from all four images while preserving signed sources, unrelated RPM inventory and stale-tree ownership guards",
+        "Pass new focused/source/Nix contracts, one useful changed-candidate scan and all-four-profile integration; record host ZFS unsupported",
+        "No matching ZFS publisher module or further ZFS approval is required for the chosen product direction; no storage VM qualification is claimed"
+      ]
+    }
+  ],
+  "packagePrerequisiteRefresh": {
+    "run": "https://github.com/closure-labs/finite/actions/runs/38314613864",
+    "sourceRevision": "0759a023ecda94e33dd27625670fc043ced4c794",
+    "artifact": "desktop-prerequisites-38314613864-1",
+    "reportSha256": "498e3480a7dd40674ff2c433e6ebdd5fac8600b2b13842ac9e1832d92b2161b2",
+    "queriedAt": "2026-10-12T22:05:53.972424+00:00",
+    "status": "blocked",
+    "packageFloorsAvailable": true,
+    "prerequisiteReady": false,
+    "inventoryParser": "passed",
+    "prerequisites": [
+      {
+        "name": "python3-anyio",
+        "component": "pkg:pypi/anyio@4.13.0",
+        "minimumUpstreamVersion": "4.14.2",
+        "advisories": [
+          "GHSA-82r6-8w77-94w6"
+        ],
+        "status": "outdated",
+        "available": [
+          {
+            "evr": "0:4.12.1-3.fc44",
+            "arch": "noarch",
+            "repository": "fedora",
+            "nevra": "python3-anyio-0:4.12.1-3.fc44.noarch",
+            "meetsFloor": null,
+            "meetsUpstreamMinimum": false
+          },
+          {
+            "evr": "0:4.13.0-1.fc44",
+            "arch": "noarch",
+            "repository": "updates",
+            "nevra": "python3-anyio-0:4.13.0-1.fc44.noarch",
+            "meetsFloor": null,
+            "meetsUpstreamMinimum": false
+          }
+        ],
+        "scannerResolution": "unknown"
+      },
+      {
+        "name": "python3-msgpack",
+        "component": "pkg:pypi/msgpack@1.1.2",
+        "minimumUpstreamVersion": "1.2.1",
+        "advisories": [
+          "GHSA-6v7p-g79w-8964"
+        ],
+        "status": "outdated",
+        "available": [
+          {
+            "evr": "0:1.1.2-2.fc44",
+            "arch": "x86_64",
+            "repository": "fedora",
+            "nevra": "python3-msgpack-0:1.1.2-2.fc44.x86_64",
+            "meetsFloor": null,
+            "meetsUpstreamMinimum": false
+          }
+        ],
+        "scannerResolution": "unknown"
+      },
+      {
+        "name": "rclone",
+        "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+        "minimumUpstreamVersion": "1.75.1",
+        "advisories": [
+          "GHSA-p569-5gjg-9cmj",
+          "GHSA-xwwr-4h3p-r22c"
+        ],
+        "status": "outdated",
+        "available": [
+          {
+            "evr": "0:1.73.0-3.fc44",
+            "arch": "x86_64",
+            "repository": "fedora",
+            "nevra": "rclone-0:1.73.0-3.fc44.x86_64",
+            "meetsFloor": null,
+            "meetsUpstreamMinimum": false
+          },
+          {
+            "evr": "0:1.74.3-1.fc44",
+            "arch": "x86_64",
+            "repository": "updates",
+            "nevra": "rclone-0:1.74.3-1.fc44.x86_64",
+            "meetsFloor": null,
+            "meetsUpstreamMinimum": false
+          }
+        ],
+        "scannerResolution": "unknown"
+      }
+    ],
+    "scope": "Metadata availability only; no RPM payload signature or transaction verification, no installation, no multilib solver proof, and no new image vulnerability scan. Even available prerequisites are not a passing security scan or proof of embedded fixes."
+  },
+  "inheritedZfs": {
+    "status": "Approved host ZFS removal implemented with strict invariance/ownership guards; hosted dependency validation in progress",
+    "baselineRpm": "kmod-zfs-2.4.4-1.fc44.x86_64",
+    "ownershipRun": "https://github.com/closure-labs/finite/actions/runs/38315879860",
+    "sourceRevision": "200c79807780",
+    "publisherMatrix": "https://github.com/ublue-os/akmods/blob/main/images.yaml",
+    "publisherInstaller": "https://github.com/ublue-os/bluefin/blob/main/build_files/base/03-install-kernel-akmods.sh",
+    "authorization": "User explicitly authorized dump zfs across all four profiles",
+    "historicalValidationLimit": "Earlier transactions with blanket old-tree removal do not prove retained ZFS files or functionality",
+    "nextProfileRisk": "Shared ownership and unrelated-package invariance guards remain mandatory while authorized explicit host ZFS removal is implemented",
+    "currentBases": [
+      {
+        "profile": "bluefin-generic",
+        "kernel": "7.2.5-200.fc44.x86_64",
+        "rpm": "kmod-zfs-2.4.4-1.fc44.x86_64",
+        "ownedModule": "/lib/modules/7.2.5-200.fc44.x86_64/extra/zfs/spl.ko",
+        "inventoryLogSha256": "ffaa915d03c3b3bc91394643c7b83baaf9cbdf0e8eb08ca192e7142ba9d156e2"
+      },
+      {
+        "profile": "bluefin-dx-generic",
+        "kernel": "7.2.5-200.fc44.x86_64",
+        "rpm": "kmod-zfs-2.4.4-1.fc44.x86_64",
+        "ownedModule": "/lib/modules/7.2.5-200.fc44.x86_64/extra/zfs/spl.ko",
+        "inventoryLogSha256": "c30b73e7a4cd56009aadc4b0a2950b2295a14c3eb0ed08173e3b89ad6af6b003"
+      }
+    ],
+    "publisherObservations": {
+      "sha256": "239dcbf349e35725ef9e10d506de245f2a037851b95cc1c190a8e1c26bac0a0f",
+      "document": {
+        "schema": 1,
+        "observationDate": "2026-10-12",
+        "kind": "retained discovery observations from prior metadata-only tool calls",
+        "payloadAuthenticationPerformed": false,
+        "candidateKernel": "7.2.9-201.fc44.x86_64",
+        "publisher": "ghcr.io/ublue-os/akmods-zfs",
+        "officialSources": [
+          "https://github.com/ublue-os/akmods/blob/main/images.yaml",
+          "https://github.com/ublue-os/akmods/blob/main/build_files/zfs/build-kmod-zfs.sh",
+          "https://github.com/ublue-os/bluefin/blob/main/build_files/base/03-install-kernel-akmods.sh"
+        ],
+        "observations": {
+          "fedora44MatrixZfsFlavors": [
+            "coreos-stable",
+            "coreos-testing",
+            "longterm-6.18"
+          ],
+          "fedora44MainZfsInMatrix": false,
+          "allFedora44TagsMatching7_2_9Or7_2_10": [],
+          "indexes": [
+            {
+              "tag": "coreos-stable-44",
+              "versionAnnotation": "coreos-stable-44-7.2.5-200.fc44",
+              "createdAnnotation": "2026-10-11T01:33:00Z",
+              "amd64ChildDigest": "sha256:6bdeba7f79c1c9196ee5849d1e8b82f1c62b798f82bce915a844126d602a2aa0"
+            },
+            {
+              "tag": "coreos-testing-44",
+              "versionAnnotation": "coreos-testing-44-7.2.7-200.fc44",
+              "createdAnnotation": "2026-10-12T01:29:13Z",
+              "amd64ChildDigest": "sha256:6facaef94d903a08dbf271158c309ba15ca72cc0961bbb22e47a8f5807805907"
+            }
+          ]
+        },
+        "commandsPreviouslyRun": [
+          "skopeo list-tags docker://ghcr.io/ublue-os/akmods-zfs",
+          "skopeo inspect --raw docker://ghcr.io/ublue-os/akmods-zfs:coreos-stable-44",
+          "skopeo inspect --raw docker://ghcr.io/ublue-os/akmods-zfs:coreos-testing-44",
+          "gh api repos/ublue-os/akmods/contents/images.yaml"
+        ],
+        "interpretation": "No matching candidate ZFS module identified in existing UBlue publisher metadata. Discovery metadata is not signed-payload or transaction proof; user has not authorized ZFS removal."
+      },
+      "limit": "Reconstructed retained metadata observations, not raw signed publisher payload authentication",
+      "scope": "Historical retained discovery before host ZFS removal authorization; earlier undecided wording records that prior state"
+    },
+    "historicalDiscoveryStatus": "Confirmed on both current approved foundations as well as historical baseline",
+    "productSupport": "Host ZFS no longer supported",
+    "alternative": "User-proposed separate FreeBSD VM storage setup; not validated installation guidance and not a host root filesystem replacement",
+    "historicalSharedGuard": {
+      "status": "implemented; focused fixtures pass",
+      "genericFixtures": 25,
+      "nextIntegrationFixtures": 10,
+      "helperSha256": "011de239e0d5f557a6c68b5b332bdea9361c390c04af2b36aea3a0acf8ed3a1a",
+      "oldRpmOwnershipPreserved": true,
+      "hostedCompleteReplacementValidation": "Blocked pending ZFS support decision or compatible signed module",
+      "nextPackageInvariance": "Snapshot before package mutations; compare all packages immediately after every DNF operation; permit only runtime5 and approved devel/virtualcam4 names; reject solver removal of ZFS and its files"
+    },
+    "sharedGuard": {
+      "status": "Implemented; 30 generic and 14 next focused fixtures pass",
+      "preservation": "Only reviewed runtime/development/virtual-camera and explicitly approved ZFS package names may change; preserve all unrelated RPMs and owned files",
+      "hostedCompleteReplacementValidation": "pending changed-source validation",
+      "genericFixtures": 30,
+      "nextIntegrationFixtures": 14,
+      "helperSha256": "896b4ac04182b77164120701b5292b8943334f78b6f1187be13631d4b5419f3c"
+    }
+  },
+  "historicalSourceContracts": [
+    {
+      "status": "passed",
+      "run": "https://github.com/closure-labs/finite/actions/runs/38317182847",
+      "workflowRevision": "9e02fcdcaab13ddce1dc15881672c937520c85cc",
+      "validatedRevision": "4bc79ded4fcf4cfe0d426f9d0bca2f03800b34db",
+      "artifact": "desktop-source-contracts-38317182847-1",
+      "logSha256": "6fcbeb151bb27562b3881cb4b0420f3621231aa01d5b4f88075adb5c71a3c0a7",
+      "scope": "Full pinned ci-checks/source contracts passed at the cited historical revision; no image build/scan/signing or boot qualification; does not cover subsequent all-profile host ZFS-removal code",
+      "context": "Historical frozen-source validation before the user authorized all-profile host ZFS removal"
+    }
+  ],
+  "zfsRemoval": {
+    "authorization": "User explicitly authorized dump zfs across all four profiles",
+    "profiles": [
+      "bluefin-generic",
+      "bluefin-next",
+      "bluefin-dx-generic",
+      "bluefin-dx-next"
+    ],
+    "productSupport": "Host ZFS no longer supported in the resulting image contract",
+    "implementationStatus": "Implemented; independent security/QA review approved; 44 focused kernel fixtures pass; hosted dependency/image validation in progress",
+    "preservedControls": [
+      "Authenticate kernel/publisher inputs before mutation",
+      "Remove only reviewed package names",
+      "Preserve unrelated RPM inventory and file ownership",
+      "Do not bypass owned-module or stale-tree guards"
+    ],
+    "alternative": "Separate FreeBSD VM storage proposed by user; no validated installation guidance or host-root-filesystem replacement claim",
+    "sourceRevision": "c29532e7ea06bb4cb8fb3118c3cf71039fe3a76b",
+    "focusedTestRun": {
+      "kind": "bounded local source fixtures",
+      "generic": 30,
+      "next": 14,
+      "recipeContracts": 4,
+      "imageInspection": 4,
+      "initramfs": 4,
+      "status": "pass",
+      "heavyWorkPerformed": false
+    },
+    "integrationRun": null,
+    "nativeCandidateRun": "https://github.com/closure-labs/finite/actions/runs/38321177037",
+    "removedPackages": [
+      "kmod-zfs",
+      "zfs",
+      "python3-pyzfs"
+    ],
+    "retainedSharedLibraries": [
+      "libnvpair3",
+      "libuutil3",
+      "libzfs7",
+      "libzpool7"
+    ]
+  },
+  "policyHardening": {
+    "status": "Implemented; 30 focused policy tests pass",
+    "reason": "Ordinary exact exceptions previously could waive known-exploited matches despite enabled KEV blocking",
+    "change": "When blockKnownExploited is true, primary, related and scanner-ignored KEV matches cannot be waived by ordinary exceptions",
+    "activeExceptions": 0,
+    "inFlightCandidateEquivalence": "Candidate371b7f17 uses prior evaluator with empty exceptions; enforcement identical for its unchanged policy. No unchanged-image rescan warranted.",
+    "sourceRevision": null
+  }
+}

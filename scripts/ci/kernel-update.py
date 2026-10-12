@@ -11,22 +11,76 @@ import subprocess
 import tempfile
 import urllib.error
 import urllib.request
+import xml.parsers.expat
 import xmlrpc.client
 
 ROOT = Path(__file__).resolve().parents[2]
 PACKAGES = ['kernel', 'kernel-core', 'kernel-modules-core', 'kernel-modules', 'kernel-modules-extra']
+XML_LIMIT = 4 * 1024 * 1024
+NUMBER = r'(?:0|[1-9][0-9]*)'
+
+
+def tagged_kernel(tag, fedora):
+    body = xmlrpc.client.dumps((tag, None, 'kernel'), methodname='getLatestBuilds', allow_none=True).encode()
+    request = urllib.request.Request('https://koji.fedoraproject.org/kojihub', data=body,
+                                     headers={'Content-Type': 'text/xml'})
+    try:
+        with urllib.request.urlopen(request, timeout=60) as response:
+            raw = response.read(XML_LIMIT + 1)
+    except OSError as error:
+        raise RuntimeError(f'Koji query failed for {tag}: {type(error).__name__}') from None
+    if len(raw) > XML_LIMIT:
+        raise ValueError(f'Koji response exceeded the reviewed size limit for {tag}')
+    try:
+        parameters, method = xmlrpc.client.loads(raw)
+    except (xmlrpc.client.Error, xml.parsers.expat.ExpatError, ValueError, TypeError):
+        raise ValueError(f'Invalid Koji XML response for {tag}') from None
+    if method is not None or len(parameters) != 1 or not isinstance(parameters[0], list) or len(parameters[0]) > 1:
+        raise ValueError(f'Expected at most one latest tagged kernel build for {tag}')
+    if not parameters[0]:
+        return None
+    build = parameters[0][0]
+    if (not isinstance(build, dict) or build.get('name') != 'kernel'
+            or not isinstance(build.get('version'), str) or len(build['version']) > 128
+            or not re.fullmatch(NUMBER + r'\.' + NUMBER + r'\.' + NUMBER, build['version'])
+            or not isinstance(build.get('release'), str) or len(build['release']) > 128
+            or not re.fullmatch(NUMBER + r'\.fc' + str(fedora), build['release'])
+            or not isinstance(build.get('completion_time'), str) or len(build['completion_time']) > 64
+            or ('id' in build and (type(build['id']) is not int or build['id'] <= 0))
+            or ('epoch' in build and build['epoch'] is not None
+                and not (type(build['epoch']) is int and build['epoch'] == 0)
+                and build['epoch'] != '0')
+            or ('nvr' in build and build['nvr'] != 'kernel-' + build['version'] + '-' + build['release'])):
+        raise ValueError(f'Malformed latest kernel build for {tag}')
+    try:
+        datetime.fromisoformat(build['completion_time'])
+    except ValueError:
+        raise ValueError(f'Invalid kernel completion timestamp for {tag}') from None
+    return build
 
 
 def latest(policy):
-    body = xmlrpc.client.dumps((policy['kojiTag'], None, 'kernel'), methodname='getLatestBuilds', allow_none=True).encode()
-    request = urllib.request.Request('https://koji.fedoraproject.org/kojihub', data=body,
-                                     headers={'Content-Type': 'text/xml'})
-    with urllib.request.urlopen(request, timeout=60) as response:
-        builds = xmlrpc.client.loads(response.read(4 * 1024 * 1024))[0][0]
-    matches = [build for build in builds if build['name'] == 'kernel']
-    if len(matches) != 1:
-        raise ValueError('Expected exactly one latest tagged kernel build')
-    return matches[0]
+    fedora = policy.get('fedora')
+    if (type(fedora) is not int or fedora <= 0
+            or policy.get('kojiTag') != 'f' + str(fedora)
+            or policy.get('stableUpdateTag') != 'f' + str(fedora) + '-updates'):
+        raise ValueError('Kernel tags must be the exact reviewed Fedora base and stable-update tags')
+    base = tagged_kernel(policy['kojiTag'], fedora)
+    stable = tagged_kernel(policy['stableUpdateTag'], fedora)
+    if base is None:
+        raise ValueError('Missing latest kernel build in the reviewed base tag')
+    if stable is None:
+        return base
+    # Restricted canonical numeric fields have the same order as RPM EVR here.
+    # Select before candidate() checks the series: never hide a stream transition
+    # by filtering a newer build out and silently returning an older 7.2 build.
+    order = lambda build: tuple(int(number) for number in build['version'].split('.')) + (int(build['release'].split('.')[0]),)
+    if order(base) == order(stable):
+        for field in ('id', 'completion_time', 'epoch', 'nvr'):
+            if field in base and field in stable and base[field] != stable[field]:
+                raise ValueError('Ambiguous identical kernel versions across approved tags')
+        return base
+    return max((base, stable), key=order)
 
 
 def candidate(policy, current, build):

@@ -23,7 +23,8 @@ class Selection(unittest.TestCase):
         self.assertEqual(impact.classify(['README.md', 'docs/installation.md']), {'checks': False, 'nix': False, 'profiles': []})
         for path in ['files/system/usr/share/finite/finite-logo.png', '.github/workflows/build.yml',
                      '.github/workflows/image.yml', '.github/actions/setup-nix/action.yml', 'scripts/ci/impact.py',
-                     'scripts/bluebuild/publication.py', 'scripts/ci/bluefin-upstream.py', 'new-image-input', 'docs-like/file',
+                     'scripts/bluebuild/publication.py', 'scripts/ci/bluefin-upstream.py',
+                     'files/scripts/kernel-module-prune.py', 'new-image-input', 'docs-like/file',
                      'automation/security/vulnerability-policy.json', 'sources/bluefin.pub', 'sources/bluefin-trust.json']:
             with self.subTest(path=path):
                 self.assertEqual(impact.classify(['README.md', path]), {'checks': True, 'nix': False, 'profiles': sorted(impact.PROFILES)})
@@ -37,12 +38,21 @@ class Selection(unittest.TestCase):
         self.assertEqual(impact.classify(['recipes/bluefin-next.yml'])['profiles'], ['bluefin-next'])
         for path in ['recipes/shared/next.yml', 'files/scripts/kernel-next.sh']:
             self.assertEqual(impact.classify([path])['profiles'], sorted(impact.NEXT))
+        for path in ['files/scripts/kernel-generic-security.py',
+                     'files/security/kernel-generic.json', 'files/security/fedora-44.pub']:
+            self.assertEqual(impact.classify([path])['profiles'], sorted(impact.GENERIC))
 
     def test_check_only_inputs_and_full_rebuild_fallback(self):
         for path in ['tests/home/contracts.sh', 'automation/github/repository-security.json', '.github/workflows/release.yml', 'devenv.lock', 'scripts/ci/http-get.py',
                      '.github/workflows/update-bluefin.yml',
                      '.github/workflows/upstream-health.yml', '.github/workflows/repository-security.yml']:
             self.assertEqual(impact.classify([path]), {'checks': True, 'nix': False, 'profiles': []})
+        for path in ['.github/workflows/desktop-security-evidence.yml',
+                     'scripts/ci/go-binary-evidence.go', 'scripts/ci/go-binary-evidence_test.go',
+                     'scripts/ci/go-desktop-evidence.py']:
+            self.assertEqual(impact.classify([path]), {'checks': True, 'nix': False, 'profiles': []})
+        self.assertEqual(impact.classify(['scripts/ci/local-candidate-evidence.py']),
+                         {'checks': True, 'nix': False, 'profiles': []})
         self.assertEqual(impact.classify([])['profiles'], sorted(impact.PROFILES))
         for path in ['.github/workflows/iso.yml', '.github/workflows/vm-acceptance.yml', '.github/workflows/qualification.yml']:
             self.assertEqual(impact.classify([path])['profiles'], sorted(impact.PROFILES))

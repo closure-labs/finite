@@ -1,0 +1,97 @@
+name: Inspect desktop Go binary applicability
+
+on:
+  workflow_dispatch:
+    inputs:
+      image:
+        description: Immutable Finite image to inspect; diagnostic only
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  evidence:
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    env:
+      GOMEMLIMIT: 1536MiB
+      GOMAXPROCS: "2"
+      INSPECT_IMAGE: ${{ inputs.image }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Validate diagnostic input before installing tools
+        run: |
+          python3 - <<'PY'
+          import os, re
+          if not re.fullmatch(r'ghcr\.io/closure-labs/finite@sha256:[0-9a-f]{64}', os.environ['INSPECT_IMAGE']):
+              raise SystemExit('An immutable Finite image is required')
+          PY
+      - name: Test and build the diagnostic extractor
+        run: |
+          set -euo pipefail
+          mkdir -p .bluebuild/go-tools
+          export GOTOOLCHAIN=go1.26.9 GOPROXY=https://proxy.golang.org GOSUMDB=sum.golang.org
+          toolchain_root=$(go env GOROOT)
+          export PATH="$toolchain_root/bin:$PATH"
+          echo "$toolchain_root/bin" >>"$GITHUB_PATH"
+          go version | tee .bluebuild/go-tools/go-version.txt
+          gofmt -d scripts/ci/go-binary-evidence.go scripts/ci/go-binary-evidence_test.go > .bluebuild/go-tools/format.diff
+          test ! -s .bluebuild/go-tools/format.diff
+          export GOTOOLCHAIN=local GOWORK=off GOPROXY=off GOSUMDB=off
+          go test -count=1 -v scripts/ci/go-binary-evidence.go scripts/ci/go-binary-evidence_test.go | tee .bluebuild/go-tools/tests.log
+          go vet scripts/ci/go-binary-evidence.go scripts/ci/go-binary-evidence_test.go
+          go build -trimpath -o .bluebuild/go-tools/go-binary-evidence scripts/ci/go-binary-evidence.go
+          python3 tests/ci/go-desktop-evidence.py
+      - name: Install the pinned official Go scanner with memory bounds
+        run: |
+          set -euo pipefail
+          sudo systemd-run --unit=finite-govulncheck-install --wait --pipe --service-type=exec \
+            --property=MemoryMax=2048M --property=MemorySwapMax=0 --property=OOMPolicy=stop \
+            --property=RuntimeMaxSec=600 --property=NoNewPrivileges=yes --property=CapabilityBoundingSet= \
+            --property="User=$(id -u)" --property="Group=$(id -g)" \
+            --setenv="PATH=$PATH" --setenv="HOME=$HOME" --setenv=GOMEMLIMIT=1536MiB --setenv=GOMAXPROCS=2 \
+            --setenv="GOBIN=$PWD/.bluebuild/go-tools" --setenv=GOSUMDB=sum.golang.org \
+            --setenv=GOPROXY=https://proxy.golang.org --setenv=GOTOOLCHAIN=auto \
+            go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
+          go version -m .bluebuild/go-tools/govulncheck > .bluebuild/go-tools/govulncheck-version.txt
+          .bluebuild/go-tools/govulncheck -version > .bluebuild/go-tools/scanner-version.txt
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        with:
+          cosign-release: v3.1.3
+      - name: Make room for authenticated image inspection
+        uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
+        with:
+          skip-if-available: "80G"
+      - name: Inspect selected live binaries without executing image code
+        run: |
+          python3 scripts/ci/go-desktop-evidence.py \
+            "$INSPECT_IMAGE" \
+            .bluebuild/go-evidence --inspector .bluebuild/go-tools/go-binary-evidence \
+            --govulncheck .bluebuild/go-tools/govulncheck
+      - name: Retain small evidence summary
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: desktop-go-summary-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .bluebuild/go-evidence/summary.json
+            .bluebuild/go-tools/*.txt
+            .bluebuild/go-tools/*.log
+            .bluebuild/go-tools/*.diff
+            .bluebuild/go-tools/scanner-version.txt
+          include-hidden-files: true
+          retention-days: 30
+      - name: Retain raw diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: desktop-go-raw-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/go-evidence/
+          include-hidden-files: true
+          retention-days: 30
