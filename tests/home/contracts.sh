@@ -76,7 +76,8 @@ fi
 	--foundation bluefin --hardware generic-x86_64 \
 	--packages uv,herdr \
 	--roles support,developer --user provisioned \
-	--output "${test_root}/cloud-init"
+	--output "${test_root}/cloud-init" 2>"${test_root}/cloud-init-notice"
+grep -qF 'cloud-init is disabled by default' "${test_root}/cloud-init-notice"
 yq -o=json '.' "${test_root}/cloud-init/profile.yaml" |
 	jq -e '
     .schema == 2 and .packages == ["herdr", "uv"] and

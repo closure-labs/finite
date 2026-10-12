@@ -10,7 +10,7 @@ esac
 repository=ghcr.io/closure-labs/finite
 source="$repository@$digest"
 mkdir -p .bluebuild/iso
-cosign verify --key cosign.pub "$source" >.bluebuild/iso/signature.json
+cosign verify --new-bundle-format=false --key cosign.pub "$source" >.bluebuild/iso/signature.json
 # Lorax uses finite-x86_64-TAG as the ISO volume ID (at most 32 bytes).
 # Keep 64 random bits plus a prefix; reject any existing tag before copying.
 tag="i$(printf '%s-%s-%s' "${GITHUB_RUN_ID:?}" "${GITHUB_RUN_ATTEMPT:?}" \
@@ -31,7 +31,7 @@ esac
 bash "$(dirname "${BASH_SOURCE[0]}")/prepare-installer.sh"
 skopeo copy --all --preserve-digests "docker://$source" "docker://$repository:$tag"
 [[ $(skopeo inspect --format '{{.Digest}}' "docker://$repository:$tag") == "$digest" ]]
-cosign verify --key cosign.pub "$repository:$tag" >/dev/null
+cosign verify --new-bundle-format=false --key cosign.pub "$repository:$tag" >/dev/null
 jq -n --arg image "$source" --arg tag "$repository:$tag" \
   --arg channel "$repository:$channel" --arg profile "$profile" \
   --slurpfile installer .bluebuild/iso/installer.json \

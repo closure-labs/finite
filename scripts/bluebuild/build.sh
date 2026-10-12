@@ -18,18 +18,14 @@ unset SOURCE_DATE_EPOCH
 
 # Use the CLI installed from sources/bluebuild-cli.json and the flake's cosign.
 # Explicit flags avoid clap's surprising treatment of false boolean env values.
-unset BB_BUILD_PUSH BB_BUILD_NO_SIGN BB_SQUASH BB_BUILD_CHUNKAH BB_BUILD_CHUNKED_OCI BB_BUILD_RECHUNK
+unset COSIGN_PRIVATE_KEY BB_BUILD_PUSH BB_BUILD_NO_SIGN BB_SQUASH BB_BUILD_CHUNKAH BB_BUILD_CHUNKED_OCI BB_BUILD_RECHUNK
 args=(build -v --build-driver docker --run-driver docker --signing-driver cosign
-  --registry ghcr.io --registry-namespace closure-labs --cache-layers)
+  --registry ghcr.io --registry-namespace closure-labs --cache-layers --no-sign)
 if [[ $publish == true ]]; then
   : "${BB_USERNAME:?registry username required}" "${BB_PASSWORD:?registry token required}"
-  : "${COSIGN_PRIVATE_KEY:?publication signing key required}"
-  # BlueBuild logs Docker and cosign in using stdin, checks the signing key
-  # against cosign.pub, then signs and verifies the pushed image. Remove the
-  # persisted registry login even if building, pushing or signing fails.
+  # Build and push an unsigned candidate. The isolated signing job runs only
+  # after independent security checks; this job never receives its key.
   trap 'docker logout ghcr.io >/dev/null 2>&1 || true' EXIT
   args+=(--push --retry-push --retry-count 3)
-else
-  unset COSIGN_PRIVATE_KEY
 fi
 bluebuild "${args[@]}" "recipes/$profile.yml"

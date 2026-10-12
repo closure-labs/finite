@@ -311,10 +311,12 @@ class PromotionQualification(unittest.TestCase):
     def test_exact_qualified_digest_is_promoted_even_with_legacy_flag(self):
         (self.evidence / (self.profile + '-acceptance.json')).write_text(json.dumps(self.acceptance))
         with patch.object(publication.subprocess, 'run') as copy_image, \
+                patch.object(publication.security, 'verify'), \
                 patch.object(publication.upstream, 'inspect', return_value={'Digest': 'sha256:' + 'a' * 64}):
             self.promote()
-        self.assertEqual(copy_image.call_count, 2)
-        for call in copy_image.call_args_list:
+        self.assertEqual(copy_image.call_count, 3)
+        self.assertEqual(copy_image.call_args_list[0].args[0][0:2], ['cosign', 'verify'])
+        for call in copy_image.call_args_list[1:]:
             self.assertIn('docker://' + self.image, call.args[0])
 
 
@@ -463,7 +465,7 @@ if name == 'docker' and args[0] == 'cp':
     def test_signature_precedes_extraction_and_digest_is_used(self):
         result, calls = self.invoke()
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(calls[0][0], 'cosign')
+        self.assertEqual(calls[0][:3], ['cosign', 'verify', '--new-bundle-format=false'])
         created = next(call for call in calls if call[:2] == ['docker', 'create'])
         self.assertRegex(created[-1], r'^ghcr.io/blue-build/cli@sha256:[a-f0-9]{64}$')
         self.assertTrue(any(call[0] == 'sudo' for call in calls))

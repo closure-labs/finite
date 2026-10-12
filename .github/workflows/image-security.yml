@@ -1,0 +1,45 @@
+name: Audit published image security
+
+on:
+  schedule:
+    - cron: "41 8 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: finite-published-image-security
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        channel: [finite, finite-next, finite-dev, finite-dev-next]
+    env:
+      CHANNEL: ${{ matrix.channel }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+      - name: Make room for image inventory
+        uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
+        with:
+          skip-if-available: "80G"
+      - name: Verify and scan the published digest
+        run: nix develop --file lib/ci-tools.nix release --command bash scripts/bluebuild/audit-published.sh
+      - name: Retain scan results including failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: published-security-${{ matrix.channel }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/security-${{ matrix.channel }}/
+          include-hidden-files: true
+          retention-days: 90

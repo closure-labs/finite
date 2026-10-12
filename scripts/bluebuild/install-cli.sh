@@ -3,7 +3,7 @@ set -euo pipefail
 source=$(jq -er '.image + "@" + .digest' sources/bluebuild-cli.json)
 version=$(jq -er .version sources/bluebuild-cli.json)
 [[ $source =~ ^ghcr.io/blue-build/cli@sha256:[0-9a-f]{64}$ ]]
-cosign verify --key sources/bluebuild-cli.pub "$source" >/dev/null
+cosign verify --new-bundle-format=false --key sources/bluebuild-cli.pub "$source" >/dev/null
 directory=$(mktemp -d)
 trap 'docker rm finite-bluebuild-cli >/dev/null 2>&1 || true; rm -rf "$directory"' EXIT
 docker create --name finite-bluebuild-cli "$source"

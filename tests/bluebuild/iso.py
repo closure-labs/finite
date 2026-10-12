@@ -20,6 +20,7 @@ name=pathlib.Path(sys.argv[0]).name
 args=sys.argv[1:]
 with open('calls.jsonl','a') as f: f.write(json.dumps([name,*args])+'\\n')
 if name=='cosign':
+ assert args[0:2]==['verify','--new-bundle-format=false']
  if os.environ.get('BAD_SIGNATURE'): sys.exit(1)
  print('[]')
 elif name=='skopeo':

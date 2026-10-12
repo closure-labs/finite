@@ -34,5 +34,86 @@
     "secret_scanning": true,
     "secret_scanning_push_protection": true
   },
-  "environments": {}
+  "environments": {
+    "package-cleanup": {
+      "can_admins_bypass": false,
+      "protection_rules": [
+        {
+          "type": "required_reviewers",
+          "prevent_self_review": false,
+          "reviewers": [
+            {
+              "type": "User",
+              "id": 52590374
+            }
+          ]
+        },
+        {
+          "type": "branch_policy"
+        }
+      ],
+      "deployment_branch_policy": {
+        "protected_branches": false,
+        "custom_branch_policies": true
+      },
+      "deployment_branches": [
+        {
+          "name": "main",
+          "type": "branch"
+        }
+      ],
+      "custom_protection_rules": []
+    },
+    "release": {
+      "can_admins_bypass": false,
+      "protection_rules": [
+        {
+          "type": "required_reviewers",
+          "prevent_self_review": false,
+          "reviewers": [
+            {
+              "type": "User",
+              "id": 52590374
+            }
+          ]
+        },
+        {
+          "type": "branch_policy"
+        }
+      ],
+      "deployment_branch_policy": {
+        "protected_branches": false,
+        "custom_branch_policies": true
+      },
+      "deployment_branches": [
+        {
+          "name": "main",
+          "type": "branch"
+        }
+      ],
+      "custom_protection_rules": []
+    },
+    "image-signing": {
+      "can_admins_bypass": false,
+      "protection_rules": [
+        {
+          "type": "branch_policy"
+        }
+      ],
+      "deployment_branch_policy": {
+        "protected_branches": false,
+        "custom_branch_policies": true
+      },
+      "deployment_branches": [
+        {
+          "name": "main",
+          "type": "branch"
+        }
+      ],
+      "custom_protection_rules": []
+    }
+  },
+  "main": {
+    "ruleset_id": 20912451
+  }
 }

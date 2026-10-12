@@ -35,8 +35,14 @@ class BluefinTests(unittest.TestCase):
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
         shutil.copytree(ROOT / 'recipes', self.root / 'recipes')
+        security = patch.object(publication.security, 'verify')
+        security.start()
+        self.addCleanup(security.stop)
         self.approved = upstream.recipes(self.root)
         self.observed = {r['base']: r['digest'] for r in self.approved.values()}
+        verification = patch.object(upstream, 'authenticate', return_value={'verified': True})
+        verification.start()
+        self.addCleanup(verification.stop)
         for module in (upstream, publication.upstream):
             mock = patch.object(module, 'image_identity', return_value=IDENTITY)
             mock.start()
@@ -84,6 +90,21 @@ class BluefinTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             upstream.update(self.root, self.observed)
         self.assertEqual(before, self.snapshot())
+
+    def test_signature_failure_does_not_change_any_recipe(self):
+        before = self.snapshot()
+        self.observed['ghcr.io/ublue-os/bluefin'] = NEW
+        with patch.object(upstream, 'authenticate', side_effect=[{'verified': True},
+                          subprocess.CalledProcessError(1, 'cosign')]):
+            with self.assertRaises(subprocess.CalledProcessError):
+                upstream.update(self.root, self.observed)
+        self.assertEqual(before, self.snapshot())
+
+    def test_relayed_observations_are_verified_before_apply(self):
+        with patch.object(upstream, 'authenticate', return_value={'verified': True}) as verify:
+            result = upstream.update(self.root, self.observed)
+        self.assertEqual(verify.call_count, 2)
+        self.assertEqual(len(result['verified']), 2)
 
     def test_disagreeing_foundation_pins_fail(self):
         path = self.root / 'recipes/bluefin-next.yml'
@@ -289,7 +310,7 @@ class BluefinTests(unittest.TestCase):
             with patch.object(publication.upstream, 'inspect', side_effect=[{'Digest': IMAGE},
                     {'Digest': candidate.split('@')[1]}, {'Digest': candidate.split('@')[1]}]):
                 publication.promote('bluefin-generic', self.root)
-            self.assertEqual(run.call_count, 2)
+            self.assertEqual(run.call_count, 3)
 
     def test_recovery_record_cannot_skip_or_change_reviewed_baseline(self):
         evidence = self.prepare_recovery()
@@ -354,8 +375,9 @@ class BluefinTests(unittest.TestCase):
         self.accepted_candidate(image)
         with patch.dict(os.environ, GITHUB_SHA='f' * 40), patch.object(publication.subprocess, 'run') as run, patch.object(publication.upstream, 'inspect', return_value={'Digest': IMAGE}):
             publication.promote('bluefin-generic', self.root)
-            self.assertEqual(run.call_count, 2)
-            for call in run.call_args_list:
+            self.assertEqual(run.call_count, 3)
+            self.assertEqual(run.call_args_list[0].args[0], ['cosign', 'verify', '--new-bundle-format=false', '--key', str(self.root / 'cosign.pub'), image])
+            for call in run.call_args_list[1:]:
                 self.assertIn('docker://' + image, call.args[0])
                 self.assertIn('--preserve-digests', call.args[0])
             self.assertTrue((self.root / '.bluebuild/bluefin-generic-promoted.json').exists())
@@ -381,7 +403,6 @@ class BluefinTests(unittest.TestCase):
         (self.root / 'image.json').write_text(json.dumps([{'Config': {'Labels': labels}}]))
         for name, script in {
             'skopeo': 'echo \'{"Digest":"' + IMAGE + '"}\'',
-            'cosign': 'exit "${SIGNATURE_STATUS:-0}"',
             'docker': 'case "$1" in pull) exit 0;; inspect) cat image.json;; run) exit "${RUNTIME_STATUS:-0}";; *) exit 1;; esac',
         }.items():
             path = bindir / name
@@ -390,7 +411,7 @@ class BluefinTests(unittest.TestCase):
         env = {**os.environ, 'PATH': str(bindir) + ':' + os.environ['PATH'], 'GITHUB_SHA': 'f' * 40}
         command = ['bash', str(ROOT / 'scripts/bluebuild/inspect-built.sh'), 'bluefin-generic', 'finite', 'true']
         marker = self.root / '.bluebuild/bluefin-generic-image-ref.txt'
-        for failure in [{'SIGNATURE_STATUS': '1'}, {'RUNTIME_STATUS': '1'}]:
+        for failure in [{'RUNTIME_STATUS': '1'}]:
             result = subprocess.run(command, cwd=self.root, env={**env, **failure}, capture_output=True)
             self.assertNotEqual(result.returncode, 0, result.stderr)
             self.assertFalse(marker.exists())
@@ -436,7 +457,7 @@ class BluefinTests(unittest.TestCase):
             (evidence / 'bluefin-generic-acceptance.json').write_text(json.dumps(accepted))
             with patch.object(publication.upstream, 'inspect', return_value={'Digest': IMAGE}):
                 publication.promote('bluefin-generic', self.root)
-            self.assertEqual(run.call_count, 2)
+            self.assertEqual(run.call_count, 3)
 
     def test_shadow_mode_cannot_prepare_or_promote(self):
         with patch.dict(os.environ, FINITE_QUALIFICATION_MODE='shadow'):
@@ -464,6 +485,70 @@ class BluefinTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'lacks matching successful'):
                 publication.promote('bluefin-generic', self.root)
             run.assert_not_called()
+
+
+class PublisherAuthentication(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        shutil.copytree(ROOT / 'sources', self.root / 'sources')
+        shutil.copytree(ROOT / 'recipes', self.root / 'recipes')
+        self.policy_path = self.root / 'sources/bluefin-trust.json'
+        self.policy = json.loads(self.policy_path.read_text())
+        self.base = 'ghcr.io/ublue-os/bluefin'
+
+    def test_exact_digest_and_reviewed_key_are_verified(self):
+        with patch.object(upstream.subprocess, 'run') as run:
+            evidence = upstream.authenticate(self.base, NEW, self.root)
+        run.assert_called_once_with(
+            ['cosign', 'verify', '--new-bundle-format=false', '--key',
+             str(self.root / 'sources/bluefin.pub'), self.base + '@' + NEW],
+            check=True, stdout=subprocess.DEVNULL, timeout=150)
+        self.assertEqual(evidence, {'image': self.base + '@' + NEW,
+                                   'keySha256': self.policy['keySha256'], 'signatureFormat': 'legacy'})
+
+    def test_invalid_policy_never_invokes_verifier(self):
+        for field, value in [('schema', 0), ('signatureFormat', 'unknown'),
+                             ('key', '../unreviewed.pub'), ('keySha256', '0' * 64),
+                             ('repositories', [self.base, 'ghcr.io/untrusted/image'])]:
+            with self.subTest(field=field):
+                self.policy_path.write_text(json.dumps({**self.policy, field: value}))
+                with patch.object(upstream.subprocess, 'run') as run:
+                    with self.assertRaises(ValueError):
+                        upstream.authenticate(self.base, NEW, self.root)
+                    run.assert_not_called()
+
+    def test_replaced_key_unapproved_repository_and_mutable_tag_rejected(self):
+        for base, digest in [('ghcr.io/attacker/bluefin', NEW), (self.base, 'stable')]:
+            with self.subTest(base=base, digest=digest), patch.object(upstream.subprocess, 'run') as run:
+                with self.assertRaises(ValueError):
+                    upstream.authenticate(base, digest, self.root)
+                run.assert_not_called()
+        (self.root / 'sources/bluefin.pub').write_text('substituted key')
+        with patch.object(upstream.subprocess, 'run') as run:
+            with self.assertRaisesRegex(ValueError, 'fingerprint'):
+                upstream.authenticate(self.base, NEW, self.root)
+            run.assert_not_called()
+
+    def test_unsigned_wrong_signer_and_timeout_keep_all_pins(self):
+        observed = {recipe['base']: NEW for recipe in upstream.recipes(self.root).values()}
+        before = {p.name: p.read_bytes() for p in (self.root / 'recipes').glob('*.yml')}
+        errors = [subprocess.CalledProcessError(1, 'cosign', stderr='no matching signatures'),
+                  subprocess.CalledProcessError(1, 'cosign', stderr='invalid signature'),
+                  subprocess.TimeoutExpired('cosign', 150)]
+        for error in errors:
+            with self.subTest(error=str(error)), patch.object(upstream.subprocess, 'run', side_effect=[None, error]):
+                with self.assertRaises(type(error)):
+                    upstream.update(self.root, observed)
+            self.assertEqual(before, {p.name: p.read_bytes() for p in (self.root / 'recipes').glob('*.yml')})
+
+    def test_verify_checks_both_approved_foundations(self):
+        with patch.object(upstream.subprocess, 'run') as run:
+            evidence = upstream.verify(self.root)
+        self.assertEqual(len(evidence['verified']), 2)
+        self.assertEqual({call.args[0][-1] for call in run.call_args_list},
+                         {recipe['base'] + '@' + recipe['digest'] for recipe in upstream.recipes(self.root).values()})
 
 
 if __name__ == '__main__':

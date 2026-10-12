@@ -34,12 +34,12 @@ if [[ -n $target ]]; then
     target="ghcr.io/closure-labs/finite@$(skopeo inspect --format '{{.Digest}}' "docker://$channel")"
   fi
   [[ $target =~ ^ghcr.io/closure-labs/finite@sha256:[0-9a-f]{64}$ ]]
-  cosign verify --key cosign.pub "$target" >"$state/target-signature.json"
+  cosign verify --new-bundle-format=false --key cosign.pub "$target" >"$state/target-signature.json"
   skopeo inspect --raw "docker://$target" >"$state/target-manifest.json"
 fi
 [[ $source =~ ^ghcr.io/closure-labs/finite@sha256:[0-9a-f]{64}$ ]]
 [[ $channel =~ ^ghcr.io/closure-labs/finite:(finite|finite-next|finite-dev|finite-dev-next)$ ]]
-cosign verify --key cosign.pub "$source" >"$state/signature.json"
+cosign verify --new-bundle-format=false --key cosign.pub "$source" >"$state/signature.json"
 skopeo inspect --raw "docker://$source" >"$state/source-manifest.json"
 mapfile -t isos < <(find "$artifact" -maxdepth 1 -name '*.iso' -type f)
 [[ ${#isos[@]} == 1 ]]
@@ -184,6 +184,21 @@ KS
 bash scripts/bluebuild/prepare-vm-iso.sh "${isos[0]}" "$secrets/ks.cfg" "$state"
 bash scripts/bluebuild/prepare-vm-firmware.sh "${isos[0]}" "$variables" "$state"
 qemu-img create -f qcow2 "$state/disk.qcow2" 64G
+# Exercise general-purpose NoCloud input in the candidate's ordinary desktop
+# configuration. Never attach this probe to the historical predecessor.
+mkdir "$state/nocloud"
+printf 'instance-id: finite-security-probe\n' >"$state/nocloud/meta-data"
+cat >"$state/nocloud/user-data" <<'NOCLOUD'
+#cloud-config
+write_files:
+  - path: /var/lib/finite-nocloud-write-executed
+    content: untrusted provisioning executed
+runcmd:
+  - [touch, /var/lib/finite-nocloud-command-executed]
+NOCLOUD
+xorriso -as mkisofs -quiet -V cidata -J -R -o "$state/nocloud.iso" \
+  "$state/nocloud/user-data" "$state/nocloud/meta-data"
+
 qemu_args=(
   -enable-kvm -machine 'q35,smm=on' -cpu host -smp 2 -m 4096 -display none -no-reboot
   "${secure_args[@]}"
@@ -237,10 +252,16 @@ ssh_args=(-i "$state/ssh-key" -p 2222 -o BatchMode=yes -o StrictHostKeyChecking=
   -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 finite-test@127.0.0.1)
 boot_vm() {
   local phase=$1
+  local -a provisioning_args=()
+  local check_security=false
+  if [[ $phase == updated || ($phase == first-boot && $phase_name != upgrade) ]]; then
+    provisioning_args=(-drive "if=ide,media=cdrom,format=raw,readonly=on,file=$state/nocloud.iso")
+    check_security=true
+  fi
   printf 'Booting %s at %s\n' "$phase" "$(date -u +%FT%TZ)"
   rm -f "$state/serial.sock" "$state/$phase-unlock.log"
   touch "$state/$phase.log"
-  qemu-system-x86_64 "${qemu_args[@]}" -boot c \
+  qemu-system-x86_64 "${qemu_args[@]}" "${provisioning_args[@]}" -boot c \
     -chardev "socket,id=serial0,path=$state/serial.sock,server=on,wait=on" \
     -serial chardev:serial0 &
   pid=$!
@@ -262,6 +283,10 @@ boot_vm() {
         >"$state/$phase-encryption.log"
       printf 'SSH ready for %s at %s\n' "$phase" "$(date -u +%FT%TZ)"
       ssh "${ssh_args[@]}" sudo bash -s <scripts/bluebuild/wait-nix.sh | tee "$state/$phase-nix.log"
+      if [[ $check_security == true ]]; then
+        ssh "${ssh_args[@]}" sudo bash -s <scripts/bluebuild/check-vm-security.sh \
+          >"$state/$phase-security.log"
+      fi
       ssh "${ssh_args[@]}" sudo journalctl --no-pager -b -u systemd-remount-fs \
         >"$state/$phase-remount.log"
       ssh "${ssh_args[@]}" sudo journalctl --no-pager -b -u mcelog >"$state/$phase-mcelog.log"

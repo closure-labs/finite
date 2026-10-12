@@ -23,6 +23,8 @@ def identity(profile, root, payload=None):
         paths.extend(path for path in (root / directory).rglob('*') if path.is_file() or path.is_symlink())
     paths.extend((root / 'sources').glob('bluebuild-*.json'))
     paths.extend((root / 'sources').glob('bluebuild-*.pub'))
+    paths.extend((root / 'sources').glob('bluefin*'))
+    paths.extend((root / 'automation/security').glob('*.json'))
     paths.extend(root / '.github/workflows' / name for name in ('image.yml', 'publication.yml', 'iso.yml', 'vm-acceptance.yml'))
     paths.extend((root / '.github/workflows').glob('*qualification*.yml'))
     entries = []

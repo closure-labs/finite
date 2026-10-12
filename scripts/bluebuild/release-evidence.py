@@ -95,7 +95,7 @@ def main():
         publication = json.loads(publication_path.read_text())
         image = validate_evidence(installation, acceptance, publication, args.channel, revision)
         subprocess.run(['sha256sum', '--check', '--strict', 'SHA256SUMS'], cwd=destination, check=True, timeout=300)
-        subprocess.run(['cosign', 'verify', '--key', 'cosign.pub', image], check=True, timeout=150)
+        subprocess.run(['cosign', 'verify', '--new-bundle-format=false', '--key', 'cosign.pub', image], check=True, timeout=150)
         shutil.copy2(acceptance_path, destination / 'acceptance.json')
         shutil.copy2(publication_path, destination / 'publication.json')
         for path in (temporary / 'image').glob('*.Containerfile'):

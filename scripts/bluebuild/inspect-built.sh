@@ -36,7 +36,6 @@ if [[ $published == true ]]; then
     echo "Retrying image pull in 10 seconds" >&2
     sleep 10
   done
-  "${measure[@]}" signature timeout 150s cosign verify --key cosign.pub "$image" >".bluebuild/$profile-signature.json"
 else
   mapfile -t images < <(docker image ls --filter "label=io.finite.profile=$profile" --format '{{.ID}}' | sort -u)
   [[ ${#images[@]} == 1 ]] || {

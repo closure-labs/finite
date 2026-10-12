@@ -5,6 +5,6 @@
       ++ [(pkgs.python3.withPackages (packages: [packages.pyyaml]))];
   };
   release = pkgs.mkShell {
-    packages = with pkgs; [bash coreutils cosign gh jq skopeo syft grype];
+    packages = with pkgs; [bash coreutils cosign gh jq python3 skopeo syft grype umoci];
   };
 }

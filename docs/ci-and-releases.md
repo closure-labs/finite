@@ -77,13 +77,14 @@ use the queue's base and proposed merge revisions.
 | Run | Registry permissions | Signing |
 | --- | --- | --- |
 | Pull request or merge group | Read | Public key available for policy assembly |
-| Trusted main build | Write | `COSIGN_PRIVATE_KEY` supplies the signing key |
+| Trusted main build | Write | Unsigned candidate only |
+| Isolated main signer | Write | Environment-scoped `COSIGN_PRIVATE_KEY`, after security gate |
 
 Both paths use the same Docker builder and BlueBuild CLI v0.9.37, installed
 from the digest in `sources/bluebuild-cli.json` after signature verification.
 The Nix CI shell supplies the supporting tools. Invoking the verified CLI
 directly avoids duplicate cosign, SLSA verifier and CLI downloads during each
-image build. Publication runs serialize. The CLI builds, caches, pushes and signs a
+image build. Publication runs serialize. The CLI builds, caches and pushes an unsigned
 `candidate-PROFILE` tag and its generated candidate aliases. Stable candidate
 tags preserve per-profile layer caches; they are diagnostic outputs, not release
 channels. Public channel tags change only after verification succeeds.
@@ -93,16 +94,20 @@ inspection. The final-image step runs after the build and checks the
 Nix seed, packages, profile, signing policy, kernel, matching initramfs with
 LUKS/FIDO2 support, and `bootc container lint`.
 Publication resolves the candidate once and verifies its immutable digest,
-signature, exact approved base digest and source revision. It then copies that
+exact approved base digest and source revision. An independent inventory and
+vulnerability scan must pass before a separate fresh job signs that digest.
+Encrypted Secure Boot VM qualification follows signing. Promotion rechecks scan
+evidence and the live signature, then copies that
 same manifest to the profile's channel tags with `--preserve-digests`, and
 confirms each destination digest. Signatures remain valid because candidate and
 channel tags share the same repository and image digest. A failed verification
-leaves the public channels unchanged. Tag updates are individually atomic;
+leaves public channels unchanged through this workflow. Registry write tokens
+remain broader than tag-scoped permissions; see the documented residual risk. Tag updates are individually atomic;
 reconciliation detects and repairs interrupted promotion of aliases.
 
 Each profile's build artifact contains its image reference, labels, generated
-Containerfile, publication plan and signature verification. Separate artifacts
-record qualification and promotion. The final image's base-digest label
+Containerfile and publication plan. Separate artifacts record native Syft and
+SPDX inventories, raw Grype results, policy decisions, qualification and promotion. The final image's base-digest label
 records the actual Bluefin input. Its source revision identifies the Finite
 commit that was built.
 
@@ -168,11 +173,15 @@ nix develop --accept-flake-config --command gh workflow run build.yml --ref main
 ## Image signing
 
 `cosign.pub` is the public trust key. The matching private key belongs in the
-repository's `COSIGN_PRIVATE_KEY` Actions secret. Verify a published digest from
+`image-signing` environment's `COSIGN_PRIVATE_KEY` Actions secret. This
+environment admits only `main`. Release-asset signing uses a separate copy in
+the approval-protected `release` environment. Builders and scanners receive no
+signing key; remove the repository-wide copy after migration and retirement of
+older workflows. Verify a published digest from
 a trusted checkout:
 
 ```bash
-cosign verify --key cosign.pub IMAGE_REFERENCE
+cosign verify --new-bundle-format=false --key cosign.pub IMAGE_REFERENCE
 ```
 
 The image configures signature verification for `ghcr.io/closure-labs/finite`
@@ -193,7 +202,8 @@ before rebooting.
 
 Generate replacement key pairs in a private directory outside the source
 checkout. Upload the private half with
-`gh secret set COSIGN_PRIVATE_KEY --repo closure-labs/finite < cosign.key`
+`gh secret set COSIGN_PRIVATE_KEY --repo closure-labs/finite --env image-signing < cosign.key`
+and repeat with `--env release`
 and commit the public half. Validate the resulting image and host policy as
 part of key rotation.
 
@@ -222,7 +232,9 @@ protected-branch automation uses `MERGE_QUEUE_TOKEN`.
 
 The checked-in policy at `automation/github/repository-security.json` describes
 the action allowlist, SHA pinning, default read-only token and repository
-security settings. Audit the live repository from a checkout with GitHub CLI
+security settings, complete environment protections and effective main-branch
+rules. Missing API access fails the audit; excluded controls are explicit in the
+JSON output. Audit the live repository from a checkout with GitHub CLI
 access:
 
 ```bash
@@ -268,3 +280,27 @@ limit requires reviewing its orchestration deadlines.
 
 The [CI optimization review](ci-optimization-review.md) records the 30-day
 baseline, confirmed causes, current bottlenecks and ranked follow-up work.
+
+
+## Image vulnerability gate
+
+`automation/security/image-policy.json` blocks fixable High/Critical advisories
+and known-exploited vulnerabilities. Native Syft inventory must identify the
+exact image digest and a substantial RPM inventory. Bluefin-to-Fedora matching
+requires the inventoried `fedora-release-common` major version as proof.
+Grype database and Fedora/KEV feeds must be at most 48 hours old; promotion
+requires evidence at most 24 hours old and evaluates the current policy again.
+Scanner errors, incomplete inventories and expired evidence block publication.
+
+Exceptions require a reviewed exact digest, component and advisory, justification,
+reviewer, approval date and expiry within 30 days. They are committed changes,
+never a workflow input. The scheduled **Audit published image security** workflow
+rescans all four public channels daily and can also run manually. It reports
+new vulnerabilities without automatically replacing or rolling back an image.
+Release preparation runs a fresh enforcing scan of its qualified digest.
+
+Bluefin base updates and candidate builds verify immutable base digests using
+`sources/bluefin.pub` and its reviewed fingerprint policy. Publisher key rotation
+requires review of both files. Explicit legacy Cosign image signatures match
+bootc's container-signature policy. See [security implementation](security-implementation.md)
+for deployment evidence and remaining upstream trust boundaries.

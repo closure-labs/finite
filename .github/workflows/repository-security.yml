@@ -50,7 +50,7 @@ jobs:
         run: |
           set -o pipefail
           nix shell --file lib/ci-tools.nix ci-repository-security-audit -c finite-repository-security-audit \
-            --repository "$GITHUB_REPOSITORY" | tee repository-security-audit.json
+            --read-only-app --repository "$GITHUB_REPOSITORY" | tee repository-security-audit.json
       - name: Save audit result
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

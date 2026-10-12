@@ -14,9 +14,12 @@ export TEST_HOME_CONTEXTS_SCRIPT="$PWD/files/system/usr/libexec/finite/fix-home-
 cat >"$temporary/bin/semodule" <<'MOCK'
 printf 'semodule %s\n' "$*" >>"$TEST_POLICY_ROOT/commands"
 case $1 in
-  -l) [[ ! -e "$TEST_POLICY_ROOT/installed" ]] || echo 'nix 1.0' ;;
+  -l) [[ ${TEST_MODULE_LIST_FAILURE:-false} != true ]] || exit 43; [[ ! -e "$TEST_POLICY_ROOT/installed" ]] || echo 'nix 1.0' ;;
   -i)
+    [[ ${TEST_INSTALL_FAILURE:-false} != true ]] || exit 44
+    [[ ${TEST_MISSING_MODULE:-false} != true ]] || exit 0
     touch "$TEST_POLICY_ROOT/installed"
+    cp "$2" "$TEST_POLICY_ROOT/installed-policy"
     printf '/var/home/[^/]+/.+ unconfined_u:object_r:user_home_t:s0\n' >"$TEST_POLICY_ROOT/contexts/file_contexts.homedirs"
     ;;
   *) exit 90 ;;
@@ -36,6 +39,7 @@ fi
 printf '/var/home/nix /nix\n' >"$TEST_POLICY_ROOT/contexts/file_contexts.subs"
 MOCK
 cat >"$temporary/bin/fix-home" <<'MOCK'
+printf 'fix-home\n' >>"$TEST_POLICY_ROOT/commands"
 exec "$BASH" "$TEST_HOME_CONTEXTS_SCRIPT" "$TEST_POLICY_ROOT/contexts"
 MOCK
 for command in "$temporary/bin/"*; do
@@ -47,13 +51,48 @@ export PATH="$temporary/bin:$PATH"
 script=files/system/usr/libexec/finite/install-determinate-nix-selinux-policy
 bash "$script"
 bash "$script"
-[[ $(grep -c '^semodule -i ' "$temporary/commands") == 1 ]]
+[[ $(grep -c '^semodule -i ' "$temporary/commands") == 2 ]]
+cmp "$FINITE_NIX_SELINUX_POLICY" "$temporary/installed-policy"
+# Same-named externally changed modules must also be reconciled.
+printf 'unexpected installed policy\n' >"$temporary/installed-policy"
+bash "$script"
+cmp "$FINITE_NIX_SELINUX_POLICY" "$temporary/installed-policy"
+cp "$FINITE_NIX_SELINUX_POLICY" "$temporary/old-policy"
+printf 'new policy\n' >"$temporary/new-policy"
+# Failed upgrade and rollback transactions preserve the previous installed bytes
+# and must never continue into context repair or Nix initialization.
+for direction in new old; do
+  cp "$temporary/installed-policy" "$temporary/before-failure"
+  cp "$temporary/$direction-policy" "$FINITE_NIX_SELINUX_POLICY"
+  repairs=$(grep -c '^fix-home$' "$temporary/commands")
+  status=0
+  TEST_INSTALL_FAILURE=true bash "$script" >"$temporary/failure" 2>&1 || status=$?
+  [[ $status == 44 ]]
+  [[ $(grep -c '^fix-home$' "$temporary/commands") == "$repairs" ]]
+  cmp "$temporary/before-failure" "$temporary/installed-policy"
+  bash "$script"
+  cmp "$FINITE_NIX_SELINUX_POLICY" "$temporary/installed-policy"
+done
+repairs=$(grep -c '^fix-home$' "$temporary/commands")
+status=0
+TEST_MODULE_LIST_FAILURE=true bash "$script" >"$temporary/failure" 2>&1 || status=$?
+[[ $status == 43 ]]
+[[ $(grep -c '^fix-home$' "$temporary/commands") == "$repairs" ]]
+rm "$temporary/installed"
+if TEST_MISSING_MODULE=true bash "$script" >"$temporary/failure" 2>&1; then
+  echo 'Accepted installation with missing nix module' >&2; exit 1
+fi
+bash "$script"
+test -e "$temporary/installed"
 grep -qxF '/var/home/nix /nix' "$temporary/contexts/file_contexts.subs"
 status=0
 TEST_POLICY_FAILURE=true bash "$script" >"$temporary/failure" 2>&1 || status=$?
 [[ $status == 42 ]]
 grep -qF 'Original semanage transaction failure' "$temporary/failure"
-! grep -qF 'fcontext -m' "$temporary/commands"
+if grep -qF 'fcontext -m' "$temporary/commands"; then
+  echo 'Unexpected fallback context modification' >&2
+  exit 1
+fi
 
 cp "$script" "$temporary/state/install-nix-policy"
 cp "$temporary/bin/fix-home" "$temporary/state/fix-home-contexts"

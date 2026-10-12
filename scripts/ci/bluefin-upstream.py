@@ -98,6 +98,29 @@ def resolve(base):
     return digest(resolved)
 
 
+def authenticate(base, image_digest, root=ROOT):
+    """Authenticate the publisher separately from registry digest integrity."""
+    policy = json.loads((root / 'sources/bluefin-trust.json').read_text())
+    if (policy.get('schema') != 1 or policy.get('signatureFormat') != 'legacy'
+            or policy.get('key') != 'bluefin.pub'
+            or sorted(policy.get('repositories', [])) != ['ghcr.io/ublue-os/bluefin', 'ghcr.io/ublue-os/bluefin-dx']
+            or base not in policy['repositories']):
+        raise ValueError('Invalid Bluefin publisher trust policy')
+    key = root / 'sources' / policy['key']
+    if hashlib.sha256(key.read_bytes()).hexdigest() != policy['keySha256']:
+        raise ValueError('Bluefin publisher key does not match reviewed fingerprint')
+    reference = base + '@' + digest(image_digest)
+    subprocess.run(['cosign', 'verify', '--new-bundle-format=false', '--key', str(key), reference],
+                   check=True, stdout=subprocess.DEVNULL, timeout=150)
+    return {'image': reference, 'keySha256': policy['keySha256'], 'signatureFormat': 'legacy'}
+
+
+def verify(root=ROOT):
+    approved = recipes(root)
+    bases = {recipe['base']: recipe['digest'] for recipe in approved.values()}
+    return {'verified': [authenticate(base, value, root) for base, value in sorted(bases.items())]}
+
+
 def update(root=ROOT, observed=None):
     approved = recipes(root)
     # Complete every registry read before changing any file. Failures cannot
@@ -108,6 +131,9 @@ def update(root=ROOT, observed=None):
     if set(observed) != bases:
         raise ValueError('Observed digests must cover exactly the two approved upstream repositories')
     observed = {base: digest(value) for base, value in observed.items()}
+    # Verify every observation, including values relayed between workflow jobs,
+    # before changing any recipe. Registry access alone cannot authorize a base.
+    verified = [authenticate(base, value, root) for base, value in sorted(observed.items())]
     changes = []
     for profile, recipe in approved.items():
         new = observed[recipe['base']]
@@ -122,7 +148,7 @@ def update(root=ROOT, observed=None):
         temporary = path.with_suffix('.yml.tmp')
         temporary.write_text(content)
         temporary.replace(path)
-    return {'checked_at': datetime.now(timezone.utc).isoformat(), 'observed': observed,
+    return {'checked_at': datetime.now(timezone.utc).isoformat(), 'observed': observed, 'verified': verified,
             'changed': bool(changes), 'profiles': [p.stem for p, _ in changes]}
 
 
@@ -201,7 +227,7 @@ def freshness(now=None):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command', choices=['update', 'apply', 'reconcile', 'recover', 'freshness'])
+    parser.add_argument('command', choices=['update', 'apply', 'verify', 'reconcile', 'recover', 'freshness'])
     args = parser.parse_args()
     result = update(observed=json.loads(os.environ['OBSERVED_DIGESTS'])) if args.command == 'apply' else globals()[args.command]()
     if args.command == 'reconcile' and (impact := json.loads(os.environ.get('IMPACT', '{}'))):

@@ -83,10 +83,8 @@ class BlueBuildContracts(unittest.TestCase):
         self.assertIn('scripts/bluebuild/build.sh "$PROFILE" "$PUBLISH"', action['run'])
         self.assertEqual(action['env']['PUBLISH'], '${{ inputs.publish }}')
         self.assertEqual(action['env']['BB_PASSWORD'], '${{ github.token }}')
-        secret = action['env']['COSIGN_PRIVATE_KEY']
-        self.assertIn('inputs.publish', secret)
-        self.assertNotIn('env.', secret)
-        self.assertIn("|| ''", secret)
+        self.assertNotIn('COSIGN_PRIVATE_KEY', action['env'])
+        self.assertNotIn('secrets', publish)
         builder = next(s for s in steps if s.get('uses', '').startswith('docker/setup-buildx-action@'))
         self.assertEqual(builder['with']['name'], 'bluebuild')
         self.assertEqual(builder['with']['driver-opts'], 'default-load=true')
@@ -96,10 +94,10 @@ class BlueBuildContracts(unittest.TestCase):
         self.assertIn('Verify assembled image', names)
         publication = read('.github/workflows/publication.yml')
         promotion = publication['jobs']['promote']
-        self.assertEqual(promotion['needs'], ['build', 'qualification'])
+        self.assertEqual(promotion['needs'], ['build', 'security', 'sign', 'qualification'])
         self.assertIn("needs.build.result == 'success'", promotion['if'])
         self.assertIn('!cancelled()', promotion['if'])
-        self.assertEqual(publication['jobs']['qualification']['needs'], 'build')
+        self.assertEqual(publication['jobs']['qualification']['needs'], ['build', 'sign'])
         qualification = read('.github/workflows/qualification.yml')
         acceptance = next(s for s in qualification['jobs']['qualify']['steps']
                           if s.get('id') == 'acceptance')

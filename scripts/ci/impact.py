@@ -22,6 +22,9 @@ def classify(paths):
         if path in {'README.md', 'CHANGELOG.md', 'LICENSE', 'LICENSE.md'} or path.startswith('docs/'):
             continue
         checks = True
+        if path.startswith('automation/security/') or path in {'sources/bluefin-trust.json', 'sources/bluefin.pub'}:
+            profiles.update(PROFILES)
+            continue
         if path.startswith(('tests/', 'automation/')):
             continue
         if path in {
