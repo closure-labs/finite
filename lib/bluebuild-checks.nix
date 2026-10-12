@@ -79,6 +79,7 @@ in {
     python3 tests/ci/security-remediation-diff.py
     python3 tests/ci/go-desktop-evidence.py
     python3 tests/ci/cosign-runtime.py
+    python3 tests/ci/approved-baseline.py
     python3 tests/ci/kernel-update.py
     python3 tests/ci/local-candidate-evidence.py
     python3 tests/bluebuild/contracts.py

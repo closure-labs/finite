@@ -1,0 +1,3415 @@
+{
+  "schema": 1,
+  "image": "ghcr.io/closure-labs/finite@sha256:567c7e90da2020ebb83f144521fdcca2ddc21009b5f42e86704be5312d9ab835",
+  "evaluationRun": 38327429782,
+  "evaluationRevision": "44e9f977196c34243ff93d16841f9f316ca6b748",
+  "policySourceRevision": "e599d99f10e6ffbddd835a95a62e7a5ffea7d251",
+  "policySha256": "59fd1f0604b819ccabd1dd8e54190b200d3f78173877d192234a6788aecf4dfb",
+  "sourceResultSha256": "d79824b95b9e61cd0a97887a81a74bd003617634cbb5d38b1177e81c9ba64ba7",
+  "sourceType": "locally-built-unpublished",
+  "releaseEligible": false,
+  "newScanPerformed": false,
+  "findings": [
+    {
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "advisory": "GHSA-4hq8-gpf5-8p68",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-57231",
+        "GHSA-4hq8-gpf5-8p68"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "reviewRules": [
+        "podman-image-host-environment"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 6,
+      "officialSources": [
+        "https://github.com/podman-container-tools/podman/security/advisories/GHSA-4hq8-gpf5-8p68"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "advisory": "GHSA-65gg-3w2w-hr4h",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2025-6032",
+        "GHSA-65gg-3w2w-hr4h"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "reviewRules": [
+        "podman-machine-image-tls"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 6,
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-65gg-3w2w-hr4h"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "advisory": "GHSA-wp3j-xq48-xpjw",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2025-9566",
+        "GHSA-wp3j-xq48-xpjw"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "reviewRules": [
+        "podman-kube-volume-symlink"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 6,
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-wp3j-xq48-xpjw"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/github.com/moby/buildkit@v0.25.1",
+      "advisory": "GHSA-4c29-8rgm-jvjj",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-33747",
+        "GHSA-4c29-8rgm-jvjj"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "reviewRules": [
+        "buildkit-untrusted-frontend-write"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 4,
+      "officialSources": [
+        "https://github.com/moby/buildkit/security/advisories/GHSA-4c29-8rgm-jvjj"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/github.com/moby/buildkit@v0.25.1",
+      "advisory": "GHSA-4vrq-3vrq-g6gg",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-33748",
+        "GHSA-4vrq-3vrq-g6gg"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "reviewRules": [
+        "buildkit-git-subdirectory-escape"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 4,
+      "officialSources": [
+        "https://github.com/moby/buildkit/security/advisories/GHSA-4vrq-3vrq-g6gg"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/github.com/moby/go-archive@v0.1.0",
+      "advisory": "GHSA-hfg8-hc9c-6c3h",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-17106",
+        "GHSA-hfg8-hc9c-6c3h"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "reviewRules": [
+        "moby-archive-destination-escape"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 4,
+      "officialSources": [
+        "https://github.com/moby/go-archive/security/advisories/GHSA-hfg8-hc9c-6c3h"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/github.com/opencontainers/selinux@v1.12.0",
+      "advisory": "GHSA-cgrx-mc8f-2prm",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2025-52881",
+        "GHSA-cgrx-mc8f-2prm"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "reviewRules": [
+        "runc-procfs-write-escape"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://github.com/opencontainers/runc/security/advisories/GHSA-cgrx-mc8f-2prm"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+      "advisory": "GHSA-2m8m-jhrm-w6j2",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-71312",
+        "GHSA-2m8m-jhrm-w6j2"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/usr/bin/rclone"
+      ],
+      "reviewRules": [
+        "rclone-sftp-powershell-command-injection"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://github.com/rclone/rclone/security/advisories/GHSA-2m8m-jhrm-w6j2"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+      "advisory": "GHSA-45pq-889g-fcgh",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-71309",
+        "GHSA-45pq-889g-fcgh"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/usr/bin/rclone"
+      ],
+      "reviewRules": [
+        "rclone-restic-backend-root-escape"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://github.com/rclone/rclone/security/advisories/GHSA-45pq-889g-fcgh"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+      "advisory": "GHSA-c476-6w5q-jw77",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-88017",
+        "GHSA-c476-6w5q-jw77"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/usr/bin/rclone"
+      ],
+      "reviewRules": [
+        "rclone-ftp-session-backend-confusion"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://github.com/rclone/rclone/security/advisories/GHSA-c476-6w5q-jw77"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+      "advisory": "GHSA-cf44-9pgv-m4xc",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-54572",
+        "GHSA-cf44-9pgv-m4xc"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/usr/bin/rclone"
+      ],
+      "reviewRules": [
+        "rclone-local-links-arbitrary-write"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://github.com/rclone/rclone/security/advisories/GHSA-cf44-9pgv-m4xc"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+      "advisory": "GHSA-fqj9-69pf-6pjg",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-59733",
+        "GHSA-fqj9-69pf-6pjg"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/usr/bin/rclone"
+      ],
+      "reviewRules": [
+        "rclone-restic-private-repository-escape"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://github.com/rclone/rclone/security/advisories/GHSA-fqj9-69pf-6pjg"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+      "advisory": "GHSA-p569-5gjg-9cmj",
+      "severity": "Critical",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-88044",
+        "GHSA-p569-5gjg-9cmj"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/usr/bin/rclone"
+      ],
+      "reviewRules": [
+        "rclone-rc-auth-proxy"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://github.com/rclone/rclone/security/advisories/GHSA-p569-5gjg-9cmj"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+      "advisory": "GHSA-xwwr-4h3p-r22c",
+      "severity": "Critical",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-88018",
+        "GHSA-xwwr-4h3p-r22c"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/usr/bin/rclone"
+      ],
+      "reviewRules": [
+        "rclone-s3-auth-proxy"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://github.com/rclone/rclone/security/advisories/GHSA-xwwr-4h3p-r22c"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/github.com/sigstore/fulcio@v1.7.1",
+      "advisory": "GHSA-f5mr-q85p-6hh6",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-49478",
+        "GHSA-f5mr-q85p-6hh6"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman",
+        "/usr/bin/skopeo"
+      ],
+      "reviewRules": [
+        "fulcio-oidc-identity-and-token-boundary"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 6,
+      "officialSources": [
+        "https://github.com/sigstore/fulcio/security/advisories/GHSA-f5mr-q85p-6hh6"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "advisory": "GHSA-5cgq-3rg8-m6cv",
+      "severity": "Critical",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-42508",
+        "GHSA-5cgq-3rg8-m6cv"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "reviewRules": [
+        "ssh-revoked-certificate-authority"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://github.com/advisories/GHSA-5cgq-3rg8-m6cv"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "advisory": "GHSA-89gr-r52h-f8rx",
+      "severity": "Critical",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-39831",
+        "GHSA-89gr-r52h-f8rx"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "reviewRules": [
+        "ssh-fido-user-presence"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://github.com/advisories/GHSA-89gr-r52h-f8rx"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "advisory": "GHSA-f5wc-c3c7-36mc",
+      "severity": "Critical",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-39832",
+        "GHSA-f5wc-c3c7-36mc"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "reviewRules": [
+        "ssh-agent-destination-constraints"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://github.com/advisories/GHSA-f5wc-c3c7-36mc"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "advisory": "GHSA-jppx-rxg9-jmrx",
+      "severity": "Critical",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-39833",
+        "GHSA-jppx-rxg9-jmrx"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "reviewRules": [
+        "ssh-agent-confirm-before-use"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://github.com/advisories/GHSA-jppx-rxg9-jmrx"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "advisory": "GHSA-x527-x647-q7gg",
+      "severity": "Critical",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-46595",
+        "GHSA-x527-x647-q7gg"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "reviewRules": [
+        "ssh-public-key-source-address"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://github.com/advisories/GHSA-x527-x647-q7gg"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "advisory": "GO-2026-6303",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-56854",
+        "GO-2026-6303"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "reviewRules": [
+        "ssh-other-auth-source-address"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6303"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.52.0",
+      "advisory": "GO-2026-6303",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-56854",
+        "GO-2026-6303"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/sysroot/ostree/repo/objects/8e/c5583db8e1709e446e0abbcb470108ba680fcf718835713b907e0f9ab05d02.file",
+        "/usr/bin/rclone",
+        "/usr/bin/restic"
+      ],
+      "reviewRules": [
+        "ssh-other-auth-source-address"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 4,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6303"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.53.0",
+      "advisory": "GO-2026-6303",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-56854",
+        "GO-2026-6303"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/75/3546d15a9cdd047adccb841b239b2b0c2c25deb15c5edcd9d94801f60325c3.file",
+        "/usr/bin/containerd",
+        "/usr/bin/cosign"
+      ],
+      "reviewRules": [
+        "ssh-other-auth-source-address"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 3,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6303"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.54.0",
+      "advisory": "GO-2026-6303",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-56854",
+        "GO-2026-6303"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/44/ddc02df5529aa029c5c6300fc06197b0de5cba60e3b35a68084c0bd0c51547.file",
+        "/sysroot/ostree/repo/objects/7e/2c48dd26ae1957c2be4ebfc6f5dbf6c1c478dd80e70482985d8d9ba08addc9.file"
+      ],
+      "reviewRules": [
+        "ssh-other-auth-source-address"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6303"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/mod@v0.20.0",
+      "advisory": "GO-2026-6179",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-56865",
+        "GO-2026-6179"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+        "/usr/bin/toolbox"
+      ],
+      "reviewRules": [
+        "go-module-sumdb-tile-forgery"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6179"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/mod@v0.20.0",
+      "advisory": "GO-2026-6180",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-56864",
+        "GO-2026-6180"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+        "/usr/bin/toolbox"
+      ],
+      "reviewRules": [
+        "go-module-sumdb-log-confusion"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6180"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/mod@v0.36.0",
+      "advisory": "GO-2026-6179",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-56865",
+        "GO-2026-6179"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/75/3546d15a9cdd047adccb841b239b2b0c2c25deb15c5edcd9d94801f60325c3.file",
+        "/sysroot/ostree/repo/objects/f4/4b3304bc30b41a152a41fe1248228b052d2d2c31c69c131e4d85e874530d1c.file",
+        "/usr/bin/containerd",
+        "/usr/bin/ctr"
+      ],
+      "reviewRules": [
+        "go-module-sumdb-tile-forgery"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 4,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6179"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/mod@v0.36.0",
+      "advisory": "GO-2026-6180",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-56864",
+        "GO-2026-6180"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/75/3546d15a9cdd047adccb841b239b2b0c2c25deb15c5edcd9d94801f60325c3.file",
+        "/sysroot/ostree/repo/objects/f4/4b3304bc30b41a152a41fe1248228b052d2d2c31c69c131e4d85e874530d1c.file",
+        "/usr/bin/containerd",
+        "/usr/bin/ctr"
+      ],
+      "reviewRules": [
+        "go-module-sumdb-log-confusion"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 4,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6180"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/mod@v0.37.0",
+      "advisory": "GO-2026-6179",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-56865",
+        "GO-2026-6179"
+      ],
+      "locations": [
+        "/usr/bin/cosign"
+      ],
+      "reviewRules": [
+        "go-module-sumdb-tile-forgery"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6179"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/mod@v0.37.0",
+      "advisory": "GO-2026-6180",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-56864",
+        "GO-2026-6180"
+      ],
+      "locations": [
+        "/usr/bin/cosign"
+      ],
+      "reviewRules": [
+        "go-module-sumdb-log-confusion"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6180"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/mod@v0.38.0",
+      "advisory": "GO-2026-6179",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-56865",
+        "GO-2026-6179"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "reviewRules": [
+        "go-module-sumdb-tile-forgery"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 4,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6179"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/mod@v0.38.0",
+      "advisory": "GO-2026-6180",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-56864",
+        "GO-2026-6180"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "reviewRules": [
+        "go-module-sumdb-log-confusion"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 4,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6180"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.40.0",
+      "advisory": "GO-2026-5026",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-39821",
+        "GO-2026-5026"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+        "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+        "/usr/bin/glow",
+        "/usr/bin/gum"
+      ],
+      "reviewRules": [
+        "go-idna-privilege-check-confusion"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 4,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5026"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.40.0",
+      "advisory": "GO-2026-6610",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-78660",
+        "GO-2026-6610"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+        "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+        "/usr/bin/glow",
+        "/usr/bin/gum"
+      ],
+      "reviewRules": [
+        "go-http2-forwarded-response-smuggling"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 4,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6610"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.48.0",
+      "advisory": "GO-2026-5026",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-39821",
+        "GO-2026-5026"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "reviewRules": [
+        "go-idna-privilege-check-confusion"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5026"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.48.0",
+      "advisory": "GO-2026-6610",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-78660",
+        "GO-2026-6610"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "reviewRules": [
+        "go-http2-forwarded-response-smuggling"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6610"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.55.0",
+      "advisory": "GO-2026-6610",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-78660",
+        "GO-2026-6610"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/19/07b725d2d82866531bee698973a08e6c438abaace3b61723709ea531853945.file",
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/sysroot/ostree/repo/objects/70/1bccba378f262def36123d3245e03a4442eb1f5cb37e43e901bd1c68954622.file",
+        "/sysroot/ostree/repo/objects/75/3546d15a9cdd047adccb841b239b2b0c2c25deb15c5edcd9d94801f60325c3.file",
+        "/sysroot/ostree/repo/objects/8e/c5583db8e1709e446e0abbcb470108ba680fcf718835713b907e0f9ab05d02.file",
+        "/sysroot/ostree/repo/objects/d1/6202c07880b5c003452384c62878ebf5155cd81a4e9befa180f485ebcc9693.file",
+        "/sysroot/ostree/repo/objects/f4/4b3304bc30b41a152a41fe1248228b052d2d2c31c69c131e4d85e874530d1c.file",
+        "/usr/bin/containerd",
+        "/usr/bin/containerd-shim-runc-v2",
+        "/usr/bin/containerd-stress",
+        "/usr/bin/ctr",
+        "/usr/bin/rclone",
+        "/usr/bin/restic",
+        "/usr/bin/runc",
+        "/usr/bin/yq"
+      ],
+      "reviewRules": [
+        "go-http2-forwarded-response-smuggling"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 15,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6610"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.56.0",
+      "advisory": "GO-2026-6610",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-78660",
+        "GO-2026-6610"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/44/ddc02df5529aa029c5c6300fc06197b0de5cba60e3b35a68084c0bd0c51547.file",
+        "/sysroot/ostree/repo/objects/7e/2c48dd26ae1957c2be4ebfc6f5dbf6c1c478dd80e70482985d8d9ba08addc9.file",
+        "/usr/bin/cosign"
+      ],
+      "reviewRules": [
+        "go-http2-forwarded-response-smuggling"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 3,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6610"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.57.0",
+      "advisory": "GO-2026-6610",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-78660",
+        "GO-2026-6610"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "reviewRules": [
+        "go-http2-forwarded-response-smuggling"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 4,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6610"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.59.0",
+      "advisory": "GO-2026-6610",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-78660",
+        "GO-2026-6610"
+      ],
+      "locations": [
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "reviewRules": [
+        "go-http2-forwarded-response-smuggling"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6610"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/google.golang.org/grpc@v1.72.2",
+      "advisory": "GHSA-hrxh-6v49-42gf",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "GHSA-hrxh-6v49-42gf"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "reviewRules": [
+        "grpc-xds-rbac-fail-open"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 4,
+      "officialSources": [
+        "https://github.com/grpc/grpc-go/security/advisories/GHSA-hrxh-6v49-42gf"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/google.golang.org/grpc@v1.72.2",
+      "advisory": "GHSA-p77j-4mvh-x3m3",
+      "severity": "Critical",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-33186",
+        "GHSA-p77j-4mvh-x3m3"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "reviewRules": [
+        "grpc-noncanonical-method-path"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 4,
+      "officialSources": [
+        "https://github.com/grpc/grpc-go/security/advisories/GHSA-p77j-4mvh-x3m3"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/google.golang.org/grpc@v1.79.3",
+      "advisory": "GHSA-hrxh-6v49-42gf",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "GHSA-hrxh-6v49-42gf"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "reviewRules": [
+        "grpc-xds-rbac-fail-open"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://github.com/grpc/grpc-go/security/advisories/GHSA-hrxh-6v49-42gf"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/google.golang.org/grpc@v1.80.0",
+      "advisory": "GHSA-hrxh-6v49-42gf",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "GHSA-hrxh-6v49-42gf"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/sysroot/ostree/repo/objects/70/1bccba378f262def36123d3245e03a4442eb1f5cb37e43e901bd1c68954622.file",
+        "/sysroot/ostree/repo/objects/75/3546d15a9cdd047adccb841b239b2b0c2c25deb15c5edcd9d94801f60325c3.file",
+        "/sysroot/ostree/repo/objects/d1/6202c07880b5c003452384c62878ebf5155cd81a4e9befa180f485ebcc9693.file",
+        "/sysroot/ostree/repo/objects/f4/4b3304bc30b41a152a41fe1248228b052d2d2c31c69c131e4d85e874530d1c.file",
+        "/usr/bin/containerd",
+        "/usr/bin/containerd-shim-runc-v2",
+        "/usr/bin/containerd-stress",
+        "/usr/bin/ctr",
+        "/usr/bin/rclone"
+      ],
+      "reviewRules": [
+        "grpc-xds-rbac-fail-open"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 10,
+      "officialSources": [
+        "https://github.com/grpc/grpc-go/security/advisories/GHSA-hrxh-6v49-42gf"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/google.golang.org/grpc@v1.81.1",
+      "advisory": "GHSA-hrxh-6v49-42gf",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "GHSA-hrxh-6v49-42gf"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/8e/c5583db8e1709e446e0abbcb470108ba680fcf718835713b907e0f9ab05d02.file",
+        "/usr/bin/restic"
+      ],
+      "reviewRules": [
+        "grpc-xds-rbac-fail-open"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://github.com/grpc/grpc-go/security/advisories/GHSA-hrxh-6v49-42gf"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/google.golang.org/grpc@v1.82.0",
+      "advisory": "GHSA-hrxh-6v49-42gf",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "GHSA-hrxh-6v49-42gf"
+      ],
+      "locations": [
+        "/usr/bin/cosign"
+      ],
+      "reviewRules": [
+        "grpc-xds-rbac-fail-open"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [
+        "https://github.com/grpc/grpc-go/security/advisories/GHSA-hrxh-6v49-42gf"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+      "advisory": "CVE-2026-27140",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-27140"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+        "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+        "/usr/bin/glow",
+        "/usr/bin/gum"
+      ],
+      "reviewRules": [
+        "go-swig-build-code-smuggling"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 4,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-4871"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+      "advisory": "CVE-2026-27143",
+      "severity": "Critical",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-27143"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+        "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+        "/usr/bin/glow",
+        "/usr/bin/gum"
+      ],
+      "reviewRules": [
+        "go-compiler-induction-bounds-corruption"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 4,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-4868"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+      "advisory": "CVE-2026-27144",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-27144"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+        "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+        "/usr/bin/glow",
+        "/usr/bin/gum"
+      ],
+      "reviewRules": [
+        "go-compiler-array-copy-corruption"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 4,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-4867"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+      "advisory": "CVE-2026-33810",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-33810"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+        "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+        "/usr/bin/glow",
+        "/usr/bin/gum"
+      ],
+      "reviewRules": [
+        "go-x509-wildcard-dns-constraint-bypass"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 4,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-4866"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+      "advisory": "CVE-2026-33811",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-33811"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+        "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+        "/usr/bin/glow",
+        "/usr/bin/gum"
+      ],
+      "reviewRules": [
+        "go-cgo-dns-double-free"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 4,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-4981"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+      "advisory": "CVE-2026-39822",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-39822"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+        "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+        "/usr/bin/glow",
+        "/usr/bin/gum"
+      ],
+      "reviewRules": [
+        "go-unix-root-symlink-escape"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 4,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-4970"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+      "advisory": "CVE-2026-42501",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-42501"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+        "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+        "/usr/bin/glow",
+        "/usr/bin/gum"
+      ],
+      "reviewRules": [
+        "go-toolchain-checksum-bypass"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 4,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-4984"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+      "advisory": "CVE-2026-56864",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-56864"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+        "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+        "/usr/bin/glow",
+        "/usr/bin/gum"
+      ],
+      "reviewRules": [
+        "go-module-sumdb-log-confusion"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 4,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6180"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+      "advisory": "CVE-2026-56865",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-56865"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+        "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+        "/usr/bin/glow",
+        "/usr/bin/gum"
+      ],
+      "reviewRules": [
+        "go-module-sumdb-tile-forgery"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 4,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6179"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3-X%3Anodwarf5",
+      "advisory": "CVE-2026-39822",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-39822"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/f5/99c9f53b03bcc53eb9e2aa655c0c6ba8ea5281fc56836990a2cc452c693732.file",
+        "/usr/bin/uupd"
+      ],
+      "reviewRules": [
+        "go-unix-root-symlink-escape"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-4970"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3-X%3Anodwarf5",
+      "advisory": "CVE-2026-56864",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-56864"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/f5/99c9f53b03bcc53eb9e2aa655c0c6ba8ea5281fc56836990a2cc452c693732.file",
+        "/usr/bin/uupd"
+      ],
+      "reviewRules": [
+        "go-module-sumdb-log-confusion"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6180"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3-X%3Anodwarf5",
+      "advisory": "CVE-2026-56865",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-56865"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/f5/99c9f53b03bcc53eb9e2aa655c0c6ba8ea5281fc56836990a2cc452c693732.file",
+        "/usr/bin/uupd"
+      ],
+      "reviewRules": [
+        "go-module-sumdb-tile-forgery"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6179"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.4",
+      "advisory": "CVE-2026-39822",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-39822"
+      ],
+      "locations": [
+        "/usr/bin/cosign"
+      ],
+      "reviewRules": [
+        "go-unix-root-symlink-escape"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-4970"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.4",
+      "advisory": "CVE-2026-56864",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-56864"
+      ],
+      "locations": [
+        "/usr/bin/cosign"
+      ],
+      "reviewRules": [
+        "go-module-sumdb-log-confusion"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6180"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.4",
+      "advisory": "CVE-2026-56865",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-56865"
+      ],
+      "locations": [
+        "/usr/bin/cosign"
+      ],
+      "reviewRules": [
+        "go-module-sumdb-tile-forgery"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6179"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.4",
+      "advisory": "GO-2026-4970",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-39822",
+        "GO-2026-4970"
+      ],
+      "locations": [
+        "/usr/bin/cosign"
+      ],
+      "reviewRules": [
+        "go-unix-root-symlink-escape"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-4970"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.4",
+      "advisory": "GO-2026-5026",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-39821",
+        "GO-2026-5026"
+      ],
+      "locations": [
+        "/usr/bin/cosign"
+      ],
+      "reviewRules": [
+        "go-idna-privilege-check-confusion"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5026"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.4",
+      "advisory": "GO-2026-6605",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-56866",
+        "GO-2026-6605"
+      ],
+      "locations": [
+        "/usr/bin/cosign"
+      ],
+      "reviewRules": [
+        "go-connect-response-desynchronization"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6605"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.4",
+      "advisory": "GO-2026-6610",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-78660",
+        "GO-2026-6610"
+      ],
+      "locations": [
+        "/usr/bin/cosign"
+      ],
+      "reviewRules": [
+        "go-http2-forwarded-response-smuggling"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6610"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.4",
+      "advisory": "GO-2026-6613",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-94439",
+        "GO-2026-6613"
+      ],
+      "locations": [
+        "/usr/bin/cosign"
+      ],
+      "reviewRules": [
+        "go-connect-request-smuggling"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6613"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.4-X%3Anodwarf5",
+      "advisory": "CVE-2026-39822",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-39822"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/sysroot/ostree/repo/objects/cb/41b7c77feb2ecdb70d6190f3ec74a9e5830b713396db0b33888e3a31fb1d80.file",
+        "/usr/bin/ipp-usb",
+        "/usr/bin/rclone"
+      ],
+      "reviewRules": [
+        "go-unix-root-symlink-escape"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 4,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-4970"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.4-X%3Anodwarf5",
+      "advisory": "CVE-2026-56864",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-56864"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/sysroot/ostree/repo/objects/cb/41b7c77feb2ecdb70d6190f3ec74a9e5830b713396db0b33888e3a31fb1d80.file",
+        "/usr/bin/ipp-usb",
+        "/usr/bin/rclone"
+      ],
+      "reviewRules": [
+        "go-module-sumdb-log-confusion"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 4,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6180"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.4-X%3Anodwarf5",
+      "advisory": "CVE-2026-56865",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-56865"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/sysroot/ostree/repo/objects/cb/41b7c77feb2ecdb70d6190f3ec74a9e5830b713396db0b33888e3a31fb1d80.file",
+        "/usr/bin/ipp-usb",
+        "/usr/bin/rclone"
+      ],
+      "reviewRules": [
+        "go-module-sumdb-tile-forgery"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 4,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6179"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.5-X%3Anodwarf5",
+      "advisory": "CVE-2026-56864",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-56864"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/8e/c5583db8e1709e446e0abbcb470108ba680fcf718835713b907e0f9ab05d02.file",
+        "/usr/bin/restic",
+        "/usr/bin/yq"
+      ],
+      "reviewRules": [
+        "go-module-sumdb-log-confusion"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 3,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6180"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.5-X%3Anodwarf5",
+      "advisory": "CVE-2026-56865",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-56865"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/8e/c5583db8e1709e446e0abbcb470108ba680fcf718835713b907e0f9ab05d02.file",
+        "/usr/bin/restic",
+        "/usr/bin/yq"
+      ],
+      "reviewRules": [
+        "go-module-sumdb-tile-forgery"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 3,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6179"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.6",
+      "advisory": "GO-2026-6605",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-56866",
+        "GO-2026-6605"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/44/ddc02df5529aa029c5c6300fc06197b0de5cba60e3b35a68084c0bd0c51547.file",
+        "/sysroot/ostree/repo/objects/7e/2c48dd26ae1957c2be4ebfc6f5dbf6c1c478dd80e70482985d8d9ba08addc9.file"
+      ],
+      "reviewRules": [
+        "go-connect-response-desynchronization"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6605"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.6",
+      "advisory": "GO-2026-6610",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-78660",
+        "GO-2026-6610"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/44/ddc02df5529aa029c5c6300fc06197b0de5cba60e3b35a68084c0bd0c51547.file",
+        "/sysroot/ostree/repo/objects/7e/2c48dd26ae1957c2be4ebfc6f5dbf6c1c478dd80e70482985d8d9ba08addc9.file"
+      ],
+      "reviewRules": [
+        "go-http2-forwarded-response-smuggling"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6610"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.6",
+      "advisory": "GO-2026-6613",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-94439",
+        "GO-2026-6613"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/44/ddc02df5529aa029c5c6300fc06197b0de5cba60e3b35a68084c0bd0c51547.file",
+        "/sysroot/ostree/repo/objects/7e/2c48dd26ae1957c2be4ebfc6f5dbf6c1c478dd80e70482985d8d9ba08addc9.file"
+      ],
+      "reviewRules": [
+        "go-connect-request-smuggling"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6613"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-27137",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-27137"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+        "/usr/bin/toolbox"
+      ],
+      "reviewRules": [
+        "go-x509-email-constraint-bypass"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-4599"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-27140",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-27140"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+        "/usr/bin/toolbox"
+      ],
+      "reviewRules": [
+        "go-swig-build-code-smuggling"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-4871"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-27143",
+      "severity": "Critical",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-27143"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+        "/usr/bin/toolbox"
+      ],
+      "reviewRules": [
+        "go-compiler-induction-bounds-corruption"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-4868"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-27144",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-27144"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+        "/usr/bin/toolbox"
+      ],
+      "reviewRules": [
+        "go-compiler-array-copy-corruption"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-4867"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-33810",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-33810"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+        "/usr/bin/toolbox"
+      ],
+      "reviewRules": [
+        "go-x509-wildcard-dns-constraint-bypass"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-4866"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-33811",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-33811"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+        "/usr/bin/toolbox"
+      ],
+      "reviewRules": [
+        "go-cgo-dns-double-free"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-4981"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-39822",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-39822"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+        "/usr/bin/toolbox"
+      ],
+      "reviewRules": [
+        "go-unix-root-symlink-escape"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-4970"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-42501",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-42501"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+        "/usr/bin/toolbox"
+      ],
+      "reviewRules": [
+        "go-toolchain-checksum-bypass"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-4984"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-56864",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-56864"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+        "/usr/bin/toolbox"
+      ],
+      "reviewRules": [
+        "go-module-sumdb-log-confusion"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6180"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-56865",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-56865"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+        "/usr/bin/toolbox"
+      ],
+      "reviewRules": [
+        "go-module-sumdb-tile-forgery"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6179"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.27.1",
+      "advisory": "GO-2026-6605",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-56866",
+        "GO-2026-6605"
+      ],
+      "locations": [
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "reviewRules": [
+        "go-connect-response-desynchronization"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6605"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.27.1",
+      "advisory": "GO-2026-6610",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-78660",
+        "GO-2026-6610"
+      ],
+      "locations": [
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "reviewRules": [
+        "go-http2-forwarded-response-smuggling"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6610"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.27.1",
+      "advisory": "GO-2026-6613",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-94439",
+        "GO-2026-6613"
+      ],
+      "locations": [
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "reviewRules": [
+        "go-connect-request-smuggling"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6613"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:pypi/anyio@4.13.0",
+      "advisory": "GHSA-82r6-8w77-94w6",
+      "severity": "Critical",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-63374",
+        "GHSA-82r6-8w77-94w6"
+      ],
+      "locations": [
+        "/usr/lib/python3.14/site-packages/anyio-4.13.0.dist-info/METADATA",
+        "/usr/lib/python3.14/site-packages/anyio-4.13.0.dist-info/top_level.txt"
+      ],
+      "reviewRules": [
+        "anyio-tls-unicode-hostname"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [
+        "https://github.com/agronholm/anyio/security/advisories/GHSA-82r6-8w77-94w6"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:rpm/fedora/hplip@3.26.4-7.fc44?distro=fedora-44",
+      "advisory": "CVE-2026-91097",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-91097"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/00/de3f9c4c554a6a5c1f16b8ff12b2e2337f1ae813727b6409331079b8fd1a73.file",
+        "/sysroot/ostree/repo/objects/04/79590e9fd51a07ff34f19a0271b45f9664333ef16d3614821291d7cbc7a2bb.file",
+        "/sysroot/ostree/repo/objects/0d/f073805f0b58f234cecfb49a6f2253df37d4635dbd7daa57b34cdabb4c0fe0.file",
+        "/sysroot/ostree/repo/objects/27/1eed261f27cc08f7f488c8be691422ca801f179667b97a17aeff4ff9947265.file",
+        "/sysroot/ostree/repo/objects/35/78e5c92f01d8c902afb1cdaa259f4bdf4f1a8cc026a7103cff3758ed3174ba.file",
+        "/sysroot/ostree/repo/objects/3c/6cbb12cdb934c571f6bc7d5dbca27ae49fb9fd2eddf5a4ab2a36fe4822c360.file",
+        "/sysroot/ostree/repo/objects/3d/bff1c4c23af3979b4508bec9e74f7b513e1afc88d6fbd22728286ec67aa1a6.file",
+        "/sysroot/ostree/repo/objects/4a/46a724a8c53b5d60885396efa8efc3fc78c38833883ce0810d101affa3a0b5.file",
+        "/sysroot/ostree/repo/objects/6c/7699708ea8bcd9a2b3fbce5f943c3727b9935caf1b2e94c34c9ebb4673daf3.file",
+        "/sysroot/ostree/repo/objects/8a/9b406d16cbb52d90e4c0d4d8047a719c0dff9233102b09b86820bcce2591db.file",
+        "/sysroot/ostree/repo/objects/a0/bc785d5832bdef2bd456060d604604df5471c683d089ee264bfaeddfa2173a.file",
+        "/sysroot/ostree/repo/objects/a7/85ae7943bc7fed41a880c18ff3cbd3aa7c2b7dc933d98f37cb1f4a502e8cb6.file",
+        "/sysroot/ostree/repo/objects/ad/bb8a20025d62efdcab860ad753abeed882d3c610f9536443fc099d35ad5096.file",
+        "/sysroot/ostree/repo/objects/fb/bb149c97996a60d4683c81e44a3ab8cb0600147a0d3d2e270a7ce8d765ef97.file"
+      ],
+      "reviewRules": [
+        "hplip-cve-2026-91097"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [
+        "https://cveawg.mitre.org/api/cve/CVE-2026-91097",
+        "https://support.hp.com/us-en/document/ish_15646959-15646984-16/hpsbpi04151"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:rpm/fedora/hplip@3.26.4-7.fc44?distro=fedora-44",
+      "advisory": "CVE-2026-91098",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-91098"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/00/de3f9c4c554a6a5c1f16b8ff12b2e2337f1ae813727b6409331079b8fd1a73.file",
+        "/sysroot/ostree/repo/objects/04/79590e9fd51a07ff34f19a0271b45f9664333ef16d3614821291d7cbc7a2bb.file",
+        "/sysroot/ostree/repo/objects/0d/f073805f0b58f234cecfb49a6f2253df37d4635dbd7daa57b34cdabb4c0fe0.file",
+        "/sysroot/ostree/repo/objects/27/1eed261f27cc08f7f488c8be691422ca801f179667b97a17aeff4ff9947265.file",
+        "/sysroot/ostree/repo/objects/35/78e5c92f01d8c902afb1cdaa259f4bdf4f1a8cc026a7103cff3758ed3174ba.file",
+        "/sysroot/ostree/repo/objects/3c/6cbb12cdb934c571f6bc7d5dbca27ae49fb9fd2eddf5a4ab2a36fe4822c360.file",
+        "/sysroot/ostree/repo/objects/3d/bff1c4c23af3979b4508bec9e74f7b513e1afc88d6fbd22728286ec67aa1a6.file",
+        "/sysroot/ostree/repo/objects/4a/46a724a8c53b5d60885396efa8efc3fc78c38833883ce0810d101affa3a0b5.file",
+        "/sysroot/ostree/repo/objects/6c/7699708ea8bcd9a2b3fbce5f943c3727b9935caf1b2e94c34c9ebb4673daf3.file",
+        "/sysroot/ostree/repo/objects/8a/9b406d16cbb52d90e4c0d4d8047a719c0dff9233102b09b86820bcce2591db.file",
+        "/sysroot/ostree/repo/objects/a0/bc785d5832bdef2bd456060d604604df5471c683d089ee264bfaeddfa2173a.file",
+        "/sysroot/ostree/repo/objects/a7/85ae7943bc7fed41a880c18ff3cbd3aa7c2b7dc933d98f37cb1f4a502e8cb6.file",
+        "/sysroot/ostree/repo/objects/ad/bb8a20025d62efdcab860ad753abeed882d3c610f9536443fc099d35ad5096.file",
+        "/sysroot/ostree/repo/objects/fb/bb149c97996a60d4683c81e44a3ab8cb0600147a0d3d2e270a7ce8d765ef97.file"
+      ],
+      "reviewRules": [
+        "hplip-cve-2026-91098"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [
+        "https://cveawg.mitre.org/api/cve/CVE-2026-91098",
+        "https://support.hp.com/us-en/document/ish_15646959-15646984-16/hpsbpi04151"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:rpm/fedora/hplip@3.26.4-7.fc44?distro=fedora-44",
+      "advisory": "CVE-2026-91100",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-91100"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/00/de3f9c4c554a6a5c1f16b8ff12b2e2337f1ae813727b6409331079b8fd1a73.file",
+        "/sysroot/ostree/repo/objects/04/79590e9fd51a07ff34f19a0271b45f9664333ef16d3614821291d7cbc7a2bb.file",
+        "/sysroot/ostree/repo/objects/0d/f073805f0b58f234cecfb49a6f2253df37d4635dbd7daa57b34cdabb4c0fe0.file",
+        "/sysroot/ostree/repo/objects/27/1eed261f27cc08f7f488c8be691422ca801f179667b97a17aeff4ff9947265.file",
+        "/sysroot/ostree/repo/objects/35/78e5c92f01d8c902afb1cdaa259f4bdf4f1a8cc026a7103cff3758ed3174ba.file",
+        "/sysroot/ostree/repo/objects/3c/6cbb12cdb934c571f6bc7d5dbca27ae49fb9fd2eddf5a4ab2a36fe4822c360.file",
+        "/sysroot/ostree/repo/objects/3d/bff1c4c23af3979b4508bec9e74f7b513e1afc88d6fbd22728286ec67aa1a6.file",
+        "/sysroot/ostree/repo/objects/4a/46a724a8c53b5d60885396efa8efc3fc78c38833883ce0810d101affa3a0b5.file",
+        "/sysroot/ostree/repo/objects/6c/7699708ea8bcd9a2b3fbce5f943c3727b9935caf1b2e94c34c9ebb4673daf3.file",
+        "/sysroot/ostree/repo/objects/8a/9b406d16cbb52d90e4c0d4d8047a719c0dff9233102b09b86820bcce2591db.file",
+        "/sysroot/ostree/repo/objects/a0/bc785d5832bdef2bd456060d604604df5471c683d089ee264bfaeddfa2173a.file",
+        "/sysroot/ostree/repo/objects/a7/85ae7943bc7fed41a880c18ff3cbd3aa7c2b7dc933d98f37cb1f4a502e8cb6.file",
+        "/sysroot/ostree/repo/objects/ad/bb8a20025d62efdcab860ad753abeed882d3c610f9536443fc099d35ad5096.file",
+        "/sysroot/ostree/repo/objects/fb/bb149c97996a60d4683c81e44a3ab8cb0600147a0d3d2e270a7ce8d765ef97.file"
+      ],
+      "reviewRules": [
+        "hplip-cve-2026-91100"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [
+        "https://cveawg.mitre.org/api/cve/CVE-2026-91100",
+        "https://support.hp.com/us-en/document/ish_15646959-15646984-16/hpsbpi04151"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:rpm/fedora/hplip@3.26.4-7.fc44?distro=fedora-44",
+      "advisory": "CVE-2026-91102",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-91102"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/00/de3f9c4c554a6a5c1f16b8ff12b2e2337f1ae813727b6409331079b8fd1a73.file",
+        "/sysroot/ostree/repo/objects/04/79590e9fd51a07ff34f19a0271b45f9664333ef16d3614821291d7cbc7a2bb.file",
+        "/sysroot/ostree/repo/objects/0d/f073805f0b58f234cecfb49a6f2253df37d4635dbd7daa57b34cdabb4c0fe0.file",
+        "/sysroot/ostree/repo/objects/27/1eed261f27cc08f7f488c8be691422ca801f179667b97a17aeff4ff9947265.file",
+        "/sysroot/ostree/repo/objects/35/78e5c92f01d8c902afb1cdaa259f4bdf4f1a8cc026a7103cff3758ed3174ba.file",
+        "/sysroot/ostree/repo/objects/3c/6cbb12cdb934c571f6bc7d5dbca27ae49fb9fd2eddf5a4ab2a36fe4822c360.file",
+        "/sysroot/ostree/repo/objects/3d/bff1c4c23af3979b4508bec9e74f7b513e1afc88d6fbd22728286ec67aa1a6.file",
+        "/sysroot/ostree/repo/objects/4a/46a724a8c53b5d60885396efa8efc3fc78c38833883ce0810d101affa3a0b5.file",
+        "/sysroot/ostree/repo/objects/6c/7699708ea8bcd9a2b3fbce5f943c3727b9935caf1b2e94c34c9ebb4673daf3.file",
+        "/sysroot/ostree/repo/objects/8a/9b406d16cbb52d90e4c0d4d8047a719c0dff9233102b09b86820bcce2591db.file",
+        "/sysroot/ostree/repo/objects/a0/bc785d5832bdef2bd456060d604604df5471c683d089ee264bfaeddfa2173a.file",
+        "/sysroot/ostree/repo/objects/a7/85ae7943bc7fed41a880c18ff3cbd3aa7c2b7dc933d98f37cb1f4a502e8cb6.file",
+        "/sysroot/ostree/repo/objects/ad/bb8a20025d62efdcab860ad753abeed882d3c610f9536443fc099d35ad5096.file",
+        "/sysroot/ostree/repo/objects/fb/bb149c97996a60d4683c81e44a3ab8cb0600147a0d3d2e270a7ce8d765ef97.file"
+      ],
+      "reviewRules": [
+        "hplip-cve-2026-91102"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [
+        "https://cveawg.mitre.org/api/cve/CVE-2026-91102",
+        "https://support.hp.com/us-en/document/ish_15646959-15646984-16/hpsbpi04151"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:rpm/fedora/hplip@3.26.4-7.fc44?distro=fedora-44",
+      "advisory": "CVE-2026-91105",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-91105"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/00/de3f9c4c554a6a5c1f16b8ff12b2e2337f1ae813727b6409331079b8fd1a73.file",
+        "/sysroot/ostree/repo/objects/04/79590e9fd51a07ff34f19a0271b45f9664333ef16d3614821291d7cbc7a2bb.file",
+        "/sysroot/ostree/repo/objects/0d/f073805f0b58f234cecfb49a6f2253df37d4635dbd7daa57b34cdabb4c0fe0.file",
+        "/sysroot/ostree/repo/objects/27/1eed261f27cc08f7f488c8be691422ca801f179667b97a17aeff4ff9947265.file",
+        "/sysroot/ostree/repo/objects/35/78e5c92f01d8c902afb1cdaa259f4bdf4f1a8cc026a7103cff3758ed3174ba.file",
+        "/sysroot/ostree/repo/objects/3c/6cbb12cdb934c571f6bc7d5dbca27ae49fb9fd2eddf5a4ab2a36fe4822c360.file",
+        "/sysroot/ostree/repo/objects/3d/bff1c4c23af3979b4508bec9e74f7b513e1afc88d6fbd22728286ec67aa1a6.file",
+        "/sysroot/ostree/repo/objects/4a/46a724a8c53b5d60885396efa8efc3fc78c38833883ce0810d101affa3a0b5.file",
+        "/sysroot/ostree/repo/objects/6c/7699708ea8bcd9a2b3fbce5f943c3727b9935caf1b2e94c34c9ebb4673daf3.file",
+        "/sysroot/ostree/repo/objects/8a/9b406d16cbb52d90e4c0d4d8047a719c0dff9233102b09b86820bcce2591db.file",
+        "/sysroot/ostree/repo/objects/a0/bc785d5832bdef2bd456060d604604df5471c683d089ee264bfaeddfa2173a.file",
+        "/sysroot/ostree/repo/objects/a7/85ae7943bc7fed41a880c18ff3cbd3aa7c2b7dc933d98f37cb1f4a502e8cb6.file",
+        "/sysroot/ostree/repo/objects/ad/bb8a20025d62efdcab860ad753abeed882d3c610f9536443fc099d35ad5096.file",
+        "/sysroot/ostree/repo/objects/fb/bb149c97996a60d4683c81e44a3ab8cb0600147a0d3d2e270a7ce8d765ef97.file"
+      ],
+      "reviewRules": [
+        "hplip-cve-2026-91105"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [
+        "https://cveawg.mitre.org/api/cve/CVE-2026-91105",
+        "https://support.hp.com/us-en/document/ish_15646959-15646984-16/hpsbpi04151"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:rpm/fedora/libX11@1.8.13-1.fc44?distro=fedora-44",
+      "advisory": "CVE-2026-88806",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-88806"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/20/fd368c6ef59a03052c894b0ee85762a3fb3d42e04f444ed01b3ab6eebccc5b.file",
+        "/sysroot/ostree/repo/objects/ee/8d08fca8066484e4434c2e00b6d903eb990e468a1c1f8df8c776c6924fe466.file"
+      ],
+      "reviewRules": [
+        "libx11-xkb-map-buffer-overflow"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [
+        "https://gitlab.freedesktop.org/xorg/lib/libx11/-/merge_requests/309"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:rpm/fedora/python3.14@3.14.7-1.fc44?distro=fedora-44",
+      "advisory": "CVE-2026-19445",
+      "severity": "Critical",
+      "knownExploited": false,
+      "reason": "reviewed-serious-risk",
+      "aliases": [
+        "CVE-2026-19445"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/02/4cf656879d7adda7f03b8024b3fb7223336fd70006fd8068ee840fd3017ca7.file",
+        "/sysroot/ostree/repo/objects/02/79a96d3f073dbf4585924820fc25b62d8448fe9b12f2f3ba410140b7abfbb9.file",
+        "/sysroot/ostree/repo/objects/09/8990762f6d7584eea189ba85edf8450b502f48f67f0586829ee6d03dbbe41a.file",
+        "/sysroot/ostree/repo/objects/11/605757e8a323c7c31a73a77136794448c587f04ccbcdf55966e6a8cdcbdd6f.file",
+        "/sysroot/ostree/repo/objects/14/077e681e927da20539d3f47e9eb4116497032f582b43cadc40cbbefc383bfd.file",
+        "/sysroot/ostree/repo/objects/14/17ba7d38ae0c39bfbde9f3769bf75e10adf80e320169c583f8789882d78bfe.file",
+        "/sysroot/ostree/repo/objects/14/273a4270edb988cdb00da2e82041cb76300195663459a16853eaca46c52e31.file",
+        "/sysroot/ostree/repo/objects/15/902912fce4b8e2f4bfe174be66923c5a7e02dd865d128147f1266bea6607ca.file",
+        "/sysroot/ostree/repo/objects/19/e4fe388b15a0245169f708190de529f2fbbfe755c5b3c45ad67f5367be294a.file",
+        "/sysroot/ostree/repo/objects/23/0e7c6ca092d927b86fca58d552e0fab137a8d54d72a6a45dc38981d4a6a810.file",
+        "/sysroot/ostree/repo/objects/2a/eb701954120ba32bbda0d5a9dfe99045bc0323ef5c4ed558f1111444dffe3d.file",
+        "/sysroot/ostree/repo/objects/2d/640c592992f64eb221bdd9f4976eb8575a37ecfb51de60ab60ee482d958036.file",
+        "/sysroot/ostree/repo/objects/34/6babb284974f45841989685e507cf6f1504a0369aa768337dda9b9e579e1cb.file",
+        "/sysroot/ostree/repo/objects/3c/938fc58ddfaf51bc323f2d00ad698ba4acc56a90d35a6ca0a1bfc72056f214.file",
+        "/sysroot/ostree/repo/objects/3e/9a236345eead0e441702f125daef691321361843ec62a5257c12b0c0d58d9e.file",
+        "/sysroot/ostree/repo/objects/40/b866c1f79205375722abdff0f7ebed1a29af6de8f1bc49ee2a87dd02e754b6.file",
+        "/sysroot/ostree/repo/objects/46/3e542b3bb3acac430dcbe9e10f4578252ced159ad0f08fc00f5e736a33a96d.file",
+        "/sysroot/ostree/repo/objects/4b/3c88998ca6e4a391145c5e6dade2837e74ca3fb720c6b31a69820e773fe748.file",
+        "/sysroot/ostree/repo/objects/4b/867ed46473f8b7796b573826bf5cef09312861552a1f2727aa5b4ead447bdb.file",
+        "/sysroot/ostree/repo/objects/4d/9fadd76957927870c5569fb1bbce65e74fe3b1182279640d9cb77310a211ef.file",
+        "/sysroot/ostree/repo/objects/4e/2e0f11fd9d6075368725c820f14b7dc03bfa2871729570b4d5541c1cec013e.file",
+        "/sysroot/ostree/repo/objects/58/db3847ccfa7caf89ae86a0e1e93be31ffbb8f1d5418a06cb262a1f803283b2.file",
+        "/sysroot/ostree/repo/objects/6c/f0b848d07255b0a6a5b3e87f7b417a575e4fec8dfa279b71c09814c153775f.file",
+        "/sysroot/ostree/repo/objects/6f/59df745a2172d0ba2aacb3af5a1ac3be025d01031fd5a9ac584c7b4f7c4707.file",
+        "/sysroot/ostree/repo/objects/73/450424aceca119afc342fd1e880c8ec6b61befeb073947f116ca92c13e0aca.file",
+        "/sysroot/ostree/repo/objects/75/c70bc1db760a3b04d39afa2cb5d24dd2674355348ed432609cffa1c0b27700.file",
+        "/sysroot/ostree/repo/objects/78/59e1b61739e6ac86ecc3acba1e3aa36a3361971ea877366065671ea396be1f.file",
+        "/sysroot/ostree/repo/objects/82/bbaf2b1c2c6980382a36a5b27496f57c5f9f814a2b3b090cdebf0bb2c15ab5.file",
+        "/sysroot/ostree/repo/objects/84/6f3ceff0e1d33c706f8dd683dfaa47561e1ab37d97ef56b7341a457d087749.file",
+        "/sysroot/ostree/repo/objects/84/e6620bd1602c2a72226ab3b04aa59cf4f800aa01d3b188805ed20080940a8f.file",
+        "/sysroot/ostree/repo/objects/91/fac3f0bda30c13669f1b27d4452f1ef0ed38800e08dacc378382114629624c.file",
+        "/sysroot/ostree/repo/objects/93/f6c31eace0e3a7d1f50e734496eec7611f1a595f85dcdc78562726941c84f0.file",
+        "/sysroot/ostree/repo/objects/a8/f8185fea84bad039a2af77c53e7a59a7413d7020c194baa4c0f23469c2ee7e.file",
+        "/sysroot/ostree/repo/objects/a9/23fafa079d77618ed33d1f09a2c935506ba84dcd8bf967ec26a52f7d00fc9a.file",
+        "/sysroot/ostree/repo/objects/aa/3bcffd25e798b4d213d3166a76adf1a6664f68c575e3ecee242eb9f154b80b.file",
+        "/sysroot/ostree/repo/objects/ab/21f3e06d9544a020627265d65f12e590d30c3ad15dd20afec3de924dc77f06.file",
+        "/sysroot/ostree/repo/objects/ae/2ecad77346f7930876aff72fdbc6ab4e017d58e8710015eb072725bd1d1b0d.file",
+        "/sysroot/ostree/repo/objects/b1/9be2c75afb2ec7084b014203487f93c2f314e39e8beaf15382e69ca95c8162.file",
+        "/sysroot/ostree/repo/objects/b5/23499a6acb1b028bc2cc82c82a0820ecbe531eb5d28de7b575da725b4073cf.file",
+        "/sysroot/ostree/repo/objects/b7/b4a92f16337fdd4c101c67c01148082ed894621961fc7a8a9c5ec7bafd7bab.file",
+        "/sysroot/ostree/repo/objects/be/bd03c4855d8de53ff7bb849ab7dcffa606f869a12e43b08587e89d49a38ba4.file",
+        "/sysroot/ostree/repo/objects/c0/c5823bd60b9c4cc88f948f18b87864eba0842079e308934c2700a962aa4a36.file",
+        "/sysroot/ostree/repo/objects/c4/afacecd82a08c622c63d05d01e5d0c22036637fc5e98ec2513b51386107558.file",
+        "/sysroot/ostree/repo/objects/ca/791ee621fab2e99af10ae73e2f06580775c43a85630ada4297ff90185cfa0e.file",
+        "/sysroot/ostree/repo/objects/cb/caeb8d17acab268721caf33164088891fc94d4d28e6608565fb3a84f052df6.file",
+        "/sysroot/ostree/repo/objects/cf/ba58e10055d43798588e8a4a89eb4048b2973f1a55ffbe5edb78dbd9374f9c.file",
+        "/sysroot/ostree/repo/objects/d0/0f23fa91fb12fd5942d65eb0256d9c5822b0c3db9d32cbbb871307fcba609b.file",
+        "/sysroot/ostree/repo/objects/d2/265af9e8c7dec61ba722683a757b6ad7786fd0f0a44c8030725826700dc88d.file",
+        "/sysroot/ostree/repo/objects/d6/962822ec604151e55e1859b2c284bb9c937e29222ba69a69914e39dcaffa49.file",
+        "/sysroot/ostree/repo/objects/db/4bdc1ea1ba7a30384ba8d954941547162dff3048792b93da3ff227bf1b6881.file",
+        "/sysroot/ostree/repo/objects/dd/1073b64d720eac74052bf7ebbcb54cc4a11e43b554347ab4405dd40e4633da.file",
+        "/sysroot/ostree/repo/objects/df/88e9999bc57992782b73ca58a941ebf4116c06573c24915f898f54fede5e61.file",
+        "/sysroot/ostree/repo/objects/e3/8e7d7871df7199897e47ea9fc411f32575e0799cc183b99492509f7d292dae.file",
+        "/sysroot/ostree/repo/objects/e4/9f93548d5982a17b3f0cf692fcab0f9cc5d4d0cb5f23f7ef57b01e4aee1e83.file",
+        "/sysroot/ostree/repo/objects/e8/3a6253e57e799dc5541f2a9ed68ee8142eacd9a59fbbef51f7da32739281b0.file",
+        "/sysroot/ostree/repo/objects/e8/a298e7df4c91996c34a626f3e5ef69801c2708971e602cc7c165711a77188e.file",
+        "/sysroot/ostree/repo/objects/e9/6acf2208fa88cb2a814b49ff4ad9e9b05dc40c13fdb4bca9fdaca32bb97633.file",
+        "/sysroot/ostree/repo/objects/ed/b00d63a076db301459d0641bf01807be82d83615163ea632964bfa695e8e2f.file",
+        "/sysroot/ostree/repo/objects/ef/e955c1396b2f0c83cea2f92f3def4412e356793f63edcd63071db295e90a1c.file",
+        "/sysroot/ostree/repo/objects/f4/160d8191366a499c866c5468ed211d90e302c73eeafd790ea97c3239496204.file",
+        "/sysroot/ostree/repo/objects/f7/206bb884f24931b6c5649b94172bcee44deed2282ca462934f817fa25c45a9.file",
+        "/sysroot/ostree/repo/objects/f7/66941210cf24a1f927ec2b88888a8114673409fe285f6c3f75fadc7826e1f7.file",
+        "/sysroot/ostree/repo/objects/f9/1e53d361d101f826372bc64617e65a4110d6c1d0f782041eb25c3c29781f8d.file",
+        "/sysroot/ostree/repo/objects/fe/61cb5551b19ada0fd1fb03ff2ebded57d900d015a97c19758d8e5275069db6.file",
+        "/sysroot/ostree/repo/objects/ff/fb9f0bb37680dd85291db74229a2a62ecb69888fe621c5e95c1edd33fe8edf.file"
+      ],
+      "reviewRules": [
+        "python-tls-sni-context-use-after-free"
+      ],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [
+        "https://github.com/python/cpython/issues/156293"
+      ],
+      "owner": "Owning signed-package/binary publisher; Finite security reviewer verifies exact affected files and any compatible source fix or applicability proof",
+      "unblockEvidence": "Approved authenticated owning-package rebuild/backport with exact binary/module/compiler evidence, or reviewed expiring digest/component/platform/all-location applicability proof; validate changed artifact before release"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "advisory": "GHSA-rm3j-f69w-wqmq",
+      "severity": "Critical",
+      "knownExploited": false,
+      "reason": "untriaged-critical",
+      "aliases": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "reviewRules": [],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [],
+      "owner": "Finite security applicability review, with advisory publisher/owning-package maintainer",
+      "unblockEvidence": "Official impact review bound to every exact shipped match and location; establish serious vs ordinary impact, affected platform/function and any source-fixed/backported evidence; unknown remains blocked"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "advisory": "GHSA-vgwf-h737-ff37",
+      "severity": "Critical",
+      "knownExploited": false,
+      "reason": "untriaged-critical",
+      "aliases": [
+        "CVE-2026-39830",
+        "GHSA-vgwf-h737-ff37"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "reviewRules": [],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [],
+      "owner": "Finite security applicability review, with advisory publisher/owning-package maintainer",
+      "unblockEvidence": "Official impact review bound to every exact shipped match and location; establish serious vs ordinary impact, affected platform/function and any source-fixed/backported evidence; unknown remains blocked"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.40.0",
+      "advisory": "GO-2026-6612",
+      "severity": "Critical",
+      "knownExploited": false,
+      "reason": "untriaged-critical",
+      "aliases": [
+        "CVE-2026-78663",
+        "GO-2026-6612"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+        "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+        "/usr/bin/glow",
+        "/usr/bin/gum"
+      ],
+      "reviewRules": [],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 4,
+      "officialSources": [],
+      "owner": "Finite security applicability review, with advisory publisher/owning-package maintainer",
+      "unblockEvidence": "Official impact review bound to every exact shipped match and location; establish serious vs ordinary impact, affected platform/function and any source-fixed/backported evidence; unknown remains blocked"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.48.0",
+      "advisory": "GO-2026-6612",
+      "severity": "Critical",
+      "knownExploited": false,
+      "reason": "untriaged-critical",
+      "aliases": [
+        "CVE-2026-78663",
+        "GO-2026-6612"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "reviewRules": [],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [],
+      "owner": "Finite security applicability review, with advisory publisher/owning-package maintainer",
+      "unblockEvidence": "Official impact review bound to every exact shipped match and location; establish serious vs ordinary impact, affected platform/function and any source-fixed/backported evidence; unknown remains blocked"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.55.0",
+      "advisory": "GO-2026-6612",
+      "severity": "Critical",
+      "knownExploited": false,
+      "reason": "untriaged-critical",
+      "aliases": [
+        "CVE-2026-78663",
+        "GO-2026-6612"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/19/07b725d2d82866531bee698973a08e6c438abaace3b61723709ea531853945.file",
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/sysroot/ostree/repo/objects/70/1bccba378f262def36123d3245e03a4442eb1f5cb37e43e901bd1c68954622.file",
+        "/sysroot/ostree/repo/objects/75/3546d15a9cdd047adccb841b239b2b0c2c25deb15c5edcd9d94801f60325c3.file",
+        "/sysroot/ostree/repo/objects/8e/c5583db8e1709e446e0abbcb470108ba680fcf718835713b907e0f9ab05d02.file",
+        "/sysroot/ostree/repo/objects/d1/6202c07880b5c003452384c62878ebf5155cd81a4e9befa180f485ebcc9693.file",
+        "/sysroot/ostree/repo/objects/f4/4b3304bc30b41a152a41fe1248228b052d2d2c31c69c131e4d85e874530d1c.file",
+        "/usr/bin/containerd",
+        "/usr/bin/containerd-shim-runc-v2",
+        "/usr/bin/containerd-stress",
+        "/usr/bin/ctr",
+        "/usr/bin/rclone",
+        "/usr/bin/restic",
+        "/usr/bin/runc",
+        "/usr/bin/yq"
+      ],
+      "reviewRules": [],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 15,
+      "officialSources": [],
+      "owner": "Finite security applicability review, with advisory publisher/owning-package maintainer",
+      "unblockEvidence": "Official impact review bound to every exact shipped match and location; establish serious vs ordinary impact, affected platform/function and any source-fixed/backported evidence; unknown remains blocked"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.56.0",
+      "advisory": "GO-2026-6612",
+      "severity": "Critical",
+      "knownExploited": false,
+      "reason": "untriaged-critical",
+      "aliases": [
+        "CVE-2026-78663",
+        "GO-2026-6612"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/44/ddc02df5529aa029c5c6300fc06197b0de5cba60e3b35a68084c0bd0c51547.file",
+        "/sysroot/ostree/repo/objects/7e/2c48dd26ae1957c2be4ebfc6f5dbf6c1c478dd80e70482985d8d9ba08addc9.file",
+        "/usr/bin/cosign"
+      ],
+      "reviewRules": [],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 3,
+      "officialSources": [],
+      "owner": "Finite security applicability review, with advisory publisher/owning-package maintainer",
+      "unblockEvidence": "Official impact review bound to every exact shipped match and location; establish serious vs ordinary impact, affected platform/function and any source-fixed/backported evidence; unknown remains blocked"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.57.0",
+      "advisory": "GO-2026-6612",
+      "severity": "Critical",
+      "knownExploited": false,
+      "reason": "untriaged-critical",
+      "aliases": [
+        "CVE-2026-78663",
+        "GO-2026-6612"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "reviewRules": [],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 4,
+      "officialSources": [],
+      "owner": "Finite security applicability review, with advisory publisher/owning-package maintainer",
+      "unblockEvidence": "Official impact review bound to every exact shipped match and location; establish serious vs ordinary impact, affected platform/function and any source-fixed/backported evidence; unknown remains blocked"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.59.0",
+      "advisory": "GO-2026-6612",
+      "severity": "Critical",
+      "knownExploited": false,
+      "reason": "untriaged-critical",
+      "aliases": [
+        "CVE-2026-78663",
+        "GO-2026-6612"
+      ],
+      "locations": [
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "reviewRules": [],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [],
+      "owner": "Finite security applicability review, with advisory publisher/owning-package maintainer",
+      "unblockEvidence": "Official impact review bound to every exact shipped match and location; establish serious vs ordinary impact, affected platform/function and any source-fixed/backported evidence; unknown remains blocked"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.4",
+      "advisory": "GO-2026-6604",
+      "severity": "Critical",
+      "knownExploited": false,
+      "reason": "untriaged-critical",
+      "aliases": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "locations": [
+        "/usr/bin/cosign"
+      ],
+      "reviewRules": [],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [],
+      "owner": "Finite security applicability review, with advisory publisher/owning-package maintainer",
+      "unblockEvidence": "Official impact review bound to every exact shipped match and location; establish serious vs ordinary impact, affected platform/function and any source-fixed/backported evidence; unknown remains blocked"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.4",
+      "advisory": "GO-2026-6612",
+      "severity": "Critical",
+      "knownExploited": false,
+      "reason": "untriaged-critical",
+      "aliases": [
+        "CVE-2026-78663",
+        "GO-2026-6612"
+      ],
+      "locations": [
+        "/usr/bin/cosign"
+      ],
+      "reviewRules": [],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [],
+      "owner": "Finite security applicability review, with advisory publisher/owning-package maintainer",
+      "unblockEvidence": "Official impact review bound to every exact shipped match and location; establish serious vs ordinary impact, affected platform/function and any source-fixed/backported evidence; unknown remains blocked"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.6",
+      "advisory": "GO-2026-6604",
+      "severity": "Critical",
+      "knownExploited": false,
+      "reason": "untriaged-critical",
+      "aliases": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/44/ddc02df5529aa029c5c6300fc06197b0de5cba60e3b35a68084c0bd0c51547.file",
+        "/sysroot/ostree/repo/objects/7e/2c48dd26ae1957c2be4ebfc6f5dbf6c1c478dd80e70482985d8d9ba08addc9.file"
+      ],
+      "reviewRules": [],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [],
+      "owner": "Finite security applicability review, with advisory publisher/owning-package maintainer",
+      "unblockEvidence": "Official impact review bound to every exact shipped match and location; establish serious vs ordinary impact, affected platform/function and any source-fixed/backported evidence; unknown remains blocked"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.6",
+      "advisory": "GO-2026-6612",
+      "severity": "Critical",
+      "knownExploited": false,
+      "reason": "untriaged-critical",
+      "aliases": [
+        "CVE-2026-78663",
+        "GO-2026-6612"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/44/ddc02df5529aa029c5c6300fc06197b0de5cba60e3b35a68084c0bd0c51547.file",
+        "/sysroot/ostree/repo/objects/7e/2c48dd26ae1957c2be4ebfc6f5dbf6c1c478dd80e70482985d8d9ba08addc9.file"
+      ],
+      "reviewRules": [],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [],
+      "owner": "Finite security applicability review, with advisory publisher/owning-package maintainer",
+      "unblockEvidence": "Official impact review bound to every exact shipped match and location; establish serious vs ordinary impact, affected platform/function and any source-fixed/backported evidence; unknown remains blocked"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.27.1",
+      "advisory": "GO-2026-6604",
+      "severity": "Critical",
+      "knownExploited": false,
+      "reason": "untriaged-critical",
+      "aliases": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "locations": [
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "reviewRules": [],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [],
+      "owner": "Finite security applicability review, with advisory publisher/owning-package maintainer",
+      "unblockEvidence": "Official impact review bound to every exact shipped match and location; establish serious vs ordinary impact, affected platform/function and any source-fixed/backported evidence; unknown remains blocked"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.27.1",
+      "advisory": "GO-2026-6612",
+      "severity": "Critical",
+      "knownExploited": false,
+      "reason": "untriaged-critical",
+      "aliases": [
+        "CVE-2026-78663",
+        "GO-2026-6612"
+      ],
+      "locations": [
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "reviewRules": [],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 2,
+      "officialSources": [],
+      "owner": "Finite security applicability review, with advisory publisher/owning-package maintainer",
+      "unblockEvidence": "Official impact review bound to every exact shipped match and location; establish serious vs ordinary impact, affected platform/function and any source-fixed/backported evidence; unknown remains blocked"
+    },
+    {
+      "component": "pkg:rpm/bluefin/curl@8.18.0-10.fc44?arch=x86_64&distro=bluefin-44&upstream=curl-8.18.0-10.fc44.src.rpm",
+      "advisory": "CVE-2026-18924",
+      "severity": "Low",
+      "knownExploited": false,
+      "reason": "untriaged-critical",
+      "aliases": [
+        "CVE-2026-18924"
+      ],
+      "locations": [
+        "/usr/share/rpm/rpmdb.sqlite"
+      ],
+      "reviewRules": [],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [],
+      "owner": "Finite security applicability review, with advisory publisher/owning-package maintainer",
+      "unblockEvidence": "Official impact review bound to every exact shipped match and location; establish serious vs ordinary impact, affected platform/function and any source-fixed/backported evidence; unknown remains blocked"
+    },
+    {
+      "component": "pkg:rpm/bluefin/httpd-core@2.4.68-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.68-1.fc44.src.rpm",
+      "advisory": "CVE-2026-29167",
+      "severity": "Medium",
+      "knownExploited": false,
+      "reason": "untriaged-critical",
+      "aliases": [
+        "CVE-2026-29167"
+      ],
+      "locations": [
+        "/usr/share/rpm/rpmdb.sqlite"
+      ],
+      "reviewRules": [],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [],
+      "owner": "Finite security applicability review, with advisory publisher/owning-package maintainer",
+      "unblockEvidence": "Official impact review bound to every exact shipped match and location; establish serious vs ordinary impact, affected platform/function and any source-fixed/backported evidence; unknown remains blocked"
+    },
+    {
+      "component": "pkg:rpm/bluefin/httpd-filesystem@2.4.68-1.fc44?arch=noarch&distro=bluefin-44&upstream=httpd-2.4.68-1.fc44.src.rpm",
+      "advisory": "CVE-2026-29167",
+      "severity": "Medium",
+      "knownExploited": false,
+      "reason": "untriaged-critical",
+      "aliases": [
+        "CVE-2026-29167"
+      ],
+      "locations": [
+        "/usr/share/rpm/rpmdb.sqlite"
+      ],
+      "reviewRules": [],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [],
+      "owner": "Finite security applicability review, with advisory publisher/owning-package maintainer",
+      "unblockEvidence": "Official impact review bound to every exact shipped match and location; establish serious vs ordinary impact, affected platform/function and any source-fixed/backported evidence; unknown remains blocked"
+    },
+    {
+      "component": "pkg:rpm/bluefin/httpd-tools@2.4.68-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.68-1.fc44.src.rpm",
+      "advisory": "CVE-2026-29167",
+      "severity": "Medium",
+      "knownExploited": false,
+      "reason": "untriaged-critical",
+      "aliases": [
+        "CVE-2026-29167"
+      ],
+      "locations": [
+        "/usr/share/rpm/rpmdb.sqlite"
+      ],
+      "reviewRules": [],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [],
+      "owner": "Finite security applicability review, with advisory publisher/owning-package maintainer",
+      "unblockEvidence": "Official impact review bound to every exact shipped match and location; establish serious vs ordinary impact, affected platform/function and any source-fixed/backported evidence; unknown remains blocked"
+    },
+    {
+      "component": "pkg:rpm/bluefin/httpd@2.4.68-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.68-1.fc44.src.rpm",
+      "advisory": "CVE-2026-29167",
+      "severity": "Medium",
+      "knownExploited": false,
+      "reason": "untriaged-critical",
+      "aliases": [
+        "CVE-2026-29167"
+      ],
+      "locations": [
+        "/usr/share/rpm/rpmdb.sqlite"
+      ],
+      "reviewRules": [],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [],
+      "owner": "Finite security applicability review, with advisory publisher/owning-package maintainer",
+      "unblockEvidence": "Official impact review bound to every exact shipped match and location; establish serious vs ordinary impact, affected platform/function and any source-fixed/backported evidence; unknown remains blocked"
+    },
+    {
+      "component": "pkg:rpm/bluefin/libcurl-minimal@8.18.0-10.fc44?arch=x86_64&distro=bluefin-44&upstream=curl-8.18.0-10.fc44.src.rpm",
+      "advisory": "CVE-2026-18924",
+      "severity": "Low",
+      "knownExploited": false,
+      "reason": "untriaged-critical",
+      "aliases": [
+        "CVE-2026-18924"
+      ],
+      "locations": [
+        "/usr/share/rpm/rpmdb.sqlite"
+      ],
+      "reviewRules": [],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [],
+      "owner": "Finite security applicability review, with advisory publisher/owning-package maintainer",
+      "unblockEvidence": "Official impact review bound to every exact shipped match and location; establish serious vs ordinary impact, affected platform/function and any source-fixed/backported evidence; unknown remains blocked"
+    },
+    {
+      "component": "pkg:rpm/bluefin/mod_lua@2.4.68-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.68-1.fc44.src.rpm",
+      "advisory": "CVE-2026-29167",
+      "severity": "Medium",
+      "knownExploited": false,
+      "reason": "untriaged-critical",
+      "aliases": [
+        "CVE-2026-29167"
+      ],
+      "locations": [
+        "/usr/share/rpm/rpmdb.sqlite"
+      ],
+      "reviewRules": [],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [],
+      "owner": "Finite security applicability review, with advisory publisher/owning-package maintainer",
+      "unblockEvidence": "Official impact review bound to every exact shipped match and location; establish serious vs ordinary impact, affected platform/function and any source-fixed/backported evidence; unknown remains blocked"
+    },
+    {
+      "component": "pkg:rpm/fedora/freerdp@3.31.1-1.fc44?distro=fedora-44",
+      "advisory": "CVE-2026-57156",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "untriaged-critical",
+      "aliases": [
+        "CVE-2026-57156"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/08/fc2ca9ea6a75d0922298a81303b6728909c61fbfce06e2d3fd67fc0dd37eb3.file",
+        "/sysroot/ostree/repo/objects/21/3a5c69e6bcc3bcf7d7956b19a8da41060a82fa75bd699c3c9959f0b26bcf00.file",
+        "/sysroot/ostree/repo/objects/38/3c2d58d5f6e2c6b1bdc557e0e30359ef541c6334c1e30512b9834a45198f3d.file",
+        "/sysroot/ostree/repo/objects/3f/e28168bfafc35f4c5a75f362a35bd64321ad763f4b66847e9662af7ed94e24.file",
+        "/sysroot/ostree/repo/objects/5e/2a0930df64e6f7b5947801ac477c9df8fc342dce35a952c101057e9ce8de4d.file",
+        "/sysroot/ostree/repo/objects/70/fb1cf6e02ee270a7716b0af74394d3cd67703795803cd3e91e73ed4719444a.file",
+        "/sysroot/ostree/repo/objects/78/c899ea8fe1653195352490c6c08f1d834ce020a03a05d1c0a560ce0ee28066.file",
+        "/sysroot/ostree/repo/objects/90/0f5a7ce94df3978f0fa90ae76c51e003545a6198a1e1dc1574da12735290be.file",
+        "/sysroot/ostree/repo/objects/cc/660fa41e8c2552a6420a11618989048bd2839fda442f4fb88f5f1f9e71544f.file",
+        "/sysroot/ostree/repo/objects/dd/d3626787a3803f4939a8a4fdfefad644e87d69a98be326d692a5fb300b09c8.file",
+        "/sysroot/ostree/repo/objects/e5/b082ca2a33265d41523bc7e190657afa530421ff868267bfcc94d39c330c36.file",
+        "/sysroot/ostree/repo/objects/fe/06c8a0dd65816aa82b8308cb2dbbca135ff7716470b8cbe06caa20fdda2a01.file"
+      ],
+      "reviewRules": [],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [],
+      "owner": "Finite security applicability review, with advisory publisher/owning-package maintainer",
+      "unblockEvidence": "Official impact review bound to every exact shipped match and location; establish serious vs ordinary impact, affected platform/function and any source-fixed/backported evidence; unknown remains blocked"
+    },
+    {
+      "component": "pkg:rpm/fedora/freerdp@3.31.1-1.fc44?distro=fedora-44",
+      "advisory": "CVE-2026-57158",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "untriaged-critical",
+      "aliases": [
+        "CVE-2026-57158"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/08/fc2ca9ea6a75d0922298a81303b6728909c61fbfce06e2d3fd67fc0dd37eb3.file",
+        "/sysroot/ostree/repo/objects/21/3a5c69e6bcc3bcf7d7956b19a8da41060a82fa75bd699c3c9959f0b26bcf00.file",
+        "/sysroot/ostree/repo/objects/38/3c2d58d5f6e2c6b1bdc557e0e30359ef541c6334c1e30512b9834a45198f3d.file",
+        "/sysroot/ostree/repo/objects/3f/e28168bfafc35f4c5a75f362a35bd64321ad763f4b66847e9662af7ed94e24.file",
+        "/sysroot/ostree/repo/objects/5e/2a0930df64e6f7b5947801ac477c9df8fc342dce35a952c101057e9ce8de4d.file",
+        "/sysroot/ostree/repo/objects/70/fb1cf6e02ee270a7716b0af74394d3cd67703795803cd3e91e73ed4719444a.file",
+        "/sysroot/ostree/repo/objects/78/c899ea8fe1653195352490c6c08f1d834ce020a03a05d1c0a560ce0ee28066.file",
+        "/sysroot/ostree/repo/objects/90/0f5a7ce94df3978f0fa90ae76c51e003545a6198a1e1dc1574da12735290be.file",
+        "/sysroot/ostree/repo/objects/cc/660fa41e8c2552a6420a11618989048bd2839fda442f4fb88f5f1f9e71544f.file",
+        "/sysroot/ostree/repo/objects/dd/d3626787a3803f4939a8a4fdfefad644e87d69a98be326d692a5fb300b09c8.file",
+        "/sysroot/ostree/repo/objects/e5/b082ca2a33265d41523bc7e190657afa530421ff868267bfcc94d39c330c36.file",
+        "/sysroot/ostree/repo/objects/fe/06c8a0dd65816aa82b8308cb2dbbca135ff7716470b8cbe06caa20fdda2a01.file"
+      ],
+      "reviewRules": [],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [],
+      "owner": "Finite security applicability review, with advisory publisher/owning-package maintainer",
+      "unblockEvidence": "Official impact review bound to every exact shipped match and location; establish serious vs ordinary impact, affected platform/function and any source-fixed/backported evidence; unknown remains blocked"
+    },
+    {
+      "component": "pkg:rpm/fedora/hplip@3.26.4-7.fc44?distro=fedora-44",
+      "advisory": "CVE-2026-91099",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "untriaged-critical",
+      "aliases": [
+        "CVE-2026-91099"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/00/de3f9c4c554a6a5c1f16b8ff12b2e2337f1ae813727b6409331079b8fd1a73.file",
+        "/sysroot/ostree/repo/objects/04/79590e9fd51a07ff34f19a0271b45f9664333ef16d3614821291d7cbc7a2bb.file",
+        "/sysroot/ostree/repo/objects/0d/f073805f0b58f234cecfb49a6f2253df37d4635dbd7daa57b34cdabb4c0fe0.file",
+        "/sysroot/ostree/repo/objects/27/1eed261f27cc08f7f488c8be691422ca801f179667b97a17aeff4ff9947265.file",
+        "/sysroot/ostree/repo/objects/35/78e5c92f01d8c902afb1cdaa259f4bdf4f1a8cc026a7103cff3758ed3174ba.file",
+        "/sysroot/ostree/repo/objects/3c/6cbb12cdb934c571f6bc7d5dbca27ae49fb9fd2eddf5a4ab2a36fe4822c360.file",
+        "/sysroot/ostree/repo/objects/3d/bff1c4c23af3979b4508bec9e74f7b513e1afc88d6fbd22728286ec67aa1a6.file",
+        "/sysroot/ostree/repo/objects/4a/46a724a8c53b5d60885396efa8efc3fc78c38833883ce0810d101affa3a0b5.file",
+        "/sysroot/ostree/repo/objects/6c/7699708ea8bcd9a2b3fbce5f943c3727b9935caf1b2e94c34c9ebb4673daf3.file",
+        "/sysroot/ostree/repo/objects/8a/9b406d16cbb52d90e4c0d4d8047a719c0dff9233102b09b86820bcce2591db.file",
+        "/sysroot/ostree/repo/objects/a0/bc785d5832bdef2bd456060d604604df5471c683d089ee264bfaeddfa2173a.file",
+        "/sysroot/ostree/repo/objects/a7/85ae7943bc7fed41a880c18ff3cbd3aa7c2b7dc933d98f37cb1f4a502e8cb6.file",
+        "/sysroot/ostree/repo/objects/ad/bb8a20025d62efdcab860ad753abeed882d3c610f9536443fc099d35ad5096.file",
+        "/sysroot/ostree/repo/objects/fb/bb149c97996a60d4683c81e44a3ab8cb0600147a0d3d2e270a7ce8d765ef97.file"
+      ],
+      "reviewRules": [],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [],
+      "owner": "Finite security applicability review, with advisory publisher/owning-package maintainer",
+      "unblockEvidence": "Official impact review bound to every exact shipped match and location; establish serious vs ordinary impact, affected platform/function and any source-fixed/backported evidence; unknown remains blocked"
+    },
+    {
+      "component": "pkg:rpm/fedora/hplip@3.26.4-7.fc44?distro=fedora-44",
+      "advisory": "CVE-2026-91101",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "untriaged-critical",
+      "aliases": [
+        "CVE-2026-91101"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/00/de3f9c4c554a6a5c1f16b8ff12b2e2337f1ae813727b6409331079b8fd1a73.file",
+        "/sysroot/ostree/repo/objects/04/79590e9fd51a07ff34f19a0271b45f9664333ef16d3614821291d7cbc7a2bb.file",
+        "/sysroot/ostree/repo/objects/0d/f073805f0b58f234cecfb49a6f2253df37d4635dbd7daa57b34cdabb4c0fe0.file",
+        "/sysroot/ostree/repo/objects/27/1eed261f27cc08f7f488c8be691422ca801f179667b97a17aeff4ff9947265.file",
+        "/sysroot/ostree/repo/objects/35/78e5c92f01d8c902afb1cdaa259f4bdf4f1a8cc026a7103cff3758ed3174ba.file",
+        "/sysroot/ostree/repo/objects/3c/6cbb12cdb934c571f6bc7d5dbca27ae49fb9fd2eddf5a4ab2a36fe4822c360.file",
+        "/sysroot/ostree/repo/objects/3d/bff1c4c23af3979b4508bec9e74f7b513e1afc88d6fbd22728286ec67aa1a6.file",
+        "/sysroot/ostree/repo/objects/4a/46a724a8c53b5d60885396efa8efc3fc78c38833883ce0810d101affa3a0b5.file",
+        "/sysroot/ostree/repo/objects/6c/7699708ea8bcd9a2b3fbce5f943c3727b9935caf1b2e94c34c9ebb4673daf3.file",
+        "/sysroot/ostree/repo/objects/8a/9b406d16cbb52d90e4c0d4d8047a719c0dff9233102b09b86820bcce2591db.file",
+        "/sysroot/ostree/repo/objects/a0/bc785d5832bdef2bd456060d604604df5471c683d089ee264bfaeddfa2173a.file",
+        "/sysroot/ostree/repo/objects/a7/85ae7943bc7fed41a880c18ff3cbd3aa7c2b7dc933d98f37cb1f4a502e8cb6.file",
+        "/sysroot/ostree/repo/objects/ad/bb8a20025d62efdcab860ad753abeed882d3c610f9536443fc099d35ad5096.file",
+        "/sysroot/ostree/repo/objects/fb/bb149c97996a60d4683c81e44a3ab8cb0600147a0d3d2e270a7ce8d765ef97.file"
+      ],
+      "reviewRules": [],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [],
+      "owner": "Finite security applicability review, with advisory publisher/owning-package maintainer",
+      "unblockEvidence": "Official impact review bound to every exact shipped match and location; establish serious vs ordinary impact, affected platform/function and any source-fixed/backported evidence; unknown remains blocked"
+    },
+    {
+      "component": "pkg:rpm/fedora/hplip@3.26.4-7.fc44?distro=fedora-44",
+      "advisory": "CVE-2026-91103",
+      "severity": "High",
+      "knownExploited": false,
+      "reason": "untriaged-critical",
+      "aliases": [
+        "CVE-2026-91103"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/00/de3f9c4c554a6a5c1f16b8ff12b2e2337f1ae813727b6409331079b8fd1a73.file",
+        "/sysroot/ostree/repo/objects/04/79590e9fd51a07ff34f19a0271b45f9664333ef16d3614821291d7cbc7a2bb.file",
+        "/sysroot/ostree/repo/objects/0d/f073805f0b58f234cecfb49a6f2253df37d4635dbd7daa57b34cdabb4c0fe0.file",
+        "/sysroot/ostree/repo/objects/27/1eed261f27cc08f7f488c8be691422ca801f179667b97a17aeff4ff9947265.file",
+        "/sysroot/ostree/repo/objects/35/78e5c92f01d8c902afb1cdaa259f4bdf4f1a8cc026a7103cff3758ed3174ba.file",
+        "/sysroot/ostree/repo/objects/3c/6cbb12cdb934c571f6bc7d5dbca27ae49fb9fd2eddf5a4ab2a36fe4822c360.file",
+        "/sysroot/ostree/repo/objects/3d/bff1c4c23af3979b4508bec9e74f7b513e1afc88d6fbd22728286ec67aa1a6.file",
+        "/sysroot/ostree/repo/objects/4a/46a724a8c53b5d60885396efa8efc3fc78c38833883ce0810d101affa3a0b5.file",
+        "/sysroot/ostree/repo/objects/6c/7699708ea8bcd9a2b3fbce5f943c3727b9935caf1b2e94c34c9ebb4673daf3.file",
+        "/sysroot/ostree/repo/objects/8a/9b406d16cbb52d90e4c0d4d8047a719c0dff9233102b09b86820bcce2591db.file",
+        "/sysroot/ostree/repo/objects/a0/bc785d5832bdef2bd456060d604604df5471c683d089ee264bfaeddfa2173a.file",
+        "/sysroot/ostree/repo/objects/a7/85ae7943bc7fed41a880c18ff3cbd3aa7c2b7dc933d98f37cb1f4a502e8cb6.file",
+        "/sysroot/ostree/repo/objects/ad/bb8a20025d62efdcab860ad753abeed882d3c610f9536443fc099d35ad5096.file",
+        "/sysroot/ostree/repo/objects/fb/bb149c97996a60d4683c81e44a3ab8cb0600147a0d3d2e270a7ce8d765ef97.file"
+      ],
+      "reviewRules": [],
+      "fixStates": [
+        "fixed"
+      ],
+      "occurrences": 1,
+      "officialSources": [],
+      "owner": "Finite security applicability review, with advisory publisher/owning-package maintainer",
+      "unblockEvidence": "Official impact review bound to every exact shipped match and location; establish serious vs ordinary impact, affected platform/function and any source-fixed/backported evidence; unknown remains blocked"
+    }
+  ],
+  "otherProfileSourceHolds": [
+    {
+      "id": "next-kernel-october-source-fixes",
+      "profiles": [
+        "bluefin-next",
+        "bluefin-dx-next"
+      ],
+      "riskClass": "major-data-loss",
+      "reason": "Pinned Fedora 45 kernel 7.2.9-300 lacks the reviewed October XFS/AMD fixes. Missing scanner matches do not establish source-fix coverage. The fixed 301 build has not reached an approved stable tag in retained official evidence.",
+      "officialSources": [
+        "https://src.fedoraproject.org/rpms/kernel/c/c2cdc6c5c0c6ccc0128613fc7c9d276ebaf870c7.patch",
+        "https://gitlab.com/cki-project/kernel-ark/-/commit/fa3bfc1343f7f3b1ebd873eee5e3e6618918f434.patch"
+      ],
+      "reviewedBy": "great_cto desktop kernel source review",
+      "reviewedAt": "2026-10-13T00:00:29Z",
+      "unblockEvidence": "Approved same-stream stable kernel containing the reviewed fixes, or separately explicit reviewed testing approval; authenticate exact Fedora payloads and validate transaction, module preservation, initramfs and boot qualification before reviewing removal of this hold."
+    }
+  ],
+  "fixStateMeaning": "Scanner-reported fix availability only: fixed means a remediation is listed, not that the shipped component is patched or cleared."
+}

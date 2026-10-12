@@ -509,6 +509,28 @@ class PublisherAuthentication(unittest.TestCase):
         self.assertEqual(evidence, {'image': self.base + '@' + NEW,
                                    'keySha256': self.policy['keySha256'], 'signatureFormat': 'legacy'})
 
+    def test_successful_build_verification_retains_exact_publisher_receipt(self):
+        verify = upstream.verify
+        with patch.object(upstream, 'ROOT', self.root), patch.object(upstream, 'verify', lambda: verify(self.root)), \
+                patch.object(upstream.subprocess, 'run'), patch('sys.argv', ['bluefin-upstream.py', 'verify']), \
+                patch.dict(os.environ, GITHUB_SHA='f' * 40, GITHUB_OUTPUT='', GITHUB_STEP_SUMMARY=''), patch('builtins.print'):
+            upstream.main()
+        receipt = json.loads((self.root / '.bluebuild/upstream-verified.json').read_text())
+        self.assertEqual(receipt['sourceRevision'], 'f' * 40)
+        self.assertEqual(receipt['trustPolicySha256'], hashlib.sha256(self.policy_path.read_bytes()).hexdigest())
+        self.assertEqual(receipt['repository'], 'closure-labs/finite')
+        self.assertEqual({entry['image'] for entry in receipt['verified']},
+                         {recipe['base'] + '@' + recipe['digest'] for recipe in upstream.recipes(self.root).values()})
+
+    def test_failed_publisher_verification_cannot_emit_build_receipt(self):
+        verify = upstream.verify
+        with patch.object(upstream, 'ROOT', self.root), patch.object(upstream, 'verify', lambda: verify(self.root)), \
+                patch.object(upstream.subprocess, 'run', side_effect=subprocess.CalledProcessError(1, 'cosign')), \
+                patch('sys.argv', ['bluefin-upstream.py', 'verify']), patch.dict(os.environ, GITHUB_SHA='f' * 40):
+            with self.assertRaises(subprocess.CalledProcessError):
+                upstream.main()
+        self.assertFalse((self.root / '.bluebuild/upstream-verified.json').exists())
+
     def test_invalid_policy_never_invokes_verifier(self):
         for field, value in [('schema', 0), ('signatureFormat', 'unknown'),
                              ('key', '../unreviewed.pub'), ('keySha256', '0' * 64),

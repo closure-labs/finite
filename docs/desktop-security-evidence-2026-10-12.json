@@ -699,7 +699,7 @@
       }
     ],
     "initramfs": {
-      "status": "implemented-in-both-generic-recipes; assembled-image-validation-pending",
+      "status": "PASS assembled-image contracts in both generic profiles in run38322036024; VM boot qualification pending",
       "recipeContractTests": 4,
       "initramfsTests": 4,
       "sequence": "replacement kernel, profile metadata, initramfs regeneration, finalization",
@@ -719,9 +719,10 @@
       "owningRpm": "kmod-zfs-2.4.4-1.fc44.x86_64"
     },
     "latestPruningGuard": {
-      "status": "New explicit ZFS removal source changing; focused and hosted confirmation pending",
+      "status": "PASS 30 generic/14 next focused regressions, representative hosted transaction/offline repeat and four-profile image/runtime contracts",
       "limits": "Preserve unrelated package inventory; never prune still-owned, unexpected or symlinked stale files",
-      "hostedPlan": "Cheap focused/source checks, one representative changed candidate, then all four image integration jobs; no repeated unchanged DX probe"
+      "hostedPlan": "Completed representative and all-profile integration evidence retained; no repeated builds/scans required for evidence reconciliation",
+      "run": "https://github.com/closure-labs/finite/actions/runs/38322036024"
     }
   },
   "nextKernel": {
@@ -809,16 +810,16 @@
     "failureProducedCandidateOrScan": false
   },
   "localCandidate": {
-    "status": "Hosted representative transaction and native scan in progress",
+    "status": "Diagnostic native scan completed with old strict policy blocked; semantic binding and exact baseline comparison recovered successfully without rebuild or rescan",
     "focusedTests": 17,
     "publicationEligibility": false,
     "productionPolicyTests": 27,
     "promotionDefense": "Production verify rejects explicit releaseEligible=false or sourceType=locally-built-unpublished in extraction, provenance or result before full release verification",
     "run": "https://github.com/closure-labs/finite/actions/runs/38321177037",
     "sourceRevision": "371b7f17bc02ab84da119e73becbdb4d6c87e2bc",
-    "imageDigest": null,
-    "resultSha256": null,
-    "comparisonSha256": null,
+    "imageDigest": "sha256:567c7e90da2020ebb83f144521fdcca2ddc21009b5f42e86704be5312d9ab835",
+    "resultSha256": "5e54e149e4e37f16e946283ecd805c28661daedfac08ee179cfeb8a611e79661",
+    "comparisonSha256": "ff5d99927db2a36f41e925176149c55c162547df1c21d9075e8f745f1e2d2299",
     "historicalFailedAttempt": {
       "status": "Representative patch attempt rejected before image commit or native scan",
       "run": "https://github.com/closure-labs/finite/actions/runs/38314613864",
@@ -828,8 +829,100 @@
       "resultSha256": null,
       "comparisonSha256": null
     },
-    "focusedTestsScope": "17 helper fixtures passed before the new authorized removal source; changed-source validation pending",
-    "remediationSourceRevision": "c29532e7ea06bb4cb8fb3118c3cf71039fe3a76b"
+    "focusedTestsScope": "17 bounded helper fixtures passed; changed ZFS implementation subsequently passed representative transaction/offline repeat and all four PR #144 builds",
+    "remediationSourceRevision": "c29532e7ea06bb4cb8fb3118c3cf71039fe3a76b",
+    "blockingRecords": 725,
+    "uniqueBlockingPairs": 261,
+    "knownExploitedRecords": 0,
+    "comparisonCounts": {
+      "persistent": 186,
+      "new": 75,
+      "notObserved": 95
+    },
+    "newPairsReusingBaselineAdvisory": 65,
+    "configurationBinding": {
+      "status": "PASS diagnostic semantic equivalence recovered in run38324348014; Docker and OCI configuration bytes remain unequal",
+      "dockerId": "sha256:e1553efd4b25c01b323bcf52a2c0a12a7fb70e74ae5502957d53a485691040db",
+      "ociConfigDigest": "sha256:af261d47342d1be7c702e4614d625a05b270e10dc9a6d25dec041324f83e9358",
+      "requirement": "Retained raw OCI config/manifest digest validation and full ordered rootfs/config semantic equivalence with retained Docker inspect; no unchanged candidate rebuild/rescan",
+      "recoveryRun": "https://github.com/closure-labs/finite/actions/runs/38324348014",
+      "recovery": {
+        "schema": 1,
+        "status": "diagnostic-semantic-equivalence",
+        "sourceRun": 38321177037,
+        "sourceRevision": "371b7f17bc02ab84da119e73becbdb4d6c87e2bc",
+        "image": "ghcr.io/closure-labs/finite@sha256:567c7e90da2020ebb83f144521fdcca2ddc21009b5f42e86704be5312d9ab835",
+        "manifestDigest": "sha256:567c7e90da2020ebb83f144521fdcca2ddc21009b5f42e86704be5312d9ab835",
+        "configurationDigest": "sha256:af261d47342d1be7c702e4614d625a05b270e10dc9a6d25dec041324f83e9358",
+        "dockerImageId": "sha256:e1553efd4b25c01b323bcf52a2c0a12a7fb70e74ae5502957d53a485691040db",
+        "dockerConfigByteIdentity": false,
+        "dockerConfigDifferenceCause": "unknown; original raw Docker configuration bytes were not retained",
+        "semanticChecks": {
+          "platform": true,
+          "created": true,
+          "supportedConfigFields": [
+            "Cmd",
+            "Entrypoint",
+            "Env",
+            "ExposedPorts",
+            "Labels",
+            "StopSignal",
+            "User",
+            "Volumes",
+            "WorkingDir"
+          ],
+          "fullOrderedRootfsDiffIds": true,
+          "layers": 89,
+          "labelsAndPatchIdentity": true
+        },
+        "sourceLayerBytes": "Every layer was SHA-256 verified by the original hosted helper before extraction; layer blobs are absent from this artifact and were not rehashed here.",
+        "sbomSha256": "aeaa335331698c886ced33ea5c2413abc1108f87153ca66b6a0764e6e2b88c9d",
+        "nativePolicyStatus": "blocked",
+        "blockingRecords": 725,
+        "uniquePairs": 261,
+        "knownExploitedBlockingRecords": 0,
+        "exceptionsApplied": 0,
+        "comparisonRecomputedExactly": true,
+        "sourceResultSha256": "5e54e149e4e37f16e946283ecd805c28661daedfac08ee179cfeb8a611e79661",
+        "sourceProvenanceSha256": "a102f86358e7ad3660c674a32b3f750660bf4ec0eac0fd1d7c974eeaad33429e",
+        "dockerInspectSha256": "a3fad03a45f3035f45463eb639b070fdf5bc71fbd680bc11ce0382022a379e03",
+        "patchInputsSha256": "2fb3c68f375be93e433ab3065ee1e448d56486f37c9a47d7b2d35417ca4888fd",
+        "releaseEligible": false,
+        "signatureVerified": false,
+        "completeRecipeBuild": false,
+        "evaluationNote": "Original scan predates the later KEV exception hardening; both enforcement versions are equivalent here because exceptions are empty. Unknown reachability and notObserved findings remain unresolved."
+      },
+      "bindingSha256": "b04faf88977045d1ea314c47fb40190ba129156d3a18570f92e005aa393ba3cd"
+    },
+    "originalPostStepStatus": "Native scan complete/blocked; summary comparison produced but post-step Docker-ID/OCI-config equality assertion failed; independent semantic binding recovery pending",
+    "recoveryArtifacts": {
+      "binding.json": {
+        "sha256": "b04faf88977045d1ea314c47fb40190ba129156d3a18570f92e005aa393ba3cd",
+        "bytes": 2184
+      },
+      "candidate-comparison.json": {
+        "sha256": "ff5d99927db2a36f41e925176149c55c162547df1c21d9075e8f745f1e2d2299",
+        "bytes": 112866
+      },
+      "candidate-ledger.json": {
+        "sha256": "f69d29305a52f4a2916175525de0b4e4d8b2afd2a657fcddaffa1fd02c602ad4",
+        "bytes": 79546
+      },
+      "ownership.json": {
+        "sha256": "a2a83af960f5d6506affda302f5b4c4b4694f72ab4f4dab4e31be76d36042d82",
+        "bytes": 1181386
+      },
+      "recovery.log": {
+        "sha256": "7f06a1299af2ac2db4edc8827555b730148a76c44d940b3ceea2cdf728c3543a",
+        "bytes": 627
+      },
+      "rpm-location-triage.json": {
+        "sha256": "236238f30c3be41051c37c0b46c3a087d88ce363abfcb53fedb6114a43474fc1",
+        "bytes": 33043
+      }
+    },
+    "policyAtScan": "Historical severity policy: fixable High/Critical and KEV; not reevaluated under upstream-maintained-risk",
+    "diagnosticLimit": "Semantic equivalence covers platform, created/config fields, ordered 89 rootfs diff IDs and labels/patch identity. Original helper verified layer SHA256 before extraction; recovery did not rehash absent layer blobs. No release signature, full recipe build, production provenance or boot proof."
   },
   "historicalPackagePrerequisites": {
     "run": "https://github.com/closure-labs/finite/actions/runs/38299553401",
@@ -881,80 +974,224 @@
     "hostZfsSupport": "Removed by explicit user decision across all four profiles; separate FreeBSD VM alternative not validated"
   },
   "finalIntegration": {
-    "status": "Pending changed runtime source after approved all-profile host ZFS removal",
+    "status": "PASS all four image builds/runtime inspections, documentation, pinned Nix/source contracts and CI gate",
     "pr": "https://github.com/closure-labs/finite/pull/144",
-    "prState": "draft",
-    "lastPostedHeadPrefix": "9a65",
-    "sourceRevision": null,
-    "run": null,
-    "profileResults": {},
+    "prState": "open-draft-at-retained-observation",
+    "lastPostedHeadPrefix": "fd64",
+    "sourceRevision": "fd64b32f4667b3f366b2eafcba5c6ed9ba6431dd",
+    "run": "https://github.com/closure-labs/finite/actions/runs/38322036024",
+    "profileResults": {
+      "bluefin-dx-generic": {
+        "status": "pass-build-and-runtime-inspection",
+        "imageId": "sha256:d61c5eda5d3c9d1828195224340e25449363345c6af7622b397c8b07b17deb3e",
+        "imageIdKind": "Docker image/config identity; not a published manifest digest",
+        "registryManifestDigest": null,
+        "platform": "linux/amd64",
+        "testedRevision": "ed7e5151f51445f4cd5e64715b6e9cef80115600",
+        "buildIdentity": "v1:84a8613bfd94dd9e34d62666d965db0759fc3c512a078b8548e3d30c7ebb8952",
+        "baseDigest": "sha256:425db37c0d8e2791b29a41a04cc744b8f17c707b3ceeb8c46bdc0b155ce14b7a",
+        "published": false,
+        "signed": false,
+        "bootQualified": false,
+        "artifacts": {
+          "bluefin-dx-generic-image-ref.txt": {
+            "sha256": "d32347fe1f120d8730a9526fb4d8e635fa1f1ecb3345f267eb33cefc433e2d1f",
+            "bytes": 13
+          },
+          "bluefin-dx-generic-image.json": {
+            "sha256": "064eb64f819c2d3fcf56f73ad6f9ce5e5014c78d03af22cf4b2c5dca135f53a4",
+            "bytes": 136313
+          },
+          "bluefin-dx-generic-publication.json": {
+            "sha256": "4c3c91e9d664984de37c82143037f93c50ef684eb05b3a77aa85b08668fe941d",
+            "bytes": 542
+          },
+          "bluefin-dx-generic-timings.jsonl": {
+            "sha256": "f95ac8a5a39d6654f9faac405729458e5a808a9012d27cf8eadb97f56d262e9b",
+            "bytes": 521
+          },
+          "bluefin-dx-generic.Containerfile": {
+            "sha256": "1206b96c1f9344c22b2544a7d177c911eadbf8f569ebbd48465f875c97f94fb5",
+            "bytes": 15630
+          },
+          "cosign-runtime.json": {
+            "sha256": "170e75cf46ceadd0ffec6437c2c94d53316d9d37ddecdfc7e9f2186ec5685a1a",
+            "bytes": 797
+          }
+        }
+      },
+      "bluefin-dx-next": {
+        "status": "pass-build-and-runtime-inspection",
+        "imageId": "sha256:23b3edc356f8e40deddbf6e636c587a20e53ca22b2509d1c65b41ae94193f2f8",
+        "imageIdKind": "Docker image/config identity; not a published manifest digest",
+        "registryManifestDigest": null,
+        "platform": "linux/amd64",
+        "testedRevision": "ed7e5151f51445f4cd5e64715b6e9cef80115600",
+        "buildIdentity": "v1:45250ffc9c34c48c869643e39d04248265cbacb556b596f5d987134a1fe8563b",
+        "baseDigest": "sha256:425db37c0d8e2791b29a41a04cc744b8f17c707b3ceeb8c46bdc0b155ce14b7a",
+        "published": false,
+        "signed": false,
+        "bootQualified": false,
+        "artifacts": {
+          "bluefin-dx-next-image-ref.txt": {
+            "sha256": "b0b2ac2bc5136a7acc6f051feb32b415316c4dda490688b0ddbd72afe0f30490",
+            "bytes": 13
+          },
+          "bluefin-dx-next-image.json": {
+            "sha256": "c65b0cfe3cf5ba1c13ff63495a923adecf1c86390d27ef0e24f2e7249e15d10a",
+            "bytes": 136500
+          },
+          "bluefin-dx-next-publication.json": {
+            "sha256": "8f7e333e8d75e3272ea5e37ed81bdebba151f8927bdd4bfb3e00c6cad8632a10",
+            "bytes": 541
+          },
+          "bluefin-dx-next-timings.jsonl": {
+            "sha256": "a9f4d5d5972a5da780fb16af8c23e7f683ca86da8ec727aa8bfb6d87d1434887",
+            "bytes": 522
+          },
+          "bluefin-dx-next.Containerfile": {
+            "sha256": "4814cbad310949d0bb6e3ffd210135a60ddacc0aadec2dbec7bbb1b112ed75d7",
+            "bytes": 16542
+          },
+          "cosign-runtime.json": {
+            "sha256": "170e75cf46ceadd0ffec6437c2c94d53316d9d37ddecdfc7e9f2186ec5685a1a",
+            "bytes": 797
+          }
+        }
+      },
+      "bluefin-generic": {
+        "status": "pass-build-and-runtime-inspection",
+        "imageId": "sha256:de040df1c21979397f97727898416795c47b881a93688e9faadb76b8b0b2f0b8",
+        "imageIdKind": "Docker image/config identity; not a published manifest digest",
+        "registryManifestDigest": null,
+        "platform": "linux/amd64",
+        "testedRevision": "ed7e5151f51445f4cd5e64715b6e9cef80115600",
+        "buildIdentity": "v1:43892647b9ba8d6a23242a4a197c4a635f5426e650b9980abd38e2d9e80c5374",
+        "baseDigest": "sha256:61c3d546bea3a0012378214de3603d9eadc2111330765a4a31b14215d4bacaea",
+        "published": false,
+        "signed": false,
+        "bootQualified": false,
+        "artifacts": {
+          "bluefin-generic-image-ref.txt": {
+            "sha256": "e784bb48e6ece725be97838f555feeb371efddc9625bfbe6e373c81294e81fe4",
+            "bytes": 13
+          },
+          "bluefin-generic-image.json": {
+            "sha256": "a1b9b5d31e0a4ee0a4c5f64953053bca7d59d3d75b7fadd5112eed766d00d1a8",
+            "bytes": 115336
+          },
+          "bluefin-generic-publication.json": {
+            "sha256": "9f9036dfc56e9239fdae36a22735e91be486b23c3b218719439a65187ac000fb",
+            "bytes": 543
+          },
+          "bluefin-generic-timings.jsonl": {
+            "sha256": "acb812cf3ee6125a86b20b2b0fe777fb7b3176939c5f75d601dd761675e190b1",
+            "bytes": 523
+          },
+          "bluefin-generic.Containerfile": {
+            "sha256": "5826d686de6388ca33f53136b8197a85fdcf3aaa46486443f9ab42ce93f5e8e6",
+            "bytes": 15596
+          },
+          "cosign-runtime.json": {
+            "sha256": "170e75cf46ceadd0ffec6437c2c94d53316d9d37ddecdfc7e9f2186ec5685a1a",
+            "bytes": 797
+          }
+        }
+      },
+      "bluefin-next": {
+        "status": "pass-build-and-runtime-inspection",
+        "imageId": "sha256:6f468c5645a2a29a49b289a93a76ea5ab147cd70f4b5f5d2323d0610cc8fbcd2",
+        "imageIdKind": "Docker image/config identity; not a published manifest digest",
+        "registryManifestDigest": null,
+        "platform": "linux/amd64",
+        "testedRevision": "ed7e5151f51445f4cd5e64715b6e9cef80115600",
+        "buildIdentity": "v1:adc9f56559cb7b7cf00dafb9fb8ad27af07dde4bf99ca7160c5749b2ca92ab13",
+        "baseDigest": "sha256:61c3d546bea3a0012378214de3603d9eadc2111330765a4a31b14215d4bacaea",
+        "published": false,
+        "signed": false,
+        "bootQualified": false,
+        "artifacts": {
+          "bluefin-next-image-ref.txt": {
+            "sha256": "90f95fc9e22fa9c6d96f2cad2debd3e0b9cab141f3496548d2301bf54e7c2596",
+            "bytes": 13
+          },
+          "bluefin-next-image.json": {
+            "sha256": "e880b548c566f24be1e682cfe439ecc846457a856fdd5087dd24d2c6bb40f7a9",
+            "bytes": 115402
+          },
+          "bluefin-next-publication.json": {
+            "sha256": "72b9312c43923d62b4b2b001e2d4228be611d2054003843148c6f769059afa01",
+            "bytes": 528
+          },
+          "bluefin-next-timings.jsonl": {
+            "sha256": "5b3670e9f2363a2d07f51607545ac6f9bbdf05b96ea051de25c59271fe34f3cf",
+            "bytes": 522
+          },
+          "bluefin-next.Containerfile": {
+            "sha256": "72c91a49495c8c731151b2f0d243a7fc0565c5fbb9b83d71f514d85c65f19dcb",
+            "bytes": 16511
+          },
+          "cosign-runtime.json": {
+            "sha256": "170e75cf46ceadd0ffec6437c2c94d53316d9d37ddecdfc7e9f2186ec5685a1a",
+            "bytes": 797
+          }
+        }
+      }
+    },
     "bootQualificationRun": null,
     "sourceContracts": {
-      "status": "pending changed-source focused and pinned Nix contracts",
-      "run": null,
-      "validatedRevision": null
+      "status": "pass",
+      "run": "https://github.com/closure-labs/finite/actions/runs/38322036024",
+      "validatedRevision": "fd64b32f4667b3f366b2eafcba5c6ed9ba6431dd",
+      "testedMergeRevision": "ed7e5151f51445f4cd5e64715b6e9cef80115600"
     },
-    "imageValidation": "New all-four-profile evidence pending after cheap checks and one useful changed candidate; no reuse of historical4bc source pass as current proof"
+    "imageValidation": "PASS all four profiles; publication skipped; no production signing or boot qualification",
+    "testedMergeRevision": "ed7e5151f51445f4cd5e64715b6e9cef80115600",
+    "note": "PR144 head and tested merge revision are distinct. PR144 merged externally atbd78c07f; policy follow-upPR145 targetsmain. No merge/publication performed by this continuation."
   },
   "verdicts": {
-    "sourceBuild": "Historical source contracts38317182847 passed4bc79ded; new all-profile host ZFS removal code requires fresh focused/Nix and image integration validation",
-    "vulnerabilityClearance": "BLOCKED; no new changed-source image digest/native comparison; remaining Go/Python/rclone and next300 XFS/AMD findings unresolved",
-    "releaseEligibility": "INELIGIBLE; new source/build, production native security, isolated signing and applicable boot gates not established"
+    "sourceBuild": "PASS: all four runtime builds/inspection38322036024 atfd64/testedmergeed7e; new policy/source/contracts/CIgate38327424786 at e599/testedmerge79715d7b. Image inputs unchanged; no repeated image build. Documentation evidence follow-up does not change runtime or policy.",
+    "vulnerabilityClearance": "BLOCKED: completed diagnostic reevaluation38327429782 under approved policy has121unique blocking pairs(95serious,26untriagedCritical),421advisory pairs,0KEV,0exceptions. No new scan or package fixes implied; retained object reachability unknown; Next source hold separately blocks both Next profiles.",
+    "releaseEligibility": "INELIGIBLE; explicit Next 300 source hold, current security review, production digest-bound policy/signing and applicable boot qualification remain unmet; no merge/publication authorized"
   },
   "remainingBlockers": [
     {
-      "scope": "Approved Fedora44 Python/rclone package fixes",
+      "scope": "New upstream-maintained-risk candidate evaluation and artifact applicability",
       "owners": [
-        "Fedora python-anyio maintainers",
-        "Fedora python-msgpack maintainers",
-        "Fedora rclone maintainers",
-        "Finite dependency/security review"
+        "Finite risk-policy/evidence review",
+        "Owning Fedora/vendor maintainers for verified serious fixes"
       ],
-      "status": "Fresh approved Fedora44 metadata remains blocked in run38314613864; no probe error",
+      "status": "Policy implementation reviewed; hosted diagnostic reevaluation38327429782 completed BLOCKED with121pairs. Final source checks passed38327424786; production security/signing/boot qualification remains required.",
       "unblockEvents": [
-        "Approved signed Fedora44 NEVR providing AnyIO>=4.14.2, msgpack>=1.2.1 and rclone>=1.75.1, or exact reviewed authenticated source/backport proof for the corresponding advisories",
-        "Refresh approved repository metadata, authenticate payloads and validate compatible owning-RPM transaction before extending floors"
+        "Authenticate immutable candidate baseline and bind all observed aliases/component paths before evaluation",
+        "Resolve matching serious risks and untriaged Critical using compatible authenticated fixes or positive complete artifact-specific nonapplicability/backport proof",
+        "Retain advisory-only ordinary upstream risks visibly; msgpack DoS is not automatically a serious blocker or a fixed finding; never waive KEV"
       ]
     },
     {
-      "scope": "Remaining shipped embedded Go/compiler fixes and ownership gaps",
-      "owners": [
-        "Owning Fedora package maintainers",
-        "Tailscale stable publisher",
-        "Sigstore Cosign publisher",
-        "Finite artifact/ownership review"
-      ],
-      "status": "Blocked; partial Tailscale/Cosign updates do not clear all findings",
-      "unblockEvents": [
-        "Publisher rebuilds of actual shipped owning executables with required compiler and embedded-module fixes; upgrading an installed compiler alone is insufficient",
-        "Authenticate exact binaries and reassess every affected live path/profile and historical OSTree location or prove its reachability/applicability with reviewed evidence",
-        "Fresh native scan and ledger comparison preserve new/persistent findings, unknown coverage and KEV enforcement"
-      ]
-    },
-    {
-      "scope": "Fedora45 next-kernel security fixes",
+      "scope": "Fedora45 Next source security hold",
       "owners": [
         "Fedora45 kernel stable-update publisher",
-        "Finite source/boot qualification",
-        "User for the separate pending testing preference"
+        "Finite source/module/boot qualification",
+        "User only for optional explicit testing decision"
       ],
-      "status": "301 testing/gating-passed/stable-requested; no stable date or implemented exception",
+      "status": "Next7.2.9-300 remains pinned; fixed301 testing/stable-requested is historical metadata, not approved stable publication",
       "unblockEvents": [
-        "Approved stable-tag promotion of a same-stream kernel containing the October XFS/AMD fixes, or a separately explicit reviewed testing exception",
-        "Authenticate all five exact signed RPMs and required module manifests, validate replacement/initramfs and affected-profile Secure Boot/LUKS install/upgrade/rollback",
-        "Pending/gating-failed7.2.10 is excluded; stable request and karma are not publication proof"
+        "Same-stream fix-containing kernel admitted to approved f45/f45-updates stable tag, or separately explicit reviewed testing approval",
+        "Authenticate exact signed runtime payloads, required in-tree IPU7/modules/initramfs and affected-profile Secure Boot/LUKS install/upgrade/rollback",
+        "Do not select pending/gating-failed7.2.10 or widen source policy"
       ]
     },
     {
-      "scope": "Latest-source candidate/build/security/signing/boot qualification",
+      "scope": "Production security, isolated signing and boot qualification",
       "owners": [
-        "Finite implementation and independent QA/security review"
+        "Finite delivery/security/boot qualification"
       ],
-      "status": "Pending new ZFS-removal source; historical source checks cannot validate changed code",
+      "status": "Not established; four-profile build pass and diagnostic semantic recovery are insufficient",
       "unblockEvents": [
-        "Validate changed all-profile ZFS-removal source with focused and pinned Nix contracts; then one representative patched copy and all four exact-source builds",
-        "Complete first unpublished patched-copy native scan and honest baseline comparison without release eligibility; retain exact manifest/source/result hashes",
-        "Obtain passing production digest-bound security policy, isolated signing and affected-profile boot qualification before release eligibility"
+        "Passing production digest-bound new policy for exact recipe-built candidate",
+        "Protected isolated environment signing and required install/upgrade/rollback boot gates",
+        "User authorization before any merge or release publication"
       ]
     },
     {
@@ -962,23 +1199,10 @@
       "owners": [
         "Finite administrator and delivery workflow review"
       ],
-      "status": "Deferred; isolated environments retain migrated signing keys",
+      "status": "Deferred; isolated environments retain migrated keys",
       "unblockEvents": [
-        "Successful protected-main signing through the image-signing/release environment secrets and evidence that old workflows/runs no longer need the repository copy",
-        "Retire the repository copy only after environment-based signing succeeds and old dependent runs retire; no secret re-export or retirement is performed by this continuation"
-      ]
-    },
-    {
-      "scope": "Authorized removal of host ZFS across all four profiles",
-      "owners": [
-        "Finite kernel/filesystem implementation",
-        "Finite independent QA/security validation"
-      ],
-      "status": "User decision completed; explicit removal implementation and fresh validation pending",
-      "unblockEvents": [
-        "Remove only the reviewed ZFS package names from all four images while preserving signed sources, unrelated RPM inventory and stale-tree ownership guards",
-        "Pass new focused/source/Nix contracts, one useful changed-candidate scan and all-four-profile integration; record host ZFS unsupported",
-        "No matching ZFS publisher module or further ZFS approval is required for the chosen product direction; no storage VM qualification is claimed"
+        "Protected-main environment signing success and evidence old workflows no longer depend on repository copy",
+        "Retire only after these conditions; no export or secret retirement by this continuation"
       ]
     }
   ],
@@ -1074,7 +1298,7 @@
     "scope": "Metadata availability only; no RPM payload signature or transaction verification, no installation, no multilib solver proof, and no new image vulnerability scan. Even available prerequisites are not a passing security scan or proof of embedded fixes."
   },
   "inheritedZfs": {
-    "status": "Approved host ZFS removal implemented with strict invariance/ownership guards; hosted dependency validation in progress",
+    "status": "User-approved host tools/modules removed; representative transaction/offline repeat and all-four image/runtime contracts PASS",
     "baselineRpm": "kmod-zfs-2.4.4-1.fc44.x86_64",
     "ownershipRun": "https://github.com/closure-labs/finite/actions/runs/38315879860",
     "sourceRevision": "200c79807780",
@@ -1162,7 +1386,7 @@
     "sharedGuard": {
       "status": "Implemented; 30 generic and 14 next focused fixtures pass",
       "preservation": "Only reviewed runtime/development/virtual-camera and explicitly approved ZFS package names may change; preserve all unrelated RPMs and owned files",
-      "hostedCompleteReplacementValidation": "pending changed-source validation",
+      "hostedCompleteReplacementValidation": "PASS representative run38321177037 and all four image contracts run38322036024; no VM boot claim",
       "genericFixtures": 30,
       "nextIntegrationFixtures": 14,
       "helperSha256": "896b4ac04182b77164120701b5292b8943334f78b6f1187be13631d4b5419f3c"
@@ -1189,7 +1413,7 @@
       "bluefin-dx-next"
     ],
     "productSupport": "Host ZFS no longer supported in the resulting image contract",
-    "implementationStatus": "Implemented; independent security/QA review approved; 44 focused kernel fixtures pass; hosted dependency/image validation in progress",
+    "implementationStatus": "Implemented and validated: 44 focused kernel fixtures, representative hosted transaction/offline repeat and all four builds/runtime inspections PASS",
     "preservedControls": [
       "Authenticate kernel/publisher inputs before mutation",
       "Remove only reviewed package names",
@@ -1208,7 +1432,7 @@
       "status": "pass",
       "heavyWorkPerformed": false
     },
-    "integrationRun": null,
+    "integrationRun": "https://github.com/closure-labs/finite/actions/runs/38322036024",
     "nativeCandidateRun": "https://github.com/closure-labs/finite/actions/runs/38321177037",
     "removedPackages": [
       "kmod-zfs",
@@ -1220,7 +1444,16 @@
       "libuutil3",
       "libzfs7",
       "libzpool7"
-    ]
+    ],
+    "representativeTransaction": {
+      "run": "https://github.com/closure-labs/finite/actions/runs/38321177037",
+      "sourceRevision": "371b7f17bc02ab84da119e73becbdb4d6c87e2bc",
+      "status": "pass",
+      "offlineRepeat": "pass",
+      "scope": "Patched signed historical generic baseline; not a full recipe build or boot qualification"
+    },
+    "finalSourceRevision": "fd64b32f4667b3f366b2eafcba5c6ed9ba6431dd",
+    "testedMergeRevision": "ed7e5151f51445f4cd5e64715b6e9cef80115600"
   },
   "policyHardening": {
     "status": "Implemented; 30 focused policy tests pass",
@@ -1228,6 +1461,762 @@
     "change": "When blockKnownExploited is true, primary, related and scanner-ignored KEV matches cannot be waived by ordinary exceptions",
     "activeExceptions": 0,
     "inFlightCandidateEquivalence": "Candidate371b7f17 uses prior evaluator with empty exceptions; enforcement identical for its unchanged policy. No unchanged-image rescan warranted.",
-    "sourceRevision": null
+    "sourceRevision": "fd64b32f4667b3f366b2eafcba5c6ed9ba6431dd"
+  },
+  "msgpackConsumerReview": {
+    "status": "Applicability incomplete; no exception",
+    "baselineConsumer": "borgbackup1.4.5-1.fc44 present on retained approved standard/DX foundations",
+    "upstreamSourceCommit": "1b7d3271d2e59e27c61815ff36a29e06a9767e13",
+    "fedoraPackagingCommit": "bd24f304c025466ee6dc9b04f2ce864c640f7333",
+    "positiveMitigationPaths": [
+      "Archive deletion recreates Unpacker after parse error",
+      "Archive resynchronization creates a fresh Unpacker before retry"
+    ],
+    "openLead": "Persistent remote RPC Unpacker may be used during rollback after malformed authenticated-server input; runtime path requires proof",
+    "impactEvidence": "Official advisory states crash/DoS, not established RCE or privilege escalation",
+    "requiredProof": [
+      "Bind candidate shipped source to authenticated owning RPMs",
+      "Inventory all consumers across profiles",
+      "Bounded hosted RPC cleanup/error-boundary regression"
+    ],
+    "sourceHashes": {
+      "helpers/msgpack.py": "4d4c0bae662768e7d51a531441fa36bc2efe18388a08e36a10ee2abfc9272817",
+      "archive.py": "d8748f7144db81a80e9c2445ed3ef880124986a2c9bcb7b138810cd5c5abeca2",
+      "remote.py": "7464f1832f9421da6b468c63760b97af9e33eb9ce6bbce72dd36891bdd7b493d"
+    },
+    "limit": "Reviewed upstream/packaging source is not proof of all actual shipped consumers or candidate bytes"
+  },
+  "retainedOstreeApplicability": {
+    "status": "Positive cataloger/location mapping; reachability unknown; no exception or automatic fix",
+    "sourceRun": "https://github.com/closure-labs/finite/actions/runs/38324348014",
+    "image": "ghcr.io/closure-labs/finite@sha256:567c7e90da2020ebb83f144521fdcca2ddc21009b5f42e86704be5312d9ab835",
+    "sbomSha256": "aeaa335331698c886ced33ea5c2413abc1108f87153ca66b6a0764e6e2b88c9d",
+    "triageSha256": "236238f30c3be41051c37c0b46c3a087d88ce363abfcb53fedb6114a43474fc1",
+    "historicalElfArtifacts": [
+      {
+        "id": "51598e3d686d63b3",
+        "name": "freerdp",
+        "version": "3.31.1-1.fc44",
+        "purl": "pkg:rpm/fedora/freerdp@3.31.1-1.fc44?distro=fedora-44",
+        "foundBy": "elf-binary-package-cataloger",
+        "sourceRpm": null,
+        "architecture": "x86_64",
+        "locations": [
+          {
+            "path": "/sysroot/ostree/repo/objects/08/fc2ca9ea6a75d0922298a81303b6728909c61fbfce06e2d3fd67fc0dd37eb3.file",
+            "accessPath": "/sysroot/ostree/repo/objects/08/fc2ca9ea6a75d0922298a81303b6728909c61fbfce06e2d3fd67fc0dd37eb3.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/21/3a5c69e6bcc3bcf7d7956b19a8da41060a82fa75bd699c3c9959f0b26bcf00.file",
+            "accessPath": "/sysroot/ostree/repo/objects/21/3a5c69e6bcc3bcf7d7956b19a8da41060a82fa75bd699c3c9959f0b26bcf00.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/38/3c2d58d5f6e2c6b1bdc557e0e30359ef541c6334c1e30512b9834a45198f3d.file",
+            "accessPath": "/sysroot/ostree/repo/objects/38/3c2d58d5f6e2c6b1bdc557e0e30359ef541c6334c1e30512b9834a45198f3d.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/3f/e28168bfafc35f4c5a75f362a35bd64321ad763f4b66847e9662af7ed94e24.file",
+            "accessPath": "/sysroot/ostree/repo/objects/3f/e28168bfafc35f4c5a75f362a35bd64321ad763f4b66847e9662af7ed94e24.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/5e/2a0930df64e6f7b5947801ac477c9df8fc342dce35a952c101057e9ce8de4d.file",
+            "accessPath": "/sysroot/ostree/repo/objects/5e/2a0930df64e6f7b5947801ac477c9df8fc342dce35a952c101057e9ce8de4d.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/70/fb1cf6e02ee270a7716b0af74394d3cd67703795803cd3e91e73ed4719444a.file",
+            "accessPath": "/sysroot/ostree/repo/objects/70/fb1cf6e02ee270a7716b0af74394d3cd67703795803cd3e91e73ed4719444a.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/78/c899ea8fe1653195352490c6c08f1d834ce020a03a05d1c0a560ce0ee28066.file",
+            "accessPath": "/sysroot/ostree/repo/objects/78/c899ea8fe1653195352490c6c08f1d834ce020a03a05d1c0a560ce0ee28066.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/90/0f5a7ce94df3978f0fa90ae76c51e003545a6198a1e1dc1574da12735290be.file",
+            "accessPath": "/sysroot/ostree/repo/objects/90/0f5a7ce94df3978f0fa90ae76c51e003545a6198a1e1dc1574da12735290be.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/cc/660fa41e8c2552a6420a11618989048bd2839fda442f4fb88f5f1f9e71544f.file",
+            "accessPath": "/sysroot/ostree/repo/objects/cc/660fa41e8c2552a6420a11618989048bd2839fda442f4fb88f5f1f9e71544f.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/dd/d3626787a3803f4939a8a4fdfefad644e87d69a98be326d692a5fb300b09c8.file",
+            "accessPath": "/sysroot/ostree/repo/objects/dd/d3626787a3803f4939a8a4fdfefad644e87d69a98be326d692a5fb300b09c8.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/e5/b082ca2a33265d41523bc7e190657afa530421ff868267bfcc94d39c330c36.file",
+            "accessPath": "/sysroot/ostree/repo/objects/e5/b082ca2a33265d41523bc7e190657afa530421ff868267bfcc94d39c330c36.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/fe/06c8a0dd65816aa82b8308cb2dbbca135ff7716470b8cbe06caa20fdda2a01.file",
+            "accessPath": "/sysroot/ostree/repo/objects/fe/06c8a0dd65816aa82b8308cb2dbbca135ff7716470b8cbe06caa20fdda2a01.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          }
+        ]
+      },
+      {
+        "id": "832458a868f92cb1",
+        "name": "hplip",
+        "version": "3.26.4-7.fc44",
+        "purl": "pkg:rpm/fedora/hplip@3.26.4-7.fc44?distro=fedora-44",
+        "foundBy": "elf-binary-package-cataloger",
+        "sourceRpm": null,
+        "architecture": "x86_64",
+        "locations": [
+          {
+            "path": "/sysroot/ostree/repo/objects/00/de3f9c4c554a6a5c1f16b8ff12b2e2337f1ae813727b6409331079b8fd1a73.file",
+            "accessPath": "/sysroot/ostree/repo/objects/00/de3f9c4c554a6a5c1f16b8ff12b2e2337f1ae813727b6409331079b8fd1a73.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/04/79590e9fd51a07ff34f19a0271b45f9664333ef16d3614821291d7cbc7a2bb.file",
+            "accessPath": "/sysroot/ostree/repo/objects/04/79590e9fd51a07ff34f19a0271b45f9664333ef16d3614821291d7cbc7a2bb.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/0d/f073805f0b58f234cecfb49a6f2253df37d4635dbd7daa57b34cdabb4c0fe0.file",
+            "accessPath": "/sysroot/ostree/repo/objects/0d/f073805f0b58f234cecfb49a6f2253df37d4635dbd7daa57b34cdabb4c0fe0.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/27/1eed261f27cc08f7f488c8be691422ca801f179667b97a17aeff4ff9947265.file",
+            "accessPath": "/sysroot/ostree/repo/objects/27/1eed261f27cc08f7f488c8be691422ca801f179667b97a17aeff4ff9947265.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/35/78e5c92f01d8c902afb1cdaa259f4bdf4f1a8cc026a7103cff3758ed3174ba.file",
+            "accessPath": "/sysroot/ostree/repo/objects/35/78e5c92f01d8c902afb1cdaa259f4bdf4f1a8cc026a7103cff3758ed3174ba.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/3c/6cbb12cdb934c571f6bc7d5dbca27ae49fb9fd2eddf5a4ab2a36fe4822c360.file",
+            "accessPath": "/sysroot/ostree/repo/objects/3c/6cbb12cdb934c571f6bc7d5dbca27ae49fb9fd2eddf5a4ab2a36fe4822c360.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/3d/bff1c4c23af3979b4508bec9e74f7b513e1afc88d6fbd22728286ec67aa1a6.file",
+            "accessPath": "/sysroot/ostree/repo/objects/3d/bff1c4c23af3979b4508bec9e74f7b513e1afc88d6fbd22728286ec67aa1a6.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/4a/46a724a8c53b5d60885396efa8efc3fc78c38833883ce0810d101affa3a0b5.file",
+            "accessPath": "/sysroot/ostree/repo/objects/4a/46a724a8c53b5d60885396efa8efc3fc78c38833883ce0810d101affa3a0b5.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/6c/7699708ea8bcd9a2b3fbce5f943c3727b9935caf1b2e94c34c9ebb4673daf3.file",
+            "accessPath": "/sysroot/ostree/repo/objects/6c/7699708ea8bcd9a2b3fbce5f943c3727b9935caf1b2e94c34c9ebb4673daf3.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/8a/9b406d16cbb52d90e4c0d4d8047a719c0dff9233102b09b86820bcce2591db.file",
+            "accessPath": "/sysroot/ostree/repo/objects/8a/9b406d16cbb52d90e4c0d4d8047a719c0dff9233102b09b86820bcce2591db.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/a0/bc785d5832bdef2bd456060d604604df5471c683d089ee264bfaeddfa2173a.file",
+            "accessPath": "/sysroot/ostree/repo/objects/a0/bc785d5832bdef2bd456060d604604df5471c683d089ee264bfaeddfa2173a.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/a7/85ae7943bc7fed41a880c18ff3cbd3aa7c2b7dc933d98f37cb1f4a502e8cb6.file",
+            "accessPath": "/sysroot/ostree/repo/objects/a7/85ae7943bc7fed41a880c18ff3cbd3aa7c2b7dc933d98f37cb1f4a502e8cb6.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/ad/bb8a20025d62efdcab860ad753abeed882d3c610f9536443fc099d35ad5096.file",
+            "accessPath": "/sysroot/ostree/repo/objects/ad/bb8a20025d62efdcab860ad753abeed882d3c610f9536443fc099d35ad5096.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/fb/bb149c97996a60d4683c81e44a3ab8cb0600147a0d3d2e270a7ce8d765ef97.file",
+            "accessPath": "/sysroot/ostree/repo/objects/fb/bb149c97996a60d4683c81e44a3ab8cb0600147a0d3d2e270a7ce8d765ef97.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          }
+        ]
+      },
+      {
+        "id": "8d7d41d045a0e840",
+        "name": "libX11",
+        "version": "1.8.13-1.fc44",
+        "purl": "pkg:rpm/fedora/libX11@1.8.13-1.fc44?distro=fedora-44",
+        "foundBy": "elf-binary-package-cataloger",
+        "sourceRpm": null,
+        "architecture": "x86_64",
+        "locations": [
+          {
+            "path": "/sysroot/ostree/repo/objects/20/fd368c6ef59a03052c894b0ee85762a3fb3d42e04f444ed01b3ab6eebccc5b.file",
+            "accessPath": "/sysroot/ostree/repo/objects/20/fd368c6ef59a03052c894b0ee85762a3fb3d42e04f444ed01b3ab6eebccc5b.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/ee/8d08fca8066484e4434c2e00b6d903eb990e468a1c1f8df8c776c6924fe466.file",
+            "accessPath": "/sysroot/ostree/repo/objects/ee/8d08fca8066484e4434c2e00b6d903eb990e468a1c1f8df8c776c6924fe466.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          }
+        ]
+      },
+      {
+        "id": "6e2e0ee34e795397",
+        "name": "sudo",
+        "version": "1.9.17-8.p2.fc44",
+        "purl": "pkg:rpm/fedora/sudo@1.9.17-8.p2.fc44?distro=fedora-44",
+        "foundBy": "elf-binary-package-cataloger",
+        "sourceRpm": null,
+        "architecture": "x86_64",
+        "locations": [
+          {
+            "path": "/sysroot/ostree/repo/objects/2d/55b0fff3b7631f197ab913d5d3ebdd6d9c38616839f93c363c3abb1351a421.file",
+            "accessPath": "/sysroot/ostree/repo/objects/2d/55b0fff3b7631f197ab913d5d3ebdd6d9c38616839f93c363c3abb1351a421.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/52/cac06ccdd3efc5f8c80b60de93d49e85ed47026ce5cae1bb54983eb28fd20e.file",
+            "accessPath": "/sysroot/ostree/repo/objects/52/cac06ccdd3efc5f8c80b60de93d49e85ed47026ce5cae1bb54983eb28fd20e.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/78/e2902dd7e33beb531b82805fc89eca835acb0f93504ac33aaf2c0859a12730.file",
+            "accessPath": "/sysroot/ostree/repo/objects/78/e2902dd7e33beb531b82805fc89eca835acb0f93504ac33aaf2c0859a12730.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/7e/8ac7147cf68e62449bec1462e849c3c61817ae0f38bee427f386d70a2260a6.file",
+            "accessPath": "/sysroot/ostree/repo/objects/7e/8ac7147cf68e62449bec1462e849c3c61817ae0f38bee427f386d70a2260a6.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/a5/55ec936ffe0e1f7f8b5296ed8562100a02efe2882dc89285264c1e48fe65d1.file",
+            "accessPath": "/sysroot/ostree/repo/objects/a5/55ec936ffe0e1f7f8b5296ed8562100a02efe2882dc89285264c1e48fe65d1.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/ab/901a0e4895ce40fe51915c3a8c8f401344a1cccf4fc4d1a70e97909ae53e70.file",
+            "accessPath": "/sysroot/ostree/repo/objects/ab/901a0e4895ce40fe51915c3a8c8f401344a1cccf4fc4d1a70e97909ae53e70.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/b8/cc979cb470f24fb55ef7ee4035bb088795c7ede78d309e66f9788f196c299b.file",
+            "accessPath": "/sysroot/ostree/repo/objects/b8/cc979cb470f24fb55ef7ee4035bb088795c7ede78d309e66f9788f196c299b.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/c4/510356252c5c37a429c3558becea19c23236d8361b2d48ac453282d8fb7d57.file",
+            "accessPath": "/sysroot/ostree/repo/objects/c4/510356252c5c37a429c3558becea19c23236d8361b2d48ac453282d8fb7d57.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/e5/f9c200658a33130bd22f6643ec2e696d727a05690bea05af448bff9d2d4e3b.file",
+            "accessPath": "/sysroot/ostree/repo/objects/e5/f9c200658a33130bd22f6643ec2e696d727a05690bea05af448bff9d2d4e3b.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/ee/d7df948529b63be0039542545464f6e60b89e64496129e82ffefd93c88fb61.file",
+            "accessPath": "/sysroot/ostree/repo/objects/ee/d7df948529b63be0039542545464f6e60b89e64496129e82ffefd93c88fb61.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          },
+          {
+            "path": "/sysroot/ostree/repo/objects/f6/9505f1cfe5b818675d4d4ef3c50620a280e44e54d6e1c6edf5546ee06439a0.file",
+            "accessPath": "/sysroot/ostree/repo/objects/f6/9505f1cfe5b818675d4d4ef3c50620a280e44e54d6e1c6edf5546ee06439a0.file",
+            "annotations": {
+              "evidence": "primary"
+            }
+          }
+        ]
+      }
+    ],
+    "liveRpmArtifacts": [
+      {
+        "id": "79d28165f091c8d9",
+        "name": "freerdp-libs",
+        "version": "2:3.32.1-1.fc44",
+        "purl": "pkg:rpm/bluefin/freerdp-libs@3.32.1-1.fc44?arch=x86_64&distro=bluefin-44&epoch=2&upstream=freerdp-3.32.1-1.fc44.src.rpm",
+        "foundBy": "rpm-db-cataloger",
+        "sourceRpm": "freerdp-3.32.1-1.fc44.src.rpm",
+        "architecture": "x86_64",
+        "locations": [
+          {
+            "path": "/usr/share/rpm/rpmdb.sqlite",
+            "accessPath": "/usr/share/rpm/rpmdb.sqlite",
+            "annotations": {
+              "evidence": "primary"
+            }
+          }
+        ]
+      },
+      {
+        "id": "574c1c60077d2e59",
+        "name": "hplip",
+        "version": "3.26.6-1.fc44",
+        "purl": "pkg:rpm/bluefin/hplip@3.26.6-1.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.6-1.fc44.src.rpm",
+        "foundBy": "rpm-db-cataloger",
+        "sourceRpm": "hplip-3.26.6-1.fc44.src.rpm",
+        "architecture": "x86_64",
+        "locations": [
+          {
+            "path": "/usr/share/rpm/rpmdb.sqlite",
+            "accessPath": "/usr/share/rpm/rpmdb.sqlite",
+            "annotations": {
+              "evidence": "primary"
+            }
+          }
+        ]
+      },
+      {
+        "id": "e00240306b4361af",
+        "name": "hplip-common",
+        "version": "3.26.6-1.fc44",
+        "purl": "pkg:rpm/bluefin/hplip-common@3.26.6-1.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.6-1.fc44.src.rpm",
+        "foundBy": "rpm-db-cataloger",
+        "sourceRpm": "hplip-3.26.6-1.fc44.src.rpm",
+        "architecture": "x86_64",
+        "locations": [
+          {
+            "path": "/usr/share/rpm/rpmdb.sqlite",
+            "accessPath": "/usr/share/rpm/rpmdb.sqlite",
+            "annotations": {
+              "evidence": "primary"
+            }
+          }
+        ]
+      },
+      {
+        "id": "99abb5e49bd3a5a4",
+        "name": "hplip-libs",
+        "version": "3.26.6-1.fc44",
+        "purl": "pkg:rpm/bluefin/hplip-libs@3.26.6-1.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.6-1.fc44.src.rpm",
+        "foundBy": "rpm-db-cataloger",
+        "sourceRpm": "hplip-3.26.6-1.fc44.src.rpm",
+        "architecture": "x86_64",
+        "locations": [
+          {
+            "path": "/usr/share/rpm/rpmdb.sqlite",
+            "accessPath": "/usr/share/rpm/rpmdb.sqlite",
+            "annotations": {
+              "evidence": "primary"
+            }
+          }
+        ]
+      },
+      {
+        "id": "be9196a76fc61ce3",
+        "name": "libX11",
+        "version": "1.8.13-3.fc44",
+        "purl": "pkg:rpm/bluefin/libX11@1.8.13-3.fc44?arch=x86_64&distro=bluefin-44&upstream=libX11-1.8.13-3.fc44.src.rpm",
+        "foundBy": "rpm-db-cataloger",
+        "sourceRpm": "libX11-1.8.13-3.fc44.src.rpm",
+        "architecture": "x86_64",
+        "locations": [
+          {
+            "path": "/usr/share/rpm/rpmdb.sqlite",
+            "accessPath": "/usr/share/rpm/rpmdb.sqlite",
+            "annotations": {
+              "evidence": "primary"
+            }
+          }
+        ]
+      },
+      {
+        "id": "161924c68c55a3b8",
+        "name": "libX11-common",
+        "version": "1.8.13-3.fc44",
+        "purl": "pkg:rpm/bluefin/libX11-common@1.8.13-3.fc44?arch=noarch&distro=bluefin-44&upstream=libX11-1.8.13-3.fc44.src.rpm",
+        "foundBy": "rpm-db-cataloger",
+        "sourceRpm": "libX11-1.8.13-3.fc44.src.rpm",
+        "architecture": "noarch",
+        "locations": [
+          {
+            "path": "/usr/share/rpm/rpmdb.sqlite",
+            "accessPath": "/usr/share/rpm/rpmdb.sqlite",
+            "annotations": {
+              "evidence": "primary"
+            }
+          }
+        ]
+      },
+      {
+        "id": "3adccae7060395f0",
+        "name": "libX11-xcb",
+        "version": "1.8.13-3.fc44",
+        "purl": "pkg:rpm/bluefin/libX11-xcb@1.8.13-3.fc44?arch=x86_64&distro=bluefin-44&upstream=libX11-1.8.13-3.fc44.src.rpm",
+        "foundBy": "rpm-db-cataloger",
+        "sourceRpm": "libX11-1.8.13-3.fc44.src.rpm",
+        "architecture": "x86_64",
+        "locations": [
+          {
+            "path": "/usr/share/rpm/rpmdb.sqlite",
+            "accessPath": "/usr/share/rpm/rpmdb.sqlite",
+            "annotations": {
+              "evidence": "primary"
+            }
+          }
+        ]
+      },
+      {
+        "id": "984b22da29b61907",
+        "name": "libwinpr",
+        "version": "2:3.32.1-1.fc44",
+        "purl": "pkg:rpm/bluefin/libwinpr@3.32.1-1.fc44?arch=x86_64&distro=bluefin-44&epoch=2&upstream=freerdp-3.32.1-1.fc44.src.rpm",
+        "foundBy": "rpm-db-cataloger",
+        "sourceRpm": "freerdp-3.32.1-1.fc44.src.rpm",
+        "architecture": "x86_64",
+        "locations": [
+          {
+            "path": "/usr/share/rpm/rpmdb.sqlite",
+            "accessPath": "/usr/share/rpm/rpmdb.sqlite",
+            "annotations": {
+              "evidence": "primary"
+            }
+          }
+        ]
+      },
+      {
+        "id": "a52c9afd6eb2df14",
+        "name": "sudo",
+        "version": "1.9.17-10.p2.fc44",
+        "purl": "pkg:rpm/bluefin/sudo@1.9.17-10.p2.fc44?arch=x86_64&distro=bluefin-44&upstream=sudo-1.9.17-10.p2.fc44.src.rpm",
+        "foundBy": "rpm-db-cataloger",
+        "sourceRpm": "sudo-1.9.17-10.p2.fc44.src.rpm",
+        "architecture": "x86_64",
+        "locations": [
+          {
+            "path": "/usr/share/rpm/rpmdb.sqlite",
+            "accessPath": "/usr/share/rpm/rpmdb.sqlite",
+            "annotations": {
+              "evidence": "primary"
+            }
+          }
+        ]
+      }
+    ],
+    "interpretation": "Older FreeRDP, HPLIP, libX11 and sudo ELF versions were observed only at retained /sysroot/ostree/repo/objects locations in this selected triage, while live RPM catalog entries reflect implemented fixed floors. Cataloger/CPE/location metadata does not prove these bytes are unreachable, that a backport applies, or that all matches/profiles are cleared."
+  },
+  "currentRiskPolicy": {
+    "mode": "upstream-maintained-risk",
+    "authorization": "User approved upstream-maintenance responsibility for ordinary inherited risks, retaining dangerous desktop/container blockers",
+    "seriousGroups": 45,
+    "seriousAliases": 102,
+    "activeReviewedDispositions": 0,
+    "activeExceptions": 0,
+    "rules": [
+      "Independently authenticate approved immutable baseline; Finite overrides remain separately accountable",
+      "Ordinary findings remain advisory under verified baseline",
+      "KEV remains nonwaivable",
+      "Reviewed serious aliases block regardless of severity or fix availability",
+      "Untriaged Critical and unknown applicability remain blocked pending complete artifact proof"
+    ],
+    "evaluationStatus": "COMPLETED diagnostic policy evaluation; vulnerability verdict BLOCKED",
+    "nextKernelHold": "7.2.9-300.fc45 lacks October XFS/AMD source fixes; stable301 promotion or explicit reviewed testing approval and signed/module/boot proof required",
+    "reference": "docs/desktop-risk-policy.md",
+    "focusedTestCount": 212,
+    "focusedTestBreakdown": {
+      "policy": 66,
+      "upstream": 43,
+      "reliability": 35,
+      "localCandidate": 23,
+      "selection": 16,
+      "comparison": 14,
+      "approvedBaseline": 11,
+      "delivery": 4
+    },
+    "sourceReview": "Independent source/integration and final parser reviews approved",
+    "pullRequest": "https://github.com/closure-labs/finite/pull/145",
+    "initialSourceRevision": "e3dbac1cdd02fc6d1226ef3e93a2cc8deeaf6764",
+    "policySourceRevision": "e599d99f10e6ffbddd835a95a62e7a5ffea7d251",
+    "policySha256": "59fd1f0604b819ccabd1dd8e54190b200d3f78173877d192234a6788aecf4dfb",
+    "evaluation": {
+      "schema": 1,
+      "status": "blocked",
+      "sourceRun": 38321177037,
+      "sourceRevision": "371b7f17bc02ab84da119e73becbdb4d6c87e2bc",
+      "evaluationRevision": "44e9f977196c34243ff93d16841f9f316ca6b748",
+      "evaluationRun": "38327429782",
+      "evaluatedAt": "2026-10-13T00:29:01.365784+00:00",
+      "scannedAt": "2026-10-12T23:36:05.319441986Z",
+      "image": "ghcr.io/closure-labs/finite@sha256:567c7e90da2020ebb83f144521fdcca2ddc21009b5f42e86704be5312d9ab835",
+      "policySha256": "59fd1f0604b819ccabd1dd8e54190b200d3f78173877d192234a6788aecf4dfb",
+      "rawScanSha256": "fa9933e0dce8752f14644ac43d4e7528c7adb806bc5b2b735b559a6e54c38179",
+      "sbomSha256": "aeaa335331698c886ced33ea5c2413abc1108f87153ca66b6a0764e6e2b88c9d",
+      "oldStrictUniquePairs": 261,
+      "oldStrictBlockingRecords": 725,
+      "blockedUniquePairs": 121,
+      "advisoryUniquePairs": 421,
+      "blockedRecords": 318,
+      "advisoryRecords": 995,
+      "knownExploitedRecords": 0,
+      "blockingReasons": {
+        "untriaged-critical": 26,
+        "reviewed-serious-risk": 95
+      },
+      "releaseBlockers": [],
+      "exceptionsApplied": 0,
+      "dispositionChanges": 104,
+      "persistent": 186,
+      "newlyObservedInExpandedPolicyScope": 356,
+      "notObservedReviewRequired": 95,
+      "releaseEligible": false,
+      "signatureVerified": false,
+      "completeRecipeBuild": false,
+      "newScanPerformed": false,
+      "publisherEvidenceReusedFrom": {
+        "run": 38322036024,
+        "job": 115053297540,
+        "logSha256": "1875077dc6fdfdbfcc26cfa7d618a57c04404088f234ee4deaca718d1408b644",
+        "actualTestedRevision": "ed7e5151f51445f4cd5e64715b6e9cef80115600"
+      },
+      "limits": [
+        "Diagnostic patched copy only; production signing/boot/complete-image qualification still required.",
+        "New policy observes more severities and unfixed findings; new counts are not newly introduced vulnerable content.",
+        "Retained OSTree objects and unknown reachability are not automatically cleared."
+      ]
+    },
+    "evaluationArtifacts": {
+      "summary.json": "0571ff565d83fed3f06792827827db9ed4fdb3d63107e22f69fffa744d25ff72",
+      "security-result.json": "d79824b95b9e61cd0a97887a81a74bd003617634cbb5d38b1177e81c9ba64ba7",
+      "comparison.json": "8e422f2a1b0602c0146a76422aefba12e00c9961170b751e0b38f172f9b3f416",
+      "approved-baseline.json": "92cba48ee6751a92660570184577b071bc40ecb168a96b066345d2bf44ecfb25",
+      "upstream-verification.json": "f248d8fc47acf0463db1c113f35d1ed178f27fcdbe30ff76ce7c40f1752719a8"
+    },
+    "blockerLedger": "docs/desktop-risk-blockers-2026-10-12.json",
+    "sourceValidation": {
+      "run": 38327424786,
+      "url": "https://github.com/closure-labs/finite/actions/runs/38327424786",
+      "sourceRevision": "e599d99f10e6ffbddd835a95a62e7a5ffea7d251",
+      "testedMergeRevision": "79715d7b413e910dcf6c4ae7d26a95e6849dcbbb",
+      "baseRevision": "bd78c07f25412484d90310f76e5dd0807014ebe1",
+      "status": "PASS",
+      "checks": [
+        "selection",
+        "documentation",
+        "Nix/runtime/source contracts",
+        "CI gate"
+      ],
+      "imageBuilds": "skipped; no image inputs changed",
+      "publication": "skipped"
+    },
+    "evaluationArtifact": {
+      "name": "retained-desktop-risk-review-38327429782-1",
+      "sha256": "e543e971080d2d6b789e1425d2301e92027f41ca50a6387faee2e169298a821e",
+      "sizeBytes": 79930,
+      "releaseEligible": false
+    },
+    "blockerLedgerSha256": "e31d779012b39f089258b38bc3f4c7fed5ab997e16498f4e14f934b0eea94fd2"
+  },
+  "historicalBlockerSnapshotBeforeReconciliation": [
+    {
+      "scope": "Approved Fedora44 Python/rclone package fixes",
+      "owners": [
+        "Fedora python-anyio maintainers",
+        "Fedora python-msgpack maintainers",
+        "Fedora rclone maintainers",
+        "Finite dependency/security review"
+      ],
+      "status": "Fresh approved Fedora44 metadata remains blocked in run38314613864; no probe error",
+      "unblockEvents": [
+        "Approved signed Fedora44 NEVR providing AnyIO>=4.14.2, msgpack>=1.2.1 and rclone>=1.75.1, or exact reviewed authenticated source/backport proof for the corresponding advisories",
+        "Refresh approved repository metadata, authenticate payloads and validate compatible owning-RPM transaction before extending floors"
+      ]
+    },
+    {
+      "scope": "Remaining shipped embedded Go/compiler fixes and ownership gaps",
+      "owners": [
+        "Owning Fedora package maintainers",
+        "Tailscale stable publisher",
+        "Sigstore Cosign publisher",
+        "Finite artifact/ownership review"
+      ],
+      "status": "Blocked; partial Tailscale/Cosign updates do not clear all findings",
+      "unblockEvents": [
+        "Publisher rebuilds of actual shipped owning executables with required compiler and embedded-module fixes; upgrading an installed compiler alone is insufficient",
+        "Authenticate exact binaries and reassess every affected live path/profile and historical OSTree location or prove its reachability/applicability with reviewed evidence",
+        "Fresh native scan and ledger comparison preserve new/persistent findings, unknown coverage and KEV enforcement"
+      ]
+    },
+    {
+      "scope": "Fedora45 next-kernel security fixes",
+      "owners": [
+        "Fedora45 kernel stable-update publisher",
+        "Finite source/boot qualification",
+        "User for the separate pending testing preference"
+      ],
+      "status": "301 testing/gating-passed/stable-requested; no stable date or implemented exception",
+      "unblockEvents": [
+        "Approved stable-tag promotion of a same-stream kernel containing the October XFS/AMD fixes, or a separately explicit reviewed testing exception",
+        "Authenticate all five exact signed RPMs and required module manifests, validate replacement/initramfs and affected-profile Secure Boot/LUKS install/upgrade/rollback",
+        "Pending/gating-failed7.2.10 is excluded; stable request and karma are not publication proof"
+      ]
+    },
+    {
+      "scope": "Latest-source candidate/build/security/signing/boot qualification",
+      "owners": [
+        "Finite implementation and independent QA/security review"
+      ],
+      "status": "Pending new ZFS-removal source; historical source checks cannot validate changed code",
+      "unblockEvents": [
+        "Validate changed all-profile ZFS-removal source with focused and pinned Nix contracts; then one representative patched copy and all four exact-source builds",
+        "Complete first unpublished patched-copy native scan and honest baseline comparison without release eligibility; retain exact manifest/source/result hashes",
+        "Obtain passing production digest-bound security policy, isolated signing and affected-profile boot qualification before release eligibility"
+      ]
+    },
+    {
+      "scope": "Retirement of retained repository signing-key copy",
+      "owners": [
+        "Finite administrator and delivery workflow review"
+      ],
+      "status": "Deferred; isolated environments retain migrated signing keys",
+      "unblockEvents": [
+        "Successful protected-main signing through the image-signing/release environment secrets and evidence that old workflows/runs no longer need the repository copy",
+        "Retire the repository copy only after environment-based signing succeeds and old dependent runs retire; no secret re-export or retirement is performed by this continuation"
+      ]
+    },
+    {
+      "scope": "Authorized removal of host ZFS across all four profiles",
+      "owners": [
+        "Finite kernel/filesystem implementation",
+        "Finite independent QA/security validation"
+      ],
+      "status": "User decision completed; explicit removal implementation and fresh validation pending",
+      "unblockEvents": [
+        "Remove only the reviewed ZFS package names from all four images while preserving signed sources, unrelated RPM inventory and stale-tree ownership guards",
+        "Pass new focused/source/Nix contracts, one useful changed-candidate scan and all-four-profile integration; record host ZFS unsupported",
+        "No matching ZFS publisher module or further ZFS approval is required for the chosen product direction; no storage VM qualification is claimed"
+      ]
+    }
+  ],
+  "completedActionableWork": {
+    "allProfileZfsRemoval": "PASS; remove kmod-zfs,zfs,python3-pyzfs only; preserve shared libraries and unrelated ownership/inventory",
+    "genericKernelAndInitramfs": "PASS signed replacement transaction/offline repeat and both generic assembled images; boot still pending",
+    "cosignRuntimeAndSourceContracts": "PASS all four runtime inspections/source identity; embedded modules not automatically cleared",
+    "nativeDiagnosticAndRecovery": "Completed once; native old-policy result retained, semantic 89-layer/SBOM/comparison binding recovered; no repeat scan/build needed"
+  },
+  "buildIdentityMigration": {
+    "status": "One-time computed identity migration from corrected self-hash/excluded-field algorithm; main reconciliation rebuild required once",
+    "subsequentPolicyOnlyEdits": "Stable build identity; no repeated image rebuild solely for later policy edits",
+    "historicalEvidence": "Do not recompute/relabel fd64 matrix or unpublished native candidate identities; retain their originally observed bytes/identity"
+  },
+  "externalMainAdvance": {
+    "pr": 144,
+    "mergeRevision": "bd78c07f25412484d90310f76e5dd0807014ebe1",
+    "mergedAt": "2026-10-13T00:19:33Z",
+    "performedByThisContinuation": false,
+    "policyFollowupBase": "main",
+    "runtimeEvidenceSourceRevision": "fd64b32f4667b3f366b2eafcba5c6ed9ba6431dd"
+  },
+  "policyEvaluationProbe": {
+    "runs": [
+      38327092869,
+      38327201274
+    ],
+    "verdict": "probe-error; no security pass",
+    "reason": "Actual Grype 0.112.0 zero-value fix.state with empty fix.versions is unspecified fix data; parser remediation under official schema review.",
+    "records": 91,
+    "metadataSha256": "6b2942c70fc8dc216ecbf649c9c2d0fe75845d6e4a99b8756878d16a25232de2",
+    "officialSources": [
+      "https://github.com/anchore/grype/blob/v0.112.0/grype/presenter/models/vulnerability.go",
+      "https://github.com/anchore/grype/blob/v0.112.0/grype/vulnerability/fix.go"
+    ],
+    "newScanPerformed": false,
+    "parserRemediation": "Accept only Grype zero-value state with empty versions as unknown fix metadata; preserve raw scan and fail closed on malformed data.",
+    "focusedPolicyTests": 66,
+    "fixImplemented": true
+  },
+  "cancelledRedundantMainRun": {
+    "run": 38326674435,
+    "sourceRevision": "bd78c07f25412484d90310f76e5dd0807014ebe1",
+    "reason": "Same source already passed four-profile merge-queue validation38324842229; unchanged approved AnyIO4.13.0 and other known old-policy findings still block its publication. User previously instructed cancellation of demonstrably doomed or redundant runs.",
+    "cancelRequested": true,
+    "status": "cancelled"
+  },
+  "temporaryValidationCleanup": {
+    "branch": "audit/desktop-zfs-validation",
+    "status": "deleted after evidence retention",
+    "verifiedRemoteMatches": 0,
+    "workspaceRegistration": "forgotten; local files retained"
   }
 }

@@ -19,5 +19,674 @@
   ],
   "blockKnownExploited": true,
   "exceptions": [],
-  "coverageProbePackage": "openssl"
+  "coverageProbePackage": "openssl",
+  "mode": "upstream-maintained-risk",
+  "seriousAdvisories": [
+    {
+      "id": "ssh-revoked-certificate-authority",
+      "advisories": [
+        "CVE-2026-42508",
+        "GHSA-5cgq-3rg8-m6cv",
+        "GO-2026-5021"
+      ],
+      "riskClass": "authentication-bypass",
+      "reason": "SSH certificate verification can accept a revoked signing CA. Affected SSH server/client consumers need artifact-specific reachability proof; desktop VPN and development tools are in scope.",
+      "officialSources": [
+        "https://github.com/advisories/GHSA-5cgq-3rg8-m6cv"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "anyio-tls-unicode-hostname",
+      "advisories": [
+        "CVE-2026-63374",
+        "GHSA-82r6-8w77-94w6"
+      ],
+      "riskClass": "tls-identity-bypass",
+      "reason": "TLSStream IDNA2003 hostname handling can validate a lookalike domain certificate after traffic redirection. Do not assume every shipped AnyIO consumer pre-encodes names safely.",
+      "officialSources": [
+        "https://github.com/agronholm/anyio/security/advisories/GHSA-82r6-8w77-94w6"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "ssh-fido-user-presence",
+      "advisories": [
+        "CVE-2026-39831",
+        "GHSA-89gr-r52h-f8rx",
+        "GO-2026-5019"
+      ],
+      "riskClass": "authentication-bypass",
+      "reason": "FIDO/U2F verification fails to enforce user presence, defeating hardware-key touch authorization in affected SSH consumers.",
+      "officialSources": [
+        "https://github.com/advisories/GHSA-89gr-r52h-f8rx"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "ssh-agent-destination-constraints",
+      "advisories": [
+        "CVE-2026-39832",
+        "GHSA-f5wc-c3c7-36mc",
+        "GO-2026-5006"
+      ],
+      "riskClass": "authentication-bypass",
+      "reason": "Agent forwarding can silently discard destination constraints and expose unrestricted signing authority to a remote host.",
+      "officialSources": [
+        "https://github.com/advisories/GHSA-f5wc-c3c7-36mc"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "ssh-agent-confirm-before-use",
+      "advisories": [
+        "CVE-2026-39833",
+        "GHSA-jppx-rxg9-jmrx",
+        "GO-2026-5005"
+      ],
+      "riskClass": "authentication-bypass",
+      "reason": "The in-memory SSH agent accepts but does not enforce ConfirmBeforeUse, allowing signing without the requested user confirmation.",
+      "officialSources": [
+        "https://github.com/advisories/GHSA-jppx-rxg9-jmrx"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "ssh-public-key-source-address",
+      "advisories": [
+        "CVE-2026-46595",
+        "GHSA-x527-x647-q7gg",
+        "GO-2026-5023"
+      ],
+      "riskClass": "authentication-bypass",
+      "reason": "VerifiedPublicKeyCallback paths can accept certificates without enforcing source-address restrictions. Consumer-specific callback proof is required.",
+      "officialSources": [
+        "https://github.com/advisories/GHSA-x527-x647-q7gg"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "rclone-rc-auth-proxy",
+      "advisories": [
+        "CVE-2026-88044",
+        "GHSA-p569-5gjg-9cmj"
+      ],
+      "riskClass": "authentication-bypass",
+      "reason": "RC serve/start can ignore per-server authProxy when the global option is empty, permitting unintended FTP access and bypassing backend authorization/routing. The dedicated CLI path differs; supported RC use is not presumed absent.",
+      "officialSources": [
+        "https://github.com/rclone/rclone/security/advisories/GHSA-p569-5gjg-9cmj"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "rclone-s3-auth-proxy",
+      "advisories": [
+        "CVE-2026-88018",
+        "GHSA-xwwr-4h3p-r22c"
+      ],
+      "riskClass": "authentication-bypass",
+      "reason": "S3 auth-proxy serving without auth-key can accept arbitrary client access keys using an empty signing secret. Conditional server use is not globally excluded.",
+      "officialSources": [
+        "https://github.com/rclone/rclone/security/advisories/GHSA-xwwr-4h3p-r22c"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "grpc-noncanonical-method-path",
+      "advisories": [
+        "CVE-2026-33186",
+        "GHSA-p77j-4mvh-x3m3"
+      ],
+      "riskClass": "authentication-bypass",
+      "reason": "An HTTP/2 method path without its initial slash can still route to a handler while evading path-based deny authorization interceptors.",
+      "officialSources": [
+        "https://github.com/grpc/grpc-go/security/advisories/GHSA-p77j-4mvh-x3m3"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "grpc-xds-rbac-fail-open",
+      "advisories": [
+        "GHSA-hrxh-6v49-42gf"
+      ],
+      "riskClass": "authentication-bypass",
+      "reason": "The advisory includes xDS RBAC matchers silently ignored during policy translation, allowing authorization to fail open; accompanying DoS issues do not reduce this impact.",
+      "officialSources": [
+        "https://github.com/grpc/grpc-go/security/advisories/GHSA-hrxh-6v49-42gf"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "buildkit-untrusted-frontend-write",
+      "advisories": [
+        "CVE-2026-33747",
+        "GHSA-4c29-8rgm-jvjj"
+      ],
+      "riskClass": "container-escape",
+      "reason": "An untrusted custom BuildKit frontend can write outside its storage root. Container builds from hostile sources are supported desktop/development use.",
+      "officialSources": [
+        "https://github.com/moby/buildkit/security/advisories/GHSA-4c29-8rgm-jvjj"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "buildkit-git-subdirectory-escape",
+      "advisories": [
+        "CVE-2026-33748",
+        "GHSA-4vrq-3vrq-g6gg"
+      ],
+      "riskClass": "container-escape",
+      "reason": "An untrusted Git URL subdirectory can expose files outside the checkout on the same filesystem, crossing the build input boundary.",
+      "officialSources": [
+        "https://github.com/moby/buildkit/security/advisories/GHSA-4vrq-3vrq-g6gg"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "podman-image-host-environment",
+      "advisories": [
+        "CVE-2026-57231",
+        "GHSA-4hq8-gpf5-8p68"
+      ],
+      "riskClass": "unresolved-serious",
+      "reason": "A malicious image can inherit and exfiltrate the invoking host environment, including session credentials. Impact depends on secrets present; absence of secrets is not established for supported container use.",
+      "officialSources": [
+        "https://github.com/podman-container-tools/podman/security/advisories/GHSA-4hq8-gpf5-8p68"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "podman-machine-image-tls",
+      "advisories": [
+        "CVE-2025-6032",
+        "GHSA-65gg-3w2w-hr4h"
+      ],
+      "riskClass": "tls-identity-bypass",
+      "reason": "Podman machine image downloads can omit TLS certificate verification, allowing a substituted VM image. Linux host identity alone does not establish this command is unavailable.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-65gg-3w2w-hr4h"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "runc-procfs-write-escape",
+      "advisories": [
+        "CVE-2025-52881",
+        "GHSA-cgrx-mc8f-2prm"
+      ],
+      "riskClass": "container-escape",
+      "reason": "Racing mount/procfs write redirection can disable LSM labels or direct sysctl writes to privileged host controls. SELinux is not a blanket mitigation for this boundary violation.",
+      "officialSources": [
+        "https://github.com/opencontainers/runc/security/advisories/GHSA-cgrx-mc8f-2prm"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "podman-kube-volume-symlink",
+      "advisories": [
+        "CVE-2025-9566",
+        "GHSA-wp3j-xq48-xpjw"
+      ],
+      "riskClass": "container-escape",
+      "reason": "Repeated kube play with ConfigMap/Secret volumes can follow a container-created symlink and overwrite host files. The attacker selects the host target even though file contents come from the manifest.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-wp3j-xq48-xpjw"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "moby-archive-destination-escape",
+      "advisories": [
+        "CVE-2026-17106",
+        "GHSA-hfg8-hc9c-6c3h"
+      ],
+      "riskClass": "desktop-takeover",
+      "reason": "A crafted archive can create or overwrite arbitrary paths writable by the extractor outside its destination, affecting hostile archive/container workflows.",
+      "officialSources": [
+        "https://github.com/moby/go-archive/security/advisories/GHSA-hfg8-hc9c-6c3h"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "rclone-local-links-arbitrary-write",
+      "advisories": [
+        "CVE-2026-54572",
+        "GHSA-cf44-9pgv-m4xc"
+      ],
+      "riskClass": "desktop-takeover",
+      "reason": "Copying attacker-controlled remote objects with --links can create escaping symlinks and overwrite user startup or authorization files, enabling code execution as the desktop user.",
+      "officialSources": [
+        "https://github.com/rclone/rclone/security/advisories/GHSA-cf44-9pgv-m4xc"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "rclone-restic-backend-root-escape",
+      "advisories": [
+        "CVE-2026-71309",
+        "GHSA-45pq-889g-fcgh"
+      ],
+      "riskClass": "major-data-loss",
+      "reason": "Restic serving can accept leading parent path components and read/write/delete objects outside the published root on affected backends. Backend and server exposure need explicit proof.",
+      "officialSources": [
+        "https://github.com/rclone/rclone/security/advisories/GHSA-45pq-889g-fcgh"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "rclone-restic-private-repository-escape",
+      "advisories": [
+        "CVE-2026-59733",
+        "GHSA-fqj9-69pf-6pjg"
+      ],
+      "riskClass": "major-data-loss",
+      "reason": "An authenticated restic user can traverse into other users backup repositories on affected backends, exposing or destroying backup data despite --private-repos.",
+      "officialSources": [
+        "https://github.com/rclone/rclone/security/advisories/GHSA-fqj9-69pf-6pjg"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "rclone-ftp-session-backend-confusion",
+      "advisories": [
+        "CVE-2026-88017",
+        "GHSA-c476-6w5q-jw77"
+      ],
+      "riskClass": "authentication-bypass",
+      "reason": "Concurrent accepted credentials for one FTP username can rebind an existing session to another credential-dependent backend. This supported conditional configuration cannot be presumed absent.",
+      "officialSources": [
+        "https://github.com/rclone/rclone/security/advisories/GHSA-c476-6w5q-jw77"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "rclone-sftp-powershell-command-injection",
+      "advisories": [
+        "CVE-2026-71312",
+        "GHSA-2m8m-jhrm-w6j2"
+      ],
+      "riskClass": "desktop-takeover",
+      "reason": "Attacker-controlled SFTP filenames can inject commands when remote hashing uses PowerShell. The affected execution is remote as the users SSH account; a Linux client does not make that remote-shell use inapplicable.",
+      "officialSources": [
+        "https://github.com/rclone/rclone/security/advisories/GHSA-2m8m-jhrm-w6j2"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "fulcio-oidc-identity-and-token-boundary",
+      "advisories": [
+        "CVE-2026-49478",
+        "GHSA-f5mr-q85p-6hh6"
+      ],
+      "riskClass": "authentication-bypass",
+      "reason": "Fulcio server OIDC discovery can substitute JWKS or leak Kubernetes tokens across hosts. A module match in Cosign alone neither proves server reachability nor proves it absent; artifact-specific evidence is required.",
+      "officialSources": [
+        "https://github.com/sigstore/fulcio/security/advisories/GHSA-f5mr-q85p-6hh6"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "go-unix-root-symlink-escape",
+      "advisories": [
+        "CVE-2026-39822",
+        "GHSA-xcgv-8mv7-v8c7",
+        "GO-2026-4970"
+      ],
+      "riskClass": "desktop-takeover",
+      "reason": "Unix os.Root operations can follow final symlinks with trailing separators outside the root. Hostile filesystem input can cross a consumer confinement boundary; exact consumers remain to be proven.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-4970"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "go-idna-privilege-check-confusion",
+      "advisories": [
+        "CVE-2026-39821",
+        "GO-2026-5026"
+      ],
+      "riskClass": "authentication-bypass",
+      "reason": "IDNA conversion can admit ASCII-only punycode that changes privilege-check inputs after conversion. Affected identity/authorization consumers require specific proof.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5026"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "go-module-sumdb-tile-forgery",
+      "advisories": [
+        "CVE-2026-56865",
+        "GO-2026-6179"
+      ],
+      "riskClass": "desktop-takeover",
+      "reason": "A malicious module proxy can forge checksum-database tile responses and persist altered modules in the local cache, undermining development supply-chain verification.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6179"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "go-module-sumdb-log-confusion",
+      "advisories": [
+        "CVE-2026-56864",
+        "GO-2026-6180"
+      ],
+      "riskClass": "desktop-takeover",
+      "reason": "A malicious module proxy and checksum database can supply module content not committed to the verified log. Development dependency/toolchain trust is in scope.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6180"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "ssh-other-auth-source-address",
+      "advisories": [
+        "CVE-2026-56854",
+        "GO-2026-6303"
+      ],
+      "riskClass": "authentication-bypass",
+      "reason": "SSH source-address critical options are not enforced on affected password, keyboard-interactive, no-auth and GSSAPI callback paths. This extends a distinct earlier public-key defect.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6303"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "go-connect-response-desynchronization",
+      "advisories": [
+        "CVE-2026-56866",
+        "GO-2026-6605"
+      ],
+      "riskClass": "unresolved-serious",
+      "reason": "Non-success HTTP/1 CONNECT responses can desynchronize pooled client connections; proxy cross-user response poisoning is a serious conditional boundary violation, not merely a process crash.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6605"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "go-http2-forwarded-response-smuggling",
+      "advisories": [
+        "CVE-2026-78660",
+        "GO-2026-6610"
+      ],
+      "riskClass": "unresolved-serious",
+      "reason": "Malformed HTTP/2 framing headers forwarded to a lenient HTTP/1 peer can allow response smuggling. Supported reverse-proxy exposure and downstream strictness need proof.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6610"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "go-connect-request-smuggling",
+      "advisories": [
+        "CVE-2026-94439",
+        "GO-2026-6613"
+      ],
+      "riskClass": "unresolved-serious",
+      "reason": "Continuing HTTP/1 parsing after successful CONNECT without Hijack can enable request smuggling across intermediate proxy boundaries. Exact server use remains unproven.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6613"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "go-compiler-induction-bounds-corruption",
+      "advisories": [
+        "CVE-2026-27143",
+        "GHSA-cfp9-33rc-j74f",
+        "GO-2026-4868"
+      ],
+      "riskClass": "unresolved-serious",
+      "reason": "Compiler induction-variable overflow can omit bounds checks and cause memory corruption in otherwise safe Go. An updated compiler alone does not repair already compiled shipped programs.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-4868"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "go-compiler-array-copy-corruption",
+      "advisories": [
+        "CVE-2026-27144",
+        "GHSA-cqrx-3m42-5p5w",
+        "GO-2026-4867"
+      ],
+      "riskClass": "unresolved-serious",
+      "reason": "Compiler alias analysis around converted array-copy operands can cause runtime memory corruption. The originating compiler and rebuilding affected artifacts must be verified.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-4867"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "go-swig-build-code-smuggling",
+      "advisories": [
+        "CVE-2026-27140",
+        "GHSA-5w89-2c2x-6x66",
+        "GO-2026-4871"
+      ],
+      "riskClass": "desktop-takeover",
+      "reason": "Crafted SWIG filenames can bypass a build trust boundary and execute arbitrary code. Building development dependencies from hostile sources is supported.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-4871"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "go-toolchain-checksum-bypass",
+      "advisories": [
+        "CVE-2026-42501",
+        "GHSA-qf3q-3h68-mmh2",
+        "GO-2026-4984"
+      ],
+      "riskClass": "desktop-takeover",
+      "reason": "A malicious module proxy can bypass checksum validation and supply a toolchain that is executed during version selection. Fixing the installed compiler alone does not establish all embedded artifacts are cleared.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-4984"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "go-x509-email-constraint-bypass",
+      "advisories": [
+        "CVE-2026-27137",
+        "GHSA-7hfw-r8qc-89v4",
+        "GO-2026-4599"
+      ],
+      "riskClass": "tls-identity-bypass",
+      "reason": "Multiple email constraints sharing a local part can be applied incorrectly during chain validation, weakening certificate identity restrictions in affected consumers.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-4599"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "go-x509-wildcard-dns-constraint-bypass",
+      "advisories": [
+        "CVE-2026-33810",
+        "GHSA-fv83-x2xw-2j55",
+        "GO-2026-4866"
+      ],
+      "riskClass": "tls-identity-bypass",
+      "reason": "Excluded DNS constraints can miss differently cased wildcard SANs in otherwise trusted chains; trust in the root CA does not restore the omitted constraint.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-4866"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "go-cgo-dns-double-free",
+      "advisories": [
+        "CVE-2026-33811",
+        "GHSA-497x-jcxf-m478",
+        "GO-2026-4981"
+      ],
+      "riskClass": "unresolved-serious",
+      "reason": "A hostile long CNAME response can trigger a C memory double-free through the cgo resolver. The publisher establishes crash/memory unsafety, not proven code execution; cgo reachability needs artifact proof.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-4981"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "python-tls-sni-context-use-after-free",
+      "advisories": [
+        "CVE-2026-19445",
+        "GHSA-7jvw-f348-84gq"
+      ],
+      "riskClass": "unresolved-serious",
+      "reason": "A remote TLS client can trigger a freed-pointer call in servers whose SNI callback changes SSLContext without retaining the original. Clients and servers retaining their listening context differ; exact shipped server use must be proven.",
+      "officialSources": [
+        "https://github.com/python/cpython/issues/156293"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "libx11-xkb-map-buffer-overflow",
+      "advisories": [
+        "CVE-2026-88806",
+        "GHSA-xrgw-w7v2-3qp8"
+      ],
+      "riskClass": "unresolved-serious",
+      "reason": "A malicious X server can overflow a libX11 XKB key-symbol map. Wayland/SELinux alone does not prove all shipped X11 client connections or remote display use are absent.",
+      "officialSources": [
+        "https://gitlab.freedesktop.org/xorg/lib/libx11/-/merge_requests/309"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "hplip-cve-2026-91097",
+      "advisories": [
+        "CVE-2026-91097",
+        "GHSA-52x8-q22p-3rrf"
+      ],
+      "riskClass": "unresolved-serious",
+      "reason": "HPs CNA identifies an out-of-bounds write reachable over a network with active user interaction and high integrity impact. Exact HPLIP consumer/path and memory-safety consequences remain to be proven.",
+      "officialSources": [
+        "https://support.hp.com/us-en/document/ish_15646959-15646984-16/hpsbpi04151",
+        "https://cveawg.mitre.org/api/cve/CVE-2026-91097"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "hplip-cve-2026-91098",
+      "advisories": [
+        "CVE-2026-91098",
+        "GHSA-mq8j-7fcj-wmh8"
+      ],
+      "riskClass": "unresolved-serious",
+      "reason": "HPs CNA identifies a heap buffer overflow reachable over a network with active user interaction and high confidentiality, integrity and availability impact. Do not presume SELinux prevents user-level corruption or credential loss.",
+      "officialSources": [
+        "https://support.hp.com/us-en/document/ish_15646959-15646984-16/hpsbpi04151",
+        "https://cveawg.mitre.org/api/cve/CVE-2026-91098"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "hplip-cve-2026-91100",
+      "advisories": [
+        "CVE-2026-91100",
+        "GHSA-c8c7-3cv3-4g6g"
+      ],
+      "riskClass": "desktop-takeover",
+      "reason": "HPs CNA identifies local OS command injection without attacker privileges and with active user interaction. This is a code-execution boundary even though the publishers CVSS rating is Medium; exact shipped HPLIP input path remains to be proven.",
+      "officialSources": [
+        "https://support.hp.com/us-en/document/ish_15646959-15646984-16/hpsbpi04151",
+        "https://cveawg.mitre.org/api/cve/CVE-2026-91100"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "hplip-cve-2026-91102",
+      "advisories": [
+        "CVE-2026-91102",
+        "GHSA-8j52-r29c-rv2m"
+      ],
+      "riskClass": "desktop-takeover",
+      "reason": "HPs CNA identifies local OS command injection without attacker privileges and with active user interaction, with high confidentiality, integrity and availability impact. Exact shipped HPLIP input path remains to be proven.",
+      "officialSources": [
+        "https://support.hp.com/us-en/document/ish_15646959-15646984-16/hpsbpi04151",
+        "https://cveawg.mitre.org/api/cve/CVE-2026-91102"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    },
+    {
+      "id": "hplip-cve-2026-91105",
+      "advisories": [
+        "CVE-2026-91105",
+        "GHSA-q37h-fx57-6fhg"
+      ],
+      "riskClass": "unresolved-serious",
+      "reason": "HPs CNA identifies a network-reachable heap buffer overflow with active user interaction and high confidentiality, integrity and availability impact. The actual shipped input path and backported fix require proof.",
+      "officialSources": [
+        "https://support.hp.com/us-en/document/ish_15646959-15646984-16/hpsbpi04151",
+        "https://cveawg.mitre.org/api/cve/CVE-2026-91105"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T00:00:29Z"
+    }
+  ],
+  "reviewedDispositions": [],
+  "releaseBlockers": [
+    {
+      "id": "next-kernel-october-source-fixes",
+      "profiles": [
+        "bluefin-next",
+        "bluefin-dx-next"
+      ],
+      "riskClass": "major-data-loss",
+      "reason": "Pinned Fedora 45 kernel 7.2.9-300 lacks the reviewed October XFS/AMD fixes. Missing scanner matches do not establish source-fix coverage. The fixed 301 build has not reached an approved stable tag in retained official evidence.",
+      "officialSources": [
+        "https://src.fedoraproject.org/rpms/kernel/c/c2cdc6c5c0c6ccc0128613fc7c9d276ebaf870c7.patch",
+        "https://gitlab.com/cki-project/kernel-ark/-/commit/fa3bfc1343f7f3b1ebd873eee5e3e6618918f434.patch"
+      ],
+      "reviewedBy": "great_cto desktop kernel source review",
+      "reviewedAt": "2026-10-13T00:00:29Z",
+      "unblockEvidence": "Approved same-stream stable kernel containing the reviewed fixes, or separately explicit reviewed testing approval; authenticate exact Fedora payloads and validate transaction, module preservation, initramfs and boot qualification before reviewing removal of this hold."
+    }
+  ]
 }

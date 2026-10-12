@@ -13,6 +13,7 @@ SPEC = importlib.util.spec_from_file_location('security_policy', ROOT / 'scripts
 security = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(security)
 SEVERITIES = ['Unknown', 'Negligible', 'Low', 'Medium', 'High', 'Critical']
+DISPOSITIONS = ('blocked', 'exception', 'advisory')
 
 
 def read(path):
@@ -28,6 +29,8 @@ def findings(entries):
         raise ValueError('Findings must be a list')
     result = {}
     for entry in entries:
+        if not isinstance(entry, dict):
+            raise ValueError('Finding must be an object')
         key = entry['component'], entry['advisory']
         if not all(isinstance(value, str) and value.strip() for value in key):
             raise ValueError('Finding requires exact component and advisory')
@@ -47,6 +50,24 @@ def findings(entries):
         aggregate['fixVersions'] = sorted(set(aggregate['fixVersions']) | set(fixes))
         aggregate['occurrences'] += count
     return result
+
+
+def previous_dispositions(ledger, previous):
+    """Retain stated dispositions; identify legacy blocking-ledger inference."""
+    result = {key: set() for key in previous}
+    for entry in ledger['findings']:
+        dispositions = entry.get('dispositions')
+        if dispositions is None and 'disposition' in entry:
+            dispositions = [entry['disposition']]
+        if dispositions is not None:
+            if (not isinstance(dispositions, list) or not dispositions or
+                    any(value not in DISPOSITIONS for value in dispositions)):
+                raise ValueError('Invalid baseline finding dispositions')
+            result[(entry['component'], entry['advisory'])].update(dispositions)
+    for key, values in result.items():
+        if not values:
+            values.add('blocked' if ledger['status'] == 'blocked' else 'unknown')
+    return {key: sorted(values) for key, values in result.items()}
 
 
 def compare(ledger, result, image, policy, policy_sha256, now=None):
@@ -77,24 +98,50 @@ def compare(ledger, result, image, policy, policy_sha256, now=None):
             type(result['databaseCoverageRecords']) is not int or result['databaseCoverageRecords'] < 1):
         raise ValueError('Result lacks validated digest/distribution/inventory coverage')
     previous = findings(ledger['findings'])
-    blocked, waived = findings(result['blocked']), findings(result['exceptionsApplied'])
-    if (result['status'] == 'blocked') != bool(blocked):
-        raise ValueError('Result status contradicts its blocking findings')
-    current = findings([*result['blocked'], *result['exceptionsApplied']])
+    risk_mode = policy.get('mode') == 'upstream-maintained-risk'
+    if risk_mode and result.get('mode') != 'upstream-maintained-risk':
+        raise ValueError('Result does not identify the reviewed risk policy mode')
+    if risk_mode and 'advisories' not in result:
+        raise ValueError('Risk policy result must retain advisory observations')
+    if risk_mode and 'releaseBlockers' not in result:
+        raise ValueError('Risk policy result must retain reviewed source release blockers')
+    holds = security.release_blockers({'releaseBlockers': result.get('releaseBlockers', [])}, now)
+    advisory_entries = result.get('advisories', [])
+    blocked, waived, advisories = (findings(result['blocked']), findings(result['exceptionsApplied']),
+                                   findings(advisory_entries))
+    if (result['status'] == 'blocked') != bool(blocked or holds):
+        raise ValueError('Result status contradicts its blocking findings or source release blockers')
+    current = findings([*result['blocked'], *result['exceptionsApplied'], *advisory_entries])
+    previous_groups = previous_dispositions(ledger, previous)
+    explicit_previous = {(entry['component'], entry['advisory']) for entry in ledger['findings']
+                         if 'dispositions' in entry or 'disposition' in entry}
     for key, entry in current.items():
-        entry['dispositions'] = [name for name, group in [('blocked', blocked), ('exception', waived)]
+        entry['dispositions'] = [name for name, group in [('blocked', blocked), ('exception', waived),
+                                                         ('advisory', advisories)]
                                  if key in group]
     persistent = sorted(previous.keys() & current.keys())
     return {'schema': 1, 'status': 'comparison-complete', 'baselineImage': ledger['image'],
             'image': image, 'scannedAt': result['scannedAt'], 'scanStatus': result['status'],
             'baselinePolicySha256': ledger['policySha256'], 'policySha256': policy_sha256,
             'policyChanged': ledger['policySha256'] != policy_sha256,
-            'scope': 'Exact component/advisory pairs in policy-enforced findings, including reviewed exceptions.',
-            'note': 'Not observed does not mean resolved: package versions, advisory matching, coverage or policy may change. This summary comparison does not replace native evidence verification or remediation review.',
+            'releaseBlockers': holds,
+            'scope': 'Exact component/advisory pairs observed in blocking findings, reviewed exceptions, and advisories. Policy disposition changes do not resolve findings.',
+            'counts': {'blockingRecords': sum(entry['occurrences'] for entry in blocked.values()),
+                       'exceptionRecords': sum(entry['occurrences'] for entry in waived.values()),
+                       'advisoryRecords': sum(entry['occurrences'] for entry in advisories.values()),
+                       'releaseBlockerRecords': len(holds),
+                       'observedPairs': len(current)},
+            'note': 'Not observed does not mean resolved: package versions, advisory matching, coverage or policy may change. Expanded advisory observation scope can add new pairs without new vulnerable content. A changed disposition does not mean a fix. This summary comparison does not replace native evidence verification or remediation review.',
             'persistent': [current[key] for key in persistent],
             'new': [current[key] for key in sorted(current.keys() - previous.keys())],
             'notObserved': [{**previous[key], 'remediationStatus': 'review-required'}
                             for key in sorted(previous.keys() - current.keys())],
+            'dispositionChanges': [{'component': key[0], 'advisory': key[1],
+                                    'previous': previous_groups[key], 'current': current[key]['dispositions'],
+                                    'previousBasis': 'explicit' if key in explicit_previous
+                                        else 'legacy-blocking-ledger' if ledger['status'] == 'blocked' else 'unknown',
+                                    'remediationStatus': 'review-required'}
+                                   for key in persistent if set(previous_groups[key]) != set(current[key]['dispositions'])],
             'severityChanges': [{'component': key[0], 'advisory': key[1],
                                  'previous': previous[key]['severity'], 'current': current[key]['severity']}
                                 for key in persistent if previous[key]['severity'] != current[key]['severity']]}
