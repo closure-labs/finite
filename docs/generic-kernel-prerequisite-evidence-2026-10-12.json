@@ -1,0 +1,73 @@
+{
+  "schema": 1,
+  "purpose": "Signed generic kernel candidate and exact compatibility blocker; no installed update or scan clearance",
+  "baseImage": "ghcr.io/ublue-os/bluefin@sha256:61c3d546bea3a0012378214de3603d9eadc2111330765a4a31b14215d4bacaea",
+  "candidateRelease": "7.2.9-201.fc44.x86_64",
+  "fedora": 44,
+  "architectures": [
+    "x86_64"
+  ],
+  "availability": {
+    "run": "https://github.com/closure-labs/finite/actions/runs/38301720702",
+    "head": "27ce72faeacd69cb17cd5ac90423d68e8ea4afdc",
+    "sha256": "0ea283a0ac23d4365720798a4fb25768efe20a2f91b924f268bb0639e814b7a7",
+    "raw": "kernel-core\\t6.19.10-300.fc44\\tx86_64\\tfedora\\tkernel-core-0:6.19.10-300.fc44.x86_64\nkernel-core\\t7.2.9-201.fc44\\tx86_64\\tupdates\\tkernel-core-0:7.2.9-201.fc44.x86_64\nkernel-modules-core\\t6.19.10-300.fc44\\tx86_64\\tfedora\\tkernel-modules-core-0:6.19.10-300.fc44.x86_64\nkernel-modules-core\\t7.2.9-201.fc44\\tx86_64\\tupdates\\tkernel-modules-core-0:7.2.9-201.fc44.x86_64\nkernel-modules-extra\\t6.19.10-300.fc44\\tx86_64\\tfedora\\tkernel-modules-extra-0:6.19.10-300.fc44.x86_64\nkernel-modules-extra\\t7.2.9-201.fc44\\tx86_64\\tupdates\\tkernel-modules-extra-0:7.2.9-201.fc44.x86_64\nkernel-modules\\t6.19.10-300.fc44\\tx86_64\\tfedora\\tkernel-modules-0:6.19.10-300.fc44.x86_64\nkernel-modules\\t7.2.9-201.fc44\\tx86_64\\tupdates\\tkernel-modules-0:7.2.9-201.fc44.x86_64\nkernel\\t6.19.10-300.fc44\\tx86_64\\tfedora\\tkernel-0:6.19.10-300.fc44.x86_64\nkernel\\t7.2.9-201.fc44\\tx86_64\\tupdates\\tkernel-0:7.2.9-201.fc44.x86_64\n"
+  },
+  "authentication": {
+    "run": "https://github.com/closure-labs/finite/actions/runs/38302087723",
+    "head": "b01f55c73c78d6facee3c330523d3ac5758b105d",
+    "keySource": "Pinned official Fedora44 container, /etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-44-x86_64",
+    "sourceContainer": "registry.fedoraproject.org/fedora@sha256:1ff9eb02e4e2d7fb1175becac7139b2960c4fdcccedce81c86ec25b98ef3124d",
+    "keySha256": "93642aec521a1e5e96dd715f7ae0ec0850ebc9de09a94ce03cae5263f26cc18a",
+    "keyFingerprint": "36F612DCF27F7D1A48A835E4DBFCF71C6D9F90A6",
+    "packages": [
+      {
+        "file": "kernel-7.2.9-201.fc44.x86_64.rpm",
+        "sha256": "80fe202b417fe6fc1ca8669f5e8e715a52c6448e5671ebeccbeb4a894eb9304a"
+      },
+      {
+        "file": "kernel-core-7.2.9-201.fc44.x86_64.rpm",
+        "sha256": "37a879e76a894fe32c19a13607a118ae4f006572370b9ddaf689ca2698e3be20"
+      },
+      {
+        "file": "kernel-modules-7.2.9-201.fc44.x86_64.rpm",
+        "sha256": "8ad8b1bca78532130f8ff7e10baa010518ef8a6c9edfabb087078af2a93ddc4f"
+      },
+      {
+        "file": "kernel-modules-core-7.2.9-201.fc44.x86_64.rpm",
+        "sha256": "01277433853490efb2d907b95ac9f1923c1c0ab0d467a7fb7e5d49ebf8123179"
+      },
+      {
+        "file": "kernel-modules-extra-7.2.9-201.fc44.x86_64.rpm",
+        "sha256": "542cdab5cccbee23fc3ff57a9c5a1f6fa4ae9d87aef1b1994a27eb233f324544"
+      }
+    ],
+    "signatures": "/probe/kernel-7.2.9-201.fc44.x86_64.rpm:\n    Header OpenPGP V4 RSA/SHA256 signature, key fingerprint: 36f612dcf27f7d1a48a835e4dbfcf71c6d9f90a6: OK\n    Header SHA256 digest: OK\n    Payload SHA256 digest: OK\nkernel\t7.2.9-201.fc44.x86_64\n/probe/kernel-core-7.2.9-201.fc44.x86_64.rpm:\n    Header OpenPGP V4 RSA/SHA256 signature, key fingerprint: 36f612dcf27f7d1a48a835e4dbfcf71c6d9f90a6: OK\n    Header SHA256 digest: OK\n    Payload SHA256 digest: OK\nkernel-core\t7.2.9-201.fc44.x86_64\n/probe/kernel-modules-7.2.9-201.fc44.x86_64.rpm:\n    Header OpenPGP V4 RSA/SHA256 signature, key fingerprint: 36f612dcf27f7d1a48a835e4dbfcf71c6d9f90a6: OK\n    Header SHA256 digest: OK\n    Payload SHA256 digest: OK\nkernel-modules\t7.2.9-201.fc44.x86_64\n/probe/kernel-modules-core-7.2.9-201.fc44.x86_64.rpm:\n    Header OpenPGP V4 RSA/SHA256 signature, key fingerprint: 36f612dcf27f7d1a48a835e4dbfcf71c6d9f90a6: OK\n    Header SHA256 digest: OK\n    Payload SHA256 digest: OK\nkernel-modules-core\t7.2.9-201.fc44.x86_64\n/probe/kernel-modules-extra-7.2.9-201.fc44.x86_64.rpm:\n    Header OpenPGP V4 RSA/SHA256 signature, key fingerprint: 36f612dcf27f7d1a48a835e4dbfcf71c6d9f90a6: OK\n    Header SHA256 digest: OK\n    Payload SHA256 digest: OK\nkernel-modules-extra\t7.2.9-201.fc44.x86_64\n",
+    "artifactHashes": {
+      "hashes.txt": "9cf63edc041b9fadfe33fcaadb600ce200a7c13bcd1dbcbec2655b3326606127",
+      "key-identity.txt": "abb5f09ab0d200116f3bda5ed4ac8ac5b2809a771b57d76d2d2dcfc681e2e304",
+      "signatures.txt": "fe1d6442ae6ac5432f740de844e331263c72e57d441b6f890c528cea599ea834"
+    }
+  },
+  "compatibility": {
+    "run": "https://github.com/closure-labs/finite/actions/runs/38302232585",
+    "head": "b60f247ca3e8ad427fd065a7ba7eef7895addc47",
+    "sha256": "1e2158c7492d493b127da44b5871ce757728cdede318b5eaf751ae0938075311",
+    "status": "blocked",
+    "mode": "read-only --assumeno; no package installation",
+    "inheritedPackages": {
+      "kmod-v4l2loopback": "0.15.4-1.fc44.x86_64",
+      "v4l2loopback": "0.15.4-1.fc44.x86_64",
+      "kernel-devel-matched": "7.2.5-200.fc44.x86_64"
+    },
+    "blockingRequirement": "kmod-v4l2loopback requires kernel-uname-r = 7.2.5-200.fc44.x86_64",
+    "approvedMatchingModule": "not found in queried Fedora/fedora-updates metadata",
+    "solverSummary": "Conflicting kernel-core and broken kernel/v4l2loopback dependencies; skips proposed packages and prints Nothing to do. Exit 0 does not establish compatibility.",
+    "unblock": "Authenticated matching-kernel v4l2loopback module/package set and compatible development dependencies, or a reviewed authenticated Bluefin base providing them."
+  },
+  "verdicts": {
+    "sourcePrerequisites": "five payloads authenticated; compatibility blocked",
+    "vulnerabilityClearance": "unknown for candidate; baseline remains blocked",
+    "releaseEligibility": "blocked; no changed kernel image or boot qualification"
+  }
+}
