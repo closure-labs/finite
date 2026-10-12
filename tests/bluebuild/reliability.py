@@ -13,7 +13,8 @@ import subprocess
 import tempfile
 import sys
 import unittest
-from unittest.mock import patch
+import yaml
+from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -28,6 +29,9 @@ def load(name, path):
 identity = load('image_identity_test', 'scripts/ci/image_identity.py')
 kernel = load('kernel_update_test', 'scripts/ci/kernel-update.py')
 release = load('release_test', 'scripts/bluebuild/release-evidence.py')
+publication = load('publication_reliability', 'scripts/bluebuild/publication.py')
+unlock = load('unlock_vm_test', 'scripts/bluebuild/unlock-vm.py')
+redact = load('redact_vm_test', 'scripts/bluebuild/redact-vm-logs.py')
 
 
 class ImageIdentity(unittest.TestCase):
@@ -196,7 +200,7 @@ class ReleaseEvidence(unittest.TestCase):
                              'updateChannel': 'ghcr.io/closure-labs/finite:finite',
                              'installer': {'finiteRevision': 'revision'}}
         self.acceptance = {'candidate': self.image, 'profile': 'bluefin-generic',
-                           'accepted': True, 'secureBoot': True, 'revision': 'revision',
+                           'accepted': True, 'secureBoot': True, 'encryptedRoot': True, 'revision': 'revision',
                            'buildIdentity': 'identity', 'previousDigest': 'previous'}
         self.publication = {'revision': 'revision', 'profile': 'bluefin-generic',
                             'buildIdentity': 'identity', 'previousDigest': 'previous'}
@@ -227,6 +231,200 @@ class ReleaseEvidence(unittest.TestCase):
         self.assertEqual(release.latest_artifact(artifacts, prefix), prefix + '2')
         with self.assertRaises(ValueError):
             release.latest_artifact([{'name': prefix + '1', 'expired': True}], prefix)
+
+
+class PromotionQualification(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        self.evidence = self.root / '.bluebuild'
+        self.evidence.mkdir()
+        self.profile = 'bluefin-generic'
+        self.image = 'ghcr.io/closure-labs/finite@sha256:' + 'a' * 64
+        self.record = {'publish': True, 'profile': self.profile, 'tags': ['finite', 'latest'],
+                       'revision': 'revision', 'publishedDigest': '', 'previousDigest': '',
+                       'recoveryReason': '', 'buildIdentity': 'identity',
+                       'qualificationMode': 'enforce', 'qualify': False}
+        self.acceptance = {'accepted': True, 'candidate': self.image, 'previousDigest': '',
+                           'profile': self.profile, 'revision': 'revision', 'buildIdentity': 'identity',
+                           'secureBoot': True, 'encryptedRoot': True}
+        (self.evidence / (self.profile + '-publication.json')).write_text(json.dumps(self.record))
+        (self.evidence / (self.profile + '-image-ref.txt')).write_text(self.image)
+
+    def promote(self):
+        with patch.dict(os.environ, {'GITHUB_SHA': 'revision', 'FINITE_QUALIFICATION_MODE': 'enforce'}):
+            publication.promote(self.profile, self.root)
+
+    def test_daily_rebuild_with_unchanged_inputs_requires_fresh_qualification(self):
+        recipes = self.root / 'recipes'
+        recipes.mkdir()
+        recipe = recipes / (self.profile + '.yml')
+        previous = {'Digest': 'sha256:' + 'b' * 64,
+                    'Labels': {'io.finite.build-inputs': 'identity'}}
+        acceptance_path = self.evidence / (self.profile + '-acceptance.json')
+        for event in ('schedule', 'schedule', 'push', 'workflow_dispatch'):
+            with self.subTest(event=event):
+                recipe.write_text('alt-tags: [finite, latest]\nlabels:\n  test: fixture\n')
+                # Yesterday's failed or successful run must never qualify today's
+                # digest, including the first schedule after weekly failure.
+                acceptance_path.write_text(json.dumps(self.acceptance))
+                with patch.dict(os.environ, GITHUB_EVENT_NAME=event, FORCE_QUALIFICATION='false'), \
+                        patch.object(publication.upstream, 'recipes', return_value={
+                            self.profile: {'tags': ['finite', 'latest']}}), \
+                        patch.object(publication.upstream, 'image_identity', return_value='identity'), \
+                        patch.object(publication.upstream, 'inspect', return_value=previous), \
+                        patch.object(publication.subprocess, 'run'):
+                    publication.prepare(self.profile, True, self.root)
+                record = json.loads((self.evidence / (self.profile + '-publication.json')).read_text())
+                self.assertIs(record['qualify'], True)
+                self.assertFalse(acceptance_path.exists())
+
+    def test_workflow_requires_successful_qualification_and_always_downloads_evidence(self):
+        workflow = yaml.safe_load((ROOT / '.github/workflows/publication.yml').read_text())
+        self.assertNotIn('if', workflow['jobs']['qualification'])
+        promote = workflow['jobs']['promote']
+        self.assertIn("needs.qualification.result == 'success'", promote['if'])
+        self.assertNotIn("'skipped'", promote['if'])
+        self.assertIn('!cancelled()', promote['if'])
+        download = next(step for step in promote['steps'] if step.get('name') ==
+                        'Download candidate and qualification evidence')
+        self.assertNotIn('QUALIFY', download['env'])
+        self.assertNotIn('if ', download['run'])
+        self.assertIn('--name "$QUALIFICATION_ARTIFACT"', download['run'])
+
+    def test_false_qualify_flag_cannot_bypass_missing_acceptance(self):
+        with patch.object(publication.subprocess, 'run') as copy_image, self.assertRaises(ValueError):
+            self.promote()
+        copy_image.assert_not_called()
+
+    def test_every_acceptance_identity_and_security_field_is_required(self):
+        for field in self.acceptance:
+            for replacement in (None, False, 'wrong'):
+                with self.subTest(field=field, replacement=replacement):
+                    (self.evidence / (self.profile + '-acceptance.json')).write_text(
+                        json.dumps({**self.acceptance, field: replacement}))
+                    with patch.object(publication.subprocess, 'run') as copy_image, self.assertRaises(ValueError):
+                        self.promote()
+                    copy_image.assert_not_called()
+
+    def test_exact_qualified_digest_is_promoted_even_with_legacy_flag(self):
+        (self.evidence / (self.profile + '-acceptance.json')).write_text(json.dumps(self.acceptance))
+        with patch.object(publication.subprocess, 'run') as copy_image, \
+                patch.object(publication.upstream, 'inspect', return_value={'Digest': 'sha256:' + 'a' * 64}):
+            self.promote()
+        self.assertEqual(copy_image.call_count, 2)
+        for call in copy_image.call_args_list:
+            self.assertIn('docker://' + self.image, call.args[0])
+
+
+class EncryptedVmConsole(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.marker = Path(temporary.name) / 'unlock.log'
+        self.secret = b'a1' * 32
+
+    def run_console(self, chunks):
+        connection = Mock()
+        connection.recv.side_effect = [*chunks, b'']
+        log, output = io.BytesIO(), io.BytesIO()
+        unlock.relay(connection, self.secret, log, self.marker, output)
+        self.assertEqual(log.getvalue(), output.getvalue())
+        self.assertNotIn(self.secret, log.getvalue())
+        return connection, log.getvalue()
+
+    def test_fragmented_prompt_unlocks_once_and_redacts_fragmented_echo(self):
+        connection, log = self.run_console([
+            b'Booting\nPlease enter passphrase for di', b'sk QEMU (luks-test): ',
+            self.secret[:17], self.secret[17:] + b'\n',
+            b'Please enter passphrase for disk QEMU (luks-test): ', b'Booted\n'])
+        connection.sendall.assert_called_once_with(self.secret + b'\r')
+        self.assertTrue(self.marker.exists())
+        self.assertIn(b'[REDACTED]', log)
+
+    def test_login_prompt_never_receives_disk_key(self):
+        connection = Mock()
+        connection.recv.side_effect = [b'finite login: ', b'']
+        with self.assertRaisesRegex(RuntimeError, 'never requested'):
+            unlock.relay(connection, self.secret, io.BytesIO(), self.marker, io.BytesIO())
+        connection.sendall.assert_not_called()
+        self.assertFalse(self.marker.exists())
+
+    def test_long_unbroken_output_does_not_leak_key_at_buffer_boundary(self):
+        connection, log = self.run_console([
+            b'Please enter passphrase for disk QEMU (luks-test):\n',
+            b'x' * 16380 + self.secret[:32], self.secret[32:] + b'y' * 17000])
+        connection.sendall.assert_called_once()
+        self.assertIn(b'[REDACTED]', log)
+
+    def test_retained_installer_and_journal_artifacts_are_redacted(self):
+        state = self.marker.parent
+        (state / 'nested').mkdir()
+        for name in ('install.log', 'final-journal.log', 'nested/diagnostics.json'):
+            (state / name).write_bytes(b'passphrase=' + self.secret + b'\n' + self.secret)
+        public = state / 'acceptance.json'
+        public.write_text('{"accepted": true}')
+        redact.redact_logs(state, self.secret)
+        for path in state.rglob('*'):
+            if path.is_file():
+                self.assertNotIn(self.secret, path.read_bytes())
+        self.assertEqual(public.read_text(), '{"accepted": true}')
+        self.assertIn(b'[REDACTED]', (state / 'install.log').read_bytes())
+
+    def test_export_failure_never_exposes_raw_diagnostics(self):
+        state = self.marker.parent / 'private'
+        state.mkdir()
+        (state / 'install.log').write_bytes(b'passphrase=' + self.secret)
+        destination = self.marker.parent / '.bluebuild/vm-fresh'
+        with patch.object(redact, 'redact_logs', side_effect=RuntimeError('redactor failed')):
+            with self.assertRaisesRegex(RuntimeError, 'redactor failed'):
+                redact.export_logs(state, self.secret, destination)
+        self.assertFalse(destination.exists())
+        with patch.object(redact, 'redact_logs'):
+            with self.assertRaisesRegex(ValueError, 'still contain'):
+                redact.export_logs(state, self.secret, destination)
+        self.assertFalse(destination.exists())
+
+    def test_export_only_includes_sanitized_diagnostics(self):
+        state = self.marker.parent / 'private'
+        state.mkdir()
+        (state / 'install.log').write_bytes(b'passphrase=' + self.secret)
+        (state / 'acceptance.json').write_text('{"accepted": true}')
+        (state / 'ssh-key').write_bytes(self.secret)
+        (state / 'ks.cfg').write_bytes(self.secret)
+        (state / 'disk.qcow2').write_bytes(self.secret)
+        destination = self.marker.parent / '.bluebuild/vm-fresh'
+        redact.export_logs(state, self.secret, destination)
+        self.assertEqual({path.name for path in destination.iterdir()}, {'install.log', 'acceptance.json'})
+        self.assertNotIn(self.secret, (destination / 'install.log').read_bytes())
+        self.assertEqual((destination / 'acceptance.json').read_text(), '{"accepted": true}')
+
+    def test_encryption_checks_real_backing_devices_and_luks_type(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for name, body in {
+                'findmnt': 'echo "$MOUNT_SOURCE"',
+                'lsblk': '[ "$5" = /dev/mapper/luks-root ] || exit 1; echo "$TOPOLOGY"',
+                'cryptsetup': 'echo "  type: $CRYPT_TYPE"',
+            }.items():
+                path = root / name
+                path.write_text('#!' + shutil.which('bash') + '\n' + body + '\n')
+                path.chmod(0o755)
+            for kind, crypt_type, source, success in [
+                    ('crypt', 'LUKS2', '/dev/mapper/luks-root', True),
+                    ('crypt', 'LUKS2', '/dev/mapper/luks-root[/root]', True),
+                    ('part', 'LUKS2', '/dev/mapper/luks-root', False),
+                    ('crypt', 'PLAIN', '/dev/mapper/luks-root', False),
+                    ('crypt', 'LUKS2', 'composefs', False)]:
+                topology = {'blockdevices': [{'name': 'root', 'type': 'lvm',
+                                              'children': [{'name': 'luks-root', 'type': kind}]}]}
+                with self.subTest(kind=kind, crypt_type=crypt_type, source=source):
+                    result = subprocess.run(['bash', str(ROOT / 'scripts/bluebuild/check-vm-encryption.sh')],
+                        env={**os.environ, 'PATH': str(root) + ':' + os.environ['PATH'],
+                             'TOPOLOGY': json.dumps(topology), 'CRYPT_TYPE': crypt_type, 'MOUNT_SOURCE': source},
+                        capture_output=True, text=True)
+                    self.assertEqual(result.returncode == 0, success, result.stderr)
 
 
 class CliBootstrap(unittest.TestCase):

@@ -154,6 +154,27 @@ class BluefinTests(unittest.TestCase):
         with patch.object(upstream, 'inspect', side_effect=missed_publication):
             self.assertEqual(upstream.reconcile(self.root)['profiles'], ['bluefin-dx-next'])
 
+    def test_docs_push_recovers_replaced_pending_publication(self):
+        docs = {'checks': False, 'nix': False, 'profiles': []}
+        with patch.object(upstream, 'inspect', side_effect=self.published):
+            self.assertEqual(upstream.merge_impact(upstream.reconcile(self.root), docs), docs)
+        def unpublished(reference, **kwargs):
+            image = self.published(reference, **kwargs)
+            if reference.endswith(':finite-next'):
+                image['Labels']['io.finite.build-inputs'] = 'v1:' + 'd' * 64
+            return image
+        with patch.object(upstream, 'inspect', side_effect=unpublished):
+            self.assertEqual(upstream.merge_impact(upstream.reconcile(self.root), docs),
+                             {'checks': True, 'nix': False, 'profiles': ['bluefin-next']})
+
+    def test_reconciliation_preserves_diff_selection_and_payload_comparison(self):
+        pending = {'checks': True, 'nix': False, 'profiles': ['bluefin-next']}
+        impact = {'checks': True, 'nix': True, 'profiles': ['bluefin-generic']}
+        self.assertEqual(upstream.merge_impact(pending, impact),
+                         {'checks': True, 'nix': True, 'profiles': ['bluefin-generic', 'bluefin-next']})
+        with self.assertRaises(ValueError):
+            upstream.merge_impact(pending, {**impact, 'profiles': ['untrusted-profile']})
+
     def test_missing_channel_requires_recovery_but_outage_fails(self):
         with patch.object(upstream, 'inspect', return_value=None):
             self.assertEqual(set(upstream.reconcile(self.root)['profiles']), set(upstream.PROFILES))
@@ -251,7 +272,7 @@ class BluefinTests(unittest.TestCase):
         (evidence / 'bluefin-generic-image-ref.txt').write_text(candidate)
         acceptance = {'accepted': True, 'candidate': candidate, 'previousDigest': NEW,
                       'profile': 'bluefin-generic', 'revision': 'f' * 40,
-                      'buildIdentity': IDENTITY, 'secureBoot': True}
+                      'buildIdentity': IDENTITY, 'secureBoot': True, 'encryptedRoot': True}
         path = evidence / 'bluefin-generic-acceptance.json'
         with patch.dict(os.environ, GITHUB_SHA='f' * 40), patch.object(publication.subprocess, 'run') as run:
             with self.assertRaisesRegex(ValueError, 'lacks matching successful'):
@@ -320,10 +341,17 @@ class BluefinTests(unittest.TestCase):
                 publication.promote('bluefin-generic', self.root)
             run.assert_not_called()
 
+    def accepted_candidate(self, image):
+        acceptance = {'accepted': True, 'candidate': image, 'previousDigest': IMAGE,
+                      'profile': 'bluefin-generic', 'revision': 'f' * 40,
+                      'buildIdentity': IDENTITY, 'secureBoot': True, 'encryptedRoot': True}
+        (self.root / '.bluebuild/bluefin-generic-acceptance.json').write_text(json.dumps(acceptance))
+
     def test_promotion_uses_verified_digest_for_both_aliases(self):
         self.prepare()
         image = upstream.REPOSITORY + '@' + IMAGE
         (self.root / '.bluebuild/bluefin-generic-image-ref.txt').write_text(image + '\n')
+        self.accepted_candidate(image)
         with patch.dict(os.environ, GITHUB_SHA='f' * 40), patch.object(publication.subprocess, 'run') as run, patch.object(publication.upstream, 'inspect', return_value={'Digest': IMAGE}):
             publication.promote('bluefin-generic', self.root)
             self.assertEqual(run.call_count, 2)
@@ -335,6 +363,7 @@ class BluefinTests(unittest.TestCase):
     def test_failed_promotion_does_not_report_success(self):
         self.prepare()
         (self.root / '.bluebuild/bluefin-generic-image-ref.txt').write_text(upstream.REPOSITORY + '@' + IMAGE)
+        self.accepted_candidate(upstream.REPOSITORY + '@' + IMAGE)
         with patch.dict(os.environ, GITHUB_SHA='f' * 40), patch.object(publication.subprocess, 'run', side_effect=subprocess.CalledProcessError(1, 'skopeo')):
             with self.assertRaises(subprocess.CalledProcessError):
                 publication.promote('bluefin-generic', self.root)
@@ -395,7 +424,7 @@ class BluefinTests(unittest.TestCase):
         (evidence / 'bluefin-generic-image-ref.txt').write_text(image)
         accepted = {'accepted': True, 'candidate': image, 'previousDigest': IMAGE,
                     'profile': 'bluefin-generic', 'revision': 'f' * 40,
-                    'buildIdentity': IDENTITY, 'secureBoot': True}
+                    'buildIdentity': IDENTITY, 'secureBoot': True, 'encryptedRoot': True}
         with patch.dict(os.environ, GITHUB_SHA='f' * 40, FINITE_QUALIFICATION_MODE='enforce'), patch.object(publication.subprocess, 'run') as run:
             with self.assertRaises(ValueError):
                 publication.promote('bluefin-generic', self.root)

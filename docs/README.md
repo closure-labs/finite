@@ -16,4 +16,5 @@ your desktop.
 | Build, sign and release images | [CI and releases](ci-and-releases.md) |
 | Qualify workstations and retain release evidence | [Workstation qualification](workstation-qualification.md) |
 | Review CI reliability and optimization evidence | [CI optimization review](ci-optimization-review.md) |
+| Understand priorities and build sequence | [Daily-driver roadmap](roadmap.md) |
 | See changes by version | [Changelog](../CHANGELOG.md) |

@@ -14,6 +14,7 @@
         "actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0",
         "blue-build/github-action@836161eb076426a451e6a0054f722b1153b8b3ad",
         "docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c",
+        "docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069",
         "docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8",
         "hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5",
         "nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569",

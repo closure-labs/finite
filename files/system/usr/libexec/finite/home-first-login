@@ -10,6 +10,13 @@ nix="${FINITE_NIX_COMMAND:-/nix/var/nix/profiles/default/bin/nix}"
 nix_wait_seconds="${FINITE_NIX_WAIT_SECONDS:-120}"
 home_init="${FINITE_HOME_INIT_COMMAND:-/usr/libexec/finite/home-init}"
 
+# Dependency pins are user-owned. Notify about approved updates without changing them.
+app_status="${FINITE_APP_STATUS_COMMAND:-/usr/bin/finite-app-status}"
+if [[ -r "$home_flake/flake.lock" && -x "$app_status" ]]; then
+	FINITE_HOME_FLAKE_PATH="$home_flake" FINITE_HOME_TEMPLATE_PATH="$home_template" \
+		"$app_status" --notify || true
+fi
+
 current=true
 for required in customize.nix flake.nix flake.lock finite-template.json profile.json modules/finite.nix \
 	modules/finite-brew-bootstrap modules/finite-brew-migration-status modules/aspects/base/brew-packages.json; do

@@ -531,8 +531,18 @@ printf '%s\n' '{"nodes":{"root":{}},"root":"root","version":7}' \
 	>"${FINITE_HOME_FLAKE_PATH}/flake.lock"
 cp "${test_root}/profile.json" "${FINITE_HOME_FLAKE_PATH}/profile.json"
 : >"${FINITE_TEST_INIT_LOG}"
+cat >"${test_root}/app-status" <<'APP_STATUS'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >>"$FINITE_TEST_APP_STATUS_LOG"
+exit 2
+APP_STATUS
+patch_test_shebang "${test_root}/app-status"
+chmod +x "${test_root}/app-status"
+export FINITE_APP_STATUS_COMMAND="${test_root}/app-status"
+export FINITE_TEST_APP_STATUS_LOG="${test_root}/app-status.log"
 FINITE_TEST_NIX_READY=false bash "${first_login}"
 test ! -s "${FINITE_TEST_INIT_LOG}"
+grep -qxF -- '--notify' "${FINITE_TEST_APP_STATUS_LOG}"
 rm "${FINITE_HOME_FLAKE_PATH}/modules/finite-brew-bootstrap"
 bash "${first_login}"
 test -s "${FINITE_TEST_INIT_LOG}"

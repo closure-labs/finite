@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Prepare isolated candidate tags and promote only a verified image digest."""
 import argparse
-from datetime import datetime, timezone
 import importlib.util
 import json
 import os
@@ -56,9 +55,9 @@ def prepare(profile, publish, root=upstream.ROOT):
                        check=True, stdout=subprocess.DEVNULL, timeout=150)
         if (upstream.inspect(baseline).get('Labels') or {}).get('io.finite.profile') != profile:
             raise ValueError('Recovery baseline belongs to a different profile')
-    weekly = os.environ.get('GITHUB_EVENT_NAME') == 'schedule' and datetime.now(timezone.utc).weekday() == 0
-    qualify = publish and (bool(recovery_reason) or os.environ.get('FORCE_QUALIFICATION') == 'true' or weekly or not previous or
-                          (previous.get('Labels') or {}).get('io.finite.build-inputs') != build_identity)
+    # Declared inputs cannot identify floating RPM/module contents. Every
+    # published candidate must boot successfully, regardless of day or labels.
+    qualify = publish
     evidence = root / '.bluebuild'
     evidence.mkdir(exist_ok=True)
     (evidence / f'{profile}-image-ref.txt').unlink(missing_ok=True)
@@ -110,7 +109,7 @@ def promote(profile, root=upstream.ROOT):
         raise ValueError('Boot qualification must be enforced')
     acceptance_path = evidence / f'{profile}-acceptance.json'
     accepted = False
-    if record['qualify'] and acceptance_path.exists():
+    if acceptance_path.exists():
         acceptance = json.loads(acceptance_path.read_text())
         accepted = all((acceptance.get('accepted') is True,
                         acceptance.get('candidate') == image,
@@ -118,9 +117,10 @@ def promote(profile, root=upstream.ROOT):
                         acceptance.get('profile') == profile,
                         acceptance.get('revision') == record['revision'],
                         acceptance.get('buildIdentity') == record['buildIdentity'],
-                        acceptance.get('secureBoot') is True))
-    if record['qualify'] and not accepted:
-        raise ValueError('Candidate lacks matching successful Secure Boot qualification')
+                        acceptance.get('secureBoot') is True,
+                        acceptance.get('encryptedRoot') is True))
+    if not accepted:
+        raise ValueError('Candidate lacks matching successful encrypted Secure Boot qualification')
     if reason:
         current = upstream.inspect(upstream.REPOSITORY + ':' + record['tags'][0])
         if upstream.digest(current['Digest']) != record['publishedDigest']:

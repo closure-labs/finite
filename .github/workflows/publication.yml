@@ -34,7 +34,6 @@ jobs:
 
   qualification:
     needs: build
-    if: needs.build.outputs.qualify == 'true'
     permissions:
       contents: read
       packages: write
@@ -50,7 +49,7 @@ jobs:
     needs: [build, qualification]
     if: >-
       always() && !cancelled() && needs.build.result == 'success' &&
-      (needs.qualification.result == 'success' || needs.qualification.result == 'skipped')
+      needs.qualification.result == 'success'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
@@ -64,14 +63,11 @@ jobs:
       - name: Download candidate and qualification evidence
         env:
           GH_TOKEN: ${{ github.token }}
-          QUALIFY: ${{ needs.build.outputs.qualify }}
           IMAGE_ARTIFACT: ${{ needs.build.outputs.evidence }}
           QUALIFICATION_ARTIFACT: ${{ needs.qualification.outputs.evidence }}
         run: |
           gh run download "$GITHUB_RUN_ID" --name "$IMAGE_ARTIFACT" --dir .bluebuild
-          if [[ $QUALIFY == true ]]; then
-            gh run download "$GITHUB_RUN_ID" --name "$QUALIFICATION_ARTIFACT" --dir .bluebuild
-          fi
+          gh run download "$GITHUB_RUN_ID" --name "$QUALIFICATION_ARTIFACT" --dir .bluebuild
       - name: Promote verified digest to public channels
         env:
           REGISTRY_TOKEN: ${{ github.token }}

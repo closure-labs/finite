@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
     inputs:
       reconcile:
-        description: Rebuild only channels that differ from approved Bluefin digests
+        description: Rebuild only channels that differ from approved image inputs
         type: boolean
         default: false
       qualify:
@@ -30,7 +30,7 @@ jobs:
   impact:
     name: Select checks
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 35
     outputs:
       checks: ${{ steps.reconcile.outputs.checks || steps.impact.outputs.checks }}
       nix: ${{ steps.reconcile.outputs.nix || steps.impact.outputs.nix }}
@@ -44,9 +44,13 @@ jobs:
         if: ${{ !inputs.reconcile }}
         run: python3 scripts/ci/impact.py
       - uses: ./.github/actions/setup-nix
-        if: inputs.reconcile
+        if: inputs.reconcile || (github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && github.event_name == 'push')
+      # A newer pending push can replace an older image-changing push. Compare
+      # public channels as well as this push diff before deciding to skip builds.
       - id: reconcile
-        if: inputs.reconcile
+        if: inputs.reconcile || (github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && github.event_name == 'push')
+        env:
+          IMPACT: ${{ toJSON(steps.impact.outputs) }}
         run: nix develop --file lib/ci-tools.nix shell --command python3 scripts/ci/bluefin-upstream.py reconcile
 
   docs:

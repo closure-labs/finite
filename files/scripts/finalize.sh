@@ -4,7 +4,9 @@ test -s /usr/share/finite/profile.json
 test -s /usr/lib/finite/determinate-nix-seed/receipt.json
 test -d /usr/lib/finite/determinate-nix-seed/store
 test -s /usr/share/selinux/packages/determinate-nix.pp
-test -s /usr/lib/udev/rules.d/70-finite-espanso-input.rules
+test ! -e /usr/lib/udev/rules.d/70-finite-espanso-input.rules
+test -x /usr/bin/finite-keyboard-access
+test -x /usr/bin/finite-app-status
 test -s /usr/share/finite/home-manager-template/customize.nix
 test -s /usr/share/finite/home-profile-catalog.json
 mapfile -t kernels < <(rpm -q --qf '%{EVR}.%{ARCH}\n' kernel-core)

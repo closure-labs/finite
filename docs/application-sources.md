@@ -77,6 +77,58 @@ duplicates. Do not remove the entire `home-manager-path` package or uninstall
 Brew alternatives. Old Nix generations remain available for rollback until
 you deliberately expire them; their store paths are not active duplicates.
 
+## Keep applications current
+
+Updating the OS does not advance your preserved Home Manager lock. Inspect it
+against the running image's approved template with:
+
+```bash
+finite-app-status
+finite-app-status --json
+```
+
+The report separates current, different, missing and custom inputs. A difference
+does not necessarily mean an older version: custom source/ref changes are shown
+separately, and deliberately newer pins can also differ. The command is read-only.
+At graphical login, `--notify` uses local notification state to show a reminder
+once per approved template when managed inputs differ. It never changes pins.
+
+Review `flake.nix` and preserve a copy of `flake.lock` before updating selected
+inputs. For example, replace `INPUT_NAME` with a managed input you intend to update:
+
+```bash
+nix flake update INPUT_NAME --flake ~/.config/home-manager
+nh home build
+nh home switch
+```
+
+Input updates resolve the configured source today; they do not necessarily select
+the exact pin shipped in the image. Review the resulting lock before activation.
+If building fails, restore your saved lock and keep the working generation. To
+undo an activated Home Manager generation, inspect `home-manager generations`
+and run the previous generation's `activate` script.
+
+Homebrew and Flatpak have separate update paths:
+
+```bash
+brew update
+brew outdated
+brew upgrade
+flatpak update --user
+flatpak update --system
+```
+
+Run Homebrew as its owning desktop user, not root. The inherited Bluefin units
+include `brew-update.timer` and `brew-upgrade.timer`; the latter's service has a
+storage-layout condition, so an installed timer alone does not prove updates
+run. Check `systemctl status brew-update.timer brew-upgrade.timer` and
+`journalctl -u brew-upgrade.service`. Bluefin's `ujust update` also includes
+Flatpak/Homebrew update paths. Inspect `systemctl status uupd.timer` and the
+actual service logs on your image before relying on inherited automation.
+Finite's Home Manager Flatpak auto-update remains disabled; verify system and
+user Flatpak installations separately. The workstation owner is responsible
+for reviewing and applying app updates.
+
 ## Review local choices
 
 List explicitly requested formulas and casks with:

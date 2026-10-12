@@ -3,8 +3,9 @@
 ## Rollout policy
 
 Candidate build, boot qualification and channel promotion are separate jobs.
-Boot qualification is mandatory when the image input identity changes and on
-Monday's scheduled build. The workflows enforce it directly; repository variables
+Boot qualification is mandatory for every candidate published to a public
+channel, even when its declared image input identity is unchanged. The workflows
+enforce it directly; repository variables
 cannot turn a failed qualification into a successful publication. Local publication
 tools default to enforcement and reject the former `shadow` mode.
 
@@ -67,11 +68,10 @@ evaluated Nix payload derivation. Documentation alone does not alter it.
 Recovery checks this identity as well as the Bluefin base and public aliases.
 Images without this metadata require one rebuild.
 
-Selection is deliberately conservative: any changed declared image input,
-including a changed Home Manager payload, requires qualification. Unchanged
-declared inputs can reuse the preceding channel's identity between weekly tests.
-Floating DNF and BlueBuild module changes are not captured by this identity;
-the weekly qualification exercises their resulting image. Reproducible identity
+Declared image input identity supports build selection and reconciliation; it
+does not authorize skipping boot qualification. Floating DNF and BlueBuild module
+changes are not captured by this identity, so every published candidate receives
+fresh exact-digest qualification. Reproducible identity
 does not claim bit-for-bit reproducible image output.
 
 Qualification first installs and boots the candidate ISO with enrolled Microsoft
@@ -95,6 +95,11 @@ acceptance-only timer writes account status, effective SSH policy, key
 fingerprints, file labels and service logs to the serial console after 90 seconds,
 so diagnosis does not depend on working SSH. It does not print password hashes
 or private keys, or alter the image's authentication policy.
+
+Qualification installs an encrypted LUKS root and checks the running root has an
+encrypted ancestor on each boot. Its disposable passphrase and VM disks are
+excluded from retained evidence. This tests passphrase unlock, not physical
+FIDO2 enrollment or unlock.
 
 The VM activates Home Manager, checks Nix and captures diagnostics.
 When a previous channel digest exists, a second installation starts from that
@@ -167,6 +172,8 @@ Run **Prepare qualified release** on main with an ISO run, a Build Finite run,
 the matching channel, and a new `finite-...` release tag. Both source runs must
 be successful main-branch runs at the release workflow's source revision. The
 qualification must match the ISO's exact image digest and input identity.
+Acceptance must record encrypted-root and Secure Boot coverage; older records
+without encrypted-root evidence cannot qualify a new release under this policy.
 
 The workflow creates a draft release, not an automatic public announcement.
 Review and publish the draft to make its assets available to users. Retain

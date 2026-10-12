@@ -1,5 +1,23 @@
 # CI reliability and optimization review
 
+## Current work and historical baselines
+
+The dated sections below preserve measurements and recommendations from their
+original reviews. They are not a current open-issue list.
+
+| Recommendation | Current state |
+| --- | --- |
+| Verify candidate before public promotion | Implemented; every published candidate now requires exact-digest boot acceptance |
+| Split inspection and staging timings | Implemented; equivalent cold/warm benchmark collection remains open |
+| Retain durable release evidence | Qualified draft workflow implemented; each release still needs its own successful hosted evidence |
+| Reconcile superseded main publication | Main selection reconciles public identities; retain four-hour recovery polling |
+| Align validation deadlines | Queue and watcher budgets are 240 minutes; updater parents allow 270 minutes |
+| Optimize registry pulls or add runner/cache capacity | Deferred until current measurements justify a specific change |
+
+Use the [daily-driver roadmap](roadmap.md) for the current building sequence.
+Encrypted-root, desktop-permission and app-update changes require fresh hosted
+and workstation validation; historical successful runs do not validate new code.
+
 ## September 21 follow-up
 
 The September 1-21 sample contains 225 runs: Build Finite has 79 successes,

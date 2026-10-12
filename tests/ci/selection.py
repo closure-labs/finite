@@ -40,7 +40,7 @@ class Selection(unittest.TestCase):
     def test_check_only_inputs_and_full_rebuild_fallback(self):
         for path in ['tests/home/contracts.sh', 'automation/github/repository-security.json', '.github/workflows/release.yml', 'devenv.lock', 'scripts/ci/http-get.py',
                      '.github/workflows/update-bluefin.yml',
-                     '.github/workflows/upstream-health.yml']:
+                     '.github/workflows/upstream-health.yml', '.github/workflows/repository-security.yml']:
             self.assertEqual(impact.classify([path]), {'checks': True, 'nix': False, 'profiles': []})
         self.assertEqual(impact.classify([])['profiles'], sorted(impact.PROFILES))
         for path in ['.github/workflows/iso.yml', '.github/workflows/vm-acceptance.yml', '.github/workflows/qualification.yml']:

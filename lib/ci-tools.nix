@@ -19,6 +19,10 @@ in {
   shell = shells.ci;
   release = shells.release;
   ci-github-actions-secrets = repository.githubActionsSecrets;
+  ci-repository-security-audit = import ./ci-applications/repository-security-audit.nix {
+    inherit pkgs;
+    policy = ../automation/github/repository-security.json;
+  };
   ci-trusted-update = updates.trustedUpdate;
   ci-queue-dependabot = updates.queueDependabot;
 }
