@@ -87,6 +87,7 @@ in {
     python3 tests/bluebuild/provisioning.py
     python3 tests/bluebuild/security-policy.py
     python3 tests/bluebuild/security-remediation.py
+    python3 tests/bluebuild/tailscale-security.py
     python3 tests/bluebuild/reliability.py
   '';
   vm-iso = check "vm-iso-layout" (with pkgs; [diffutils gnugrep gnused libisoburn mtools]) ''

@@ -43,12 +43,13 @@ jobs:
         run: |
           mkdir -p .bluebuild/transaction
           set -o pipefail
-          docker run --name finite-rpm-transaction --entrypoint python3 \
+          docker run --name finite-rpm-transaction --entrypoint bash \
             --env CONFIG_DIRECTORY=/probe --volume "$PWD/files:/probe:ro" \
-            "$BASE_IMAGE" /probe/scripts/security-remediate.py 2>&1 | tee .bluebuild/transaction/transaction.log
+            "$BASE_IMAGE" -euc 'python3 /probe/scripts/security-remediate.py; python3 /probe/scripts/tailscale-security.py' 2>&1 | tee .bluebuild/transaction/transaction.log
           docker start --attach finite-rpm-transaction 2>&1 | tee .bluebuild/transaction/noop.log
           test "$(docker inspect --format '{{.State.ExitCode}}' finite-rpm-transaction)" = 0
           grep -F 'already satisfied; no repository access required' .bluebuild/transaction/noop.log
+          grep -F 'Reviewed Tailscale floor already satisfied; no vendor access required' .bluebuild/transaction/noop.log
       - name: Remove the test container
         if: always()
         run: docker rm --force finite-rpm-transaction || true

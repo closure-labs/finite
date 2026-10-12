@@ -96,3 +96,14 @@ identifies package owners and available versions. AnyIO, msgpack and rclone
 remain below their advisory fix versions in the approved repositories; queried
 Go-owning RPMs are already at their newest Fedora versions. Preflight reports
 these as scan-readiness blockers. It does not substitute for native image scans.
+
+## Continued vendor remediation
+
+A new installed-only Tailscale floor uses an exact locked, signed stable vendor
+RPM. Actual hosted package inspection confirmed newer embedded modules; Go and
+x/net fix prerequisites still remain unmet. See the
+[continued plan and residual owners](validation-remediation-plan.md) and
+[signature/module evidence](security-continuation-evidence-2026-10-12.json).
+This partial update does not close baseline ledger findings or establish release
+eligibility. The final original four-profile matrix passed at `f506ae341663`;
+current continuation validation is tracked on PR #140.

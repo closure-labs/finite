@@ -15,7 +15,7 @@ Beads is unavailable; this file is the skill's task-tracking fallback.
 | R5 upstream trust | root | Implemented | Reviewed publisher key and negative signature tests |
 | Integration and documentation | root | Implemented; hosted contracts pass | Pinned Nix checks, runbook and residual requirements |
 | Independent code/QA/security review | specialists | Approved | No blocking source findings; focused suites passed |
-| Hosted validation and deployment | root | Image validation pending; current image blocked by policy | PR #139; CLI/App audits, hosted Nix/runtime checks and native extraction preflight pass; real native inventory + authenticated Grype continuation find 281 unique fixable High/Critical component/advisory pairs |
+| Hosted validation and deployment | root | Four-profile validation passed; release blocked by policy | PR #139; CLI/App audits, hosted Nix/runtime checks and native extraction preflight pass; real native inventory + authenticated Grype continuation find 281 unique fixable High/Critical component/advisory pairs |
 
 Operational constraint: after workstation memory pressure, stop local Nix evaluations,
 image scans and VM builds. Use hosted runners for remaining full validation.
@@ -54,4 +54,27 @@ on PR #139; its existing change remains intact.
   remaining Go/kernel findings. No broad suppressions or package overlays added.
 - Focused transaction: run 38295423922 passed on the authenticated Bluefin base,
   including actual fixed-floor transaction and already-satisfied second run.
-  Ready to resume the final PR matrix; upstream scan-readiness remains blocked.
+  Final matrix run 38295992049 passed all four image profiles, runtime inspections,
+  documentation, Nix contracts and CI gate at f506ae341663; scan-readiness remains blocked.
+
+## Continued validation and remediation
+
+- Current repository state verified: PR #139 merged; PR #140 targets main. Preserve
+  the passed matrix and two benchmarks; no benchmark repeats.
+- Hosted prerequisite refresh run 38299553401 completed with expected `blocked`
+  policy result, not a probe error. All 16 floors remain available; approved
+  AnyIO/msgpack/rclone fixes remain unavailable. Native inventory parser passed.
+- Security-officer ownership follow-up identified a signed stable Tailscale RPM
+  candidate. Hosted run 38299748350 verified exact package/key hashes, signature,
+  identity and actual embedded Go modules. Separate installed-only update implemented.
+- Investigate cosign provenance and exact kernel/platform applicability separately;
+  no false-positive exemption or resolved finding has been introduced.
+- Heavy work stays hosted. Source/build validation, vulnerability clearance and
+  release eligibility remain distinct verdicts. No merge or publication authorized.
+- Combined transaction run 38300150513 passed against the authenticated pinned
+  generic base, then both helpers passed no-repository/vendor-access repeats.
+- All 100 focused tests and source lint passed. Independent security and
+  QA/performance/readability source reviews approved; final PR integration checks
+  are recorded against the exact head on PR #140.
+- Remaining external dependencies and their specific unblock evidence are listed
+  in the plan. Baseline findings remain pending rescan; release remains blocked.
