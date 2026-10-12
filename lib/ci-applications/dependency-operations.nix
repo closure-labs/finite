@@ -59,7 +59,7 @@
           watch_run() {
             local run_id=$1 status
             echo "Validation: https://github.com/''${GITHUB_REPOSITORY}/actions/runs/$run_id"
-            if timeout 180m gh run watch "$run_id" \
+            if timeout 240m gh run watch "$run_id" \
               --repo "''${GITHUB_REPOSITORY}" --interval 15 --exit-status; then
               return 0
             else

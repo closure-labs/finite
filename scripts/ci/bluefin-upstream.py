@@ -146,6 +146,19 @@ def reconcile(root=ROOT):
     return {'checks': True, 'nix': False, 'profiles': sorted(pending)}
 
 
+def merge_impact(reconciled, impact):
+    """Preserve diff-selected validation while recovering unpublished inputs."""
+    if (set(impact) != {'checks', 'nix', 'profiles'}
+            or not isinstance(impact['checks'], bool)
+            or not isinstance(impact['nix'], bool)
+            or not isinstance(impact['profiles'], list)
+            or any(profile not in PROFILES for profile in impact['profiles'])):
+        raise ValueError('Invalid impact selection')
+    profiles = sorted(set(reconciled['profiles']) | set(impact['profiles']))
+    return {'checks': impact['checks'] or bool(profiles),
+            'nix': impact['nix'], 'profiles': profiles}
+
+
 def github(path):
     spec = importlib.util.spec_from_file_location('http_get', ROOT / 'scripts/ci/http-get.py')
     module = importlib.util.module_from_spec(spec)
@@ -191,6 +204,8 @@ def main():
     parser.add_argument('command', choices=['update', 'apply', 'reconcile', 'recover', 'freshness'])
     args = parser.parse_args()
     result = update(observed=json.loads(os.environ['OBSERVED_DIGESTS'])) if args.command == 'apply' else globals()[args.command]()
+    if args.command == 'reconcile' and (impact := json.loads(os.environ.get('IMPACT', '{}'))):
+        result = merge_impact(result, {key: json.loads(value) for key, value in impact.items()})
     print(json.dumps(result, indent=2))
     if path := os.environ.get('GITHUB_OUTPUT'):
         with open(path, 'a') as output:

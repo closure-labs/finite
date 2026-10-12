@@ -20,8 +20,10 @@ dispatches. It selects work from the complete Git diff for each event:
 | Daily schedule or ordinary manual dispatch | All checks and all four images |
 | Manual dispatch with `reconcile=true` | All checks and only channels that differ from approved image-input identities or base digests |
 
-Fast checks finish before image builds start. A documentation-only main push
-runs documentation checks; the daily schedule refreshes floating DNF and
+Fast checks finish before image builds start. Documentation-only pull requests
+run documentation checks. Every main push also reconciles public image identities
+with the approved checkout, so a newer docs push cannot hide a superseded pending
+image build. The daily schedule refreshes floating DNF and
 BlueBuild module inputs while retaining the approved base digests.
 Missing comparison data selects full validation. Renames include both paths,
 so moving an image input into documentation still triggers image builds.
@@ -104,11 +106,12 @@ record qualification and promotion. The final image's base-digest label
 records the actual Bluefin input. Its source revision identifies the Finite
 commit that was built.
 
-Candidate publication blocks promotion when required boot qualification fails.
+Every candidate publication requires successful boot qualification of its exact
+digest, including encrypted-root fresh install, upgrade and rollback where a
+predecessor exists. Missing or failed acceptance blocks promotion.
 See [workstation qualification](workstation-qualification.md) for enforcement,
-weekly/manual coverage, signed kernel maintenance and durable release bundles.
-Use Build Finite's `qualify=true` dispatch input to force fresh acceptance even
-when the declared image inputs are unchanged.
+signed kernel maintenance and durable release bundles. Build Finite's
+`qualify` dispatch input remains compatible; all publication already qualifies.
 
 ## Bluefin updates and recovery
 
@@ -198,13 +201,15 @@ part of key rotation.
 
 1. Update `VERSION` and add a dated entry to `CHANGELOG.md` in a PR. The version
    also identifies the staged Home Manager template.
-2. Pass `CI gate` and merge through the queue. Wait for all four signed main
-   image builds and their final-image checks to succeed.
-3. Record the successful build revision and each profile's digest. Create the
-   `vVERSION` Git tag at that exact revision, then publish the GitHub release
-   with the changelog notes and image evidence.
-4. Use the [ISO workflow](installation.md#get-an-iso) for any requested installer
-   artifacts, and validate them with the [hosted VM test](development.md#validate-an-iso).
+2. Pass `CI gate` and merge through the queue. Wait for successful signed main
+   builds, exact-digest qualification and promotion for the selected channels.
+3. Follow [Durable releases](workstation-qualification.md#durable-releases):
+   build the matching ISO and run **Prepare qualified release** with successful
+   same-revision build/ISO runs and a new `finite-CHANNEL-VERSION` tag.
+4. Review the draft's signed assets, qualification evidence, scan exceptions and
+   claimed physical-hardware results before publishing. The qualified-draft
+   workflow is the canonical release path; do not publish a separate `vVERSION`
+   release before installer qualification.
 
 The channel tags continue to receive daily builds. Release records identify
 specific source revisions and image digests for reproducibility.
@@ -224,6 +229,17 @@ access:
 nix run --accept-flake-config .#repository-security-audit
 ```
 
+The daily/manual **Audit repository security policy** workflow runs this same
+read-only audit. Configure the GitHub App client ID as the Actions variable
+`SECAUDIT_CLIENTID` and its PEM private key as the Actions secret `SECAUDIT_PEM`.
+The App needs repository Administration: read and automatic Metadata: read access
+and must be installed on Finite. The same App can serve other repositories;
+each audit requests a short-lived token scoped only to its current repository
+and Administration: read. The token is revoked when the job finishes.
+Organization-level variables/secrets also work when their repository access
+includes Finite. Missing credentials or inaccessible settings fail visibly.
+Review the retained JSON result and rotate the App private key periodically.
+
 ## Update reliability and measurement
 
 Source lookups use at most four GET attempts, with a 30-second attempt timeout,
@@ -239,11 +255,16 @@ before computing change outputs. Generated updates pass text checks before a
 PR is created. Dedicated credentials remain scoped to existing PR/merge steps;
 the default workflow token has contents-read permission.
 
-Updater jobs allow 210 minutes, including a bounded 180-minute wait for child
+Updater jobs allow 270 minutes, including a bounded 240-minute wait for child
 validation. Existing PR and manual runs are reused only for the same branch
 and commit. Failures include a direct run link and never enable auto-merge.
 A fresh dispatch after integration uses the corrected workflow; rerunning an
 older run uses its older revision.
+
+The merge queue also allows 240 minutes for required checks. This exceeds the
+220-minute configured validation path and leaves allowance for queueing. A
+delivery-policy contract checks these budgets together; raising a child job's
+limit requires reviewing its orchestration deadlines.
 
 The [CI optimization review](ci-optimization-review.md) records the 30-day
 baseline, confirmed causes, current bottlenecks and ranked follow-up work.

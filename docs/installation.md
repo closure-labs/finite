@@ -79,6 +79,11 @@ Custom inputs and dependency pins survive image upgrades; see
 
 To refresh the independent package inputs in your Home Manager configuration:
 
+First run `finite-app-status` to compare your inputs with the running image's
+approved template. Review custom pins before updating. See
+[application maintenance](application-sources.md#keep-applications-current) for
+selective updates, rollback, Homebrew and Flatpak maintenance.
+
 ```bash
 nix flake update --flake ~/.config/home-manager
 nh home build

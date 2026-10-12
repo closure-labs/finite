@@ -44,7 +44,7 @@
       touch "$out"
     '';
 in {
-  home = check "home-contracts" (with pkgs; [gawk getent gnugrep jq ripgrep yq-go]) ''
+  home = check "home-contracts" (with pkgs; [gawk getent gnugrep jq python3 ripgrep yq-go]) ''
     export FINITE_HOME_CATALOG_PATH=${homeCatalog}
     bash tests/home/contracts.sh \
       ${applications.homeProfile}/bin/finite-home-profile \
@@ -52,6 +52,7 @@ in {
       ${applications.cloudInit}/bin/finite-cloud-init \
       ${homeScaffold}
     bash tests/home/dell-panel-policy.sh
+    python3 tests/home/maintenance.py
     bash modules/aspects/capabilities/devops/tests/contracts.sh
     bash modules/aspects/roles/developer/tests/contracts.sh
     bash modules/aspects/roles/support/tests/contracts.sh
@@ -70,6 +71,7 @@ in {
     python3 tests/ci/selection.py
     python3 tests/ci/nix-checks.py
     python3 tests/ci/toolchain.py
+    python3 tests/ci/delivery-policy.py
     python3 tests/bluebuild/contracts.py
     python3 tests/bluebuild/build.py
     python3 tests/bluebuild/inspect-built.py

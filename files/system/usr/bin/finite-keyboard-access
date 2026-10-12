@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# Root-only, explicit opt-in for Espanso's Wayland keyboard event access.
+set -euo pipefail
+
+set_keyboard_access() {
+	local operation=$1 configuration_root=$2 parent mode temporary
+	local rule="$configuration_root/udev/rules.d/70-finite-espanso-input.rules"
+	# Never follow path replacements or writable parents.
+	for parent in "$configuration_root" "$configuration_root/udev" "$configuration_root/udev/rules.d"; do
+		[[ -d "$parent" && ! -L "$parent" && $(stat -c %u "$parent") == 0 ]] || {
+			echo "Unsafe udev directory: $parent" >&2; return 1
+		}
+		mode=$(stat -c %a "$parent")
+		(( (8#$mode & 0022) == 0 )) || {
+			echo "Udev directory is writable by non-administrators: $parent" >&2; return 1
+		}
+	done
+	[[ ! -L "$rule" && ( ! -e "$rule" || -f "$rule" ) ]] || {
+		echo "Refusing unsafe udev rule: $rule" >&2; return 1
+	}
+	if [[ "$operation" == enable ]]; then
+		temporary=$(mktemp "$configuration_root/udev/rules.d/.finite-keyboard-access.XXXXXX")
+		cat >"$temporary" <<'RULE'
+# Managed by finite-keyboard-access. Grants all active-seat user programs raw keyboard access.
+SUBSYSTEM=="input", KERNEL=="event*", ENV{ID_INPUT_KEYBOARD}=="1", TAG+="uaccess"
+RULE
+		if ! chmod 0644 "$temporary" || ! mv -fT -- "$temporary" "$rule"; then
+			rm -f -- "$temporary"
+			return 1
+		fi
+		echo 'Enabled raw keyboard access for active local seat users and their programs.'
+	else
+		rm -f -- "$rule"
+		echo 'Removed the keyboard access opt-in. Reboot to finish revoking existing ACLs and open device handles.'
+	fi
+	udevadm control --reload-rules
+	udevadm trigger --subsystem-match=input --sysname-match='event*' --action=change
+}
+
+main() {
+	PATH=/usr/sbin:/usr/bin:/sbin:/bin
+	export PATH
+	local rule=/etc/udev/rules.d/70-finite-espanso-input.rules
+	[[ $# == 1 ]] || { echo 'usage: sudo finite-keyboard-access {enable|disable|status}' >&2; return 2; }
+	case "$1" in
+	status)
+		if [[ -f "$rule" && ! -L "$rule" ]]; then
+			echo 'Finite keyboard access opt-in is installed.'
+		else
+			echo 'Finite keyboard access opt-in is not installed.'
+		fi
+		return 0
+		;;
+	enable | disable) ;;
+	*) echo 'usage: sudo finite-keyboard-access {enable|disable|status}' >&2; return 2 ;;
+	esac
+	[[ $EUID == 0 ]] || { echo 'Administrator privileges are required.' >&2; return 2; }
+	set_keyboard_access "$1" /etc
+}
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+	main "$@"
+fi

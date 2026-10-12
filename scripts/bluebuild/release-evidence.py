@@ -54,6 +54,7 @@ def validate_evidence(installation, acceptance, publication, channel, revision):
                 installation['updateChannel'] == 'ghcr.io/closure-labs/finite:' + channel,
                 acceptance['candidate'] == image, acceptance['profile'] == profile,
                 acceptance['accepted'] is True, acceptance['secureBoot'] is True,
+                acceptance.get('encryptedRoot') is True,
                 acceptance['revision'] == revision,
                 publication['revision'] == revision, publication['profile'] == profile,
                 acceptance['buildIdentity'] == publication['buildIdentity'],

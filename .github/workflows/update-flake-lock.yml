@@ -16,7 +16,7 @@ jobs:
   update:
     name: Refresh every locked input
     runs-on: ubuntu-24.04
-    timeout-minutes: 210
+    timeout-minutes: 270
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

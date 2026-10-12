@@ -8,9 +8,13 @@ set -euo pipefail
 artifact=$(realpath "${1:?ISO artifact directory required}")
 phase_name="${3:-manual}"
 [[ $phase_name =~ ^(manual|fresh|upgrade)$ ]]
-state="$PWD/.bluebuild/vm-$phase_name"
-mkdir -p "$state"
-rm -f "$state/acceptance.json"
+evidence="$PWD/.bluebuild/vm-$phase_name"
+# Raw logs, disk images, and credentials never enter an upload path, even if
+# the runner kills this process before cleanup can sanitize diagnostics.
+state=$(mktemp -d /tmp/finite-vm.XXXXXXXX)
+chmod 0700 "$state"
+trap 'rm -rf "$state"' EXIT
+rm -rf "$evidence"
 (cd "$artifact" && sha256sum -c SHA256SUMS)
 hook_sha=$(sha256sum files/installer/install_finite_fstab | cut -d' ' -f1)
 jq -e --slurpfile expected sources/bluebuild-installer.json --arg hash "$hook_sha" '
@@ -51,6 +55,36 @@ test -r "$firmware"
 test -r "$variables"
 test -e /dev/kvm
 sudo chmod a+rw /dev/kvm
+# Keep key material and the kickstart outside all artifact upload globs.
+secrets="$state/secrets"
+mkdir -m 0700 "$secrets"
+openssl rand -hex 32 >"$secrets/luks-key"
+luks_key=$(cat "$secrets/luks-key")
+# GitHub masks accidental diagnostic echoes in the live job log as well.
+printf '::add-mask::%s\n' "$luks_key"
+pid=
+log_pid=
+cleanup() {
+  local result=$?
+  trap - EXIT INT TERM
+  if [[ -n $pid && -f $state/ssh-key ]]; then
+    timeout 20s ssh -i "$state/ssh-key" -p 2222 -o BatchMode=yes -o StrictHostKeyChecking=no \
+      -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 finite-test@127.0.0.1 \
+      sudo journalctl --no-pager -b >"$state/final-journal.log" 2>&1 || true
+  fi
+  if [[ -n $pid ]]; then kill "$pid" 2>/dev/null || true; wait "$pid" 2>/dev/null || true; fi
+  if [[ -n $log_pid ]]; then kill "$log_pid" 2>/dev/null || true; wait "$log_pid" 2>/dev/null || true; fi
+  # Installer/journal diagnostics can include kickstart content on failure.
+  if ! python3 scripts/bluebuild/redact-vm-logs.py "$state" "$secrets/luks-key" "$evidence"; then
+    echo 'VM diagnostics could not be sanitized; withholding all VM artifacts.' >&2
+    result=1
+  fi
+  rm -rf "$state"
+  exit "$result"
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 ssh-keygen -q -t ed25519 -N '' -f "$state/ssh-key"
 key=$(cat "$state/ssh-key.pub")
 diagnostics=$(base64 -w0 scripts/bluebuild/vm-diagnostics.sh)
@@ -63,13 +97,14 @@ predecessor_enabled=false
 if [[ $phase_name == upgrade ]]; then
   predecessor_enabled=true
 fi
-cat >"$state/ks.cfg" <<KS
+cat >"$secrets/ks.cfg" <<KS
 lang en_US.UTF-8
 keyboard us
 timezone America/Chicago
 zerombr
 clearpart --all --initlabel --drives=vda
-autopart
+autopart --encrypted --luks-version=luks2 --passphrase=$luks_key
+bootloader --append="console=ttyS0,115200n8 rd.plymouth=0 plymouth.enable=0"
 poweroff
 rootpw --lock
 # Bluefin initializes the shared Homebrew prefix for the first desktop user.
@@ -146,7 +181,7 @@ UNIT
 systemctl enable finite-vm-diagnostics.timer
 %end
 KS
-bash scripts/bluebuild/prepare-vm-iso.sh "${isos[0]}" "$state/ks.cfg" "$state"
+bash scripts/bluebuild/prepare-vm-iso.sh "${isos[0]}" "$secrets/ks.cfg" "$state"
 bash scripts/bluebuild/prepare-vm-firmware.sh "${isos[0]}" "$variables" "$state"
 qemu-img create -f qcow2 "$state/disk.qcow2" 64G
 qemu_args=(
@@ -164,17 +199,6 @@ stream_console() {
   tail --pid="$pid" -n +1 -F "$1" &
   log_pid=$!
 }
-cleanup() {
-  if [[ -n $pid && -f $state/ssh-key ]]; then
-    timeout 20s ssh -i "$state/ssh-key" -p 2222 -o BatchMode=yes -o StrictHostKeyChecking=no \
-      -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 finite-test@127.0.0.1 \
-      sudo journalctl --no-pager -b >"$state/final-journal.log" 2>&1 || true
-  fi
-  if [[ -n $pid ]]; then kill "$pid" 2>/dev/null || true; wait "$pid" 2>/dev/null || true; fi
-  if [[ -n $log_pid ]]; then kill "$log_pid" 2>/dev/null || true; wait "$log_pid" 2>/dev/null || true; fi
-  rm -f "$state/ssh-key" "$state/install.iso" "$state/disk.qcow2"
-}
-trap cleanup EXIT
 # timeout also bounds Anaconda errors that leave the installer UI waiting.
 printf 'Starting unattended UEFI installation at %s (45-minute limit)\n' "$(date -u +%FT%TZ)"
 timeout 45m qemu-system-x86_64 "${qemu_args[@]}" -boot d -cdrom "$state/install.iso" \
@@ -214,12 +238,18 @@ ssh_args=(-i "$state/ssh-key" -p 2222 -o BatchMode=yes -o StrictHostKeyChecking=
 boot_vm() {
   local phase=$1
   printf 'Booting %s at %s\n' "$phase" "$(date -u +%FT%TZ)"
-  qemu-system-x86_64 "${qemu_args[@]}" -boot c -serial "file:$state/$phase.log" &
+  rm -f "$state/serial.sock" "$state/$phase-unlock.log"
+  touch "$state/$phase.log"
+  qemu-system-x86_64 "${qemu_args[@]}" -boot c \
+    -chardev "socket,id=serial0,path=$state/serial.sock,server=on,wait=on" \
+    -serial chardev:serial0 &
   pid=$!
-  stream_console "$state/$phase.log"
+  python3 scripts/bluebuild/unlock-vm.py "$state/serial.sock" "$secrets/luks-key" \
+    "$state/$phase.log" "$state/$phase-unlock.log" &
+  log_pid=$!
   for _ in {1..120}; do
-    if ! kill -0 "$pid" 2>/dev/null; then
-      echo "VM exited during $phase; see $state/$phase.log" >&2
+    if ! kill -0 "$pid" 2>/dev/null || ! kill -0 "$log_pid" 2>/dev/null; then
+      echo "VM or disk unlock helper exited during $phase; see $state/$phase.log" >&2
       return 1
     fi
     if grep -qF 'Perform MOK management' "$state/$phase.log"; then
@@ -227,6 +257,9 @@ boot_vm() {
       return 1
     fi
     if ssh "${ssh_args[@]}" true 2>"$state/$phase-ssh.log"; then
+      test -s "$state/$phase-unlock.log"
+      ssh "${ssh_args[@]}" sudo bash -s <scripts/bluebuild/check-vm-encryption.sh \
+        >"$state/$phase-encryption.log"
       printf 'SSH ready for %s at %s\n' "$phase" "$(date -u +%FT%TZ)"
       ssh "${ssh_args[@]}" sudo bash -s <scripts/bluebuild/wait-nix.sh | tee "$state/$phase-nix.log"
       ssh "${ssh_args[@]}" sudo journalctl --no-pager -b -u systemd-remount-fs \
@@ -314,7 +347,7 @@ if [[ -z $target ]]; then
   poweroff_vm
   jq -n --arg source "$source" --arg profile "$profile" \
     --argjson secure "${FINITE_SECURE_BOOT:-false}" \
-    '{source:$source,profile:$profile,secureBoot:$secure,accepted:true}' >"$state/acceptance.json"
+    '{source:$source,profile:$profile,secureBoot:$secure,encryptedRoot:true,accepted:true}' >"$state/acceptance.json"
   exit 0
 fi
 # Use a deliberately wrong public key, then restore policy even if the test fails.
@@ -370,4 +403,4 @@ poweroff_vm
 jq -n --arg source "$source" --arg channel "$channel" --arg profile "$profile" \
   --arg target "$target" --argjson secure "${FINITE_SECURE_BOOT:-false}" \
   '{source:$source,target:$target,updateChannel:$channel,profile:$profile,
-    uefi:true,secureBoot:$secure,accepted:true}' >"$state/acceptance.json"
+    uefi:true,secureBoot:$secure,encryptedRoot:true,accepted:true}' >"$state/acceptance.json"

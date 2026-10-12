@@ -10,6 +10,8 @@ modules:
       packages:
         - cloud-init
         - jq
+        - python3
+        - libnotify
         - nix
         - nix-daemon
         - yq

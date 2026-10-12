@@ -29,7 +29,9 @@ test -d /usr/lib/finite/determinate-nix-seed/var/nix
 test -s /usr/share/selinux/packages/determinate-nix.pp
 test -s /usr/share/finite/home-manager-template/customize.nix
 test -s /usr/share/finite/home-profile-catalog.json
-test -s /usr/lib/udev/rules.d/70-finite-espanso-input.rules
+test ! -e /usr/lib/udev/rules.d/70-finite-espanso-input.rules
+test -x /usr/bin/finite-keyboard-access
+test -x /usr/bin/finite-app-status
 test -L /usr/lib/systemd/system/multi-user.target.wants/nix-daemon.socket
 test -L /usr/lib/systemd/system/multi-user.target.wants/finite-nix-gpu.service
 test ! -L /etc/systemd/system/sockets.target.wants/nix-daemon.socket

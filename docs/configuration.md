@@ -112,6 +112,30 @@ available. The service skips machines that have not run the GPU setup helper.
 The supported path covers 64-bit Mesa on Intel, AMD and Nouveau. Systems using
 proprietary NVIDIA or 32-bit graphics need additional integration.
 
+## Enable Espanso keyboard access
+
+The Support role includes Espanso's Wayland backend. Raw keyboard-event access
+requires an explicit host-administrator choice:
+
+```bash
+sudo finite-keyboard-access enable
+finite-keyboard-access status
+```
+
+This permits programs running as an active local seat user to read keyboard
+events. It is an account-wide permission, not an Espanso process sandbox, and
+applies to all active local seats on this host. The default image does not grant
+this permission. To revoke it:
+
+```bash
+sudo finite-keyboard-access disable
+sudo systemctl reboot
+```
+
+Reboot completes revocation of existing device ACLs and open handles. Test
+Espanso after enabling access and check device access after revocation; selecting
+or removing the Support role alone does not change this administrator setting.
+
 ## Your configuration files
 
 | Location | Purpose |

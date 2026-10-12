@@ -13,14 +13,23 @@ skopeo inspect "docker://$candidate" | jq -e --arg identity "$BUILD_IDENTITY" \
   .Labels["org.opencontainers.image.revision"] == $revision' >/dev/null
 bash scripts/bluebuild/iso.sh "$CHANNEL" "$CANDIDATE_DIGEST"
 FINITE_SECURE_BOOT=true bash scripts/bluebuild/vm-acceptance.sh .bluebuild/iso '' fresh
+jq -e --arg candidate "$candidate" --arg profile "$PROFILE" '
+  .accepted == true and .secureBoot == true and .encryptedRoot == true and
+  .source == $candidate and .profile == $profile
+' .bluebuild/vm-fresh/acceptance.json >/dev/null
 if [[ -n ${PREVIOUS_DIGEST:-} ]]; then
   [[ $PREVIOUS_DIGEST =~ ^sha256:[0-9a-f]{64}$ ]]
   rm -f .bluebuild/iso/*.iso
   bash scripts/bluebuild/iso.sh "$CHANNEL" "$PREVIOUS_DIGEST"
   FINITE_SECURE_BOOT=true bash scripts/bluebuild/vm-acceptance.sh .bluebuild/iso "$candidate" upgrade
+  jq -e --arg candidate "$candidate" --arg profile "$PROFILE" \
+    --arg previous "ghcr.io/closure-labs/finite@$PREVIOUS_DIGEST" '
+    .accepted == true and .secureBoot == true and .encryptedRoot == true and
+    .source == $previous and .target == $candidate and .profile == $profile
+  ' .bluebuild/vm-upgrade/acceptance.json >/dev/null
 fi
 jq -n --arg candidate "$candidate" --arg previous "${PREVIOUS_DIGEST:-}" \
   --arg profile "$PROFILE" --arg revision "$GITHUB_SHA" --arg identity "$BUILD_IDENTITY" \
   '{schema:1,candidate:$candidate,previousDigest:$previous,profile:$profile,
-    revision:$revision,buildIdentity:$identity,secureBoot:true,accepted:true,
+    revision:$revision,buildIdentity:$identity,secureBoot:true,encryptedRoot:true,accepted:true,
     bootstrap:($previous == "")}' >".bluebuild/$PROFILE-acceptance.json"

@@ -15,3 +15,8 @@ test ! -e "${aspect_root}/apply.sh"
 shopt -s nullglob dotglob
 manifests=("${aspect_root}"/manifests/*)
 test "${#manifests[@]}" -eq 0
+
+# Raw keyboard access requires administrator opt-in even when support is selected.
+test ! -e files/system/usr/lib/udev/rules.d/70-finite-espanso-input.rules
+test -x files/system/usr/bin/finite-keyboard-access
+bash -n files/system/usr/bin/finite-keyboard-access

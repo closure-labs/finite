@@ -6,6 +6,16 @@ validation are the lightweight development path.
 
 ## Choose where to make a change
 
+This is a Jujutsu (`jj`) repository with colocated Git metadata. Use `jj` for
+local changes, bookmarks and rebasing; GitHub Actions still uses Git checkouts.
+Start with `jj status` and `jj log`, preserve any existing work, then fetch with
+`jj git fetch --remote origin`. Create a separate change on `main@origin` with
+`jj new main@origin` when starting independent work. Describe each focused
+change with `jj describe`, review it with `jj diff`, and run the checks below.
+Use a named bookmark for a pull request and push that bookmark explicitly with
+`jj git push --bookmark NAME`. Use GitHub CLI for PR review and CI inspection.
+Do not reset the colocated Git working tree or overwrite unrelated jj changes.
+
 | Change | Files |
 | --- | --- |
 | Image foundation, tags or profile identity | `recipes/*.yml` |
