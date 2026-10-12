@@ -44,20 +44,31 @@ while IFS=$'\t' read -r name file sha256; do
 	rpms+=("${rpm_file}")
 done < <(jq -r '.packages[] | [.name, .file, .sha256] | @tsv' "${lock}")
 
-# Bluefin may carry build-only kernel packages and an external v4l2loopback
-# kmod tied to its inherited kernel. They are not runtime dependencies of the
-# next image and can prevent the pinned Fedora kernel transaction.
+# Record the installed release set before any package mutation. Only those
+# retired trees may later be considered by the shared ownership guard.
+inherited_release_output=$(rpm -q --qf '%{EVR}.%{ARCH}\n' kernel-core)
+[[ -n $inherited_release_output ]]
+mapfile -t inherited_kernel_releases <<<"$inherited_release_output"
+inventory_guard="$CONFIG_DIRECTORY/scripts/kernel-module-prune.py"
+inventory_snapshot="$keydb/inherited-rpms.json"
+python3 "$inventory_guard" --snapshot "$inventory_snapshot"
+
+# Host ZFS and virtual-camera support were explicitly retired. Remove only
+# installed named packages; keep every unrelated package and physical driver.
 cleanup_packages=()
-for package in kernel-devel kernel-devel-matched kmod-v4l2loopback v4l2loopback; do
+for package in kernel-devel kernel-devel-matched kmod-v4l2loopback v4l2loopback \
+	kmod-zfs zfs python3-pyzfs; do
 	if rpm -q "${package}" >/dev/null 2>&1; then
 		cleanup_packages+=("${package}")
 	fi
 done
 if ((${#cleanup_packages[@]} > 0)); then
-	dnf5 -y remove --no-autoremove "${cleanup_packages[@]}"
+	dnf5 -y --disable-repo=* remove --no-autoremove "${cleanup_packages[@]}"
+	python3 "$inventory_guard" --check-snapshot "$inventory_snapshot"
 fi
 
 dnf5 -y install --allowerasing "${rpms[@]}"
+python3 "$inventory_guard" --check-snapshot "$inventory_snapshot"
 
 # A bootc image has one authoritative runtime kernel. Remove any inherited
 # version only after the complete pinned replacement has installed.
@@ -68,7 +79,8 @@ for package in kernel kernel-core kernel-modules-core kernel-modules kernel-modu
 	done < <(rpm -q --qf '%{NAME}-%{EVR}.%{ARCH}\t%{EVR}.%{ARCH}\n' "${package}")
 done
 if ((${#stale_kernel_packages[@]} > 0)); then
-	dnf5 -y remove --no-autoremove "${stale_kernel_packages[@]}"
+	dnf5 -y --disable-repo=* remove --no-autoremove "${stale_kernel_packages[@]}"
+	python3 "$inventory_guard" --check-snapshot "$inventory_snapshot"
 fi
 
 for package in kernel kernel-core kernel-modules-core kernel-modules kernel-modules-extra; do
@@ -86,10 +98,12 @@ done < <(jq -r '.requiredModules[]' "${lock}")
 # RPM removal leaves generated initramfs files and module directories behind.
 # BlueBuild regenerates every directory under /usr/lib/modules, so an orphan
 # from the inherited kernel would fail dracut before it reaches our replacement.
-# Only prune after the replacement packages and required modules are verified.
+# Only prune generated unowned artifacts after the replacement is verified.
+# Retained third-party modules must never be deleted silently.
 modules_root=/usr/lib/modules
 [[ -s "$modules_root/$release/vmlinuz" && -s "$modules_root/$release/modules.dep" ]]
-for module_dir in "$modules_root"/*; do
-	[[ -d $module_dir ]] || continue
-	[[ ${module_dir##*/} == "$release" ]] || rm -rf -- "$module_dir"
+prune_args=(--release "$release" --root "$modules_root")
+for inherited_release in "${inherited_kernel_releases[@]}"; do
+	prune_args+=(--old-release "$inherited_release")
 done
+python3 "$CONFIG_DIRECTORY/scripts/kernel-module-prune.py" "${prune_args[@]}"

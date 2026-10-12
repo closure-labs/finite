@@ -203,7 +203,8 @@ def evaluate(sbom, scan, image, policy, now=None, database_coverage=None, manife
         known = any(v.get('knownExploited') for v in [vulnerability, *related])
         fix = vulnerability['fix']
         fixable = fix['state'] == 'fixed' and bool(fix['versions'])
-        if not ((known and policy['blockKnownExploited']) or
+        known_blocked = known and policy['blockKnownExploited']
+        if not (known_blocked or
                 (fixable and vulnerability['severity'] in policy['blockedFixableSeverities'])):
             continue
         # Artifact ID remains usable for embedded components lacking a PURL;
@@ -212,7 +213,10 @@ def evaluate(sbom, scan, image, policy, now=None, database_coverage=None, manife
         finding = {'component': component, 'advisory': vulnerability['id'],
                    'severity': vulnerability['severity'], 'knownExploited': bool(known),
                    'fixVersions': fix['versions']}
-        (waived if (component, vulnerability['id']) in exceptions else blocked).append(finding)
+        # Ordinary exact, time-limited exceptions cannot disable the explicit
+        # known-exploitation gate, including related aliases and ignored matches.
+        exception_applies = (component, vulnerability['id']) in exceptions and not known_blocked
+        (waived if exception_applies else blocked).append(finding)
     return {'schema': 1, 'status': 'blocked' if blocked else 'pass', 'image': image,
             'scannedAt': descriptor['timestamp'], 'scanner': descriptor['version'],
             'database': db, 'coverage': coverage, 'databaseCoverageRecords': len(database_coverage),
@@ -222,6 +226,17 @@ def evaluate(sbom, scan, image, policy, now=None, database_coverage=None, manife
 
 def verify(directory, image, policy_path=ROOT / 'automation/security/image-policy.json'):
     policy = load_policy(policy_path)
+    # Representative local copies are useful diagnostics, but cannot qualify
+    # registry candidates for signing or release even when native policy passes.
+    for name in ('extraction.json', 'source-provenance.json', 'security-result.json'):
+        path = directory / name
+        if path.exists():
+            record = json.loads(path.read_text())
+            if not isinstance(record, dict):
+                raise ValueError('Invalid release evidence provenance')
+            if (record.get('releaseEligible') is False
+                    or record.get('sourceType') == 'locally-built-unpublished'):
+                raise ValueError('Diagnostic local candidate evidence cannot qualify a release')
     sbom = json.loads((directory / 'sbom.syft.json').read_text())
     scan = json.loads((directory / 'vulnerabilities.json').read_text())
     result = evaluate(sbom, scan, image, policy,

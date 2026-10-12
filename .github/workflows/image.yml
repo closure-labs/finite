@@ -58,6 +58,12 @@ jobs:
           test ! -e "$tools/bin/nix"
           test ! -e "$tools/bin/bluebuild"
           echo "$tools/bin" >>"$GITHUB_PATH"
+      # Authenticate the canonical pinned recipes before preparation rewrites
+      # public channel tags to isolated candidate tags.
+      - name: Authenticate pinned upstream publishers
+        run: python3 scripts/ci/bluefin-upstream.py verify
+      - name: Authenticate the locked runtime Cosign publisher
+        run: python3 scripts/ci/cosign-runtime.py --output .bluebuild/cosign-runtime.json
       - name: Prepare candidate publication
         id: prepare
         env:
@@ -69,8 +75,6 @@ jobs:
           echo "evidence=image-$PROFILE-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >>"$GITHUB_OUTPUT"
       - name: Install the verified locked BlueBuild CLI
         run: bash scripts/bluebuild/install-cli.sh
-      - name: Authenticate pinned upstream publishers
-        run: python3 scripts/ci/bluefin-upstream.py verify
       - name: Stage pinned payload
         run: python3 scripts/bluebuild/measure.py payload-staging bash scripts/bluebuild/stage.sh "$PROFILE"
       - name: Set up the BlueBuild builder

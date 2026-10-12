@@ -6,6 +6,7 @@ description: Finite bluefin-dx with Home Manager and generic-x86_64
 base-image: ghcr.io/ublue-os/bluefin-dx
 image-version: stable@sha256:425db37c0d8e2791b29a41a04cc744b8f17c707b3ceeb8c46bdc0b155ce14b7a
 blue-build-tag: v0.9.37
+cosign-version: 3.1.3@sha256:9e5c2f2edc34351160407ca3416c61855bdf9403c3c5936e0f0be7fc261611b8
 alt-tags: [finite-dev]
 labels:
   org.opencontainers.image.title: Finite
@@ -19,5 +20,8 @@ modules:
   - from-file: shared/base.yml
   - type: script@v1
     snippets:
+      - python3 "$CONFIG_DIRECTORY/scripts/kernel-generic-security.py" --profile bluefin-dx-generic
       - bash "$CONFIG_DIRECTORY/scripts/profile.sh" bluefin-dx-generic bluefin-dx generic-x86_64 finite-dev
+  # The replacement kernel needs its own encrypted-root boot payload.
+  - type: initramfs@v1
   - from-file: shared/final.yml

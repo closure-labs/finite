@@ -396,6 +396,7 @@ class BluefinTests(unittest.TestCase):
         bindir = self.root / 'bin'
         bindir.mkdir()
         shutil.copytree(ROOT / 'sources', self.root / 'sources')
+        shutil.copytree(ROOT / 'files/security', self.root / 'files/security')
         recipe = self.approved['bluefin-generic']
         labels = {'org.opencontainers.image.base.digest': recipe['digest'], 'org.opencontainers.image.revision': 'f' * 40,
                   'io.finite.build-inputs': IDENTITY,

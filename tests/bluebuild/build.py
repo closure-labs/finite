@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 """Exercise the direct CLI's publication boundary without building an image."""
+import importlib.util
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
+
+import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -90,6 +95,104 @@ sys.exit(int(os.environ.get('BUILD_STATUS' if name == 'bluebuild' else 'LOGOUT_S
                 result, calls = self.invoke(**args)
                 self.assertNotEqual(result.returncode, 0)
                 self.assertEqual(calls, [])
+
+
+class PublicationPreparation(unittest.TestCase):
+    def setUp(self):
+        spec = importlib.util.spec_from_file_location('build_test_publication', ROOT / 'scripts/bluebuild/publication.py')
+        self.publication = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.publication)
+        self.upstream = self.publication.upstream
+        spec = importlib.util.spec_from_file_location('build_test_cosign', ROOT / 'scripts/ci/cosign-runtime.py')
+        self.cosign = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.cosign)
+        mock = patch.object(self.cosign, 'authenticate', return_value={'status': 'publisher-authenticated'})
+        mock.start()
+        self.addCleanup(mock.stop)
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        shutil.copytree(ROOT / 'recipes', self.root / 'recipes')
+        for target, name, value in ((self.upstream, 'image_identity', 'v1:' + 'a' * 64),
+                                    (self.upstream, 'inspect', None)):
+            mock = patch.object(target, name, return_value=value)
+            mock.start()
+            self.addCleanup(mock.stop)
+        env = patch.dict(os.environ, GITHUB_OUTPUT='', GITHUB_SHA='b' * 40,
+                         FINITE_QUALIFICATION_MODE='enforce')
+        env.start()
+        self.addCleanup(env.stop)
+        workflow = yaml.safe_load((ROOT / '.github/workflows/image.yml').read_text())
+        self.steps = workflow['jobs']['build']['steps']
+
+    def prepare_from_workflow(self, profile, publish):
+        operations = []
+        for step in self.steps:
+            command = step.get('run', '')
+            if 'scripts/ci/bluefin-upstream.py verify' in command:
+                self.assertNotIn('if', step)
+                self.assertFalse(step.get('continue-on-error', False))
+                operations.append('verify')
+                self.upstream.verify(self.root)
+            if 'scripts/ci/cosign-runtime.py' in command:
+                self.assertNotIn('if', step)
+                self.assertFalse(step.get('continue-on-error', False))
+                operations.append('verify-cosign')
+                policy = self.cosign.policy(ROOT)
+                self.cosign.recipe_pins(policy, self.root)
+                self.cosign.authenticate(policy)
+            if 'scripts/bluebuild/publication.py prepare' in command:
+                operations.append('prepare')
+                self.publication.prepare(profile, publish, self.root)
+        self.assertEqual(operations, ['verify', 'verify-cosign', 'prepare'])
+
+    def test_workflow_authenticates_pins_before_publication_mutates_tags(self):
+        originals = {path: path.read_bytes() for path in (self.root / 'recipes').glob('*.yml')}
+        for profile, (_, tags) in self.upstream.PROFILES.items():
+            for publish in (False, True):
+                with self.subTest(profile=profile, publish=publish):
+                    for path, content in originals.items():
+                        path.write_bytes(content)
+                    with patch.object(self.upstream, 'authenticate') as authenticate:
+                        self.prepare_from_workflow(profile, publish)
+                    self.assertEqual(authenticate.call_count, 2)
+                    for call in authenticate.call_args_list:
+                        self.assertRegex(call.args[1], r'^sha256:[0-9a-f]{64}$')
+                    recipe = yaml.safe_load((self.root / 'recipes' / (profile + '.yml')).read_text())
+                    self.assertEqual(recipe['alt-tags'], ['candidate-' + profile] if publish else tags)
+
+    def test_authentication_failure_stops_before_candidate_preparation(self):
+        before = {path: path.read_bytes() for path in (self.root / 'recipes').glob('*.yml')}
+        with patch.object(self.upstream, 'authenticate', side_effect=subprocess.CalledProcessError(1, 'cosign')):
+            with self.assertRaises(subprocess.CalledProcessError):
+                self.prepare_from_workflow('bluefin-generic', True)
+        self.assertEqual(before, {path: path.read_bytes() for path in before})
+        self.assertFalse((self.root / '.bluebuild').exists())
+
+    def test_strict_recipe_validation_still_rejects_candidate_and_foreign_tags(self):
+        for profile in self.upstream.PROFILES:
+            path = self.root / 'recipes' / (profile + '.yml')
+            original = path.read_text()
+            for tags in (['candidate-' + profile], ['unreviewed-channel']):
+                with self.subTest(profile=profile, tags=tags):
+                    recipe = yaml.safe_load(original)
+                    recipe['alt-tags'] = tags
+                    path.write_text(yaml.safe_dump(recipe))
+                    with patch.object(self.upstream, 'authenticate') as authenticate:
+                        with self.assertRaisesRegex(ValueError, 'Unexpected recipe identity: ' + profile):
+                            self.upstream.verify(self.root)
+                        authenticate.assert_not_called()
+                    path.write_text(original)
+
+
+    def test_runtime_cosign_failure_stops_before_candidate_preparation(self):
+        before = {path: path.read_bytes() for path in (self.root / 'recipes').glob('*.yml')}
+        with patch.object(self.upstream, 'authenticate'), \
+                patch.object(self.cosign, 'authenticate', side_effect=RuntimeError('publisher rejected')):
+            with self.assertRaisesRegex(RuntimeError, 'publisher rejected'):
+                self.prepare_from_workflow('bluefin-generic', True)
+        self.assertEqual(before, {path: path.read_bytes() for path in before})
+        self.assertFalse((self.root / '.bluebuild').exists())
 
 
 if __name__ == '__main__':

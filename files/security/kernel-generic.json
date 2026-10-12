@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "fedora": 44,
+  "release": "7.2.9-201.fc44.x86_64",
+  "keySHA256": "93642aec521a1e5e96dd715f7ae0ec0850ebc9de09a94ce03cae5263f26cc18a",
+  "keyFingerprint": "36F612DCF27F7D1A48A835E4DBFCF71C6D9F90A6",
+  "source": "https://bodhi.fedoraproject.org/updates/FEDORA-2026-c2d6603acd",
+  "packages": [
+    {
+      "name": "kernel",
+      "file": "kernel-7.2.9-201.fc44.x86_64.rpm",
+      "url": "https://kojipkgs.fedoraproject.org/packages/kernel/7.2.9/201.fc44/data/signed/6d9f90a6/x86_64/kernel-7.2.9-201.fc44.x86_64.rpm",
+      "sha256": "80fe202b417fe6fc1ca8669f5e8e715a52c6448e5671ebeccbeb4a894eb9304a"
+    },
+    {
+      "name": "kernel-core",
+      "file": "kernel-core-7.2.9-201.fc44.x86_64.rpm",
+      "url": "https://kojipkgs.fedoraproject.org/packages/kernel/7.2.9/201.fc44/data/signed/6d9f90a6/x86_64/kernel-core-7.2.9-201.fc44.x86_64.rpm",
+      "sha256": "37a879e76a894fe32c19a13607a118ae4f006572370b9ddaf689ca2698e3be20"
+    },
+    {
+      "name": "kernel-modules-core",
+      "file": "kernel-modules-core-7.2.9-201.fc44.x86_64.rpm",
+      "url": "https://kojipkgs.fedoraproject.org/packages/kernel/7.2.9/201.fc44/data/signed/6d9f90a6/x86_64/kernel-modules-core-7.2.9-201.fc44.x86_64.rpm",
+      "sha256": "01277433853490efb2d907b95ac9f1923c1c0ab0d467a7fb7e5d49ebf8123179"
+    },
+    {
+      "name": "kernel-modules",
+      "file": "kernel-modules-7.2.9-201.fc44.x86_64.rpm",
+      "url": "https://kojipkgs.fedoraproject.org/packages/kernel/7.2.9/201.fc44/data/signed/6d9f90a6/x86_64/kernel-modules-7.2.9-201.fc44.x86_64.rpm",
+      "sha256": "8ad8b1bca78532130f8ff7e10baa010518ef8a6c9edfabb087078af2a93ddc4f"
+    },
+    {
+      "name": "kernel-modules-extra",
+      "file": "kernel-modules-extra-7.2.9-201.fc44.x86_64.rpm",
+      "url": "https://kojipkgs.fedoraproject.org/packages/kernel/7.2.9/201.fc44/data/signed/6d9f90a6/x86_64/kernel-modules-extra-7.2.9-201.fc44.x86_64.rpm",
+      "sha256": "542cdab5cccbee23fc3ff57a9c5a1f6fa4ae9d87aef1b1994a27eb233f324544"
+    },
+    {
+      "name": "kernel-devel",
+      "file": "kernel-devel-7.2.9-201.fc44.x86_64.rpm",
+      "url": "https://kojipkgs.fedoraproject.org/packages/kernel/7.2.9/201.fc44/data/signed/6d9f90a6/x86_64/kernel-devel-7.2.9-201.fc44.x86_64.rpm",
+      "sha256": "7076e36392df24687da7c16a6dfb568b0af6ccf67689aa714d7e98377283b9d7"
+    },
+    {
+      "name": "kernel-devel-matched",
+      "file": "kernel-devel-matched-7.2.9-201.fc44.x86_64.rpm",
+      "url": "https://kojipkgs.fedoraproject.org/packages/kernel/7.2.9/201.fc44/data/signed/6d9f90a6/x86_64/kernel-devel-matched-7.2.9-201.fc44.x86_64.rpm",
+      "sha256": "8653b4703af81b1f20f2da6f4033be7c559ac274e312c93a546c869b3b90a0a5"
+    }
+  ]
+}

@@ -56,6 +56,20 @@ class Policy(unittest.TestCase):
     def evaluate(self):
         return security.evaluate(self.sbom, self.scan, IMAGE, self.policy, NOW, database_coverage=DATABASE_COVERAGE)
 
+    def test_diagnostic_candidate_cannot_qualify_release_before_catalog_read(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            for name in ('extraction.json', 'source-provenance.json', 'security-result.json'):
+                for marker in ({'releaseEligible': False}, {'sourceType': 'locally-built-unpublished'}):
+                    with self.subTest(name=name, marker=marker):
+                        path = directory / name
+                        path.write_text(json.dumps(marker))
+                        with patch.object(security, 'evaluate') as evaluate:
+                            with self.assertRaisesRegex(ValueError, 'cannot qualify a release'):
+                                security.verify(directory, IMAGE)
+                            evaluate.assert_not_called()
+                        path.unlink()
+
     def test_clean_supported_inventory_passes_without_rpm_vulnerabilities(self):
         result = self.evaluate()
         self.assertEqual(result['status'], 'pass')
@@ -125,6 +139,54 @@ class Policy(unittest.TestCase):
                 self.assertEqual(self.evaluate()['status'], 'blocked')
         self.policy['exceptions'] = [{**exception, 'expiresAt': '2027-01-01T00:00:00Z'}]
         with self.assertRaises(ValueError): self.evaluate()
+
+    def exact_exception(self):
+        return {'digest': DIGEST, 'component': 'pkg:rpm/fedora/example@1', 'advisory': 'CVE-2026-1234',
+                'approvedAt': STAMP, 'expiresAt': '2026-10-20T00:00:00Z',
+                'reviewedBy': 'maintainer', 'reason': 'Fixture exact ordinary exception'}
+
+    def test_known_exploitation_cannot_be_waived_by_exact_ordinary_exception(self):
+        self.scan['matches'] = [finding('Low', False, True)]
+        self.policy['exceptions'] = [self.exact_exception()]
+        result = self.evaluate()
+        self.assertEqual(result['status'], 'blocked')
+        self.assertEqual(len(result['blocked']), 1)
+        self.assertTrue(result['blocked'][0]['knownExploited'])
+        self.assertEqual(result['exceptionsApplied'], [])
+
+    def test_related_known_exploitation_and_ignored_matches_cannot_be_waived(self):
+        for group in ('matches', 'ignoredMatches'):
+            with self.subTest(group=group):
+                self.scan['matches'] = []
+                self.scan['ignoredMatches'] = []
+                match = finding('Low', False)
+                match['relatedVulnerabilities'] = [{'id': 'CVE-2026-ALIAS',
+                                                   'knownExploited': [{'cve': 'CVE-2026-ALIAS'}]}]
+                self.scan[group] = [match]
+                self.policy['exceptions'] = [self.exact_exception()]
+                result = self.evaluate()
+                self.assertEqual(result['status'], 'blocked')
+                self.assertEqual(result['matches'], 1)
+                self.assertEqual(len(result['blocked']), 1)
+                self.assertTrue(result['blocked'][0]['knownExploited'])
+                self.assertEqual(result['exceptionsApplied'], [])
+
+    def test_known_exploitation_switch_disabled_preserves_ordinary_exception_behavior(self):
+        self.policy['blockKnownExploited'] = False
+        self.policy['exceptions'] = [self.exact_exception()]
+        self.scan['matches'] = [finding('High', True, True)]
+        result = self.evaluate()
+        self.assertEqual(result['status'], 'pass')
+        self.assertEqual(result['blocked'], [])
+        self.assertEqual(len(result['exceptionsApplied']), 1)
+        self.assertTrue(result['exceptionsApplied'][0]['knownExploited'])
+        # Without the KEV gate, a low/unfixed finding is outside the ordinary
+        # fixable-severity gate and does not falsely consume an exception.
+        self.scan['matches'] = [finding('Low', False, True)]
+        result = self.evaluate()
+        self.assertEqual(result['status'], 'pass')
+        self.assertEqual(result['blocked'], [])
+        self.assertEqual(result['exceptionsApplied'], [])
 
     def test_missing_database_distribution_coverage_fails(self):
         for proof in (None, [], [{'vulnerability': {'provider': 'other'}, 'packages': []}]):

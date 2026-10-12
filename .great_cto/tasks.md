@@ -1,5 +1,35 @@
 # Security audit implementation
 
+## Current desktop continuation
+
+- User approved host ZFS removal across all four profiles ("dump zfs"), in
+  addition to optional generic virtual-camera removal. Remove only reviewed ZFS
+  package names; preserve signatures, unrelated RPM inventory and file ownership.
+- Host ZFS is no longer supported. A separate FreeBSD VM storage setup is the
+  user's proposed alternative, not validated guidance or a host-root replacement.
+- Draft PR #144 targets main; its last posted head starts 9a65. Runtime source
+  is changing; final source revision and new validation run bindings are pending.
+- Historical source contracts38317182847 passed4bc79ded; these do not validate
+  the new ZFS-removal source. Run fresh focused/source/Nix contracts and all four
+  profile builds after cheap checks; obtain one useful changed-candidate scan.
+- Failed guarded representative38314613864 and ownership38315879860 remain
+  historical evidence, not successful image/native/boot results. Matching ZFS
+  publisher modules are no longer the chosen product prerequisite.
+- Next301 testing preference is still unapproved. Keep next300 and exact
+  f45/f45-updates policy; October XFS/AMD security gap remains explicit.
+- Fresh prerequisite38314613864 still found approved AnyIO/msgpack/rclone fixes
+  unavailable. Other Go/Tailscale/Sigstore rebuild requirements remain blocked.
+- Preserve complete Go38310504908 evidence, actual Cosign3.1.3 partial bundle fix,
+  earlier kernel/package runs and previous all-profile integration as scoped history.
+- PR140 merged1bf562527742 and PR143 mergedbe90c0a83126. No new merge or
+  publication is authorized; maintain isolated Jujutsu desktop-security workspace.
+- Heavy work stays hosted; no workstation Nix compilation/image scan/VM build.
+  Baseline finding statuses and symbol/module/stdlib unknowns remain unchanged.
+- Current plans and pending evidence: docs/desktop-security-validation-plan.md,
+  docs/generic-kernel-remediation-plan.md and
+  docs/desktop-security-evidence-2026-10-12.json. Source/build pending for changed
+  code; vulnerability clearance blocked; release ineligible until all gates pass.
+
 User authorized implementation of the 2026-10-12 cybersecurity report using
 great_cto and nixos-managing. Existing product choices remain: personal daily
 driver, automated qualified images, manual application updates, opt-in raw
@@ -22,7 +52,7 @@ image scans and VM builds. Use hosted runners for remaining full validation.
 Existing signing key migrated into image-signing and release environment secrets;
 repository copy retirement remains pending old-workflow completion.
 
-## Follow-up PR: scan remediation and CI tool reuse
+## Historical follow-up PR: scan remediation and CI tool reuse
 
 User requested a new PR with Nix CI optimizations and the latest failed scan's
 remediation. Work is isolated in Jujutsu workspace `security-remediation`, based
@@ -57,10 +87,10 @@ on PR #139; its existing change remains intact.
   Final matrix run 38295992049 passed all four image profiles, runtime inspections,
   documentation, Nix contracts and CI gate at f506ae341663; scan-readiness remains blocked.
 
-## Continued validation and remediation
+## Historical continued validation and remediation
 
-- Current repository state verified: PR #139 merged; PR #140 targets main. Preserve
-  the passed matrix and two benchmarks; no benchmark repeats.
+- Historical state at that stage: PR #139 merged and PR #140 targeted main.
+  Both later merged; retain the passed matrices and two benchmarks.
 - Hosted prerequisite refresh run 38299553401 completed with expected `blocked`
   policy result, not a probe error. All 16 floors remain available; approved
   AnyIO/msgpack/rclone fixes remain unavailable. Native inventory parser passed.
@@ -78,3 +108,60 @@ on PR #139; its existing change remains intact.
   are recorded against the exact head on PR #140.
 - Remaining external dependencies and their specific unblock evidence are listed
   in the plan. Baseline findings remain pending rescan; release remains blocked.
+
+## Historical ZFS discovery before the support decision
+
+- Run 38314613864 correctly rejected an old-tree ZFS module still owned by
+  retained `kmod-zfs`; no candidate digest or scan was produced. Older passing
+  blanket-prune runs do not establish ZFS functionality.
+- Read-only current-base ownership probe 38315879860 passed and confirms both
+  current approved bases retain `kmod-zfs` and its old-kernel module.
+- At that stage only virtual-camera removal was authorized; ZFS removal was
+  undecided and matching signed modules were unavailable. The user has since
+  authorized removing host ZFS support across all four profiles.
+- Shared ownership guard implemented for both kernel paths; 25 generic and ten
+  next fixtures pass. Preserve
+  all owned files and continue independent Cosign/CI/evidence work; avoid doomed
+  image builds while this dependency remains.
+
+- Next kernel transactions now enforce complete unrelated-RPM invariance after
+  each DNF operation. Regression cases reject solver removal of both the ZFS
+  package and module files before old-tree pruning.
+- Validate frozen source contracts on a hosted runner independently of the
+  known-blocked image matrix. No scan or boot qualification claim is made.
+
+- Hosted full source contracts PASS: run 38317182847, exact checked-out source
+  `4bc79ded4fcf4cfe0d426f9d0bca2f03800b34db`. At that point later edits were
+  evidence only; the newly authorized runtime removal code now needs fresh checks.
+- Before the decision, the image matrix was held on confirmed ZFS ownership;
+  no new scan digest or boot/signing/release verdict resulted from that source.
+
+- Draft [PR #144](https://github.com/closure-labs/finite/pull/144) targets main
+  directly. Its prior posted head starts 9a65; keep it draft while new authorized
+  removal code receives fresh validation. PR #143 is merged.
+
+## Authorized host ZFS removal follow-up
+
+- Removal decision completed for all four profiles; no further ZFS approval or
+  matching-module wait is required for the chosen unsupported-host-ZFS direction.
+- Fresh removal/invariance tests, source/Nix contracts, four-profile image evidence
+  and changed-candidate native scan remain pending; root will bind exact revisions.
+- Preserve the separate unapproved next301 testing decision and production
+  security/signing/boot requirements. No automatic finding resolution or waiver.
+
+## Blocker-resolution assessment
+
+- Current focused validation: 44 kernel and 12 contract fixtures passed at source
+  c295; later KEV non-waivability hardening has 30 passing policy fixtures.
+- Representative hosted candidate38321177037 at frozen source371b7f17 is in
+  progress; no new scan outcome, image clearance or boot success is claimed.
+- Keep fix dependencies separate from applicability/exposure evidence and final
+  source/build/security/release gates. No active exception or new testing approval.
+- Next cheap investigations: msgpack owning consumers/Unpacker error handling and
+  rclone dependencies/RC/S3 configuration before optional removal or exposure review.
+- Existing exact digest/component/advisory exceptions expire within30days and need
+  documented reviewer/reason; every matching location in that digest must support
+  the review. KEV (including aliases/ignored matches) is now non-waivable with
+  the active gate. Unknown symbols or SELinux labels are not blanket mitigations.
+- Resolution options and evidence limits recorded in the desktop plan; reuse the
+  changed-candidate result and avoid unchanged scan repeats or unsupported fixes.

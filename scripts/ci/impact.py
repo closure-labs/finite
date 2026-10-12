@@ -13,6 +13,7 @@ PROFILES = {
     'bluefin-dx-next': 'finite-dev-next',
 }
 NEXT = {'bluefin-next', 'bluefin-dx-next'}
+GENERIC = set(PROFILES) - NEXT
 
 
 def classify(paths):
@@ -36,6 +37,10 @@ def classify(paths):
             '.github/workflows/queue-dependabot.yml',
             '.github/workflows/update-kernel.yml', '.github/workflows/release.yml',
             'scripts/ci/kernel-update.py',
+            '.github/workflows/desktop-security-evidence.yml',
+            'scripts/ci/go-binary-evidence.go', 'scripts/ci/go-binary-evidence_test.go',
+            'scripts/ci/go-desktop-evidence.py',
+            'scripts/ci/local-candidate-evidence.py',
         }:
             continue
         if path.startswith(('lib/', 'modules/', 'templates/')) or path in {
@@ -47,6 +52,9 @@ def classify(paths):
             profiles.add(Path(path).stem)
         elif path in {'recipes/shared/next.yml', 'files/scripts/kernel-next.sh'}:
             profiles.update(NEXT)
+        elif path in {'files/scripts/kernel-generic-security.py',
+                      'files/security/kernel-generic.json', 'files/security/fedora-44.pub'}:
+            profiles.update(GENERIC)
         else:
             profiles.update(PROFILES)
     return {'checks': checks, 'nix': nix, 'profiles': sorted(profiles)}

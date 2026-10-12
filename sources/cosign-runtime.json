@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "version": "3.1.3",
+  "repository": "ghcr.io/sigstore/cosign/cosign",
+  "indexDigest": "sha256:9e5c2f2edc34351160407ca3416c61855bdf9403c3c5936e0f0be7fc261611b8",
+  "platformDigest": "sha256:6ca1127dc1e9ff19f3f2bfa214936813a86fbbf52919652eda49d393c888ad3c",
+  "platform": {"os": "linux", "architecture": "amd64"},
+  "certificateIdentity": "keyless@projectsigstore.iam.gserviceaccount.com",
+  "certificateOidcIssuer": "https://accounts.google.com",
+  "annotations": {
+    "GIT_VERSION": "v3.1.3",
+    "GIT_HASH": "11926fa5bbbbde47e88fc006b625a17769b743b2"
+  }
+}

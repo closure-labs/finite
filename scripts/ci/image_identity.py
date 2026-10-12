@@ -17,8 +17,9 @@ def identity(profile, root, payload=None):
     if not payload.startswith('/nix/store/') or not payload.endswith('.drv'):
         raise ValueError('Invalid Nix payload identity')
     paths = [root / 'recipes' / (profile + '.yml'), root / 'cosign.pub',
+             root / 'sources/cosign-runtime.json', root / 'scripts/ci/cosign-runtime.py',
              root / 'scripts/ci/image_identity.py']
-    for directory in ('recipes/shared', 'files/scripts', 'files/system', 'files/dnf',
+    for directory in ('recipes/shared', 'files/scripts', 'files/security', 'files/system', 'files/dnf',
                       'files/installer', 'scripts/bluebuild'):
         paths.extend(path for path in (root / directory).rglob('*') if path.is_file() or path.is_symlink())
     paths.extend((root / 'sources').glob('bluebuild-*.json'))
@@ -31,6 +32,10 @@ def identity(profile, root, payload=None):
     for path in sorted(set(paths)):
         relative = path.relative_to(root).as_posix()
         if not profile.endswith('-next') and relative in ('recipes/shared/next.yml', 'files/scripts/kernel-next.sh'):
+            continue
+        if profile.endswith('-next') and relative in (
+                'files/scripts/kernel-generic-security.py', 'files/security/kernel-generic.json',
+                'files/security/fedora-44.pub'):
             continue
         content = str(path.readlink()).encode() if path.is_symlink() else path.read_bytes()
         entries.append([relative, bool(path.lstat().st_mode & 0o111), hashlib.sha256(content).hexdigest()])

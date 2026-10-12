@@ -12,6 +12,7 @@
       ../automation
       ../recipes
       ../files/scripts
+      ../files/security
       ../files/installer
       ../files/system
       ../files/dnf
@@ -76,11 +77,16 @@ in {
     python3 tests/ci/remediation-preflight.py
     python3 tests/ci/security-ownership.py
     python3 tests/ci/security-remediation-diff.py
+    python3 tests/ci/go-desktop-evidence.py
+    python3 tests/ci/cosign-runtime.py
+    python3 tests/ci/kernel-update.py
+    python3 tests/ci/local-candidate-evidence.py
     python3 tests/bluebuild/contracts.py
     python3 tests/bluebuild/build.py
     python3 tests/bluebuild/inspect-built.py
     python3 tests/bluebuild/iso.py
     python3 tests/bluebuild/kernel.py
+    python3 tests/bluebuild/kernel-generic-security.py
     python3 tests/bluebuild/initramfs.py
     python3 tests/bluebuild/vm-mok.py
     python3 tests/bluebuild/installer.py
