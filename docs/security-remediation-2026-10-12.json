@@ -1,0 +1,3270 @@
+{
+  "schema": 1,
+  "sourceRun": "https://github.com/closure-labs/finite/actions/runs/38290632761",
+  "sourceResultSha256": "0fb5adc9cd892b159f259be47df22506dd7898ac784e812180e48f2f4154bcbf",
+  "image": "ghcr.io/closure-labs/finite@sha256:302f05b64f6d38ce3747de84342fedd519495efa6b195f5f0dccfbe887f25d8d",
+  "scannedAt": "2026-10-12T18:26:31.850219047Z",
+  "policySha256": "94b1465623476ae88e6322796608f9acc451e090ba57acc923adc63f0e6e9112",
+  "status": "blocked",
+  "note": "Scanner matches awaiting remediation and rescan; not confirmed exploitability. Deduplication is for tracking only and does not alter enforcement.",
+  "findings": [
+    {
+      "component": "pkg:generic/linux-kernel@7.2.5-200.fc44.x86_64",
+      "advisory": "CVE-2020-27815",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "4.9.249",
+        "4.14.213",
+        "4.19.164",
+        "5.4.86",
+        "5.10.4"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:generic/linux-kernel@7.2.5-200.fc44.x86_64",
+      "advisory": "CVE-2026-100075",
+      "severity": "Critical",
+      "knownExploited": false,
+      "fixVersions": [
+        "5.10.270",
+        "5.15.221",
+        "6.1.188",
+        "6.6.157",
+        "6.12.110",
+        "6.18.52",
+        "7.2.6"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:generic/linux-kernel@7.2.5-200.fc44.x86_64",
+      "advisory": "CVE-2026-98050",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "6.18.53",
+        "7.2.7"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:generic/linux-kernel@7.2.5-200.fc44.x86_64",
+      "advisory": "CVE-2026-98052",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "6.6.158",
+        "6.12.111",
+        "6.18.53",
+        "7.2.7"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:generic/linux-kernel@7.2.5-200.fc44.x86_64",
+      "advisory": "CVE-2026-98083",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "6.6.158",
+        "6.12.111",
+        "6.18.53",
+        "7.2.7"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:generic/linux-kernel@7.2.5-200.fc44.x86_64",
+      "advisory": "CVE-2026-98115",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "6.7",
+        "6.11",
+        "7.2.7"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:generic/linux-kernel@7.2.5-200.fc44.x86_64",
+      "advisory": "CVE-2026-98136",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "7.2.7"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:generic/linux-kernel@7.2.5-200.fc44.x86_64",
+      "advisory": "CVE-2026-98163",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "7.2.8"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "advisory": "GHSA-4hq8-gpf5-8p68",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "5.8.4"
+      ],
+      "occurrences": 6,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "advisory": "GHSA-65gg-3w2w-hr4h",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "5.5.2"
+      ],
+      "occurrences": 6,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "advisory": "GHSA-wp3j-xq48-xpjw",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "5.6.1"
+      ],
+      "occurrences": 6,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/github.com/moby/buildkit@v0.25.1",
+      "advisory": "GHSA-4c29-8rgm-jvjj",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.28.1"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/github.com/moby/buildkit@v0.25.1",
+      "advisory": "GHSA-4vrq-3vrq-g6gg",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.28.1"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/github.com/moby/go-archive@v0.1.0",
+      "advisory": "GHSA-hfg8-hc9c-6c3h",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.3.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/github.com/opencontainers/selinux@v1.12.0",
+      "advisory": "GHSA-cgrx-mc8f-2prm",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.13.0"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+      "advisory": "GHSA-2m8m-jhrm-w6j2",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.75.0"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+      "advisory": "GHSA-45pq-889g-fcgh",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.75.0"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+      "advisory": "GHSA-c476-6w5q-jw77",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.75.1"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+      "advisory": "GHSA-cf44-9pgv-m4xc",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.74.4"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+      "advisory": "GHSA-fqj9-69pf-6pjg",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.74.4"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+      "advisory": "GHSA-p569-5gjg-9cmj",
+      "severity": "Critical",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.75.1"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+      "advisory": "GHSA-xwwr-4h3p-r22c",
+      "severity": "Critical",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.75.1"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/github.com/sigstore/fulcio@v1.7.1",
+      "advisory": "GHSA-f5mr-q85p-6hh6",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.8.6"
+      ],
+      "occurrences": 6,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/github.com/sigstore/fulcio@v1.7.1",
+      "advisory": "GHSA-f83f-xpx7-ffpw",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.8.3"
+      ],
+      "occurrences": 6,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/go.opentelemetry.io/otel@v1.36.0",
+      "advisory": "GHSA-mh2q-q3fh-2475",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.41.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/go.opentelemetry.io/otel@v1.39.0",
+      "advisory": "GHSA-mh2q-q3fh-2475",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.41.0"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "advisory": "GHSA-5cgq-3rg8-m6cv",
+      "severity": "Critical",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.52.0"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "advisory": "GHSA-89gr-r52h-f8rx",
+      "severity": "Critical",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.52.0"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "advisory": "GHSA-f5wc-c3c7-36mc",
+      "severity": "Critical",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.52.0"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "advisory": "GHSA-jppx-rxg9-jmrx",
+      "severity": "Critical",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.52.0"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "advisory": "GHSA-q4h4-gmj2-qvw2",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.52.0"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "advisory": "GHSA-rm3j-f69w-wqmq",
+      "severity": "Critical",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.52.0"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "advisory": "GHSA-vgwf-h737-ff37",
+      "severity": "Critical",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.52.0"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "advisory": "GHSA-w879-237q-wc7r",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.52.0"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "advisory": "GHSA-x527-x647-q7gg",
+      "severity": "Critical",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.52.0"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "advisory": "GO-2026-6303",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.55.0"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "advisory": "GO-2026-6354",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.56.0"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "advisory": "GO-2026-6355",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.56.0"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.52.0",
+      "advisory": "GO-2026-6303",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.55.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.52.0",
+      "advisory": "GO-2026-6354",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.56.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.52.0",
+      "advisory": "GO-2026-6355",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.56.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.53.0",
+      "advisory": "GO-2026-6303",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.55.0"
+      ],
+      "occurrences": 3,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.53.0",
+      "advisory": "GO-2026-6354",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.56.0"
+      ],
+      "occurrences": 3,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.53.0",
+      "advisory": "GO-2026-6355",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.56.0"
+      ],
+      "occurrences": 3,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.54.0",
+      "advisory": "GO-2026-6303",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.55.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.54.0",
+      "advisory": "GO-2026-6354",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.56.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.54.0",
+      "advisory": "GO-2026-6355",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.56.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/image@v0.41.0",
+      "advisory": "GO-2026-4961",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.42.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/image@v0.41.0",
+      "advisory": "GO-2026-5061",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.43.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/image@v0.41.0",
+      "advisory": "GO-2026-5062",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.43.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/image@v0.41.0",
+      "advisory": "GO-2026-5066",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.43.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/image@v0.41.0",
+      "advisory": "GO-2026-6222",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.45.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/mod@v0.20.0",
+      "advisory": "GO-2026-6179",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.40.0"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/mod@v0.20.0",
+      "advisory": "GO-2026-6180",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.40.0"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/mod@v0.36.0",
+      "advisory": "GO-2026-6179",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.40.0"
+      ],
+      "occurrences": 5,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/mod@v0.36.0",
+      "advisory": "GO-2026-6180",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.40.0"
+      ],
+      "occurrences": 5,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/mod@v0.38.0",
+      "advisory": "GO-2026-6179",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.40.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/mod@v0.38.0",
+      "advisory": "GO-2026-6180",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.40.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.40.0",
+      "advisory": "GO-2026-4918",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.53.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.40.0",
+      "advisory": "GO-2026-5026",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.55.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.40.0",
+      "advisory": "GO-2026-5942",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.56.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.40.0",
+      "advisory": "GO-2026-6603",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.60.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.40.0",
+      "advisory": "GO-2026-6610",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.60.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.40.0",
+      "advisory": "GO-2026-6611",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.60.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.40.0",
+      "advisory": "GO-2026-6612",
+      "severity": "Critical",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.60.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.48.0",
+      "advisory": "GO-2026-4918",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.53.0"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.48.0",
+      "advisory": "GO-2026-5026",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.55.0"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.48.0",
+      "advisory": "GO-2026-5942",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.56.0"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.48.0",
+      "advisory": "GO-2026-6603",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.60.0"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.48.0",
+      "advisory": "GO-2026-6610",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.60.0"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.48.0",
+      "advisory": "GO-2026-6611",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.60.0"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.48.0",
+      "advisory": "GO-2026-6612",
+      "severity": "Critical",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.60.0"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.55.0",
+      "advisory": "GO-2026-5942",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.56.0"
+      ],
+      "occurrences": 16,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.55.0",
+      "advisory": "GO-2026-6603",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.60.0"
+      ],
+      "occurrences": 16,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.55.0",
+      "advisory": "GO-2026-6610",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.60.0"
+      ],
+      "occurrences": 16,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.55.0",
+      "advisory": "GO-2026-6611",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.60.0"
+      ],
+      "occurrences": 16,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.55.0",
+      "advisory": "GO-2026-6612",
+      "severity": "Critical",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.60.0"
+      ],
+      "occurrences": 16,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.56.0",
+      "advisory": "GO-2026-6603",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.60.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.56.0",
+      "advisory": "GO-2026-6610",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.60.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.56.0",
+      "advisory": "GO-2026-6611",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.60.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.56.0",
+      "advisory": "GO-2026-6612",
+      "severity": "Critical",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.60.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.57.0",
+      "advisory": "GO-2026-6603",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.60.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.57.0",
+      "advisory": "GO-2026-6610",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.60.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.57.0",
+      "advisory": "GO-2026-6611",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.60.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.57.0",
+      "advisory": "GO-2026-6612",
+      "severity": "Critical",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.60.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/text@v0.21.0",
+      "advisory": "GO-2026-5970",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.39.0"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/text@v0.21.0",
+      "advisory": "GO-2026-6629",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.41.0"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/text@v0.28.0",
+      "advisory": "GO-2026-5970",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.39.0"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/text@v0.28.0",
+      "advisory": "GO-2026-6629",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.41.0"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/text@v0.32.0",
+      "advisory": "GO-2026-5970",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.39.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/text@v0.32.0",
+      "advisory": "GO-2026-6629",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.41.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/text@v0.37.0",
+      "advisory": "GO-2026-5970",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.39.0"
+      ],
+      "occurrences": 7,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/text@v0.37.0",
+      "advisory": "GO-2026-6629",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.41.0"
+      ],
+      "occurrences": 7,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/text@v0.38.0",
+      "advisory": "GO-2026-5970",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.39.0"
+      ],
+      "occurrences": 7,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/text@v0.38.0",
+      "advisory": "GO-2026-6629",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.41.0"
+      ],
+      "occurrences": 7,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/golang.org/x/text@v0.40.0",
+      "advisory": "GO-2026-6629",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0.41.0"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/google.golang.org/grpc@v1.72.2",
+      "advisory": "GHSA-2v4p-qf9q-27wj",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.82.2"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/google.golang.org/grpc@v1.72.2",
+      "advisory": "GHSA-hrxh-6v49-42gf",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.82.1"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/google.golang.org/grpc@v1.72.2",
+      "advisory": "GHSA-p77j-4mvh-x3m3",
+      "severity": "Critical",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.79.3"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/google.golang.org/grpc@v1.72.2",
+      "advisory": "GHSA-vp52-pcj8-j9qc",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.83.1"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/google.golang.org/grpc@v1.79.3",
+      "advisory": "GHSA-2v4p-qf9q-27wj",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.82.2"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/google.golang.org/grpc@v1.79.3",
+      "advisory": "GHSA-hrxh-6v49-42gf",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.82.1"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/google.golang.org/grpc@v1.79.3",
+      "advisory": "GHSA-vp52-pcj8-j9qc",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.83.1"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/google.golang.org/grpc@v1.80.0",
+      "advisory": "GHSA-2v4p-qf9q-27wj",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.82.2"
+      ],
+      "occurrences": 10,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/google.golang.org/grpc@v1.80.0",
+      "advisory": "GHSA-hrxh-6v49-42gf",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.82.1"
+      ],
+      "occurrences": 10,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/google.golang.org/grpc@v1.80.0",
+      "advisory": "GHSA-vp52-pcj8-j9qc",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.83.1"
+      ],
+      "occurrences": 10,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/google.golang.org/grpc@v1.81.1",
+      "advisory": "GHSA-2v4p-qf9q-27wj",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.82.2"
+      ],
+      "occurrences": 3,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/google.golang.org/grpc@v1.81.1",
+      "advisory": "GHSA-hrxh-6v49-42gf",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.82.1"
+      ],
+      "occurrences": 3,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/google.golang.org/grpc@v1.81.1",
+      "advisory": "GHSA-vp52-pcj8-j9qc",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.83.1"
+      ],
+      "occurrences": 3,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+      "advisory": "CVE-2026-27140",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.9",
+        "1.26.2"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+      "advisory": "CVE-2026-27143",
+      "severity": "Critical",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.9",
+        "1.26.2"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+      "advisory": "CVE-2026-27144",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.9",
+        "1.26.2"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+      "advisory": "CVE-2026-27145",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.11",
+        "1.26.4"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+      "advisory": "CVE-2026-32280",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.9",
+        "1.26.2"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+      "advisory": "CVE-2026-32281",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.9",
+        "1.26.2"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+      "advisory": "CVE-2026-32283",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.9",
+        "1.26.2"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+      "advisory": "CVE-2026-33810",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.26.2"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+      "advisory": "CVE-2026-33811",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.10",
+        "1.26.3"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+      "advisory": "CVE-2026-33814",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.10",
+        "1.26.3"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+      "advisory": "CVE-2026-33818",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+      "advisory": "CVE-2026-39820",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.10",
+        "1.26.3"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+      "advisory": "CVE-2026-39822",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.12",
+        "1.26.5",
+        "1.27.0-rc.2"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+      "advisory": "CVE-2026-39836",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.10",
+        "1.26.3"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+      "advisory": "CVE-2026-42499",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.10",
+        "1.26.3"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+      "advisory": "CVE-2026-42501",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.10",
+        "1.26.3"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+      "advisory": "CVE-2026-42504",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.11",
+        "1.26.4"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+      "advisory": "CVE-2026-46600",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+      "advisory": "CVE-2026-56853",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+      "advisory": "CVE-2026-56859",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+      "advisory": "CVE-2026-56862",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+      "advisory": "CVE-2026-56864",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+      "advisory": "CVE-2026-56865",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3",
+      "advisory": "CVE-2026-27145",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.11",
+        "1.26.4"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3",
+      "advisory": "CVE-2026-33818",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3",
+      "advisory": "CVE-2026-39822",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.12",
+        "1.26.5",
+        "1.27.0-rc.2"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3",
+      "advisory": "CVE-2026-42504",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.11",
+        "1.26.4"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3",
+      "advisory": "CVE-2026-46600",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3",
+      "advisory": "CVE-2026-56853",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3",
+      "advisory": "CVE-2026-56859",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3",
+      "advisory": "CVE-2026-56862",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3",
+      "advisory": "CVE-2026-56864",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3",
+      "advisory": "CVE-2026-56865",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3",
+      "advisory": "GO-2026-4970",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.12",
+        "1.26.5",
+        "1.27.0-rc.2"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3",
+      "advisory": "GO-2026-5026",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3",
+      "advisory": "GO-2026-5037",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.11",
+        "1.26.4"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3",
+      "advisory": "GO-2026-5038",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.11",
+        "1.26.4"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3",
+      "advisory": "GO-2026-5942",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3",
+      "advisory": "GO-2026-5972",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3",
+      "advisory": "GO-2026-6088",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3",
+      "advisory": "GO-2026-6089",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3",
+      "advisory": "GO-2026-6090",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3",
+      "advisory": "GO-2026-6603",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.26.9"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3",
+      "advisory": "GO-2026-6604",
+      "severity": "Critical",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.26.9",
+        "1.27.2"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3",
+      "advisory": "GO-2026-6605",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.26.9",
+        "1.27.2"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3",
+      "advisory": "GO-2026-6607",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.26.9",
+        "1.27.2"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3",
+      "advisory": "GO-2026-6608",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.26.9",
+        "1.27.2"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3",
+      "advisory": "GO-2026-6609",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.26.9",
+        "1.27.2"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3",
+      "advisory": "GO-2026-6610",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.26.9"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3",
+      "advisory": "GO-2026-6611",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.26.9"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3",
+      "advisory": "GO-2026-6612",
+      "severity": "Critical",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.26.9"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3",
+      "advisory": "GO-2026-6613",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.26.9",
+        "1.27.2"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3-X%3Anodwarf5",
+      "advisory": "CVE-2026-27145",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.11",
+        "1.26.4"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3-X%3Anodwarf5",
+      "advisory": "CVE-2026-33818",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3-X%3Anodwarf5",
+      "advisory": "CVE-2026-39822",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.12",
+        "1.26.5",
+        "1.27.0-rc.2"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3-X%3Anodwarf5",
+      "advisory": "CVE-2026-42504",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.11",
+        "1.26.4"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3-X%3Anodwarf5",
+      "advisory": "CVE-2026-46600",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3-X%3Anodwarf5",
+      "advisory": "CVE-2026-56853",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3-X%3Anodwarf5",
+      "advisory": "CVE-2026-56859",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3-X%3Anodwarf5",
+      "advisory": "CVE-2026-56862",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3-X%3Anodwarf5",
+      "advisory": "CVE-2026-56864",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.3-X%3Anodwarf5",
+      "advisory": "CVE-2026-56865",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.4-X%3Anodwarf5",
+      "advisory": "CVE-2026-33818",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.4-X%3Anodwarf5",
+      "advisory": "CVE-2026-39822",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.12",
+        "1.26.5",
+        "1.27.0-rc.2"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.4-X%3Anodwarf5",
+      "advisory": "CVE-2026-46600",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.4-X%3Anodwarf5",
+      "advisory": "CVE-2026-56853",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.4-X%3Anodwarf5",
+      "advisory": "CVE-2026-56859",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.4-X%3Anodwarf5",
+      "advisory": "CVE-2026-56862",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.4-X%3Anodwarf5",
+      "advisory": "CVE-2026-56864",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.4-X%3Anodwarf5",
+      "advisory": "CVE-2026-56865",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.5-X%3Anodwarf5",
+      "advisory": "CVE-2026-33818",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 3,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.5-X%3Anodwarf5",
+      "advisory": "CVE-2026-46600",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 3,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.5-X%3Anodwarf5",
+      "advisory": "CVE-2026-56853",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 3,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.5-X%3Anodwarf5",
+      "advisory": "CVE-2026-56859",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 3,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.5-X%3Anodwarf5",
+      "advisory": "CVE-2026-56862",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 3,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.5-X%3Anodwarf5",
+      "advisory": "CVE-2026-56864",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 3,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.5-X%3Anodwarf5",
+      "advisory": "CVE-2026-56865",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 3,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.6",
+      "advisory": "GO-2026-6603",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.26.9"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.6",
+      "advisory": "GO-2026-6604",
+      "severity": "Critical",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.26.9",
+        "1.27.2"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.6",
+      "advisory": "GO-2026-6605",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.26.9",
+        "1.27.2"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.6",
+      "advisory": "GO-2026-6607",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.26.9",
+        "1.27.2"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.6",
+      "advisory": "GO-2026-6608",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.26.9",
+        "1.27.2"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.6",
+      "advisory": "GO-2026-6609",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.26.9",
+        "1.27.2"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.6",
+      "advisory": "GO-2026-6610",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.26.9"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.6",
+      "advisory": "GO-2026-6611",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.26.9"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.6",
+      "advisory": "GO-2026-6612",
+      "severity": "Critical",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.26.9"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.6",
+      "advisory": "GO-2026-6613",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.26.9",
+        "1.27.2"
+      ],
+      "occurrences": 4,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-25679",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.8",
+        "1.26.1"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-27137",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.26.1"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-27140",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.9",
+        "1.26.2"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-27143",
+      "severity": "Critical",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.9",
+        "1.26.2"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-27144",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.9",
+        "1.26.2"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-27145",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.11",
+        "1.26.4"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-32280",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.9",
+        "1.26.2"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-32281",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.9",
+        "1.26.2"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-32283",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.9",
+        "1.26.2"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-33810",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.26.2"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-33811",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.10",
+        "1.26.3"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-33814",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.10",
+        "1.26.3"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-33818",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-39820",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.10",
+        "1.26.3"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-39822",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.12",
+        "1.26.5",
+        "1.27.0-rc.2"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-39836",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.10",
+        "1.26.3"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-42499",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.10",
+        "1.26.3"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-42501",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.10",
+        "1.26.3"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-42504",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.11",
+        "1.26.4"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-46600",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-56853",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-56859",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-56862",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-56864",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+      "advisory": "CVE-2026-56865",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "occurrences": 2,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:pypi/anyio@4.13.0",
+      "advisory": "GHSA-82r6-8w77-94w6",
+      "severity": "Critical",
+      "knownExploited": false,
+      "fixVersions": [
+        "4.14.2"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:pypi/msgpack@1.1.2",
+      "advisory": "GHSA-6v7p-g79w-8964",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "1.2.1"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/freerdp-libs@3.31.1-1.fc44?arch=x86_64&distro=bluefin-44&epoch=2&upstream=freerdp-3.31.1-1.fc44.src.rpm",
+      "advisory": "FEDORA-2026-9aca5215f2",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "2:3.32.1-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/hplip-common@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+      "advisory": "CVE-2026-91097",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.26.6-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/hplip-common@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+      "advisory": "CVE-2026-91098",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.26.6-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/hplip-common@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+      "advisory": "CVE-2026-91099",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.26.6-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/hplip-common@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+      "advisory": "CVE-2026-91100",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.26.6-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/hplip-common@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+      "advisory": "CVE-2026-91101",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.26.6-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/hplip-common@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+      "advisory": "CVE-2026-91102",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.26.6-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/hplip-common@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+      "advisory": "CVE-2026-91103",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.26.6-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/hplip-common@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+      "advisory": "CVE-2026-91105",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.26.6-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/hplip-libs@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+      "advisory": "CVE-2026-91097",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.26.6-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/hplip-libs@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+      "advisory": "CVE-2026-91098",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.26.6-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/hplip-libs@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+      "advisory": "CVE-2026-91099",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.26.6-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/hplip-libs@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+      "advisory": "CVE-2026-91100",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.26.6-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/hplip-libs@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+      "advisory": "CVE-2026-91101",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.26.6-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/hplip-libs@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+      "advisory": "CVE-2026-91102",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.26.6-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/hplip-libs@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+      "advisory": "CVE-2026-91103",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.26.6-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/hplip-libs@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+      "advisory": "CVE-2026-91105",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.26.6-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/hplip@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+      "advisory": "CVE-2026-91097",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.26.6-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/hplip@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+      "advisory": "CVE-2026-91098",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.26.6-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/hplip@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+      "advisory": "CVE-2026-91099",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.26.6-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/hplip@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+      "advisory": "CVE-2026-91100",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.26.6-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/hplip@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+      "advisory": "CVE-2026-91101",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.26.6-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/hplip@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+      "advisory": "CVE-2026-91102",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.26.6-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/hplip@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+      "advisory": "CVE-2026-91103",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.26.6-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/hplip@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+      "advisory": "CVE-2026-91105",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.26.6-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/libX11-common@1.8.13-1.fc44?arch=noarch&distro=bluefin-44&upstream=libX11-1.8.13-1.fc44.src.rpm",
+      "advisory": "CVE-2026-88806",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:1.8.13-3.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/libX11-xcb@1.8.13-1.fc44?arch=x86_64&distro=bluefin-44&upstream=libX11-1.8.13-1.fc44.src.rpm",
+      "advisory": "CVE-2026-88806",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:1.8.13-3.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/libX11@1.8.13-1.fc44?arch=x86_64&distro=bluefin-44&upstream=libX11-1.8.13-1.fc44.src.rpm",
+      "advisory": "CVE-2026-88806",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:1.8.13-3.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/libsane-hpaio@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+      "advisory": "CVE-2026-91097",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.26.6-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/libsane-hpaio@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+      "advisory": "CVE-2026-91098",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.26.6-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/libsane-hpaio@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+      "advisory": "CVE-2026-91099",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.26.6-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/libsane-hpaio@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+      "advisory": "CVE-2026-91100",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.26.6-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/libsane-hpaio@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+      "advisory": "CVE-2026-91101",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.26.6-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/libsane-hpaio@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+      "advisory": "CVE-2026-91102",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.26.6-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/libsane-hpaio@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+      "advisory": "CVE-2026-91103",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.26.6-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/libsane-hpaio@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+      "advisory": "CVE-2026-91105",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.26.6-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/libwinpr@3.31.1-1.fc44?arch=x86_64&distro=bluefin-44&epoch=2&upstream=freerdp-3.31.1-1.fc44.src.rpm",
+      "advisory": "FEDORA-2026-9aca5215f2",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "2:3.32.1-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/python-unversioned-command@3.14.7-1.fc44?arch=noarch&distro=bluefin-44&upstream=python3.14-3.14.7-1.fc44.src.rpm",
+      "advisory": "CVE-2026-19445",
+      "severity": "Critical",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.14.8-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/python3-libs@3.14.7-1.fc44?arch=x86_64&distro=bluefin-44&upstream=python3.14-3.14.7-1.fc44.src.rpm",
+      "advisory": "CVE-2026-19445",
+      "severity": "Critical",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.14.8-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/python3@3.14.7-1.fc44?arch=x86_64&distro=bluefin-44&upstream=python3.14-3.14.7-1.fc44.src.rpm",
+      "advisory": "CVE-2026-19445",
+      "severity": "Critical",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:3.14.8-1.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/sudo-python-plugin@1.9.17-8.p2.fc44?arch=x86_64&distro=bluefin-44&upstream=sudo-1.9.17-8.p2.fc44.src.rpm",
+      "advisory": "FEDORA-2026-7d4732cbab",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:1.9.17-10.p2.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/sudo@1.9.17-8.p2.fc44?arch=x86_64&distro=bluefin-44&upstream=sudo-1.9.17-8.p2.fc44.src.rpm",
+      "advisory": "FEDORA-2026-7d4732cbab",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:1.9.17-10.p2.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/tesseract-common@5.5.3-1.fc44?arch=noarch&distro=bluefin-44&upstream=tesseract-5.5.3-1.fc44.src.rpm",
+      "advisory": "CVE-2026-88047",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:5.5.3-2.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/tesseract-common@5.5.3-1.fc44?arch=noarch&distro=bluefin-44&upstream=tesseract-5.5.3-1.fc44.src.rpm",
+      "advisory": "CVE-2026-88048",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:5.5.3-2.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/tesseract-common@5.5.3-1.fc44?arch=noarch&distro=bluefin-44&upstream=tesseract-5.5.3-1.fc44.src.rpm",
+      "advisory": "CVE-2026-88049",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:5.5.3-2.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/tesseract-common@5.5.3-1.fc44?arch=noarch&distro=bluefin-44&upstream=tesseract-5.5.3-1.fc44.src.rpm",
+      "advisory": "CVE-2026-88050",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:5.5.3-2.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/tesseract-common@5.5.3-1.fc44?arch=noarch&distro=bluefin-44&upstream=tesseract-5.5.3-1.fc44.src.rpm",
+      "advisory": "CVE-2026-88051",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:5.5.3-2.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/tesseract-common@5.5.3-1.fc44?arch=noarch&distro=bluefin-44&upstream=tesseract-5.5.3-1.fc44.src.rpm",
+      "advisory": "CVE-2026-88052",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:5.5.3-2.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/tesseract-common@5.5.3-1.fc44?arch=noarch&distro=bluefin-44&upstream=tesseract-5.5.3-1.fc44.src.rpm",
+      "advisory": "CVE-2026-88053",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:5.5.3-2.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/tesseract-common@5.5.3-1.fc44?arch=noarch&distro=bluefin-44&upstream=tesseract-5.5.3-1.fc44.src.rpm",
+      "advisory": "CVE-2026-88054",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:5.5.3-2.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/tesseract-libs@5.5.3-1.fc44?arch=x86_64&distro=bluefin-44&upstream=tesseract-5.5.3-1.fc44.src.rpm",
+      "advisory": "CVE-2026-88047",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:5.5.3-2.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/tesseract-libs@5.5.3-1.fc44?arch=x86_64&distro=bluefin-44&upstream=tesseract-5.5.3-1.fc44.src.rpm",
+      "advisory": "CVE-2026-88048",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:5.5.3-2.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/tesseract-libs@5.5.3-1.fc44?arch=x86_64&distro=bluefin-44&upstream=tesseract-5.5.3-1.fc44.src.rpm",
+      "advisory": "CVE-2026-88049",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:5.5.3-2.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/tesseract-libs@5.5.3-1.fc44?arch=x86_64&distro=bluefin-44&upstream=tesseract-5.5.3-1.fc44.src.rpm",
+      "advisory": "CVE-2026-88050",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:5.5.3-2.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/tesseract-libs@5.5.3-1.fc44?arch=x86_64&distro=bluefin-44&upstream=tesseract-5.5.3-1.fc44.src.rpm",
+      "advisory": "CVE-2026-88051",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:5.5.3-2.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/tesseract-libs@5.5.3-1.fc44?arch=x86_64&distro=bluefin-44&upstream=tesseract-5.5.3-1.fc44.src.rpm",
+      "advisory": "CVE-2026-88052",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:5.5.3-2.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/tesseract-libs@5.5.3-1.fc44?arch=x86_64&distro=bluefin-44&upstream=tesseract-5.5.3-1.fc44.src.rpm",
+      "advisory": "CVE-2026-88053",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:5.5.3-2.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    },
+    {
+      "component": "pkg:rpm/bluefin/tesseract-libs@5.5.3-1.fc44?arch=x86_64&distro=bluefin-44&upstream=tesseract-5.5.3-1.fc44.src.rpm",
+      "advisory": "CVE-2026-88054",
+      "severity": "High",
+      "knownExploited": false,
+      "fixVersions": [
+        "0:5.5.3-2.fc44"
+      ],
+      "occurrences": 1,
+      "remediationStatus": "pending-rescan"
+    }
+  ]
+}

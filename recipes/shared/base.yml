@@ -25,6 +25,10 @@ modules:
         - opensc
         - pcsc-lite
         - yubikey-manager
+  - type: script@v1
+    snippets:
+      - python3 "$CONFIG_DIRECTORY/scripts/security-remediate.py"
+      - python3 "$CONFIG_DIRECTORY/scripts/tailscale-security.py"
   - type: files@v1
     files:
       - source: system

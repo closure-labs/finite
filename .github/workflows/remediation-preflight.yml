@@ -1,0 +1,45 @@
+name: Validate remediation prerequisites
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  prerequisites:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Query reviewed Fedora repositories
+        run: |
+          docker run --detach --name finite-fedora-probe \
+            registry.fedoraproject.org/fedora@sha256:1ff9eb02e4e2d7fb1175becac7139b2960c4fdcccedce81c86ec25b98ef3124d \
+            sleep infinity
+          python3 scripts/ci/remediation-preflight.py --container finite-fedora-probe \
+            --policy files/scripts/security-remediation.json --output .bluebuild/preflight/packages.json
+      - name: Reuse native inventory for package ownership
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 38288928004 --repo "$GITHUB_REPOSITORY" \
+            --name published-security-finite-38288928004-1 --dir .bluebuild/baseline
+          python3 scripts/ci/security-ownership.py --inventory-dir .bluebuild/baseline \
+            --ledger docs/security-remediation-2026-10-12.json --output .bluebuild/preflight/ownership.json
+      - name: Remove probe container
+        if: always()
+        run: docker rm --force finite-fedora-probe || true
+      - name: Retain prerequisite evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: remediation-preflight-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/preflight/*.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 30

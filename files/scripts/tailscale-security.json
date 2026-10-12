@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "fedora": 44,
+  "package": "tailscale",
+  "minimumEVR": "0:1.104.1-1",
+  "arch": "x86_64",
+  "url": "https://pkgs.tailscale.com/stable/fedora/x86_64/tailscale_1.104.1_x86_64.rpm",
+  "sha256": "7b4369268fb239f1332e6b113d6c77ad3fc2551c4c84c12da8a0f1f37ccb84dd",
+  "keySHA256": "53c6f7dfbd774839d9f37e6c5022ba952108aba9a0e556a56f292a9eb605d7cf",
+  "keyFingerprint": "2596A99EAAB33821893C0A79458CA832957F5868",
+  "keySource": "https://pkgs.tailscale.com/stable/fedora/repo.gpg"
+}

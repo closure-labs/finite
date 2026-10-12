@@ -38,7 +38,7 @@ jobs:
       - name: Validate synchronized locks
         if: steps.source.outputs.changed == 'true'
         run: >-
-          nix shell --accept-flake-config .#ci-lock-validate
+          nix shell --file lib/ci-tools.nix ci-lock-validate
           -c finite-ci-validate-locks
 
       - name: Validate generated text

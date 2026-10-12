@@ -1,0 +1,1705 @@
+{
+  "schema": 1,
+  "run": "https://github.com/closure-labs/finite/actions/runs/38294546850",
+  "purpose": "Prerequisite evidence only, not a new scan or proof of remediation",
+  "image": "ghcr.io/closure-labs/finite@sha256:302f05b64f6d38ce3747de84342fedd519495efa6b195f5f0dccfbe887f25d8d",
+  "sbomSha256": "f68fe556740047fcec218bb6b71800f827658a48e1ed9664b24c0f16a27acb4b",
+  "artifactFiles": {
+    "ownership.json": "14b11c65be64ab635fe45ba51ff709adeab38ad7e3a86213023c2c2e9c8a3a70",
+    "packages.json": "230c6b85ce4175fe383a9f815e88d84f24b65e581f54744d7fb6d4a94d5cc0fb"
+  },
+  "ownership": {
+    "total": 281,
+    "exactPurlMatches": 281,
+    "identified": 244,
+    "unknown": 37,
+    "owners": [
+      {
+        "name": "podman",
+        "version": "5:5.8.7-1.fc44",
+        "purl": "pkg:rpm/bluefin/podman@5.8.7-1.fc44?arch=x86_64&distro=bluefin-44&epoch=5&upstream=podman-5.8.7-1.fc44.src.rpm",
+        "sourceRpm": "podman-5.8.7-1.fc44.src.rpm",
+        "evidence": "rpm-file-list"
+      },
+      {
+        "name": "buildah",
+        "version": "2:1.43.4-1.fc44",
+        "purl": "pkg:rpm/bluefin/buildah@1.43.4-1.fc44?arch=x86_64&distro=bluefin-44&epoch=2&upstream=buildah-1.43.4-1.fc44.src.rpm",
+        "sourceRpm": "buildah-1.43.4-1.fc44.src.rpm",
+        "evidence": "rpm-file-list"
+      },
+      {
+        "name": "skopeo",
+        "version": "1:1.22.3-1.fc44",
+        "purl": "pkg:rpm/bluefin/skopeo@1.22.3-1.fc44?arch=x86_64&distro=bluefin-44&epoch=1&upstream=skopeo-1.22.3-1.fc44.src.rpm",
+        "sourceRpm": "skopeo-1.22.3-1.fc44.src.rpm",
+        "evidence": "rpm-file-list"
+      },
+      {
+        "name": "rclone",
+        "version": "1.74.3-1.fc44",
+        "purl": "pkg:rpm/bluefin/rclone@1.74.3-1.fc44?arch=x86_64&distro=bluefin-44&upstream=rclone-1.74.3-1.fc44.src.rpm",
+        "sourceRpm": "rclone-1.74.3-1.fc44.src.rpm",
+        "evidence": "rpm-file-list"
+      },
+      {
+        "name": "restic",
+        "version": "0.19.1-1.fc44",
+        "purl": "pkg:rpm/bluefin/restic@0.19.1-1.fc44?arch=x86_64&distro=bluefin-44&upstream=restic-0.19.1-1.fc44.src.rpm",
+        "sourceRpm": "restic-0.19.1-1.fc44.src.rpm",
+        "evidence": "rpm-file-list"
+      },
+      {
+        "name": "containerd",
+        "version": "2.3.5-1.fc44",
+        "purl": "pkg:rpm/bluefin/containerd@2.3.5-1.fc44?arch=x86_64&distro=bluefin-44&upstream=containerd-2.3.5-1.fc44.src.rpm",
+        "sourceRpm": "containerd-2.3.5-1.fc44.src.rpm",
+        "evidence": "rpm-file-list"
+      },
+      {
+        "name": "tailscale",
+        "version": "0:1.102.5-1",
+        "purl": "pkg:rpm/bluefin/tailscale@1.102.5-1?arch=x86_64&distro=bluefin-44&epoch=0&upstream=tailscale-1.102.5-1.src.rpm",
+        "sourceRpm": "tailscale-1.102.5-1.src.rpm",
+        "evidence": "rpm-file-list"
+      },
+      {
+        "name": "toolbox",
+        "version": "0.3-4.fc44",
+        "purl": "pkg:rpm/bluefin/toolbox@0.3-4.fc44?arch=x86_64&distro=bluefin-44&upstream=toolbox-0.3-4.fc44.src.rpm",
+        "sourceRpm": "toolbox-0.3-4.fc44.src.rpm",
+        "evidence": "rpm-file-list"
+      },
+      {
+        "name": "glow",
+        "version": "2.1.2-1.fc44",
+        "purl": "pkg:rpm/bluefin/glow@2.1.2-1.fc44?arch=x86_64&distro=bluefin-44&upstream=glow-2.1.2-1.fc44.src.rpm",
+        "sourceRpm": "glow-2.1.2-1.fc44.src.rpm",
+        "evidence": "rpm-file-list"
+      },
+      {
+        "name": "gum",
+        "version": "0.17.0-3.fc44",
+        "purl": "pkg:rpm/bluefin/gum@0.17.0-3.fc44?arch=x86_64&distro=bluefin-44&upstream=gum-0.17.0-3.fc44.src.rpm",
+        "sourceRpm": "gum-0.17.0-3.fc44.src.rpm",
+        "evidence": "rpm-file-list"
+      },
+      {
+        "name": "runc",
+        "version": "2:1.5.2-3.fc44",
+        "purl": "pkg:rpm/bluefin/runc@1.5.2-3.fc44?arch=x86_64&distro=bluefin-44&epoch=2&upstream=runc-1.5.2-3.fc44.src.rpm",
+        "sourceRpm": "runc-1.5.2-3.fc44.src.rpm",
+        "evidence": "rpm-file-list"
+      },
+      {
+        "name": "yq",
+        "version": "4.53.3-1.fc44",
+        "purl": "pkg:rpm/bluefin/yq@4.53.3-1.fc44?arch=x86_64&distro=bluefin-44&upstream=yq-4.53.3-1.fc44.src.rpm",
+        "sourceRpm": "yq-4.53.3-1.fc44.src.rpm",
+        "evidence": "rpm-file-list"
+      },
+      {
+        "name": "uupd",
+        "version": "1.4.0-2.fc44",
+        "purl": "pkg:rpm/bluefin/uupd@1.4.0-2.fc44?arch=x86_64&distro=bluefin-44&upstream=uupd-1.4.0-2.fc44.src.rpm",
+        "sourceRpm": "uupd-1.4.0-2.fc44.src.rpm",
+        "evidence": "rpm-file-list"
+      },
+      {
+        "name": "ipp-usb",
+        "version": "0.9.34-2.fc44",
+        "purl": "pkg:rpm/bluefin/ipp-usb@0.9.34-2.fc44?arch=x86_64&distro=bluefin-44&upstream=ipp-usb-0.9.34-2.fc44.src.rpm",
+        "sourceRpm": "ipp-usb-0.9.34-2.fc44.src.rpm",
+        "evidence": "rpm-file-list"
+      },
+      {
+        "name": "python3-anyio",
+        "version": "4.13.0-1.fc44",
+        "purl": "pkg:rpm/bluefin/python3-anyio@4.13.0-1.fc44?arch=noarch&distro=bluefin-44&upstream=python-anyio-4.13.0-1.fc44.src.rpm",
+        "sourceRpm": "python-anyio-4.13.0-1.fc44.src.rpm",
+        "evidence": "rpm-file-list"
+      },
+      {
+        "name": "python3-msgpack",
+        "version": "1.1.2-2.fc44",
+        "purl": "pkg:rpm/bluefin/python3-msgpack@1.1.2-2.fc44?arch=x86_64&distro=bluefin-44&upstream=python-msgpack-1.1.2-2.fc44.src.rpm",
+        "sourceRpm": "python-msgpack-1.1.2-2.fc44.src.rpm",
+        "evidence": "rpm-file-list"
+      },
+      {
+        "name": "freerdp-libs",
+        "version": "2:3.31.1-1.fc44",
+        "purl": "pkg:rpm/bluefin/freerdp-libs@3.31.1-1.fc44?arch=x86_64&distro=bluefin-44&epoch=2&upstream=freerdp-3.31.1-1.fc44.src.rpm",
+        "sourceRpm": "freerdp-3.31.1-1.fc44.src.rpm",
+        "evidence": "rpm-artifact-itself"
+      },
+      {
+        "name": "hplip-common",
+        "version": "3.26.4-7.fc44",
+        "purl": "pkg:rpm/bluefin/hplip-common@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+        "sourceRpm": "hplip-3.26.4-7.fc44.src.rpm",
+        "evidence": "rpm-artifact-itself"
+      },
+      {
+        "name": "hplip-libs",
+        "version": "3.26.4-7.fc44",
+        "purl": "pkg:rpm/bluefin/hplip-libs@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+        "sourceRpm": "hplip-3.26.4-7.fc44.src.rpm",
+        "evidence": "rpm-artifact-itself"
+      },
+      {
+        "name": "hplip",
+        "version": "3.26.4-7.fc44",
+        "purl": "pkg:rpm/bluefin/hplip@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+        "sourceRpm": "hplip-3.26.4-7.fc44.src.rpm",
+        "evidence": "rpm-artifact-itself"
+      },
+      {
+        "name": "libX11-common",
+        "version": "1.8.13-1.fc44",
+        "purl": "pkg:rpm/bluefin/libX11-common@1.8.13-1.fc44?arch=noarch&distro=bluefin-44&upstream=libX11-1.8.13-1.fc44.src.rpm",
+        "sourceRpm": "libX11-1.8.13-1.fc44.src.rpm",
+        "evidence": "rpm-artifact-itself"
+      },
+      {
+        "name": "libX11-xcb",
+        "version": "1.8.13-1.fc44",
+        "purl": "pkg:rpm/bluefin/libX11-xcb@1.8.13-1.fc44?arch=x86_64&distro=bluefin-44&upstream=libX11-1.8.13-1.fc44.src.rpm",
+        "sourceRpm": "libX11-1.8.13-1.fc44.src.rpm",
+        "evidence": "rpm-artifact-itself"
+      },
+      {
+        "name": "libX11",
+        "version": "1.8.13-1.fc44",
+        "purl": "pkg:rpm/bluefin/libX11@1.8.13-1.fc44?arch=x86_64&distro=bluefin-44&upstream=libX11-1.8.13-1.fc44.src.rpm",
+        "sourceRpm": "libX11-1.8.13-1.fc44.src.rpm",
+        "evidence": "rpm-artifact-itself"
+      },
+      {
+        "name": "libsane-hpaio",
+        "version": "3.26.4-7.fc44",
+        "purl": "pkg:rpm/bluefin/libsane-hpaio@3.26.4-7.fc44?arch=x86_64&distro=bluefin-44&upstream=hplip-3.26.4-7.fc44.src.rpm",
+        "sourceRpm": "hplip-3.26.4-7.fc44.src.rpm",
+        "evidence": "rpm-artifact-itself"
+      },
+      {
+        "name": "libwinpr",
+        "version": "2:3.31.1-1.fc44",
+        "purl": "pkg:rpm/bluefin/libwinpr@3.31.1-1.fc44?arch=x86_64&distro=bluefin-44&epoch=2&upstream=freerdp-3.31.1-1.fc44.src.rpm",
+        "sourceRpm": "freerdp-3.31.1-1.fc44.src.rpm",
+        "evidence": "rpm-artifact-itself"
+      },
+      {
+        "name": "python-unversioned-command",
+        "version": "3.14.7-1.fc44",
+        "purl": "pkg:rpm/bluefin/python-unversioned-command@3.14.7-1.fc44?arch=noarch&distro=bluefin-44&upstream=python3.14-3.14.7-1.fc44.src.rpm",
+        "sourceRpm": "python3.14-3.14.7-1.fc44.src.rpm",
+        "evidence": "rpm-artifact-itself"
+      },
+      {
+        "name": "python3-libs",
+        "version": "3.14.7-1.fc44",
+        "purl": "pkg:rpm/bluefin/python3-libs@3.14.7-1.fc44?arch=x86_64&distro=bluefin-44&upstream=python3.14-3.14.7-1.fc44.src.rpm",
+        "sourceRpm": "python3.14-3.14.7-1.fc44.src.rpm",
+        "evidence": "rpm-artifact-itself"
+      },
+      {
+        "name": "python3",
+        "version": "3.14.7-1.fc44",
+        "purl": "pkg:rpm/bluefin/python3@3.14.7-1.fc44?arch=x86_64&distro=bluefin-44&upstream=python3.14-3.14.7-1.fc44.src.rpm",
+        "sourceRpm": "python3.14-3.14.7-1.fc44.src.rpm",
+        "evidence": "rpm-artifact-itself"
+      },
+      {
+        "name": "sudo-python-plugin",
+        "version": "1.9.17-8.p2.fc44",
+        "purl": "pkg:rpm/bluefin/sudo-python-plugin@1.9.17-8.p2.fc44?arch=x86_64&distro=bluefin-44&upstream=sudo-1.9.17-8.p2.fc44.src.rpm",
+        "sourceRpm": "sudo-1.9.17-8.p2.fc44.src.rpm",
+        "evidence": "rpm-artifact-itself"
+      },
+      {
+        "name": "sudo",
+        "version": "1.9.17-8.p2.fc44",
+        "purl": "pkg:rpm/bluefin/sudo@1.9.17-8.p2.fc44?arch=x86_64&distro=bluefin-44&upstream=sudo-1.9.17-8.p2.fc44.src.rpm",
+        "sourceRpm": "sudo-1.9.17-8.p2.fc44.src.rpm",
+        "evidence": "rpm-artifact-itself"
+      },
+      {
+        "name": "tesseract-common",
+        "version": "5.5.3-1.fc44",
+        "purl": "pkg:rpm/bluefin/tesseract-common@5.5.3-1.fc44?arch=noarch&distro=bluefin-44&upstream=tesseract-5.5.3-1.fc44.src.rpm",
+        "sourceRpm": "tesseract-5.5.3-1.fc44.src.rpm",
+        "evidence": "rpm-artifact-itself"
+      },
+      {
+        "name": "tesseract-libs",
+        "version": "5.5.3-1.fc44",
+        "purl": "pkg:rpm/bluefin/tesseract-libs@5.5.3-1.fc44?arch=x86_64&distro=bluefin-44&upstream=tesseract-5.5.3-1.fc44.src.rpm",
+        "sourceRpm": "tesseract-5.5.3-1.fc44.src.rpm",
+        "evidence": "rpm-artifact-itself"
+      }
+    ],
+    "livePathsWithoutRpmOwner": [
+      "/usr/bin/cosign",
+      "/usr/bin/tailscaled",
+      "/usr/lib/modules/7.2.5-200.fc44.x86_64/vmlinuz",
+      "/usr/share/rpm/rpmdb.sqlite"
+    ]
+  },
+  "packages": {
+    "schema": 1,
+    "status": "available",
+    "queriedAt": "2026-10-12T18:59:08.706682+00:00",
+    "fedora": 44,
+    "sourceImage": "ghcr.io/closure-labs/finite@sha256:302f05b64f6d38ce3747de84342fedd519495efa6b195f5f0dccfbe887f25d8d",
+    "architectures": [
+      "x86_64",
+      "noarch"
+    ],
+    "scannerResolution": "unknown",
+    "findings": [
+      {
+        "name": "buildah",
+        "minimumEVR": null,
+        "status": "available",
+        "scannerResolution": "unknown",
+        "available": [
+          {
+            "evr": "2:1.43.0-1.fc44",
+            "arch": "x86_64",
+            "repository": "fedora",
+            "nevra": "buildah-2:1.43.0-1.fc44.x86_64",
+            "meetsFloor": null
+          },
+          {
+            "evr": "2:1.43.4-1.fc44",
+            "arch": "x86_64",
+            "repository": "updates",
+            "nevra": "buildah-2:1.43.4-1.fc44.x86_64",
+            "meetsFloor": null
+          }
+        ]
+      },
+      {
+        "name": "containerd",
+        "minimumEVR": null,
+        "status": "available",
+        "scannerResolution": "unknown",
+        "available": [
+          {
+            "evr": "0:2.2.2-1.fc44",
+            "arch": "x86_64",
+            "repository": "fedora",
+            "nevra": "containerd-0:2.2.2-1.fc44.x86_64",
+            "meetsFloor": null
+          },
+          {
+            "evr": "0:2.3.5-1.fc44",
+            "arch": "x86_64",
+            "repository": "updates",
+            "nevra": "containerd-0:2.3.5-1.fc44.x86_64",
+            "meetsFloor": null
+          }
+        ]
+      },
+      {
+        "name": "cosign",
+        "minimumEVR": null,
+        "status": "missing",
+        "scannerResolution": "unknown",
+        "available": []
+      },
+      {
+        "name": "freerdp-libs",
+        "minimumEVR": "2:3.32.1-1.fc44",
+        "status": "available",
+        "scannerResolution": "unknown",
+        "available": [
+          {
+            "evr": "2:3.24.2-1.fc44",
+            "arch": "x86_64",
+            "repository": "fedora",
+            "nevra": "freerdp-libs-2:3.24.2-1.fc44.x86_64",
+            "meetsFloor": false
+          },
+          {
+            "evr": "2:3.32.1-1.fc44",
+            "arch": "x86_64",
+            "repository": "updates",
+            "nevra": "freerdp-libs-2:3.32.1-1.fc44.x86_64",
+            "meetsFloor": true
+          }
+        ]
+      },
+      {
+        "name": "glow",
+        "minimumEVR": null,
+        "status": "available",
+        "scannerResolution": "unknown",
+        "available": [
+          {
+            "evr": "0:2.1.1-10.fc44",
+            "arch": "x86_64",
+            "repository": "fedora",
+            "nevra": "glow-0:2.1.1-10.fc44.x86_64",
+            "meetsFloor": null
+          },
+          {
+            "evr": "0:2.1.2-1.fc44",
+            "arch": "x86_64",
+            "repository": "updates",
+            "nevra": "glow-0:2.1.2-1.fc44.x86_64",
+            "meetsFloor": null
+          }
+        ]
+      },
+      {
+        "name": "gum",
+        "minimumEVR": null,
+        "status": "available",
+        "scannerResolution": "unknown",
+        "available": [
+          {
+            "evr": "0:0.17.0-1.fc44",
+            "arch": "x86_64",
+            "repository": "fedora",
+            "nevra": "gum-0:0.17.0-1.fc44.x86_64",
+            "meetsFloor": null
+          },
+          {
+            "evr": "0:0.17.0-3.fc44",
+            "arch": "x86_64",
+            "repository": "updates",
+            "nevra": "gum-0:0.17.0-3.fc44.x86_64",
+            "meetsFloor": null
+          }
+        ]
+      },
+      {
+        "name": "hplip",
+        "minimumEVR": "0:3.26.6-1.fc44",
+        "status": "available",
+        "scannerResolution": "unknown",
+        "available": [
+          {
+            "evr": "0:3.25.8-2.fc44",
+            "arch": "x86_64",
+            "repository": "fedora",
+            "nevra": "hplip-0:3.25.8-2.fc44.x86_64",
+            "meetsFloor": false
+          },
+          {
+            "evr": "0:3.26.6-1.fc44",
+            "arch": "x86_64",
+            "repository": "updates",
+            "nevra": "hplip-0:3.26.6-1.fc44.x86_64",
+            "meetsFloor": true
+          }
+        ]
+      },
+      {
+        "name": "hplip-common",
+        "minimumEVR": "0:3.26.6-1.fc44",
+        "status": "available",
+        "scannerResolution": "unknown",
+        "available": [
+          {
+            "evr": "0:3.25.8-2.fc44",
+            "arch": "x86_64",
+            "repository": "fedora",
+            "nevra": "hplip-common-0:3.25.8-2.fc44.x86_64",
+            "meetsFloor": false
+          },
+          {
+            "evr": "0:3.26.6-1.fc44",
+            "arch": "x86_64",
+            "repository": "updates",
+            "nevra": "hplip-common-0:3.26.6-1.fc44.x86_64",
+            "meetsFloor": true
+          }
+        ]
+      },
+      {
+        "name": "hplip-libs",
+        "minimumEVR": "0:3.26.6-1.fc44",
+        "status": "available",
+        "scannerResolution": "unknown",
+        "available": [
+          {
+            "evr": "0:3.25.8-2.fc44",
+            "arch": "x86_64",
+            "repository": "fedora",
+            "nevra": "hplip-libs-0:3.25.8-2.fc44.x86_64",
+            "meetsFloor": false
+          },
+          {
+            "evr": "0:3.26.6-1.fc44",
+            "arch": "x86_64",
+            "repository": "updates",
+            "nevra": "hplip-libs-0:3.26.6-1.fc44.x86_64",
+            "meetsFloor": true
+          }
+        ]
+      },
+      {
+        "name": "libX11",
+        "minimumEVR": "0:1.8.13-3.fc44",
+        "status": "available",
+        "scannerResolution": "unknown",
+        "available": [
+          {
+            "evr": "0:1.8.13-1.fc44",
+            "arch": "x86_64",
+            "repository": "fedora",
+            "nevra": "libX11-0:1.8.13-1.fc44.x86_64",
+            "meetsFloor": false
+          },
+          {
+            "evr": "0:1.8.13-3.fc44",
+            "arch": "x86_64",
+            "repository": "updates",
+            "nevra": "libX11-0:1.8.13-3.fc44.x86_64",
+            "meetsFloor": true
+          }
+        ]
+      },
+      {
+        "name": "libX11-common",
+        "minimumEVR": "0:1.8.13-3.fc44",
+        "status": "available",
+        "scannerResolution": "unknown",
+        "available": [
+          {
+            "evr": "0:1.8.13-1.fc44",
+            "arch": "noarch",
+            "repository": "fedora",
+            "nevra": "libX11-common-0:1.8.13-1.fc44.noarch",
+            "meetsFloor": false
+          },
+          {
+            "evr": "0:1.8.13-3.fc44",
+            "arch": "noarch",
+            "repository": "updates",
+            "nevra": "libX11-common-0:1.8.13-3.fc44.noarch",
+            "meetsFloor": true
+          }
+        ]
+      },
+      {
+        "name": "libX11-xcb",
+        "minimumEVR": "0:1.8.13-3.fc44",
+        "status": "available",
+        "scannerResolution": "unknown",
+        "available": [
+          {
+            "evr": "0:1.8.13-1.fc44",
+            "arch": "x86_64",
+            "repository": "fedora",
+            "nevra": "libX11-xcb-0:1.8.13-1.fc44.x86_64",
+            "meetsFloor": false
+          },
+          {
+            "evr": "0:1.8.13-3.fc44",
+            "arch": "x86_64",
+            "repository": "updates",
+            "nevra": "libX11-xcb-0:1.8.13-3.fc44.x86_64",
+            "meetsFloor": true
+          }
+        ]
+      },
+      {
+        "name": "libsane-hpaio",
+        "minimumEVR": "0:3.26.6-1.fc44",
+        "status": "available",
+        "scannerResolution": "unknown",
+        "available": [
+          {
+            "evr": "0:3.25.8-2.fc44",
+            "arch": "x86_64",
+            "repository": "fedora",
+            "nevra": "libsane-hpaio-0:3.25.8-2.fc44.x86_64",
+            "meetsFloor": false
+          },
+          {
+            "evr": "0:3.26.6-1.fc44",
+            "arch": "x86_64",
+            "repository": "updates",
+            "nevra": "libsane-hpaio-0:3.26.6-1.fc44.x86_64",
+            "meetsFloor": true
+          }
+        ]
+      },
+      {
+        "name": "libwinpr",
+        "minimumEVR": "2:3.32.1-1.fc44",
+        "status": "available",
+        "scannerResolution": "unknown",
+        "available": [
+          {
+            "evr": "2:3.24.2-1.fc44",
+            "arch": "x86_64",
+            "repository": "fedora",
+            "nevra": "libwinpr-2:3.24.2-1.fc44.x86_64",
+            "meetsFloor": false
+          },
+          {
+            "evr": "2:3.32.1-1.fc44",
+            "arch": "x86_64",
+            "repository": "updates",
+            "nevra": "libwinpr-2:3.32.1-1.fc44.x86_64",
+            "meetsFloor": true
+          }
+        ]
+      },
+      {
+        "name": "podman",
+        "minimumEVR": null,
+        "status": "available",
+        "scannerResolution": "unknown",
+        "available": [
+          {
+            "evr": "5:5.8.1-1.fc44",
+            "arch": "x86_64",
+            "repository": "fedora",
+            "nevra": "podman-5:5.8.1-1.fc44.x86_64",
+            "meetsFloor": null
+          },
+          {
+            "evr": "5:5.8.7-1.fc44",
+            "arch": "x86_64",
+            "repository": "updates",
+            "nevra": "podman-5:5.8.7-1.fc44.x86_64",
+            "meetsFloor": null
+          }
+        ]
+      },
+      {
+        "name": "python-unversioned-command",
+        "minimumEVR": "0:3.14.8-1.fc44",
+        "status": "available",
+        "scannerResolution": "unknown",
+        "available": [
+          {
+            "evr": "0:3.14.3-2.fc44",
+            "arch": "noarch",
+            "repository": "fedora",
+            "nevra": "python-unversioned-command-0:3.14.3-2.fc44.noarch",
+            "meetsFloor": false
+          },
+          {
+            "evr": "0:3.14.8-1.fc44",
+            "arch": "noarch",
+            "repository": "updates",
+            "nevra": "python-unversioned-command-0:3.14.8-1.fc44.noarch",
+            "meetsFloor": true
+          }
+        ]
+      },
+      {
+        "name": "python3",
+        "minimumEVR": "0:3.14.8-1.fc44",
+        "status": "available",
+        "scannerResolution": "unknown",
+        "available": [
+          {
+            "evr": "0:3.14.3-2.fc44",
+            "arch": "x86_64",
+            "repository": "fedora",
+            "nevra": "python3-0:3.14.3-2.fc44.x86_64",
+            "meetsFloor": false
+          },
+          {
+            "evr": "0:3.14.8-1.fc44",
+            "arch": "x86_64",
+            "repository": "updates",
+            "nevra": "python3-0:3.14.8-1.fc44.x86_64",
+            "meetsFloor": true
+          }
+        ]
+      },
+      {
+        "name": "python3-anyio",
+        "minimumEVR": null,
+        "status": "available",
+        "scannerResolution": "unknown",
+        "available": [
+          {
+            "evr": "0:4.12.1-3.fc44",
+            "arch": "noarch",
+            "repository": "fedora",
+            "nevra": "python3-anyio-0:4.12.1-3.fc44.noarch",
+            "meetsFloor": null
+          },
+          {
+            "evr": "0:4.13.0-1.fc44",
+            "arch": "noarch",
+            "repository": "updates",
+            "nevra": "python3-anyio-0:4.13.0-1.fc44.noarch",
+            "meetsFloor": null
+          }
+        ]
+      },
+      {
+        "name": "python3-libs",
+        "minimumEVR": "0:3.14.8-1.fc44",
+        "status": "available",
+        "scannerResolution": "unknown",
+        "available": [
+          {
+            "evr": "0:3.14.3-2.fc44",
+            "arch": "x86_64",
+            "repository": "fedora",
+            "nevra": "python3-libs-0:3.14.3-2.fc44.x86_64",
+            "meetsFloor": false
+          },
+          {
+            "evr": "0:3.14.8-1.fc44",
+            "arch": "x86_64",
+            "repository": "updates",
+            "nevra": "python3-libs-0:3.14.8-1.fc44.x86_64",
+            "meetsFloor": true
+          }
+        ]
+      },
+      {
+        "name": "python3-msgpack",
+        "minimumEVR": null,
+        "status": "available",
+        "scannerResolution": "unknown",
+        "available": [
+          {
+            "evr": "0:1.1.2-2.fc44",
+            "arch": "x86_64",
+            "repository": "fedora",
+            "nevra": "python3-msgpack-0:1.1.2-2.fc44.x86_64",
+            "meetsFloor": null
+          }
+        ]
+      },
+      {
+        "name": "rclone",
+        "minimumEVR": null,
+        "status": "available",
+        "scannerResolution": "unknown",
+        "available": [
+          {
+            "evr": "0:1.73.0-3.fc44",
+            "arch": "x86_64",
+            "repository": "fedora",
+            "nevra": "rclone-0:1.73.0-3.fc44.x86_64",
+            "meetsFloor": null
+          },
+          {
+            "evr": "0:1.74.3-1.fc44",
+            "arch": "x86_64",
+            "repository": "updates",
+            "nevra": "rclone-0:1.74.3-1.fc44.x86_64",
+            "meetsFloor": null
+          }
+        ]
+      },
+      {
+        "name": "restic",
+        "minimumEVR": null,
+        "status": "available",
+        "scannerResolution": "unknown",
+        "available": [
+          {
+            "evr": "0:0.18.1-3.fc44",
+            "arch": "x86_64",
+            "repository": "fedora",
+            "nevra": "restic-0:0.18.1-3.fc44.x86_64",
+            "meetsFloor": null
+          },
+          {
+            "evr": "0:0.19.1-1.fc44",
+            "arch": "x86_64",
+            "repository": "updates",
+            "nevra": "restic-0:0.19.1-1.fc44.x86_64",
+            "meetsFloor": null
+          }
+        ]
+      },
+      {
+        "name": "runc",
+        "minimumEVR": null,
+        "status": "available",
+        "scannerResolution": "unknown",
+        "available": [
+          {
+            "evr": "2:1.4.1-1.fc44",
+            "arch": "x86_64",
+            "repository": "fedora",
+            "nevra": "runc-2:1.4.1-1.fc44.x86_64",
+            "meetsFloor": null
+          },
+          {
+            "evr": "2:1.5.2-3.fc44",
+            "arch": "x86_64",
+            "repository": "updates",
+            "nevra": "runc-2:1.5.2-3.fc44.x86_64",
+            "meetsFloor": null
+          }
+        ]
+      },
+      {
+        "name": "skopeo",
+        "minimumEVR": null,
+        "status": "available",
+        "scannerResolution": "unknown",
+        "available": [
+          {
+            "evr": "1:1.22.0-2.fc44",
+            "arch": "x86_64",
+            "repository": "fedora",
+            "nevra": "skopeo-1:1.22.0-2.fc44.x86_64",
+            "meetsFloor": null
+          },
+          {
+            "evr": "1:1.22.3-1.fc44",
+            "arch": "x86_64",
+            "repository": "updates",
+            "nevra": "skopeo-1:1.22.3-1.fc44.x86_64",
+            "meetsFloor": null
+          }
+        ]
+      },
+      {
+        "name": "sudo",
+        "minimumEVR": "0:1.9.17-10.p2.fc44",
+        "status": "available",
+        "scannerResolution": "unknown",
+        "available": [
+          {
+            "evr": "0:1.9.17-10.p2.fc44",
+            "arch": "x86_64",
+            "repository": "updates",
+            "nevra": "sudo-0:1.9.17-10.p2.fc44.x86_64",
+            "meetsFloor": true
+          },
+          {
+            "evr": "0:1.9.17-7.p2.fc44",
+            "arch": "x86_64",
+            "repository": "fedora",
+            "nevra": "sudo-0:1.9.17-7.p2.fc44.x86_64",
+            "meetsFloor": false
+          }
+        ]
+      },
+      {
+        "name": "sudo-python-plugin",
+        "minimumEVR": "0:1.9.17-10.p2.fc44",
+        "status": "available",
+        "scannerResolution": "unknown",
+        "available": [
+          {
+            "evr": "0:1.9.17-10.p2.fc44",
+            "arch": "x86_64",
+            "repository": "updates",
+            "nevra": "sudo-python-plugin-0:1.9.17-10.p2.fc44.x86_64",
+            "meetsFloor": true
+          },
+          {
+            "evr": "0:1.9.17-7.p2.fc44",
+            "arch": "x86_64",
+            "repository": "fedora",
+            "nevra": "sudo-python-plugin-0:1.9.17-7.p2.fc44.x86_64",
+            "meetsFloor": false
+          }
+        ]
+      },
+      {
+        "name": "tailscale",
+        "minimumEVR": null,
+        "status": "available",
+        "scannerResolution": "unknown",
+        "available": [
+          {
+            "evr": "0:1.94.2-1.fc44",
+            "arch": "x86_64",
+            "repository": "fedora",
+            "nevra": "tailscale-0:1.94.2-1.fc44.x86_64",
+            "meetsFloor": null
+          },
+          {
+            "evr": "0:1.98.8-1.fc44",
+            "arch": "x86_64",
+            "repository": "updates",
+            "nevra": "tailscale-0:1.98.8-1.fc44.x86_64",
+            "meetsFloor": null
+          }
+        ]
+      },
+      {
+        "name": "tesseract-common",
+        "minimumEVR": "0:5.5.3-2.fc44",
+        "status": "available",
+        "scannerResolution": "unknown",
+        "available": [
+          {
+            "evr": "0:5.5.2-1.fc44",
+            "arch": "noarch",
+            "repository": "fedora",
+            "nevra": "tesseract-common-0:5.5.2-1.fc44.noarch",
+            "meetsFloor": false
+          },
+          {
+            "evr": "0:5.5.3-2.fc44",
+            "arch": "noarch",
+            "repository": "updates",
+            "nevra": "tesseract-common-0:5.5.3-2.fc44.noarch",
+            "meetsFloor": true
+          }
+        ]
+      },
+      {
+        "name": "tesseract-libs",
+        "minimumEVR": "0:5.5.3-2.fc44",
+        "status": "available",
+        "scannerResolution": "unknown",
+        "available": [
+          {
+            "evr": "0:5.5.2-1.fc44",
+            "arch": "x86_64",
+            "repository": "fedora",
+            "nevra": "tesseract-libs-0:5.5.2-1.fc44.x86_64",
+            "meetsFloor": false
+          },
+          {
+            "evr": "0:5.5.3-2.fc44",
+            "arch": "x86_64",
+            "repository": "updates",
+            "nevra": "tesseract-libs-0:5.5.3-2.fc44.x86_64",
+            "meetsFloor": true
+          }
+        ]
+      },
+      {
+        "name": "toolbox",
+        "minimumEVR": null,
+        "status": "available",
+        "scannerResolution": "unknown",
+        "available": [
+          {
+            "evr": "0:0.3-4.fc44",
+            "arch": "x86_64",
+            "repository": "fedora",
+            "nevra": "toolbox-0:0.3-4.fc44.x86_64",
+            "meetsFloor": null
+          }
+        ]
+      },
+      {
+        "name": "yq",
+        "minimumEVR": null,
+        "status": "available",
+        "scannerResolution": "unknown",
+        "available": [
+          {
+            "evr": "0:4.47.1-5.fc44",
+            "arch": "x86_64",
+            "repository": "fedora",
+            "nevra": "yq-0:4.47.1-5.fc44.x86_64",
+            "meetsFloor": null
+          },
+          {
+            "evr": "0:4.53.3-1.fc44",
+            "arch": "x86_64",
+            "repository": "updates",
+            "nevra": "yq-0:4.53.3-1.fc44.x86_64",
+            "meetsFloor": null
+          }
+        ]
+      }
+    ],
+    "limits": "Metadata availability only; no RPM payload signature or transaction verification, no installation, no multilib solver proof, and no new image vulnerability scan.",
+    "containerImage": "registry.fedoraproject.org/fedora@sha256:1ff9eb02e4e2d7fb1175becac7139b2960c4fdcccedce81c86ec25b98ef3124d",
+    "rpmVersion": "RPM version 6.0.2",
+    "dnfVersion": "dnf5 version 5.4.6.0\ndnf5 plugin API version 2.0\nlibdnf5 version 5.4.6.0\nlibdnf5 plugin API version 2.2\n\nLoaded dnf5 plugins:\n  name: builddep\n  version: 1.0.0\n  API version: 2.0\n\n  name: changelog\n  version: 1.0.0\n  API version: 2.0\n\n  name: config-manager\n  version: 0.1.0\n  API version: 2.0\n\n  name: copr\n  version: 0.1.0\n  API version: 2.0\n\n  name: needs_restarting\n  version: 1.0.0\n  API version: 2.0\n\n  name: repoclosure\n  version: 1.0.0\n  API version: 2.0\n\n  name: repomanage\n  version: 1.0.0\n  API version: 2.0\n\n  name: reposync\n  version: 1.0.0\n  API version: 2.0"
+  },
+  "readinessValidation": {
+    "run": "https://github.com/closure-labs/finite/actions/runs/38295029112",
+    "sha256": "d266c84a90d445b9b1bdc618135896f44eb959af6e7e3939a98f474aa051d66c",
+    "result": {
+      "schema": 1,
+      "status": "blocked",
+      "queriedAt": "2026-10-12T19:03:47.096538+00:00",
+      "fedora": 44,
+      "sourceImage": "ghcr.io/closure-labs/finite@sha256:302f05b64f6d38ce3747de84342fedd519495efa6b195f5f0dccfbe887f25d8d",
+      "architectures": [
+        "x86_64",
+        "noarch"
+      ],
+      "scannerResolution": "unknown",
+      "findings": [
+        {
+          "name": "buildah",
+          "minimumEVR": null,
+          "status": "available",
+          "scannerResolution": "unknown",
+          "available": [
+            {
+              "evr": "2:1.43.0-1.fc44",
+              "arch": "x86_64",
+              "repository": "fedora",
+              "nevra": "buildah-2:1.43.0-1.fc44.x86_64",
+              "meetsFloor": null
+            },
+            {
+              "evr": "2:1.43.4-1.fc44",
+              "arch": "x86_64",
+              "repository": "updates",
+              "nevra": "buildah-2:1.43.4-1.fc44.x86_64",
+              "meetsFloor": null
+            }
+          ]
+        },
+        {
+          "name": "containerd",
+          "minimumEVR": null,
+          "status": "available",
+          "scannerResolution": "unknown",
+          "available": [
+            {
+              "evr": "0:2.2.2-1.fc44",
+              "arch": "x86_64",
+              "repository": "fedora",
+              "nevra": "containerd-0:2.2.2-1.fc44.x86_64",
+              "meetsFloor": null
+            },
+            {
+              "evr": "0:2.3.5-1.fc44",
+              "arch": "x86_64",
+              "repository": "updates",
+              "nevra": "containerd-0:2.3.5-1.fc44.x86_64",
+              "meetsFloor": null
+            }
+          ]
+        },
+        {
+          "name": "cosign",
+          "minimumEVR": null,
+          "status": "missing",
+          "scannerResolution": "unknown",
+          "available": []
+        },
+        {
+          "name": "freerdp-libs",
+          "minimumEVR": "2:3.32.1-1.fc44",
+          "status": "available",
+          "scannerResolution": "unknown",
+          "available": [
+            {
+              "evr": "2:3.24.2-1.fc44",
+              "arch": "x86_64",
+              "repository": "fedora",
+              "nevra": "freerdp-libs-2:3.24.2-1.fc44.x86_64",
+              "meetsFloor": false
+            },
+            {
+              "evr": "2:3.32.1-1.fc44",
+              "arch": "x86_64",
+              "repository": "updates",
+              "nevra": "freerdp-libs-2:3.32.1-1.fc44.x86_64",
+              "meetsFloor": true
+            }
+          ]
+        },
+        {
+          "name": "glow",
+          "minimumEVR": null,
+          "status": "available",
+          "scannerResolution": "unknown",
+          "available": [
+            {
+              "evr": "0:2.1.1-10.fc44",
+              "arch": "x86_64",
+              "repository": "fedora",
+              "nevra": "glow-0:2.1.1-10.fc44.x86_64",
+              "meetsFloor": null
+            },
+            {
+              "evr": "0:2.1.2-1.fc44",
+              "arch": "x86_64",
+              "repository": "updates",
+              "nevra": "glow-0:2.1.2-1.fc44.x86_64",
+              "meetsFloor": null
+            }
+          ]
+        },
+        {
+          "name": "gum",
+          "minimumEVR": null,
+          "status": "available",
+          "scannerResolution": "unknown",
+          "available": [
+            {
+              "evr": "0:0.17.0-1.fc44",
+              "arch": "x86_64",
+              "repository": "fedora",
+              "nevra": "gum-0:0.17.0-1.fc44.x86_64",
+              "meetsFloor": null
+            },
+            {
+              "evr": "0:0.17.0-3.fc44",
+              "arch": "x86_64",
+              "repository": "updates",
+              "nevra": "gum-0:0.17.0-3.fc44.x86_64",
+              "meetsFloor": null
+            }
+          ]
+        },
+        {
+          "name": "hplip",
+          "minimumEVR": "0:3.26.6-1.fc44",
+          "status": "available",
+          "scannerResolution": "unknown",
+          "available": [
+            {
+              "evr": "0:3.25.8-2.fc44",
+              "arch": "x86_64",
+              "repository": "fedora",
+              "nevra": "hplip-0:3.25.8-2.fc44.x86_64",
+              "meetsFloor": false
+            },
+            {
+              "evr": "0:3.26.6-1.fc44",
+              "arch": "x86_64",
+              "repository": "updates",
+              "nevra": "hplip-0:3.26.6-1.fc44.x86_64",
+              "meetsFloor": true
+            }
+          ]
+        },
+        {
+          "name": "hplip-common",
+          "minimumEVR": "0:3.26.6-1.fc44",
+          "status": "available",
+          "scannerResolution": "unknown",
+          "available": [
+            {
+              "evr": "0:3.25.8-2.fc44",
+              "arch": "x86_64",
+              "repository": "fedora",
+              "nevra": "hplip-common-0:3.25.8-2.fc44.x86_64",
+              "meetsFloor": false
+            },
+            {
+              "evr": "0:3.26.6-1.fc44",
+              "arch": "x86_64",
+              "repository": "updates",
+              "nevra": "hplip-common-0:3.26.6-1.fc44.x86_64",
+              "meetsFloor": true
+            }
+          ]
+        },
+        {
+          "name": "hplip-libs",
+          "minimumEVR": "0:3.26.6-1.fc44",
+          "status": "available",
+          "scannerResolution": "unknown",
+          "available": [
+            {
+              "evr": "0:3.25.8-2.fc44",
+              "arch": "x86_64",
+              "repository": "fedora",
+              "nevra": "hplip-libs-0:3.25.8-2.fc44.x86_64",
+              "meetsFloor": false
+            },
+            {
+              "evr": "0:3.26.6-1.fc44",
+              "arch": "x86_64",
+              "repository": "updates",
+              "nevra": "hplip-libs-0:3.26.6-1.fc44.x86_64",
+              "meetsFloor": true
+            }
+          ]
+        },
+        {
+          "name": "ipp-usb",
+          "minimumEVR": null,
+          "status": "available",
+          "scannerResolution": "unknown",
+          "available": [
+            {
+              "evr": "0:0.9.31-2.fc44",
+              "arch": "x86_64",
+              "repository": "fedora",
+              "nevra": "ipp-usb-0:0.9.31-2.fc44.x86_64",
+              "meetsFloor": null
+            },
+            {
+              "evr": "0:0.9.34-2.fc44",
+              "arch": "x86_64",
+              "repository": "updates",
+              "nevra": "ipp-usb-0:0.9.34-2.fc44.x86_64",
+              "meetsFloor": null
+            }
+          ]
+        },
+        {
+          "name": "libX11",
+          "minimumEVR": "0:1.8.13-3.fc44",
+          "status": "available",
+          "scannerResolution": "unknown",
+          "available": [
+            {
+              "evr": "0:1.8.13-1.fc44",
+              "arch": "x86_64",
+              "repository": "fedora",
+              "nevra": "libX11-0:1.8.13-1.fc44.x86_64",
+              "meetsFloor": false
+            },
+            {
+              "evr": "0:1.8.13-3.fc44",
+              "arch": "x86_64",
+              "repository": "updates",
+              "nevra": "libX11-0:1.8.13-3.fc44.x86_64",
+              "meetsFloor": true
+            }
+          ]
+        },
+        {
+          "name": "libX11-common",
+          "minimumEVR": "0:1.8.13-3.fc44",
+          "status": "available",
+          "scannerResolution": "unknown",
+          "available": [
+            {
+              "evr": "0:1.8.13-1.fc44",
+              "arch": "noarch",
+              "repository": "fedora",
+              "nevra": "libX11-common-0:1.8.13-1.fc44.noarch",
+              "meetsFloor": false
+            },
+            {
+              "evr": "0:1.8.13-3.fc44",
+              "arch": "noarch",
+              "repository": "updates",
+              "nevra": "libX11-common-0:1.8.13-3.fc44.noarch",
+              "meetsFloor": true
+            }
+          ]
+        },
+        {
+          "name": "libX11-xcb",
+          "minimumEVR": "0:1.8.13-3.fc44",
+          "status": "available",
+          "scannerResolution": "unknown",
+          "available": [
+            {
+              "evr": "0:1.8.13-1.fc44",
+              "arch": "x86_64",
+              "repository": "fedora",
+              "nevra": "libX11-xcb-0:1.8.13-1.fc44.x86_64",
+              "meetsFloor": false
+            },
+            {
+              "evr": "0:1.8.13-3.fc44",
+              "arch": "x86_64",
+              "repository": "updates",
+              "nevra": "libX11-xcb-0:1.8.13-3.fc44.x86_64",
+              "meetsFloor": true
+            }
+          ]
+        },
+        {
+          "name": "libsane-hpaio",
+          "minimumEVR": "0:3.26.6-1.fc44",
+          "status": "available",
+          "scannerResolution": "unknown",
+          "available": [
+            {
+              "evr": "0:3.25.8-2.fc44",
+              "arch": "x86_64",
+              "repository": "fedora",
+              "nevra": "libsane-hpaio-0:3.25.8-2.fc44.x86_64",
+              "meetsFloor": false
+            },
+            {
+              "evr": "0:3.26.6-1.fc44",
+              "arch": "x86_64",
+              "repository": "updates",
+              "nevra": "libsane-hpaio-0:3.26.6-1.fc44.x86_64",
+              "meetsFloor": true
+            }
+          ]
+        },
+        {
+          "name": "libwinpr",
+          "minimumEVR": "2:3.32.1-1.fc44",
+          "status": "available",
+          "scannerResolution": "unknown",
+          "available": [
+            {
+              "evr": "2:3.24.2-1.fc44",
+              "arch": "x86_64",
+              "repository": "fedora",
+              "nevra": "libwinpr-2:3.24.2-1.fc44.x86_64",
+              "meetsFloor": false
+            },
+            {
+              "evr": "2:3.32.1-1.fc44",
+              "arch": "x86_64",
+              "repository": "updates",
+              "nevra": "libwinpr-2:3.32.1-1.fc44.x86_64",
+              "meetsFloor": true
+            }
+          ]
+        },
+        {
+          "name": "podman",
+          "minimumEVR": null,
+          "status": "available",
+          "scannerResolution": "unknown",
+          "available": [
+            {
+              "evr": "5:5.8.1-1.fc44",
+              "arch": "x86_64",
+              "repository": "fedora",
+              "nevra": "podman-5:5.8.1-1.fc44.x86_64",
+              "meetsFloor": null
+            },
+            {
+              "evr": "5:5.8.7-1.fc44",
+              "arch": "x86_64",
+              "repository": "updates",
+              "nevra": "podman-5:5.8.7-1.fc44.x86_64",
+              "meetsFloor": null
+            }
+          ]
+        },
+        {
+          "name": "python-unversioned-command",
+          "minimumEVR": "0:3.14.8-1.fc44",
+          "status": "available",
+          "scannerResolution": "unknown",
+          "available": [
+            {
+              "evr": "0:3.14.3-2.fc44",
+              "arch": "noarch",
+              "repository": "fedora",
+              "nevra": "python-unversioned-command-0:3.14.3-2.fc44.noarch",
+              "meetsFloor": false
+            },
+            {
+              "evr": "0:3.14.8-1.fc44",
+              "arch": "noarch",
+              "repository": "updates",
+              "nevra": "python-unversioned-command-0:3.14.8-1.fc44.noarch",
+              "meetsFloor": true
+            }
+          ]
+        },
+        {
+          "name": "python3",
+          "minimumEVR": "0:3.14.8-1.fc44",
+          "status": "available",
+          "scannerResolution": "unknown",
+          "available": [
+            {
+              "evr": "0:3.14.3-2.fc44",
+              "arch": "x86_64",
+              "repository": "fedora",
+              "nevra": "python3-0:3.14.3-2.fc44.x86_64",
+              "meetsFloor": false
+            },
+            {
+              "evr": "0:3.14.8-1.fc44",
+              "arch": "x86_64",
+              "repository": "updates",
+              "nevra": "python3-0:3.14.8-1.fc44.x86_64",
+              "meetsFloor": true
+            }
+          ]
+        },
+        {
+          "name": "python3-anyio",
+          "minimumEVR": null,
+          "status": "available",
+          "scannerResolution": "unknown",
+          "available": [
+            {
+              "evr": "0:4.12.1-3.fc44",
+              "arch": "noarch",
+              "repository": "fedora",
+              "nevra": "python3-anyio-0:4.12.1-3.fc44.noarch",
+              "meetsFloor": null
+            },
+            {
+              "evr": "0:4.13.0-1.fc44",
+              "arch": "noarch",
+              "repository": "updates",
+              "nevra": "python3-anyio-0:4.13.0-1.fc44.noarch",
+              "meetsFloor": null
+            }
+          ]
+        },
+        {
+          "name": "python3-libs",
+          "minimumEVR": "0:3.14.8-1.fc44",
+          "status": "available",
+          "scannerResolution": "unknown",
+          "available": [
+            {
+              "evr": "0:3.14.3-2.fc44",
+              "arch": "x86_64",
+              "repository": "fedora",
+              "nevra": "python3-libs-0:3.14.3-2.fc44.x86_64",
+              "meetsFloor": false
+            },
+            {
+              "evr": "0:3.14.8-1.fc44",
+              "arch": "x86_64",
+              "repository": "updates",
+              "nevra": "python3-libs-0:3.14.8-1.fc44.x86_64",
+              "meetsFloor": true
+            }
+          ]
+        },
+        {
+          "name": "python3-msgpack",
+          "minimumEVR": null,
+          "status": "available",
+          "scannerResolution": "unknown",
+          "available": [
+            {
+              "evr": "0:1.1.2-2.fc44",
+              "arch": "x86_64",
+              "repository": "fedora",
+              "nevra": "python3-msgpack-0:1.1.2-2.fc44.x86_64",
+              "meetsFloor": null
+            }
+          ]
+        },
+        {
+          "name": "rclone",
+          "minimumEVR": null,
+          "status": "available",
+          "scannerResolution": "unknown",
+          "available": [
+            {
+              "evr": "0:1.73.0-3.fc44",
+              "arch": "x86_64",
+              "repository": "fedora",
+              "nevra": "rclone-0:1.73.0-3.fc44.x86_64",
+              "meetsFloor": null
+            },
+            {
+              "evr": "0:1.74.3-1.fc44",
+              "arch": "x86_64",
+              "repository": "updates",
+              "nevra": "rclone-0:1.74.3-1.fc44.x86_64",
+              "meetsFloor": null
+            }
+          ]
+        },
+        {
+          "name": "restic",
+          "minimumEVR": null,
+          "status": "available",
+          "scannerResolution": "unknown",
+          "available": [
+            {
+              "evr": "0:0.18.1-3.fc44",
+              "arch": "x86_64",
+              "repository": "fedora",
+              "nevra": "restic-0:0.18.1-3.fc44.x86_64",
+              "meetsFloor": null
+            },
+            {
+              "evr": "0:0.19.1-1.fc44",
+              "arch": "x86_64",
+              "repository": "updates",
+              "nevra": "restic-0:0.19.1-1.fc44.x86_64",
+              "meetsFloor": null
+            }
+          ]
+        },
+        {
+          "name": "runc",
+          "minimumEVR": null,
+          "status": "available",
+          "scannerResolution": "unknown",
+          "available": [
+            {
+              "evr": "2:1.4.1-1.fc44",
+              "arch": "x86_64",
+              "repository": "fedora",
+              "nevra": "runc-2:1.4.1-1.fc44.x86_64",
+              "meetsFloor": null
+            },
+            {
+              "evr": "2:1.5.2-3.fc44",
+              "arch": "x86_64",
+              "repository": "updates",
+              "nevra": "runc-2:1.5.2-3.fc44.x86_64",
+              "meetsFloor": null
+            }
+          ]
+        },
+        {
+          "name": "skopeo",
+          "minimumEVR": null,
+          "status": "available",
+          "scannerResolution": "unknown",
+          "available": [
+            {
+              "evr": "1:1.22.0-2.fc44",
+              "arch": "x86_64",
+              "repository": "fedora",
+              "nevra": "skopeo-1:1.22.0-2.fc44.x86_64",
+              "meetsFloor": null
+            },
+            {
+              "evr": "1:1.22.3-1.fc44",
+              "arch": "x86_64",
+              "repository": "updates",
+              "nevra": "skopeo-1:1.22.3-1.fc44.x86_64",
+              "meetsFloor": null
+            }
+          ]
+        },
+        {
+          "name": "sudo",
+          "minimumEVR": "0:1.9.17-10.p2.fc44",
+          "status": "available",
+          "scannerResolution": "unknown",
+          "available": [
+            {
+              "evr": "0:1.9.17-10.p2.fc44",
+              "arch": "x86_64",
+              "repository": "updates",
+              "nevra": "sudo-0:1.9.17-10.p2.fc44.x86_64",
+              "meetsFloor": true
+            },
+            {
+              "evr": "0:1.9.17-7.p2.fc44",
+              "arch": "x86_64",
+              "repository": "fedora",
+              "nevra": "sudo-0:1.9.17-7.p2.fc44.x86_64",
+              "meetsFloor": false
+            }
+          ]
+        },
+        {
+          "name": "sudo-python-plugin",
+          "minimumEVR": "0:1.9.17-10.p2.fc44",
+          "status": "available",
+          "scannerResolution": "unknown",
+          "available": [
+            {
+              "evr": "0:1.9.17-10.p2.fc44",
+              "arch": "x86_64",
+              "repository": "updates",
+              "nevra": "sudo-python-plugin-0:1.9.17-10.p2.fc44.x86_64",
+              "meetsFloor": true
+            },
+            {
+              "evr": "0:1.9.17-7.p2.fc44",
+              "arch": "x86_64",
+              "repository": "fedora",
+              "nevra": "sudo-python-plugin-0:1.9.17-7.p2.fc44.x86_64",
+              "meetsFloor": false
+            }
+          ]
+        },
+        {
+          "name": "tailscale",
+          "minimumEVR": null,
+          "status": "available",
+          "scannerResolution": "unknown",
+          "available": [
+            {
+              "evr": "0:1.94.2-1.fc44",
+              "arch": "x86_64",
+              "repository": "fedora",
+              "nevra": "tailscale-0:1.94.2-1.fc44.x86_64",
+              "meetsFloor": null
+            },
+            {
+              "evr": "0:1.98.8-1.fc44",
+              "arch": "x86_64",
+              "repository": "updates",
+              "nevra": "tailscale-0:1.98.8-1.fc44.x86_64",
+              "meetsFloor": null
+            }
+          ]
+        },
+        {
+          "name": "tesseract-common",
+          "minimumEVR": "0:5.5.3-2.fc44",
+          "status": "available",
+          "scannerResolution": "unknown",
+          "available": [
+            {
+              "evr": "0:5.5.2-1.fc44",
+              "arch": "noarch",
+              "repository": "fedora",
+              "nevra": "tesseract-common-0:5.5.2-1.fc44.noarch",
+              "meetsFloor": false
+            },
+            {
+              "evr": "0:5.5.3-2.fc44",
+              "arch": "noarch",
+              "repository": "updates",
+              "nevra": "tesseract-common-0:5.5.3-2.fc44.noarch",
+              "meetsFloor": true
+            }
+          ]
+        },
+        {
+          "name": "tesseract-libs",
+          "minimumEVR": "0:5.5.3-2.fc44",
+          "status": "available",
+          "scannerResolution": "unknown",
+          "available": [
+            {
+              "evr": "0:5.5.2-1.fc44",
+              "arch": "x86_64",
+              "repository": "fedora",
+              "nevra": "tesseract-libs-0:5.5.2-1.fc44.x86_64",
+              "meetsFloor": false
+            },
+            {
+              "evr": "0:5.5.3-2.fc44",
+              "arch": "x86_64",
+              "repository": "updates",
+              "nevra": "tesseract-libs-0:5.5.3-2.fc44.x86_64",
+              "meetsFloor": true
+            }
+          ]
+        },
+        {
+          "name": "toolbox",
+          "minimumEVR": null,
+          "status": "available",
+          "scannerResolution": "unknown",
+          "available": [
+            {
+              "evr": "0:0.3-4.fc44",
+              "arch": "x86_64",
+              "repository": "fedora",
+              "nevra": "toolbox-0:0.3-4.fc44.x86_64",
+              "meetsFloor": null
+            }
+          ]
+        },
+        {
+          "name": "uupd",
+          "minimumEVR": null,
+          "status": "missing",
+          "scannerResolution": "unknown",
+          "available": []
+        },
+        {
+          "name": "yq",
+          "minimumEVR": null,
+          "status": "available",
+          "scannerResolution": "unknown",
+          "available": [
+            {
+              "evr": "0:4.47.1-5.fc44",
+              "arch": "x86_64",
+              "repository": "fedora",
+              "nevra": "yq-0:4.47.1-5.fc44.x86_64",
+              "meetsFloor": null
+            },
+            {
+              "evr": "0:4.53.3-1.fc44",
+              "arch": "x86_64",
+              "repository": "updates",
+              "nevra": "yq-0:4.53.3-1.fc44.x86_64",
+              "meetsFloor": null
+            }
+          ]
+        }
+      ],
+      "packageFloorsAvailable": true,
+      "prerequisiteReady": false,
+      "prerequisites": [
+        {
+          "name": "python3-anyio",
+          "component": "pkg:pypi/anyio@4.13.0",
+          "minimumUpstreamVersion": "4.14.2",
+          "advisories": [
+            "GHSA-82r6-8w77-94w6"
+          ],
+          "status": "outdated",
+          "available": [
+            {
+              "evr": "0:4.12.1-3.fc44",
+              "arch": "noarch",
+              "repository": "fedora",
+              "nevra": "python3-anyio-0:4.12.1-3.fc44.noarch",
+              "meetsFloor": null,
+              "meetsUpstreamMinimum": false
+            },
+            {
+              "evr": "0:4.13.0-1.fc44",
+              "arch": "noarch",
+              "repository": "updates",
+              "nevra": "python3-anyio-0:4.13.0-1.fc44.noarch",
+              "meetsFloor": null,
+              "meetsUpstreamMinimum": false
+            }
+          ],
+          "scannerResolution": "unknown"
+        },
+        {
+          "name": "python3-msgpack",
+          "component": "pkg:pypi/msgpack@1.1.2",
+          "minimumUpstreamVersion": "1.2.1",
+          "advisories": [
+            "GHSA-6v7p-g79w-8964"
+          ],
+          "status": "outdated",
+          "available": [
+            {
+              "evr": "0:1.1.2-2.fc44",
+              "arch": "x86_64",
+              "repository": "fedora",
+              "nevra": "python3-msgpack-0:1.1.2-2.fc44.x86_64",
+              "meetsFloor": null,
+              "meetsUpstreamMinimum": false
+            }
+          ],
+          "scannerResolution": "unknown"
+        },
+        {
+          "name": "rclone",
+          "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+          "minimumUpstreamVersion": "1.75.1",
+          "advisories": [
+            "GHSA-p569-5gjg-9cmj",
+            "GHSA-xwwr-4h3p-r22c"
+          ],
+          "status": "outdated",
+          "available": [
+            {
+              "evr": "0:1.73.0-3.fc44",
+              "arch": "x86_64",
+              "repository": "fedora",
+              "nevra": "rclone-0:1.73.0-3.fc44.x86_64",
+              "meetsFloor": null,
+              "meetsUpstreamMinimum": false
+            },
+            {
+              "evr": "0:1.74.3-1.fc44",
+              "arch": "x86_64",
+              "repository": "updates",
+              "nevra": "rclone-0:1.74.3-1.fc44.x86_64",
+              "meetsFloor": null,
+              "meetsUpstreamMinimum": false
+            }
+          ],
+          "scannerResolution": "unknown"
+        }
+      ],
+      "limits": "Metadata availability only; no RPM payload signature or transaction verification, no installation, no multilib solver proof, and no new image vulnerability scan. Even available prerequisites are not a passing security scan or proof of embedded fixes.",
+      "containerImage": "registry.fedoraproject.org/fedora@sha256:1ff9eb02e4e2d7fb1175becac7139b2960c4fdcccedce81c86ec25b98ef3124d",
+      "rpmVersion": "RPM version 6.0.2",
+      "dnfVersion": "dnf5 version 5.4.6.0\ndnf5 plugin API version 2.0\nlibdnf5 version 5.4.6.0\nlibdnf5 plugin API version 2.2\n\nLoaded dnf5 plugins:\n  name: builddep\n  version: 1.0.0\n  API version: 2.0\n\n  name: changelog\n  version: 1.0.0\n  API version: 2.0\n\n  name: config-manager\n  version: 0.1.0\n  API version: 2.0\n\n  name: copr\n  version: 0.1.0\n  API version: 2.0\n\n  name: needs_restarting\n  version: 1.0.0\n  API version: 2.0\n\n  name: repoclosure\n  version: 1.0.0\n  API version: 2.0\n\n  name: repomanage\n  version: 1.0.0\n  API version: 2.0\n\n  name: reposync\n  version: 1.0.0\n  API version: 2.0"
+    }
+  }
+}

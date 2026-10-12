@@ -72,6 +72,10 @@ in {
     python3 tests/ci/nix-checks.py
     python3 tests/ci/toolchain.py
     python3 tests/ci/delivery-policy.py
+    python3 tests/ci/image-tools-benchmark.py
+    python3 tests/ci/remediation-preflight.py
+    python3 tests/ci/security-ownership.py
+    python3 tests/ci/security-remediation-diff.py
     python3 tests/bluebuild/contracts.py
     python3 tests/bluebuild/build.py
     python3 tests/bluebuild/inspect-built.py
@@ -82,6 +86,8 @@ in {
     python3 tests/bluebuild/installer.py
     python3 tests/bluebuild/provisioning.py
     python3 tests/bluebuild/security-policy.py
+    python3 tests/bluebuild/security-remediation.py
+    python3 tests/bluebuild/tailscale-security.py
     python3 tests/bluebuild/reliability.py
   '';
   vm-iso = check "vm-iso-layout" (with pkgs; [diffutils gnugrep gnused libisoburn mtools]) ''

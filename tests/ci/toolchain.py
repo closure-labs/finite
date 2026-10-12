@@ -2,6 +2,10 @@
 """Keep maintenance and publication outside the full Home Manager evaluation."""
 from pathlib import Path
 import json
+import os
+import shutil
+import subprocess
+import tempfile
 import unittest
 
 import yaml
@@ -21,9 +25,70 @@ class Toolchain(unittest.TestCase):
                     with self.subTest(path=path.name, step=step.get('name')):
                         self.assertNotIn('nix develop .#ci', command)
                         self.assertNotIn('nix develop .#release', command)
-                        for tool in ['ci-github-actions-secrets', 'ci-queue-dependabot', 'ci-trusted-update']:
+                        for tool in ['ci-github-actions-secrets', 'ci-queue-dependabot', 'ci-trusted-update',
+                                     'ci-source-update', 'ci-lock-validate']:
                             if tool in command:
                                 self.assertIn('nix shell --file lib/ci-tools.nix ' + tool, command)
+
+    def test_lightweight_updates_reuse_existing_implementations(self):
+        entry = (ROOT / 'lib/ci-tools.nix').read_text()
+        for tool, filename in [('ci-source-update', 'update-determinate-nix.nix'),
+                               ('ci-lock-validate', 'validate-locks.nix')]:
+            self.assertIn(f'{tool} = import ./ci-applications/{filename} {{inherit pkgs;}};', entry)
+        # The lock updater retains its exact flake-provided devenv package and
+        # transitive input graph; do not silently substitute nixpkgs.devenv.
+        workflow = (ROOT / '.github/workflows/update-flake-lock.yml').read_text()
+        self.assertIn('nix shell --accept-flake-config .#ci-update-locks', workflow)
+        self.assertNotIn('ci-update-locks =', entry)
+
+    def test_image_tools_are_realized_once_without_development_shells(self):
+        workflow = yaml.safe_load((ROOT / '.github/workflows/image.yml').read_text())
+        steps = workflow['jobs']['build']['steps']
+        preparations = [step for step in steps if 'image-tools --no-link' in step.get('run', '')]
+        self.assertEqual(len(preparations), 1)
+        prepare_index = steps.index(preparations[0])
+        self.assertLess(prepare_index, next(i for i, step in enumerate(steps) if step.get('id') == 'prepare'))
+        self.assertFalse(any('nix develop' in step.get('run', '') for step in steps))
+        packages = (ROOT / 'lib/ci-shells.nix').read_text()
+        self.assertIn('packages = ciPackages;', packages)
+        self.assertIn('paths = ciPackages;', packages)
+        self.assertIn('pathsToLink = ["/bin"];', packages)
+        self.assertIn('[bash coreutils cosign file git gh jq ripgrep skopeo]', packages)
+
+    def test_tool_path_preserves_host_nix_and_installed_bluebuild(self):
+        workflow = yaml.safe_load((ROOT / '.github/workflows/image.yml').read_text())
+        step = next(s for s in workflow['jobs']['build']['steps']
+                    if 'image-tools --no-link' in s.get('run', ''))
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            host = root / 'host'
+            tools = root / 'tools'
+            host.mkdir()
+            (tools / 'bin').mkdir(parents=True)
+            path_file = root / 'github-path'
+            shell = shutil.which('bash')
+            for path, body in [(host / 'nix', 'printf "%s\\n" "$TEST_TOOLS"'),
+                               (host / 'bluebuild', 'exit 0'),
+                               (tools / 'bin/python3', 'exit 0')]:
+                path.write_text('#!' + shell + '\n' + body + '\n')
+                path.chmod(0o755)
+            env = {**os.environ, 'PATH': str(host) + os.pathsep + os.environ['PATH'],
+                   'TEST_TOOLS': str(tools), 'GITHUB_PATH': str(path_file)}
+            result = subprocess.run([shell, '-euo', 'pipefail', '-c', step['run']], env=env,
+                                    capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(path_file.read_text().splitlines(), [str(tools / 'bin')])
+            env['PATH'] = str(tools / 'bin') + os.pathsep + env['PATH']
+            for command in ('nix', 'bluebuild'):
+                self.assertEqual(shutil.which(command, path=env['PATH']), str(host / command))
+            # An accidentally exported replacement client/CLI must fail setup.
+            for command in ('nix', 'bluebuild'):
+                shadow = tools / 'bin' / command
+                shadow.write_text('unexpected bundled client')
+                result = subprocess.run([shell, '-euo', 'pipefail', '-c', step['run']], env=env,
+                                        capture_output=True, text=True)
+                self.assertNotEqual(result.returncode, 0)
+                shadow.unlink()
 
     def test_store_cache_preserves_sources_and_only_full_checks_save(self):
         action = yaml.safe_load((ROOT / '.github/actions/setup-nix/action.yml').read_text())

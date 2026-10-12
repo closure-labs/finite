@@ -34,7 +34,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-
-          nix shell --accept-flake-config .#ci-source-update
+          nix shell --file lib/ci-tools.nix ci-source-update
           -c finite-source-update determinate-nix "${GITHUB_OUTPUT}"
 
       - name: Validate generated text
