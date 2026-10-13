@@ -354,3 +354,15 @@ hold remain explicit. Release eligibility has not been established.
 - Independent review: no qualifying confirmed risk in existing current-candidate receipts; unresolved risks explicitly accepted, not resolved.157 policy/integration regression tests pass.
 
 - All four candidates pass revised vulnerability policy with zero confirmed blockers. Unresolved Critical observations retained: standard24/development54, advisory only. Proceed to trusted signing/VM qualification after the reviewed source change reaches main; no required vulnerability-count reduction.
+
+## Signing compatibility and independent candidate resume
+
+- [x] Diagnose run38426200092: all four builds/security passes; legacy Cosign flags conflict with signing-config default.
+- [x] Pin signer to reviewed Cosign3.1.3 and explicitly select compatible legacy signing; preserve transparency verification and isolated secrets.
+- [x] Hosted smoke38432226349: ephemeral-key sign/verify passed, wrong key rejected, real transparency verified; no production key used.
+- [x] Implement authenticated native security-evidence reuse with current policy/freshness reevaluation and retained original timestamps; 12 helper,90 policy,20 resume,16 selection tests pass.
+- [x] Independent security/CI review approved; helper source loading avoids introducing bytecode into image identity.
+- [ ] Hosted source checks for signing/resume PR #152.
+- [ ] Resume exact standard candidate from38426200092; verify signing and enforcing VM install/upgrade/rollback before promotion.
+- [ ] Resume Next independently after standard; record exact release/rollback evidence.
+- No additional vulnerability-count reduction or physical hardware test is required by current policy. Outstanding release gates are operational evidence, not advisory-pair counts.
