@@ -390,9 +390,12 @@ hold remain explicit. Release eligibility has not been established.
 
 - [x] User authorized implementation and rollout; separate this pilot from release qualification.
 - [x] Create empty `doppler-pilot` environment, restrict to main, disable administrator bypass; existing signer/release protections unchanged.
-- [ ] Deploy manual claims-only/canary workflow and retain actual GitHub OIDC claims without credentials.
+- [x] Deploy manual claims-only/canary workflow. Run38452109711 passed exact public claims in5s; no Doppler fetch or backend denial test attempted without a workspace.
 - [ ] Verify positive/negative Doppler authentication before trialing the read-only audit App.
 - External blocker: user confirms no Doppler workspace exists. Owner: organization administrator; unblock by creating an entitled Team/Enterprise workspace, a canary-only config and narrowly constrained service account/identity. No production secret migration until pilot evidence passes.
 - [x] Pilot behavioral fixtures verify claim matching, HTTP401/403 denial, unexpected success, malformed/rate-limit/server/network failures and token non-disclosure; workflow lint and documentation checks pass.
 - [x] Hosted38448894056 caught missing action allowlist entry. Add only the reviewed Doppler SHA and main-only pilot environment to tracked/live security policy; delivery and full repository-policy fixtures pass.
 - [x] Hosted38449803661 exposed a stale blanket no-secret-forwarding assertion. Require exactly the named signing key and retain nested-job isolation; 215 broadened focused tests pass before retry.
+- [x] PR #154 merged at31e47a59f456 after source38450595473 and queue38451388697 passed. Redundant automatic build38452072161 cancelled; exact standard candidate resumed in38452104611 and claims-only pilot38452109711 launched.
+- [ ] Repair sandboxed Skopeo credential lookup exposed by resume38452104611; source/candidate recovery passed, but default /run/containers/1001/auth.json is unreadable. Signing not attempted; reuse same digest after scoped authentication fix.
+- [x] Implement scoped registry-auth repair with153focusedtests and workflow lint passing; helper preserves all current trust/resource gates and candidate identity. Hosted rollout pending.

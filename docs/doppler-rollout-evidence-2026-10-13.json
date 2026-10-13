@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "status": "implementation-and-github-preparation",
+  "status": "github-pilot-deployed-claims-verified-doppler-workspace-required",
   "owner": "Finite maintainers",
   "productionSecretsMigrated": false,
   "dopplerWorkspaceExists": false,
@@ -15,7 +15,26 @@
     "branchPolicyId": 62941382,
     "productionSecrets": false
   },
-  "claimsProbe": "pending-deployment",
+  "claimsProbe": {
+    "run": 38452109711,
+    "url": "https://github.com/closure-labs/finite/actions/runs/38452109711",
+    "mode": "claims-only",
+    "status": "pass",
+    "jobSeconds": 5,
+    "publicClaims": {
+      "aud": "https://github.com/closure-labs",
+      "event_name": "workflow_dispatch",
+      "iss": "https://token.actions.githubusercontent.com",
+      "ref": "refs/heads/main",
+      "repository_id": "1293375784",
+      "repository_owner_id": "256683018",
+      "sub": "repo:closure-labs@256683018/finite@1293375784:environment:doppler-pilot",
+      "workflow_ref": "closure-labs/finite/.github/workflows/doppler-pilot.yml@refs/heads/main"
+    },
+    "logSha256": "64581c0371b3da5f962e45da1c948b75fcbd1401d2a2f439ee987ebe31e8b77f",
+    "dopplerFetchAttempted": false,
+    "backendDenialTestsAttempted": false
+  },
   "dopplerAuthentication": "not-tested-no-workspace",
   "rolloutOrder": [
     "merge and verify named signing secret fix",
@@ -39,7 +58,7 @@
     "actionlint": "pass-1.7.12",
     "zizmor": "pass-1.29.0",
     "documentation": "pass",
-    "hosted": "pending",
+    "hosted": "source-and-queue-pass",
     "supersededSourceRun": 38448374886,
     "supersededReason": "New signer fixture hardcoded host shell paths; corrected to preserve Nix sandbox tool paths before rerunning.",
     "policyIntegrationFailureRun": 38448894056,
@@ -47,7 +66,12 @@
     "deliveryPolicyTests": 4,
     "repositorySecurityFixtures": "pass-negative-api-pagination",
     "contractUpdateFailureRun": 38449803661,
-    "contractUpdate": "Replace obsolete blanket no-forwarding assertion with exact named key contract; nested builder/qualification still receive no secrets."
+    "contractUpdate": "Replace obsolete blanket no-forwarding assertion with exact named key contract; nested builder/qualification still receive no secrets.",
+    "sourceRevision": "ffa4de2d3dd39c5a2ad93291b267b517975cfff3",
+    "sourceRun": 38450595473,
+    "queueRun": 38451388697,
+    "mergeRevision": "31e47a59f456caceaacda75557c7971eba3a172d",
+    "pr": 154
   },
   "liveRepositoryAudit": {
     "status": "pass",

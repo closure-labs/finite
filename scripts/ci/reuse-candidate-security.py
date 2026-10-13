@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Reuse authenticated hosted native bytes, reevaluating current policy and freshness."""
 import argparse
+import base64
 from datetime import datetime, timedelta, timezone
 import hashlib
 import importlib.util
@@ -158,6 +159,38 @@ def revalidate(directory, image, profile, source, identity, policy_path):
     return original, result
 
 
+def inspect_candidate(image):
+    """Give only the registry read an explicit, private, short-lived auth file."""
+    actor, token = os.environ.get('GITHUB_ACTOR', ''), os.environ.get('GH_TOKEN', '')
+    if (not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]*(?:\[bot\])?', actor)
+            or not token or len(token) > 65536 or any(character.isspace() for character in token)):
+        raise ValueError('Candidate registry inspection requires the workflow actor and token')
+    # Skopeo inspect documents REGISTRY_AUTH_FILE as its primary authfile override.
+    # No runtime-dir fallback, credentials in argv, or evidence-directory storage.
+    previous = os.environ.get('REGISTRY_AUTH_FILE')
+    with tempfile.TemporaryDirectory(prefix='finite-registry-auth-') as temporary:
+        directory = Path(temporary)
+        directory.chmod(0o700)
+        path = directory / 'auth.json'
+        descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(descriptor, 'w') as stream:
+            os.fchmod(stream.fileno(), 0o600)
+            credential = base64.b64encode((actor + ':' + token).encode()).decode('ascii')
+            json.dump({'auths': {'ghcr.io': {'auth': credential}}}, stream)
+        try:
+            os.environ['REGISTRY_AUTH_FILE'] = str(path)
+            try:
+                return publication.upstream.inspect(image)
+            except (RuntimeError, ValueError, OSError, subprocess.SubprocessError):
+                # Remote error bodies are not trusted to omit credential data.
+                raise ValueError('Authenticated candidate registry inspection failed') from None
+        finally:
+            if previous is None:
+                os.environ.pop('REGISTRY_AUTH_FILE', None)
+            else:
+                os.environ['REGISTRY_AUTH_FILE'] = previous
+
+
 def hosted():
     if (os.environ.get('GITHUB_ACTIONS') != 'true'
             or os.environ.get('GITHUB_REPOSITORY') != publication.REPOSITORY
@@ -196,7 +229,7 @@ def reuse(run_id, profile, digest, output):
     image = publication.upstream.REPOSITORY + '@' + digest
     publication.validate_candidate(profile, digest, run['head_sha'],
         json.loads(files[f'{profile}-publication.json']), files[f'{profile}-image-ref.txt'].decode(),
-        publication.upstream.inspect(image), recipe, identity)
+        inspect_candidate(image), recipe, identity)
     output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='.security-reuse-', dir=output.parent) as temporary:
         staging = Path(temporary) / 'evidence'
