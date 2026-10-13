@@ -149,6 +149,8 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.checks.outputs.matrix || '{"include":[]}') }}
     uses: ./.github/workflows/publication.yml
+    secrets:
+      COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
     with:
       profile: ${{ matrix.profile }}
       channel: ${{ matrix.channel }}

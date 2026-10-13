@@ -1,0 +1,168 @@
+name: Doppler OIDC canary pilot
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Inspect public claims, or validate the configured canary and denial paths
+        type: choice
+        options: [claims-only, validate]
+        default: claims-only
+
+permissions: {}
+
+jobs:
+  canary:
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
+    environment: doppler-pilot
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      id-token: write
+    steps:
+      - name: Inspect public OIDC claims without retaining the assertion
+        timeout-minutes: 1
+        run: |
+          python3 - <<'PY'
+          import base64, json, os, urllib.request
+          try:
+              request = urllib.request.Request(os.environ['ACTIONS_ID_TOKEN_REQUEST_URL'], headers={
+                  'Authorization': 'Bearer ' + os.environ['ACTIONS_ID_TOKEN_REQUEST_TOKEN']})
+              with urllib.request.urlopen(request, timeout=15) as response:
+                  raw = response.read(65537)
+              if len(raw) > 65536:
+                  raise ValueError('size')
+              token = json.loads(raw)['value']
+              payload = token.split('.')[1]
+              claims = json.loads(base64.urlsafe_b64decode(payload + '=' * (-len(payload) % 4)))
+              expected = {
+                  'iss': 'https://token.actions.githubusercontent.com',
+                  'aud': 'https://github.com/closure-labs',
+                  'sub': 'repo:closure-labs@256683018/finite@1293375784:environment:doppler-pilot',
+                  'repository_id': '1293375784', 'repository_owner_id': '256683018',
+                  'ref': 'refs/heads/main', 'event_name': 'workflow_dispatch',
+                  'workflow_ref': 'closure-labs/finite/.github/workflows/doppler-pilot.yml@refs/heads/main',
+              }
+              # This inspection is diagnostic. Doppler must validate the signed JWT.
+              public = {key: claims.get(key) for key in expected}
+              print(json.dumps(public, sort_keys=True))
+              if public != expected:
+                  raise ValueError('claims')
+              with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+                  summary.write('### Public pilot OIDC claims\n\n```json\n' + json.dumps(public, sort_keys=True, indent=2) + '\n```\n\nClaims matched; Doppler access has not been established by this probe.\n')
+              print('Public pilot claims match the intended trust configuration.')
+          except Exception:
+              raise SystemExit('OIDC claim inspection failed; no token or response retained.') from None
+          PY
+      - name: Require nonsecret pilot configuration
+        if: inputs.mode == 'validate'
+        env:
+          PILOT_IDENTITY: ${{ vars.DOPPLER_PILOT_IDENTITY_ID }}
+          PILOT_PROJECT: ${{ vars.DOPPLER_PILOT_PROJECT }}
+          PILOT_CONFIG: ${{ vars.DOPPLER_PILOT_CONFIG }}
+        run: |
+          [[ -n "$PILOT_IDENTITY" && -n "$PILOT_PROJECT" && -n "$PILOT_CONFIG" ]] || {
+            echo 'Configure the three DOPPLER_PILOT repository variables first.' >&2
+            exit 1
+          }
+      - name: Fetch only the dedicated canary config
+        if: inputs.mode == 'validate'
+        id: doppler
+        timeout-minutes: 2
+        uses: DopplerHQ/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534 # v2.0.0
+        with:
+          auth-method: oidc
+          doppler-identity-id: ${{ vars.DOPPLER_PILOT_IDENTITY_ID }}
+          doppler-project: ${{ vars.DOPPLER_PILOT_PROJECT }}
+          doppler-config: ${{ vars.DOPPLER_PILOT_CONFIG }}
+          inject-env-vars: 'false'
+      - name: Verify canary presence without printing its value
+        if: inputs.mode == 'validate'
+        env:
+          PILOT_CANARY: ${{ steps.doppler.outputs.FINITE_DOPPLER_PILOT_CANARY }}
+        run: |
+          [[ -n "$PILOT_CANARY" ]] || { echo 'Pilot canary is absent.' >&2; exit 1; }
+          echo 'Dedicated pilot canary retrieved; value omitted.'
+      - name: Require Doppler to reject a genuine JWT with the wrong audience
+        if: inputs.mode == 'validate'
+        timeout-minutes: 1
+        env:
+          PILOT_IDENTITY: ${{ vars.DOPPLER_PILOT_IDENTITY_ID }}
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.error, urllib.parse, urllib.request
+          try:
+              url = os.environ['ACTIONS_ID_TOKEN_REQUEST_URL']
+              parsed = urllib.parse.urlsplit(url)
+              query = urllib.parse.parse_qsl(parsed.query)
+              query = [(key, value) for key, value in query if key != 'audience']
+              query.append(('audience', 'finite-doppler-pilot-denied'))
+              url = urllib.parse.urlunsplit(parsed._replace(query=urllib.parse.urlencode(query)))
+              request = urllib.request.Request(url, headers={
+                  'Authorization': 'Bearer ' + os.environ['ACTIONS_ID_TOKEN_REQUEST_TOKEN']})
+              with urllib.request.urlopen(request, timeout=15) as response:
+                  raw = response.read(65537)
+              if len(raw) > 65536:
+                  raise ValueError('size')
+              assertion = json.loads(raw)['value']
+              body = json.dumps({'identity': os.environ['PILOT_IDENTITY'], 'token': assertion}).encode()
+              request = urllib.request.Request('https://api.doppler.com/v3/auth/oidc', data=body,
+                  headers={'Content-Type': 'application/json'}, method='POST')
+              try:
+                  with urllib.request.urlopen(request, timeout=15):
+                      raise ValueError('unexpected acceptance')
+              except urllib.error.HTTPError as error:
+                  status = error.code
+                  error.close()
+                  if status not in (401, 403):
+                      raise ValueError('not an authentication denial')
+              print('Doppler rejected the wrong-audience assertion (HTTP %s).' % status)
+          except Exception:
+              raise SystemExit('Wrong-audience denial was not established; no response or token retained.') from None
+          PY
+
+  deny-without-environment:
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && inputs.mode == 'validate'
+    needs: canary
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    permissions:
+      id-token: write
+    steps:
+      - name: Require Doppler to reject the same workflow outside its trusted environment
+        timeout-minutes: 1
+        env:
+          PILOT_IDENTITY: ${{ vars.DOPPLER_PILOT_IDENTITY_ID }}
+        run: |
+          python3 - <<'PY'
+          import base64, json, os, urllib.error, urllib.request
+          try:
+              if not os.environ.get('PILOT_IDENTITY'):
+                  raise ValueError('identity')
+              request = urllib.request.Request(os.environ['ACTIONS_ID_TOKEN_REQUEST_URL'], headers={
+                  'Authorization': 'Bearer ' + os.environ['ACTIONS_ID_TOKEN_REQUEST_TOKEN']})
+              with urllib.request.urlopen(request, timeout=15) as response:
+                  raw = response.read(65537)
+              if len(raw) > 65536:
+                  raise ValueError('size')
+              assertion = json.loads(raw)['value']
+              payload = assertion.split('.')[1]
+              claims = json.loads(base64.urlsafe_b64decode(payload + '=' * (-len(payload) % 4)))
+              if (claims.get('sub') != 'repo:closure-labs@256683018/finite@1293375784:ref:refs/heads/main'
+                      or claims.get('aud') != 'https://github.com/closure-labs'):
+                  raise ValueError('negative context')
+              body = json.dumps({'identity': os.environ['PILOT_IDENTITY'], 'token': assertion}).encode()
+              request = urllib.request.Request('https://api.doppler.com/v3/auth/oidc', data=body,
+                  headers={'Content-Type': 'application/json'}, method='POST')
+              try:
+                  with urllib.request.urlopen(request, timeout=15):
+                      raise ValueError('unexpected acceptance')
+              except urllib.error.HTTPError as error:
+                  status = error.code
+                  error.close()
+                  if status not in (401, 403):
+                      raise ValueError('not an authentication denial')
+              print('Doppler rejected the assertion without the trusted environment (HTTP %s).' % status)
+          except Exception:
+              raise SystemExit('Environment denial was not established; no response or token retained.') from None
+          PY

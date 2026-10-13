@@ -17,6 +17,9 @@ on:
       resume_digest:
         type: string
         default: ""
+    secrets:
+      COSIGN_PRIVATE_KEY:
+        required: true
 permissions:
   contents: read
   packages: write
@@ -155,6 +158,18 @@ jobs:
           REGISTRY_USER: ${{ github.actor }}
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
+          set +x
+          [[ -n ${COSIGN_PRIVATE_KEY:-} ]] || { echo 'Image-signing key is unavailable' >&2; exit 1; }
+          if ! derived_public_key=$(timeout 30s cosign public-key --key env://COSIGN_PRIVATE_KEY 2>/dev/null); then
+            echo 'Image-signing key could not derive a public key' >&2
+            exit 1
+          fi
+          [[ $derived_public_key == "$(cat cosign.pub)" ]] || {
+            echo 'Image-signing key does not match cosign.pub' >&2
+            exit 1
+          }
+          unset derived_public_key
           [[ $CANDIDATE_DIGEST =~ ^sha256:[0-9a-f]{64}$ ]]
           [[ $(gh api repos/closure-labs/finite/git/ref/heads/main --jq .object.sha) == "$GITHUB_SHA" ]]
           image="ghcr.io/closure-labs/finite@$CANDIDATE_DIGEST"

@@ -1,0 +1,65 @@
+{
+  "schema": 1,
+  "status": "implementation-and-github-preparation",
+  "owner": "Finite maintainers",
+  "productionSecretsMigrated": false,
+  "dopplerWorkspaceExists": false,
+  "workspaceStatusSource": "user-confirmed-2026-10-13",
+  "githubEnvironment": {
+    "name": "doppler-pilot",
+    "id": 24206534727,
+    "canAdminsBypass": false,
+    "allowedBranches": [
+      "main"
+    ],
+    "branchPolicyId": 62941382,
+    "productionSecrets": false
+  },
+  "claimsProbe": "pending-deployment",
+  "dopplerAuthentication": "not-tested-no-workspace",
+  "rolloutOrder": [
+    "merge and verify named signing secret fix",
+    "deploy and run claim-only pilot",
+    "administrator creates entitled Doppler workspace and canary-only identity",
+    "verify authorized canary and backend rejection cases",
+    "trial read-only audit App with preserved installation scope",
+    "review signer/release migration last with existing key and rollback"
+  ],
+  "blockers": [
+    {
+      "owner": "organization administrator",
+      "event": "Create Team/Enterprise Doppler workplace and canary-only service account identity; configure three non-secret repository variables from docs/doppler-pilot-setup.md",
+      "blocks": "live Doppler validation and production migration",
+      "blocksImageRelease": false
+    }
+  ],
+  "validation": {
+    "focusedTests": 215,
+    "selectionAndPilotTests": 19,
+    "actionlint": "pass-1.7.12",
+    "zizmor": "pass-1.29.0",
+    "documentation": "pass",
+    "hosted": "pending",
+    "supersededSourceRun": 38448374886,
+    "supersededReason": "New signer fixture hardcoded host shell paths; corrected to preserve Nix sandbox tool paths before rerunning.",
+    "policyIntegrationFailureRun": 38448894056,
+    "policyIntegrationRemediation": "Add exact reviewed action SHA and isolated pilot environment to repository security policy and fixtures; no publisher wildcard or verified-publisher bypass.",
+    "deliveryPolicyTests": 4,
+    "repositorySecurityFixtures": "pass-negative-api-pagination",
+    "contractUpdateFailureRun": 38449803661,
+    "contractUpdate": "Replace obsolete blanket no-forwarding assertion with exact named key contract; nested builder/qualification still receive no secrets."
+  },
+  "liveRepositoryAudit": {
+    "status": "pass",
+    "drift": [],
+    "coverage": "complete",
+    "unavailable": [],
+    "excluded": [
+      "legacy branch protection (effective rulesets checked)",
+      "organization membership and secret access",
+      "environment secret values"
+    ],
+    "reportSha256": "1091d529bf2bf847051412f5a010e77636f695a35019f59aa5cbcd474b2ecc9f",
+    "authentication": "administrator CLI including ruleset bypass actors"
+  }
+}

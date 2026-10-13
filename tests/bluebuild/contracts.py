@@ -88,7 +88,7 @@ class BlueBuildContracts(unittest.TestCase):
         self.assertEqual(action['env']['PUBLISH'], '${{ inputs.publish }}')
         self.assertEqual(action['env']['BB_PASSWORD'], '${{ github.token }}')
         self.assertNotIn('COSIGN_PRIVATE_KEY', action['env'])
-        self.assertNotIn('secrets', publish)
+        self.assertEqual(publish['secrets'], {'COSIGN_PRIVATE_KEY': '${{ secrets.COSIGN_PRIVATE_KEY }}'})
         builder = next(s for s in steps if s.get('uses', '').startswith('docker/setup-buildx-action@'))
         self.assertEqual(builder['with']['name'], 'bluebuild')
         self.assertEqual(builder['with']['driver-opts'], 'default-load=true')
@@ -97,6 +97,8 @@ class BlueBuildContracts(unittest.TestCase):
         self.assertLess(names.index('Install the verified locked BlueBuild CLI'), names.index('Build with BlueBuild'))
         self.assertIn('Verify assembled image', names)
         publication = read('.github/workflows/publication.yml')
+        self.assertNotIn('secrets', publication['jobs']['build'])
+        self.assertNotIn('secrets', publication['jobs']['qualification'])
         promotion = publication['jobs']['promote']
         self.assertEqual(promotion['needs'], ['build', 'security', 'sign', 'qualification'])
         self.assertIn("needs.build.result == 'success'", promotion['if'])
