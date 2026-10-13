@@ -1,0 +1,2698 @@
+{
+  "schema": 1,
+  "status": "authenticated-source-census",
+  "run": 38362940891,
+  "sourceRevision": "0fd09531a3a1484814521e6c5b7733efc8e4ac64",
+  "artifactId": 11795975764,
+  "artifactName": "grpc-source-census-38362940891-1",
+  "artifactSha256": "4c6277958666f464ebc36259502f4fdcf0164afbe09acb13ed6f0a46655fa290",
+  "reportSha256": "a1000693e4e93e7c7b286b36c357ca05d7dcc188dcedae0ff24cb684d4a86b85",
+  "reportBytes": 23346186,
+  "sourceEvidenceSha256": "578c068c9b1d80be2c80710b96da9657aef08b561f87693054a007f96dd2a5c4",
+  "parserSourceSha256": "481c11187618ec2316a56cb076f76cff8cf1cfe31aa0e2dd973149c5e757a56b",
+  "collectorSha256": "1e64d4d6482bf3d10b260df0eaf943f3fb5c7824550abc01daf22ee284d17efb",
+  "hostedParserFixtures": 11,
+  "retainedSourceBytes": 3720880,
+  "limits": [
+    "AST census is not a type-resolved call graph or vulnerable-function reachability proof.",
+    "Compiled-package candidate records include all its Go files; exact file build constraints need manual review.",
+    "Aliases and dot imports retained; reflection, unsafe, interface/function escapes need manual closure.",
+    "Full source retained for importing/service packages plus explicit server/linkname/init review targets, bounded to 4MiB total.",
+    "Observed Koji build log is not a compiler attestation; binary/source joins remain independently required."
+  ],
+  "releaseEligible": false,
+  "priorCensus": {
+    "run": 38362022050,
+    "reportSha256": "4d2c47040a1d1207bdc2921032aec381acecda7f49329891ff1dd97d9b93137a",
+    "reasonForFollowup": "Close specific package initializer, constructor/function-value and go:linkname gaps before authorization-only caller review"
+  },
+  "packages": [
+    {
+      "name": "podman",
+      "version": "5.8.7",
+      "sourceArchive": {
+        "url": "https://src.fedoraproject.org/repo/pkgs/rpms/podman/v5.8.7.tar.gz/sha512/94a108aa9401fb62cfeaa2b3cfe8552a08240f7f9275ff53fe90eb289c285a0733b4a5582ce5f3a2c4d19d13ac9b4002f7565553d0961713a42a6101fdbe98f9/v5.8.7.tar.gz",
+        "bytes": 20639251,
+        "sha512": "94a108aa9401fb62cfeaa2b3cfe8552a08240f7f9275ff53fe90eb289c285a0733b4a5582ce5f3a2c4d19d13ac9b4002f7565553d0961713a42a6101fdbe98f9",
+        "sha256": "56016d197499ecdda3092e6cfd9985f2c1defd3882b5d85ba0a60a77af6f1b21"
+      },
+      "sourceClosureManifestSha256": "d923714d00f75b325276332d2982dba2d84a83e0474e8252580258f500bd6ffc",
+      "allGoFilesParsed": true,
+      "goFileCount": 7077,
+      "candidateSourceDirectories": [
+        "vendor/github.com/containers/ocicrypt/keywrap/keyprovider",
+        "vendor/github.com/containers/ocicrypt/utils/keyprovider"
+      ],
+      "retainedSources": [
+        {
+          "path": "pkg/api/server/handler_logging.go",
+          "gitBlob": "1fd75e233f6d68234fa18f48ce9d451feec34a6c",
+          "sha256": "6e9b117fee354d414581c33fb06d331830b0cc1ab908739e9d32fbddfe552203",
+          "bytes": 1759,
+          "retainedSourceFile": "podman__pkg__api__server__handler_logging.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "pkg/api/server/handler_panic.go",
+          "gitBlob": "e654c0047a121265855feecaec7380cfe9174079",
+          "sha256": "5abb9ef8a700c22aa43fe511ba1ac7e447063895062445de7e0a68a2a933d289",
+          "bytes": 946,
+          "retainedSourceFile": "podman__pkg__api__server__handler_panic.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "pkg/api/server/handler_rid.go",
+          "gitBlob": "1acd47823b1ea2c9b598786d2562f64445afaccd",
+          "sha256": "a8085cd0d03061cc053c74d1de4c14267e39e785b2c09ef87d53289a24a564a0",
+          "bytes": 1057,
+          "retainedSourceFile": "podman__pkg__api__server__handler_rid.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/containers/ocicrypt/keywrap/keyprovider/keyprovider.go",
+          "gitBlob": "6ac0fcb95a873ce8a4f85689d5351d47324a5c15",
+          "sha256": "f6e91d62902cc2f09fb76c606c5daeca432f8913344e99237fd5380fff3771fc",
+          "bytes": 8172,
+          "retainedSourceFile": "podman__vendor__github.com__containers__ocicrypt__keywrap__keyprovider__keyprovider.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/containers/ocicrypt/utils/keyprovider/keyprovider.pb.go",
+          "gitBlob": "dc477d3cf8b8a1f9568cb480fb4f14a754bf88d7",
+          "sha256": "99bc016c216318648d7dcb8f2691992e4561d6d1a7e1ae5a63cffe28eb731311",
+          "bytes": 10399,
+          "retainedSourceFile": "podman__vendor__github.com__containers__ocicrypt__utils__keyprovider__keyprovider.pb.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/felixge/httpsnoop/capture_metrics.go",
+          "gitBlob": "bec7b71b39cb0722616e4760431c8b557aed45db",
+          "sha256": "f6b6d050a4e5c0457041962b41884f054b3c19942486a602fdc5e9c774be6bfb",
+          "bytes": 2551,
+          "retainedSourceFile": "podman__vendor__github.com__felixge__httpsnoop__capture_metrics.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/gorilla/handlers/canonical.go",
+          "gitBlob": "7121f5307bec97de5ba40903b06b423aa63e2f4a",
+          "sha256": "5df8e43b4d03506951cff1dc7ae9eb29f393644775613d6e6ccf0d4fa21fc913",
+          "bytes": 1956,
+          "retainedSourceFile": "podman__vendor__github.com__gorilla__handlers__canonical.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/gorilla/handlers/compress.go",
+          "gitBlob": "d6f589503b5eaa57dfa13d5d86d9ef7de6d06c31",
+          "sha256": "93757c8635518e72a21982e38afc583276ad854902d8b61179271337ea20a757",
+          "bytes": 3817,
+          "retainedSourceFile": "podman__vendor__github.com__gorilla__handlers__compress.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/gorilla/handlers/cors.go",
+          "gitBlob": "8af9c096e5e40563b6653929c5d7d3d9b2526d62",
+          "sha256": "0e40c03e8dd6acae5db5bacda60240bb4ae7683e1366a0fb7b4ba0c9a6c7e8ec",
+          "bytes": 9676,
+          "retainedSourceFile": "podman__vendor__github.com__gorilla__handlers__cors.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/gorilla/handlers/handlers.go",
+          "gitBlob": "9b92fce3333e791d75762fa94f43dcecc940e367",
+          "sha256": "88ab6bc9e9c2a146948ee32ee441d2801c868bef93d907d0315ec7270308ba05",
+          "bytes": 4542,
+          "retainedSourceFile": "podman__vendor__github.com__gorilla__handlers__handlers.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/gorilla/handlers/logging.go",
+          "gitBlob": "2badb6fbff84407898270aad6cb538cc2e2b1d51",
+          "sha256": "ae528c18154de86b570bd8b03dbdddd58f225d7f7d94d7f98b1caef20e5e40e7",
+          "bytes": 7148,
+          "retainedSourceFile": "podman__vendor__github.com__gorilla__handlers__logging.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/gorilla/handlers/proxy_headers.go",
+          "gitBlob": "281d753e95a287124cdd05abd03b3b6228228206",
+          "sha256": "d5a31dd03b9b04765868fd00d8d826326840b720bde92dd34005eb64dad80904",
+          "bytes": 4564,
+          "retainedSourceFile": "podman__vendor__github.com__gorilla__handlers__proxy_headers.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/gorilla/handlers/recovery.go",
+          "gitBlob": "0d4f955ecbda0fe2ba22f0630e107ad926b69569",
+          "sha256": "587a13bba983502684b7681eeede94dad2be12ea60ed84fec103e9ffee57cf99",
+          "bytes": 2467,
+          "retainedSourceFile": "podman__vendor__github.com__gorilla__handlers__recovery.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/gorilla/mux/middleware.go",
+          "gitBlob": "cb51c565ebd3ab5eb70ab12f94dae23f725944e4",
+          "sha256": "028f45ec94f1716f7eb614a7713db9555334076a061b29022e17b7cd1c82d177",
+          "bytes": 2619,
+          "retainedSourceFile": "podman__vendor__github.com__gorilla__mux__middleware.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/gorilla/mux/mux.go",
+          "gitBlob": "1e089906fad5715477ba0c785562a43f0d987a8a",
+          "sha256": "9fe967437d9bc37d9dfa8e3e7f742bd9a74561c8bdc2f63b73387ca90dfa3e16",
+          "bytes": 17782,
+          "retainedSourceFile": "podman__vendor__github.com__gorilla__mux__mux.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/hashicorp/go-cleanhttp/handlers.go",
+          "gitBlob": "3c845dc0dc6f85976d20fdcf3f4d44bbb22e7608",
+          "sha256": "4445e50f0ba70a772db04c187b71835b44c3569c538276fa5308478bc6734eeb",
+          "bytes": 995,
+          "retainedSourceFile": "podman__vendor__github.com__hashicorp__go-cleanhttp__handlers.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/modern-go/reflect2/go_above_118.go",
+          "gitBlob": "2b4116f6c9bec1320b5bfffd1e8fa2b23228b29d",
+          "sha256": "b41d841d561da73b0ab54f9f2830d7f9437561b831faad1fa22f738ea99ad805",
+          "bytes": 552,
+          "retainedSourceFile": "podman__vendor__github.com__modern-go__reflect2__go_above_118.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/modern-go/reflect2/go_above_19.go",
+          "gitBlob": "974f7685e495deeaf4c55c3db47e0d99f027e3b7",
+          "sha256": "422e740515d8517cdc4d412e0fe0bf3d42f86909302ce3cf2df66a8800fd021f",
+          "bytes": 378,
+          "retainedSourceFile": "podman__vendor__github.com__modern-go__reflect2__go_above_19.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/modern-go/reflect2/go_below_118.go",
+          "gitBlob": "00003dbd7c57da7a18546b0daf4a4af3ff44dd3f",
+          "sha256": "5b650e4f7c3b3c240dafd32426d7339c78adae4f50bb36fa1c27468e63aaaa3f",
+          "bytes": 531,
+          "retainedSourceFile": "podman__vendor__github.com__modern-go__reflect2__go_below_118.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/modern-go/reflect2/type_map.go",
+          "gitBlob": "4b13c3155c80d9bb27447bd3f48026f26c8ad89c",
+          "sha256": "4fabf996f68479b1b4ab68741558fe85074c97ec4d576cd113c0383cf56286db",
+          "bytes": 1730,
+          "retainedSourceFile": "podman__vendor__github.com__modern-go__reflect2__type_map.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/modern-go/reflect2/unsafe_link.go",
+          "gitBlob": "b49f614efc58d9495df914e3a8b4dcb86ba467b6",
+          "sha256": "f2ac5514fc2dc286e08f9c3655c32ec5821e262df610004161cb10dd27c08cde",
+          "bytes": 2677,
+          "retainedSourceFile": "podman__vendor__github.com__modern-go__reflect2__unsafe_link.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/opencontainers/runc/libcontainer/utils/utils_unix.go",
+          "gitBlob": "7dbec54dc98f8b6e004555a85a910072107c5488",
+          "sha256": "64bcd6616e0359080a40ac45a5c77426f7f18989903be98e5098e5ffad2ce662",
+          "bytes": 10417,
+          "retainedSourceFile": "podman__vendor__github.com__opencontainers__runc__libcontainer__utils__utils_unix.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/pkg/sftp/server.go",
+          "gitBlob": "cd656d8fbf0b703aacabc2f87d148b88ab78fb86",
+          "sha256": "998a982f847a38a161cb8f311c31172fe16c38bf2f50e881849353779be29bc1",
+          "bytes": 16190,
+          "retainedSourceFile": "podman__vendor__github.com__pkg__sftp__server.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp/handler.go",
+          "gitBlob": "937f9b4e737459702cb7646829885ec6b7a3ac63",
+          "sha256": "a9feeb290a6cc10c8e20f1381bdab33d6e9bc109d4f0a5035b2ae83c7aa6a179",
+          "bytes": 7349,
+          "retainedSourceFile": "podman__vendor__go.opentelemetry.io__contrib__instrumentation__net__http__otelhttp__handler.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/net/http2/server.go",
+          "gitBlob": "a7d2053b6c7961cc467d51964390b204b116b6a5",
+          "sha256": "cf07329cd7d5d95909a5404f3b29f10f4252189012b98ad4c8fdbfca384cb9d1",
+          "bytes": 101785,
+          "retainedSourceFile": "podman__vendor__golang.org__x__net__http2__server.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/cpu/cpu_openbsd_arm64.go",
+          "gitBlob": "85b64d5ccb735e9387ee9dad8b583d4458bc6ffe",
+          "sha256": "681c260436ffe0d3d591bc99e9e08a3218e0017589552a7f6a374fcd4a54aad8",
+          "bytes": 1702,
+          "retainedSourceFile": "podman__vendor__golang.org__x__sys__cpu__cpu_openbsd_arm64.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/cpu/runtime_auxv_go121.go",
+          "gitBlob": "4c9788ea8ee88a5071ca70fa6d45096b2e20613a",
+          "sha256": "6eee9d1a593dce53d22545dc5d5f6ed9127a43e6568ef5f5521920946510d445",
+          "bytes": 357,
+          "retainedSourceFile": "podman__vendor__golang.org__x__sys__cpu__runtime_auxv_go121.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/cpu/syscall_aix_ppc64_gc.go",
+          "gitBlob": "e8b6cdbe9a7c8b62a50d04e727ffc19bd43146dd",
+          "sha256": "33f76a8da28ee51d3db32944949fc2ddcb9870ba0f2d22d29732dfcf2a6ba119",
+          "bytes": 988,
+          "retainedSourceFile": "podman__vendor__golang.org__x__sys__cpu__syscall_aix_ppc64_gc.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/cpu/syscall_darwin_arm64_gc.go",
+          "gitBlob": "7b4e67ff9c9e21101dd62d5193b39b0ee76c9c73",
+          "sha256": "2ec90937ba10bdeb3a646e3fcefd531bd99ce0c3653eaa6c8de2c6d86362e758",
+          "bytes": 1474,
+          "retainedSourceFile": "podman__vendor__golang.org__x__sys__cpu__syscall_darwin_arm64_gc.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/cpu/syscall_darwin_x86_gc.go",
+          "gitBlob": "4d0888b0c010f41faaf56692175b7d395bb7494a",
+          "sha256": "66059b45534544bdcde771fa793eca91d04de079e21adc4b2732e0912a57900a",
+          "bytes": 2542,
+          "retainedSourceFile": "podman__vendor__golang.org__x__sys__cpu__syscall_darwin_x86_gc.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/unix/auxv.go",
+          "gitBlob": "37a82528f580f1a3fa7ed57d65cbb8ee7097a98e",
+          "sha256": "5e470a481610ff746d64cb22b3e7a981ffa527d6ca546e87df4296704d6c6de6",
+          "bytes": 1020,
+          "retainedSourceFile": "podman__vendor__golang.org__x__sys__unix__auxv.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/unix/syscall_darwin_libSystem.go",
+          "gitBlob": "2f0fa76e4f65b17d55eba7a6996a43c73f3d3253",
+          "sha256": "0c327ad9b9845e19b1e097dfb7b569bc9793b670874e24be4a87ac9bd4647557",
+          "bytes": 1225,
+          "retainedSourceFile": "podman__vendor__golang.org__x__sys__unix__syscall_darwin_libSystem.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/unix/syscall_linux.go",
+          "gitBlob": "21e2bfa398b93a78d00dbfc7435257b992ffe102",
+          "sha256": "5a1f64326a3de29148008a364f560fa8c8227238ca1b681ba5bec2e7c266bb98",
+          "bytes": 80259,
+          "retainedSourceFile": "podman__vendor__golang.org__x__sys__unix__syscall_linux.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/unix/syscall_openbsd_libc.go",
+          "gitBlob": "0a451e6dd40a958c1eab021723b5fead8edc5d77",
+          "sha256": "8f249670f3576e501a7d9d9efb839e8dff2f3f5b4cd1b0811d512517c682f219",
+          "bytes": 1128,
+          "retainedSourceFile": "podman__vendor__golang.org__x__sys__unix__syscall_openbsd_libc.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/unix/vgetrandom_linux.go",
+          "gitBlob": "07ac8e09d1b702b1abd56252d7c6d1135580f559",
+          "sha256": "4dfa240c42977f70ef32d1cea7effdbd902b5ef6814e67f20c48da10548b4bc9",
+          "bytes": 345,
+          "retainedSourceFile": "podman__vendor__golang.org__x__sys__unix__vgetrandom_linux.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/unix/zsyscall_aix_ppc64_gc.go",
+          "gitBlob": "b68a78362b2cdc670c589e88268df70d1ee2790b",
+          "sha256": "5a806c7a1368edba0adb4f7c029c8b4e1c7f4ce3e2053608f8546bb358fd8282",
+          "bytes": 43453,
+          "retainedSourceFile": "podman__vendor__golang.org__x__sys__unix__zsyscall_aix_ppc64_gc.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/unix/zsyscall_illumos_amd64.go",
+          "gitBlob": "c698cbc01a538f2ada7c476334c4a04a0711b814",
+          "sha256": "6dbad6fb56bf5533b9a5a75edca9a37d7b1a2740155fc9db4761ee39422f77a8",
+          "bytes": 2698,
+          "retainedSourceFile": "podman__vendor__golang.org__x__sys__unix__zsyscall_illumos_amd64.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/unix/zsyscall_solaris_amd64.go",
+          "gitBlob": "b4609c20c24dfe0a3463dbe9f118c43d4a1afd53",
+          "sha256": "4ca86eaf8f9017fb7a065a272f195b8eb2ac0184d99d84994edef3a7e7594a19",
+          "bytes": 64967,
+          "retainedSourceFile": "podman__vendor__golang.org__x__sys__unix__zsyscall_solaris_amd64.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/backoff.go",
+          "gitBlob": "29475e31c979e6ef661c059cb5dac3d9127436bb",
+          "sha256": "b5593815ced2bc309a68b9ab18c9044b6c93723ae303ef636f77c1ec7f400718",
+          "bytes": 1996,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__backoff.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/backoff/backoff.go",
+          "gitBlob": "d7b40b7cb66f11f7100134d737d47573aa939d59",
+          "sha256": "79c43f7f8f0ea8a1aa8a93e0f37a2d9eedd3a6dafde0adee0a0a97a6a0ed5d8d",
+          "bytes": 1738,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__backoff__backoff.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/balancer/balancer.go",
+          "gitBlob": "c9b343c7156470e7d13290fa68a31e0fb5f166b4",
+          "sha256": "18d1889db917abb01d2e8958a219938aa385d74fafe3d577f8b04930bb014d45",
+          "bytes": 16224,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__balancer__balancer.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/balancer/base/balancer.go",
+          "gitBlob": "4d576876d8c80c31f438bb47db5328f807a9a34c",
+          "sha256": "c888127edd98f36185140fbcf3e11294b8a89d00ffdaa4f433e32af222548c80",
+          "bytes": 8585,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__balancer__base__balancer.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/balancer/pickfirst/internal/internal.go",
+          "gitBlob": "7d66cb491c406935fa346577c323c8c3a44f60c8",
+          "sha256": "34a213a232eead5ede0258327948a97c1d6da91c6e941e329ead67edec922b54",
+          "bytes": 1048,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__balancer__pickfirst__internal__internal.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/balancer/pickfirst/pickfirst.go",
+          "gitBlob": "ea8899818c22e5fa51ca27d4e1828b589e768f8d",
+          "sha256": "a48b33e07d83a5be908e20e43c01b4c46600ec9a0eb5d792d6f279fbd9d81590",
+          "bytes": 9406,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__balancer__pickfirst__pickfirst.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/balancer/pickfirst/pickfirstleaf/pickfirstleaf.go",
+          "gitBlob": "494314f23582532e148623d83f97c6d3855a6cae",
+          "sha256": "dafdbcba8bc8cbdd6c4147a0741d52edad3f17135173a82a123b21e74fb6ffdb",
+          "bytes": 33346,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__balancer__pickfirst__pickfirstleaf__pickfirstleaf.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/balancer/roundrobin/roundrobin.go",
+          "gitBlob": "35da5d1ec9d904ee9dc79f08b7d5e9a06039ed8d",
+          "sha256": "d0b017434445e26fb514ab073f68500d8406718d0a6b5d3f33073f409f752821",
+          "bytes": 2350,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__balancer__roundrobin__roundrobin.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/balancer_wrapper.go",
+          "gitBlob": "948a21ef68338c7164b69ffc31005e17023f1099",
+          "sha256": "faa15ba485c1c82e84255b923fa88886baa478eb7743df592afc4d32a46b16fb",
+          "bytes": 18053,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__balancer_wrapper.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/binarylog/grpc_binarylog_v1/binarylog.pb.go",
+          "gitBlob": "825c31795f0562b2b2fc68b59da7064fbe419d14",
+          "sha256": "5dcaa4c7b57787735ac2b92d5089cf7dd46cb0887a2ab370501e3d6087b1b1c7",
+          "bytes": 42001,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__binarylog__grpc_binarylog_v1__binarylog.pb.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/call.go",
+          "gitBlob": "788c89c16f96027b81423ef5ec1077c73534c800",
+          "sha256": "74e6a635956cb9a0edc05341acd3c299be978a96adf4ac79450b9d50e9763b80",
+          "bytes": 2463,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__call.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/clientconn.go",
+          "gitBlob": "4f350ca56ad1298d6d9750bd4b50e026f93634b0",
+          "sha256": "e845f2341d7d975039a7331b5119493916e36b726a21be3e83541641ae2d616f",
+          "bytes": 61754,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__clientconn.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/codec.go",
+          "gitBlob": "959c2f99d4a735e1990a351eab99880485e273e5",
+          "sha256": "6717f2e6bd13fd93c6f6726f66153d0ea132a8aec7c45c6258b7375727055955",
+          "bytes": 3154,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__codec.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/codes/code_string.go",
+          "gitBlob": "934fac2b090aeccc43400dda84ffaf37bac2f006",
+          "sha256": "fc83f20f33a04a641ef92e72f2df310ad89875fed491ce402029308dcca53508",
+          "bytes": 2437,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__codes__code_string.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/codes/codes.go",
+          "gitBlob": "0b42c302b24b7d6c9f0cb04b202ea514887f6a8d",
+          "sha256": "e67aa5a4a8a39663b70244ee9ef6f76b8ef145896cdf3cd10b397d9173aa7322",
+          "bytes": 9418,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__codes__codes.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/connectivity/connectivity.go",
+          "gitBlob": "4a89926422bcfdf60b8ed8da9b403b9c351e5f40",
+          "sha256": "ca86fd043275378e7c04ac49924a4307dd34f1fbef2a90b322af92cd0ee06d2e",
+          "bytes": 2684,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__connectivity__connectivity.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/credentials/credentials.go",
+          "gitBlob": "665e790bb0f776bdb42c3ffa3b203d5e96151833",
+          "sha256": "8bceffe733e653be8074e5fd88caf7117c704a7fb4e12a85800f8e044f3c7797",
+          "bytes": 11958,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__credentials__credentials.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/credentials/tls.go",
+          "gitBlob": "bd5fe22b6af6a50e8e74b5daa04637a408de4bb2",
+          "sha256": "3ebf20c3a7b9fde9442b861d09898885994b11d6115d17040e833cab1058fe1a",
+          "bytes": 10511,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__credentials__tls.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/dialoptions.go",
+          "gitBlob": "405a2ffeb39e49c156e21ab180a73c9aae9d2cc0",
+          "sha256": "a08b83a0bd52de35a979e041fb52b67b3ebc84ebea4ea2af12e6a8d6fbf956b2",
+          "bytes": 27836,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__dialoptions.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/encoding/encoding.go",
+          "gitBlob": "11d0ae142c4295ce61cc197fdf1cc94d79ef0c7e",
+          "sha256": "11cbabdf147d3518e88b6150fc1b58c050fe16105aac9bd6c39a94446ba307ad",
+          "bytes": 5064,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__encoding__encoding.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/encoding/proto/proto.go",
+          "gitBlob": "ceec319dd2fb42f8a935bc66218704109c17d3ec",
+          "sha256": "7cd620378613e4d614058d243a8f5acfab30dd7050c86f48cb3a3d9bc51232b6",
+          "bytes": 2543,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__encoding__proto__proto.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/experimental/stats/metricregistry.go",
+          "gitBlob": "ad75313a18e12afeac1219dfe9c81902f813d8db",
+          "sha256": "3e1438a2b1345fb10ef2487fc13d537a34f5deeedc58f9de00e04ee56fca964a",
+          "bytes": 10172,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__experimental__stats__metricregistry.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/grpclog/component.go",
+          "gitBlob": "f1ae080dcb816cb8546507a1b4ef9f2b5e0f736e",
+          "sha256": "2b2a50fdc442ef1a92d5012c9f21763b71d47794114604b4dfcb39c410d9c4bf",
+          "bytes": 2932,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__grpclog__component.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/grpclog/grpclog.go",
+          "gitBlob": "db320105e64e2cc59c4616aa6595f501b90fe2ae",
+          "sha256": "6b1c4c32181da0292783b4feb489b979830556724bfa3b33e4612b1279d24081",
+          "bytes": 5189,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__grpclog__grpclog.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/grpclog/internal/loggerv2.go",
+          "gitBlob": "ed90060c3cba52a5f060aaf05d6f2cb1139ff869",
+          "sha256": "73624458b062c9a9b60b89b0640d5958c53d2703d032dfedbcfed5b68dcd6b37",
+          "bytes": 8218,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__grpclog__internal__loggerv2.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/backoff/backoff.go",
+          "gitBlob": "b6ae7f258505ad73ae2b76c3cf92b97f8a9298fe",
+          "sha256": "f6385bcafb72a06a86d5c28e0cd1680fdad8e3757182e2291fe13b495615a991",
+          "bytes": 3344,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__internal__backoff__backoff.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/balancer/gracefulswitch/gracefulswitch.go",
+          "gitBlob": "fbc1ca356ab9925030bf3f96a3f90e6850ff2de9",
+          "sha256": "9fa38d4717230cee5ec8e04db11e05260b7f2ae05968e9507daa98cc0a3d477b",
+          "bytes": 14830,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__internal__balancer__gracefulswitch__gracefulswitch.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/binarylog/binarylog.go",
+          "gitBlob": "755fdebc1b15aaa075397e6b59a22e303fc41a01",
+          "sha256": "5fc48a515beffa63f5e1ab297c8fd98ee77e755881fb392e55e313bd08191189",
+          "bytes": 5683,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__internal__binarylog__binarylog.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/binarylog/binarylog_testutil.go",
+          "gitBlob": "1ee00a39ac7c7b66689ccc7eae1bf475f66df306",
+          "sha256": "0490bfd3780ebf38e67f9b2c297759708f2f67b91a6db40b27baefa85efc258e",
+          "bytes": 1538,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__internal__binarylog__binarylog_testutil.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/binarylog/env_config.go",
+          "gitBlob": "f9e80e27ab6881f070812f80fc85d19090091967",
+          "sha256": "960fd8f1f3159361bbae1110e4b9acd5d7d411534bd54b75723f85c64e176087",
+          "bytes": 6803,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__internal__binarylog__env_config.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/binarylog/sink.go",
+          "gitBlob": "9ea598b14c077d3e9443a2e3ac59231b0f577510",
+          "sha256": "7b76e9a8456f515cdc7a906157ea5b91fedb153239536abe8be528951b2b0b85",
+          "bytes": 4440,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__internal__binarylog__sink.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/buffer/unbounded.go",
+          "gitBlob": "11f91668ac9be1e4a047804c0b16755ad68df733",
+          "sha256": "b2de0ea2d76d7af9c5894e1371a2320b44956b1c42cd0803a051629c24f8a23d",
+          "bytes": 3309,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__internal__buffer__unbounded.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/channelz/funcs.go",
+          "gitBlob": "078bb81238bc466a46bada2e537bae93d1ac06e7",
+          "sha256": "4aecad9253e8832541a4ee49136fcd4f1c0ba881972099d87caca20574537b1f",
+          "bytes": 7080,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__internal__channelz__funcs.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/channelz/logging.go",
+          "gitBlob": "ee4d721258055ca5eb00fd309adc858028981788",
+          "sha256": "60832e30dae6a10abdd6ed7266f458c20c8b065bd8a211d59f5c8139fb47380c",
+          "bytes": 2093,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__internal__channelz__logging.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/channelz/trace.go",
+          "gitBlob": "2bffe4777684dc5d26c0cc4bda5f9f15d9ef88f2",
+          "sha256": "3721a89c1c2dc1a3dbc30f0db1b8e55be0bc3aa21678dd7f7a6ef23e276036ed",
+          "bytes": 6061,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__internal__channelz__trace.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/credentials/spiffe.go",
+          "gitBlob": "25ade623058e3f52ed20c782c8e122c58c6ed522",
+          "sha256": "149056461f3e6a44cb6f24c7f7f7e836a23103f8ab68336f0b8d0e868da5f907",
+          "bytes": 2300,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__internal__credentials__spiffe.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/envconfig/envconfig.go",
+          "gitBlob": "cc5713fd9d5eac0bf8552dc0e99d2254ea1ab5e4",
+          "sha256": "5e437816437c1eaf405b1e443e36317521680ca52a032344e0430f6f082c1780",
+          "bytes": 4260,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__internal__envconfig__envconfig.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/envconfig/observability.go",
+          "gitBlob": "dd314cfb18f48a97c7fb132db2810affe8e52b03",
+          "sha256": "57c20c861a81a343a7e0f65d29952f5a6429dc0246fbd76fe3f69c9d214ce000",
+          "bytes": 1441,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__internal__envconfig__observability.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/envconfig/xds.go",
+          "gitBlob": "2eb97f832b1c0e69196187781e4e33f6ae62593f",
+          "sha256": "cab6d3a20aef2773ced4ac2f2724f3ea91a9f34208f9a7f5d881b38b009909d0",
+          "bytes": 2753,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__internal__envconfig__xds.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/idle/idle.go",
+          "gitBlob": "2c13ee9dac753c996bd28d3f6ba7ff8313b450df",
+          "sha256": "7c77a17b5091560c433e65d04d7dc52306df9c6734cf4b3a0df9de262fc828c2",
+          "bytes": 9858,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__internal__idle__idle.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/internal.go",
+          "gitBlob": "2ce012cda135ae09b8ec540fc69a14e1dee111cf",
+          "sha256": "312b11dbc089cbfad0b7402fce596070d36ae8e055be4da6467030cc93987b87",
+          "bytes": 14397,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__internal__internal.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/resolver/delegatingresolver/delegatingresolver.go",
+          "gitBlob": "20b8fb098ac3a14fb4364c92c29512ef3089e0aa",
+          "sha256": "5b63b6db29508d9ffb671418bf96c454f2e8d3fa40b4228b281ccf192c6e3888",
+          "bytes": 16085,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__internal__resolver__delegatingresolver__delegatingresolver.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/resolver/dns/dns_resolver.go",
+          "gitBlob": "ba5c5a95d0d7f17ae42c00f6a3c30cf9ab7a8d63",
+          "sha256": "8e44b5db8b373c439d2630a70d64b9039308794a82bf858f68fc1ea04247d16d",
+          "bytes": 13625,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__internal__resolver__dns__dns_resolver.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/resolver/dns/internal/internal.go",
+          "gitBlob": "c0eae4f5f83fcd1cddc212028a7ac01594cd8c8f",
+          "sha256": "360c14f956b0fc34a4ccc067945367ad0c16b192dc050f99ab2a6f1f4e7e5c95",
+          "bytes": 3159,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__internal__resolver__dns__internal__internal.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/resolver/passthrough/passthrough.go",
+          "gitBlob": "b901c7bace5061d62c86828756e21292977512dd",
+          "sha256": "9b653000c8516ed008ed2416cbc59e48ffdf3b974330dae9e142004431392959",
+          "bytes": 1700,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__internal__resolver__passthrough__passthrough.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/resolver/unix/unix.go",
+          "gitBlob": "27cd81af9e5f46041939cd67a8609cc1f0d039dc",
+          "sha256": "d7413035609466572b9e656055553df55d2f2cdda7c5c35c419877615a51dc38",
+          "bytes": 2301,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__internal__resolver__unix__unix.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/serviceconfig/serviceconfig.go",
+          "gitBlob": "51e733e495a36bc3c127bf9587972a32c0c58e9b",
+          "sha256": "ee1eb07030513d275455f66d92261a692cb0fd0ddb32371e98a18e72d291caa2",
+          "bytes": 6508,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__internal__serviceconfig__serviceconfig.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/syscall/syscall_linux.go",
+          "gitBlob": "b3a72276dee4211860c8357db3a4a5b938fec946",
+          "sha256": "91096efdaa61581ac7b9d2d8076635d8ca5ac7ef3064094dab2f8efb70f003b2",
+          "bytes": 3214,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__internal__syscall__syscall_linux.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/syscall/syscall_nonlinux.go",
+          "gitBlob": "54c24c2ff3865635acf8d05ae19a8580c7617a73",
+          "sha256": "3b74e0c3889ed8a826963f5f3bf9e7bf2bab3ee05f6d2739c9f1bb75cca8d490",
+          "bytes": 1985,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__internal__syscall__syscall_nonlinux.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/transport/bdp_estimator.go",
+          "gitBlob": "070680edbac1271bda40a5cb99bc61789fef7887",
+          "sha256": "01a7332c6ea43122862b91c7e69ca4a2aa91b11ee9c094fc2ffe1ba6edad75f3",
+          "bytes": 4411,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__internal__transport__bdp_estimator.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/transport/controlbuf.go",
+          "gitBlob": "ef72fbb3a0163b537a41f68934cc9617124be923",
+          "sha256": "ed633c3114ac8648d36a38e61d242cc1f6b3f3db82dbd0db42693038949cb183",
+          "bytes": 29348,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__internal__transport__controlbuf.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/transport/defaults.go",
+          "gitBlob": "bc8ee07474968670d429d6f2bb7e87cd4069a3b7",
+          "sha256": "859b175037c944b30fffe75de821538f7049cef62a0db65408159e7006f3e64a",
+          "bytes": 2026,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__internal__transport__defaults.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/transport/http2_client.go",
+          "gitBlob": "171e690a3f22709bccb8018b01816af6a64fdec0",
+          "sha256": "d0f88fe202d12e65e440a44f430562abf294a8fa5b3ce361986e29880cd68def",
+          "bytes": 60007,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__internal__transport__http2_client.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/transport/http2_server.go",
+          "gitBlob": "7e53eb1735eff37d95e6db2d36c91417cd1b2a9c",
+          "sha256": "f0d93e1d943cc607574f94728465d84995a74d4d170c29915824a4f6b5657acc",
+          "bytes": 46133,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__internal__transport__http2_server.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/transport/http_util.go",
+          "gitBlob": "f997f9fdb5d01e0a52dcc021b2aa2b1442e97f82",
+          "sha256": "65cc0ae1141be06a7bc51a25fadc81fdfd352adf2ba32190bca5df7c8df77d2a",
+          "bytes": 11331,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__internal__transport__http_util.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/transport/logging.go",
+          "gitBlob": "42ed2b07af663cb50de072b707d568139cb96b44",
+          "sha256": "ebf772b0c69a9a96b5bc58670c3b4197d707fb4980defca772ac51e492ee6a5e",
+          "bytes": 1337,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__internal__transport__logging.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/transport/transport.go",
+          "gitBlob": "af4a4aeab1456fb716b1533a1329b9ef55743126",
+          "sha256": "86dc8afccf4672e9758116bfe3f85dfdd1cfbf40a2757033c7ea07950a50b6a8",
+          "bytes": 21780,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__internal__transport__transport.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/mem/buffer_pool.go",
+          "gitBlob": "c37c58c0233ec0f468563463a8726fcfcc9c5d31",
+          "sha256": "18f57823a619658ab5931dc78fcadadae5d0d87ce80cb3452a4c54696fb13a44",
+          "bytes": 5235,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__mem__buffer_pool.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/mem/buffer_slice.go",
+          "gitBlob": "65002e2cc8517f098d477ecd82bd0ee95e99ce16",
+          "sha256": "023ec85f847d698de3570386f02ca60ac4a08cddf3b863fd5137d887a7351d3b",
+          "bytes": 8129,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__mem__buffer_slice.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/mem/buffers.go",
+          "gitBlob": "ecbf0b9a73ea39f3b7a299ba2b060f02beef47d3",
+          "sha256": "d9e3814c07e8bcb56d55349bae858c5177aa63b9d75646cbd3850fcb4dce5cb2",
+          "bytes": 7135,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__mem__buffers.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/metadata/metadata.go",
+          "gitBlob": "d2e15253bbfbc5c12fe1558613ceb24de56aaeaa",
+          "sha256": "4eb14f67165c1ac4c745794e165e0f689d522baad284cf10affe231287bbc522",
+          "bytes": 8511,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__metadata__metadata.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/resolver/resolver.go",
+          "gitBlob": "b84ef26d46d11649a52f5b23f37fe6d026f419f1",
+          "sha256": "2d6ee132f4b930c101e03fd77fb4e7d3e452bfe67e203581f001c3fc727d2a95",
+          "bytes": 14021,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__resolver__resolver.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/rpc_util.go",
+          "gitBlob": "ad20e9dff2063cf2ccae5d5cf0bdb8eda6c11438",
+          "sha256": "4e2ddefa7082fee7d6d38936462e680478080dc784bb33b1f1434b192c3a18ee",
+          "bytes": 33088,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__rpc_util.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/server.go",
+          "gitBlob": "976e70ae068e1f204c96f5d24f6258273f33718a",
+          "sha256": "84d274446303056cce011d94cac7012fdecd0bcd8146eaca14af60c82a2622e9",
+          "bytes": 70608,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__server.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/service_config.go",
+          "gitBlob": "8d451e07c7cc072cf484af8c398f73d6a7682d0e",
+          "sha256": "c38647649ab124f58b5e2c27dc7683afe6d6a277d3fc4966abe89c19e0299604",
+          "bytes": 11089,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__service_config.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/stream.go",
+          "gitBlob": "12163150ba7f42bfb7f9cb2672d3217714ab0e8c",
+          "sha256": "bfb845570c62a9808846cbdce90d1962477e399ce636917cbe7f03e5a4118e18",
+          "bytes": 58071,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__stream.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/stream_interfaces.go",
+          "gitBlob": "0037fee0bd71ab76ddae0ceba38c67013c1936bc",
+          "sha256": "c51281c4729c8a806e038104b218ef8cf2eb2c90012c35cc6e0f107e603d6e38",
+          "bytes": 10422,
+          "retainedSourceFile": "podman__vendor__google.golang.org__grpc__stream_interfaces.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        }
+      ]
+    },
+    {
+      "name": "buildah",
+      "version": "1.43.4",
+      "sourceArchive": {
+        "url": "https://src.fedoraproject.org/repo/pkgs/rpms/buildah/v1.43.4.tar.gz/sha512/863cfd633446e3adae16a623ef62e2366fd2e0634349b83a8b01804788fefb3d1a871525bacf17ab0801ad357ef2a45a96d19e5dae652a76e58c3986731f9257/v1.43.4.tar.gz",
+        "bytes": 11145540,
+        "sha512": "863cfd633446e3adae16a623ef62e2366fd2e0634349b83a8b01804788fefb3d1a871525bacf17ab0801ad357ef2a45a96d19e5dae652a76e58c3986731f9257",
+        "sha256": "81950613a1849f7c74c64551f021133ad1335c66a21728b27e3e2c79d990ac9c"
+      },
+      "sourceClosureManifestSha256": "6d5d978c15e2f2038e5d2b8412491a4dc52d3116f238900994b41c0634c4c123",
+      "allGoFilesParsed": true,
+      "goFileCount": 3565,
+      "candidateSourceDirectories": [
+        "vendor/github.com/containers/ocicrypt/keywrap/keyprovider",
+        "vendor/github.com/containers/ocicrypt/utils/keyprovider"
+      ],
+      "retainedSources": [
+        {
+          "path": "vendor/github.com/containers/ocicrypt/keywrap/keyprovider/keyprovider.go",
+          "gitBlob": "6ac0fcb95a873ce8a4f85689d5351d47324a5c15",
+          "sha256": "f6e91d62902cc2f09fb76c606c5daeca432f8913344e99237fd5380fff3771fc",
+          "bytes": 8172,
+          "retainedSourceFile": "buildah__vendor__github.com__containers__ocicrypt__keywrap__keyprovider__keyprovider.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/containers/ocicrypt/utils/keyprovider/keyprovider.pb.go",
+          "gitBlob": "dc477d3cf8b8a1f9568cb480fb4f14a754bf88d7",
+          "sha256": "99bc016c216318648d7dcb8f2691992e4561d6d1a7e1ae5a63cffe28eb731311",
+          "bytes": 10399,
+          "retainedSourceFile": "buildah__vendor__github.com__containers__ocicrypt__utils__keyprovider__keyprovider.pb.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/felixge/httpsnoop/capture_metrics.go",
+          "gitBlob": "bec7b71b39cb0722616e4760431c8b557aed45db",
+          "sha256": "f6b6d050a4e5c0457041962b41884f054b3c19942486a602fdc5e9c774be6bfb",
+          "bytes": 2551,
+          "retainedSourceFile": "buildah__vendor__github.com__felixge__httpsnoop__capture_metrics.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/gorilla/mux/middleware.go",
+          "gitBlob": "cb51c565ebd3ab5eb70ab12f94dae23f725944e4",
+          "sha256": "028f45ec94f1716f7eb614a7713db9555334076a061b29022e17b7cd1c82d177",
+          "bytes": 2619,
+          "retainedSourceFile": "buildah__vendor__github.com__gorilla__mux__middleware.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/gorilla/mux/mux.go",
+          "gitBlob": "1e089906fad5715477ba0c785562a43f0d987a8a",
+          "sha256": "9fe967437d9bc37d9dfa8e3e7f742bd9a74561c8bdc2f63b73387ca90dfa3e16",
+          "bytes": 17782,
+          "retainedSourceFile": "buildah__vendor__github.com__gorilla__mux__mux.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/modern-go/reflect2/go_above_118.go",
+          "gitBlob": "2b4116f6c9bec1320b5bfffd1e8fa2b23228b29d",
+          "sha256": "b41d841d561da73b0ab54f9f2830d7f9437561b831faad1fa22f738ea99ad805",
+          "bytes": 552,
+          "retainedSourceFile": "buildah__vendor__github.com__modern-go__reflect2__go_above_118.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/modern-go/reflect2/go_above_19.go",
+          "gitBlob": "974f7685e495deeaf4c55c3db47e0d99f027e3b7",
+          "sha256": "422e740515d8517cdc4d412e0fe0bf3d42f86909302ce3cf2df66a8800fd021f",
+          "bytes": 378,
+          "retainedSourceFile": "buildah__vendor__github.com__modern-go__reflect2__go_above_19.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/modern-go/reflect2/go_below_118.go",
+          "gitBlob": "00003dbd7c57da7a18546b0daf4a4af3ff44dd3f",
+          "sha256": "5b650e4f7c3b3c240dafd32426d7339c78adae4f50bb36fa1c27468e63aaaa3f",
+          "bytes": 531,
+          "retainedSourceFile": "buildah__vendor__github.com__modern-go__reflect2__go_below_118.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/modern-go/reflect2/type_map.go",
+          "gitBlob": "4b13c3155c80d9bb27447bd3f48026f26c8ad89c",
+          "sha256": "4fabf996f68479b1b4ab68741558fe85074c97ec4d576cd113c0383cf56286db",
+          "bytes": 1730,
+          "retainedSourceFile": "buildah__vendor__github.com__modern-go__reflect2__type_map.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/modern-go/reflect2/unsafe_link.go",
+          "gitBlob": "b49f614efc58d9495df914e3a8b4dcb86ba467b6",
+          "sha256": "f2ac5514fc2dc286e08f9c3655c32ec5821e262df610004161cb10dd27c08cde",
+          "bytes": 2677,
+          "retainedSourceFile": "buildah__vendor__github.com__modern-go__reflect2__unsafe_link.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/opencontainers/runc/libcontainer/utils/utils_unix.go",
+          "gitBlob": "7dbec54dc98f8b6e004555a85a910072107c5488",
+          "sha256": "64bcd6616e0359080a40ac45a5c77426f7f18989903be98e5098e5ffad2ce662",
+          "bytes": 10417,
+          "retainedSourceFile": "buildah__vendor__github.com__opencontainers__runc__libcontainer__utils__utils_unix.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp/handler.go",
+          "gitBlob": "937f9b4e737459702cb7646829885ec6b7a3ac63",
+          "sha256": "a9feeb290a6cc10c8e20f1381bdab33d6e9bc109d4f0a5035b2ae83c7aa6a179",
+          "bytes": 7349,
+          "retainedSourceFile": "buildah__vendor__go.opentelemetry.io__contrib__instrumentation__net__http__otelhttp__handler.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/net/http2/server.go",
+          "gitBlob": "a7d2053b6c7961cc467d51964390b204b116b6a5",
+          "sha256": "cf07329cd7d5d95909a5404f3b29f10f4252189012b98ad4c8fdbfca384cb9d1",
+          "bytes": 101785,
+          "retainedSourceFile": "buildah__vendor__golang.org__x__net__http2__server.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/cpu/cpu_openbsd_arm64.go",
+          "gitBlob": "85b64d5ccb735e9387ee9dad8b583d4458bc6ffe",
+          "sha256": "681c260436ffe0d3d591bc99e9e08a3218e0017589552a7f6a374fcd4a54aad8",
+          "bytes": 1702,
+          "retainedSourceFile": "buildah__vendor__golang.org__x__sys__cpu__cpu_openbsd_arm64.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/cpu/runtime_auxv_go121.go",
+          "gitBlob": "4c9788ea8ee88a5071ca70fa6d45096b2e20613a",
+          "sha256": "6eee9d1a593dce53d22545dc5d5f6ed9127a43e6568ef5f5521920946510d445",
+          "bytes": 357,
+          "retainedSourceFile": "buildah__vendor__golang.org__x__sys__cpu__runtime_auxv_go121.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/cpu/syscall_aix_ppc64_gc.go",
+          "gitBlob": "e8b6cdbe9a7c8b62a50d04e727ffc19bd43146dd",
+          "sha256": "33f76a8da28ee51d3db32944949fc2ddcb9870ba0f2d22d29732dfcf2a6ba119",
+          "bytes": 988,
+          "retainedSourceFile": "buildah__vendor__golang.org__x__sys__cpu__syscall_aix_ppc64_gc.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/cpu/syscall_darwin_arm64_gc.go",
+          "gitBlob": "7b4e67ff9c9e21101dd62d5193b39b0ee76c9c73",
+          "sha256": "2ec90937ba10bdeb3a646e3fcefd531bd99ce0c3653eaa6c8de2c6d86362e758",
+          "bytes": 1474,
+          "retainedSourceFile": "buildah__vendor__golang.org__x__sys__cpu__syscall_darwin_arm64_gc.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/cpu/syscall_darwin_x86_gc.go",
+          "gitBlob": "4d0888b0c010f41faaf56692175b7d395bb7494a",
+          "sha256": "66059b45534544bdcde771fa793eca91d04de079e21adc4b2732e0912a57900a",
+          "bytes": 2542,
+          "retainedSourceFile": "buildah__vendor__golang.org__x__sys__cpu__syscall_darwin_x86_gc.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/unix/auxv.go",
+          "gitBlob": "37a82528f580f1a3fa7ed57d65cbb8ee7097a98e",
+          "sha256": "5e470a481610ff746d64cb22b3e7a981ffa527d6ca546e87df4296704d6c6de6",
+          "bytes": 1020,
+          "retainedSourceFile": "buildah__vendor__golang.org__x__sys__unix__auxv.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/unix/syscall_darwin_libSystem.go",
+          "gitBlob": "2f0fa76e4f65b17d55eba7a6996a43c73f3d3253",
+          "sha256": "0c327ad9b9845e19b1e097dfb7b569bc9793b670874e24be4a87ac9bd4647557",
+          "bytes": 1225,
+          "retainedSourceFile": "buildah__vendor__golang.org__x__sys__unix__syscall_darwin_libSystem.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/unix/syscall_linux.go",
+          "gitBlob": "21e2bfa398b93a78d00dbfc7435257b992ffe102",
+          "sha256": "5a1f64326a3de29148008a364f560fa8c8227238ca1b681ba5bec2e7c266bb98",
+          "bytes": 80259,
+          "retainedSourceFile": "buildah__vendor__golang.org__x__sys__unix__syscall_linux.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/unix/syscall_openbsd_libc.go",
+          "gitBlob": "0a451e6dd40a958c1eab021723b5fead8edc5d77",
+          "sha256": "8f249670f3576e501a7d9d9efb839e8dff2f3f5b4cd1b0811d512517c682f219",
+          "bytes": 1128,
+          "retainedSourceFile": "buildah__vendor__golang.org__x__sys__unix__syscall_openbsd_libc.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/unix/vgetrandom_linux.go",
+          "gitBlob": "07ac8e09d1b702b1abd56252d7c6d1135580f559",
+          "sha256": "4dfa240c42977f70ef32d1cea7effdbd902b5ef6814e67f20c48da10548b4bc9",
+          "bytes": 345,
+          "retainedSourceFile": "buildah__vendor__golang.org__x__sys__unix__vgetrandom_linux.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/unix/zsyscall_aix_ppc64_gc.go",
+          "gitBlob": "b68a78362b2cdc670c589e88268df70d1ee2790b",
+          "sha256": "5a806c7a1368edba0adb4f7c029c8b4e1c7f4ce3e2053608f8546bb358fd8282",
+          "bytes": 43453,
+          "retainedSourceFile": "buildah__vendor__golang.org__x__sys__unix__zsyscall_aix_ppc64_gc.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/unix/zsyscall_illumos_amd64.go",
+          "gitBlob": "c698cbc01a538f2ada7c476334c4a04a0711b814",
+          "sha256": "6dbad6fb56bf5533b9a5a75edca9a37d7b1a2740155fc9db4761ee39422f77a8",
+          "bytes": 2698,
+          "retainedSourceFile": "buildah__vendor__golang.org__x__sys__unix__zsyscall_illumos_amd64.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/unix/zsyscall_solaris_amd64.go",
+          "gitBlob": "b4609c20c24dfe0a3463dbe9f118c43d4a1afd53",
+          "sha256": "4ca86eaf8f9017fb7a065a272f195b8eb2ac0184d99d84994edef3a7e7594a19",
+          "bytes": 64967,
+          "retainedSourceFile": "buildah__vendor__golang.org__x__sys__unix__zsyscall_solaris_amd64.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/backoff.go",
+          "gitBlob": "29475e31c979e6ef661c059cb5dac3d9127436bb",
+          "sha256": "b5593815ced2bc309a68b9ab18c9044b6c93723ae303ef636f77c1ec7f400718",
+          "bytes": 1996,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__backoff.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/backoff/backoff.go",
+          "gitBlob": "d7b40b7cb66f11f7100134d737d47573aa939d59",
+          "sha256": "79c43f7f8f0ea8a1aa8a93e0f37a2d9eedd3a6dafde0adee0a0a97a6a0ed5d8d",
+          "bytes": 1738,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__backoff__backoff.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/balancer/balancer.go",
+          "gitBlob": "c9b343c7156470e7d13290fa68a31e0fb5f166b4",
+          "sha256": "18d1889db917abb01d2e8958a219938aa385d74fafe3d577f8b04930bb014d45",
+          "bytes": 16224,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__balancer__balancer.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/balancer/base/balancer.go",
+          "gitBlob": "4d576876d8c80c31f438bb47db5328f807a9a34c",
+          "sha256": "c888127edd98f36185140fbcf3e11294b8a89d00ffdaa4f433e32af222548c80",
+          "bytes": 8585,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__balancer__base__balancer.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/balancer/pickfirst/internal/internal.go",
+          "gitBlob": "7d66cb491c406935fa346577c323c8c3a44f60c8",
+          "sha256": "34a213a232eead5ede0258327948a97c1d6da91c6e941e329ead67edec922b54",
+          "bytes": 1048,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__balancer__pickfirst__internal__internal.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/balancer/pickfirst/pickfirst.go",
+          "gitBlob": "ea8899818c22e5fa51ca27d4e1828b589e768f8d",
+          "sha256": "a48b33e07d83a5be908e20e43c01b4c46600ec9a0eb5d792d6f279fbd9d81590",
+          "bytes": 9406,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__balancer__pickfirst__pickfirst.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/balancer/pickfirst/pickfirstleaf/pickfirstleaf.go",
+          "gitBlob": "494314f23582532e148623d83f97c6d3855a6cae",
+          "sha256": "dafdbcba8bc8cbdd6c4147a0741d52edad3f17135173a82a123b21e74fb6ffdb",
+          "bytes": 33346,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__balancer__pickfirst__pickfirstleaf__pickfirstleaf.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/balancer/roundrobin/roundrobin.go",
+          "gitBlob": "35da5d1ec9d904ee9dc79f08b7d5e9a06039ed8d",
+          "sha256": "d0b017434445e26fb514ab073f68500d8406718d0a6b5d3f33073f409f752821",
+          "bytes": 2350,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__balancer__roundrobin__roundrobin.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/balancer_wrapper.go",
+          "gitBlob": "948a21ef68338c7164b69ffc31005e17023f1099",
+          "sha256": "faa15ba485c1c82e84255b923fa88886baa478eb7743df592afc4d32a46b16fb",
+          "bytes": 18053,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__balancer_wrapper.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/binarylog/grpc_binarylog_v1/binarylog.pb.go",
+          "gitBlob": "825c31795f0562b2b2fc68b59da7064fbe419d14",
+          "sha256": "5dcaa4c7b57787735ac2b92d5089cf7dd46cb0887a2ab370501e3d6087b1b1c7",
+          "bytes": 42001,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__binarylog__grpc_binarylog_v1__binarylog.pb.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/call.go",
+          "gitBlob": "788c89c16f96027b81423ef5ec1077c73534c800",
+          "sha256": "74e6a635956cb9a0edc05341acd3c299be978a96adf4ac79450b9d50e9763b80",
+          "bytes": 2463,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__call.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/clientconn.go",
+          "gitBlob": "4f350ca56ad1298d6d9750bd4b50e026f93634b0",
+          "sha256": "e845f2341d7d975039a7331b5119493916e36b726a21be3e83541641ae2d616f",
+          "bytes": 61754,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__clientconn.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/codec.go",
+          "gitBlob": "959c2f99d4a735e1990a351eab99880485e273e5",
+          "sha256": "6717f2e6bd13fd93c6f6726f66153d0ea132a8aec7c45c6258b7375727055955",
+          "bytes": 3154,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__codec.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/codes/code_string.go",
+          "gitBlob": "934fac2b090aeccc43400dda84ffaf37bac2f006",
+          "sha256": "fc83f20f33a04a641ef92e72f2df310ad89875fed491ce402029308dcca53508",
+          "bytes": 2437,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__codes__code_string.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/codes/codes.go",
+          "gitBlob": "0b42c302b24b7d6c9f0cb04b202ea514887f6a8d",
+          "sha256": "e67aa5a4a8a39663b70244ee9ef6f76b8ef145896cdf3cd10b397d9173aa7322",
+          "bytes": 9418,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__codes__codes.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/connectivity/connectivity.go",
+          "gitBlob": "4a89926422bcfdf60b8ed8da9b403b9c351e5f40",
+          "sha256": "ca86fd043275378e7c04ac49924a4307dd34f1fbef2a90b322af92cd0ee06d2e",
+          "bytes": 2684,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__connectivity__connectivity.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/credentials/credentials.go",
+          "gitBlob": "665e790bb0f776bdb42c3ffa3b203d5e96151833",
+          "sha256": "8bceffe733e653be8074e5fd88caf7117c704a7fb4e12a85800f8e044f3c7797",
+          "bytes": 11958,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__credentials__credentials.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/credentials/tls.go",
+          "gitBlob": "bd5fe22b6af6a50e8e74b5daa04637a408de4bb2",
+          "sha256": "3ebf20c3a7b9fde9442b861d09898885994b11d6115d17040e833cab1058fe1a",
+          "bytes": 10511,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__credentials__tls.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/dialoptions.go",
+          "gitBlob": "405a2ffeb39e49c156e21ab180a73c9aae9d2cc0",
+          "sha256": "a08b83a0bd52de35a979e041fb52b67b3ebc84ebea4ea2af12e6a8d6fbf956b2",
+          "bytes": 27836,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__dialoptions.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/encoding/encoding.go",
+          "gitBlob": "11d0ae142c4295ce61cc197fdf1cc94d79ef0c7e",
+          "sha256": "11cbabdf147d3518e88b6150fc1b58c050fe16105aac9bd6c39a94446ba307ad",
+          "bytes": 5064,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__encoding__encoding.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/encoding/proto/proto.go",
+          "gitBlob": "ceec319dd2fb42f8a935bc66218704109c17d3ec",
+          "sha256": "7cd620378613e4d614058d243a8f5acfab30dd7050c86f48cb3a3d9bc51232b6",
+          "bytes": 2543,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__encoding__proto__proto.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/experimental/stats/metricregistry.go",
+          "gitBlob": "ad75313a18e12afeac1219dfe9c81902f813d8db",
+          "sha256": "3e1438a2b1345fb10ef2487fc13d537a34f5deeedc58f9de00e04ee56fca964a",
+          "bytes": 10172,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__experimental__stats__metricregistry.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/grpclog/component.go",
+          "gitBlob": "f1ae080dcb816cb8546507a1b4ef9f2b5e0f736e",
+          "sha256": "2b2a50fdc442ef1a92d5012c9f21763b71d47794114604b4dfcb39c410d9c4bf",
+          "bytes": 2932,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__grpclog__component.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/grpclog/grpclog.go",
+          "gitBlob": "db320105e64e2cc59c4616aa6595f501b90fe2ae",
+          "sha256": "6b1c4c32181da0292783b4feb489b979830556724bfa3b33e4612b1279d24081",
+          "bytes": 5189,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__grpclog__grpclog.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/grpclog/internal/loggerv2.go",
+          "gitBlob": "ed90060c3cba52a5f060aaf05d6f2cb1139ff869",
+          "sha256": "73624458b062c9a9b60b89b0640d5958c53d2703d032dfedbcfed5b68dcd6b37",
+          "bytes": 8218,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__grpclog__internal__loggerv2.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/backoff/backoff.go",
+          "gitBlob": "b6ae7f258505ad73ae2b76c3cf92b97f8a9298fe",
+          "sha256": "f6385bcafb72a06a86d5c28e0cd1680fdad8e3757182e2291fe13b495615a991",
+          "bytes": 3344,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__internal__backoff__backoff.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/balancer/gracefulswitch/gracefulswitch.go",
+          "gitBlob": "fbc1ca356ab9925030bf3f96a3f90e6850ff2de9",
+          "sha256": "9fa38d4717230cee5ec8e04db11e05260b7f2ae05968e9507daa98cc0a3d477b",
+          "bytes": 14830,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__internal__balancer__gracefulswitch__gracefulswitch.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/binarylog/binarylog.go",
+          "gitBlob": "755fdebc1b15aaa075397e6b59a22e303fc41a01",
+          "sha256": "5fc48a515beffa63f5e1ab297c8fd98ee77e755881fb392e55e313bd08191189",
+          "bytes": 5683,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__internal__binarylog__binarylog.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/binarylog/binarylog_testutil.go",
+          "gitBlob": "1ee00a39ac7c7b66689ccc7eae1bf475f66df306",
+          "sha256": "0490bfd3780ebf38e67f9b2c297759708f2f67b91a6db40b27baefa85efc258e",
+          "bytes": 1538,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__internal__binarylog__binarylog_testutil.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/binarylog/env_config.go",
+          "gitBlob": "f9e80e27ab6881f070812f80fc85d19090091967",
+          "sha256": "960fd8f1f3159361bbae1110e4b9acd5d7d411534bd54b75723f85c64e176087",
+          "bytes": 6803,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__internal__binarylog__env_config.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/binarylog/sink.go",
+          "gitBlob": "9ea598b14c077d3e9443a2e3ac59231b0f577510",
+          "sha256": "7b76e9a8456f515cdc7a906157ea5b91fedb153239536abe8be528951b2b0b85",
+          "bytes": 4440,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__internal__binarylog__sink.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/buffer/unbounded.go",
+          "gitBlob": "11f91668ac9be1e4a047804c0b16755ad68df733",
+          "sha256": "b2de0ea2d76d7af9c5894e1371a2320b44956b1c42cd0803a051629c24f8a23d",
+          "bytes": 3309,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__internal__buffer__unbounded.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/channelz/funcs.go",
+          "gitBlob": "078bb81238bc466a46bada2e537bae93d1ac06e7",
+          "sha256": "4aecad9253e8832541a4ee49136fcd4f1c0ba881972099d87caca20574537b1f",
+          "bytes": 7080,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__internal__channelz__funcs.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/channelz/logging.go",
+          "gitBlob": "ee4d721258055ca5eb00fd309adc858028981788",
+          "sha256": "60832e30dae6a10abdd6ed7266f458c20c8b065bd8a211d59f5c8139fb47380c",
+          "bytes": 2093,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__internal__channelz__logging.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/channelz/trace.go",
+          "gitBlob": "2bffe4777684dc5d26c0cc4bda5f9f15d9ef88f2",
+          "sha256": "3721a89c1c2dc1a3dbc30f0db1b8e55be0bc3aa21678dd7f7a6ef23e276036ed",
+          "bytes": 6061,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__internal__channelz__trace.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/credentials/spiffe.go",
+          "gitBlob": "25ade623058e3f52ed20c782c8e122c58c6ed522",
+          "sha256": "149056461f3e6a44cb6f24c7f7f7e836a23103f8ab68336f0b8d0e868da5f907",
+          "bytes": 2300,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__internal__credentials__spiffe.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/envconfig/envconfig.go",
+          "gitBlob": "cc5713fd9d5eac0bf8552dc0e99d2254ea1ab5e4",
+          "sha256": "5e437816437c1eaf405b1e443e36317521680ca52a032344e0430f6f082c1780",
+          "bytes": 4260,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__internal__envconfig__envconfig.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/envconfig/observability.go",
+          "gitBlob": "dd314cfb18f48a97c7fb132db2810affe8e52b03",
+          "sha256": "57c20c861a81a343a7e0f65d29952f5a6429dc0246fbd76fe3f69c9d214ce000",
+          "bytes": 1441,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__internal__envconfig__observability.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/envconfig/xds.go",
+          "gitBlob": "2eb97f832b1c0e69196187781e4e33f6ae62593f",
+          "sha256": "cab6d3a20aef2773ced4ac2f2724f3ea91a9f34208f9a7f5d881b38b009909d0",
+          "bytes": 2753,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__internal__envconfig__xds.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/idle/idle.go",
+          "gitBlob": "2c13ee9dac753c996bd28d3f6ba7ff8313b450df",
+          "sha256": "7c77a17b5091560c433e65d04d7dc52306df9c6734cf4b3a0df9de262fc828c2",
+          "bytes": 9858,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__internal__idle__idle.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/internal.go",
+          "gitBlob": "2ce012cda135ae09b8ec540fc69a14e1dee111cf",
+          "sha256": "312b11dbc089cbfad0b7402fce596070d36ae8e055be4da6467030cc93987b87",
+          "bytes": 14397,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__internal__internal.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/resolver/delegatingresolver/delegatingresolver.go",
+          "gitBlob": "20b8fb098ac3a14fb4364c92c29512ef3089e0aa",
+          "sha256": "5b63b6db29508d9ffb671418bf96c454f2e8d3fa40b4228b281ccf192c6e3888",
+          "bytes": 16085,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__internal__resolver__delegatingresolver__delegatingresolver.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/resolver/dns/dns_resolver.go",
+          "gitBlob": "ba5c5a95d0d7f17ae42c00f6a3c30cf9ab7a8d63",
+          "sha256": "8e44b5db8b373c439d2630a70d64b9039308794a82bf858f68fc1ea04247d16d",
+          "bytes": 13625,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__internal__resolver__dns__dns_resolver.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/resolver/dns/internal/internal.go",
+          "gitBlob": "c0eae4f5f83fcd1cddc212028a7ac01594cd8c8f",
+          "sha256": "360c14f956b0fc34a4ccc067945367ad0c16b192dc050f99ab2a6f1f4e7e5c95",
+          "bytes": 3159,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__internal__resolver__dns__internal__internal.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/resolver/passthrough/passthrough.go",
+          "gitBlob": "b901c7bace5061d62c86828756e21292977512dd",
+          "sha256": "9b653000c8516ed008ed2416cbc59e48ffdf3b974330dae9e142004431392959",
+          "bytes": 1700,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__internal__resolver__passthrough__passthrough.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/resolver/unix/unix.go",
+          "gitBlob": "27cd81af9e5f46041939cd67a8609cc1f0d039dc",
+          "sha256": "d7413035609466572b9e656055553df55d2f2cdda7c5c35c419877615a51dc38",
+          "bytes": 2301,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__internal__resolver__unix__unix.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/serviceconfig/serviceconfig.go",
+          "gitBlob": "51e733e495a36bc3c127bf9587972a32c0c58e9b",
+          "sha256": "ee1eb07030513d275455f66d92261a692cb0fd0ddb32371e98a18e72d291caa2",
+          "bytes": 6508,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__internal__serviceconfig__serviceconfig.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/syscall/syscall_linux.go",
+          "gitBlob": "b3a72276dee4211860c8357db3a4a5b938fec946",
+          "sha256": "91096efdaa61581ac7b9d2d8076635d8ca5ac7ef3064094dab2f8efb70f003b2",
+          "bytes": 3214,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__internal__syscall__syscall_linux.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/syscall/syscall_nonlinux.go",
+          "gitBlob": "54c24c2ff3865635acf8d05ae19a8580c7617a73",
+          "sha256": "3b74e0c3889ed8a826963f5f3bf9e7bf2bab3ee05f6d2739c9f1bb75cca8d490",
+          "bytes": 1985,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__internal__syscall__syscall_nonlinux.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/transport/bdp_estimator.go",
+          "gitBlob": "070680edbac1271bda40a5cb99bc61789fef7887",
+          "sha256": "01a7332c6ea43122862b91c7e69ca4a2aa91b11ee9c094fc2ffe1ba6edad75f3",
+          "bytes": 4411,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__internal__transport__bdp_estimator.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/transport/controlbuf.go",
+          "gitBlob": "ef72fbb3a0163b537a41f68934cc9617124be923",
+          "sha256": "ed633c3114ac8648d36a38e61d242cc1f6b3f3db82dbd0db42693038949cb183",
+          "bytes": 29348,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__internal__transport__controlbuf.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/transport/defaults.go",
+          "gitBlob": "bc8ee07474968670d429d6f2bb7e87cd4069a3b7",
+          "sha256": "859b175037c944b30fffe75de821538f7049cef62a0db65408159e7006f3e64a",
+          "bytes": 2026,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__internal__transport__defaults.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/transport/http2_client.go",
+          "gitBlob": "171e690a3f22709bccb8018b01816af6a64fdec0",
+          "sha256": "d0f88fe202d12e65e440a44f430562abf294a8fa5b3ce361986e29880cd68def",
+          "bytes": 60007,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__internal__transport__http2_client.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/transport/http2_server.go",
+          "gitBlob": "7e53eb1735eff37d95e6db2d36c91417cd1b2a9c",
+          "sha256": "f0d93e1d943cc607574f94728465d84995a74d4d170c29915824a4f6b5657acc",
+          "bytes": 46133,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__internal__transport__http2_server.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/transport/http_util.go",
+          "gitBlob": "f997f9fdb5d01e0a52dcc021b2aa2b1442e97f82",
+          "sha256": "65cc0ae1141be06a7bc51a25fadc81fdfd352adf2ba32190bca5df7c8df77d2a",
+          "bytes": 11331,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__internal__transport__http_util.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/transport/logging.go",
+          "gitBlob": "42ed2b07af663cb50de072b707d568139cb96b44",
+          "sha256": "ebf772b0c69a9a96b5bc58670c3b4197d707fb4980defca772ac51e492ee6a5e",
+          "bytes": 1337,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__internal__transport__logging.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/transport/transport.go",
+          "gitBlob": "af4a4aeab1456fb716b1533a1329b9ef55743126",
+          "sha256": "86dc8afccf4672e9758116bfe3f85dfdd1cfbf40a2757033c7ea07950a50b6a8",
+          "bytes": 21780,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__internal__transport__transport.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/mem/buffer_pool.go",
+          "gitBlob": "c37c58c0233ec0f468563463a8726fcfcc9c5d31",
+          "sha256": "18f57823a619658ab5931dc78fcadadae5d0d87ce80cb3452a4c54696fb13a44",
+          "bytes": 5235,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__mem__buffer_pool.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/mem/buffer_slice.go",
+          "gitBlob": "65002e2cc8517f098d477ecd82bd0ee95e99ce16",
+          "sha256": "023ec85f847d698de3570386f02ca60ac4a08cddf3b863fd5137d887a7351d3b",
+          "bytes": 8129,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__mem__buffer_slice.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/mem/buffers.go",
+          "gitBlob": "ecbf0b9a73ea39f3b7a299ba2b060f02beef47d3",
+          "sha256": "d9e3814c07e8bcb56d55349bae858c5177aa63b9d75646cbd3850fcb4dce5cb2",
+          "bytes": 7135,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__mem__buffers.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/metadata/metadata.go",
+          "gitBlob": "d2e15253bbfbc5c12fe1558613ceb24de56aaeaa",
+          "sha256": "4eb14f67165c1ac4c745794e165e0f689d522baad284cf10affe231287bbc522",
+          "bytes": 8511,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__metadata__metadata.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/resolver/resolver.go",
+          "gitBlob": "b84ef26d46d11649a52f5b23f37fe6d026f419f1",
+          "sha256": "2d6ee132f4b930c101e03fd77fb4e7d3e452bfe67e203581f001c3fc727d2a95",
+          "bytes": 14021,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__resolver__resolver.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/rpc_util.go",
+          "gitBlob": "ad20e9dff2063cf2ccae5d5cf0bdb8eda6c11438",
+          "sha256": "4e2ddefa7082fee7d6d38936462e680478080dc784bb33b1f1434b192c3a18ee",
+          "bytes": 33088,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__rpc_util.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/server.go",
+          "gitBlob": "976e70ae068e1f204c96f5d24f6258273f33718a",
+          "sha256": "84d274446303056cce011d94cac7012fdecd0bcd8146eaca14af60c82a2622e9",
+          "bytes": 70608,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__server.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/service_config.go",
+          "gitBlob": "8d451e07c7cc072cf484af8c398f73d6a7682d0e",
+          "sha256": "c38647649ab124f58b5e2c27dc7683afe6d6a277d3fc4966abe89c19e0299604",
+          "bytes": 11089,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__service_config.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/stream.go",
+          "gitBlob": "12163150ba7f42bfb7f9cb2672d3217714ab0e8c",
+          "sha256": "bfb845570c62a9808846cbdce90d1962477e399ce636917cbe7f03e5a4118e18",
+          "bytes": 58071,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__stream.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/stream_interfaces.go",
+          "gitBlob": "0037fee0bd71ab76ddae0ceba38c67013c1936bc",
+          "sha256": "c51281c4729c8a806e038104b218ef8cf2eb2c90012c35cc6e0f107e603d6e38",
+          "bytes": 10422,
+          "retainedSourceFile": "buildah__vendor__google.golang.org__grpc__stream_interfaces.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        }
+      ]
+    },
+    {
+      "name": "skopeo",
+      "version": "1.22.3",
+      "sourceArchive": {
+        "url": "https://src.fedoraproject.org/repo/pkgs/rpms/skopeo/v1.22.3.tar.gz/sha512/88b8dc39388575cdbeae97f0e3e8bc599c340c983dab38e97f647b3aee8a0f205d7763a5084a4a2c2784ad3c68923739245d470e53745cab90c8a1270b3eab84/v1.22.3.tar.gz",
+        "bytes": 10338736,
+        "sha512": "88b8dc39388575cdbeae97f0e3e8bc599c340c983dab38e97f647b3aee8a0f205d7763a5084a4a2c2784ad3c68923739245d470e53745cab90c8a1270b3eab84",
+        "sha256": "f372e8c23407e727d6762d0bd6ff0804fc2180bc8af5c8a134197c756cff2737"
+      },
+      "sourceClosureManifestSha256": "9017ab85a45bd7327d17b92f16b6fd479dc1a5ef814c29113346b1939c2e1112",
+      "allGoFilesParsed": true,
+      "goFileCount": 2644,
+      "candidateSourceDirectories": [
+        "vendor/github.com/containers/ocicrypt/keywrap/keyprovider",
+        "vendor/github.com/containers/ocicrypt/utils/keyprovider"
+      ],
+      "retainedSources": [
+        {
+          "path": "vendor/github.com/containers/ocicrypt/keywrap/keyprovider/keyprovider.go",
+          "gitBlob": "6ac0fcb95a873ce8a4f85689d5351d47324a5c15",
+          "sha256": "f6e91d62902cc2f09fb76c606c5daeca432f8913344e99237fd5380fff3771fc",
+          "bytes": 8172,
+          "retainedSourceFile": "skopeo__vendor__github.com__containers__ocicrypt__keywrap__keyprovider__keyprovider.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/containers/ocicrypt/utils/keyprovider/keyprovider.pb.go",
+          "gitBlob": "dc477d3cf8b8a1f9568cb480fb4f14a754bf88d7",
+          "sha256": "99bc016c216318648d7dcb8f2691992e4561d6d1a7e1ae5a63cffe28eb731311",
+          "bytes": 10399,
+          "retainedSourceFile": "skopeo__vendor__github.com__containers__ocicrypt__utils__keyprovider__keyprovider.pb.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/felixge/httpsnoop/capture_metrics.go",
+          "gitBlob": "bec7b71b39cb0722616e4760431c8b557aed45db",
+          "sha256": "f6b6d050a4e5c0457041962b41884f054b3c19942486a602fdc5e9c774be6bfb",
+          "bytes": 2551,
+          "retainedSourceFile": "skopeo__vendor__github.com__felixge__httpsnoop__capture_metrics.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/gorilla/mux/middleware.go",
+          "gitBlob": "cb51c565ebd3ab5eb70ab12f94dae23f725944e4",
+          "sha256": "028f45ec94f1716f7eb614a7713db9555334076a061b29022e17b7cd1c82d177",
+          "bytes": 2619,
+          "retainedSourceFile": "skopeo__vendor__github.com__gorilla__mux__middleware.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/gorilla/mux/mux.go",
+          "gitBlob": "1e089906fad5715477ba0c785562a43f0d987a8a",
+          "sha256": "9fe967437d9bc37d9dfa8e3e7f742bd9a74561c8bdc2f63b73387ca90dfa3e16",
+          "bytes": 17782,
+          "retainedSourceFile": "skopeo__vendor__github.com__gorilla__mux__mux.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/hashicorp/go-cleanhttp/handlers.go",
+          "gitBlob": "3c845dc0dc6f85976d20fdcf3f4d44bbb22e7608",
+          "sha256": "4445e50f0ba70a772db04c187b71835b44c3569c538276fa5308478bc6734eeb",
+          "bytes": 995,
+          "retainedSourceFile": "skopeo__vendor__github.com__hashicorp__go-cleanhttp__handlers.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/modern-go/reflect2/go_above_118.go",
+          "gitBlob": "2b4116f6c9bec1320b5bfffd1e8fa2b23228b29d",
+          "sha256": "b41d841d561da73b0ab54f9f2830d7f9437561b831faad1fa22f738ea99ad805",
+          "bytes": 552,
+          "retainedSourceFile": "skopeo__vendor__github.com__modern-go__reflect2__go_above_118.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/modern-go/reflect2/go_above_19.go",
+          "gitBlob": "974f7685e495deeaf4c55c3db47e0d99f027e3b7",
+          "sha256": "422e740515d8517cdc4d412e0fe0bf3d42f86909302ce3cf2df66a8800fd021f",
+          "bytes": 378,
+          "retainedSourceFile": "skopeo__vendor__github.com__modern-go__reflect2__go_above_19.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/modern-go/reflect2/go_below_118.go",
+          "gitBlob": "00003dbd7c57da7a18546b0daf4a4af3ff44dd3f",
+          "sha256": "5b650e4f7c3b3c240dafd32426d7339c78adae4f50bb36fa1c27468e63aaaa3f",
+          "bytes": 531,
+          "retainedSourceFile": "skopeo__vendor__github.com__modern-go__reflect2__go_below_118.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/modern-go/reflect2/type_map.go",
+          "gitBlob": "4b13c3155c80d9bb27447bd3f48026f26c8ad89c",
+          "sha256": "4fabf996f68479b1b4ab68741558fe85074c97ec4d576cd113c0383cf56286db",
+          "bytes": 1730,
+          "retainedSourceFile": "skopeo__vendor__github.com__modern-go__reflect2__type_map.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/github.com/modern-go/reflect2/unsafe_link.go",
+          "gitBlob": "b49f614efc58d9495df914e3a8b4dcb86ba467b6",
+          "sha256": "f2ac5514fc2dc286e08f9c3655c32ec5821e262df610004161cb10dd27c08cde",
+          "bytes": 2677,
+          "retainedSourceFile": "skopeo__vendor__github.com__modern-go__reflect2__unsafe_link.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp/handler.go",
+          "gitBlob": "937f9b4e737459702cb7646829885ec6b7a3ac63",
+          "sha256": "a9feeb290a6cc10c8e20f1381bdab33d6e9bc109d4f0a5035b2ae83c7aa6a179",
+          "bytes": 7349,
+          "retainedSourceFile": "skopeo__vendor__go.opentelemetry.io__contrib__instrumentation__net__http__otelhttp__handler.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/net/http2/server.go",
+          "gitBlob": "bdc5520ebd3e53b6b7f400e448cf15a92a08747d",
+          "sha256": "8ad3096777659845a5c1677ebe031e0156f90febeb49bc3f9cfa30c273b91789",
+          "bytes": 106409,
+          "retainedSourceFile": "skopeo__vendor__golang.org__x__net__http2__server.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/cpu/cpu_openbsd_arm64.go",
+          "gitBlob": "85b64d5ccb735e9387ee9dad8b583d4458bc6ffe",
+          "sha256": "681c260436ffe0d3d591bc99e9e08a3218e0017589552a7f6a374fcd4a54aad8",
+          "bytes": 1702,
+          "retainedSourceFile": "skopeo__vendor__golang.org__x__sys__cpu__cpu_openbsd_arm64.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/cpu/runtime_auxv_go121.go",
+          "gitBlob": "4c9788ea8ee88a5071ca70fa6d45096b2e20613a",
+          "sha256": "6eee9d1a593dce53d22545dc5d5f6ed9127a43e6568ef5f5521920946510d445",
+          "bytes": 357,
+          "retainedSourceFile": "skopeo__vendor__golang.org__x__sys__cpu__runtime_auxv_go121.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/cpu/syscall_aix_ppc64_gc.go",
+          "gitBlob": "e8b6cdbe9a7c8b62a50d04e727ffc19bd43146dd",
+          "sha256": "33f76a8da28ee51d3db32944949fc2ddcb9870ba0f2d22d29732dfcf2a6ba119",
+          "bytes": 988,
+          "retainedSourceFile": "skopeo__vendor__golang.org__x__sys__cpu__syscall_aix_ppc64_gc.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/cpu/syscall_darwin_x86_gc.go",
+          "gitBlob": "4d0888b0c010f41faaf56692175b7d395bb7494a",
+          "sha256": "66059b45534544bdcde771fa793eca91d04de079e21adc4b2732e0912a57900a",
+          "bytes": 2542,
+          "retainedSourceFile": "skopeo__vendor__golang.org__x__sys__cpu__syscall_darwin_x86_gc.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/unix/auxv.go",
+          "gitBlob": "37a82528f580f1a3fa7ed57d65cbb8ee7097a98e",
+          "sha256": "5e470a481610ff746d64cb22b3e7a981ffa527d6ca546e87df4296704d6c6de6",
+          "bytes": 1020,
+          "retainedSourceFile": "skopeo__vendor__golang.org__x__sys__unix__auxv.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/unix/syscall_darwin_libSystem.go",
+          "gitBlob": "2f0fa76e4f65b17d55eba7a6996a43c73f3d3253",
+          "sha256": "0c327ad9b9845e19b1e097dfb7b569bc9793b670874e24be4a87ac9bd4647557",
+          "bytes": 1225,
+          "retainedSourceFile": "skopeo__vendor__golang.org__x__sys__unix__syscall_darwin_libSystem.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/unix/syscall_linux.go",
+          "gitBlob": "06c0eea6fb6a06e9d29ef211d9c28805c6a8700a",
+          "sha256": "2755237f9936b3802f9217fd57272d7a954956e726fbfee0e886d9eb6e4473a6",
+          "bytes": 81868,
+          "retainedSourceFile": "skopeo__vendor__golang.org__x__sys__unix__syscall_linux.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/unix/syscall_openbsd_libc.go",
+          "gitBlob": "0a451e6dd40a958c1eab021723b5fead8edc5d77",
+          "sha256": "8f249670f3576e501a7d9d9efb839e8dff2f3f5b4cd1b0811d512517c682f219",
+          "bytes": 1128,
+          "retainedSourceFile": "skopeo__vendor__golang.org__x__sys__unix__syscall_openbsd_libc.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/unix/vgetrandom_linux.go",
+          "gitBlob": "07ac8e09d1b702b1abd56252d7c6d1135580f559",
+          "sha256": "4dfa240c42977f70ef32d1cea7effdbd902b5ef6814e67f20c48da10548b4bc9",
+          "bytes": 345,
+          "retainedSourceFile": "skopeo__vendor__golang.org__x__sys__unix__vgetrandom_linux.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/unix/zsyscall_aix_ppc64_gc.go",
+          "gitBlob": "b68a78362b2cdc670c589e88268df70d1ee2790b",
+          "sha256": "5a806c7a1368edba0adb4f7c029c8b4e1c7f4ce3e2053608f8546bb358fd8282",
+          "bytes": 43453,
+          "retainedSourceFile": "skopeo__vendor__golang.org__x__sys__unix__zsyscall_aix_ppc64_gc.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/unix/zsyscall_illumos_amd64.go",
+          "gitBlob": "c698cbc01a538f2ada7c476334c4a04a0711b814",
+          "sha256": "6dbad6fb56bf5533b9a5a75edca9a37d7b1a2740155fc9db4761ee39422f77a8",
+          "bytes": 2698,
+          "retainedSourceFile": "skopeo__vendor__golang.org__x__sys__unix__zsyscall_illumos_amd64.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/golang.org/x/sys/unix/zsyscall_solaris_amd64.go",
+          "gitBlob": "b4609c20c24dfe0a3463dbe9f118c43d4a1afd53",
+          "sha256": "4ca86eaf8f9017fb7a065a272f195b8eb2ac0184d99d84994edef3a7e7594a19",
+          "bytes": 64967,
+          "retainedSourceFile": "skopeo__vendor__golang.org__x__sys__unix__zsyscall_solaris_amd64.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/backoff.go",
+          "gitBlob": "29475e31c979e6ef661c059cb5dac3d9127436bb",
+          "sha256": "b5593815ced2bc309a68b9ab18c9044b6c93723ae303ef636f77c1ec7f400718",
+          "bytes": 1996,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__backoff.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/backoff/backoff.go",
+          "gitBlob": "d7b40b7cb66f11f7100134d737d47573aa939d59",
+          "sha256": "79c43f7f8f0ea8a1aa8a93e0f37a2d9eedd3a6dafde0adee0a0a97a6a0ed5d8d",
+          "bytes": 1738,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__backoff__backoff.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/balancer/balancer.go",
+          "gitBlob": "d08b7ad6371b2913b0bf9c31b881a548fba2322f",
+          "sha256": "ef9a9cb082d90f050ae0b1dc83b7784835bfc3ebfb4ce65883fd9c5d205a4963",
+          "bytes": 16382,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__balancer__balancer.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/balancer/base/balancer.go",
+          "gitBlob": "4d576876d8c80c31f438bb47db5328f807a9a34c",
+          "sha256": "c888127edd98f36185140fbcf3e11294b8a89d00ffdaa4f433e32af222548c80",
+          "bytes": 8585,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__balancer__base__balancer.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/balancer/endpointsharding/endpointsharding.go",
+          "gitBlob": "360db08ebc13d91fbab31fb45b7293eebbe82c5b",
+          "sha256": "b532cbd7c490a278a58b0f947c7498f913c43e135bbe4134e92662bfb6ef7878",
+          "bytes": 12904,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__balancer__endpointsharding__endpointsharding.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/balancer/pickfirst/internal/internal.go",
+          "gitBlob": "cc902a4de6fba96e442dc6201debbc97c6516f87",
+          "sha256": "2abb7cfbfe55770e52f54381da1e426a173eccb663cc4c9b070549087c7a7ca9",
+          "bytes": 1152,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__balancer__pickfirst__internal__internal.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/balancer/pickfirst/pickfirst.go",
+          "gitBlob": "dccd9f0bf398845163237deb2c4f9162485190da",
+          "sha256": "313c20aac8b76aef149a760be99b58835c00699dfc125088e6f77102a06383bd",
+          "bytes": 34082,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__balancer__pickfirst__pickfirst.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/balancer/roundrobin/roundrobin.go",
+          "gitBlob": "22e6e3267945c820639f3268d925bfcc40665086",
+          "sha256": "2c23443fdc43aafe86d530124f6b5e52d65af86de5954265f33ec01a763d9c63",
+          "bytes": 2164,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__balancer__roundrobin__roundrobin.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/balancer_wrapper.go",
+          "gitBlob": "a1e56a3893cbd5a052a3575369beed6f78a13035",
+          "sha256": "735c36b5c6fdb7a5f114615e4e49d02947458ed24a98f524b6e7917020371714",
+          "bytes": 17961,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__balancer_wrapper.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/binarylog/grpc_binarylog_v1/binarylog.pb.go",
+          "gitBlob": "42c61cf9fe5200a990de0444700dac08198c1cf5",
+          "sha256": "3ee6b4792dd46645bfd51af98307a4bef7dec3986bbc1b0dc66d32923390e01c",
+          "bytes": 33196,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__binarylog__grpc_binarylog_v1__binarylog.pb.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/call.go",
+          "gitBlob": "788c89c16f96027b81423ef5ec1077c73534c800",
+          "sha256": "74e6a635956cb9a0edc05341acd3c299be978a96adf4ac79450b9d50e9763b80",
+          "bytes": 2463,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__call.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/clientconn.go",
+          "gitBlob": "5dec2dacc0ba23d6e68d95260615f7023417804e",
+          "sha256": "d46d518fe7c494bdc047e4c8b55b0feab3c1c019df956c72dea9a0441c06e0c2",
+          "bytes": 67613,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__clientconn.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/codec.go",
+          "gitBlob": "959c2f99d4a735e1990a351eab99880485e273e5",
+          "sha256": "6717f2e6bd13fd93c6f6726f66153d0ea132a8aec7c45c6258b7375727055955",
+          "bytes": 3154,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__codec.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/codes/code_string.go",
+          "gitBlob": "934fac2b090aeccc43400dda84ffaf37bac2f006",
+          "sha256": "fc83f20f33a04a641ef92e72f2df310ad89875fed491ce402029308dcca53508",
+          "bytes": 2437,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__codes__code_string.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/codes/codes.go",
+          "gitBlob": "0b42c302b24b7d6c9f0cb04b202ea514887f6a8d",
+          "sha256": "e67aa5a4a8a39663b70244ee9ef6f76b8ef145896cdf3cd10b397d9173aa7322",
+          "bytes": 9418,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__codes__codes.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/connectivity/connectivity.go",
+          "gitBlob": "4a89926422bcfdf60b8ed8da9b403b9c351e5f40",
+          "sha256": "ca86fd043275378e7c04ac49924a4307dd34f1fbef2a90b322af92cd0ee06d2e",
+          "bytes": 2684,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__connectivity__connectivity.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/credentials/credentials.go",
+          "gitBlob": "06f6c6c70a94272e446ad5473d62f97b9dc69761",
+          "sha256": "eacbcc8137ade7617e88ebdab497db2f4b3b0cb4d87543ee0963098120ec806b",
+          "bytes": 14096,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__credentials__credentials.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/credentials/tls.go",
+          "gitBlob": "0bcd16dbbf1d597a5af738769a6f8107c312717a",
+          "sha256": "ab8ac260ccbd3aa68d0fd277518a1207b488db63ecc44df3bfd6abb0665d9deb",
+          "bytes": 11349,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__credentials__tls.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/dialoptions.go",
+          "gitBlob": "7a5ac2e7c4948ca3ff55aab1d3a27a3b5c41e15f",
+          "sha256": "d7d537986c9ce43fa4e8396122295c8ad72d93902ec4edfeae8adef66120dbc0",
+          "bytes": 28695,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__dialoptions.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/encoding/encoding.go",
+          "gitBlob": "296f38c3a80496aff770d1e70d12017cc3a82560",
+          "sha256": "7103d143ecf0a46dd2cf299c3b8a287552efe0d8c27ba5b52c841ca2c8d9172e",
+          "bytes": 5351,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__encoding__encoding.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/encoding/proto/proto.go",
+          "gitBlob": "1ab874c7ad264fcac89c2df09f159052fa242cc7",
+          "sha256": "e49a349919237058e91aa19cf2128f78fdbdaae0f8ed169a600ffcc07ff566bd",
+          "bytes": 3200,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__encoding__proto__proto.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/experimental/stats/metricregistry.go",
+          "gitBlob": "472813f58fa0f821058b6c836f5fbf4a4becc277",
+          "sha256": "bd1c67f63b659225510f16afa534f14dea5a272c615a38e0085f4d04ea3d7ef4",
+          "bytes": 13176,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__experimental__stats__metricregistry.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/grpclog/component.go",
+          "gitBlob": "f1ae080dcb816cb8546507a1b4ef9f2b5e0f736e",
+          "sha256": "2b2a50fdc442ef1a92d5012c9f21763b71d47794114604b4dfcb39c410d9c4bf",
+          "bytes": 2932,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__grpclog__component.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/grpclog/grpclog.go",
+          "gitBlob": "db320105e64e2cc59c4616aa6595f501b90fe2ae",
+          "sha256": "6b1c4c32181da0292783b4feb489b979830556724bfa3b33e4612b1279d24081",
+          "bytes": 5189,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__grpclog__grpclog.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/grpclog/internal/loggerv2.go",
+          "gitBlob": "ed90060c3cba52a5f060aaf05d6f2cb1139ff869",
+          "sha256": "73624458b062c9a9b60b89b0640d5958c53d2703d032dfedbcfed5b68dcd6b37",
+          "bytes": 8218,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__grpclog__internal__loggerv2.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/backoff/backoff.go",
+          "gitBlob": "b6ae7f258505ad73ae2b76c3cf92b97f8a9298fe",
+          "sha256": "f6385bcafb72a06a86d5c28e0cd1680fdad8e3757182e2291fe13b495615a991",
+          "bytes": 3344,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__internal__backoff__backoff.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/balancer/gracefulswitch/gracefulswitch.go",
+          "gitBlob": "f38de74a4933ccc8457751df243392a03022d8af",
+          "sha256": "f44b3da3c81ef06997fb2736c1d768fdc69234f83116b5b1359430fb75fba6b0",
+          "bytes": 15241,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__internal__balancer__gracefulswitch__gracefulswitch.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/binarylog/binarylog.go",
+          "gitBlob": "755fdebc1b15aaa075397e6b59a22e303fc41a01",
+          "sha256": "5fc48a515beffa63f5e1ab297c8fd98ee77e755881fb392e55e313bd08191189",
+          "bytes": 5683,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__internal__binarylog__binarylog.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/binarylog/binarylog_testutil.go",
+          "gitBlob": "1ee00a39ac7c7b66689ccc7eae1bf475f66df306",
+          "sha256": "0490bfd3780ebf38e67f9b2c297759708f2f67b91a6db40b27baefa85efc258e",
+          "bytes": 1538,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__internal__binarylog__binarylog_testutil.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/binarylog/env_config.go",
+          "gitBlob": "f9e80e27ab6881f070812f80fc85d19090091967",
+          "sha256": "960fd8f1f3159361bbae1110e4b9acd5d7d411534bd54b75723f85c64e176087",
+          "bytes": 6803,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__internal__binarylog__env_config.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/binarylog/sink.go",
+          "gitBlob": "9ea598b14c077d3e9443a2e3ac59231b0f577510",
+          "sha256": "7b76e9a8456f515cdc7a906157ea5b91fedb153239536abe8be528951b2b0b85",
+          "bytes": 4440,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__internal__binarylog__sink.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/buffer/unbounded.go",
+          "gitBlob": "467392b8d45556c72e1e19ab2e5b2cd8c45858c1",
+          "sha256": "169a83cf5dca8d822034f342f134206bce99f1808a6dc9bef481a1723a7f5f54",
+          "bytes": 3327,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__internal__buffer__unbounded.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/channelz/funcs.go",
+          "gitBlob": "078bb81238bc466a46bada2e537bae93d1ac06e7",
+          "sha256": "4aecad9253e8832541a4ee49136fcd4f1c0ba881972099d87caca20574537b1f",
+          "bytes": 7080,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__internal__channelz__funcs.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/channelz/logging.go",
+          "gitBlob": "ee4d721258055ca5eb00fd309adc858028981788",
+          "sha256": "60832e30dae6a10abdd6ed7266f458c20c8b065bd8a211d59f5c8139fb47380c",
+          "bytes": 2093,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__internal__channelz__logging.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/channelz/trace.go",
+          "gitBlob": "3b7ba59662537aadbd35ccd987139322b48b6eed",
+          "sha256": "181af874a10e982864274e5a7476dbe5a35f9cc629e37820094c01fa99ee3dde",
+          "bytes": 6062,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__internal__channelz__trace.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/credentials/spiffe.go",
+          "gitBlob": "25ade623058e3f52ed20c782c8e122c58c6ed522",
+          "sha256": "149056461f3e6a44cb6f24c7f7f7e836a23103f8ab68336f0b8d0e868da5f907",
+          "bytes": 2300,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__internal__credentials__spiffe.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/envconfig/envconfig.go",
+          "gitBlob": "7ad6fb44ca859e6d6bebeda4462943636d9e6b00",
+          "sha256": "0957e2d6f48a0262f2d6fa9ac45d9f5333f429349d85788f88ba32e2f86d18b6",
+          "bytes": 5818,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__internal__envconfig__envconfig.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/envconfig/observability.go",
+          "gitBlob": "dd314cfb18f48a97c7fb132db2810affe8e52b03",
+          "sha256": "57c20c861a81a343a7e0f65d29952f5a6429dc0246fbd76fe3f69c9d214ce000",
+          "bytes": 1441,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__internal__envconfig__observability.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/envconfig/xds.go",
+          "gitBlob": "7685d08b54dea72a65fe3f02063de239b552e9a4",
+          "sha256": "1d8762bc842fd01aced0e08262c52815e3c0b1ad7a5a30318f95cd1dfd81c89a",
+          "bytes": 3681,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__internal__envconfig__xds.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/idle/idle.go",
+          "gitBlob": "d3cd24f80bd75a573b0c6d641d3c157a243ecaaa",
+          "sha256": "f67f127edd0ce323ba14bce05e5f6c4f61bf66c1f1e5c075fd4576898cf491de",
+          "bytes": 10369,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__internal__idle__idle.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/internal.go",
+          "gitBlob": "4b3d563f8d7626894a1a3b3c32a80ba6784c8145",
+          "sha256": "9dabad1ab1175eebe6029a8de36a16ebcea786f60c6fb0af18530a3ab66ef36f",
+          "bytes": 13657,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__internal__internal.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/resolver/delegatingresolver/delegatingresolver.go",
+          "gitBlob": "5bfa67b7268a084f341c4d1efcff83d19e6e397c",
+          "sha256": "3c23d9fee64ae948fc47613489dce867eeb60c5bae8e6e5ba532db56b92ef545",
+          "bytes": 17761,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__internal__resolver__delegatingresolver__delegatingresolver.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/resolver/dns/dns_resolver.go",
+          "gitBlob": "70b89e4d7f2c81d562358ac6616df6cf44dd3b4e",
+          "sha256": "fae3828426c9cb90d31a0feafce53892434cfce8ec4ceb2f5cd7f823c2d67136",
+          "bytes": 13896,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__internal__resolver__dns__dns_resolver.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/resolver/dns/internal/internal.go",
+          "gitBlob": "c0eae4f5f83fcd1cddc212028a7ac01594cd8c8f",
+          "sha256": "360c14f956b0fc34a4ccc067945367ad0c16b192dc050f99ab2a6f1f4e7e5c95",
+          "bytes": 3159,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__internal__resolver__dns__internal__internal.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/resolver/passthrough/passthrough.go",
+          "gitBlob": "b901c7bace5061d62c86828756e21292977512dd",
+          "sha256": "9b653000c8516ed008ed2416cbc59e48ffdf3b974330dae9e142004431392959",
+          "bytes": 1700,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__internal__resolver__passthrough__passthrough.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/resolver/unix/unix.go",
+          "gitBlob": "27cd81af9e5f46041939cd67a8609cc1f0d039dc",
+          "sha256": "d7413035609466572b9e656055553df55d2f2cdda7c5c35c419877615a51dc38",
+          "bytes": 2301,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__internal__resolver__unix__unix.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/serviceconfig/serviceconfig.go",
+          "gitBlob": "51e733e495a36bc3c127bf9587972a32c0c58e9b",
+          "sha256": "ee1eb07030513d275455f66d92261a692cb0fd0ddb32371e98a18e72d291caa2",
+          "bytes": 6508,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__internal__serviceconfig__serviceconfig.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/syscall/syscall_linux.go",
+          "gitBlob": "b3a72276dee4211860c8357db3a4a5b938fec946",
+          "sha256": "91096efdaa61581ac7b9d2d8076635d8ca5ac7ef3064094dab2f8efb70f003b2",
+          "bytes": 3214,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__internal__syscall__syscall_linux.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/syscall/syscall_nonlinux.go",
+          "gitBlob": "54c24c2ff3865635acf8d05ae19a8580c7617a73",
+          "sha256": "3b74e0c3889ed8a826963f5f3bf9e7bf2bab3ee05f6d2739c9f1bb75cca8d490",
+          "bytes": 1985,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__internal__syscall__syscall_nonlinux.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/transport/bdp_estimator.go",
+          "gitBlob": "070680edbac1271bda40a5cb99bc61789fef7887",
+          "sha256": "01a7332c6ea43122862b91c7e69ca4a2aa91b11ee9c094fc2ffe1ba6edad75f3",
+          "bytes": 4411,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__internal__transport__bdp_estimator.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/transport/controlbuf.go",
+          "gitBlob": "7efa524785b15000a3b0c4e53fb8f5f0bdae3d6c",
+          "sha256": "39547162e21c6b23585bc50d8a6241c54e992b3f4548ffa2a48fa8450dffd6cf",
+          "bytes": 29601,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__internal__transport__controlbuf.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/transport/defaults.go",
+          "gitBlob": "bc8ee07474968670d429d6f2bb7e87cd4069a3b7",
+          "sha256": "859b175037c944b30fffe75de821538f7049cef62a0db65408159e7006f3e64a",
+          "bytes": 2026,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__internal__transport__defaults.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/transport/http2_client.go",
+          "gitBlob": "37b1acc340be0ec9408ce1462a3eb55d11bea496",
+          "sha256": "8b878d3ba62c94ab5250c550a8d40b34e4a772955b4c801620729f6b0d785d26",
+          "bytes": 61370,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__internal__transport__http2_client.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/transport/http2_server.go",
+          "gitBlob": "a1a14e14fc8ed9fb84d3d274ec55e2d785757aac",
+          "sha256": "e29a47a269f511095ce08d61af6eb2fadbbfeaa009d4d6732d770e6ed5af4dd9",
+          "bytes": 46923,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__internal__transport__http2_server.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/transport/http_util.go",
+          "gitBlob": "5bbb641ad900fd3690432c33826603e9ed6d6e8b",
+          "sha256": "3f06a828464a3e6dce764adc1d20146eca8a0d1cefc58c6f33c6c25180130bb2",
+          "bytes": 16099,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__internal__transport__http_util.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/transport/logging.go",
+          "gitBlob": "42ed2b07af663cb50de072b707d568139cb96b44",
+          "sha256": "ebf772b0c69a9a96b5bc58670c3b4197d707fb4980defca772ac51e492ee6a5e",
+          "bytes": 1337,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__internal__transport__logging.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/internal/transport/transport.go",
+          "gitBlob": "b86094da943332530a7da803600847adc17b2de5",
+          "sha256": "6ce58bd69d2087611fbe249497ace6c8260d2654f55008c0ed4c723ba9a2d0ad",
+          "bytes": 24233,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__internal__transport__transport.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/mem/buffer_pool.go",
+          "gitBlob": "2ea763a49a2ff5a6d1ecad21435246b3fbce6905",
+          "sha256": "96f0dce3bdd880e34574dcf78e8042e177d7bba1037d6629ab4cb2e9b23de186",
+          "bytes": 5824,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__mem__buffer_pool.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/mem/buffer_slice.go",
+          "gitBlob": "084fb19c6d15c7b474e2ad37a663611bc79d1891",
+          "sha256": "8945b27a4e063106ae8c879b0c2077cd5be3b911b6e36a6cea07e000ec09a299",
+          "bytes": 9850,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__mem__buffer_slice.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/mem/buffers.go",
+          "gitBlob": "db1620e6ace03f8a8f5cab06ba6723695c87f506",
+          "sha256": "adc16bb1f590d614138eb3f07ca0be83b7b72dffe725b76b84611aabcb162d92",
+          "bytes": 7531,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__mem__buffers.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/metadata/metadata.go",
+          "gitBlob": "d2e15253bbfbc5c12fe1558613ceb24de56aaeaa",
+          "sha256": "4eb14f67165c1ac4c745794e165e0f689d522baad284cf10affe231287bbc522",
+          "bytes": 8511,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__metadata__metadata.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/resolver/resolver.go",
+          "gitBlob": "598ed21a29cfd13e509faed80b53a44463da61b9",
+          "sha256": "19f7efcd95b6dc1d2d49bdf19ccd5b4ef4393b5c8f9f37133166ae7fd4a2bcc8",
+          "bytes": 14288,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__resolver__resolver.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/rpc_util.go",
+          "gitBlob": "8160f94304051b418a2223da12ba3ed5ca0e8a95",
+          "sha256": "e298b9dd08be827554eafe845a527b4d75c521c7c1a8d343605e45162dbb75cc",
+          "bytes": 36240,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__rpc_util.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/server.go",
+          "gitBlob": "8efb29a7b95cca2e110a2e9efba4edaeee5ce716",
+          "sha256": "08a0b852ea4cfc54c2e83fb3f9a4087c417b54122b84dc957319d6f28c4a7af3",
+          "bytes": 72623,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__server.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/service_config.go",
+          "gitBlob": "8d451e07c7cc072cf484af8c398f73d6a7682d0e",
+          "sha256": "c38647649ab124f58b5e2c27dc7683afe6d6a277d3fc4966abe89c19e0299604",
+          "bytes": 11089,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__service_config.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/stream.go",
+          "gitBlob": "eedb5f9b99c76c3dba3a64e4107b6a2a4f3320e6",
+          "sha256": "b6291a11f862f3d38d7c7402ac38d11631171c6371bf0a128ce3e0691c02e392",
+          "bytes": 62154,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__stream.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        },
+        {
+          "path": "vendor/google.golang.org/grpc/stream_interfaces.go",
+          "gitBlob": "0037fee0bd71ab76ddae0ceba38c67013c1936bc",
+          "sha256": "c51281c4729c8a806e038104b218ef8cf2eb2c90012c35cc6e0f107e603d6e38",
+          "bytes": 10422,
+          "retainedSourceFile": "skopeo__vendor__google.golang.org__grpc__stream_interfaces.go",
+          "compiledPackageCandidate": true,
+          "fileBuildSelection": "not-established-from-package-log"
+        }
+      ]
+    }
+  ]
+}

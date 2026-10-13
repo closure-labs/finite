@@ -1,0 +1,267 @@
+{
+  "schema": 1,
+  "status": "reviewable-future-hosted-plan-not-executed",
+  "createdAt": "2026-10-13T07:31:48.108367+00:00",
+  "upstreamCommit": "be8d6044eacb843b74d335db0c5fbe09222031fe",
+  "package": {
+    "nvr": "rclone-1.75.2-1.fc44",
+    "signedRpmSha256": "27864f31cdb6580f942b03c51ec59e95ea2ac6c426d1a871d188d92df7281219",
+    "binarySha256": "0343a46124ac5f3d64396bfb33102e6d734541979036f5d0d931358902cd686e",
+    "signatureProofRun": 38361178024,
+    "signatureProofRevision": "9423e8d9854c"
+  },
+  "sourceAcceptance": "Compatibility validation may use exact signed testing RPM in throwaway hosted test environment; that does not authorize adoption or enable testing in Finite. Production route still requires stable promotion or explicit source-policy decision.",
+  "smallestStrategy": {
+    "tier1": "Execute verified reference executable directly from extracted package in authenticated compatible Fedora44 throwaway container; Python stdlib harness, loopback-only servers, no whole Go source build or cloud integration suite. Extracted RPM reference tests do not replace later production installed-only transaction.",
+    "isolation": [
+      "Unprivileged user; tmpfs/temp working directory; empty rclone config and isolated HOME/XDG paths; no host home, repo secrets/cloud credentials or host filesystem access.",
+      "Start fixture environment with network egress denied after approved image/dependencies acquisition; loopback only, processes/signals cleaned in finally; resource limits and logs bounded.",
+      "Do not install testing RPM on workstation/Finite or enable testing repository. Approved Fedora44/OpenSSH dependencies only; missing dependency is probe error.",
+      "All server subprocesses per-case timeout<=180s; job overall10minutes; sequential cases sharing one reference and authenticated container. Cache/reuse reference evidence; do not repeat native scans/builds."
+    ],
+    "timeBudget": "Binary mechanisms total~6minutes maximum; normally much less. Single hosted job<=10minutes includingsetup; fail immediately on prerequisite/hash/process failure.",
+    "tier2": "Only when a binary fixture cannot prove exact mechanism, run corresponding named upstream test against authenticated matching source/vendor archives, -mod=vendor -count=1 -parallel=1 -timeout=120s. Separate source test result from actual RPM compatibility; do not run entire repository. Go source build stays hosted and optional, not mandatory repeated overhead.",
+    "goProxyFixtures": "UpstreamFTP/S3 fixtures invoke go run auth-proxy helpers. Tier1 substitutes small Python programs implementing exact inspected JSON protocol to avoid recompiling proxy tools."
+  },
+  "cases": [
+    {
+      "id": "links-root-confinement",
+      "advisory": "GHSA-cf44-9pgv-m4xc",
+      "upstream": {
+        "package": "./backend/local",
+        "names": [
+          "TestSymlinkEscapeWriteThroughBlocked",
+          "TestSymlinkEscapeNestedBlocked",
+          "TestSymlinkInTreeWriteThroughWorks",
+          "TestDirMetadataThroughPlantedSymlinkBlocked",
+          "TestDirSetModTimeThroughPlantedSymlinkBlocked"
+        ],
+        "source": "https://github.com/rclone/rclone/blob/be8d6044eacb843b74d335db0c5fbe09222031fe/backend/local/local_internal_test.go",
+        "sourceSha256": "03b75a3dd6eef941c64ac43650793b2a8eabc6f429242904cadbd012d66d8275",
+        "command": "go test -mod=vendor -count=1 -parallel=1 -timeout=120s ./backend/local -run '^(TestSymlinkEscapeWriteThroughBlocked|TestSymlinkEscapeNestedBlocked|TestSymlinkInTreeWriteThroughWorks|TestDirMetadataThroughPlantedSymlinkBlocked|TestDirSetModTimeThroughPlantedSymlinkBlocked)$'",
+        "qualification": "Runs source regressions, not the signed RPM executable. Only a fallback/supplement on hosted runners using authenticated matching Fedora sources/vendor archives; no claim that separately compiled test binary is shipped RPM."
+      },
+      "signedBinaryProcedure": [
+        "Create TMP/outside/sentinel and TMP/destination, recording outside directory content/hash. Put an absolute TMP/outside target string in a regular local payload file.",
+        "Use exact verified rclone with --config empty.cfg copyto payload destination/pwn.rclonelink --links; assert symlink target preserved.",
+        "Use copyto data destination/pwn/authkeys --links; require nonzero refusal and outside/authkeys absent. Repeat nested in-tree link -> external link variant.",
+        "Positive control: in-tree link to destination/sub permits writing destination/link/file and exact expected bytes; benign regular copy/sync remain functional."
+      ],
+      "commands": [
+        "timeout 20s \"$RCLONE\" --config \"$CFG\" copyto \"$TARGET_PAYLOAD\" \"$DEST/pwn.rclonelink\" --links",
+        "timeout 20s \"$RCLONE\" --config \"$CFG\" copyto \"$DATA\" \"$DEST/pwn/authkeys\" --links"
+      ],
+      "expectedFailOld": "Outside file may be written through planted link; fixed RPM must refuse while permitting in-tree links.",
+      "dependencies": [
+        "Python3 stdlib",
+        "temporary local files/symlink support"
+      ],
+      "budgetSeconds": 45
+    },
+    {
+      "id": "sftp-powershell-quote",
+      "advisory": "GHSA-2m8m-jhrm-w6j2",
+      "upstream": {
+        "package": "./backend/sftp",
+        "names": [
+          "TestShellEscapePowerShell",
+          "TestRemoteShellPathEncodesRemoteNames",
+          "TestRemoteShellPathEncodesPathOverrideNames"
+        ],
+        "source": "https://github.com/rclone/rclone/blob/be8d6044eacb843b74d335db0c5fbe09222031fe/backend/sftp/sftp_internal_test.go",
+        "sourceSha256": "8aaf2a8fc6a08698b8585c841530f39ad5c3054afed811426b5231de18962b75",
+        "command": "go test -mod=vendor -count=1 -parallel=1 -timeout=120s ./backend/sftp -run '^(TestShellEscapePowerShell|TestRemoteShellPathEncodesRemoteNames|TestRemoteShellPathEncodesPathOverrideNames)$'",
+        "qualification": "Runs source regressions, not the signed RPM executable. Only a fallback/supplement on hosted runners using authenticated matching Fedora sources/vendor archives; no claim that separately compiled test binary is shipped RPM."
+      },
+      "signedBinaryProcedure": [
+        "Run disposable loopback OpenSSH with fixture-only generated key and a ForceCommand wrapper. The wrapper delegates SFTP subsystem to approved sftp-server; all shell exec commands are captured as data and receive deterministic harmless hash/probe responses, never executed.",
+        "Create benign file and filenames with each ASCII/U+2018/U+2019/U+201A/U+201B delimiter followed by a marker command. Configure rclone SFTP remote shell_type=powershell and forced known hash command; trigger remote hashsum without downloading local hash as a substitute.",
+        "Assert every captured path literal exactly doubles the relevant delimiter and round-trips the original filename; require actual remote hash invocation to be observed, benign hash correct, no marker file produced. Missing shell call or unsupported fixture is a probe error."
+      ],
+      "commandTemplate": "timeout 20s \"$RCLONE\" --config \"$CFG\" hashsum SHA-256 :sftp:FIXTURE_PATH --sftp-host 127.0.0.1 --sftp-port \"$SSH_PORT\" --sftp-user \"$FIXTURE_USER\" --sftp-key-file \"$FIXTURE_KEY\" --sftp-shell-type powershell",
+      "limits": "Linux mock verifies actual shipped command construction, not Windows SSH/PowerShell transport interoperability. Existing supported remote Windows configuration needs a real Windows/Powershell fixture if claiming that broader compatibility. Exact hash-command/probe responses must follow pinned backend/sftp source; do not declare pass if rclone falls back to local hashing.",
+      "expectedFailOld": "Smart-quote path delimiter remains single, allowing a PowerShell literal to terminate.",
+      "dependencies": [
+        "Approved OpenSSH server/client and sftp-server in disposable Fedora44 test container",
+        "Python stdlib capture/assertion wrapper"
+      ],
+      "budgetSeconds": 90
+    },
+    {
+      "id": "rc-per-server-proxy",
+      "advisory": "GHSA-p569-5gjg-9cmj",
+      "upstream": [
+        {
+          "package": "./cmd/serve/ftp",
+          "names": [
+            "TestNewServerPerServerAuthProxy",
+            "TestRc"
+          ],
+          "source": "https://github.com/rclone/rclone/blob/be8d6044eacb843b74d335db0c5fbe09222031fe/cmd/serve/ftp/ftp_test.go",
+          "sourceSha256": "a900b30a1a21c661de031d363513c6a3f5c878c87e70c49a89143a389f8f64f7",
+          "command": "go test -mod=vendor -count=1 -parallel=1 -timeout=120s ./cmd/serve/ftp -run '^(TestNewServerPerServerAuthProxy|TestRc)$'",
+          "qualification": "Runs source regressions, not the signed RPM executable. Only a fallback/supplement on hosted runners using authenticated matching Fedora sources/vendor archives; no claim that separately compiled test binary is shipped RPM."
+        },
+        {
+          "package": "./cmd/serve/s3",
+          "names": [
+            "TestNewServerPerServerAuthProxy",
+            "TestRc"
+          ],
+          "source": "https://github.com/rclone/rclone/blob/be8d6044eacb843b74d335db0c5fbe09222031fe/cmd/serve/s3/s3_test.go",
+          "sourceSha256": "a2d54f811f7fd82797ed75883256fd8fcb378dcf7286c484ea7b06c0d70391f0",
+          "command": "go test -mod=vendor -count=1 -parallel=1 -timeout=120s ./cmd/serve/s3 -run '^(TestNewServerPerServerAuthProxy|TestRc)$'",
+          "qualification": "Runs source regressions, not the signed RPM executable. Only a fallback/supplement on hosted runners using authenticated matching Fedora sources/vendor archives; no claim that separately compiled test binary is shipped RPM."
+        }
+      ],
+      "signedBinaryProcedure": [
+        "Start rcd on loopback with no process-global auth-proxy. Start FTP and S3 via JSON serve/start with fs=trap root and request-local auth_proxy fixture program, unique loopback addresses and passive FTP ports.",
+        "FTP anonymous or bad credentials must fail; good credentials map to authorized root and cannot read trap-root sentinel. S3 correctly signed authorized key maps to authorized root and cannot access trap-root sentinel.",
+        "Start a second server with different request-local auth-proxy/root; prove roots/keys remain isolated. serve/stop all IDs and assert ports close."
+      ],
+      "commands": [
+        "timeout 180s \"$RCLONE\" --config \"$CFG\" rcd --rc-addr 127.0.0.1:PORT --rc-no-auth",
+        "POST /serve/start {\"type\":\"ftp\",\"fs\":\"TRAP_ROOT\",\"addr\":\"127.0.0.1:FTP_PORT\",\"auth_proxy\":\"python3 FIXTURE_PROXY\",\"passive_port\":\"LOW-HIGH\"}",
+        "POST /serve/start {\"type\":\"s3\",\"fs\":\"TRAP_ROOT\",\"addr\":\"127.0.0.1:S3_PORT\",\"auth_proxy\":\"python3 FIXTURE_PROXY\",\"auth_key\":[\"TEST_KEY,TEST_SECRET\"]}"
+      ],
+      "expectedFailOld": "Request-local auth_proxy ignored; FTP falls back to anonymous or authenticated S3 selects fixed trap filesystem.",
+      "dependencies": [
+        "Python urllib/json/ftplib stdlib",
+        "Python hashlib+hmac SigV4 fixture signer"
+      ],
+      "budgetSeconds": 60
+    },
+    {
+      "id": "s3-proxy-secret-and-authority",
+      "advisory": "GHSA-xwwr-4h3p-r22c",
+      "upstream": {
+        "package": "./cmd/serve/s3",
+        "names": [
+          "TestAuthProxyEmptySecret",
+          "TestAuthProxyKeysNotRegistered",
+          "TestAuthProxyUsersKeptApart",
+          "TestAuthKeyPerServer"
+        ],
+        "source": "https://github.com/rclone/rclone/blob/be8d6044eacb843b74d335db0c5fbe09222031fe/cmd/serve/s3/s3_test.go",
+        "sourceSha256": "a2d54f811f7fd82797ed75883256fd8fcb378dcf7286c484ea7b06c0d70391f0",
+        "command": "go test -mod=vendor -count=1 -parallel=1 -timeout=120s ./cmd/serve/s3 -run '^(TestAuthProxyEmptySecret|TestAuthProxyKeysNotRegistered|TestAuthProxyUsersKeptApart|TestAuthKeyPerServer)$'",
+        "qualification": "Runs source regressions, not the signed RPM executable. Only a fallback/supplement on hosted runners using authenticated matching Fedora sources/vendor archives; no claim that separately compiled test binary is shipped RPM."
+      },
+      "signedBinaryProcedure": [
+        "Use Python equivalent of pinned servetest/proxy_code.go: return local _root and nonempty per-identity _secret_access_key ONLY for exact fixture access key; reject unknown identities. Never use production credentials.",
+        "Start serve s3 with auth-proxy and without --auth-key to exercise new per-identity-secret contract. Correctly SigV4-signed key must return200; empty secret, unknown key and wrong secret must return403 with no listing.",
+        "Two identities/backends plus two servers: every cross-key/cross-server attempt denied; valid credentials retain read/write access to their own backend only. Verify changing --auth-key cannot substitute for proxy per-identity secret; record compatibility contract change."
+      ],
+      "commandTemplate": "timeout 120s \"$RCLONE\" --config \"$CFG\" serve s3 \"$TRAP_ROOT\" --addr 127.0.0.1:PORT --auth-proxy \"python3 FIXTURE_PROXY\"",
+      "expectedFailOld": "Arbitrary key signed with empty sharedsecret can obtain listing/access.",
+      "dependencies": [
+        "Python stdlib SigV4 signer and JSON auth-proxy",
+        "No AWS account/network service"
+      ],
+      "budgetSeconds": 45
+    },
+    {
+      "id": "restic-private-repository",
+      "advisory": "GHSA-fqj9-69pf-6pjg",
+      "upstream": {
+        "package": "./cmd/serve/restic",
+        "names": [
+          "TestResticPrivateRepositories"
+        ],
+        "source": "https://github.com/rclone/rclone/blob/be8d6044eacb843b74d335db0c5fbe09222031fe/cmd/serve/restic/restic_privaterepos_test.go",
+        "sourceSha256": "df05698bbf7e5694cdff4fb9f6c527e06a76ca7f787f2a6bb928219b832b9233",
+        "command": "go test -mod=vendor -count=1 -parallel=1 -timeout=120s ./cmd/serve/restic -run '^(TestResticPrivateRepositories)$'",
+        "qualification": "Runs source regressions, not the signed RPM executable. Only a fallback/supplement on hosted runners using authenticated matching Fedora sources/vendor archives; no claim that separately compiled test binary is shipped RPM."
+      },
+      "signedBinaryProcedure": [
+        "Start loopback restic server with --private-repos and fixture basic-auth. Use process-local :memory: backend through same rcd process so parent/other-user objects can be seeded by operations/copyfile; local backend alone can encode dot components and mask the historical backend-specific defect.",
+        "Known inside authorized/test/config GET succeeds. Send literal /test/../other_user/config for GET/POST/DELETE plus encoded dot-dot using raw http.client.putrequest; client must not normalize path.",
+        "Require400 and unchanged other-user sentinel/content, no leaked secret; ordinary other-user path requires403, unauthenticated request401."
+      ],
+      "commandTemplate": "POST /serve/start {\"type\":\"restic\",\"fs\":\":memory:FIXTURE\",\"addr\":\"127.0.0.1:PORT\",\"private_repos\":true,\"user\":\"test\",\"pass\":\"fixture-only\"}",
+      "expectedFailOld": "Matched username first segment can be authorized before backend traversal reaches another user.",
+      "dependencies": [
+        "Python http.client/urllib/json stdlib",
+        "Same-process rcd memory backend seed via operations/copyfile; fixture option parsing verified from CLI help/RC response"
+      ],
+      "budgetSeconds": 30
+    },
+    {
+      "id": "restic-root-traversal",
+      "advisory": "GHSA-45pq-889g-fcgh",
+      "upstream": {
+        "package": "./cmd/serve/restic",
+        "names": [
+          "TestResticPathTraversal"
+        ],
+        "source": "https://github.com/rclone/rclone/blob/be8d6044eacb843b74d335db0c5fbe09222031fe/cmd/serve/restic/restic_traversal_test.go",
+        "sourceSha256": "0fc1ade4b090c4506088444617bb5c9bb05295f22cf69b518de82d58ed1e4f28",
+        "command": "go test -mod=vendor -count=1 -parallel=1 -timeout=120s ./cmd/serve/restic -run '^(TestResticPathTraversal)$'",
+        "qualification": "Runs source regressions, not the signed RPM executable. Only a fallback/supplement on hosted runners using authenticated matching Fedora sources/vendor archives; no claim that separately compiled test binary is shipped RPM."
+      },
+      "signedBinaryProcedure": [
+        "In same rcd process, seed :memory:FIXTURE/outside-secret.txt and :memory:FIXTURE/served-root/inside.txt from temp source files using operations/copyfile, then serve restic :memory:FIXTURE/served-root.",
+        "Positive GET /inside.txt returns200/INSIDE. Raw paths ../, ../../, ../outside-secret.txt, %2e%2e/outside-secret.txt, a/../outside-secret.txt, a/../../outside-secret.txt, . and ./inside.txt with GET/HEAD/POST/DELETE must return400.",
+        "Read outside sentinel via RC copyfile to temp and compare bytes; outside-write.txt must not exist. No normalizing HTTP client or only-local backend shortcut."
+      ],
+      "commandTemplate": "POST /serve/start {\"type\":\"restic\",\"fs\":\":memory:FIXTURE/served-root\",\"addr\":\"127.0.0.1:PORT\"}",
+      "expectedFailOld": "Parent/dot paths accepted and resolved by memory backend beyond served root.",
+      "dependencies": [
+        "Python stdlib raw HTTP and same-process rcd memory backend"
+      ],
+      "budgetSeconds": 30
+    },
+    {
+      "id": "ftp-session-authority",
+      "advisory": "GHSA-c476-6w5q-jw77",
+      "upstream": {
+        "package": "./cmd/serve/ftp",
+        "names": [
+          "TestProxyCrossSession"
+        ],
+        "source": "https://github.com/rclone/rclone/blob/be8d6044eacb843b74d335db0c5fbe09222031fe/cmd/serve/ftp/ftp_crosssession_test.go",
+        "sourceSha256": "ff46159dc877baaa5a620104cc635f95df8d40366bfa44cc73edf62c31b7acdc",
+        "command": "go test -mod=vendor -count=1 -parallel=1 -timeout=120s ./cmd/serve/ftp -run '^(TestProxyCrossSession)$'",
+        "qualification": "Runs source regressions, not the signed RPM executable. Only a fallback/supplement on hosted runners using authenticated matching Fedora sources/vendor archives; no claim that separately compiled test binary is shipped RPM."
+      },
+      "signedBinaryProcedure": [
+        "Python JSON auth-proxy equivalent of pinned ftp/proxy_crosssession_code.go maps same username shared plus attacker-token/victim-token to separate temp roots; bad tokens rejected.",
+        "Open two simultaneous ftplib connections to loopback serve ftp. First attacker session lists only attacker root; second victim login same username different token lists only victim root.",
+        "After second login, first session still lists attacker root and RETR victim.txt fails; victim content remains unchanged. Repeat switching token order, then stop/release all sockets."
+      ],
+      "commandTemplate": "timeout 120s \"$RCLONE\" --config \"$CFG\" serve ftp --addr 127.0.0.1:PORT --passive-port LOW-HIGH --auth-proxy \"python3 FIXTURE_PROXY\"",
+      "expectedFailOld": "Later credential for shared username rebinds earlier session; missing failure in old1.74.3 is not proof of inapplicability because old cache timing differs.",
+      "dependencies": [
+        "Python ftplib/json stdlib",
+        "Unique private passive port range"
+      ],
+      "budgetSeconds": 45
+    }
+  ],
+  "smokeControls": {
+    "commands": [
+      "timeout 10s \"$RCLONE\" --config \"$CFG\" version",
+      "timeout 20s \"$RCLONE\" --config \"$CFG\" copy \"$SRC\" \"$DST\"",
+      "timeout 20s \"$RCLONE\" --config \"$CFG\" sync \"$SRC\" \"$DST\"",
+      "timeout 20s \"$RCLONE\" --config \"$CFG\" check \"$SRC\" \"$DST\""
+    ],
+    "mount": "One benign FUSE read/write/unmount smoke in disposable hosted container only if /dev/fuse and unprivileged mount supported. No privileged host mount; unsupported runner yields explicit mount qualification gap to cover in representative image/boot stage, not a silent skip.",
+    "positiveControls": "Every negative authorization/confinement case needs a functioning benign request and sentinel integrity check; connection failure/timeouts never count as denied/fixed."
+  },
+  "expectedEvidence": {
+    "eachCase": "Exact package/source/binary hash, command argv with fixture-only args, bounded log, actual HTTP/FTP/SSH responses, before/after sentinel hashes, positive control, timeout/error distinction.",
+    "overall": "PASS only if all seven mechanisms and positive controls pass against exact reference bytes. PARTIAL/PROBE_ERROR for missing pathways/dependencies; no current-image disposition, security clearance or release eligibility.",
+    "unfixedControl": "Avoid old vulnerable-binary downloads by default. Fixed-only assertions plus positivecontrols and officialsource regressions are minimal. If harness sensitivity uncertain, use already authenticated retained old1.74.3 binary on the same isolated fixture and classify nondifferentiation as inconclusive, never blanket waiver."
+  },
+  "fedoraCoverageGap": "Pinned Fedora spec disables several TestS3/TestFTP/TestSftp etc and omits backendFTP/SFTP and cmdmount from portions ofgocheck; publisher gating does not substitute these focused Finite checks.",
+  "knownPlanningLimits": [
+    "RC option names must be validated via exact signed executable CLI help/config contract when harness is implemented; unknown/rejected option fails setup.",
+    "SFTP PowerShell capture fixture requires implementation against actual source hash probing; never declare success when remote hashing did not run.",
+    "Mount/Windows transport interoperability qualification remains separate if runner cannot exercise it.",
+    "No testing source adopted and no test/job dispatched by this plan."
+  ],
+  "testsStarted": false,
+  "repoEdited": false,
+  "releaseEligible": false,
+  "exactFtpOptionSource": "https://github.com/rclone/rclone/blob/be8d6044eacb843b74d335db0c5fbe09222031fe/cmd/serve/ftp/ftp.go: config passive_port -> CLI --passive-port"
+}
