@@ -1,0 +1,46 @@
+{
+  "schema": 1,
+  "status": "blocked",
+  "sourceRun": 38321177037,
+  "sourceRevision": "371b7f17bc02ab84da119e73becbdb4d6c87e2bc",
+  "evaluationRevision": "44e9f977196c34243ff93d16841f9f316ca6b748",
+  "evaluationRun": "38327429782",
+  "evaluatedAt": "2026-10-13T00:29:01.365784+00:00",
+  "scannedAt": "2026-10-12T23:36:05.319441986Z",
+  "image": "ghcr.io/closure-labs/finite@sha256:567c7e90da2020ebb83f144521fdcca2ddc21009b5f42e86704be5312d9ab835",
+  "policySha256": "59fd1f0604b819ccabd1dd8e54190b200d3f78173877d192234a6788aecf4dfb",
+  "rawScanSha256": "fa9933e0dce8752f14644ac43d4e7528c7adb806bc5b2b735b559a6e54c38179",
+  "sbomSha256": "aeaa335331698c886ced33ea5c2413abc1108f87153ca66b6a0764e6e2b88c9d",
+  "oldStrictUniquePairs": 261,
+  "oldStrictBlockingRecords": 725,
+  "blockedUniquePairs": 121,
+  "advisoryUniquePairs": 421,
+  "blockedRecords": 318,
+  "advisoryRecords": 995,
+  "knownExploitedRecords": 0,
+  "blockingReasons": {
+    "untriaged-critical": 26,
+    "reviewed-serious-risk": 95
+  },
+  "releaseBlockers": [],
+  "exceptionsApplied": 0,
+  "dispositionChanges": 104,
+  "persistent": 186,
+  "newlyObservedInExpandedPolicyScope": 356,
+  "notObservedReviewRequired": 95,
+  "releaseEligible": false,
+  "signatureVerified": false,
+  "completeRecipeBuild": false,
+  "newScanPerformed": false,
+  "publisherEvidenceReusedFrom": {
+    "run": 38322036024,
+    "job": 115053297540,
+    "logSha256": "1875077dc6fdfdbfcc26cfa7d618a57c04404088f234ee4deaca718d1408b644",
+    "actualTestedRevision": "ed7e5151f51445f4cd5e64715b6e9cef80115600"
+  },
+  "limits": [
+    "Diagnostic patched copy only; production signing/boot/complete-image qualification still required.",
+    "New policy observes more severities and unfixed findings; new counts are not newly introduced vulnerable content.",
+    "Retained OSTree objects and unknown reachability are not automatically cleared."
+  ]
+}

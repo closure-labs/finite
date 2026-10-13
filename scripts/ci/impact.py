@@ -14,15 +14,27 @@ PROFILES = {
 }
 NEXT = {'bluefin-next', 'bluefin-dx-next'}
 GENERIC = set(PROFILES) - NEXT
+# These files qualify an existing immutable image; they are not filesystem
+# inputs. Keep source/security checks while reusing already validated builds.
+QUALIFICATION_ONLY = {
+    'automation/security/image-policy.json',
+    'scripts/ci/approved-baseline.py', 'scripts/ci/security-remediation-diff.py',
+    'scripts/ci/bluefin-upstream.py', 'scripts/ci/impact.py', 'scripts/ci/image_identity.py',
+    'scripts/bluebuild/security-policy.py', 'scripts/bluebuild/security-scan.py',
+    'scripts/bluebuild/security-run.sh', 'scripts/bluebuild/audit-published.sh',
+    '.github/workflows/publication.yml', '.github/workflows/image-security.yml',
+}
 
 
 def classify(paths):
     checks, nix = not paths, False
     profiles = set(PROFILES) if not paths else set()
     for path in paths:
-        if path in {'README.md', 'CHANGELOG.md', 'LICENSE', 'LICENSE.md'} or path.startswith('docs/'):
+        if path in {'README.md', 'CHANGELOG.md', 'LICENSE', 'LICENSE.md', '.great_cto/tasks.md'} or path.startswith('docs/'):
             continue
         checks = True
+        if path in QUALIFICATION_ONLY:
+            continue
         if path.startswith('automation/security/') or path in {'sources/bluefin-trust.json', 'sources/bluefin.pub'}:
             profiles.update(PROFILES)
             continue

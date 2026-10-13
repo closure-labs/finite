@@ -29,8 +29,17 @@ def identity(profile, root, payload=None):
     paths.extend(root / '.github/workflows' / name for name in ('image.yml', 'publication.yml', 'iso.yml', 'vm-acceptance.yml'))
     paths.extend((root / '.github/workflows').glob('*qualification*.yml'))
     entries = []
+    qualification_only = {
+        'automation/security/image-policy.json', '.github/workflows/publication.yml',
+        'scripts/bluebuild/security-policy.py', 'scripts/bluebuild/security-scan.py',
+        'scripts/bluebuild/security-run.sh', 'scripts/bluebuild/audit-published.sh',
+    }
     for path in sorted(set(paths)):
         relative = path.relative_to(root).as_posix()
+        # The current security policy is bound separately by policySha256 and
+        # re-evaluated before signing. Changing it does not change image bytes.
+        if relative in qualification_only:
+            continue
         if not profile.endswith('-next') and relative in ('recipes/shared/next.yml', 'files/scripts/kernel-next.sh'):
             continue
         if profile.endswith('-next') and relative in (

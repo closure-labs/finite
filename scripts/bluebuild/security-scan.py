@@ -14,6 +14,10 @@ import tempfile
 spec = importlib.util.spec_from_file_location('security_policy', Path(__file__).with_name('security-policy.py'))
 policy_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(policy_module)
+baseline_spec = importlib.util.spec_from_file_location('approved_baseline_producer',
+    Path(__file__).resolve().parents[1] / 'ci/approved-baseline.py')
+baseline_module = importlib.util.module_from_spec(baseline_spec)
+baseline_spec.loader.exec_module(baseline_module)
 
 
 def run(args, output=None):
@@ -59,7 +63,21 @@ def prepare_layout(layout, image, evidence):
         (layout / 'index.json').write_text(json.dumps({'schemaVersion': 2, 'manifests': [descriptor]}))
     else:
         policy_module.manifest_binding(image, {'parent': parent_raw, 'child': None})
-    return {'parent': parent_raw, 'child': child_raw}
+    manifest = json.loads(child_raw) if child_raw else document
+    descriptor = manifest['config']
+    if (descriptor.get('mediaType') not in ('application/vnd.oci.image.config.v1+json',
+            'application/vnd.docker.container.image.v1+json')
+            or not re.fullmatch(r'sha256:[0-9a-f]{64}', descriptor.get('digest', ''))
+            or type(descriptor.get('size')) is not int or not 0 < descriptor['size'] <= policy_module.MANIFEST_LIMIT):
+        raise ValueError('Invalid immutable image configuration descriptor')
+    config_path = layout / 'blobs/sha256' / descriptor['digest'][7:]
+    if config_path.is_symlink() or not config_path.is_file() or config_path.stat().st_size != descriptor['size']:
+        raise ValueError('Missing or mismatched immutable configuration blob')
+    config_raw = config_path.read_bytes()
+    if 'sha256:' + hashlib.sha256(config_raw).hexdigest() != descriptor['digest']:
+        raise ValueError('Image configuration does not match its immutable manifest')
+    (evidence / 'image-config.json').write_bytes(config_raw)
+    return {'parent': parent_raw, 'child': child_raw, 'config': config_raw.decode('utf-8')}
 
 
 def main():
@@ -68,23 +86,34 @@ def main():
     parser.add_argument('directory', type=Path)
     parser.add_argument('--profile')
     parser.add_argument('--identity')
+    parser.add_argument('--upstream-receipt', type=Path)
     args = parser.parse_args()
     directory = args.directory
     directory.mkdir(parents=True, exist_ok=False)
     try:
         if not policy_module.IMAGE.fullmatch(args.image):
             raise ValueError('Security scan requires an immutable Finite image')
-        if args.profile:
+        policy = policy_module.load_policy(policy_module.ROOT / 'automation/security/image-policy.json')
+        risk_mode = policy.get('mode') == 'upstream-maintained-risk'
+        baseline = None
+        receipt = None
+        if args.profile or risk_mode:
             inspected = json.loads(subprocess.check_output(
                 ['skopeo', '--command-timeout', '90s', 'inspect', '--no-tags', '--no-creds', 'docker://' + args.image],
                 text=True, timeout=150))
             labels = inspected['Labels']
-            if (inspected['Digest'] != args.image.split('@')[1] or
+            if inspected['Digest'] != args.image.split('@')[1]:
+                raise ValueError('Registry metadata changed the requested immutable image')
+            if args.profile and (
                     labels['org.opencontainers.image.revision'] != os.environ['GITHUB_SHA'] or
                     labels['org.opencontainers.image.source'] != 'https://github.com/closure-labs/finite' or
                     labels['io.finite.profile'] != args.profile or
                     labels['io.finite.build-inputs'] != args.identity):
                 raise ValueError('Registry candidate identity does not match the requested build')
+            if risk_mode:
+                receipt = (baseline_module.read(args.upstream_receipt)[0] if args.upstream_receipt
+                           else baseline_module.authenticate(inspected))
+                baseline = baseline_module.context(inspected, args.image, receipt)
         # Stereoscope's registry materialization exceeded the hosted memory
         # cap before cataloging this OS image. Stream layers to disk serially,
         # preserving the signed manifest, then inventory the local OCI image.
@@ -97,6 +126,12 @@ def main():
             if digest_file.read_text().strip() != args.image.split('@')[1]:
                 raise ValueError('Local OCI inventory source changed the requested image digest')
             manifests = prepare_layout(temporary / 'image', args.image, directory)
+            if risk_mode:
+                bound = baseline_module.context(json.loads(manifests['config']), args.image, receipt)
+                if bound != baseline:
+                    raise ValueError('Materialized configuration differs from inspected approved baseline')
+                (directory / 'approved-baseline.json').write_text(json.dumps(bound, indent=2) + '\n')
+                (directory / 'upstream-verification.json').write_text(json.dumps(receipt, indent=2) + '\n')
             # Extract without executing image code. Stereoscope retains a
             # cumulative in-memory tree per layer, exceeding 10 GiB for this OS.
             # Rootless extraction preserves package bytes, not runtime ownership.

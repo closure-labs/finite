@@ -35,6 +35,7 @@ jobs:
     permissions:
       contents: read
       packages: read
+      actions: read
     outputs:
       digest: ${{ steps.scan.outputs.digest }}
       evidence: ${{ steps.scan.outputs.evidence }}
@@ -47,6 +48,16 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-nix
+      - name: Reuse authenticated publisher evidence from this build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILD_EVIDENCE: ${{ needs.build.outputs.evidence }}
+        run: |
+          set -euo pipefail
+          [[ $BUILD_EVIDENCE == "image-$PROFILE-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" ]]
+          gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" \
+            --name "$BUILD_EVIDENCE" --dir .bluebuild/upstream-build
+          test -f .bluebuild/upstream-build/upstream-verified.json
       - name: Make room for the immutable image inventory
         uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
         with:
@@ -56,7 +67,8 @@ jobs:
         run: |
           nix develop --file lib/ci-tools.nix release --command bash scripts/bluebuild/security-run.sh \
             "ghcr.io/closure-labs/finite@$CANDIDATE_DIGEST" ".bluebuild/security-$PROFILE" \
-            --profile "$PROFILE" --identity "$BUILD_IDENTITY"
+            --profile "$PROFILE" --identity "$BUILD_IDENTITY" \
+            --upstream-receipt .bluebuild/upstream-build/upstream-verified.json
           echo "digest=$CANDIDATE_DIGEST" >>"$GITHUB_OUTPUT"
           echo "evidence=security-$PROFILE-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >>"$GITHUB_OUTPUT"
       - name: Retain scanner evidence including failures

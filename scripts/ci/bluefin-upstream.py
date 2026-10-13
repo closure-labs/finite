@@ -244,6 +244,16 @@ def main():
         evidence = ROOT / '.bluebuild/upstream-check.json'
         evidence.parent.mkdir(exist_ok=True)
         evidence.write_text(json.dumps(result, indent=2) + '\n')
+    if args.command == 'verify' and re.fullmatch(r'[0-9a-f]{40}', os.environ.get('GITHUB_SHA', '')):
+        # Reuse this successful verification in the security job. The build
+        # artifact is consumed from the same trusted workflow, never a PR input.
+        evidence = ROOT / '.bluebuild/upstream-verified.json'
+        evidence.parent.mkdir(exist_ok=True)
+        receipt = {'schema': 1, 'repository': 'closure-labs/finite',
+                   'sourceRevision': os.environ['GITHUB_SHA'],
+                   'trustPolicySha256': hashlib.sha256((ROOT / 'sources/bluefin-trust.json').read_bytes()).hexdigest(),
+                   'verified': result['verified']}
+        evidence.write_text(json.dumps(receipt, indent=2) + '\n')
 
 
 if __name__ == '__main__':

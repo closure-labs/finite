@@ -2,33 +2,48 @@
 
 ## Current desktop continuation
 
-- User approved host ZFS removal across all four profiles ("dump zfs"), in
-  addition to optional generic virtual-camera removal. Remove only reviewed ZFS
-  package names; preserve signatures, unrelated RPM inventory and file ownership.
-- Host ZFS is no longer supported. A separate FreeBSD VM storage setup is the
-  user's proposed alternative, not validated guidance or a host-root replacement.
-- Draft PR #144 targets main; its last posted head starts 9a65. Runtime source
-  is changing; final source revision and new validation run bindings are pending.
-- Historical source contracts38317182847 passed4bc79ded; these do not validate
-  the new ZFS-removal source. Run fresh focused/source/Nix contracts and all four
-  profile builds after cheap checks; obtain one useful changed-candidate scan.
-- Failed guarded representative38314613864 and ownership38315879860 remain
-  historical evidence, not successful image/native/boot results. Matching ZFS
-  publisher modules are no longer the chosen product prerequisite.
-- Next301 testing preference is still unapproved. Keep next300 and exact
-  f45/f45-updates policy; October XFS/AMD security gap remains explicit.
-- Fresh prerequisite38314613864 still found approved AnyIO/msgpack/rclone fixes
-  unavailable. Other Go/Tailscale/Sigstore rebuild requirements remain blocked.
-- Preserve complete Go38310504908 evidence, actual Cosign3.1.3 partial bundle fix,
-  earlier kernel/package runs and previous all-profile integration as scoped history.
-- PR140 merged1bf562527742 and PR143 mergedbe90c0a83126. No new merge or
-  publication is authorized; maintain isolated Jujutsu desktop-security workspace.
-- Heavy work stays hosted; no workstation Nix compilation/image scan/VM build.
-  Baseline finding statuses and symbol/module/stdlib unknowns remain unchanged.
-- Current plans and pending evidence: docs/desktop-security-validation-plan.md,
-  docs/generic-kernel-remediation-plan.md and
-  docs/desktop-security-evidence-2026-10-12.json. Source/build pending for changed
-  code; vulnerability clearance blocked; release ineligible until all gates pass.
+- User-approved host ZFS removal is implemented and validated across all four
+  profiles: remove only kmod-zfs, zfs and python3-pyzfs; retain required shared
+  libraries, unrelated inventory and file ownership. Host ZFS is unsupported.
+- PR #144 head `fd64b32f4667b3f366b2eafcba5c6ed9ba6431dd` passed all four builds,
+  runtime inspections, documentation, pinned Nix/source checks and CI gate in
+  [run 38322036024](https://github.com/closure-labs/finite/actions/runs/38322036024).
+  Tested PR merge revision: `ed7e5151f51445f4cd5e64715b6e9cef80115600`.
+  Image artifacts record local Docker identities; no registry publication,
+  production signing, merge or VM boot qualification is claimed.
+- Representative native run 38321177037 completed at `371b7f17bc02` with 261
+  distinct old-strict blocking pairs, 725 records and zero observed KEV records.
+  Its transaction and offline repeat passed. Recovery run 38324348014 passed
+  configuration semantics, ordered 89-layer/SBOM binding and exact comparison
+  without another build/scan. Diagnostic evidence remains release-ineligible.
+- Older FreeRDP/HPLIP/libX11/sudo ELF matches map to retained OSTree object paths;
+  live RPM catalog entries show implemented floors. Reachability/backport
+  applicability remains unknown; no false-positive or fixed disposition follows.
+- User approved upstream-maintained-risk: ordinary inherited risks remain visible
+  advisories under an independently authenticated baseline. There are 45 serious
+  groups/102 aliases; KEV, reviewed serious risks and untriaged Critical block.
+  No active reviewed proof dispositions or suppressions. Finite overrides remain
+  separately accountable. Policy-only follow-up PR145 targets main; retained evaluation38327429782 completed blocked; final hosted source checks passed38327424786. PR144 was merged externally at bd78c07f2541 while this follow-up was being prepared; no merge was performed by this continuation.
+- Latest policy-only integration review approved; 212 focused tests passed
+  (66 policy, 43 upstream, 35 reliability, 23 local-candidate, 16 selection,
+  14 comparison, 11 approved-baseline and four delivery fixtures). Root will bind
+  this source to its new PR and hosted run; it is not a current clearance verdict.
+- Identity self-hash/exclusion correction causes one computed-identity migration
+  requiring main reconciliation once; subsequent policy-only edits retain stable
+  build identity. Historical fd64 and native candidate identities stay unchanged.
+- Next 300 remains pinned; fixed 301 testing choice is unapproved. Exact stable
+  f45/f45-updates source hold remains release-blocking until approved fixed source,
+  signed/module/initramfs evidence and affected-profile boot qualification.
+- Historical prerequisite run 38314613864 remains a dated metadata observation:
+  AnyIO/msgpack/rclone fixes unavailable then; no current availability claim or
+  repeated polling. Ordinary msgpack process DoS is advisory under the new mode;
+  AnyIO TLS and rclone serious conditional risks still require precise review.
+- Preserve Go run 38310504908 unknowns and actual Cosign 3.1.3 partial bundle fix.
+  PR #140 merged at 1bf562527742 and #143 at be90c0a83126; these were separately
+  authorized. No new merge/publication is authorized. Use the isolated JJ repo.
+- Heavy builds, full SBOM/image scans and VMs stay hosted. Reuse evidence and
+  benchmarks. Current verdicts: source/build PASS for PR #144; new-policy security
+  evaluation38327429782 completed BLOCKED(121pairs); release INELIGIBLE. Plans/ledger preserve exact scope.
 
 User authorized implementation of the 2026-10-12 cybersecurity report using
 great_cto and nixos-managing. Existing product choices remain: personal daily
@@ -140,28 +155,48 @@ on PR #139; its existing change remains intact.
   directly. Its prior posted head starts 9a65; keep it draft while new authorized
   removal code receives fresh validation. PR #143 is merged.
 
-## Authorized host ZFS removal follow-up
+## Completed authorized host ZFS removal follow-up
 
 - Removal decision completed for all four profiles; no further ZFS approval or
   matching-module wait is required for the chosen unsupported-host-ZFS direction.
-- Fresh removal/invariance tests, source/Nix contracts, four-profile image evidence
-  and changed-candidate native scan remain pending; root will bind exact revisions.
+- Fresh removal/invariance tests, source/Nix contracts and all-four image evidence
+  passed in run 38322036024 at fd64/tested ed7e5151. The representative diagnostic
+  native scan completed once; recovered evidence is retained without a rescan.
 - Preserve the separate unapproved next301 testing decision and production
   security/signing/boot requirements. No automatic finding resolution or waiver.
 
-## Blocker-resolution assessment
+## Current blocker-resolution assessment
 
-- Current focused validation: 44 kernel and 12 contract fixtures passed at source
-  c295; later KEV non-waivability hardening has 30 passing policy fixtures.
-- Representative hosted candidate38321177037 at frozen source371b7f17 is in
-  progress; no new scan outcome, image clearance or boot success is claimed.
-- Keep fix dependencies separate from applicability/exposure evidence and final
-  source/build/security/release gates. No active exception or new testing approval.
-- Next cheap investigations: msgpack owning consumers/Unpacker error handling and
-  rclone dependencies/RC/S3 configuration before optional removal or exposure review.
-- Existing exact digest/component/advisory exceptions expire within30days and need
-  documented reviewer/reason; every matching location in that digest must support
-  the review. KEV (including aliases/ignored matches) is now non-waivable with
-  the active gate. Unknown symbols or SELinux labels are not blanket mitigations.
-- Resolution options and evidence limits recorded in the desktop plan; reuse the
-  changed-candidate result and avoid unchanged scan repeats or unsupported fixes.
+- Retained diagnostic evidence evaluated under the approved risk model in
+  run38327429782, bound to PR145 policy sourcee599d99f10e6:121blocking pairs,
+  421advisory pairs,0KEV,0exceptions. Final source checks passed38327424786; the
+  historical severity result is not a new-policy pass.
+- Historical first-pass review: eleven of15 old-strict Critical IDs matched
+  serious groups; four remained untriaged Critical:
+  GO-2026-6604 Windows root escape, GO-2026-6612 HTTP/2 resource accounting, and
+  two SSH DoS advisories. The expanded new-policy scope now includes11distinct
+  untriaged Critical IDs; complete all-alias/path/platform/impact proof before dispositions.
+- Typed dispositions bind exact digest, component, platform and every canonical
+  location, positive evidence, reviewer/time and expiry within 30 days. Routine
+  cannot waive serious groups; KEV is nonwaivable. Unknown symbols or SELinux
+  labels are not blanket mitigations. No disposition is currently active.
+- Next 300 source hold and production signing/boot qualification remain separate
+  requirements. No new kernel testing approval, merge or publication is granted.
+- Resolve verified serious risks through compatible signed owning-package fixes
+  or complete artifact proof, while keeping ordinary upstream advisories visible.
+  Reuse retained build/scan/recovery and source evidence; no repeated benchmarks.
+
+## Approved upstream policy implementation outcome
+
+- Policy-onlyPR145 targetsmain after externalPR144 merge;212focused tests and
+  independent security/integration/parser reviews passed at e599d99f10e6.
+- Hosted retained-evidence reevaluation38327429782 completed without rebuild or
+  rescan:121blocking pairs(95serious,26untriagedCritical),421advisory,0KEV,0exceptions.
+  These are policy dispositions and expanded scope, not package fixes.
+- Exactmanifest/policy/native hashes, actual file paths, owners and required
+  unblock evidence are in desktop-risk-evaluation/blockers JSON ledgers.
+- Next300 sourcehold persists independently; production security/signing/boot
+  gates remain unmet. Sourcechecks PASS38327424786; releaseINELIGIBLE.
+- Cancelled redundant old-policy main publication38326674435 after same main
+  revision passed all four merge-queue builds38324842229; known AnyIO blocker
+  remained. No merge or publication performed by this continuation.

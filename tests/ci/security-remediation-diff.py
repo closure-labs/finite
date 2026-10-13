@@ -22,9 +22,19 @@ def finding(component='pkg:rpm/fedora/example@1', advisory='CVE-2026-1', severit
             'knownExploited': False, 'fixVersions': ['2']}
 
 
+def hold():
+    return {'id': 'next-kernel-source-hold', 'profiles': ['bluefin-next'],
+            'riskClass': 'local-privilege-escalation', 'reason': 'Unqualified source fix',
+            'officialSources': ['https://kernel.org/'], 'reviewedBy': 'Security reviewer',
+            'reviewedAt': STAMP, 'unblockEvidence': 'Authenticated compatible fix and boot qualification'}
+
+
 class Remediation(unittest.TestCase):
     def setUp(self):
         self.policy, self.policy_hash = remediation.read(ROOT / 'automation/security/image-policy.json')
+        # These original fixtures exercise the legacy result contract regardless
+        # of the live repository policy selected by a later remediation.
+        self.policy.pop('mode', None)
         self.ledger = {'schema': 1, 'status': 'blocked', 'image': OLD,
                        'scannedAt': '2026-10-12T10:00:00Z', 'policySha256': self.policy_hash,
                        'findings': [finding(), finding(advisory='CVE-2026-2')]}
@@ -106,11 +116,101 @@ class Remediation(unittest.TestCase):
         self.assertTrue(self.compare()['policyChanged'])
         self.assertEqual(before, (self.ledger, self.result))
 
+    def test_policy_transition_to_advisory_remains_observed_and_requires_review(self):
+        self.policy['mode'] = 'upstream-maintained-risk'
+        self.ledger['policySha256'] = 'c' * 64
+        self.result.update(mode='upstream-maintained-risk', status='pass', blocked=[],
+                           advisories=[finding(), finding(advisory='CVE-2026-2')], releaseBlockers=[])
+        result = self.compare()
+        self.assertTrue(result['policyChanged'])
+        self.assertEqual(len(result['persistent']), 2)
+        self.assertEqual(result['notObserved'], [])
+        self.assertEqual(result['new'], [])
+        self.assertTrue(all(entry['dispositions'] == ['advisory'] for entry in result['persistent']))
+        self.assertTrue(all(change['previous'] == ['blocked'] and change['current'] == ['advisory']
+                            and change['remediationStatus'] == 'review-required'
+                            for change in result['dispositionChanges']))
+        self.assertNotIn('resolved', result)
+        self.assertNotIn('fixed', result)
+
+    def test_duplicate_advisories_are_counted_without_losing_exact_pair_scope(self):
+        self.result['advisories'] = [finding(advisory='CVE-2026-3'), finding(advisory='CVE-2026-3'),
+                                     finding(component='pkg:rpm/fedora/example@2')]
+        result = self.compare()
+        self.assertEqual(result['counts'], {'blockingRecords': 2, 'exceptionRecords': 0,
+                                            'advisoryRecords': 3, 'releaseBlockerRecords': 0, 'observedPairs': 3})
+        duplicate = next(entry for entry in result['new'] if entry['advisory'] == 'CVE-2026-3')
+        self.assertEqual(duplicate['occurrences'], 3)
+        self.assertEqual(duplicate['dispositions'], ['blocked', 'advisory'])
+        self.assertEqual(len(result['new']), 2)
+        self.assertIn('advisories', result['scope'])
+
+    def test_missing_malformed_or_wrong_mode_advisories_fail_closed(self):
+        for change in (lambda result: result.pop('advisories'),
+                       lambda result: result.update(advisories=None),
+                       lambda result: result.update(advisories={}),
+                       lambda result: result.update(advisories=['not-an-object']),
+                       lambda result: result.update(advisories=[{**finding(), 'knownExploited': 1}]),
+                       lambda result: result.update(mode='legacy')):
+            with self.subTest(change=change):
+                self.setUp()
+                self.policy['mode'] = 'upstream-maintained-risk'
+                self.result.update(mode='upstream-maintained-risk', advisories=[], releaseBlockers=[])
+                change(self.result)
+                with self.assertRaises(ValueError):
+                    self.compare()
+
+    def test_explicit_previous_disposition_is_preserved(self):
+        self.ledger['findings'][0]['dispositions'] = ['advisory']
+        self.result['advisories'] = [finding(advisory='CVE-2026-2')]
+        result = self.compare()
+        change = next(entry for entry in result['dispositionChanges'] if entry['advisory'] == 'CVE-2026-1')
+        self.assertEqual(change['previous'], ['advisory'])
+        self.assertEqual(change['current'], ['blocked'])
+        self.assertEqual(change['previousBasis'], 'explicit')
+
+    def test_advisory_presence_cannot_hide_status_contradiction_or_stale_digest(self):
+        self.result.update(status='pass', advisories=[finding()])
+        with self.assertRaisesRegex(ValueError, 'contradicts'):
+            self.compare()
+        self.result.update(blocked=[], image=OLD)
+        with self.assertRaisesRegex(ValueError, 'immutable image'):
+            self.compare()
+
     def test_summary_hash_binds_exact_input_bytes(self):
         path = ROOT / 'docs/security-remediation-2026-10-12.json'
         ledger, checksum = remediation.read(path)
         self.assertEqual(checksum, hashlib.sha256(path.read_bytes()).hexdigest())
         self.assertEqual(ledger['schema'], 1)
+
+    def test_source_hold_blocks_without_fabricating_vulnerability_records(self):
+        self.policy['mode'] = 'upstream-maintained-risk'
+        self.result.update(mode='upstream-maintained-risk', blocked=[], advisories=[finding()],
+                           releaseBlockers=[hold()])
+        result = self.compare()
+        self.assertEqual(result['scanStatus'], 'blocked')
+        self.assertEqual(result['releaseBlockers'], [hold()])
+        self.assertEqual(result['counts']['releaseBlockerRecords'], 1)
+        self.assertEqual(result['counts']['blockingRecords'], 0)
+        self.assertEqual(result['counts']['advisoryRecords'], 1)
+        self.assertEqual(len(result['persistent']), 1)
+        self.assertNotIn('fixed', result)
+
+    def test_missing_malformed_or_contradictory_holds_fail_closed(self):
+        for change in (lambda result: result.pop('releaseBlockers'),
+                       lambda result: result.update(releaseBlockers=None),
+                       lambda result: result.update(releaseBlockers=[{}]),
+                       lambda result: result.update(releaseBlockers=[hold(), hold()]),
+                       lambda result: result.update(status='pass'),
+                       lambda result: result.update(releaseBlockers=[])):
+            with self.subTest(change=change):
+                self.setUp()
+                self.policy['mode'] = 'upstream-maintained-risk'
+                self.result.update(mode='upstream-maintained-risk', blocked=[], advisories=[],
+                                   releaseBlockers=[hold()])
+                change(self.result)
+                with self.assertRaises(ValueError):
+                    self.compare()
 
 
 if __name__ == '__main__':

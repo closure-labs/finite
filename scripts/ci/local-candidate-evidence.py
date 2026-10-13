@@ -5,6 +5,7 @@ This diagnostic does not execute image code, authenticate a release signature,
 or grant publication eligibility. The production vulnerability policy is reused.
 """
 import argparse
+from datetime import datetime, timezone
 import hashlib
 import importlib.util
 import json
@@ -172,7 +173,23 @@ def write_json(path, document):
     path.write_text(json.dumps(document, indent=2) + '\n')
 
 
-def scan_candidate(layout, directory, candidate):
+def approved_baseline_context(path, candidate, profile, identity, revision):
+    """Bind an externally authenticated receipt; this helper cannot create trust."""
+    raw, document = raw_document(path)
+    context = policy_module.baseline_context(document, candidate['image'])
+    if (context['profile'] != profile or context['sourceRevision'] != revision or
+            context['buildIdentity'] != identity or context['trustPolicySha256'] !=
+            policy_module.file_sha256(ROOT / 'sources/bluefin-trust.json')):
+        raise ValueError('Approved baseline receipt does not match candidate inputs/trust policy')
+    labels = json.loads(candidate['configRaw'])['config']['Labels']
+    repository, digest = context['baseImage'].split('@')
+    if (labels.get('org.opencontainers.image.base.digest') != digest or
+            labels.get('org.opencontainers.image.base.name') != repository + ':stable@' + digest):
+        raise ValueError('Approved baseline receipt differs from candidate base labels')
+    return raw, context
+
+
+def scan_candidate(layout, directory, candidate, approved_baseline=None):
     # Hard links retain exact blob bytes without copying gigabytes or mutating
     # the build layout. The temporary directory is on the input filesystem.
     with tempfile.TemporaryDirectory(prefix='finite-candidate-scan-', dir=layout.parent) as temporary:
@@ -213,7 +230,7 @@ def scan_candidate(layout, directory, candidate):
     result = policy_module.evaluate(sbom, json.loads((directory / 'vulnerabilities.json').read_text()),
                                     candidate['image'], policy,
                                     database_coverage=json.loads((directory / 'database-coverage.json').read_text()),
-                                    manifests=manifests)
+                                    manifests=manifests, approved_baseline=approved_baseline)
     result['policySha256'] = policy_module.file_sha256(policy_path)
     return result
 
@@ -224,6 +241,8 @@ def main(argv=None):
     parser.add_argument('directory', type=Path)
     parser.add_argument('--profile', required=True)
     parser.add_argument('--identity', required=True)
+    parser.add_argument('--approved-baseline', type=Path,
+                        help='Caller-authenticated baseline receipt; required by upstream risk policy')
     args = parser.parse_args(argv)
     # This boundary precedes any evidence-directory creation or scanner launch.
     if os.environ.get('GITHUB_ACTIONS') != 'true' or os.environ.get('GITHUB_REPOSITORY') != 'closure-labs/finite':
@@ -238,8 +257,18 @@ def main(argv=None):
             raise ValueError('Evidence output must be outside the input OCI layout')
         directory.mkdir(parents=True, exist_ok=False)
         created = True
+        policy = policy_module.load_policy(ROOT / 'automation/security/image-policy.json')
+        risk_mode = policy.get('mode') == 'upstream-maintained-risk'
+        if risk_mode and args.approved_baseline is None:
+            raise ValueError('Upstream risk policy requires caller-authenticated approved baseline evidence')
         candidate = validate_candidate(layout, args.profile, args.identity, os.environ.get('GITHUB_SHA'))
         image = candidate['image']
+        context, context_hash = None, None
+        if args.approved_baseline is not None:
+            context_raw, context = approved_baseline_context(
+                args.approved_baseline, candidate, args.profile, args.identity, os.environ['GITHUB_SHA'])
+            context_hash = hashlib.sha256(context_raw).hexdigest()
+            (directory / 'approved-baseline.json').write_bytes(context_raw)
         (directory / 'local-index.json').write_bytes(candidate['indexRaw'])
         (directory / 'image-config.json').write_bytes(candidate['configRaw'])
         write_json(directory / 'source-provenance.json', {
@@ -249,16 +278,30 @@ def main(argv=None):
             'revision': os.environ['GITHUB_SHA'], 'repository': 'closure-labs/finite',
             'profile': args.profile, 'identity': args.identity, 'layers': candidate['layers'],
             'layerDigestsVerified': True,
+            'approvedBaselineEvidenceSha256': context_hash,
             'runId': os.environ.get('GITHUB_RUN_ID'), 'runAttempt': os.environ.get('GITHUB_RUN_ATTEMPT')})
-        result = scan_candidate(layout, directory, candidate)
+        result = scan_candidate(layout, directory, candidate, approved_baseline=context)
         if result.get('status') not in ('pass', 'blocked') or result.get('image') != image:
             raise ValueError('Native policy returned inconsistent candidate evidence')
+        if ((risk_mode and ('advisories' not in result or result.get('mode') != 'upstream-maintained-risk' or
+                           result.get('approvedBaseline') != context)) or
+                not isinstance(result.get('advisories', []), list)):
+            raise ValueError('Native risk policy result does not retain advisory observations')
+        if risk_mode and 'releaseBlockers' not in result:
+            raise ValueError('Native risk policy result does not retain reviewed source release blockers')
+        holds = policy_module.release_blockers(
+            {'releaseBlockers': result.get('releaseBlockers', [])}, datetime.now(timezone.utc))
+        if (result['status'] == 'blocked') != bool(result['blocked'] or holds):
+            raise ValueError('Native policy status contradicts blocking findings or source release blockers')
         result.update({'sourceType': 'locally-built-unpublished', 'signatureVerified': False, 'releaseEligible': False})
         code = 0 if result['status'] == 'pass' else 1
         write_json(directory / 'security-result.json', result)
         summary = {key: result[key] for key in ('schema', 'status', 'image', 'scannedAt', 'scanner', 'policySha256',
                                                 'sourceType', 'signatureVerified', 'releaseEligible')}
         summary.update({'blockingRecords': len(result['blocked']), 'exceptionRecords': len(result['exceptionsApplied']),
+                        'advisoryRecords': len(result.get('advisories', [])),
+                        'releaseBlockers': holds, 'releaseBlockerRecords': len(holds),
+                        'observationRecords': len(result.get('observations', [])),
                         'coverage': result['coverage'], 'matches': result['matches']})
         write_json(directory / 'security-summary.json', summary)
         print(json.dumps(summary))

@@ -2,7 +2,7 @@
 
 This continuation covers all four Finite profiles, their desktop applications,
 development tools and container runtimes. Finite uses Bluefin/bootc with Nix/Home
-Manager. Changes use Jujutsu in the isolated desktop-security workspace. The
+Manager. Changes use Jujutsu in isolated security workspaces. The
 user authorized implementation, optional generic virtual-camera removal, and
 now removal of host ZFS support from all four profiles. The separate next-kernel
 testing exception remains unapproved.
@@ -17,6 +17,43 @@ passed documentation/CI checks in
 [run 38305327730](https://github.com/closure-labs/finite/actions/runs/38305327730)
 and merged at `be90c0a83126`. Those merges were separately requested. This
 continuation does not authorize another merge or publication.
+
+## Current status
+
+[PR #144](https://github.com/closure-labs/finite/pull/144) implementation head
+`fd64b32f4667b3f366b2eafcba5c6ed9ba6431dd` passed all four image builds and runtime
+inspections, documentation, pinned Nix/source contracts and the CI gate in
+[run 38322036024](https://github.com/closure-labs/finite/actions/runs/38322036024).
+The tested PR merge revision is `ed7e5151f51445f4cd5e64715b6e9cef80115600`, distinct
+from the implementation head. All four local image identities and artifact hashes
+are recorded in the ledger. Publication was skipped; these are Docker image IDs,
+not published manifest digests. No new merge, signing or VM boot result is claimed.
+
+The user approved the [upstream-maintained-risk policy](desktop-risk-policy.md):
+ordinary inherited findings remain advisory under an independently authenticated
+baseline, while KEV, reviewed serious risks and untriaged Critical findings block.
+There are 45 serious groups covering 102 aliases and no active proof dispositions.
+The policy-only follow-up is [PR145](https://github.com/closure-labs/finite/pull/145).
+Retained-evidence evaluation38327429782 completed; final source checks passed38327424786. The Next 300 XFS/AMD source gap remains an explicit release hold.
+
+[The unpublished diagnostic scan](https://github.com/closure-labs/finite/actions/runs/38321177037)
+completed once: 261 distinct old-strict component/advisory pairs, 725 raw blocking
+records and zero observed KEV blocking records. This is the historical severity
+policy result, not a new-policy verdict. [Recovery run 38324348014](https://github.com/closure-labs/finite/actions/runs/38324348014)
+passed semantic configuration binding, ordered 89-layer identity, SBOM binding and
+exact comparison recomputation without rebuilding or rescanning. The Docker/OCI
+configuration bytes differ; their original-byte difference remains unknown.
+Recovery qualifies retained diagnostic evidence only, not a production signature,
+complete recipe build or boot result. The new risk evaluation completed blocked
+in run38327429782; exact outcomes are recorded below.
+
+The policy-only source passed independent integration review and 212 focused tests
+(66 policy, 43 upstream, 35 reliability, 23 local-candidate, 16 selection,
+14 comparison, 11 approved-baseline and four delivery fixtures) at policy source
+`e599d99f10e6`; hosted checks passed38327424786 at tested merge79715d7b. The corrected identity self-hash/exclusion
+algorithm causes one computed-identity migration requiring main reconciliation
+once. Subsequent policy-only edits retain stable identity. Retained fd64 matrix
+and unpublished native identities must stay exactly as originally observed.
 
 ## Desktop threat model
 
@@ -72,8 +109,9 @@ Baseline finding statuses remain unchanged.
   at `5b961c8d`, including offline repeat runs. A newer guard refuses to delete
   owned, unexpected or symlinked stale module files; 25 focused fixtures pass,
   and the historical hosted attempt correctly rejected a retained ZFS owner.
-  The user has since approved removing host ZFS; that changed implementation
-  needs fresh validation rather than reusing the earlier package-run success. Both generic recipes now
+  Approved removal now passes 30 generic/14 next regressions, a representative
+  transaction/offline repeat in run 38321177037 and all-four build/runtime
+  contracts in run 38322036024. Both generic recipes now
   regenerate initramfs after replacement and profile metadata, before finalization:
   RPM installation in a container does not create the required boot payload.
   See [the generic kernel plan](generic-kernel-remediation-plan.md).
@@ -120,43 +158,43 @@ The rclone [RC per-server auth-proxy bypass](https://github.com/advisories/GHSA-
 and [serve S3 auth-proxy signature bypass](https://github.com/advisories/GHSA-xwwr-4h3p-r22c)
 need exact listener/configuration evidence. Presence of rclone alone does not
 prove these server modes are exposed. These mechanisms guide prioritization;
-they do not change scanner policy or waive the unavailable fixes.
+they guide the new serious-risk registry without establishing that any shipped
+consumer is fixed or eligible for a disposition. Msgpack remains advisory under
+the approved upstream-maintenance model unless separate serious-impact or KEV
+evidence changes its classification.
 
 ## Remaining sequence and verdicts
 
-1. Complete authorized explicit ZFS package removal across all four profiles and
-   focused regressions preserving unrelated inventory, signatures and ownership.
-   Run cheap source/Nix checks before one representative changed copy, then all
-   four integration builds. The next 301 testing choice is still unapproved;
-   retain 300/stable policy and its open October XFS/AMD gap.
-2. Use the hosted local-candidate helper for one representative patched OCI copy.
-   Its 17 fixtures pass; its first hosted native scan is pending. Authenticate
-   layout blobs, profile and source identity, reuse production scan policy, and
-   compare all baseline findings. The unpublished copy is diagnostic evidence;
-   it has no release signature or publication authority. Production verification
-   rejects explicit diagnostic markers before release processing. Thirty policy
-   fixtures pass, covering those boundaries and the new non-waivable KEV gate.
-3. Review persistent/new/not-observed findings and positive applicability evidence.
-   Preserve unknowns and current policy; not-observed is never automatically fixed.
-4. Build and inspect all four changed profiles only after cheap checks and useful
-   representative evidence. Draft PR #144 exists; its final source revision and
-   new integration results are pending slots in the evidence ledger.
-5. Require fresh digest-bound native scans, isolated signing and affected-profile
-   Secure Boot/LUKS install, upgrade and rollback qualification before eligibility.
+1. Completed hosted policy-only source checks38327424786. Retained authenticated evidence has
+   already been evaluated in run38327429782; reuse that completed result and
+   passing builds, transactions and benchmarks. No unchanged image scan.
+2. Bind remaining serious and untriaged Critical findings to all observed aliases,
+   exact components and locations across supported profiles/use cases. Implement
+   only verified compatible remediations, or review positive artifact proof for a
+   narrowly scoped disposition. Preserve unknown reachability and probe errors.
+3. Resolve the Next 300 source hold through approved stable promotion of a fixed
+   same-stream kernel, or a separately explicit reviewed testing decision. Keep
+   the current lock and stable-tag policy until then; no cross-release substitute.
+4. Require production digest-bound security, isolated signing and affected-profile
+   Secure Boot/LUKS install, upgrade and rollback gates before release eligibility.
+   This continuation authorizes implementation, validation and PR updates only.
 
-- Source/build: historical all-profile validation and source contracts passed;
-  the new ZFS-removal source needs fresh focused/Nix checks, patched-copy scan
-  and final all-profile integration.
-- Vulnerability clearance: blocked. Diagnostic Go evidence and package
-  transactions do not replace a complete fresh candidate scan or close findings.
-- Release eligibility: ineligible until all applicable security and boot gates pass.
+- Source/build: **PASS** PR #144 head `fd64b32f4667b3f366b2eafcba5c6ed9ba6431dd`,
+  tested merge `ed7e5151f51445f4cd5e64715b6e9cef80115600`, run 38322036024; all four
+  builds/runtime, documentation, Nix/source checks and CI gate passed. Policy source `e599d99f10e6` also passed run38327424786 as tested merge
+  `79715d7b413e910dcf6c4ae7d26a95e6849dcbbb`; no image inputs changed.
+- Vulnerability clearance: **BLOCKED** after completed policy evaluation38327429782:
+  121 blocking pairs (95 reviewed serious risks and26 untriaged Critical),421
+  advisory pairs,0 observed KEV and0 exceptions. Historical old-strict counts
+  remain separate; unknown applicability and retained-object reachability persist.
+- Release eligibility: **ineligible**. Next source hold, current security review,
+  production signing and applicable boot qualification remain unmet.
 
 Heavy builds, full scans/inventories and VMs remain hosted. Diagnostic subprocesses
 use bounded time and separate 2 GiB limits with swap disabled. No Go scanner or
 compiler is added to the ordinary image-tool closure. Temporary validation refs
 retain read-only permissions and no signing/App secrets; remove them after saving
-evidence. Reuse valid evidence and cancel only demonstrably doomed or redundant
-runs.
+evidence. Cancel only demonstrably doomed or redundant runs.
 
 ## Historical ZFS discovery and current support decision
 
@@ -188,81 +226,128 @@ kernels and approved development/virtual-camera cleanup names, catching accident
 ZFS erasure. The new implementation permits only the additional explicitly reviewed ZFS
 names; unrelated erasure remains forbidden. Thirty generic and fourteen next
 fixtures pass for authorized removal and unrelated-package preservation.
-Hosted transactions must establish actual dependency compatibility.
+The representative transaction/offline repeat and all-four image/runtime checks
+now establish the tested dependency/build compatibility. VM boot qualification
+is separate.
 
-## Historical source validation and new working source
+## Completed source validation
 
-[Hosted source contracts](https://github.com/closure-labs/finite/actions/runs/38317182847)
-passed exact source `4bc79ded4fcf4cfe0d426f9d0bca2f03800b34db`. This is useful
-historical evidence; it does not cover the newly authorized ZFS-removal code.
-[Draft PR #144](https://github.com/closure-labs/finite/pull/144) targets main.
-Its last posted head starts `9a65`; working source is changing and needs new
-focused/source contracts, pinned Nix checks, all four image builds and one useful
-changed-candidate native scan. Keep the PR draft until those results are bound to
-its exact final source. No new-source scan or boot success is claimed yet.
+[Historical source contracts](https://github.com/closure-labs/finite/actions/runs/38317182847)
+passed `4bc79ded4fcf4cfe0d426f9d0bca2f03800b34db` before the approved ZFS removal.
+Later PR #144 head `fd64b32f4667b3f366b2eafcba5c6ed9ba6431dd` passed all four image
+build/runtime and pinned source/Nix checks in run 38322036024 at tested merge
+`ed7e5151f51445f4cd5e64715b6e9cef80115600`. The earlier result is retained history;
+the later result validates the changed source. Policy-only source checks and PR
+binding remain a separate continuation; no repeated image matrix is needed solely
+for this evidence reconciliation.
 
-Host ZFS filesystem support is removed by the new source for all four profiles;
-assembled-image validation is still pending. The
-user's separate FreeBSD VM storage setup is an alternative to investigate, not
-validated installation guidance and not a replacement for the host root filesystem.
-It does not waive desktop security, signing, or boot qualification requirements.
-The next 301 testing-update preference remains unapproved; current 300 and the
-strict stable-tag policy stay pinned while their October XFS/AMD gap remains open.
+All four assembled-image contracts establish absent host ZFS tools/modules:
+explicitly removed `kmod-zfs`, `zfs` and `python3-pyzfs`, retaining shared libraries
+where unrelated-package preservation requires them. The user's separate FreeBSD
+VM storage proposal is not validated installation guidance or a host-root
+replacement. These build contracts do not waive signing or boot qualification.
+Next remains 300 under the stable-only policy; no 301 testing approval is assumed.
 
 ## Resolving the remaining blockers
 
-The default is conservative: it blocks fixable High/Critical scanner matches and
-known-exploited findings, not every CVE. "Fixable" means an advisory lists a fix;
-it does not prove an approved Fedora/vendor package is available or that every
-matched executable is exploitable. Some matches therefore need remediation and
-others need exact applicability review. Keep the strict digest, inventory,
-freshness, signature and boot boundaries; lowering the global severity threshold
-or treating SELinux as universal confinement would obscure genuine desktop risk.
+The approved model assigns routine inherited risks to verified upstream maintenance
+and retains serious desktop/container blockers. It replaces the historical blanket
+fixable High/Critical rule; it does not claim every upstream program is fixed or
+trust Finite's kernel/Cosign overrides automatically. Read the full
+[risk policy](desktop-risk-policy.md) for the 45-group/102-alias registry and sources.
+KEV cannot be waived, serious alias groups block independently of severity and fix
+availability, and untriaged Critical findings require complete artifact review.
+No proof disposition or blanket suppression is active.
 
-| Remaining scope | Concrete resolution options | Required proof |
+| Remaining scope | Concrete owner/event | Required proof |
 | --- | --- | --- |
-| AnyIO / msgpack | Approved fixed Fedora RPM; authenticated owning-RPM backport/rebuild; remove an optional consumer only after dependency review | Actual owning packages, patched source and shipped bytes; msgpack consumer behavior after an Unpacker error; supported desktop use cases remain intact |
-| rclone | Approved fixed owning RPM/backport; remove it if optional after dependency/use-case review; reviewed exposure controls for the two server advisories | RC auth-proxy and serve S3 configuration/listeners, supported command paths and every affected location; absence of a default listener alone is not an artifact-wide fix |
-| Embedded Go in container/development/VPN tools | Publisher rebuild with required compiler and module fixes; authenticated compatible source/backport | Inspect actual rebuilt owning executables and all matching live/OSTree locations; compiler installation alone does not rebuild them |
-| Next kernel 300 | Wait for a stable security-fixed same-stream update; separately review the exact 301 testing exception if explicitly authorized | Five authenticated Fedora45 RPMs, required modules, initramfs and boot qualification; testing gating/request-stable are not stable publication |
-| Native match applicability | Verify exact platform, source/backport or disabled/absent affected functionality; propose a narrowly scoped exception only if positive evidence supports it | GO-2026-6604 Windows and historical CVE-2020-27815 JFS are leads, not dispositions; cover every matched artifact/path and supported profile/use case |
-| Changed-source qualification | Finish focused/Nix checks, one useful patched-copy scan and four-profile integration, then production security/signing/boot gates | Exact revisions and manifest/results; an unpublished diagnostic pass is not release qualification |
+| Policy source qualification | Finite final hosted source checks38327424786 passed; retained evaluation38327429782 is complete and blocked | Exact source/check binding; preserve native hashes and independently authenticated baseline; no diagnostic promotion |
+| AnyIO / rclone serious boundaries | Owning Fedora/vendor publisher supplies compatible signed fixes or authenticated backports; Finite verifies affected call paths | Actual shipped packages/files; AnyIO TLS hostname use; rclone RC/S3/FTP/restic configuration and all supported command paths. Default listener absence is not artifact-wide proof |
+| Embedded Go / compiler serious findings | Owning package, Tailscale or Sigstore publisher rebuilds; Finite authenticates actual executables | Compiler and embedded-module proof for live and retained locations; an updated installed compiler does not repair existing binaries |
+| Critical applicability | Finite artifact review supplies complete positive OS/function/impact proof | Windows GO-2026-6604 and resource-exhaustion Criticals remain leads, not dispositions; cover every alias/path/profile before a typed review |
+| Retained OSTree content | Finite ownership/reachability review resolves old ELF objects | Old FreeRDP/HPLIP/libX11/sudo locations are known; live RPM floors are installed, but retained object reachability/backport status remains unknown |
+| Next 300 kernel | Fixed same-stream source reaches approved stable tag, or user explicitly approves a reviewed testing source | Five exact signed Fedora45 runtime RPMs, required IPU7/modules/initramfs, and boot qualification; testing gating/request-stable is not stable publication |
+| Production qualification | Finite delivery and boot validation after risk prerequisites support it | Exact recipe-built immutable digest, production policy, isolated signer and affected-profile Secure Boot/LUKS install/upgrade/rollback |
 
-The first inexpensive investigations after the current candidate result should
-be msgpack's actual consumers/error handling and rclone's dependency/configuration
-paths. The published msgpack workaround discards/recreates an Unpacker after an
-error; applying it requires proof of the actual affected consumer. Determine
-whether the optional consumers can be removed without removing required desktop
-or container features. For rclone, inspect which server modes are enabled or
-supported before choosing controls or removal. AnyIO's redirected non-ASCII TLS
-hostname issue remains a client trust concern requiring an owning-package fix or
-exact affected-call-path evidence. Do not classify all server advisories as exposed
-by default, or all process-local crashes as harmless.
+The recovered candidate maps older FreeRDP 3.31.1, HPLIP 3.26.4, libX11
+1.8.13-1 and sudo 1.9.17-8 ELF artifacts to retained
+`/sysroot/ostree/repo/objects` paths. The live RPM catalog reports FreeRDP/WinPR
+3.32.1, HPLIP 3.26.6, libX11 1.8.13-3 and sudo 1.9.17-10 fixed floors. This is
+positive location/cataloger evidence, not proof that every retained object is
+unreachable or that scanner matches are false positives. Exact artifact IDs,
+versions, paths and hashes are retained in the ledger; no finding is automatically
+closed and not-observed remains distinct from fixed.
 
-The existing exception format requires an exact image digest, exact component
-PURL (or artifact ID), advisory, approvedAt/expiresAt, reviewedBy and reason, with
-a maximum 30-day review window. Exceptions are reviewed committed policy changes,
-not runtime workflow inputs. The schema does not independently encode paths,
-platforms or listener configurations: a component/advisory exception covers every
-matching occurrence in that digest, so the review must establish the claim for
-all of them. Other profile/new-build digests require their own review. Evidence
-links, artifact hashes, source patches and exposure assumptions belong in the
-review rationale. No exceptions are active or introduced by this assessment.
+The new typed `reviewedDispositions` format requires exact aliases, digest,
+versioned component, platform, every canonical in-image location, disposition,
+reason, official sources, positive evidence, reviewer/time and expiry within
+30 days. New aliases or uncovered paths invalidate narrower proof. `routine`
+cannot waive serious groups; KEV remains nonwaivable. The legacy exception format
+is historical and does not provide the new risk-mode proof boundary. Missing
+symbols, SELinux labels or a successful helper process do not establish absence.
 
-Known-exploited findings now remain blocked despite an ordinary exact exception
-when the KEV gate is enabled, including related aliases and ignored matches;
-30 focused policy fixtures pass. Exceptions cannot repair stale/incomplete native
-evidence, unknown symbol coverage, signature failures or failed boot contracts.
-Missing symbols in the diagnostic probe are not proof of non-applicability.
+The unchanged diagnostic candidate's native scan completed at
+`371b7f17bc02ab84da119e73becbdb4d6c87e2bc` in run 38321177037. Recovery run
+38324348014 validates supported configuration/platform fields, ordered 89 rootfs
+diff IDs, patch labels and SBOM hash and reproduces the comparison exactly:
+186 persistent, 75 new and 95 not-observed pairs; 65 new pairs reuse an advisory
+already present in the baseline. Original layer bytes were hashed before
+extraction; recovery did not rehash absent layer blobs. Original raw Docker config
+bytes were not retained, so semantic equivalence does not establish byte equality.
+The diagnostic copy remains unpublished and release-ineligible; it is not the
+four-profile recipe matrix or a production signing result.
 
-The in-progress representative run
-[38321177037](https://github.com/closure-labs/finite/actions/runs/38321177037)
-uses frozen source `371b7f17`; do not claim its outcome before completion. The
-44 kernel and 12 contract fixtures passed at source `c295`, while the later
-KEV hardening has its separate 30-fixture result. Historical source success does
-not establish the latest all-profile build result. Once the new native result is
-available, compare persistent/new/not-observed findings and prioritize owning
-packages rather than repeating unchanged scans or treating trace counts as
-unique vulnerabilities. Source/build validation, vulnerability clearance and
-release eligibility remain independent verdicts. No new kernel testing approval,
-blanket waiver, unsigned/self-signed remediation source or publication is granted.
+Reuse these observations for the next policy evaluation and ownership review.
+Ordinary advisory maintenance can continue independently of the Next source hold
+or a blocked serious item. No new testing approval, merge or publication is granted.
+
+
+
+### Msgpack consumer follow-up
+
+Retained approved standard/DX package inventories contain Borgbackup 1.4.5-1.fc44
+and python3-msgpack 1.1.2-2.fc44. This identifies a consumer lead, not a complete
+reverse-dependency inventory or proof of candidate shipped source.
+[Borg's exact 1.4.5 source](https://github.com/borgbackup/borg/tree/1b7d3271d2e59e27c61815ff36a29e06a9767e13)
+recreates the Unpacker after parse errors in archive deletion and resynchronization,
+consistent with the official msgpack workaround. Its persistent RPC unpacker and
+exception cleanup/rollback path still require investigation for reuse after a
+malformed authenticated-server response. This is a potential application DoS
+path, not established RCE, privilege escalation or package-wide mitigation.
+
+[The Fedora packaging source](https://src.fedoraproject.org/rpms/borgbackup/raw/bd24f304c025466ee6dc9b04f2ce864c640f7333/f/borgbackup.spec)
+shows only a documentation-theme patch at the reviewed commit. Before disposition,
+bind the candidate's shipped Borg/msgpack files to authenticated owning RPMs,
+inventory other consumers across supported profiles, and test the RPC cleanup
+boundary in a bounded hosted subprocess. Preserve the unknown until that proof;
+no msgpack exception or speculative consumer patch is implemented.
+
+Msgpack’s process-DoS advisory remains visible under the approved upstream-maintenance
+model; consumer follow-up is useful maintenance evidence, not a blanket release
+block solely because the historical severity policy labeled it High. No shipped
+consumer fix or artifact disposition is inferred from the upstream source review.
+
+PR #144 was merged externally at `bd78c07f25412484d90310f76e5dd0807014ebe1`
+while the approved policy follow-up was prepared. That follow-up targets the new
+main revision; this continuation did not merge or publish. The unchanged runtime
+tree retains its exact fd64 build evidence.
+
+## Approved policy validation outcome
+
+[PR145](https://github.com/closure-labs/finite/pull/145) targets externally merged
+main. Policy source `e599d99f10e6` passed 212 focused tests and independent integration
+and parser reviews. Final hosted source checks passed run38327424786.
+[Policy evaluation38327429782](https://github.com/closure-labs/finite/actions/runs/38327429782)
+completed successfully with a **blocked** security verdict:121 blocking pairs
+(95 serious,26 untriaged Critical),421 advisory pairs,0 KEV and0 exceptions.
+It reused the same native immutable manifest and raw evidence without rescanning.
+See [exact evaluation](desktop-risk-evaluation-2026-10-12.json) and
+[remaining file-level blockers](desktop-risk-blockers-2026-10-12.json).
+
+The expanded observation scope and104 disposition changes reflect the approved
+policy decision, not newly introduced vulnerabilities or successful package fixes.
+The95 nonobserved baseline pairs remain review-required. The Generic patched copy
+is diagnostic and unsigned; applicable production scan/signing/boot gates remain
+unmet. Both Next profiles retain the independent reviewed kernel source hold.
+Source/build evidence remains separate from vulnerability clearance and release
+eligibility. No merge, publication or testing-kernel approval was performed here.

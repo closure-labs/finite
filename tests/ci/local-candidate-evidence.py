@@ -22,6 +22,11 @@ OCI_MANIFEST = 'application/vnd.oci.image.manifest.v1+json'
 
 class LocalCandidate(unittest.TestCase):
     def setUp(self):
+        self.policy = mod.policy_module.load_policy(ROOT / 'automation/security/image-policy.json')
+        self.policy.pop('mode', None)  # Original fixtures remain explicitly legacy.
+        policy_loader = patch.object(mod.policy_module, 'load_policy', return_value=self.policy)
+        policy_loader.start()
+        self.addCleanup(policy_loader.stop)
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
@@ -31,6 +36,8 @@ class LocalCandidate(unittest.TestCase):
         self.config = {'os': 'linux', 'architecture': 'amd64', 'config': {'Labels': {
             'org.opencontainers.image.revision': REVISION,
             'org.opencontainers.image.source': 'https://github.com/closure-labs/finite',
+            'org.opencontainers.image.base.name': 'ghcr.io/ublue-os/bluefin:stable@sha256:' + 'd' * 64,
+            'org.opencontainers.image.base.digest': 'sha256:' + 'd' * 64,
             'io.finite.profile': PROFILE, 'io.finite.build-inputs': IDENTITY}},
             'rootfs': {'type': 'layers', 'diff_ids': ['sha256:' + 'c' * 64]}}
         self.layer = self.blob(b'metadata-only-test-layer', 'application/vnd.oci.image.layer.v1.tar')
@@ -192,7 +199,85 @@ class LocalCandidate(unittest.TestCase):
     def result(self, status):
         return {'schema': 1, 'status': status, 'image': self.validate()['image'], 'scannedAt': '2026-10-12T00:00:00Z',
                 'scanner': 'fixture', 'policySha256': 'd' * 64, 'coverage': {'effective': 'fedora:44'},
-                'matches': 1, 'blocked': [{}] if status == 'blocked' else [], 'exceptionsApplied': []}
+                'matches': 1, 'blocked': [{}] if status == 'blocked' else [], 'exceptionsApplied': [],
+                'mode': 'fixable-severity', 'advisories': [], 'observations': [], 'releaseBlockers': []}
+
+    def context(self):
+        return {'schema': 1, 'status': 'verified', 'image': self.validate()['image'], 'profile': PROFILE,
+                'sourceRevision': REVISION, 'buildIdentity': IDENTITY,
+                'baseImage': 'ghcr.io/ublue-os/bluefin@sha256:' + 'd' * 64,
+                'trustPolicySha256': mod.policy_module.file_sha256(ROOT / 'sources/bluefin-trust.json')}
+
+    def test_risk_mode_requires_context_before_scanner_launch(self):
+        self.policy['mode'] = 'upstream-maintained-risk'
+        output = self.root / 'missing-context'
+        with patch.dict(mod.os.environ, self.environment(), clear=True), patch.object(mod, 'scan_candidate') as scan:
+            self.assertEqual(mod.main([str(self.layout), str(output), '--profile', PROFILE, '--identity', IDENTITY]), 2)
+        scan.assert_not_called()
+        self.assertIn('approved baseline', json.loads((output / 'security-result.json').read_text())['error'])
+
+    def test_supplied_context_is_exactly_bound_and_advisories_remain_visible(self):
+        self.policy['mode'] = 'upstream-maintained-risk'
+        context = self.context()
+        path = self.root / 'approved.json'
+        mod.write_json(path, context)
+        output = self.root / 'risk-evidence'
+        result = self.result('pass')
+        observation = {'component': 'pkg:rpm/fedora/example@1', 'advisory': 'CVE-2026-1', 'severity': 'High',
+                       'knownExploited': False, 'fixVersions': ['2'], 'disposition': 'advisory'}
+        result.update(mode='upstream-maintained-risk', approvedBaseline=context,
+                      advisories=[observation], observations=[observation])
+        with patch.dict(mod.os.environ, self.environment(), clear=True), \
+             patch.object(mod, 'scan_candidate', return_value=result) as scan:
+            self.assertEqual(mod.main([str(self.layout), str(output), '--profile', PROFILE, '--identity', IDENTITY,
+                                       '--approved-baseline', str(path)]), 0)
+        self.assertEqual(scan.call_args.kwargs['approved_baseline'], context)
+        self.assertEqual((output / 'approved-baseline.json').read_bytes(), path.read_bytes())
+        provenance = json.loads((output / 'source-provenance.json').read_text())
+        self.assertEqual(provenance['approvedBaselineEvidenceSha256'], hashlib.sha256(path.read_bytes()).hexdigest())
+        summary = json.loads((output / 'security-summary.json').read_text())
+        self.assertEqual(summary['blockingRecords'], 0)
+        self.assertEqual(summary['advisoryRecords'], 1)
+        self.assertEqual(summary['observationRecords'], 1)
+        self.assertFalse(summary['releaseEligible'])
+        self.assertFalse(summary['signatureVerified'])
+
+    def test_malformed_or_mismatched_context_never_launches_scanner(self):
+        self.policy['mode'] = 'upstream-maintained-risk'
+        context = self.context()
+        for key, value in [('schema', True), ('status', 'assumed'), ('image', 'ghcr.io/closure-labs/finite@sha256:' + 'e' * 64),
+                           ('profile', 'bluefin-next'), ('sourceRevision', 'e' * 40), ('buildIdentity', 'v1:' + 'e' * 64),
+                           ('trustPolicySha256', 'e' * 64), ('baseImage', 'ghcr.io/ublue-os/bluefin@sha256:' + 'e' * 64)]:
+            with self.subTest(key=key):
+                path = self.root / ('context-' + key + '.json')
+                mod.write_json(path, {**context, key: value})
+                output = self.root / ('mismatched-' + key)
+                with patch.dict(mod.os.environ, self.environment(), clear=True), patch.object(mod, 'scan_candidate') as scan:
+                    self.assertEqual(mod.main([str(self.layout), str(output), '--profile', PROFILE, '--identity', IDENTITY,
+                                               '--approved-baseline', str(path)]), 2)
+                scan.assert_not_called()
+                self.assertFalse(json.loads((output / 'security-result.json').read_text())['releaseEligible'])
+
+    def test_context_symlink_and_missing_advisory_result_fail_closed(self):
+        self.policy['mode'] = 'upstream-maintained-risk'
+        context = self.context()
+        path = self.root / 'context.json'
+        mod.write_json(path, context)
+        alias = self.root / 'context-link.json'
+        alias.symlink_to(path)
+        output = self.root / 'context-link-error'
+        with patch.dict(mod.os.environ, self.environment(), clear=True), patch.object(mod, 'scan_candidate') as scan:
+            self.assertEqual(mod.main([str(self.layout), str(output), '--profile', PROFILE, '--identity', IDENTITY,
+                                       '--approved-baseline', str(alias)]), 2)
+        scan.assert_not_called()
+        result = self.result('pass')
+        result.update(mode='upstream-maintained-risk', approvedBaseline=context)
+        result.pop('advisories')
+        output = self.root / 'missing-advisory-result'
+        with patch.dict(mod.os.environ, self.environment(), clear=True), patch.object(mod, 'scan_candidate', return_value=result):
+            self.assertEqual(mod.main([str(self.layout), str(output), '--profile', PROFILE, '--identity', IDENTITY,
+                                       '--approved-baseline', str(path)]), 2)
+        self.assertEqual(json.loads((output / 'security-result.json').read_text())['status'], 'scanner-error')
 
     def test_native_pass_and_blocked_never_grant_release(self):
         for status, expected in (('pass', 0), ('blocked', 1)):
@@ -209,6 +294,33 @@ class LocalCandidate(unittest.TestCase):
                     self.assertEqual(document['sourceType'], 'locally-built-unpublished')
                 self.assertEqual(provenance['revision'], REVISION)
                 self.assertEqual(provenance['configurationDigest'], self.config_descriptor['digest'])
+
+    def test_source_hold_blocks_without_inventing_vulnerability_records(self):
+        hold = {'id': 'fixture-source-hold', 'profiles': [PROFILE],
+                'riskClass': 'local-privilege-escalation', 'reason': 'Unqualified source fix',
+                'officialSources': ['https://kernel.org/'], 'reviewedBy': 'Security reviewer',
+                'reviewedAt': '2026-10-12T00:00:00Z', 'unblockEvidence': 'Verified compatible source fix'}
+        result = self.result('blocked')
+        result.update(blocked=[], releaseBlockers=[hold])
+        output = self.root / 'source-held'
+        with patch.dict(mod.os.environ, self.environment(), clear=True), \
+             patch.object(mod, 'scan_candidate', return_value=result):
+            self.assertEqual(mod.main([str(self.layout), str(output), '--profile', PROFILE, '--identity', IDENTITY]), 1)
+        summary = json.loads((output / 'security-summary.json').read_text())
+        self.assertEqual(summary['releaseBlockers'], [hold])
+        self.assertEqual(summary['releaseBlockerRecords'], 1)
+        self.assertEqual(summary['blockingRecords'], 0)
+        self.assertFalse(summary['releaseEligible'])
+
+    def test_malformed_or_contradictory_source_hold_is_scanner_error(self):
+        for suffix, holds in [('malformed', [{}]), ('missing', [])]:
+            result = self.result('blocked')
+            result.update(blocked=[], releaseBlockers=holds)
+            output = self.root / ('bad-source-hold-' + suffix)
+            with patch.dict(mod.os.environ, self.environment(), clear=True), \
+                 patch.object(mod, 'scan_candidate', return_value=result):
+                self.assertEqual(mod.main([str(self.layout), str(output), '--profile', PROFILE, '--identity', IDENTITY]), 2)
+            self.assertEqual(json.loads((output / 'security-result.json').read_text())['status'], 'scanner-error')
 
     def test_scanner_error_retains_provenance_and_distinct_exit(self):
         output = self.root / 'scanner-error'
@@ -274,6 +386,7 @@ class LocalCandidate(unittest.TestCase):
         inventory.assert_called_once()
         evaluate.assert_called_once()
         self.assertEqual(evaluate.call_args.args[2], candidate['image'])
+        self.assertIsNone(evaluate.call_args.kwargs['approved_baseline'])
         self.assertEqual(evaluate.call_args.kwargs['manifests']['extraction']['sourceType'], 'locally-built-unpublished')
         self.assertEqual((self.layout / 'index.json').read_bytes(), original_index)
         self.assertIn(['grype', 'db', 'update'], calls)

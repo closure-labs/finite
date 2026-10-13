@@ -15,6 +15,7 @@ your desktop.
 | Work on recipes or Home Manager modules | [Development](development.md) |
 | Build, sign and release images | [CI and releases](ci-and-releases.md) |
 | Qualify workstations and retain release evidence | [Workstation qualification](workstation-qualification.md) |
+| Review desktop vulnerability decisions | [Desktop risk policy](desktop-risk-policy.md) |
 | Review CI reliability and optimization evidence | [CI optimization review](ci-optimization-review.md) |
 | Understand priorities and build sequence | [Daily-driver roadmap](roadmap.md) |
 | See changes by version | [Changelog](../CHANGELOG.md) |

@@ -52,6 +52,27 @@ class ImageIdentity(unittest.TestCase):
         (self.root / 'README.md').write_text('New docs\n')
         self.assertEqual(before, self.value())
 
+    def test_policy_changes_requalify_without_changing_filesystem_identity(self):
+        directory = self.root / 'automation/security'
+        directory.mkdir(parents=True)
+        policy = directory / 'image-policy.json'
+        policy.write_text('{"mode":"strict"}\n')
+        for profile in ('bluefin-generic', 'bluefin-next'):
+            with self.subTest(profile=profile):
+                before = self.value(profile)
+                policy.write_text('{"mode":"upstream-maintained-risk"}\n')
+                scanner = self.root / 'scripts/bluebuild/security-policy.py'
+                scanner.write_text(scanner.read_text() + '\n# Changed risk review\n')
+                publication_gate = self.root / '.github/workflows/publication.yml'
+                publication_gate.write_text(publication_gate.read_text() + '\n# Changed qualification\n')
+                self.assertEqual(before, self.value(profile))
+
+    def test_publisher_trust_changes_still_change_image_identity(self):
+        before = self.value()
+        trust = self.root / 'sources/bluefin-trust.json'
+        trust.write_text(trust.read_text() + '\n')
+        self.assertNotEqual(before, self.value())
+
     def test_payload_and_runtime_changes_do_change_identity(self):
         before = self.value()
         self.assertNotEqual(before, self.value(payload='/nix/store/other.drv'))

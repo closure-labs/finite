@@ -22,8 +22,8 @@ class Selection(unittest.TestCase):
     def test_documentation_and_mixed_changes(self):
         self.assertEqual(impact.classify(['README.md', 'docs/installation.md']), {'checks': False, 'nix': False, 'profiles': []})
         for path in ['files/system/usr/share/finite/finite-logo.png', '.github/workflows/build.yml',
-                     '.github/workflows/image.yml', '.github/actions/setup-nix/action.yml', 'scripts/ci/impact.py',
-                     'scripts/bluebuild/publication.py', 'scripts/ci/bluefin-upstream.py',
+                     '.github/workflows/image.yml', '.github/actions/setup-nix/action.yml',
+                     'scripts/bluebuild/publication.py',
                      'files/scripts/kernel-module-prune.py', 'new-image-input', 'docs-like/file',
                      'automation/security/vulnerability-policy.json', 'sources/bluefin.pub', 'sources/bluefin-trust.json']:
             with self.subTest(path=path):
@@ -43,6 +43,9 @@ class Selection(unittest.TestCase):
             self.assertEqual(impact.classify([path])['profiles'], sorted(impact.GENERIC))
 
     def test_check_only_inputs_and_full_rebuild_fallback(self):
+        for path in impact.QUALIFICATION_ONLY:
+            with self.subTest(path=path):
+                self.assertEqual(impact.classify([path]), {'checks': True, 'nix': False, 'profiles': []})
         for path in ['tests/home/contracts.sh', 'automation/github/repository-security.json', '.github/workflows/release.yml', 'devenv.lock', 'scripts/ci/http-get.py',
                      '.github/workflows/update-bluefin.yml',
                      '.github/workflows/upstream-health.yml', '.github/workflows/repository-security.yml']:
