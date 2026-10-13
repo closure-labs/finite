@@ -3,7 +3,7 @@
   "sourceRevision": "2cb7b1ed0db02aeb9a82a90bffdd511dc843c8c0",
   "buildVerdict": "all-four-passed",
   "vulnerabilityPolicyVerdict": "all-four-passed-reviewed-desktop-exploitability-policy; unresolved advisories retained",
-  "releaseVerdict": "blocked-incomplete-upgrade-VM-qualification",
+  "releaseVerdict": "standard-qualified-and-promoted; other-channels-require-independent-qualification",
   "signingFailure": "Cosign legacy format conflicted with default use-signing-config=true",
   "fix": {
     "version": "v3.1.3",
@@ -192,6 +192,157 @@
     "completedAt": "2026-10-13T19:45:32Z"
   },
   "currentStandardCandidate": {
+    "image": "ghcr.io/closure-labs/finite@sha256:3b3e867d68691461fc9257b2e46eabcc215753d3e96004292b9283ba4e8c1178",
+    "sourceRevision": "85a37e0c1b887d246fd905982591debcef0e0911",
+    "validationRevision": "85a37e0c1b887d246fd905982591debcef0e0911",
+    "buildIdentity": "v1:1b3f6a06fcb7d16730b3933702755d71b4351238ab681da11ae3a4ef9ab652c6",
+    "run": 38467981855,
+    "url": "https://github.com/closure-labs/finite/actions/runs/38467981855",
+    "imageArtifact": {
+      "id": 11851706113,
+      "sha256": "edbabaae91bf1f6a5c98bca1b81750815170007b84e30d9e9eb862236f72e80e"
+    },
+    "sourceAndBuild": "pass",
+    "vulnerabilityPolicy": "pass-reviewed-desktop-policy; unresolved advisories retained",
+    "signing": "pass",
+    "qualification": {
+      "job": 115551257692,
+      "status": "pass",
+      "completedAt": "2026-10-13T22:28:53Z",
+      "artifact": 11855770714,
+      "artifactSha256": "f28d244bbb24b25d95fa3724fad1b433c1ee577b7af86a3a0879f05f7418cdc6",
+      "acceptance": {
+        "schema": 1,
+        "candidate": "ghcr.io/closure-labs/finite@sha256:3b3e867d68691461fc9257b2e46eabcc215753d3e96004292b9283ba4e8c1178",
+        "previousDigest": "sha256:0079daf9eb090e3304cbd9f719096d4e0c1ce461873a99af123bf14b989eee98",
+        "profile": "bluefin-generic",
+        "revision": "85a37e0c1b887d246fd905982591debcef0e0911",
+        "sourceRevision": "85a37e0c1b887d246fd905982591debcef0e0911",
+        "buildIdentity": "v1:1b3f6a06fcb7d16730b3933702755d71b4351238ab681da11ae3a4ef9ab652c6",
+        "secureBoot": true,
+        "encryptedRoot": true,
+        "accepted": true,
+        "bootstrap": false,
+        "vmSecurityEvidence": {
+          "path": "bluefin-generic-desktop-acceptance.json",
+          "sha256": "183b8164c9b406b2d0c3679f94e22dcba3a3870d2b7cabf953de87056ed4bdd3"
+        }
+      },
+      "independentReceiptVerification": "pass",
+      "phases": [
+        "fresh",
+        "upgrade"
+      ],
+      "rollbackChecksum": "ccecd5f07eff71cee79628a97af0c6babe778c1e7b66f34df4ea1c3f14f1d89f",
+      "observedWrongKeyRejection": "A signature was required, but no signature exists"
+    },
+    "releaseEligibility": "qualified-and-promoted",
+    "previousDigest": "sha256:0079daf9eb090e3304cbd9f719096d4e0c1ce461873a99af123bf14b989eee98",
+    "securityReceipt": {
+      "status": "pass",
+      "image": "ghcr.io/closure-labs/finite@sha256:3b3e867d68691461fc9257b2e46eabcc215753d3e96004292b9283ba4e8c1178",
+      "scannedAt": "2026-10-13T21:32:26.914269081Z",
+      "scanner": "0.112.0",
+      "mode": "desktop-critical-only",
+      "blockingBasis": "reviewed-desktop-exploitability",
+      "policySha256": "2e7848880b90bfdf07c1f17dd97d010b02e59834c9110fb1da2364ceaf55230d",
+      "releaseBlockers": [],
+      "blocked": [],
+      "databaseBuilt": "2026-10-13T06:35:20Z"
+    },
+    "securityArtifact": {
+      "id": 11851603437,
+      "sha256": "b0a0ee50fb7904d775f3cedacf7b24f0da2c64b8fc8125ac59417b3035661c8a"
+    },
+    "signingJob": 115551104106,
+    "promotion": {
+      "job": 115573630073,
+      "status": "pass",
+      "artifact": 11855860886,
+      "artifactSha256": "01a425133aaa57da8dd75d1f354bea6f17aeb59688693fb64af4839a293b2460",
+      "receipt": {
+        "base": "ghcr.io/ublue-os/bluefin",
+        "digest": "sha256:23b7bf54349f1a93c2fea4168c7725a632641ee67ae29b0951ef1976c1ba2bc9",
+        "tags": [
+          "finite",
+          "latest"
+        ],
+        "profile": "bluefin-generic",
+        "candidate": "candidate-bluefin-generic",
+        "revision": "85a37e0c1b887d246fd905982591debcef0e0911",
+        "publish": true,
+        "sourceRevision": "85a37e0c1b887d246fd905982591debcef0e0911",
+        "buildIdentity": "v1:1b3f6a06fcb7d16730b3933702755d71b4351238ab681da11ae3a4ef9ab652c6",
+        "previousDigest": "sha256:0079daf9eb090e3304cbd9f719096d4e0c1ce461873a99af123bf14b989eee98",
+        "publishedDigest": "sha256:0079daf9eb090e3304cbd9f719096d4e0c1ce461873a99af123bf14b989eee98",
+        "recoveryReason": "",
+        "qualify": true,
+        "qualificationMode": "enforce",
+        "image": "ghcr.io/closure-labs/finite@sha256:3b3e867d68691461fc9257b2e46eabcc215753d3e96004292b9283ba4e8c1178",
+        "accepted": true
+      },
+      "independentRegistryVerification": {
+        "finite": "sha256:3b3e867d68691461fc9257b2e46eabcc215753d3e96004292b9283ba4e8c1178",
+        "latest": "sha256:3b3e867d68691461fc9257b2e46eabcc215753d3e96004292b9283ba4e8c1178"
+      }
+    },
+    "ciGate": {
+      "job": 115574538899,
+      "status": "pass"
+    }
+  },
+  "signaturePolicyDiagnostic": {
+    "run": 38465007600,
+    "url": "https://github.com/closure-labs/finite/actions/runs/38465007600",
+    "revision": "606c825dd7d11f341c9ea689bf738765d8f27fd6",
+    "artifact": 11847354805,
+    "artifactSha256": "2c4ecde813be02b2729ee68c9fed478625e2200e4650508c0ce91011a64ff273",
+    "verdict": "unknown-despite-workflow-success",
+    "correctKey": "OpenImage policy accepted; subsequent manifest pipe timed out",
+    "wrongKey": "A signature was required, but no signature exists",
+    "blobRequests": 0,
+    "authentication": "anonymous",
+    "limitation": "Does not recover deleted bootc error or establish VM upgrade/rollback",
+    "probeRepair": "Use policy-enforcing OpenImage only; propagate shell pipeline failures",
+    "correctedRun": 38466268480,
+    "correctedOutcome": {
+      "run": 38466268480,
+      "revision": "e6d4c0430348c0ec63365e1970cab59d269cbe31",
+      "status": "failed-diagnostic-shutdown-response",
+      "correctKey": "OpenImage returned a policy-accepted handle and CloseImage completed; Shutdown returned EOF, which wrapper incorrectly parsed as JSON",
+      "wrongKey": "A signature was required, but no signature exists",
+      "artifact": 11849295676,
+      "artifactSha256": "0ef6eddbda15892cce0ffca44ed1a57f178b188ae20ba2507ee32eadf971d569",
+      "blobRequests": 0,
+      "releaseEligibilityEstablished": false
+    },
+    "temporaryBranchDeleted": true,
+    "interpretationSources": [
+      "https://github.com/containers/skopeo/blob/v1.22.3/cmd/skopeo/proxy.go#L933",
+      "https://github.com/containers/skopeo/blob/v1.22.3/cmd/skopeo/proxy.go#L249"
+    ],
+    "interpretation": "Skopeo 1.22.3 Shutdown exits before replying; correct-key OpenImage/CloseImage succeeded. Wrong-key index verification and unsigned child verification both fail, returning the child missing-signature error. This supports the explicit matcher repair, not VM qualification."
+  },
+  "vmSignatureProbeRepair": {
+    "status": "merged-and-validated-through-promotion",
+    "focusedTests": 32,
+    "change": "Recognize observed missing-signature rejection; preserve sanitized guest diagnostics; always restore original policy and remove disposable keys",
+    "unrelatedErrorsAccepted": false,
+    "newCandidateRequired": true,
+    "reason": "Current image identity binds vm-acceptance.sh; keep identity enforcement",
+    "pr": 156,
+    "sourceRevision": "21bde0368b1e5080821cab9fdf601c8191c6bfb2",
+    "sourceRun": 38466401141,
+    "sourceStatus": "pass",
+    "queueRun": 38467226440,
+    "independentReview": "approved",
+    "queueStatus": "pass",
+    "mergeRevision": "85a37e0c1b887d246fd905982591debcef0e0911",
+    "freshCandidateRun": 38467981855,
+    "freshCandidateUrl": "https://github.com/closure-labs/finite/actions/runs/38467981855",
+    "cancelledRedundantRun": 38467897021
+  },
+  "previousStandardCandidate": {
     "image": "ghcr.io/closure-labs/finite@sha256:60b12153f6c3db4152225e6213ff5ae95971190cca87920b969a848b5fa423ef",
     "sourceRevision": "b274129fc76f2bdf588b4b312d83af4759e0d1a7",
     "validationRevision": "3fd275c98d98a3a1c5fa028b32d64a7e692d18f7",
@@ -223,27 +374,18 @@
     "releaseEligibility": "blocked-incomplete-upgrade-VM-qualification",
     "previousDigest": "sha256:0079daf9eb090e3304cbd9f719096d4e0c1ce461873a99af123bf14b989eee98"
   },
-  "signaturePolicyDiagnostic": {
-    "run": 38465007600,
-    "url": "https://github.com/closure-labs/finite/actions/runs/38465007600",
-    "revision": "606c825dd7d11f341c9ea689bf738765d8f27fd6",
-    "artifact": 11847354805,
-    "artifactSha256": "2c4ecde813be02b2729ee68c9fed478625e2200e4650508c0ce91011a64ff273",
-    "verdict": "unknown-despite-workflow-success",
-    "correctKey": "OpenImage policy accepted; subsequent manifest pipe timed out",
-    "wrongKey": "A signature was required, but no signature exists",
-    "blobRequests": 0,
-    "authentication": "anonymous",
-    "limitation": "Does not recover deleted bootc error or establish VM upgrade/rollback",
-    "probeRepair": "Use policy-enforcing OpenImage only; propagate shell pipeline failures",
-    "correctedRun": 38466268480
-  },
-  "vmSignatureProbeRepair": {
-    "status": "focused-tests-pass-hosted-pending",
-    "focusedTests": 32,
-    "change": "Recognize observed missing-signature rejection; preserve sanitized guest diagnostics; always restore original policy and remove disposable keys",
-    "unrelatedErrorsAccepted": false,
-    "newCandidateRequired": true,
-    "reason": "Current image identity binds vm-acceptance.sh; keep identity enforcement"
-  }
+  "remainingDependencies": [
+    {
+      "item": "Doppler backend pilot",
+      "owner": "organization administrator",
+      "unblock": "Create entitled workspace, canary-only config and exact constrained identity; set three nonsecret pilot variables; pass backend allow/deny checks",
+      "blocksStandardImageRelease": false
+    },
+    {
+      "item": "Next and development channels",
+      "owner": "Finite maintainers",
+      "unblock": "Independently qualify exact candidates through current security, signing and VM gates",
+      "blocksStandardImageRelease": false
+    }
+  ]
 }

@@ -6,40 +6,36 @@ execution order; older audit ledgers remain historical evidence.
 
 ## Current signing and secret-management rollout
 
-Fresh standard [run38439778084](https://github.com/closure-labs/finite/actions/runs/38439778084)
-at `b274129fc76f2bdf588b4b312d83af4759e0d1a7` passed build and security policy.
-Signing received an empty secret through the reusable workflow boundary; this
-is not evidence of stored-key corruption. The candidate digest is
-`sha256:60b12153f6c3db4152225e6213ff5ae95971190cca87920b969a848b5fa423ef`.
+Standard Finite is qualified and promoted. [Run38467981855](https://github.com/closure-labs/finite/actions/runs/38467981855)
+at `85a37e0c1b887d246fd905982591debcef0e0911` passed source/runtime checks,
+image build, security policy, protected signing, Secure Boot/encrypted-root/SELinux-enforcing
+VM fresh installation, signed upgrade, rollback and promotion. Independent receipt
+validation passed; both public `finite` and `latest` resolve to
+`sha256:3b3e867d68691461fc9257b2e46eabcc215753d3e96004292b9283ba4e8c1178`.
 
-1. Declare and explicitly forward only the signing secret, retain the protected
-   signing environment, and check its derived public key against `cosign.pub`.
-2. Validate and merge the repair. Resume that exact candidate, reusing fresh
-   authenticated security evidence; do not rebuild for workflow-only changes.
-3. Complete protected signing and enforcing VM install/upgrade/rollback before
-   promotion. Qualify Next independently after useful standard evidence.
-4. Deploy a manual Doppler canary pilot with exact OIDC trust and no production
-   credentials. Verify entitlement/access and actual allow/deny results before
-   moving the read-only audit App or considering signer migration.
+PR #154 repaired named signing-secret forwarding and deployed the isolated
+Doppler pilot. PR #155 repaired sandboxed registry authentication, allowing the
+previous candidate to reuse native security evidence and pass signing. Its fresh
+VM passed, but the upgrade test omitted the verifier's explicit missing-signature
+error and discarded the diagnostic. PR #156 corrected that matcher and retained
+sanitized diagnostics; the new VM run observed the exact rejection, accepted the
+correct signature, and completed upgrade/rollback. The identity-bound harness
+required one fresh standard candidate; no identity or release gate was bypassed.
+See the [exact revisions, artifacts and verdicts](signing-resume-evidence-2026-10-13.json).
 
-The [Doppler assessment](doppler-oidc-assessment-2026-10-13.md) records trust
-requirements and limits. Secret-store adoption is independent of image release.
+The vulnerability verdict passes the approved desktop Critical exploitability
+policy with zero confirmed release blockers. Unresolved advisory observations
+remain accepted risk; they are not asserted fixed or harmless. This qualification
+covers the standard channel only. Next and development channels need their own
+exact-candidate security, signing and VM receipts; they do not hold standard back.
 
-PR #154 deployed the named signing boundary and Doppler pilot after source/queue
-validation passed. The claims-only pilot passed; no Doppler workspace exists.
-Resume38452104611 recovered the immutable candidate but stopped before signing:
-sandboxed Skopeo could not read its default credential path. PR #155 provides a
-private, short-lived registry auth file only around candidate inspection, preserving the non-root resource limits and all trust checks.
-Corrected resume38455754348 passed native security reuse and protected signing
-without rebuilding or rescanning. The key matched `cosign.pub`, and signature
-and transparency verification passed. Fresh Secure Boot/encrypted-root/enforcing VM qualification passed. The upgrade
-path stopped at the wrong-key rejection probe; its temporary diagnostic was
-deleted, so the exact bootc error is unknown. A hosted predecessor-engine probe
-observed a genuine missing-signature rejection omitted by the VM matcher. Add
-that explicit rejection and preserve diagnostics, then validate the complete
-upgrade/rollback path before claiming release eligibility. Current image identity
-includes the VM harness, so the corrected harness requires one fresh standard
-candidate; do not bypass the existing identity check to reuse its old digest.
+The GitHub side of the Doppler pilot is deployed, and its exact public OIDC claims
+passed in run38452109711. The owner has no Doppler workspace. The organization
+administrator must create an entitled workspace, a canary-only config and a
+narrowly constrained identity, then supply the three nonsecret variables and
+complete backend allow/deny tests in the [setup guide](doppler-pilot-setup.md).
+Production credentials remain in their protected GitHub environments. Doppler
+adoption is independent of the qualified standard release.
 
 ## Historical candidate identity correction
 

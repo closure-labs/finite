@@ -382,7 +382,7 @@ hold remain explicit. Release eligibility has not been established.
 - [x] Review official action source, OIDC claims, live repository settings and protected-environment metadata; independent security/integration review supports a canary-only pilot.
 - [x] Diagnose38439778084: build and security pass; signer receives empty COSIGN_PRIVATE_KEY because the reusable caller does not forward the secret. No stored-key corruption established.
 - [x] Implement explicit named secret forwarding and a bounded public-key preflight; 151 focused signing/selection/resume/pilot tests pass. Hosted validation and exact-digest signing passed; upgrade VM qualification remains incomplete.
-- [ ] Resume exact digest60b12153f6c3 without rebuilding; retain fresh security evidence where valid.
+- [x] Resume exact digest60b12153f6c3 without rebuilding:38455754348 reused valid security evidence and signed it, then exposed the VM matcher defect. Superseded by repaired, fully qualified fresh candidate38467981855.
 - Doppler adoption is optional and requires verified subscription/workspace configuration and positive/negative canary tests; no integration or secret migration performed by this assessment.
 - Assessment and rollout constraints: docs/doppler-oidc-assessment-2026-10-13.md.
 
@@ -402,6 +402,12 @@ hold remain explicit. Release eligibility has not been established.
 - [x] PR #155 merged at3fd275c98d98 after source38454295599 and queue38454956311 passed; independent registry-auth review approved. Cancelled redundant38455635843 and resumed same candidate in38455754348.
 - [x] Live corrected reuse38455754348 passed: original native evidence revalidated under current policy and original timestamps, no new scan. Protected signing passed key-match, signature and transparency verification; fresh Secure Boot/encrypted-root/enforcing VM passed; upgrade stopped at the wrong-key rejection probe, whose error log was discarded. No promotion.
 
-- [ ] Diagnose and retain the wrong-key bootc rejection error from qualification38455754348. Fresh candidate VM passed, but upgrade/rollback did not run; do not treat any bootc error as valid signature rejection.
+- [x] Diagnose wrong-key bootc rejection and retain fresh VM diagnostics. The historical38455754348 error was deleted, but38467981855 captured the exact missing-signature rejection and passed signed upgrade/rollback after the matcher repair; generic bootc errors remain failures.
 
-- [x] Implement the explicit missing-signature rejection match and private/sanitized VM diagnostic retention;32focusedVM/desktop/resumetests and shellcheck/docs pass. Hosted source/queue and a fresh standard candidate remain required because the harness is identity-bound.
+- [x] Implement the explicit missing-signature rejection match and private/sanitized VM diagnostic retention;32focusedVM/desktop/resumetests and shellcheck/docs pass. Hosted source/queue and fresh standard candidate38467981855 subsequently passed; the harness identity was preserved.
+
+- [x] PR #156 source38466401141 passed at21bde0368b1e; independent VM security review approved. Merge queue38467226440 passed; PR #156 merged at85a37e0c1b88. Diagnostic38466268480 observed correct-key OpenImage acceptance and explicit wrong-key missing-signature rejection but failed at wrapper shutdown; preserve overall failure. Temporary diagnostic branch deleted; no extra probe needed to support the matcher repair.
+
+- [x] Complete fresh standard rollout38467981855 at85a37e0c1b88 with repaired VM rejection matching and diagnostics. Redundant automatic run38467897021 cancelled; all security/signing/boot gates remain enforced.
+
+- [x] Standard rollout38467981855 passed all gates: fresh candidate3b3e867d6869, reviewed Critical desktop policy with zero blockers, protected signing, Secure Boot/encrypted-root/enforcing VM fresh install/signed upgrade/rollback, promotion and CI. Independent VM receipt validation and public finite/latest digest reads passed. Next/development qualification remains independent; Doppler backend pilot awaits owner workspace.
