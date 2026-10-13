@@ -403,3 +403,5 @@ hold remain explicit. Release eligibility has not been established.
 - [x] Live corrected reuse38455754348 passed: original native evidence revalidated under current policy and original timestamps, no new scan. Protected signing passed key-match, signature and transparency verification; fresh Secure Boot/encrypted-root/enforcing VM passed; upgrade stopped at the wrong-key rejection probe, whose error log was discarded. No promotion.
 
 - [ ] Diagnose and retain the wrong-key bootc rejection error from qualification38455754348. Fresh candidate VM passed, but upgrade/rollback did not run; do not treat any bootc error as valid signature rejection.
+
+- [x] Implement the explicit missing-signature rejection match and private/sanitized VM diagnostic retention;32focusedVM/desktop/resumetests and shellcheck/docs pass. Hosted source/queue and a fresh standard candidate remain required because the harness is identity-bound.

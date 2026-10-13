@@ -34,8 +34,12 @@ Corrected resume38455754348 passed native security reuse and protected signing
 without rebuilding or rescanning. The key matched `cosign.pub`, and signature
 and transparency verification passed. Fresh Secure Boot/encrypted-root/enforcing VM qualification passed. The upgrade
 path stopped at the wrong-key rejection probe; its temporary diagnostic was
-deleted, so the underlying bootc error is unknown. Preserve diagnostics and
-resolve that failure before claiming upgrade/rollback or release eligibility.
+deleted, so the exact bootc error is unknown. A hosted predecessor-engine probe
+observed a genuine missing-signature rejection omitted by the VM matcher. Add
+that explicit rejection and preserve diagnostics, then validate the complete
+upgrade/rollback path before claiming release eligibility. Current image identity
+includes the VM harness, so the corrected harness requires one fresh standard
+candidate; do not bypass the existing identity check to reuse its old digest.
 
 ## Historical candidate identity correction
 

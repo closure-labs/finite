@@ -222,5 +222,28 @@
     },
     "releaseEligibility": "blocked-incomplete-upgrade-VM-qualification",
     "previousDigest": "sha256:0079daf9eb090e3304cbd9f719096d4e0c1ce461873a99af123bf14b989eee98"
+  },
+  "signaturePolicyDiagnostic": {
+    "run": 38465007600,
+    "url": "https://github.com/closure-labs/finite/actions/runs/38465007600",
+    "revision": "606c825dd7d11f341c9ea689bf738765d8f27fd6",
+    "artifact": 11847354805,
+    "artifactSha256": "2c4ecde813be02b2729ee68c9fed478625e2200e4650508c0ce91011a64ff273",
+    "verdict": "unknown-despite-workflow-success",
+    "correctKey": "OpenImage policy accepted; subsequent manifest pipe timed out",
+    "wrongKey": "A signature was required, but no signature exists",
+    "blobRequests": 0,
+    "authentication": "anonymous",
+    "limitation": "Does not recover deleted bootc error or establish VM upgrade/rollback",
+    "probeRepair": "Use policy-enforcing OpenImage only; propagate shell pipeline failures",
+    "correctedRun": 38466268480
+  },
+  "vmSignatureProbeRepair": {
+    "status": "focused-tests-pass-hosted-pending",
+    "focusedTests": 32,
+    "change": "Recognize observed missing-signature rejection; preserve sanitized guest diagnostics; always restore original policy and remove disposable keys",
+    "unrelatedErrorsAccepted": false,
+    "newCandidateRequired": true,
+    "reason": "Current image identity binds vm-acceptance.sh; keep identity enforcement"
   }
 }
