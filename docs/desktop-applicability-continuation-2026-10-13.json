@@ -1,0 +1,268 @@
+{
+  "date": "2026-10-13",
+  "sourceBase": "9d1b0c5b5ebdc7314497ee6500fba4a9c289f706",
+  "pr": 148,
+  "independentChannelQualification": true,
+  "implemented": {
+    "cmdGoRuntimeMismatchScopes": 27,
+    "consumerAndSumdbScopes": 72,
+    "totalReviewedDispositions": 150,
+    "scope": "Six retained immutable candidates only; new main digests require fresh bindings",
+    "evidenceCollector": "Authenticated signed Buildah/Skopeo RPM payload and compact Go build settings; no payload execution"
+  },
+  "validation": {
+    "focusedTestsPassed": 107,
+    "sourceReferenceRun": 38354387254,
+    "policyReevaluationRun": 38356296590,
+    "policyReevaluationStatus": "passed; security remains blocked",
+    "policyRevision": "f692e979ef47a973254837122a89a29e2fc5021b",
+    "policySha256": "26fed6440bfaefab3d0c1cbc49302adf3210e747cc278576cd872428cf06d3ef",
+    "candidateResults": [
+      {
+        "schema": 1,
+        "status": "blocked",
+        "image": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+        "profile": "bluefin-dx-generic",
+        "sourceRun": 38341284379,
+        "sourceRevision": "1d347b7456b0cf64d4372cc0e7a562a9e63eb45b",
+        "policySha256": "26fed6440bfaefab3d0c1cbc49302adf3210e747cc278576cd872428cf06d3ef",
+        "sourceResultSha256": "7cdbb3e6a941de295d48ef0f2a7cfc8c72b4ec383ca990e6a17de0cf114605bb",
+        "resultSha256": "2c333d97fa04caa0ecb7e5363ec72cbc976aa7ba5502af56bdfbf4ff38af1ffd",
+        "sbomSha256": "afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "vulnerabilitiesSha256": "7f2023d2ed029d4e6532ef34650640b53060464d56ea9c017c745da547cc60e8",
+        "configurationDigest": "sha256:f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357",
+        "originalPolicyReproduced": true,
+        "observationsUnchanged": true,
+        "newScanPerformed": false,
+        "releaseEligible": false,
+        "beforeBlockingPairs": 146,
+        "blockingPairs": 119,
+        "blockingRecords": 413,
+        "advisoryRecords": 1587,
+        "reviewedNonapplicableRecords": 97,
+        "releaseBlockers": []
+      },
+      {
+        "schema": 1,
+        "status": "blocked",
+        "image": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+        "profile": "bluefin-generic",
+        "sourceRun": 38341281199,
+        "sourceRevision": "1d347b7456b0cf64d4372cc0e7a562a9e63eb45b",
+        "policySha256": "26fed6440bfaefab3d0c1cbc49302adf3210e747cc278576cd872428cf06d3ef",
+        "sourceResultSha256": "814aab9be9c5872dd844ffcbe4d8205a092c6ca43dec11167c4a49aeaa891805",
+        "resultSha256": "f93ee52e61509a98a9124a32e64dd2a636a393d3cc08c95b683b10499385bc04",
+        "sbomSha256": "8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199",
+        "vulnerabilitiesSha256": "dc2f17b51f30e6aceb672725cecfacdf53090733df29574ba13aea677fdc719c",
+        "configurationDigest": "sha256:97b4843f19705f7d6d29988bfbe591594388af5a9b7785e4edb08a7b6fb6abef",
+        "originalPolicyReproduced": true,
+        "observationsUnchanged": true,
+        "newScanPerformed": false,
+        "releaseEligible": false,
+        "beforeBlockingPairs": 93,
+        "blockingPairs": 71,
+        "blockingRecords": 218,
+        "advisoryRecords": 949,
+        "reviewedNonapplicableRecords": 71,
+        "releaseBlockers": []
+      },
+      {
+        "schema": 1,
+        "status": "blocked",
+        "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+        "profile": "bluefin-dx-generic",
+        "sourceRun": 38340112122,
+        "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+        "policySha256": "26fed6440bfaefab3d0c1cbc49302adf3210e747cc278576cd872428cf06d3ef",
+        "sourceResultSha256": "b6439aee802b91d107231e19cdd6ddc405d5546204db05d46f14b99ba3086f56",
+        "resultSha256": "6301627e5805ee52198365303c1fa817517c4354b0b3c9b09f52bc49085e6e34",
+        "sbomSha256": "d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64",
+        "vulnerabilitiesSha256": "53d9bba5e04edcfb53294c604a6dbfb0f4ec8fc0f93334575bee101b17971655",
+        "configurationDigest": "sha256:5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78",
+        "originalPolicyReproduced": true,
+        "observationsUnchanged": true,
+        "newScanPerformed": false,
+        "releaseEligible": false,
+        "beforeBlockingPairs": 146,
+        "blockingPairs": 119,
+        "blockingRecords": 413,
+        "advisoryRecords": 1587,
+        "reviewedNonapplicableRecords": 97,
+        "releaseBlockers": []
+      },
+      {
+        "schema": 1,
+        "status": "blocked",
+        "image": "ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+        "profile": "bluefin-dx-next",
+        "sourceRun": 38340112122,
+        "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+        "policySha256": "26fed6440bfaefab3d0c1cbc49302adf3210e747cc278576cd872428cf06d3ef",
+        "sourceResultSha256": "5724e3de7bbfd54999a962439452e4d9713f6ce1226c3fdbe126454868ba734b",
+        "resultSha256": "c2d67ab642fa56b48d9e9a34d930ad0d416eec591089969d73c6bafe8b77c2c6",
+        "sbomSha256": "46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5",
+        "vulnerabilitiesSha256": "eedf0c80d2370c5421832469412abfae9db32b8017bdf29c10ca3b487a0ca362",
+        "configurationDigest": "sha256:3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44",
+        "originalPolicyReproduced": true,
+        "observationsUnchanged": true,
+        "newScanPerformed": false,
+        "releaseEligible": false,
+        "beforeBlockingPairs": 146,
+        "blockingPairs": 119,
+        "blockingRecords": 413,
+        "advisoryRecords": 1587,
+        "reviewedNonapplicableRecords": 97,
+        "releaseBlockers": [
+          {
+            "id": "next-kernel-october-source-fixes",
+            "profiles": [
+              "bluefin-next",
+              "bluefin-dx-next"
+            ],
+            "riskClass": "major-data-loss",
+            "reason": "Pinned Fedora 45 kernel 7.2.9-300 lacks the reviewed October XFS/AMD fixes. Missing scanner matches do not establish source-fix coverage. The fixed 301 build has not reached an approved stable tag in retained official evidence.",
+            "officialSources": [
+              "https://src.fedoraproject.org/rpms/kernel/c/c2cdc6c5c0c6ccc0128613fc7c9d276ebaf870c7.patch",
+              "https://gitlab.com/cki-project/kernel-ark/-/commit/fa3bfc1343f7f3b1ebd873eee5e3e6618918f434.patch"
+            ],
+            "reviewedBy": "great_cto desktop kernel source review",
+            "reviewedAt": "2026-10-13T00:00:29Z",
+            "unblockEvidence": "Approved same-stream stable kernel containing the reviewed fixes, or separately explicit reviewed testing approval; authenticate exact Fedora payloads and validate transaction, module preservation, initramfs and boot qualification before reviewing removal of this hold."
+          }
+        ]
+      },
+      {
+        "schema": 1,
+        "status": "blocked",
+        "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+        "profile": "bluefin-generic",
+        "sourceRun": 38340112122,
+        "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+        "policySha256": "26fed6440bfaefab3d0c1cbc49302adf3210e747cc278576cd872428cf06d3ef",
+        "sourceResultSha256": "92127eae6a60001c57937bb329061da88bdc6a933a993a6a047c6be7466518ca",
+        "resultSha256": "5e4e307036c0cbf8b6d877c148aca1eb4d55164fffd886becbeb3a320e8fdc79",
+        "sbomSha256": "4902fdd4b2afca8374a3197770f25daa11c7626cb5c83c46fb614ad1f5441201",
+        "vulnerabilitiesSha256": "231611b8f55e1b8a756a9b78ccf88f96eeba9881e3387d3ef2fe93ca420d168f",
+        "configurationDigest": "sha256:eb2542e972cdd6c71f3448674c57b0c41252fdc4c986252bc8ff3621e2119cf4",
+        "originalPolicyReproduced": true,
+        "observationsUnchanged": true,
+        "newScanPerformed": false,
+        "releaseEligible": false,
+        "beforeBlockingPairs": 93,
+        "blockingPairs": 71,
+        "blockingRecords": 218,
+        "advisoryRecords": 949,
+        "reviewedNonapplicableRecords": 71,
+        "releaseBlockers": []
+      },
+      {
+        "schema": 1,
+        "status": "blocked",
+        "image": "ghcr.io/closure-labs/finite@sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+        "profile": "bluefin-next",
+        "sourceRun": 38340112122,
+        "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+        "policySha256": "26fed6440bfaefab3d0c1cbc49302adf3210e747cc278576cd872428cf06d3ef",
+        "sourceResultSha256": "64182a6c9df652cdfdf3c07d19b7983a7ac297d43bff97f18cac74cd12d8f95c",
+        "resultSha256": "d60a6d128666810f035dc5391cf57c5b822131d7e288a8400596beea5875b940",
+        "sbomSha256": "bcf12455b002324b0c5923110de414cde3528d164bbb6b230dc2e8efb69f56b4",
+        "vulnerabilitiesSha256": "010f4472f5ba934a3bb65f7089cd32816ee000dd7bd100eb6df2a574cb49aca3",
+        "configurationDigest": "sha256:fce1315ea7763cf210b19f4e7c83334ab5e36be9a490d97e0ccc2b2c69491497",
+        "originalPolicyReproduced": true,
+        "observationsUnchanged": true,
+        "newScanPerformed": false,
+        "releaseEligible": false,
+        "beforeBlockingPairs": 93,
+        "blockingPairs": 71,
+        "blockingRecords": 218,
+        "advisoryRecords": 949,
+        "reviewedNonapplicableRecords": 71,
+        "releaseBlockers": [
+          {
+            "id": "next-kernel-october-source-fixes",
+            "profiles": [
+              "bluefin-next",
+              "bluefin-dx-next"
+            ],
+            "riskClass": "major-data-loss",
+            "reason": "Pinned Fedora 45 kernel 7.2.9-300 lacks the reviewed October XFS/AMD fixes. Missing scanner matches do not establish source-fix coverage. The fixed 301 build has not reached an approved stable tag in retained official evidence.",
+            "officialSources": [
+              "https://src.fedoraproject.org/rpms/kernel/c/c2cdc6c5c0c6ccc0128613fc7c9d276ebaf870c7.patch",
+              "https://gitlab.com/cki-project/kernel-ark/-/commit/fa3bfc1343f7f3b1ebd873eee5e3e6618918f434.patch"
+            ],
+            "reviewedBy": "great_cto desktop kernel source review",
+            "reviewedAt": "2026-10-13T00:00:29Z",
+            "unblockEvidence": "Approved same-stream stable kernel containing the reviewed fixes, or separately explicit reviewed testing approval; authenticate exact Fedora payloads and validate transaction, module preservation, initramfs and boot qualification before reviewing removal of this hold."
+          }
+        ]
+      }
+    ],
+    "deltaFromPreviousReviewedPolicy": {
+      "standardBlockingPairs": {
+        "before": 87,
+        "after": 71
+      },
+      "developmentBlockingPairs": {
+        "before": 135,
+        "after": 119
+      },
+      "meaning": "Applicability reclassification only; observations unchanged, no new scan"
+    },
+    "priorSourceChecks": {
+      "revision": "318d191af7bcab51ca57e0cb849c6311a32706db",
+      "run": 38356430718,
+      "status": "passed"
+    },
+    "finalSourceChecks": {
+      "revision": "29e8d962c063c9321ed4d4004298e4d28d77b769",
+      "run": 38356992553,
+      "status": "passed"
+    }
+  },
+  "review": {
+    "approvedBy": "great_cto security-officer and independent continuation_qa",
+    "expandedCurrentNativeJoinsChecked": 216,
+    "consumerReport": "current-consumer-expanded-review-2026-10-13.json",
+    "sumdbReport": "current-sumdb-expanded-review-2026-10-13.json",
+    "vendorSelection": "Inferred from Go default semantics and actual build/source evidence; no explicit vendor flag claimed"
+  },
+  "remaining": [
+    {
+      "owner": "Fedora / Bluefin owning-package publishers",
+      "block": "AnyIO TLS IDNA and rclone supported-mode vulnerabilities",
+      "unblock": "Compatible authenticated owning package fixes and exact changed-candidate verification; rclone 1.75.2 source exists but current binary trust route remains unqualified"
+    },
+    {
+      "owner": "Finite applicability review / owning Go binary publishers",
+      "block": "Compiler/cgo, gRPC, HTTP and other unresolved actual consumers",
+      "unblock": "Authenticated rebuilt executables or complete affected-call-path proof; SELinux alone is insufficient"
+    },
+    {
+      "owner": "Microsoft / Finite applicability review",
+      "block": "VS Code shell-quote source mismatch lead",
+      "unblock": "Bind reviewed source caller behavior to actual shipped Microsoft payload and every relevant importer"
+    },
+    {
+      "owner": "Fedora kernel publishers",
+      "block": "Next approved-source kernel hold",
+      "unblock": "Approved stable matching-release fix and channel boot qualification"
+    }
+  ],
+  "verdicts": {
+    "sourceBuild": "All four main builds passed run38353294526; final applicability/scanner source checks passed run38356992553",
+    "vulnerabilityClearance": "blocked",
+    "releaseEligibility": "ineligible pending applicable security/signing/boot gates"
+  },
+  "newMainScan": {
+    "run": 38353294526,
+    "sourceRevision": "9d1b0c5b5ebdc7314497ee6500fba4a9c289f706",
+    "allFourBuilds": "passed",
+    "genericDigest": "sha256:a6bed424318edeaa48d179ac659036e58a4ea2a12d64fdd9dbfc991506c69a1c",
+    "genericSecurityJob": 115155414168,
+    "status": "scanner-error",
+    "cause": "Production scanner passed relative SBOM path to canonical-only RPM evidence collector; native catalog completed but policy verdict was not produced",
+    "remainingJobs": "Cancellation requested after proving same deterministic invocation defect in shared workflow",
+    "classification": "No vulnerability clearance or security policy verdict; old exact-digest scopes are not transferable",
+    "remediation": "Implemented absolute caller output path with symlink/traversal rejection; production invocation regression reaches actual canonical no-follow reader; malicious SBOM remains scanner-error"
+  }
+}

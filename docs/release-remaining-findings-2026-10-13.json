@@ -1,0 +1,3873 @@
+{
+  "schema": 1,
+  "sourceRun": 38356296590,
+  "sourcePolicySha256": "26fed6440bfaefab3d0c1cbc49302adf3210e747cc278576cd872428cf06d3ef",
+  "status": "blocked",
+  "meaning": "Remaining observed blocking pairs grouped for remediation planning; counts are not distinct exploits; unknown applicability stays explicit",
+  "profiles": [
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "blockingPairs": 71,
+      "findings": [
+        {
+          "component": "pkg:golang/google.golang.org/grpc@v1.72.2",
+          "advisory": "GHSA-p77j-4mvh-x3m3",
+          "aliases": [
+            "CVE-2026-33186",
+            "GHSA-p77j-4mvh-x3m3"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+            "/usr/bin/buildah",
+            "/usr/bin/podman"
+          ],
+          "fixVersions": [
+            "1.79.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+          "advisory": "CVE-2026-27143",
+          "aliases": [
+            "CVE-2026-27143"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+            "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+            "/usr/bin/glow",
+            "/usr/bin/gum"
+          ],
+          "fixVersions": [
+            "1.25.9",
+            "1.26.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+          "advisory": "CVE-2026-27143",
+          "aliases": [
+            "CVE-2026-27143"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+            "/usr/bin/toolbox"
+          ],
+          "fixVersions": [
+            "1.25.9",
+            "1.26.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+          "advisory": "CVE-2026-33811",
+          "aliases": [
+            "CVE-2026-33811"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+            "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+            "/usr/bin/glow",
+            "/usr/bin/gum"
+          ],
+          "fixVersions": [
+            "1.25.10",
+            "1.26.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+          "advisory": "CVE-2026-33811",
+          "aliases": [
+            "CVE-2026-33811"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+            "/usr/bin/toolbox"
+          ],
+          "fixVersions": [
+            "1.25.10",
+            "1.26.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.40.0",
+          "advisory": "GO-2026-5026",
+          "aliases": [
+            "CVE-2026-39821",
+            "GO-2026-5026"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+            "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+            "/usr/bin/glow",
+            "/usr/bin/gum"
+          ],
+          "fixVersions": [
+            "0.55.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.48.0",
+          "advisory": "GO-2026-5026",
+          "aliases": [
+            "CVE-2026-39821",
+            "GO-2026-5026"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ],
+          "fixVersions": [
+            "0.55.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.4",
+          "advisory": "GO-2026-5026",
+          "aliases": [
+            "CVE-2026-39821",
+            "GO-2026-5026"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/usr/bin/cosign"
+          ],
+          "fixVersions": [
+            "1.25.13",
+            "1.26.6",
+            "1.27.0-rc.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.40.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "riskClasses": [],
+          "locations": [
+            "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+            "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+            "/usr/bin/glow",
+            "/usr/bin/gum"
+          ],
+          "fixVersions": [
+            "0.60.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.48.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "riskClasses": [],
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ],
+          "fixVersions": [
+            "0.60.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.55.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "riskClasses": [],
+          "locations": [
+            "/sysroot/ostree/repo/objects/19/07b725d2d82866531bee698973a08e6c438abaace3b61723709ea531853945.file",
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/sysroot/ostree/repo/objects/70/1bccba378f262def36123d3245e03a4442eb1f5cb37e43e901bd1c68954622.file",
+            "/sysroot/ostree/repo/objects/75/3546d15a9cdd047adccb841b239b2b0c2c25deb15c5edcd9d94801f60325c3.file",
+            "/sysroot/ostree/repo/objects/8e/c5583db8e1709e446e0abbcb470108ba680fcf718835713b907e0f9ab05d02.file",
+            "/sysroot/ostree/repo/objects/d1/6202c07880b5c003452384c62878ebf5155cd81a4e9befa180f485ebcc9693.file",
+            "/sysroot/ostree/repo/objects/f4/4b3304bc30b41a152a41fe1248228b052d2d2c31c69c131e4d85e874530d1c.file",
+            "/usr/bin/containerd",
+            "/usr/bin/containerd-shim-runc-v2",
+            "/usr/bin/containerd-stress",
+            "/usr/bin/ctr",
+            "/usr/bin/rclone",
+            "/usr/bin/restic",
+            "/usr/bin/runc",
+            "/usr/bin/yq"
+          ],
+          "fixVersions": [
+            "0.60.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.56.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "riskClasses": [],
+          "locations": [
+            "/usr/bin/cosign"
+          ],
+          "fixVersions": [
+            "0.60.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.57.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "riskClasses": [],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+            "/usr/bin/buildah",
+            "/usr/bin/podman"
+          ],
+          "fixVersions": [
+            "0.60.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.59.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "riskClasses": [],
+          "locations": [
+            "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+            "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+            "/usr/bin/tailscale",
+            "/usr/bin/tailscaled"
+          ],
+          "fixVersions": [
+            "0.60.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.4",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "riskClasses": [],
+          "locations": [
+            "/usr/bin/cosign"
+          ],
+          "fixVersions": [
+            "1.26.9"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.27.1",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "riskClasses": [],
+          "locations": [
+            "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+            "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+            "/usr/bin/tailscale",
+            "/usr/bin/tailscaled"
+          ],
+          "fixVersions": [
+            "1.27.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+          "advisory": "GHSA-xwwr-4h3p-r22c",
+          "aliases": [
+            "CVE-2026-88018",
+            "GHSA-xwwr-4h3p-r22c"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/usr/bin/rclone"
+          ],
+          "fixVersions": [
+            "1.75.1"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+          "advisory": "CVE-2026-27137",
+          "aliases": [
+            "CVE-2026-27137"
+          ],
+          "riskClasses": [
+            "tls-identity-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+            "/usr/bin/toolbox"
+          ],
+          "fixVersions": [
+            "1.26.1"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+          "advisory": "GHSA-fqj9-69pf-6pjg",
+          "aliases": [
+            "CVE-2026-59733",
+            "GHSA-fqj9-69pf-6pjg"
+          ],
+          "riskClasses": [
+            "major-data-loss"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/usr/bin/rclone"
+          ],
+          "fixVersions": [
+            "1.74.4"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+          "advisory": "GHSA-p569-5gjg-9cmj",
+          "aliases": [
+            "CVE-2026-88044",
+            "GHSA-p569-5gjg-9cmj"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/usr/bin/rclone"
+          ],
+          "fixVersions": [
+            "1.75.1"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/github.com/opencontainers/selinux@v1.12.0",
+          "advisory": "GHSA-cgrx-mc8f-2prm",
+          "aliases": [
+            "CVE-2025-52881",
+            "GHSA-cgrx-mc8f-2prm"
+          ],
+          "riskClasses": [
+            "container-escape"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ],
+          "fixVersions": [
+            "1.13.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+          "advisory": "GHSA-2m8m-jhrm-w6j2",
+          "aliases": [
+            "CVE-2026-71312",
+            "GHSA-2m8m-jhrm-w6j2"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/usr/bin/rclone"
+          ],
+          "fixVersions": [
+            "1.75.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+          "advisory": "GHSA-45pq-889g-fcgh",
+          "aliases": [
+            "CVE-2026-71309",
+            "GHSA-45pq-889g-fcgh"
+          ],
+          "riskClasses": [
+            "major-data-loss"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/usr/bin/rclone"
+          ],
+          "fixVersions": [
+            "1.75.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.52.0",
+          "advisory": "GO-2026-6303",
+          "aliases": [
+            "CVE-2026-56854",
+            "GO-2026-6303"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/sysroot/ostree/repo/objects/8e/c5583db8e1709e446e0abbcb470108ba680fcf718835713b907e0f9ab05d02.file",
+            "/usr/bin/rclone",
+            "/usr/bin/restic"
+          ],
+          "fixVersions": [
+            "0.55.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.53.0",
+          "advisory": "GO-2026-6303",
+          "aliases": [
+            "CVE-2026-56854",
+            "GO-2026-6303"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/75/3546d15a9cdd047adccb841b239b2b0c2c25deb15c5edcd9d94801f60325c3.file",
+            "/usr/bin/containerd",
+            "/usr/bin/cosign"
+          ],
+          "fixVersions": [
+            "0.55.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/github.com/moby/go-archive@v0.1.0",
+          "advisory": "GHSA-hfg8-hc9c-6c3h",
+          "aliases": [
+            "CVE-2026-17106",
+            "GHSA-hfg8-hc9c-6c3h"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+            "/usr/bin/buildah",
+            "/usr/bin/podman"
+          ],
+          "fixVersions": [
+            "0.3.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+          "advisory": "GHSA-cf44-9pgv-m4xc",
+          "aliases": [
+            "CVE-2026-54572",
+            "GHSA-cf44-9pgv-m4xc"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/usr/bin/rclone"
+          ],
+          "fixVersions": [
+            "1.74.4"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+          "advisory": "CVE-2026-33810",
+          "aliases": [
+            "CVE-2026-33810"
+          ],
+          "riskClasses": [
+            "tls-identity-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+            "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+            "/usr/bin/glow",
+            "/usr/bin/gum"
+          ],
+          "fixVersions": [
+            "1.26.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+          "advisory": "CVE-2026-33810",
+          "aliases": [
+            "CVE-2026-33810"
+          ],
+          "riskClasses": [
+            "tls-identity-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+            "/usr/bin/toolbox"
+          ],
+          "fixVersions": [
+            "1.26.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:pypi/anyio@4.13.0",
+          "advisory": "GHSA-82r6-8w77-94w6",
+          "aliases": [
+            "CVE-2026-63374",
+            "GHSA-82r6-8w77-94w6"
+          ],
+          "riskClasses": [
+            "tls-identity-bypass"
+          ],
+          "locations": [
+            "/usr/lib/python3.14/site-packages/anyio-4.13.0.dist-info/METADATA",
+            "/usr/lib/python3.14/site-packages/anyio-4.13.0.dist-info/top_level.txt"
+          ],
+          "fixVersions": [
+            "4.14.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.4",
+          "advisory": "GO-2026-6613",
+          "aliases": [
+            "CVE-2026-94439",
+            "GO-2026-6613"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/usr/bin/cosign"
+          ],
+          "fixVersions": [
+            "1.26.9",
+            "1.27.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.27.1",
+          "advisory": "GO-2026-6613",
+          "aliases": [
+            "CVE-2026-94439",
+            "GO-2026-6613"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+            "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+            "/usr/bin/tailscale",
+            "/usr/bin/tailscaled"
+          ],
+          "fixVersions": [
+            "1.26.9",
+            "1.27.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.4",
+          "advisory": "GO-2026-6605",
+          "aliases": [
+            "CVE-2026-56866",
+            "GO-2026-6605"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/usr/bin/cosign"
+          ],
+          "fixVersions": [
+            "1.26.9",
+            "1.27.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.27.1",
+          "advisory": "GO-2026-6605",
+          "aliases": [
+            "CVE-2026-56866",
+            "GO-2026-6605"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+            "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+            "/usr/bin/tailscale",
+            "/usr/bin/tailscaled"
+          ],
+          "fixVersions": [
+            "1.26.9",
+            "1.27.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.40.0",
+          "advisory": "GO-2026-6610",
+          "aliases": [
+            "CVE-2026-78660",
+            "GO-2026-6610"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+            "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+            "/usr/bin/glow",
+            "/usr/bin/gum"
+          ],
+          "fixVersions": [
+            "0.60.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.48.0",
+          "advisory": "GO-2026-6610",
+          "aliases": [
+            "CVE-2026-78660",
+            "GO-2026-6610"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ],
+          "fixVersions": [
+            "0.60.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.55.0",
+          "advisory": "GO-2026-6610",
+          "aliases": [
+            "CVE-2026-78660",
+            "GO-2026-6610"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/19/07b725d2d82866531bee698973a08e6c438abaace3b61723709ea531853945.file",
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/sysroot/ostree/repo/objects/70/1bccba378f262def36123d3245e03a4442eb1f5cb37e43e901bd1c68954622.file",
+            "/sysroot/ostree/repo/objects/75/3546d15a9cdd047adccb841b239b2b0c2c25deb15c5edcd9d94801f60325c3.file",
+            "/sysroot/ostree/repo/objects/8e/c5583db8e1709e446e0abbcb470108ba680fcf718835713b907e0f9ab05d02.file",
+            "/sysroot/ostree/repo/objects/d1/6202c07880b5c003452384c62878ebf5155cd81a4e9befa180f485ebcc9693.file",
+            "/sysroot/ostree/repo/objects/f4/4b3304bc30b41a152a41fe1248228b052d2d2c31c69c131e4d85e874530d1c.file",
+            "/usr/bin/containerd",
+            "/usr/bin/containerd-shim-runc-v2",
+            "/usr/bin/containerd-stress",
+            "/usr/bin/ctr",
+            "/usr/bin/rclone",
+            "/usr/bin/restic",
+            "/usr/bin/runc",
+            "/usr/bin/yq"
+          ],
+          "fixVersions": [
+            "0.60.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.56.0",
+          "advisory": "GO-2026-6610",
+          "aliases": [
+            "CVE-2026-78660",
+            "GO-2026-6610"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/usr/bin/cosign"
+          ],
+          "fixVersions": [
+            "0.60.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.57.0",
+          "advisory": "GO-2026-6610",
+          "aliases": [
+            "CVE-2026-78660",
+            "GO-2026-6610"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+            "/usr/bin/buildah",
+            "/usr/bin/podman"
+          ],
+          "fixVersions": [
+            "0.60.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.59.0",
+          "advisory": "GO-2026-6610",
+          "aliases": [
+            "CVE-2026-78660",
+            "GO-2026-6610"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+            "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+            "/usr/bin/tailscale",
+            "/usr/bin/tailscaled"
+          ],
+          "fixVersions": [
+            "0.60.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.4",
+          "advisory": "GO-2026-6610",
+          "aliases": [
+            "CVE-2026-78660",
+            "GO-2026-6610"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/usr/bin/cosign"
+          ],
+          "fixVersions": [
+            "1.26.9"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.27.1",
+          "advisory": "GO-2026-6610",
+          "aliases": [
+            "CVE-2026-78660",
+            "GO-2026-6610"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+            "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+            "/usr/bin/tailscale",
+            "/usr/bin/tailscaled"
+          ],
+          "fixVersions": [
+            "1.27.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/mod@v0.20.0",
+          "advisory": "GO-2026-6180",
+          "aliases": [
+            "CVE-2026-56864",
+            "GO-2026-6180"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+            "/usr/bin/toolbox"
+          ],
+          "fixVersions": [
+            "0.40.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/mod@v0.36.0",
+          "advisory": "GO-2026-6180",
+          "aliases": [
+            "CVE-2026-56864",
+            "GO-2026-6180"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/75/3546d15a9cdd047adccb841b239b2b0c2c25deb15c5edcd9d94801f60325c3.file",
+            "/sysroot/ostree/repo/objects/f4/4b3304bc30b41a152a41fe1248228b052d2d2c31c69c131e4d85e874530d1c.file",
+            "/usr/bin/containerd",
+            "/usr/bin/ctr"
+          ],
+          "fixVersions": [
+            "0.40.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/mod@v0.37.0",
+          "advisory": "GO-2026-6180",
+          "aliases": [
+            "CVE-2026-56864",
+            "GO-2026-6180"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/usr/bin/cosign"
+          ],
+          "fixVersions": [
+            "0.40.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+          "advisory": "CVE-2026-56864",
+          "aliases": [
+            "CVE-2026-56864"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+            "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+            "/usr/bin/glow",
+            "/usr/bin/gum"
+          ],
+          "fixVersions": [
+            "1.25.13",
+            "1.26.6",
+            "1.27.0-rc.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.4",
+          "advisory": "CVE-2026-56864",
+          "aliases": [
+            "CVE-2026-56864"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/usr/bin/cosign"
+          ],
+          "fixVersions": [
+            "1.25.13",
+            "1.26.6",
+            "1.27.0-rc.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.4-X%3Anodwarf5",
+          "advisory": "CVE-2026-56864",
+          "aliases": [
+            "CVE-2026-56864"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/sysroot/ostree/repo/objects/cb/41b7c77feb2ecdb70d6190f3ec74a9e5830b713396db0b33888e3a31fb1d80.file",
+            "/usr/bin/ipp-usb",
+            "/usr/bin/rclone"
+          ],
+          "fixVersions": [
+            "1.25.13",
+            "1.26.6",
+            "1.27.0-rc.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.5-X%3Anodwarf5",
+          "advisory": "CVE-2026-56864",
+          "aliases": [
+            "CVE-2026-56864"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/8e/c5583db8e1709e446e0abbcb470108ba680fcf718835713b907e0f9ab05d02.file",
+            "/usr/bin/restic",
+            "/usr/bin/yq"
+          ],
+          "fixVersions": [
+            "1.25.13",
+            "1.26.6",
+            "1.27.0-rc.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+          "advisory": "CVE-2026-56864",
+          "aliases": [
+            "CVE-2026-56864"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+            "/usr/bin/toolbox"
+          ],
+          "fixVersions": [
+            "1.25.13",
+            "1.26.6",
+            "1.27.0-rc.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+          "advisory": "CVE-2026-27144",
+          "aliases": [
+            "CVE-2026-27144"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+            "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+            "/usr/bin/glow",
+            "/usr/bin/gum"
+          ],
+          "fixVersions": [
+            "1.25.9",
+            "1.26.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+          "advisory": "CVE-2026-27144",
+          "aliases": [
+            "CVE-2026-27144"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+            "/usr/bin/toolbox"
+          ],
+          "fixVersions": [
+            "1.25.9",
+            "1.26.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+          "advisory": "CVE-2026-39822",
+          "aliases": [
+            "CVE-2026-39822"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+            "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+            "/usr/bin/glow",
+            "/usr/bin/gum"
+          ],
+          "fixVersions": [
+            "1.25.12",
+            "1.26.5",
+            "1.27.0-rc.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.4",
+          "advisory": "CVE-2026-39822",
+          "aliases": [
+            "CVE-2026-39822"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/usr/bin/cosign"
+          ],
+          "fixVersions": [
+            "1.25.12",
+            "1.26.5",
+            "1.27.0-rc.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.4",
+          "advisory": "GO-2026-4970",
+          "aliases": [
+            "CVE-2026-39822",
+            "GO-2026-4970"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/usr/bin/cosign"
+          ],
+          "fixVersions": [
+            "1.25.12",
+            "1.26.5",
+            "1.27.0-rc.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.4-X%3Anodwarf5",
+          "advisory": "CVE-2026-39822",
+          "aliases": [
+            "CVE-2026-39822"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/sysroot/ostree/repo/objects/cb/41b7c77feb2ecdb70d6190f3ec74a9e5830b713396db0b33888e3a31fb1d80.file",
+            "/usr/bin/ipp-usb",
+            "/usr/bin/rclone"
+          ],
+          "fixVersions": [
+            "1.25.12",
+            "1.26.5",
+            "1.27.0-rc.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+          "advisory": "CVE-2026-39822",
+          "aliases": [
+            "CVE-2026-39822"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+            "/usr/bin/toolbox"
+          ],
+          "fixVersions": [
+            "1.25.12",
+            "1.26.5",
+            "1.27.0-rc.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+          "advisory": "GHSA-c476-6w5q-jw77",
+          "aliases": [
+            "CVE-2026-88017",
+            "GHSA-c476-6w5q-jw77"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/usr/bin/rclone"
+          ],
+          "fixVersions": [
+            "1.75.1"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/mod@v0.20.0",
+          "advisory": "GO-2026-6179",
+          "aliases": [
+            "CVE-2026-56865",
+            "GO-2026-6179"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+            "/usr/bin/toolbox"
+          ],
+          "fixVersions": [
+            "0.40.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/mod@v0.36.0",
+          "advisory": "GO-2026-6179",
+          "aliases": [
+            "CVE-2026-56865",
+            "GO-2026-6179"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/75/3546d15a9cdd047adccb841b239b2b0c2c25deb15c5edcd9d94801f60325c3.file",
+            "/sysroot/ostree/repo/objects/f4/4b3304bc30b41a152a41fe1248228b052d2d2c31c69c131e4d85e874530d1c.file",
+            "/usr/bin/containerd",
+            "/usr/bin/ctr"
+          ],
+          "fixVersions": [
+            "0.40.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/mod@v0.37.0",
+          "advisory": "GO-2026-6179",
+          "aliases": [
+            "CVE-2026-56865",
+            "GO-2026-6179"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/usr/bin/cosign"
+          ],
+          "fixVersions": [
+            "0.40.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+          "advisory": "CVE-2026-56865",
+          "aliases": [
+            "CVE-2026-56865"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+            "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+            "/usr/bin/glow",
+            "/usr/bin/gum"
+          ],
+          "fixVersions": [
+            "1.25.13",
+            "1.26.6",
+            "1.27.0-rc.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.4",
+          "advisory": "CVE-2026-56865",
+          "aliases": [
+            "CVE-2026-56865"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/usr/bin/cosign"
+          ],
+          "fixVersions": [
+            "1.25.13",
+            "1.26.6",
+            "1.27.0-rc.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.4-X%3Anodwarf5",
+          "advisory": "CVE-2026-56865",
+          "aliases": [
+            "CVE-2026-56865"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/sysroot/ostree/repo/objects/cb/41b7c77feb2ecdb70d6190f3ec74a9e5830b713396db0b33888e3a31fb1d80.file",
+            "/usr/bin/ipp-usb",
+            "/usr/bin/rclone"
+          ],
+          "fixVersions": [
+            "1.25.13",
+            "1.26.6",
+            "1.27.0-rc.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.5-X%3Anodwarf5",
+          "advisory": "CVE-2026-56865",
+          "aliases": [
+            "CVE-2026-56865"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/8e/c5583db8e1709e446e0abbcb470108ba680fcf718835713b907e0f9ab05d02.file",
+            "/usr/bin/restic",
+            "/usr/bin/yq"
+          ],
+          "fixVersions": [
+            "1.25.13",
+            "1.26.6",
+            "1.27.0-rc.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+          "advisory": "CVE-2026-56865",
+          "aliases": [
+            "CVE-2026-56865"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+            "/usr/bin/toolbox"
+          ],
+          "fixVersions": [
+            "1.25.13",
+            "1.26.6",
+            "1.27.0-rc.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/google.golang.org/grpc@v1.72.2",
+          "advisory": "GHSA-hrxh-6v49-42gf",
+          "aliases": [
+            "GHSA-hrxh-6v49-42gf"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+            "/usr/bin/buildah",
+            "/usr/bin/podman"
+          ],
+          "fixVersions": [
+            "1.82.1"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/google.golang.org/grpc@v1.79.3",
+          "advisory": "GHSA-hrxh-6v49-42gf",
+          "aliases": [
+            "GHSA-hrxh-6v49-42gf"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ],
+          "fixVersions": [
+            "1.82.1"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/google.golang.org/grpc@v1.80.0",
+          "advisory": "GHSA-hrxh-6v49-42gf",
+          "aliases": [
+            "GHSA-hrxh-6v49-42gf"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/sysroot/ostree/repo/objects/70/1bccba378f262def36123d3245e03a4442eb1f5cb37e43e901bd1c68954622.file",
+            "/sysroot/ostree/repo/objects/75/3546d15a9cdd047adccb841b239b2b0c2c25deb15c5edcd9d94801f60325c3.file",
+            "/sysroot/ostree/repo/objects/d1/6202c07880b5c003452384c62878ebf5155cd81a4e9befa180f485ebcc9693.file",
+            "/sysroot/ostree/repo/objects/f4/4b3304bc30b41a152a41fe1248228b052d2d2c31c69c131e4d85e874530d1c.file",
+            "/usr/bin/containerd",
+            "/usr/bin/containerd-shim-runc-v2",
+            "/usr/bin/containerd-stress",
+            "/usr/bin/ctr",
+            "/usr/bin/rclone"
+          ],
+          "fixVersions": [
+            "1.82.1"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/google.golang.org/grpc@v1.81.1",
+          "advisory": "GHSA-hrxh-6v49-42gf",
+          "aliases": [
+            "GHSA-hrxh-6v49-42gf"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/8e/c5583db8e1709e446e0abbcb470108ba680fcf718835713b907e0f9ab05d02.file",
+            "/usr/bin/restic"
+          ],
+          "fixVersions": [
+            "1.82.1"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/google.golang.org/grpc@v1.82.0",
+          "advisory": "GHSA-hrxh-6v49-42gf",
+          "aliases": [
+            "GHSA-hrxh-6v49-42gf"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/usr/bin/cosign"
+          ],
+          "fixVersions": [
+            "1.82.1"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        }
+      ]
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "blockingPairs": 119,
+      "findings": [
+        {
+          "component": "pkg:golang/google.golang.org/grpc@v1.72.2",
+          "advisory": "GHSA-p77j-4mvh-x3m3",
+          "aliases": [
+            "CVE-2026-33186",
+            "GHSA-p77j-4mvh-x3m3"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/90/2251a93331aa5e6a9393d0850cd6e647ef9be08f4fd745c9fa3e861c9aa058.file",
+            "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+            "/usr/bin/buildah",
+            "/usr/bin/podman",
+            "/usr/bin/podman-tui"
+          ],
+          "fixVersions": [
+            "1.79.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.36.0",
+          "advisory": "GHSA-f5wc-c3c7-36mc",
+          "aliases": [
+            "CVE-2026-39832",
+            "GHSA-f5wc-c3c7-36mc"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+            "/usr/bin/git-lfs"
+          ],
+          "fixVersions": [
+            "0.52.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.49.0",
+          "advisory": "GHSA-f5wc-c3c7-36mc",
+          "aliases": [
+            "CVE-2026-39832",
+            "GHSA-f5wc-c3c7-36mc"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/usr/bin/incus-agent"
+          ],
+          "fixVersions": [
+            "0.52.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.50.0",
+          "advisory": "GHSA-f5wc-c3c7-36mc",
+          "aliases": [
+            "CVE-2026-39832",
+            "GHSA-f5wc-c3c7-36mc"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+            "/usr/libexec/podman/gvproxy"
+          ],
+          "fixVersions": [
+            "0.52.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+          "advisory": "CVE-2026-27143",
+          "aliases": [
+            "CVE-2026-27143"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/0e/295cf756665b586a2e7184404790e668bc4a51494a19b13b4d5398dcfb3867.file",
+            "/sysroot/ostree/repo/objects/25/8f910dfac74f9ad2f618152c0e8fd723ff234605646c445c6e38e0bc6e950b.file",
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/sysroot/ostree/repo/objects/65/cd93d36c96a2405df94f220abdc47a006555f9382cf62415fd590aa92b1e65.file",
+            "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+            "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+            "/usr/bin/glow",
+            "/usr/bin/gum",
+            "/usr/bin/incus",
+            "/usr/bin/incus-agent",
+            "/usr/libexec/incus/incus-user",
+            "/usr/libexec/incus/incusd"
+          ],
+          "fixVersions": [
+            "1.25.9",
+            "1.26.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+          "advisory": "CVE-2026-27143",
+          "aliases": [
+            "CVE-2026-27143"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+            "/usr/bin/toolbox"
+          ],
+          "fixVersions": [
+            "1.25.9",
+            "1.26.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+          "advisory": "CVE-2026-33811",
+          "aliases": [
+            "CVE-2026-33811"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/0e/295cf756665b586a2e7184404790e668bc4a51494a19b13b4d5398dcfb3867.file",
+            "/sysroot/ostree/repo/objects/25/8f910dfac74f9ad2f618152c0e8fd723ff234605646c445c6e38e0bc6e950b.file",
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/sysroot/ostree/repo/objects/65/cd93d36c96a2405df94f220abdc47a006555f9382cf62415fd590aa92b1e65.file",
+            "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+            "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+            "/usr/bin/glow",
+            "/usr/bin/gum",
+            "/usr/bin/incus",
+            "/usr/bin/incus-agent",
+            "/usr/libexec/incus/incus-user",
+            "/usr/libexec/incus/incusd"
+          ],
+          "fixVersions": [
+            "1.25.10",
+            "1.26.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.2-X%3Anodwarf5",
+          "advisory": "CVE-2026-33811",
+          "aliases": [
+            "CVE-2026-33811"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/6d/94a749c1087ec61710ab873c0d3277269eb47debe4b51c7602409969f732a8.file",
+            "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+            "/usr/libexec/podman/gvforwarder",
+            "/usr/libexec/podman/gvproxy"
+          ],
+          "fixVersions": [
+            "1.25.10",
+            "1.26.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+          "advisory": "CVE-2026-33811",
+          "aliases": [
+            "CVE-2026-33811"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+            "/usr/bin/toolbox"
+          ],
+          "fixVersions": [
+            "1.25.10",
+            "1.26.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.36.0",
+          "advisory": "GHSA-5cgq-3rg8-m6cv",
+          "aliases": [
+            "CVE-2026-42508",
+            "GHSA-5cgq-3rg8-m6cv"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+            "/usr/bin/git-lfs"
+          ],
+          "fixVersions": [
+            "0.52.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.49.0",
+          "advisory": "GHSA-5cgq-3rg8-m6cv",
+          "aliases": [
+            "CVE-2026-42508",
+            "GHSA-5cgq-3rg8-m6cv"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/usr/bin/incus-agent"
+          ],
+          "fixVersions": [
+            "0.52.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.50.0",
+          "advisory": "GHSA-5cgq-3rg8-m6cv",
+          "aliases": [
+            "CVE-2026-42508",
+            "GHSA-5cgq-3rg8-m6cv"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+            "/usr/libexec/podman/gvproxy"
+          ],
+          "fixVersions": [
+            "0.52.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.36.0",
+          "advisory": "GHSA-vgwf-h737-ff37",
+          "aliases": [
+            "CVE-2026-39830",
+            "GHSA-vgwf-h737-ff37"
+          ],
+          "riskClasses": [],
+          "locations": [
+            "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+            "/usr/bin/git-lfs"
+          ],
+          "fixVersions": [
+            "0.52.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.49.0",
+          "advisory": "GHSA-vgwf-h737-ff37",
+          "aliases": [
+            "CVE-2026-39830",
+            "GHSA-vgwf-h737-ff37"
+          ],
+          "riskClasses": [],
+          "locations": [
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/usr/bin/incus-agent"
+          ],
+          "fixVersions": [
+            "0.52.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.50.0",
+          "advisory": "GHSA-vgwf-h737-ff37",
+          "aliases": [
+            "CVE-2026-39830",
+            "GHSA-vgwf-h737-ff37"
+          ],
+          "riskClasses": [],
+          "locations": [
+            "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+            "/usr/libexec/podman/gvproxy"
+          ],
+          "fixVersions": [
+            "0.52.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.38.0",
+          "advisory": "GO-2026-5026",
+          "aliases": [
+            "CVE-2026-39821",
+            "GO-2026-5026"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+            "/usr/bin/git-lfs"
+          ],
+          "fixVersions": [
+            "0.55.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.40.0",
+          "advisory": "GO-2026-5026",
+          "aliases": [
+            "CVE-2026-39821",
+            "GO-2026-5026"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+            "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+            "/usr/bin/glow",
+            "/usr/bin/gum"
+          ],
+          "fixVersions": [
+            "0.55.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.48.0",
+          "advisory": "GO-2026-5026",
+          "aliases": [
+            "CVE-2026-39821",
+            "GO-2026-5026"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ],
+          "fixVersions": [
+            "0.55.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.52.0",
+          "advisory": "GO-2026-5026",
+          "aliases": [
+            "CVE-2026-39821",
+            "GO-2026-5026"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/usr/bin/incus-agent"
+          ],
+          "fixVersions": [
+            "0.55.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.53.0",
+          "advisory": "GO-2026-5026",
+          "aliases": [
+            "CVE-2026-39821",
+            "GO-2026-5026"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/6d/94a749c1087ec61710ab873c0d3277269eb47debe4b51c7602409969f732a8.file",
+            "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+            "/usr/libexec/podman/gvforwarder",
+            "/usr/libexec/podman/gvproxy"
+          ],
+          "fixVersions": [
+            "0.55.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.25.12",
+          "advisory": "GO-2026-5026",
+          "aliases": [
+            "CVE-2026-39821",
+            "GO-2026-5026"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+            "/usr/libexec/docker/cli-plugins/docker-model"
+          ],
+          "fixVersions": [
+            "1.25.13",
+            "1.26.6",
+            "1.27.0-rc.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.4",
+          "advisory": "GO-2026-5026",
+          "aliases": [
+            "CVE-2026-39821",
+            "GO-2026-5026"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/usr/bin/cosign"
+          ],
+          "fixVersions": [
+            "1.25.13",
+            "1.26.6",
+            "1.27.0-rc.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.38.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "riskClasses": [],
+          "locations": [
+            "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+            "/usr/bin/git-lfs"
+          ],
+          "fixVersions": [
+            "0.60.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.40.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "riskClasses": [],
+          "locations": [
+            "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+            "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+            "/usr/bin/glow",
+            "/usr/bin/gum"
+          ],
+          "fixVersions": [
+            "0.60.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.48.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "riskClasses": [],
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ],
+          "fixVersions": [
+            "0.60.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.52.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "riskClasses": [],
+          "locations": [
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/usr/bin/incus-agent"
+          ],
+          "fixVersions": [
+            "0.60.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.53.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "riskClasses": [],
+          "locations": [
+            "/sysroot/ostree/repo/objects/6d/94a749c1087ec61710ab873c0d3277269eb47debe4b51c7602409969f732a8.file",
+            "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+            "/usr/libexec/podman/gvforwarder",
+            "/usr/libexec/podman/gvproxy"
+          ],
+          "fixVersions": [
+            "0.60.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.55.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "riskClasses": [],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+            "/sysroot/ostree/repo/objects/8e/c5583db8e1709e446e0abbcb470108ba680fcf718835713b907e0f9ab05d02.file",
+            "/sysroot/ostree/repo/objects/90/2251a93331aa5e6a9393d0850cd6e647ef9be08f4fd745c9fa3e861c9aa058.file",
+            "/sysroot/ostree/repo/objects/94/edb58e77e87ab78c64d120de2d6c5e76d12a9fc90671dd9ebfa18e03f72029.file",
+            "/usr/bin/podman-tui",
+            "/usr/bin/rclone",
+            "/usr/bin/restic",
+            "/usr/bin/runc",
+            "/usr/bin/yq",
+            "/usr/libexec/docker/cli-plugins/docker-model"
+          ],
+          "fixVersions": [
+            "0.60.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.56.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "riskClasses": [],
+          "locations": [
+            "/usr/bin/cosign"
+          ],
+          "fixVersions": [
+            "0.60.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.57.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "riskClasses": [],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+            "/usr/bin/buildah",
+            "/usr/bin/podman"
+          ],
+          "fixVersions": [
+            "0.60.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.58.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "riskClasses": [],
+          "locations": [
+            "/sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file",
+            "/sysroot/ostree/repo/objects/28/9a163069c0d420700e407d2936c88343c7199051fcb2167a4e0dd505f8b123.file",
+            "/sysroot/ostree/repo/objects/2d/22e9d3905518951cfb5facea21864b7c403d447ceb4b10fd2c95e39dff293f.file",
+            "/sysroot/ostree/repo/objects/2e/801e49da654ab9f6d28238d987b7387d825ee88c8f7d7f47535edcf7d7f8a4.file",
+            "/sysroot/ostree/repo/objects/89/38c593efda2631da84deb9abdc8d6a48d14cd3f582ef6c7e0d63092bae1cbb.file",
+            "/sysroot/ostree/repo/objects/ac/79a1c7b0143c61cbb6938d323c81a7f1aa4fe3939e910855dca32dd82acfba.file",
+            "/usr/bin/containerd",
+            "/usr/bin/containerd-shim-runc-v2",
+            "/usr/bin/ctr",
+            "/usr/bin/gen-manpages",
+            "/usr/bin/rootlesskit",
+            "/usr/libexec/docker/cli-plugins/docker-compose"
+          ],
+          "fixVersions": [
+            "0.60.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.59.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "riskClasses": [],
+          "locations": [
+            "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+            "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+            "/sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file",
+            "/usr/bin/tailscale",
+            "/usr/bin/tailscaled",
+            "/usr/libexec/docker/cli-plugins/docker-buildx"
+          ],
+          "fixVersions": [
+            "0.60.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.25.12",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "riskClasses": [],
+          "locations": [
+            "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+            "/usr/libexec/docker/cli-plugins/docker-model"
+          ],
+          "fixVersions": [
+            "1.26.9"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.4",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "riskClasses": [],
+          "locations": [
+            "/usr/bin/cosign"
+          ],
+          "fixVersions": [
+            "1.26.9"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.8",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "riskClasses": [],
+          "locations": [
+            "/sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file",
+            "/sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file",
+            "/usr/libexec/docker/cli-plugins/docker-buildx",
+            "/usr/libexec/docker/cli-plugins/docker-compose"
+          ],
+          "fixVersions": [
+            "1.26.9"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.27.1",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "riskClasses": [],
+          "locations": [
+            "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+            "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+            "/usr/bin/tailscale",
+            "/usr/bin/tailscaled"
+          ],
+          "fixVersions": [
+            "1.27.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+          "advisory": "GHSA-xwwr-4h3p-r22c",
+          "aliases": [
+            "CVE-2026-88018",
+            "GHSA-xwwr-4h3p-r22c"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/usr/bin/rclone"
+          ],
+          "fixVersions": [
+            "1.75.1"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.36.0",
+          "advisory": "GHSA-x527-x647-q7gg",
+          "aliases": [
+            "CVE-2026-46595",
+            "GHSA-x527-x647-q7gg"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+            "/usr/bin/git-lfs"
+          ],
+          "fixVersions": [
+            "0.52.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.49.0",
+          "advisory": "GHSA-x527-x647-q7gg",
+          "aliases": [
+            "CVE-2026-46595",
+            "GHSA-x527-x647-q7gg"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/usr/bin/incus-agent"
+          ],
+          "fixVersions": [
+            "0.52.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.50.0",
+          "advisory": "GHSA-x527-x647-q7gg",
+          "aliases": [
+            "CVE-2026-46595",
+            "GHSA-x527-x647-q7gg"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+            "/usr/libexec/podman/gvproxy"
+          ],
+          "fixVersions": [
+            "0.52.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+          "advisory": "CVE-2026-27137",
+          "aliases": [
+            "CVE-2026-27137"
+          ],
+          "riskClasses": [
+            "tls-identity-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+            "/usr/bin/toolbox"
+          ],
+          "fixVersions": [
+            "1.26.1"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+          "advisory": "GHSA-fqj9-69pf-6pjg",
+          "aliases": [
+            "CVE-2026-59733",
+            "GHSA-fqj9-69pf-6pjg"
+          ],
+          "riskClasses": [
+            "major-data-loss"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/usr/bin/rclone"
+          ],
+          "fixVersions": [
+            "1.74.4"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+          "advisory": "GHSA-p569-5gjg-9cmj",
+          "aliases": [
+            "CVE-2026-88044",
+            "GHSA-p569-5gjg-9cmj"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/usr/bin/rclone"
+          ],
+          "fixVersions": [
+            "1.75.1"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.36.0",
+          "advisory": "GHSA-jppx-rxg9-jmrx",
+          "aliases": [
+            "CVE-2026-39833",
+            "GHSA-jppx-rxg9-jmrx"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+            "/usr/bin/git-lfs"
+          ],
+          "fixVersions": [
+            "0.52.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.49.0",
+          "advisory": "GHSA-jppx-rxg9-jmrx",
+          "aliases": [
+            "CVE-2026-39833",
+            "GHSA-jppx-rxg9-jmrx"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/usr/bin/incus-agent"
+          ],
+          "fixVersions": [
+            "0.52.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.50.0",
+          "advisory": "GHSA-jppx-rxg9-jmrx",
+          "aliases": [
+            "CVE-2026-39833",
+            "GHSA-jppx-rxg9-jmrx"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+            "/usr/libexec/podman/gvproxy"
+          ],
+          "fixVersions": [
+            "0.52.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.36.0",
+          "advisory": "GHSA-89gr-r52h-f8rx",
+          "aliases": [
+            "CVE-2026-39831",
+            "GHSA-89gr-r52h-f8rx"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+            "/usr/bin/git-lfs"
+          ],
+          "fixVersions": [
+            "0.52.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.49.0",
+          "advisory": "GHSA-89gr-r52h-f8rx",
+          "aliases": [
+            "CVE-2026-39831",
+            "GHSA-89gr-r52h-f8rx"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/usr/bin/incus-agent"
+          ],
+          "fixVersions": [
+            "0.52.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.50.0",
+          "advisory": "GHSA-89gr-r52h-f8rx",
+          "aliases": [
+            "CVE-2026-39831",
+            "GHSA-89gr-r52h-f8rx"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+            "/usr/libexec/podman/gvproxy"
+          ],
+          "fixVersions": [
+            "0.52.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/github.com/opencontainers/selinux@v1.12.0",
+          "advisory": "GHSA-cgrx-mc8f-2prm",
+          "aliases": [
+            "CVE-2025-52881",
+            "GHSA-cgrx-mc8f-2prm"
+          ],
+          "riskClasses": [
+            "container-escape"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ],
+          "fixVersions": [
+            "1.13.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+          "advisory": "GHSA-2m8m-jhrm-w6j2",
+          "aliases": [
+            "CVE-2026-71312",
+            "GHSA-2m8m-jhrm-w6j2"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/usr/bin/rclone"
+          ],
+          "fixVersions": [
+            "1.75.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+          "advisory": "GHSA-45pq-889g-fcgh",
+          "aliases": [
+            "CVE-2026-71309",
+            "GHSA-45pq-889g-fcgh"
+          ],
+          "riskClasses": [
+            "major-data-loss"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/usr/bin/rclone"
+          ],
+          "fixVersions": [
+            "1.75.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:npm/shell-quote@1.10.0",
+          "advisory": "GHSA-pqg4-j6r4-53mv",
+          "aliases": [
+            "CVE-2026-102422",
+            "GHSA-pqg4-j6r4-53mv"
+          ],
+          "riskClasses": [],
+          "locations": [
+            "/usr/share/code/resources/app/node_modules/shell-quote/package.json"
+          ],
+          "fixVersions": [
+            "1.11.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.36.0",
+          "advisory": "GO-2026-6303",
+          "aliases": [
+            "CVE-2026-56854",
+            "GO-2026-6303"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+            "/usr/bin/git-lfs"
+          ],
+          "fixVersions": [
+            "0.55.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.49.0",
+          "advisory": "GO-2026-6303",
+          "aliases": [
+            "CVE-2026-56854",
+            "GO-2026-6303"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/usr/bin/incus-agent"
+          ],
+          "fixVersions": [
+            "0.55.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.50.0",
+          "advisory": "GO-2026-6303",
+          "aliases": [
+            "CVE-2026-56854",
+            "GO-2026-6303"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+            "/usr/libexec/podman/gvproxy"
+          ],
+          "fixVersions": [
+            "0.55.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.52.0",
+          "advisory": "GO-2026-6303",
+          "aliases": [
+            "CVE-2026-56854",
+            "GO-2026-6303"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/sysroot/ostree/repo/objects/8e/c5583db8e1709e446e0abbcb470108ba680fcf718835713b907e0f9ab05d02.file",
+            "/usr/bin/rclone",
+            "/usr/bin/restic"
+          ],
+          "fixVersions": [
+            "0.55.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.53.0",
+          "advisory": "GO-2026-6303",
+          "aliases": [
+            "CVE-2026-56854",
+            "GO-2026-6303"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+            "/sysroot/ostree/repo/objects/90/2251a93331aa5e6a9393d0850cd6e647ef9be08f4fd745c9fa3e861c9aa058.file",
+            "/usr/bin/cosign",
+            "/usr/bin/podman-tui",
+            "/usr/libexec/docker/cli-plugins/docker-model"
+          ],
+          "fixVersions": [
+            "0.55.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/github.com/moby/go-archive@v0.1.0",
+          "advisory": "GHSA-hfg8-hc9c-6c3h",
+          "aliases": [
+            "CVE-2026-17106",
+            "GHSA-hfg8-hc9c-6c3h"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+            "/usr/bin/buildah",
+            "/usr/bin/podman"
+          ],
+          "fixVersions": [
+            "0.3.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/github.com/moby/go-archive@v0.2.0",
+          "advisory": "GHSA-hfg8-hc9c-6c3h",
+          "aliases": [
+            "CVE-2026-17106",
+            "GHSA-hfg8-hc9c-6c3h"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file",
+            "/usr/libexec/docker/cli-plugins/docker-buildx"
+          ],
+          "fixVersions": [
+            "0.3.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+          "advisory": "GHSA-cf44-9pgv-m4xc",
+          "aliases": [
+            "CVE-2026-54572",
+            "GHSA-cf44-9pgv-m4xc"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/usr/bin/rclone"
+          ],
+          "fixVersions": [
+            "1.74.4"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+          "advisory": "CVE-2026-33810",
+          "aliases": [
+            "CVE-2026-33810"
+          ],
+          "riskClasses": [
+            "tls-identity-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/0e/295cf756665b586a2e7184404790e668bc4a51494a19b13b4d5398dcfb3867.file",
+            "/sysroot/ostree/repo/objects/25/8f910dfac74f9ad2f618152c0e8fd723ff234605646c445c6e38e0bc6e950b.file",
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/sysroot/ostree/repo/objects/65/cd93d36c96a2405df94f220abdc47a006555f9382cf62415fd590aa92b1e65.file",
+            "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+            "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+            "/usr/bin/glow",
+            "/usr/bin/gum",
+            "/usr/bin/incus",
+            "/usr/bin/incus-agent",
+            "/usr/libexec/incus/incus-user",
+            "/usr/libexec/incus/incusd"
+          ],
+          "fixVersions": [
+            "1.26.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+          "advisory": "CVE-2026-33810",
+          "aliases": [
+            "CVE-2026-33810"
+          ],
+          "riskClasses": [
+            "tls-identity-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+            "/usr/bin/toolbox"
+          ],
+          "fixVersions": [
+            "1.26.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:pypi/anyio@4.13.0",
+          "advisory": "GHSA-82r6-8w77-94w6",
+          "aliases": [
+            "CVE-2026-63374",
+            "GHSA-82r6-8w77-94w6"
+          ],
+          "riskClasses": [
+            "tls-identity-bypass"
+          ],
+          "locations": [
+            "/usr/lib/python3.14/site-packages/anyio-4.13.0.dist-info/METADATA",
+            "/usr/lib/python3.14/site-packages/anyio-4.13.0.dist-info/top_level.txt"
+          ],
+          "fixVersions": [
+            "4.14.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.25.12",
+          "advisory": "GO-2026-6613",
+          "aliases": [
+            "CVE-2026-94439",
+            "GO-2026-6613"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+            "/usr/libexec/docker/cli-plugins/docker-model"
+          ],
+          "fixVersions": [
+            "1.26.9",
+            "1.27.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.4",
+          "advisory": "GO-2026-6613",
+          "aliases": [
+            "CVE-2026-94439",
+            "GO-2026-6613"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/usr/bin/cosign"
+          ],
+          "fixVersions": [
+            "1.26.9",
+            "1.27.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.8",
+          "advisory": "GO-2026-6613",
+          "aliases": [
+            "CVE-2026-94439",
+            "GO-2026-6613"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file",
+            "/sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file",
+            "/usr/libexec/docker/cli-plugins/docker-buildx",
+            "/usr/libexec/docker/cli-plugins/docker-compose"
+          ],
+          "fixVersions": [
+            "1.26.9",
+            "1.27.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.27.1",
+          "advisory": "GO-2026-6613",
+          "aliases": [
+            "CVE-2026-94439",
+            "GO-2026-6613"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+            "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+            "/usr/bin/tailscale",
+            "/usr/bin/tailscaled"
+          ],
+          "fixVersions": [
+            "1.26.9",
+            "1.27.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.25.12",
+          "advisory": "GO-2026-6605",
+          "aliases": [
+            "CVE-2026-56866",
+            "GO-2026-6605"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+            "/usr/libexec/docker/cli-plugins/docker-model"
+          ],
+          "fixVersions": [
+            "1.26.9",
+            "1.27.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.4",
+          "advisory": "GO-2026-6605",
+          "aliases": [
+            "CVE-2026-56866",
+            "GO-2026-6605"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/usr/bin/cosign"
+          ],
+          "fixVersions": [
+            "1.26.9",
+            "1.27.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.8",
+          "advisory": "GO-2026-6605",
+          "aliases": [
+            "CVE-2026-56866",
+            "GO-2026-6605"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file",
+            "/sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file",
+            "/usr/libexec/docker/cli-plugins/docker-buildx",
+            "/usr/libexec/docker/cli-plugins/docker-compose"
+          ],
+          "fixVersions": [
+            "1.26.9",
+            "1.27.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.27.1",
+          "advisory": "GO-2026-6605",
+          "aliases": [
+            "CVE-2026-56866",
+            "GO-2026-6605"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+            "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+            "/usr/bin/tailscale",
+            "/usr/bin/tailscaled"
+          ],
+          "fixVersions": [
+            "1.26.9",
+            "1.27.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/github.com/sigstore/fulcio@v1.7.1",
+          "advisory": "GHSA-f5mr-q85p-6hh6",
+          "aliases": [
+            "CVE-2026-49478",
+            "GHSA-f5mr-q85p-6hh6"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/90/2251a93331aa5e6a9393d0850cd6e647ef9be08f4fd745c9fa3e861c9aa058.file",
+            "/usr/bin/podman-tui"
+          ],
+          "fixVersions": [
+            "1.8.6"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.38.0",
+          "advisory": "GO-2026-6610",
+          "aliases": [
+            "CVE-2026-78660",
+            "GO-2026-6610"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+            "/usr/bin/git-lfs"
+          ],
+          "fixVersions": [
+            "0.60.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.40.0",
+          "advisory": "GO-2026-6610",
+          "aliases": [
+            "CVE-2026-78660",
+            "GO-2026-6610"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+            "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+            "/usr/bin/glow",
+            "/usr/bin/gum"
+          ],
+          "fixVersions": [
+            "0.60.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.48.0",
+          "advisory": "GO-2026-6610",
+          "aliases": [
+            "CVE-2026-78660",
+            "GO-2026-6610"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ],
+          "fixVersions": [
+            "0.60.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.52.0",
+          "advisory": "GO-2026-6610",
+          "aliases": [
+            "CVE-2026-78660",
+            "GO-2026-6610"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/usr/bin/incus-agent"
+          ],
+          "fixVersions": [
+            "0.60.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.53.0",
+          "advisory": "GO-2026-6610",
+          "aliases": [
+            "CVE-2026-78660",
+            "GO-2026-6610"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/6d/94a749c1087ec61710ab873c0d3277269eb47debe4b51c7602409969f732a8.file",
+            "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+            "/usr/libexec/podman/gvforwarder",
+            "/usr/libexec/podman/gvproxy"
+          ],
+          "fixVersions": [
+            "0.60.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.55.0",
+          "advisory": "GO-2026-6610",
+          "aliases": [
+            "CVE-2026-78660",
+            "GO-2026-6610"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+            "/sysroot/ostree/repo/objects/8e/c5583db8e1709e446e0abbcb470108ba680fcf718835713b907e0f9ab05d02.file",
+            "/sysroot/ostree/repo/objects/90/2251a93331aa5e6a9393d0850cd6e647ef9be08f4fd745c9fa3e861c9aa058.file",
+            "/sysroot/ostree/repo/objects/94/edb58e77e87ab78c64d120de2d6c5e76d12a9fc90671dd9ebfa18e03f72029.file",
+            "/usr/bin/podman-tui",
+            "/usr/bin/rclone",
+            "/usr/bin/restic",
+            "/usr/bin/runc",
+            "/usr/bin/yq",
+            "/usr/libexec/docker/cli-plugins/docker-model"
+          ],
+          "fixVersions": [
+            "0.60.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.56.0",
+          "advisory": "GO-2026-6610",
+          "aliases": [
+            "CVE-2026-78660",
+            "GO-2026-6610"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/usr/bin/cosign"
+          ],
+          "fixVersions": [
+            "0.60.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.57.0",
+          "advisory": "GO-2026-6610",
+          "aliases": [
+            "CVE-2026-78660",
+            "GO-2026-6610"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+            "/usr/bin/buildah",
+            "/usr/bin/podman"
+          ],
+          "fixVersions": [
+            "0.60.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.58.0",
+          "advisory": "GO-2026-6610",
+          "aliases": [
+            "CVE-2026-78660",
+            "GO-2026-6610"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file",
+            "/sysroot/ostree/repo/objects/28/9a163069c0d420700e407d2936c88343c7199051fcb2167a4e0dd505f8b123.file",
+            "/sysroot/ostree/repo/objects/2d/22e9d3905518951cfb5facea21864b7c403d447ceb4b10fd2c95e39dff293f.file",
+            "/sysroot/ostree/repo/objects/2e/801e49da654ab9f6d28238d987b7387d825ee88c8f7d7f47535edcf7d7f8a4.file",
+            "/sysroot/ostree/repo/objects/89/38c593efda2631da84deb9abdc8d6a48d14cd3f582ef6c7e0d63092bae1cbb.file",
+            "/sysroot/ostree/repo/objects/ac/79a1c7b0143c61cbb6938d323c81a7f1aa4fe3939e910855dca32dd82acfba.file",
+            "/usr/bin/containerd",
+            "/usr/bin/containerd-shim-runc-v2",
+            "/usr/bin/ctr",
+            "/usr/bin/gen-manpages",
+            "/usr/bin/rootlesskit",
+            "/usr/libexec/docker/cli-plugins/docker-compose"
+          ],
+          "fixVersions": [
+            "0.60.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.59.0",
+          "advisory": "GO-2026-6610",
+          "aliases": [
+            "CVE-2026-78660",
+            "GO-2026-6610"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+            "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+            "/sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file",
+            "/usr/bin/tailscale",
+            "/usr/bin/tailscaled",
+            "/usr/libexec/docker/cli-plugins/docker-buildx"
+          ],
+          "fixVersions": [
+            "0.60.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.25.12",
+          "advisory": "GO-2026-6610",
+          "aliases": [
+            "CVE-2026-78660",
+            "GO-2026-6610"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+            "/usr/libexec/docker/cli-plugins/docker-model"
+          ],
+          "fixVersions": [
+            "1.26.9"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.4",
+          "advisory": "GO-2026-6610",
+          "aliases": [
+            "CVE-2026-78660",
+            "GO-2026-6610"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/usr/bin/cosign"
+          ],
+          "fixVersions": [
+            "1.26.9"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.8",
+          "advisory": "GO-2026-6610",
+          "aliases": [
+            "CVE-2026-78660",
+            "GO-2026-6610"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file",
+            "/sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file",
+            "/usr/libexec/docker/cli-plugins/docker-buildx",
+            "/usr/libexec/docker/cli-plugins/docker-compose"
+          ],
+          "fixVersions": [
+            "1.26.9"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.27.1",
+          "advisory": "GO-2026-6610",
+          "aliases": [
+            "CVE-2026-78660",
+            "GO-2026-6610"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+            "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+            "/usr/bin/tailscale",
+            "/usr/bin/tailscaled"
+          ],
+          "fixVersions": [
+            "1.27.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/mod@v0.20.0",
+          "advisory": "GO-2026-6180",
+          "aliases": [
+            "CVE-2026-56864",
+            "GO-2026-6180"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+            "/usr/bin/toolbox"
+          ],
+          "fixVersions": [
+            "0.40.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/mod@v0.37.0",
+          "advisory": "GO-2026-6180",
+          "aliases": [
+            "CVE-2026-56864",
+            "GO-2026-6180"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/usr/bin/cosign"
+          ],
+          "fixVersions": [
+            "0.40.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.25.12",
+          "advisory": "CVE-2026-56864",
+          "aliases": [
+            "CVE-2026-56864"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+            "/usr/libexec/docker/cli-plugins/docker-model"
+          ],
+          "fixVersions": [
+            "1.25.13",
+            "1.26.6",
+            "1.27.0-rc.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+          "advisory": "CVE-2026-56864",
+          "aliases": [
+            "CVE-2026-56864"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/0e/295cf756665b586a2e7184404790e668bc4a51494a19b13b4d5398dcfb3867.file",
+            "/sysroot/ostree/repo/objects/25/8f910dfac74f9ad2f618152c0e8fd723ff234605646c445c6e38e0bc6e950b.file",
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/sysroot/ostree/repo/objects/65/cd93d36c96a2405df94f220abdc47a006555f9382cf62415fd590aa92b1e65.file",
+            "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+            "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+            "/usr/bin/glow",
+            "/usr/bin/gum",
+            "/usr/bin/incus",
+            "/usr/bin/incus-agent",
+            "/usr/libexec/incus/incus-user",
+            "/usr/libexec/incus/incusd"
+          ],
+          "fixVersions": [
+            "1.25.13",
+            "1.26.6",
+            "1.27.0-rc.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.2-X%3Anodwarf5",
+          "advisory": "CVE-2026-56864",
+          "aliases": [
+            "CVE-2026-56864"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/6d/94a749c1087ec61710ab873c0d3277269eb47debe4b51c7602409969f732a8.file",
+            "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+            "/usr/libexec/podman/gvforwarder",
+            "/usr/libexec/podman/gvproxy"
+          ],
+          "fixVersions": [
+            "1.25.13",
+            "1.26.6",
+            "1.27.0-rc.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.4",
+          "advisory": "CVE-2026-56864",
+          "aliases": [
+            "CVE-2026-56864"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/usr/bin/cosign"
+          ],
+          "fixVersions": [
+            "1.25.13",
+            "1.26.6",
+            "1.27.0-rc.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.4-X%3Anodwarf5",
+          "advisory": "CVE-2026-56864",
+          "aliases": [
+            "CVE-2026-56864"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/sysroot/ostree/repo/objects/90/2251a93331aa5e6a9393d0850cd6e647ef9be08f4fd745c9fa3e861c9aa058.file",
+            "/sysroot/ostree/repo/objects/cb/41b7c77feb2ecdb70d6190f3ec74a9e5830b713396db0b33888e3a31fb1d80.file",
+            "/usr/bin/ipp-usb",
+            "/usr/bin/podman-tui",
+            "/usr/bin/rclone"
+          ],
+          "fixVersions": [
+            "1.25.13",
+            "1.26.6",
+            "1.27.0-rc.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.5-X%3Anodwarf5",
+          "advisory": "CVE-2026-56864",
+          "aliases": [
+            "CVE-2026-56864"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/8e/c5583db8e1709e446e0abbcb470108ba680fcf718835713b907e0f9ab05d02.file",
+            "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+            "/usr/bin/git-lfs",
+            "/usr/bin/restic",
+            "/usr/bin/yq"
+          ],
+          "fixVersions": [
+            "1.25.13",
+            "1.26.6",
+            "1.27.0-rc.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+          "advisory": "CVE-2026-56864",
+          "aliases": [
+            "CVE-2026-56864"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+            "/usr/bin/toolbox"
+          ],
+          "fixVersions": [
+            "1.25.13",
+            "1.26.6",
+            "1.27.0-rc.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+          "advisory": "CVE-2026-27144",
+          "aliases": [
+            "CVE-2026-27144"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/0e/295cf756665b586a2e7184404790e668bc4a51494a19b13b4d5398dcfb3867.file",
+            "/sysroot/ostree/repo/objects/25/8f910dfac74f9ad2f618152c0e8fd723ff234605646c445c6e38e0bc6e950b.file",
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/sysroot/ostree/repo/objects/65/cd93d36c96a2405df94f220abdc47a006555f9382cf62415fd590aa92b1e65.file",
+            "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+            "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+            "/usr/bin/glow",
+            "/usr/bin/gum",
+            "/usr/bin/incus",
+            "/usr/bin/incus-agent",
+            "/usr/libexec/incus/incus-user",
+            "/usr/libexec/incus/incusd"
+          ],
+          "fixVersions": [
+            "1.25.9",
+            "1.26.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+          "advisory": "CVE-2026-27144",
+          "aliases": [
+            "CVE-2026-27144"
+          ],
+          "riskClasses": [
+            "unresolved-serious"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+            "/usr/bin/toolbox"
+          ],
+          "fixVersions": [
+            "1.25.9",
+            "1.26.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+          "advisory": "CVE-2026-39822",
+          "aliases": [
+            "CVE-2026-39822"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/0e/295cf756665b586a2e7184404790e668bc4a51494a19b13b4d5398dcfb3867.file",
+            "/sysroot/ostree/repo/objects/25/8f910dfac74f9ad2f618152c0e8fd723ff234605646c445c6e38e0bc6e950b.file",
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/sysroot/ostree/repo/objects/65/cd93d36c96a2405df94f220abdc47a006555f9382cf62415fd590aa92b1e65.file",
+            "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+            "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+            "/usr/bin/glow",
+            "/usr/bin/gum",
+            "/usr/bin/incus",
+            "/usr/bin/incus-agent",
+            "/usr/libexec/incus/incus-user",
+            "/usr/libexec/incus/incusd"
+          ],
+          "fixVersions": [
+            "1.25.12",
+            "1.26.5",
+            "1.27.0-rc.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.2-X%3Anodwarf5",
+          "advisory": "CVE-2026-39822",
+          "aliases": [
+            "CVE-2026-39822"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/6d/94a749c1087ec61710ab873c0d3277269eb47debe4b51c7602409969f732a8.file",
+            "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+            "/usr/libexec/podman/gvforwarder",
+            "/usr/libexec/podman/gvproxy"
+          ],
+          "fixVersions": [
+            "1.25.12",
+            "1.26.5",
+            "1.27.0-rc.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.4",
+          "advisory": "CVE-2026-39822",
+          "aliases": [
+            "CVE-2026-39822"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/usr/bin/cosign"
+          ],
+          "fixVersions": [
+            "1.25.12",
+            "1.26.5",
+            "1.27.0-rc.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.4",
+          "advisory": "GO-2026-4970",
+          "aliases": [
+            "CVE-2026-39822",
+            "GO-2026-4970"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/usr/bin/cosign"
+          ],
+          "fixVersions": [
+            "1.25.12",
+            "1.26.5",
+            "1.27.0-rc.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.4-X%3Anodwarf5",
+          "advisory": "CVE-2026-39822",
+          "aliases": [
+            "CVE-2026-39822"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/sysroot/ostree/repo/objects/90/2251a93331aa5e6a9393d0850cd6e647ef9be08f4fd745c9fa3e861c9aa058.file",
+            "/sysroot/ostree/repo/objects/cb/41b7c77feb2ecdb70d6190f3ec74a9e5830b713396db0b33888e3a31fb1d80.file",
+            "/usr/bin/ipp-usb",
+            "/usr/bin/podman-tui",
+            "/usr/bin/rclone"
+          ],
+          "fixVersions": [
+            "1.25.12",
+            "1.26.5",
+            "1.27.0-rc.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+          "advisory": "CVE-2026-39822",
+          "aliases": [
+            "CVE-2026-39822"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+            "/usr/bin/toolbox"
+          ],
+          "fixVersions": [
+            "1.25.12",
+            "1.26.5",
+            "1.27.0-rc.2"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+          "advisory": "GHSA-c476-6w5q-jw77",
+          "aliases": [
+            "CVE-2026-88017",
+            "GHSA-c476-6w5q-jw77"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/usr/bin/rclone"
+          ],
+          "fixVersions": [
+            "1.75.1"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/mod@v0.20.0",
+          "advisory": "GO-2026-6179",
+          "aliases": [
+            "CVE-2026-56865",
+            "GO-2026-6179"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+            "/usr/bin/toolbox"
+          ],
+          "fixVersions": [
+            "0.40.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/golang.org/x/mod@v0.37.0",
+          "advisory": "GO-2026-6179",
+          "aliases": [
+            "CVE-2026-56865",
+            "GO-2026-6179"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/usr/bin/cosign"
+          ],
+          "fixVersions": [
+            "0.40.0"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.25.12",
+          "advisory": "CVE-2026-56865",
+          "aliases": [
+            "CVE-2026-56865"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+            "/usr/libexec/docker/cli-plugins/docker-model"
+          ],
+          "fixVersions": [
+            "1.25.13",
+            "1.26.6",
+            "1.27.0-rc.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+          "advisory": "CVE-2026-56865",
+          "aliases": [
+            "CVE-2026-56865"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/0e/295cf756665b586a2e7184404790e668bc4a51494a19b13b4d5398dcfb3867.file",
+            "/sysroot/ostree/repo/objects/25/8f910dfac74f9ad2f618152c0e8fd723ff234605646c445c6e38e0bc6e950b.file",
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/sysroot/ostree/repo/objects/65/cd93d36c96a2405df94f220abdc47a006555f9382cf62415fd590aa92b1e65.file",
+            "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+            "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+            "/usr/bin/glow",
+            "/usr/bin/gum",
+            "/usr/bin/incus",
+            "/usr/bin/incus-agent",
+            "/usr/libexec/incus/incus-user",
+            "/usr/libexec/incus/incusd"
+          ],
+          "fixVersions": [
+            "1.25.13",
+            "1.26.6",
+            "1.27.0-rc.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.2-X%3Anodwarf5",
+          "advisory": "CVE-2026-56865",
+          "aliases": [
+            "CVE-2026-56865"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/6d/94a749c1087ec61710ab873c0d3277269eb47debe4b51c7602409969f732a8.file",
+            "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+            "/usr/libexec/podman/gvforwarder",
+            "/usr/libexec/podman/gvproxy"
+          ],
+          "fixVersions": [
+            "1.25.13",
+            "1.26.6",
+            "1.27.0-rc.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.4",
+          "advisory": "CVE-2026-56865",
+          "aliases": [
+            "CVE-2026-56865"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/usr/bin/cosign"
+          ],
+          "fixVersions": [
+            "1.25.13",
+            "1.26.6",
+            "1.27.0-rc.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.4-X%3Anodwarf5",
+          "advisory": "CVE-2026-56865",
+          "aliases": [
+            "CVE-2026-56865"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/sysroot/ostree/repo/objects/90/2251a93331aa5e6a9393d0850cd6e647ef9be08f4fd745c9fa3e861c9aa058.file",
+            "/sysroot/ostree/repo/objects/cb/41b7c77feb2ecdb70d6190f3ec74a9e5830b713396db0b33888e3a31fb1d80.file",
+            "/usr/bin/ipp-usb",
+            "/usr/bin/podman-tui",
+            "/usr/bin/rclone"
+          ],
+          "fixVersions": [
+            "1.25.13",
+            "1.26.6",
+            "1.27.0-rc.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.5-X%3Anodwarf5",
+          "advisory": "CVE-2026-56865",
+          "aliases": [
+            "CVE-2026-56865"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/8e/c5583db8e1709e446e0abbcb470108ba680fcf718835713b907e0f9ab05d02.file",
+            "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+            "/usr/bin/git-lfs",
+            "/usr/bin/restic",
+            "/usr/bin/yq"
+          ],
+          "fixVersions": [
+            "1.25.13",
+            "1.26.6",
+            "1.27.0-rc.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+          "advisory": "CVE-2026-56865",
+          "aliases": [
+            "CVE-2026-56865"
+          ],
+          "riskClasses": [
+            "desktop-takeover"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+            "/usr/bin/toolbox"
+          ],
+          "fixVersions": [
+            "1.25.13",
+            "1.26.6",
+            "1.27.0-rc.3"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/google.golang.org/grpc@v1.72.2",
+          "advisory": "GHSA-hrxh-6v49-42gf",
+          "aliases": [
+            "GHSA-hrxh-6v49-42gf"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/90/2251a93331aa5e6a9393d0850cd6e647ef9be08f4fd745c9fa3e861c9aa058.file",
+            "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+            "/usr/bin/buildah",
+            "/usr/bin/podman",
+            "/usr/bin/podman-tui"
+          ],
+          "fixVersions": [
+            "1.82.1"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/google.golang.org/grpc@v1.79.3",
+          "advisory": "GHSA-hrxh-6v49-42gf",
+          "aliases": [
+            "GHSA-hrxh-6v49-42gf"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+            "/usr/bin/skopeo",
+            "/usr/libexec/docker/cli-plugins/docker-model"
+          ],
+          "fixVersions": [
+            "1.82.1"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/google.golang.org/grpc@v1.80.0",
+          "advisory": "GHSA-hrxh-6v49-42gf",
+          "aliases": [
+            "GHSA-hrxh-6v49-42gf"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/usr/bin/rclone"
+          ],
+          "fixVersions": [
+            "1.82.1"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/google.golang.org/grpc@v1.81.1",
+          "advisory": "GHSA-hrxh-6v49-42gf",
+          "aliases": [
+            "GHSA-hrxh-6v49-42gf"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/8e/c5583db8e1709e446e0abbcb470108ba680fcf718835713b907e0f9ab05d02.file",
+            "/usr/bin/restic"
+          ],
+          "fixVersions": [
+            "1.82.1"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        },
+        {
+          "component": "pkg:golang/google.golang.org/grpc@v1.82.0",
+          "advisory": "GHSA-hrxh-6v49-42gf",
+          "aliases": [
+            "GHSA-hrxh-6v49-42gf"
+          ],
+          "riskClasses": [
+            "authentication-bypass"
+          ],
+          "locations": [
+            "/usr/bin/cosign"
+          ],
+          "fixVersions": [
+            "1.82.1"
+          ],
+          "status": "blocked-requires-fix-or-positive-applicability-proof"
+        }
+      ]
+    }
+  ]
+}

@@ -2,33 +2,34 @@
 
 ## Active release eligibility sequence
 
-- User instructed "begin sequence"; start from externally merged PR145/main7dba.
-- Signed stable Curl12 floor implemented for installed Curl/libcurl variants;
-  transaction/offline/integrity proof verified by38332614606 after the original
-  wrapper's missing-ripgrep post-check error.19configured RPM floors, no blanket fixes.
-- Hosted prerequisite38331234974 confirms AnyIO/rclone fixes unavailable;
-  ordinary msgpack availability no longer blocks readiness. Next stable tags still300.
-- Bounded positive Go/ELF collector reuses existing extraction, grants no clearance;
-  official Critical/Go scope reviews preserve missing current file/source bindings.
-- Manual channel selection preserves all required gates and whole-run release rule.
-- Guarded exact-digest candidate reuse implemented with original source versus
-  current qualification revision, origin/archive/runtime checks and fresh gates.
-  Current main/public-channel changes now prevent stale signing/promotion.
-- Native summary38334371393 PASS: standard profiles121 pairs, DX179;
-  both Next profiles retain their kernel hold. No reviewed dispositions active.
-- Signed stable refresh38334919442 changes the standard base to23b7bf54;
-  the newly announced release then updates DX toa41cf1eb, verified38336166342.
-  PR146 independently merged the same digests; rebased onto main cbaf8264.
-  Running diagnostics retain original source1d347 for exact evidence binding.
-- Positive Go and RPM byte probes use current catalog paths while the rootfs
-  already exists. Opt-in branch diagnostics reuse the assembled image.
-- 369 focused source tests pass; independent QA approves hosted validation.
-  Actual tiny unpacker/scanner-profile smoke38339665069 passed with byte
-  preservation. Superseded incompatible diagnostics canceled before scans.
-  Hosted full matrix and changed standard/DX diagnostics remain pending.
-  No merge/publication by this agent.
-- Current sequence/evidence: docs/release-eligibility-sequence.md and
-  docs/release-eligibility-evidence-2026-10-12.json. Release remains INELIGIBLE.
+- PR147 head68fbf8759df3208dc6879640aa7d211d9162addf PASS all four image builds,
+  runtime inspections, docs, pinned Nix contracts and CI gate38342366434.
+  It incorporates externally merged Bluefin PR146/maincbaf8264 and adds the
+  installed-only signed Curl12 floor, guarded candidate reuse and opt-in diagnostics.
+- Changed standard/DX native diagnostics38341281199/38341284379 completed
+  BLOCKED with valid scanner/probe evidence; no scanner errors or publication.
+- Reuse all four new main38340112122 registry candidates. Compact comparison
+  38344754471 and final full-native reevaluation38348146097 PASS evidence checks:
+  original results reproduced and all observations preserved, no new image scans.
+- Independent review approves51 exact scopes:36 Linux/fixed-Podman nonapplicability
+  and15 accepted SSH large-write-loop availability risks;14dayexpiry. Go5017
+  unreleasable connection leaks, Go6612 host-memory risks, other serious/embedded
+  compiler/dependency risks and both Next kernel holds remain blocked.
+- Signed reference proofs PASS: FreeRDP38340338218, Podman38344182246,
+  HTTPD38344687698. Current HTTPD/FreeRDP matches are not observed and current
+  versions differ from old references; no false fix claim or waiver follows.
+- 401 focused fixtures pass; policy fixture argument-size error fixed with a
+  temporary policy file. Stacked PR148 passes source/docs/Nix/payload/CI gate
+  38349399433 and skips redundant image work, reusing validated PR147 builds.
+- Current blockers: standard87pairs/266records; DX135pairs/481records; Next hold.
+  Source/build PASS for PR147. Vulnerability clearance BLOCKED. Release INELIGIBLE.
+- Plan/evidence/owners: docs/release-eligibility-sequence.md,
+  docs/release-eligibility-evidence-2026-10-12.json,
+  docs/current-desktop-risk-blockers-2026-10-12.json. Reuse dated approved metadata;
+  await concrete publisher fixes/rebuilds or complete specific artifact/resource proof.
+- Heavy work remains hosted; original user workspace preserved. No merge/release
+  publication. Temporary read-only validation branch is removed after retaining
+  exact source/run/report evidence. Original user workspace remains untouched.
 
 ## Completed desktop policy continuation
 
@@ -230,3 +231,46 @@ on PR #139; its existing change remains intact.
 - Cancelled redundant old-policy main publication38326674435 after same main
   revision passed all four merge-queue builds38324842229; known AnyIO blocker
   remained. No merge or publication performed by this continuation.
+
+## Authenticated consumer continuation — 2026-10-13
+
+PR #147 merged externally at `9d1b0c5b5ebd`; PR #148 now targets main.
+The user approved independent channel qualification: generic channels can proceed
+as their own security, signing and boot gates clear, while Next retains its hold.
+
+Implemented 27 cmd/go runtime mismatch scopes and 72 independently reviewed
+consumer/sumdb scopes, bringing the exact-digest policy to 150 dispositions.
+Signed RPM payloads, verified source archives and owning compilation records
+prove the named consumer mismatches; these are nonapplicability determinations,
+not package fixes or blanket dependency suppressions. New main digests need new
+bindings. All 107 focused policy/evidence/selection tests passed.
+
+[Hosted source proof](https://github.com/closure-labs/finite/actions/runs/38354387254)
+passed. [Retained policy reevaluation](https://github.com/closure-labs/finite/actions/runs/38356296590)
+passed: unchanged observations now yield 71 standard and 119 development
+blocking pairs, down from 87 and 135 under the previous reviewed policy.
+Owners, unblock evidence and separate verdicts are retained in
+[the continuation ledger](../docs/desktop-applicability-continuation-2026-10-13.json).
+Compiler/cgo, unresolved network consumers, AnyIO, rclone and the Next source
+hold remain explicit. Release eligibility has not been established.
+
+- New main run38353294526 completed all four builds, but generic native scanning
+  failed before policy evaluation because the production caller supplied a
+  relative SBOM path to the strict evidence collector. Remaining identical
+  scans were cancelled as demonstrably doomed. This is a scanner error, not a
+  policy blocker; canonical caller-path remediation and three regression tests now pass.
+- Temporary read-only validation branch was deleted after successful retained
+  reevaluation38356296590; evidence remains in the ledger and hosted artifacts.
+
+## Current implementation and release sequencing
+
+- [x] Final PR148 applicability/scanner head29e8d962 passed all hosted source gates38356992553.
+- [x] Sequence standard generic first, development and Next independently; retain all supported threat surfaces.
+- [ ] Resolve signed package prerequisites and remaining exact consumer proof; owners and acceptance evidence are in docs/release-implementation-sequence.md.
+- [ ] Validate one genuinely changed representative candidate before broadening image work.
+- [ ] Prepare exact-digest security, signing, boot, ISO and rollback packet for each cleared channel.
+- [ ] Release owner approves concrete qualified publication; no release eligibility exists yet.
+
+- [x] Identify rclone fixed owning build3118644 / FEDORA-2026-e27d24d18c in testing; retain exact publisher evidence.
+- [ ] After approved stable promotion, authenticate RPM payload and validate transaction, compiler/modules and auth-proxy compatibility on hosted runners.
+- [ ] AnyIO: await signed owning4.14.2 update or verified specific backport; no qualifying Fedora44 build observed.

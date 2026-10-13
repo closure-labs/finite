@@ -22,6 +22,7 @@ QUALIFICATION_ONLY = {
     'scripts/ci/bluefin-upstream.py', 'scripts/ci/impact.py', 'scripts/ci/image_identity.py',
     'scripts/bluebuild/security-policy.py', 'scripts/bluebuild/security-scan.py',
     'scripts/bluebuild/security-run.sh', 'scripts/bluebuild/audit-published.sh',
+    'scripts/bluebuild/publication.py',
     '.github/workflows/publication.yml', '.github/workflows/image-security.yml',
     '.github/workflows/build.yml', 'scripts/ci/release-selection.py',
     'scripts/ci/remediation-preflight.py', 'scripts/ci/applicability-evidence.py',
@@ -29,6 +30,9 @@ QUALIFICATION_ONLY = {
     'scripts/ci/diagnose-built-candidate.sh', 'scripts/ci/rpm-file-evidence.py',
     'scripts/ci/extraction-layout-smoke.py',
     'scripts/ci/freerdp-reference-evidence.py',
+    'scripts/ci/podman-reference-evidence.py',
+    'scripts/ci/httpd-reference-evidence.py',
+    'scripts/ci/go-consumer-reference.py',
 }
 
 

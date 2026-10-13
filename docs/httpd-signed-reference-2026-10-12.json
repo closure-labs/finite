@@ -1,0 +1,2454 @@
+{
+  "schema": 1,
+  "status": "signed-reference-bytes-proven",
+  "observedAt": "2026-10-13T04:04:49.543285+00:00",
+  "kojiBuildId": 3014347,
+  "sourceCommit": "3b7cd5bc56d859c0b5257ffa0c5d576b85125b4c",
+  "sourceRpm": "httpd-2.4.68-1.fc44.src.rpm",
+  "sourceUrl": "https://src.fedoraproject.org/rpms/httpd/tree/3b7cd5bc56d859c0b5257ffa0c5d576b85125b4c",
+  "reviewedSourcePackaging": {
+    "specSha256": "76366115d4901ffb2dd4480c4c6f37de5526865eebe46e01ecb8878ae6d1c93a",
+    "sourceManifestSha256": "296beeb6e435d1fddd14645723056becb94bd2f9b6d6c9cb325d5fdbb42170f6",
+    "sourceTarballSha512": "134a5bbd3ffe97523ac750490531bcb9441c532cedf0229aa006aa1368e9d25040507c6f519bed6754044f62c371f7c7f9a11b6a311f79b9680d478bf4373eb3",
+    "review": "Official Koji build binds exact fixed Apache2.4.68 source tarball. Fifteen immutable downstream patches were reviewed; none changes LDAP module source. Packaging splits mod_ldap; no installed-module absence or reachability claim follows."
+  },
+  "mappingSha256": "8b9321ee83684d1a12d2ac1e492d7c0e9ee98c60db01211bd319563e24858b0f",
+  "originalSelectorImage": "ghcr.io/closure-labs/finite@sha256:66ff1f5c91ae5ddf97ac5c09bd510765888afd30457e535ae5710abb8a37f01e",
+  "originalSelectorSbomSha256": "23419f2a7c9a103f3552a5fae65a2e5a1044af50da96a797e001ed13bd254aa8",
+  "originalSelectorSummarySha256": "901cc5af571ed932852c9a7351b6480192e0a83acd017c53f27e3bbf80bcd8e1",
+  "originalSelectors": [
+    {
+      "component": "pkg:rpm/bluefin/httpd@2.4.68-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.68-1.fc44.src.rpm",
+      "componentId": "9531909936bc294c",
+      "locations": [
+        "/usr/share/rpm/rpmdb.sqlite"
+      ],
+      "observedAliases": [
+        "CVE-2026-29167"
+      ]
+    },
+    {
+      "component": "pkg:rpm/bluefin/httpd-core@2.4.68-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.68-1.fc44.src.rpm",
+      "componentId": "cdea64aa4f23e707",
+      "locations": [
+        "/usr/share/rpm/rpmdb.sqlite"
+      ],
+      "observedAliases": [
+        "CVE-2026-29167"
+      ]
+    },
+    {
+      "component": "pkg:rpm/bluefin/httpd-filesystem@2.4.68-1.fc44?arch=noarch&distro=bluefin-44&upstream=httpd-2.4.68-1.fc44.src.rpm",
+      "componentId": "baf4fd9504dab5e5",
+      "locations": [
+        "/usr/share/rpm/rpmdb.sqlite"
+      ],
+      "observedAliases": [
+        "CVE-2026-29167"
+      ]
+    },
+    {
+      "component": "pkg:rpm/bluefin/httpd-tools@2.4.68-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.68-1.fc44.src.rpm",
+      "componentId": "12aece33cc1849a3",
+      "locations": [
+        "/usr/share/rpm/rpmdb.sqlite"
+      ],
+      "observedAliases": [
+        "CVE-2026-29167"
+      ]
+    },
+    {
+      "component": "pkg:rpm/bluefin/mod_lua@2.4.68-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.68-1.fc44.src.rpm",
+      "componentId": "ddd86ff33175a0b6",
+      "locations": [
+        "/usr/share/rpm/rpmdb.sqlite"
+      ],
+      "observedAliases": [
+        "CVE-2026-29167"
+      ]
+    }
+  ],
+  "collectorSha256": "d3c5d32b93fde48d7e6804bdcddb03e6a8a75a11912a6d1ff1c80093890b4a94",
+  "helperSha256": "75be7827f8b104b3bc50c60fc2786056e3fdafeadbf8a5fc0c3e6bcea696b582",
+  "byteObserverSha256": "f031c0acb067aecf2de14e2a55a100374aa1afa375d4d87488537c4735fd731f",
+  "packages": [
+    {
+      "rpm": {
+        "name": "httpd",
+        "epoch": 0,
+        "version": "2.4.68",
+        "release": "1.fc44",
+        "architecture": "x86_64",
+        "sourceRpm": "httpd-2.4.68-1.fc44.src.rpm"
+      },
+      "kojiRpmId": 47434301,
+      "download": {
+        "url": "https://kojipkgs.fedoraproject.org/packages/httpd/2.4.68/1.fc44/data/signed/6d9f90a6/x86_64/httpd-2.4.68-1.fc44.x86_64.rpm",
+        "sha256": "bb9326cfacd353117b11dd03ab97c598e3d487754740a6ffca40fc856e592f2d",
+        "bytes": 47280
+      },
+      "signatureVerified": true,
+      "signatureSha256": "2b81dce42b86c767c837a21eef2b8b7ac69cdc4366d96bf20b690a4c6577e258",
+      "signatureKeyFingerprint": "36f612dcf27f7d1a48a835e4dbfcf71c6d9f90a6",
+      "signatureKeySha256": "93642aec521a1e5e96dd715f7ae0ec0850ebc9de09a94ce03cae5263f26cc18a",
+      "rpmFileManifestSha256": "cfd6d82108f02a988e22ded5e14f83d3950fafcc7aa1acf58816968a4ecb69be",
+      "selectedFileCount": 6,
+      "excludedManifestEntries": [
+        {
+          "path": "/etc/httpd/conf.modules.d/00-brotli.conf",
+          "mode": 33188,
+          "size": 47,
+          "flags": 17,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/etc/httpd/conf.modules.d/00-systemd.conf",
+          "mode": 33188,
+          "size": 88,
+          "flags": 17,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/03",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/03/bf0f56c25603ae266159e1578355c1986f6e7a",
+          "mode": 41471,
+          "size": 49,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/fc",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/fc/0a5d9149b6e641e5a6f6b85fb8f00d6256b857",
+          "mode": 41471,
+          "size": 50,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/man/man5/httpd.conf.5.gz",
+          "mode": 33188,
+          "size": 2488,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/man/man8/apachectl.8.gz",
+          "mode": 33188,
+          "size": 1847,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/man/man8/fcgistarter.8.gz",
+          "mode": 33188,
+          "size": 509,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/man/man8/htcacheclean.8.gz",
+          "mode": 33188,
+          "size": 2522,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/man/man8/htcacheclean.service.8.gz",
+          "mode": 33188,
+          "size": 1118,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/man/man8/httpd.8.gz",
+          "mode": 33188,
+          "size": 2169,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/man/man8/httpd.service.8.gz",
+          "mode": 33188,
+          "size": 4463,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/man/man8/httpd.socket.8.gz",
+          "mode": 33188,
+          "size": 45,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/man/man8/httpd@.service.8.gz",
+          "mode": 33188,
+          "size": 45,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/man/man8/rotatelogs.8.gz",
+          "mode": 33188,
+          "size": 3569,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/man/man8/suexec.8.gz",
+          "mode": 33188,
+          "size": 694,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        }
+      ]
+    },
+    {
+      "rpm": {
+        "name": "httpd-core",
+        "epoch": 0,
+        "version": "2.4.68",
+        "release": "1.fc44",
+        "architecture": "x86_64",
+        "sourceRpm": "httpd-2.4.68-1.fc44.src.rpm"
+      },
+      "kojiRpmId": 47434305,
+      "download": {
+        "url": "https://kojipkgs.fedoraproject.org/packages/httpd/2.4.68/1.fc44/data/signed/6d9f90a6/x86_64/httpd-core-2.4.68-1.fc44.x86_64.rpm",
+        "sha256": "7e12df96bcf8751adbfe7c5ca3968dce6fc8b90ef057669bc10bcf761404cc88",
+        "bytes": 1507266
+      },
+      "signatureVerified": true,
+      "signatureSha256": "baecfc989123eca4e8a282e26b91572c339093ba30bdee7a3f63362ada02e0fa",
+      "signatureKeyFingerprint": "36f612dcf27f7d1a48a835e4dbfcf71c6d9f90a6",
+      "signatureKeySha256": "93642aec521a1e5e96dd715f7ae0ec0850ebc9de09a94ce03cae5263f26cc18a",
+      "rpmFileManifestSha256": "0af80f86f0ca46daa97c498a1a727859c7c7cbcbae1b429119a2cee32f68ce61",
+      "selectedFileCount": 377,
+      "excludedManifestEntries": [
+        {
+          "path": "/etc/httpd/conf",
+          "mode": 16877,
+          "size": 0,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/etc/httpd/conf.d/autoindex.conf",
+          "mode": 33188,
+          "size": 2945,
+          "flags": 17,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/etc/httpd/conf.d/userdir.conf",
+          "mode": 33188,
+          "size": 1252,
+          "flags": 17,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/etc/httpd/conf.d/welcome.conf",
+          "mode": 33188,
+          "size": 653,
+          "flags": 17,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/etc/httpd/conf.modules.d",
+          "mode": 16877,
+          "size": 0,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/etc/httpd/conf.modules.d/00-base.conf",
+          "mode": 33188,
+          "size": 3382,
+          "flags": 17,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/etc/httpd/conf.modules.d/00-dav.conf",
+          "mode": 33188,
+          "size": 139,
+          "flags": 17,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/etc/httpd/conf.modules.d/00-mpm.conf",
+          "mode": 33188,
+          "size": 732,
+          "flags": 17,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/etc/httpd/conf.modules.d/00-optional.conf",
+          "mode": 33188,
+          "size": 787,
+          "flags": 17,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/etc/httpd/conf.modules.d/00-proxy.conf",
+          "mode": 33188,
+          "size": 1073,
+          "flags": 17,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/etc/httpd/conf.modules.d/01-cgi.conf",
+          "mode": 33188,
+          "size": 367,
+          "flags": 17,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/etc/httpd/conf/httpd.conf",
+          "mode": 33188,
+          "size": 12680,
+          "flags": 17,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/etc/httpd/conf/magic",
+          "mode": 33188,
+          "size": 13430,
+          "flags": 17,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/etc/httpd/logs",
+          "mode": 41471,
+          "size": 19,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/etc/httpd/modules",
+          "mode": 41471,
+          "size": 29,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/etc/httpd/run",
+          "mode": 41471,
+          "size": 10,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/etc/httpd/state",
+          "mode": 41471,
+          "size": 19,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/etc/logrotate.d/httpd",
+          "mode": 33188,
+          "size": 331,
+          "flags": 17,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/etc/sysconfig/htcacheclean",
+          "mode": 33188,
+          "size": 348,
+          "flags": 17,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/run/httpd",
+          "mode": 16840,
+          "size": 0,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/run/httpd/htcacheclean",
+          "mode": 16832,
+          "size": 0,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/00",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/00/939f4c6b38f92ad00dcff9cebc8a9699296b41",
+          "mode": 41471,
+          "size": 55,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/01",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/01/8df2488fbbe658103d88967b77007d9a27a6bf",
+          "mode": 41471,
+          "size": 53,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/03/bf0f56c25603ae266159e1578355c1986f6e7a",
+          "mode": 41471,
+          "size": 49,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/07",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/07/a69cc1d1769214c0ca99efd223ffce1fb6299b",
+          "mode": 41471,
+          "size": 56,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/08",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/08/de7dc9e50efa3e0d8c3deeb01d7eac359da9c5",
+          "mode": 41471,
+          "size": 56,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/0b",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/0b/0937f40af6818531668142ea0a7eb3a4a0d29a",
+          "mode": 41471,
+          "size": 54,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/0d",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/0d/4fb59af5064d5cc14557d2df85c94b56104fa6",
+          "mode": 41471,
+          "size": 47,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/0e",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/0e/2d12181d5f79edbd748d9e51a9850561ae819f",
+          "mode": 41471,
+          "size": 49,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/15",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/15/2aa76d9f60264feb4db60a40c4bad41b7e6351",
+          "mode": 41471,
+          "size": 52,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/16",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/16/a9aa194cbb471980739ce3d08d8b49493e2a1b",
+          "mode": 41471,
+          "size": 56,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/1a",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/1a/52d5efa4336c566aa08265cf454ce0540822f4",
+          "mode": 41471,
+          "size": 61,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/1a/ccf19fd3b988ee4a723a67635c0abe0c1d3670",
+          "mode": 41471,
+          "size": 53,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/21",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/21/346a1838a3eddf246079c4f92f89c57c1bdf01",
+          "mode": 41471,
+          "size": 51,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/25",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/25/ec8af7a1debf0578605ea98da42509f02c4489",
+          "mode": 41471,
+          "size": 47,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/27",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/27/4d5824fbc43ee6d1065611b66bae5e3be742b6",
+          "mode": 41471,
+          "size": 54,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/27/83f489e670f1ecdee2786edc3abd12aa0cf9dc",
+          "mode": 41471,
+          "size": 49,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/2b",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/2b/c69769462a9c854ee08d67ae9815c313f12c16",
+          "mode": 41471,
+          "size": 53,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/2c",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/2c/c935f0ac3c8185b116ae8c0f3a2a10d611eab9",
+          "mode": 41471,
+          "size": 50,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/2d",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/2d/9cbb40356a16fb2cded8ceddce4807b53f0f38",
+          "mode": 41471,
+          "size": 52,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/2e",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/2e/1aaa713506fd53d1e2acafb5844b874f6e949d",
+          "mode": 41471,
+          "size": 52,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/2e/b907fb07a465d15187a64248161d1986ab0123",
+          "mode": 41471,
+          "size": 53,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/2f",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/2f/71d24f2caed984f2142651c9adf10ab6540e94",
+          "mode": 41471,
+          "size": 48,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/2f/945c3af0dd523935343a8e92a0daeddc8f5d24",
+          "mode": 41471,
+          "size": 49,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/32",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/32/e1cb87d085f3b3c22c74b132adb1aa4309a5db",
+          "mode": 41471,
+          "size": 52,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/33",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/33/67707c86970ba451c6bf830681fa9ad60b162f",
+          "mode": 41471,
+          "size": 26,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/35",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/35/4d81f039b7ce98d41b8b2419a8ef1f08f2bd39",
+          "mode": 41471,
+          "size": 56,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/3b",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/3b/646e76a15a1e37f178c736921b7f3d784aa3b9",
+          "mode": 41471,
+          "size": 50,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/3c",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/3c/dfa7b92b4f05f06627349e2255f99415a94875",
+          "mode": 41471,
+          "size": 53,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/3d",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/3d/a79a143aa5338ca7454cacd2d44f7b5d4110e5",
+          "mode": 41471,
+          "size": 48,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/3e",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/3e/2fb690f7ca2762b554c0cc0d9687890f807338",
+          "mode": 41471,
+          "size": 56,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/3f",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/3f/121f0d2a55821b2ff93312690c1813c7662964",
+          "mode": 41471,
+          "size": 47,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/43",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/43/f747b902b87cf5c82a12035c7b4e1dc25dcbe8",
+          "mode": 41471,
+          "size": 50,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/45",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/45/c640c94fd4b37441a4f5792013e00d68a5fff0",
+          "mode": 41471,
+          "size": 53,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/49",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/49/dc1003bdee5bd986b22d06cf61cc29dd88515e",
+          "mode": 41471,
+          "size": 53,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/4c",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/4c/afd2f84ffa183e4f6fcbea3bbb996b6c7d9bb7",
+          "mode": 41471,
+          "size": 55,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/4e",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/4e/0942fec460186dab8037df405cab9af0933a50",
+          "mode": 41471,
+          "size": 53,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/4f",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/4f/85053d9ac3664354e4f67bb07f4795817a6220",
+          "mode": 41471,
+          "size": 50,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/50",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/50/9fe1ba90b8b9e85f0757e0d23e8ad4a3510c37",
+          "mode": 41471,
+          "size": 30,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/52",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/52/7eb3520383047b1414af6c96c6cd420733bd06",
+          "mode": 41471,
+          "size": 55,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/59",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/59/1404dbef418054e8a81faaccd30a187f64fb5b",
+          "mode": 41471,
+          "size": 54,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/5d",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/5d/b755a17a6f724ed661e337bbea2eefeb1cdd00",
+          "mode": 41471,
+          "size": 47,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/5e",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/5e/e43621459fbac69053341c2cc4126b87b94657",
+          "mode": 41471,
+          "size": 46,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/60",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/60/301fe62580af22e3d8e712ee945583eba3df97",
+          "mode": 41471,
+          "size": 46,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/60/69b41ca4ef7f35d8c61b70787f58e9d65d025c",
+          "mode": 41471,
+          "size": 54,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/66",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/66/803569f3bd8d9eeb7851215aaacde12f8c457c",
+          "mode": 41471,
+          "size": 47,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/6a",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/6a/b36a73c75fd20b9e7f8ef8abb9d8d01350c7f9",
+          "mode": 41471,
+          "size": 55,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/6b",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/6b/065a9101f3165f1a5b5df447172b8a13708a5a",
+          "mode": 41471,
+          "size": 53,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/6d",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/6d/34c1edf8d642a5f0ccbec0700b9bc79e03dc64",
+          "mode": 41471,
+          "size": 49,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/70",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/70/b27bca5bfe6433df6b2ea03e114492eac90e5f",
+          "mode": 41471,
+          "size": 46,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/72",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/72/360ddf26f9b1d4133d157ba9c5590694c4456f",
+          "mode": 41471,
+          "size": 59,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/73",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/73/d7063920d8779ec46f9fec218463ee845690a7",
+          "mode": 41471,
+          "size": 52,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/74",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/74/6da40684664b13349bfd774f668c1c3230fa70",
+          "mode": 41471,
+          "size": 52,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/75",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/75/999be81b2cf49f8f11238691f35a9e05fcd18e",
+          "mode": 41471,
+          "size": 55,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/77",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/77/4c9572ec7d387ba5d689c0191935e7111aa442",
+          "mode": 41471,
+          "size": 56,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/7b",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/7b/dedc56660f4b43806ba82095b040aa353e0b79",
+          "mode": 41471,
+          "size": 53,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/7d",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/7d/d56273946de909326aa2cebb652b0e62f53bd0",
+          "mode": 41471,
+          "size": 57,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/7e",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/7e/5356f27fe644170c0c21adeb198f1749162efe",
+          "mode": 41471,
+          "size": 50,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/7e/61fa5a0165c2ef9cb3a2e26df049c3e6eee409",
+          "mode": 41471,
+          "size": 47,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/7e/81af3e2579bcfeb69b5b4b9c22c2f6ba4dad7a",
+          "mode": 41471,
+          "size": 57,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/7e/9ccba0a93cec71f25f8ca1db0637f2ce4360e4",
+          "mode": 41471,
+          "size": 25,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/7e/ceeef5d891a0987d5639f3869dc8adac2fe196",
+          "mode": 41471,
+          "size": 50,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/83",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/83/09110a0c2a147331d4016b631ce3241bba5576",
+          "mode": 41471,
+          "size": 48,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/85",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/85/04163b03bf78270d38101ce891177ae0d401b5",
+          "mode": 41471,
+          "size": 46,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/8d",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/8d/1fa54ee41ce53eab59393aceba3e8a52163cff",
+          "mode": 41471,
+          "size": 50,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/93",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/93/e475124ca2f6dd5ad93e7fe5b2802c1986780a",
+          "mode": 41471,
+          "size": 57,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/93/f16edd2fc65328ea7bff47bd1bc686a0f0d662",
+          "mode": 41471,
+          "size": 48,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/94",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/94/6fbefac12b57c33ff961e61f3e9128c9100f03",
+          "mode": 41471,
+          "size": 53,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/96",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/96/1f2bc3d70413178eb3d3553b9f377c28737f29",
+          "mode": 41471,
+          "size": 58,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/97",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/97/0e774e9dd6ab6be2a8cdc17aee45b71356ae8d",
+          "mode": 41471,
+          "size": 54,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/9a",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/9a/a6764568c694a83a905bcbbaaba051af6953ba",
+          "mode": 41471,
+          "size": 49,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/9d",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/9d/8064ca52b6981fcc24773e40d7753c5466d35f",
+          "mode": 41471,
+          "size": 53,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/a0",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/a0/2e217b07b52f769d12b531cef85318f3bf7623",
+          "mode": 41471,
+          "size": 56,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/a2",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/a2/5e5e492e6352c52061c86da5f10af2ac515c13",
+          "mode": 41471,
+          "size": 54,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/a2/dfb41bc44b85728328757e32845ede4b39ec5f",
+          "mode": 41471,
+          "size": 50,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/a2/e0df1d80cd40fd9f918f1c084feec893fc589f",
+          "mode": 41471,
+          "size": 62,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/a3",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/a3/b6c6be7c93ce681084276b07a02044d7494caa",
+          "mode": 41471,
+          "size": 52,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/a5",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/a5/af8a7b5737df5dd941a2d98e011488204a65cd",
+          "mode": 41471,
+          "size": 53,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/a5/f63f1d5d82fa7c4382e65023bbf806c0207dac",
+          "mode": 41471,
+          "size": 52,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/ab",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/ab/2d24d5d0bf447b9edcbba7c799a81f940a61b7",
+          "mode": 41471,
+          "size": 51,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/ab/b657d4da8ee6b9a031877b6352b7b6d8b76a0c",
+          "mode": 41471,
+          "size": 61,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/ab/fd277c104865f26e2be019ee89e4f63c0c9e0e",
+          "mode": 41471,
+          "size": 54,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/af",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/af/81267125d67ffbdadfbe6ef506c274efd462f8",
+          "mode": 41471,
+          "size": 52,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/af/b07b4525d6c163eaccdbbe0a7d2c9cd8bd88a9",
+          "mode": 41471,
+          "size": 46,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/b7",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/b7/bd397371c56e2dc3add30d30605c9deaffc8ba",
+          "mode": 41471,
+          "size": 54,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/bd",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/bd/67390f5e9b57abb1bb4a4fd02f157c04ec8f9a",
+          "mode": 41471,
+          "size": 53,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/c4",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/c4/d17616544dda8fd0f0409587abc2bbe6fbec68",
+          "mode": 41471,
+          "size": 56,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/c6",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/c6/8429dfbfb6bc76c87acd3425c9cbfba6c7144f",
+          "mode": 41471,
+          "size": 52,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/c8",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/c8/af8e4c2f2753c7038116cc6c097fe6d7fa1dfe",
+          "mode": 41471,
+          "size": 47,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/c9",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/c9/6b4a4d3f63e41d01ec6fb6be1efa57161583b4",
+          "mode": 41471,
+          "size": 31,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/ca",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/ca/0beef147251393a84c55ef0f78161dde5891e4",
+          "mode": 41471,
+          "size": 50,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/cb",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/cb/4ace2a1a4cf66760d8afb7aa9fc92c27f4c22c",
+          "mode": 41471,
+          "size": 51,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/cc",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/cc/d4df91bcd18c300a0a177258ef640ba5ed3071",
+          "mode": 41471,
+          "size": 52,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/ce",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/ce/de80b9ceadf7fe958dfb9978655ddc2cff8e5d",
+          "mode": 41471,
+          "size": 52,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/ce/ffa05b0e5babb711691ce12e175579601d6021",
+          "mode": 41471,
+          "size": 53,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/d0",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/d0/cd9f1c675035cb80d9a90d345d2754948dad24",
+          "mode": 41471,
+          "size": 49,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/d1",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/d1/f9c45b36dfb6e5732ececf55f16bb551ae2e2c",
+          "mode": 41471,
+          "size": 52,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/d3",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/d3/48a798f508fdfdd5cca2c262d946a2984a9d61",
+          "mode": 41471,
+          "size": 50,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/d4",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/d4/09acb113c41f2a57f441e55d2b3ce270ec6525",
+          "mode": 41471,
+          "size": 54,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/d5",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/d5/1a63a18226065fe6030ee514ea6ebe0de220d2",
+          "mode": 41471,
+          "size": 51,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/d6",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/d6/f1c6d0b284ccba61e12a57776bed6aefbaa413",
+          "mode": 41471,
+          "size": 48,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/d7",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/d7/6a8ad17097d53fd489f30c0a8d15aa01306c4d",
+          "mode": 41471,
+          "size": 57,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/d7/c92587fa915f051770d58170007e7b20faa06d",
+          "mode": 41471,
+          "size": 54,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/da",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/da/b271b11a650b07e5b1b3e643dd4173aafbe7c7",
+          "mode": 41471,
+          "size": 50,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/dc",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/dc/8af097d0c0bbce0a019f0ce6196f793e2bac0a",
+          "mode": 41471,
+          "size": 52,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/dc/a5676a4c781d8eb82c7ad87104eeb75640229e",
+          "mode": 41471,
+          "size": 32,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/dd",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/dd/a57e2d07c2b2bbe461d40f7019c58c4a252d8c",
+          "mode": 41471,
+          "size": 53,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/e0",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/e0/39384d6ddd2dd67306263a09558bc628f41518",
+          "mode": 41471,
+          "size": 62,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/e6",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/e6/283312bc0a6ffda5f5399754978cd23a73074d",
+          "mode": 41471,
+          "size": 55,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/e7",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/e7/655eb334d463cd03784168f667891f56ee770f",
+          "mode": 41471,
+          "size": 50,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/ea",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/ea/05682a96b149a01d1116d08e5390358a2c9097",
+          "mode": 41471,
+          "size": 54,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/ea/e7ab13d032b3a7ebd0725536881518bf72a0eb",
+          "mode": 41471,
+          "size": 53,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/ec",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/ec/bfb6c884f845d65f14cd1b5bec9c497acb8384",
+          "mode": 41471,
+          "size": 49,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/f2",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/f2/d84b4b3d15c69c2fec1b616a5b1993554f7f00",
+          "mode": 41471,
+          "size": 46,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/f7",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/f7/0a2eb21fbe788a791d4ac871be8a9a14b917b1",
+          "mode": 41471,
+          "size": 48,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/fa",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/fa/ca5b1dfdd412b9552e5650d5822d3dfa3afaea",
+          "mode": 41471,
+          "size": 46,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/fb",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/fb/1829e141d0f1ec99d0263e3a13b58111005891",
+          "mode": 41471,
+          "size": 52,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/fb/f4fc585d561d2980dd9df9b38157d41cf1c868",
+          "mode": 41471,
+          "size": 46,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/fc/0a5d9149b6e641e5a6f6b85fb8f00d6256b857",
+          "mode": 41471,
+          "size": 50,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib64/httpd",
+          "mode": 16877,
+          "size": 0,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib64/httpd/modules",
+          "mode": 16877,
+          "size": 0,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/libexec/initscripts/legacy-actions/httpd",
+          "mode": 16877,
+          "size": 0,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/doc/httpd-core",
+          "mode": 16877,
+          "size": 0,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/doc/httpd-core/ABOUT_APACHE",
+          "mode": 33188,
+          "size": 13496,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/doc/httpd-core/CHANGES",
+          "mode": 33188,
+          "size": 396291,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/doc/httpd-core/LICENSE",
+          "mode": 33188,
+          "size": 25479,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/doc/httpd-core/NOTICE",
+          "mode": 33188,
+          "size": 721,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/doc/httpd-core/README",
+          "mode": 33188,
+          "size": 4650,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/doc/httpd-core/VERSIONING",
+          "mode": 33188,
+          "size": 8186,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/doc/httpd-core/httpd-autoindex.conf",
+          "mode": 33188,
+          "size": 2945,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/doc/httpd-core/httpd-dav.conf",
+          "mode": 33188,
+          "size": 1881,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/doc/httpd-core/httpd-default.conf",
+          "mode": 33188,
+          "size": 2942,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/doc/httpd-core/httpd-info.conf",
+          "mode": 33188,
+          "size": 1119,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/doc/httpd-core/httpd-languages.conf",
+          "mode": 33188,
+          "size": 5079,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/doc/httpd-core/httpd-manual.conf",
+          "mode": 33188,
+          "size": 1391,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/doc/httpd-core/httpd-mpm.conf",
+          "mode": 33188,
+          "size": 4443,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/doc/httpd-core/httpd-multilang-errordoc.conf",
+          "mode": 33188,
+          "size": 2272,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/doc/httpd-core/httpd-vhosts.conf",
+          "mode": 33188,
+          "size": 1477,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/doc/httpd-core/instance.conf",
+          "mode": 33188,
+          "size": 11948,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/doc/httpd-core/proxy-html.conf",
+          "mode": 33188,
+          "size": 3161,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/doc/httpd-core/server-status.conf",
+          "mode": 33188,
+          "size": 276,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/httpd/error",
+          "mode": 16877,
+          "size": 0,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/httpd/error/include",
+          "mode": 16877,
+          "size": 0,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/httpd/icons/poweredby.png",
+          "mode": 41471,
+          "size": 27,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/httpd/icons/small",
+          "mode": 16877,
+          "size": 0,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/httpd/noindex",
+          "mode": 16877,
+          "size": 0,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/httpd/noindex/index.html",
+          "mode": 41471,
+          "size": 25,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/httpd/server-status",
+          "mode": 16877,
+          "size": 0,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/var/cache/httpd",
+          "mode": 16832,
+          "size": 0,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/var/cache/httpd/proxy",
+          "mode": 16832,
+          "size": 0,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/var/lib/httpd",
+          "mode": 16832,
+          "size": 0,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/var/log/httpd",
+          "mode": 16832,
+          "size": 0,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        }
+      ]
+    },
+    {
+      "rpm": {
+        "name": "httpd-filesystem",
+        "epoch": 0,
+        "version": "2.4.68",
+        "release": "1.fc44",
+        "architecture": "noarch",
+        "sourceRpm": "httpd-2.4.68-1.fc44.src.rpm"
+      },
+      "kojiRpmId": 47434287,
+      "download": {
+        "url": "https://kojipkgs.fedoraproject.org/packages/httpd/2.4.68/1.fc44/data/signed/6d9f90a6/noarch/httpd-filesystem-2.4.68-1.fc44.noarch.rpm",
+        "sha256": "b928ee789d7fc84d5e43d0fdb35c6a335956df2b37c7f4a9ce3ea38509982cf2",
+        "bytes": 11509
+      },
+      "signatureVerified": true,
+      "signatureSha256": "df2db6849db993c640534e627207dad6de1cf8222ec12f563599122b7771a920",
+      "signatureKeyFingerprint": "36f612dcf27f7d1a48a835e4dbfcf71c6d9f90a6",
+      "signatureKeySha256": "93642aec521a1e5e96dd715f7ae0ec0850ebc9de09a94ce03cae5263f26cc18a",
+      "rpmFileManifestSha256": "8eb0dfb82906e1a08124137e88d3924da150059060958efbf54602d4f414c53b",
+      "selectedFileCount": 2,
+      "excludedManifestEntries": [
+        {
+          "path": "/etc/httpd",
+          "mode": 16877,
+          "size": 0,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/etc/httpd/conf.d",
+          "mode": 16877,
+          "size": 0,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/etc/systemd/system/httpd.service.d",
+          "mode": 16877,
+          "size": 0,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/systemd/system/httpd.service.d",
+          "mode": 16877,
+          "size": 0,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/systemd/system/httpd.socket.d",
+          "mode": 16877,
+          "size": 0,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/httpd",
+          "mode": 16877,
+          "size": 0,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/httpd/icons",
+          "mode": 16877,
+          "size": 0,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/var/www",
+          "mode": 16877,
+          "size": 0,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/var/www/cgi-bin",
+          "mode": 16877,
+          "size": 0,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/var/www/html",
+          "mode": 16877,
+          "size": 0,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        }
+      ]
+    },
+    {
+      "rpm": {
+        "name": "httpd-tools",
+        "epoch": 0,
+        "version": "2.4.68",
+        "release": "1.fc44",
+        "architecture": "x86_64",
+        "sourceRpm": "httpd-2.4.68-1.fc44.src.rpm"
+      },
+      "kojiRpmId": 47434302,
+      "download": {
+        "url": "https://kojipkgs.fedoraproject.org/packages/httpd/2.4.68/1.fc44/data/signed/6d9f90a6/x86_64/httpd-tools-2.4.68-1.fc44.x86_64.rpm",
+        "sha256": "0c89390bf810574206b157156595bb5e1effebc82ac20b1fc6fbaad9d5a4094a",
+        "bytes": 81324
+      },
+      "signatureVerified": true,
+      "signatureSha256": "db36681204759da1c770cbd8e04f2eea808cd1affc6bde427dac550ca42ecb86",
+      "signatureKeyFingerprint": "36f612dcf27f7d1a48a835e4dbfcf71c6d9f90a6",
+      "signatureKeySha256": "93642aec521a1e5e96dd715f7ae0ec0850ebc9de09a94ce03cae5263f26cc18a",
+      "rpmFileManifestSha256": "fd79d642c16f9c9c5fffd89e55af52aa1fab90fd8463b68ffd7f3233ca1eb974",
+      "selectedFileCount": 6,
+      "excludedManifestEntries": [
+        {
+          "path": "/usr/lib/.build-id",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/0c",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/0c/58ab9a952b0085b2af7de3ca1b776265162bdc",
+          "mode": 41471,
+          "size": 28,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/23",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/23/2422063277a6b6230f62c9553d6c6570c5abc3",
+          "mode": 41471,
+          "size": 25,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/36",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/36/7879d03913c133b88a63049db4fc8c82ad29fb",
+          "mode": 41471,
+          "size": 29,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/3b/99eb1eee710134d8c0382ebd173964d7eaa3ed",
+          "mode": 41471,
+          "size": 22,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/98",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/98/9a157254f05bc93636a81e116a2726715addba",
+          "mode": 41471,
+          "size": 28,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/ed",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/ed/f429444930e17a036fc348a563378269a2809a",
+          "mode": 41471,
+          "size": 30,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/doc/httpd-tools",
+          "mode": 16877,
+          "size": 0,
+          "flags": 0,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/doc/httpd-tools/LICENSE",
+          "mode": 33188,
+          "size": 25479,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/doc/httpd-tools/NOTICE",
+          "mode": 33188,
+          "size": 721,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/man/man1/ab.1.gz",
+          "mode": 33188,
+          "size": 3849,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/man/man1/htdbm.1.gz",
+          "mode": 33188,
+          "size": 3254,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/man/man1/htdigest.1.gz",
+          "mode": 33188,
+          "size": 983,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/man/man1/htpasswd.1.gz",
+          "mode": 33188,
+          "size": 3456,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/man/man1/httxt2dbm.1.gz",
+          "mode": 33188,
+          "size": 822,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/share/man/man1/logresolve.1.gz",
+          "mode": 33188,
+          "size": 740,
+          "flags": 2,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        }
+      ]
+    },
+    {
+      "rpm": {
+        "name": "mod_lua",
+        "epoch": 0,
+        "version": "2.4.68",
+        "release": "1.fc44",
+        "architecture": "x86_64",
+        "sourceRpm": "httpd-2.4.68-1.fc44.src.rpm"
+      },
+      "kojiRpmId": 47434298,
+      "download": {
+        "url": "https://kojipkgs.fedoraproject.org/packages/httpd/2.4.68/1.fc44/data/signed/6d9f90a6/x86_64/mod_lua-2.4.68-1.fc44.x86_64.rpm",
+        "sha256": "6f697405a40204c433c720329daadeb64b1422d92e9dff5607138f3af9f84c26",
+        "bytes": 59376
+      },
+      "signatureVerified": true,
+      "signatureSha256": "9ff1389d8109ed423491411ddb5c96545b46bcc1db03718fbd437f37e9b2ed07",
+      "signatureKeyFingerprint": "36f612dcf27f7d1a48a835e4dbfcf71c6d9f90a6",
+      "signatureKeySha256": "93642aec521a1e5e96dd715f7ae0ec0850ebc9de09a94ce03cae5263f26cc18a",
+      "rpmFileManifestSha256": "a1bba42bc8c4d79706854241dc0cfa54c3e7aaea5b075d14f97173e14b5325fc",
+      "selectedFileCount": 1,
+      "excludedManifestEntries": [
+        {
+          "path": "/etc/httpd/conf.modules.d/00-lua.conf",
+          "mode": 33188,
+          "size": 41,
+          "flags": 17,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id",
+          "mode": 16877,
+          "size": 0,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        },
+        {
+          "path": "/usr/lib/.build-id/70/b27bca5bfe6433df6b2ea03e114492eac90e5f",
+          "mode": 41471,
+          "size": 46,
+          "flags": 4096,
+          "reason": "flagged-config/doc/license/ghost-or-nonregular; outside reference byte proof"
+        }
+      ]
+    }
+  ],
+  "currentCandidateJoin": "unproven",
+  "releaseEligible": false,
+  "dispositionsGranted": [],
+  "vulnerabilityClearance": "not-assessed",
+  "limits": [
+    "No image pull, scan, installation/downgrade or image code execution performed.",
+    "All unflagged regular files in five signed reference RPMs are covered. Excluded manifest entries remain outside byte proof.",
+    "Old rpmdb selectors and expected digests are caller metadata, not observed current candidate bytes.",
+    "Current immutable digest, component, complete aliases and every observed location need independent byte/source joins.",
+    "No global LDAP absence, listener/default configuration, SELinux waiver or retained-object reachability is inferred.",
+    "Production security, signing and boot qualification remain separate."
+  ],
+  "sourceReportSha256": "9eeb6dc7dd99830b56aa5a90c66383d6221e13b5e9241f605b291fc3a0ea25b5",
+  "sourceRun": 38344687698,
+  "sourceArtifact": "httpd-reference-38344687698-1/reference-evidence.json",
+  "retainedForm": "Compact reference summary; complete392actual-file records remain in the source hosted artifact and exact reconstruction mapping",
+  "verifiedReferenceFileCount": 392,
+  "verifiedReferenceFileRecordsSha256": "a01b1c10d2bfebc3f5ef63e79486c5b92ca1201f75206fa8c978349298ecf10e"
+}

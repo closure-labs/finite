@@ -1,0 +1,434 @@
+{
+  "schema": 1,
+  "status": "signed-reference-bytes-proven",
+  "observedAt": "2026-10-13T03:58:28.919621+00:00",
+  "sourceCommit": "4d5daf480eb219a34e6c4cb96818c3d1de6d80a5",
+  "upstreamCommit": "c593b672bf3db1173aebea565ebf1a724ea196dc",
+  "sourceRpm": "podman-5.8.7-1.fc44.src.rpm",
+  "sourceUrl": "https://src.fedoraproject.org/rpms/podman/tree/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5",
+  "reviewedSourcePackaging": {
+    "specUrl": "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+    "specSha256": "8b03b4211e85a353a41de9ec3cc892171e79a2ee989c902536a99375eae2a009",
+    "manifestUrl": "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/sources",
+    "manifestSha256": "7a97e5c712c59c1965e072bc7227cf184e0952523dd84cc725268ccebb752ccb",
+    "sourceTarballSha512": "94a108aa9401fb62cfeaa2b3cfe8552a08240f7f9275ff53fe90eb289c285a0733b4a5582ce5f3a2c4d19d13ac9b4002f7565553d0961713a42a6101fdbe98f9",
+    "review": "Immutable Fedora spec builds upstream v5.8.7 with explicit gitCommit; autosetup initializes packaging Git and prep changes Makefile install substitution. Upstream tagged source fixes all three selected main-module advisories. These are prior source-review hashes, not a fresh source retrieval."
+  },
+  "mappingSha256": "c0c7ac383c1e022a6043efac87f14dfd4a2b5d6fe695b89fe5201970e683229e",
+  "originalSelectorImage": "ghcr.io/closure-labs/finite@sha256:66ff1f5c91ae5ddf97ac5c09bd510765888afd30457e535ae5710abb8a37f01e",
+  "originalSelectorSbomSha256": "23419f2a7c9a103f3552a5fae65a2e5a1044af50da96a797e001ed13bd254aa8",
+  "originalSelectorSummarySha256": "901cc5af571ed932852c9a7351b6480192e0a83acd017c53f27e3bbf80bcd8e1",
+  "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+  "advisories": [
+    "CVE-2025-6032",
+    "CVE-2025-9566",
+    "CVE-2026-57231",
+    "GHSA-4hq8-gpf5-8p68",
+    "GHSA-65gg-3w2w-hr4h",
+    "GHSA-wp3j-xq48-xpjw"
+  ],
+  "collectorSha256": "e93b23c3e6b01c6ea0a64533f0d13c31a081f0b564e61fa28fec48e7b36e1a57",
+  "supportingCollectors": {
+    "scripts/ci/freerdp-reference-evidence.py": "75be7827f8b104b3bc50c60fc2786056e3fdafeadbf8a5fc0c3e6bcea696b582",
+    "scripts/ci/rpm-file-evidence.py": "f031c0acb067aecf2de14e2a55a100374aa1afa375d4d87488537c4735fd731f"
+  },
+  "packages": [
+    {
+      "rpm": {
+        "name": "podman",
+        "epoch": 5,
+        "version": "5.8.7",
+        "release": "1.fc44",
+        "architecture": "x86_64",
+        "sourceRpm": "podman-5.8.7-1.fc44.src.rpm",
+        "vendor": "Fedora Project"
+      },
+      "kojiBuildId": 3103127,
+      "kojiRpmId": 48829615,
+      "download": {
+        "url": "https://kojipkgs.fedoraproject.org/packages/podman/5.8.7/1.fc44/data/signed/6d9f90a6/x86_64/podman-5.8.7-1.fc44.x86_64.rpm",
+        "bytes": 16107978,
+        "sha256": "c13f548c74c9f80dfe9681824d2e648c832abe7cf19d2d9ab8d93d02b6be16fe"
+      },
+      "unsignedKojiBytes": 16065018,
+      "signatureVerified": true,
+      "signatureKeyFingerprint": "36f612dcf27f7d1a48a835e4dbfcf71c6d9f90a6",
+      "signatureKeySha256": "93642aec521a1e5e96dd715f7ae0ec0850ebc9de09a94ce03cae5263f26cc18a",
+      "signatureSha256": "b9fba7717e6cf7bcc514835c3b0d3697b36c4fe0e0b3152daef7b6d4ca180468",
+      "rpmFileManifestSha256": "4654870677e8c35a522ca4230f0a51074f1648300ac142d120a4db95eaf20b53",
+      "selectedFileCount": 3
+    }
+  ],
+  "matches": [
+    {
+      "selectorPath": "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+      "referencePath": "/usr/bin/podman",
+      "selectorSha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+      "selectorSize": 45362352,
+      "expected": {
+        "mode": 33261,
+        "size": 45362352,
+        "digest": {
+          "algorithm": "sha256",
+          "value": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454"
+        },
+        "flags": ""
+      },
+      "referenceBytes": {
+        "path": "/usr/bin/podman",
+        "status": "matches-rpm-manifest",
+        "actualFileIntegrityVerified": true,
+        "expected": {
+          "mode": 33261,
+          "size": 45362352,
+          "digest": {
+            "algorithm": "sha256",
+            "value": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454"
+          },
+          "flags": "",
+          "userName": null,
+          "groupName": null
+        },
+        "observedStat": {
+          "device": 2049,
+          "inode": 8955957,
+          "mode": 33261,
+          "size": 45362352,
+          "mtimeNs": 1791863908831186971,
+          "ctimeNs": 1791863908831186971,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "actualSha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+        "bytesRead": 45362352,
+        "elfHeader": "7f454c4602010100000000000000000003003e00",
+        "afterStat": {
+          "device": 2049,
+          "inode": 8955957,
+          "mode": 33261,
+          "size": 45362352,
+          "mtimeNs": 1791863908831186971,
+          "ctimeNs": 1791863908831186971,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "reason": "stable-regular-file-size-sha256-and-mode-match",
+        "configFile": false
+      },
+      "signedReferenceByteMatch": true,
+      "actualCandidateBytesIndependentlyObserved": false
+    },
+    {
+      "selectorPath": "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+      "referencePath": "/usr/libexec/podman/rootlessport",
+      "selectorSha256": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd",
+      "selectorSize": 3210992,
+      "expected": {
+        "mode": 33261,
+        "size": 3210992,
+        "digest": {
+          "algorithm": "sha256",
+          "value": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd"
+        },
+        "flags": ""
+      },
+      "referenceBytes": {
+        "path": "/usr/libexec/podman/rootlessport",
+        "status": "matches-rpm-manifest",
+        "actualFileIntegrityVerified": true,
+        "expected": {
+          "mode": 33261,
+          "size": 3210992,
+          "digest": {
+            "algorithm": "sha256",
+            "value": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd"
+          },
+          "flags": "",
+          "userName": null,
+          "groupName": null
+        },
+        "observedStat": {
+          "device": 2049,
+          "inode": 8957910,
+          "mode": 33261,
+          "size": 3210992,
+          "mtimeNs": 1791863908849186167,
+          "ctimeNs": 1791863908849186167,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "actualSha256": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd",
+        "bytesRead": 3210992,
+        "elfHeader": "7f454c4602010100000000000000000003003e00",
+        "afterStat": {
+          "device": 2049,
+          "inode": 8957910,
+          "mode": 33261,
+          "size": 3210992,
+          "mtimeNs": 1791863908849186167,
+          "ctimeNs": 1791863908849186167,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "reason": "stable-regular-file-size-sha256-and-mode-match",
+        "configFile": false
+      },
+      "signedReferenceByteMatch": true,
+      "actualCandidateBytesIndependentlyObserved": false
+    },
+    {
+      "selectorPath": "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+      "referencePath": "/usr/libexec/podman/quadlet",
+      "selectorSha256": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454",
+      "selectorSize": 2515640,
+      "expected": {
+        "mode": 33261,
+        "size": 2515640,
+        "digest": {
+          "algorithm": "sha256",
+          "value": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454"
+        },
+        "flags": ""
+      },
+      "referenceBytes": {
+        "path": "/usr/libexec/podman/quadlet",
+        "status": "matches-rpm-manifest",
+        "actualFileIntegrityVerified": true,
+        "expected": {
+          "mode": 33261,
+          "size": 2515640,
+          "digest": {
+            "algorithm": "sha256",
+            "value": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454"
+          },
+          "flags": "",
+          "userName": null,
+          "groupName": null
+        },
+        "observedStat": {
+          "device": 2049,
+          "inode": 8957909,
+          "mode": 33261,
+          "size": 2515640,
+          "mtimeNs": 1791863908840186569,
+          "ctimeNs": 1791863908840186569,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "actualSha256": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454",
+        "bytesRead": 2515640,
+        "elfHeader": "7f454c4602010100000000000000000003003e00",
+        "afterStat": {
+          "device": 2049,
+          "inode": 8957909,
+          "mode": 33261,
+          "size": 2515640,
+          "mtimeNs": 1791863908840186569,
+          "ctimeNs": 1791863908840186569,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "reason": "stable-regular-file-size-sha256-and-mode-match",
+        "configFile": false
+      },
+      "signedReferenceByteMatch": true,
+      "actualCandidateBytesIndependentlyObserved": false
+    },
+    {
+      "selectorPath": "/usr/bin/podman",
+      "referencePath": "/usr/bin/podman",
+      "selectorSha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+      "selectorSize": 45362352,
+      "expected": {
+        "mode": 33261,
+        "size": 45362352,
+        "digest": {
+          "algorithm": "sha256",
+          "value": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454"
+        },
+        "flags": ""
+      },
+      "referenceBytes": {
+        "path": "/usr/bin/podman",
+        "status": "matches-rpm-manifest",
+        "actualFileIntegrityVerified": true,
+        "expected": {
+          "mode": 33261,
+          "size": 45362352,
+          "digest": {
+            "algorithm": "sha256",
+            "value": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454"
+          },
+          "flags": "",
+          "userName": null,
+          "groupName": null
+        },
+        "observedStat": {
+          "device": 2049,
+          "inode": 8955957,
+          "mode": 33261,
+          "size": 45362352,
+          "mtimeNs": 1791863908831186971,
+          "ctimeNs": 1791863908831186971,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "actualSha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+        "bytesRead": 45362352,
+        "elfHeader": "7f454c4602010100000000000000000003003e00",
+        "afterStat": {
+          "device": 2049,
+          "inode": 8955957,
+          "mode": 33261,
+          "size": 45362352,
+          "mtimeNs": 1791863908831186971,
+          "ctimeNs": 1791863908831186971,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "reason": "stable-regular-file-size-sha256-and-mode-match",
+        "configFile": false
+      },
+      "signedReferenceByteMatch": true,
+      "actualCandidateBytesIndependentlyObserved": false
+    },
+    {
+      "selectorPath": "/usr/libexec/podman/quadlet",
+      "referencePath": "/usr/libexec/podman/quadlet",
+      "selectorSha256": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454",
+      "selectorSize": 2515640,
+      "expected": {
+        "mode": 33261,
+        "size": 2515640,
+        "digest": {
+          "algorithm": "sha256",
+          "value": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454"
+        },
+        "flags": ""
+      },
+      "referenceBytes": {
+        "path": "/usr/libexec/podman/quadlet",
+        "status": "matches-rpm-manifest",
+        "actualFileIntegrityVerified": true,
+        "expected": {
+          "mode": 33261,
+          "size": 2515640,
+          "digest": {
+            "algorithm": "sha256",
+            "value": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454"
+          },
+          "flags": "",
+          "userName": null,
+          "groupName": null
+        },
+        "observedStat": {
+          "device": 2049,
+          "inode": 8957909,
+          "mode": 33261,
+          "size": 2515640,
+          "mtimeNs": 1791863908840186569,
+          "ctimeNs": 1791863908840186569,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "actualSha256": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454",
+        "bytesRead": 2515640,
+        "elfHeader": "7f454c4602010100000000000000000003003e00",
+        "afterStat": {
+          "device": 2049,
+          "inode": 8957909,
+          "mode": 33261,
+          "size": 2515640,
+          "mtimeNs": 1791863908840186569,
+          "ctimeNs": 1791863908840186569,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "reason": "stable-regular-file-size-sha256-and-mode-match",
+        "configFile": false
+      },
+      "signedReferenceByteMatch": true,
+      "actualCandidateBytesIndependentlyObserved": false
+    },
+    {
+      "selectorPath": "/usr/libexec/podman/rootlessport",
+      "referencePath": "/usr/libexec/podman/rootlessport",
+      "selectorSha256": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd",
+      "selectorSize": 3210992,
+      "expected": {
+        "mode": 33261,
+        "size": 3210992,
+        "digest": {
+          "algorithm": "sha256",
+          "value": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd"
+        },
+        "flags": ""
+      },
+      "referenceBytes": {
+        "path": "/usr/libexec/podman/rootlessport",
+        "status": "matches-rpm-manifest",
+        "actualFileIntegrityVerified": true,
+        "expected": {
+          "mode": 33261,
+          "size": 3210992,
+          "digest": {
+            "algorithm": "sha256",
+            "value": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd"
+          },
+          "flags": "",
+          "userName": null,
+          "groupName": null
+        },
+        "observedStat": {
+          "device": 2049,
+          "inode": 8957910,
+          "mode": 33261,
+          "size": 3210992,
+          "mtimeNs": 1791863908849186167,
+          "ctimeNs": 1791863908849186167,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "actualSha256": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd",
+        "bytesRead": 3210992,
+        "elfHeader": "7f454c4602010100000000000000000003003e00",
+        "afterStat": {
+          "device": 2049,
+          "inode": 8957910,
+          "mode": 33261,
+          "size": 3210992,
+          "mtimeNs": 1791863908849186167,
+          "ctimeNs": 1791863908849186167,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "reason": "stable-regular-file-size-sha256-and-mode-match",
+        "configFile": false
+      },
+      "signedReferenceByteMatch": true,
+      "actualCandidateBytesIndependentlyObserved": false
+    }
+  ],
+  "candidateBindingUnproven": true,
+  "releaseEligible": false,
+  "dispositionsGranted": [],
+  "vulnerabilityClearance": "not-assessed",
+  "limits": [
+    "No image pull, scan, RPM install or image/payload execution.",
+    "Selector metadata is a caller claim; current digest/component/aliases/all native locations must independently join the reference SHA256.",
+    "Only selected Podman main-module version matches are under investigation; compiler, embedded modules and other advisories remain separate.",
+    "No current-candidate integrity, freshness, security/signing/boot clearance is granted."
+  ]
+}

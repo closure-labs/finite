@@ -1,0 +1,2071 @@
+{
+  "schema": 1,
+  "reviewedAt": "2026-10-13T04:13:30.190167+00:00",
+  "reviewedBy": "great_cto security applicability reviewer",
+  "purpose": "Read-only current six-candidate applicability join; no image work or rescans",
+  "httpdReference": {
+    "run": 38344687698,
+    "workflowRevision": "97b0adc1a4b3c32e8d2724ec1e270daf6f66774f",
+    "url": "https://github.com/closure-labs/finite/actions/runs/38344687698",
+    "status": "success; allfive signatures/payload digests and392 files proven",
+    "reportSha256": "9eeb6dc7dd99830b56aa5a90c66383d6221e13b5e9241f605b291fc3a0ea25b5",
+    "collectorSha256": "d3c5d32b93fde48d7e6804bdcddb03e6a8a75a11912a6d1ff1c80093890b4a94",
+    "collectorMatchesCurrentSource": true,
+    "collectorMatchesExactHostedRevision": true,
+    "helperMatchesCurrentSource": true,
+    "observerMatchesCurrentSource": true,
+    "referencePackages": [
+      {
+        "name": "httpd",
+        "downloadSha256": "bb9326cfacd353117b11dd03ab97c598e3d487754740a6ffca40fc856e592f2d",
+        "bytes": 47280,
+        "signatureKeyFingerprint": "36f612dcf27f7d1a48a835e4dbfcf71c6d9f90a6",
+        "selectedFiles": 6
+      },
+      {
+        "name": "httpd-core",
+        "downloadSha256": "7e12df96bcf8751adbfe7c5ca3968dce6fc8b90ef057669bc10bcf761404cc88",
+        "bytes": 1507266,
+        "signatureKeyFingerprint": "36f612dcf27f7d1a48a835e4dbfcf71c6d9f90a6",
+        "selectedFiles": 377
+      },
+      {
+        "name": "httpd-filesystem",
+        "downloadSha256": "b928ee789d7fc84d5e43d0fdb35c6a335956df2b37c7f4a9ce3ea38509982cf2",
+        "bytes": 11509,
+        "signatureKeyFingerprint": "36f612dcf27f7d1a48a835e4dbfcf71c6d9f90a6",
+        "selectedFiles": 2
+      },
+      {
+        "name": "httpd-tools",
+        "downloadSha256": "0c89390bf810574206b157156595bb5e1effebc82ac20b1fc6fbaad9d5a4094a",
+        "bytes": 81324,
+        "signatureKeyFingerprint": "36f612dcf27f7d1a48a835e4dbfcf71c6d9f90a6",
+        "selectedFiles": 6
+      },
+      {
+        "name": "mod_lua",
+        "downloadSha256": "6f697405a40204c433c720329daadeb64b1422d92e9dff5607138f3af9f84c26",
+        "bytes": 59376,
+        "signatureKeyFingerprint": "36f612dcf27f7d1a48a835e4dbfcf71c6d9f90a6",
+        "selectedFiles": 1
+      }
+    ]
+  },
+  "freerdpReference": {
+    "run": 38340338218,
+    "url": "https://github.com/closure-labs/finite/actions/runs/38340338218",
+    "reportSha256": "b035dc2c3bc27c5ed1ee7e28e9cb3e88a8af45bec68f7736258ca5569bea5179",
+    "status": "historical fixed signed3.31.1 reference12-file proof retained; currentnew object binding unavailable"
+  },
+  "advisoriesReviewed": [
+    "CVE-2026-29167",
+    "GHSA-85f4-9pxx-739j",
+    "CVE-2026-57156",
+    "GHSA-v5wf-j8j4-77h7",
+    "CVE-2026-57158",
+    "GHSA-mp3f-59pg-c5pp"
+  ],
+  "candidates": [
+    {
+      "name": "main-bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "scannedManifestDigest": "sha256:e626d128a3eae4acd4421de5ffcb19e6d4535798c7b42ee8f7506063bd3572b3",
+      "configurationDigest": "sha256:eb2542e972cdd6c71f3448674c57b0c41252fdc4c986252bc8ff3621e2119cf4",
+      "sourceType": "signed-production-candidate; see original scan/provenance gates",
+      "sourceScanRun": 38340112122,
+      "compactRetentionRun": 38344754471,
+      "sbomSha256": "4902fdd4b2afca8374a3197770f25daa11c7626cb5c83c46fb614ad1f5441201",
+      "nativeSummarySha256": "5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9",
+      "securityResultSha256": "92127eae6a60001c57937bb329061da88bdc6a933a993a6a047c6be7466518ca",
+      "extractionSha256": "dad4c01f31b275477cf5ce896b48ae67b6aa79c9d0152f8bef56b3eb1811c0ec",
+      "bindingsVerified": true,
+      "observedTargetNativeFindingPairs": 0,
+      "observedTargetPolicyRows": 0,
+      "actualCandidateQualifiedDispositions": [],
+      "httpd": {
+        "currentPackages": [
+          {
+            "name": "httpd",
+            "version": "2.4.69-1.fc44",
+            "purl": "pkg:rpm/bluefin/httpd@2.4.69-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.69-1.fc44.src.rpm",
+            "sourceRpm": "httpd-2.4.69-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Mon Oct  5 07:56:00 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          },
+          {
+            "name": "httpd-core",
+            "version": "2.4.69-1.fc44",
+            "purl": "pkg:rpm/bluefin/httpd-core@2.4.69-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.69-1.fc44.src.rpm",
+            "sourceRpm": "httpd-2.4.69-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Mon Oct  5 07:55:59 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          },
+          {
+            "name": "httpd-filesystem",
+            "version": "2.4.69-1.fc44",
+            "purl": "pkg:rpm/bluefin/httpd-filesystem@2.4.69-1.fc44?arch=noarch&distro=bluefin-44&upstream=httpd-2.4.69-1.fc44.src.rpm",
+            "sourceRpm": "httpd-2.4.69-1.fc44.src.rpm",
+            "architecture": "noarch",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Mon Oct  5 07:55:58 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          },
+          {
+            "name": "httpd-tools",
+            "version": "2.4.69-1.fc44",
+            "purl": "pkg:rpm/bluefin/httpd-tools@2.4.69-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.69-1.fc44.src.rpm",
+            "sourceRpm": "httpd-2.4.69-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Mon Oct  5 07:55:59 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          },
+          {
+            "name": "mod_lua",
+            "version": "2.4.69-1.fc44",
+            "purl": "pkg:rpm/bluefin/mod_lua@2.4.69-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.69-1.fc44.src.rpm",
+            "sourceRpm": "httpd-2.4.69-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Mon Oct  5 07:55:59 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          }
+        ],
+        "historicalReferenceVersion": "2.4.68-1.fc44",
+        "sameReferenceComponentIdentity": false,
+        "freshByteEvidenceSha256": null,
+        "fileJoinCounts": {
+          "current-declared-manifest-only-agrees": 276,
+          "current-declared-manifest-differs-from-historical-reference": 115,
+          "current-declared-path-unavailable": 1
+        },
+        "fileJoinCountsByPackage": {
+          "httpd": {
+            "current-declared-manifest-only-agrees": 4,
+            "current-declared-manifest-differs-from-historical-reference": 2
+          },
+          "httpd-core": {
+            "current-declared-manifest-only-agrees": 270,
+            "current-declared-manifest-differs-from-historical-reference": 106,
+            "current-declared-path-unavailable": 1
+          },
+          "httpd-filesystem": {
+            "current-declared-manifest-only-agrees": 2
+          },
+          "httpd-tools": {
+            "current-declared-manifest-differs-from-historical-reference": 6
+          },
+          "mod_lua": {
+            "current-declared-manifest-differs-from-historical-reference": 1
+          }
+        },
+        "complete392ByteJoin": false,
+        "decision": "No disposition. Current2.4.69 code differs from historical2.4.68 reference; 276 unchanged manifest paths are not whole-package/source byte proof. Absence of current target findings is preserved as not observed."
+      },
+      "freerdp": {
+        "currentPackages": [
+          {
+            "name": "freerdp-libs",
+            "version": "2:3.32.1-1.fc44",
+            "purl": "pkg:rpm/bluefin/freerdp-libs@3.32.1-1.fc44?arch=x86_64&distro=bluefin-44&epoch=2&upstream=freerdp-3.32.1-1.fc44.src.rpm",
+            "sourceRpm": "freerdp-3.32.1-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Tue Sep 29 08:28:22 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          },
+          {
+            "name": "libwinpr",
+            "version": "2:3.32.1-1.fc44",
+            "purl": "pkg:rpm/bluefin/libwinpr@3.32.1-1.fc44?arch=x86_64&distro=bluefin-44&epoch=2&upstream=freerdp-3.32.1-1.fc44.src.rpm",
+            "sourceRpm": "freerdp-3.32.1-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Tue Sep 29 08:28:22 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          }
+        ],
+        "historicalReferenceVersion": "2:3.31.1-1.fc44",
+        "currentMatchLocationCoverage": "no target matches exposed; cannot transfer historical12 object paths",
+        "complete12CurrentObjectJoin": false,
+        "historicalObjectSelectors": [
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/08/fc2ca9ea6a75d0922298a81303b6728909c61fbfce06e2d3fd67fc0dd37eb3.file",
+            "referencePath": "/usr/lib64/libfreerdp-shadow3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "8762e31cb0f42d60a54c20d64a3715f8426d7aca7a1445d86f8b034bcc6aa77e",
+            "referenceSize": 98304,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/21/3a5c69e6bcc3bcf7d7956b19a8da41060a82fa75bd699c3c9959f0b26bcf00.file",
+            "referencePath": "/usr/lib64/libfreerdp-server3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "1df7b243ab735901076c66b61509acd5b6abd03e8222dae6f7cf89e9a2d09306",
+            "referenceSize": 318088,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/38/3c2d58d5f6e2c6b1bdc557e0e30359ef541c6334c1e30512b9834a45198f3d.file",
+            "referencePath": "/usr/lib64/freerdp3/proxy/libproxy-bitmap-filter-plugin.so",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "e0102151531e0c71f613c7d7f1543ec70b11f2704ac426f3e38326391a62c4ca",
+            "referenceSize": 20120,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": {
+              "sha256": "db9945bffe6b64168f364e44ab41c873c97f793d9c4f53a5dfb31277c5c4c91d",
+              "size": 20120,
+              "mode": 33261,
+              "independentByteProof": false
+            }
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/3f/e28168bfafc35f4c5a75f362a35bd64321ad763f4b66847e9662af7ed94e24.file",
+            "referencePath": "/usr/lib64/freerdp3/proxy/libproxy-dyn-channel-dump-plugin.so",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "b6ec87072b5a7d70f915ca9f129271be4b9770a1713c0315deaab8ac2e9dd7d9",
+            "referenceSize": 187600,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": {
+              "sha256": "9287253d7e7d7f8a10af997a7d229fe54340e5599e8c5fc33afec1b36b50d01e",
+              "size": 187600,
+              "mode": 33261,
+              "independentByteProof": false
+            }
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/5e/2a0930df64e6f7b5947801ac477c9df8fc342dce35a952c101057e9ce8de4d.file",
+            "referencePath": "/usr/lib64/libfreerdp3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "a25d541bfab8bf2a1cb076b182ebd2d7a43a3f7eff52db5447337a37bc21349a",
+            "referenceSize": 2254640,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/70/fb1cf6e02ee270a7716b0af74394d3cd67703795803cd3e91e73ed4719444a.file",
+            "referencePath": "/usr/lib64/libfreerdp-server-proxy3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "31c28efcf2933f765be7ddb23422c27fc6854efd935e64e04c55d7836ea7509d",
+            "referenceSize": 136232,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/78/c899ea8fe1653195352490c6c08f1d834ce020a03a05d1c0a560ce0ee28066.file",
+            "referencePath": "/usr/lib64/librdtk0.so.0.2.0",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "f5bc9cbc971513912720b4b2d434217feed57b959f66ecce94389dd62be69990",
+            "referenceSize": 36112,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": {
+              "sha256": "36b422ce32a57cce069542d1376d086b83eb483b02492eb49471162d7e3caa5b",
+              "size": 36112,
+              "mode": 33261,
+              "independentByteProof": false
+            }
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/90/0f5a7ce94df3978f0fa90ae76c51e003545a6198a1e1dc1574da12735290be.file",
+            "referencePath": "/usr/lib64/libfreerdp-client3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "e99f8050bc7aa7a48805554b2f559336a7d1cd782a140c33548f1eb9a90f96fa",
+            "referenceSize": 787784,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/cc/660fa41e8c2552a6420a11618989048bd2839fda442f4fb88f5f1f9e71544f.file",
+            "referencePath": "/usr/lib64/freerdp3/proxy/libproxy-demo-plugin.so",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "9db3600e92d6362f306d7f2f7d8b5d99b41c7dd57f4da4d93db3d5ea80f1e0fb",
+            "referenceSize": 20008,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": {
+              "sha256": "c46ce556dad734141e35992e98701a7b458d72885a3de73a09755c0f73fa64c3",
+              "size": 20008,
+              "mode": 33261,
+              "independentByteProof": false
+            }
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/dd/d3626787a3803f4939a8a4fdfefad644e87d69a98be326d692a5fb300b09c8.file",
+            "referencePath": "/usr/lib64/libfreerdp-shadow-subsystem3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "791113ce1c3c69920c892e01a0e97a8275627bf6fde874adf0859ac935983a30",
+            "referenceSize": 36240,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/e5/b082ca2a33265d41523bc7e190657afa530421ff868267bfcc94d39c330c36.file",
+            "referencePath": "/usr/lib64/libwinpr3.so.3.31.1",
+            "referencePackage": "libwinpr",
+            "referenceSha256": "e78e7be59b0199ebe51bb05bb29592636bfa20acd4567b1d6f8774b1577f0757",
+            "referenceSize": 1161720,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/fe/06c8a0dd65816aa82b8308cb2dbbca135ff7716470b8cbe06caa20fdda2a01.file",
+            "referencePath": "/usr/lib64/libwinpr-tools3.so.3.31.1",
+            "referencePackage": "libwinpr",
+            "referenceSha256": "2d37663e2fb2048a0ebedfd9b6972acc2edd92783f488f698c306711c7a1048c",
+            "referenceSize": 34736,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          }
+        ],
+        "decision": "No disposition. Currentlive3.32.1 metadata and non-observation do not authenticate retained objects or establish all-alias/all-location applicability proof."
+      }
+    },
+    {
+      "name": "main-bluefin-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+      "scannedManifestDigest": "sha256:0e50f1435759085be0e789c2a880a296fc8dd2d0e363ae4be4c0ac5c3e2a6b60",
+      "configurationDigest": "sha256:fce1315ea7763cf210b19f4e7c83334ab5e36be9a490d97e0ccc2b2c69491497",
+      "sourceType": "signed-production-candidate; see original scan/provenance gates",
+      "sourceScanRun": 38340112122,
+      "compactRetentionRun": 38344754471,
+      "sbomSha256": "bcf12455b002324b0c5923110de414cde3528d164bbb6b230dc2e8efb69f56b4",
+      "nativeSummarySha256": "81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f",
+      "securityResultSha256": "64182a6c9df652cdfdf3c07d19b7983a7ac297d43bff97f18cac74cd12d8f95c",
+      "extractionSha256": "526eac11850343447addbc89dbddc401122823d23e3c09504bea5c17a833853b",
+      "bindingsVerified": true,
+      "observedTargetNativeFindingPairs": 0,
+      "observedTargetPolicyRows": 0,
+      "actualCandidateQualifiedDispositions": [],
+      "httpd": {
+        "currentPackages": [
+          {
+            "name": "httpd",
+            "version": "2.4.69-1.fc44",
+            "purl": "pkg:rpm/bluefin/httpd@2.4.69-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.69-1.fc44.src.rpm",
+            "sourceRpm": "httpd-2.4.69-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Mon Oct  5 07:56:00 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          },
+          {
+            "name": "httpd-core",
+            "version": "2.4.69-1.fc44",
+            "purl": "pkg:rpm/bluefin/httpd-core@2.4.69-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.69-1.fc44.src.rpm",
+            "sourceRpm": "httpd-2.4.69-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Mon Oct  5 07:55:59 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          },
+          {
+            "name": "httpd-filesystem",
+            "version": "2.4.69-1.fc44",
+            "purl": "pkg:rpm/bluefin/httpd-filesystem@2.4.69-1.fc44?arch=noarch&distro=bluefin-44&upstream=httpd-2.4.69-1.fc44.src.rpm",
+            "sourceRpm": "httpd-2.4.69-1.fc44.src.rpm",
+            "architecture": "noarch",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Mon Oct  5 07:55:58 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          },
+          {
+            "name": "httpd-tools",
+            "version": "2.4.69-1.fc44",
+            "purl": "pkg:rpm/bluefin/httpd-tools@2.4.69-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.69-1.fc44.src.rpm",
+            "sourceRpm": "httpd-2.4.69-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Mon Oct  5 07:55:59 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          },
+          {
+            "name": "mod_lua",
+            "version": "2.4.69-1.fc44",
+            "purl": "pkg:rpm/bluefin/mod_lua@2.4.69-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.69-1.fc44.src.rpm",
+            "sourceRpm": "httpd-2.4.69-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Mon Oct  5 07:55:59 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          }
+        ],
+        "historicalReferenceVersion": "2.4.68-1.fc44",
+        "sameReferenceComponentIdentity": false,
+        "freshByteEvidenceSha256": null,
+        "fileJoinCounts": {
+          "current-declared-manifest-only-agrees": 276,
+          "current-declared-manifest-differs-from-historical-reference": 115,
+          "current-declared-path-unavailable": 1
+        },
+        "fileJoinCountsByPackage": {
+          "httpd": {
+            "current-declared-manifest-only-agrees": 4,
+            "current-declared-manifest-differs-from-historical-reference": 2
+          },
+          "httpd-core": {
+            "current-declared-manifest-only-agrees": 270,
+            "current-declared-manifest-differs-from-historical-reference": 106,
+            "current-declared-path-unavailable": 1
+          },
+          "httpd-filesystem": {
+            "current-declared-manifest-only-agrees": 2
+          },
+          "httpd-tools": {
+            "current-declared-manifest-differs-from-historical-reference": 6
+          },
+          "mod_lua": {
+            "current-declared-manifest-differs-from-historical-reference": 1
+          }
+        },
+        "complete392ByteJoin": false,
+        "decision": "No disposition. Current2.4.69 code differs from historical2.4.68 reference; 276 unchanged manifest paths are not whole-package/source byte proof. Absence of current target findings is preserved as not observed."
+      },
+      "freerdp": {
+        "currentPackages": [
+          {
+            "name": "freerdp-libs",
+            "version": "2:3.32.1-1.fc44",
+            "purl": "pkg:rpm/bluefin/freerdp-libs@3.32.1-1.fc44?arch=x86_64&distro=bluefin-44&epoch=2&upstream=freerdp-3.32.1-1.fc44.src.rpm",
+            "sourceRpm": "freerdp-3.32.1-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Tue Sep 29 08:28:22 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          },
+          {
+            "name": "libwinpr",
+            "version": "2:3.32.1-1.fc44",
+            "purl": "pkg:rpm/bluefin/libwinpr@3.32.1-1.fc44?arch=x86_64&distro=bluefin-44&epoch=2&upstream=freerdp-3.32.1-1.fc44.src.rpm",
+            "sourceRpm": "freerdp-3.32.1-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Tue Sep 29 08:28:22 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          }
+        ],
+        "historicalReferenceVersion": "2:3.31.1-1.fc44",
+        "currentMatchLocationCoverage": "no target matches exposed; cannot transfer historical12 object paths",
+        "complete12CurrentObjectJoin": false,
+        "historicalObjectSelectors": [
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/08/fc2ca9ea6a75d0922298a81303b6728909c61fbfce06e2d3fd67fc0dd37eb3.file",
+            "referencePath": "/usr/lib64/libfreerdp-shadow3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "8762e31cb0f42d60a54c20d64a3715f8426d7aca7a1445d86f8b034bcc6aa77e",
+            "referenceSize": 98304,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/21/3a5c69e6bcc3bcf7d7956b19a8da41060a82fa75bd699c3c9959f0b26bcf00.file",
+            "referencePath": "/usr/lib64/libfreerdp-server3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "1df7b243ab735901076c66b61509acd5b6abd03e8222dae6f7cf89e9a2d09306",
+            "referenceSize": 318088,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/38/3c2d58d5f6e2c6b1bdc557e0e30359ef541c6334c1e30512b9834a45198f3d.file",
+            "referencePath": "/usr/lib64/freerdp3/proxy/libproxy-bitmap-filter-plugin.so",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "e0102151531e0c71f613c7d7f1543ec70b11f2704ac426f3e38326391a62c4ca",
+            "referenceSize": 20120,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": {
+              "sha256": "db9945bffe6b64168f364e44ab41c873c97f793d9c4f53a5dfb31277c5c4c91d",
+              "size": 20120,
+              "mode": 33261,
+              "independentByteProof": false
+            }
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/3f/e28168bfafc35f4c5a75f362a35bd64321ad763f4b66847e9662af7ed94e24.file",
+            "referencePath": "/usr/lib64/freerdp3/proxy/libproxy-dyn-channel-dump-plugin.so",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "b6ec87072b5a7d70f915ca9f129271be4b9770a1713c0315deaab8ac2e9dd7d9",
+            "referenceSize": 187600,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": {
+              "sha256": "9287253d7e7d7f8a10af997a7d229fe54340e5599e8c5fc33afec1b36b50d01e",
+              "size": 187600,
+              "mode": 33261,
+              "independentByteProof": false
+            }
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/5e/2a0930df64e6f7b5947801ac477c9df8fc342dce35a952c101057e9ce8de4d.file",
+            "referencePath": "/usr/lib64/libfreerdp3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "a25d541bfab8bf2a1cb076b182ebd2d7a43a3f7eff52db5447337a37bc21349a",
+            "referenceSize": 2254640,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/70/fb1cf6e02ee270a7716b0af74394d3cd67703795803cd3e91e73ed4719444a.file",
+            "referencePath": "/usr/lib64/libfreerdp-server-proxy3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "31c28efcf2933f765be7ddb23422c27fc6854efd935e64e04c55d7836ea7509d",
+            "referenceSize": 136232,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/78/c899ea8fe1653195352490c6c08f1d834ce020a03a05d1c0a560ce0ee28066.file",
+            "referencePath": "/usr/lib64/librdtk0.so.0.2.0",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "f5bc9cbc971513912720b4b2d434217feed57b959f66ecce94389dd62be69990",
+            "referenceSize": 36112,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": {
+              "sha256": "36b422ce32a57cce069542d1376d086b83eb483b02492eb49471162d7e3caa5b",
+              "size": 36112,
+              "mode": 33261,
+              "independentByteProof": false
+            }
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/90/0f5a7ce94df3978f0fa90ae76c51e003545a6198a1e1dc1574da12735290be.file",
+            "referencePath": "/usr/lib64/libfreerdp-client3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "e99f8050bc7aa7a48805554b2f559336a7d1cd782a140c33548f1eb9a90f96fa",
+            "referenceSize": 787784,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/cc/660fa41e8c2552a6420a11618989048bd2839fda442f4fb88f5f1f9e71544f.file",
+            "referencePath": "/usr/lib64/freerdp3/proxy/libproxy-demo-plugin.so",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "9db3600e92d6362f306d7f2f7d8b5d99b41c7dd57f4da4d93db3d5ea80f1e0fb",
+            "referenceSize": 20008,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": {
+              "sha256": "c46ce556dad734141e35992e98701a7b458d72885a3de73a09755c0f73fa64c3",
+              "size": 20008,
+              "mode": 33261,
+              "independentByteProof": false
+            }
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/dd/d3626787a3803f4939a8a4fdfefad644e87d69a98be326d692a5fb300b09c8.file",
+            "referencePath": "/usr/lib64/libfreerdp-shadow-subsystem3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "791113ce1c3c69920c892e01a0e97a8275627bf6fde874adf0859ac935983a30",
+            "referenceSize": 36240,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/e5/b082ca2a33265d41523bc7e190657afa530421ff868267bfcc94d39c330c36.file",
+            "referencePath": "/usr/lib64/libwinpr3.so.3.31.1",
+            "referencePackage": "libwinpr",
+            "referenceSha256": "e78e7be59b0199ebe51bb05bb29592636bfa20acd4567b1d6f8774b1577f0757",
+            "referenceSize": 1161720,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/fe/06c8a0dd65816aa82b8308cb2dbbca135ff7716470b8cbe06caa20fdda2a01.file",
+            "referencePath": "/usr/lib64/libwinpr-tools3.so.3.31.1",
+            "referencePackage": "libwinpr",
+            "referenceSha256": "2d37663e2fb2048a0ebedfd9b6972acc2edd92783f488f698c306711c7a1048c",
+            "referenceSize": 34736,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          }
+        ],
+        "decision": "No disposition. Currentlive3.32.1 metadata and non-observation do not authenticate retained objects or establish all-alias/all-location applicability proof."
+      }
+    },
+    {
+      "name": "main-bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "scannedManifestDigest": "sha256:452d00e425c67c7e41b88d63a3dcf5728c2c68621ac75689c617c8a36e7cfe21",
+      "configurationDigest": "sha256:5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78",
+      "sourceType": "signed-production-candidate; see original scan/provenance gates",
+      "sourceScanRun": 38340112122,
+      "compactRetentionRun": 38344754471,
+      "sbomSha256": "d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64",
+      "nativeSummarySha256": "21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+      "securityResultSha256": "b6439aee802b91d107231e19cdd6ddc405d5546204db05d46f14b99ba3086f56",
+      "extractionSha256": "1945c7099ecb4475b5227231861be84ba495311ed1195d7008632697683d2e54",
+      "bindingsVerified": true,
+      "observedTargetNativeFindingPairs": 0,
+      "observedTargetPolicyRows": 0,
+      "actualCandidateQualifiedDispositions": [],
+      "httpd": {
+        "currentPackages": [
+          {
+            "name": "httpd",
+            "version": "2.4.69-1.fc44",
+            "purl": "pkg:rpm/bluefin/httpd@2.4.69-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.69-1.fc44.src.rpm",
+            "sourceRpm": "httpd-2.4.69-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Mon Oct  5 07:56:00 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          },
+          {
+            "name": "httpd-core",
+            "version": "2.4.69-1.fc44",
+            "purl": "pkg:rpm/bluefin/httpd-core@2.4.69-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.69-1.fc44.src.rpm",
+            "sourceRpm": "httpd-2.4.69-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Mon Oct  5 07:55:59 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          },
+          {
+            "name": "httpd-filesystem",
+            "version": "2.4.69-1.fc44",
+            "purl": "pkg:rpm/bluefin/httpd-filesystem@2.4.69-1.fc44?arch=noarch&distro=bluefin-44&upstream=httpd-2.4.69-1.fc44.src.rpm",
+            "sourceRpm": "httpd-2.4.69-1.fc44.src.rpm",
+            "architecture": "noarch",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Mon Oct  5 07:55:58 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          },
+          {
+            "name": "httpd-tools",
+            "version": "2.4.69-1.fc44",
+            "purl": "pkg:rpm/bluefin/httpd-tools@2.4.69-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.69-1.fc44.src.rpm",
+            "sourceRpm": "httpd-2.4.69-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Mon Oct  5 07:55:59 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          },
+          {
+            "name": "mod_lua",
+            "version": "2.4.69-1.fc44",
+            "purl": "pkg:rpm/bluefin/mod_lua@2.4.69-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.69-1.fc44.src.rpm",
+            "sourceRpm": "httpd-2.4.69-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Mon Oct  5 07:55:59 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          }
+        ],
+        "historicalReferenceVersion": "2.4.68-1.fc44",
+        "sameReferenceComponentIdentity": false,
+        "freshByteEvidenceSha256": null,
+        "fileJoinCounts": {
+          "current-declared-manifest-only-agrees": 276,
+          "current-declared-manifest-differs-from-historical-reference": 115,
+          "current-declared-path-unavailable": 1
+        },
+        "fileJoinCountsByPackage": {
+          "httpd": {
+            "current-declared-manifest-only-agrees": 4,
+            "current-declared-manifest-differs-from-historical-reference": 2
+          },
+          "httpd-core": {
+            "current-declared-manifest-only-agrees": 270,
+            "current-declared-manifest-differs-from-historical-reference": 106,
+            "current-declared-path-unavailable": 1
+          },
+          "httpd-filesystem": {
+            "current-declared-manifest-only-agrees": 2
+          },
+          "httpd-tools": {
+            "current-declared-manifest-differs-from-historical-reference": 6
+          },
+          "mod_lua": {
+            "current-declared-manifest-differs-from-historical-reference": 1
+          }
+        },
+        "complete392ByteJoin": false,
+        "decision": "No disposition. Current2.4.69 code differs from historical2.4.68 reference; 276 unchanged manifest paths are not whole-package/source byte proof. Absence of current target findings is preserved as not observed."
+      },
+      "freerdp": {
+        "currentPackages": [
+          {
+            "name": "freerdp-libs",
+            "version": "2:3.32.1-1.fc44",
+            "purl": "pkg:rpm/bluefin/freerdp-libs@3.32.1-1.fc44?arch=x86_64&distro=bluefin-44&epoch=2&upstream=freerdp-3.32.1-1.fc44.src.rpm",
+            "sourceRpm": "freerdp-3.32.1-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Tue Sep 29 08:28:22 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          },
+          {
+            "name": "libwinpr",
+            "version": "2:3.32.1-1.fc44",
+            "purl": "pkg:rpm/bluefin/libwinpr@3.32.1-1.fc44?arch=x86_64&distro=bluefin-44&epoch=2&upstream=freerdp-3.32.1-1.fc44.src.rpm",
+            "sourceRpm": "freerdp-3.32.1-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Tue Sep 29 08:28:22 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          }
+        ],
+        "historicalReferenceVersion": "2:3.31.1-1.fc44",
+        "currentMatchLocationCoverage": "no target matches exposed; cannot transfer historical12 object paths",
+        "complete12CurrentObjectJoin": false,
+        "historicalObjectSelectors": [
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/08/fc2ca9ea6a75d0922298a81303b6728909c61fbfce06e2d3fd67fc0dd37eb3.file",
+            "referencePath": "/usr/lib64/libfreerdp-shadow3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "8762e31cb0f42d60a54c20d64a3715f8426d7aca7a1445d86f8b034bcc6aa77e",
+            "referenceSize": 98304,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/21/3a5c69e6bcc3bcf7d7956b19a8da41060a82fa75bd699c3c9959f0b26bcf00.file",
+            "referencePath": "/usr/lib64/libfreerdp-server3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "1df7b243ab735901076c66b61509acd5b6abd03e8222dae6f7cf89e9a2d09306",
+            "referenceSize": 318088,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/38/3c2d58d5f6e2c6b1bdc557e0e30359ef541c6334c1e30512b9834a45198f3d.file",
+            "referencePath": "/usr/lib64/freerdp3/proxy/libproxy-bitmap-filter-plugin.so",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "e0102151531e0c71f613c7d7f1543ec70b11f2704ac426f3e38326391a62c4ca",
+            "referenceSize": 20120,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": {
+              "sha256": "db9945bffe6b64168f364e44ab41c873c97f793d9c4f53a5dfb31277c5c4c91d",
+              "size": 20120,
+              "mode": 33261,
+              "independentByteProof": false
+            }
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/3f/e28168bfafc35f4c5a75f362a35bd64321ad763f4b66847e9662af7ed94e24.file",
+            "referencePath": "/usr/lib64/freerdp3/proxy/libproxy-dyn-channel-dump-plugin.so",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "b6ec87072b5a7d70f915ca9f129271be4b9770a1713c0315deaab8ac2e9dd7d9",
+            "referenceSize": 187600,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": {
+              "sha256": "9287253d7e7d7f8a10af997a7d229fe54340e5599e8c5fc33afec1b36b50d01e",
+              "size": 187600,
+              "mode": 33261,
+              "independentByteProof": false
+            }
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/5e/2a0930df64e6f7b5947801ac477c9df8fc342dce35a952c101057e9ce8de4d.file",
+            "referencePath": "/usr/lib64/libfreerdp3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "a25d541bfab8bf2a1cb076b182ebd2d7a43a3f7eff52db5447337a37bc21349a",
+            "referenceSize": 2254640,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/70/fb1cf6e02ee270a7716b0af74394d3cd67703795803cd3e91e73ed4719444a.file",
+            "referencePath": "/usr/lib64/libfreerdp-server-proxy3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "31c28efcf2933f765be7ddb23422c27fc6854efd935e64e04c55d7836ea7509d",
+            "referenceSize": 136232,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/78/c899ea8fe1653195352490c6c08f1d834ce020a03a05d1c0a560ce0ee28066.file",
+            "referencePath": "/usr/lib64/librdtk0.so.0.2.0",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "f5bc9cbc971513912720b4b2d434217feed57b959f66ecce94389dd62be69990",
+            "referenceSize": 36112,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": {
+              "sha256": "36b422ce32a57cce069542d1376d086b83eb483b02492eb49471162d7e3caa5b",
+              "size": 36112,
+              "mode": 33261,
+              "independentByteProof": false
+            }
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/90/0f5a7ce94df3978f0fa90ae76c51e003545a6198a1e1dc1574da12735290be.file",
+            "referencePath": "/usr/lib64/libfreerdp-client3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "e99f8050bc7aa7a48805554b2f559336a7d1cd782a140c33548f1eb9a90f96fa",
+            "referenceSize": 787784,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/cc/660fa41e8c2552a6420a11618989048bd2839fda442f4fb88f5f1f9e71544f.file",
+            "referencePath": "/usr/lib64/freerdp3/proxy/libproxy-demo-plugin.so",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "9db3600e92d6362f306d7f2f7d8b5d99b41c7dd57f4da4d93db3d5ea80f1e0fb",
+            "referenceSize": 20008,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": {
+              "sha256": "c46ce556dad734141e35992e98701a7b458d72885a3de73a09755c0f73fa64c3",
+              "size": 20008,
+              "mode": 33261,
+              "independentByteProof": false
+            }
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/dd/d3626787a3803f4939a8a4fdfefad644e87d69a98be326d692a5fb300b09c8.file",
+            "referencePath": "/usr/lib64/libfreerdp-shadow-subsystem3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "791113ce1c3c69920c892e01a0e97a8275627bf6fde874adf0859ac935983a30",
+            "referenceSize": 36240,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/e5/b082ca2a33265d41523bc7e190657afa530421ff868267bfcc94d39c330c36.file",
+            "referencePath": "/usr/lib64/libwinpr3.so.3.31.1",
+            "referencePackage": "libwinpr",
+            "referenceSha256": "e78e7be59b0199ebe51bb05bb29592636bfa20acd4567b1d6f8774b1577f0757",
+            "referenceSize": 1161720,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/fe/06c8a0dd65816aa82b8308cb2dbbca135ff7716470b8cbe06caa20fdda2a01.file",
+            "referencePath": "/usr/lib64/libwinpr-tools3.so.3.31.1",
+            "referencePackage": "libwinpr",
+            "referenceSha256": "2d37663e2fb2048a0ebedfd9b6972acc2edd92783f488f698c306711c7a1048c",
+            "referenceSize": 34736,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          }
+        ],
+        "decision": "No disposition. Currentlive3.32.1 metadata and non-observation do not authenticate retained objects or establish all-alias/all-location applicability proof."
+      }
+    },
+    {
+      "name": "main-bluefin-dx-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "scannedManifestDigest": "sha256:29499493e2d9ec4bd259f44529c647f45ea10fa229d0132d279d662934df0d3b",
+      "configurationDigest": "sha256:3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44",
+      "sourceType": "signed-production-candidate; see original scan/provenance gates",
+      "sourceScanRun": 38340112122,
+      "compactRetentionRun": 38344754471,
+      "sbomSha256": "46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5",
+      "nativeSummarySha256": "fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+      "securityResultSha256": "5724e3de7bbfd54999a962439452e4d9713f6ce1226c3fdbe126454868ba734b",
+      "extractionSha256": "99db89859b93fef227982046f2e7ce59a1328667e4f444cc58f2a0142cf4f2fe",
+      "bindingsVerified": true,
+      "observedTargetNativeFindingPairs": 0,
+      "observedTargetPolicyRows": 0,
+      "actualCandidateQualifiedDispositions": [],
+      "httpd": {
+        "currentPackages": [
+          {
+            "name": "httpd",
+            "version": "2.4.69-1.fc44",
+            "purl": "pkg:rpm/bluefin/httpd@2.4.69-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.69-1.fc44.src.rpm",
+            "sourceRpm": "httpd-2.4.69-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Mon Oct  5 07:56:00 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          },
+          {
+            "name": "httpd-core",
+            "version": "2.4.69-1.fc44",
+            "purl": "pkg:rpm/bluefin/httpd-core@2.4.69-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.69-1.fc44.src.rpm",
+            "sourceRpm": "httpd-2.4.69-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Mon Oct  5 07:55:59 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          },
+          {
+            "name": "httpd-filesystem",
+            "version": "2.4.69-1.fc44",
+            "purl": "pkg:rpm/bluefin/httpd-filesystem@2.4.69-1.fc44?arch=noarch&distro=bluefin-44&upstream=httpd-2.4.69-1.fc44.src.rpm",
+            "sourceRpm": "httpd-2.4.69-1.fc44.src.rpm",
+            "architecture": "noarch",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Mon Oct  5 07:55:58 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          },
+          {
+            "name": "httpd-tools",
+            "version": "2.4.69-1.fc44",
+            "purl": "pkg:rpm/bluefin/httpd-tools@2.4.69-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.69-1.fc44.src.rpm",
+            "sourceRpm": "httpd-2.4.69-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Mon Oct  5 07:55:59 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          },
+          {
+            "name": "mod_lua",
+            "version": "2.4.69-1.fc44",
+            "purl": "pkg:rpm/bluefin/mod_lua@2.4.69-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.69-1.fc44.src.rpm",
+            "sourceRpm": "httpd-2.4.69-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Mon Oct  5 07:55:59 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          }
+        ],
+        "historicalReferenceVersion": "2.4.68-1.fc44",
+        "sameReferenceComponentIdentity": false,
+        "freshByteEvidenceSha256": null,
+        "fileJoinCounts": {
+          "current-declared-manifest-only-agrees": 276,
+          "current-declared-manifest-differs-from-historical-reference": 115,
+          "current-declared-path-unavailable": 1
+        },
+        "fileJoinCountsByPackage": {
+          "httpd": {
+            "current-declared-manifest-only-agrees": 4,
+            "current-declared-manifest-differs-from-historical-reference": 2
+          },
+          "httpd-core": {
+            "current-declared-manifest-only-agrees": 270,
+            "current-declared-manifest-differs-from-historical-reference": 106,
+            "current-declared-path-unavailable": 1
+          },
+          "httpd-filesystem": {
+            "current-declared-manifest-only-agrees": 2
+          },
+          "httpd-tools": {
+            "current-declared-manifest-differs-from-historical-reference": 6
+          },
+          "mod_lua": {
+            "current-declared-manifest-differs-from-historical-reference": 1
+          }
+        },
+        "complete392ByteJoin": false,
+        "decision": "No disposition. Current2.4.69 code differs from historical2.4.68 reference; 276 unchanged manifest paths are not whole-package/source byte proof. Absence of current target findings is preserved as not observed."
+      },
+      "freerdp": {
+        "currentPackages": [
+          {
+            "name": "freerdp-libs",
+            "version": "2:3.32.1-1.fc44",
+            "purl": "pkg:rpm/bluefin/freerdp-libs@3.32.1-1.fc44?arch=x86_64&distro=bluefin-44&epoch=2&upstream=freerdp-3.32.1-1.fc44.src.rpm",
+            "sourceRpm": "freerdp-3.32.1-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Tue Sep 29 08:28:22 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          },
+          {
+            "name": "libwinpr",
+            "version": "2:3.32.1-1.fc44",
+            "purl": "pkg:rpm/bluefin/libwinpr@3.32.1-1.fc44?arch=x86_64&distro=bluefin-44&epoch=2&upstream=freerdp-3.32.1-1.fc44.src.rpm",
+            "sourceRpm": "freerdp-3.32.1-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Tue Sep 29 08:28:22 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          }
+        ],
+        "historicalReferenceVersion": "2:3.31.1-1.fc44",
+        "currentMatchLocationCoverage": "no target matches exposed; cannot transfer historical12 object paths",
+        "complete12CurrentObjectJoin": false,
+        "historicalObjectSelectors": [
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/08/fc2ca9ea6a75d0922298a81303b6728909c61fbfce06e2d3fd67fc0dd37eb3.file",
+            "referencePath": "/usr/lib64/libfreerdp-shadow3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "8762e31cb0f42d60a54c20d64a3715f8426d7aca7a1445d86f8b034bcc6aa77e",
+            "referenceSize": 98304,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/21/3a5c69e6bcc3bcf7d7956b19a8da41060a82fa75bd699c3c9959f0b26bcf00.file",
+            "referencePath": "/usr/lib64/libfreerdp-server3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "1df7b243ab735901076c66b61509acd5b6abd03e8222dae6f7cf89e9a2d09306",
+            "referenceSize": 318088,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/38/3c2d58d5f6e2c6b1bdc557e0e30359ef541c6334c1e30512b9834a45198f3d.file",
+            "referencePath": "/usr/lib64/freerdp3/proxy/libproxy-bitmap-filter-plugin.so",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "e0102151531e0c71f613c7d7f1543ec70b11f2704ac426f3e38326391a62c4ca",
+            "referenceSize": 20120,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": {
+              "sha256": "db9945bffe6b64168f364e44ab41c873c97f793d9c4f53a5dfb31277c5c4c91d",
+              "size": 20120,
+              "mode": 33261,
+              "independentByteProof": false
+            }
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/3f/e28168bfafc35f4c5a75f362a35bd64321ad763f4b66847e9662af7ed94e24.file",
+            "referencePath": "/usr/lib64/freerdp3/proxy/libproxy-dyn-channel-dump-plugin.so",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "b6ec87072b5a7d70f915ca9f129271be4b9770a1713c0315deaab8ac2e9dd7d9",
+            "referenceSize": 187600,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": {
+              "sha256": "9287253d7e7d7f8a10af997a7d229fe54340e5599e8c5fc33afec1b36b50d01e",
+              "size": 187600,
+              "mode": 33261,
+              "independentByteProof": false
+            }
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/5e/2a0930df64e6f7b5947801ac477c9df8fc342dce35a952c101057e9ce8de4d.file",
+            "referencePath": "/usr/lib64/libfreerdp3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "a25d541bfab8bf2a1cb076b182ebd2d7a43a3f7eff52db5447337a37bc21349a",
+            "referenceSize": 2254640,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/70/fb1cf6e02ee270a7716b0af74394d3cd67703795803cd3e91e73ed4719444a.file",
+            "referencePath": "/usr/lib64/libfreerdp-server-proxy3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "31c28efcf2933f765be7ddb23422c27fc6854efd935e64e04c55d7836ea7509d",
+            "referenceSize": 136232,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/78/c899ea8fe1653195352490c6c08f1d834ce020a03a05d1c0a560ce0ee28066.file",
+            "referencePath": "/usr/lib64/librdtk0.so.0.2.0",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "f5bc9cbc971513912720b4b2d434217feed57b959f66ecce94389dd62be69990",
+            "referenceSize": 36112,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": {
+              "sha256": "36b422ce32a57cce069542d1376d086b83eb483b02492eb49471162d7e3caa5b",
+              "size": 36112,
+              "mode": 33261,
+              "independentByteProof": false
+            }
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/90/0f5a7ce94df3978f0fa90ae76c51e003545a6198a1e1dc1574da12735290be.file",
+            "referencePath": "/usr/lib64/libfreerdp-client3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "e99f8050bc7aa7a48805554b2f559336a7d1cd782a140c33548f1eb9a90f96fa",
+            "referenceSize": 787784,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/cc/660fa41e8c2552a6420a11618989048bd2839fda442f4fb88f5f1f9e71544f.file",
+            "referencePath": "/usr/lib64/freerdp3/proxy/libproxy-demo-plugin.so",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "9db3600e92d6362f306d7f2f7d8b5d99b41c7dd57f4da4d93db3d5ea80f1e0fb",
+            "referenceSize": 20008,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": {
+              "sha256": "c46ce556dad734141e35992e98701a7b458d72885a3de73a09755c0f73fa64c3",
+              "size": 20008,
+              "mode": 33261,
+              "independentByteProof": false
+            }
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/dd/d3626787a3803f4939a8a4fdfefad644e87d69a98be326d692a5fb300b09c8.file",
+            "referencePath": "/usr/lib64/libfreerdp-shadow-subsystem3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "791113ce1c3c69920c892e01a0e97a8275627bf6fde874adf0859ac935983a30",
+            "referenceSize": 36240,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/e5/b082ca2a33265d41523bc7e190657afa530421ff868267bfcc94d39c330c36.file",
+            "referencePath": "/usr/lib64/libwinpr3.so.3.31.1",
+            "referencePackage": "libwinpr",
+            "referenceSha256": "e78e7be59b0199ebe51bb05bb29592636bfa20acd4567b1d6f8774b1577f0757",
+            "referenceSize": 1161720,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/fe/06c8a0dd65816aa82b8308cb2dbbca135ff7716470b8cbe06caa20fdda2a01.file",
+            "referencePath": "/usr/lib64/libwinpr-tools3.so.3.31.1",
+            "referencePackage": "libwinpr",
+            "referenceSha256": "2d37663e2fb2048a0ebedfd9b6972acc2edd92783f488f698c306711c7a1048c",
+            "referenceSize": 34736,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          }
+        ],
+        "decision": "No disposition. Currentlive3.32.1 metadata and non-observation do not authenticate retained objects or establish all-alias/all-location applicability proof."
+      }
+    },
+    {
+      "name": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+      "scannedManifestDigest": "sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+      "configurationDigest": "sha256:97b4843f19705f7d6d29988bfbe591594388af5a9b7785e4edb08a7b6fb6abef",
+      "sourceType": "locally-built-unpublished",
+      "sourceScanRun": 38341281199,
+      "compactRetentionRun": 38344754471,
+      "sbomSha256": "8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199",
+      "nativeSummarySha256": "868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f",
+      "securityResultSha256": "814aab9be9c5872dd844ffcbe4d8205a092c6ca43dec11167c4a49aeaa891805",
+      "extractionSha256": "1090f5bcb0b10b19e09f748847587bf9e8da6c1bd304f86c73defaba48b08025",
+      "bindingsVerified": true,
+      "observedTargetNativeFindingPairs": 0,
+      "observedTargetPolicyRows": 0,
+      "actualCandidateQualifiedDispositions": [],
+      "httpd": {
+        "currentPackages": [
+          {
+            "name": "httpd",
+            "version": "2.4.69-1.fc44",
+            "purl": "pkg:rpm/bluefin/httpd@2.4.69-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.69-1.fc44.src.rpm",
+            "sourceRpm": "httpd-2.4.69-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Mon Oct  5 07:56:00 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          },
+          {
+            "name": "httpd-core",
+            "version": "2.4.69-1.fc44",
+            "purl": "pkg:rpm/bluefin/httpd-core@2.4.69-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.69-1.fc44.src.rpm",
+            "sourceRpm": "httpd-2.4.69-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Mon Oct  5 07:55:59 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          },
+          {
+            "name": "httpd-filesystem",
+            "version": "2.4.69-1.fc44",
+            "purl": "pkg:rpm/bluefin/httpd-filesystem@2.4.69-1.fc44?arch=noarch&distro=bluefin-44&upstream=httpd-2.4.69-1.fc44.src.rpm",
+            "sourceRpm": "httpd-2.4.69-1.fc44.src.rpm",
+            "architecture": "noarch",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Mon Oct  5 07:55:58 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          },
+          {
+            "name": "httpd-tools",
+            "version": "2.4.69-1.fc44",
+            "purl": "pkg:rpm/bluefin/httpd-tools@2.4.69-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.69-1.fc44.src.rpm",
+            "sourceRpm": "httpd-2.4.69-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Mon Oct  5 07:55:59 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          },
+          {
+            "name": "mod_lua",
+            "version": "2.4.69-1.fc44",
+            "purl": "pkg:rpm/bluefin/mod_lua@2.4.69-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.69-1.fc44.src.rpm",
+            "sourceRpm": "httpd-2.4.69-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Mon Oct  5 07:55:59 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          }
+        ],
+        "historicalReferenceVersion": "2.4.68-1.fc44",
+        "sameReferenceComponentIdentity": false,
+        "freshByteEvidenceSha256": "d4f2cd9530e46814198a950653600d1828734ae9b0c439c03b60b0502ac59847",
+        "fileJoinCounts": {
+          "current-fresh-byte-match-to-historical-signed-reference": 276,
+          "current-declared-manifest-differs-from-historical-reference": 115,
+          "current-declared-path-unavailable": 1
+        },
+        "fileJoinCountsByPackage": {
+          "httpd": {
+            "current-fresh-byte-match-to-historical-signed-reference": 4,
+            "current-declared-manifest-differs-from-historical-reference": 2
+          },
+          "httpd-core": {
+            "current-fresh-byte-match-to-historical-signed-reference": 270,
+            "current-declared-manifest-differs-from-historical-reference": 106,
+            "current-declared-path-unavailable": 1
+          },
+          "httpd-filesystem": {
+            "current-fresh-byte-match-to-historical-signed-reference": 2
+          },
+          "httpd-tools": {
+            "current-declared-manifest-differs-from-historical-reference": 6
+          },
+          "mod_lua": {
+            "current-declared-manifest-differs-from-historical-reference": 1
+          }
+        },
+        "complete392ByteJoin": false,
+        "decision": "No disposition. Current2.4.69 code differs from historical2.4.68 reference; 276 unchanged manifest paths are not whole-package/source byte proof. Absence of current target findings is preserved as not observed."
+      },
+      "freerdp": {
+        "currentPackages": [
+          {
+            "name": "freerdp-libs",
+            "version": "2:3.32.1-1.fc44",
+            "purl": "pkg:rpm/bluefin/freerdp-libs@3.32.1-1.fc44?arch=x86_64&distro=bluefin-44&epoch=2&upstream=freerdp-3.32.1-1.fc44.src.rpm",
+            "sourceRpm": "freerdp-3.32.1-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Tue Sep 29 08:28:22 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          },
+          {
+            "name": "libwinpr",
+            "version": "2:3.32.1-1.fc44",
+            "purl": "pkg:rpm/bluefin/libwinpr@3.32.1-1.fc44?arch=x86_64&distro=bluefin-44&epoch=2&upstream=freerdp-3.32.1-1.fc44.src.rpm",
+            "sourceRpm": "freerdp-3.32.1-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Tue Sep 29 08:28:22 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          }
+        ],
+        "historicalReferenceVersion": "2:3.31.1-1.fc44",
+        "currentMatchLocationCoverage": "no target matches exposed; cannot transfer historical12 object paths",
+        "complete12CurrentObjectJoin": false,
+        "historicalObjectSelectors": [
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/08/fc2ca9ea6a75d0922298a81303b6728909c61fbfce06e2d3fd67fc0dd37eb3.file",
+            "referencePath": "/usr/lib64/libfreerdp-shadow3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "8762e31cb0f42d60a54c20d64a3715f8426d7aca7a1445d86f8b034bcc6aa77e",
+            "referenceSize": 98304,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/21/3a5c69e6bcc3bcf7d7956b19a8da41060a82fa75bd699c3c9959f0b26bcf00.file",
+            "referencePath": "/usr/lib64/libfreerdp-server3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "1df7b243ab735901076c66b61509acd5b6abd03e8222dae6f7cf89e9a2d09306",
+            "referenceSize": 318088,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/38/3c2d58d5f6e2c6b1bdc557e0e30359ef541c6334c1e30512b9834a45198f3d.file",
+            "referencePath": "/usr/lib64/freerdp3/proxy/libproxy-bitmap-filter-plugin.so",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "e0102151531e0c71f613c7d7f1543ec70b11f2704ac426f3e38326391a62c4ca",
+            "referenceSize": 20120,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": {
+              "sha256": "db9945bffe6b64168f364e44ab41c873c97f793d9c4f53a5dfb31277c5c4c91d",
+              "size": 20120,
+              "mode": 33261,
+              "independentByteProof": false
+            }
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/3f/e28168bfafc35f4c5a75f362a35bd64321ad763f4b66847e9662af7ed94e24.file",
+            "referencePath": "/usr/lib64/freerdp3/proxy/libproxy-dyn-channel-dump-plugin.so",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "b6ec87072b5a7d70f915ca9f129271be4b9770a1713c0315deaab8ac2e9dd7d9",
+            "referenceSize": 187600,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": {
+              "sha256": "9287253d7e7d7f8a10af997a7d229fe54340e5599e8c5fc33afec1b36b50d01e",
+              "size": 187600,
+              "mode": 33261,
+              "independentByteProof": false
+            }
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/5e/2a0930df64e6f7b5947801ac477c9df8fc342dce35a952c101057e9ce8de4d.file",
+            "referencePath": "/usr/lib64/libfreerdp3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "a25d541bfab8bf2a1cb076b182ebd2d7a43a3f7eff52db5447337a37bc21349a",
+            "referenceSize": 2254640,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/70/fb1cf6e02ee270a7716b0af74394d3cd67703795803cd3e91e73ed4719444a.file",
+            "referencePath": "/usr/lib64/libfreerdp-server-proxy3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "31c28efcf2933f765be7ddb23422c27fc6854efd935e64e04c55d7836ea7509d",
+            "referenceSize": 136232,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/78/c899ea8fe1653195352490c6c08f1d834ce020a03a05d1c0a560ce0ee28066.file",
+            "referencePath": "/usr/lib64/librdtk0.so.0.2.0",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "f5bc9cbc971513912720b4b2d434217feed57b959f66ecce94389dd62be69990",
+            "referenceSize": 36112,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": {
+              "sha256": "36b422ce32a57cce069542d1376d086b83eb483b02492eb49471162d7e3caa5b",
+              "size": 36112,
+              "mode": 33261,
+              "independentByteProof": false
+            }
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/90/0f5a7ce94df3978f0fa90ae76c51e003545a6198a1e1dc1574da12735290be.file",
+            "referencePath": "/usr/lib64/libfreerdp-client3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "e99f8050bc7aa7a48805554b2f559336a7d1cd782a140c33548f1eb9a90f96fa",
+            "referenceSize": 787784,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/cc/660fa41e8c2552a6420a11618989048bd2839fda442f4fb88f5f1f9e71544f.file",
+            "referencePath": "/usr/lib64/freerdp3/proxy/libproxy-demo-plugin.so",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "9db3600e92d6362f306d7f2f7d8b5d99b41c7dd57f4da4d93db3d5ea80f1e0fb",
+            "referenceSize": 20008,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": {
+              "sha256": "c46ce556dad734141e35992e98701a7b458d72885a3de73a09755c0f73fa64c3",
+              "size": 20008,
+              "mode": 33261,
+              "independentByteProof": false
+            }
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/dd/d3626787a3803f4939a8a4fdfefad644e87d69a98be326d692a5fb300b09c8.file",
+            "referencePath": "/usr/lib64/libfreerdp-shadow-subsystem3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "791113ce1c3c69920c892e01a0e97a8275627bf6fde874adf0859ac935983a30",
+            "referenceSize": 36240,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/e5/b082ca2a33265d41523bc7e190657afa530421ff868267bfcc94d39c330c36.file",
+            "referencePath": "/usr/lib64/libwinpr3.so.3.31.1",
+            "referencePackage": "libwinpr",
+            "referenceSha256": "e78e7be59b0199ebe51bb05bb29592636bfa20acd4567b1d6f8774b1577f0757",
+            "referenceSize": 1161720,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/fe/06c8a0dd65816aa82b8308cb2dbbca135ff7716470b8cbe06caa20fdda2a01.file",
+            "referencePath": "/usr/lib64/libwinpr-tools3.so.3.31.1",
+            "referencePackage": "libwinpr",
+            "referenceSha256": "2d37663e2fb2048a0ebedfd9b6972acc2edd92783f488f698c306711c7a1048c",
+            "referenceSize": 34736,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          }
+        ],
+        "decision": "No disposition. Currentlive3.32.1 metadata and non-observation do not authenticate retained objects or establish all-alias/all-location applicability proof."
+      }
+    },
+    {
+      "name": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "scannedManifestDigest": "sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "configurationDigest": "sha256:f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357",
+      "sourceType": "locally-built-unpublished",
+      "sourceScanRun": 38341284379,
+      "compactRetentionRun": 38344754471,
+      "sbomSha256": "afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+      "nativeSummarySha256": "90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+      "securityResultSha256": "7cdbb3e6a941de295d48ef0f2a7cfc8c72b4ec383ca990e6a17de0cf114605bb",
+      "extractionSha256": "764adc980272907e1e4b918164d649cb71448c44a3021ba29d86a93dcf32d1ba",
+      "bindingsVerified": true,
+      "observedTargetNativeFindingPairs": 0,
+      "observedTargetPolicyRows": 0,
+      "actualCandidateQualifiedDispositions": [],
+      "httpd": {
+        "currentPackages": [
+          {
+            "name": "httpd",
+            "version": "2.4.69-1.fc44",
+            "purl": "pkg:rpm/bluefin/httpd@2.4.69-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.69-1.fc44.src.rpm",
+            "sourceRpm": "httpd-2.4.69-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Mon Oct  5 07:56:00 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          },
+          {
+            "name": "httpd-core",
+            "version": "2.4.69-1.fc44",
+            "purl": "pkg:rpm/bluefin/httpd-core@2.4.69-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.69-1.fc44.src.rpm",
+            "sourceRpm": "httpd-2.4.69-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Mon Oct  5 07:55:59 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          },
+          {
+            "name": "httpd-filesystem",
+            "version": "2.4.69-1.fc44",
+            "purl": "pkg:rpm/bluefin/httpd-filesystem@2.4.69-1.fc44?arch=noarch&distro=bluefin-44&upstream=httpd-2.4.69-1.fc44.src.rpm",
+            "sourceRpm": "httpd-2.4.69-1.fc44.src.rpm",
+            "architecture": "noarch",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Mon Oct  5 07:55:58 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          },
+          {
+            "name": "httpd-tools",
+            "version": "2.4.69-1.fc44",
+            "purl": "pkg:rpm/bluefin/httpd-tools@2.4.69-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.69-1.fc44.src.rpm",
+            "sourceRpm": "httpd-2.4.69-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Mon Oct  5 07:55:59 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          },
+          {
+            "name": "mod_lua",
+            "version": "2.4.69-1.fc44",
+            "purl": "pkg:rpm/bluefin/mod_lua@2.4.69-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.69-1.fc44.src.rpm",
+            "sourceRpm": "httpd-2.4.69-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Mon Oct  5 07:55:59 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          }
+        ],
+        "historicalReferenceVersion": "2.4.68-1.fc44",
+        "sameReferenceComponentIdentity": false,
+        "freshByteEvidenceSha256": "a04099d5eae4df1b86f4f797db05b7b4e042e81fbf0cd181969182459d63a48c",
+        "fileJoinCounts": {
+          "current-fresh-byte-match-to-historical-signed-reference": 276,
+          "current-declared-manifest-differs-from-historical-reference": 115,
+          "current-declared-path-unavailable": 1
+        },
+        "fileJoinCountsByPackage": {
+          "httpd": {
+            "current-fresh-byte-match-to-historical-signed-reference": 4,
+            "current-declared-manifest-differs-from-historical-reference": 2
+          },
+          "httpd-core": {
+            "current-fresh-byte-match-to-historical-signed-reference": 270,
+            "current-declared-manifest-differs-from-historical-reference": 106,
+            "current-declared-path-unavailable": 1
+          },
+          "httpd-filesystem": {
+            "current-fresh-byte-match-to-historical-signed-reference": 2
+          },
+          "httpd-tools": {
+            "current-declared-manifest-differs-from-historical-reference": 6
+          },
+          "mod_lua": {
+            "current-declared-manifest-differs-from-historical-reference": 1
+          }
+        },
+        "complete392ByteJoin": false,
+        "decision": "No disposition. Current2.4.69 code differs from historical2.4.68 reference; 276 unchanged manifest paths are not whole-package/source byte proof. Absence of current target findings is preserved as not observed."
+      },
+      "freerdp": {
+        "currentPackages": [
+          {
+            "name": "freerdp-libs",
+            "version": "2:3.32.1-1.fc44",
+            "purl": "pkg:rpm/bluefin/freerdp-libs@3.32.1-1.fc44?arch=x86_64&distro=bluefin-44&epoch=2&upstream=freerdp-3.32.1-1.fc44.src.rpm",
+            "sourceRpm": "freerdp-3.32.1-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Tue Sep 29 08:28:22 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          },
+          {
+            "name": "libwinpr",
+            "version": "2:3.32.1-1.fc44",
+            "purl": "pkg:rpm/bluefin/libwinpr@3.32.1-1.fc44?arch=x86_64&distro=bluefin-44&epoch=2&upstream=freerdp-3.32.1-1.fc44.src.rpm",
+            "sourceRpm": "freerdp-3.32.1-1.fc44.src.rpm",
+            "architecture": "x86_64",
+            "signatures": [
+              {
+                "algo": "RSA",
+                "hash": "SHA256",
+                "created": "Tue Sep 29 08:28:22 2026",
+                "issuer": "dbfcf71c6d9f90a6"
+              }
+            ]
+          }
+        ],
+        "historicalReferenceVersion": "2:3.31.1-1.fc44",
+        "currentMatchLocationCoverage": "no target matches exposed; cannot transfer historical12 object paths",
+        "complete12CurrentObjectJoin": false,
+        "historicalObjectSelectors": [
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/08/fc2ca9ea6a75d0922298a81303b6728909c61fbfce06e2d3fd67fc0dd37eb3.file",
+            "referencePath": "/usr/lib64/libfreerdp-shadow3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "8762e31cb0f42d60a54c20d64a3715f8426d7aca7a1445d86f8b034bcc6aa77e",
+            "referenceSize": 98304,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/21/3a5c69e6bcc3bcf7d7956b19a8da41060a82fa75bd699c3c9959f0b26bcf00.file",
+            "referencePath": "/usr/lib64/libfreerdp-server3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "1df7b243ab735901076c66b61509acd5b6abd03e8222dae6f7cf89e9a2d09306",
+            "referenceSize": 318088,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/38/3c2d58d5f6e2c6b1bdc557e0e30359ef541c6334c1e30512b9834a45198f3d.file",
+            "referencePath": "/usr/lib64/freerdp3/proxy/libproxy-bitmap-filter-plugin.so",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "e0102151531e0c71f613c7d7f1543ec70b11f2704ac426f3e38326391a62c4ca",
+            "referenceSize": 20120,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": {
+              "sha256": "db9945bffe6b64168f364e44ab41c873c97f793d9c4f53a5dfb31277c5c4c91d",
+              "size": 20120,
+              "mode": 33261,
+              "independentByteProof": false
+            }
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/3f/e28168bfafc35f4c5a75f362a35bd64321ad763f4b66847e9662af7ed94e24.file",
+            "referencePath": "/usr/lib64/freerdp3/proxy/libproxy-dyn-channel-dump-plugin.so",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "b6ec87072b5a7d70f915ca9f129271be4b9770a1713c0315deaab8ac2e9dd7d9",
+            "referenceSize": 187600,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": {
+              "sha256": "9287253d7e7d7f8a10af997a7d229fe54340e5599e8c5fc33afec1b36b50d01e",
+              "size": 187600,
+              "mode": 33261,
+              "independentByteProof": false
+            }
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/5e/2a0930df64e6f7b5947801ac477c9df8fc342dce35a952c101057e9ce8de4d.file",
+            "referencePath": "/usr/lib64/libfreerdp3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "a25d541bfab8bf2a1cb076b182ebd2d7a43a3f7eff52db5447337a37bc21349a",
+            "referenceSize": 2254640,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/70/fb1cf6e02ee270a7716b0af74394d3cd67703795803cd3e91e73ed4719444a.file",
+            "referencePath": "/usr/lib64/libfreerdp-server-proxy3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "31c28efcf2933f765be7ddb23422c27fc6854efd935e64e04c55d7836ea7509d",
+            "referenceSize": 136232,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/78/c899ea8fe1653195352490c6c08f1d834ce020a03a05d1c0a560ce0ee28066.file",
+            "referencePath": "/usr/lib64/librdtk0.so.0.2.0",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "f5bc9cbc971513912720b4b2d434217feed57b959f66ecce94389dd62be69990",
+            "referenceSize": 36112,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": {
+              "sha256": "36b422ce32a57cce069542d1376d086b83eb483b02492eb49471162d7e3caa5b",
+              "size": 36112,
+              "mode": 33261,
+              "independentByteProof": false
+            }
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/90/0f5a7ce94df3978f0fa90ae76c51e003545a6198a1e1dc1574da12735290be.file",
+            "referencePath": "/usr/lib64/libfreerdp-client3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "e99f8050bc7aa7a48805554b2f559336a7d1cd782a140c33548f1eb9a90f96fa",
+            "referenceSize": 787784,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/cc/660fa41e8c2552a6420a11618989048bd2839fda442f4fb88f5f1f9e71544f.file",
+            "referencePath": "/usr/lib64/freerdp3/proxy/libproxy-demo-plugin.so",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "9db3600e92d6362f306d7f2f7d8b5d99b41c7dd57f4da4d93db3d5ea80f1e0fb",
+            "referenceSize": 20008,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": {
+              "sha256": "c46ce556dad734141e35992e98701a7b458d72885a3de73a09755c0f73fa64c3",
+              "size": 20008,
+              "mode": 33261,
+              "independentByteProof": false
+            }
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/dd/d3626787a3803f4939a8a4fdfefad644e87d69a98be326d692a5fb300b09c8.file",
+            "referencePath": "/usr/lib64/libfreerdp-shadow-subsystem3.so.3.31.1",
+            "referencePackage": "freerdp-libs",
+            "referenceSha256": "791113ce1c3c69920c892e01a0e97a8275627bf6fde874adf0859ac935983a30",
+            "referenceSize": 36240,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/e5/b082ca2a33265d41523bc7e190657afa530421ff868267bfcc94d39c330c36.file",
+            "referencePath": "/usr/lib64/libwinpr3.so.3.31.1",
+            "referencePackage": "libwinpr",
+            "referenceSha256": "e78e7be59b0199ebe51bb05bb29592636bfa20acd4567b1d6f8774b1577f0757",
+            "referenceSize": 1161720,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          },
+          {
+            "historicalSelectorPath": "/sysroot/ostree/repo/objects/fe/06c8a0dd65816aa82b8308cb2dbbca135ff7716470b8cbe06caa20fdda2a01.file",
+            "referencePath": "/usr/lib64/libwinpr-tools3.so.3.31.1",
+            "referencePackage": "libwinpr",
+            "referenceSha256": "2d37663e2fb2048a0ebedfd9b6972acc2edd92783f488f698c306711c7a1048c",
+            "referenceSize": 34736,
+            "referenceElfHeader": "7f454c4602010100000000000000000003003e00",
+            "currentOldObjectPathInExposedFindings": false,
+            "currentActualObjectDigest": null,
+            "status": "current-matched-location-and-byte-proof-unavailable; not-observed-is-not-fixed",
+            "currentLiveDeclaredSamePath": null
+          }
+        ],
+        "decision": "No disposition. Currentlive3.32.1 metadata and non-observation do not authenticate retained objects or establish all-alias/all-location applicability proof."
+      }
+    }
+  ],
+  "proposedTypedDispositions": [],
+  "summary": {
+    "candidateCount": 6,
+    "observedCurrentTargetFindingPairs": 0,
+    "completeCurrentHistoricalReferenceJoins": 0,
+    "freshDiagnosticPartialReferenceMatchesPerImage": 276,
+    "currentHttpdPackageVersion": "2.4.69-1.fc44",
+    "currentFreeRdpPackageVersion": "2:3.32.1-1.fc44",
+    "dispositionsProposed": 0
+  },
+  "releaseEligible": false,
+  "limits": [
+    "Read only compact native summaries, retained policy/extraction/provenance, and two small current file-evidence reports; no full native SBOM, image pull, scan or execution.",
+    "Native scanner non-observation is not positive fixed/reachable/platform proof.",
+    "Main4 summaries have declared RPM manifests but no fresh RPM file probes; diagnostic2 byte observations cannot be transferred across image digests.",
+    "Historical signed references remain valid baseline investigation evidence, not generic versions/location waivers.",
+    "Configs/docs/nonregular entries and unexposed retained objects remain outside signed-reference joins.",
+    "No globalLDAP absence, default server state, SELinux mitigation or retained-object reachability assumption is used."
+  ],
+  "detailedJoinSha256": "dcde9e437e05edc9e4d7bb69f706815c1f3630adf13f6acbaa4874ce91296062"
+}

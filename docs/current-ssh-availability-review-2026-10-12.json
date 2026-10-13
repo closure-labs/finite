@@ -1,0 +1,2087 @@
+{
+  "schema": 1,
+  "status": "narrow-impact-review-proposals-not-applied",
+  "reviewedAt": "2026-10-13T04:33:34+00:00",
+  "reviewedBy": "great_cto security-officer impact review",
+  "policySha256": "1f97d4f396ee34c664531e8f6c4aa6ff21b01f44ca531deeef0bb03d686a006d",
+  "sourcePolicyReevaluationRun": 38346130574,
+  "nativeSummaryRun": 38344754471,
+  "primarySourceRefresh": {
+    "timestamp": "2026-10-13T04:33:34+00:00",
+    "sources": [
+      "https://pkg.go.dev/vuln/GO-2026-5017",
+      "https://pkg.go.dev/vuln/GO-2026-5020",
+      "https://raw.githubusercontent.com/golang/vulndb/master/data/osv/GO-2026-5017.json",
+      "https://raw.githubusercontent.com/golang/vulndb/master/data/osv/GO-2026-5020.json"
+    ],
+    "patchInspection": "Go CL endpoints unavailable in web tooling; no claim to have read their diffs"
+  },
+  "advisoryDecisions": {
+    "GHSA-rm3j-f69w-wqmq": {
+      "cve": "CVE-2026-39834",
+      "go": "GO-2026-5020",
+      "decision": "routine-process-dos-proposals",
+      "primary": "https://pkg.go.dev/vuln/GO-2026-5020",
+      "issue": "https://go.dev/issue/79567",
+      "fix": "https://go.dev/cl/781663",
+      "retainedGhsaSha256": "33fd0d6749a3b6f102dfb0f69f95998afa467c2f6deae0872c101d03d723f7da",
+      "publisherMetricConflict": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:H"
+    },
+    "GHSA-vgwf-h737-ff37": {
+      "cve": "CVE-2026-39830",
+      "go": "GO-2026-5017",
+      "decision": "unknown-host-memory-bounds-required",
+      "primary": "https://pkg.go.dev/vuln/GO-2026-5017",
+      "issue": "https://go.dev/issue/79564",
+      "fix": "https://go.dev/cl/781640",
+      "retainedGhsaSha256": "abb5aef8e1f6ffd3d29d2c9f6fc73644c3bedb2bb36adb142e161bd068a27903",
+      "publisherMetricConflict": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:H"
+    }
+  },
+  "decisionRationales": {
+    "CVE-2026-39834": "Accept specifically scoped process/CPU/network write-loop availability risk as routine under already-approved desktop policy. Positive actual file/module/alias/path binding exists; affected code remains visible and unfixed. No finding is declared harmless, fixed, unreachable, or prevented by SELinux.",
+    "CVE-2026-39830": "Do not grant routine entries from a generic process-DoS label: explicit cumulative leak survives Close. Retained evidence lacks connection/retry lifetime, sustainable memory bounds or containment for actual consumers, especially long-lived agents/proxies. Source/bounds proof or signed owning binary fix is needed.",
+    "GO-2026-6612": "No entry: bypasses configured connection flow-control budget; actual concurrent-stream, per-stream and connection counts plus process/host isolation needed to bound aggregate memory. Do not extrapolate SSH CPU-loop acceptance to host OOM protection."
+  },
+  "proposedReviewedDispositions": [
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-generic-7848ba4cfb-23c96ee9",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq"
+      ],
+      "reason": "Go publisher specifies an integer-truncated SSH channel write that stalls in an empty-packet loop after a >4GiB application Write. This is accepted as ordinary process/CPU/network denial of service under the approved desktop/development/container policy. The matched code remains affected; no fixed, unreachable, credential-safety, integrity-safety, listener-absence or SELinux mitigation claim is made. The exact reviewed alias scope contains no reviewed serious group or KEV.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5020",
+        "https://go.dev/issue/79567",
+        "https://go.dev/cl/781663",
+        "https://github.com/advisories/GHSA-rm3j-f69w-wqmq"
+      ],
+      "reviewedBy": "great_cto security-officer impact review",
+      "reviewedAt": "2026-10-13T04:33:34+00:00",
+      "digest": "sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "component": "pkg:golang/golang.org/x/crypto@v0.36.0",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+        "/usr/bin/git-lfs"
+      ],
+      "disposition": "routine",
+      "evidence": [
+        "Current native run 38341284379; exact candidate ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; policy reevaluation 38346130574 result SHA256 440d4c9cc08cd64d5caa80952be5698657c58f329e91045bafcd873175d8cd94; source raw scan SHA256 7f2023d2ed029d4e6532ef34650640b53060464d56ea9c017c745da547cc60e8; SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Exact source 1d347b7456b0cf64d4372cc0e7a562a9e63eb45b; profile bluefin-dx-generic; build v1:b30ea5e8bfe8ec02caa2f4118aa91ba47c6c4283c3fe44cf1d73568f6954c76b; config SHA256 f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357; native summary 38344754471 bluefin-dx-generic SHA256 90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+        "Publisher GO-2026-5020 record refreshed 2026-10-13 and CVE-2026-39834 match the SSH Write truncation/empty-packet availability mechanism. Retained GHSA SHA256 33fd0d6749a3b6f102dfb0f69f95998afa467c2f6deae0872c101d03d723f7da. Generic GHSA CVSS integrity-H metadata is retained as a conflict; it is not used to invent a credential/integrity consequence from this mechanism.",
+        "Exposure is accepted across all supported container/development uses. No affected-function absence claim; retained-object paths are covered as affected byte instances, without asserting they are unreachable. Revoke routine disposition if specific serious system/data-loss impact or KEV is established.",
+        "Every-location byte join /sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file SHA256 3fb93b8f144a3939479a9c3cc77c6827ba1ff7a4d748e441798b49fd51b87ee4 size 13620008 compiler go1.26.5-X:nodwarf5 module v0.36.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+        "Every-location byte join /usr/bin/git-lfs SHA256 3fb93b8f144a3939479a9c3cc77c6827ba1ff7a4d748e441798b49fd51b87ee4 size 13620008 compiler go1.26.5-X:nodwarf5 module v0.36.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594"
+      ],
+      "expiresAt": "2026-10-27T04:33:34+00:00"
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-generic-7848ba4cfb-5e6315a8",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq"
+      ],
+      "reason": "Go publisher specifies an integer-truncated SSH channel write that stalls in an empty-packet loop after a >4GiB application Write. This is accepted as ordinary process/CPU/network denial of service under the approved desktop/development/container policy. The matched code remains affected; no fixed, unreachable, credential-safety, integrity-safety, listener-absence or SELinux mitigation claim is made. The exact reviewed alias scope contains no reviewed serious group or KEV.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5020",
+        "https://go.dev/issue/79567",
+        "https://go.dev/cl/781663",
+        "https://github.com/advisories/GHSA-rm3j-f69w-wqmq"
+      ],
+      "reviewedBy": "great_cto security-officer impact review",
+      "reviewedAt": "2026-10-13T04:33:34+00:00",
+      "digest": "sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "disposition": "routine",
+      "evidence": [
+        "Current native run 38341284379; exact candidate ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; policy reevaluation 38346130574 result SHA256 440d4c9cc08cd64d5caa80952be5698657c58f329e91045bafcd873175d8cd94; source raw scan SHA256 7f2023d2ed029d4e6532ef34650640b53060464d56ea9c017c745da547cc60e8; SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Exact source 1d347b7456b0cf64d4372cc0e7a562a9e63eb45b; profile bluefin-dx-generic; build v1:b30ea5e8bfe8ec02caa2f4118aa91ba47c6c4283c3fe44cf1d73568f6954c76b; config SHA256 f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357; native summary 38344754471 bluefin-dx-generic SHA256 90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+        "Publisher GO-2026-5020 record refreshed 2026-10-13 and CVE-2026-39834 match the SSH Write truncation/empty-packet availability mechanism. Retained GHSA SHA256 33fd0d6749a3b6f102dfb0f69f95998afa467c2f6deae0872c101d03d723f7da. Generic GHSA CVSS integrity-H metadata is retained as a conflict; it is not used to invent a credential/integrity consequence from this mechanism.",
+        "Exposure is accepted across all supported container/development uses. No affected-function absence claim; retained-object paths are covered as affected byte instances, without asserting they are unreachable. Revoke routine disposition if specific serious system/data-loss impact or KEV is established.",
+        "Every-location byte join /sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file SHA256 5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34 size 26175536 compiler go1.26.8-X:nodwarf5 module v0.46.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+        "Every-location byte join /usr/bin/skopeo SHA256 5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34 size 26175536 compiler go1.26.8-X:nodwarf5 module v0.46.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594"
+      ],
+      "expiresAt": "2026-10-27T04:33:34+00:00"
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-generic-7848ba4cfb-4856240e",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq"
+      ],
+      "reason": "Go publisher specifies an integer-truncated SSH channel write that stalls in an empty-packet loop after a >4GiB application Write. This is accepted as ordinary process/CPU/network denial of service under the approved desktop/development/container policy. The matched code remains affected; no fixed, unreachable, credential-safety, integrity-safety, listener-absence or SELinux mitigation claim is made. The exact reviewed alias scope contains no reviewed serious group or KEV.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5020",
+        "https://go.dev/issue/79567",
+        "https://go.dev/cl/781663",
+        "https://github.com/advisories/GHSA-rm3j-f69w-wqmq"
+      ],
+      "reviewedBy": "great_cto security-officer impact review",
+      "reviewedAt": "2026-10-13T04:33:34+00:00",
+      "digest": "sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "component": "pkg:golang/golang.org/x/crypto@v0.49.0",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+        "/usr/bin/incus-agent"
+      ],
+      "disposition": "routine",
+      "evidence": [
+        "Current native run 38341284379; exact candidate ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; policy reevaluation 38346130574 result SHA256 440d4c9cc08cd64d5caa80952be5698657c58f329e91045bafcd873175d8cd94; source raw scan SHA256 7f2023d2ed029d4e6532ef34650640b53060464d56ea9c017c745da547cc60e8; SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Exact source 1d347b7456b0cf64d4372cc0e7a562a9e63eb45b; profile bluefin-dx-generic; build v1:b30ea5e8bfe8ec02caa2f4118aa91ba47c6c4283c3fe44cf1d73568f6954c76b; config SHA256 f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357; native summary 38344754471 bluefin-dx-generic SHA256 90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+        "Publisher GO-2026-5020 record refreshed 2026-10-13 and CVE-2026-39834 match the SSH Write truncation/empty-packet availability mechanism. Retained GHSA SHA256 33fd0d6749a3b6f102dfb0f69f95998afa467c2f6deae0872c101d03d723f7da. Generic GHSA CVSS integrity-H metadata is retained as a conflict; it is not used to invent a credential/integrity consequence from this mechanism.",
+        "Exposure is accepted across all supported container/development uses. No affected-function absence claim; retained-object paths are covered as affected byte instances, without asserting they are unreachable. Revoke routine disposition if specific serious system/data-loss impact or KEV is established.",
+        "Every-location byte join /sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file SHA256 e82bfc2d40202f61c8762acf8ef046ceb16c9b1619299531eb33e95bc84152b1 size 19258328 compiler go1.26.1-X:nodwarf5 module v0.49.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+        "Every-location byte join /usr/bin/incus-agent SHA256 e82bfc2d40202f61c8762acf8ef046ceb16c9b1619299531eb33e95bc84152b1 size 19258328 compiler go1.26.1-X:nodwarf5 module v0.49.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594"
+      ],
+      "expiresAt": "2026-10-27T04:33:34+00:00"
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-generic-7848ba4cfb-d712a2b6",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq"
+      ],
+      "reason": "Go publisher specifies an integer-truncated SSH channel write that stalls in an empty-packet loop after a >4GiB application Write. This is accepted as ordinary process/CPU/network denial of service under the approved desktop/development/container policy. The matched code remains affected; no fixed, unreachable, credential-safety, integrity-safety, listener-absence or SELinux mitigation claim is made. The exact reviewed alias scope contains no reviewed serious group or KEV.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5020",
+        "https://go.dev/issue/79567",
+        "https://go.dev/cl/781663",
+        "https://github.com/advisories/GHSA-rm3j-f69w-wqmq"
+      ],
+      "reviewedBy": "great_cto security-officer impact review",
+      "reviewedAt": "2026-10-13T04:33:34+00:00",
+      "digest": "sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "component": "pkg:golang/golang.org/x/crypto@v0.50.0",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+        "/usr/libexec/podman/gvproxy"
+      ],
+      "disposition": "routine",
+      "evidence": [
+        "Current native run 38341284379; exact candidate ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; policy reevaluation 38346130574 result SHA256 440d4c9cc08cd64d5caa80952be5698657c58f329e91045bafcd873175d8cd94; source raw scan SHA256 7f2023d2ed029d4e6532ef34650640b53060464d56ea9c017c745da547cc60e8; SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Exact source 1d347b7456b0cf64d4372cc0e7a562a9e63eb45b; profile bluefin-dx-generic; build v1:b30ea5e8bfe8ec02caa2f4118aa91ba47c6c4283c3fe44cf1d73568f6954c76b; config SHA256 f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357; native summary 38344754471 bluefin-dx-generic SHA256 90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+        "Publisher GO-2026-5020 record refreshed 2026-10-13 and CVE-2026-39834 match the SSH Write truncation/empty-packet availability mechanism. Retained GHSA SHA256 33fd0d6749a3b6f102dfb0f69f95998afa467c2f6deae0872c101d03d723f7da. Generic GHSA CVSS integrity-H metadata is retained as a conflict; it is not used to invent a credential/integrity consequence from this mechanism.",
+        "Exposure is accepted across all supported container/development uses. No affected-function absence claim; retained-object paths are covered as affected byte instances, without asserting they are unreachable. Revoke routine disposition if specific serious system/data-loss impact or KEV is established.",
+        "Every-location byte join /sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file SHA256 69ed90d7024f00320c1a1b3525a90c0fed28f979a9945ba492427ad0673b07d0 size 13025000 compiler go1.26.2-X:nodwarf5 module v0.50.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+        "Every-location byte join /usr/libexec/podman/gvproxy SHA256 69ed90d7024f00320c1a1b3525a90c0fed28f979a9945ba492427ad0673b07d0 size 13025000 compiler go1.26.2-X:nodwarf5 module v0.50.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594"
+      ],
+      "expiresAt": "2026-10-27T04:33:34+00:00"
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-generic-e98ca0ceb4-5e6315a8",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq"
+      ],
+      "reason": "Go publisher specifies an integer-truncated SSH channel write that stalls in an empty-packet loop after a >4GiB application Write. This is accepted as ordinary process/CPU/network denial of service under the approved desktop/development/container policy. The matched code remains affected; no fixed, unreachable, credential-safety, integrity-safety, listener-absence or SELinux mitigation claim is made. The exact reviewed alias scope contains no reviewed serious group or KEV.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5020",
+        "https://go.dev/issue/79567",
+        "https://go.dev/cl/781663",
+        "https://github.com/advisories/GHSA-rm3j-f69w-wqmq"
+      ],
+      "reviewedBy": "great_cto security-officer impact review",
+      "reviewedAt": "2026-10-13T04:33:34+00:00",
+      "digest": "sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "disposition": "routine",
+      "evidence": [
+        "Current native run 38341281199; exact candidate ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7; policy reevaluation 38346130574 result SHA256 dede7498530f61a6c084a3b97d2c4c06fdb9d3b6e6dfdf679588c187193b2488; source raw scan SHA256 dc2f17b51f30e6aceb672725cecfacdf53090733df29574ba13aea677fdc719c; SBOM SHA256 8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199",
+        "Exact source 1d347b7456b0cf64d4372cc0e7a562a9e63eb45b; profile bluefin-generic; build v1:29a6920037b0251e2c54a53719a00eb9c7085a75e59c8db76839b214703d8e0b; config SHA256 97b4843f19705f7d6d29988bfbe591594388af5a9b7785e4edb08a7b6fb6abef; native summary 38344754471 bluefin-generic SHA256 868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f",
+        "Publisher GO-2026-5020 record refreshed 2026-10-13 and CVE-2026-39834 match the SSH Write truncation/empty-packet availability mechanism. Retained GHSA SHA256 33fd0d6749a3b6f102dfb0f69f95998afa467c2f6deae0872c101d03d723f7da. Generic GHSA CVSS integrity-H metadata is retained as a conflict; it is not used to invent a credential/integrity consequence from this mechanism.",
+        "Exposure is accepted across all supported container/development uses. No affected-function absence claim; retained-object paths are covered as affected byte instances, without asserting they are unreachable. Revoke routine disposition if specific serious system/data-loss impact or KEV is established.",
+        "Every-location byte join /sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file SHA256 5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34 size 26175536 compiler go1.26.8-X:nodwarf5 module v0.46.0; independent probe run 38341281199 JSON SHA256 f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+        "Every-location byte join /usr/bin/skopeo SHA256 5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34 size 26175536 compiler go1.26.8-X:nodwarf5 module v0.46.0; independent probe run 38341281199 JSON SHA256 f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af"
+      ],
+      "expiresAt": "2026-10-27T04:33:34+00:00"
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-generic-3fd7e10d0e-23c96ee9",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq"
+      ],
+      "reason": "Go publisher specifies an integer-truncated SSH channel write that stalls in an empty-packet loop after a >4GiB application Write. This is accepted as ordinary process/CPU/network denial of service under the approved desktop/development/container policy. The matched code remains affected; no fixed, unreachable, credential-safety, integrity-safety, listener-absence or SELinux mitigation claim is made. The exact reviewed alias scope contains no reviewed serious group or KEV.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5020",
+        "https://go.dev/issue/79567",
+        "https://go.dev/cl/781663",
+        "https://github.com/advisories/GHSA-rm3j-f69w-wqmq"
+      ],
+      "reviewedBy": "great_cto security-officer impact review",
+      "reviewedAt": "2026-10-13T04:33:34+00:00",
+      "digest": "sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/crypto@v0.36.0",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+        "/usr/bin/git-lfs"
+      ],
+      "disposition": "routine",
+      "evidence": [
+        "Current native run 38340112122; exact candidate ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c; policy reevaluation 38346130574 result SHA256 cd126c61b033e909d7e31e49a12ea18a1181dc2164eac2fe6921eee1cd2065df; source raw scan SHA256 53d9bba5e04edcfb53294c604a6dbfb0f4ec8fc0f93334575bee101b17971655; SBOM SHA256 d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64",
+        "Exact source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-dx-generic; build v1:05fb59c6ab874df5cdba42675aeacfb37f7ba34df2053d198be408edb85ed247; config SHA256 5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78; native summary 38344754471 main-bluefin-dx-generic SHA256 21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+        "Publisher GO-2026-5020 record refreshed 2026-10-13 and CVE-2026-39834 match the SSH Write truncation/empty-packet availability mechanism. Retained GHSA SHA256 33fd0d6749a3b6f102dfb0f69f95998afa467c2f6deae0872c101d03d723f7da. Generic GHSA CVSS integrity-H metadata is retained as a conflict; it is not used to invent a credential/integrity consequence from this mechanism.",
+        "Exposure is accepted across all supported container/development uses. No affected-function absence claim; retained-object paths are covered as affected byte instances, without asserting they are unreachable. Revoke routine disposition if specific serious system/data-loss impact or KEV is established.",
+        "Every-location byte join /sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file SHA256 3fb93b8f144a3939479a9c3cc77c6827ba1ff7a4d748e441798b49fd51b87ee4 size 13620008 compiler go1.26.5-X:nodwarf5 module v0.36.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+        "Every-location byte join /usr/bin/git-lfs SHA256 3fb93b8f144a3939479a9c3cc77c6827ba1ff7a4d748e441798b49fd51b87ee4 size 13620008 compiler go1.26.5-X:nodwarf5 module v0.36.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594"
+      ],
+      "expiresAt": "2026-10-27T04:33:34+00:00"
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-generic-3fd7e10d0e-5e6315a8",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq"
+      ],
+      "reason": "Go publisher specifies an integer-truncated SSH channel write that stalls in an empty-packet loop after a >4GiB application Write. This is accepted as ordinary process/CPU/network denial of service under the approved desktop/development/container policy. The matched code remains affected; no fixed, unreachable, credential-safety, integrity-safety, listener-absence or SELinux mitigation claim is made. The exact reviewed alias scope contains no reviewed serious group or KEV.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5020",
+        "https://go.dev/issue/79567",
+        "https://go.dev/cl/781663",
+        "https://github.com/advisories/GHSA-rm3j-f69w-wqmq"
+      ],
+      "reviewedBy": "great_cto security-officer impact review",
+      "reviewedAt": "2026-10-13T04:33:34+00:00",
+      "digest": "sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "disposition": "routine",
+      "evidence": [
+        "Current native run 38340112122; exact candidate ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c; policy reevaluation 38346130574 result SHA256 cd126c61b033e909d7e31e49a12ea18a1181dc2164eac2fe6921eee1cd2065df; source raw scan SHA256 53d9bba5e04edcfb53294c604a6dbfb0f4ec8fc0f93334575bee101b17971655; SBOM SHA256 d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64",
+        "Exact source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-dx-generic; build v1:05fb59c6ab874df5cdba42675aeacfb37f7ba34df2053d198be408edb85ed247; config SHA256 5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78; native summary 38344754471 main-bluefin-dx-generic SHA256 21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+        "Publisher GO-2026-5020 record refreshed 2026-10-13 and CVE-2026-39834 match the SSH Write truncation/empty-packet availability mechanism. Retained GHSA SHA256 33fd0d6749a3b6f102dfb0f69f95998afa467c2f6deae0872c101d03d723f7da. Generic GHSA CVSS integrity-H metadata is retained as a conflict; it is not used to invent a credential/integrity consequence from this mechanism.",
+        "Exposure is accepted across all supported container/development uses. No affected-function absence claim; retained-object paths are covered as affected byte instances, without asserting they are unreachable. Revoke routine disposition if specific serious system/data-loss impact or KEV is established.",
+        "Every-location byte join /sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file SHA256 5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34 size 26175536 compiler go1.26.8-X:nodwarf5 module v0.46.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+        "Every-location byte join /usr/bin/skopeo SHA256 5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34 size 26175536 compiler go1.26.8-X:nodwarf5 module v0.46.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594"
+      ],
+      "expiresAt": "2026-10-27T04:33:34+00:00"
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-generic-3fd7e10d0e-4856240e",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq"
+      ],
+      "reason": "Go publisher specifies an integer-truncated SSH channel write that stalls in an empty-packet loop after a >4GiB application Write. This is accepted as ordinary process/CPU/network denial of service under the approved desktop/development/container policy. The matched code remains affected; no fixed, unreachable, credential-safety, integrity-safety, listener-absence or SELinux mitigation claim is made. The exact reviewed alias scope contains no reviewed serious group or KEV.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5020",
+        "https://go.dev/issue/79567",
+        "https://go.dev/cl/781663",
+        "https://github.com/advisories/GHSA-rm3j-f69w-wqmq"
+      ],
+      "reviewedBy": "great_cto security-officer impact review",
+      "reviewedAt": "2026-10-13T04:33:34+00:00",
+      "digest": "sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/crypto@v0.49.0",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+        "/usr/bin/incus-agent"
+      ],
+      "disposition": "routine",
+      "evidence": [
+        "Current native run 38340112122; exact candidate ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c; policy reevaluation 38346130574 result SHA256 cd126c61b033e909d7e31e49a12ea18a1181dc2164eac2fe6921eee1cd2065df; source raw scan SHA256 53d9bba5e04edcfb53294c604a6dbfb0f4ec8fc0f93334575bee101b17971655; SBOM SHA256 d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64",
+        "Exact source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-dx-generic; build v1:05fb59c6ab874df5cdba42675aeacfb37f7ba34df2053d198be408edb85ed247; config SHA256 5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78; native summary 38344754471 main-bluefin-dx-generic SHA256 21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+        "Publisher GO-2026-5020 record refreshed 2026-10-13 and CVE-2026-39834 match the SSH Write truncation/empty-packet availability mechanism. Retained GHSA SHA256 33fd0d6749a3b6f102dfb0f69f95998afa467c2f6deae0872c101d03d723f7da. Generic GHSA CVSS integrity-H metadata is retained as a conflict; it is not used to invent a credential/integrity consequence from this mechanism.",
+        "Exposure is accepted across all supported container/development uses. No affected-function absence claim; retained-object paths are covered as affected byte instances, without asserting they are unreachable. Revoke routine disposition if specific serious system/data-loss impact or KEV is established.",
+        "Every-location byte join /sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file SHA256 e82bfc2d40202f61c8762acf8ef046ceb16c9b1619299531eb33e95bc84152b1 size 19258328 compiler go1.26.1-X:nodwarf5 module v0.49.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+        "Every-location byte join /usr/bin/incus-agent SHA256 e82bfc2d40202f61c8762acf8ef046ceb16c9b1619299531eb33e95bc84152b1 size 19258328 compiler go1.26.1-X:nodwarf5 module v0.49.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594"
+      ],
+      "expiresAt": "2026-10-27T04:33:34+00:00"
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-generic-3fd7e10d0e-d712a2b6",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq"
+      ],
+      "reason": "Go publisher specifies an integer-truncated SSH channel write that stalls in an empty-packet loop after a >4GiB application Write. This is accepted as ordinary process/CPU/network denial of service under the approved desktop/development/container policy. The matched code remains affected; no fixed, unreachable, credential-safety, integrity-safety, listener-absence or SELinux mitigation claim is made. The exact reviewed alias scope contains no reviewed serious group or KEV.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5020",
+        "https://go.dev/issue/79567",
+        "https://go.dev/cl/781663",
+        "https://github.com/advisories/GHSA-rm3j-f69w-wqmq"
+      ],
+      "reviewedBy": "great_cto security-officer impact review",
+      "reviewedAt": "2026-10-13T04:33:34+00:00",
+      "digest": "sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/crypto@v0.50.0",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+        "/usr/libexec/podman/gvproxy"
+      ],
+      "disposition": "routine",
+      "evidence": [
+        "Current native run 38340112122; exact candidate ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c; policy reevaluation 38346130574 result SHA256 cd126c61b033e909d7e31e49a12ea18a1181dc2164eac2fe6921eee1cd2065df; source raw scan SHA256 53d9bba5e04edcfb53294c604a6dbfb0f4ec8fc0f93334575bee101b17971655; SBOM SHA256 d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64",
+        "Exact source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-dx-generic; build v1:05fb59c6ab874df5cdba42675aeacfb37f7ba34df2053d198be408edb85ed247; config SHA256 5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78; native summary 38344754471 main-bluefin-dx-generic SHA256 21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+        "Publisher GO-2026-5020 record refreshed 2026-10-13 and CVE-2026-39834 match the SSH Write truncation/empty-packet availability mechanism. Retained GHSA SHA256 33fd0d6749a3b6f102dfb0f69f95998afa467c2f6deae0872c101d03d723f7da. Generic GHSA CVSS integrity-H metadata is retained as a conflict; it is not used to invent a credential/integrity consequence from this mechanism.",
+        "Exposure is accepted across all supported container/development uses. No affected-function absence claim; retained-object paths are covered as affected byte instances, without asserting they are unreachable. Revoke routine disposition if specific serious system/data-loss impact or KEV is established.",
+        "Every-location byte join /sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file SHA256 69ed90d7024f00320c1a1b3525a90c0fed28f979a9945ba492427ad0673b07d0 size 13025000 compiler go1.26.2-X:nodwarf5 module v0.50.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+        "Every-location byte join /usr/libexec/podman/gvproxy SHA256 69ed90d7024f00320c1a1b3525a90c0fed28f979a9945ba492427ad0673b07d0 size 13025000 compiler go1.26.2-X:nodwarf5 module v0.50.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594"
+      ],
+      "expiresAt": "2026-10-27T04:33:34+00:00"
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-next-a851083d1a-23c96ee9",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq"
+      ],
+      "reason": "Go publisher specifies an integer-truncated SSH channel write that stalls in an empty-packet loop after a >4GiB application Write. This is accepted as ordinary process/CPU/network denial of service under the approved desktop/development/container policy. The matched code remains affected; no fixed, unreachable, credential-safety, integrity-safety, listener-absence or SELinux mitigation claim is made. The exact reviewed alias scope contains no reviewed serious group or KEV.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5020",
+        "https://go.dev/issue/79567",
+        "https://go.dev/cl/781663",
+        "https://github.com/advisories/GHSA-rm3j-f69w-wqmq"
+      ],
+      "reviewedBy": "great_cto security-officer impact review",
+      "reviewedAt": "2026-10-13T04:33:34+00:00",
+      "digest": "sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "component": "pkg:golang/golang.org/x/crypto@v0.36.0",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+        "/usr/bin/git-lfs"
+      ],
+      "disposition": "routine",
+      "evidence": [
+        "Current native run 38340112122; exact candidate ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26; policy reevaluation 38346130574 result SHA256 4ec5425fcf67492ce00d3fefdddbbf74363aa5e9d01c0c7be4d11af2b500f8bb; source raw scan SHA256 eedf0c80d2370c5421832469412abfae9db32b8017bdf29c10ca3b487a0ca362; SBOM SHA256 46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5",
+        "Exact source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-dx-next; build v1:13ab0d947b649d17a43851dbea491a445b2c123fcaba02eb1d21bff47ac94ccc; config SHA256 3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44; native summary 38344754471 main-bluefin-dx-next SHA256 fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+        "Publisher GO-2026-5020 record refreshed 2026-10-13 and CVE-2026-39834 match the SSH Write truncation/empty-packet availability mechanism. Retained GHSA SHA256 33fd0d6749a3b6f102dfb0f69f95998afa467c2f6deae0872c101d03d723f7da. Generic GHSA CVSS integrity-H metadata is retained as a conflict; it is not used to invent a credential/integrity consequence from this mechanism.",
+        "Exposure is accepted across all supported container/development uses. No affected-function absence claim; retained-object paths are covered as affected byte instances, without asserting they are unreachable. Revoke routine disposition if specific serious system/data-loss impact or KEV is established.",
+        "Every-location byte join /sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file SHA256 3fb93b8f144a3939479a9c3cc77c6827ba1ff7a4d748e441798b49fd51b87ee4 size 13620008 compiler go1.26.5-X:nodwarf5 module v0.36.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+        "Every-location byte join /usr/bin/git-lfs SHA256 3fb93b8f144a3939479a9c3cc77c6827ba1ff7a4d748e441798b49fd51b87ee4 size 13620008 compiler go1.26.5-X:nodwarf5 module v0.36.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594"
+      ],
+      "expiresAt": "2026-10-27T04:33:34+00:00"
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-next-a851083d1a-5e6315a8",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq"
+      ],
+      "reason": "Go publisher specifies an integer-truncated SSH channel write that stalls in an empty-packet loop after a >4GiB application Write. This is accepted as ordinary process/CPU/network denial of service under the approved desktop/development/container policy. The matched code remains affected; no fixed, unreachable, credential-safety, integrity-safety, listener-absence or SELinux mitigation claim is made. The exact reviewed alias scope contains no reviewed serious group or KEV.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5020",
+        "https://go.dev/issue/79567",
+        "https://go.dev/cl/781663",
+        "https://github.com/advisories/GHSA-rm3j-f69w-wqmq"
+      ],
+      "reviewedBy": "great_cto security-officer impact review",
+      "reviewedAt": "2026-10-13T04:33:34+00:00",
+      "digest": "sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "disposition": "routine",
+      "evidence": [
+        "Current native run 38340112122; exact candidate ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26; policy reevaluation 38346130574 result SHA256 4ec5425fcf67492ce00d3fefdddbbf74363aa5e9d01c0c7be4d11af2b500f8bb; source raw scan SHA256 eedf0c80d2370c5421832469412abfae9db32b8017bdf29c10ca3b487a0ca362; SBOM SHA256 46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5",
+        "Exact source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-dx-next; build v1:13ab0d947b649d17a43851dbea491a445b2c123fcaba02eb1d21bff47ac94ccc; config SHA256 3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44; native summary 38344754471 main-bluefin-dx-next SHA256 fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+        "Publisher GO-2026-5020 record refreshed 2026-10-13 and CVE-2026-39834 match the SSH Write truncation/empty-packet availability mechanism. Retained GHSA SHA256 33fd0d6749a3b6f102dfb0f69f95998afa467c2f6deae0872c101d03d723f7da. Generic GHSA CVSS integrity-H metadata is retained as a conflict; it is not used to invent a credential/integrity consequence from this mechanism.",
+        "Exposure is accepted across all supported container/development uses. No affected-function absence claim; retained-object paths are covered as affected byte instances, without asserting they are unreachable. Revoke routine disposition if specific serious system/data-loss impact or KEV is established.",
+        "Every-location byte join /sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file SHA256 5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34 size 26175536 compiler go1.26.8-X:nodwarf5 module v0.46.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+        "Every-location byte join /usr/bin/skopeo SHA256 5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34 size 26175536 compiler go1.26.8-X:nodwarf5 module v0.46.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594"
+      ],
+      "expiresAt": "2026-10-27T04:33:34+00:00"
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-next-a851083d1a-4856240e",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq"
+      ],
+      "reason": "Go publisher specifies an integer-truncated SSH channel write that stalls in an empty-packet loop after a >4GiB application Write. This is accepted as ordinary process/CPU/network denial of service under the approved desktop/development/container policy. The matched code remains affected; no fixed, unreachable, credential-safety, integrity-safety, listener-absence or SELinux mitigation claim is made. The exact reviewed alias scope contains no reviewed serious group or KEV.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5020",
+        "https://go.dev/issue/79567",
+        "https://go.dev/cl/781663",
+        "https://github.com/advisories/GHSA-rm3j-f69w-wqmq"
+      ],
+      "reviewedBy": "great_cto security-officer impact review",
+      "reviewedAt": "2026-10-13T04:33:34+00:00",
+      "digest": "sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "component": "pkg:golang/golang.org/x/crypto@v0.49.0",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+        "/usr/bin/incus-agent"
+      ],
+      "disposition": "routine",
+      "evidence": [
+        "Current native run 38340112122; exact candidate ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26; policy reevaluation 38346130574 result SHA256 4ec5425fcf67492ce00d3fefdddbbf74363aa5e9d01c0c7be4d11af2b500f8bb; source raw scan SHA256 eedf0c80d2370c5421832469412abfae9db32b8017bdf29c10ca3b487a0ca362; SBOM SHA256 46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5",
+        "Exact source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-dx-next; build v1:13ab0d947b649d17a43851dbea491a445b2c123fcaba02eb1d21bff47ac94ccc; config SHA256 3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44; native summary 38344754471 main-bluefin-dx-next SHA256 fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+        "Publisher GO-2026-5020 record refreshed 2026-10-13 and CVE-2026-39834 match the SSH Write truncation/empty-packet availability mechanism. Retained GHSA SHA256 33fd0d6749a3b6f102dfb0f69f95998afa467c2f6deae0872c101d03d723f7da. Generic GHSA CVSS integrity-H metadata is retained as a conflict; it is not used to invent a credential/integrity consequence from this mechanism.",
+        "Exposure is accepted across all supported container/development uses. No affected-function absence claim; retained-object paths are covered as affected byte instances, without asserting they are unreachable. Revoke routine disposition if specific serious system/data-loss impact or KEV is established.",
+        "Every-location byte join /sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file SHA256 e82bfc2d40202f61c8762acf8ef046ceb16c9b1619299531eb33e95bc84152b1 size 19258328 compiler go1.26.1-X:nodwarf5 module v0.49.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+        "Every-location byte join /usr/bin/incus-agent SHA256 e82bfc2d40202f61c8762acf8ef046ceb16c9b1619299531eb33e95bc84152b1 size 19258328 compiler go1.26.1-X:nodwarf5 module v0.49.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594"
+      ],
+      "expiresAt": "2026-10-27T04:33:34+00:00"
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-next-a851083d1a-d712a2b6",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq"
+      ],
+      "reason": "Go publisher specifies an integer-truncated SSH channel write that stalls in an empty-packet loop after a >4GiB application Write. This is accepted as ordinary process/CPU/network denial of service under the approved desktop/development/container policy. The matched code remains affected; no fixed, unreachable, credential-safety, integrity-safety, listener-absence or SELinux mitigation claim is made. The exact reviewed alias scope contains no reviewed serious group or KEV.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5020",
+        "https://go.dev/issue/79567",
+        "https://go.dev/cl/781663",
+        "https://github.com/advisories/GHSA-rm3j-f69w-wqmq"
+      ],
+      "reviewedBy": "great_cto security-officer impact review",
+      "reviewedAt": "2026-10-13T04:33:34+00:00",
+      "digest": "sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "component": "pkg:golang/golang.org/x/crypto@v0.50.0",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+        "/usr/libexec/podman/gvproxy"
+      ],
+      "disposition": "routine",
+      "evidence": [
+        "Current native run 38340112122; exact candidate ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26; policy reevaluation 38346130574 result SHA256 4ec5425fcf67492ce00d3fefdddbbf74363aa5e9d01c0c7be4d11af2b500f8bb; source raw scan SHA256 eedf0c80d2370c5421832469412abfae9db32b8017bdf29c10ca3b487a0ca362; SBOM SHA256 46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5",
+        "Exact source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-dx-next; build v1:13ab0d947b649d17a43851dbea491a445b2c123fcaba02eb1d21bff47ac94ccc; config SHA256 3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44; native summary 38344754471 main-bluefin-dx-next SHA256 fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+        "Publisher GO-2026-5020 record refreshed 2026-10-13 and CVE-2026-39834 match the SSH Write truncation/empty-packet availability mechanism. Retained GHSA SHA256 33fd0d6749a3b6f102dfb0f69f95998afa467c2f6deae0872c101d03d723f7da. Generic GHSA CVSS integrity-H metadata is retained as a conflict; it is not used to invent a credential/integrity consequence from this mechanism.",
+        "Exposure is accepted across all supported container/development uses. No affected-function absence claim; retained-object paths are covered as affected byte instances, without asserting they are unreachable. Revoke routine disposition if specific serious system/data-loss impact or KEV is established.",
+        "Every-location byte join /sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file SHA256 69ed90d7024f00320c1a1b3525a90c0fed28f979a9945ba492427ad0673b07d0 size 13025000 compiler go1.26.2-X:nodwarf5 module v0.50.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+        "Every-location byte join /usr/libexec/podman/gvproxy SHA256 69ed90d7024f00320c1a1b3525a90c0fed28f979a9945ba492427ad0673b07d0 size 13025000 compiler go1.26.2-X:nodwarf5 module v0.50.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594"
+      ],
+      "expiresAt": "2026-10-27T04:33:34+00:00"
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-generic-3d4693f25f-5e6315a8",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq"
+      ],
+      "reason": "Go publisher specifies an integer-truncated SSH channel write that stalls in an empty-packet loop after a >4GiB application Write. This is accepted as ordinary process/CPU/network denial of service under the approved desktop/development/container policy. The matched code remains affected; no fixed, unreachable, credential-safety, integrity-safety, listener-absence or SELinux mitigation claim is made. The exact reviewed alias scope contains no reviewed serious group or KEV.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5020",
+        "https://go.dev/issue/79567",
+        "https://go.dev/cl/781663",
+        "https://github.com/advisories/GHSA-rm3j-f69w-wqmq"
+      ],
+      "reviewedBy": "great_cto security-officer impact review",
+      "reviewedAt": "2026-10-13T04:33:34+00:00",
+      "digest": "sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "disposition": "routine",
+      "evidence": [
+        "Current native run 38340112122; exact candidate ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844; policy reevaluation 38346130574 result SHA256 3222b174330e244407d7eeb771a849a968db7b293ce23c419eb2a75b84dc112a; source raw scan SHA256 231611b8f55e1b8a756a9b78ccf88f96eeba9881e3387d3ef2fe93ca420d168f; SBOM SHA256 4902fdd4b2afca8374a3197770f25daa11c7626cb5c83c46fb614ad1f5441201",
+        "Exact source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-generic; build v1:357fa0799580560ed50f4045d429e0e9d19ad76e8deb9e647e45b0be33885a38; config SHA256 eb2542e972cdd6c71f3448674c57b0c41252fdc4c986252bc8ff3621e2119cf4; native summary 38344754471 main-bluefin-generic SHA256 5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9",
+        "Publisher GO-2026-5020 record refreshed 2026-10-13 and CVE-2026-39834 match the SSH Write truncation/empty-packet availability mechanism. Retained GHSA SHA256 33fd0d6749a3b6f102dfb0f69f95998afa467c2f6deae0872c101d03d723f7da. Generic GHSA CVSS integrity-H metadata is retained as a conflict; it is not used to invent a credential/integrity consequence from this mechanism.",
+        "Exposure is accepted across all supported container/development uses. No affected-function absence claim; retained-object paths are covered as affected byte instances, without asserting they are unreachable. Revoke routine disposition if specific serious system/data-loss impact or KEV is established.",
+        "Every-location byte join /sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file SHA256 5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34 size 26175536 compiler go1.26.8-X:nodwarf5 module v0.46.0; independent probe run 38341281199 JSON SHA256 f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+        "Every-location byte join /usr/bin/skopeo SHA256 5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34 size 26175536 compiler go1.26.8-X:nodwarf5 module v0.46.0; independent probe run 38341281199 JSON SHA256 f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af"
+      ],
+      "expiresAt": "2026-10-27T04:33:34+00:00"
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-next-a36f46afcc-5e6315a8",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq"
+      ],
+      "reason": "Go publisher specifies an integer-truncated SSH channel write that stalls in an empty-packet loop after a >4GiB application Write. This is accepted as ordinary process/CPU/network denial of service under the approved desktop/development/container policy. The matched code remains affected; no fixed, unreachable, credential-safety, integrity-safety, listener-absence or SELinux mitigation claim is made. The exact reviewed alias scope contains no reviewed serious group or KEV.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5020",
+        "https://go.dev/issue/79567",
+        "https://go.dev/cl/781663",
+        "https://github.com/advisories/GHSA-rm3j-f69w-wqmq"
+      ],
+      "reviewedBy": "great_cto security-officer impact review",
+      "reviewedAt": "2026-10-13T04:33:34+00:00",
+      "digest": "sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "disposition": "routine",
+      "evidence": [
+        "Current native run 38340112122; exact candidate ghcr.io/closure-labs/finite@sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db; policy reevaluation 38346130574 result SHA256 f0b72c27606d52a6468b841dd73a05b20df54defb77fdb72600c516aa89088e1; source raw scan SHA256 010f4472f5ba934a3bb65f7089cd32816ee000dd7bd100eb6df2a574cb49aca3; SBOM SHA256 bcf12455b002324b0c5923110de414cde3528d164bbb6b230dc2e8efb69f56b4",
+        "Exact source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-next; build v1:204a54980664eb886d8b5a949b4a2bcd50c5fd6074f82e5d60ae6362241bb47c; config SHA256 fce1315ea7763cf210b19f4e7c83334ab5e36be9a490d97e0ccc2b2c69491497; native summary 38344754471 main-bluefin-next SHA256 81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f",
+        "Publisher GO-2026-5020 record refreshed 2026-10-13 and CVE-2026-39834 match the SSH Write truncation/empty-packet availability mechanism. Retained GHSA SHA256 33fd0d6749a3b6f102dfb0f69f95998afa467c2f6deae0872c101d03d723f7da. Generic GHSA CVSS integrity-H metadata is retained as a conflict; it is not used to invent a credential/integrity consequence from this mechanism.",
+        "Exposure is accepted across all supported container/development uses. No affected-function absence claim; retained-object paths are covered as affected byte instances, without asserting they are unreachable. Revoke routine disposition if specific serious system/data-loss impact or KEV is established.",
+        "Every-location byte join /sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file SHA256 5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34 size 26175536 compiler go1.26.8-X:nodwarf5 module v0.46.0; independent probe run 38341281199 JSON SHA256 f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+        "Every-location byte join /usr/bin/skopeo SHA256 5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34 size 26175536 compiler go1.26.8-X:nodwarf5 module v0.46.0; independent probe run 38341281199 JSON SHA256 f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af"
+      ],
+      "expiresAt": "2026-10-27T04:33:34+00:00"
+    }
+  ],
+  "joinEvidence": [
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-generic-7848ba4cfb-23c96ee9",
+      "candidate": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "sourceRun": 38341284379,
+      "reevaluatedResultSha256": "440d4c9cc08cd64d5caa80952be5698657c58f329e91045bafcd873175d8cd94",
+      "nativeSummarySha256": "90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+      "sbomSha256": "afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+      "configurationDigest": "sha256:f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357",
+      "currentObservationsUnchanged": true,
+      "occurrences": 2,
+      "allPaths": [
+        {
+          "path": "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+          "sha256": "3fb93b8f144a3939479a9c3cc77c6827ba1ff7a4d748e441798b49fd51b87ee4",
+          "size": 13620008,
+          "goVersion": "go1.26.5-X:nodwarf5",
+          "mainPackage": "github.com/git-lfs/git-lfs/v3",
+          "nativeModuleVersion": "v0.36.0",
+          "nativeMainModule": "github.com/git-lfs/git-lfs/v3",
+          "goBuildInfoSha256": "5f48927c0b9d47870082f8f087f39b07e8473e9ad13a5174c4cbcb57e58c6924",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "d5b37884552bfe54",
+          "currentNativeArtifactId": "f1a21a867c0c8395"
+        },
+        {
+          "path": "/usr/bin/git-lfs",
+          "sha256": "3fb93b8f144a3939479a9c3cc77c6827ba1ff7a4d748e441798b49fd51b87ee4",
+          "size": 13620008,
+          "goVersion": "go1.26.5-X:nodwarf5",
+          "mainPackage": "github.com/git-lfs/git-lfs/v3",
+          "nativeModuleVersion": "v0.36.0",
+          "nativeMainModule": "github.com/git-lfs/git-lfs/v3",
+          "goBuildInfoSha256": "5f48927c0b9d47870082f8f087f39b07e8473e9ad13a5174c4cbcb57e58c6924",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "84960a562c388ab9",
+          "currentNativeArtifactId": "a2c2244bb79ff003"
+        }
+      ]
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-generic-7848ba4cfb-5e6315a8",
+      "candidate": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "sourceRun": 38341284379,
+      "reevaluatedResultSha256": "440d4c9cc08cd64d5caa80952be5698657c58f329e91045bafcd873175d8cd94",
+      "nativeSummarySha256": "90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+      "sbomSha256": "afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+      "configurationDigest": "sha256:f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357",
+      "currentObservationsUnchanged": true,
+      "occurrences": 2,
+      "allPaths": [
+        {
+          "path": "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+          "nativeModuleVersion": "v0.46.0",
+          "nativeMainModule": "github.com/containers/skopeo",
+          "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "d42a27ddac533463",
+          "currentNativeArtifactId": "ca9f749c8a273505"
+        },
+        {
+          "path": "/usr/bin/skopeo",
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+          "nativeModuleVersion": "v0.46.0",
+          "nativeMainModule": "github.com/containers/skopeo",
+          "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "587d529acb31d6e3",
+          "currentNativeArtifactId": "a8ac0b8bf9fd7bc3"
+        }
+      ]
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-generic-7848ba4cfb-4856240e",
+      "candidate": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "sourceRun": 38341284379,
+      "reevaluatedResultSha256": "440d4c9cc08cd64d5caa80952be5698657c58f329e91045bafcd873175d8cd94",
+      "nativeSummarySha256": "90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+      "sbomSha256": "afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+      "configurationDigest": "sha256:f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357",
+      "currentObservationsUnchanged": true,
+      "occurrences": 2,
+      "allPaths": [
+        {
+          "path": "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+          "sha256": "e82bfc2d40202f61c8762acf8ef046ceb16c9b1619299531eb33e95bc84152b1",
+          "size": 19258328,
+          "goVersion": "go1.26.1-X:nodwarf5",
+          "mainPackage": "github.com/lxc/incus/v6/cmd/incus-agent",
+          "nativeModuleVersion": "v0.49.0",
+          "nativeMainModule": "github.com/lxc/incus/v6",
+          "goBuildInfoSha256": "9ed5fccfaa500140ab6d8a715b2601957383671b778640221905c23ee0c423a0",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "a0c6c280b73eae50",
+          "currentNativeArtifactId": "48386d4704aeb3a6"
+        },
+        {
+          "path": "/usr/bin/incus-agent",
+          "sha256": "e82bfc2d40202f61c8762acf8ef046ceb16c9b1619299531eb33e95bc84152b1",
+          "size": 19258328,
+          "goVersion": "go1.26.1-X:nodwarf5",
+          "mainPackage": "github.com/lxc/incus/v6/cmd/incus-agent",
+          "nativeModuleVersion": "v0.49.0",
+          "nativeMainModule": "github.com/lxc/incus/v6",
+          "goBuildInfoSha256": "9ed5fccfaa500140ab6d8a715b2601957383671b778640221905c23ee0c423a0",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "c2b8abb902daacc3",
+          "currentNativeArtifactId": "293ceb376074d96c"
+        }
+      ]
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-generic-7848ba4cfb-d712a2b6",
+      "candidate": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "sourceRun": 38341284379,
+      "reevaluatedResultSha256": "440d4c9cc08cd64d5caa80952be5698657c58f329e91045bafcd873175d8cd94",
+      "nativeSummarySha256": "90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+      "sbomSha256": "afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+      "configurationDigest": "sha256:f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357",
+      "currentObservationsUnchanged": true,
+      "occurrences": 2,
+      "allPaths": [
+        {
+          "path": "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+          "sha256": "69ed90d7024f00320c1a1b3525a90c0fed28f979a9945ba492427ad0673b07d0",
+          "size": 13025000,
+          "goVersion": "go1.26.2-X:nodwarf5",
+          "mainPackage": "github.com/containers/gvisor-tap-vsock/cmd/gvproxy",
+          "nativeModuleVersion": "v0.50.0",
+          "nativeMainModule": "github.com/containers/gvisor-tap-vsock",
+          "goBuildInfoSha256": "b89110d705c7323d7a7b28f26b42bc9a5c9fdff73fc3c681f4d1308221118c49",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "606a8592d6323a0d",
+          "currentNativeArtifactId": "3d5d2b89e597b070"
+        },
+        {
+          "path": "/usr/libexec/podman/gvproxy",
+          "sha256": "69ed90d7024f00320c1a1b3525a90c0fed28f979a9945ba492427ad0673b07d0",
+          "size": 13025000,
+          "goVersion": "go1.26.2-X:nodwarf5",
+          "mainPackage": "github.com/containers/gvisor-tap-vsock/cmd/gvproxy",
+          "nativeModuleVersion": "v0.50.0",
+          "nativeMainModule": "github.com/containers/gvisor-tap-vsock",
+          "goBuildInfoSha256": "b89110d705c7323d7a7b28f26b42bc9a5c9fdff73fc3c681f4d1308221118c49",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "4e269741896e1cf9",
+          "currentNativeArtifactId": "8d8585b29115486a"
+        }
+      ]
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-generic-e98ca0ceb4-5e6315a8",
+      "candidate": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+      "sourceRun": 38341281199,
+      "reevaluatedResultSha256": "dede7498530f61a6c084a3b97d2c4c06fdb9d3b6e6dfdf679588c187193b2488",
+      "nativeSummarySha256": "868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f",
+      "sbomSha256": "8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199",
+      "configurationDigest": "sha256:97b4843f19705f7d6d29988bfbe591594388af5a9b7785e4edb08a7b6fb6abef",
+      "currentObservationsUnchanged": true,
+      "occurrences": 2,
+      "allPaths": [
+        {
+          "path": "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+          "nativeModuleVersion": "v0.46.0",
+          "nativeMainModule": "github.com/containers/skopeo",
+          "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeSourceRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeFileId": "d42a27ddac533463",
+          "currentNativeArtifactId": "ca9f749c8a273505"
+        },
+        {
+          "path": "/usr/bin/skopeo",
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+          "nativeModuleVersion": "v0.46.0",
+          "nativeMainModule": "github.com/containers/skopeo",
+          "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeSourceRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeFileId": "587d529acb31d6e3",
+          "currentNativeArtifactId": "a8ac0b8bf9fd7bc3"
+        }
+      ]
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-generic-3fd7e10d0e-23c96ee9",
+      "candidate": "main-bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "sourceRun": 38340112122,
+      "reevaluatedResultSha256": "cd126c61b033e909d7e31e49a12ea18a1181dc2164eac2fe6921eee1cd2065df",
+      "nativeSummarySha256": "21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+      "sbomSha256": "d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64",
+      "configurationDigest": "sha256:5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78",
+      "currentObservationsUnchanged": true,
+      "occurrences": 2,
+      "allPaths": [
+        {
+          "path": "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+          "sha256": "3fb93b8f144a3939479a9c3cc77c6827ba1ff7a4d748e441798b49fd51b87ee4",
+          "size": 13620008,
+          "goVersion": "go1.26.5-X:nodwarf5",
+          "mainPackage": "github.com/git-lfs/git-lfs/v3",
+          "nativeModuleVersion": "v0.36.0",
+          "nativeMainModule": "github.com/git-lfs/git-lfs/v3",
+          "goBuildInfoSha256": "5f48927c0b9d47870082f8f087f39b07e8473e9ad13a5174c4cbcb57e58c6924",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "d5b37884552bfe54",
+          "currentNativeArtifactId": "f1a21a867c0c8395"
+        },
+        {
+          "path": "/usr/bin/git-lfs",
+          "sha256": "3fb93b8f144a3939479a9c3cc77c6827ba1ff7a4d748e441798b49fd51b87ee4",
+          "size": 13620008,
+          "goVersion": "go1.26.5-X:nodwarf5",
+          "mainPackage": "github.com/git-lfs/git-lfs/v3",
+          "nativeModuleVersion": "v0.36.0",
+          "nativeMainModule": "github.com/git-lfs/git-lfs/v3",
+          "goBuildInfoSha256": "5f48927c0b9d47870082f8f087f39b07e8473e9ad13a5174c4cbcb57e58c6924",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "84960a562c388ab9",
+          "currentNativeArtifactId": "a2c2244bb79ff003"
+        }
+      ]
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-generic-3fd7e10d0e-5e6315a8",
+      "candidate": "main-bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "sourceRun": 38340112122,
+      "reevaluatedResultSha256": "cd126c61b033e909d7e31e49a12ea18a1181dc2164eac2fe6921eee1cd2065df",
+      "nativeSummarySha256": "21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+      "sbomSha256": "d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64",
+      "configurationDigest": "sha256:5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78",
+      "currentObservationsUnchanged": true,
+      "occurrences": 2,
+      "allPaths": [
+        {
+          "path": "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+          "nativeModuleVersion": "v0.46.0",
+          "nativeMainModule": "github.com/containers/skopeo",
+          "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "d42a27ddac533463",
+          "currentNativeArtifactId": "ca9f749c8a273505"
+        },
+        {
+          "path": "/usr/bin/skopeo",
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+          "nativeModuleVersion": "v0.46.0",
+          "nativeMainModule": "github.com/containers/skopeo",
+          "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "587d529acb31d6e3",
+          "currentNativeArtifactId": "a8ac0b8bf9fd7bc3"
+        }
+      ]
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-generic-3fd7e10d0e-4856240e",
+      "candidate": "main-bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "sourceRun": 38340112122,
+      "reevaluatedResultSha256": "cd126c61b033e909d7e31e49a12ea18a1181dc2164eac2fe6921eee1cd2065df",
+      "nativeSummarySha256": "21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+      "sbomSha256": "d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64",
+      "configurationDigest": "sha256:5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78",
+      "currentObservationsUnchanged": true,
+      "occurrences": 2,
+      "allPaths": [
+        {
+          "path": "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+          "sha256": "e82bfc2d40202f61c8762acf8ef046ceb16c9b1619299531eb33e95bc84152b1",
+          "size": 19258328,
+          "goVersion": "go1.26.1-X:nodwarf5",
+          "mainPackage": "github.com/lxc/incus/v6/cmd/incus-agent",
+          "nativeModuleVersion": "v0.49.0",
+          "nativeMainModule": "github.com/lxc/incus/v6",
+          "goBuildInfoSha256": "9ed5fccfaa500140ab6d8a715b2601957383671b778640221905c23ee0c423a0",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "a0c6c280b73eae50",
+          "currentNativeArtifactId": "48386d4704aeb3a6"
+        },
+        {
+          "path": "/usr/bin/incus-agent",
+          "sha256": "e82bfc2d40202f61c8762acf8ef046ceb16c9b1619299531eb33e95bc84152b1",
+          "size": 19258328,
+          "goVersion": "go1.26.1-X:nodwarf5",
+          "mainPackage": "github.com/lxc/incus/v6/cmd/incus-agent",
+          "nativeModuleVersion": "v0.49.0",
+          "nativeMainModule": "github.com/lxc/incus/v6",
+          "goBuildInfoSha256": "9ed5fccfaa500140ab6d8a715b2601957383671b778640221905c23ee0c423a0",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "c2b8abb902daacc3",
+          "currentNativeArtifactId": "293ceb376074d96c"
+        }
+      ]
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-generic-3fd7e10d0e-d712a2b6",
+      "candidate": "main-bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "sourceRun": 38340112122,
+      "reevaluatedResultSha256": "cd126c61b033e909d7e31e49a12ea18a1181dc2164eac2fe6921eee1cd2065df",
+      "nativeSummarySha256": "21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+      "sbomSha256": "d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64",
+      "configurationDigest": "sha256:5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78",
+      "currentObservationsUnchanged": true,
+      "occurrences": 2,
+      "allPaths": [
+        {
+          "path": "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+          "sha256": "69ed90d7024f00320c1a1b3525a90c0fed28f979a9945ba492427ad0673b07d0",
+          "size": 13025000,
+          "goVersion": "go1.26.2-X:nodwarf5",
+          "mainPackage": "github.com/containers/gvisor-tap-vsock/cmd/gvproxy",
+          "nativeModuleVersion": "v0.50.0",
+          "nativeMainModule": "github.com/containers/gvisor-tap-vsock",
+          "goBuildInfoSha256": "b89110d705c7323d7a7b28f26b42bc9a5c9fdff73fc3c681f4d1308221118c49",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "606a8592d6323a0d",
+          "currentNativeArtifactId": "3d5d2b89e597b070"
+        },
+        {
+          "path": "/usr/libexec/podman/gvproxy",
+          "sha256": "69ed90d7024f00320c1a1b3525a90c0fed28f979a9945ba492427ad0673b07d0",
+          "size": 13025000,
+          "goVersion": "go1.26.2-X:nodwarf5",
+          "mainPackage": "github.com/containers/gvisor-tap-vsock/cmd/gvproxy",
+          "nativeModuleVersion": "v0.50.0",
+          "nativeMainModule": "github.com/containers/gvisor-tap-vsock",
+          "goBuildInfoSha256": "b89110d705c7323d7a7b28f26b42bc9a5c9fdff73fc3c681f4d1308221118c49",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "4e269741896e1cf9",
+          "currentNativeArtifactId": "8d8585b29115486a"
+        }
+      ]
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-next-a851083d1a-23c96ee9",
+      "candidate": "main-bluefin-dx-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "sourceRun": 38340112122,
+      "reevaluatedResultSha256": "4ec5425fcf67492ce00d3fefdddbbf74363aa5e9d01c0c7be4d11af2b500f8bb",
+      "nativeSummarySha256": "fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+      "sbomSha256": "46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5",
+      "configurationDigest": "sha256:3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44",
+      "currentObservationsUnchanged": true,
+      "occurrences": 2,
+      "allPaths": [
+        {
+          "path": "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+          "sha256": "3fb93b8f144a3939479a9c3cc77c6827ba1ff7a4d748e441798b49fd51b87ee4",
+          "size": 13620008,
+          "goVersion": "go1.26.5-X:nodwarf5",
+          "mainPackage": "github.com/git-lfs/git-lfs/v3",
+          "nativeModuleVersion": "v0.36.0",
+          "nativeMainModule": "github.com/git-lfs/git-lfs/v3",
+          "goBuildInfoSha256": "5f48927c0b9d47870082f8f087f39b07e8473e9ad13a5174c4cbcb57e58c6924",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "d5b37884552bfe54",
+          "currentNativeArtifactId": "f1a21a867c0c8395"
+        },
+        {
+          "path": "/usr/bin/git-lfs",
+          "sha256": "3fb93b8f144a3939479a9c3cc77c6827ba1ff7a4d748e441798b49fd51b87ee4",
+          "size": 13620008,
+          "goVersion": "go1.26.5-X:nodwarf5",
+          "mainPackage": "github.com/git-lfs/git-lfs/v3",
+          "nativeModuleVersion": "v0.36.0",
+          "nativeMainModule": "github.com/git-lfs/git-lfs/v3",
+          "goBuildInfoSha256": "5f48927c0b9d47870082f8f087f39b07e8473e9ad13a5174c4cbcb57e58c6924",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "84960a562c388ab9",
+          "currentNativeArtifactId": "a2c2244bb79ff003"
+        }
+      ]
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-next-a851083d1a-5e6315a8",
+      "candidate": "main-bluefin-dx-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "sourceRun": 38340112122,
+      "reevaluatedResultSha256": "4ec5425fcf67492ce00d3fefdddbbf74363aa5e9d01c0c7be4d11af2b500f8bb",
+      "nativeSummarySha256": "fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+      "sbomSha256": "46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5",
+      "configurationDigest": "sha256:3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44",
+      "currentObservationsUnchanged": true,
+      "occurrences": 2,
+      "allPaths": [
+        {
+          "path": "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+          "nativeModuleVersion": "v0.46.0",
+          "nativeMainModule": "github.com/containers/skopeo",
+          "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "d42a27ddac533463",
+          "currentNativeArtifactId": "ca9f749c8a273505"
+        },
+        {
+          "path": "/usr/bin/skopeo",
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+          "nativeModuleVersion": "v0.46.0",
+          "nativeMainModule": "github.com/containers/skopeo",
+          "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "587d529acb31d6e3",
+          "currentNativeArtifactId": "a8ac0b8bf9fd7bc3"
+        }
+      ]
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-next-a851083d1a-4856240e",
+      "candidate": "main-bluefin-dx-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "sourceRun": 38340112122,
+      "reevaluatedResultSha256": "4ec5425fcf67492ce00d3fefdddbbf74363aa5e9d01c0c7be4d11af2b500f8bb",
+      "nativeSummarySha256": "fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+      "sbomSha256": "46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5",
+      "configurationDigest": "sha256:3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44",
+      "currentObservationsUnchanged": true,
+      "occurrences": 2,
+      "allPaths": [
+        {
+          "path": "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+          "sha256": "e82bfc2d40202f61c8762acf8ef046ceb16c9b1619299531eb33e95bc84152b1",
+          "size": 19258328,
+          "goVersion": "go1.26.1-X:nodwarf5",
+          "mainPackage": "github.com/lxc/incus/v6/cmd/incus-agent",
+          "nativeModuleVersion": "v0.49.0",
+          "nativeMainModule": "github.com/lxc/incus/v6",
+          "goBuildInfoSha256": "9ed5fccfaa500140ab6d8a715b2601957383671b778640221905c23ee0c423a0",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "a0c6c280b73eae50",
+          "currentNativeArtifactId": "48386d4704aeb3a6"
+        },
+        {
+          "path": "/usr/bin/incus-agent",
+          "sha256": "e82bfc2d40202f61c8762acf8ef046ceb16c9b1619299531eb33e95bc84152b1",
+          "size": 19258328,
+          "goVersion": "go1.26.1-X:nodwarf5",
+          "mainPackage": "github.com/lxc/incus/v6/cmd/incus-agent",
+          "nativeModuleVersion": "v0.49.0",
+          "nativeMainModule": "github.com/lxc/incus/v6",
+          "goBuildInfoSha256": "9ed5fccfaa500140ab6d8a715b2601957383671b778640221905c23ee0c423a0",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "c2b8abb902daacc3",
+          "currentNativeArtifactId": "293ceb376074d96c"
+        }
+      ]
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-next-a851083d1a-d712a2b6",
+      "candidate": "main-bluefin-dx-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "sourceRun": 38340112122,
+      "reevaluatedResultSha256": "4ec5425fcf67492ce00d3fefdddbbf74363aa5e9d01c0c7be4d11af2b500f8bb",
+      "nativeSummarySha256": "fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+      "sbomSha256": "46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5",
+      "configurationDigest": "sha256:3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44",
+      "currentObservationsUnchanged": true,
+      "occurrences": 2,
+      "allPaths": [
+        {
+          "path": "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+          "sha256": "69ed90d7024f00320c1a1b3525a90c0fed28f979a9945ba492427ad0673b07d0",
+          "size": 13025000,
+          "goVersion": "go1.26.2-X:nodwarf5",
+          "mainPackage": "github.com/containers/gvisor-tap-vsock/cmd/gvproxy",
+          "nativeModuleVersion": "v0.50.0",
+          "nativeMainModule": "github.com/containers/gvisor-tap-vsock",
+          "goBuildInfoSha256": "b89110d705c7323d7a7b28f26b42bc9a5c9fdff73fc3c681f4d1308221118c49",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "606a8592d6323a0d",
+          "currentNativeArtifactId": "3d5d2b89e597b070"
+        },
+        {
+          "path": "/usr/libexec/podman/gvproxy",
+          "sha256": "69ed90d7024f00320c1a1b3525a90c0fed28f979a9945ba492427ad0673b07d0",
+          "size": 13025000,
+          "goVersion": "go1.26.2-X:nodwarf5",
+          "mainPackage": "github.com/containers/gvisor-tap-vsock/cmd/gvproxy",
+          "nativeModuleVersion": "v0.50.0",
+          "nativeMainModule": "github.com/containers/gvisor-tap-vsock",
+          "goBuildInfoSha256": "b89110d705c7323d7a7b28f26b42bc9a5c9fdff73fc3c681f4d1308221118c49",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "4e269741896e1cf9",
+          "currentNativeArtifactId": "8d8585b29115486a"
+        }
+      ]
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-generic-3d4693f25f-5e6315a8",
+      "candidate": "main-bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "sourceRun": 38340112122,
+      "reevaluatedResultSha256": "3222b174330e244407d7eeb771a849a968db7b293ce23c419eb2a75b84dc112a",
+      "nativeSummarySha256": "5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9",
+      "sbomSha256": "4902fdd4b2afca8374a3197770f25daa11c7626cb5c83c46fb614ad1f5441201",
+      "configurationDigest": "sha256:eb2542e972cdd6c71f3448674c57b0c41252fdc4c986252bc8ff3621e2119cf4",
+      "currentObservationsUnchanged": true,
+      "occurrences": 2,
+      "allPaths": [
+        {
+          "path": "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+          "nativeModuleVersion": "v0.46.0",
+          "nativeMainModule": "github.com/containers/skopeo",
+          "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeSourceRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeFileId": "d42a27ddac533463",
+          "currentNativeArtifactId": "ca9f749c8a273505"
+        },
+        {
+          "path": "/usr/bin/skopeo",
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+          "nativeModuleVersion": "v0.46.0",
+          "nativeMainModule": "github.com/containers/skopeo",
+          "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeSourceRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeFileId": "587d529acb31d6e3",
+          "currentNativeArtifactId": "a8ac0b8bf9fd7bc3"
+        }
+      ]
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-next-a36f46afcc-5e6315a8",
+      "candidate": "main-bluefin-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+      "sourceRun": 38340112122,
+      "reevaluatedResultSha256": "f0b72c27606d52a6468b841dd73a05b20df54defb77fdb72600c516aa89088e1",
+      "nativeSummarySha256": "81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f",
+      "sbomSha256": "bcf12455b002324b0c5923110de414cde3528d164bbb6b230dc2e8efb69f56b4",
+      "configurationDigest": "sha256:fce1315ea7763cf210b19f4e7c83334ab5e36be9a490d97e0ccc2b2c69491497",
+      "currentObservationsUnchanged": true,
+      "occurrences": 2,
+      "allPaths": [
+        {
+          "path": "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+          "nativeModuleVersion": "v0.46.0",
+          "nativeMainModule": "github.com/containers/skopeo",
+          "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeSourceRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeFileId": "d42a27ddac533463",
+          "currentNativeArtifactId": "ca9f749c8a273505"
+        },
+        {
+          "path": "/usr/bin/skopeo",
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+          "nativeModuleVersion": "v0.46.0",
+          "nativeMainModule": "github.com/containers/skopeo",
+          "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeSourceRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeFileId": "587d529acb31d6e3",
+          "currentNativeArtifactId": "a8ac0b8bf9fd7bc3"
+        }
+      ]
+    }
+  ],
+  "rejectedUnknowns": [
+    {
+      "candidate": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "component": "pkg:golang/golang.org/x/crypto@v0.36.0",
+      "advisory": "GHSA-vgwf-h737-ff37",
+      "aliases": [
+        "CVE-2026-39830",
+        "GHSA-vgwf-h737-ff37"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+        "/usr/bin/git-lfs"
+      ],
+      "status": "blocked-unknown-no-routine-proposal",
+      "why": [
+        "Publisher describes cumulative unreleasable resource leakage per SSH connection; current consumer connection/retry lifetime and process/host memory ceilings are not established. A process-DoS label alone does not bound host memory impact, particularly for supported persistent Incus-agent/gvproxy use."
+      ],
+      "positiveByteEvidence": [
+        {
+          "path": "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+          "sha256": "3fb93b8f144a3939479a9c3cc77c6827ba1ff7a4d748e441798b49fd51b87ee4",
+          "size": 13620008,
+          "goVersion": "go1.26.5-X:nodwarf5",
+          "mainPackage": "github.com/git-lfs/git-lfs/v3",
+          "nativeModuleVersion": "v0.36.0",
+          "nativeMainModule": "github.com/git-lfs/git-lfs/v3",
+          "goBuildInfoSha256": "5f48927c0b9d47870082f8f087f39b07e8473e9ad13a5174c4cbcb57e58c6924",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "d5b37884552bfe54",
+          "currentNativeArtifactId": "f1a21a867c0c8395"
+        },
+        {
+          "path": "/usr/bin/git-lfs",
+          "sha256": "3fb93b8f144a3939479a9c3cc77c6827ba1ff7a4d748e441798b49fd51b87ee4",
+          "size": 13620008,
+          "goVersion": "go1.26.5-X:nodwarf5",
+          "mainPackage": "github.com/git-lfs/git-lfs/v3",
+          "nativeModuleVersion": "v0.36.0",
+          "nativeMainModule": "github.com/git-lfs/git-lfs/v3",
+          "goBuildInfoSha256": "5f48927c0b9d47870082f8f087f39b07e8473e9ad13a5174c4cbcb57e58c6924",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "84960a562c388ab9",
+          "currentNativeArtifactId": "a2c2244bb79ff003"
+        }
+      ]
+    },
+    {
+      "candidate": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "advisory": "GHSA-vgwf-h737-ff37",
+      "aliases": [
+        "CVE-2026-39830",
+        "GHSA-vgwf-h737-ff37"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "status": "blocked-unknown-no-routine-proposal",
+      "why": [
+        "Publisher describes cumulative unreleasable resource leakage per SSH connection; current consumer connection/retry lifetime and process/host memory ceilings are not established. A process-DoS label alone does not bound host memory impact, particularly for supported persistent Incus-agent/gvproxy use."
+      ],
+      "positiveByteEvidence": [
+        {
+          "path": "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+          "nativeModuleVersion": "v0.46.0",
+          "nativeMainModule": "github.com/containers/skopeo",
+          "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "d42a27ddac533463",
+          "currentNativeArtifactId": "ca9f749c8a273505"
+        },
+        {
+          "path": "/usr/bin/skopeo",
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+          "nativeModuleVersion": "v0.46.0",
+          "nativeMainModule": "github.com/containers/skopeo",
+          "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "587d529acb31d6e3",
+          "currentNativeArtifactId": "a8ac0b8bf9fd7bc3"
+        }
+      ]
+    },
+    {
+      "candidate": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "component": "pkg:golang/golang.org/x/crypto@v0.49.0",
+      "advisory": "GHSA-vgwf-h737-ff37",
+      "aliases": [
+        "CVE-2026-39830",
+        "GHSA-vgwf-h737-ff37"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+        "/usr/bin/incus-agent"
+      ],
+      "status": "blocked-unknown-no-routine-proposal",
+      "why": [
+        "Publisher describes cumulative unreleasable resource leakage per SSH connection; current consumer connection/retry lifetime and process/host memory ceilings are not established. A process-DoS label alone does not bound host memory impact, particularly for supported persistent Incus-agent/gvproxy use."
+      ],
+      "positiveByteEvidence": [
+        {
+          "path": "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+          "sha256": "e82bfc2d40202f61c8762acf8ef046ceb16c9b1619299531eb33e95bc84152b1",
+          "size": 19258328,
+          "goVersion": "go1.26.1-X:nodwarf5",
+          "mainPackage": "github.com/lxc/incus/v6/cmd/incus-agent",
+          "nativeModuleVersion": "v0.49.0",
+          "nativeMainModule": "github.com/lxc/incus/v6",
+          "goBuildInfoSha256": "9ed5fccfaa500140ab6d8a715b2601957383671b778640221905c23ee0c423a0",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "a0c6c280b73eae50",
+          "currentNativeArtifactId": "48386d4704aeb3a6"
+        },
+        {
+          "path": "/usr/bin/incus-agent",
+          "sha256": "e82bfc2d40202f61c8762acf8ef046ceb16c9b1619299531eb33e95bc84152b1",
+          "size": 19258328,
+          "goVersion": "go1.26.1-X:nodwarf5",
+          "mainPackage": "github.com/lxc/incus/v6/cmd/incus-agent",
+          "nativeModuleVersion": "v0.49.0",
+          "nativeMainModule": "github.com/lxc/incus/v6",
+          "goBuildInfoSha256": "9ed5fccfaa500140ab6d8a715b2601957383671b778640221905c23ee0c423a0",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "c2b8abb902daacc3",
+          "currentNativeArtifactId": "293ceb376074d96c"
+        }
+      ]
+    },
+    {
+      "candidate": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "component": "pkg:golang/golang.org/x/crypto@v0.50.0",
+      "advisory": "GHSA-vgwf-h737-ff37",
+      "aliases": [
+        "CVE-2026-39830",
+        "GHSA-vgwf-h737-ff37"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+        "/usr/libexec/podman/gvproxy"
+      ],
+      "status": "blocked-unknown-no-routine-proposal",
+      "why": [
+        "Publisher describes cumulative unreleasable resource leakage per SSH connection; current consumer connection/retry lifetime and process/host memory ceilings are not established. A process-DoS label alone does not bound host memory impact, particularly for supported persistent Incus-agent/gvproxy use."
+      ],
+      "positiveByteEvidence": [
+        {
+          "path": "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+          "sha256": "69ed90d7024f00320c1a1b3525a90c0fed28f979a9945ba492427ad0673b07d0",
+          "size": 13025000,
+          "goVersion": "go1.26.2-X:nodwarf5",
+          "mainPackage": "github.com/containers/gvisor-tap-vsock/cmd/gvproxy",
+          "nativeModuleVersion": "v0.50.0",
+          "nativeMainModule": "github.com/containers/gvisor-tap-vsock",
+          "goBuildInfoSha256": "b89110d705c7323d7a7b28f26b42bc9a5c9fdff73fc3c681f4d1308221118c49",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "606a8592d6323a0d",
+          "currentNativeArtifactId": "3d5d2b89e597b070"
+        },
+        {
+          "path": "/usr/libexec/podman/gvproxy",
+          "sha256": "69ed90d7024f00320c1a1b3525a90c0fed28f979a9945ba492427ad0673b07d0",
+          "size": 13025000,
+          "goVersion": "go1.26.2-X:nodwarf5",
+          "mainPackage": "github.com/containers/gvisor-tap-vsock/cmd/gvproxy",
+          "nativeModuleVersion": "v0.50.0",
+          "nativeMainModule": "github.com/containers/gvisor-tap-vsock",
+          "goBuildInfoSha256": "b89110d705c7323d7a7b28f26b42bc9a5c9fdff73fc3c681f4d1308221118c49",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "4e269741896e1cf9",
+          "currentNativeArtifactId": "8d8585b29115486a"
+        }
+      ]
+    },
+    {
+      "candidate": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "advisory": "GHSA-vgwf-h737-ff37",
+      "aliases": [
+        "CVE-2026-39830",
+        "GHSA-vgwf-h737-ff37"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "status": "blocked-unknown-no-routine-proposal",
+      "why": [
+        "Publisher describes cumulative unreleasable resource leakage per SSH connection; current consumer connection/retry lifetime and process/host memory ceilings are not established. A process-DoS label alone does not bound host memory impact, particularly for supported persistent Incus-agent/gvproxy use."
+      ],
+      "positiveByteEvidence": [
+        {
+          "path": "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+          "nativeModuleVersion": "v0.46.0",
+          "nativeMainModule": "github.com/containers/skopeo",
+          "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeSourceRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeFileId": "d42a27ddac533463",
+          "currentNativeArtifactId": "ca9f749c8a273505"
+        },
+        {
+          "path": "/usr/bin/skopeo",
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+          "nativeModuleVersion": "v0.46.0",
+          "nativeMainModule": "github.com/containers/skopeo",
+          "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeSourceRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeFileId": "587d529acb31d6e3",
+          "currentNativeArtifactId": "a8ac0b8bf9fd7bc3"
+        }
+      ]
+    },
+    {
+      "candidate": "main-bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/crypto@v0.36.0",
+      "advisory": "GHSA-vgwf-h737-ff37",
+      "aliases": [
+        "CVE-2026-39830",
+        "GHSA-vgwf-h737-ff37"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+        "/usr/bin/git-lfs"
+      ],
+      "status": "blocked-unknown-no-routine-proposal",
+      "why": [
+        "Publisher describes cumulative unreleasable resource leakage per SSH connection; current consumer connection/retry lifetime and process/host memory ceilings are not established. A process-DoS label alone does not bound host memory impact, particularly for supported persistent Incus-agent/gvproxy use."
+      ],
+      "positiveByteEvidence": [
+        {
+          "path": "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+          "sha256": "3fb93b8f144a3939479a9c3cc77c6827ba1ff7a4d748e441798b49fd51b87ee4",
+          "size": 13620008,
+          "goVersion": "go1.26.5-X:nodwarf5",
+          "mainPackage": "github.com/git-lfs/git-lfs/v3",
+          "nativeModuleVersion": "v0.36.0",
+          "nativeMainModule": "github.com/git-lfs/git-lfs/v3",
+          "goBuildInfoSha256": "5f48927c0b9d47870082f8f087f39b07e8473e9ad13a5174c4cbcb57e58c6924",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "d5b37884552bfe54",
+          "currentNativeArtifactId": "f1a21a867c0c8395"
+        },
+        {
+          "path": "/usr/bin/git-lfs",
+          "sha256": "3fb93b8f144a3939479a9c3cc77c6827ba1ff7a4d748e441798b49fd51b87ee4",
+          "size": 13620008,
+          "goVersion": "go1.26.5-X:nodwarf5",
+          "mainPackage": "github.com/git-lfs/git-lfs/v3",
+          "nativeModuleVersion": "v0.36.0",
+          "nativeMainModule": "github.com/git-lfs/git-lfs/v3",
+          "goBuildInfoSha256": "5f48927c0b9d47870082f8f087f39b07e8473e9ad13a5174c4cbcb57e58c6924",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "84960a562c388ab9",
+          "currentNativeArtifactId": "a2c2244bb79ff003"
+        }
+      ]
+    },
+    {
+      "candidate": "main-bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "advisory": "GHSA-vgwf-h737-ff37",
+      "aliases": [
+        "CVE-2026-39830",
+        "GHSA-vgwf-h737-ff37"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "status": "blocked-unknown-no-routine-proposal",
+      "why": [
+        "Publisher describes cumulative unreleasable resource leakage per SSH connection; current consumer connection/retry lifetime and process/host memory ceilings are not established. A process-DoS label alone does not bound host memory impact, particularly for supported persistent Incus-agent/gvproxy use."
+      ],
+      "positiveByteEvidence": [
+        {
+          "path": "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+          "nativeModuleVersion": "v0.46.0",
+          "nativeMainModule": "github.com/containers/skopeo",
+          "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "d42a27ddac533463",
+          "currentNativeArtifactId": "ca9f749c8a273505"
+        },
+        {
+          "path": "/usr/bin/skopeo",
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+          "nativeModuleVersion": "v0.46.0",
+          "nativeMainModule": "github.com/containers/skopeo",
+          "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "587d529acb31d6e3",
+          "currentNativeArtifactId": "a8ac0b8bf9fd7bc3"
+        }
+      ]
+    },
+    {
+      "candidate": "main-bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/crypto@v0.49.0",
+      "advisory": "GHSA-vgwf-h737-ff37",
+      "aliases": [
+        "CVE-2026-39830",
+        "GHSA-vgwf-h737-ff37"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+        "/usr/bin/incus-agent"
+      ],
+      "status": "blocked-unknown-no-routine-proposal",
+      "why": [
+        "Publisher describes cumulative unreleasable resource leakage per SSH connection; current consumer connection/retry lifetime and process/host memory ceilings are not established. A process-DoS label alone does not bound host memory impact, particularly for supported persistent Incus-agent/gvproxy use."
+      ],
+      "positiveByteEvidence": [
+        {
+          "path": "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+          "sha256": "e82bfc2d40202f61c8762acf8ef046ceb16c9b1619299531eb33e95bc84152b1",
+          "size": 19258328,
+          "goVersion": "go1.26.1-X:nodwarf5",
+          "mainPackage": "github.com/lxc/incus/v6/cmd/incus-agent",
+          "nativeModuleVersion": "v0.49.0",
+          "nativeMainModule": "github.com/lxc/incus/v6",
+          "goBuildInfoSha256": "9ed5fccfaa500140ab6d8a715b2601957383671b778640221905c23ee0c423a0",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "a0c6c280b73eae50",
+          "currentNativeArtifactId": "48386d4704aeb3a6"
+        },
+        {
+          "path": "/usr/bin/incus-agent",
+          "sha256": "e82bfc2d40202f61c8762acf8ef046ceb16c9b1619299531eb33e95bc84152b1",
+          "size": 19258328,
+          "goVersion": "go1.26.1-X:nodwarf5",
+          "mainPackage": "github.com/lxc/incus/v6/cmd/incus-agent",
+          "nativeModuleVersion": "v0.49.0",
+          "nativeMainModule": "github.com/lxc/incus/v6",
+          "goBuildInfoSha256": "9ed5fccfaa500140ab6d8a715b2601957383671b778640221905c23ee0c423a0",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "c2b8abb902daacc3",
+          "currentNativeArtifactId": "293ceb376074d96c"
+        }
+      ]
+    },
+    {
+      "candidate": "main-bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/crypto@v0.50.0",
+      "advisory": "GHSA-vgwf-h737-ff37",
+      "aliases": [
+        "CVE-2026-39830",
+        "GHSA-vgwf-h737-ff37"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+        "/usr/libexec/podman/gvproxy"
+      ],
+      "status": "blocked-unknown-no-routine-proposal",
+      "why": [
+        "Publisher describes cumulative unreleasable resource leakage per SSH connection; current consumer connection/retry lifetime and process/host memory ceilings are not established. A process-DoS label alone does not bound host memory impact, particularly for supported persistent Incus-agent/gvproxy use."
+      ],
+      "positiveByteEvidence": [
+        {
+          "path": "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+          "sha256": "69ed90d7024f00320c1a1b3525a90c0fed28f979a9945ba492427ad0673b07d0",
+          "size": 13025000,
+          "goVersion": "go1.26.2-X:nodwarf5",
+          "mainPackage": "github.com/containers/gvisor-tap-vsock/cmd/gvproxy",
+          "nativeModuleVersion": "v0.50.0",
+          "nativeMainModule": "github.com/containers/gvisor-tap-vsock",
+          "goBuildInfoSha256": "b89110d705c7323d7a7b28f26b42bc9a5c9fdff73fc3c681f4d1308221118c49",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "606a8592d6323a0d",
+          "currentNativeArtifactId": "3d5d2b89e597b070"
+        },
+        {
+          "path": "/usr/libexec/podman/gvproxy",
+          "sha256": "69ed90d7024f00320c1a1b3525a90c0fed28f979a9945ba492427ad0673b07d0",
+          "size": 13025000,
+          "goVersion": "go1.26.2-X:nodwarf5",
+          "mainPackage": "github.com/containers/gvisor-tap-vsock/cmd/gvproxy",
+          "nativeModuleVersion": "v0.50.0",
+          "nativeMainModule": "github.com/containers/gvisor-tap-vsock",
+          "goBuildInfoSha256": "b89110d705c7323d7a7b28f26b42bc9a5c9fdff73fc3c681f4d1308221118c49",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "4e269741896e1cf9",
+          "currentNativeArtifactId": "8d8585b29115486a"
+        }
+      ]
+    },
+    {
+      "candidate": "main-bluefin-dx-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "component": "pkg:golang/golang.org/x/crypto@v0.36.0",
+      "advisory": "GHSA-vgwf-h737-ff37",
+      "aliases": [
+        "CVE-2026-39830",
+        "GHSA-vgwf-h737-ff37"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+        "/usr/bin/git-lfs"
+      ],
+      "status": "blocked-unknown-no-routine-proposal",
+      "why": [
+        "Publisher describes cumulative unreleasable resource leakage per SSH connection; current consumer connection/retry lifetime and process/host memory ceilings are not established. A process-DoS label alone does not bound host memory impact, particularly for supported persistent Incus-agent/gvproxy use."
+      ],
+      "positiveByteEvidence": [
+        {
+          "path": "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+          "sha256": "3fb93b8f144a3939479a9c3cc77c6827ba1ff7a4d748e441798b49fd51b87ee4",
+          "size": 13620008,
+          "goVersion": "go1.26.5-X:nodwarf5",
+          "mainPackage": "github.com/git-lfs/git-lfs/v3",
+          "nativeModuleVersion": "v0.36.0",
+          "nativeMainModule": "github.com/git-lfs/git-lfs/v3",
+          "goBuildInfoSha256": "5f48927c0b9d47870082f8f087f39b07e8473e9ad13a5174c4cbcb57e58c6924",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "d5b37884552bfe54",
+          "currentNativeArtifactId": "f1a21a867c0c8395"
+        },
+        {
+          "path": "/usr/bin/git-lfs",
+          "sha256": "3fb93b8f144a3939479a9c3cc77c6827ba1ff7a4d748e441798b49fd51b87ee4",
+          "size": 13620008,
+          "goVersion": "go1.26.5-X:nodwarf5",
+          "mainPackage": "github.com/git-lfs/git-lfs/v3",
+          "nativeModuleVersion": "v0.36.0",
+          "nativeMainModule": "github.com/git-lfs/git-lfs/v3",
+          "goBuildInfoSha256": "5f48927c0b9d47870082f8f087f39b07e8473e9ad13a5174c4cbcb57e58c6924",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "84960a562c388ab9",
+          "currentNativeArtifactId": "a2c2244bb79ff003"
+        }
+      ]
+    },
+    {
+      "candidate": "main-bluefin-dx-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "advisory": "GHSA-vgwf-h737-ff37",
+      "aliases": [
+        "CVE-2026-39830",
+        "GHSA-vgwf-h737-ff37"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "status": "blocked-unknown-no-routine-proposal",
+      "why": [
+        "Publisher describes cumulative unreleasable resource leakage per SSH connection; current consumer connection/retry lifetime and process/host memory ceilings are not established. A process-DoS label alone does not bound host memory impact, particularly for supported persistent Incus-agent/gvproxy use."
+      ],
+      "positiveByteEvidence": [
+        {
+          "path": "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+          "nativeModuleVersion": "v0.46.0",
+          "nativeMainModule": "github.com/containers/skopeo",
+          "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "d42a27ddac533463",
+          "currentNativeArtifactId": "ca9f749c8a273505"
+        },
+        {
+          "path": "/usr/bin/skopeo",
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+          "nativeModuleVersion": "v0.46.0",
+          "nativeMainModule": "github.com/containers/skopeo",
+          "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "587d529acb31d6e3",
+          "currentNativeArtifactId": "a8ac0b8bf9fd7bc3"
+        }
+      ]
+    },
+    {
+      "candidate": "main-bluefin-dx-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "component": "pkg:golang/golang.org/x/crypto@v0.49.0",
+      "advisory": "GHSA-vgwf-h737-ff37",
+      "aliases": [
+        "CVE-2026-39830",
+        "GHSA-vgwf-h737-ff37"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+        "/usr/bin/incus-agent"
+      ],
+      "status": "blocked-unknown-no-routine-proposal",
+      "why": [
+        "Publisher describes cumulative unreleasable resource leakage per SSH connection; current consumer connection/retry lifetime and process/host memory ceilings are not established. A process-DoS label alone does not bound host memory impact, particularly for supported persistent Incus-agent/gvproxy use."
+      ],
+      "positiveByteEvidence": [
+        {
+          "path": "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+          "sha256": "e82bfc2d40202f61c8762acf8ef046ceb16c9b1619299531eb33e95bc84152b1",
+          "size": 19258328,
+          "goVersion": "go1.26.1-X:nodwarf5",
+          "mainPackage": "github.com/lxc/incus/v6/cmd/incus-agent",
+          "nativeModuleVersion": "v0.49.0",
+          "nativeMainModule": "github.com/lxc/incus/v6",
+          "goBuildInfoSha256": "9ed5fccfaa500140ab6d8a715b2601957383671b778640221905c23ee0c423a0",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "a0c6c280b73eae50",
+          "currentNativeArtifactId": "48386d4704aeb3a6"
+        },
+        {
+          "path": "/usr/bin/incus-agent",
+          "sha256": "e82bfc2d40202f61c8762acf8ef046ceb16c9b1619299531eb33e95bc84152b1",
+          "size": 19258328,
+          "goVersion": "go1.26.1-X:nodwarf5",
+          "mainPackage": "github.com/lxc/incus/v6/cmd/incus-agent",
+          "nativeModuleVersion": "v0.49.0",
+          "nativeMainModule": "github.com/lxc/incus/v6",
+          "goBuildInfoSha256": "9ed5fccfaa500140ab6d8a715b2601957383671b778640221905c23ee0c423a0",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "c2b8abb902daacc3",
+          "currentNativeArtifactId": "293ceb376074d96c"
+        }
+      ]
+    },
+    {
+      "candidate": "main-bluefin-dx-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "component": "pkg:golang/golang.org/x/crypto@v0.50.0",
+      "advisory": "GHSA-vgwf-h737-ff37",
+      "aliases": [
+        "CVE-2026-39830",
+        "GHSA-vgwf-h737-ff37"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+        "/usr/libexec/podman/gvproxy"
+      ],
+      "status": "blocked-unknown-no-routine-proposal",
+      "why": [
+        "Publisher describes cumulative unreleasable resource leakage per SSH connection; current consumer connection/retry lifetime and process/host memory ceilings are not established. A process-DoS label alone does not bound host memory impact, particularly for supported persistent Incus-agent/gvproxy use."
+      ],
+      "positiveByteEvidence": [
+        {
+          "path": "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+          "sha256": "69ed90d7024f00320c1a1b3525a90c0fed28f979a9945ba492427ad0673b07d0",
+          "size": 13025000,
+          "goVersion": "go1.26.2-X:nodwarf5",
+          "mainPackage": "github.com/containers/gvisor-tap-vsock/cmd/gvproxy",
+          "nativeModuleVersion": "v0.50.0",
+          "nativeMainModule": "github.com/containers/gvisor-tap-vsock",
+          "goBuildInfoSha256": "b89110d705c7323d7a7b28f26b42bc9a5c9fdff73fc3c681f4d1308221118c49",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "606a8592d6323a0d",
+          "currentNativeArtifactId": "3d5d2b89e597b070"
+        },
+        {
+          "path": "/usr/libexec/podman/gvproxy",
+          "sha256": "69ed90d7024f00320c1a1b3525a90c0fed28f979a9945ba492427ad0673b07d0",
+          "size": 13025000,
+          "goVersion": "go1.26.2-X:nodwarf5",
+          "mainPackage": "github.com/containers/gvisor-tap-vsock/cmd/gvproxy",
+          "nativeModuleVersion": "v0.50.0",
+          "nativeMainModule": "github.com/containers/gvisor-tap-vsock",
+          "goBuildInfoSha256": "b89110d705c7323d7a7b28f26b42bc9a5c9fdff73fc3c681f4d1308221118c49",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeSourceRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "4e269741896e1cf9",
+          "currentNativeArtifactId": "8d8585b29115486a"
+        }
+      ]
+    },
+    {
+      "candidate": "main-bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "advisory": "GHSA-vgwf-h737-ff37",
+      "aliases": [
+        "CVE-2026-39830",
+        "GHSA-vgwf-h737-ff37"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "status": "blocked-unknown-no-routine-proposal",
+      "why": [
+        "Publisher describes cumulative unreleasable resource leakage per SSH connection; current consumer connection/retry lifetime and process/host memory ceilings are not established. A process-DoS label alone does not bound host memory impact, particularly for supported persistent Incus-agent/gvproxy use."
+      ],
+      "positiveByteEvidence": [
+        {
+          "path": "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+          "nativeModuleVersion": "v0.46.0",
+          "nativeMainModule": "github.com/containers/skopeo",
+          "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeSourceRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeFileId": "d42a27ddac533463",
+          "currentNativeArtifactId": "ca9f749c8a273505"
+        },
+        {
+          "path": "/usr/bin/skopeo",
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+          "nativeModuleVersion": "v0.46.0",
+          "nativeMainModule": "github.com/containers/skopeo",
+          "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeSourceRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeFileId": "587d529acb31d6e3",
+          "currentNativeArtifactId": "a8ac0b8bf9fd7bc3"
+        }
+      ]
+    },
+    {
+      "candidate": "main-bluefin-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "advisory": "GHSA-vgwf-h737-ff37",
+      "aliases": [
+        "CVE-2026-39830",
+        "GHSA-vgwf-h737-ff37"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "status": "blocked-unknown-no-routine-proposal",
+      "why": [
+        "Publisher describes cumulative unreleasable resource leakage per SSH connection; current consumer connection/retry lifetime and process/host memory ceilings are not established. A process-DoS label alone does not bound host memory impact, particularly for supported persistent Incus-agent/gvproxy use."
+      ],
+      "positiveByteEvidence": [
+        {
+          "path": "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+          "nativeModuleVersion": "v0.46.0",
+          "nativeMainModule": "github.com/containers/skopeo",
+          "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeSourceRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeFileId": "d42a27ddac533463",
+          "currentNativeArtifactId": "ca9f749c8a273505"
+        },
+        {
+          "path": "/usr/bin/skopeo",
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+          "nativeModuleVersion": "v0.46.0",
+          "nativeMainModule": "github.com/containers/skopeo",
+          "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeSourceRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeFileId": "587d529acb31d6e3",
+          "currentNativeArtifactId": "a8ac0b8bf9fd7bc3"
+        }
+      ]
+    }
+  ],
+  "candidates": [
+    {
+      "candidate": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "profile": "bluefin-dx-generic",
+      "sourceRun": 38341284379,
+      "currentBlockingPairs": 139,
+      "sshWriteLoopBlockedPairs": 4,
+      "sshUnreleasableLeakBlockedPairs": 4,
+      "proposedRoutinePairs": 4,
+      "leftUnknownSshPairs": 4,
+      "proposedRoutineRecords": 8,
+      "releaseBlockers": [],
+      "releaseEligible": false
+    },
+    {
+      "candidate": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+      "profile": "bluefin-generic",
+      "sourceRun": 38341281199,
+      "currentBlockingPairs": 88,
+      "sshWriteLoopBlockedPairs": 1,
+      "sshUnreleasableLeakBlockedPairs": 1,
+      "proposedRoutinePairs": 1,
+      "leftUnknownSshPairs": 1,
+      "proposedRoutineRecords": 2,
+      "releaseBlockers": [],
+      "releaseEligible": false
+    },
+    {
+      "candidate": "main-bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "profile": "bluefin-dx-generic",
+      "sourceRun": 38340112122,
+      "currentBlockingPairs": 139,
+      "sshWriteLoopBlockedPairs": 4,
+      "sshUnreleasableLeakBlockedPairs": 4,
+      "proposedRoutinePairs": 4,
+      "leftUnknownSshPairs": 4,
+      "proposedRoutineRecords": 8,
+      "releaseBlockers": [],
+      "releaseEligible": false
+    },
+    {
+      "candidate": "main-bluefin-dx-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "profile": "bluefin-dx-next",
+      "sourceRun": 38340112122,
+      "currentBlockingPairs": 139,
+      "sshWriteLoopBlockedPairs": 4,
+      "sshUnreleasableLeakBlockedPairs": 4,
+      "proposedRoutinePairs": 4,
+      "leftUnknownSshPairs": 4,
+      "proposedRoutineRecords": 8,
+      "releaseBlockers": [
+        {
+          "id": "next-kernel-october-source-fixes",
+          "profiles": [
+            "bluefin-next",
+            "bluefin-dx-next"
+          ],
+          "riskClass": "major-data-loss",
+          "reason": "Pinned Fedora 45 kernel 7.2.9-300 lacks the reviewed October XFS/AMD fixes. Missing scanner matches do not establish source-fix coverage. The fixed 301 build has not reached an approved stable tag in retained official evidence.",
+          "officialSources": [
+            "https://src.fedoraproject.org/rpms/kernel/c/c2cdc6c5c0c6ccc0128613fc7c9d276ebaf870c7.patch",
+            "https://gitlab.com/cki-project/kernel-ark/-/commit/fa3bfc1343f7f3b1ebd873eee5e3e6618918f434.patch"
+          ],
+          "reviewedBy": "great_cto desktop kernel source review",
+          "reviewedAt": "2026-10-13T00:00:29Z",
+          "unblockEvidence": "Approved same-stream stable kernel containing the reviewed fixes, or separately explicit reviewed testing approval; authenticate exact Fedora payloads and validate transaction, module preservation, initramfs and boot qualification before reviewing removal of this hold."
+        }
+      ],
+      "releaseEligible": false
+    },
+    {
+      "candidate": "main-bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "profile": "bluefin-generic",
+      "sourceRun": 38340112122,
+      "currentBlockingPairs": 88,
+      "sshWriteLoopBlockedPairs": 1,
+      "sshUnreleasableLeakBlockedPairs": 1,
+      "proposedRoutinePairs": 1,
+      "leftUnknownSshPairs": 1,
+      "proposedRoutineRecords": 2,
+      "releaseBlockers": [],
+      "releaseEligible": false
+    },
+    {
+      "candidate": "main-bluefin-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+      "profile": "bluefin-next",
+      "sourceRun": 38340112122,
+      "currentBlockingPairs": 88,
+      "sshWriteLoopBlockedPairs": 1,
+      "sshUnreleasableLeakBlockedPairs": 1,
+      "proposedRoutinePairs": 1,
+      "leftUnknownSshPairs": 1,
+      "proposedRoutineRecords": 2,
+      "releaseBlockers": [
+        {
+          "id": "next-kernel-october-source-fixes",
+          "profiles": [
+            "bluefin-next",
+            "bluefin-dx-next"
+          ],
+          "riskClass": "major-data-loss",
+          "reason": "Pinned Fedora 45 kernel 7.2.9-300 lacks the reviewed October XFS/AMD fixes. Missing scanner matches do not establish source-fix coverage. The fixed 301 build has not reached an approved stable tag in retained official evidence.",
+          "officialSources": [
+            "https://src.fedoraproject.org/rpms/kernel/c/c2cdc6c5c0c6ccc0128613fc7c9d276ebaf870c7.patch",
+            "https://gitlab.com/cki-project/kernel-ark/-/commit/fa3bfc1343f7f3b1ebd873eee5e3e6618918f434.patch"
+          ],
+          "reviewedBy": "great_cto desktop kernel source review",
+          "reviewedAt": "2026-10-13T00:00:29Z",
+          "unblockEvidence": "Approved same-stream stable kernel containing the reviewed fixes, or separately explicit reviewed testing approval; authenticate exact Fedora payloads and validate transaction, module preservation, initramfs and boot qualification before reviewing removal of this hold."
+        }
+      ],
+      "releaseEligible": false
+    }
+  ],
+  "validation": {
+    "existingTypedSchemaAndReviewWindow": "passed reviewed_rules including all existing dispositions",
+    "proposedExpiryDays": 14,
+    "noObservedKnownExploitedOrSeriousAliasWaived": true,
+    "everyAcceptedObservedAliasAndLocationCovered": true
+  },
+  "policyChanged": false,
+  "newScanPerformed": false,
+  "newImagePulled": false,
+  "releaseEligible": false
+}

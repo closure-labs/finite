@@ -173,6 +173,8 @@ def build_info(stream, size):
     return {'elf': {'class': 64, 'endianness': 'little', 'machine': 'EM_X86_64'},
             'goVersion': version, 'os': values['GOOS'], 'arch': values['GOARCH'],
             'mainPackage': package[0], 'relevantModuleRecords': relevant,
+            'goBuildSettingsRecords': [line for line in lines if line.startswith('build\t')],
+            'goDependencyModuleRecords': [line for line in lines if line.startswith(('mod\t', 'dep\t', '=>\t'))],
             'goBuildInfoSha256': hashlib.sha256(raw).hexdigest(),
             'goModuleInfoSha256': hashlib.sha256(module_raw).hexdigest(),
             'symbolCoverage': 'not-collected', 'absenceNotProof': True}

@@ -1,0 +1,84 @@
+{
+  "schema": 1,
+  "compactRun": 38344754471,
+  "targets": [
+    {
+      "label": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "run": 38341284379,
+      "artifactName": "diagnostic-bluefin-dx-generic-38341284379-1",
+      "resultSha256": "7cdbb3e6a941de295d48ef0f2a7cfc8c72b4ec383ca990e6a17de0cf114605bb",
+      "sbomSha256": "afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+      "extractionSha256": "764adc980272907e1e4b918164d649cb71448c44a3021ba29d86a93dcf32d1ba",
+      "configurationDigest": "sha256:f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357",
+      "profile": "bluefin-dx-generic",
+      "summarySha256": "90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+      "baselineLedgerSha256": "01b651947f67822302df692e0347f10fb34048e52413198fc62d58ccc5e1078a"
+    },
+    {
+      "label": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+      "run": 38341281199,
+      "artifactName": "diagnostic-bluefin-generic-38341281199-1",
+      "resultSha256": "814aab9be9c5872dd844ffcbe4d8205a092c6ca43dec11167c4a49aeaa891805",
+      "sbomSha256": "8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199",
+      "extractionSha256": "1090f5bcb0b10b19e09f748847587bf9e8da6c1bd304f86c73defaba48b08025",
+      "configurationDigest": "sha256:97b4843f19705f7d6d29988bfbe591594388af5a9b7785e4edb08a7b6fb6abef",
+      "profile": "bluefin-generic",
+      "summarySha256": "868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f",
+      "baselineLedgerSha256": "725fee4147486e408eb0282949bfff5e024371d30e733750be001f7498ef6c91"
+    },
+    {
+      "label": "main-bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "run": 38340112122,
+      "artifactName": "security-bluefin-dx-generic-38340112122-1",
+      "resultSha256": "b6439aee802b91d107231e19cdd6ddc405d5546204db05d46f14b99ba3086f56",
+      "sbomSha256": "d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64",
+      "extractionSha256": "1945c7099ecb4475b5227231861be84ba495311ed1195d7008632697683d2e54",
+      "configurationDigest": "sha256:5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78",
+      "profile": "bluefin-dx-generic",
+      "summarySha256": "21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+      "baselineLedgerSha256": "01b651947f67822302df692e0347f10fb34048e52413198fc62d58ccc5e1078a"
+    },
+    {
+      "label": "main-bluefin-dx-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "run": 38340112122,
+      "artifactName": "security-bluefin-dx-next-38340112122-1",
+      "resultSha256": "5724e3de7bbfd54999a962439452e4d9713f6ce1226c3fdbe126454868ba734b",
+      "sbomSha256": "46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5",
+      "extractionSha256": "99db89859b93fef227982046f2e7ce59a1328667e4f444cc58f2a0142cf4f2fe",
+      "configurationDigest": "sha256:3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44",
+      "profile": "bluefin-dx-next",
+      "summarySha256": "fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+      "baselineLedgerSha256": "abb97734626faaf79224839fd792b516807975a621c27afa34a7bbf1caca45c3"
+    },
+    {
+      "label": "main-bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "run": 38340112122,
+      "artifactName": "security-bluefin-generic-38340112122-1",
+      "resultSha256": "92127eae6a60001c57937bb329061da88bdc6a933a993a6a047c6be7466518ca",
+      "sbomSha256": "4902fdd4b2afca8374a3197770f25daa11c7626cb5c83c46fb614ad1f5441201",
+      "extractionSha256": "dad4c01f31b275477cf5ce896b48ae67b6aa79c9d0152f8bef56b3eb1811c0ec",
+      "configurationDigest": "sha256:eb2542e972cdd6c71f3448674c57b0c41252fdc4c986252bc8ff3621e2119cf4",
+      "profile": "bluefin-generic",
+      "summarySha256": "5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9",
+      "baselineLedgerSha256": "725fee4147486e408eb0282949bfff5e024371d30e733750be001f7498ef6c91"
+    },
+    {
+      "label": "main-bluefin-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+      "run": 38340112122,
+      "artifactName": "security-bluefin-next-38340112122-1",
+      "resultSha256": "64182a6c9df652cdfdf3c07d19b7983a7ac297d43bff97f18cac74cd12d8f95c",
+      "sbomSha256": "bcf12455b002324b0c5923110de414cde3528d164bbb6b230dc2e8efb69f56b4",
+      "extractionSha256": "526eac11850343447addbc89dbddc401122823d23e3c09504bea5c17a833853b",
+      "configurationDigest": "sha256:fce1315ea7763cf210b19f4e7c83334ab5e36be9a490d97e0ccc2b2c69491497",
+      "profile": "bluefin-next",
+      "summarySha256": "81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f",
+      "baselineLedgerSha256": "db9e45023c471ca95ae2740b12660b019f5cc314bb259e82a97f55965bc73c48"
+    }
+  ]
+}

@@ -1,5 +1,7 @@
 # Validation and remediation plan
 
+Current execution order: [remediation and independent release sequence](release-implementation-sequence.md).
+
 The current all-profile desktop applicability work is tracked in
 [the desktop continuation plan](desktop-security-validation-plan.md). Its threat
 scope and later queue events update the historical continuation below; prior
@@ -281,3 +283,25 @@ The user's proposed FreeBSD VM storage alternative is outside validated
 installation guidance and cannot be claimed to replace the host root filesystem.
 Vulnerability clearance and release eligibility remain blocked; historical source
 checks are not new-source or native/boot clearance.
+
+## Authenticated consumer continuation — 2026-10-13
+
+PR #147 merged externally at `9d1b0c5b5ebd`; PR #148 now targets main.
+The user approved independent channel qualification: generic channels can proceed
+as their own security, signing and boot gates clear, while Next retains its hold.
+
+Implemented 27 cmd/go runtime mismatch scopes and 72 independently reviewed
+consumer/sumdb scopes, bringing the exact-digest policy to 150 dispositions.
+Signed RPM payloads, verified source archives and owning compilation records
+prove the named consumer mismatches; these are nonapplicability determinations,
+not package fixes or blanket dependency suppressions. New main digests need new
+bindings. All 107 focused policy/evidence/selection tests passed.
+
+[Hosted source proof](https://github.com/closure-labs/finite/actions/runs/38354387254)
+passed. [Retained policy reevaluation](https://github.com/closure-labs/finite/actions/runs/38356296590)
+passed: unchanged observations now yield 71 standard and 119 development
+blocking pairs, down from 87 and 135 under the previous reviewed policy.
+Owners, unblock evidence and separate verdicts are retained in
+[the continuation ledger](desktop-applicability-continuation-2026-10-13.json).
+Compiler/cgo, unresolved network consumers, AnyIO, rclone and the Next source
+hold remain explicit. Release eligibility has not been established.
