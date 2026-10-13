@@ -11,6 +11,12 @@ on:
       force_qualification:
         type: boolean
         default: false
+      resume_run:
+        type: string
+        default: ""
+      resume_digest:
+        type: string
+        default: ""
 permissions:
   contents: read
   packages: write
@@ -21,11 +27,14 @@ jobs:
     permissions:
       contents: read
       packages: write
+      actions: read
     with:
       profile: ${{ inputs.profile }}
       channel: ${{ inputs.channel }}
       publish: true
       force_qualification: ${{ inputs.force_qualification }}
+      resume_run: ${{ inputs.resume_run }}
+      resume_digest: ${{ inputs.resume_digest }}
 
   security:
     needs: build
@@ -43,6 +52,7 @@ jobs:
       PROFILE: ${{ inputs.profile }}
       CANDIDATE_DIGEST: ${{ needs.build.outputs.digest }}
       BUILD_IDENTITY: ${{ needs.build.outputs.identity }}
+      SOURCE_REVISION: ${{ needs.build.outputs.source_revision }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -68,6 +78,7 @@ jobs:
           nix develop --file lib/ci-tools.nix release --command bash scripts/bluebuild/security-run.sh \
             "ghcr.io/closure-labs/finite@$CANDIDATE_DIGEST" ".bluebuild/security-$PROFILE" \
             --profile "$PROFILE" --identity "$BUILD_IDENTITY" \
+            --source-revision "$SOURCE_REVISION" \
             --upstream-receipt .bluebuild/upstream-build/upstream-verified.json
           echo "digest=$CANDIDATE_DIGEST" >>"$GITHUB_OUTPUT"
           echo "evidence=security-$PROFILE-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >>"$GITHUB_OUTPUT"
@@ -102,8 +113,10 @@ jobs:
           COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
           REGISTRY_TOKEN: ${{ github.token }}
           REGISTRY_USER: ${{ github.actor }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           [[ $CANDIDATE_DIGEST =~ ^sha256:[0-9a-f]{64}$ ]]
+          [[ $(gh api repos/closure-labs/finite/git/ref/heads/main --jq .object.sha) == "$GITHUB_SHA" ]]
           image="ghcr.io/closure-labs/finite@$CANDIDATE_DIGEST"
           trap 'docker logout ghcr.io >/dev/null 2>&1 || true' EXIT
           printf '%s' "$REGISTRY_TOKEN" | docker login --username "$REGISTRY_USER" --password-stdin ghcr.io
@@ -122,6 +135,7 @@ jobs:
       digest: ${{ needs.build.outputs.digest }}
       previous: ${{ needs.build.outputs.previous }}
       identity: ${{ needs.build.outputs.identity }}
+      source_revision: ${{ needs.build.outputs.source_revision }}
 
   promote:
     needs: [build, security, sign, qualification]
@@ -151,6 +165,7 @@ jobs:
           gh run download "$GITHUB_RUN_ID" --name "$SECURITY_ARTIFACT" --dir ".bluebuild/security-$PROFILE"
       - name: Promote verified digest to public channels
         env:
+          GH_TOKEN: ${{ github.token }}
           REGISTRY_TOKEN: ${{ github.token }}
           REGISTRY_USER: ${{ github.actor }}
         run: |

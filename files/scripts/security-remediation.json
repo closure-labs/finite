@@ -157,6 +157,27 @@
         "FEDORA-2026-7d4732cbab"
       ],
       "source": "https://bodhi.fedoraproject.org/updates/FEDORA-2026-7d4732cbab"
+    },
+    "curl": {
+      "minimumEVR": "0:8.18.0-12.fc44",
+      "advisories": [
+        "CVE-2026-18924"
+      ],
+      "source": "https://bodhi.fedoraproject.org/updates/FEDORA-2026-8efcd7a2a0"
+    },
+    "libcurl": {
+      "minimumEVR": "0:8.18.0-12.fc44",
+      "advisories": [
+        "CVE-2026-18924"
+      ],
+      "source": "https://bodhi.fedoraproject.org/updates/FEDORA-2026-8efcd7a2a0"
+    },
+    "libcurl-minimal": {
+      "minimumEVR": "0:8.18.0-12.fc44",
+      "advisories": [
+        "CVE-2026-18924"
+      ],
+      "source": "https://bodhi.fedoraproject.org/updates/FEDORA-2026-8efcd7a2a0"
     }
   }
 }

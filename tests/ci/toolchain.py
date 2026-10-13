@@ -14,6 +14,32 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class Toolchain(unittest.TestCase):
+    def test_scanner_profile_is_optional_and_requires_actual_native_tools(self):
+        workflow = yaml.safe_load((ROOT / '.github/workflows/image.yml').read_text())
+        step = next(s for s in workflow['jobs']['build']['steps']
+                    if 'scanner-tools --no-link' in s.get('run', ''))
+        self.assertEqual(step['if'], 'inputs.diagnostic_security')
+        self.assertNotIn('nix develop', step['run'])
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            host, tools = root / 'host', root / 'tools'
+            host.mkdir()
+            (tools / 'bin').mkdir(parents=True)
+            shell = shutil.which('bash')
+            (host / 'nix').write_text('#!' + shell + '\nprintf "%s\\n" "$TEST_TOOLS"\n')
+            (host / 'nix').chmod(0o755)
+            for tool in ('python3', 'umoci', 'syft', 'grype'):
+                p = tools / 'bin' / tool
+                p.write_text('#!' + shell + '\nexit 0\n')
+                p.chmod(0o755)
+            env = {**os.environ, 'PATH': str(host) + os.pathsep + os.environ['PATH'],
+                   'TEST_TOOLS': str(tools), 'GITHUB_PATH': str(root / 'path')}
+            run = lambda: subprocess.run([shell, '-euo', 'pipefail', '-c', step['run']],
+                                         env=env, capture_output=True, text=True)
+            self.assertEqual(run().returncode, 0)
+            (tools / 'bin/umoci').unlink()
+            self.assertNotEqual(run().returncode, 0)
+
     def test_registry_jobs_and_secret_mapping_use_the_lightweight_entry(self):
         for path in [ROOT / '.github/actions/setup-nix/action.yml',
                      *sorted((ROOT / '.github/workflows').glob('*.yml'))]:

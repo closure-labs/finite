@@ -70,6 +70,12 @@ in {
   bluebuild = check "bluebuild-contracts" [pkgs.gawk pkgs.git pkgs.jq pkgs.yq-go (pkgs.python3.withPackages (p: [p.pyyaml]))] ''
     python3 tests/automation/bluefin-upstream.py
     python3 tests/ci/selection.py
+    python3 tests/ci/release-selection.py
+    python3 tests/ci/applicability-evidence.py
+    python3 tests/ci/native-evidence-summary.py
+    python3 tests/ci/diagnose-built-candidate.py
+    python3 tests/ci/rpm-file-evidence.py
+    python3 tests/ci/freerdp-reference-evidence.py
     python3 tests/ci/nix-checks.py
     python3 tests/ci/toolchain.py
     python3 tests/ci/delivery-policy.py
@@ -96,6 +102,8 @@ in {
     python3 tests/bluebuild/security-remediation.py
     python3 tests/bluebuild/tailscale-security.py
     python3 tests/bluebuild/reliability.py
+    python3 tests/bluebuild/resume.py
+    python3 tests/bluebuild/extraction-layout.py
   '';
   vm-iso = check "vm-iso-layout" (with pkgs; [diffutils gnugrep gnused libisoburn mtools]) ''
     bash tests/bluebuild/vm-iso.sh

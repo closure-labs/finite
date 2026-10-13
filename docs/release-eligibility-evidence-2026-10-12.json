@@ -1,0 +1,753 @@
+{
+  "schema": 1,
+  "purpose": "Release eligibility sequence; fixes and positive applicability proof before expensive qualification",
+  "baseRevision": "7dba29d3da8770b11ae633545a53854ba10ee353",
+  "authorization": "User begin sequence; retain signed sources, all supported profiles, read-only audit and isolated signing; no agent merge/publication",
+  "prerequisiteRefresh": {
+    "run": 38331234974,
+    "sourceRevision": "28d71573037a",
+    "queriedAt": "2026-10-13T01:15:36.714886+00:00",
+    "reportSha256": "b4d36c0e6d88140891a80ae4164bb8bfa9efe5f544fb0ea80bc2d0f5976e3125",
+    "status": "blocked",
+    "packageFloorsAvailable": true,
+    "prerequisites": [
+      {
+        "name": "python3-anyio",
+        "component": "pkg:pypi/anyio@4.13.0",
+        "minimumUpstreamVersion": "4.14.2",
+        "advisories": [
+          "GHSA-82r6-8w77-94w6"
+        ],
+        "status": "outdated",
+        "available": [
+          {
+            "evr": "0:4.12.1-3.fc44",
+            "arch": "noarch",
+            "repository": "fedora",
+            "nevra": "python3-anyio-0:4.12.1-3.fc44.noarch",
+            "meetsFloor": null,
+            "meetsUpstreamMinimum": false
+          },
+          {
+            "evr": "0:4.13.0-1.fc44",
+            "arch": "noarch",
+            "repository": "updates",
+            "nevra": "python3-anyio-0:4.13.0-1.fc44.noarch",
+            "meetsFloor": null,
+            "meetsUpstreamMinimum": false
+          }
+        ],
+        "blockingUnderCurrentPolicy": true,
+        "scannerResolution": "unknown"
+      },
+      {
+        "name": "python3-msgpack",
+        "component": "pkg:pypi/msgpack@1.1.2",
+        "minimumUpstreamVersion": "1.2.1",
+        "advisories": [
+          "GHSA-6v7p-g79w-8964"
+        ],
+        "status": "outdated",
+        "available": [
+          {
+            "evr": "0:1.1.2-2.fc44",
+            "arch": "x86_64",
+            "repository": "fedora",
+            "nevra": "python3-msgpack-0:1.1.2-2.fc44.x86_64",
+            "meetsFloor": null,
+            "meetsUpstreamMinimum": false
+          }
+        ],
+        "blockingUnderCurrentPolicy": false,
+        "scannerResolution": "unknown"
+      },
+      {
+        "name": "rclone",
+        "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+        "minimumUpstreamVersion": "1.75.1",
+        "advisories": [
+          "GHSA-p569-5gjg-9cmj",
+          "GHSA-xwwr-4h3p-r22c"
+        ],
+        "status": "outdated",
+        "available": [
+          {
+            "evr": "0:1.73.0-3.fc44",
+            "arch": "x86_64",
+            "repository": "fedora",
+            "nevra": "rclone-0:1.73.0-3.fc44.x86_64",
+            "meetsFloor": null,
+            "meetsUpstreamMinimum": false
+          },
+          {
+            "evr": "0:1.74.3-1.fc44",
+            "arch": "x86_64",
+            "repository": "updates",
+            "nevra": "rclone-0:1.74.3-1.fc44.x86_64",
+            "meetsFloor": null,
+            "meetsUpstreamMinimum": false
+          }
+        ],
+        "blockingUnderCurrentPolicy": true,
+        "scannerResolution": "unknown"
+      }
+    ],
+    "releaseClearance": "unknown"
+  },
+  "nextKernelMetadata": {
+    "schema": 1,
+    "queriedAt": "2026-10-13T01:14:26.434090+00:00",
+    "officialEndpoint": "https://koji.fedoraproject.org/kojihub",
+    "approvedTags": {
+      "f45": {
+        "build_id": 3113055,
+        "completion_time": "2026-10-03 19:41:20.260924+00:00",
+        "create_event": 180128624,
+        "creation_event_id": 180002531,
+        "creation_time": "2026-10-03 15:58:57.814362+00:00",
+        "draft": false,
+        "epoch": null,
+        "id": 3113055,
+        "name": "kernel",
+        "nvr": "kernel-7.2.9-300.fc45",
+        "owner_id": 926,
+        "owner_name": "jforbes",
+        "package_id": 8,
+        "package_name": "kernel",
+        "promoter_id": null,
+        "promoter_name": null,
+        "promotion_time": null,
+        "release": "300.fc45",
+        "start_time": "2026-10-03 15:58:57.807465+00:00",
+        "state": 1,
+        "tag_id": 128147,
+        "tag_name": "f45",
+        "task_id": 150868499,
+        "version": "7.2.9",
+        "volume_id": 0,
+        "volume_name": "DEFAULT"
+      },
+      "f45-updates": {
+        "build_id": 3113055,
+        "completion_time": "2026-10-03 19:41:20.260924+00:00",
+        "create_event": 180128624,
+        "creation_event_id": 180002531,
+        "creation_time": "2026-10-03 15:58:57.814362+00:00",
+        "draft": false,
+        "epoch": null,
+        "id": 3113055,
+        "name": "kernel",
+        "nvr": "kernel-7.2.9-300.fc45",
+        "owner_id": 926,
+        "owner_name": "jforbes",
+        "package_id": 8,
+        "package_name": "kernel",
+        "promoter_id": null,
+        "promoter_name": null,
+        "promotion_time": null,
+        "release": "300.fc45",
+        "start_time": "2026-10-03 15:58:57.807465+00:00",
+        "state": 1,
+        "tag_id": 128147,
+        "tag_name": "f45",
+        "task_id": 150868499,
+        "version": "7.2.9",
+        "volume_id": 0,
+        "volume_name": "DEFAULT"
+      }
+    },
+    "currentRelease": "7.2.9-300.fc45.x86_64",
+    "status": "metadata-only",
+    "payloadAuthentication": "not performed",
+    "releaseEligible": false
+  },
+  "curlRemediation": {
+    "packages": [
+      "curl",
+      "libcurl",
+      "libcurl-minimal"
+    ],
+    "minimumEVR": "0:8.18.0-12.fc44",
+    "advisories": [
+      "CVE-2026-18924"
+    ],
+    "source": "https://bodhi.fedoraproject.org/updates/FEDORA-2026-8efcd7a2a0",
+    "sourceBuild": "curl-8.18.0-12.fc44",
+    "sourceCommit": "f526fe6df17eb86ac836adb63a202b39b9a7c692",
+    "upstreamFixCommit": "90325ff0444cbdff368bda5d26d6405a0bb6ee43",
+    "backportSha256": "875d9f0aff4324f596283149f5f3cbab7281ebbe705b8e2f2a2d9b92a2e5b6a2",
+    "transactionRun": 38331968520,
+    "transactionStatus": "PASS signed floor transaction, RPM integrity and disconnected repeat; original wrapper failed only at missing-ripgrep post-check",
+    "imageScannerResolution": "unknown",
+    "verifiedBinding": {
+      "schema": 1,
+      "status": "verified-transaction-and-offline-evidence",
+      "sourceRun": 38331968520,
+      "sourceRevision": "f074b0de4d07b9dddc0f88e83b0fb0bc218698f8",
+      "recoveryRun": "38332614606",
+      "recoveryRevision": "7485198eb54d9ab8985f3e0b79c4efd308067c67",
+      "originalWorkflowStatus": "failure: post-validation ripgrep executable absent",
+      "transaction": "PASS",
+      "offlineRepeat": "PASS; network disconnected",
+      "curlFileIntegrity": "RPM verification returned no differences",
+      "baselineImage": "ghcr.io/ublue-os/bluefin@sha256:61c3d546bea3a0012378214de3603d9eadc2111330765a4a31b14215d4bacaea",
+      "policySha256": "fe068fea6352272be68084ada6aab1dc6e24ba82c568349187de8575676ba3f5",
+      "sourceRpm": "curl-8.18.0-12.fc44.src.rpm",
+      "protectedInventoryUnchanged": true,
+      "installedLibraryVariantPreserved": true,
+      "policyPackages": 19,
+      "newImageBuildOrScan": false,
+      "vulnerabilityClearance": "not-assessed",
+      "releaseEligible": false,
+      "artifactHashes": {
+        "offline-repeat.log": "5a4753dbf9123c51d332c8e2b4913c5564c97302944917ce6a016a30ae0f8269",
+        "curl-file-verification.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "curl-changelog.txt": "79c20fa436b77d95ed58b22bd27d7e2e83c69e0bdff5435e97a163cbbfb6c140",
+        "container.json": "6fe20a92917418f753fdef7bc4fd3a33ed2d78e0c5c4960f7cbdc3ed5094c144",
+        "rpm-after.tsv": "9ae9ac9f5d6c6bc03161d9cf7cd84d5c6f6b0590e4b7528e8c07f1365cd1825a",
+        "curl-installed.tsv": "4a5ee9a62f2d3140377054efee9d6c1dfb0bf83cb24b7910640cc13f96659125",
+        "rpm-before.tsv": "694d75291fec7dfb6358ea267f7fb1e532706a0d003b2dfe5f156e651e9a8633",
+        "transaction.log": "bfd20f5ffae072d8ec3fc2a571b6f770a70a1ec655657cc40dffcd8fa3ad0739"
+      }
+    }
+  },
+  "applicabilityReview": {
+    "criticalEvidence": "docs/desktop-critical-applicability-2026-10-12.json",
+    "criticalEvidenceSha256": "fa28f070a14363d5a2ab8d45b0007d4c0df4ad93c4799a81798949bbb6df3d55",
+    "goEvidence": "docs/desktop-go-applicability-2026-10-12.json",
+    "goEvidenceSha256": "96adee8ab9b00510a6eed9a35959c9983e1662564435012428bab654ecef4807",
+    "activeDispositions": 0,
+    "unknownsPreserved": true,
+    "collector": "scripts/ci/applicability-evidence.py",
+    "collectorExtraPullOrCompiler": false,
+    "collectorGrantsClearance": false
+  },
+  "channelSelection": {
+    "workflow": "build.yml",
+    "targetDefault": "automatic",
+    "explicitChannels": [
+      "finite",
+      "finite-next",
+      "finite-dev",
+      "finite-dev-next"
+    ],
+    "purpose": "A channel-specific complete successful build can support durable release evidence while another profile remains held. Existing whole-run-success rule is preserved.",
+    "guards": "Manual selection only; conflicting reconcile rejected; all checks/security/signing/boot gates preserved."
+  },
+  "sourceValidation": {
+    "focusedTests": 260,
+    "independentReview": "approved; no open source-integration findings",
+    "hostedFinalSource": "pending",
+    "focusedTestBreakdown": {
+      "rpmFloors": 17,
+      "prerequisites": 10,
+      "applicabilityCollector": 14,
+      "manualChannelSelector": 7,
+      "existingSelection": 16,
+      "deliveryPolicy": 4,
+      "securityPolicy": 66,
+      "reliability": 35,
+      "localCandidate": 23,
+      "comparison": 14,
+      "upstreamTrust": 43,
+      "approvedBaseline": 11
+    }
+  },
+  "completeCandidateEvidence": {
+    "run": 38330308713,
+    "sourceRevision": "7dba29d3da8770b11ae633545a53854ba10ee353",
+    "status": "first complete production security scans running under approved policy; existing run reused",
+    "newCurlFloorIncluded": false,
+    "newCollectorIncluded": false,
+    "profiles": {
+      "bluefin-dx-next": {
+        "candidateImage": "ghcr.io/closure-labs/finite@sha256:1067d5dd8627130eb1b8edcb0ace5b28d650d1709f7b6a4ecf7f992bcd24d882",
+        "sourceRevision": "7dba29d3da8770b11ae633545a53854ba10ee353",
+        "buildIdentity": "v1:942506df59d13f36e49f59377895de75854a45025615eb15b438e704670c9102",
+        "previousPublicImage": "ghcr.io/closure-labs/finite@sha256:33e7b69d9c597dfbd5f907d63823cb9a6fe96533a3c5393b8a48caa440bba32c",
+        "upstreamFoundation": "ghcr.io/ublue-os/bluefin-dx@sha256:425db37c0d8e2791b29a41a04cc744b8f17c707b3ceeb8c46bdc0b155ce14b7a",
+        "qualificationRequired": true,
+        "buildArtifactSha256": "b8ef58a3a6bd1d94288d7ef59d12f41aef8b23978d72130b53db086351ea7a3e"
+      },
+      "bluefin-dx-generic": {
+        "candidateImage": "ghcr.io/closure-labs/finite@sha256:615b3c01d3b6cebe3ecd67d1005b1d8fa2918675dff20d28191deea5313279a3",
+        "sourceRevision": "7dba29d3da8770b11ae633545a53854ba10ee353",
+        "buildIdentity": "v1:751abbc9ebad4c240c8e93847336318ecb4133101f9e2acff36eea279ab6d7d2",
+        "previousPublicImage": "ghcr.io/closure-labs/finite@sha256:b64254f3ba54fa5a6ce3802147812d54f4873e124a4b683e486d8cad535dd490",
+        "upstreamFoundation": "ghcr.io/ublue-os/bluefin-dx@sha256:425db37c0d8e2791b29a41a04cc744b8f17c707b3ceeb8c46bdc0b155ce14b7a",
+        "qualificationRequired": true,
+        "buildArtifactSha256": "e341de8d424f127aae24486579a5adbfae2c48b42bc773a16ae509a9f8b20b98"
+      },
+      "bluefin-next": {
+        "candidateImage": "ghcr.io/closure-labs/finite@sha256:a85115bb4155b848867a0518c3c3c3bb59f73586bcfa73108cf0ba21dafbc790",
+        "sourceRevision": "7dba29d3da8770b11ae633545a53854ba10ee353",
+        "buildIdentity": "v1:f90b249797dddba9a4e697760af787cfd1507dc55f0f7d72e38706e035c9be8a",
+        "previousPublicImage": "ghcr.io/closure-labs/finite@sha256:befdd47f9be55a4cf4824ed0351e077513008339201a6c688dbc03932507e893",
+        "upstreamFoundation": "ghcr.io/ublue-os/bluefin@sha256:61c3d546bea3a0012378214de3603d9eadc2111330765a4a31b14215d4bacaea",
+        "qualificationRequired": true,
+        "buildArtifactSha256": "487fe0ddd901e609dfd8a06834610d92ff765eaf0bfc4e3ce939d23bd1652008"
+      },
+      "bluefin-generic": {
+        "candidateImage": "ghcr.io/closure-labs/finite@sha256:66ff1f5c91ae5ddf97ac5c09bd510765888afd30457e535ae5710abb8a37f01e",
+        "sourceRevision": "7dba29d3da8770b11ae633545a53854ba10ee353",
+        "buildIdentity": "v1:fa8c741a49966b33f553f685f07649a17e392859bcd5ff9dc7e66106563073f7",
+        "previousPublicImage": "ghcr.io/closure-labs/finite@sha256:0079daf9eb090e3304cbd9f719096d4e0c1ce461873a99af123bf14b989eee98",
+        "upstreamFoundation": "ghcr.io/ublue-os/bluefin@sha256:61c3d546bea3a0012378214de3603d9eadc2111330765a4a31b14215d4bacaea",
+        "qualificationRequired": true,
+        "buildArtifactSha256": "4ff273751802ad71a7e8462f46c04a11e5c23e4cf4dcbfef6d3ff4bf99500254"
+      }
+    }
+  },
+  "verdicts": {
+    "sourceBuild": "Focused source and signed Curl transaction PASS; final hosted source/matrix pending",
+    "vulnerabilityClearance": "BLOCKED; prior diagnostic121pairs not automatically resolved by new source or official-range leads",
+    "releaseEligibility": "INELIGIBLE until current full-candidate risk policy, applicable source holds, isolated signing and boot qualification pass"
+  },
+  "mainCandidateSecurity": {
+    "run": 38330308713,
+    "sourceRevision": "7dba29d3da8770b11ae633545a53854ba10ee353",
+    "status": "blocked",
+    "genericImage": "ghcr.io/closure-labs/finite@sha256:66ff1f5c91ae5ddf97ac5c09bd510765888afd30457e535ae5710abb8a37f01e",
+    "scannedAt": "2026-10-13T01:43:17.439347221Z",
+    "policySha256": "59fd1f0604b819ccabd1dd8e54190b200d3f78173877d192234a6788aecf4dfb",
+    "securityResultSha256": "74cdc87f2204307bd76cdce7d3808ff19d4535ed52956d4df0341c61a0353e17",
+    "counts": {
+      "blockingRecords": 318,
+      "exceptionRecords": 0,
+      "advisoryRecords": 995,
+      "releaseBlockerRecords": 0,
+      "observedPairs": 542
+    },
+    "blockingPairs": 121,
+    "blockingReasons": {
+      "reviewed-serious-risk": 262,
+      "untriaged-critical": 56
+    },
+    "baselineComparison": {
+      "persistent": 186,
+      "new": 356,
+      "notObserved": 95,
+      "dispositionChanges": 104
+    },
+    "baselineLedger": "docs/security-remediation-2026-10-12.json",
+    "comparisonSha256": "e1f468f5a1fc7f5d87bc61cd288f9b713227f5268b64c6bced98c02cc508fe90",
+    "note": "Complete production candidate; raw native artifacts retained in hosted run. No signing/promotion occurred; non-observation never proves a fix."
+  },
+  "retainedNativeSummaries": {
+    "run": 38334371393,
+    "sourceRevision": "31ea0c4b502c",
+    "newBuildOrScan": false,
+    "status": "PASS",
+    "profiles": [
+      {
+        "profile": "bluefin-dx-generic",
+        "image": "ghcr.io/closure-labs/finite@sha256:615b3c01d3b6cebe3ecd67d1005b1d8fa2918675dff20d28191deea5313279a3",
+        "blockingPairs": 179,
+        "blockingRecords": 669,
+        "reportSha256": "601403205dc3b09d9f9826466264c98aa1a29f16f32501aa7a75f0e97268e738",
+        "sourceResultSha256": "f44b84692a5c3fc4f8b7096f60d2421db11b1dbc0cb833d499770f0e06b51665",
+        "sbomSha256": "9f12a08954ce848f9cd5b488ac9a129b11247154da752559e5c0b6dceeb6a8d5",
+        "scannedManifestDigest": "sha256:5bdd310614e3b44a6499244d154640e95518c6f4a172120674716556de7660a2",
+        "note": "Retained native platform, ownership, expected RPM digests and executable metadata. Independent current-byte verification remains unverified; no disposition granted."
+      },
+      {
+        "profile": "bluefin-dx-next",
+        "image": "ghcr.io/closure-labs/finite@sha256:1067d5dd8627130eb1b8edcb0ace5b28d650d1709f7b6a4ecf7f992bcd24d882",
+        "blockingPairs": 179,
+        "blockingRecords": 669,
+        "reportSha256": "b9306bdbbb125b7053293dd551e138078b424c625f4827f4a26cb44b32a9a67e",
+        "sourceResultSha256": "8fbde0f8d0e14be74fae5414e785f942ac8138db6763b19f5da05e52d717757d",
+        "sbomSha256": "50509c498d764c6b4ebee65bdebf18922cf0c1568b8d4dbe89fd50a015f06c09",
+        "scannedManifestDigest": "sha256:cee765cb9a3efdb3231e89bea9ab1b73561a87feb37577d69fd8557f01327837",
+        "note": "Retained native platform, ownership, expected RPM digests and executable metadata. Independent current-byte verification remains unverified; no disposition granted."
+      },
+      {
+        "profile": "bluefin-generic",
+        "image": "ghcr.io/closure-labs/finite@sha256:66ff1f5c91ae5ddf97ac5c09bd510765888afd30457e535ae5710abb8a37f01e",
+        "blockingPairs": 121,
+        "blockingRecords": 318,
+        "reportSha256": "901cc5af571ed932852c9a7351b6480192e0a83acd017c53f27e3bbf80bcd8e1",
+        "sourceResultSha256": "74cdc87f2204307bd76cdce7d3808ff19d4535ed52956d4df0341c61a0353e17",
+        "sbomSha256": "23419f2a7c9a103f3552a5fae65a2e5a1044af50da96a797e001ed13bd254aa8",
+        "scannedManifestDigest": "sha256:82f656cc9212c27e7b78615ccad2fabc1b08cc10cf57444017a7da4a49dc0d37",
+        "note": "Retained native platform, ownership, expected RPM digests and executable metadata. Independent current-byte verification remains unverified; no disposition granted."
+      },
+      {
+        "profile": "bluefin-next",
+        "image": "ghcr.io/closure-labs/finite@sha256:a85115bb4155b848867a0518c3c3c3bb59f73586bcfa73108cf0ba21dafbc790",
+        "blockingPairs": 121,
+        "blockingRecords": 318,
+        "reportSha256": "0e74e821c06cae6540030130356bfa152b43240fea71ffc3b643bf85a84e104b",
+        "sourceResultSha256": "b05696d92b05d6ef2b19f6b8af30bd18a5d020cc79e456afb2d194231eefc066",
+        "sbomSha256": "cadb111b7b92cce7aa62da534588661b8c3fde4ba2757e317bb822d46fcd8d78",
+        "scannedManifestDigest": "sha256:2da4a45768a00ec3629680f18b74b0d92a418712ecb11d27c591e4a63c5d01cd",
+        "note": "Retained native platform, ownership, expected RPM digests and executable metadata. Independent current-byte verification remains unverified; no disposition granted."
+      }
+    ]
+  },
+  "guardedResume": {
+    "purpose": "Allow exact-digest reviewed applicability evidence to authorize an unchanged trusted candidate without a revision-bearing rebuild.",
+    "separateRevisions": [
+      "sourceRevision identifies original image bytes",
+      "revision identifies current policy/qualification/release inputs"
+    ],
+    "prerequisites": [
+      "trusted main origin and successful source/image jobs at exact attempt",
+      "verified archive SHA256 and exact image record/digest/profile/base",
+      "original source ancestor of current main",
+      "current image-input identity equal to original",
+      "fresh native security, isolated signing and fresh boot acceptance"
+    ],
+    "runtimeDrift": "Rejected; Curl floor changes require a new candidate",
+    "activeDispositions": 0,
+    "hostedResumeValidation": "not attempted; release remains blocked"
+  },
+  "signedBluefinRefresh": {
+    "run": 38334919442,
+    "revision": "8589d2fe10b9",
+    "reportSha256": "545dac8a4a6f08384e6de2485b7922624b2da4b153d319968b7d3c7f7cac1c08",
+    "checked_at": "2026-10-13T02:03:15.003205+00:00",
+    "observed": {
+      "ghcr.io/ublue-os/bluefin": "sha256:23b7bf54349f1a93c2fea4168c7725a632641ee67ae29b0951ef1976c1ba2bc9",
+      "ghcr.io/ublue-os/bluefin-dx": "sha256:425db37c0d8e2791b29a41a04cc744b8f17c707b3ceeb8c46bdc0b155ce14b7a"
+    },
+    "verified": [
+      {
+        "image": "ghcr.io/ublue-os/bluefin@sha256:23b7bf54349f1a93c2fea4168c7725a632641ee67ae29b0951ef1976c1ba2bc9",
+        "keySha256": "af78ecfda6eb21c35195af3739341715e9cfc3f2f5911dd9c10b0670547bf6e8",
+        "signatureFormat": "legacy"
+      },
+      {
+        "image": "ghcr.io/ublue-os/bluefin-dx@sha256:425db37c0d8e2791b29a41a04cc744b8f17c707b3ceeb8c46bdc0b155ce14b7a",
+        "keySha256": "af78ecfda6eb21c35195af3739341715e9cfc3f2f5911dd9c10b0670547bf6e8",
+        "signatureFormat": "legacy"
+      }
+    ],
+    "changed": true,
+    "profiles": [
+      "bluefin-generic",
+      "bluefin-next"
+    ],
+    "appliedProfiles": [
+      "bluefin-generic",
+      "bluefin-next"
+    ],
+    "status": "Authenticated stable source refresh; runtime/native qualification pending",
+    "vulnerabilityClearance": "not-assessed"
+  },
+  "finalFocusedSourceValidation": {
+    "status": "PASS",
+    "tests": 369,
+    "files": [
+      {
+        "path": "tests/automation/bluefin-upstream.py",
+        "tests": 43,
+        "status": "PASS"
+      },
+      {
+        "path": "tests/bluebuild/security-remediation.py",
+        "tests": 17,
+        "status": "PASS"
+      },
+      {
+        "path": "tests/ci/remediation-preflight.py",
+        "tests": 10,
+        "status": "PASS"
+      },
+      {
+        "path": "tests/ci/applicability-evidence.py",
+        "tests": 15,
+        "status": "PASS"
+      },
+      {
+        "path": "tests/ci/native-evidence-summary.py",
+        "tests": 10,
+        "status": "PASS"
+      },
+      {
+        "path": "tests/ci/diagnose-built-candidate.py",
+        "tests": 7,
+        "status": "PASS"
+      },
+      {
+        "path": "tests/ci/rpm-file-evidence.py",
+        "tests": 24,
+        "status": "PASS"
+      },
+      {
+        "path": "tests/ci/release-selection.py",
+        "tests": 9,
+        "status": "PASS"
+      },
+      {
+        "path": "tests/ci/selection.py",
+        "tests": 16,
+        "status": "PASS"
+      },
+      {
+        "path": "tests/ci/delivery-policy.py",
+        "tests": 4,
+        "status": "PASS"
+      },
+      {
+        "path": "tests/bluebuild/build.py",
+        "tests": 10,
+        "status": "PASS"
+      },
+      {
+        "path": "tests/bluebuild/contracts.py",
+        "tests": 4,
+        "status": "PASS"
+      },
+      {
+        "path": "tests/bluebuild/resume.py",
+        "tests": 16,
+        "status": "PASS"
+      },
+      {
+        "path": "tests/bluebuild/security-policy.py",
+        "tests": 66,
+        "status": "PASS"
+      },
+      {
+        "path": "tests/bluebuild/reliability.py",
+        "tests": 37,
+        "status": "PASS"
+      },
+      {
+        "path": "tests/ci/local-candidate-evidence.py",
+        "tests": 23,
+        "status": "PASS"
+      },
+      {
+        "path": "tests/ci/security-remediation-diff.py",
+        "tests": 14,
+        "status": "PASS"
+      },
+      {
+        "path": "tests/ci/approved-baseline.py",
+        "tests": 11,
+        "status": "PASS"
+      }
+    ],
+    "otherChecks": [
+      "Bash syntax",
+      "repository text style",
+      "Markdown links",
+      "diff whitespace"
+    ],
+    "independentQA": "Approved for hosted validation; 301 distinct fixtures independently reviewed",
+    "nativeSecurity": "No clearance; zero active dispositions",
+    "additionalFiles": [
+      {
+        "path": "tests/bluebuild/extraction-layout.py",
+        "tests": 8,
+        "status": "PASS"
+      },
+      {
+        "path": "tests/ci/freerdp-reference-evidence.py",
+        "tests": 17,
+        "status": "PASS"
+      },
+      {
+        "path": "tests/ci/toolchain.py",
+        "tests": 8,
+        "status": "PASS"
+      }
+    ]
+  },
+  "newlyAnnouncedBluefinRelease": {
+    "run": 38336166342,
+    "revision": "f5c7db8f21d6",
+    "release": "https://github.com/ublue-os/bluefin/releases/tag/stable-20261013",
+    "publishedAt": "2026-10-13T02:13:17Z",
+    "reportSha256": "57251524bd8041e3b0d26d84372b3c576d7448daae08a05004e5ce8b6ac4283d",
+    "checked_at": "2026-10-13T02:18:45.750250+00:00",
+    "observed": {
+      "ghcr.io/ublue-os/bluefin": "sha256:23b7bf54349f1a93c2fea4168c7725a632641ee67ae29b0951ef1976c1ba2bc9",
+      "ghcr.io/ublue-os/bluefin-dx": "sha256:a41cf1ebc4b6718cab813f221b8394c963ed3f0777b52e19fe6c3784b15c52ed"
+    },
+    "verified": [
+      {
+        "image": "ghcr.io/ublue-os/bluefin@sha256:23b7bf54349f1a93c2fea4168c7725a632641ee67ae29b0951ef1976c1ba2bc9",
+        "keySha256": "af78ecfda6eb21c35195af3739341715e9cfc3f2f5911dd9c10b0670547bf6e8",
+        "signatureFormat": "legacy"
+      },
+      {
+        "image": "ghcr.io/ublue-os/bluefin-dx@sha256:a41cf1ebc4b6718cab813f221b8394c963ed3f0777b52e19fe6c3784b15c52ed",
+        "keySha256": "af78ecfda6eb21c35195af3739341715e9cfc3f2f5911dd9c10b0670547bf6e8",
+        "signatureFormat": "legacy"
+      }
+    ],
+    "changed": true,
+    "profiles": [
+      "bluefin-generic",
+      "bluefin-next",
+      "bluefin-dx-generic",
+      "bluefin-dx-next"
+    ],
+    "appliedProfiles": [
+      "bluefin-dx-generic",
+      "bluefin-dx-next"
+    ],
+    "standardDigestUnchangedSinceEarlierRefresh": true,
+    "note": "Source refresh does not establish vulnerability clearance. Current standard diagnostic remains useful because its approved base is unchanged."
+  },
+  "developmentOwningPrerequisites": {
+    "run": 38336026926,
+    "sourceRevision": "dcebac45679e",
+    "reportSha256": "7e017c9aaed125d5ed59b768adb75d988db519506cc841442c133a7e32e9fdb7",
+    "status": "PASS metadata only",
+    "latestApprovedFedora44": {
+      "git-lfs": "0:3.7.1-6.fc44",
+      "incus-agent": "0:6.23-3.fc44",
+      "gvisor-tap-vsock": "6:0.8.9-1.fc44"
+    },
+    "unavailableFedora44Fixes": [
+      "git-lfs3.8.0",
+      "incus7.5.1",
+      "gvisor-tap-vsock0.9.0"
+    ],
+    "vendorPackages": "Docker and Code absent from Fedora/updates; do not substitute or install unreviewed sources",
+    "newBluefinDX": "Signed a41cf1eb base includes newer vendor packages; validate actual embedded modules in changed DX artifact before any clearance"
+  },
+  "separateSourceReleaseRefresh": {
+    "cosign": {
+      "release": "v3.1.3",
+      "publishedAt": "2026-08-06T01:09:23Z",
+      "source": "https://github.com/sigstore/cosign/releases/tag/v3.1.3",
+      "status": "latest official release; existing lock retained; no new fixed owning binary observed"
+    },
+    "tailscale": {
+      "release": "v1.104.1",
+      "publishedAt": "2026-10-07T22:09:57Z",
+      "source": "https://github.com/tailscale/tailscale/releases/tag/v1.104.1",
+      "status": "latest official release; actual embedded dependencies require separate validation"
+    }
+  },
+  "developmentUpstreamSourceLeads": {
+    "vscode": {
+      "release": "1.141.0",
+      "source": "https://github.com/microsoft/vscode/blob/1.141.0/package-lock.json",
+      "sourceSha256": "286c91eca07e79d56f3a195aff95c7a8a2d8c6dbb589e20e28a80d5ae793816e",
+      "shellQuote": "1.10.0",
+      "fixVersion": "1.11.0",
+      "status": "An updated Code version alone does not establish the dependency fix; actual shipped files/source proof required"
+    },
+    "buildx": {
+      "release": "v0.38.0",
+      "source": "https://github.com/docker/buildx/blob/v0.38.0/go.mod",
+      "mobyGoArchive": "v0.2.0",
+      "fixVersion": "v0.3.0",
+      "status": "New official release still declares the vulnerable dependency; actual byte/role/backport proof required"
+    },
+    "gvisor": {
+      "release": "v0.9.0",
+      "source": "https://github.com/containers/gvisor-tap-vsock/blob/v0.9.0/go.mod",
+      "crypto": "v0.57.0",
+      "net": "v0.59.0",
+      "availableFedora44": "6:0.8.9-1.fc44",
+      "status": "Upstream source improves some dependencies but signed Fedora44 owning package is not available; x/net0.60 remains a separate native threshold"
+    },
+    "gitLfs": {
+      "release": "v3.8.0",
+      "source": "https://github.com/git-lfs/git-lfs/blob/v3.8.0/go.mod",
+      "crypto": "v0.54.0",
+      "net": "v0.57.0",
+      "availableFedora44": "0:3.7.1-6.fc44",
+      "status": "Published source alone does not fix current shipped Fedora package; additional module advisories require separate newer minima"
+    },
+    "incus": {
+      "release": "v7.5.1",
+      "source": "https://github.com/lxc/incus/blob/v7.5.1/go.mod",
+      "crypto": "v0.57.0",
+      "net": "v0.59.0",
+      "availableFedora44": "0:6.23-3.fc44",
+      "status": "No blind major-version substitution; compatible signed Fedora44 fixes/backports and actual module proof required"
+    }
+  },
+  "supersededDiagnostics": [
+    {
+      "run": 38336783883,
+      "reason": "Queued DX diagnostic superseded by per-profile read-only concurrency; no image work"
+    },
+    {
+      "run": 38335573822,
+      "sourceRevision": "9e31a5c0b4785725347ac584865f969402eb0e0a",
+      "reason": "Source/docs/Nix checks passed; canceled while image work was incomplete after official unpacker incompatibility was confirmed; no native/security verdict"
+    },
+    {
+      "run": 38336979136,
+      "sourceRevision": "00fe5a9e6164",
+      "reason": "Canceled early for same known unpacker incompatibility; no native/security verdict"
+    }
+  ],
+  "extractionCompatibilityRemediation": {
+    "rootCause": "Byte-preserving Docker v2 manifest export requires an OCI metadata-only pointer for umoci. Initial tiny hosted probe38337776170 failed before unpack because the thin build profile did not contain umoci.",
+    "fixes": [
+      "Authenticate original manifests/config first",
+      "Derive local OCI manifest/config/layer media-type descriptors only; retain original configuration and layer bytes/digests/order",
+      "Retain original digest evidence and explicit unsigned extraction transformation trace",
+      "Optional pinned scanner-tools profile supplies umoci/Syft/Grype/PyYAML without a developer shell or replacement Nix client",
+      "Tiny actual umoci compatibility smoke precedes all opt-in image work"
+    ],
+    "fullDiagnosticsRestart": "Approved by actual tiny umoci PASS; separate standard/DX read-only profile concurrency",
+    "releaseEligible": false,
+    "hostedSmoke": {
+      "run": 38339665069,
+      "sourceRevision": "0fa11988b131",
+      "reportSha256": "c59d2bdcf6d024139ad22df9ed672871643cf156b7a5b5a7190b17e42e35ba38",
+      "umociVersion": "0.6.0",
+      "schema": 1,
+      "status": "PASS",
+      "originalImageDigest": "sha256:d4f2cf57cc3e37daf0d5190f8984d69d7b9d6a357f27393a46b28692531d65ea",
+      "extractionManifestDigest": "sha256:b17a40635c155286ac90c2097c1a5df44b1f45166e23333687d85b3a5ed0d521",
+      "configurationDigest": "sha256:49e6d7c054b444e6c7e341d102ec4b42e926e247305a1e946997b1de1445057c",
+      "layerDigest": "sha256:acde8d7ceb81dd84b6098f05e1aa2b3c834f2848e02e6fd2d105fa95dd17308f",
+      "originalBytesPreserved": true,
+      "imageCodeExecuted": false,
+      "imageBuildOrPull": false,
+      "releaseEligible": false
+    }
+  },
+  "upstreamIntegration": {
+    "mergedExternally": true,
+    "pr": 146,
+    "url": "https://github.com/closure-labs/finite/pull/146",
+    "revision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+    "mergedAt": "2026-10-13T03:06:20Z",
+    "baseDigestsMatchValidatedRefresh": true,
+    "action": "JJ rebase onto externally advanced main; preserve running diagnostic evidence at its original source revision"
+  },
+  "changedCandidateDiagnostics": {
+    "sourceRevision": "1d347b7456b0cf64d4372cc0e7a562a9e63eb45b",
+    "standardRun": 38341281199,
+    "developmentRun": 38341284379,
+    "sourceChecks": "PASS documentation and pinned Nix/runtime contracts for both runs",
+    "nativeVerdicts": "pending",
+    "publication": false,
+    "signing": false,
+    "releaseEligible": false
+  },
+  "independentFinalReview": {
+    "verdict": "APPROVED",
+    "focusedFixtures": 100,
+    "scope": "media adapter, opt-in scanner tool profile, real unpack smoke orchestration, signed FreeRDP reference verifier, diagnostic provenance and existing publication reliability"
+  },
+  "signedFreeRdpReference": {
+    "run": 38340338218,
+    "url": "https://github.com/closure-labs/finite/actions/runs/38340338218",
+    "sourceRevision": "1967565f85cd6fec4d8e7f1890f5191edc53e65e",
+    "status": "PASS signed reference bytes",
+    "report": "docs/freerdp-signed-reference-2026-10-12.json",
+    "reportSha256": "b035dc2c3bc27c5ed1ee7e28e9cb3e88a8af45bec68f7736258ca5569bea5179",
+    "referenceFiles": 12,
+    "sourceRpm": "freerdp-3.31.1-1.fc44.src.rpm",
+    "sourceCommit": "199c380597cb7f4642ebd299865a3032aef4e89b",
+    "signatureFingerprint": "36F612DCF27F7D1A48A835E4DBFCF71C6D9F90A6",
+    "candidateBinding": "old main66 native selectors match all12; new changed candidate join pending",
+    "dispositionsGranted": [],
+    "releaseEligible": false,
+    "limits": "Runs a bounded Fedora tooling container; does not pull or execute a Finite candidate or perform a new image scan"
+  }
+}

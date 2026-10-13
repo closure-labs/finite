@@ -1,6 +1,36 @@
 # Security audit implementation
 
-## Current desktop continuation
+## Active release eligibility sequence
+
+- User instructed "begin sequence"; start from externally merged PR145/main7dba.
+- Signed stable Curl12 floor implemented for installed Curl/libcurl variants;
+  transaction/offline/integrity proof verified by38332614606 after the original
+  wrapper's missing-ripgrep post-check error.19configured RPM floors, no blanket fixes.
+- Hosted prerequisite38331234974 confirms AnyIO/rclone fixes unavailable;
+  ordinary msgpack availability no longer blocks readiness. Next stable tags still300.
+- Bounded positive Go/ELF collector reuses existing extraction, grants no clearance;
+  official Critical/Go scope reviews preserve missing current file/source bindings.
+- Manual channel selection preserves all required gates and whole-run release rule.
+- Guarded exact-digest candidate reuse implemented with original source versus
+  current qualification revision, origin/archive/runtime checks and fresh gates.
+  Current main/public-channel changes now prevent stale signing/promotion.
+- Native summary38334371393 PASS: standard profiles121 pairs, DX179;
+  both Next profiles retain their kernel hold. No reviewed dispositions active.
+- Signed stable refresh38334919442 changes the standard base to23b7bf54;
+  the newly announced release then updates DX toa41cf1eb, verified38336166342.
+  PR146 independently merged the same digests; rebased onto main cbaf8264.
+  Running diagnostics retain original source1d347 for exact evidence binding.
+- Positive Go and RPM byte probes use current catalog paths while the rootfs
+  already exists. Opt-in branch diagnostics reuse the assembled image.
+- 369 focused source tests pass; independent QA approves hosted validation.
+  Actual tiny unpacker/scanner-profile smoke38339665069 passed with byte
+  preservation. Superseded incompatible diagnostics canceled before scans.
+  Hosted full matrix and changed standard/DX diagnostics remain pending.
+  No merge/publication by this agent.
+- Current sequence/evidence: docs/release-eligibility-sequence.md and
+  docs/release-eligibility-evidence-2026-10-12.json. Release remains INELIGIBLE.
+
+## Completed desktop policy continuation
 
 - User-approved host ZFS removal is implemented and validated across all four
   profiles: remove only kmod-zfs, zfs and python3-pyzfs; retain required shared

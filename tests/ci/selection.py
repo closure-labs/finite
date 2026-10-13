@@ -21,7 +21,7 @@ import payloads
 class Selection(unittest.TestCase):
     def test_documentation_and_mixed_changes(self):
         self.assertEqual(impact.classify(['README.md', 'docs/installation.md']), {'checks': False, 'nix': False, 'profiles': []})
-        for path in ['files/system/usr/share/finite/finite-logo.png', '.github/workflows/build.yml',
+        for path in ['files/system/usr/share/finite/finite-logo.png',
                      '.github/workflows/image.yml', '.github/actions/setup-nix/action.yml',
                      'scripts/bluebuild/publication.py',
                      'files/scripts/kernel-module-prune.py', 'new-image-input', 'docs-like/file',

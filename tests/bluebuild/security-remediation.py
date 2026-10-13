@@ -49,7 +49,7 @@ class Remediation(unittest.TestCase):
             'python-unversioned-command', 'python3', 'python3-libs',
             'libX11', 'libX11-common', 'libX11-xcb',
             'tesseract-common', 'tesseract-libs', 'freerdp-libs', 'libwinpr',
-            'sudo', 'sudo-python-plugin',
+            'sudo', 'sudo-python-plugin', 'curl', 'libcurl', 'libcurl-minimal',
         })
 
     def exercise(self, after=None, current='0:3.14.7-1.fc44', failure=False):
@@ -80,6 +80,29 @@ class Remediation(unittest.TestCase):
             self.assertIn(arg, command)
         self.assertNotIn('--allowerasing', command)
         self.assertNotIn('--skip-unavailable', command)
+
+    def test_curl_floor_preserves_the_installed_library_variant(self):
+        before = {'curl': [('0:8.18.0-10.fc44', 'x86_64')],
+                  'libcurl-minimal': [('0:8.18.0-10.fc44', 'x86_64')],
+                  'kernel-core': [('0:7.2.9-201.fc44', 'x86_64')]}
+        after = copy.deepcopy(before)
+        for name in ('curl', 'libcurl-minimal'):
+            after[name] = [('0:8.18.0-12.fc44', 'x86_64')]
+        commands = []
+        def run(args):
+            commands.append(args)
+            return '44' if args == ['rpm', '--eval', '%{fedora}'] else ''
+        with patch.object(mod, 'run', run), patch.object(mod, 'inventory', side_effect=[before, after]), \
+                patch.object(mod, 'compare', lambda a,b: (a>b)-(a<b)):
+            mod.remediate(POLICY)
+        self.assertIn('curl >= 0:8.18.0-12.fc44', commands[-1])
+        self.assertIn('libcurl-minimal >= 0:8.18.0-12.fc44', commands[-1])
+        self.assertFalse(any(arg.startswith('libcurl ') for arg in commands[-1]))
+        replaced = {key:value for key,value in after.items() if key != 'libcurl-minimal'}
+        replaced['libcurl'] = [('0:8.18.0-12.fc44', 'x86_64')]
+        with patch.object(mod, 'run', run), patch.object(mod, 'inventory', side_effect=[before, replaced]), \
+                patch.object(mod, 'compare', lambda a,b: (a>b)-(a<b)), self.assertRaisesRegex(ValueError, 'floor not satisfied'):
+            mod.remediate(POLICY)
 
     def test_no_network_if_current(self):
         self.assertEqual(len(self.exercise(current='0:3.14.8-1.fc44')), 1)

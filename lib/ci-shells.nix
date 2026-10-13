@@ -4,6 +4,9 @@
   ciPackages =
     (with pkgs; [bash coreutils cosign file git gh jq ripgrep skopeo])
     ++ [(pkgs.python3.withPackages (packages: [packages.pyyaml]))];
+  scannerPackages =
+    (with pkgs; [bash coreutils cosign gh jq skopeo syft grype umoci])
+    ++ [(pkgs.python3.withPackages (packages: [packages.pyyaml]))];
 in {
   ci = pkgs.mkShell {packages = ciPackages;};
   imageTools = pkgs.buildEnv {
@@ -11,7 +14,12 @@ in {
     paths = ciPackages;
     pathsToLink = ["/bin"];
   };
+  scannerTools = pkgs.buildEnv {
+    name = "finite-ci-scanner-tools";
+    paths = scannerPackages;
+    pathsToLink = ["/bin"];
+  };
   release = pkgs.mkShell {
-    packages = with pkgs; [bash coreutils cosign gh jq python3 skopeo syft grype umoci];
+    packages = scannerPackages;
   };
 }

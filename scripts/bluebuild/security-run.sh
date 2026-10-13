@@ -44,7 +44,8 @@ sudo systemd-run --unit="$unit" --wait --pipe --service-type=exec \
   --property="User=$(id -u)" --property="Group=$(id -g)" \
   --working-directory="$PWD" \
   --setenv="PATH=$PATH" --setenv="HOME=$HOME" \
-  --setenv="GITHUB_SHA=${GITHUB_SHA:-}" \
+  --setenv="GITHUB_SHA=${GITHUB_SHA:-}" --setenv="GITHUB_REPOSITORY=${GITHUB_REPOSITORY:-}" \
+  --setenv="GITHUB_ACTIONS=${GITHUB_ACTIONS:-}" \
   --setenv="GOMEMLIMIT=${go_limit_mib}MiB" --setenv=SYFT_PARALLELISM=1 --setenv=SYFT_LOG_LEVEL=info \
   "$scanner_python" "$(dirname "${BASH_SOURCE[0]}")/security-scan.py" "$@" 2>&1 | tee -a "$log"
 status=${PIPESTATUS[0]}

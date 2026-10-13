@@ -10,6 +10,23 @@ on:
     - cron: "17 8 * * *"
   workflow_dispatch:
     inputs:
+      target:
+        description: Select one channel for complete validation/publication, or retain automatic selection
+        type: choice
+        default: automatic
+        options: [automatic, finite, finite-next, finite-dev, finite-dev-next]
+      resume_run:
+        description: Original trusted main build run for an existing candidate (requires target and resume_digest)
+        type: string
+        default: ""
+      resume_digest:
+        description: Exact sha256 candidate digest to requalify without rebuilding
+        type: string
+        default: ""
+      diagnostic_security:
+        description: Scan the selected unpublished validation image on this branch; no release clearance
+        type: boolean
+        default: false
       reconcile:
         description: Rebuild only channels that differ from approved image inputs
         type: boolean
@@ -23,7 +40,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && 'finite-publication' || format('finite-validation-{0}', github.ref) }}
+  group: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && 'finite-publication' || format('finite-validation-{0}-{1}', github.ref, github.event_name == 'workflow_dispatch' && inputs.diagnostic_security && inputs.target || 'all') }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
 
 jobs:
@@ -32,16 +49,25 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     outputs:
-      checks: ${{ steps.reconcile.outputs.checks || steps.impact.outputs.checks }}
-      nix: ${{ steps.reconcile.outputs.nix || steps.impact.outputs.nix }}
-      profiles: ${{ steps.reconcile.outputs.profiles || steps.impact.outputs.profiles }}
+      checks: ${{ steps.target.outputs.checks || steps.reconcile.outputs.checks || steps.impact.outputs.checks }}
+      nix: ${{ steps.target.outputs.nix || steps.reconcile.outputs.nix || steps.impact.outputs.nix }}
+      profiles: ${{ steps.target.outputs.profiles || steps.reconcile.outputs.profiles || steps.impact.outputs.profiles }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: 0
+      - name: Validate manual channel selection
+        id: target
+        env:
+          RELEASE_TARGET: ${{ inputs.target || 'automatic' }}
+          RECONCILE: ${{ inputs.reconcile || false }}
+          RESUME_RUN: ${{ inputs.resume_run || '' }}
+          RESUME_DIGEST: ${{ inputs.resume_digest || '' }}
+          DIAGNOSTIC_SECURITY: ${{ inputs.diagnostic_security || false }}
+        run: python3 scripts/ci/release-selection.py
       - id: impact
-        if: ${{ !inputs.reconcile }}
+        if: ${{ !inputs.reconcile && steps.target.outputs.selected != 'true' }}
         run: python3 scripts/ci/impact.py
       - uses: ./.github/actions/setup-nix
         if: inputs.reconcile || (github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && github.event_name == 'push')
@@ -109,6 +135,7 @@ jobs:
       profile: ${{ matrix.profile }}
       channel: ${{ matrix.channel }}
       publish: false
+      diagnostic_security: ${{ inputs.diagnostic_security || false }}
 
   publish:
     name: Publish (${{ matrix.profile }})
@@ -126,6 +153,8 @@ jobs:
       profile: ${{ matrix.profile }}
       channel: ${{ matrix.channel }}
       force_qualification: ${{ inputs.qualify || false }}
+      resume_run: ${{ inputs.resume_run || '' }}
+      resume_digest: ${{ inputs.resume_digest || '' }}
 
   gate:
     name: CI gate

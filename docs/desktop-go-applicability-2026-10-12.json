@@ -1,0 +1,618 @@
+{
+  "schema": 1,
+  "status": "applicability-investigation-incomplete",
+  "scope": "Windows-only and Go build-tool leads; no automatic vulnerability clearance",
+  "diagnosticImage": "ghcr.io/closure-labs/finite@sha256:567c7e90da2020ebb83f144521fdcca2ddc21009b5f42e86704be5312d9ab835",
+  "blockingLedgerSha256": "e31d779012b39f089258b38bc3f4c7fed5ab997e16498f4e14f934b0eea94fd2",
+  "historicalGoEvidence": {
+    "image": "ghcr.io/closure-labs/finite@sha256:302f05b64f6d38ce3747de84342fedd519495efa6b195f5f0dccfbe887f25d8d",
+    "revision": "e1d7a1e5a13e17995d6da0bdc0708bca5f8ccbee",
+    "summarySha256": "e40ca75c2811cc16ad63bb85695e0cb1dc267bf9614a40ed12cf89fcb34d0c01",
+    "liveExecutablesWithPlatformMetadata": 22,
+    "scope": "selected live executables; excludes historical OSTree objects",
+    "limits": [
+      "Evidence is for a different immutable baseline. Changed Cosign/Tailscale and historical OSTree objects cannot inherit this proof.",
+      "Negative govulncheck and pclntab absence are not nonapplicability proof."
+    ]
+  },
+  "advisories": [
+    {
+      "id": "GO-2026-6604",
+      "officialRecord": "https://pkg.go.dev/vuln/GO-2026-6604",
+      "officialRecordSha256": "f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9",
+      "aliases": [
+        "CVE-2026-56857"
+      ],
+      "affected": [
+        {
+          "package": {
+            "name": "stdlib",
+            "ecosystem": "Go"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.26.9"
+                },
+                {
+                  "introduced": "1.27.0-0"
+                },
+                {
+                  "fixed": "1.27.2"
+                }
+              ]
+            }
+          ],
+          "ecosystem_specific": {
+            "imports": [
+              {
+                "path": "os",
+                "goos": [
+                  "windows"
+                ],
+                "symbols": [
+                  "Root.Chmod",
+                  "Root.Chown",
+                  "Root.Chtimes",
+                  "Root.Lchown",
+                  "Root.Link",
+                  "Root.Mkdir",
+                  "Root.MkdirAll",
+                  "Root.Remove",
+                  "Root.RemoveAll",
+                  "Root.Rename",
+                  "Root.Symlink",
+                  "doInRoot",
+                  "rootMkdirAll"
+                ]
+              },
+              {
+                "path": "internal/syscall/windows",
+                "goos": [
+                  "windows"
+                ],
+                "symbols": [
+                  "Mkdirat"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "reviewStatus": "windows-only-platform-lead",
+      "rationale": "Every official affected import is restricted to Windows. Positive Linux/amd64 ELF and embedded GOOS/GOARCH proof for every current matched file can support a nonapplicable review. Historical objects and current aliases/locations must all be covered.",
+      "historicalDiagnosticMatches": [
+        {
+          "component": "pkg:golang/stdlib@1.26.4",
+          "advisory": "GO-2026-6604",
+          "aliases": [
+            "CVE-2026-56857",
+            "GO-2026-6604"
+          ],
+          "locations": [
+            "/usr/bin/cosign"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.6",
+          "advisory": "GO-2026-6604",
+          "aliases": [
+            "CVE-2026-56857",
+            "GO-2026-6604"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/44/ddc02df5529aa029c5c6300fc06197b0de5cba60e3b35a68084c0bd0c51547.file",
+            "/sysroot/ostree/repo/objects/7e/2c48dd26ae1957c2be4ebfc6f5dbf6c1c478dd80e70482985d8d9ba08addc9.file"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.27.1",
+          "advisory": "GO-2026-6604",
+          "aliases": [
+            "CVE-2026-56857",
+            "GO-2026-6604"
+          ],
+          "locations": [
+            "/usr/bin/tailscale",
+            "/usr/bin/tailscaled"
+          ]
+        }
+      ],
+      "currentCandidateFileCoverage": "not-collected",
+      "dispositionGranted": false
+    },
+    {
+      "id": "GO-2026-4871",
+      "officialRecord": "https://pkg.go.dev/vuln/GO-2026-4871",
+      "officialRecordSha256": "8d73c89d6a578d431ec2d9822711b998cd509232f44724ded3cfdf70e2d0a033",
+      "aliases": [
+        "CVE-2026-27140"
+      ],
+      "affected": [
+        {
+          "package": {
+            "name": "toolchain",
+            "ecosystem": "Go"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.25.9"
+                },
+                {
+                  "introduced": "1.26.0-0"
+                },
+                {
+                  "fixed": "1.26.2"
+                }
+              ]
+            }
+          ],
+          "ecosystem_specific": {
+            "imports": [
+              {
+                "path": "cmd/go"
+              }
+            ]
+          }
+        }
+      ],
+      "reviewStatus": "cmd-go-build-tool-only-lead",
+      "rationale": "Official affected package is toolchain, import cmd/go. Exact owning executable/main package plus source identity and affected use boundary need proof; generic stdlib/compiler version matching alone is not applicability.",
+      "historicalDiagnosticMatches": [],
+      "currentCandidateFileCoverage": "not-collected",
+      "dispositionGranted": false
+    },
+    {
+      "id": "GO-2026-4984",
+      "officialRecord": "https://pkg.go.dev/vuln/GO-2026-4984",
+      "officialRecordSha256": "f50ac2f792a131762eb19eb7fae7a831a3121007f8ba3b6ce75ed92ddb02a747",
+      "aliases": [
+        "CVE-2026-42501"
+      ],
+      "affected": [
+        {
+          "package": {
+            "name": "toolchain",
+            "ecosystem": "Go"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.25.10"
+                },
+                {
+                  "introduced": "1.26.0-0"
+                },
+                {
+                  "fixed": "1.26.3"
+                }
+              ]
+            }
+          ],
+          "ecosystem_specific": {
+            "imports": [
+              {
+                "path": "cmd/go"
+              }
+            ]
+          }
+        }
+      ],
+      "reviewStatus": "cmd-go-build-tool-only-lead",
+      "rationale": "Official affected package is toolchain, import cmd/go. Installed Go command and toolchain downloads are supported development use; fixing a different compiler does not prove this executable fixed.",
+      "historicalDiagnosticMatches": [],
+      "currentCandidateFileCoverage": "not-collected",
+      "dispositionGranted": false
+    },
+    {
+      "id": "GO-2026-6179",
+      "officialRecord": "https://pkg.go.dev/vuln/GO-2026-6179",
+      "officialRecordSha256": "6d717167a1824b12b2ab4ead65a78f390195eaafcb8a373127dfba6ef985b28e",
+      "aliases": [
+        "CVE-2026-56865"
+      ],
+      "affected": [
+        {
+          "package": {
+            "name": "toolchain",
+            "ecosystem": "Go"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.25.13"
+                },
+                {
+                  "introduced": "1.26.0-0"
+                },
+                {
+                  "fixed": "1.26.6"
+                },
+                {
+                  "introduced": "1.27.0-0"
+                },
+                {
+                  "fixed": "1.27.0-rc.3"
+                }
+              ]
+            }
+          ],
+          "ecosystem_specific": {
+            "imports": [
+              {
+                "path": "cmd/go"
+              }
+            ]
+          }
+        },
+        {
+          "package": {
+            "name": "golang.org/x/mod",
+            "ecosystem": "Go"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "0.40.0"
+                }
+              ]
+            }
+          ],
+          "ecosystem_specific": {
+            "imports": [
+              {
+                "path": "golang.org/x/mod/sumdb/tlog",
+                "symbols": [
+                  "tileHashReader.ReadHashes"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "reviewStatus": "embedded-module-risk-remains",
+      "rationale": "Official record separately affects cmd/go and golang.org/x/mod/sumdb/tlog.tileHashReader.ReadHashes. Embedded x/mod matches in container/desktop binaries cannot be cleared as build-tool-only.",
+      "historicalDiagnosticMatches": [
+        {
+          "component": "pkg:golang/golang.org/x/mod@v0.20.0",
+          "advisory": "GO-2026-6179",
+          "aliases": [
+            "CVE-2026-56865",
+            "GO-2026-6179"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+            "/usr/bin/toolbox"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/mod@v0.36.0",
+          "advisory": "GO-2026-6179",
+          "aliases": [
+            "CVE-2026-56865",
+            "GO-2026-6179"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/75/3546d15a9cdd047adccb841b239b2b0c2c25deb15c5edcd9d94801f60325c3.file",
+            "/sysroot/ostree/repo/objects/f4/4b3304bc30b41a152a41fe1248228b052d2d2c31c69c131e4d85e874530d1c.file",
+            "/usr/bin/containerd",
+            "/usr/bin/ctr"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/mod@v0.37.0",
+          "advisory": "GO-2026-6179",
+          "aliases": [
+            "CVE-2026-56865",
+            "GO-2026-6179"
+          ],
+          "locations": [
+            "/usr/bin/cosign"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/mod@v0.38.0",
+          "advisory": "GO-2026-6179",
+          "aliases": [
+            "CVE-2026-56865",
+            "GO-2026-6179"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+            "/usr/bin/buildah",
+            "/usr/bin/podman"
+          ]
+        }
+      ],
+      "currentCandidateFileCoverage": "not-collected",
+      "dispositionGranted": false
+    },
+    {
+      "id": "GO-2026-6180",
+      "officialRecord": "https://pkg.go.dev/vuln/GO-2026-6180",
+      "officialRecordSha256": "28cdf70eec7d4be6c908065919a3018dcb8c795f987b5a271ad8290de2a2edae",
+      "aliases": [
+        "CVE-2026-56864"
+      ],
+      "affected": [
+        {
+          "package": {
+            "name": "toolchain",
+            "ecosystem": "Go"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.25.13"
+                },
+                {
+                  "introduced": "1.26.0-0"
+                },
+                {
+                  "fixed": "1.26.6"
+                },
+                {
+                  "introduced": "1.27.0-0"
+                },
+                {
+                  "fixed": "1.27.0-rc.3"
+                }
+              ]
+            }
+          ],
+          "ecosystem_specific": {
+            "imports": [
+              {
+                "path": "cmd/go"
+              }
+            ]
+          }
+        },
+        {
+          "package": {
+            "name": "golang.org/x/mod",
+            "ecosystem": "Go"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "0.40.0"
+                }
+              ]
+            }
+          ],
+          "ecosystem_specific": {
+            "imports": [
+              {
+                "path": "golang.org/x/mod/sumdb",
+                "symbols": [
+                  "Client.Lookup"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "reviewStatus": "embedded-module-risk-remains",
+      "rationale": "Official record separately affects cmd/go and golang.org/x/mod/sumdb.Client.Lookup. All exact consuming binaries, aliases and file locations remain pending source/call-boundary proof or signed owning-binary fixes.",
+      "historicalDiagnosticMatches": [
+        {
+          "component": "pkg:golang/golang.org/x/mod@v0.20.0",
+          "advisory": "GO-2026-6180",
+          "aliases": [
+            "CVE-2026-56864",
+            "GO-2026-6180"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+            "/usr/bin/toolbox"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/mod@v0.36.0",
+          "advisory": "GO-2026-6180",
+          "aliases": [
+            "CVE-2026-56864",
+            "GO-2026-6180"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/75/3546d15a9cdd047adccb841b239b2b0c2c25deb15c5edcd9d94801f60325c3.file",
+            "/sysroot/ostree/repo/objects/f4/4b3304bc30b41a152a41fe1248228b052d2d2c31c69c131e4d85e874530d1c.file",
+            "/usr/bin/containerd",
+            "/usr/bin/ctr"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/mod@v0.37.0",
+          "advisory": "GO-2026-6180",
+          "aliases": [
+            "CVE-2026-56864",
+            "GO-2026-6180"
+          ],
+          "locations": [
+            "/usr/bin/cosign"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/mod@v0.38.0",
+          "advisory": "GO-2026-6180",
+          "aliases": [
+            "CVE-2026-56864",
+            "GO-2026-6180"
+          ],
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+            "/usr/bin/buildah",
+            "/usr/bin/podman"
+          ]
+        }
+      ],
+      "currentCandidateFileCoverage": "not-collected",
+      "dispositionGranted": false
+    },
+    {
+      "id": "GO-2026-4867",
+      "officialRecord": "https://pkg.go.dev/vuln/GO-2026-4867",
+      "officialRecordSha256": "d5acff30c3ff1b631954db2abe54fa9487a5b0e658291c5b5ba19f1b624e827c",
+      "aliases": [
+        "CVE-2026-27144"
+      ],
+      "affected": [
+        {
+          "package": {
+            "name": "toolchain",
+            "ecosystem": "Go"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.25.9"
+                },
+                {
+                  "introduced": "1.26.0-0"
+                },
+                {
+                  "fixed": "1.26.2"
+                }
+              ]
+            }
+          ],
+          "ecosystem_specific": {
+            "imports": [
+              {
+                "path": "cmd/compile"
+              }
+            ]
+          }
+        }
+      ],
+      "reviewStatus": "compiler-produced-code-risk-remains",
+      "rationale": "Originating compiler and affected compiled code must be proved fixed/nonaffected, or affected programs rebuilt. An installed compiler upgrade alone cannot repair shipped programs.",
+      "historicalDiagnosticMatches": [],
+      "currentCandidateFileCoverage": "not-collected",
+      "dispositionGranted": false
+    },
+    {
+      "id": "GO-2026-4868",
+      "officialRecord": "https://pkg.go.dev/vuln/GO-2026-4868",
+      "officialRecordSha256": "60e2540929287df66aeabcfabf4339710d3e5abb9c6bfd65c67dc91762d59b2c",
+      "aliases": [
+        "CVE-2026-27143"
+      ],
+      "affected": [
+        {
+          "package": {
+            "name": "toolchain",
+            "ecosystem": "Go"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.25.9"
+                },
+                {
+                  "introduced": "1.26.0-0"
+                },
+                {
+                  "fixed": "1.26.2"
+                }
+              ]
+            }
+          ],
+          "ecosystem_specific": {
+            "imports": [
+              {
+                "path": "cmd/compile"
+              }
+            ]
+          }
+        }
+      ],
+      "reviewStatus": "compiler-produced-code-risk-remains",
+      "rationale": "Originating compiler and affected compiled code must be proved fixed/nonaffected, or affected programs rebuilt. An installed compiler upgrade alone cannot repair shipped programs.",
+      "historicalDiagnosticMatches": [],
+      "currentCandidateFileCoverage": "not-collected",
+      "dispositionGranted": false
+    }
+  ],
+  "proposedDisposition": {
+    "advisory": "GO-2026-6604",
+    "type": "nonapplicable",
+    "state": "not-authorized-by-existing-proof",
+    "prerequisites": [
+      "Actual current candidate immutable manifest/config and authenticated extraction binding",
+      "ELF64 amd64 plus exact embedded GOOS=linux and GOARCH=amd64, streaming file SHA256, for every current match location including retained OSTree files",
+      "Current native scanner component/version/all-alias/all-location binding; historical ledger is selectors only",
+      "Reviewed official Windows-only impact, recorded reviewer/time and expiry within 30 days, exact candidate digest/component/platform/locations",
+      "Independent review and policy reevaluation; no KEV waiver"
+    ]
+  },
+  "collector": {
+    "path": "scripts/ci/applicability-evidence.py",
+    "execution": "hosted Finite only, while existing authenticated rootfs is materialized",
+    "binarySizeLimitBytes": 268435456,
+    "metadataLimitBytes": 1048576,
+    "maxSelectedPaths": 128,
+    "readsImageBytesWithoutExecutingThem": true,
+    "requiresGoCompiler": false,
+    "additionalImagePullRequired": false,
+    "currentFindingBindings": "Not supplied by this collector; join later current native findings to exact file hashes and all aliases/locations",
+    "parserSources": [
+      "https://go.dev/src/debug/buildinfo/buildinfo.go",
+      "https://go.dev/src/runtime/debug/mod.go",
+      "https://go.dev/src/cmd/go/internal/modload/build.go"
+    ],
+    "validation": "14 synthetic ELF/manifest/path/bounds tests passed; actual candidate binary validation pending hosted run"
+  },
+  "releaseEligible": false,
+  "vulnerabilityClearance": "not-assessed",
+  "dispositionsGranted": []
+}

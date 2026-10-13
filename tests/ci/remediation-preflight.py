@@ -95,6 +95,30 @@ class Preflight(unittest.TestCase):
             self.assertEqual(result['status'], 'available' if expected else 'blocked')
             self.assertEqual(result['scannerResolution'], 'unknown')
 
+    def test_ordinary_unavailable_fix_does_not_block_reviewed_risk_readiness(self):
+        risk = mod.security.load_policy(ROOT / 'automation/security/image-policy.json')
+        policy = {'fedora': 44, 'sourceImage': 'fixture', 'packages': {}}
+        prerequisites = mod.load_prerequisites(ROOT / 'scripts/ci/remediation-prerequisites.json')
+        output = ('python3-anyio\t4.14.2-1.fc44\tnoarch\tupdates\tpython3-anyio-0:4.14.2-1.fc44.noarch\n'
+                  'rclone\t1.75.1-1.fc44\tx86_64\tupdates\trclone-0:1.75.1-1.fc44.x86_64\n'
+                  'python3-msgpack\t1.1.2-2.fc44\tnoarch\tupdates\tpython3-msgpack-0:1.1.2-2.fc44.noarch')
+        with patch.object(mod, 'run', return_value=output), patch.object(mod, 'compare', side_effect=lambda a,b,r: (a>b)-(a<b)):
+            current = mod.probe(policy, prerequisites, risk_policy=risk)
+            legacy = mod.probe(policy, prerequisites)
+        self.assertTrue(current['prerequisiteReady'])
+        self.assertFalse(current['allRequestedFixesAvailable'])
+        self.assertEqual(current['status'], 'available')
+        msgpack = next(row for row in current['prerequisites'] if row['name'] == 'python3-msgpack')
+        self.assertEqual(msgpack['status'], 'outdated')
+        self.assertFalse(msgpack['blockingUnderCurrentPolicy'])
+        self.assertEqual(current['scannerResolution'], 'unknown')
+        self.assertEqual(legacy['status'], 'blocked')
+        with patch.object(mod, 'run', return_value=output.replace('4.14.2', '4.13.0')), \
+                patch.object(mod, 'compare', side_effect=lambda a,b,r: (a>b)-(a<b)):
+            serious = mod.probe(policy, prerequisites, risk_policy=risk)
+        self.assertFalse(serious['prerequisiteReady'])
+        self.assertEqual(serious['status'], 'blocked')
+
     def test_upstream_comparison_discards_epoch_and_release(self):
         with patch.object(mod, 'compare', return_value=-1) as compare:
             self.assertFalse(mod.upstream_meets('99:4.13.0-999.fc44', '4.14.2', mod.run))
