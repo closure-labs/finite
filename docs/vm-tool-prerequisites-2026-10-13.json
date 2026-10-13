@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "sourceRun": 38340112122,
+  "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+  "sbomSha256": "4902fdd4b2afca8374a3197770f25daa11c7626cb5c83c46fb614ad1f5441201",
+  "status": "packages-observed",
+  "packages": [
+    {
+      "name": "iproute",
+      "version": "6.17.0-2.fc44",
+      "type": "rpm",
+      "purl": "pkg:rpm/bluefin/iproute@6.17.0-2.fc44?arch=x86_64&distro=bluefin-44&upstream=iproute-6.17.0-2.fc44.src.rpm",
+      "toolPaths": [
+        "/usr/bin/ss"
+      ]
+    },
+    {
+      "name": "policycoreutils",
+      "version": "3.11-2.fc44",
+      "type": "rpm",
+      "purl": "pkg:rpm/bluefin/policycoreutils@3.11-2.fc44?arch=x86_64&distro=bluefin-44&upstream=policycoreutils-3.11-2.fc44.src.rpm",
+      "toolPaths": []
+    },
+    {
+      "name": "policycoreutils-python-utils",
+      "version": "3.11-2.fc44",
+      "type": "rpm",
+      "purl": "pkg:rpm/bluefin/policycoreutils-python-utils@3.11-2.fc44?arch=noarch&distro=bluefin-44&upstream=policycoreutils-3.11-2.fc44.src.rpm",
+      "toolPaths": []
+    },
+    {
+      "name": "procps-ng",
+      "version": "4.0.6-1.fc44",
+      "type": "rpm",
+      "purl": "pkg:rpm/bluefin/procps-ng@4.0.6-1.fc44?arch=x86_64&distro=bluefin-44&upstream=procps-ng-4.0.6-1.fc44.src.rpm",
+      "toolPaths": [
+        "/usr/bin/ps"
+      ]
+    },
+    {
+      "name": "python3",
+      "version": "3.14.8-1.fc44",
+      "type": "rpm",
+      "purl": "pkg:rpm/bluefin/python3@3.14.8-1.fc44?arch=x86_64&distro=bluefin-44&upstream=python3.14-3.14.8-1.fc44.src.rpm",
+      "toolPaths": [
+        "/usr/bin/python3"
+      ]
+    }
+  ],
+  "limit": "Historical package inventory supports prerequisites; future VM must execute actual tools successfully. No new scan or release clearance.",
+  "validationRun": 38369120537,
+  "validationUrl": "https://github.com/closure-labs/finite/actions/runs/38369120537",
+  "artifactId": 11797763513,
+  "artifactSha256": "67abb69b98b9e8353116449f261557161dd3b44ca83d52f3e53dc6cd37b118d4"
+}

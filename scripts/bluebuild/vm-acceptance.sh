@@ -286,6 +286,8 @@ boot_vm() {
       if [[ $check_security == true ]]; then
         ssh "${ssh_args[@]}" sudo bash -s <scripts/bluebuild/check-vm-security.sh \
           >"$state/$phase-security.log"
+        ssh "${ssh_args[@]}" sudo python3 - <scripts/bluebuild/check-vm-desktop.py \
+          >"$state/$phase-desktop.json"
       fi
       ssh "${ssh_args[@]}" sudo journalctl --no-pager -b -u systemd-remount-fs \
         >"$state/$phase-remount.log"

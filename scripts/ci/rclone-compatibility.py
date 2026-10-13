@@ -8,6 +8,8 @@ import argparse
 from contextlib import contextmanager
 import ftplib
 import hashlib
+import hmac
+from datetime import datetime, timezone
 import http.client
 import json
 import os
@@ -28,10 +30,8 @@ MAX_LOG = 256 * 1024
 GAPS = [
     {'id': 'sftp-powershell-quote', 'advisory': 'GHSA-2m8m-jhrm-w6j2', 'status': 'not-covered',
      'reason': 'Requires exact captured SFTP shell invocation and separate real Windows interoperability fixture.'},
-    {'id': 'rc-per-server-proxy', 'advisory': 'GHSA-p569-5gjg-9cmj', 'status': 'not-covered',
-     'reason': 'FTP direct-server session test does not exercise RC-started FTP/S3 request-local proxies.'},
-    {'id': 's3-proxy-secret-and-authority', 'advisory': 'GHSA-xwwr-4h3p-r22c', 'status': 'not-covered',
-     'reason': 'Per-identity SigV4 secret and cross-server authority fixture remains required.'},
+    {'id': 's3-shared-backend-multipart-metadata', 'advisory': 'GHSA-xwwr-4h3p-r22c', 'status': 'not-covered',
+     'reason': 'Distinct-root identity checks do not prove shared-backend multipart ownership or metadata isolation.'},
     {'id': 'mount', 'status': 'not-covered', 'reason': 'This capability-free container does not qualify FUSE mounting.'},
 ]
 
@@ -322,6 +322,192 @@ def rc(port, operation, parameters):
     return json.loads(raw)
 
 
+@contextmanager
+def rc_servers(runner):
+    control = free_port()
+    servers = []
+    with runner.server(['rcd', '--rc-addr', '127.0.0.1:' + str(control), '--rc-no-auth'], control):
+        def start(options):
+            port = free_port()
+            result = rc(control, 'serve/start', {**options, 'addr': '127.0.0.1:' + str(port)})
+            positive(isinstance(result.get('id'), str), 'RC did not return a server ID')
+            servers.append((result['id'], port))
+            return port
+        try:
+            yield start
+        finally:
+            # Attempt every stop even if one fails; runner's process-group cleanup
+            # is the final boundary if RC cannot stop a fixture server.
+            errors = []
+            for identity, port in reversed(servers):
+                try:
+                    rc(control, 'serve/stop', {'id': identity})
+                    try:
+                        connection = socket.create_connection(('127.0.0.1', port), timeout=1)
+                    except ConnectionRefusedError:
+                        continue
+                    connection.close()
+                    raise ProbeError('RC stopped server still accepts connections')
+                except (ProbeError, OSError, ValueError) as error:
+                    errors.append(str(error))
+            positive(not errors, 'RC fixture cleanup failed: ' + '; '.join(errors))
+
+
+def rc_ftp_proxies(runner, root):
+    trap = root / 'trap'
+    trap.mkdir()
+    (trap / 'trap.txt').write_bytes(b'TRAP-SECRET')
+    receipts = []
+    with rc_servers(runner) as start:
+        servers = []
+        for index, name in enumerate(('alice', 'bob')):
+            directory = root / name
+            directory.mkdir()
+            (directory / (name + '.txt')).write_bytes((name + '-only').encode())
+            proxy = root / (name + '-proxy.py')
+            proxy.write_text(ftp_proxy_source({name + '-token': str(directory)}))
+            # Rclone requires a numeric range; use disjoint nonempty ranges.
+            passive = 20000 + index * 8
+            port = start({'type': 'ftp', 'fs': str(trap), 'passive_port': f'{passive}-{passive + 8}',
+                          'auth_proxy': shlex.join(['/usr/bin/python3', str(proxy)])})
+            servers.append((name, port))
+        for name, port in servers:
+            with ftplib.FTP() as client:
+                client.connect('127.0.0.1', port, timeout=3)
+                client.login('shared', name + '-token')
+                positive(client.nlst() == [name + '.txt'], 'RC FTP proxy selected incorrect root')
+                content = bytearray()
+                client.retrbinary('RETR ' + name + '.txt', content.extend)
+                positive(content == (name + '-only').encode(), 'RC FTP positive retrieval failed')
+                content.clear()
+                try:
+                    client.retrbinary('RETR trap.txt', content.extend)
+                except ftplib.error_perm as error:
+                    positive(str(error).split(' ', 1)[0] in ('550', '551'), 'RC FTP unexpected trap denial')
+                else:
+                    raise ContractFailure('RC FTP exposed fixed trap filesystem')
+                require(not content, 'RC FTP trap response leaked bytes')
+            other = 'bob' if name == 'alice' else 'alice'
+            for user, token in (('anonymous', 'anonymous'), ('shared', 'wrong-token'), ('shared', other + '-token')):
+                with ftplib.FTP() as client:
+                    client.connect('127.0.0.1', port, timeout=3)
+                    try:
+                        client.login(user, token)
+                    except ftplib.error_perm as error:
+                        positive(str(error).split(' ', 1)[0] == '530', 'RC FTP unexpected login denial')
+                    else:
+                        raise ContractFailure('RC FTP accepted unauthorised per-server credential')
+                receipts.append({'server': name, 'user': user, 'token': token, 'status': 530})
+    require((trap / 'trap.txt').read_bytes() == b'TRAP-SECRET', 'RC FTP trap changed')
+    return {'contracts': ['two-request-local-FTP-proxies', 'own-file-retrieval', 'anonymous-wrong-and-other-server-token-denied',
+                          'trap-root-inaccessible', 'servers-stopped'], 'responses': receipts,
+            'scope': 'FTP RC path; S3 RC path is exercised by s3-proxy-secret-and-authority.'}
+
+
+def s3_proxy_source(identities):
+    # Pinned servetest/proxy_code.go identifies S3 by absence of pass/public_key.
+    return ('import json,sys\n'
+            'raw=sys.stdin.buffer.read(16385)\n'
+            'if len(raw)>16384: sys.exit(1)\n'
+            'request=json.loads(raw)\n'
+            'identities=' + repr(identities) + '\n'
+            'if "pass" in request or "public_key" in request or request.get("user") not in identities: sys.exit(1)\n'
+            'root,secret=identities[request["user"]]\n'
+            'print(json.dumps({"type":"local","_root":root,"_secret_access_key":secret}))\n')
+
+
+def sigv4_headers(host, method, path, key, secret, body=b'', timestamp=None):
+    # Fixed fixture paths contain only ASCII unreserved characters and '/'; no
+    # query strings. AWS SigV4 signs host, payload digest and UTC timestamp.
+    positive(re.fullmatch(r'/[A-Za-z0-9/._-]*', path) is not None, 'Unsupported signing fixture path')
+    timestamp = timestamp or datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+    payload = hashlib.sha256(body).hexdigest()
+    signed = 'host;x-amz-content-sha256;x-amz-date'
+    headers = f'host:{host}\nx-amz-content-sha256:{payload}\nx-amz-date:{timestamp}\n'
+    canonical = '\n'.join((method, path, '', headers, signed, payload))
+    scope = timestamp[:8] + '/us-east-1/s3/aws4_request'
+    message = '\n'.join(('AWS4-HMAC-SHA256', timestamp, scope, hashlib.sha256(canonical.encode()).hexdigest()))
+    signing = ('AWS4' + secret).encode()
+    for value in (timestamp[:8], 'us-east-1', 's3', 'aws4_request'):
+        signing = hmac.new(signing, value.encode(), hashlib.sha256).digest()
+    signature = hmac.new(signing, message.encode(), hashlib.sha256).hexdigest()
+    return {'Host': host, 'X-Amz-Content-Sha256': payload, 'X-Amz-Date': timestamp,
+            'Authorization': f'AWS4-HMAC-SHA256 Credential={key}/{scope}, SignedHeaders={signed}, Signature={signature}'}
+
+
+def s3_authority(runner, root):
+    trap = root / 'trap'
+    (trap / 'trap-bucket').mkdir(parents=True)
+    (trap / 'trap-bucket/secret').write_bytes(b'TRAP-SECRET')
+    identities = {}
+    for name in ('alice', 'bob', 'carol', 'static'):
+        directory = root / name
+        (directory / 'bucket').mkdir(parents=True)
+        (directory / 'bucket' / (name + '.txt')).write_bytes((name + '-only').encode())
+        identities[name] = (str(directory), name + '-secret')
+    receipts = []
+    def signed(port, method, path, key, secret, body=b''):
+        status, content = request(port, method, path, body=body,
+                                  headers=sigv4_headers('127.0.0.1:' + str(port), method, path, key, secret, body))
+        receipts.append({'port': port, 'method': method, 'path': path, 'key': key,
+                         'status': status, 'bodySha256': hashlib.sha256(content).hexdigest()})
+        return status, content
+    def denied(port, key, secret):
+        status, content = signed(port, 'GET', '/', key, secret)
+        require(not 200 <= status < 300 and b'ListAllMyBucketsResult' not in content,
+                'S3 accepted unauthorised credential: ' + key)
+        positive(status == 403, 'S3 denial was not an authentication refusal: ' + str(status))
+    with rc_servers(runner) as start:
+        ports = []
+        for names in (('alice', 'bob'), ('carol',)):
+            proxy = root / (names[0] + '-proxy.py')
+            entries = {name: identities[name] for name in names}
+            entries['empty'] = (identities[names[0]][0], '')
+            proxy.write_text(s3_proxy_source(entries))
+            options = {'type': 's3', 'fs': str(trap), 'auth_proxy': shlex.join(['/usr/bin/python3', str(proxy)])}
+            if names == ('carol',):
+                options['auth_key'] = ['fallback,fallback-secret']
+            ports.append(start(options))
+        # Same-process static server must not inherit any proxy identity key.
+        static_port = start({'type': 's3', 'fs': identities['static'][0], 'auth_key': ['static,static-secret']})
+        for name, port in (('alice', ports[0]), ('bob', ports[0]), ('carol', ports[1]), ('static', static_port)):
+            secret = identities[name][1]
+            status, content = signed(port, 'GET', '/bucket/' + name + '.txt', name, secret)
+            positive(status == 200 and content == (name + '-only').encode(), 'S3 own-file positive failed: ' + name)
+            body = (name + '-write').encode()
+            status, _ = signed(port, 'PUT', '/bucket/written.txt', name, secret, body)
+            positive(status == 200, 'S3 authenticated write failed: ' + name)
+            status, content = signed(port, 'GET', '/bucket/written.txt', name, secret)
+            positive(status == 200 and content == body, 'S3 authenticated write/read mismatch: ' + name)
+            if name != 'static':
+                denied(port, name, '')
+                denied(port, name, 'wrong-secret')
+        for port in ports:
+            for key, secret in (('unknown', ''), ('unknown', 'unknown-secret'), ('empty', ''), ('fallback', 'fallback-secret')):
+                denied(port, key, secret)
+        for key in ('alice', 'bob'):
+            denied(ports[1], key, identities[key][1])
+            denied(static_port, key, identities[key][1])
+        denied(ports[0], 'carol', identities['carol'][1])
+        denied(ports[0], 'static', identities['static'][1])
+        # Recheck identity A after B has accessed/written its own backend.
+        for name, other in (('alice', 'bob'), ('bob', 'alice')):
+            status, content = signed(ports[0], 'GET', '/bucket/written.txt', name, identities[name][1])
+            require(status == 200 and content == (name + '-write').encode(), 'S3 identity root rebound')
+            for path in ('/bucket/' + other + '.txt', '/trap-bucket/secret'):
+                status, content = signed(ports[0], 'GET', path, name, identities[name][1])
+                require(not 200 <= status < 300 and b'TRAP-SECRET' not in content and (other + '-only').encode() not in content,
+                        'S3 leaked cross-root content')
+                positive(status == 404, 'S3 cross-root response was not missing-object refusal')
+    for name in identities:
+        require((root / name / 'bucket' / (name + '.txt')).read_bytes() == (name + '-only').encode(), 'S3 sentinel changed')
+    require((trap / 'trap-bucket/secret').read_bytes() == b'TRAP-SECRET', 'S3 trap changed')
+    return {'contracts': ['RC-request-local-S3-proxies', 'per-identity-positive-read-write', 'empty-wrong-unknown-secret-denied',
+                          'auth-key-cannot-replace-proxy-secret', 'cross-server-keys-denied', 'same-process-static-key-isolation',
+                          'distinct-identity-roots-retained', 'trap-root-inaccessible', 'servers-stopped'], 'responses': receipts,
+            'scope': 'Distinct backends; shared-backend multipart and metadata remain explicit gaps.'}
+
+
 def restic(runner, root, private=False):
     control, port = port_pair()
     memory = ':memory:compat-' + ('private' if private else 'root')
@@ -384,6 +570,8 @@ def collect(binary):
             definitions = [('ordinary-copy-sync', None, smoke),
                            ('links-root-confinement', 'GHSA-cf44-9pgv-m4xc', links),
                            ('ftp-session-authority', 'GHSA-c476-6w5q-jw77', ftp_sessions),
+                           ('rc-per-server-proxy', 'GHSA-p569-5gjg-9cmj', rc_ftp_proxies),
+                           ('s3-proxy-secret-and-authority', 'GHSA-xwwr-4h3p-r22c', s3_authority),
                            ('restic-root-traversal', 'GHSA-45pq-889g-fcgh', restic),
                            ('restic-private-repository', 'GHSA-fqj9-69pf-6pjg', lambda r, p: restic(r, p, True))]
             for name, advisory, function in definitions:

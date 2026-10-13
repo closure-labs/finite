@@ -1,0 +1,385 @@
+{
+  "schema": 1,
+  "reviewedAt": "2026-10-13T08:19:15.582092+00:00",
+  "reviewedBy": "great_cto independent QA/security-officer / continuation_qa",
+  "scope": "Bounded read-only official Bodhi/Koji prerequisite metadata refresh; no installs/source enablement/builds/scans/source compilation, current dispositions or repository changes.",
+  "status": "no-new-approved-stable-owning-fix-observed",
+  "inputSha256": {
+    "docs/release-remaining-findings-2026-10-13.json": "10f37ba0ee488cf3222526bd90f5fdf800fac48672b7d9681cc032cd228741b6",
+    "docs/release-package-options-2026-10-13.json": "d01e7fc481cca4c7716ac79875e1070cb6b9f24aff8a82fe0c48b35bfd3ded56",
+    "docs/rclone-prospective-remediation-2026-10-13.json": "5a08450cdbdf328fd15059fc6825a0562f5287c9bd4efa8477fbe3157c2d0aea",
+    "docs/rclone-compatibility-evidence-2026-10-13.json": "3b45be9f3c157b1ad12369593ea69b5f49bd6b1f0ed9836d898808194a75c1ca",
+    "docs/consumer-policy-reevaluation-2026-10-13.json": "0024bf36290eee93bccc92f30b885a59eab3b7bfe14ba7ec6127e267370bd6cf",
+    "sources/kernel-next.json": "1f2130850b038f5000928953b5d8e51d19e8e03500ff583d1929df3a0840c027",
+    "sources/kernel-policy.json": "907df3b823a2bb1ee12df7c170a265eeaf76badc3a38b09430b891fa89fc3ee2"
+  },
+  "counts": {
+    "historicalRemainingLedgerStandard": 71,
+    "latestRetainedStandard": 70,
+    "latestRetainedDevelopment": 119,
+    "validatedRun": 38364577930,
+    "meaning": "Component/advisory pairs; not distinct exploits. Historical remaining ledger predates six authorization-only dispositions."
+  },
+  "rclone": {
+    "nvr": "rclone-1.75.2-1.fc44",
+    "bodhi": {
+      "alias": "FEDORA-2026-e27d24d18c",
+      "status": "testing",
+      "request": null,
+      "date_submitted": "2026-10-11 09:37:01",
+      "date_testing": "2026-10-13 02:30:13",
+      "date_stable": null,
+      "test_gating_status": "passed",
+      "meets_testing_requirements": false,
+      "stable_days": 7,
+      "stable_karma": 3,
+      "karma": 0,
+      "builds": [
+        "rclone-1.75.2-1.fc44"
+      ]
+    },
+    "officialUrl": "https://bodhi.fedoraproject.org/updates/FEDORA-2026-e27d24d18c",
+    "kojiBuildId": 3118644,
+    "currentTags": [
+      "f44-updates-testing"
+    ],
+    "latestApprovedStableTaggedNvr": "rclone-1.74.3-1.fc44",
+    "approvedStableAvailable": false,
+    "retainedAuthentication": {
+      "signedReferenceRun": 38361178024,
+      "lastCompatibilityRun": 38366200031,
+      "lastCompatibilityRevision": "cf349b5a62f577de31fc04d0f65bb8a709539d4d",
+      "keyFingerprint": "36f612dcf27f7d1a48a835e4dbfcf71c6d9f90a6",
+      "rpmSha256": "27864f31cdb6580f942b03c51ec59e95ea2ac6c426d1a871d188d92df7281219",
+      "binarySha256": "0343a46124ac5f3d64396bfb33102e6d734541979036f5d0d931358902cd686e",
+      "actualCompiler": "go1.26.9-X:nodwarf5",
+      "actualModules": [
+        "golang.org/x/crypto v0.57.0",
+        "golang.org/x/net v0.60.0"
+      ],
+      "compatibility": "Five implemented contracts pass; four named gaps remain. Reuse valid evidence; no repeat downloads/probes for unchanged bytes."
+    },
+    "potentialImpact": "14 rclone-owned component/advisory pairs supported prospectively (7 main,2 x/net,1 x/crypto,3 compiler,1 gRPC). Updating this owner is not guaranteed to reduce the total standard70 count by14 because other binaries share component/advisory groups and retained old files require separate proof.",
+    "owner": "Fedora rclone maintainer/QA for promotion; Finite for remaining compatibility, transaction and candidate qualification.",
+    "unblockEvent": "FEDORA-2026-e27d24d18c reaches status stable/date_stable and exact build3118644 is tagged f44-updates; then complete required compatibility gaps and hosted signed installed-only DNF transaction, current immutable live/retained-file/native comparison, applicable signing/VM/boot gates.",
+    "immediateCompatiblePackageChangeRecommended": false
+  },
+  "anyio": {
+    "requiredFixedVersion": "4.14.2",
+    "officialUpdateQuery": "https://bodhi.fedoraproject.org/updates/?packages=python-anyio&releases=F44&rows_per_page=20",
+    "latestObservedFedora44Updates": [
+      {
+        "alias": "FEDORA-2026-08c83416cf",
+        "status": "stable",
+        "request": null,
+        "date_submitted": "2026-05-25 05:41:14",
+        "date_testing": "2026-05-26 01:49:51",
+        "date_stable": "2026-06-02 00:53:32",
+        "test_gating_status": "ignored",
+        "meets_testing_requirements": true,
+        "stable_days": 7,
+        "stable_karma": 3,
+        "karma": 3,
+        "builds": [
+          "python-anyio-4.13.0-1.fc44"
+        ]
+      },
+      {
+        "alias": "FEDORA-2026-7d8c4d4949",
+        "status": "stable",
+        "request": null,
+        "date_submitted": "2026-01-21 23:15:01",
+        "date_testing": "2026-01-21 23:18:58",
+        "date_stable": "2026-01-21 23:20:21",
+        "test_gating_status": "ignored",
+        "meets_testing_requirements": true,
+        "stable_days": 0,
+        "stable_karma": 3,
+        "karma": 0,
+        "builds": [
+          "python-anyio-4.12.1-3.fc44"
+        ]
+      },
+      {
+        "alias": "FEDORA-2026-444e8a7728",
+        "status": "stable",
+        "request": null,
+        "date_submitted": "2026-01-06 14:33:29",
+        "date_testing": "2026-01-06 14:35:28",
+        "date_stable": "2026-01-06 14:38:21",
+        "test_gating_status": "ignored",
+        "meets_testing_requirements": true,
+        "stable_days": 0,
+        "stable_karma": 3,
+        "karma": 0,
+        "builds": [
+          "python-anyio-4.12.1-1.fc44"
+        ]
+      }
+    ],
+    "latestApprovedStableTaggedNvr": "python-anyio-4.13.0-1.fc44",
+    "exactFixedBuildPattern": "python-anyio-4.14.2-*.fc44",
+    "exactFixedBuildRecords": [],
+    "latestTestingBuildRecords": [],
+    "approvedFixedOwningPackageObserved": false,
+    "limits": "No fixed NVR observed in bounded official publication/tag/exact-build queries; not proof about unqueried/private work. Existing4.13 backport remains unproven.",
+    "officialAdvisory": "https://github.com/agronholm/anyio/security/advisories/GHSA-82r6-8w77-94w6",
+    "requiredSourceFix": "https://github.com/agronholm/anyio/commit/68f58915f82d9be8109ebbbd8f5d70577d43f2ce",
+    "owner": "Fedora python-anyio maintainer/Bluefin publishes signed owning update/backport; Finite validates actual Python code and supported consumers.",
+    "unblockEvent": "Approved signed compatible Fedora44 owning RPM carrying fixed4.14.2 implementation or specific authenticated backport; sharp-s/IDNA2008 certificate regression covers both standard/external SSLContext.wrap_bio and all selected shipped files. No pip overlay or metadata-only version inference.",
+    "immediateCompatiblePackageChangeRecommended": false
+  },
+  "nextKernel": {
+    "currentRelease": "7.2.9-300.fc45.x86_64",
+    "candidateNvr": "kernel-7.2.9-301.fc45",
+    "officialUrl": "https://bodhi.fedoraproject.org/updates/?builds=kernel-7.2.9-301.fc45&rows_per_page=20",
+    "bodhi": {
+      "alias": "FEDORA-2026-d4b8c35afa",
+      "status": "testing",
+      "request": "stable",
+      "date_submitted": "2026-10-09 18:29:08",
+      "date_testing": "2026-10-10 02:22:20",
+      "date_stable": null,
+      "test_gating_status": "passed",
+      "meets_testing_requirements": true,
+      "stable_days": 14,
+      "stable_karma": 3,
+      "karma": 9,
+      "builds": [
+        "kernel-7.2.9-301.fc45"
+      ]
+    },
+    "kojiBuildId": 3116880,
+    "source": "git+https://src.fedoraproject.org/rpms/kernel.git#6cfad0f187c5b5635e9e97ca97ef160bc267c035",
+    "currentCandidateTags": [
+      "f45-updates-testing",
+      "f45-updates-pending"
+    ],
+    "latestApprovedInheritedStableNvr": "kernel-7.2.9-300.fc45",
+    "approvedStableAvailable": false,
+    "interpretation": "Meets testing requirements and stable promotion requested; f45-updates-pending is a concrete promotion event, not stable publication. Do not substitute this kernel into generic Fedora44. Metadata does not establish source fix, signatures or boot qualification.",
+    "owner": "Fedora kernel maintainer/release infrastructure promotes same stream; Finite authenticates fixed source/RPM family and protected boot transaction.",
+    "unblockEvent": "FEDORA-2026-d4b8c35afa becomes stable and exact reviewed same-series candidate tagged f45-updates; authenticate approved Fedora45 key and all five RPM payloads/source fixes; preserve required modules, initramfs/Secure Boot and VM install/upgrade/rollback evidence.",
+    "immediateCompatiblePackageChangeRecommended": false
+  },
+  "prioritizedCompatibleRemediationLeads": [
+    {
+      "priority": 1,
+      "ownerPackage": "Fedora44 rclone",
+      "lead": "Largest already authenticated prospective owning-package improvement among refreshed prerequisites; stable-only promotion and four compatibility gaps remain; prepare transaction qualification without enabling testing.",
+      "availabilityVerdict": "external blocker; no immediate package mutation proof"
+    },
+    {
+      "priority": 2,
+      "ownerPackage": "Fedora44 python3-anyio",
+      "lead": "High-impact TLS identity bypass; signed owning fix or authenticated backport with exact standard/custom SNI positive regression.",
+      "availabilityVerdict": "external owning-package publication blocker"
+    },
+    {
+      "priority": 3,
+      "ownerPackage": "Fedora44 skopeo / owning Go consumer rebuilds",
+      "lead": "Existing standard ledger has opencontainers/selinux v1.12.0 escape advisory plus x/net0.48 and compiler/component risks. Root independent SELinux consumer review can establish exact applicability; otherwise require signed compatible owning rebuild with actual fixed embedded modules. Never infer absence/fix from client label or updated compiler alone.",
+      "availabilityVerdict": "planning lead only; new package availability not queried or claimed"
+    },
+    {
+      "priority": 4,
+      "ownerPackage": "Fedora44 glow/gum/toolbox and separate-source cosign/Tailscale consumers",
+      "lead": "Older embedded toolchains/modules account for serious retained TLS/compiler/network groups; prefer owning-publisher rebuilds whose actual shipped bytes fix relevant floors. Update ordinary Go compiler is insufficient; source/compatibility and all retained paths remain required.",
+      "availabilityVerdict": "planning lead from retained ledger only; no new availability or compatibility proof"
+    },
+    {
+      "priority": 5,
+      "ownerPackage": "Fedora45 same-series Next kernel",
+      "lead": "Proceed independently after stable promotion/source qualification; never delay a cleared standard generic channel on Next.",
+      "availabilityVerdict": "stable promotion requested but not complete"
+    }
+  ],
+  "retrievalErrors": [
+    {
+      "mechanism": "web open",
+      "urls": [
+        "https://bodhi.fedoraproject.org/updates/FEDORA-2026-e27d24d18c",
+        "https://bodhi.fedoraproject.org/updates/?packages=python-anyio&releases=F44&rows_per_page=20",
+        "https://bodhi.fedoraproject.org/updates/?builds=kernel-7.2.9-301.fc45&rows_per_page=20"
+      ],
+      "error": "Web tool returned not accessible; no availability conclusion inferred."
+    },
+    {
+      "mechanism": "sandbox urllib",
+      "error": "Temporary failure in name resolution for all3 URLs; authorized network read-only fallback succeeded."
+    }
+  ],
+  "officialMetadataReceipts": [
+    {
+      "query": "rclone",
+      "url": "https://bodhi.fedoraproject.org/updates/FEDORA-2026-e27d24d18c",
+      "retrievedAt": "2026-10-13T08:15:33.027210+00:00",
+      "httpStatus": 200,
+      "finalUrl": "https://bodhi.fedoraproject.org/updates/FEDORA-2026-e27d24d18c",
+      "bytes": 27586,
+      "sha256": "41ab97b1d9787e85a667d3e90117af42e6a3c082e601f10276dae7d1f0834620"
+    },
+    {
+      "query": "anyio",
+      "url": "https://bodhi.fedoraproject.org/updates/?packages=python-anyio&releases=F44&rows_per_page=20",
+      "retrievedAt": "2026-10-13T08:15:33.028251+00:00",
+      "httpStatus": 200,
+      "finalUrl": "https://bodhi.fedoraproject.org/updates/?packages=python-anyio&releases=F44&rows_per_page=20",
+      "bytes": 39293,
+      "sha256": "c4f4070fb9fe9c9417ee8247ae90034b94c23e1fce812ecff2a54d8f1321914a"
+    },
+    {
+      "query": "next",
+      "url": "https://bodhi.fedoraproject.org/updates/?builds=kernel-7.2.9-301.fc45&rows_per_page=20",
+      "retrievedAt": "2026-10-13T08:15:33.028869+00:00",
+      "httpStatus": 200,
+      "finalUrl": "https://bodhi.fedoraproject.org/updates/?builds=kernel-7.2.9-301.fc45&rows_per_page=20",
+      "bytes": 14594,
+      "sha256": "beb172cff72afb0b9b3d1b200e372ab7a8f3d1a12f1fb6d0c387417f24863add"
+    },
+    {
+      "query": "rclone-stable",
+      "endpoint": "https://koji.fedoraproject.org/kojihub",
+      "method": "listTagged",
+      "args": [
+        "f44-updates"
+      ],
+      "kwargs": {
+        "package": "rclone",
+        "latest": true,
+        "inherit": true
+      },
+      "retrievedAt": "2026-10-13T08:15:35.114661+00:00",
+      "bytes": 656,
+      "sha256": "58df4797961bf5e17d7da9a992b3ff87142f8edd428996b040a9b01f2f07037b",
+      "observedNvrs": [
+        "rclone-1.74.3-1.fc44"
+      ]
+    },
+    {
+      "query": "anyio-stable",
+      "endpoint": "https://koji.fedoraproject.org/kojihub",
+      "method": "listTagged",
+      "args": [
+        "f44-updates"
+      ],
+      "kwargs": {
+        "package": "python-anyio",
+        "latest": true,
+        "inherit": true
+      },
+      "retrievedAt": "2026-10-13T08:15:35.115099+00:00",
+      "bytes": 672,
+      "sha256": "f245bbf5cf5540e83ad1ffbccfdc0caff2fadc2b90db9c9f0629daf977f80071",
+      "observedNvrs": [
+        "python-anyio-4.13.0-1.fc44"
+      ]
+    },
+    {
+      "query": "anyio-fixed-build",
+      "endpoint": "https://koji.fedoraproject.org/kojihub",
+      "method": "listBuilds",
+      "args": [],
+      "kwargs": {
+        "packageID": 28928,
+        "pattern": "python-anyio-4.14.2-*.fc44",
+        "queryOpts": {
+          "limit": 10
+        }
+      },
+      "retrievedAt": "2026-10-13T08:15:35.115394+00:00",
+      "bytes": 2,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "observedNvrs": []
+    },
+    {
+      "query": "next-build",
+      "endpoint": "https://koji.fedoraproject.org/kojihub",
+      "method": "getBuild",
+      "args": [
+        "kernel-7.2.9-301.fc45"
+      ],
+      "kwargs": {},
+      "retrievedAt": "2026-10-13T08:15:35.115883+00:00",
+      "bytes": 970,
+      "sha256": "f76d0ef43f367c3f32353346863383a58fcb3ce7af55c54cff38f3d16a1537d9"
+    },
+    {
+      "query": "next-tags",
+      "endpoint": "https://koji.fedoraproject.org/kojihub",
+      "method": "listTags",
+      "args": [],
+      "kwargs": {
+        "build": 3116880
+      },
+      "retrievedAt": "2026-10-13T08:17:17.042241+00:00",
+      "observedTags": [
+        "f45-updates-testing",
+        "f45-updates-pending"
+      ]
+    },
+    {
+      "query": "rclone-tags",
+      "endpoint": "https://koji.fedoraproject.org/kojihub",
+      "method": "listTags",
+      "args": [],
+      "kwargs": {
+        "build": 3118644
+      },
+      "retrievedAt": "2026-10-13T08:17:17.042542+00:00",
+      "observedTags": [
+        "f44-updates-testing"
+      ]
+    },
+    {
+      "query": "anyio-testing",
+      "endpoint": "https://koji.fedoraproject.org/kojihub",
+      "method": "listTagged",
+      "args": [
+        "f44-updates-testing"
+      ],
+      "kwargs": {
+        "package": "python-anyio",
+        "latest": true,
+        "inherit": false
+      },
+      "retrievedAt": "2026-10-13T08:17:17.042786+00:00",
+      "observedNvrs": []
+    },
+    {
+      "query": "next-stable",
+      "endpoint": "https://koji.fedoraproject.org/kojihub",
+      "method": "listTagged",
+      "args": [
+        "f45-updates"
+      ],
+      "kwargs": {
+        "package": "kernel",
+        "latest": true,
+        "inherit": true
+      },
+      "retrievedAt": "2026-10-13T08:17:17.042906+00:00",
+      "observedNvrs": [
+        "kernel-7.2.9-300.fc45"
+      ]
+    }
+  ],
+  "rawMetadataFiles": {
+    "/tmp/finite-release-official-refresh.json": "8e139185342e2b7448c8630fb300e30f3939638decb2a32d57a6adf75c3f3ad0",
+    "/tmp/finite-release-official-tags.json": "e5071243a73a64da7bc02da450729c2861c66cc2dcbfd415da66d27db068596b"
+  },
+  "decision": {
+    "immediateCompatibleOwningPackageMutation": "None supported by refreshed stable/source/compatibility prerequisites.",
+    "continueIndependentWork": "Implement validated source/gate hardening and remaining bounded rclone compatibility/SELinux consumer proof while publishers are blocked.",
+    "requeryTrigger": "Concrete publisher update, stable tag/promotion event or signed owning fix/backport publication; no unchanged polling.",
+    "sourceBuildValidation": "Prerequisite refresh completed; no runtime package remediation implemented.",
+    "vulnerabilityClearance": "Blocked. No dispositions or current image clearance added.",
+    "releaseEligibility": false,
+    "qualificationScope": "Honor user VM sufficiency: automated VM security/signing/boot qualification is required; physical hardware/GUI unknowns are informational, not a newly imposed manual gate."
+  },
+  "repoEdited": false,
+  "jjMutated": false,
+  "githubWritten": false,
+  "fullSbomParsed": false,
+  "packageDownloaded": false
+}

@@ -34,3 +34,4 @@ jq -n --arg candidate "$candidate" --arg previous "${PREVIOUS_DIGEST:-}" \
   '{schema:1,candidate:$candidate,previousDigest:$previous,profile:$profile,
     revision:$revision,sourceRevision:$sourceRevision,buildIdentity:$identity,secureBoot:true,encryptedRoot:true,accepted:true,
     bootstrap:($previous == "")}' >".bluebuild/$PROFILE-acceptance.json"
+python3 scripts/bluebuild/desktop-qualification.py ".bluebuild/$PROFILE-acceptance.json"

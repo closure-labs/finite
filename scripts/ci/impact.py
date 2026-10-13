@@ -34,6 +34,10 @@ QUALIFICATION_ONLY = {
     'scripts/ci/httpd-reference-evidence.py',
     'scripts/ci/go-consumer-reference.py',
     'scripts/ci/rclone-compatibility.py',
+    'scripts/bluebuild/desktop-qualification.py',
+    'scripts/bluebuild/check-vm-desktop.py',
+    'scripts/bluebuild/vm-acceptance.sh', 'scripts/bluebuild/qualify.sh',
+    'scripts/bluebuild/release-evidence.py', '.github/workflows/qualification.yml',
 }
 
 

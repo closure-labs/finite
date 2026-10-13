@@ -233,6 +233,153 @@ class Contracts(unittest.TestCase):
         with self.assertRaisesRegex(app.ContractFailure, 'traversal not rejected'):
             self.restic_fixture(vulnerable=True)
 
+    def test_s3_proxy_protocol_rejects_unknown_and_password_credentials(self):
+        import sys
+        source = app.s3_proxy_source({'alice': ('/fixture/alice', 'alice-secret')})
+        for request, allowed in (({'user': 'alice'}, True), ({'user': 'unknown'}, False),
+                                 ({'user': 'alice', 'pass': ''}, False), ({'user': 'alice', 'public_key': ''}, False)):
+            output = io.StringIO()
+            with patch.object(sys, 'stdin', Mock(buffer=io.BytesIO(json.dumps(request, indent=2).encode()))), \
+                    patch.object(sys, 'stdout', output):
+                if allowed:
+                    exec(compile(source, '<fixture-proxy>', 'exec'), {})
+                    self.assertEqual(json.loads(output.getvalue()), {'type': 'local', '_root': '/fixture/alice',
+                                                                     '_secret_access_key': 'alice-secret'})
+                else:
+                    with self.assertRaises(SystemExit):
+                        exec(compile(source, '<fixture-proxy>', 'exec'), {})
+
+    def test_sigv4_canonical_request_matches_independent_fixed_fixture(self):
+        # Literal canonical request tests newline, host-port and payload binding.
+        import hmac
+        canonical = ('GET\n/bucket/alice.txt\n\nhost:127.0.0.1:1234\n'
+                     'x-amz-content-sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\n'
+                     'x-amz-date:20261013T120000Z\n\nhost;x-amz-content-sha256;x-amz-date\n'
+                     'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855')
+        key = hmac.digest(b'AWS4alice-secret', b'20261013', 'sha256')
+        key = hmac.digest(key, b'us-east-1', 'sha256')
+        key = hmac.digest(key, b's3', 'sha256')
+        key = hmac.digest(key, b'aws4_request', 'sha256')
+        message = ('AWS4-HMAC-SHA256\n20261013T120000Z\n20261013/us-east-1/s3/aws4_request\n'
+                   + hashlib.sha256(canonical.encode()).hexdigest()).encode()
+        signature = hmac.digest(key, message, 'sha256').hex()
+        headers = app.sigv4_headers('127.0.0.1:1234', 'GET', '/bucket/alice.txt', 'alice', 'alice-secret',
+                                    timestamp='20261013T120000Z')
+        self.assertTrue(headers['Authorization'].endswith('Signature=' + signature))
+        changed = app.sigv4_headers('127.0.0.1:1234', 'GET', '/bucket/alice.txt', 'alice', 'alice-secret', b'changed',
+                                    timestamp='20261013T120000Z')
+        self.assertNotEqual(headers['Authorization'], changed['Authorization'])
+        with self.assertRaises(app.ProbeError):
+            app.sigv4_headers('localhost', 'GET', '/?unimplemented', 'alice', 'secret')
+
+    def s3_fixture(self, vulnerable=False, broken=False, rebound=False, denial_status=403):
+        servers = {}
+        @contextmanager
+        def manager(runner):
+            def start(options):
+                self.assertEqual(options['type'], 's3')
+                port = len(servers) + 10000
+                if 'auth_proxy' in options:
+                    first = 'alice' if 'alice-proxy.py' in options['auth_proxy'] else 'carol'
+                    self.assertEqual(options['fs'], str(self.root / 'trap'))
+                    servers[port] = ('alice', 'bob') if first == 'alice' else ('carol',)
+                else:
+                    self.assertEqual(options['auth_key'], ['static,static-secret'])
+                    servers[port] = ('static',)
+                return port
+            yield start
+        def request(port, method, path, body, headers):
+            auth = headers['Authorization']
+            name = auth.split('Credential=', 1)[1].split('/', 1)[0]
+            expected = app.sigv4_headers('127.0.0.1:' + str(port), method, path, name, name + '-secret', body,
+                                         headers['X-Amz-Date'])
+            valid = name in servers[port] and auth == expected['Authorization']
+            if not valid:
+                return (200, b'<ListAllMyBucketsResult/>') if vulnerable else (denial_status, b'<Error><Code>AccessDenied</Code></Error>')
+            if broken:
+                return 503, b'unavailable'
+            target = self.root / name / path.lstrip('/')
+            if method == 'PUT':
+                target.write_bytes(body)
+                return 200, b''
+            if rebound and name == 'alice' and path.endswith('written.txt') and (self.root / 'bob/bucket/written.txt').exists():
+                return 200, b'bob-write'
+            return (200, target.read_bytes()) if target.exists() else (404, b'<Error><Code>NoSuchKey</Code></Error>')
+        with patch.object(app, 'rc_servers', manager), patch.object(app, 'request', request):
+            return app.case_result('s3', None, lambda: app.s3_authority(Mock(), self.root))
+
+    def test_s3_positive_read_write_and_all_secret_denials(self):
+        result = self.s3_fixture()
+        self.assertEqual(result['status'], 'pass', result)
+        self.assertGreater(len(result['evidence']['responses']), 25)
+
+    def test_s3_accepting_wrong_secret_is_security_failure(self):
+        self.assertEqual(self.s3_fixture(vulnerable=True)['status'], 'fail')
+
+    def test_s3_broken_positive_is_probe_error(self):
+        self.assertEqual(self.s3_fixture(broken=True)['status'], 'probe-error')
+
+    def test_s3_rebound_identity_is_security_failure(self):
+        self.assertEqual(self.s3_fixture(rebound=True)['status'], 'fail')
+
+    def rc_ftp_fixture(self, accept_bad=False, leak=False):
+        servers = {}
+        @contextmanager
+        def manager(runner):
+            def start(options):
+                self.assertEqual(options['fs'], str(self.root / 'trap'))
+                self.assertEqual(options['type'], 'ftp')
+                port = len(servers) + 10000
+                servers[port] = 'alice' if 'alice-proxy.py' in options['auth_proxy'] else 'bob'
+                return port
+            yield start
+        class FTP:
+            def __enter__(self): return self
+            def __exit__(self, *args): pass
+            def connect(self, host, port, **kwargs): self.name = servers[port]
+            def login(self, user, token):
+                if not accept_bad and (user != 'shared' or token != self.name + '-token'):
+                    raise app.ftplib.error_perm('530 denied')
+            def nlst(self): return [self.name + '.txt']
+            def retrbinary(self, command, callback):
+                if command == 'RETR ' + self.name + '.txt':
+                    callback((self.name + '-only').encode())
+                else:
+                    if leak:
+                        callback(b'TRAP-SECRET')
+                    raise app.ftplib.error_perm('551 File not available')
+        with patch.object(app, 'rc_servers', manager), patch.object(app.ftplib, 'FTP', FTP):
+            return app.case_result('rc-ftp', None, lambda: app.rc_ftp_proxies(Mock(), self.root))
+
+    def test_rc_ftp_request_local_proxy_controls(self):
+        result = self.rc_ftp_fixture()
+        self.assertEqual(result['status'], 'pass', result)
+        self.assertEqual(len(result['evidence']['responses']), 6)
+
+    def test_rc_ftp_accepted_bad_credentials_are_failure(self):
+        self.assertEqual(self.rc_ftp_fixture(accept_bad=True)['status'], 'fail')
+
+    def test_rc_ftp_denial_with_leaked_bytes_is_failure(self):
+        self.assertEqual(self.rc_ftp_fixture(leak=True)['status'], 'fail')
+
+    def test_s3_unrelated_denial_is_probe_error(self):
+        self.assertEqual(self.s3_fixture(denial_status=500)['status'], 'probe-error')
+
+    def test_rc_cleanup_attempts_all_servers_and_requires_closed_ports(self):
+        @contextmanager
+        def server(*args): yield
+        seen = []
+        def rc(port, operation, options):
+            seen.append((operation, options))
+            return {'id': str(len(seen))}
+        with patch.object(app, 'rc', rc), patch.object(app, 'free_port', side_effect=[10000, 10001, 10002]), \
+                patch.object(app.socket, 'create_connection', side_effect=[Mock(), ConnectionRefusedError()]):
+            with self.assertRaisesRegex(app.ProbeError, 'still accepts'):
+                with app.rc_servers(Mock(server=server)) as start:
+                    start({'type': 's3'})
+                    start({'type': 'ftp'})
+        self.assertEqual([x[0] for x in seen].count('serve/stop'), 2)
+
     def test_successful_subset_remains_incomplete_and_never_release_eligible(self):
         binary = self.root / 'fixture'
         binary.write_text('never executed')
@@ -240,7 +387,8 @@ class Contracts(unittest.TestCase):
         with patch.dict(os.environ, GITHUB_SHA='a' * 40), \
                 patch.object(app, 'hosted_guard'), patch.object(app, 'authenticate', return_value=fd), \
                 patch.object(app, 'smoke', return_value={}), patch.object(app, 'links', return_value={}), \
-                patch.object(app, 'ftp_sessions', return_value={}), patch.object(app, 'restic', return_value={}):
+                patch.object(app, 'ftp_sessions', return_value={}), patch.object(app, 'restic', return_value={}), \
+                patch.object(app, 'rc_ftp_proxies', return_value={}), patch.object(app, 's3_authority', return_value={}):
             report = app.collect(binary)
         self.assertEqual(report['status'], 'partial-pass')
         self.assertFalse(report['coverageComplete'])
@@ -248,7 +396,7 @@ class Contracts(unittest.TestCase):
         self.assertFalse(report['installationApproved'])
         self.assertEqual(report['dispositionsGranted'], [])
         self.assertTrue(all(gap['status'] == 'not-covered' for gap in report['gaps']))
-        self.assertEqual(len(report['cases']), 5)
+        self.assertEqual(len(report['cases']), 7)
 
 
 if __name__ == '__main__':

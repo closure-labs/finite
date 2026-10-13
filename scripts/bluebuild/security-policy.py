@@ -17,6 +17,7 @@ RELATED_ADVISORY = re.compile(r'(?:' + ADVISORY.pattern + r'|FEDORA(?:-EPEL)?-[0
 RISK_CLASSES = {'desktop-takeover', 'local-privilege-escalation', 'container-escape',
                 'authentication-bypass', 'tls-identity-bypass', 'major-data-loss', 'unresolved-serious'}
 PROFILES = {'bluefin-generic', 'bluefin-next', 'bluefin-dx-generic', 'bluefin-dx-next'}
+RISK_MODES = {'upstream-maintained-risk', 'desktop-critical-only'}
 SEVERITIES = {'Unknown', 'Negligible', 'Low', 'Medium', 'High', 'Critical'}
 
 
@@ -113,19 +114,30 @@ def reviewed_rules(policy, now):
 
 
 def release_blockers(policy, now):
-    """Reviewed source holds survive missing scanner matches and never expire implicitly."""
+    """Validate source concerns; explicit Critical holds survive missing scanner matches."""
     entries = policy.get('releaseBlockers', [])
     fields = {'id', 'profiles', 'riskClass', 'reason', 'officialSources', 'reviewedBy',
               'reviewedAt', 'unblockEvidence'}
     if not isinstance(entries, list) or len(entries) > 128:
         raise ValueError('Release blockers must be a bounded reviewed list')
+    critical_only = policy.get('mode') == 'desktop-critical-only'
+    if critical_only:
+        fields |= {'severity', 'advisories'}
     ids = set()
     for entry in entries:
         if (not isinstance(entry, dict) or set(entry) != fields
-                or not all(nonempty(entry[key]) for key in fields - {'profiles', 'officialSources'})
+                or not all(nonempty(entry[key]) for key in fields - {'profiles', 'officialSources', 'advisories'})
                 or not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,79}', entry['id']) or entry['id'] in ids
                 or entry['riskClass'] not in RISK_CLASSES):
             raise ValueError('Release blocker requires exact documented review')
+        if critical_only:
+            aliases = entry['advisories']
+            if (entry['severity'] not in SEVERITIES or not isinstance(aliases, list)
+                    or len(aliases) > 64
+                    or any(not isinstance(v, str) or not ADVISORY.fullmatch(v) for v in aliases)
+                    or len(set(aliases)) != len(aliases)
+                    or (entry['severity'] == 'Critical' and not aliases)):
+                raise ValueError('Source concern requires exact severity and advisory classification')
         ids.add(entry['id'])
         profiles = entry['profiles']
         if (not isinstance(profiles, list) or not profiles or len(profiles) > len(PROFILES)
@@ -146,25 +158,99 @@ def release_blockers(policy, now):
     return entries
 
 
+
+def confirmed_desktop_risks(policy, now):
+    """Review receipts establish risk; scanner advisory pairs alone do not."""
+    entries = policy['confirmedDesktopRisks']
+    lists = {'advisories', 'locations', 'officialSources', 'severityEvidence',
+             'affectedCodeEvidence', 'preconditions', 'selinuxEvidence'}
+    fields = lists | {'id', 'digest', 'profile', 'platform', 'component', 'severity',
+                      'impact', 'reason', 'attackerPath', 'selinuxAssessment', 'reviewedBy', 'reviewedAt'}
+    if not isinstance(entries, list) or len(entries) > 128:
+        raise ValueError('Confirmed desktop risks require a bounded reviewed list')
+    ids = set()
+    for entry in entries:
+        if (not isinstance(entry, dict) or set(entry) != fields
+                or not all(nonempty(entry[key]) and len(entry[key]) <= 8192 for key in fields - lists)
+                or not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,79}', entry['id']) or entry['id'] in ids
+                or not re.fullmatch(r'sha256:[0-9a-f]{64}', entry['digest'])
+                or entry['profile'] not in PROFILES or entry['platform'] != 'linux/amd64'
+                or '*' in entry['component']
+                or (entry['component'].startswith('pkg:') and '@' not in entry['component'])
+                or entry['severity'] != 'Critical'):
+            raise ValueError('Confirmed desktop risk requires exact Critical candidate scope and review')
+        ids.add(entry['id'])
+        for key in lists:
+            values = entry[key]
+            if (not isinstance(values, list) or not values or len(values) > 64
+                    or any(not nonempty(v) or len(v) > 8192 for v in values)
+                    or len(set(values)) != len(values)):
+                raise ValueError('Confirmed desktop risk requires bounded evidence: ' + key)
+        if (any(not ADVISORY.fullmatch(v) for v in entry['advisories'])
+                or any(not canonical_location(v) for v in entry['locations'])):
+            raise ValueError('Confirmed desktop risk requires exact advisories and shipped paths')
+        for source in entry['officialSources']:
+            url = urlsplit(source)
+            if url.scheme != 'https' or not url.hostname or url.username or url.password:
+                raise ValueError('Confirmed desktop risk requires official HTTPS sources')
+        if timestamp(entry['reviewedAt']) > now:
+            raise ValueError('Confirmed desktop risk review cannot be from the future')
+    return entries
+
+
+
+def validate_confirmed_findings(findings, holds):
+    """Bind blocked scanner observations to independently validated exact-image holds."""
+    if not isinstance(findings, list):
+        raise ValueError('Confirmed findings must be a list')
+    for finding in findings:
+        if (not isinstance(finding, dict) or finding.get('disposition') != 'blocked'
+                or finding.get('reason') != 'confirmed-desktop-exploitability'
+                or not nonempty(finding.get('component')) or finding.get('locationCoverage') != 'complete'):
+            raise ValueError('Blocked observation lacks confirmed desktop risk binding')
+        for key in ('confirmedRiskReviews', 'aliases', 'locations'):
+            values = finding.get(key)
+            if (not isinstance(values, list) or not values or not all(nonempty(v) for v in values)
+                    or len(set(values)) != len(values)):
+                raise ValueError('Invalid confirmed observation selectors')
+        if any(not canonical_location(v) for v in finding['locations']):
+            raise ValueError('Confirmed observation requires canonical shipped paths')
+        expected = sorted(entry['id'] for entry in holds
+                          if entry['component'] == finding['component']
+                          and set(finding['aliases']).intersection(entry['advisories'])
+                          and set(finding['locations']).intersection(entry['locations']))
+        if not expected or finding['confirmedRiskReviews'] != expected:
+            raise ValueError('Confirmed observation differs from reviewed source risk')
+
+
 def validate_policy(policy, now=None):
     if not isinstance(policy, dict) or type(policy.get('schema')) is not int or policy['schema'] != 1:
         raise ValueError('Unsupported image security policy')
     mode = policy.get('mode', 'fixable-severity')
-    if not isinstance(mode, str) or mode not in {'fixable-severity', 'upstream-maintained-risk'}:
+    if not isinstance(mode, str) or mode not in {'fixable-severity', *RISK_MODES}:
         raise ValueError('Unsupported image security policy mode')
-    if mode == 'upstream-maintained-risk':
+    if mode in RISK_MODES:
         expected = {'schema', 'mode', 'maxDatabaseAgeHours', 'maxEvidenceAgeHours', 'maxExceptionDays',
                     'distributionAliases', 'requiredReleasePackage', 'minimumRpmPackages', 'requiredProviders',
                     'blockedFixableSeverities', 'blockKnownExploited', 'exceptions', 'coverageProbePackage',
                     'seriousAdvisories', 'reviewedDispositions', 'releaseBlockers'}
+        if 'blockingBasis' in policy or 'confirmedDesktopRisks' in policy:
+            if mode != 'desktop-critical-only' or policy.get('blockingBasis') != 'reviewed-desktop-exploitability':
+                raise ValueError('Unsupported desktop release blocking basis')
+            expected |= {'blockingBasis', 'confirmedDesktopRisks'}
         if not expected - {'releaseBlockers'} <= set(policy) <= expected:
             raise ValueError('Risk policy requires exact supported fields')
-        if policy.get('blockKnownExploited') is not True:
+        if mode == 'upstream-maintained-risk' and policy.get('blockKnownExploited') is not True:
             raise ValueError('Upstream risk policy cannot disable known exploitation protection')
+        if mode == 'desktop-critical-only' and (policy.get('blockKnownExploited') is not False
+                or policy.get('blockedFixableSeverities') != ['Critical']):
+            raise ValueError('Desktop policy must explicitly track lower severity exploitation without blocking')
         if type(policy.get('maxExceptionDays')) is not int or not 1 <= policy['maxExceptionDays'] <= 30:
             raise ValueError('Risk review windows cannot exceed 30 days')
         reviewed_rules(policy, now or datetime.now(timezone.utc))
         release_blockers(policy, now or datetime.now(timezone.utc))
+        if 'blockingBasis' in policy:
+            confirmed_desktop_risks(policy, now or datetime.now(timezone.utc))
     return mode
 
 
@@ -355,7 +441,7 @@ def read_baseline(directory, path=None):
 
 def production_baseline(directory, image, policy, manifests, context):
     """Require the protected producer's publisher receipt as well as bound context."""
-    if policy.get('mode', 'fixable-severity') != 'upstream-maintained-risk':
+    if policy.get('mode', 'fixable-severity') not in RISK_MODES:
         return context
     context = baseline_binding(context, image, manifests)
     spec = importlib.util.spec_from_file_location('security_approved_baseline',
@@ -427,10 +513,19 @@ def evaluate(sbom, scan, image, policy, now=None, database_coverage=None, manife
              approved_baseline=None):
     now = now or datetime.now(timezone.utc)
     mode = validate_policy(policy, now)
-    baseline = baseline_binding(approved_baseline, image, manifests) if mode == 'upstream-maintained-risk' else None
+    baseline = baseline_binding(approved_baseline, image, manifests) if mode in RISK_MODES else None
     serious, dispositions = reviewed_rules(policy, now) if baseline else ({}, [])
     holds = [entry for entry in release_blockers(policy, now)
              if baseline['profile'] in entry['profiles']] if baseline else []
+    reviewed_basis = policy.get('blockingBasis') == 'reviewed-desktop-exploitability'
+    tracked_holds = []
+    if reviewed_basis:
+        tracked_holds = holds
+        holds = [entry for entry in confirmed_desktop_risks(policy, now)
+                 if entry['digest'] == image.split('@')[1] and entry['profile'] == baseline['profile']]
+    elif mode == 'desktop-critical-only':
+        tracked_holds = [entry for entry in holds if entry['severity'] != 'Critical']
+        holds = [entry for entry in holds if entry['severity'] == 'Critical']
     coverage = inventory(sbom, image, policy, manifests)
     descriptor = scan['descriptor']
     if descriptor['name'] != 'grype' or not descriptor['version']:
@@ -501,7 +596,11 @@ def evaluate(sbom, scan, image, policy, now=None, database_coverage=None, manife
                    'locations': locations, 'locationCoverage': 'complete' if location_complete else 'unknown'}
         if baseline:
             rules = {serious[alias]['id']: serious[alias] for alias in alias_ids if alias in serious}
-            critical = any(v.get('severity') == 'Critical' for v in [vulnerability, *related])
+            critical_aliases = sorted({v['id'] for v in [vulnerability, *related]
+                                       if v.get('severity') == 'Critical'})
+            critical = bool(critical_aliases)
+            if mode == 'desktop-critical-only':
+                finding['criticalSeverityAdvisories'] = critical_aliases
             proof = [entry for entry in dispositions
                      if entry['digest'] == image.split('@')[1] and entry['component'] == component
                      and timestamp(entry['expiresAt']) > now
@@ -510,7 +609,15 @@ def evaluate(sbom, scan, image, policy, now=None, database_coverage=None, manife
             if len(proof) > 1:
                 raise ValueError('Multiple reviewed dispositions match one occurrence')
             reviewed = proof[0] if proof else None
-            if known_blocked:
+            if mode == 'desktop-critical-only':
+                cleared = reviewed and reviewed['disposition'] in {'nonapplicable', 'backported'}
+                if critical and not cleared:
+                    disposition, reason = ('advisory', 'critical-applicability-unresolved') if reviewed_basis else (
+                        'blocked', 'critical-applicability-pending-review')
+                else:
+                    disposition = 'advisory'
+                    reason = 'reviewed-' + reviewed['disposition'] if cleared else 'below-critical-release-threshold'
+            elif known_blocked:
                 disposition, reason = 'blocked', 'known-exploited'
             elif rules and not (reviewed and reviewed['disposition'] in {'nonapplicable', 'backported'}):
                 disposition, reason = 'blocked', 'reviewed-serious-risk'
@@ -519,6 +626,13 @@ def evaluate(sbom, scan, image, policy, now=None, database_coverage=None, manife
             else:
                 disposition = 'advisory'
                 reason = 'reviewed-' + reviewed['disposition'] if reviewed else 'maintained-upstream-advisory'
+            if reviewed_basis:
+                confirmed = [entry['id'] for entry in holds if entry['component'] == component
+                             and set(alias_ids).intersection(entry['advisories'])
+                             and location_complete and set(locations).intersection(entry['locations'])]
+                if confirmed:
+                    disposition, reason = 'blocked', 'confirmed-desktop-exploitability'
+                    finding['confirmedRiskReviews'] = sorted(confirmed)
             finding.update(disposition=disposition, reason=reason, reviewRules=sorted(rules),
                            riskClasses=sorted({entry['riskClass'] for entry in rules.values()}))
             if reviewed and disposition == 'advisory':
@@ -533,10 +647,10 @@ def evaluate(sbom, scan, image, policy, now=None, database_coverage=None, manife
             finding.update(disposition=disposition, reason='known-exploited' if known_blocked else (
                 'fixable-severity' if severity_blocked else 'outside-legacy-blocking-scope'))
             {'blocked': blocked, 'exception': waived, 'advisory': advisories}[disposition].append(finding)
-        # Neither an ordinary exception nor scanner suppression can erase an
-        # observation or disable the known-exploitation gate.
+        # Exceptions and scanner suppressions never erase observations.
+        # Desktop-critical mode explicitly tracks lower-severity exploitation.
         observations.append(finding)
-    return {'schema': 1, 'status': 'blocked' if blocked or holds else 'pass', 'image': image,
+    result = {'schema': 1, 'status': 'blocked' if blocked or holds else 'pass', 'image': image,
             'scannedAt': descriptor['timestamp'], 'scanner': descriptor['version'],
             'database': db, 'coverage': coverage, 'databaseCoverageRecords': len(database_coverage),
             'matches': len(matches),
@@ -544,6 +658,12 @@ def evaluate(sbom, scan, image, policy, now=None, database_coverage=None, manife
             'releaseBlockers': holds,
             'blocked': blocked, 'exceptionsApplied': waived, 'advisories': advisories,
             'observations': observations}
+    if mode == 'desktop-critical-only':
+        result['trackedReleaseConcerns'] = tracked_holds
+    if reviewed_basis:
+        validate_confirmed_findings(blocked, holds)
+        result['blockingBasis'] = policy['blockingBasis']
+    return result
 
 
 def verify(directory, image, policy_path=ROOT / 'automation/security/image-policy.json',

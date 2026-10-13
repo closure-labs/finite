@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Compact hosted triage from retained native evidence, without granting clearance."""
 import argparse
+from datetime import datetime, timezone
 import hashlib
 import importlib.util
 import json
@@ -74,6 +75,39 @@ def report(sbom, result, extraction, image, sbom_hash):
             or sbom.get('source', {}).get('type') != 'directory'
             or sbom.get('source', {}).get('metadata', {}).get('path') != prefix):
         raise ValueError('Native directory source does not match extraction')
+    critical_only = result.get('mode') == 'desktop-critical-only'
+    basis = result.get('blockingBasis')
+    if basis is not None and (not critical_only or basis != 'reviewed-desktop-exploitability'):
+        raise ValueError('Unsupported native result blocking basis')
+    reviewed_basis = basis == 'reviewed-desktop-exploitability'
+    tracked = result.get('trackedReleaseConcerns', [])
+    if critical_only:
+        if 'trackedReleaseConcerns' not in result or 'releaseBlockers' not in result:
+            raise ValueError('Critical-only result must retain classified source concerns')
+        # A retained scan can be reevaluated against a newer policy review.
+        # Validate review timestamps now without refreshing scan evidence.
+        reviewed_now = datetime.now(timezone.utc)
+        if reviewed_basis:
+            baseline = result.get('approvedBaseline')
+            if (not isinstance(baseline, dict) or baseline.get('image') != image
+                    or baseline.get('profile') not in security.PROFILES):
+                raise ValueError('Confirmed desktop risks require exact candidate profile binding')
+            holds = security.confirmed_desktop_risks(
+                {'confirmedDesktopRisks': result['releaseBlockers']}, reviewed_now)
+            if (any(entry['digest'] != image.split('@')[1] or entry['profile'] != baseline['profile']
+                    for entry in holds)):
+                raise ValueError('Confirmed desktop risk result contradicts candidate scope or blocking basis')
+            security.validate_confirmed_findings(result['blocked'], holds)
+        else:
+            holds = security.release_blockers(
+                {'mode': result['mode'], 'releaseBlockers': result['releaseBlockers']}, reviewed_now)
+        tracked = security.release_blockers(
+            {'mode': result['mode'], 'releaseBlockers': tracked}, reviewed_now)
+        if not reviewed_basis and (any(entry['severity'] != 'Critical' for entry in holds) or any(
+                entry['severity'] == 'Critical' for entry in tracked)):
+            raise ValueError('Source concern disposition contradicts Critical-only policy')
+    elif not isinstance(tracked, list):
+        raise ValueError('Invalid tracked source concerns')
     blocked = result['blocked']
     if (result['status'] == 'blocked') != bool(blocked or result.get('releaseBlockers')):
         raise ValueError('Native result status contradicts findings/source holds')
@@ -89,11 +123,22 @@ def report(sbom, result, extraction, image, sbom_hash):
                 or finding.get('severity') not in security.SEVERITIES or not security.nonempty(finding.get('reason'))
                 or type(finding['knownExploited']) is not bool):
             raise ValueError('Blocked finding requires complete typed component/advisory/path evidence')
+        critical_aliases = finding.get('criticalSeverityAdvisories', [])
+        if (not isinstance(critical_aliases, list) or len(critical_aliases) > 128
+                or any(not isinstance(alias, str) or alias not in aliases for alias in critical_aliases)
+                or len(set(critical_aliases)) != len(critical_aliases)
+                or (critical_only and not reviewed_basis and (not critical_aliases or
+                    (finding['severity'] == 'Critical' and advisory not in critical_aliases)))):
+            raise ValueError('Invalid or missing Critical severity advisory evidence')
         key = component, advisory
         entry = grouped.setdefault(key, {'component': component, 'advisory': advisory, 'aliases': set(),
             'locations': set(), 'reasons': set(), 'severities': set(), 'knownExploited': False,
-            'locationCoverage': 'complete', 'occurrences': 0, 'fixStates': set(), 'fixVersions': set()})
+            'locationCoverage': 'complete', 'occurrences': 0, 'fixStates': set(), 'fixVersions': set(),
+            'criticalSeverityAdvisories': set(), 'confirmedRiskReviews': set()})
         entry['aliases'].update(aliases)
+        entry['criticalSeverityAdvisories'].update(critical_aliases)
+        if reviewed_basis:
+            entry['confirmedRiskReviews'].update(finding['confirmedRiskReviews'])
         entry['locations'].update(paths)
         entry['reasons'].add(finding['reason'])
         entry['severities'].add(finding['severity'])
@@ -176,7 +221,7 @@ def report(sbom, result, extraction, image, sbom_hash):
     findings = []
     for key in sorted(grouped):
         entry = grouped[key]
-        for field in ('aliases', 'locations', 'reasons', 'severities', 'fixStates', 'fixVersions'):
+        for field in ('aliases', 'locations', 'reasons', 'severities', 'fixStates', 'fixVersions', 'criticalSeverityAdvisories', 'confirmedRiskReviews'):
             entry[field] = sorted(entry[field])
         matches = components[entry['component']]
         observed = {path for match in matches for path in match['locations']}
@@ -191,6 +236,7 @@ def report(sbom, result, extraction, image, sbom_hash):
     return {'schema': 1, 'status': 'triage-only', 'image': image, 'nativePolicyStatus': result['status'],
             'scannedAt': result['scannedAt'], 'policySha256': result['policySha256'], 'sbomSha256': sbom_hash,
             'blockingRecords': len(blocked), 'blockingPairs': len(findings), 'releaseBlockers': result.get('releaseBlockers', []),
+            'blockingBasis': basis, 'trackedReleaseConcerns': tracked, 'policyMode': result.get('mode', 'fixable-severity'),
             'findings': findings, 'focusedRpmPackages': list(package_files.values()),
             'releaseEligible': False, 'dispositionsGranted': [], 'newScanPerformed': False,
             'releaseFreshnessReevaluated': False,

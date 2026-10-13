@@ -98,17 +98,42 @@ def compare(ledger, result, image, policy, policy_sha256, now=None):
             type(result['databaseCoverageRecords']) is not int or result['databaseCoverageRecords'] < 1):
         raise ValueError('Result lacks validated digest/distribution/inventory coverage')
     previous = findings(ledger['findings'])
-    risk_mode = policy.get('mode') == 'upstream-maintained-risk'
-    if risk_mode and result.get('mode') != 'upstream-maintained-risk':
+    risk_mode = policy.get('mode') in security.RISK_MODES
+    if risk_mode and result.get('mode') != policy.get('mode'):
         raise ValueError('Result does not identify the reviewed risk policy mode')
     if risk_mode and 'advisories' not in result:
         raise ValueError('Risk policy result must retain advisory observations')
     if risk_mode and 'releaseBlockers' not in result:
         raise ValueError('Risk policy result must retain reviewed source release blockers')
-    holds = security.release_blockers({'releaseBlockers': result.get('releaseBlockers', [])}, now)
+    if result.get('blockingBasis') != policy.get('blockingBasis'):
+        raise ValueError('Result does not identify the reviewed blocking basis')
+    reviewed_basis = policy.get('blockingBasis') == 'reviewed-desktop-exploitability'
+    if reviewed_basis:
+        baseline = result.get('approvedBaseline')
+        if (policy.get('mode') != 'desktop-critical-only' or not isinstance(baseline, dict)
+                or baseline.get('image') != image or baseline.get('profile') not in security.PROFILES):
+            raise ValueError('Confirmed desktop risk result requires exact candidate profile binding')
+        holds = security.confirmed_desktop_risks({'confirmedDesktopRisks': result['releaseBlockers']}, now)
+        expected_holds = [entry for entry in security.confirmed_desktop_risks(policy, now)
+                          if entry['digest'] == image.split('@')[1] and entry['profile'] == baseline['profile']]
+        if holds != expected_holds:
+            raise ValueError('Confirmed desktop risk holds differ from reviewed candidate policy')
+        security.validate_confirmed_findings(result['blocked'], holds)
+    else:
+        holds = security.release_blockers(
+            {'mode': policy.get('mode'), 'releaseBlockers': result.get('releaseBlockers', [])}, now)
     advisory_entries = result.get('advisories', [])
     blocked, waived, advisories = (findings(result['blocked']), findings(result['exceptionsApplied']),
                                    findings(advisory_entries))
+    tracked = []
+    if policy.get('mode') == 'desktop-critical-only':
+        if 'trackedReleaseConcerns' not in result:
+            raise ValueError('Critical-only result must retain advisory source concerns')
+        tracked = security.release_blockers(
+            {'mode': policy['mode'], 'releaseBlockers': result['trackedReleaseConcerns']}, now)
+        if not reviewed_basis and (any(entry['severity'] != 'Critical' for entry in holds) or any(
+                entry['severity'] == 'Critical' for entry in tracked)):
+            raise ValueError('Source concern disposition contradicts Critical-only policy')
     if (result['status'] == 'blocked') != bool(blocked or holds):
         raise ValueError('Result status contradicts its blocking findings or source release blockers')
     current = findings([*result['blocked'], *result['exceptionsApplied'], *advisory_entries])
@@ -124,7 +149,8 @@ def compare(ledger, result, image, policy, policy_sha256, now=None):
             'image': image, 'scannedAt': result['scannedAt'], 'scanStatus': result['status'],
             'baselinePolicySha256': ledger['policySha256'], 'policySha256': policy_sha256,
             'policyChanged': ledger['policySha256'] != policy_sha256,
-            'releaseBlockers': holds,
+            'blockingBasis': result.get('blockingBasis'),
+                'releaseBlockers': holds, 'trackedReleaseConcerns': tracked,
             'scope': 'Exact component/advisory pairs observed in blocking findings, reviewed exceptions, and advisories. Policy disposition changes do not resolve findings.',
             'counts': {'blockingRecords': sum(entry['occurrences'] for entry in blocked.values()),
                        'exceptionRecords': sum(entry['occurrences'] for entry in waived.values()),

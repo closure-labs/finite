@@ -111,7 +111,10 @@ def probe(policy, prerequisites, runner=None, risk_policy=None):
         records = [{**record, 'meetsUpstreamMinimum': upstream_meets(record['evr'], entry['minimumUpstreamVersion'], runner)}
                    for record in packages[name]]
         status = 'missing' if not records else 'available' if any(row['meetsUpstreamMinimum'] for row in records) else 'outdated'
-        blocking = mode != 'upstream-maintained-risk' or bool(serious_aliases.intersection(entry['advisories']))
+        # Repository metadata has no candidate severity or applicability evidence.
+        # Critical-only decisions belong to the authenticated candidate scanner.
+        blocking = (mode != 'desktop-critical-only' and
+                    (mode != 'upstream-maintained-risk' or bool(serious_aliases.intersection(entry['advisories']))))
         prerequisite_rows.append({'name': name, **entry, 'status': status, 'available': records,
                                   'blockingUnderCurrentPolicy': blocking, 'scannerResolution': 'unknown'})
     prerequisite_ready = all(row['status'] == 'available' for row in prerequisite_rows
@@ -128,7 +131,7 @@ def probe(policy, prerequisites, runner=None, risk_policy=None):
             'limits': 'Metadata availability only; no RPM payload signature or transaction verification, '
                       'no installation, no multilib solver proof, and no new image vulnerability scan. '
                       'Even available prerequisites are not a passing security scan or proof of embedded fixes. '
-                      'Advisory-only metadata rows are retained but do not block readiness; actual Critical/KEV, '
+                      'Advisory-only metadata rows are retained but do not block readiness; the selected candidate severity/exploitation policy, '
                       'artifact applicability and source holds remain enforced by the candidate security policy.'}
 
 

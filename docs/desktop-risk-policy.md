@@ -1,3 +1,14 @@
+> Superseding clarification: Critical scanner matches alone are nonblocking
+> advisories. Release blocking requires a reviewed, exact-candidate desktop
+> exploitability record including SELinux analysis. Historical counts below
+> do not constitute the current release verdict.
+
+> Current policy update (2026-10-13): the release owner selected
+> `desktop-critical-only`. Lower-severity serious/KEV findings below remain
+> tracked, not release blockers. Critical applicability still requires exact
+> evidence. The earlier policy and counts below are historical; see
+> [the current contract](desktop-release-qualification.md#critical-only-release-decision-2026-10-13).
+
 # Desktop risk policy
 
 Finite uses Bluefin/bootc with Nix and Home Manager, not NixOS. This policy covers all four desktop profiles and their development/container tools: hostile websites, downloads, archives and images; local privilege escalation; VPN and remote-service exposure; and attacks on development dependencies. SELinux remains required, but it does not establish that a vulnerable program cannot expose user files, credentials, authentication decisions or an affected container boundary.

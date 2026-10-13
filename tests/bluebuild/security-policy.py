@@ -31,7 +31,10 @@ DATABASE_COVERAGE = [{'vulnerability': {'provider': 'fedora'},
 def evidence():
     policy = security.load_policy(ROOT / 'automation/security/image-policy.json')
     # Historical gate fixtures remain independent of the live reviewed mode.
-    policy['mode'] = 'fixable-severity'
+    policy.pop('blockingBasis', None)
+    policy.pop('confirmedDesktopRisks', None)
+    policy.update(mode='fixable-severity', blockKnownExploited=True,
+                  blockedFixableSeverities=['High', 'Critical'])
     sbom = {'source': {'type': 'image', 'metadata': {'manifestDigest': DIGEST}},
             'distro': {'id': 'bluefin', 'versionID': '44'},
             'artifacts': [{'id': str(i), 'type': 'rpm', 'foundBy': 'rpm-db-cataloger', 'name': 'package-' + str(i), 'version': '1'}
@@ -674,7 +677,11 @@ class PublicationBoundary(unittest.TestCase):
                 provider['captured'] = stamp
             (security_dir / 'sbom.syft.json').write_text(json.dumps(sbom))
             (security_dir / 'database-coverage.json').write_text(json.dumps(DATABASE_COVERAGE))
-            with patch.dict(os.environ, GITHUB_SHA='revision', FINITE_QUALIFICATION_MODE='enforce'):
+            # Isolate the native-security gate; desktop receipt validation has
+            # dedicated coverage and must not mask these security mutations.
+            with patch.dict(os.environ, GITHUB_SHA='revision', FINITE_QUALIFICATION_MODE='enforce'), \
+                    patch.object(publication.desktop, 'verify') as desktop:
+
                 for failure in ('missing', 'stale', 'vulnerable', 'missing-binding'):
                     with self.subTest(failure=failure):
                         current = json.loads(json.dumps(scan))
@@ -692,6 +699,7 @@ class PublicationBoundary(unittest.TestCase):
                 with patch.object(publication.subprocess, 'run', side_effect=subprocess.CalledProcessError(1, 'cosign')) as registry:
                     with self.assertRaises(subprocess.CalledProcessError):
                         publication.promote(profile, root)
+                    desktop.assert_called()
                     self.assertEqual(registry.call_count, 1)
                     self.assertEqual(registry.call_args.args[0][:2], ['cosign', 'verify'])
 
@@ -763,6 +771,18 @@ class UpstreamRiskPolicy(unittest.TestCase):
 
     def ordinary_exception(self):
         return {**Policy.exact_exception(self), 'digest': self.digest}
+
+    def test_historical_output_omits_new_mode_metadata(self):
+        self.located()
+        result = self.evaluate()
+        self.assertNotIn('trackedReleaseConcerns', result)
+        self.assertNotIn('criticalSeverityAdvisories', result['blocked'][0])
+        policy, sbom, scan = evidence()
+        scan['matches'] = [finding()]
+        result = security.evaluate(sbom, scan, IMAGE, policy, NOW,
+                                   database_coverage=DATABASE_COVERAGE)
+        self.assertNotIn('trackedReleaseConcerns', result)
+        self.assertNotIn('criticalSeverityAdvisories', result['blocked'][0])
 
     def test_routine_findings_are_visible_not_cleared_or_erased(self):
         self.scan['matches'] = [finding('High'), finding('High', False), finding('Medium'), finding('Low')]
@@ -1233,6 +1253,289 @@ class UpstreamRiskPolicy(unittest.TestCase):
         self.assertEqual(self.evaluate()['status'], 'blocked')
         self.policy['releaseBlockers'] = []
         self.assertEqual(self.evaluate()['status'], 'pass')
+
+
+class DesktopCriticalPolicy(unittest.TestCase):
+    # Reuse evidence builders, not the old mode's deliberately different verdicts.
+    bind_config = UpstreamRiskPolicy.bind_config
+    bind_manifest = UpstreamRiskPolicy.bind_manifest
+    evaluate = UpstreamRiskPolicy.evaluate
+    located = UpstreamRiskPolicy.located
+    disposition = UpstreamRiskPolicy.disposition
+    serious = UpstreamRiskPolicy.serious
+    profile = UpstreamRiskPolicy.profile
+    ordinary_exception = UpstreamRiskPolicy.ordinary_exception
+    write_metadata = UpstreamRiskPolicy.write_metadata
+
+    def setUp(self):
+        UpstreamRiskPolicy.setUp(self)
+        self.policy.update(mode='desktop-critical-only', blockKnownExploited=False,
+                           blockedFixableSeverities=['Critical'])
+
+    def test_noncritical_serious_and_exploited_findings_remain_visible(self):
+        self.serious()
+        for severity in ('Unknown', 'Negligible', 'Low', 'Medium', 'High'):
+            for ignored in (False, True):
+                with self.subTest(severity=severity, ignored=ignored):
+                    match = self.located(severity)
+                    match['vulnerability']['knownExploited'] = [{}]
+                    self.scan['matches'] = [] if ignored else [match]
+                    self.scan['ignoredMatches'] = [match] if ignored else []
+                    result = self.evaluate()
+                    self.assertEqual(result['status'], 'pass')
+                    self.assertEqual(result['observations'], result['advisories'])
+                    self.assertTrue(result['advisories'][0]['knownExploited'])
+                    self.assertEqual(result['advisories'][0]['reviewRules'], ['fixture-serious'])
+                    self.assertEqual(result['advisories'][0]['reason'], 'below-critical-release-threshold')
+
+    def test_critical_aliases_block_even_without_cve_primary_or_fix(self):
+        for primary in ('CVE-2026-1234', 'GHSA-aaaa-bbbb-cccc', 'GO-2026-6604'):
+            for related in (False, True):
+                for ignored in (False, True):
+                    with self.subTest(primary=primary, related=related, ignored=ignored):
+                        match = self.located('High' if related else 'Critical')
+                        match['vulnerability']['id'] = primary
+                        if related:
+                            match['relatedVulnerabilities'] = [{'id': 'CVE-2026-1234', 'severity': 'Critical'}]
+                        self.scan['matches'] = [] if ignored else [match]
+                        self.scan['ignoredMatches'] = [match] if ignored else []
+                        result = self.evaluate()
+                        self.assertEqual(result['status'], 'blocked')
+                        self.assertEqual(result['blocked'][0]['reason'], 'critical-applicability-pending-review')
+                        self.assertEqual(result['blocked'][0]['criticalSeverityAdvisories'],
+                                         ['CVE-2026-1234' if related else primary])
+
+    def test_critical_cannot_be_cleared_by_routine_or_ordinary_exception(self):
+        self.located()
+        self.policy['exceptions'] = [self.ordinary_exception()]
+        self.disposition('routine')
+        result = self.evaluate()
+        self.assertEqual(result['status'], 'blocked')
+        self.assertEqual(result['exceptionsApplied'], [])
+        self.assertNotIn('reviewedDisposition', result['blocked'][0])
+
+    def test_exact_nonapplicable_or_backport_proof_clears_even_critical_kev(self):
+        match = self.located()
+        match['vulnerability']['knownExploited'] = [{}]
+        for disposition in ('nonapplicable', 'backported'):
+            with self.subTest(disposition=disposition):
+                self.disposition(disposition)
+                result = self.evaluate()
+                self.assertEqual(result['status'], 'pass')
+                self.assertEqual(result['advisories'][0]['reason'], 'reviewed-' + disposition)
+                self.assertTrue(result['advisories'][0]['knownExploited'])
+
+    def test_critical_proof_cannot_follow_different_digest_path_alias_or_version(self):
+        for mutation in ('digest', 'version', 'path', 'alias', 'expired', 'missing-locations'):
+            with self.subTest(mutation=mutation):
+                self.setUp()
+                match = self.located()
+                proof = self.disposition('nonapplicable')
+                if mutation == 'digest': proof['digest'] = DIGEST
+                if mutation == 'version': match['artifact']['purl'] += '2'
+                if mutation == 'path': match['artifact']['locations'].append({'path': '/usr/bin/other'})
+                if mutation == 'alias': match['relatedVulnerabilities'] = [{'id': 'CVE-2026-9876'}]
+                if mutation == 'expired': proof['expiresAt'] = '2026-10-12T11:00:00Z'
+                if mutation == 'missing-locations': match['artifact']['locations'] = []
+                self.assertEqual(self.evaluate()['status'], 'blocked')
+
+    def test_missing_baseline_and_malformed_scanner_still_fail_closed(self):
+        with self.assertRaises(ValueError):
+            self.evaluate(False)
+        for mutation in ('stale', 'invalid-db', 'missing-coverage', 'malformed-severity'):
+            with self.subTest(mutation=mutation):
+                self.setUp()
+                match = self.located('High')
+                if mutation == 'stale': self.scan['descriptor']['timestamp'] = '2026-01-01T00:00:00Z'
+                if mutation == 'invalid-db': self.scan['descriptor']['db']['status']['valid'] = False
+                if mutation == 'missing-coverage': self.sbom['artifacts'] = []
+                if mutation == 'malformed-severity': match['vulnerability']['severity'] = 'critical'
+                with self.assertRaises(ValueError):
+                    self.evaluate()
+
+    def test_source_holds_only_block_explicit_critical_advisories(self):
+        self.profile('bluefin-next')
+        hold = UpstreamRiskPolicy.kernel_hold(self)
+        hold.update(severity='Unknown', advisories=[])
+        for severity in ('Unknown', 'High', 'Critical'):
+            with self.subTest(severity=severity):
+                hold.update(severity=severity, advisories=['CVE-2026-1234'] if severity == 'Critical' else [])
+                result = self.evaluate()
+                self.assertEqual(result['status'], 'blocked' if severity == 'Critical' else 'pass')
+                self.assertEqual(result['releaseBlockers'], [hold] if severity == 'Critical' else [])
+                self.assertEqual(result['trackedReleaseConcerns'], [] if severity == 'Critical' else [hold])
+                self.assertEqual(result['matches'], 0)
+
+    def test_source_hold_classification_requires_explicit_valid_evidence(self):
+        for change in ('missing', 'severity', 'empty-critical', 'wildcard'):
+            with self.subTest(change=change):
+                self.setUp()
+                hold = UpstreamRiskPolicy.kernel_hold(self)
+                hold.update(severity='Critical', advisories=['CVE-2026-1234'])
+                if change == 'missing': del hold['severity']
+                if change == 'severity': hold['severity'] = 'critical'
+                if change == 'empty-critical': hold['advisories'] = []
+                if change == 'wildcard': hold['advisories'] = ['CVE-*']
+                with self.assertRaises(ValueError):
+                    self.evaluate()
+
+    def test_production_still_requires_protected_publisher_receipt(self):
+        UpstreamRiskPolicy.test_production_verify_rejects_naked_context_before_catalog_or_evaluate(self)
+
+    def test_mode_rejects_misleading_threshold_or_kev_configuration(self):
+        for key, value in [('blockKnownExploited', True), ('blockedFixableSeverities', ['High', 'Critical'])]:
+            with self.subTest(key=key):
+                self.setUp()
+                self.policy[key] = value
+                with self.assertRaises(ValueError):
+                    self.evaluate()
+
+
+class ReviewedDesktopExploitability(unittest.TestCase):
+    bind_config = UpstreamRiskPolicy.bind_config
+    bind_manifest = UpstreamRiskPolicy.bind_manifest
+    evaluate = UpstreamRiskPolicy.evaluate
+    located = UpstreamRiskPolicy.located
+    disposition = UpstreamRiskPolicy.disposition
+    serious = UpstreamRiskPolicy.serious
+    profile = UpstreamRiskPolicy.profile
+
+    def setUp(self):
+        DesktopCriticalPolicy.setUp(self)
+        self.policy.update(blockingBasis='reviewed-desktop-exploitability', confirmedDesktopRisks=[])
+
+    def confirmed(self):
+        receipt = {
+            'id': 'confirmed-fixture', 'digest': self.digest, 'profile': self.baseline['profile'],
+            'platform': 'linux/amd64', 'component': 'pkg:rpm/fedora/example@1', 'severity': 'Critical',
+            'advisories': ['CVE-2026-1234'], 'locations': ['/usr/bin/example'],
+            'officialSources': ['https://example.org/security/CVE-2026-1234'],
+            'severityEvidence': ['Official advisory rates unauthenticated remote takeover Critical'],
+            'affectedCodeEvidence': ['sha256:' + 'a' * 64 + ':exact-file-function-review'],
+            'impact': 'Unauthenticated hostile input executes code with desktop user authority',
+            'attackerPath': 'Supported desktop application opens attacker-controlled file',
+            'preconditions': ['Default supported file handler installed and reachable'],
+            'selinuxAssessment': 'Verified application domain permits the affected user-file access',
+            'selinuxEvidence': ['sha256:' + 'b' * 64 + ':guest-domain-and-policy-review'],
+            'reason': 'Exact image evidence establishes the supported exploit path',
+            'reviewedBy': 'fixture-reviewer', 'reviewedAt': STAMP}
+        self.policy['confirmedDesktopRisks'] = [receipt]
+        return receipt
+
+    def test_critical_advisory_pairs_are_unresolved_not_automatic_blockers(self):
+        self.serious()
+        for primary in ('High', 'Critical'):
+            with self.subTest(primary=primary):
+                match = self.located(primary)
+                match['relatedVulnerabilities'] = [{'id': 'GO-2026-6604', 'severity': 'Critical'}]
+                match['vulnerability']['knownExploited'] = [{}]
+                self.scan['matches'], self.scan['ignoredMatches'] = [], [match]
+                result = self.evaluate()
+                self.assertEqual(result['status'], 'pass')
+                self.assertEqual(result['blocked'], [])
+                self.assertEqual(result['advisories'][0]['reason'], 'critical-applicability-unresolved')
+                self.assertTrue(result['advisories'][0]['knownExploited'])
+                self.assertEqual(result['observations'], result['advisories'])
+                self.assertEqual(result['blockingBasis'], 'reviewed-desktop-exploitability')
+
+    def test_old_critical_source_concern_alone_is_only_tracked(self):
+        self.profile('bluefin-next')
+        concern = UpstreamRiskPolicy.kernel_hold(self)
+        concern.update(severity='Critical', advisories=['CVE-2026-1234'])
+        result = self.evaluate()
+        self.assertEqual(result['status'], 'pass')
+        self.assertEqual(result['releaseBlockers'], [])
+        self.assertEqual(result['trackedReleaseConcerns'], [concern])
+
+    def test_confirmed_exact_source_risk_blocks_even_without_scanner_match(self):
+        receipt = self.confirmed()
+        result = self.evaluate()
+        self.assertEqual(result['status'], 'blocked')
+        self.assertEqual(result['releaseBlockers'], [receipt])
+        self.assertEqual(result['matches'], 0)
+        self.assertEqual(result['observations'], [])
+
+    def test_confirmed_risk_cannot_follow_different_image_or_profile(self):
+        for key, value in [('digest', DIGEST), ('profile', 'bluefin-next')]:
+            with self.subTest(key=key):
+                self.confirmed()[key] = value
+                self.assertEqual(self.evaluate()['status'], 'pass')
+                self.assertEqual(self.evaluate()['releaseBlockers'], [])
+
+    def test_nonapplicable_review_does_not_silently_remove_confirmed_source_hold(self):
+        self.confirmed()
+        self.located()
+        self.disposition('nonapplicable')
+        result = self.evaluate()
+        self.assertEqual(result['status'], 'blocked')
+        self.assertEqual(result['blocked'][0]['reason'], 'confirmed-desktop-exploitability')
+        self.assertEqual(result['blocked'][0]['confirmedRiskReviews'], ['confirmed-fixture'])
+        self.assertEqual(len(result['releaseBlockers']), 1)
+
+    def test_confirmed_holds_require_full_exact_evidence(self):
+        mutations = [('severity', 'High'), ('digest', 'latest'), ('profile', 'all'),
+                     ('platform', 'windows/amd64'), ('component', 'pkg:rpm/fedora/example'),
+                     ('component', '*'), ('advisories', []), ('advisories', ['CVE-*']),
+                     ('locations', ['/usr/../bin/example']), ('locations', []),
+                     ('officialSources', ['http://example.org']), ('affectedCodeEvidence', []),
+                     ('severityEvidence', []), ('attackerPath', ''), ('preconditions', []),
+                     ('selinuxAssessment', ''), ('selinuxEvidence', []), ('impact', ''),
+                     ('reviewedBy', ''), ('reviewedAt', '2026-10-13T00:00:00Z'),
+                     ('affectedCodeEvidence', ['x' * 8193]), ('unknown', True)]
+        for key, value in mutations:
+            with self.subTest(key=key, value=value):
+                self.confirmed()[key] = value
+                with self.assertRaises(ValueError):
+                    self.evaluate()
+        self.confirmed().pop('selinuxEvidence')
+        with self.assertRaises(ValueError):
+            self.evaluate()
+        record = self.confirmed()
+        self.policy['confirmedDesktopRisks'].append(dict(record))
+        with self.assertRaises(ValueError):
+            self.evaluate()
+
+    def test_basis_requires_explicit_valid_mode_and_list(self):
+        for key, value in [('mode', 'upstream-maintained-risk'), ('blockingBasis', 'scanner-count'),
+                           ('confirmedDesktopRisks', None)]:
+            with self.subTest(key=key):
+                self.setUp()
+                self.policy[key] = value
+                with self.assertRaises(ValueError):
+                    self.evaluate()
+        self.setUp()
+        del self.policy['confirmedDesktopRisks']
+        with self.assertRaises(ValueError):
+            self.evaluate()
+
+    def test_old_critical_mode_output_and_verdict_preserved_without_opt_in(self):
+        self.policy.pop('blockingBasis')
+        self.policy.pop('confirmedDesktopRisks')
+        self.located()
+        result = self.evaluate()
+        self.assertEqual(result['status'], 'blocked')
+        self.assertEqual(result['blocked'][0]['reason'], 'critical-applicability-pending-review')
+        self.assertNotIn('blockingBasis', result)
+
+    def test_confirmed_blocked_observation_references_are_independently_checked(self):
+        self.confirmed()
+        self.located('High')
+        result = self.evaluate()
+        self.assertEqual(result['blocked'][0]['severity'], 'High')
+        security.validate_confirmed_findings(result['blocked'], result['releaseBlockers'])
+        original = result['blocked'][0]
+        for key, value in [('confirmedRiskReviews', ['wrong-review']), ('component', 'other-component'),
+                           ('locations', ['/usr/bin/other']), ('aliases', ['CVE-2026-9999']),
+                           ('reason', 'critical-applicability-unresolved'), ('locationCoverage', 'unknown')]:
+            with self.subTest(key=key):
+                with self.assertRaises(ValueError):
+                    security.validate_confirmed_findings([{**original, key: value}], result['releaseBlockers'])
+
+    def test_probes_remain_errors_when_scanner_match_does_not_block(self):
+        self.located()
+        self.scan['descriptor']['db']['status']['valid'] = False
+        with self.assertRaises(ValueError):
+            self.evaluate()
 
 
 if __name__ == '__main__':

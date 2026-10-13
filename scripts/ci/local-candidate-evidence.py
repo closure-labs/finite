@@ -253,7 +253,7 @@ def main(argv=None):
     parser.add_argument('--profile', required=True)
     parser.add_argument('--identity', required=True)
     parser.add_argument('--approved-baseline', type=Path,
-                        help='Caller-authenticated baseline receipt; required by upstream risk policy')
+                        help='Caller-authenticated baseline receipt; required by risk policies')
     args = parser.parse_args(argv)
     # This boundary precedes any evidence-directory creation or scanner launch.
     if os.environ.get('GITHUB_ACTIONS') != 'true' or os.environ.get('GITHUB_REPOSITORY') != 'closure-labs/finite':
@@ -269,9 +269,9 @@ def main(argv=None):
         directory.mkdir(parents=True, exist_ok=False)
         created = True
         policy = policy_module.load_policy(ROOT / 'automation/security/image-policy.json')
-        risk_mode = policy.get('mode') == 'upstream-maintained-risk'
+        risk_mode = policy.get('mode') in policy_module.RISK_MODES
         if risk_mode and args.approved_baseline is None:
-            raise ValueError('Upstream risk policy requires caller-authenticated approved baseline evidence')
+            raise ValueError('Risk policy requires caller-authenticated approved baseline evidence')
         candidate = validate_candidate(layout, args.profile, args.identity, os.environ.get('GITHUB_SHA'))
         image = candidate['image']
         context, context_hash = None, None
@@ -294,14 +294,38 @@ def main(argv=None):
         result = scan_candidate(layout, directory, candidate, approved_baseline=context)
         if result.get('status') not in ('pass', 'blocked') or result.get('image') != image:
             raise ValueError('Native policy returned inconsistent candidate evidence')
-        if ((risk_mode and ('advisories' not in result or result.get('mode') != 'upstream-maintained-risk' or
+        if ((risk_mode and ('advisories' not in result or result.get('mode') != policy.get('mode') or
                            result.get('approvedBaseline') != context)) or
                 not isinstance(result.get('advisories', []), list)):
             raise ValueError('Native risk policy result does not retain advisory observations')
         if risk_mode and 'releaseBlockers' not in result:
             raise ValueError('Native risk policy result does not retain reviewed source release blockers')
-        holds = policy_module.release_blockers(
-            {'releaseBlockers': result.get('releaseBlockers', [])}, datetime.now(timezone.utc))
+        if result.get('blockingBasis') != policy.get('blockingBasis'):
+            raise ValueError('Result does not identify the reviewed blocking basis')
+        reviewed_basis = policy.get('blockingBasis') == 'reviewed-desktop-exploitability'
+        if reviewed_basis:
+            baseline = result.get('approvedBaseline')
+            if (policy.get('mode') != 'desktop-critical-only' or not isinstance(baseline, dict)
+                    or baseline.get('image') != image or baseline.get('profile') not in policy_module.PROFILES):
+                raise ValueError('Confirmed desktop risk result requires exact candidate profile binding')
+            holds = policy_module.confirmed_desktop_risks({'confirmedDesktopRisks': result['releaseBlockers']}, datetime.now(timezone.utc))
+            expected_holds = [entry for entry in policy_module.confirmed_desktop_risks(policy, datetime.now(timezone.utc))
+                              if entry['digest'] == image.split('@')[1] and entry['profile'] == baseline['profile']]
+            if holds != expected_holds:
+                raise ValueError('Confirmed desktop risk holds differ from reviewed candidate policy')
+            policy_module.validate_confirmed_findings(result['blocked'], holds)
+        else:
+            holds = policy_module.release_blockers(
+                {'mode': policy.get('mode'), 'releaseBlockers': result.get('releaseBlockers', [])}, datetime.now(timezone.utc))
+        tracked = []
+        if policy.get('mode') == 'desktop-critical-only':
+            if 'trackedReleaseConcerns' not in result:
+                raise ValueError('Critical-only result must retain advisory source concerns')
+            tracked = policy_module.release_blockers(
+                {'mode': policy['mode'], 'releaseBlockers': result['trackedReleaseConcerns']}, datetime.now(timezone.utc))
+            if not reviewed_basis and (any(entry['severity'] != 'Critical' for entry in holds) or any(
+                    entry['severity'] == 'Critical' for entry in tracked)):
+                raise ValueError('Source concern disposition contradicts Critical-only policy')
         if (result['status'] == 'blocked') != bool(result['blocked'] or holds):
             raise ValueError('Native policy status contradicts blocking findings or source release blockers')
         result.update({'sourceType': 'locally-built-unpublished', 'signatureVerified': False, 'releaseEligible': False})
@@ -311,7 +335,8 @@ def main(argv=None):
                                                 'sourceType', 'signatureVerified', 'releaseEligible')}
         summary.update({'blockingRecords': len(result['blocked']), 'exceptionRecords': len(result['exceptionsApplied']),
                         'advisoryRecords': len(result.get('advisories', [])),
-                        'releaseBlockers': holds, 'releaseBlockerRecords': len(holds),
+                        'blockingBasis': result.get('blockingBasis'),
+                        'releaseBlockers': holds, 'trackedReleaseConcerns': tracked, 'releaseBlockerRecords': len(holds),
                         'observationRecords': len(result.get('observations', [])),
                         'coverage': result['coverage'], 'matches': result['matches']})
         write_json(directory / 'security-summary.json', summary)

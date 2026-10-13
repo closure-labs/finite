@@ -366,15 +366,23 @@ class PromotionQualification(unittest.TestCase):
                         self.promote()
                     copy_image.assert_not_called()
 
+    def test_missing_vm_security_receipt_blocks_before_registry_mutation(self):
+        (self.evidence / (self.profile + '-acceptance.json')).write_text(json.dumps(self.acceptance))
+        with patch.object(publication.subprocess, 'run') as command, self.assertRaisesRegex(ValueError, 'VM security receipt'):
+            self.promote()
+        command.assert_not_called()
+
     def test_exact_qualified_digest_is_promoted_even_with_legacy_flag(self):
         (self.evidence / (self.profile + '-acceptance.json')).write_text(json.dumps(self.acceptance))
         with patch.object(publication.subprocess, 'run') as copy_image, \
                 patch.object(publication.security, 'verify'), \
+                patch.object(publication.desktop, 'verify') as desktop_verify, \
                 patch.object(publication, 'github', return_value={'ref': 'refs/heads/main',
                         'object': {'type': 'commit', 'sha': 'd' * 40}}), \
                 patch.object(publication.upstream, 'inspect', side_effect=[None,
                     {'Digest': 'sha256:' + 'a' * 64}, {'Digest': 'sha256:' + 'a' * 64}]):
             self.promote()
+        desktop_verify.assert_called_once_with(self.evidence, self.acceptance)
         self.assertEqual(copy_image.call_count, 3)
         self.assertEqual(copy_image.call_args_list[0].args[0][0:2], ['cosign', 'verify'])
         for call in copy_image.call_args_list[1:]:

@@ -29,12 +29,26 @@ def hold():
             'reviewedAt': STAMP, 'unblockEvidence': 'Authenticated compatible fix and boot qualification'}
 
 
+def confirmed_risk(image, profile='bluefin-generic'):
+    return {'id': 'confirmed-fixture', 'digest': image.split('@')[1], 'profile': profile,
+            'platform': 'linux/amd64', 'component': 'pkg:rpm/fedora/example@1', 'severity': 'Critical',
+            'impact': 'Host compromise', 'reason': 'Fixture review', 'attackerPath': 'Hostile imported file',
+            'selinuxAssessment': 'Applicable confinement does not prevent the confirmed path',
+            'reviewedBy': 'Fixture reviewer', 'reviewedAt': '2026-10-12T00:00:00Z',
+            'advisories': ['CVE-2026-1234'], 'locations': ['/usr/bin/example'],
+            'officialSources': ['https://example.org/advisory'], 'severityEvidence': ['Official Critical rating'],
+            'affectedCodeEvidence': ['Exact binary and vulnerable code reviewed'],
+            'preconditions': ['Supported desktop import'], 'selinuxEvidence': ['Relevant domain reviewed']}
+
+
 class Remediation(unittest.TestCase):
     def setUp(self):
         self.policy, self.policy_hash = remediation.read(ROOT / 'automation/security/image-policy.json')
         # These original fixtures exercise the legacy result contract regardless
         # of the live repository policy selected by a later remediation.
         self.policy.pop('mode', None)
+        self.policy.pop('blockingBasis', None)
+        self.policy.pop('confirmedDesktopRisks', None)
         self.ledger = {'schema': 1, 'status': 'blocked', 'image': OLD,
                        'scannedAt': '2026-10-12T10:00:00Z', 'policySha256': self.policy_hash,
                        'findings': [finding(), finding(advisory='CVE-2026-2')]}
@@ -132,6 +146,66 @@ class Remediation(unittest.TestCase):
                             for change in result['dispositionChanges']))
         self.assertNotIn('resolved', result)
         self.assertNotIn('fixed', result)
+
+    def test_critical_only_exact_mode_and_classified_source_holds(self):
+        self.policy['mode'] = 'desktop-critical-only'
+        self.result.update(mode='desktop-critical-only', status='blocked', blocked=[], advisories=[finding()],
+                           trackedReleaseConcerns=[{**hold(), 'severity': 'Unknown', 'advisories': []}],
+                           releaseBlockers=[{**hold(), 'severity': 'Critical', 'advisories': ['CVE-2026-1234']}])
+        self.assertEqual(len(self.compare()['releaseBlockers']), 1)
+        self.assertEqual(self.compare()['trackedReleaseConcerns'][0]['severity'], 'Unknown')
+        self.result['mode'] = 'upstream-maintained-risk'
+        with self.assertRaisesRegex(ValueError, 'policy mode'):
+            self.compare()
+        self.result['mode'] = 'desktop-critical-only'
+        self.result['releaseBlockers'] = [hold()]
+        with self.assertRaises(ValueError):
+            self.compare()
+
+    def test_critical_only_source_concern_misclassification_fails_closed(self):
+        self.policy['mode'] = 'desktop-critical-only'
+        classified = {**hold(), 'severity': 'Critical', 'advisories': ['CVE-2026-1234']}
+        for blocked, tracked in [([], [classified]), ([{**classified, 'severity': 'Unknown'}], [])]:
+            self.result.update(mode='desktop-critical-only', status='blocked' if blocked else 'pass',
+                               blocked=[], advisories=[], releaseBlockers=blocked, trackedReleaseConcerns=tracked)
+            with self.assertRaisesRegex(ValueError, 'disposition'):
+                self.compare()
+        self.result.update(releaseBlockers=[])
+        self.result.pop('trackedReleaseConcerns')
+        with self.assertRaisesRegex(ValueError, 'retain advisory source'):
+            self.compare()
+
+    def test_reviewed_basis_requires_confirmed_candidate_risk_not_pairs(self):
+        basis = 'reviewed-desktop-exploitability'
+        self.policy.update(mode='desktop-critical-only', blockingBasis=basis, confirmedDesktopRisks=[])
+        self.result.update(mode='desktop-critical-only', blockingBasis=basis, status='pass', blocked=[],
+                           advisories=[finding(severity='Critical')], releaseBlockers=[],
+                           approvedBaseline={'image': NEW, 'profile': 'bluefin-generic'},
+                           trackedReleaseConcerns=[{**hold(), 'severity': 'Critical', 'advisories': ['CVE-2026-1234']}])
+        result = self.compare()
+        self.assertEqual(result['blockingBasis'], basis)
+        self.assertEqual(result['trackedReleaseConcerns'][0]['severity'], 'Critical')
+        self.assertEqual(result['counts']['blockingRecords'], 0)
+        self.result.pop('blockingBasis')
+        with self.assertRaisesRegex(ValueError, 'blocking basis'):
+            self.compare()
+        self.result.update(blockingBasis=basis, status='blocked')
+        risk = confirmed_risk(NEW)
+        self.policy['confirmedDesktopRisks'] = [risk]
+        self.result['releaseBlockers'] = [deepcopy(risk)]
+        self.assertEqual(self.compare()['releaseBlockers'], [risk])
+        self.result['blocked'] = [{**finding(advisory='CVE-2026-1234'),
+            'aliases': ['CVE-2026-1234'], 'locations': ['/usr/bin/example'], 'locationCoverage': 'complete',
+            'reason': 'confirmed-desktop-exploitability', 'disposition': 'blocked', 'confirmedRiskReviews': [risk['id']]}]
+        self.assertEqual(self.compare()['counts']['blockingRecords'], 1)
+        for mutate in [lambda: self.result.update(releaseBlockers=[]),
+                       lambda: self.result['releaseBlockers'][0].update(profile='bluefin-next'),
+                       lambda: self.result['releaseBlockers'][0].update(digest=OLD.split('@')[1]),
+                       lambda: self.result['releaseBlockers'][0].pop('selinuxEvidence')]:
+            self.result['releaseBlockers'] = [deepcopy(risk)]
+            mutate()
+            with self.assertRaises(ValueError):
+                self.compare()
 
     def test_duplicate_advisories_are_counted_without_losing_exact_pair_scope(self):
         self.result['advisories'] = [finding(advisory='CVE-2026-3'), finding(advisory='CVE-2026-3'),

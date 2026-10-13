@@ -1,0 +1,192 @@
+{
+  "schema": 1,
+  "decision": "Advisory pairs alone do not justify release blocking. Unresolved Critical findings are accepted review work, not declared fixed or harmless.",
+  "blockingBasis": "reviewed-desktop-exploitability",
+  "run": 38414548421,
+  "runUrl": "https://github.com/closure-labs/finite/actions/runs/38414548421",
+  "revision": "16e85456662c69da27941de32382cce7065128af",
+  "artifactId": 11822744560,
+  "artifactSha256": "0f289afc2fe7b42bfdfceabdab22d6580e3dfb175b006a22d5b777c5b07e416e",
+  "policySha256": "2e7848880b90bfdf07c1f17dd97d010b02e59834c9110fb1da2364ceaf55230d",
+  "targets": [
+    {
+      "schema": 1,
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:7115f9fb9f50fc323f1cc6abd04190a4ac7b388385451064ee7b2701ff18710b",
+      "sourceRun": 38395796884,
+      "sourceRevision": "1240490583072257def95727f199df41e59fe053",
+      "policySha256": "2e7848880b90bfdf07c1f17dd97d010b02e59834c9110fb1da2364ceaf55230d",
+      "status": "pass",
+      "beforeBlockingPairs": 146,
+      "blockingPairs": 0,
+      "blockingRecords": 0,
+      "advisoryRecords": 2001,
+      "releaseBlockers": [],
+      "trackedReleaseConcerns": [],
+      "originalPolicyReproduced": true,
+      "observationsUnchanged": true,
+      "newScanPerformed": false,
+      "releaseEligible": false,
+      "hashes": {
+        "security-result.json": "a834d30ed8efba15aac524651dd86ea09177a1080fe87fb4dfbec7b28660d42a",
+        "sbom.syft.json": "57274240ae3d6700aa7e731d4e37bbe036373e3b7fb83bf54afdf5e929da25d7",
+        "vulnerabilities.json": "47f40b883ec85add40f37994aa8afbb2ccc4d8dcf7fd9bb02de9a60eabddfdf8",
+        "image-config.json": "1d3682698da73d0b5b49087c5e45a35c9c60b035b37ed3143a408aca102728c8"
+      },
+      "baselineLedgerSha256": "01b651947f67822302df692e0347f10fb34048e52413198fc62d58ccc5e1078a",
+      "comparisonSha256": "ea9d16b21af525f62c5ef86c1a1d5e82bfc21f12adef14b765d3bbf73baa1d21",
+      "findings": [],
+      "blockingBasis": "reviewed-desktop-exploitability",
+      "unresolvedCriticalPairs": 54,
+      "summarySha256": "27b384290aa96055b56a537bfb3ff268fc7b6b585bfd29053af8b7b0f90f6911",
+      "resultSha256": "423a97866b5ac77081b0f3124489be33c012c082bef48b43191a99ac3fbcf41c"
+    },
+    {
+      "schema": 1,
+      "profile": "bluefin-dx-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:75eb7ed4d6329787de35f529584d246be939b78274ab06892332e57c0f1924d0",
+      "sourceRun": 38395796884,
+      "sourceRevision": "1240490583072257def95727f199df41e59fe053",
+      "policySha256": "2e7848880b90bfdf07c1f17dd97d010b02e59834c9110fb1da2364ceaf55230d",
+      "status": "pass",
+      "beforeBlockingPairs": 146,
+      "blockingPairs": 0,
+      "blockingRecords": 0,
+      "advisoryRecords": 2001,
+      "releaseBlockers": [],
+      "trackedReleaseConcerns": [
+        {
+          "id": "next-kernel-october-source-fixes",
+          "profiles": [
+            "bluefin-next",
+            "bluefin-dx-next"
+          ],
+          "riskClass": "major-data-loss",
+          "reason": "Pinned Fedora 45 kernel 7.2.9-300 lacks the reviewed October XFS/AMD fixes. Missing scanner matches do not establish source-fix coverage. The fixed 301 build has not reached an approved stable tag in retained official evidence.",
+          "officialSources": [
+            "https://src.fedoraproject.org/rpms/kernel/c/c2cdc6c5c0c6ccc0128613fc7c9d276ebaf870c7.patch",
+            "https://gitlab.com/cki-project/kernel-ark/-/commit/fa3bfc1343f7f3b1ebd873eee5e3e6618918f434.patch"
+          ],
+          "reviewedBy": "great_cto desktop kernel source review",
+          "reviewedAt": "2026-10-13T00:00:29Z",
+          "unblockEvidence": "Approved same-stream stable kernel containing the reviewed fixes, or separately explicit reviewed testing approval; authenticate exact Fedora payloads and validate transaction, module preservation, initramfs and boot qualification before reviewing removal of this hold.",
+          "severity": "Unknown",
+          "advisories": []
+        }
+      ],
+      "originalPolicyReproduced": true,
+      "observationsUnchanged": true,
+      "newScanPerformed": false,
+      "releaseEligible": false,
+      "hashes": {
+        "security-result.json": "b50bca07727f8043b2e38e3bd2d4b0f27144df9af18add59b6b83f7305e5134e",
+        "sbom.syft.json": "8590f5ed9853112f66bb4d71e859fd6c93d6343f190b948cff609602688977d7",
+        "vulnerabilities.json": "3149ff52bd423b2ad850c594f056749bcaa81d86dc72348bdbf2bd2274e18cd9",
+        "image-config.json": "881b6049be85dabeafbfc7a307ea4cf6db1ec1a448991b1d44a637d327244386"
+      },
+      "baselineLedgerSha256": "abb97734626faaf79224839fd792b516807975a621c27afa34a7bbf1caca45c3",
+      "comparisonSha256": "6bb67e9b5940a3d1a5b3556aec256862e502a7fe7747a71fd70c73fe0b4c4657",
+      "findings": [],
+      "blockingBasis": "reviewed-desktop-exploitability",
+      "unresolvedCriticalPairs": 54,
+      "summarySha256": "d53430c470e7dc67469e9c0736ce1f800614e826c9abcb586e8010e093b09db7",
+      "resultSha256": "1dd618f94576e3706875581f55fb603c608136114069e79b4738d08cf5dcc903"
+    },
+    {
+      "schema": 1,
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3b18003a2267bf22b455254f29c9324805c48cfff0f9115d00a77d041035eece",
+      "sourceRun": 38395796884,
+      "sourceRevision": "1240490583072257def95727f199df41e59fe053",
+      "policySha256": "2e7848880b90bfdf07c1f17dd97d010b02e59834c9110fb1da2364ceaf55230d",
+      "status": "pass",
+      "beforeBlockingPairs": 93,
+      "blockingPairs": 0,
+      "blockingRecords": 0,
+      "advisoryRecords": 1167,
+      "releaseBlockers": [],
+      "trackedReleaseConcerns": [],
+      "originalPolicyReproduced": true,
+      "observationsUnchanged": true,
+      "newScanPerformed": false,
+      "releaseEligible": false,
+      "hashes": {
+        "security-result.json": "cd31ce68a8068ba0d2a419bb4293f32faa5b9275903250cdb471179704b9a0a8",
+        "sbom.syft.json": "015274537c835dcdf01c1333f148b46df365c0fa4ba0f72e17b289c2a70b2e7b",
+        "vulnerabilities.json": "d99275b13019a076859d16575b2f2978b162a9cd5a0503cbde0ef995b1ec6fec",
+        "image-config.json": "808652ff652652bb6568e94b152046069a4c64ff52656dda308a41293b31528d"
+      },
+      "baselineLedgerSha256": "725fee4147486e408eb0282949bfff5e024371d30e733750be001f7498ef6c91",
+      "comparisonSha256": "6756479ecba624a0e1370e9f4abc18ce36db414fb358d2bfb39ecb445031c33d",
+      "findings": [],
+      "blockingBasis": "reviewed-desktop-exploitability",
+      "unresolvedCriticalPairs": 24,
+      "summarySha256": "678b9ca0017146847cb1381e2f24e5522eabff6a8236462781955706019d8c19",
+      "resultSha256": "09e009273e0247fd22bf0b6fccdd71a02e5674f75dc573fc83599b47c02f79c0"
+    },
+    {
+      "schema": 1,
+      "profile": "bluefin-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:cbf3c777dc57c632ac8067beabc52e66eab476128653894dc6beed7a8975c9d7",
+      "sourceRun": 38395796884,
+      "sourceRevision": "1240490583072257def95727f199df41e59fe053",
+      "policySha256": "2e7848880b90bfdf07c1f17dd97d010b02e59834c9110fb1da2364ceaf55230d",
+      "status": "pass",
+      "beforeBlockingPairs": 93,
+      "blockingPairs": 0,
+      "blockingRecords": 0,
+      "advisoryRecords": 1167,
+      "releaseBlockers": [],
+      "trackedReleaseConcerns": [
+        {
+          "id": "next-kernel-october-source-fixes",
+          "profiles": [
+            "bluefin-next",
+            "bluefin-dx-next"
+          ],
+          "riskClass": "major-data-loss",
+          "reason": "Pinned Fedora 45 kernel 7.2.9-300 lacks the reviewed October XFS/AMD fixes. Missing scanner matches do not establish source-fix coverage. The fixed 301 build has not reached an approved stable tag in retained official evidence.",
+          "officialSources": [
+            "https://src.fedoraproject.org/rpms/kernel/c/c2cdc6c5c0c6ccc0128613fc7c9d276ebaf870c7.patch",
+            "https://gitlab.com/cki-project/kernel-ark/-/commit/fa3bfc1343f7f3b1ebd873eee5e3e6618918f434.patch"
+          ],
+          "reviewedBy": "great_cto desktop kernel source review",
+          "reviewedAt": "2026-10-13T00:00:29Z",
+          "unblockEvidence": "Approved same-stream stable kernel containing the reviewed fixes, or separately explicit reviewed testing approval; authenticate exact Fedora payloads and validate transaction, module preservation, initramfs and boot qualification before reviewing removal of this hold.",
+          "severity": "Unknown",
+          "advisories": []
+        }
+      ],
+      "originalPolicyReproduced": true,
+      "observationsUnchanged": true,
+      "newScanPerformed": false,
+      "releaseEligible": false,
+      "hashes": {
+        "security-result.json": "7e0de82cc0837b00255171fa1d1de83a57ede47b94aecba9734d69b59fd1bb1f",
+        "sbom.syft.json": "fa0a88a9519e6d846c9e7a57387d655d6900fd02d21dd0b32eeee5ac42548bdc",
+        "vulnerabilities.json": "7a2901a86a2119a8f9fc721a7039b6fcc4fb63d87e6a32655e8bd11700f3ed2d",
+        "image-config.json": "4a3a11142caf8655fe1d6b1f6b410730387ccfc5c8cd8b76f3279955fdc50685"
+      },
+      "baselineLedgerSha256": "db9e45023c471ca95ae2740b12660b019f5cc314bb259e82a97f55965bc73c48",
+      "comparisonSha256": "da771d976c7d7239e1be579f8d4d7fb662eff41244d0a5cc8b7f93c427322a3f",
+      "findings": [],
+      "blockingBasis": "reviewed-desktop-exploitability",
+      "unresolvedCriticalPairs": 24,
+      "summarySha256": "6fc662a45ba93dfd82d12a5f8d0443dbee3280d22126db303c60f6053f74aa36",
+      "resultSha256": "08398d6878241dd204edbdb873433e684dc11cb3eb13a94cb87096bb73c1ecc3"
+    }
+  ],
+  "validation": {
+    "coreTests": 90,
+    "integrationTests": 67,
+    "independentReview": "APPROVED; no existing candidate-specific receipt meets full confirmed-risk standard; exact documentary proof is admissible without exploit reproduction.",
+    "sourceChecks": "Final exact-head hosted status tracked on PR151"
+  },
+  "verdicts": {
+    "vulnerabilityPolicyAcceptance": "pass for all four retained candidates under explicit risk-acceptance basis; no confirmed blockers",
+    "vulnerabilityRemediation": "unchanged; scanner findings remain unresolved advisories",
+    "source": "157 focused tests and82 promotion/reliability tests pass",
+    "signingAndVm": "still required on trusted main workflow; not performed by this diagnostic",
+    "releaseEligible": false
+  }
+}

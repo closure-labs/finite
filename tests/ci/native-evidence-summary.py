@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Small native metadata fixtures preserve binding, ownership and unknowns."""
 from copy import deepcopy
+from datetime import datetime, timezone
 import hashlib
 import importlib.util
 import json
@@ -18,6 +19,18 @@ IMAGE = 'ghcr.io/closure-labs/finite@sha256:' + 'a' * 64
 COMPONENT = 'pkg:golang/stdlib@1.26.4'
 ROOTFS = '/tmp/hosted/rootfs'
 OBJECT = '/sysroot/ostree/repo/objects/ab/example.file'
+
+
+def confirmed_risk(image, profile='bluefin-generic'):
+    return {'id': 'confirmed-fixture', 'digest': image.split('@')[1], 'profile': profile,
+            'platform': 'linux/amd64', 'component': 'pkg:rpm/fedora/example@1', 'severity': 'Critical',
+            'impact': 'Host compromise', 'reason': 'Fixture review', 'attackerPath': 'Hostile imported file',
+            'selinuxAssessment': 'Applicable confinement does not prevent the confirmed path',
+            'reviewedBy': 'Fixture reviewer', 'reviewedAt': '2026-10-12T00:00:00Z',
+            'advisories': ['CVE-2026-1234'], 'locations': ['/usr/bin/example'],
+            'officialSources': ['https://example.org/advisory'], 'severityEvidence': ['Official Critical rating'],
+            'affectedCodeEvidence': ['Exact binary and vulnerable code reviewed'],
+            'preconditions': ['Supported desktop import'], 'selinuxEvidence': ['Relevant domain reviewed']}
 
 
 class NativeSummary(unittest.TestCase):
@@ -66,6 +79,83 @@ class NativeSummary(unittest.TestCase):
         self.assertEqual(live['independentPlatformProof'], 'unknown')
         self.assertFalse(result['releaseEligible'])
         self.assertFalse(result['releaseFreshnessReevaluated'])
+
+    def critical_result(self):
+        self.result.update(mode='desktop-critical-only', trackedReleaseConcerns=[{
+            'id': 'pending-source', 'profiles': ['bluefin-next'], 'riskClass': 'local-privilege-escalation',
+            'reason': 'Source fix not classified Critical', 'severity': 'Unknown', 'advisories': [],
+            'officialSources': ['https://kernel.org/'], 'reviewedBy': 'Fixture reviewer',
+            'reviewedAt': '2026-10-13T11:00:00Z', 'unblockEvidence': 'Source classification and compatible fix'}])
+        self.result['blocked'][0].update(severity='High', criticalSeverityAdvisories=['CVE-2026-56857'])
+
+    def test_critical_alias_and_unknown_source_concern_survive_compaction(self):
+        self.critical_result()
+        result = self.report()
+        self.assertEqual(result['trackedReleaseConcerns'], self.result['trackedReleaseConcerns'])
+        self.assertEqual(result['policyMode'], 'desktop-critical-only')
+        self.assertEqual(result['findings'][0]['severities'], ['High'])
+        self.assertEqual(result['findings'][0]['criticalSeverityAdvisories'], ['CVE-2026-56857'])
+        self.assertFalse(result['releaseEligible'])
+
+    def test_post_scan_source_review_is_valid_without_refreshing_scan(self):
+        self.critical_result()
+        concern = self.result['trackedReleaseConcerns'][0]
+        concern['reviewedAt'] = '2026-10-13T13:00:00Z'
+        with patch.object(native, 'datetime') as clock:
+            clock.now.return_value = datetime(2026, 10, 13, 14, tzinfo=timezone.utc)
+            result = self.report()
+            self.assertEqual(result['scannedAt'], '2026-10-13T12:00:00Z')
+            self.assertEqual(result['trackedReleaseConcerns'][0]['reviewedAt'], '2026-10-13T13:00:00Z')
+            self.assertFalse(result['releaseFreshnessReevaluated'])
+            concern['reviewedAt'] = '2026-10-13T15:00:00Z'
+            with self.assertRaisesRegex(ValueError, 'future'):
+                self.report()
+
+    def test_critical_concern_and_alias_evidence_fails_closed_when_malformed(self):
+        mutations = [lambda: self.result.pop('trackedReleaseConcerns'),
+                     lambda: self.result.update(trackedReleaseConcerns=None),
+                     lambda: self.result['trackedReleaseConcerns'][0].update(severity='Critical', advisories=['CVE-2026-56857']),
+                     lambda: self.result['releaseBlockers'].append(self.result['trackedReleaseConcerns'][0]),
+                     lambda: self.result['blocked'][0].pop('criticalSeverityAdvisories'),
+                     lambda: self.result['blocked'][0].update(criticalSeverityAdvisories=['CVE-2026-9999']),
+                     lambda: self.result['blocked'][0].update(criticalSeverityAdvisories=[True]),
+                     lambda: self.result['blocked'][0].update(severity='Critical')]
+        for change in mutations:
+            self.setUp()
+            self.critical_result()
+            change()
+            with self.assertRaises(ValueError):
+                self.report()
+
+    def test_reviewed_basis_preserves_confirmed_holds_and_tracks_critical_source_concerns(self):
+        self.critical_result()
+        basis = 'reviewed-desktop-exploitability'
+        self.result.update(blockingBasis=basis, blocked=[], status='pass',
+                           approvedBaseline={'image': IMAGE, 'profile': 'bluefin-generic'})
+        self.result['trackedReleaseConcerns'][0].update(severity='Critical', advisories=['CVE-2026-1234'])
+        result = self.report()
+        self.assertEqual(result['blockingBasis'], basis)
+        self.assertEqual(result['trackedReleaseConcerns'][0]['severity'], 'Critical')
+        risk = confirmed_risk(IMAGE)
+        self.result.update(status='blocked', releaseBlockers=[risk])
+        self.assertEqual(self.report()['releaseBlockers'], [risk])
+        risk.update(component=COMPONENT, locations=['/usr/bin/cosign'], advisories=['CVE-2026-56857'])
+        self.result['blocked'] = [{'component': COMPONENT, 'advisory': 'CVE-2026-56857',
+            'severity': 'High', 'aliases': ['CVE-2026-56857'], 'locations': ['/usr/bin/cosign'],
+            'locationCoverage': 'complete', 'reason': 'confirmed-desktop-exploitability', 'disposition': 'blocked',
+            'knownExploited': False, 'criticalSeverityAdvisories': [], 'confirmedRiskReviews': [risk['id']]}]
+        finding = self.report()['findings'][0]
+        self.assertEqual(finding['confirmedRiskReviews'], [risk['id']])
+        self.assertEqual(finding['severities'], ['High'])
+        self.assertEqual(finding['criticalSeverityAdvisories'], [])
+        for mutate in [lambda: self.result.update(blockingBasis='other'),
+                       lambda: self.result['releaseBlockers'][0].update(digest='sha256:' + 'f' * 64),
+                       lambda: self.result['releaseBlockers'][0].update(profile='bluefin-next'),
+                       lambda: self.result['releaseBlockers'][0].pop('affectedCodeEvidence')]:
+            self.result.update(blockingBasis=basis, releaseBlockers=[deepcopy(risk)])
+            mutate()
+            with self.assertRaises(ValueError):
+                self.report()
 
     def test_relationships_do_not_invent_ownership_of_retained_objects(self):
         result = self.report()

@@ -1,0 +1,3154 @@
+{
+  "schema": 1,
+  "decision": "Release owner explicitly requests Critical-only desktop SELinux vulnerability threshold. Lower severity accepted as tracked risk, not fixed.",
+  "mode": "desktop-critical-only",
+  "policySha256": "3d016024d3225d4278b9bfd63c8a7fbb422feada1c021724d898402c989179e1",
+  "sourceScanRun": 38395796884,
+  "sourceScanRevision": "1240490583072257def95727f199df41e59fe053",
+  "validation": {
+    "policyTests": 80,
+    "integrationTests": 51,
+    "independentReview": "approved",
+    "signingAndVmGates": "preserved",
+    "newScanPerformed": false,
+    "nativeSummaryTests": 13
+  },
+  "runs": [
+    {
+      "run": 38411151441,
+      "url": "https://github.com/closure-labs/finite/actions/runs/38411151441",
+      "revision": "9c3b38c8c325dd314878d32703b0defbee92347d",
+      "artifactId": 11821501771,
+      "artifactSha256": "13491acebbfbbc8c02710267a770f4ca177d1032c94b7f836e39c3d6e5bff419",
+      "note": "Generic evaluations completed; overall workflow later failed on missing Next baseline filename."
+    },
+    {
+      "run": 38411349067,
+      "url": "https://github.com/closure-labs/finite/actions/runs/38411349067",
+      "revision": "b95e54eb684605fbe023cfd4029dd507e4919fc3",
+      "artifactId": 11822425707,
+      "artifactSha256": "a8c2759b3f1773e1c03244fa49f45a9cc6847ca0113e8f0f1395a3cea80a075b",
+      "note": "Next comparisons passed; reused valid Generic evaluations."
+    }
+  ],
+  "targets": [
+    {
+      "schema": 1,
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:7115f9fb9f50fc323f1cc6abd04190a4ac7b388385451064ee7b2701ff18710b",
+      "sourceRun": 38395796884,
+      "sourceRevision": "1240490583072257def95727f199df41e59fe053",
+      "policySha256": "3d016024d3225d4278b9bfd63c8a7fbb422feada1c021724d898402c989179e1",
+      "status": "blocked",
+      "beforeBlockingPairs": 146,
+      "blockingPairs": 54,
+      "blockingRecords": 156,
+      "advisoryRecords": 1845,
+      "releaseBlockers": [],
+      "trackedReleaseConcerns": [],
+      "originalPolicyReproduced": true,
+      "observationsUnchanged": true,
+      "newScanPerformed": false,
+      "releaseEligible": false,
+      "hashes": {
+        "security-result.json": "a834d30ed8efba15aac524651dd86ea09177a1080fe87fb4dfbec7b28660d42a",
+        "sbom.syft.json": "57274240ae3d6700aa7e731d4e37bbe036373e3b7fb83bf54afdf5e929da25d7",
+        "vulnerabilities.json": "47f40b883ec85add40f37994aa8afbb2ccc4d8dcf7fd9bb02de9a60eabddfdf8",
+        "image-config.json": "1d3682698da73d0b5b49087c5e45a35c9c60b035b37ed3143a408aca102728c8"
+      },
+      "baselineLedgerSha256": "01b651947f67822302df692e0347f10fb34048e52413198fc62d58ccc5e1078a",
+      "comparisonSha256": "b8dcc77328950c25c0f5f035fc3b9c820ae77a26e836f9b9b239a4726a4f2077",
+      "remainingCriticalPairs": [
+        {
+          "component": "pkg:golang/google.golang.org/grpc@v1.72.2",
+          "advisory": "GHSA-p77j-4mvh-x3m3",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-33186",
+            "GHSA-p77j-4mvh-x3m3"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-33186",
+            "GHSA-p77j-4mvh-x3m3"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/90/2251a93331aa5e6a9393d0850cd6e647ef9be08f4fd745c9fa3e861c9aa058.file",
+            "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+            "/usr/bin/buildah",
+            "/usr/bin/podman",
+            "/usr/bin/podman-tui"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.36.0",
+          "advisory": "GHSA-f5wc-c3c7-36mc",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39832",
+            "GHSA-f5wc-c3c7-36mc"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-f5wc-c3c7-36mc"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+            "/usr/bin/git-lfs"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+          "advisory": "GHSA-f5wc-c3c7-36mc",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39832",
+            "GHSA-f5wc-c3c7-36mc"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-f5wc-c3c7-36mc"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.49.0",
+          "advisory": "GHSA-f5wc-c3c7-36mc",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39832",
+            "GHSA-f5wc-c3c7-36mc"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-f5wc-c3c7-36mc"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/usr/bin/incus-agent"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.50.0",
+          "advisory": "GHSA-f5wc-c3c7-36mc",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39832",
+            "GHSA-f5wc-c3c7-36mc"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-f5wc-c3c7-36mc"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+            "/usr/libexec/podman/gvproxy"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+          "advisory": "CVE-2026-27143",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-27143"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-27143"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/0e/295cf756665b586a2e7184404790e668bc4a51494a19b13b4d5398dcfb3867.file",
+            "/sysroot/ostree/repo/objects/25/8f910dfac74f9ad2f618152c0e8fd723ff234605646c445c6e38e0bc6e950b.file",
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/sysroot/ostree/repo/objects/65/cd93d36c96a2405df94f220abdc47a006555f9382cf62415fd590aa92b1e65.file",
+            "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+            "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+            "/usr/bin/glow",
+            "/usr/bin/gum",
+            "/usr/bin/incus",
+            "/usr/bin/incus-agent",
+            "/usr/libexec/incus/incus-user",
+            "/usr/libexec/incus/incusd"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+          "advisory": "CVE-2026-27143",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-27143"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-27143"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+            "/usr/bin/toolbox"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.36.0",
+          "advisory": "GHSA-5cgq-3rg8-m6cv",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-42508",
+            "GHSA-5cgq-3rg8-m6cv"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-5cgq-3rg8-m6cv"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+            "/usr/bin/git-lfs"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+          "advisory": "GHSA-5cgq-3rg8-m6cv",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-42508",
+            "GHSA-5cgq-3rg8-m6cv"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-5cgq-3rg8-m6cv"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.49.0",
+          "advisory": "GHSA-5cgq-3rg8-m6cv",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-42508",
+            "GHSA-5cgq-3rg8-m6cv"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-5cgq-3rg8-m6cv"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/usr/bin/incus-agent"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.50.0",
+          "advisory": "GHSA-5cgq-3rg8-m6cv",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-42508",
+            "GHSA-5cgq-3rg8-m6cv"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-5cgq-3rg8-m6cv"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+            "/usr/libexec/podman/gvproxy"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.36.0",
+          "advisory": "GHSA-rm3j-f69w-wqmq",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39834",
+            "GHSA-rm3j-f69w-wqmq"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-39834",
+            "GHSA-rm3j-f69w-wqmq"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+            "/usr/bin/git-lfs"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+          "advisory": "GHSA-rm3j-f69w-wqmq",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39834",
+            "GHSA-rm3j-f69w-wqmq"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-39834",
+            "GHSA-rm3j-f69w-wqmq"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.49.0",
+          "advisory": "GHSA-rm3j-f69w-wqmq",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39834",
+            "GHSA-rm3j-f69w-wqmq"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-39834",
+            "GHSA-rm3j-f69w-wqmq"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/usr/bin/incus-agent"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.50.0",
+          "advisory": "GHSA-rm3j-f69w-wqmq",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39834",
+            "GHSA-rm3j-f69w-wqmq"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-39834",
+            "GHSA-rm3j-f69w-wqmq"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+            "/usr/libexec/podman/gvproxy"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.36.0",
+          "advisory": "GHSA-vgwf-h737-ff37",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39830",
+            "GHSA-vgwf-h737-ff37"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-vgwf-h737-ff37"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+            "/usr/bin/git-lfs"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+          "advisory": "GHSA-vgwf-h737-ff37",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39830",
+            "GHSA-vgwf-h737-ff37"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-vgwf-h737-ff37"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.49.0",
+          "advisory": "GHSA-vgwf-h737-ff37",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39830",
+            "GHSA-vgwf-h737-ff37"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-vgwf-h737-ff37"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/usr/bin/incus-agent"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.50.0",
+          "advisory": "GHSA-vgwf-h737-ff37",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39830",
+            "GHSA-vgwf-h737-ff37"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-vgwf-h737-ff37"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+            "/usr/libexec/podman/gvproxy"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.38.0",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+            "/usr/bin/git-lfs"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.40.0",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+            "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+            "/usr/bin/glow",
+            "/usr/bin/gum"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.48.0",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.52.0",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/usr/bin/incus-agent"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.53.0",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/6d/94a749c1087ec61710ab873c0d3277269eb47debe4b51c7602409969f732a8.file",
+            "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+            "/usr/libexec/podman/gvforwarder",
+            "/usr/libexec/podman/gvproxy"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.55.0",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+            "/sysroot/ostree/repo/objects/8e/c5583db8e1709e446e0abbcb470108ba680fcf718835713b907e0f9ab05d02.file",
+            "/sysroot/ostree/repo/objects/90/2251a93331aa5e6a9393d0850cd6e647ef9be08f4fd745c9fa3e861c9aa058.file",
+            "/sysroot/ostree/repo/objects/94/edb58e77e87ab78c64d120de2d6c5e76d12a9fc90671dd9ebfa18e03f72029.file",
+            "/usr/bin/podman-tui",
+            "/usr/bin/rclone",
+            "/usr/bin/restic",
+            "/usr/bin/runc",
+            "/usr/bin/yq",
+            "/usr/libexec/docker/cli-plugins/docker-model"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.56.0",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/usr/bin/cosign"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.57.0",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+            "/usr/bin/buildah",
+            "/usr/bin/podman"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.58.0",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file",
+            "/sysroot/ostree/repo/objects/28/9a163069c0d420700e407d2936c88343c7199051fcb2167a4e0dd505f8b123.file",
+            "/sysroot/ostree/repo/objects/2d/22e9d3905518951cfb5facea21864b7c403d447ceb4b10fd2c95e39dff293f.file",
+            "/sysroot/ostree/repo/objects/2e/801e49da654ab9f6d28238d987b7387d825ee88c8f7d7f47535edcf7d7f8a4.file",
+            "/sysroot/ostree/repo/objects/89/38c593efda2631da84deb9abdc8d6a48d14cd3f582ef6c7e0d63092bae1cbb.file",
+            "/sysroot/ostree/repo/objects/ac/79a1c7b0143c61cbb6938d323c81a7f1aa4fe3939e910855dca32dd82acfba.file",
+            "/usr/bin/containerd",
+            "/usr/bin/containerd-shim-runc-v2",
+            "/usr/bin/ctr",
+            "/usr/bin/gen-manpages",
+            "/usr/bin/rootlesskit",
+            "/usr/libexec/docker/cli-plugins/docker-compose"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.59.0",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+            "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+            "/sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file",
+            "/usr/bin/tailscale",
+            "/usr/bin/tailscaled",
+            "/usr/libexec/docker/cli-plugins/docker-buildx"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.25.12",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+            "/usr/libexec/docker/cli-plugins/docker-model"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.4",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/usr/bin/cosign"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.8",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file",
+            "/sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file",
+            "/usr/libexec/docker/cli-plugins/docker-buildx",
+            "/usr/libexec/docker/cli-plugins/docker-compose"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.27.1",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+            "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+            "/usr/bin/tailscale",
+            "/usr/bin/tailscaled"
+          ]
+        },
+        {
+          "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+          "advisory": "GHSA-xwwr-4h3p-r22c",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-88018",
+            "GHSA-xwwr-4h3p-r22c"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-88018",
+            "GHSA-xwwr-4h3p-r22c"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/usr/bin/rclone"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.36.0",
+          "advisory": "GHSA-x527-x647-q7gg",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-46595",
+            "GHSA-x527-x647-q7gg"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-x527-x647-q7gg"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+            "/usr/bin/git-lfs"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+          "advisory": "GHSA-x527-x647-q7gg",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-46595",
+            "GHSA-x527-x647-q7gg"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-x527-x647-q7gg"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.49.0",
+          "advisory": "GHSA-x527-x647-q7gg",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-46595",
+            "GHSA-x527-x647-q7gg"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-x527-x647-q7gg"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/usr/bin/incus-agent"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.50.0",
+          "advisory": "GHSA-x527-x647-q7gg",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-46595",
+            "GHSA-x527-x647-q7gg"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-x527-x647-q7gg"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+            "/usr/libexec/podman/gvproxy"
+          ]
+        },
+        {
+          "component": "pkg:golang/github.com/moby/buildkit@v0.25.1",
+          "advisory": "GHSA-4c29-8rgm-jvjj",
+          "severity": "High",
+          "aliases": [
+            "CVE-2026-33747",
+            "GHSA-4c29-8rgm-jvjj"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-33747"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+            "/usr/bin/buildah",
+            "/usr/bin/podman"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.25.12",
+          "advisory": "GO-2026-6604",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-56857",
+            "GO-2026-6604"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-56857",
+            "GO-2026-6604"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+            "/usr/libexec/docker/cli-plugins/docker-model"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.4",
+          "advisory": "GO-2026-6604",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-56857",
+            "GO-2026-6604"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-56857",
+            "GO-2026-6604"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/usr/bin/cosign"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.8",
+          "advisory": "GO-2026-6604",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-56857",
+            "GO-2026-6604"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-56857",
+            "GO-2026-6604"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file",
+            "/sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file",
+            "/usr/libexec/docker/cli-plugins/docker-buildx",
+            "/usr/libexec/docker/cli-plugins/docker-compose"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.27.1",
+          "advisory": "GO-2026-6604",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-56857",
+            "GO-2026-6604"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-56857",
+            "GO-2026-6604"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+            "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+            "/usr/bin/tailscale",
+            "/usr/bin/tailscaled"
+          ]
+        },
+        {
+          "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+          "advisory": "GHSA-p569-5gjg-9cmj",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-88044",
+            "GHSA-p569-5gjg-9cmj"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-88044",
+            "GHSA-p569-5gjg-9cmj"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/usr/bin/rclone"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.36.0",
+          "advisory": "GHSA-89gr-r52h-f8rx",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39831",
+            "GHSA-89gr-r52h-f8rx"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-39831",
+            "GHSA-89gr-r52h-f8rx"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+            "/usr/bin/git-lfs"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.36.0",
+          "advisory": "GHSA-jppx-rxg9-jmrx",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39833",
+            "GHSA-jppx-rxg9-jmrx"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-39833",
+            "GHSA-jppx-rxg9-jmrx"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+            "/usr/bin/git-lfs"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+          "advisory": "GHSA-89gr-r52h-f8rx",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39831",
+            "GHSA-89gr-r52h-f8rx"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-39831",
+            "GHSA-89gr-r52h-f8rx"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+          "advisory": "GHSA-jppx-rxg9-jmrx",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39833",
+            "GHSA-jppx-rxg9-jmrx"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-39833",
+            "GHSA-jppx-rxg9-jmrx"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.49.0",
+          "advisory": "GHSA-89gr-r52h-f8rx",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39831",
+            "GHSA-89gr-r52h-f8rx"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-39831",
+            "GHSA-89gr-r52h-f8rx"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/usr/bin/incus-agent"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.49.0",
+          "advisory": "GHSA-jppx-rxg9-jmrx",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39833",
+            "GHSA-jppx-rxg9-jmrx"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-39833",
+            "GHSA-jppx-rxg9-jmrx"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/usr/bin/incus-agent"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.50.0",
+          "advisory": "GHSA-89gr-r52h-f8rx",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39831",
+            "GHSA-89gr-r52h-f8rx"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-39831",
+            "GHSA-89gr-r52h-f8rx"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+            "/usr/libexec/podman/gvproxy"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.50.0",
+          "advisory": "GHSA-jppx-rxg9-jmrx",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39833",
+            "GHSA-jppx-rxg9-jmrx"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-39833",
+            "GHSA-jppx-rxg9-jmrx"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+            "/usr/libexec/podman/gvproxy"
+          ]
+        },
+        {
+          "component": "pkg:npm/shell-quote@1.10.0",
+          "advisory": "GHSA-pqg4-j6r4-53mv",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-102422",
+            "GHSA-pqg4-j6r4-53mv"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-102422",
+            "GHSA-pqg4-j6r4-53mv"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/usr/share/code/resources/app/node_modules/shell-quote/package.json"
+          ]
+        },
+        {
+          "component": "pkg:pypi/anyio@4.13.0",
+          "advisory": "GHSA-82r6-8w77-94w6",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-63374",
+            "GHSA-82r6-8w77-94w6"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-63374",
+            "GHSA-82r6-8w77-94w6"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/usr/lib/python3.14/site-packages/anyio-4.13.0.dist-info/METADATA",
+            "/usr/lib/python3.14/site-packages/anyio-4.13.0.dist-info/top_level.txt"
+          ]
+        }
+      ],
+      "summarySha256": "020d265ee6b5f3ecabd3281b7edcd11a0b2f0b56ac285748f8faefd20b9451f5",
+      "evaluationRun": 38411151441
+    },
+    {
+      "schema": 1,
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3b18003a2267bf22b455254f29c9324805c48cfff0f9115d00a77d041035eece",
+      "sourceRun": 38395796884,
+      "sourceRevision": "1240490583072257def95727f199df41e59fe053",
+      "policySha256": "3d016024d3225d4278b9bfd63c8a7fbb422feada1c021724d898402c989179e1",
+      "status": "blocked",
+      "beforeBlockingPairs": 93,
+      "blockingPairs": 24,
+      "blockingRecords": 73,
+      "advisoryRecords": 1094,
+      "releaseBlockers": [],
+      "trackedReleaseConcerns": [],
+      "originalPolicyReproduced": true,
+      "observationsUnchanged": true,
+      "newScanPerformed": false,
+      "releaseEligible": false,
+      "hashes": {
+        "security-result.json": "cd31ce68a8068ba0d2a419bb4293f32faa5b9275903250cdb471179704b9a0a8",
+        "sbom.syft.json": "015274537c835dcdf01c1333f148b46df365c0fa4ba0f72e17b289c2a70b2e7b",
+        "vulnerabilities.json": "d99275b13019a076859d16575b2f2978b162a9cd5a0503cbde0ef995b1ec6fec",
+        "image-config.json": "808652ff652652bb6568e94b152046069a4c64ff52656dda308a41293b31528d"
+      },
+      "baselineLedgerSha256": "725fee4147486e408eb0282949bfff5e024371d30e733750be001f7498ef6c91",
+      "comparisonSha256": "618fd67861fb7f103043bc1a50e84c76f45596e3f638ece2da27a94c0929beb5",
+      "remainingCriticalPairs": [
+        {
+          "component": "pkg:golang/google.golang.org/grpc@v1.72.2",
+          "advisory": "GHSA-p77j-4mvh-x3m3",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-33186",
+            "GHSA-p77j-4mvh-x3m3"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-33186",
+            "GHSA-p77j-4mvh-x3m3"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+            "/usr/bin/buildah",
+            "/usr/bin/podman"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+          "advisory": "GHSA-f5wc-c3c7-36mc",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39832",
+            "GHSA-f5wc-c3c7-36mc"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-f5wc-c3c7-36mc"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+          "advisory": "CVE-2026-27143",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-27143"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-27143"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+            "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+            "/usr/bin/glow",
+            "/usr/bin/gum"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+          "advisory": "CVE-2026-27143",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-27143"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-27143"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+            "/usr/bin/toolbox"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+          "advisory": "GHSA-5cgq-3rg8-m6cv",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-42508",
+            "GHSA-5cgq-3rg8-m6cv"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-5cgq-3rg8-m6cv"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+          "advisory": "GHSA-rm3j-f69w-wqmq",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39834",
+            "GHSA-rm3j-f69w-wqmq"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-39834",
+            "GHSA-rm3j-f69w-wqmq"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+          "advisory": "GHSA-vgwf-h737-ff37",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39830",
+            "GHSA-vgwf-h737-ff37"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-vgwf-h737-ff37"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.40.0",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+            "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+            "/usr/bin/glow",
+            "/usr/bin/gum"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.48.0",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.55.0",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/19/07b725d2d82866531bee698973a08e6c438abaace3b61723709ea531853945.file",
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/sysroot/ostree/repo/objects/70/1bccba378f262def36123d3245e03a4442eb1f5cb37e43e901bd1c68954622.file",
+            "/sysroot/ostree/repo/objects/75/3546d15a9cdd047adccb841b239b2b0c2c25deb15c5edcd9d94801f60325c3.file",
+            "/sysroot/ostree/repo/objects/8e/c5583db8e1709e446e0abbcb470108ba680fcf718835713b907e0f9ab05d02.file",
+            "/sysroot/ostree/repo/objects/d1/6202c07880b5c003452384c62878ebf5155cd81a4e9befa180f485ebcc9693.file",
+            "/sysroot/ostree/repo/objects/f4/4b3304bc30b41a152a41fe1248228b052d2d2c31c69c131e4d85e874530d1c.file",
+            "/usr/bin/containerd",
+            "/usr/bin/containerd-shim-runc-v2",
+            "/usr/bin/containerd-stress",
+            "/usr/bin/ctr",
+            "/usr/bin/rclone",
+            "/usr/bin/restic",
+            "/usr/bin/runc",
+            "/usr/bin/yq"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.56.0",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/usr/bin/cosign"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.57.0",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+            "/usr/bin/buildah",
+            "/usr/bin/podman"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.59.0",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+            "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+            "/usr/bin/tailscale",
+            "/usr/bin/tailscaled"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.4",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/usr/bin/cosign"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.27.1",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+            "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+            "/usr/bin/tailscale",
+            "/usr/bin/tailscaled"
+          ]
+        },
+        {
+          "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+          "advisory": "GHSA-xwwr-4h3p-r22c",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-88018",
+            "GHSA-xwwr-4h3p-r22c"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-88018",
+            "GHSA-xwwr-4h3p-r22c"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/usr/bin/rclone"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+          "advisory": "GHSA-x527-x647-q7gg",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-46595",
+            "GHSA-x527-x647-q7gg"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-x527-x647-q7gg"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ]
+        },
+        {
+          "component": "pkg:golang/github.com/moby/buildkit@v0.25.1",
+          "advisory": "GHSA-4c29-8rgm-jvjj",
+          "severity": "High",
+          "aliases": [
+            "CVE-2026-33747",
+            "GHSA-4c29-8rgm-jvjj"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-33747"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+            "/usr/bin/buildah",
+            "/usr/bin/podman"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.4",
+          "advisory": "GO-2026-6604",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-56857",
+            "GO-2026-6604"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-56857",
+            "GO-2026-6604"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/usr/bin/cosign"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.27.1",
+          "advisory": "GO-2026-6604",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-56857",
+            "GO-2026-6604"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-56857",
+            "GO-2026-6604"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+            "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+            "/usr/bin/tailscale",
+            "/usr/bin/tailscaled"
+          ]
+        },
+        {
+          "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+          "advisory": "GHSA-p569-5gjg-9cmj",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-88044",
+            "GHSA-p569-5gjg-9cmj"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-88044",
+            "GHSA-p569-5gjg-9cmj"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/usr/bin/rclone"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+          "advisory": "GHSA-89gr-r52h-f8rx",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39831",
+            "GHSA-89gr-r52h-f8rx"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-39831",
+            "GHSA-89gr-r52h-f8rx"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+          "advisory": "GHSA-jppx-rxg9-jmrx",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39833",
+            "GHSA-jppx-rxg9-jmrx"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-39833",
+            "GHSA-jppx-rxg9-jmrx"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ]
+        },
+        {
+          "component": "pkg:pypi/anyio@4.13.0",
+          "advisory": "GHSA-82r6-8w77-94w6",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-63374",
+            "GHSA-82r6-8w77-94w6"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-63374",
+            "GHSA-82r6-8w77-94w6"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/usr/lib/python3.14/site-packages/anyio-4.13.0.dist-info/METADATA",
+            "/usr/lib/python3.14/site-packages/anyio-4.13.0.dist-info/top_level.txt"
+          ]
+        }
+      ],
+      "summarySha256": "6128e645316e94dd08bffe6112007d3f9b0c4548a1ecd015f398c804d30878ff",
+      "evaluationRun": 38411151441
+    },
+    {
+      "schema": 1,
+      "profile": "bluefin-dx-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:75eb7ed4d6329787de35f529584d246be939b78274ab06892332e57c0f1924d0",
+      "sourceRun": 38395796884,
+      "sourceRevision": "1240490583072257def95727f199df41e59fe053",
+      "policySha256": "3d016024d3225d4278b9bfd63c8a7fbb422feada1c021724d898402c989179e1",
+      "status": "blocked",
+      "beforeBlockingPairs": 146,
+      "blockingPairs": 54,
+      "blockingRecords": 156,
+      "advisoryRecords": 1845,
+      "releaseBlockers": [],
+      "trackedReleaseConcerns": [
+        {
+          "id": "next-kernel-october-source-fixes",
+          "profiles": [
+            "bluefin-next",
+            "bluefin-dx-next"
+          ],
+          "riskClass": "major-data-loss",
+          "reason": "Pinned Fedora 45 kernel 7.2.9-300 lacks the reviewed October XFS/AMD fixes. Missing scanner matches do not establish source-fix coverage. The fixed 301 build has not reached an approved stable tag in retained official evidence.",
+          "officialSources": [
+            "https://src.fedoraproject.org/rpms/kernel/c/c2cdc6c5c0c6ccc0128613fc7c9d276ebaf870c7.patch",
+            "https://gitlab.com/cki-project/kernel-ark/-/commit/fa3bfc1343f7f3b1ebd873eee5e3e6618918f434.patch"
+          ],
+          "reviewedBy": "great_cto desktop kernel source review",
+          "reviewedAt": "2026-10-13T00:00:29Z",
+          "unblockEvidence": "Approved same-stream stable kernel containing the reviewed fixes, or separately explicit reviewed testing approval; authenticate exact Fedora payloads and validate transaction, module preservation, initramfs and boot qualification before reviewing removal of this hold.",
+          "severity": "Unknown",
+          "advisories": []
+        }
+      ],
+      "originalPolicyReproduced": true,
+      "observationsUnchanged": true,
+      "newScanPerformed": false,
+      "releaseEligible": false,
+      "hashes": {
+        "security-result.json": "b50bca07727f8043b2e38e3bd2d4b0f27144df9af18add59b6b83f7305e5134e",
+        "sbom.syft.json": "8590f5ed9853112f66bb4d71e859fd6c93d6343f190b948cff609602688977d7",
+        "vulnerabilities.json": "3149ff52bd423b2ad850c594f056749bcaa81d86dc72348bdbf2bd2274e18cd9",
+        "image-config.json": "881b6049be85dabeafbfc7a307ea4cf6db1ec1a448991b1d44a637d327244386"
+      },
+      "baselineLedgerSha256": "abb97734626faaf79224839fd792b516807975a621c27afa34a7bbf1caca45c3",
+      "comparisonSha256": "cc4a64e503097711bd07d809879ef7d0080a06b274c57dbd8aeca5be26ed7374",
+      "remainingCriticalPairs": [
+        {
+          "component": "pkg:golang/google.golang.org/grpc@v1.72.2",
+          "advisory": "GHSA-p77j-4mvh-x3m3",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-33186",
+            "GHSA-p77j-4mvh-x3m3"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-33186",
+            "GHSA-p77j-4mvh-x3m3"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/90/2251a93331aa5e6a9393d0850cd6e647ef9be08f4fd745c9fa3e861c9aa058.file",
+            "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+            "/usr/bin/buildah",
+            "/usr/bin/podman",
+            "/usr/bin/podman-tui"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.36.0",
+          "advisory": "GHSA-f5wc-c3c7-36mc",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39832",
+            "GHSA-f5wc-c3c7-36mc"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-f5wc-c3c7-36mc"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+            "/usr/bin/git-lfs"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+          "advisory": "GHSA-f5wc-c3c7-36mc",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39832",
+            "GHSA-f5wc-c3c7-36mc"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-f5wc-c3c7-36mc"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.49.0",
+          "advisory": "GHSA-f5wc-c3c7-36mc",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39832",
+            "GHSA-f5wc-c3c7-36mc"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-f5wc-c3c7-36mc"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/usr/bin/incus-agent"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.50.0",
+          "advisory": "GHSA-f5wc-c3c7-36mc",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39832",
+            "GHSA-f5wc-c3c7-36mc"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-f5wc-c3c7-36mc"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+            "/usr/libexec/podman/gvproxy"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+          "advisory": "CVE-2026-27143",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-27143"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-27143"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/0e/295cf756665b586a2e7184404790e668bc4a51494a19b13b4d5398dcfb3867.file",
+            "/sysroot/ostree/repo/objects/25/8f910dfac74f9ad2f618152c0e8fd723ff234605646c445c6e38e0bc6e950b.file",
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/sysroot/ostree/repo/objects/65/cd93d36c96a2405df94f220abdc47a006555f9382cf62415fd590aa92b1e65.file",
+            "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+            "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+            "/usr/bin/glow",
+            "/usr/bin/gum",
+            "/usr/bin/incus",
+            "/usr/bin/incus-agent",
+            "/usr/libexec/incus/incus-user",
+            "/usr/libexec/incus/incusd"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+          "advisory": "CVE-2026-27143",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-27143"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-27143"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+            "/usr/bin/toolbox"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.36.0",
+          "advisory": "GHSA-5cgq-3rg8-m6cv",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-42508",
+            "GHSA-5cgq-3rg8-m6cv"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-5cgq-3rg8-m6cv"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+            "/usr/bin/git-lfs"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+          "advisory": "GHSA-5cgq-3rg8-m6cv",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-42508",
+            "GHSA-5cgq-3rg8-m6cv"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-5cgq-3rg8-m6cv"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.49.0",
+          "advisory": "GHSA-5cgq-3rg8-m6cv",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-42508",
+            "GHSA-5cgq-3rg8-m6cv"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-5cgq-3rg8-m6cv"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/usr/bin/incus-agent"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.50.0",
+          "advisory": "GHSA-5cgq-3rg8-m6cv",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-42508",
+            "GHSA-5cgq-3rg8-m6cv"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-5cgq-3rg8-m6cv"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+            "/usr/libexec/podman/gvproxy"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.36.0",
+          "advisory": "GHSA-rm3j-f69w-wqmq",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39834",
+            "GHSA-rm3j-f69w-wqmq"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-39834",
+            "GHSA-rm3j-f69w-wqmq"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+            "/usr/bin/git-lfs"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+          "advisory": "GHSA-rm3j-f69w-wqmq",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39834",
+            "GHSA-rm3j-f69w-wqmq"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-39834",
+            "GHSA-rm3j-f69w-wqmq"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.49.0",
+          "advisory": "GHSA-rm3j-f69w-wqmq",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39834",
+            "GHSA-rm3j-f69w-wqmq"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-39834",
+            "GHSA-rm3j-f69w-wqmq"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/usr/bin/incus-agent"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.50.0",
+          "advisory": "GHSA-rm3j-f69w-wqmq",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39834",
+            "GHSA-rm3j-f69w-wqmq"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-39834",
+            "GHSA-rm3j-f69w-wqmq"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+            "/usr/libexec/podman/gvproxy"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.36.0",
+          "advisory": "GHSA-vgwf-h737-ff37",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39830",
+            "GHSA-vgwf-h737-ff37"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-vgwf-h737-ff37"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+            "/usr/bin/git-lfs"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+          "advisory": "GHSA-vgwf-h737-ff37",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39830",
+            "GHSA-vgwf-h737-ff37"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-vgwf-h737-ff37"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.49.0",
+          "advisory": "GHSA-vgwf-h737-ff37",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39830",
+            "GHSA-vgwf-h737-ff37"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-vgwf-h737-ff37"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/usr/bin/incus-agent"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.50.0",
+          "advisory": "GHSA-vgwf-h737-ff37",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39830",
+            "GHSA-vgwf-h737-ff37"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-vgwf-h737-ff37"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+            "/usr/libexec/podman/gvproxy"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.38.0",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+            "/usr/bin/git-lfs"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.40.0",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+            "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+            "/usr/bin/glow",
+            "/usr/bin/gum"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.48.0",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.52.0",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/usr/bin/incus-agent"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.53.0",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/6d/94a749c1087ec61710ab873c0d3277269eb47debe4b51c7602409969f732a8.file",
+            "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+            "/usr/libexec/podman/gvforwarder",
+            "/usr/libexec/podman/gvproxy"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.55.0",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+            "/sysroot/ostree/repo/objects/8e/c5583db8e1709e446e0abbcb470108ba680fcf718835713b907e0f9ab05d02.file",
+            "/sysroot/ostree/repo/objects/90/2251a93331aa5e6a9393d0850cd6e647ef9be08f4fd745c9fa3e861c9aa058.file",
+            "/sysroot/ostree/repo/objects/94/edb58e77e87ab78c64d120de2d6c5e76d12a9fc90671dd9ebfa18e03f72029.file",
+            "/usr/bin/podman-tui",
+            "/usr/bin/rclone",
+            "/usr/bin/restic",
+            "/usr/bin/runc",
+            "/usr/bin/yq",
+            "/usr/libexec/docker/cli-plugins/docker-model"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.56.0",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/usr/bin/cosign"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.57.0",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+            "/usr/bin/buildah",
+            "/usr/bin/podman"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.58.0",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file",
+            "/sysroot/ostree/repo/objects/28/9a163069c0d420700e407d2936c88343c7199051fcb2167a4e0dd505f8b123.file",
+            "/sysroot/ostree/repo/objects/2d/22e9d3905518951cfb5facea21864b7c403d447ceb4b10fd2c95e39dff293f.file",
+            "/sysroot/ostree/repo/objects/2e/801e49da654ab9f6d28238d987b7387d825ee88c8f7d7f47535edcf7d7f8a4.file",
+            "/sysroot/ostree/repo/objects/89/38c593efda2631da84deb9abdc8d6a48d14cd3f582ef6c7e0d63092bae1cbb.file",
+            "/sysroot/ostree/repo/objects/ac/79a1c7b0143c61cbb6938d323c81a7f1aa4fe3939e910855dca32dd82acfba.file",
+            "/usr/bin/containerd",
+            "/usr/bin/containerd-shim-runc-v2",
+            "/usr/bin/ctr",
+            "/usr/bin/gen-manpages",
+            "/usr/bin/rootlesskit",
+            "/usr/libexec/docker/cli-plugins/docker-compose"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.59.0",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+            "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+            "/sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file",
+            "/usr/bin/tailscale",
+            "/usr/bin/tailscaled",
+            "/usr/libexec/docker/cli-plugins/docker-buildx"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.25.12",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+            "/usr/libexec/docker/cli-plugins/docker-model"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.4",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/usr/bin/cosign"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.8",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file",
+            "/sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file",
+            "/usr/libexec/docker/cli-plugins/docker-buildx",
+            "/usr/libexec/docker/cli-plugins/docker-compose"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.27.1",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+            "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+            "/usr/bin/tailscale",
+            "/usr/bin/tailscaled"
+          ]
+        },
+        {
+          "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+          "advisory": "GHSA-xwwr-4h3p-r22c",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-88018",
+            "GHSA-xwwr-4h3p-r22c"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-88018",
+            "GHSA-xwwr-4h3p-r22c"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/usr/bin/rclone"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.36.0",
+          "advisory": "GHSA-x527-x647-q7gg",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-46595",
+            "GHSA-x527-x647-q7gg"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-x527-x647-q7gg"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+            "/usr/bin/git-lfs"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+          "advisory": "GHSA-x527-x647-q7gg",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-46595",
+            "GHSA-x527-x647-q7gg"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-x527-x647-q7gg"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.49.0",
+          "advisory": "GHSA-x527-x647-q7gg",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-46595",
+            "GHSA-x527-x647-q7gg"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-x527-x647-q7gg"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/usr/bin/incus-agent"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.50.0",
+          "advisory": "GHSA-x527-x647-q7gg",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-46595",
+            "GHSA-x527-x647-q7gg"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-x527-x647-q7gg"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+            "/usr/libexec/podman/gvproxy"
+          ]
+        },
+        {
+          "component": "pkg:golang/github.com/moby/buildkit@v0.25.1",
+          "advisory": "GHSA-4c29-8rgm-jvjj",
+          "severity": "High",
+          "aliases": [
+            "CVE-2026-33747",
+            "GHSA-4c29-8rgm-jvjj"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-33747"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+            "/usr/bin/buildah",
+            "/usr/bin/podman"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.25.12",
+          "advisory": "GO-2026-6604",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-56857",
+            "GO-2026-6604"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-56857",
+            "GO-2026-6604"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+            "/usr/libexec/docker/cli-plugins/docker-model"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.4",
+          "advisory": "GO-2026-6604",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-56857",
+            "GO-2026-6604"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-56857",
+            "GO-2026-6604"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/usr/bin/cosign"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.8",
+          "advisory": "GO-2026-6604",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-56857",
+            "GO-2026-6604"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-56857",
+            "GO-2026-6604"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file",
+            "/sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file",
+            "/usr/libexec/docker/cli-plugins/docker-buildx",
+            "/usr/libexec/docker/cli-plugins/docker-compose"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.27.1",
+          "advisory": "GO-2026-6604",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-56857",
+            "GO-2026-6604"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-56857",
+            "GO-2026-6604"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+            "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+            "/usr/bin/tailscale",
+            "/usr/bin/tailscaled"
+          ]
+        },
+        {
+          "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+          "advisory": "GHSA-p569-5gjg-9cmj",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-88044",
+            "GHSA-p569-5gjg-9cmj"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-88044",
+            "GHSA-p569-5gjg-9cmj"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/usr/bin/rclone"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.36.0",
+          "advisory": "GHSA-89gr-r52h-f8rx",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39831",
+            "GHSA-89gr-r52h-f8rx"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-39831",
+            "GHSA-89gr-r52h-f8rx"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+            "/usr/bin/git-lfs"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.36.0",
+          "advisory": "GHSA-jppx-rxg9-jmrx",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39833",
+            "GHSA-jppx-rxg9-jmrx"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-39833",
+            "GHSA-jppx-rxg9-jmrx"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+            "/usr/bin/git-lfs"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+          "advisory": "GHSA-89gr-r52h-f8rx",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39831",
+            "GHSA-89gr-r52h-f8rx"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-39831",
+            "GHSA-89gr-r52h-f8rx"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+          "advisory": "GHSA-jppx-rxg9-jmrx",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39833",
+            "GHSA-jppx-rxg9-jmrx"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-39833",
+            "GHSA-jppx-rxg9-jmrx"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.49.0",
+          "advisory": "GHSA-89gr-r52h-f8rx",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39831",
+            "GHSA-89gr-r52h-f8rx"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-39831",
+            "GHSA-89gr-r52h-f8rx"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/usr/bin/incus-agent"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.49.0",
+          "advisory": "GHSA-jppx-rxg9-jmrx",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39833",
+            "GHSA-jppx-rxg9-jmrx"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-39833",
+            "GHSA-jppx-rxg9-jmrx"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+            "/usr/bin/incus-agent"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.50.0",
+          "advisory": "GHSA-89gr-r52h-f8rx",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39831",
+            "GHSA-89gr-r52h-f8rx"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-39831",
+            "GHSA-89gr-r52h-f8rx"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+            "/usr/libexec/podman/gvproxy"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.50.0",
+          "advisory": "GHSA-jppx-rxg9-jmrx",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39833",
+            "GHSA-jppx-rxg9-jmrx"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-39833",
+            "GHSA-jppx-rxg9-jmrx"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+            "/usr/libexec/podman/gvproxy"
+          ]
+        },
+        {
+          "component": "pkg:npm/shell-quote@1.10.0",
+          "advisory": "GHSA-pqg4-j6r4-53mv",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-102422",
+            "GHSA-pqg4-j6r4-53mv"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-102422",
+            "GHSA-pqg4-j6r4-53mv"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/usr/share/code/resources/app/node_modules/shell-quote/package.json"
+          ]
+        },
+        {
+          "component": "pkg:pypi/anyio@4.13.0",
+          "advisory": "GHSA-82r6-8w77-94w6",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-63374",
+            "GHSA-82r6-8w77-94w6"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-63374",
+            "GHSA-82r6-8w77-94w6"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/usr/lib/python3.14/site-packages/anyio-4.13.0.dist-info/METADATA",
+            "/usr/lib/python3.14/site-packages/anyio-4.13.0.dist-info/top_level.txt"
+          ]
+        }
+      ],
+      "summarySha256": "87e91ddd78e3c68bad200d0fc44feef09fca57d0c39cf0a68554c2ab1e88f7e7",
+      "evaluationRun": 38411349067
+    },
+    {
+      "schema": 1,
+      "profile": "bluefin-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:cbf3c777dc57c632ac8067beabc52e66eab476128653894dc6beed7a8975c9d7",
+      "sourceRun": 38395796884,
+      "sourceRevision": "1240490583072257def95727f199df41e59fe053",
+      "policySha256": "3d016024d3225d4278b9bfd63c8a7fbb422feada1c021724d898402c989179e1",
+      "status": "blocked",
+      "beforeBlockingPairs": 93,
+      "blockingPairs": 24,
+      "blockingRecords": 73,
+      "advisoryRecords": 1094,
+      "releaseBlockers": [],
+      "trackedReleaseConcerns": [
+        {
+          "id": "next-kernel-october-source-fixes",
+          "profiles": [
+            "bluefin-next",
+            "bluefin-dx-next"
+          ],
+          "riskClass": "major-data-loss",
+          "reason": "Pinned Fedora 45 kernel 7.2.9-300 lacks the reviewed October XFS/AMD fixes. Missing scanner matches do not establish source-fix coverage. The fixed 301 build has not reached an approved stable tag in retained official evidence.",
+          "officialSources": [
+            "https://src.fedoraproject.org/rpms/kernel/c/c2cdc6c5c0c6ccc0128613fc7c9d276ebaf870c7.patch",
+            "https://gitlab.com/cki-project/kernel-ark/-/commit/fa3bfc1343f7f3b1ebd873eee5e3e6618918f434.patch"
+          ],
+          "reviewedBy": "great_cto desktop kernel source review",
+          "reviewedAt": "2026-10-13T00:00:29Z",
+          "unblockEvidence": "Approved same-stream stable kernel containing the reviewed fixes, or separately explicit reviewed testing approval; authenticate exact Fedora payloads and validate transaction, module preservation, initramfs and boot qualification before reviewing removal of this hold.",
+          "severity": "Unknown",
+          "advisories": []
+        }
+      ],
+      "originalPolicyReproduced": true,
+      "observationsUnchanged": true,
+      "newScanPerformed": false,
+      "releaseEligible": false,
+      "hashes": {
+        "security-result.json": "7e0de82cc0837b00255171fa1d1de83a57ede47b94aecba9734d69b59fd1bb1f",
+        "sbom.syft.json": "fa0a88a9519e6d846c9e7a57387d655d6900fd02d21dd0b32eeee5ac42548bdc",
+        "vulnerabilities.json": "7a2901a86a2119a8f9fc721a7039b6fcc4fb63d87e6a32655e8bd11700f3ed2d",
+        "image-config.json": "4a3a11142caf8655fe1d6b1f6b410730387ccfc5c8cd8b76f3279955fdc50685"
+      },
+      "baselineLedgerSha256": "db9e45023c471ca95ae2740b12660b019f5cc314bb259e82a97f55965bc73c48",
+      "comparisonSha256": "059cdf6233bf679d81c5224e4f9aa4fb292c4427e4bc05d60bd8dea20ed81b86",
+      "remainingCriticalPairs": [
+        {
+          "component": "pkg:golang/google.golang.org/grpc@v1.72.2",
+          "advisory": "GHSA-p77j-4mvh-x3m3",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-33186",
+            "GHSA-p77j-4mvh-x3m3"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-33186",
+            "GHSA-p77j-4mvh-x3m3"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+            "/usr/bin/buildah",
+            "/usr/bin/podman"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+          "advisory": "GHSA-f5wc-c3c7-36mc",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39832",
+            "GHSA-f5wc-c3c7-36mc"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-f5wc-c3c7-36mc"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.1-X%3Anodwarf5",
+          "advisory": "CVE-2026-27143",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-27143"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-27143"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+            "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+            "/usr/bin/glow",
+            "/usr/bin/gum"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26rc2-X%3Anodwarf5",
+          "advisory": "CVE-2026-27143",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-27143"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-27143"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+            "/usr/bin/toolbox"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+          "advisory": "GHSA-5cgq-3rg8-m6cv",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-42508",
+            "GHSA-5cgq-3rg8-m6cv"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-5cgq-3rg8-m6cv"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+          "advisory": "GHSA-rm3j-f69w-wqmq",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39834",
+            "GHSA-rm3j-f69w-wqmq"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-39834",
+            "GHSA-rm3j-f69w-wqmq"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+          "advisory": "GHSA-vgwf-h737-ff37",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39830",
+            "GHSA-vgwf-h737-ff37"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-vgwf-h737-ff37"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.40.0",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+            "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+            "/usr/bin/glow",
+            "/usr/bin/gum"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.48.0",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.55.0",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/19/07b725d2d82866531bee698973a08e6c438abaace3b61723709ea531853945.file",
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/sysroot/ostree/repo/objects/70/1bccba378f262def36123d3245e03a4442eb1f5cb37e43e901bd1c68954622.file",
+            "/sysroot/ostree/repo/objects/75/3546d15a9cdd047adccb841b239b2b0c2c25deb15c5edcd9d94801f60325c3.file",
+            "/sysroot/ostree/repo/objects/8e/c5583db8e1709e446e0abbcb470108ba680fcf718835713b907e0f9ab05d02.file",
+            "/sysroot/ostree/repo/objects/d1/6202c07880b5c003452384c62878ebf5155cd81a4e9befa180f485ebcc9693.file",
+            "/sysroot/ostree/repo/objects/f4/4b3304bc30b41a152a41fe1248228b052d2d2c31c69c131e4d85e874530d1c.file",
+            "/usr/bin/containerd",
+            "/usr/bin/containerd-shim-runc-v2",
+            "/usr/bin/containerd-stress",
+            "/usr/bin/ctr",
+            "/usr/bin/rclone",
+            "/usr/bin/restic",
+            "/usr/bin/runc",
+            "/usr/bin/yq"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.56.0",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/usr/bin/cosign"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.57.0",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+            "/usr/bin/buildah",
+            "/usr/bin/podman"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/net@v0.59.0",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+            "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+            "/usr/bin/tailscale",
+            "/usr/bin/tailscaled"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.4",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/usr/bin/cosign"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.27.1",
+          "advisory": "GO-2026-6612",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+            "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+            "/usr/bin/tailscale",
+            "/usr/bin/tailscaled"
+          ]
+        },
+        {
+          "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+          "advisory": "GHSA-xwwr-4h3p-r22c",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-88018",
+            "GHSA-xwwr-4h3p-r22c"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-88018",
+            "GHSA-xwwr-4h3p-r22c"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/usr/bin/rclone"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+          "advisory": "GHSA-x527-x647-q7gg",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-46595",
+            "GHSA-x527-x647-q7gg"
+          ],
+          "criticalSeverityAdvisories": [
+            "GHSA-x527-x647-q7gg"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ]
+        },
+        {
+          "component": "pkg:golang/github.com/moby/buildkit@v0.25.1",
+          "advisory": "GHSA-4c29-8rgm-jvjj",
+          "severity": "High",
+          "aliases": [
+            "CVE-2026-33747",
+            "GHSA-4c29-8rgm-jvjj"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-33747"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+            "/usr/bin/buildah",
+            "/usr/bin/podman"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.26.4",
+          "advisory": "GO-2026-6604",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-56857",
+            "GO-2026-6604"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-56857",
+            "GO-2026-6604"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/usr/bin/cosign"
+          ]
+        },
+        {
+          "component": "pkg:golang/stdlib@1.27.1",
+          "advisory": "GO-2026-6604",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-56857",
+            "GO-2026-6604"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-56857",
+            "GO-2026-6604"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+            "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+            "/usr/bin/tailscale",
+            "/usr/bin/tailscaled"
+          ]
+        },
+        {
+          "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+          "advisory": "GHSA-p569-5gjg-9cmj",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-88044",
+            "GHSA-p569-5gjg-9cmj"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-88044",
+            "GHSA-p569-5gjg-9cmj"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+            "/usr/bin/rclone"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+          "advisory": "GHSA-89gr-r52h-f8rx",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39831",
+            "GHSA-89gr-r52h-f8rx"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-39831",
+            "GHSA-89gr-r52h-f8rx"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ]
+        },
+        {
+          "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+          "advisory": "GHSA-jppx-rxg9-jmrx",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-39833",
+            "GHSA-jppx-rxg9-jmrx"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-39833",
+            "GHSA-jppx-rxg9-jmrx"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "/usr/bin/skopeo"
+          ]
+        },
+        {
+          "component": "pkg:pypi/anyio@4.13.0",
+          "advisory": "GHSA-82r6-8w77-94w6",
+          "severity": "Critical",
+          "aliases": [
+            "CVE-2026-63374",
+            "GHSA-82r6-8w77-94w6"
+          ],
+          "criticalSeverityAdvisories": [
+            "CVE-2026-63374",
+            "GHSA-82r6-8w77-94w6"
+          ],
+          "reason": "critical-applicability-pending-review",
+          "locations": [
+            "/usr/lib/python3.14/site-packages/anyio-4.13.0.dist-info/METADATA",
+            "/usr/lib/python3.14/site-packages/anyio-4.13.0.dist-info/top_level.txt"
+          ]
+        }
+      ],
+      "summarySha256": "1b4a598d529934e301ed7fd852624003f253c73ef2193714f5171689faac308a",
+      "evaluationRun": 38411349067
+    }
+  ],
+  "releaseEligible": false,
+  "probeErrors": [
+    {
+      "run": 38410999928,
+      "cause": "New result fields initially altered legacy output shape; restored exact old-mode output and added regression. No clearance claimed."
+    },
+    {
+      "run": 38411151441,
+      "cause": "Next compact baseline has main- prefix; corrected only missing Next work without repeating valid Generic evaluations."
+    }
+  ],
+  "verdicts": {
+    "source": "144 focused policy/integration/native-summary tests pass; exact final hosted status tracked on PR151",
+    "vulnerability": "Critical applicability review still required: standard24, development54 pairs on each kernel channel",
+    "release": "ineligible; no exact candidate signed VM receipt yet"
+  },
+  "officialSeverityReview": [
+    {
+      "id": "CVE-2026-78663",
+      "retrievedAt": "2026-10-13T14:20:20.973453+00:00",
+      "apiUrl": "https://api.github.com/repos/CVEProject/cvelistV5/contents/cves/2026/78xxx/CVE-2026-78663.json",
+      "path": "/tmp/finite-critical-official-severity-2026-10-13/CVE-2026-78663.json",
+      "sha256": "2efb863574d2255c66a566066670c1c0d4849f37c7652b9578b64bc90af71280"
+    },
+    {
+      "id": "CVE-2026-27143",
+      "retrievedAt": "2026-10-13T14:20:21.342509+00:00",
+      "apiUrl": "https://api.github.com/repos/CVEProject/cvelistV5/contents/cves/2026/27xxx/CVE-2026-27143.json",
+      "path": "/tmp/finite-critical-official-severity-2026-10-13/CVE-2026-27143.json",
+      "sha256": "80df4f78239c698bfa1cbdc4631c6799c381fe37c06e486add395e8b06d49041"
+    },
+    {
+      "id": "GHSA-82r6-8w77-94w6",
+      "retrievedAt": "2026-10-13T14:20:21.818689+00:00",
+      "apiUrl": "https://api.github.com/advisories/GHSA-82r6-8w77-94w6",
+      "path": "/tmp/finite-critical-official-severity-2026-10-13/GHSA-82r6-8w77-94w6.json",
+      "sha256": "7bdbdd6cab489005e57beb86568db59fc57df744e4174df6fda58a31b09c123a"
+    },
+    {
+      "id": "GHSA-p569-5gjg-9cmj",
+      "retrievedAt": "2026-10-13T14:20:22.539664+00:00",
+      "apiUrl": "https://api.github.com/advisories/GHSA-p569-5gjg-9cmj",
+      "path": "/tmp/finite-critical-official-severity-2026-10-13/GHSA-p569-5gjg-9cmj.json",
+      "sha256": "cfaf272893863b117e8d4e88739674c50441875b744b1fb3fdb12c1665294d1f"
+    },
+    {
+      "id": "GHSA-xwwr-4h3p-r22c",
+      "retrievedAt": "2026-10-13T14:20:23.092937+00:00",
+      "apiUrl": "https://api.github.com/advisories/GHSA-xwwr-4h3p-r22c",
+      "path": "/tmp/finite-critical-official-severity-2026-10-13/GHSA-xwwr-4h3p-r22c.json",
+      "sha256": "041933bf1e481fcccdb7219a617b4f07b78549d1bd91184c0466ca5d2ee26508"
+    }
+  ],
+  "removalProbe": {
+    "run": 38411928635,
+    "evidence": "docs/desktop-removal-evidence-2026-10-13.json",
+    "actualRemoval": false
+  }
+}
