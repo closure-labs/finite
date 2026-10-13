@@ -1,6 +1,15 @@
 # Validation and remediation plan
 
-Current signing/resume status: [exact candidates and signing validation](signing-resume-evidence-2026-10-13.json). PR #153 corrected generated-cache identity drift. Fresh standard run38439778084 passed its build and security policy; signing received an empty key because the reusable workflow caller did not forward it. PR #154 repaired the explicit secret boundary and added public-key preflight. Resume38452104611 recovered the image but failed before signing because sandboxed Skopeo could not read its default credential path. PR #155 corrected scoped registry authentication. Resume38455754348 reused the authenticated original scan under current policy and passed protected signing, including the public-key match and signature/transparency verification. No rebuild or new scan occurred. The fresh SELinux-enforcing Secure Boot/encrypted-root VM passed; the upgrade VM stopped at its wrong-key rejection probe and discarded the actual error. Diagnose that failure and complete upgrade/rollback before release; no promotion occurred. Doppler adoption follows a separate canary pilot and does not delay this release.
+Current rollout: [standard Finite qualified and promoted](signing-resume-evidence-2026-10-13.json).
+Run38467981855 at85a37e0c1b88 passed source/build, security policy, protected signing,
+Secure Boot/encrypted-root/SELinux-enforcing VM fresh installation, signed upgrade,
+rollback, promotion and the CI gate. Both public standard tags resolve to the
+verified candidate. PRs #154–#156 fixed secret forwarding, scoped registry
+credentials, and the VM signature-rejection matcher/diagnostics. No confirmed
+Critical desktop release blockers were found under the approved policy;
+unresolved advisories remain accepted risk. Other channels require independent
+qualification. Doppler backend adoption waits for the owner's workspace and
+canary allow/deny validation; it does not block this release.
 
 Current execution order: [remediation and independent release sequence](release-implementation-sequence.md).
 
