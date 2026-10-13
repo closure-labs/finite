@@ -47,7 +47,8 @@ class Selection(unittest.TestCase):
                 self.assertEqual(impact.classify([path]), {'checks': True, 'nix': False, 'profiles': []})
         for path in ['tests/home/contracts.sh', 'automation/github/repository-security.json', '.github/workflows/release.yml', 'devenv.lock', 'scripts/ci/http-get.py',
                      '.github/workflows/update-bluefin.yml',
-                     '.github/workflows/upstream-health.yml', '.github/workflows/repository-security.yml']:
+                     '.github/workflows/upstream-health.yml', '.github/workflows/repository-security.yml',
+                     '.github/workflows/doppler-pilot.yml']:
             self.assertEqual(impact.classify([path]), {'checks': True, 'nix': False, 'profiles': []})
         for path in ['.github/workflows/desktop-security-evidence.yml',
                      'scripts/ci/go-binary-evidence.go', 'scripts/ci/go-binary-evidence_test.go',
@@ -209,6 +210,96 @@ class Gate(unittest.TestCase):
         needs = self.needs(True, ['bluefin-next'])
         needs['checks']['outputs'] = {'images': 'false', 'matrix': '{"include":[]}'}
         self.assertTrue(gate.failures(needs, False))
+
+
+class DopplerPilot(unittest.TestCase):
+    def setUp(self):
+        import yaml
+        self.workflow = yaml.safe_load((ROOT / '.github/workflows/doppler-pilot.yml').read_text())
+
+    def probe(self, job, index, status=403, bad_claim=False):
+        import base64
+        import io
+        import urllib.error
+        from unittest.mock import patch
+        steps = self.workflow['jobs'][job]['steps']
+        source = steps[index]['run'].split("python3 - <<'PY'\n", 1)[1].rsplit('\nPY', 1)[0]
+        claims = {
+            'iss': 'https://token.actions.githubusercontent.com',
+            'aud': 'https://github.com/closure-labs',
+            'sub': 'repo:closure-labs@256683018/finite@1293375784:' + (
+                'environment:doppler-pilot' if job == 'canary' else 'ref:refs/heads/main'),
+            'repository_id': '1293375784', 'repository_owner_id': '256683018',
+            'ref': 'refs/heads/main', 'event_name': 'workflow_dispatch',
+            'workflow_ref': 'closure-labs/finite/.github/workflows/doppler-pilot.yml@refs/heads/main',
+        }
+        if bad_claim:
+            claims['sub'] = 'unexpected'
+        token = 'secret-header.' + base64.urlsafe_b64encode(json.dumps(claims).encode()).decode() + '.secret-signature'
+        calls = []
+        def request(req, timeout):
+            calls.append(req)
+            self.assertEqual(timeout, 15)
+            if len(calls) == 1:
+                return io.BytesIO(json.dumps({'value': token}).encode())
+            self.assertEqual(req.full_url, 'https://api.doppler.com/v3/auth/oidc')
+            self.assertEqual(json.loads(req.data), {'identity': 'pilot-identity', 'token': token})
+            if status == 'network':
+                raise urllib.error.URLError(token)
+            if status != 200:
+                raise urllib.error.HTTPError(req.full_url, status, token, {}, io.BytesIO(token.encode()))
+            return io.BytesIO(token.encode())
+        with tempfile.TemporaryDirectory() as tmp:
+            summary = Path(tmp) / 'summary'
+            output = io.StringIO()
+            error = None
+            with patch.dict(os.environ, {
+                'ACTIONS_ID_TOKEN_REQUEST_URL': 'https://example.invalid/token?request=1',
+                'ACTIONS_ID_TOKEN_REQUEST_TOKEN': 'secret-request',
+                'PILOT_IDENTITY': 'pilot-identity', 'GITHUB_STEP_SUMMARY': str(summary),
+            }), patch('urllib.request.urlopen', side_effect=request), contextlib.redirect_stdout(output):
+                try:
+                    exec(compile(source, '<pilot>', 'exec'), {})
+                except SystemExit as exc:
+                    error = str(exc)
+            retained = output.getvalue() + (summary.read_text() if summary.exists() else '') + (error or '')
+            self.assertNotIn(token, retained)
+            self.assertNotIn('secret-request', retained)
+            return error, calls, retained
+
+    def test_claims_only_and_bad_claims(self):
+        error, calls, retained = self.probe('canary', 0)
+        self.assertIsNone(error)
+        self.assertEqual(len(calls), 1)
+        self.assertIn('Public pilot OIDC claims', retained)
+        self.assertIsNotNone(self.probe('canary', 0, bad_claim=True)[0])
+
+    def test_negative_probes_require_actual_authentication_denial(self):
+        for job, index in [('canary', 4), ('deny-without-environment', 0)]:
+            for status in (401, 403):
+                error, calls, _ = self.probe(job, index, status=status)
+                self.assertIsNone(error)
+                self.assertEqual(len(calls), 2)
+                if job == 'canary':
+                    self.assertIn('audience=finite-doppler-pilot-denied', calls[0].full_url)
+            for status in (200, 400, 429, 500, 'network'):
+                self.assertIsNotNone(self.probe(job, index, status=status)[0])
+        error, calls, _ = self.probe('deny-without-environment', 0, bad_claim=True)
+        self.assertIsNotNone(error)
+        self.assertEqual(len(calls), 1)
+
+    def test_pilot_permissions_and_secret_scope(self):
+        self.assertEqual(self.workflow['permissions'], {})
+        jobs = self.workflow['jobs']
+        self.assertEqual(jobs['canary']['environment'], 'doppler-pilot')
+        self.assertNotIn('environment', jobs['deny-without-environment'])
+        for job in jobs.values():
+            self.assertEqual(job['permissions'], {'id-token': 'write'})
+            self.assertIn("github.ref == 'refs/heads/main'", job['if'])
+        action = jobs['canary']['steps'][2]
+        self.assertEqual(action['uses'], 'DopplerHQ/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534')
+        self.assertEqual(action['with']['inject-env-vars'], 'false')
+        self.assertNotIn('doppler-token', action['with'])
 
 
 if __name__ == '__main__':

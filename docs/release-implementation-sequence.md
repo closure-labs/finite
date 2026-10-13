@@ -4,7 +4,28 @@ Finite is a Jujutsu repository, using Bluefin/bootc with Nix/Home Manager. All
 four desktop profiles and container tools remain supported. This is the current
 execution order; older audit ledgers remain historical evidence.
 
-## Candidate identity correction
+## Current signing and secret-management rollout
+
+Fresh standard [run38439778084](https://github.com/closure-labs/finite/actions/runs/38439778084)
+at `b274129fc76f2bdf588b4b312d83af4759e0d1a7` passed build and security policy.
+Signing received an empty secret through the reusable workflow boundary; this
+is not evidence of stored-key corruption. The candidate digest is
+`sha256:60b12153f6c3db4152225e6213ff5ae95971190cca87920b969a848b5fa423ef`.
+
+1. Declare and explicitly forward only the signing secret, retain the protected
+   signing environment, and check its derived public key against `cosign.pub`.
+2. Validate and merge the repair. Resume that exact candidate, reusing fresh
+   authenticated security evidence; do not rebuild for workflow-only changes.
+3. Complete protected signing and enforcing VM install/upgrade/rollback before
+   promotion. Qualify Next independently after useful standard evidence.
+4. Deploy a manual Doppler canary pilot with exact OIDC trust and no production
+   credentials. Verify entitlement/access and actual allow/deny results before
+   moving the read-only audit App or considering signer migration.
+
+The [Doppler assessment](doppler-oidc-assessment-2026-10-13.md) records trust
+requirements and limits. Secret-store adoption is independent of image release.
+
+## Historical candidate identity correction
 
 PR #152 merged at `31cdca7ffc15b537613d0f694191fcf8e06c1f4f` after
 [source](https://github.com/closure-labs/finite/actions/runs/38434206098) and

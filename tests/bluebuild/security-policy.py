@@ -6,6 +6,7 @@ import importlib.util
 import hashlib
 import json
 import os
+import shutil
 from pathlib import Path
 import subprocess
 import sys
@@ -615,6 +616,12 @@ class PublicationBoundary(unittest.TestCase):
         self.assertNotIn('COSIGN_PRIVATE_KEY', image)
         self.assertNotIn('cosign_private_key', image)
         self.assertNotIn('secrets', publication['build'])
+        workflow = yaml.safe_load((ROOT / '.github/workflows/publication.yml').read_text())
+        caller = yaml.safe_load((ROOT / '.github/workflows/build.yml').read_text())['jobs']['publish']
+        self.assertEqual(workflow[True]['workflow_call']['secrets'], {'COSIGN_PRIVATE_KEY': {'required': True}})
+        self.assertEqual(caller['secrets'], {'COSIGN_PRIVATE_KEY': '${{ secrets.COSIGN_PRIVATE_KEY }}'})
+        self.assertNotIn('secrets: inherit', (ROOT / '.github/workflows/build.yml').read_text())
+        self.assertNotIn('secrets: inherit', (ROOT / '.github/workflows/publication.yml').read_text())
         self.assertEqual(publication['sign']['needs'], 'security')
         self.assertEqual(publication['sign']['environment'], 'image-signing')
         self.assertIn('sign', publication['qualification']['needs'])
@@ -637,6 +644,55 @@ class PublicationBoundary(unittest.TestCase):
             self.assertIn("needs." + dependency + ".result == 'success'", publication['promote']['if'])
         download = next(step for step in publication['promote']['steps'] if 'SECURITY_ARTIFACT' in step.get('env', {}))
         self.assertEqual(download['env']['SECURITY_ARTIFACT'], '${{ needs.security.outputs.evidence }}')
+
+    def test_signer_preflight_rejects_missing_invalid_or_wrong_key_before_registry_access(self):
+        jobs = yaml.safe_load((ROOT / '.github/workflows/publication.yml').read_text())['jobs']
+        step = next(step for step in jobs['sign']['steps'] if 'COSIGN_PRIVATE_KEY' in step.get('env', {}))
+        self.assertIn('timeout 30s cosign public-key --key env://COSIGN_PRIVATE_KEY', step['run'])
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            tools = root / 'bin'
+            tools.mkdir()
+            (root / 'cosign.pub').write_text('fixture-public-key\n')
+            bash = shutil.which('bash')
+            self.assertIsNotNone(bash)
+            programs = {
+                'cosign': '#!/bin/bash\nprintf "%s\\n" "cosign:$1" >>"$CALLS"\n'
+                          'if [[ $1 == public-key ]]; then\n'
+                          '  if [[ $KEY_MODE == invalid ]]; then printf "%s" "$COSIGN_PRIVATE_KEY" >&2; exit 1; fi\n'
+                          '  printf "%s\\n" "$DERIVED_PUBLIC_KEY"\nfi\n',
+                'gh': '#!/bin/bash\nprintf "gh\\n" >>"$CALLS"\nprintf "%s\\n" "$GITHUB_SHA"\n',
+                'docker': '#!/bin/bash\nprintf "docker:%s\\n" "$1" >>"$CALLS"\n'
+                          'if [[ $1 == login ]]; then cat >/dev/null; fi\n'}
+            for name, code in programs.items():
+                path = tools / name
+                path.write_text(code.replace('#!/bin/bash', '#!' + bash, 1))
+                path.chmod(0o755)
+            for label, key, derived, expected in [('missing', '', 'fixture-public-key', False),
+                    ('invalid', 'sensitive-fixture-key', 'fixture-public-key', False),
+                    ('mismatch', 'sensitive-fixture-key', 'wrong-public-key', False),
+                    ('matching', 'sensitive-fixture-key', 'fixture-public-key', True)]:
+                calls = root / (label + '.calls')
+                env = {**os.environ, 'PATH': str(tools) + os.pathsep + os.environ['PATH'], 'CALLS': str(calls),
+                       'KEY_MODE': label, 'COSIGN_PRIVATE_KEY': key, 'DERIVED_PUBLIC_KEY': derived,
+                       'CANDIDATE_DIGEST': DIGEST, 'GITHUB_SHA': 'b' * 40,
+                       'REGISTRY_TOKEN': 'fixture-token', 'REGISTRY_USER': 'fixture-user'}
+                completed = subprocess.run(['bash', '-c', step['run']], cwd=root, env=env,
+                                           capture_output=True, text=True, timeout=10)
+                self.assertEqual(completed.returncode == 0, expected, completed.stderr)
+                observed = calls.read_text() if calls.exists() else ''
+                self.assertNotIn('sensitive-fixture-key', completed.stdout + completed.stderr)
+                self.assertNotIn('fixture-token', completed.stdout + completed.stderr)
+                if expected:
+                    self.assertLess(observed.index('cosign:public-key'), observed.index('docker:login'))
+                    self.assertIn('cosign:sign', observed)
+                    self.assertIn('cosign:verify', observed)
+                else:
+                    self.assertNotIn('gh', observed)
+                    self.assertNotIn('docker:', observed)
+                    self.assertNotIn('cosign:sign', observed)
+            self.assertEqual({path.name for path in root.iterdir()},
+                             {'bin', 'cosign.pub', 'invalid.calls', 'mismatch.calls', 'matching.calls'})
 
     def test_release_scan_cannot_share_signing_credentials(self):
         jobs = yaml.safe_load((ROOT / '.github/workflows/release.yml').read_text())['jobs']

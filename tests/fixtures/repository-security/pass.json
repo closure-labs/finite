@@ -7,6 +7,7 @@
       "patterns_allowed": [
         "DeterminateSystems/determinate-nix-action@*",
         "DeterminateSystems/nix-installer-action@*",
+        "DopplerHQ/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534",
         "actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0",
         "blue-build/github-action@836161eb076426a451e6a0054f722b1153b8b3ad",
         "docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c",
@@ -99,6 +100,25 @@
           ],
           "type": "required_reviewers"
         },
+        {
+          "type": "branch_policy"
+        }
+      ]
+    },
+    "doppler-pilot": {
+      "can_admins_bypass": false,
+      "custom_protection_rules": [],
+      "deployment_branch_policy": {
+        "custom_branch_policies": true,
+        "protected_branches": false
+      },
+      "deployment_branches": [
+        {
+          "name": "main",
+          "type": "branch"
+        }
+      ],
+      "protection_rules": [
         {
           "type": "branch_policy"
         }

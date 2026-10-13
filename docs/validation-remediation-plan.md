@@ -1,6 +1,6 @@
 # Validation and remediation plan
 
-Current signing/resume status: [exact candidates and signing validation](signing-resume-evidence-2026-10-13.json). Prior builds and vulnerability-policy checks passed, but candidate reuse failed its identity guard. Correct generated-cache identity drift, then build and qualify fresh candidates; protected signing and enforcing VM gates remain pending.
+Current signing/resume status: [exact candidates and signing validation](signing-resume-evidence-2026-10-13.json). PR #153 corrected generated-cache identity drift. Fresh standard run38439778084 passed its build and security policy; signing received an empty key because the reusable workflow caller did not forward it. Repair the explicit secret boundary and verify its public key, then resume that immutable candidate without rebuilding. Protected signing and SELinux-enforcing VM qualification remain release gates. Doppler adoption follows a separate canary pilot and does not delay this release.
 
 Current execution order: [remediation and independent release sequence](release-implementation-sequence.md).
 

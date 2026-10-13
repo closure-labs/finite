@@ -3,7 +3,7 @@
   "sourceRevision": "2cb7b1ed0db02aeb9a82a90bffdd511dc843c8c0",
   "buildVerdict": "all-four-passed",
   "vulnerabilityPolicyVerdict": "all-four-passed-reviewed-desktop-exploitability-policy; unresolved advisories retained",
-  "releaseVerdict": "pending-deterministic-identity-fix-fresh-build-signing-and-enforcing-VM-qualification",
+  "releaseVerdict": "pending-secret-forwarding-repair-protected-signing-and-enforcing-VM-qualification",
   "signingFailure": "Cosign legacy format conflicted with default use-signing-config=true",
   "fix": {
     "version": "v3.1.3",
@@ -77,5 +77,47 @@
     "securityReevaluationAttempted": false,
     "finding": "Identity enumerates generated scripts/bluebuild Python bytecode; cache headers depend on checkout modification times. Identical source can hash differently.",
     "remediation": "Exclude generated Python caches from tooling identity, retain authored and shipped inputs, version canonical identity payload, and build new candidates without accepting old mismatched identities."
+  },
+  "identityCorrection": {
+    "pr": 153,
+    "sourceRevision": "e9a406b6365aaf4834f30dceaa65faeffa95b22e",
+    "sourceRun": 38437866524,
+    "queueRun": 38438814330,
+    "mergeRevision": "b274129fc76f2bdf588b4b312d83af4759e0d1a7",
+    "status": "merged-after-passing-checks",
+    "focusedTests": 120,
+    "newCanonicalSchema": 2,
+    "wireFormat": "v1:sha256",
+    "oldIdentitiesAccepted": false
+  },
+  "freshStandardRun": {
+    "id": 38439778084,
+    "url": "https://github.com/closure-labs/finite/actions/runs/38439778084",
+    "revision": "b274129fc76f2bdf588b4b312d83af4759e0d1a7",
+    "target": "finite",
+    "forceQualification": true,
+    "sourceChecks": "pass",
+    "imageBuild": "pass",
+    "releaseVerdict": "pending",
+    "securityPolicy": "pass",
+    "signing": "failed-empty-key-environment",
+    "qualification": "skipped",
+    "promotion": "skipped",
+    "digest": "sha256:60b12153f6c3db4152225e6213ff5ae95971190cca87920b969a848b5fa423ef",
+    "buildArtifact": 11836131571,
+    "securityArtifact": 11836309039
+  },
+  "cancelledRedundantRuns": [
+    38435847079,
+    38439666375
+  ],
+  "secretForwardingRepair": {
+    "status": "implemented-awaiting-hosted-validation",
+    "namedSecretOnly": true,
+    "publicKeyPreflightSeconds": 30,
+    "focusedTests": 215,
+    "newImageRequired": false,
+    "candidateRun": 38439778084,
+    "candidateDigest": "sha256:60b12153f6c3db4152225e6213ff5ae95971190cca87920b969a848b5fa423ef"
   }
 }

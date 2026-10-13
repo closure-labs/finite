@@ -370,7 +370,29 @@ hold remain explicit. Release eligibility has not been established.
 ## Deterministic image input identity
 
 - [x] Exclude only generated tooling .pyc/.pyo from identity; authored/shipped inputs remain bound.120 focused tests and independent review pass.
-- [ ] Validate and merge identity correction. Defer the build-only disk cleanup optimization to a later image-workflow change so this tooling PR does not trigger four unnecessary validation builds.
+- [x] PR #153 merged atb274129fc76f after source38437866524 and queue38438814330 passed. Defer the build-only disk cleanup optimization to a later image-workflow change so this tooling PR does not trigger four unnecessary validation builds.
 - [ ] Build one fresh standard candidate under corrected identity; scan, sign and VM qualify before promotion.
 - [ ] Build and qualify Next independently; do not retry old mismatched identities.
 - This is a release tooling/provenance correction, not a vulnerability-policy failure or additional security exception.
+
+- Fresh standard run38439778084 has passed source checks and entered image build atb274129fc76f. Next remains sequenced after standard evidence; no release eligibility claimed.
+
+## Doppler OIDC assessment and fresh-candidate signing diagnosis
+
+- [x] Review official action source, OIDC claims, live repository settings and protected-environment metadata; independent security/integration review supports a canary-only pilot.
+- [x] Diagnose38439778084: build and security pass; signer receives empty COSIGN_PRIVATE_KEY because the reusable caller does not forward the secret. No stored-key corruption established.
+- [x] Implement explicit named secret forwarding and a bounded public-key preflight; 151 focused signing/selection/resume/pilot tests pass. Hosted validation and exact-digest resume remain pending.
+- [ ] Resume exact digest60b12153f6c3 without rebuilding; retain fresh security evidence where valid.
+- Doppler adoption is optional and requires verified subscription/workspace configuration and positive/negative canary tests; no integration or secret migration performed by this assessment.
+- Assessment and rollout constraints: docs/doppler-oidc-assessment-2026-10-13.md.
+
+## Authorized Doppler canary rollout
+
+- [x] User authorized implementation and rollout; separate this pilot from release qualification.
+- [x] Create empty `doppler-pilot` environment, restrict to main, disable administrator bypass; existing signer/release protections unchanged.
+- [ ] Deploy manual claims-only/canary workflow and retain actual GitHub OIDC claims without credentials.
+- [ ] Verify positive/negative Doppler authentication before trialing the read-only audit App.
+- External blocker: user confirms no Doppler workspace exists. Owner: organization administrator; unblock by creating an entitled Team/Enterprise workspace, a canary-only config and narrowly constrained service account/identity. No production secret migration until pilot evidence passes.
+- [x] Pilot behavioral fixtures verify claim matching, HTTP401/403 denial, unexpected success, malformed/rate-limit/server/network failures and token non-disclosure; workflow lint and documentation checks pass.
+- [x] Hosted38448894056 caught missing action allowlist entry. Add only the reviewed Doppler SHA and main-only pilot environment to tracked/live security policy; delivery and full repository-policy fixtures pass.
+- [x] Hosted38449803661 exposed a stale blanket no-secret-forwarding assertion. Require exactly the named signing key and retain nested-job isolation; 215 broadened focused tests pass before retry.
