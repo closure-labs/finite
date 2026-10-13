@@ -211,6 +211,17 @@ def prepare_layout(layout, image, evidence):
     return {'parent': parent_raw, 'child': child_raw, 'config': config_raw.decode('utf-8')}
 
 
+def output_directory(path):
+    """Make caller-relative outputs absolute without resolving away symlinks."""
+    directory = path.absolute()
+    value = str(directory)
+    if ('..' in directory.parts or value.startswith('//') or len(value) > 4096
+            or any(ord(char) < 32 or ord(char) == 127 for char in value)
+            or any(part.is_symlink() for part in (directory, *directory.parents))):
+        raise ValueError('Security output must have a canonical path without symlinks')
+    return directory
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('image')
@@ -220,7 +231,10 @@ def main():
     parser.add_argument('--source-revision')
     parser.add_argument('--upstream-receipt', type=Path)
     args = parser.parse_args()
-    directory = args.directory
+    try:
+        directory = output_directory(args.directory)
+    except ValueError as error:
+        parser.error(str(error))
     directory.mkdir(parents=True, exist_ok=False)
     try:
         if not policy_module.IMAGE.fullmatch(args.image):

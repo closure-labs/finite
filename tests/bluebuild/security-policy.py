@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Negative tests for the independent vulnerability/signing publication boundary."""
 from datetime import datetime, timezone
+from contextlib import chdir
 import importlib.util
 import hashlib
 import json
@@ -415,6 +416,90 @@ class ManifestBinding(unittest.TestCase):
             self.assertIn('extraction', security.read_manifests(directory))
             sbom.write_text('{"modified":true}')
             with self.assertRaises(ValueError): security.read_manifests(directory)
+
+
+class ScannerOutputPaths(unittest.TestCase):
+    def setUp(self):
+        def load(name, path):
+            spec = importlib.util.spec_from_file_location(name, ROOT / path)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            return module
+        self.scanner = load('scanner_paths', 'scripts/bluebuild/security-scan.py')
+        self.collector = load('collector_paths', 'scripts/ci/rpm-file-evidence.py')
+
+    def invoke_production_relative_output(self, temporary, symlink_sbom=False):
+        scanner = self.scanner
+        directory = temporary / '.bluebuild/security-bluefin-generic'
+        observed = []
+        class CollectorReached(RuntimeError):
+            pass
+        def run(command, output=None):
+            if command[0] == 'skopeo':
+                Path(command[command.index('--digestfile') + 1]).write_text(DIGEST)
+            elif command[0] == 'syft':
+                path = Path(next(arg.split('=', 1)[1] for arg in command if arg.startswith('syft-json=')))
+                if symlink_sbom:
+                    target = temporary / 'outside-sbom.json'
+                    target.write_text('{}')
+                    path.symlink_to(target)
+                else:
+                    path.write_text('{}')
+            elif command[0] == 'python3' and command[1].endswith('/rpm-file-evidence.py'):
+                sbom = command[command.index('--sbom') + 1]
+                output = command[command.index('--output') + 1]
+                self.assertEqual(sbom, str(directory / 'sbom.syft.json'))
+                self.assertEqual(output, str(directory / 'rpm-file-evidence.json'))
+                self.assertTrue(self.collector.canonical(sbom))
+                self.assertTrue(self.collector.canonical(output))
+                # Invoke the real no-follow reader rather than merely matching
+                # command strings. Production relative paths failed here.
+                self.assertEqual(self.collector.read_sbom(Path(sbom))[0], {})
+                observed.append((sbom, output))
+                raise CollectorReached()
+        inspected = json.dumps({'Digest': DIGEST, 'Labels': {}})
+        with chdir(temporary), patch.object(sys, 'argv', ['security-scan.py', IMAGE, '.bluebuild/security-bluefin-generic']), \
+                patch.object(scanner.policy_module, 'load_policy', return_value={'mode': 'upstream-maintained-risk'}), \
+                patch.object(scanner.baseline_module, 'authenticate', return_value={}), \
+                patch.object(scanner.baseline_module, 'context', return_value={}), \
+                patch.object(scanner, 'prepare_layout', return_value={'config': '{}'}), \
+                patch.object(scanner.subprocess, 'check_output', side_effect=[inspected, 'umoci fixture']), \
+                patch.object(scanner, 'run', side_effect=run):
+            if symlink_sbom:
+                with self.assertRaises(SystemExit) as exit_status:
+                    scanner.main()
+                self.assertEqual(exit_status.exception.code, 2)
+                result = json.loads((directory / 'security-result.json').read_text())
+                self.assertEqual(result['status'], 'scanner-error')
+                self.assertEqual(observed, [])
+            else:
+                with self.assertRaises(CollectorReached):
+                    scanner.main()
+                self.assertEqual(len(observed), 1)
+
+    def test_relative_scan_output_reaches_actual_canonical_sbom_reader(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            self.invoke_production_relative_output(Path(temporary))
+
+    def test_relative_output_does_not_hide_symlinked_sbom(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            self.invoke_production_relative_output(Path(temporary), symlink_sbom=True)
+
+    def test_output_parent_symlinks_and_parent_traversal_fail_before_scanning(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            temporary = Path(temporary)
+            outside = temporary / 'outside'
+            outside.mkdir()
+            (temporary / 'alias').symlink_to(outside, target_is_directory=True)
+            for relative in ('alias/evidence', 'alias/../evidence', '../evidence'):
+                with self.subTest(relative=relative), chdir(temporary), \
+                        patch.object(sys, 'argv', ['security-scan.py', IMAGE, relative]), \
+                        patch.object(self.scanner, 'run') as run:
+                    with self.assertRaises(SystemExit) as exit_status:
+                        self.scanner.main()
+                    self.assertEqual(exit_status.exception.code, 2)
+                    run.assert_not_called()
+            self.assertEqual(list(outside.iterdir()), [])
 
 
 class BoundedScanner(unittest.TestCase):

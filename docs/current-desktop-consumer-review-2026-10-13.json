@@ -1,0 +1,540 @@
+{
+  "schema": 1,
+  "status": "targeted-source-applicability-review-no-dispositions",
+  "reviewedAt": "2026-10-13T05:49:57.498545+00:00",
+  "reviewedBy": "great_cto security applicability / ownership_followup",
+  "parentValidatedRevision": "2361fe543f62220e2f2ecf1ccfe1fbd18d66d6f0",
+  "inputLedgerSha256": "71390eaf0fcb5a8c2a70a267bb81314df07f5391d7805a3aaea5c3adbfbbd80e",
+  "inputLedgerPolicySha256": "cb55ca02a90c70857a858911ca37820a2add7d1a5b4a5c29c0b7db6caf69dee9",
+  "currentPolicyFileSha256": "d4ba69e1aba2c76e8a3772f444ef2341deb8a8820558456c754251a0f7718c30",
+  "scope": "AnyIO, rclone, Code shell-quote and official HTTP/2/CONNECT mechanism boundaries; root owns deeper Go caller graph proof.",
+  "anyio": {
+    "component": "pkg:pypi/anyio@4.13.0",
+    "advisory": "GHSA-82r6-8w77-94w6",
+    "aliases": [
+      "CVE-2026-63374",
+      "GHSA-82r6-8w77-94w6"
+    ],
+    "fixVersions": [
+      "4.14.2"
+    ],
+    "scopes": {
+      "bluefin-generic": [
+        "/usr/lib/python3.14/site-packages/anyio-4.13.0.dist-info/METADATA",
+        "/usr/lib/python3.14/site-packages/anyio-4.13.0.dist-info/top_level.txt"
+      ],
+      "bluefin-next": [
+        "/usr/lib/python3.14/site-packages/anyio-4.13.0.dist-info/METADATA",
+        "/usr/lib/python3.14/site-packages/anyio-4.13.0.dist-info/top_level.txt"
+      ],
+      "bluefin-dx-generic": [
+        "/usr/lib/python3.14/site-packages/anyio-4.13.0.dist-info/METADATA",
+        "/usr/lib/python3.14/site-packages/anyio-4.13.0.dist-info/top_level.txt"
+      ],
+      "bluefin-dx-next": [
+        "/usr/lib/python3.14/site-packages/anyio-4.13.0.dist-info/METADATA",
+        "/usr/lib/python3.14/site-packages/anyio-4.13.0.dist-info/top_level.txt"
+      ]
+    },
+    "verdict": "Relevant conditional TLS-identity risk, not a demonstrated exploit in every consumer. Package-wide nonapplicability is not supported.",
+    "conditions": [
+      "A non-ASCII certificate hostname reaches AnyIO TLSStream.wrap/connect_tcp without IDNA2008 pre-encoding.",
+      "The network connection is redirected or hijacked through another mechanism to a malicious peer with a certificate for the different IDNA2003 domain."
+    ],
+    "positiveCallerLeads": [
+      {
+        "source": "HTTPX0.28.1 URL normalization uses the idna package and hands an encoded ASCII host to HTTPcore; HTTPcore1.0.9 normally derives TLS server_hostname from origin.host decoded as ASCII.",
+        "qualification": "This can control the ordinary HTTPX call path once exact installed versions/files/callers are bound. It does not cover direct AnyIO API calls or a custom non-ASCII sni_hostname extension.",
+        "sources": [
+          "https://github.com/encode/httpx/blob/0.28.1/httpx/_urlparse.py",
+          "https://github.com/encode/httpcore/blob/1.0.9/httpcore/_async/connection.py",
+          "https://github.com/encode/httpcore/blob/1.0.9/httpcore/_backends/anyio.py"
+        ]
+      }
+    ],
+    "verifiedUpstreamFix": {
+      "version": "4.14.2",
+      "tagCommit": "c384f99687c64c59ed8a11c3a0f11a2d57daff71",
+      "securityFixCommit": "68f58915f82d9be8109ebbbd8f5d70577d43f2ce",
+      "mechanism": "Resolve certificate hostnames through IDNA2008 before either standard or external SSLContext.wrap_bio. The upstream regression distinguishes sharp-s domain encoding and validates a legitimate certificate for the correct encoded name.",
+      "source": "https://github.com/agronholm/anyio/commit/68f58915f82d9be8109ebbbd8f5d70577d43f2ce"
+    },
+    "safeRemediation": "Prefer a compatible Fedora-signed python3-anyio update/backport. The security commit is narrower than all changes between4.13 and4.14.2; test both SSLContext branches and current supported consumers. No pip overlay over RPM files.",
+    "owner": "Fedora python-anyio maintainer / Bluefin; Finite qualifies signed package and supported consumers",
+    "unblockEvent": "Approved owning RPM with this fix (or authenticated backport proof at actual shipped files), or complete positive consumer/hostname restrictions covering all supported calls. Existing package availability evidence is reused, not queried again.",
+    "officialSources": [
+      "https://github.com/agronholm/anyio/security/advisories/GHSA-82r6-8w77-94w6",
+      "https://github.com/agronholm/anyio/blob/c384f99687c64c59ed8a11c3a0f11a2d57daff71/src/anyio/streams/tls.py"
+    ]
+  },
+  "rcloneCases": [
+    {
+      "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+      "advisory": "GHSA-cf44-9pgv-m4xc",
+      "aliases": [
+        "CVE-2026-54572",
+        "GHSA-cf44-9pgv-m4xc"
+      ],
+      "fixVersions": [
+        "1.74.4"
+      ],
+      "scopes": {
+        "bluefin-generic": [
+          "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+          "/usr/bin/rclone"
+        ],
+        "bluefin-next": [
+          "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+          "/usr/bin/rclone"
+        ],
+        "bluefin-dx-generic": [
+          "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+          "/usr/bin/rclone"
+        ],
+        "bluefin-dx-next": [
+          "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+          "/usr/bin/rclone"
+        ]
+      },
+      "role": "client",
+      "mechanism": "Copying untrusted remote objects with --links can plant an escaping symlink and then write attacker data outside the destination as the desktop user.",
+      "verdict": "Relevant supported desktop client functionality; server exclusion cannot resolve this.",
+      "publisherFixedVersion": "1.74.4",
+      "sourceOrConfigurationRemediation": "Reject escaping link targets in the owning-package fix; disabling --links would require an enforced, documented feature restriction, not an absent default flag.",
+      "officialSources": [
+        "https://github.com/rclone/rclone/security/advisories/GHSA-cf44-9pgv-m4xc"
+      ]
+    },
+    {
+      "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+      "advisory": "GHSA-2m8m-jhrm-w6j2",
+      "aliases": [
+        "CVE-2026-71312",
+        "GHSA-2m8m-jhrm-w6j2"
+      ],
+      "fixVersions": [
+        "1.75.0"
+      ],
+      "scopes": {
+        "bluefin-generic": [
+          "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+          "/usr/bin/rclone"
+        ],
+        "bluefin-next": [
+          "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+          "/usr/bin/rclone"
+        ],
+        "bluefin-dx-generic": [
+          "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+          "/usr/bin/rclone"
+        ],
+        "bluefin-dx-next": [
+          "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+          "/usr/bin/rclone"
+        ]
+      },
+      "role": "client-to-remote-command",
+      "mechanism": "SFTP remote hashing under PowerShell with SSH exec enabled interpolates attacker-controlled filenames; smart quotes can execute statements as the remote SSH account.",
+      "verdict": "Relevant supported SFTP workflow; Linux host proof alone is not nonapplicability because the command shell is remote.",
+      "publisherFixedVersion": "1.75.0",
+      "sourceOrConfigurationRemediation": "Use fixed quoting for all PowerShell quote delimiters; disabling remote hashing/SSH exec can control this specific configuration but must cover every supported remote and cannot clear other rclone findings.",
+      "officialSources": [
+        "https://github.com/rclone/rclone/security/advisories/GHSA-2m8m-jhrm-w6j2"
+      ]
+    },
+    {
+      "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+      "advisory": "GHSA-p569-5gjg-9cmj",
+      "aliases": [
+        "CVE-2026-88044",
+        "GHSA-p569-5gjg-9cmj"
+      ],
+      "fixVersions": [
+        "1.75.1"
+      ],
+      "scopes": {
+        "bluefin-generic": [
+          "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+          "/usr/bin/rclone"
+        ],
+        "bluefin-next": [
+          "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+          "/usr/bin/rclone"
+        ],
+        "bluefin-dx-generic": [
+          "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+          "/usr/bin/rclone"
+        ],
+        "bluefin-dx-next": [
+          "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+          "/usr/bin/rclone"
+        ]
+      },
+      "role": "RC-started-server",
+      "mechanism": "FTP/S3 serve/start receives request-local proxyOpt.AuthProxy but older constructors consult the unrelated process-global option. FTP can fall back to anonymous access; S3 with AuthKey can route authenticated keys to the fixed RC filesystem instead of the authorized backend.",
+      "verdict": "Relevant supported conditional server mode. Dedicated CLI-started servers are explicitly not affected by this option-scope mismatch. Anonymous S3 without AuthKey is not this advisory impact.",
+      "publisherFixedVersion": "1.75.1",
+      "sourceOrConfigurationRemediation": "Construct each server from its own proxy options; validate FTP denial, authenticated S3 backend isolation and simultaneous distinct server configurations.",
+      "officialSources": [
+        "https://github.com/rclone/rclone/security/advisories/GHSA-p569-5gjg-9cmj"
+      ]
+    },
+    {
+      "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+      "advisory": "GHSA-xwwr-4h3p-r22c",
+      "aliases": [
+        "CVE-2026-88018",
+        "GHSA-xwwr-4h3p-r22c"
+      ],
+      "fixVersions": [
+        "1.75.1"
+      ],
+      "scopes": {
+        "bluefin-generic": [
+          "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+          "/usr/bin/rclone"
+        ],
+        "bluefin-next": [
+          "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+          "/usr/bin/rclone"
+        ],
+        "bluefin-dx-generic": [
+          "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+          "/usr/bin/rclone"
+        ],
+        "bluefin-dx-next": [
+          "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+          "/usr/bin/rclone"
+        ]
+      },
+      "role": "S3-server",
+      "mechanism": "S3 auth-proxy without a separate shared signing secret can register arbitrary client access keys against an empty secret, so SigV4 authenticates no possession of credentials.",
+      "verdict": "Relevant supported conditional server mode; cannot call every rclone invocation exposed.",
+      "publisherFixedVersion": "1.75.1",
+      "sourceOrConfigurationRemediation": "The published newer source uses a per-identity-secret proxy flow, not merely the advisory illustrative startup guard. Existing S3 auth-proxy scripts and AuthKey semantics need migration and integration validation.",
+      "officialSources": [
+        "https://github.com/rclone/rclone/security/advisories/GHSA-xwwr-4h3p-r22c"
+      ]
+    },
+    {
+      "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+      "advisory": "GHSA-fqj9-69pf-6pjg",
+      "aliases": [
+        "CVE-2026-59733",
+        "GHSA-fqj9-69pf-6pjg"
+      ],
+      "fixVersions": [
+        "1.74.4"
+      ],
+      "scopes": {
+        "bluefin-generic": [
+          "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+          "/usr/bin/rclone"
+        ],
+        "bluefin-next": [
+          "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+          "/usr/bin/rclone"
+        ],
+        "bluefin-dx-generic": [
+          "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+          "/usr/bin/rclone"
+        ],
+        "bluefin-dx-next": [
+          "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+          "/usr/bin/rclone"
+        ]
+      },
+      "role": "REST-server",
+      "mechanism": "serve restic --private-repos authorizes one username prefix but passes an uncanonicalized path to backends; parent components can select another user repository.",
+      "verdict": "Relevant supported conditional server mode with path-normalizing backends, including memory/SFTP/FTP; append-only does not prevent cross-tenant reads.",
+      "publisherFixedVersion": "1.74.4",
+      "sourceOrConfigurationRemediation": "Reject dot/parent components before both authorization and backend object selection; exercise read/write/delete and private repository separation against supported backend families.",
+      "officialSources": [
+        "https://github.com/rclone/rclone/security/advisories/GHSA-fqj9-69pf-6pjg"
+      ]
+    },
+    {
+      "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+      "advisory": "GHSA-45pq-889g-fcgh",
+      "aliases": [
+        "CVE-2026-71309",
+        "GHSA-45pq-889g-fcgh"
+      ],
+      "fixVersions": [
+        "1.75.0"
+      ],
+      "scopes": {
+        "bluefin-generic": [
+          "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+          "/usr/bin/rclone"
+        ],
+        "bluefin-next": [
+          "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+          "/usr/bin/rclone"
+        ],
+        "bluefin-dx-generic": [
+          "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+          "/usr/bin/rclone"
+        ],
+        "bluefin-dx-next": [
+          "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+          "/usr/bin/rclone"
+        ]
+      },
+      "role": "REST-server",
+      "mechanism": "serve restic accepts leading ../ paths on affected backends, exposing objects outside the configured root.",
+      "verdict": "Relevant supported conditional server mode; the publisher confirms multiple backend manifestations rather than only WebDAV.",
+      "publisherFixedVersion": "1.75.0",
+      "sourceOrConfigurationRemediation": "Use the fixed canonical relative-path validation (io/fs.ValidPath plus rejection of dot root); validate root confinement across supported backends and methods.",
+      "officialSources": [
+        "https://github.com/rclone/rclone/security/advisories/GHSA-45pq-889g-fcgh"
+      ]
+    },
+    {
+      "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+      "advisory": "GHSA-c476-6w5q-jw77",
+      "aliases": [
+        "CVE-2026-88017",
+        "GHSA-c476-6w5q-jw77"
+      ],
+      "fixVersions": [
+        "1.75.1"
+      ],
+      "scopes": {
+        "bluefin-generic": [
+          "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+          "/usr/bin/rclone"
+        ],
+        "bluefin-next": [
+          "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+          "/usr/bin/rclone"
+        ],
+        "bluefin-dx-generic": [
+          "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+          "/usr/bin/rclone"
+        ],
+        "bluefin-dx-next": [
+          "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+          "/usr/bin/rclone"
+        ]
+      },
+      "role": "FTP-server",
+      "mechanism": "A username-global credential map can replace an existing session credential after another login. The publisher confirms v1.75.0; older versions have different cache/timing conditions.",
+      "verdict": "Not a demonstrated v1.74.3 exploit yet, but its source has the username-global password map, per-operation lookup and username-only credential-checked cache. After cache expiry an accepted replacement credential can still rebind the older session; no source-based nonapplicability established.",
+      "publisherFixedVersion": "1.75.1",
+      "sourceOrConfigurationRemediation": "Bind credentials to the FTP session. A bounded loopback test on authenticated shipped bytes with explicit cache expiry would establish the older-version boundary; absent immediate reproduction is not proof of safety.",
+      "officialSources": [
+        "https://github.com/rclone/rclone/security/advisories/GHSA-c476-6w5q-jw77"
+      ]
+    }
+  ],
+  "rcloneNewPublisherSourceLead": {
+    "release": "1.75.2",
+    "publishedAt": "2026-10-09T11:03:19Z",
+    "upstreamCommit": "be8d6044eacb843b74d335db0c5fbe09222031fe",
+    "sourceModuleFacts": {
+      "minimumGoDirective": "1.26.0",
+      "golang.org/x/net": "0.60.0",
+      "golang.org/x/crypto": "0.57.0",
+      "actualReleaseBinaryCompiler": "unknown/not downloaded or inspected"
+    },
+    "verdict": "Real potential partial remediation of seven rclone main-module findings and embedded module floors; not yet a compatible approved package/source or stdlib clearance.",
+    "existingPublisherRoute": "Fedora-signed owning update/backport/rebuild; do not repeat unchanged availability query until publication event.",
+    "newOfficialPublisherRoute": "Requires explicit source/trust review and actual compatible RPM transaction/binary module proof; do not silently substitute an unsigned archive or overwrite RPM files.",
+    "signingMetadataProbe": {
+      "releaseAssetId": 624718850,
+      "checksumUrl": "https://github.com/rclone/rclone/releases/download/v1.75.2/SHA256SUMS",
+      "checksumSha256": "73ede5aab2b8f2dd4b1315f7f063cdd5df10de6338749bba49cbc0c240bda976",
+      "checksumBytes": 4795,
+      "keysSource": "https://github.com/rclone/rclone/blob/v1.75.2/docs/content/KEYS",
+      "keysSha256": "398761407ca77bd5a4aafda1b0176605aa9cb4cf0ae0c5a6dd1d2c2d11175100",
+      "validSignature": true,
+      "signingFingerprint": "FBF737ECE9F8AB18604BD2AC93935E02FF3B54FA",
+      "publicKeyAlgorithm": "DSA1024",
+      "signatureDigest": "SHA1",
+      "actualGpgStatusAlgorithms": [
+        17,
+        2
+      ],
+      "strongGitTagKeyFingerprint": "E3B358DC858FB307F48170B9CB0DBEBC5F32C81D",
+      "gitTagIsNotBinaryChecksumAuthority": true,
+      "rpmSha256": "d5174054cf94075c32faf25961687622b8d366b788972ea9fbcedba59013e320",
+      "zipSha256": "349ac8fba6ff65d6247043f1750cdcb518ec5d500ef91463a10d37c0ccdf3702",
+      "modernAttestationProbe": "GitHub attestations endpoint returned404; modern attestation not proven, absence not inferred.",
+      "cdnProbe": "downloads.rclone.org checksum GET returned403; official GitHub release metadata fallback used.",
+      "trustConclusion": "The checksum is authentic under the historical documented key, but introduces legacy DSA1024/SHA1 authentication; do not present as equivalent to current reviewed Fedora RSA/SHA256 source. Prefer owning publisher rebuild or a separately reviewed modern signature/attestation path."
+    },
+    "compatibilityRequirements": [
+      "Validate S3 auth-proxy per-identity-secret protocol and AuthKey behavior; source differs from the advisory illustrative minimal fix.",
+      "Validate RC-started FTP/S3 per-server proxies and FTP session isolation.",
+      "Validate ordinary sync/mount/copy, --links and SFTP hash behavior at all supported profiles.",
+      "Inspect actual embedded compiler/module versions before assessing other Go advisories; changed source go.mod does not prove binary contents."
+    ],
+    "officialSources": [
+      "https://rclone.org/downloads/",
+      "https://rclone.org/release_signing/",
+      "https://github.com/rclone/rclone/releases/tag/v1.75.2",
+      "https://github.com/rclone/rclone/blob/be8d6044eacb843b74d335db0c5fbe09222031fe/go.mod"
+    ]
+  },
+  "codeShellQuote": {
+    "component": "pkg:npm/shell-quote@1.10.0",
+    "advisory": "GHSA-pqg4-j6r4-53mv",
+    "aliases": [
+      "CVE-2026-102422",
+      "GHSA-pqg4-j6r4-53mv"
+    ],
+    "fixVersions": [
+      "1.11.0"
+    ],
+    "scopes": {
+      "bluefin-dx-generic": [
+        "/usr/share/code/resources/app/node_modules/shell-quote/package.json"
+      ],
+      "bluefin-dx-next": [
+        "/usr/share/code/resources/app/node_modules/shell-quote/package.json"
+      ]
+    },
+    "verdict": "Strong source-level false-positive lead; not granted because exact shipped Code runtime files and all runtime importers remain unbound.",
+    "condition": "quote() must receive an actual object comment token before a later attacker-controlled string with a line terminator in the same token array. parse-only callers and arrays containing strings only cannot produce this specific comment-token boundary.",
+    "officialSource": "https://github.com/ljharb/shell-quote/security/advisories/GHSA-pqg4-j6r4-53mv",
+    "fixSource": "https://github.com/ljharb/shell-quote/commit/6002b2ed90c6b83095eb272b6b0adaf3a172b0bc",
+    "fixedVersion": "1.11.0",
+    "exactCodeSource": {
+      "tag": "1.141.0",
+      "commit": "2a59476c9bfcb90b3ddc372c36762471b7dfad1c",
+      "latestOfficialReleaseChecked": "1.141.0",
+      "runtimeConsumer": "@vscode/sandbox-runtime0.0.1",
+      "otherLockConsumer": "npm-run-all2 is a devDependency in this exact Code package.json; do not assume installed exclusion without bundle proof."
+    },
+    "positivePublishedConsumerProof": {
+      "url": "https://registry.npmjs.org/@vscode/sandbox-runtime/-/sandbox-runtime-0.0.1.tgz",
+      "archiveSha256": "94c9c8c791c72ea4f5b6c9c480d7094471174eb7aee5e0a228c82981077b5fc4",
+      "archiveBytes": 458745,
+      "unpackedBytes": 1244804,
+      "fileCount": 79,
+      "sourceIntegrityMatchedExactCodeLock": "sha512-Jy3iKmNXGD1HcLJkT3YS2l+n5S7H41buvMsZER/EC3nx24fSu1vhg1y9RDzLDwq7wEh7CZTEJBwRcYjV9OAFvQ==",
+      "onlyDirectShellQuoteImports": [
+        {
+          "path": "package/dist/sandbox/linux-sandbox-utils.js",
+          "sha256": "28f4d1df6f49557abe7bd7ac8180218f847261458a3a8f077bbeb935f5e60171",
+          "quoteCallerRoles": "String paths/env/argv, shell -c string argument, inner script string, bwrap string argv; no parse() or object comment token construction observed in published runtime."
+        },
+        {
+          "path": "package/dist/sandbox/macos-sandbox-utils.js",
+          "sha256": "fd9a00359f4da3044ac8623f063305b0e400426e0d69212de80eac17a7613421",
+          "quoteCallerRoles": "String environment entries, sandbox-exec argv and command strings. Not used as a Linux platform exclusion for the shared module."
+        }
+      ],
+      "qualification": "Positive caller shapes in the exact published dependency source, not an absent-symbol probe. Argument construction and input validation must be covered in final source review; dynamic importers, other packages and actual Microsoft bundle differences remain unknown."
+    },
+    "nextCheapProof": "Hosted bounded signed Microsoft Code RPM or existing candidate extraction text probe: authenticate exact owning package/source/product revision, hash current sandbox dependency/runtime files against these source bytes, list every runtime shell-quote importer and map each quote token construction. Include all current native/retained package locations. If all are string-only or parser-only, propose exact digest/component/alias/path nonapplicability; otherwise request Microsoft-signed1.11-containing Code update.",
+    "owner": "Microsoft Code publisher; Finite applicability reviewer",
+    "unblockEvent": "Complete authenticated runtime-source/caller/all-location join, or compatible Microsoft-signed Code bundle with shell-quote1.11.0. Do not alter RPM-owned node_modules in place.",
+    "officialSources": [
+      "https://github.com/microsoft/vscode/blob/2a59476c9bfcb90b3ddc372c36762471b7dfad1c/package.json",
+      "https://github.com/microsoft/vscode/blob/2a59476c9bfcb90b3ddc372c36762471b7dfad1c/package-lock.json",
+      "https://github.com/microsoft/vscode-sandbox-runtime",
+      "https://github.com/ljharb/shell-quote/security/advisories/GHSA-pqg4-j6r4-53mv"
+    ]
+  },
+  "httpConditionalClassification": [
+    {
+      "id": "GO-2026-6605",
+      "aliases": [
+        "CVE-2026-56866"
+      ],
+      "mechanism": "An HTTP/1 CONNECT request with nonempty body, non-2xx keep-alive rejection and pooled reuse can poison the response consumed by a later caller. Cross-user impact requires a shared transport boundary such as a reverse proxy.",
+      "classification": "Conditional client/forwarder risk; ordinary TLS proxy CONNECT with no Request.Body is not this mechanism.",
+      "positiveProofRequired": "Enumerate every supported CONNECT-producing caller, Body assignment, rejection behavior and shared transport reuse; exact compiled source/bytes at all native locations. Client-only labeling or absent CONNECT symbols is insufficient.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6605",
+        "https://go.dev/issue/81740",
+        "https://go.dev/cl/847306"
+      ]
+    },
+    {
+      "id": "GO-2026-6610",
+      "aliases": [
+        "CVE-2026-78660"
+      ],
+      "mechanism": "An HTTP/2 client accepts malformed framing headers; response smuggling requires forwarding those headers to a lenient HTTP/1 peer when acting as a reverse proxy.",
+      "classification": "Official description does not establish desktop takeover for a terminal client that consumes the response without forwarding it. Such clients are high-yield nonapplicability leads, not accepted scopes yet.",
+      "positiveProofRequired": "Trace each supported HTTP/2 response consumer and every serialization/header-forwarding path; prove there is no lenient downstream HTTP/1 boundary, including optional servers and proxy roles. stdlib and x/net copies require distinct exact-component coverage.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6610",
+        "https://go.dev/issue/81115",
+        "https://go.dev/cl/835145",
+        "https://go.dev/cl/836385"
+      ]
+    },
+    {
+      "id": "GO-2026-6613",
+      "aliases": [
+        "CVE-2026-94439"
+      ],
+      "mechanism": "An HTTP/1 handler returns a successful CONNECT response without hijacking the connection, while an intermediate peer treats it as a tunnel. The server continues parsing HTTP and can disagree with the proxy boundary.",
+      "classification": "Conditional server/proxy risk; importing net/http or running a client does not establish this handler path.",
+      "positiveProofRequired": "Inventory every supported HTTP/1 server handler, CONNECT method response, default/fallback route and Hijack behavior. Prove CONNECT rejects before success, or prove safe hijack/closure; exact compiled source/binary/module/location binding remains required.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6613",
+        "https://go.dev/issue/81744",
+        "https://go.dev/cl/847311"
+      ]
+    }
+  ],
+  "recommendedSequence": [
+    "First bind the exact current Code sandbox files/importers; the positive string-only published caller shape is the strongest cheap new false-positive lead.",
+    "Continue root Go CONNECT/reverse-proxy source role proof with the explicit advisory conditions; never infer vulnerability or nonapplicability merely from net/http symbols.",
+    "Keep AnyIO and supported rclone client/server paths blocked until owning signed fixes/backports or complete enforced/applicability evidence. Source fixes now exist upstream; approved package publication remains a separate dependency.",
+    "If product scope changes are desired, ask for explicit decisions on individual server/remote-hash/link functionality or optional packages after dependency proof; removing server support alone cannot clear rclone client --links and remote PowerShell risks.",
+    "Only when new source fixes or complete exact-digest proofs change evidence, reuse retained results for review and scan a changed candidate once; signing and boot gates remain separate."
+  ],
+  "remainingBlockers": [
+    {
+      "owner": "Microsoft / Finite reviewer",
+      "requiredEvent": "Authenticated exact Code runtime/all-importer/all-location proof or signed Code1.11-containing update."
+    },
+    {
+      "owner": "Fedora python-anyio maintainer / Bluefin",
+      "requiredEvent": "Compatible signed owning RPM update/backport of68f58915, or comprehensive supported hostname consumer proof."
+    },
+    {
+      "owner": "Fedora rclone maintainer / Bluefin; optionally separately reviewed official rclone publisher",
+      "requiredEvent": "Signed compatible owning update/backport with all seven main fixes and required module/compiler proof; new publisher route requires modern/explicitly reviewed authentication and transaction qualification."
+    },
+    {
+      "owner": "Finite product owner",
+      "requiredEvent": "Explicit enforceable feature/support decisions if using exclusions for conditional rclone modes; default listener absence is insufficient."
+    },
+    {
+      "owner": "Finite Go applicability reviewer / owning publishers",
+      "requiredEvent": "Exact CONNECT/reverse-proxy/server response source/caller proof at all component versions and locations, or fixed compatible owning rebuilds."
+    }
+  ],
+  "acceptedDispositions": [],
+  "newNativeScanPerformed": false,
+  "newImagePulled": false,
+  "newBinaryDownloaded": false,
+  "sourceArchivesInspected": [
+    {
+      "name": "@vscode/sandbox-runtime0.0.1",
+      "compressedBytes": 458745,
+      "codeExecuted": false,
+      "installed": false
+    }
+  ],
+  "fullAuditRestarted": false,
+  "fedoraAvailabilityQueriesRepeated": false,
+  "repoEdited": false,
+  "sourceBuildVerdict": "Parent-providedPR147/148PASS; no new source implementation or hosted validation performed by this review.",
+  "vulnerabilityVerdict": "BLOCKED; source leads and partial fix opportunities do not establish clearance.",
+  "releaseEligible": false,
+  "additionalProvenanceProbe": {
+    "endpoint": "https://api.github.com/repos/rclone/rclone/attestations/sha256:d5174054cf94075c32faf25961687622b8d366b788972ea9fbcedba59013e320",
+    "result": "HTTP404; unavailable through this API, not proof that no attestation exists",
+    "officialReleaseAssetDigest": "sha256:d5174054cf94075c32faf25961687622b8d366b788972ea9fbcedba59013e320",
+    "releasePublishedAt": "2026-10-09T11:03:19Z",
+    "newPublisherTrustApproved": false
+  }
+}

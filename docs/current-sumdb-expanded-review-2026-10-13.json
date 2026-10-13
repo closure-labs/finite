@@ -1,0 +1,2193 @@
+{
+  "schema": 1,
+  "status": "proposed-exact-scope-review",
+  "reviewedAt": "2026-10-13T06:08:38.981406+00:00",
+  "sourceProofRun": 38354387254,
+  "sourceProofRevision": "a4012ae37d374ec09a23a988d228907bd0f5d5bf",
+  "sourceEvidenceSha256": "578c068c9b1d80be2c80710b96da9657aef08b561f87693054a007f96dd2a5c4",
+  "consumerSignedReferenceSha256": "c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+  "previousReviewSha256": "33b31c3740a6012f6bdfb5ca5cf2abc79a5e04cc48fa2ffb677beb5bffe0a268",
+  "newImagePulled": false,
+  "newScanPerformed": false,
+  "policyChanged": false,
+  "releaseEligible": false,
+  "proposedReviewedDispositions": [
+    {
+      "id": "sumdb-semver-6179-bluefin-dx-generic-7848ba4cfbc9-61668157",
+      "advisories": [
+        "CVE-2026-56865",
+        "GO-2026-6179"
+      ],
+      "component": "pkg:golang/golang.org/x/mod@v0.38.0",
+      "digest": "sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "Both exact current Podman and Buildah live/OSTree payloads match authenticated signed owning RPMs. Exact immutable Fedora source archives match reviewed upstream/vendor Git bytes; each complete vendored application source closure contains x/mod0.38.0 semver only. Actual owning -a -v compile blocks corroborate semver, with GO111MODULE=on and documented default vendor semantics (no explicit vendor flag proven). The affected sumdb Client.Lookup and tlog.tileHashReader.ReadHashes sources are outside these application closures. This is exact package nonapplicability, not a fix, proof of historical build integrity, or absence-of-symbol clearance.",
+      "officialSources": [
+        "https://github.com/containers/buildah/blob/c7061d00bae87f95000d550c015bc4d9be0b53af/vendor/modules.txt",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/vendor/modules.txt",
+        "https://go.dev/ref/mod#vendoring",
+        "https://kojipkgs.fedoraproject.org/packages/buildah/1.43.4/1.fc44/data/logs/x86_64/build.log",
+        "https://kojipkgs.fedoraproject.org/packages/podman/5.8.7/1.fc44/data/logs/x86_64/build.log",
+        "https://pkg.go.dev/vuln/GO-2026-6179",
+        "https://src.fedoraproject.org/rpms/buildah/raw/b99f65ea1800c6488c54aff69f29336f74f6e68f/f/buildah.spec",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T06:08:38.981406+00:00",
+      "expiresAt": "2026-10-27T06:08:37.981406+00:00",
+      "evidence": [
+        "Exact current image/context bound by bluefin-dx-generic-native.json SHA256 90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813; original result 7cdbb3e6a941de295d48ef0f2a7cfc8c72b4ec383ca990e6a17de0cf114605bb, SBOM afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54, config sha256:f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357.",
+        "Signed RPM/source/build proof and vendored dependency closure hashes are retained in podmanSourceProof; no symbol-absence waiver.",
+        "All four current matched locations join to Podman authenticated SHA a844579b\u2026 or Buildah authenticated SHA 8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2; sourceProofRun38354387254 ata4012ae37d374ec09a23a988d228907bd0f5d5bf; source-evidence SHA256 578c068c9b1d80be2c80710b96da9657aef08b561f87693054a007f96dd2a5c4; signed Buildah reference SHA256 c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493.",
+        "Exact immutable archive/vendor/file hashes, actual owning build commands/package blocks and Buildah binary tags/module/buildinfo provenance are recorded in sourcePackages and joinEvidence for sumdb-semver-6179-bluefin-dx-generic-7848ba4cfbc9-61668157. Vendor mode is inferred by official Go semantics, not represented as an explicit observed flag."
+      ]
+    },
+    {
+      "id": "sumdb-semver-6180-bluefin-dx-generic-7848ba4cfbc9-61668157",
+      "advisories": [
+        "CVE-2026-56864",
+        "GO-2026-6180"
+      ],
+      "component": "pkg:golang/golang.org/x/mod@v0.38.0",
+      "digest": "sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "Both exact current Podman and Buildah live/OSTree payloads match authenticated signed owning RPMs. Exact immutable Fedora source archives match reviewed upstream/vendor Git bytes; each complete vendored application source closure contains x/mod0.38.0 semver only. Actual owning -a -v compile blocks corroborate semver, with GO111MODULE=on and documented default vendor semantics (no explicit vendor flag proven). The affected sumdb Client.Lookup and tlog.tileHashReader.ReadHashes sources are outside these application closures. This is exact package nonapplicability, not a fix, proof of historical build integrity, or absence-of-symbol clearance.",
+      "officialSources": [
+        "https://github.com/containers/buildah/blob/c7061d00bae87f95000d550c015bc4d9be0b53af/vendor/modules.txt",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/vendor/modules.txt",
+        "https://go.dev/ref/mod#vendoring",
+        "https://kojipkgs.fedoraproject.org/packages/buildah/1.43.4/1.fc44/data/logs/x86_64/build.log",
+        "https://kojipkgs.fedoraproject.org/packages/podman/5.8.7/1.fc44/data/logs/x86_64/build.log",
+        "https://pkg.go.dev/vuln/GO-2026-6180",
+        "https://src.fedoraproject.org/rpms/buildah/raw/b99f65ea1800c6488c54aff69f29336f74f6e68f/f/buildah.spec",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T06:08:38.981406+00:00",
+      "expiresAt": "2026-10-27T06:08:37.981406+00:00",
+      "evidence": [
+        "Exact current image/context bound by bluefin-dx-generic-native.json SHA256 90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813; original result 7cdbb3e6a941de295d48ef0f2a7cfc8c72b4ec383ca990e6a17de0cf114605bb, SBOM afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54, config sha256:f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357.",
+        "Signed RPM/source/build proof and vendored dependency closure hashes are retained in podmanSourceProof; no symbol-absence waiver.",
+        "All four current matched locations join to Podman authenticated SHA a844579b\u2026 or Buildah authenticated SHA 8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2; sourceProofRun38354387254 ata4012ae37d374ec09a23a988d228907bd0f5d5bf; source-evidence SHA256 578c068c9b1d80be2c80710b96da9657aef08b561f87693054a007f96dd2a5c4; signed Buildah reference SHA256 c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493.",
+        "Exact immutable archive/vendor/file hashes, actual owning build commands/package blocks and Buildah binary tags/module/buildinfo provenance are recorded in sourcePackages and joinEvidence for sumdb-semver-6180-bluefin-dx-generic-7848ba4cfbc9-61668157. Vendor mode is inferred by official Go semantics, not represented as an explicit observed flag."
+      ]
+    },
+    {
+      "id": "sumdb-semver-6179-bluefin-generic-e98ca0ceb484-61668157",
+      "advisories": [
+        "CVE-2026-56865",
+        "GO-2026-6179"
+      ],
+      "component": "pkg:golang/golang.org/x/mod@v0.38.0",
+      "digest": "sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "Both exact current Podman and Buildah live/OSTree payloads match authenticated signed owning RPMs. Exact immutable Fedora source archives match reviewed upstream/vendor Git bytes; each complete vendored application source closure contains x/mod0.38.0 semver only. Actual owning -a -v compile blocks corroborate semver, with GO111MODULE=on and documented default vendor semantics (no explicit vendor flag proven). The affected sumdb Client.Lookup and tlog.tileHashReader.ReadHashes sources are outside these application closures. This is exact package nonapplicability, not a fix, proof of historical build integrity, or absence-of-symbol clearance.",
+      "officialSources": [
+        "https://github.com/containers/buildah/blob/c7061d00bae87f95000d550c015bc4d9be0b53af/vendor/modules.txt",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/vendor/modules.txt",
+        "https://go.dev/ref/mod#vendoring",
+        "https://kojipkgs.fedoraproject.org/packages/buildah/1.43.4/1.fc44/data/logs/x86_64/build.log",
+        "https://kojipkgs.fedoraproject.org/packages/podman/5.8.7/1.fc44/data/logs/x86_64/build.log",
+        "https://pkg.go.dev/vuln/GO-2026-6179",
+        "https://src.fedoraproject.org/rpms/buildah/raw/b99f65ea1800c6488c54aff69f29336f74f6e68f/f/buildah.spec",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T06:08:38.981406+00:00",
+      "expiresAt": "2026-10-27T06:08:37.981406+00:00",
+      "evidence": [
+        "Exact current image/context bound by bluefin-generic-native.json SHA256 868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f; original result 814aab9be9c5872dd844ffcbe4d8205a092c6ca43dec11167c4a49aeaa891805, SBOM 8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199, config sha256:97b4843f19705f7d6d29988bfbe591594388af5a9b7785e4edb08a7b6fb6abef.",
+        "Signed RPM/source/build proof and vendored dependency closure hashes are retained in podmanSourceProof; no symbol-absence waiver.",
+        "All four current matched locations join to Podman authenticated SHA a844579b\u2026 or Buildah authenticated SHA 8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2; sourceProofRun38354387254 ata4012ae37d374ec09a23a988d228907bd0f5d5bf; source-evidence SHA256 578c068c9b1d80be2c80710b96da9657aef08b561f87693054a007f96dd2a5c4; signed Buildah reference SHA256 c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493.",
+        "Exact immutable archive/vendor/file hashes, actual owning build commands/package blocks and Buildah binary tags/module/buildinfo provenance are recorded in sourcePackages and joinEvidence for sumdb-semver-6179-bluefin-generic-e98ca0ceb484-61668157. Vendor mode is inferred by official Go semantics, not represented as an explicit observed flag."
+      ]
+    },
+    {
+      "id": "sumdb-semver-6180-bluefin-generic-e98ca0ceb484-61668157",
+      "advisories": [
+        "CVE-2026-56864",
+        "GO-2026-6180"
+      ],
+      "component": "pkg:golang/golang.org/x/mod@v0.38.0",
+      "digest": "sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "Both exact current Podman and Buildah live/OSTree payloads match authenticated signed owning RPMs. Exact immutable Fedora source archives match reviewed upstream/vendor Git bytes; each complete vendored application source closure contains x/mod0.38.0 semver only. Actual owning -a -v compile blocks corroborate semver, with GO111MODULE=on and documented default vendor semantics (no explicit vendor flag proven). The affected sumdb Client.Lookup and tlog.tileHashReader.ReadHashes sources are outside these application closures. This is exact package nonapplicability, not a fix, proof of historical build integrity, or absence-of-symbol clearance.",
+      "officialSources": [
+        "https://github.com/containers/buildah/blob/c7061d00bae87f95000d550c015bc4d9be0b53af/vendor/modules.txt",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/vendor/modules.txt",
+        "https://go.dev/ref/mod#vendoring",
+        "https://kojipkgs.fedoraproject.org/packages/buildah/1.43.4/1.fc44/data/logs/x86_64/build.log",
+        "https://kojipkgs.fedoraproject.org/packages/podman/5.8.7/1.fc44/data/logs/x86_64/build.log",
+        "https://pkg.go.dev/vuln/GO-2026-6180",
+        "https://src.fedoraproject.org/rpms/buildah/raw/b99f65ea1800c6488c54aff69f29336f74f6e68f/f/buildah.spec",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T06:08:38.981406+00:00",
+      "expiresAt": "2026-10-27T06:08:37.981406+00:00",
+      "evidence": [
+        "Exact current image/context bound by bluefin-generic-native.json SHA256 868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f; original result 814aab9be9c5872dd844ffcbe4d8205a092c6ca43dec11167c4a49aeaa891805, SBOM 8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199, config sha256:97b4843f19705f7d6d29988bfbe591594388af5a9b7785e4edb08a7b6fb6abef.",
+        "Signed RPM/source/build proof and vendored dependency closure hashes are retained in podmanSourceProof; no symbol-absence waiver.",
+        "All four current matched locations join to Podman authenticated SHA a844579b\u2026 or Buildah authenticated SHA 8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2; sourceProofRun38354387254 ata4012ae37d374ec09a23a988d228907bd0f5d5bf; source-evidence SHA256 578c068c9b1d80be2c80710b96da9657aef08b561f87693054a007f96dd2a5c4; signed Buildah reference SHA256 c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493.",
+        "Exact immutable archive/vendor/file hashes, actual owning build commands/package blocks and Buildah binary tags/module/buildinfo provenance are recorded in sourcePackages and joinEvidence for sumdb-semver-6180-bluefin-generic-e98ca0ceb484-61668157. Vendor mode is inferred by official Go semantics, not represented as an explicit observed flag."
+      ]
+    },
+    {
+      "id": "sumdb-semver-6179-main-bluefin-dx-generic-3fd7e10d0e29-61668157",
+      "advisories": [
+        "CVE-2026-56865",
+        "GO-2026-6179"
+      ],
+      "component": "pkg:golang/golang.org/x/mod@v0.38.0",
+      "digest": "sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "Both exact current Podman and Buildah live/OSTree payloads match authenticated signed owning RPMs. Exact immutable Fedora source archives match reviewed upstream/vendor Git bytes; each complete vendored application source closure contains x/mod0.38.0 semver only. Actual owning -a -v compile blocks corroborate semver, with GO111MODULE=on and documented default vendor semantics (no explicit vendor flag proven). The affected sumdb Client.Lookup and tlog.tileHashReader.ReadHashes sources are outside these application closures. This is exact package nonapplicability, not a fix, proof of historical build integrity, or absence-of-symbol clearance.",
+      "officialSources": [
+        "https://github.com/containers/buildah/blob/c7061d00bae87f95000d550c015bc4d9be0b53af/vendor/modules.txt",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/vendor/modules.txt",
+        "https://go.dev/ref/mod#vendoring",
+        "https://kojipkgs.fedoraproject.org/packages/buildah/1.43.4/1.fc44/data/logs/x86_64/build.log",
+        "https://kojipkgs.fedoraproject.org/packages/podman/5.8.7/1.fc44/data/logs/x86_64/build.log",
+        "https://pkg.go.dev/vuln/GO-2026-6179",
+        "https://src.fedoraproject.org/rpms/buildah/raw/b99f65ea1800c6488c54aff69f29336f74f6e68f/f/buildah.spec",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T06:08:38.981406+00:00",
+      "expiresAt": "2026-10-27T06:08:37.981406+00:00",
+      "evidence": [
+        "Exact current image/context bound by main-bluefin-dx-generic-native.json SHA256 21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf; original result b6439aee802b91d107231e19cdd6ddc405d5546204db05d46f14b99ba3086f56, SBOM d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64, config sha256:5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78.",
+        "Signed RPM/source/build proof and vendored dependency closure hashes are retained in podmanSourceProof; no symbol-absence waiver.",
+        "All four current matched locations join to Podman authenticated SHA a844579b\u2026 or Buildah authenticated SHA 8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2; sourceProofRun38354387254 ata4012ae37d374ec09a23a988d228907bd0f5d5bf; source-evidence SHA256 578c068c9b1d80be2c80710b96da9657aef08b561f87693054a007f96dd2a5c4; signed Buildah reference SHA256 c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493.",
+        "Exact immutable archive/vendor/file hashes, actual owning build commands/package blocks and Buildah binary tags/module/buildinfo provenance are recorded in sourcePackages and joinEvidence for sumdb-semver-6179-main-bluefin-dx-generic-3fd7e10d0e29-61668157. Vendor mode is inferred by official Go semantics, not represented as an explicit observed flag."
+      ]
+    },
+    {
+      "id": "sumdb-semver-6180-main-bluefin-dx-generic-3fd7e10d0e29-61668157",
+      "advisories": [
+        "CVE-2026-56864",
+        "GO-2026-6180"
+      ],
+      "component": "pkg:golang/golang.org/x/mod@v0.38.0",
+      "digest": "sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "Both exact current Podman and Buildah live/OSTree payloads match authenticated signed owning RPMs. Exact immutable Fedora source archives match reviewed upstream/vendor Git bytes; each complete vendored application source closure contains x/mod0.38.0 semver only. Actual owning -a -v compile blocks corroborate semver, with GO111MODULE=on and documented default vendor semantics (no explicit vendor flag proven). The affected sumdb Client.Lookup and tlog.tileHashReader.ReadHashes sources are outside these application closures. This is exact package nonapplicability, not a fix, proof of historical build integrity, or absence-of-symbol clearance.",
+      "officialSources": [
+        "https://github.com/containers/buildah/blob/c7061d00bae87f95000d550c015bc4d9be0b53af/vendor/modules.txt",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/vendor/modules.txt",
+        "https://go.dev/ref/mod#vendoring",
+        "https://kojipkgs.fedoraproject.org/packages/buildah/1.43.4/1.fc44/data/logs/x86_64/build.log",
+        "https://kojipkgs.fedoraproject.org/packages/podman/5.8.7/1.fc44/data/logs/x86_64/build.log",
+        "https://pkg.go.dev/vuln/GO-2026-6180",
+        "https://src.fedoraproject.org/rpms/buildah/raw/b99f65ea1800c6488c54aff69f29336f74f6e68f/f/buildah.spec",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T06:08:38.981406+00:00",
+      "expiresAt": "2026-10-27T06:08:37.981406+00:00",
+      "evidence": [
+        "Exact current image/context bound by main-bluefin-dx-generic-native.json SHA256 21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf; original result b6439aee802b91d107231e19cdd6ddc405d5546204db05d46f14b99ba3086f56, SBOM d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64, config sha256:5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78.",
+        "Signed RPM/source/build proof and vendored dependency closure hashes are retained in podmanSourceProof; no symbol-absence waiver.",
+        "All four current matched locations join to Podman authenticated SHA a844579b\u2026 or Buildah authenticated SHA 8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2; sourceProofRun38354387254 ata4012ae37d374ec09a23a988d228907bd0f5d5bf; source-evidence SHA256 578c068c9b1d80be2c80710b96da9657aef08b561f87693054a007f96dd2a5c4; signed Buildah reference SHA256 c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493.",
+        "Exact immutable archive/vendor/file hashes, actual owning build commands/package blocks and Buildah binary tags/module/buildinfo provenance are recorded in sourcePackages and joinEvidence for sumdb-semver-6180-main-bluefin-dx-generic-3fd7e10d0e29-61668157. Vendor mode is inferred by official Go semantics, not represented as an explicit observed flag."
+      ]
+    },
+    {
+      "id": "sumdb-semver-6179-main-bluefin-dx-next-a851083d1a9e-61668157",
+      "advisories": [
+        "CVE-2026-56865",
+        "GO-2026-6179"
+      ],
+      "component": "pkg:golang/golang.org/x/mod@v0.38.0",
+      "digest": "sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "Both exact current Podman and Buildah live/OSTree payloads match authenticated signed owning RPMs. Exact immutable Fedora source archives match reviewed upstream/vendor Git bytes; each complete vendored application source closure contains x/mod0.38.0 semver only. Actual owning -a -v compile blocks corroborate semver, with GO111MODULE=on and documented default vendor semantics (no explicit vendor flag proven). The affected sumdb Client.Lookup and tlog.tileHashReader.ReadHashes sources are outside these application closures. This is exact package nonapplicability, not a fix, proof of historical build integrity, or absence-of-symbol clearance.",
+      "officialSources": [
+        "https://github.com/containers/buildah/blob/c7061d00bae87f95000d550c015bc4d9be0b53af/vendor/modules.txt",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/vendor/modules.txt",
+        "https://go.dev/ref/mod#vendoring",
+        "https://kojipkgs.fedoraproject.org/packages/buildah/1.43.4/1.fc44/data/logs/x86_64/build.log",
+        "https://kojipkgs.fedoraproject.org/packages/podman/5.8.7/1.fc44/data/logs/x86_64/build.log",
+        "https://pkg.go.dev/vuln/GO-2026-6179",
+        "https://src.fedoraproject.org/rpms/buildah/raw/b99f65ea1800c6488c54aff69f29336f74f6e68f/f/buildah.spec",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T06:08:38.981406+00:00",
+      "expiresAt": "2026-10-27T06:08:37.981406+00:00",
+      "evidence": [
+        "Exact current image/context bound by main-bluefin-dx-next-native.json SHA256 fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96; original result 5724e3de7bbfd54999a962439452e4d9713f6ce1226c3fdbe126454868ba734b, SBOM 46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5, config sha256:3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44.",
+        "Signed RPM/source/build proof and vendored dependency closure hashes are retained in podmanSourceProof; no symbol-absence waiver.",
+        "All four current matched locations join to Podman authenticated SHA a844579b\u2026 or Buildah authenticated SHA 8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2; sourceProofRun38354387254 ata4012ae37d374ec09a23a988d228907bd0f5d5bf; source-evidence SHA256 578c068c9b1d80be2c80710b96da9657aef08b561f87693054a007f96dd2a5c4; signed Buildah reference SHA256 c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493.",
+        "Exact immutable archive/vendor/file hashes, actual owning build commands/package blocks and Buildah binary tags/module/buildinfo provenance are recorded in sourcePackages and joinEvidence for sumdb-semver-6179-main-bluefin-dx-next-a851083d1a9e-61668157. Vendor mode is inferred by official Go semantics, not represented as an explicit observed flag."
+      ]
+    },
+    {
+      "id": "sumdb-semver-6180-main-bluefin-dx-next-a851083d1a9e-61668157",
+      "advisories": [
+        "CVE-2026-56864",
+        "GO-2026-6180"
+      ],
+      "component": "pkg:golang/golang.org/x/mod@v0.38.0",
+      "digest": "sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "Both exact current Podman and Buildah live/OSTree payloads match authenticated signed owning RPMs. Exact immutable Fedora source archives match reviewed upstream/vendor Git bytes; each complete vendored application source closure contains x/mod0.38.0 semver only. Actual owning -a -v compile blocks corroborate semver, with GO111MODULE=on and documented default vendor semantics (no explicit vendor flag proven). The affected sumdb Client.Lookup and tlog.tileHashReader.ReadHashes sources are outside these application closures. This is exact package nonapplicability, not a fix, proof of historical build integrity, or absence-of-symbol clearance.",
+      "officialSources": [
+        "https://github.com/containers/buildah/blob/c7061d00bae87f95000d550c015bc4d9be0b53af/vendor/modules.txt",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/vendor/modules.txt",
+        "https://go.dev/ref/mod#vendoring",
+        "https://kojipkgs.fedoraproject.org/packages/buildah/1.43.4/1.fc44/data/logs/x86_64/build.log",
+        "https://kojipkgs.fedoraproject.org/packages/podman/5.8.7/1.fc44/data/logs/x86_64/build.log",
+        "https://pkg.go.dev/vuln/GO-2026-6180",
+        "https://src.fedoraproject.org/rpms/buildah/raw/b99f65ea1800c6488c54aff69f29336f74f6e68f/f/buildah.spec",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T06:08:38.981406+00:00",
+      "expiresAt": "2026-10-27T06:08:37.981406+00:00",
+      "evidence": [
+        "Exact current image/context bound by main-bluefin-dx-next-native.json SHA256 fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96; original result 5724e3de7bbfd54999a962439452e4d9713f6ce1226c3fdbe126454868ba734b, SBOM 46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5, config sha256:3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44.",
+        "Signed RPM/source/build proof and vendored dependency closure hashes are retained in podmanSourceProof; no symbol-absence waiver.",
+        "All four current matched locations join to Podman authenticated SHA a844579b\u2026 or Buildah authenticated SHA 8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2; sourceProofRun38354387254 ata4012ae37d374ec09a23a988d228907bd0f5d5bf; source-evidence SHA256 578c068c9b1d80be2c80710b96da9657aef08b561f87693054a007f96dd2a5c4; signed Buildah reference SHA256 c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493.",
+        "Exact immutable archive/vendor/file hashes, actual owning build commands/package blocks and Buildah binary tags/module/buildinfo provenance are recorded in sourcePackages and joinEvidence for sumdb-semver-6180-main-bluefin-dx-next-a851083d1a9e-61668157. Vendor mode is inferred by official Go semantics, not represented as an explicit observed flag."
+      ]
+    },
+    {
+      "id": "sumdb-semver-6179-main-bluefin-generic-3d4693f25f09-61668157",
+      "advisories": [
+        "CVE-2026-56865",
+        "GO-2026-6179"
+      ],
+      "component": "pkg:golang/golang.org/x/mod@v0.38.0",
+      "digest": "sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "Both exact current Podman and Buildah live/OSTree payloads match authenticated signed owning RPMs. Exact immutable Fedora source archives match reviewed upstream/vendor Git bytes; each complete vendored application source closure contains x/mod0.38.0 semver only. Actual owning -a -v compile blocks corroborate semver, with GO111MODULE=on and documented default vendor semantics (no explicit vendor flag proven). The affected sumdb Client.Lookup and tlog.tileHashReader.ReadHashes sources are outside these application closures. This is exact package nonapplicability, not a fix, proof of historical build integrity, or absence-of-symbol clearance.",
+      "officialSources": [
+        "https://github.com/containers/buildah/blob/c7061d00bae87f95000d550c015bc4d9be0b53af/vendor/modules.txt",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/vendor/modules.txt",
+        "https://go.dev/ref/mod#vendoring",
+        "https://kojipkgs.fedoraproject.org/packages/buildah/1.43.4/1.fc44/data/logs/x86_64/build.log",
+        "https://kojipkgs.fedoraproject.org/packages/podman/5.8.7/1.fc44/data/logs/x86_64/build.log",
+        "https://pkg.go.dev/vuln/GO-2026-6179",
+        "https://src.fedoraproject.org/rpms/buildah/raw/b99f65ea1800c6488c54aff69f29336f74f6e68f/f/buildah.spec",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T06:08:38.981406+00:00",
+      "expiresAt": "2026-10-27T06:08:37.981406+00:00",
+      "evidence": [
+        "Exact current image/context bound by main-bluefin-generic-native.json SHA256 5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9; original result 92127eae6a60001c57937bb329061da88bdc6a933a993a6a047c6be7466518ca, SBOM 4902fdd4b2afca8374a3197770f25daa11c7626cb5c83c46fb614ad1f5441201, config sha256:eb2542e972cdd6c71f3448674c57b0c41252fdc4c986252bc8ff3621e2119cf4.",
+        "Signed RPM/source/build proof and vendored dependency closure hashes are retained in podmanSourceProof; no symbol-absence waiver.",
+        "All four current matched locations join to Podman authenticated SHA a844579b\u2026 or Buildah authenticated SHA 8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2; sourceProofRun38354387254 ata4012ae37d374ec09a23a988d228907bd0f5d5bf; source-evidence SHA256 578c068c9b1d80be2c80710b96da9657aef08b561f87693054a007f96dd2a5c4; signed Buildah reference SHA256 c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493.",
+        "Exact immutable archive/vendor/file hashes, actual owning build commands/package blocks and Buildah binary tags/module/buildinfo provenance are recorded in sourcePackages and joinEvidence for sumdb-semver-6179-main-bluefin-generic-3d4693f25f09-61668157. Vendor mode is inferred by official Go semantics, not represented as an explicit observed flag."
+      ]
+    },
+    {
+      "id": "sumdb-semver-6180-main-bluefin-generic-3d4693f25f09-61668157",
+      "advisories": [
+        "CVE-2026-56864",
+        "GO-2026-6180"
+      ],
+      "component": "pkg:golang/golang.org/x/mod@v0.38.0",
+      "digest": "sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "Both exact current Podman and Buildah live/OSTree payloads match authenticated signed owning RPMs. Exact immutable Fedora source archives match reviewed upstream/vendor Git bytes; each complete vendored application source closure contains x/mod0.38.0 semver only. Actual owning -a -v compile blocks corroborate semver, with GO111MODULE=on and documented default vendor semantics (no explicit vendor flag proven). The affected sumdb Client.Lookup and tlog.tileHashReader.ReadHashes sources are outside these application closures. This is exact package nonapplicability, not a fix, proof of historical build integrity, or absence-of-symbol clearance.",
+      "officialSources": [
+        "https://github.com/containers/buildah/blob/c7061d00bae87f95000d550c015bc4d9be0b53af/vendor/modules.txt",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/vendor/modules.txt",
+        "https://go.dev/ref/mod#vendoring",
+        "https://kojipkgs.fedoraproject.org/packages/buildah/1.43.4/1.fc44/data/logs/x86_64/build.log",
+        "https://kojipkgs.fedoraproject.org/packages/podman/5.8.7/1.fc44/data/logs/x86_64/build.log",
+        "https://pkg.go.dev/vuln/GO-2026-6180",
+        "https://src.fedoraproject.org/rpms/buildah/raw/b99f65ea1800c6488c54aff69f29336f74f6e68f/f/buildah.spec",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T06:08:38.981406+00:00",
+      "expiresAt": "2026-10-27T06:08:37.981406+00:00",
+      "evidence": [
+        "Exact current image/context bound by main-bluefin-generic-native.json SHA256 5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9; original result 92127eae6a60001c57937bb329061da88bdc6a933a993a6a047c6be7466518ca, SBOM 4902fdd4b2afca8374a3197770f25daa11c7626cb5c83c46fb614ad1f5441201, config sha256:eb2542e972cdd6c71f3448674c57b0c41252fdc4c986252bc8ff3621e2119cf4.",
+        "Signed RPM/source/build proof and vendored dependency closure hashes are retained in podmanSourceProof; no symbol-absence waiver.",
+        "All four current matched locations join to Podman authenticated SHA a844579b\u2026 or Buildah authenticated SHA 8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2; sourceProofRun38354387254 ata4012ae37d374ec09a23a988d228907bd0f5d5bf; source-evidence SHA256 578c068c9b1d80be2c80710b96da9657aef08b561f87693054a007f96dd2a5c4; signed Buildah reference SHA256 c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493.",
+        "Exact immutable archive/vendor/file hashes, actual owning build commands/package blocks and Buildah binary tags/module/buildinfo provenance are recorded in sourcePackages and joinEvidence for sumdb-semver-6180-main-bluefin-generic-3d4693f25f09-61668157. Vendor mode is inferred by official Go semantics, not represented as an explicit observed flag."
+      ]
+    },
+    {
+      "id": "sumdb-semver-6179-main-bluefin-next-a36f46afcc2a-61668157",
+      "advisories": [
+        "CVE-2026-56865",
+        "GO-2026-6179"
+      ],
+      "component": "pkg:golang/golang.org/x/mod@v0.38.0",
+      "digest": "sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "Both exact current Podman and Buildah live/OSTree payloads match authenticated signed owning RPMs. Exact immutable Fedora source archives match reviewed upstream/vendor Git bytes; each complete vendored application source closure contains x/mod0.38.0 semver only. Actual owning -a -v compile blocks corroborate semver, with GO111MODULE=on and documented default vendor semantics (no explicit vendor flag proven). The affected sumdb Client.Lookup and tlog.tileHashReader.ReadHashes sources are outside these application closures. This is exact package nonapplicability, not a fix, proof of historical build integrity, or absence-of-symbol clearance.",
+      "officialSources": [
+        "https://github.com/containers/buildah/blob/c7061d00bae87f95000d550c015bc4d9be0b53af/vendor/modules.txt",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/vendor/modules.txt",
+        "https://go.dev/ref/mod#vendoring",
+        "https://kojipkgs.fedoraproject.org/packages/buildah/1.43.4/1.fc44/data/logs/x86_64/build.log",
+        "https://kojipkgs.fedoraproject.org/packages/podman/5.8.7/1.fc44/data/logs/x86_64/build.log",
+        "https://pkg.go.dev/vuln/GO-2026-6179",
+        "https://src.fedoraproject.org/rpms/buildah/raw/b99f65ea1800c6488c54aff69f29336f74f6e68f/f/buildah.spec",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T06:08:38.981406+00:00",
+      "expiresAt": "2026-10-27T06:08:37.981406+00:00",
+      "evidence": [
+        "Exact current image/context bound by main-bluefin-next-native.json SHA256 81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f; original result 64182a6c9df652cdfdf3c07d19b7983a7ac297d43bff97f18cac74cd12d8f95c, SBOM bcf12455b002324b0c5923110de414cde3528d164bbb6b230dc2e8efb69f56b4, config sha256:fce1315ea7763cf210b19f4e7c83334ab5e36be9a490d97e0ccc2b2c69491497.",
+        "Signed RPM/source/build proof and vendored dependency closure hashes are retained in podmanSourceProof; no symbol-absence waiver.",
+        "All four current matched locations join to Podman authenticated SHA a844579b\u2026 or Buildah authenticated SHA 8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2; sourceProofRun38354387254 ata4012ae37d374ec09a23a988d228907bd0f5d5bf; source-evidence SHA256 578c068c9b1d80be2c80710b96da9657aef08b561f87693054a007f96dd2a5c4; signed Buildah reference SHA256 c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493.",
+        "Exact immutable archive/vendor/file hashes, actual owning build commands/package blocks and Buildah binary tags/module/buildinfo provenance are recorded in sourcePackages and joinEvidence for sumdb-semver-6179-main-bluefin-next-a36f46afcc2a-61668157. Vendor mode is inferred by official Go semantics, not represented as an explicit observed flag."
+      ]
+    },
+    {
+      "id": "sumdb-semver-6180-main-bluefin-next-a36f46afcc2a-61668157",
+      "advisories": [
+        "CVE-2026-56864",
+        "GO-2026-6180"
+      ],
+      "component": "pkg:golang/golang.org/x/mod@v0.38.0",
+      "digest": "sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "Both exact current Podman and Buildah live/OSTree payloads match authenticated signed owning RPMs. Exact immutable Fedora source archives match reviewed upstream/vendor Git bytes; each complete vendored application source closure contains x/mod0.38.0 semver only. Actual owning -a -v compile blocks corroborate semver, with GO111MODULE=on and documented default vendor semantics (no explicit vendor flag proven). The affected sumdb Client.Lookup and tlog.tileHashReader.ReadHashes sources are outside these application closures. This is exact package nonapplicability, not a fix, proof of historical build integrity, or absence-of-symbol clearance.",
+      "officialSources": [
+        "https://github.com/containers/buildah/blob/c7061d00bae87f95000d550c015bc4d9be0b53af/vendor/modules.txt",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/vendor/modules.txt",
+        "https://go.dev/ref/mod#vendoring",
+        "https://kojipkgs.fedoraproject.org/packages/buildah/1.43.4/1.fc44/data/logs/x86_64/build.log",
+        "https://kojipkgs.fedoraproject.org/packages/podman/5.8.7/1.fc44/data/logs/x86_64/build.log",
+        "https://pkg.go.dev/vuln/GO-2026-6180",
+        "https://src.fedoraproject.org/rpms/buildah/raw/b99f65ea1800c6488c54aff69f29336f74f6e68f/f/buildah.spec",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T06:08:38.981406+00:00",
+      "expiresAt": "2026-10-27T06:08:37.981406+00:00",
+      "evidence": [
+        "Exact current image/context bound by main-bluefin-next-native.json SHA256 81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f; original result 64182a6c9df652cdfdf3c07d19b7983a7ac297d43bff97f18cac74cd12d8f95c, SBOM bcf12455b002324b0c5923110de414cde3528d164bbb6b230dc2e8efb69f56b4, config sha256:fce1315ea7763cf210b19f4e7c83334ab5e36be9a490d97e0ccc2b2c69491497.",
+        "Signed RPM/source/build proof and vendored dependency closure hashes are retained in podmanSourceProof; no symbol-absence waiver.",
+        "All four current matched locations join to Podman authenticated SHA a844579b\u2026 or Buildah authenticated SHA 8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2; sourceProofRun38354387254 ata4012ae37d374ec09a23a988d228907bd0f5d5bf; source-evidence SHA256 578c068c9b1d80be2c80710b96da9657aef08b561f87693054a007f96dd2a5c4; signed Buildah reference SHA256 c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493.",
+        "Exact immutable archive/vendor/file hashes, actual owning build commands/package blocks and Buildah binary tags/module/buildinfo provenance are recorded in sourcePackages and joinEvidence for sumdb-semver-6180-main-bluefin-next-a36f46afcc2a-61668157. Vendor mode is inferred by official Go semantics, not represented as an explicit observed flag."
+      ]
+    }
+  ],
+  "joinEvidence": [
+    {
+      "id": "sumdb-semver-6179-bluefin-dx-generic-7848ba4cfbc9-61668157",
+      "candidateBindings": {
+        "candidate": "bluefin-dx-generic",
+        "profile": "bluefin-dx-generic",
+        "image": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+        "sourceRevision": "1d347b7456b0cf64d4372cc0e7a562a9e63eb45b",
+        "sourceRun": 38341284379,
+        "configurationDigest": "sha256:f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357",
+        "buildIdentity": "v1:b30ea5e8bfe8ec02caa2f4118aa91ba47c6c4283c3fe44cf1d73568f6954c76b",
+        "sbomSha256": "afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "sourceResultSha256": "7cdbb3e6a941de295d48ef0f2a7cfc8c72b4ec383ca990e6a17de0cf114605bb",
+        "nativeSummarySha256": "90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+        "bindingSha256": "0455f967e75f684f3c513dc044a549c0a2ab975c11e8c328d86d88139a8477a2",
+        "extractionSha256": "764adc980272907e1e4b918164d649cb71448c44a3021ba29d86a93dcf32d1ba",
+        "proposedToolchainPairs": 0,
+        "proposedPodmanScopedPairs": 0,
+        "releaseEligible": false
+      },
+      "proof": [
+        {
+          "path": "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "mainPackage": "github.com/containers/podman/v5/cmd/podman",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "5d6ccd7d0ea879559f19af23e49395822454df477f1b37a44a3b1e26a4204fdd",
+          "goModuleInfoSha256": "9387a6e427ea30e6e66aa49fd3d9ae813ef82368d3f600b9ac7061461206c4e2",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "6174488172a0d8fe",
+          "join": "same-candidate-byte-proof",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/usr/bin/podman",
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "mainPackage": "github.com/containers/podman/v5/cmd/podman",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "5d6ccd7d0ea879559f19af23e49395822454df477f1b37a44a3b1e26a4204fdd",
+          "goModuleInfoSha256": "9387a6e427ea30e6e66aa49fd3d9ae813ef82368d3f600b9ac7061461206c4e2",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "3e7c38694c0bef3c",
+          "join": "same-candidate-byte-proof",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "mainPackage": "github.com/containers/buildah/cmd/buildah",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "01ee869fe1ea27c927f5f824220ae4b4856f46fd2c21e1e474e5da64000bd64d",
+          "goModuleInfoSha256": "a000e6a6023cde1b7fbb49e7226a29ddfdba68fa2be0c66c4a6cfffa2f15363c",
+          "currentNativeFileId": "14a61673d4ae857d",
+          "referenceRun": 38354387254,
+          "signedReferenceEvidenceSha256": "c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+          "referenceRpmKojiId": 48829555,
+          "referenceRpmFileManifestSha256": "8fa7dd8a18eaac9e0dd17783da036ffb0e353bb0c4cbbb3c6597812596279cf7",
+          "join": "current-native-sha256-size-compiler-equal-to-independently-authenticated-signed-owning-RPM-payload",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/usr/bin/buildah",
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "mainPackage": "github.com/containers/buildah/cmd/buildah",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "01ee869fe1ea27c927f5f824220ae4b4856f46fd2c21e1e474e5da64000bd64d",
+          "goModuleInfoSha256": "a000e6a6023cde1b7fbb49e7226a29ddfdba68fa2be0c66c4a6cfffa2f15363c",
+          "currentNativeFileId": "93b05f434b690035",
+          "referenceRun": 38354387254,
+          "signedReferenceEvidenceSha256": "c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+          "referenceRpmKojiId": 48829555,
+          "referenceRpmFileManifestSha256": "8fa7dd8a18eaac9e0dd17783da036ffb0e353bb0c4cbbb3c6597812596279cf7",
+          "join": "current-native-sha256-size-compiler-equal-to-independently-authenticated-signed-owning-RPM-payload",
+          "absenceNotProof": true
+        }
+      ],
+      "coverage": "all-current-matched-locations",
+      "notCoveredLocations": []
+    },
+    {
+      "id": "sumdb-semver-6180-bluefin-dx-generic-7848ba4cfbc9-61668157",
+      "candidateBindings": {
+        "candidate": "bluefin-dx-generic",
+        "profile": "bluefin-dx-generic",
+        "image": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+        "sourceRevision": "1d347b7456b0cf64d4372cc0e7a562a9e63eb45b",
+        "sourceRun": 38341284379,
+        "configurationDigest": "sha256:f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357",
+        "buildIdentity": "v1:b30ea5e8bfe8ec02caa2f4118aa91ba47c6c4283c3fe44cf1d73568f6954c76b",
+        "sbomSha256": "afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "sourceResultSha256": "7cdbb3e6a941de295d48ef0f2a7cfc8c72b4ec383ca990e6a17de0cf114605bb",
+        "nativeSummarySha256": "90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+        "bindingSha256": "0455f967e75f684f3c513dc044a549c0a2ab975c11e8c328d86d88139a8477a2",
+        "extractionSha256": "764adc980272907e1e4b918164d649cb71448c44a3021ba29d86a93dcf32d1ba",
+        "proposedToolchainPairs": 0,
+        "proposedPodmanScopedPairs": 1,
+        "releaseEligible": false
+      },
+      "proof": [
+        {
+          "path": "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "mainPackage": "github.com/containers/podman/v5/cmd/podman",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "5d6ccd7d0ea879559f19af23e49395822454df477f1b37a44a3b1e26a4204fdd",
+          "goModuleInfoSha256": "9387a6e427ea30e6e66aa49fd3d9ae813ef82368d3f600b9ac7061461206c4e2",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "6174488172a0d8fe",
+          "join": "same-candidate-byte-proof",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/usr/bin/podman",
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "mainPackage": "github.com/containers/podman/v5/cmd/podman",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "5d6ccd7d0ea879559f19af23e49395822454df477f1b37a44a3b1e26a4204fdd",
+          "goModuleInfoSha256": "9387a6e427ea30e6e66aa49fd3d9ae813ef82368d3f600b9ac7061461206c4e2",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeFileId": "3e7c38694c0bef3c",
+          "join": "same-candidate-byte-proof",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "mainPackage": "github.com/containers/buildah/cmd/buildah",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "01ee869fe1ea27c927f5f824220ae4b4856f46fd2c21e1e474e5da64000bd64d",
+          "goModuleInfoSha256": "a000e6a6023cde1b7fbb49e7226a29ddfdba68fa2be0c66c4a6cfffa2f15363c",
+          "currentNativeFileId": "14a61673d4ae857d",
+          "referenceRun": 38354387254,
+          "signedReferenceEvidenceSha256": "c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+          "referenceRpmKojiId": 48829555,
+          "referenceRpmFileManifestSha256": "8fa7dd8a18eaac9e0dd17783da036ffb0e353bb0c4cbbb3c6597812596279cf7",
+          "join": "current-native-sha256-size-compiler-equal-to-independently-authenticated-signed-owning-RPM-payload",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/usr/bin/buildah",
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "mainPackage": "github.com/containers/buildah/cmd/buildah",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "01ee869fe1ea27c927f5f824220ae4b4856f46fd2c21e1e474e5da64000bd64d",
+          "goModuleInfoSha256": "a000e6a6023cde1b7fbb49e7226a29ddfdba68fa2be0c66c4a6cfffa2f15363c",
+          "currentNativeFileId": "93b05f434b690035",
+          "referenceRun": 38354387254,
+          "signedReferenceEvidenceSha256": "c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+          "referenceRpmKojiId": 48829555,
+          "referenceRpmFileManifestSha256": "8fa7dd8a18eaac9e0dd17783da036ffb0e353bb0c4cbbb3c6597812596279cf7",
+          "join": "current-native-sha256-size-compiler-equal-to-independently-authenticated-signed-owning-RPM-payload",
+          "absenceNotProof": true
+        }
+      ],
+      "coverage": "all-current-matched-locations",
+      "notCoveredLocations": []
+    },
+    {
+      "id": "sumdb-semver-6179-bluefin-generic-e98ca0ceb484-61668157",
+      "candidateBindings": {
+        "candidate": "bluefin-generic",
+        "profile": "bluefin-generic",
+        "image": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+        "sourceRevision": "1d347b7456b0cf64d4372cc0e7a562a9e63eb45b",
+        "sourceRun": 38341281199,
+        "configurationDigest": "sha256:97b4843f19705f7d6d29988bfbe591594388af5a9b7785e4edb08a7b6fb6abef",
+        "buildIdentity": "v1:29a6920037b0251e2c54a53719a00eb9c7085a75e59c8db76839b214703d8e0b",
+        "sbomSha256": "8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199",
+        "sourceResultSha256": "814aab9be9c5872dd844ffcbe4d8205a092c6ca43dec11167c4a49aeaa891805",
+        "nativeSummarySha256": "868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f",
+        "bindingSha256": "6a95e6f351fa48571175409349a8c4ecc4899b93967e5b53808e5b34f8a4fa2b",
+        "extractionSha256": "1090f5bcb0b10b19e09f748847587bf9e8da6c1bd304f86c73defaba48b08025",
+        "proposedToolchainPairs": 0,
+        "proposedPodmanScopedPairs": 0,
+        "releaseEligible": false
+      },
+      "proof": [
+        {
+          "path": "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "mainPackage": "github.com/containers/podman/v5/cmd/podman",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "5d6ccd7d0ea879559f19af23e49395822454df477f1b37a44a3b1e26a4204fdd",
+          "goModuleInfoSha256": "9387a6e427ea30e6e66aa49fd3d9ae813ef82368d3f600b9ac7061461206c4e2",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeFileId": "6174488172a0d8fe",
+          "join": "same-candidate-byte-proof",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/usr/bin/podman",
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "mainPackage": "github.com/containers/podman/v5/cmd/podman",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "5d6ccd7d0ea879559f19af23e49395822454df477f1b37a44a3b1e26a4204fdd",
+          "goModuleInfoSha256": "9387a6e427ea30e6e66aa49fd3d9ae813ef82368d3f600b9ac7061461206c4e2",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeFileId": "3e7c38694c0bef3c",
+          "join": "same-candidate-byte-proof",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "mainPackage": "github.com/containers/buildah/cmd/buildah",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "01ee869fe1ea27c927f5f824220ae4b4856f46fd2c21e1e474e5da64000bd64d",
+          "goModuleInfoSha256": "a000e6a6023cde1b7fbb49e7226a29ddfdba68fa2be0c66c4a6cfffa2f15363c",
+          "currentNativeFileId": "14a61673d4ae857d",
+          "referenceRun": 38354387254,
+          "signedReferenceEvidenceSha256": "c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+          "referenceRpmKojiId": 48829555,
+          "referenceRpmFileManifestSha256": "8fa7dd8a18eaac9e0dd17783da036ffb0e353bb0c4cbbb3c6597812596279cf7",
+          "join": "current-native-sha256-size-compiler-equal-to-independently-authenticated-signed-owning-RPM-payload",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/usr/bin/buildah",
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "mainPackage": "github.com/containers/buildah/cmd/buildah",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "01ee869fe1ea27c927f5f824220ae4b4856f46fd2c21e1e474e5da64000bd64d",
+          "goModuleInfoSha256": "a000e6a6023cde1b7fbb49e7226a29ddfdba68fa2be0c66c4a6cfffa2f15363c",
+          "currentNativeFileId": "93b05f434b690035",
+          "referenceRun": 38354387254,
+          "signedReferenceEvidenceSha256": "c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+          "referenceRpmKojiId": 48829555,
+          "referenceRpmFileManifestSha256": "8fa7dd8a18eaac9e0dd17783da036ffb0e353bb0c4cbbb3c6597812596279cf7",
+          "join": "current-native-sha256-size-compiler-equal-to-independently-authenticated-signed-owning-RPM-payload",
+          "absenceNotProof": true
+        }
+      ],
+      "coverage": "all-current-matched-locations",
+      "notCoveredLocations": []
+    },
+    {
+      "id": "sumdb-semver-6180-bluefin-generic-e98ca0ceb484-61668157",
+      "candidateBindings": {
+        "candidate": "bluefin-generic",
+        "profile": "bluefin-generic",
+        "image": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+        "sourceRevision": "1d347b7456b0cf64d4372cc0e7a562a9e63eb45b",
+        "sourceRun": 38341281199,
+        "configurationDigest": "sha256:97b4843f19705f7d6d29988bfbe591594388af5a9b7785e4edb08a7b6fb6abef",
+        "buildIdentity": "v1:29a6920037b0251e2c54a53719a00eb9c7085a75e59c8db76839b214703d8e0b",
+        "sbomSha256": "8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199",
+        "sourceResultSha256": "814aab9be9c5872dd844ffcbe4d8205a092c6ca43dec11167c4a49aeaa891805",
+        "nativeSummarySha256": "868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f",
+        "bindingSha256": "6a95e6f351fa48571175409349a8c4ecc4899b93967e5b53808e5b34f8a4fa2b",
+        "extractionSha256": "1090f5bcb0b10b19e09f748847587bf9e8da6c1bd304f86c73defaba48b08025",
+        "proposedToolchainPairs": 0,
+        "proposedPodmanScopedPairs": 1,
+        "releaseEligible": false
+      },
+      "proof": [
+        {
+          "path": "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "mainPackage": "github.com/containers/podman/v5/cmd/podman",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "5d6ccd7d0ea879559f19af23e49395822454df477f1b37a44a3b1e26a4204fdd",
+          "goModuleInfoSha256": "9387a6e427ea30e6e66aa49fd3d9ae813ef82368d3f600b9ac7061461206c4e2",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeFileId": "6174488172a0d8fe",
+          "join": "same-candidate-byte-proof",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/usr/bin/podman",
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "mainPackage": "github.com/containers/podman/v5/cmd/podman",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "5d6ccd7d0ea879559f19af23e49395822454df477f1b37a44a3b1e26a4204fdd",
+          "goModuleInfoSha256": "9387a6e427ea30e6e66aa49fd3d9ae813ef82368d3f600b9ac7061461206c4e2",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeFileId": "3e7c38694c0bef3c",
+          "join": "same-candidate-byte-proof",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "mainPackage": "github.com/containers/buildah/cmd/buildah",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "01ee869fe1ea27c927f5f824220ae4b4856f46fd2c21e1e474e5da64000bd64d",
+          "goModuleInfoSha256": "a000e6a6023cde1b7fbb49e7226a29ddfdba68fa2be0c66c4a6cfffa2f15363c",
+          "currentNativeFileId": "14a61673d4ae857d",
+          "referenceRun": 38354387254,
+          "signedReferenceEvidenceSha256": "c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+          "referenceRpmKojiId": 48829555,
+          "referenceRpmFileManifestSha256": "8fa7dd8a18eaac9e0dd17783da036ffb0e353bb0c4cbbb3c6597812596279cf7",
+          "join": "current-native-sha256-size-compiler-equal-to-independently-authenticated-signed-owning-RPM-payload",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/usr/bin/buildah",
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "mainPackage": "github.com/containers/buildah/cmd/buildah",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "01ee869fe1ea27c927f5f824220ae4b4856f46fd2c21e1e474e5da64000bd64d",
+          "goModuleInfoSha256": "a000e6a6023cde1b7fbb49e7226a29ddfdba68fa2be0c66c4a6cfffa2f15363c",
+          "currentNativeFileId": "93b05f434b690035",
+          "referenceRun": 38354387254,
+          "signedReferenceEvidenceSha256": "c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+          "referenceRpmKojiId": 48829555,
+          "referenceRpmFileManifestSha256": "8fa7dd8a18eaac9e0dd17783da036ffb0e353bb0c4cbbb3c6597812596279cf7",
+          "join": "current-native-sha256-size-compiler-equal-to-independently-authenticated-signed-owning-RPM-payload",
+          "absenceNotProof": true
+        }
+      ],
+      "coverage": "all-current-matched-locations",
+      "notCoveredLocations": []
+    },
+    {
+      "id": "sumdb-semver-6179-main-bluefin-dx-generic-3fd7e10d0e29-61668157",
+      "candidateBindings": {
+        "candidate": "main-bluefin-dx-generic",
+        "profile": "bluefin-dx-generic",
+        "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+        "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+        "sourceRun": 38340112122,
+        "configurationDigest": "sha256:5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78",
+        "buildIdentity": "v1:05fb59c6ab874df5cdba42675aeacfb37f7ba34df2053d198be408edb85ed247",
+        "sbomSha256": "d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64",
+        "sourceResultSha256": "b6439aee802b91d107231e19cdd6ddc405d5546204db05d46f14b99ba3086f56",
+        "nativeSummarySha256": "21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+        "bindingSha256": "579c2e93bfebcf83bebc46a16235230761f00f3708bcb8aa9070cd1c0baefc14",
+        "extractionSha256": "1945c7099ecb4475b5227231861be84ba495311ed1195d7008632697683d2e54",
+        "proposedToolchainPairs": 0,
+        "proposedPodmanScopedPairs": 0,
+        "releaseEligible": false
+      },
+      "proof": [
+        {
+          "path": "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "mainPackage": "github.com/containers/podman/v5/cmd/podman",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "5d6ccd7d0ea879559f19af23e49395822454df477f1b37a44a3b1e26a4204fdd",
+          "goModuleInfoSha256": "9387a6e427ea30e6e66aa49fd3d9ae813ef82368d3f600b9ac7061461206c4e2",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeFileId": "6174488172a0d8fe",
+          "join": "current-native-sha256-size-compiler-and-authenticated-probe-content-equality",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/usr/bin/podman",
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "mainPackage": "github.com/containers/podman/v5/cmd/podman",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "5d6ccd7d0ea879559f19af23e49395822454df477f1b37a44a3b1e26a4204fdd",
+          "goModuleInfoSha256": "9387a6e427ea30e6e66aa49fd3d9ae813ef82368d3f600b9ac7061461206c4e2",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeFileId": "3e7c38694c0bef3c",
+          "join": "current-native-sha256-size-compiler-and-authenticated-probe-content-equality",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "mainPackage": "github.com/containers/buildah/cmd/buildah",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "01ee869fe1ea27c927f5f824220ae4b4856f46fd2c21e1e474e5da64000bd64d",
+          "goModuleInfoSha256": "a000e6a6023cde1b7fbb49e7226a29ddfdba68fa2be0c66c4a6cfffa2f15363c",
+          "currentNativeFileId": "14a61673d4ae857d",
+          "referenceRun": 38354387254,
+          "signedReferenceEvidenceSha256": "c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+          "referenceRpmKojiId": 48829555,
+          "referenceRpmFileManifestSha256": "8fa7dd8a18eaac9e0dd17783da036ffb0e353bb0c4cbbb3c6597812596279cf7",
+          "join": "current-native-sha256-size-compiler-equal-to-independently-authenticated-signed-owning-RPM-payload",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/usr/bin/buildah",
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "mainPackage": "github.com/containers/buildah/cmd/buildah",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "01ee869fe1ea27c927f5f824220ae4b4856f46fd2c21e1e474e5da64000bd64d",
+          "goModuleInfoSha256": "a000e6a6023cde1b7fbb49e7226a29ddfdba68fa2be0c66c4a6cfffa2f15363c",
+          "currentNativeFileId": "93b05f434b690035",
+          "referenceRun": 38354387254,
+          "signedReferenceEvidenceSha256": "c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+          "referenceRpmKojiId": 48829555,
+          "referenceRpmFileManifestSha256": "8fa7dd8a18eaac9e0dd17783da036ffb0e353bb0c4cbbb3c6597812596279cf7",
+          "join": "current-native-sha256-size-compiler-equal-to-independently-authenticated-signed-owning-RPM-payload",
+          "absenceNotProof": true
+        }
+      ],
+      "coverage": "all-current-matched-locations",
+      "notCoveredLocations": []
+    },
+    {
+      "id": "sumdb-semver-6180-main-bluefin-dx-generic-3fd7e10d0e29-61668157",
+      "candidateBindings": {
+        "candidate": "main-bluefin-dx-generic",
+        "profile": "bluefin-dx-generic",
+        "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+        "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+        "sourceRun": 38340112122,
+        "configurationDigest": "sha256:5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78",
+        "buildIdentity": "v1:05fb59c6ab874df5cdba42675aeacfb37f7ba34df2053d198be408edb85ed247",
+        "sbomSha256": "d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64",
+        "sourceResultSha256": "b6439aee802b91d107231e19cdd6ddc405d5546204db05d46f14b99ba3086f56",
+        "nativeSummarySha256": "21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+        "bindingSha256": "579c2e93bfebcf83bebc46a16235230761f00f3708bcb8aa9070cd1c0baefc14",
+        "extractionSha256": "1945c7099ecb4475b5227231861be84ba495311ed1195d7008632697683d2e54",
+        "proposedToolchainPairs": 0,
+        "proposedPodmanScopedPairs": 1,
+        "releaseEligible": false
+      },
+      "proof": [
+        {
+          "path": "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "mainPackage": "github.com/containers/podman/v5/cmd/podman",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "5d6ccd7d0ea879559f19af23e49395822454df477f1b37a44a3b1e26a4204fdd",
+          "goModuleInfoSha256": "9387a6e427ea30e6e66aa49fd3d9ae813ef82368d3f600b9ac7061461206c4e2",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeFileId": "6174488172a0d8fe",
+          "join": "current-native-sha256-size-compiler-and-authenticated-probe-content-equality",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/usr/bin/podman",
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "mainPackage": "github.com/containers/podman/v5/cmd/podman",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "5d6ccd7d0ea879559f19af23e49395822454df477f1b37a44a3b1e26a4204fdd",
+          "goModuleInfoSha256": "9387a6e427ea30e6e66aa49fd3d9ae813ef82368d3f600b9ac7061461206c4e2",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeFileId": "3e7c38694c0bef3c",
+          "join": "current-native-sha256-size-compiler-and-authenticated-probe-content-equality",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "mainPackage": "github.com/containers/buildah/cmd/buildah",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "01ee869fe1ea27c927f5f824220ae4b4856f46fd2c21e1e474e5da64000bd64d",
+          "goModuleInfoSha256": "a000e6a6023cde1b7fbb49e7226a29ddfdba68fa2be0c66c4a6cfffa2f15363c",
+          "currentNativeFileId": "14a61673d4ae857d",
+          "referenceRun": 38354387254,
+          "signedReferenceEvidenceSha256": "c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+          "referenceRpmKojiId": 48829555,
+          "referenceRpmFileManifestSha256": "8fa7dd8a18eaac9e0dd17783da036ffb0e353bb0c4cbbb3c6597812596279cf7",
+          "join": "current-native-sha256-size-compiler-equal-to-independently-authenticated-signed-owning-RPM-payload",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/usr/bin/buildah",
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "mainPackage": "github.com/containers/buildah/cmd/buildah",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "01ee869fe1ea27c927f5f824220ae4b4856f46fd2c21e1e474e5da64000bd64d",
+          "goModuleInfoSha256": "a000e6a6023cde1b7fbb49e7226a29ddfdba68fa2be0c66c4a6cfffa2f15363c",
+          "currentNativeFileId": "93b05f434b690035",
+          "referenceRun": 38354387254,
+          "signedReferenceEvidenceSha256": "c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+          "referenceRpmKojiId": 48829555,
+          "referenceRpmFileManifestSha256": "8fa7dd8a18eaac9e0dd17783da036ffb0e353bb0c4cbbb3c6597812596279cf7",
+          "join": "current-native-sha256-size-compiler-equal-to-independently-authenticated-signed-owning-RPM-payload",
+          "absenceNotProof": true
+        }
+      ],
+      "coverage": "all-current-matched-locations",
+      "notCoveredLocations": []
+    },
+    {
+      "id": "sumdb-semver-6179-main-bluefin-dx-next-a851083d1a9e-61668157",
+      "candidateBindings": {
+        "candidate": "main-bluefin-dx-next",
+        "profile": "bluefin-dx-next",
+        "image": "ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+        "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+        "sourceRun": 38340112122,
+        "configurationDigest": "sha256:3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44",
+        "buildIdentity": "v1:13ab0d947b649d17a43851dbea491a445b2c123fcaba02eb1d21bff47ac94ccc",
+        "sbomSha256": "46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5",
+        "sourceResultSha256": "5724e3de7bbfd54999a962439452e4d9713f6ce1226c3fdbe126454868ba734b",
+        "nativeSummarySha256": "fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+        "bindingSha256": "602ae24f7a558478314182e9ca84bbf0980aad3b56371b647ab946407b9b66b4",
+        "extractionSha256": "99db89859b93fef227982046f2e7ce59a1328667e4f444cc58f2a0142cf4f2fe",
+        "proposedToolchainPairs": 0,
+        "proposedPodmanScopedPairs": 0,
+        "releaseEligible": false
+      },
+      "proof": [
+        {
+          "path": "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "mainPackage": "github.com/containers/podman/v5/cmd/podman",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "5d6ccd7d0ea879559f19af23e49395822454df477f1b37a44a3b1e26a4204fdd",
+          "goModuleInfoSha256": "9387a6e427ea30e6e66aa49fd3d9ae813ef82368d3f600b9ac7061461206c4e2",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeFileId": "6174488172a0d8fe",
+          "join": "current-native-sha256-size-compiler-and-authenticated-probe-content-equality",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/usr/bin/podman",
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "mainPackage": "github.com/containers/podman/v5/cmd/podman",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "5d6ccd7d0ea879559f19af23e49395822454df477f1b37a44a3b1e26a4204fdd",
+          "goModuleInfoSha256": "9387a6e427ea30e6e66aa49fd3d9ae813ef82368d3f600b9ac7061461206c4e2",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeFileId": "3e7c38694c0bef3c",
+          "join": "current-native-sha256-size-compiler-and-authenticated-probe-content-equality",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "mainPackage": "github.com/containers/buildah/cmd/buildah",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "01ee869fe1ea27c927f5f824220ae4b4856f46fd2c21e1e474e5da64000bd64d",
+          "goModuleInfoSha256": "a000e6a6023cde1b7fbb49e7226a29ddfdba68fa2be0c66c4a6cfffa2f15363c",
+          "currentNativeFileId": "14a61673d4ae857d",
+          "referenceRun": 38354387254,
+          "signedReferenceEvidenceSha256": "c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+          "referenceRpmKojiId": 48829555,
+          "referenceRpmFileManifestSha256": "8fa7dd8a18eaac9e0dd17783da036ffb0e353bb0c4cbbb3c6597812596279cf7",
+          "join": "current-native-sha256-size-compiler-equal-to-independently-authenticated-signed-owning-RPM-payload",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/usr/bin/buildah",
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "mainPackage": "github.com/containers/buildah/cmd/buildah",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "01ee869fe1ea27c927f5f824220ae4b4856f46fd2c21e1e474e5da64000bd64d",
+          "goModuleInfoSha256": "a000e6a6023cde1b7fbb49e7226a29ddfdba68fa2be0c66c4a6cfffa2f15363c",
+          "currentNativeFileId": "93b05f434b690035",
+          "referenceRun": 38354387254,
+          "signedReferenceEvidenceSha256": "c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+          "referenceRpmKojiId": 48829555,
+          "referenceRpmFileManifestSha256": "8fa7dd8a18eaac9e0dd17783da036ffb0e353bb0c4cbbb3c6597812596279cf7",
+          "join": "current-native-sha256-size-compiler-equal-to-independently-authenticated-signed-owning-RPM-payload",
+          "absenceNotProof": true
+        }
+      ],
+      "coverage": "all-current-matched-locations",
+      "notCoveredLocations": []
+    },
+    {
+      "id": "sumdb-semver-6180-main-bluefin-dx-next-a851083d1a9e-61668157",
+      "candidateBindings": {
+        "candidate": "main-bluefin-dx-next",
+        "profile": "bluefin-dx-next",
+        "image": "ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+        "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+        "sourceRun": 38340112122,
+        "configurationDigest": "sha256:3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44",
+        "buildIdentity": "v1:13ab0d947b649d17a43851dbea491a445b2c123fcaba02eb1d21bff47ac94ccc",
+        "sbomSha256": "46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5",
+        "sourceResultSha256": "5724e3de7bbfd54999a962439452e4d9713f6ce1226c3fdbe126454868ba734b",
+        "nativeSummarySha256": "fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+        "bindingSha256": "602ae24f7a558478314182e9ca84bbf0980aad3b56371b647ab946407b9b66b4",
+        "extractionSha256": "99db89859b93fef227982046f2e7ce59a1328667e4f444cc58f2a0142cf4f2fe",
+        "proposedToolchainPairs": 0,
+        "proposedPodmanScopedPairs": 1,
+        "releaseEligible": false
+      },
+      "proof": [
+        {
+          "path": "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "mainPackage": "github.com/containers/podman/v5/cmd/podman",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "5d6ccd7d0ea879559f19af23e49395822454df477f1b37a44a3b1e26a4204fdd",
+          "goModuleInfoSha256": "9387a6e427ea30e6e66aa49fd3d9ae813ef82368d3f600b9ac7061461206c4e2",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeFileId": "6174488172a0d8fe",
+          "join": "current-native-sha256-size-compiler-and-authenticated-probe-content-equality",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/usr/bin/podman",
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "mainPackage": "github.com/containers/podman/v5/cmd/podman",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "5d6ccd7d0ea879559f19af23e49395822454df477f1b37a44a3b1e26a4204fdd",
+          "goModuleInfoSha256": "9387a6e427ea30e6e66aa49fd3d9ae813ef82368d3f600b9ac7061461206c4e2",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeFileId": "3e7c38694c0bef3c",
+          "join": "current-native-sha256-size-compiler-and-authenticated-probe-content-equality",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "mainPackage": "github.com/containers/buildah/cmd/buildah",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "01ee869fe1ea27c927f5f824220ae4b4856f46fd2c21e1e474e5da64000bd64d",
+          "goModuleInfoSha256": "a000e6a6023cde1b7fbb49e7226a29ddfdba68fa2be0c66c4a6cfffa2f15363c",
+          "currentNativeFileId": "14a61673d4ae857d",
+          "referenceRun": 38354387254,
+          "signedReferenceEvidenceSha256": "c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+          "referenceRpmKojiId": 48829555,
+          "referenceRpmFileManifestSha256": "8fa7dd8a18eaac9e0dd17783da036ffb0e353bb0c4cbbb3c6597812596279cf7",
+          "join": "current-native-sha256-size-compiler-equal-to-independently-authenticated-signed-owning-RPM-payload",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/usr/bin/buildah",
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "mainPackage": "github.com/containers/buildah/cmd/buildah",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "01ee869fe1ea27c927f5f824220ae4b4856f46fd2c21e1e474e5da64000bd64d",
+          "goModuleInfoSha256": "a000e6a6023cde1b7fbb49e7226a29ddfdba68fa2be0c66c4a6cfffa2f15363c",
+          "currentNativeFileId": "93b05f434b690035",
+          "referenceRun": 38354387254,
+          "signedReferenceEvidenceSha256": "c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+          "referenceRpmKojiId": 48829555,
+          "referenceRpmFileManifestSha256": "8fa7dd8a18eaac9e0dd17783da036ffb0e353bb0c4cbbb3c6597812596279cf7",
+          "join": "current-native-sha256-size-compiler-equal-to-independently-authenticated-signed-owning-RPM-payload",
+          "absenceNotProof": true
+        }
+      ],
+      "coverage": "all-current-matched-locations",
+      "notCoveredLocations": []
+    },
+    {
+      "id": "sumdb-semver-6179-main-bluefin-generic-3d4693f25f09-61668157",
+      "candidateBindings": {
+        "candidate": "main-bluefin-generic",
+        "profile": "bluefin-generic",
+        "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+        "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+        "sourceRun": 38340112122,
+        "configurationDigest": "sha256:eb2542e972cdd6c71f3448674c57b0c41252fdc4c986252bc8ff3621e2119cf4",
+        "buildIdentity": "v1:357fa0799580560ed50f4045d429e0e9d19ad76e8deb9e647e45b0be33885a38",
+        "sbomSha256": "4902fdd4b2afca8374a3197770f25daa11c7626cb5c83c46fb614ad1f5441201",
+        "sourceResultSha256": "92127eae6a60001c57937bb329061da88bdc6a933a993a6a047c6be7466518ca",
+        "nativeSummarySha256": "5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9",
+        "bindingSha256": "eebe5c68f116c22b39c89654f752a9e09b565c7e7c8810569a5f3d338d8140be",
+        "extractionSha256": "dad4c01f31b275477cf5ce896b48ae67b6aa79c9d0152f8bef56b3eb1811c0ec",
+        "proposedToolchainPairs": 0,
+        "proposedPodmanScopedPairs": 0,
+        "releaseEligible": false
+      },
+      "proof": [
+        {
+          "path": "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "mainPackage": "github.com/containers/podman/v5/cmd/podman",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "5d6ccd7d0ea879559f19af23e49395822454df477f1b37a44a3b1e26a4204fdd",
+          "goModuleInfoSha256": "9387a6e427ea30e6e66aa49fd3d9ae813ef82368d3f600b9ac7061461206c4e2",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeFileId": "6174488172a0d8fe",
+          "join": "current-native-sha256-size-compiler-and-authenticated-probe-content-equality",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/usr/bin/podman",
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "mainPackage": "github.com/containers/podman/v5/cmd/podman",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "5d6ccd7d0ea879559f19af23e49395822454df477f1b37a44a3b1e26a4204fdd",
+          "goModuleInfoSha256": "9387a6e427ea30e6e66aa49fd3d9ae813ef82368d3f600b9ac7061461206c4e2",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeFileId": "3e7c38694c0bef3c",
+          "join": "current-native-sha256-size-compiler-and-authenticated-probe-content-equality",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "mainPackage": "github.com/containers/buildah/cmd/buildah",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "01ee869fe1ea27c927f5f824220ae4b4856f46fd2c21e1e474e5da64000bd64d",
+          "goModuleInfoSha256": "a000e6a6023cde1b7fbb49e7226a29ddfdba68fa2be0c66c4a6cfffa2f15363c",
+          "currentNativeFileId": "14a61673d4ae857d",
+          "referenceRun": 38354387254,
+          "signedReferenceEvidenceSha256": "c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+          "referenceRpmKojiId": 48829555,
+          "referenceRpmFileManifestSha256": "8fa7dd8a18eaac9e0dd17783da036ffb0e353bb0c4cbbb3c6597812596279cf7",
+          "join": "current-native-sha256-size-compiler-equal-to-independently-authenticated-signed-owning-RPM-payload",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/usr/bin/buildah",
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "mainPackage": "github.com/containers/buildah/cmd/buildah",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "01ee869fe1ea27c927f5f824220ae4b4856f46fd2c21e1e474e5da64000bd64d",
+          "goModuleInfoSha256": "a000e6a6023cde1b7fbb49e7226a29ddfdba68fa2be0c66c4a6cfffa2f15363c",
+          "currentNativeFileId": "93b05f434b690035",
+          "referenceRun": 38354387254,
+          "signedReferenceEvidenceSha256": "c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+          "referenceRpmKojiId": 48829555,
+          "referenceRpmFileManifestSha256": "8fa7dd8a18eaac9e0dd17783da036ffb0e353bb0c4cbbb3c6597812596279cf7",
+          "join": "current-native-sha256-size-compiler-equal-to-independently-authenticated-signed-owning-RPM-payload",
+          "absenceNotProof": true
+        }
+      ],
+      "coverage": "all-current-matched-locations",
+      "notCoveredLocations": []
+    },
+    {
+      "id": "sumdb-semver-6180-main-bluefin-generic-3d4693f25f09-61668157",
+      "candidateBindings": {
+        "candidate": "main-bluefin-generic",
+        "profile": "bluefin-generic",
+        "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+        "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+        "sourceRun": 38340112122,
+        "configurationDigest": "sha256:eb2542e972cdd6c71f3448674c57b0c41252fdc4c986252bc8ff3621e2119cf4",
+        "buildIdentity": "v1:357fa0799580560ed50f4045d429e0e9d19ad76e8deb9e647e45b0be33885a38",
+        "sbomSha256": "4902fdd4b2afca8374a3197770f25daa11c7626cb5c83c46fb614ad1f5441201",
+        "sourceResultSha256": "92127eae6a60001c57937bb329061da88bdc6a933a993a6a047c6be7466518ca",
+        "nativeSummarySha256": "5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9",
+        "bindingSha256": "eebe5c68f116c22b39c89654f752a9e09b565c7e7c8810569a5f3d338d8140be",
+        "extractionSha256": "dad4c01f31b275477cf5ce896b48ae67b6aa79c9d0152f8bef56b3eb1811c0ec",
+        "proposedToolchainPairs": 0,
+        "proposedPodmanScopedPairs": 1,
+        "releaseEligible": false
+      },
+      "proof": [
+        {
+          "path": "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "mainPackage": "github.com/containers/podman/v5/cmd/podman",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "5d6ccd7d0ea879559f19af23e49395822454df477f1b37a44a3b1e26a4204fdd",
+          "goModuleInfoSha256": "9387a6e427ea30e6e66aa49fd3d9ae813ef82368d3f600b9ac7061461206c4e2",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeFileId": "6174488172a0d8fe",
+          "join": "current-native-sha256-size-compiler-and-authenticated-probe-content-equality",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/usr/bin/podman",
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "mainPackage": "github.com/containers/podman/v5/cmd/podman",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "5d6ccd7d0ea879559f19af23e49395822454df477f1b37a44a3b1e26a4204fdd",
+          "goModuleInfoSha256": "9387a6e427ea30e6e66aa49fd3d9ae813ef82368d3f600b9ac7061461206c4e2",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeFileId": "3e7c38694c0bef3c",
+          "join": "current-native-sha256-size-compiler-and-authenticated-probe-content-equality",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "mainPackage": "github.com/containers/buildah/cmd/buildah",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "01ee869fe1ea27c927f5f824220ae4b4856f46fd2c21e1e474e5da64000bd64d",
+          "goModuleInfoSha256": "a000e6a6023cde1b7fbb49e7226a29ddfdba68fa2be0c66c4a6cfffa2f15363c",
+          "currentNativeFileId": "14a61673d4ae857d",
+          "referenceRun": 38354387254,
+          "signedReferenceEvidenceSha256": "c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+          "referenceRpmKojiId": 48829555,
+          "referenceRpmFileManifestSha256": "8fa7dd8a18eaac9e0dd17783da036ffb0e353bb0c4cbbb3c6597812596279cf7",
+          "join": "current-native-sha256-size-compiler-equal-to-independently-authenticated-signed-owning-RPM-payload",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/usr/bin/buildah",
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "mainPackage": "github.com/containers/buildah/cmd/buildah",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "01ee869fe1ea27c927f5f824220ae4b4856f46fd2c21e1e474e5da64000bd64d",
+          "goModuleInfoSha256": "a000e6a6023cde1b7fbb49e7226a29ddfdba68fa2be0c66c4a6cfffa2f15363c",
+          "currentNativeFileId": "93b05f434b690035",
+          "referenceRun": 38354387254,
+          "signedReferenceEvidenceSha256": "c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+          "referenceRpmKojiId": 48829555,
+          "referenceRpmFileManifestSha256": "8fa7dd8a18eaac9e0dd17783da036ffb0e353bb0c4cbbb3c6597812596279cf7",
+          "join": "current-native-sha256-size-compiler-equal-to-independently-authenticated-signed-owning-RPM-payload",
+          "absenceNotProof": true
+        }
+      ],
+      "coverage": "all-current-matched-locations",
+      "notCoveredLocations": []
+    },
+    {
+      "id": "sumdb-semver-6179-main-bluefin-next-a36f46afcc2a-61668157",
+      "candidateBindings": {
+        "candidate": "main-bluefin-next",
+        "profile": "bluefin-next",
+        "image": "ghcr.io/closure-labs/finite@sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+        "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+        "sourceRun": 38340112122,
+        "configurationDigest": "sha256:fce1315ea7763cf210b19f4e7c83334ab5e36be9a490d97e0ccc2b2c69491497",
+        "buildIdentity": "v1:204a54980664eb886d8b5a949b4a2bcd50c5fd6074f82e5d60ae6362241bb47c",
+        "sbomSha256": "bcf12455b002324b0c5923110de414cde3528d164bbb6b230dc2e8efb69f56b4",
+        "sourceResultSha256": "64182a6c9df652cdfdf3c07d19b7983a7ac297d43bff97f18cac74cd12d8f95c",
+        "nativeSummarySha256": "81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f",
+        "bindingSha256": "24ee45ac5db92e35d0c93f3fc9c64c7b7eb7c9c2ec0a37927305172b2cca21b4",
+        "extractionSha256": "526eac11850343447addbc89dbddc401122823d23e3c09504bea5c17a833853b",
+        "proposedToolchainPairs": 0,
+        "proposedPodmanScopedPairs": 0,
+        "releaseEligible": false
+      },
+      "proof": [
+        {
+          "path": "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "mainPackage": "github.com/containers/podman/v5/cmd/podman",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "5d6ccd7d0ea879559f19af23e49395822454df477f1b37a44a3b1e26a4204fdd",
+          "goModuleInfoSha256": "9387a6e427ea30e6e66aa49fd3d9ae813ef82368d3f600b9ac7061461206c4e2",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeFileId": "6174488172a0d8fe",
+          "join": "current-native-sha256-size-compiler-and-authenticated-probe-content-equality",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/usr/bin/podman",
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "mainPackage": "github.com/containers/podman/v5/cmd/podman",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "5d6ccd7d0ea879559f19af23e49395822454df477f1b37a44a3b1e26a4204fdd",
+          "goModuleInfoSha256": "9387a6e427ea30e6e66aa49fd3d9ae813ef82368d3f600b9ac7061461206c4e2",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeFileId": "3e7c38694c0bef3c",
+          "join": "current-native-sha256-size-compiler-and-authenticated-probe-content-equality",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "mainPackage": "github.com/containers/buildah/cmd/buildah",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "01ee869fe1ea27c927f5f824220ae4b4856f46fd2c21e1e474e5da64000bd64d",
+          "goModuleInfoSha256": "a000e6a6023cde1b7fbb49e7226a29ddfdba68fa2be0c66c4a6cfffa2f15363c",
+          "currentNativeFileId": "14a61673d4ae857d",
+          "referenceRun": 38354387254,
+          "signedReferenceEvidenceSha256": "c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+          "referenceRpmKojiId": 48829555,
+          "referenceRpmFileManifestSha256": "8fa7dd8a18eaac9e0dd17783da036ffb0e353bb0c4cbbb3c6597812596279cf7",
+          "join": "current-native-sha256-size-compiler-equal-to-independently-authenticated-signed-owning-RPM-payload",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/usr/bin/buildah",
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "mainPackage": "github.com/containers/buildah/cmd/buildah",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "01ee869fe1ea27c927f5f824220ae4b4856f46fd2c21e1e474e5da64000bd64d",
+          "goModuleInfoSha256": "a000e6a6023cde1b7fbb49e7226a29ddfdba68fa2be0c66c4a6cfffa2f15363c",
+          "currentNativeFileId": "93b05f434b690035",
+          "referenceRun": 38354387254,
+          "signedReferenceEvidenceSha256": "c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+          "referenceRpmKojiId": 48829555,
+          "referenceRpmFileManifestSha256": "8fa7dd8a18eaac9e0dd17783da036ffb0e353bb0c4cbbb3c6597812596279cf7",
+          "join": "current-native-sha256-size-compiler-equal-to-independently-authenticated-signed-owning-RPM-payload",
+          "absenceNotProof": true
+        }
+      ],
+      "coverage": "all-current-matched-locations",
+      "notCoveredLocations": []
+    },
+    {
+      "id": "sumdb-semver-6180-main-bluefin-next-a36f46afcc2a-61668157",
+      "candidateBindings": {
+        "candidate": "main-bluefin-next",
+        "profile": "bluefin-next",
+        "image": "ghcr.io/closure-labs/finite@sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+        "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+        "sourceRun": 38340112122,
+        "configurationDigest": "sha256:fce1315ea7763cf210b19f4e7c83334ab5e36be9a490d97e0ccc2b2c69491497",
+        "buildIdentity": "v1:204a54980664eb886d8b5a949b4a2bcd50c5fd6074f82e5d60ae6362241bb47c",
+        "sbomSha256": "bcf12455b002324b0c5923110de414cde3528d164bbb6b230dc2e8efb69f56b4",
+        "sourceResultSha256": "64182a6c9df652cdfdf3c07d19b7983a7ac297d43bff97f18cac74cd12d8f95c",
+        "nativeSummarySha256": "81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f",
+        "bindingSha256": "24ee45ac5db92e35d0c93f3fc9c64c7b7eb7c9c2ec0a37927305172b2cca21b4",
+        "extractionSha256": "526eac11850343447addbc89dbddc401122823d23e3c09504bea5c17a833853b",
+        "proposedToolchainPairs": 0,
+        "proposedPodmanScopedPairs": 1,
+        "releaseEligible": false
+      },
+      "proof": [
+        {
+          "path": "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "mainPackage": "github.com/containers/podman/v5/cmd/podman",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "5d6ccd7d0ea879559f19af23e49395822454df477f1b37a44a3b1e26a4204fdd",
+          "goModuleInfoSha256": "9387a6e427ea30e6e66aa49fd3d9ae813ef82368d3f600b9ac7061461206c4e2",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeFileId": "6174488172a0d8fe",
+          "join": "current-native-sha256-size-compiler-and-authenticated-probe-content-equality",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/usr/bin/podman",
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "mainPackage": "github.com/containers/podman/v5/cmd/podman",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "5d6ccd7d0ea879559f19af23e49395822454df477f1b37a44a3b1e26a4204fdd",
+          "goModuleInfoSha256": "9387a6e427ea30e6e66aa49fd3d9ae813ef82368d3f600b9ac7061461206c4e2",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeFileId": "3e7c38694c0bef3c",
+          "join": "current-native-sha256-size-compiler-and-authenticated-probe-content-equality",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "mainPackage": "github.com/containers/buildah/cmd/buildah",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "01ee869fe1ea27c927f5f824220ae4b4856f46fd2c21e1e474e5da64000bd64d",
+          "goModuleInfoSha256": "a000e6a6023cde1b7fbb49e7226a29ddfdba68fa2be0c66c4a6cfffa2f15363c",
+          "currentNativeFileId": "14a61673d4ae857d",
+          "referenceRun": 38354387254,
+          "signedReferenceEvidenceSha256": "c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+          "referenceRpmKojiId": 48829555,
+          "referenceRpmFileManifestSha256": "8fa7dd8a18eaac9e0dd17783da036ffb0e353bb0c4cbbb3c6597812596279cf7",
+          "join": "current-native-sha256-size-compiler-equal-to-independently-authenticated-signed-owning-RPM-payload",
+          "absenceNotProof": true
+        },
+        {
+          "path": "/usr/bin/buildah",
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "mainPackage": "github.com/containers/buildah/cmd/buildah",
+          "goVersion": "go1.26.8-X:nodwarf5",
+          "os": "linux",
+          "arch": "amd64",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "goBuildInfoSha256": "01ee869fe1ea27c927f5f824220ae4b4856f46fd2c21e1e474e5da64000bd64d",
+          "goModuleInfoSha256": "a000e6a6023cde1b7fbb49e7226a29ddfdba68fa2be0c66c4a6cfffa2f15363c",
+          "currentNativeFileId": "93b05f434b690035",
+          "referenceRun": 38354387254,
+          "signedReferenceEvidenceSha256": "c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+          "referenceRpmKojiId": 48829555,
+          "referenceRpmFileManifestSha256": "8fa7dd8a18eaac9e0dd17783da036ffb0e353bb0c4cbbb3c6597812596279cf7",
+          "join": "current-native-sha256-size-compiler-equal-to-independently-authenticated-signed-owning-RPM-payload",
+          "absenceNotProof": true
+        }
+      ],
+      "coverage": "all-current-matched-locations",
+      "notCoveredLocations": []
+    }
+  ],
+  "candidates": [
+    {
+      "candidate": "bluefin-dx-generic",
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "sourceRevision": "1d347b7456b0cf64d4372cc0e7a562a9e63eb45b",
+      "sourceRun": 38341284379,
+      "configurationDigest": "sha256:f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357",
+      "buildIdentity": "v1:b30ea5e8bfe8ec02caa2f4118aa91ba47c6c4283c3fe44cf1d73568f6954c76b",
+      "sbomSha256": "afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+      "sourceResultSha256": "7cdbb3e6a941de295d48ef0f2a7cfc8c72b4ec383ca990e6a17de0cf114605bb",
+      "nativeSummarySha256": "90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+      "bindingSha256": "0455f967e75f684f3c513dc044a549c0a2ab975c11e8c328d86d88139a8477a2",
+      "extractionSha256": "764adc980272907e1e4b918164d649cb71448c44a3021ba29d86a93dcf32d1ba",
+      "proposedToolchainPairs": 0,
+      "proposedPodmanScopedPairs": 0,
+      "releaseEligible": false,
+      "expandedSumdbPairs": 2
+    },
+    {
+      "candidate": "bluefin-generic",
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+      "sourceRevision": "1d347b7456b0cf64d4372cc0e7a562a9e63eb45b",
+      "sourceRun": 38341281199,
+      "configurationDigest": "sha256:97b4843f19705f7d6d29988bfbe591594388af5a9b7785e4edb08a7b6fb6abef",
+      "buildIdentity": "v1:29a6920037b0251e2c54a53719a00eb9c7085a75e59c8db76839b214703d8e0b",
+      "sbomSha256": "8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199",
+      "sourceResultSha256": "814aab9be9c5872dd844ffcbe4d8205a092c6ca43dec11167c4a49aeaa891805",
+      "nativeSummarySha256": "868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f",
+      "bindingSha256": "6a95e6f351fa48571175409349a8c4ecc4899b93967e5b53808e5b34f8a4fa2b",
+      "extractionSha256": "1090f5bcb0b10b19e09f748847587bf9e8da6c1bd304f86c73defaba48b08025",
+      "proposedToolchainPairs": 0,
+      "proposedPodmanScopedPairs": 0,
+      "releaseEligible": false,
+      "expandedSumdbPairs": 2
+    },
+    {
+      "candidate": "main-bluefin-dx-generic",
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+      "sourceRun": 38340112122,
+      "configurationDigest": "sha256:5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78",
+      "buildIdentity": "v1:05fb59c6ab874df5cdba42675aeacfb37f7ba34df2053d198be408edb85ed247",
+      "sbomSha256": "d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64",
+      "sourceResultSha256": "b6439aee802b91d107231e19cdd6ddc405d5546204db05d46f14b99ba3086f56",
+      "nativeSummarySha256": "21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+      "bindingSha256": "579c2e93bfebcf83bebc46a16235230761f00f3708bcb8aa9070cd1c0baefc14",
+      "extractionSha256": "1945c7099ecb4475b5227231861be84ba495311ed1195d7008632697683d2e54",
+      "proposedToolchainPairs": 0,
+      "proposedPodmanScopedPairs": 0,
+      "releaseEligible": false,
+      "expandedSumdbPairs": 2
+    },
+    {
+      "candidate": "main-bluefin-dx-next",
+      "profile": "bluefin-dx-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+      "sourceRun": 38340112122,
+      "configurationDigest": "sha256:3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44",
+      "buildIdentity": "v1:13ab0d947b649d17a43851dbea491a445b2c123fcaba02eb1d21bff47ac94ccc",
+      "sbomSha256": "46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5",
+      "sourceResultSha256": "5724e3de7bbfd54999a962439452e4d9713f6ce1226c3fdbe126454868ba734b",
+      "nativeSummarySha256": "fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+      "bindingSha256": "602ae24f7a558478314182e9ca84bbf0980aad3b56371b647ab946407b9b66b4",
+      "extractionSha256": "99db89859b93fef227982046f2e7ce59a1328667e4f444cc58f2a0142cf4f2fe",
+      "proposedToolchainPairs": 0,
+      "proposedPodmanScopedPairs": 0,
+      "releaseEligible": false,
+      "expandedSumdbPairs": 2
+    },
+    {
+      "candidate": "main-bluefin-generic",
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+      "sourceRun": 38340112122,
+      "configurationDigest": "sha256:eb2542e972cdd6c71f3448674c57b0c41252fdc4c986252bc8ff3621e2119cf4",
+      "buildIdentity": "v1:357fa0799580560ed50f4045d429e0e9d19ad76e8deb9e647e45b0be33885a38",
+      "sbomSha256": "4902fdd4b2afca8374a3197770f25daa11c7626cb5c83c46fb614ad1f5441201",
+      "sourceResultSha256": "92127eae6a60001c57937bb329061da88bdc6a933a993a6a047c6be7466518ca",
+      "nativeSummarySha256": "5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9",
+      "bindingSha256": "eebe5c68f116c22b39c89654f752a9e09b565c7e7c8810569a5f3d338d8140be",
+      "extractionSha256": "dad4c01f31b275477cf5ce896b48ae67b6aa79c9d0152f8bef56b3eb1811c0ec",
+      "proposedToolchainPairs": 0,
+      "proposedPodmanScopedPairs": 0,
+      "releaseEligible": false,
+      "expandedSumdbPairs": 2
+    },
+    {
+      "candidate": "main-bluefin-next",
+      "profile": "bluefin-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+      "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+      "sourceRun": 38340112122,
+      "configurationDigest": "sha256:fce1315ea7763cf210b19f4e7c83334ab5e36be9a490d97e0ccc2b2c69491497",
+      "buildIdentity": "v1:204a54980664eb886d8b5a949b4a2bcd50c5fd6074f82e5d60ae6362241bb47c",
+      "sbomSha256": "bcf12455b002324b0c5923110de414cde3528d164bbb6b230dc2e8efb69f56b4",
+      "sourceResultSha256": "64182a6c9df652cdfdf3c07d19b7983a7ac297d43bff97f18cac74cd12d8f95c",
+      "nativeSummarySha256": "81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f",
+      "bindingSha256": "24ee45ac5db92e35d0c93f3fc9c64c7b7eb7c9c2ec0a37927305172b2cca21b4",
+      "extractionSha256": "526eac11850343447addbc89dbddc401122823d23e3c09504bea5c17a833853b",
+      "proposedToolchainPairs": 0,
+      "proposedPodmanScopedPairs": 0,
+      "releaseEligible": false,
+      "expandedSumdbPairs": 2
+    }
+  ],
+  "sourcePackages": [
+    {
+      "name": "podman",
+      "upstreamTreeId": "c593b672bf3db1173aebea565ebf1a724ea196dc",
+      "fedoraSourceRevision": "4d5daf480eb219a34e6c4cb96818c3d1de6d80a5",
+      "specUrl": "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+      "specSha256": "8b03b4211e85a353a41de9ec3cc892171e79a2ee989c902536a99375eae2a009",
+      "sourceManifestSha256": "7a97e5c712c59c1965e072bc7227cf184e0952523dd84cc725268ccebb752ccb",
+      "sourceArchive": {
+        "url": "https://src.fedoraproject.org/repo/pkgs/rpms/podman/v5.8.7.tar.gz/sha512/94a108aa9401fb62cfeaa2b3cfe8552a08240f7f9275ff53fe90eb289c285a0733b4a5582ce5f3a2c4d19d13ac9b4002f7565553d0961713a42a6101fdbe98f9/v5.8.7.tar.gz",
+        "bytes": 20639251,
+        "sha512": "94a108aa9401fb62cfeaa2b3cfe8552a08240f7f9275ff53fe90eb289c285a0733b4a5582ce5f3a2c4d19d13ac9b4002f7565553d0961713a42a6101fdbe98f9",
+        "sha256": "56016d197499ecdda3092e6cfd9985f2c1defd3882b5d85ba0a60a77af6f1b21"
+      },
+      "sourceClosure": {
+        "allReviewedSourceBytesMatch": true,
+        "reviewedFileCount": 7966,
+        "archiveEntryCount": 11554,
+        "fileManifestSha256": "d923714d00f75b325276332d2982dba2d84a83e0474e8252580258f500bd6ffc",
+        "vendorModulesSha256": "c2196cbf7e7caf7a03206c62cbc63187e997421e0a32aef7f29186b43d12ad7e",
+        "moduleGoDirective": "1.26.0",
+        "selectedSourceFiles": {
+          "go.mod": {
+            "gitBlob": "d433db3682237559bba80c96f30055c508dacf41",
+            "sha256": "265413842315cdb9d487dbd1a85cddb89ae86647f54bbbdfe32eae158445be0e",
+            "bytes": 9422
+          },
+          "go.sum": {
+            "gitBlob": "c7966acb8ad47edbc1137908e926bb70f3b7cd6f",
+            "sha256": "6ff9a3e1a21164a8752fe7a7781889bf2f13b0cae6edc29222ad1bc2851dd967",
+            "bytes": 58232
+          },
+          "vendor/modules.txt": {
+            "gitBlob": "6ed07353e48f1b13b42aea9b7834171b204bc6c5",
+            "sha256": "c2196cbf7e7caf7a03206c62cbc63187e997421e0a32aef7f29186b43d12ad7e",
+            "bytes": 44075
+          }
+        }
+      },
+      "actualXModPackages": [
+        "golang.org/x/mod/semver"
+      ],
+      "owningBuild": {
+        "mainBuildCommand": "+ go build -buildmode pie -compiler gc '-tags=rpm_crashtraceback seccomp systemd libsubid libsqlite3 grpcnotrace  containers_image_sequoia' -a -v -ldflags '-X github.com/containers/podman/v5/libpod/define.buildInfo=1789516800          -X \"github.com/containers/podman/v5/libpod/define.buildOrigin=Fedora Project\"          -X github.com/containers/podman/v5/libpod/config._installPrefix=/usr          -X github.com/containers/podman/v5/libpod/config._etcDir=/etc          -X github.com/containers/podman/v5/pkg/systemd/quadlet._binDir=/usr/bin -X github.com/containers/podman/v5/libpod/define.gitCommit=c593b672bf3db1173aebea565ebf1a724ea196dc  -B 0x8c2e860e755f03eccb39f8fc7988afc78e4b0d09 -compressdwarf=false -linkmode=external -extldflags '\\''-Wl,-z,relro -Wl,--as-needed  -Wl,-z,pack-relative-relocs -Wl,-z,now -specs=/usr/lib/rpm/redhat/redhat-hardened-ld -specs=/usr/lib/rpm/redhat/redhat-hardened-ld-errors -specs=/usr/lib/rpm/redhat/redhat-annobin-cc1  -Wl,--build-id=sha1 -specs=/usr/lib/rpm/redhat/redhat-package-notes   '\\''' -o bin/podman ./cmd/podman",
+        "commandLine": 214,
+        "packageBlockEndLine": 1288,
+        "moduleModeEvidence": "+ GO111MODULE=on",
+        "moduleOverrideEvidence": [],
+        "vendorMode": "inferred-go-default",
+        "vendorBuildFlagProven": false,
+        "vendorInference": "Verified vendor tree and go.mod >=1.14 with GO111MODULE=on; no override observed in owning build log.",
+        "vendorSemantics": "https://go.dev/ref/mod#vendoring",
+        "limitations": [
+          "Build log is observed Koji evidence, not an authenticated compiler attestation.",
+          "Compiled package names do not prove runtime callers or vulnerable function reachability."
+        ]
+      },
+      "owningBuildPackageListSha256": "302bdfd810411fc91623364a02d528493e5c6b436c6b1ee57071349676f17528",
+      "compiledPackageCount": 1070,
+      "buildLog": {
+        "url": "https://kojipkgs.fedoraproject.org/packages/podman/5.8.7/1.fc44/data/logs/x86_64/build.log",
+        "bytes": 251082,
+        "sha512": "99c0e0ef7a986d5db4f4c48e901d434085dff548fd8fafaca4235395bf56a3390292ab835815319965ebf319f018e2049ab693645eaa5b79f7528585900b5602",
+        "sha256": "ab0a71f3fbd01080bbb5060212423e0b68bc2e8e70d3e8df50d8aaba8ea58937"
+      },
+      "vulnerablePackageStatus": "Outside verified vendored application source closure; positive semver-only owning compile block corroborates; not a negative symbol scan.",
+      "signedRpmReferenceSha256": "0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+      "actualBinary": {
+        "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+        "size": 45362352,
+        "goVersion": "go1.26.8-X:nodwarf5",
+        "settingsCoverage": "Historical independent collector omitted build settings; exact signed bytes/source and owning build command+package block retained."
+      }
+    },
+    {
+      "name": "buildah",
+      "upstreamTreeId": "c7061d00bae87f95000d550c015bc4d9be0b53af",
+      "fedoraSourceRevision": "b99f65ea1800c6488c54aff69f29336f74f6e68f",
+      "specUrl": "https://src.fedoraproject.org/rpms/buildah/raw/b99f65ea1800c6488c54aff69f29336f74f6e68f/f/buildah.spec",
+      "specSha256": "d53a5ffba54749b75581826fceffe7859cb690514e71c027bfd502abebdf6ba1",
+      "sourceManifestSha256": "04eca2efb9f3d64b24f3d63fcd19b46315e6de4b7580a365e04d0cee4bc8e786",
+      "sourceArchive": {
+        "url": "https://src.fedoraproject.org/repo/pkgs/rpms/buildah/v1.43.4.tar.gz/sha512/863cfd633446e3adae16a623ef62e2366fd2e0634349b83a8b01804788fefb3d1a871525bacf17ab0801ad357ef2a45a96d19e5dae652a76e58c3986731f9257/v1.43.4.tar.gz",
+        "bytes": 11145540,
+        "sha512": "863cfd633446e3adae16a623ef62e2366fd2e0634349b83a8b01804788fefb3d1a871525bacf17ab0801ad357ef2a45a96d19e5dae652a76e58c3986731f9257",
+        "sha256": "81950613a1849f7c74c64551f021133ad1335c66a21728b27e3e2c79d990ac9c"
+      },
+      "sourceClosure": {
+        "allReviewedSourceBytesMatch": true,
+        "reviewedFileCount": 4230,
+        "archiveEntryCount": 6360,
+        "fileManifestSha256": "6d5d978c15e2f2038e5d2b8412491a4dc52d3116f238900994b41c0634c4c123",
+        "vendorModulesSha256": "bf37d8b2796e85eb631833569d39e46e8a4516264b02a83076022c6915851141",
+        "moduleGoDirective": "1.26.0",
+        "selectedSourceFiles": {
+          "go.mod": {
+            "gitBlob": "bd71de2bb3c30851df3a1f7f49e15f9fc278713d",
+            "sha256": "32041a95d5fcda19a6874ccb27119abe12d6e3ebd8ada04cf120fb54188ef03c",
+            "bytes": 6653
+          },
+          "go.sum": {
+            "gitBlob": "2bb96c49037461dcab491fe652250731fb842da9",
+            "sha256": "7507390c527f32badc7b723f349a1f7252b2437ff894d26f6d827efa26b0dcbd",
+            "bytes": 42217
+          },
+          "vendor/modules.txt": {
+            "gitBlob": "3448d07bbcb1878466d7f181514ff2ab933a8a79",
+            "sha256": "bf37d8b2796e85eb631833569d39e46e8a4516264b02a83076022c6915851141",
+            "bytes": 30682
+          }
+        }
+      },
+      "actualXModPackages": [
+        "golang.org/x/mod/semver"
+      ],
+      "owningBuild": {
+        "mainBuildCommand": "+ go build -buildmode pie -compiler gc '-tags=rpm_crashtraceback seccomp systemd libsubid libsqlite3 containers_image_sequoia' -a -v -ldflags '-X main.buildInfo=1789591169 -X main.cniVersion=  -B 0x613dfa5878c6f7983dec89f2f71ef02443df9f28 -compressdwarf=false -linkmode=external -extldflags '\\''-Wl,-z,relro -Wl,--as-needed  -Wl,-z,pack-relative-relocs -Wl,-z,now -specs=/usr/lib/rpm/redhat/redhat-hardened-ld -specs=/usr/lib/rpm/redhat/redhat-hardened-ld-errors -specs=/usr/lib/rpm/redhat/redhat-annobin-cc1  -Wl,--build-id=sha1 -specs=/usr/lib/rpm/redhat/redhat-package-notes   '\\''' -o bin/buildah ./cmd/buildah",
+        "commandLine": 103,
+        "packageBlockEndLine": 940,
+        "moduleModeEvidence": "+ GO111MODULE=on",
+        "moduleOverrideEvidence": [],
+        "vendorMode": "inferred-go-default",
+        "vendorBuildFlagProven": false,
+        "vendorInference": "Verified vendor tree and go.mod >=1.14 with GO111MODULE=on; no override observed in owning build log.",
+        "vendorSemantics": "https://go.dev/ref/mod#vendoring",
+        "limitations": [
+          "Build log is observed Koji evidence, not an authenticated compiler attestation.",
+          "Compiled package names do not prove runtime callers or vulnerable function reachability."
+        ]
+      },
+      "owningBuildPackageListSha256": "0d3ec5b25c40e6862d098287df97d97eca326f61ebb756e228e7a8bb442a9940",
+      "compiledPackageCount": 830,
+      "buildLog": {
+        "url": "https://kojipkgs.fedoraproject.org/packages/buildah/1.43.4/1.fc44/data/logs/x86_64/build.log",
+        "bytes": 360689,
+        "sha512": "5476b9117aa8a6b0765842875f7bf021f392292c1ab71a680be7a3015dddbcd3adee3396127ff8b2b8ef7ddcb2c3086784d6239fa98b2208d496b2f18501944b",
+        "sha256": "e566ddcae0769c4db838d37b1172efdad4337c04d714ed9fae986aa54839e6ef"
+      },
+      "vulnerablePackageStatus": "Outside verified vendored application source closure; positive semver-only owning compile block corroborates; not a negative symbol scan.",
+      "signedRpm": {
+        "rpm": {
+          "name": "buildah",
+          "epoch": 2,
+          "version": "1.43.4",
+          "release": "1.fc44",
+          "sourceRpm": "buildah-1.43.4-1.fc44.src.rpm",
+          "vendor": "Fedora Project"
+        },
+        "kojiBuildId": 3103124,
+        "kojiRpmId": 48829555,
+        "sourceCommit": "b99f65ea1800c6488c54aff69f29336f74f6e68f",
+        "download": {
+          "url": "https://kojipkgs.fedoraproject.org/packages/buildah/1.43.4/1.fc44/data/signed/6d9f90a6/x86_64/buildah-1.43.4-1.fc44.x86_64.rpm",
+          "bytes": 10506112,
+          "sha256": "4f126f2d7d2396a896de082e46d55f7b49c1d05043a4e93c2156314f4053d2c5"
+        },
+        "signatureVerified": true,
+        "signatureKeyFingerprint": "36f612dcf27f7d1a48a835e4dbfcf71c6d9f90a6",
+        "signatureKeySha256": "93642aec521a1e5e96dd715f7ae0ec0850ebc9de09a94ce03cae5263f26cc18a",
+        "signatureSha256": "4b5f7368262a53c55cfea71982e6fc6f1d2efa33815361efc08c42aa7e4b9d45",
+        "rpmFileManifestSha256": "8fa7dd8a18eaac9e0dd17783da036ffb0e353bb0c4cbbb3c6597812596279cf7"
+      },
+      "actualBinary": {
+        "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+        "size": 33236984,
+        "mainPackage": "github.com/containers/buildah/cmd/buildah",
+        "goVersion": "go1.26.8-X:nodwarf5",
+        "os": "linux",
+        "arch": "amd64",
+        "elf": {
+          "class": 64,
+          "endianness": "little",
+          "machine": "EM_X86_64"
+        },
+        "goBuildInfoSha256": "01ee869fe1ea27c927f5f824220ae4b4856f46fd2c21e1e474e5da64000bd64d",
+        "goModuleInfoSha256": "a000e6a6023cde1b7fbb49e7226a29ddfdba68fa2be0c66c4a6cfffa2f15363c",
+        "goBuildSettingsRecords": [
+          "build\t-buildmode=pie",
+          "build\t-compiler=gc",
+          "build\t-ldflags=\"-X main.buildInfo=1789591169 -X main.cniVersion=  -B 0x613dfa5878c6f7983dec89f2f71ef02443df9f28 -compressdwarf=false -linkmode=external -extldflags '-Wl,-z,relro -Wl,--as-needed  -Wl,-z,pack-relative-relocs -Wl,-z,now -specs=/usr/lib/rpm/redhat/redhat-hardened-ld -specs=/usr/lib/rpm/redhat/redhat-hardened-ld-errors -specs=/usr/lib/rpm/redhat/redhat-annobin-cc1  -Wl,--build-id=sha1 -specs=/usr/lib/rpm/redhat/redhat-package-notes   '\"",
+          "build\t-tags=rpm_crashtraceback,seccomp,systemd,libsubid,libsqlite3,containers_image_sequoia",
+          "build\tCGO_ENABLED=1",
+          "build\tCGO_CFLAGS=\"-O2 -ffat-lto-objects -fexceptions -g -grecord-gcc-switches -pipe -Wall -Werror=format-security -Wp,-U_FORTIFY_SOURCE,-D_FORTIFY_SOURCE=3 -Wp,-D_GLIBCXX_ASSERTIONS -specs=/usr/lib/rpm/redhat/redhat-hardened-cc1 -fstack-protector-strong  -m64 -march=x86-64 -mtune=generic -fasynchronous-unwind-tables -fstack-clash-protection -fcf-protection -mtls-dialect=gnu2 -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -m64 -mtune=generic -fcf-protection=full\"",
+          "build\tCGO_CPPFLAGS=",
+          "build\tCGO_CXXFLAGS=",
+          "build\tCGO_LDFLAGS=",
+          "build\tGOARCH=amd64",
+          "build\tGOEXPERIMENT=nodwarf5",
+          "build\tGOOS=linux",
+          "build\tGOAMD64=v1",
+          "build\tvcs=git",
+          "build\tvcs.revision=87cbbc088390d67d1d991b9a8c4ea278a6770669",
+          "build\tvcs.time=2026-09-15T00:00:00Z",
+          "build\tvcs.modified=false"
+        ],
+        "relevantModuleRecords": [
+          "mod\tgithub.com/containers/buildah\tv0.0.0-20260915000000-87cbbc088390\t",
+          "dep\tgolang.org/x/mod\tv0.38.0\t"
+        ]
+      },
+      "settingsMatchOwningBuild": {
+        "buildTags": [
+          "containers_image_sequoia",
+          "libsqlite3",
+          "libsubid",
+          "rpm_crashtraceback",
+          "seccomp",
+          "systemd"
+        ],
+        "compiler": "gc",
+        "buildmode": "pie",
+        "ldflagsBuildInfo": "1789591169",
+        "moduleVersion": "golang.org/x/mod v0.38.0",
+        "vcsIdentity": "Packaging VCS87cbbc\u2026 is not upstream c706\u2026; source bridge is owning signed Fedora RPM and immutable spec/archive, not pseudo module version."
+      }
+    }
+  ],
+  "unknowns": [
+    {
+      "consumers": [
+        "cosign",
+        "toolbox",
+        "containerd",
+        "ctr"
+      ],
+      "advisories": [
+        "GO-2026-6179",
+        "GO-2026-6180"
+      ],
+      "status": "remain-unknown-blocked",
+      "reason": "No complete authenticated selected-source closure established for these separate consumers; no transfer of Podman/Buildah source proof."
+    },
+    {
+      "advisories": [
+        "GO-2026-4867",
+        "GO-2026-4868",
+        "GO-2026-4981"
+      ],
+      "status": "unchanged",
+      "reason": "No compiler/cgo remediation or applicability result granted by semver-only proof."
+    }
+  ],
+  "skopeo": {
+    "currentObservedBlockingXModPairs": 0,
+    "proofScope": "Authenticated source/runtime reference is available, but source vendor closure has no x/mod package and no current x/mod match for Skopeo in six compact summaries; no disposition fabricated."
+  },
+  "limitations": [
+    "Observed Koji compiler log is publisher evidence, not cryptographic compiler attestation. Archive-to-reviewed-source and signed exact RPM-to-current-byte bridges are independent positive checks.",
+    "Default vendor selection inferred from Go>=1.14,module mode on, verified vendor tree and no observed override; explicit -mod=vendor flag not proven.",
+    "No additional scan performed; policy-only reevaluation must preserve observation aliases and count changes separately from fixed findings.",
+    "Existing Podman-only entries must be replaced by expanded scopes; adding both conflicts with strict evaluator scope uniqueness.",
+    "No release eligibility or Next source hold clearance."
+  ]
+}

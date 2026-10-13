@@ -65,6 +65,15 @@ shipped paths, owning RPM metadata or explicitly unknown ownership. Retained-fil
 ownership relationships use exact content equality; they do not independently
 verify a package signature or resolve its vulnerabilities.
 
+## Independent channel qualification
+
+The user approved qualifying channels independently. Continue security remediation
+for all four profiles, but a generic channel may proceed when its own exact
+candidate security, signing and boot gates pass while Next awaits its source fix.
+Use the existing manual channel selector; a passing build or another channel's
+qualification cannot clear that candidate. This continuation does not merge or
+publish a release.
+
 ## Remaining owners and concrete unblock events
 
 | Item | Owner | Required event or evidence |
@@ -94,3 +103,25 @@ remain blocking; no blanket suppression or installed-compiler shortcut was used.
 Source/build validation: PASS for PR147 and the PR148 proof follow-up. Vulnerability clearance: BLOCKED. Release eligibility:
 INELIGIBLE until applicable security, source, signing and boot/release gates pass.
 No merge or release publication is performed by this continuation.
+
+## Authenticated consumer continuation — 2026-10-13
+
+PR #147 merged externally at `9d1b0c5b5ebd`; PR #148 now targets main.
+The user approved independent channel qualification: generic channels can proceed
+as their own security, signing and boot gates clear, while Next retains its hold.
+
+Implemented 27 cmd/go runtime mismatch scopes and 72 independently reviewed
+consumer/sumdb scopes, bringing the exact-digest policy to 150 dispositions.
+Signed RPM payloads, verified source archives and owning compilation records
+prove the named consumer mismatches; these are nonapplicability determinations,
+not package fixes or blanket dependency suppressions. New main digests need new
+bindings. All 107 focused policy/evidence/selection tests passed.
+
+[Hosted source proof](https://github.com/closure-labs/finite/actions/runs/38354387254)
+passed. [Retained policy reevaluation](https://github.com/closure-labs/finite/actions/runs/38356296590)
+passed: unchanged observations now yield 71 standard and 119 development
+blocking pairs, down from 87 and 135 under the previous reviewed policy.
+Owners, unblock evidence and separate verdicts are retained in
+[the continuation ledger](desktop-applicability-continuation-2026-10-13.json).
+Compiler/cgo, unresolved network consumers, AnyIO, rclone and the Next source
+hold remain explicit. Release eligibility has not been established.

@@ -31,6 +31,7 @@ QUALIFICATION_ONLY = {
     'scripts/ci/freerdp-reference-evidence.py',
     'scripts/ci/podman-reference-evidence.py',
     'scripts/ci/httpd-reference-evidence.py',
+    'scripts/ci/go-consumer-reference.py',
 }
 
 

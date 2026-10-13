@@ -231,3 +231,33 @@ on PR #139; its existing change remains intact.
 - Cancelled redundant old-policy main publication38326674435 after same main
   revision passed all four merge-queue builds38324842229; known AnyIO blocker
   remained. No merge or publication performed by this continuation.
+
+## Authenticated consumer continuation — 2026-10-13
+
+PR #147 merged externally at `9d1b0c5b5ebd`; PR #148 now targets main.
+The user approved independent channel qualification: generic channels can proceed
+as their own security, signing and boot gates clear, while Next retains its hold.
+
+Implemented 27 cmd/go runtime mismatch scopes and 72 independently reviewed
+consumer/sumdb scopes, bringing the exact-digest policy to 150 dispositions.
+Signed RPM payloads, verified source archives and owning compilation records
+prove the named consumer mismatches; these are nonapplicability determinations,
+not package fixes or blanket dependency suppressions. New main digests need new
+bindings. All 107 focused policy/evidence/selection tests passed.
+
+[Hosted source proof](https://github.com/closure-labs/finite/actions/runs/38354387254)
+passed. [Retained policy reevaluation](https://github.com/closure-labs/finite/actions/runs/38356296590)
+passed: unchanged observations now yield 71 standard and 119 development
+blocking pairs, down from 87 and 135 under the previous reviewed policy.
+Owners, unblock evidence and separate verdicts are retained in
+[the continuation ledger](../docs/desktop-applicability-continuation-2026-10-13.json).
+Compiler/cgo, unresolved network consumers, AnyIO, rclone and the Next source
+hold remain explicit. Release eligibility has not been established.
+
+- New main run38353294526 completed all four builds, but generic native scanning
+  failed before policy evaluation because the production caller supplied a
+  relative SBOM path to the strict evidence collector. Remaining identical
+  scans were cancelled as demonstrably doomed. This is a scanner error, not a
+  policy blocker; canonical caller-path remediation and three regression tests now pass.
+- Temporary read-only validation branch was deleted after successful retained
+  reevaluation38356296590; evidence remains in the ledger and hosted artifacts.
