@@ -6,18 +6,57 @@ All notable changes to Finite are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-13
+
+### Added
+
+- Desktop qualification checks for encrypted-root installation, Secure Boot,
+  SELinux enforcement, signed upgrades and rollback before channel promotion.
+- Release evidence that ties the image, installer, signatures and security
+  review to an exact image digest.
+
+### Changed
+
+- Bluefin updates are checked regularly and failed channel updates are retried
+  against the approved upstream image.
+- Channels qualify independently, allowing standard Finite to ship without
+  waiting for Next or development images.
+- Vulnerability decisions use reviewed evidence of Critical impact on supported
+  desktop use. Scanner matches alone do not establish exploitability; unresolved
+  advisories remain documented risks.
+- Shared command-line tools use the supported Homebrew integration, while Nix
+  and Home Manager continue to manage the desktop configuration and applications.
+
 ### Fixed
 
 - Home Manager template upgrades preserve the user's flake entry point and
   dependency lock, keeping custom inputs available to preserved modules.
 - Restore the Nix GPU driver link after the persistent store mounts at boot,
   fixing Ghostty and other Nix graphics applications after reboot.
+- Correct SELinux labels for persistent Nix state and home directories, and
+  avoid repeating completed Nix store relabeling on every boot.
+- Retry transient Home Manager download failures and preserve the compatible
+  Den dependency set used by standalone home configurations.
+- Restore signed image publication and authenticated reuse of valid security
+  evidence after isolated signing and registry authentication failures.
+- Recognize the container engine's explicit missing-signature rejection during
+  upgrade qualification and retain useful diagnostics when validation fails.
 
-### Changed
+### Removed
 
-- CI selects documentation, Nix/runtime and image checks from changed inputs.
-  Nix payload dependency comparisons select the affected generic or next images.
-- The README displays the Finite logo beside its title.
+- Host ZFS support, including its kernel modules. Workstations use the supported
+  Btrfs storage path; ZFS-dependent workloads need a separate environment.
+- Optional virtual-camera modules from generic profiles so their availability
+  no longer delays signed kernel security updates. Physical camera support is
+  separate from this virtual-camera feature.
+
+### Security
+
+- Apply targeted package and signed kernel updates while preserving approved
+  publishers, protected boot components and package ownership checks.
+- Isolate image signing from builders and scanners, verify the signing key
+  against the committed public key, and require exact-digest boot qualification
+  before updating public channel tags.
 
 ## [0.6.0] - 2026-09-06
 
@@ -385,7 +424,8 @@ All notable changes to Finite are documented here. The format follows
 - The required `CI gate` now validates repository policy, selected image and
   installer jobs, merge candidates, and trusted dependency-update automation.
 
-[Unreleased]: https://github.com/closure-labs/finite/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/closure-labs/finite/compare/finite-finite-0.7.0...HEAD
+[0.7.0]: https://github.com/closure-labs/finite/compare/v0.6.0...finite-finite-0.7.0
 [0.6.0]: https://github.com/closure-labs/finite/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/closure-labs/finite/compare/v0.3.0...v0.5.0
 [0.3.0]: https://github.com/closure-labs/finite/compare/v0.2.4...v0.3.0
