@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "pr": 151,
+  "basePr": 150,
+  "vmSufficientForDesktopQualification": true,
+  "manualHardwareGateRequired": false,
+  "independentReview": "approved for source validation; actual VM pending prerequisites",
+  "offlineValidation": {
+    "broadenedSuites": 37,
+    "broadenedTests": 435,
+    "upstreamTests": 44,
+    "securityPolicyTests": 69,
+    "desktopReleaseResumeTests": 64,
+    "totalTests": 612,
+    "status": "pass"
+  },
+  "sourceHashes": {
+    "scripts/bluebuild/check-vm-desktop.py": "308b9e16c6c2d544a7d7a2d1fbb0a8169e396776acabc118c1f156fd67ec07c3",
+    "scripts/bluebuild/desktop-qualification.py": "27b01646d1763cf84a4f8b736fab304ba9dd9c8d81a80b5a9827867674948d18",
+    "scripts/bluebuild/publication.py": "53d32b710827c020ff6458c5321469756e82945c66434ff4a93dc0d16e9e3668",
+    "scripts/bluebuild/release-evidence.py": "760038744bb3aa76543941181cda54f8100fa9afa201cffc04d23bccb2497488",
+    "scripts/bluebuild/qualify.sh": "4359390d352c0061a0bedddb4918a4069e1c66d5fa946430efafc250cfb50461",
+    "scripts/bluebuild/vm-acceptance.sh": "c38cf675da1734f38b7446a43703b5437e51b99fdd60ef89ea99b718793e65f4",
+    "scripts/ci/rclone-compatibility.py": "870481124b31befb726494e8aa80ab1cca5b16467eec663c39082269904ecff6"
+  },
+  "hostedValidation": {
+    "rcloneCompatibilityRun": 38368702487,
+    "implementedCasesPassed": 7,
+    "retainedVmPrerequisitesRun": 38369120537,
+    "firstSourceRun": 38369444397,
+    "firstSourceFailure": "Legacy promotion fixtures did not carry the newly mandatory VM receipt. Updated focused fixture boundaries and added rejection-before-registry regression. Production gate unchanged.",
+    "latestSourceRunReference": "PR151 exact-head checks record hosted final validation."
+  },
+  "verdicts": {
+    "sourceFixtures": "pass",
+    "actualNewVmExecution": "not-run: package/security prerequisites pending",
+    "vulnerabilityClearance": "blocked",
+    "releaseEligibility": "ineligible"
+  },
+  "limits": [
+    "GUI and physical hardware are informational coverage limits, not release gates.",
+    "No new image build/scan, package adoption, merge or publication.",
+    "Package compatibility remains partial; named gaps remain in protocol report."
+  ]
+}

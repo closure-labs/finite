@@ -245,7 +245,7 @@ def main():
         if args.source_revision and not args.profile:
             raise ValueError('An explicit image source revision requires a candidate profile')
         policy = policy_module.load_policy(policy_module.ROOT / 'automation/security/image-policy.json')
-        risk_mode = policy.get('mode') == 'upstream-maintained-risk'
+        risk_mode = policy.get('mode') in policy_module.RISK_MODES
         baseline = None
         receipt = None
         if args.profile or risk_mode:

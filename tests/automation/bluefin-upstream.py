@@ -38,6 +38,13 @@ class BluefinTests(unittest.TestCase):
         security = patch.object(publication.security, 'verify')
         security.start()
         self.addCleanup(security.stop)
+        # This suite exercises upstream selection and promotion sequencing.
+        # Receipt contents have dedicated desktop-qualification coverage; the
+        # negative integration test below deliberately restores the real gate.
+        self.desktop_verifier = publication.desktop.verify
+        desktop = patch.object(publication.desktop, 'verify')
+        self.desktop = desktop.start()
+        self.addCleanup(desktop.stop)
         current_main = patch.object(publication, 'github', return_value={
             'ref': 'refs/heads/main', 'object': {'type': 'commit', 'sha': 'f' * 40}})
         current_main.start()
@@ -373,6 +380,21 @@ class BluefinTests(unittest.TestCase):
                       'buildIdentity': IDENTITY, 'secureBoot': True, 'encryptedRoot': True}
         (self.root / '.bluebuild/bluefin-generic-acceptance.json').write_text(json.dumps(acceptance))
 
+    def test_missing_vm_receipt_blocks_before_registry_access(self):
+        self.prepare()
+        image = upstream.REPOSITORY + '@' + IMAGE
+        (self.root / '.bluebuild/bluefin-generic-image-ref.txt').write_text(image + '\n')
+        self.accepted_candidate(image)
+        with patch.dict(os.environ, GITHUB_SHA='f' * 40), \
+                patch.object(publication.desktop, 'verify', self.desktop_verifier), \
+                patch.object(publication.subprocess, 'run') as run, \
+                patch.object(publication.upstream, 'inspect') as inspect:
+            with self.assertRaisesRegex(ValueError, 'Missing hash-bound VM security receipt'):
+                publication.promote('bluefin-generic', self.root)
+            run.assert_not_called()
+            inspect.assert_not_called()
+        self.assertFalse((self.root / '.bluebuild/bluefin-generic-promoted.json').exists())
+
     def test_promotion_uses_verified_digest_for_both_aliases(self):
         self.prepare()
         image = upstream.REPOSITORY + '@' + IMAGE
@@ -380,6 +402,9 @@ class BluefinTests(unittest.TestCase):
         self.accepted_candidate(image)
         with patch.dict(os.environ, GITHUB_SHA='f' * 40), patch.object(publication.subprocess, 'run') as run, patch.object(publication.upstream, 'inspect', return_value={'Digest': IMAGE}):
             publication.promote('bluefin-generic', self.root)
+            self.desktop.assert_called_once()
+            self.assertEqual(self.desktop.call_args.args[0], self.root / '.bluebuild')
+            self.assertEqual(self.desktop.call_args.args[1]['candidate'], image)
             self.assertEqual(run.call_count, 3)
             self.assertEqual(run.call_args_list[0].args[0], ['cosign', 'verify', '--new-bundle-format=false', '--key', str(self.root / 'cosign.pub'), image])
             for call in run.call_args_list[1:]:
@@ -463,6 +488,9 @@ class BluefinTests(unittest.TestCase):
             (evidence / 'bluefin-generic-acceptance.json').write_text(json.dumps(accepted))
             with patch.object(publication.upstream, 'inspect', return_value={'Digest': IMAGE}):
                 publication.promote('bluefin-generic', self.root)
+            self.desktop.assert_called_once()
+            self.assertEqual(self.desktop.call_args.args[0], self.root / '.bluebuild')
+            self.assertEqual(self.desktop.call_args.args[1]['candidate'], image)
             self.assertEqual(run.call_count, 3)
 
     def test_shadow_mode_cannot_prepare_or_promote(self):

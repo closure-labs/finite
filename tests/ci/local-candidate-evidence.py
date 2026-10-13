@@ -20,10 +20,24 @@ PROFILE = 'bluefin-generic'
 OCI_MANIFEST = 'application/vnd.oci.image.manifest.v1+json'
 
 
+def confirmed_risk(image, profile='bluefin-generic'):
+    return {'id': 'confirmed-fixture', 'digest': image.split('@')[1], 'profile': profile,
+            'platform': 'linux/amd64', 'component': 'pkg:rpm/fedora/example@1', 'severity': 'Critical',
+            'impact': 'Host compromise', 'reason': 'Fixture review', 'attackerPath': 'Hostile imported file',
+            'selinuxAssessment': 'Applicable confinement does not prevent the confirmed path',
+            'reviewedBy': 'Fixture reviewer', 'reviewedAt': '2026-10-12T00:00:00Z',
+            'advisories': ['CVE-2026-1234'], 'locations': ['/usr/bin/example'],
+            'officialSources': ['https://example.org/advisory'], 'severityEvidence': ['Official Critical rating'],
+            'affectedCodeEvidence': ['Exact binary and vulnerable code reviewed'],
+            'preconditions': ['Supported desktop import'], 'selinuxEvidence': ['Relevant domain reviewed']}
+
+
 class LocalCandidate(unittest.TestCase):
     def setUp(self):
         self.policy = mod.policy_module.load_policy(ROOT / 'automation/security/image-policy.json')
         self.policy.pop('mode', None)  # Original fixtures remain explicitly legacy.
+        self.policy.pop('blockingBasis', None)
+        self.policy.pop('confirmedDesktopRisks', None)
         policy_loader = patch.object(mod.policy_module, 'load_policy', return_value=self.policy)
         policy_loader.start()
         self.addCleanup(policy_loader.stop)
@@ -278,6 +292,60 @@ class LocalCandidate(unittest.TestCase):
             self.assertEqual(mod.main([str(self.layout), str(output), '--profile', PROFILE, '--identity', IDENTITY,
                                        '--approved-baseline', str(path)]), 2)
         self.assertEqual(json.loads((output / 'security-result.json').read_text())['status'], 'scanner-error')
+
+    def test_critical_only_baseline_and_exact_mode_are_required(self):
+        self.policy['mode'] = 'desktop-critical-only'
+        output = self.root / 'critical-no-context'
+        with patch.dict(mod.os.environ, self.environment(), clear=True), patch.object(mod, 'scan_candidate') as scan:
+            self.assertEqual(mod.main([str(self.layout), str(output), '--profile', PROFILE, '--identity', IDENTITY]), 2)
+        scan.assert_not_called()
+        context = self.context()
+        path = self.root / 'critical-context.json'
+        mod.write_json(path, context)
+        for mode, expected in [('desktop-critical-only', 0), ('upstream-maintained-risk', 2)]:
+            result = self.result('pass')
+            result.update(mode=mode, approvedBaseline=context, trackedReleaseConcerns=[{
+                'id': 'fixture-concern', 'profiles': [PROFILE], 'riskClass': 'local-privilege-escalation',
+                'reason': 'Source concern not classified Critical', 'officialSources': ['https://kernel.org/'],
+                'reviewedBy': 'Fixture', 'reviewedAt': '2026-10-12T00:00:00Z',
+                'unblockEvidence': 'Specific source proof', 'severity': 'Unknown', 'advisories': []}])
+            output = self.root / ('critical-' + mode)
+            with patch.dict(mod.os.environ, self.environment(), clear=True), patch.object(mod, 'scan_candidate', return_value=result):
+                self.assertEqual(mod.main([str(self.layout), str(output), '--profile', PROFILE, '--identity', IDENTITY,
+                                           '--approved-baseline', str(path)]), expected)
+            self.assertFalse(json.loads((output / 'security-result.json').read_text())['releaseEligible'])
+            if expected == 0:
+                summary = json.loads((output / 'security-summary.json').read_text())
+                self.assertEqual(summary['trackedReleaseConcerns'][0]['severity'], 'Unknown')
+
+    def test_reviewed_basis_retains_confirmed_hold_and_rejects_basis_mismatch(self):
+        basis = 'reviewed-desktop-exploitability'
+        self.policy.update(mode='desktop-critical-only', blockingBasis=basis, confirmedDesktopRisks=[])
+        context = self.context()
+        path = self.root / 'reviewed-context.json'
+        mod.write_json(path, context)
+        risk = confirmed_risk(context['image'], PROFILE)
+        for label, basis_value, holds, expected in [('unconfirmed', basis, [], 0),
+                ('confirmed', basis, [risk], 1), ('wrong-basis', 'other', [], 2),
+                ('wrong-digest', basis, [{**risk, 'digest': 'sha256:' + 'f' * 64}], 2)]:
+            self.policy['confirmedDesktopRisks'] = [risk] if holds else []
+            result = self.result('pass')
+            result.update(mode='desktop-critical-only', blockingBasis=basis_value, approvedBaseline=context,
+                          trackedReleaseConcerns=[], releaseBlockers=holds, status='blocked' if holds else 'pass')
+            if label == 'confirmed':
+                result['blocked'] = [{'component': risk['component'], 'advisory': 'CVE-2026-1234',
+                    'severity': 'High', 'aliases': ['CVE-2026-1234'], 'locations': ['/usr/bin/example'],
+                    'locationCoverage': 'complete', 'reason': 'confirmed-desktop-exploitability', 'disposition': 'blocked',
+                    'confirmedRiskReviews': [risk['id']]}]
+            output = self.root / ('reviewed-' + label)
+            with patch.dict(mod.os.environ, self.environment(), clear=True), patch.object(mod, 'scan_candidate', return_value=result):
+                self.assertEqual(mod.main([str(self.layout), str(output), '--profile', PROFILE, '--identity', IDENTITY,
+                                           '--approved-baseline', str(path)]), expected)
+            if expected != 2:
+                summary = json.loads((output / 'security-summary.json').read_text())
+                self.assertEqual(summary['blockingBasis'], basis)
+                self.assertEqual(summary['releaseBlockers'], holds)
+                self.assertFalse(summary['releaseEligible'])
 
     def test_native_pass_and_blocked_never_grant_release(self):
         for status, expected in (('pass', 0), ('blocked', 1)):

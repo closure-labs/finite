@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Assemble release evidence only from matching successful main-branch runs."""
 import argparse
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -9,6 +10,9 @@ import shutil
 import subprocess
 import tempfile
 
+desktop_spec = importlib.util.spec_from_file_location('desktop_qualification', Path(__file__).with_name('desktop-qualification.py'))
+desktop = importlib.util.module_from_spec(desktop_spec)
+desktop_spec.loader.exec_module(desktop)
 REPOSITORY = 'closure-labs/finite'
 PROFILES = {'finite': 'bluefin-generic', 'finite-next': 'bluefin-next',
             'finite-dev': 'bluefin-dx-generic', 'finite-dev-next': 'bluefin-dx-next'}
@@ -98,6 +102,8 @@ def main():
         acceptance = json.loads(acceptance_path.read_text())
         publication = json.loads(publication_path.read_text())
         image = validate_evidence(installation, acceptance, publication, args.channel, revision)
+        desktop_path = desktop.verify(temporary / 'qualification', acceptance)
+        shutil.copy2(desktop_path, destination / desktop_path.name)
         subprocess.run(['sha256sum', '--check', '--strict', 'SHA256SUMS'], cwd=destination, check=True, timeout=300)
         subprocess.run(['cosign', 'verify', '--new-bundle-format=false', '--key', 'cosign.pub', image], check=True, timeout=150)
         shutil.copy2(acceptance_path, destination / 'acceptance.json')

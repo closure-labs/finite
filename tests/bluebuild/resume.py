@@ -331,6 +331,7 @@ class PromotionState(unittest.TestCase):
                     patch.object(pub, 'github', return_value=self.main), \
                     patch.object(pub.upstream, 'inspect', return_value={'Digest': 'sha256:' + 'c' * 64}), \
                     patch.object(pub.security, 'verify') as security, \
+                    patch.object(pub.desktop, 'verify'), \
                     patch.object(pub.subprocess, 'run') as command:
                 with self.assertRaisesRegex(ValueError, 'Public channel changed'):
                     pub.promote('bluefin-generic', root)

@@ -17,6 +17,9 @@ spec.loader.exec_module(upstream)
 security_spec = importlib.util.spec_from_file_location('security_policy', Path(__file__).with_name('security-policy.py'))
 security = importlib.util.module_from_spec(security_spec)
 security_spec.loader.exec_module(security)
+desktop_spec = importlib.util.spec_from_file_location('desktop_qualification', Path(__file__).with_name('desktop-qualification.py'))
+desktop = importlib.util.module_from_spec(desktop_spec)
+desktop_spec.loader.exec_module(desktop)
 REPOSITORY = 'closure-labs/finite'
 SHA = re.compile(r'[0-9a-f]{40}')
 DIGEST = re.compile(r'sha256:[0-9a-f]{64}')
@@ -303,6 +306,7 @@ def promote(profile, root=upstream.ROOT):
                         acceptance.get('encryptedRoot') is True))
     if not accepted:
         raise ValueError('Candidate lacks matching successful encrypted Secure Boot qualification')
+    desktop.verify(evidence, acceptance)
     security.verify(evidence / ('security-' + profile), image, root / 'automation/security/image-policy.json')
     subprocess.run(['cosign', 'verify', '--new-bundle-format=false', '--key', str(root / 'cosign.pub'), image],
                    check=True, stdout=subprocess.DEVNULL, timeout=150)

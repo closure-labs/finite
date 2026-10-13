@@ -56,7 +56,7 @@ class Selection(unittest.TestCase):
         self.assertEqual(impact.classify(['scripts/ci/local-candidate-evidence.py']),
                          {'checks': True, 'nix': False, 'profiles': []})
         self.assertEqual(impact.classify([])['profiles'], sorted(impact.PROFILES))
-        for path in ['.github/workflows/iso.yml', '.github/workflows/vm-acceptance.yml', '.github/workflows/qualification.yml']:
+        for path in ['.github/workflows/iso.yml', '.github/workflows/vm-acceptance.yml']:
             self.assertEqual(impact.classify([path])['profiles'], sorted(impact.PROFILES))
         for event in ['schedule', 'workflow_dispatch', 'unknown']:
             self.assertIsNone(impact.changed_paths(event, {}))

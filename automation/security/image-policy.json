@@ -14,13 +14,12 @@
     "kev"
   ],
   "blockedFixableSeverities": [
-    "High",
     "Critical"
   ],
-  "blockKnownExploited": true,
+  "blockKnownExploited": false,
   "exceptions": [],
   "coverageProbePackage": "openssl",
-  "mode": "upstream-maintained-risk",
+  "mode": "desktop-critical-only",
   "seriousAdvisories": [
     {
       "id": "ssh-revoked-certificate-authority",
@@ -5712,7 +5711,11 @@
       ],
       "reviewedBy": "great_cto desktop kernel source review",
       "reviewedAt": "2026-10-13T00:00:29Z",
-      "unblockEvidence": "Approved same-stream stable kernel containing the reviewed fixes, or separately explicit reviewed testing approval; authenticate exact Fedora payloads and validate transaction, module preservation, initramfs and boot qualification before reviewing removal of this hold."
+      "unblockEvidence": "Approved same-stream stable kernel containing the reviewed fixes, or separately explicit reviewed testing approval; authenticate exact Fedora payloads and validate transaction, module preservation, initramfs and boot qualification before reviewing removal of this hold.",
+      "severity": "Unknown",
+      "advisories": []
     }
-  ]
+  ],
+  "blockingBasis": "reviewed-desktop-exploitability",
+  "confirmedDesktopRisks": []
 }

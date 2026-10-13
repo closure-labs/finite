@@ -97,6 +97,10 @@ class Preflight(unittest.TestCase):
 
     def test_ordinary_unavailable_fix_does_not_block_reviewed_risk_readiness(self):
         risk = mod.security.load_policy(ROOT / 'automation/security/image-policy.json')
+        risk.update(mode='upstream-maintained-risk', blockKnownExploited=True)
+        risk.pop('blockingBasis', None)
+        risk.pop('confirmedDesktopRisks', None)
+        risk['releaseBlockers'] = []
         policy = {'fedora': 44, 'sourceImage': 'fixture', 'packages': {}}
         prerequisites = mod.load_prerequisites(ROOT / 'scripts/ci/remediation-prerequisites.json')
         output = ('python3-anyio\t4.14.2-1.fc44\tnoarch\tupdates\tpython3-anyio-0:4.14.2-1.fc44.noarch\n'
@@ -118,6 +122,24 @@ class Preflight(unittest.TestCase):
             serious = mod.probe(policy, prerequisites, risk_policy=risk)
         self.assertFalse(serious['prerequisiteReady'])
         self.assertEqual(serious['status'], 'blocked')
+
+    def test_critical_only_missing_prerequisites_are_advisory_not_clearance(self):
+        risk = mod.security.load_policy(ROOT / 'automation/security/image-policy.json')
+        risk.update(mode='desktop-critical-only', blockedFixableSeverities=['Critical'], blockKnownExploited=False)
+        prerequisites = mod.load_prerequisites(ROOT / 'scripts/ci/remediation-prerequisites.json')
+        policy = {'fedora': 44, 'sourceImage': 'fixture', 'packages': {}}
+        with patch.object(mod, 'run', return_value=''):
+            result = mod.probe(policy, prerequisites, risk_policy=risk)
+        self.assertEqual(result['status'], 'available')
+        self.assertFalse(result['allRequestedFixesAvailable'])
+        self.assertEqual(result['scannerResolution'], 'unknown')
+        self.assertTrue(all(row['status'] == 'missing' and not row['blockingUnderCurrentPolicy']
+                            for row in result['prerequisites']))
+        policy['packages']['sudo'] = {'minimumEVR': '0:1.9.17-10.p2.fc44'}
+        with patch.object(mod, 'run', return_value=''):
+            result = mod.probe(policy, prerequisites, risk_policy=risk)
+        self.assertEqual(result['status'], 'blocked')
+        self.assertFalse(result['packageFloorsAvailable'])
 
     def test_upstream_comparison_discards_epoch_and_release(self):
         with patch.object(mod, 'compare', return_value=-1) as compare:

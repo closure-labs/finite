@@ -304,3 +304,53 @@ hold remain explicit. Release eligibility has not been established.
 - [ ] Finite: complete SFTP/Windows, RC proxy, S3 identity-secret and mount compatibility before full package adoption.
 
 - [x] Remove temporary audit/rclone-reference branch and forget probe workspace after retaining hosted artifacts and receipts.
+
+## Desktop release qualification implementation
+
+- [x] Senior developer: RC/S3 controls implemented;30 fixtures and hosted7-case run38368702487 pass.
+- [x] Security architect: candidate VM receipts bind actual SELinux/process/network observations through qualification, promotion and release.
+- [x] Security officer: refresh confirms rclone testing, AnyIO unavailable and Next stable promotion pending; exact owners/events recorded.
+- [x] Root: implement qualification contracts and focused tests; retain hosted compatibility/prerequisite evidence in stacked PR151. Hosted source status is tracked on its exact-head checks.
+- [x] QA/security: independent RC/S3 and VM source review approved;64 VM/release/resume fixtures pass; actual VM execution remains unproven.
+- Preserve PR1505eeee35a and source PASS38366873163; standard generic first; no merge or publication.
+
+- Decision: VM qualification is sufficient; the user explicitly rejected a separate hardware/desktop test gate. Record untested physical/GUI behavior as informational only.
+
+- [x] Retained SBOM prerequisite check38369120537 confirms required guest-tool packages; full SBOM parsed hosted only.
+- [ ] Actual candidate VM execution follows a genuinely changed, vulnerability-qualified image; no unchanged-image build/scan or false boot pass.
+
+- CI38369444397 exposed legacy promotion fixtures missing the newly required VM receipt. Fixture boundaries corrected without weakening the production gate;612 broadened offline tests now pass before retry.
+- Temporary validation branch removed after retaining run38368702487 and run38369120537 evidence.
+
+## Critical-only desktop release threshold
+
+- Decision: user explicitly narrows vulnerability blocking to Critical findings
+  applicable to supported desktop SELinux use; all four profiles and container
+  tools remain in scope. Lower-severity risks remain tracked, not falsely fixed.
+- [x] Implement exact Critical/alias evaluation and authenticated mode integration (80 policy +51 integration +13 native-summary tests).
+- [x] Independently review policy, integration and focused regression tests; approved bounded source scope.
+- [x] Reevaluate fresh retained scans from main run38395796884 on hosted runners;
+  preserve observations and compare with the retained baseline. No repeated scan.
+- [x] Record remaining Critical applicability work: standard24, development54 pairs on both kernel channels; no clearance claimed.
+- Actual signed candidate VM qualification remains required; no physical test gate.
+
+- [x] Rebase PR151 after external PR150 merge; cancel redundant four-image run38410619261.
+- [x] Hosted removal dry-run38411928635: rclone alone; AnyIO also removes HTTPX; gum/glow have inherited desktop callers. No removal or clearance claimed.
+- [ ] Implement compatible optional removal/caller remedies as a batch before the next changed candidate; preserve desktop confirmations and supported container use.
+
+## Evidence-based desktop blocking correction
+
+- Decision: advisory/component pairs alone are insufficient for release blocking.
+  Unresolved Critical matches remain advisory review work, not automatic holds.
+- [x] Implement explicit reviewed-desktop-exploitability basis and strict exact
+  candidate confirmation records; preserve historical policy output.
+- [x] Independently assess existing receipts for qualifying confirmed risks and
+  validate policy/integration regressions.
+- [x] Hosted reevaluation38414548421 reuses fresh native scans; retain all observations,
+  distinguish policy acceptance from fixes, update PR and evidence.
+- Signing, SELinux-enforcing VM install/upgrade/rollback and evidence validity
+  remain qualification gates. No merge/publication is part of this correction.
+
+- Independent review: no qualifying confirmed risk in existing current-candidate receipts; unresolved risks explicitly accepted, not resolved.157 policy/integration regression tests pass.
+
+- All four candidates pass revised vulnerability policy with zero confirmed blockers. Unresolved Critical observations retained: standard24/development54, advisory only. Proceed to trusted signing/VM qualification after the reviewed source change reaches main; no required vulnerability-count reduction.

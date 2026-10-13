@@ -1,0 +1,658 @@
+{
+  "schema": 1,
+  "status": "partial-pass",
+  "run": 38368702487,
+  "runUrl": "https://github.com/closure-labs/finite/actions/runs/38368702487",
+  "revision": "20e6d5dfd76faef063ab931180ef3e8fb52d76ab",
+  "artifactId": 11797842664,
+  "artifactSha256": "70bdf3cb26e055816efe9f0d477c32acf038e0603d2661fa78b70e7c33c9d6d0",
+  "report": {
+    "schema": 1,
+    "binarySha256": "0343a46124ac5f3d64396bfb33102e6d734541979036f5d0d931358902cd686e",
+    "sourceRevision": "20e6d5dfd76faef063ab931180ef3e8fb52d76ab",
+    "referenceScope": "testing-candidate",
+    "status": "partial-pass",
+    "cases": [
+      {
+        "id": "ordinary-copy-sync",
+        "advisory": null,
+        "status": "pass",
+        "evidence": {
+          "controls": [
+            "version",
+            "copy",
+            "sync",
+            "check"
+          ]
+        }
+      },
+      {
+        "id": "links-root-confinement",
+        "advisory": "GHSA-cf44-9pgv-m4xc",
+        "status": "pass",
+        "evidence": {
+          "contracts": [
+            "external-link-refused",
+            "nested-link-refused",
+            "in-tree-link-allowed"
+          ],
+          "remainingScope": "Concurrent link races and directory metadata writes are not covered here."
+        }
+      },
+      {
+        "id": "ftp-session-authority",
+        "advisory": "GHSA-c476-6w5q-jw77",
+        "status": "pass",
+        "evidence": {
+          "contracts": [
+            "simultaneous-same-user-isolation-both-orders",
+            "cross-root-retrieval-denied",
+            "unknown-token-denied"
+          ]
+        }
+      },
+      {
+        "id": "rc-per-server-proxy",
+        "advisory": "GHSA-p569-5gjg-9cmj",
+        "status": "pass",
+        "evidence": {
+          "contracts": [
+            "two-request-local-FTP-proxies",
+            "own-file-retrieval",
+            "anonymous-wrong-and-other-server-token-denied",
+            "trap-root-inaccessible",
+            "servers-stopped"
+          ],
+          "responses": [
+            {
+              "server": "alice",
+              "user": "anonymous",
+              "token": "anonymous",
+              "status": 530
+            },
+            {
+              "server": "alice",
+              "user": "shared",
+              "token": "wrong-token",
+              "status": 530
+            },
+            {
+              "server": "alice",
+              "user": "shared",
+              "token": "bob-token",
+              "status": 530
+            },
+            {
+              "server": "bob",
+              "user": "anonymous",
+              "token": "anonymous",
+              "status": 530
+            },
+            {
+              "server": "bob",
+              "user": "shared",
+              "token": "wrong-token",
+              "status": 530
+            },
+            {
+              "server": "bob",
+              "user": "shared",
+              "token": "alice-token",
+              "status": 530
+            }
+          ],
+          "scope": "FTP RC path; S3 RC path is exercised by s3-proxy-secret-and-authority."
+        }
+      },
+      {
+        "id": "s3-proxy-secret-and-authority",
+        "advisory": "GHSA-xwwr-4h3p-r22c",
+        "status": "pass",
+        "evidence": {
+          "contracts": [
+            "RC-request-local-S3-proxies",
+            "per-identity-positive-read-write",
+            "empty-wrong-unknown-secret-denied",
+            "auth-key-cannot-replace-proxy-secret",
+            "cross-server-keys-denied",
+            "same-process-static-key-isolation",
+            "distinct-identity-roots-retained",
+            "trap-root-inaccessible",
+            "servers-stopped"
+          ],
+          "responses": [
+            {
+              "port": 34667,
+              "method": "GET",
+              "path": "/bucket/alice.txt",
+              "key": "alice",
+              "status": 200,
+              "bodySha256": "f18b7bf8f8aec317372d64e36f784dd96ac1036cfeccf5afa01e4d76066e7687"
+            },
+            {
+              "port": 34667,
+              "method": "PUT",
+              "path": "/bucket/written.txt",
+              "key": "alice",
+              "status": 200,
+              "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "port": 34667,
+              "method": "GET",
+              "path": "/bucket/written.txt",
+              "key": "alice",
+              "status": 200,
+              "bodySha256": "b0e0fc5493d526ff4bcf24fd0a8acbe20309ee470c960886ecfd096389eed3f8"
+            },
+            {
+              "port": 34667,
+              "method": "GET",
+              "path": "/",
+              "key": "alice",
+              "status": 403,
+              "bodySha256": "d9228b355c91a1939be25f83f7d6acc1f39db8dfa5c37643fb710934f4e5cd40"
+            },
+            {
+              "port": 34667,
+              "method": "GET",
+              "path": "/",
+              "key": "alice",
+              "status": 403,
+              "bodySha256": "d9228b355c91a1939be25f83f7d6acc1f39db8dfa5c37643fb710934f4e5cd40"
+            },
+            {
+              "port": 34667,
+              "method": "GET",
+              "path": "/bucket/bob.txt",
+              "key": "bob",
+              "status": 200,
+              "bodySha256": "fde6c7e085d1abadf263fa472c3d144ca33bcb2439d1bc60015eed6876ab0aa8"
+            },
+            {
+              "port": 34667,
+              "method": "PUT",
+              "path": "/bucket/written.txt",
+              "key": "bob",
+              "status": 200,
+              "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "port": 34667,
+              "method": "GET",
+              "path": "/bucket/written.txt",
+              "key": "bob",
+              "status": 200,
+              "bodySha256": "d695606a33b5447110535c07b3f089fe6dca5108c2f14ae021661d7d8a3f5f4f"
+            },
+            {
+              "port": 34667,
+              "method": "GET",
+              "path": "/",
+              "key": "bob",
+              "status": 403,
+              "bodySha256": "d9228b355c91a1939be25f83f7d6acc1f39db8dfa5c37643fb710934f4e5cd40"
+            },
+            {
+              "port": 34667,
+              "method": "GET",
+              "path": "/",
+              "key": "bob",
+              "status": 403,
+              "bodySha256": "d9228b355c91a1939be25f83f7d6acc1f39db8dfa5c37643fb710934f4e5cd40"
+            },
+            {
+              "port": 34599,
+              "method": "GET",
+              "path": "/bucket/carol.txt",
+              "key": "carol",
+              "status": 200,
+              "bodySha256": "6a6b255714b09c5f73af765ddc864a337eb70bc40d74a53b39a0c9232bc0b708"
+            },
+            {
+              "port": 34599,
+              "method": "PUT",
+              "path": "/bucket/written.txt",
+              "key": "carol",
+              "status": 200,
+              "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "port": 34599,
+              "method": "GET",
+              "path": "/bucket/written.txt",
+              "key": "carol",
+              "status": 200,
+              "bodySha256": "9964213b849448ff5c822fa3b8aa5a083c2da928fdb6f294ecfc33cd41f93ede"
+            },
+            {
+              "port": 34599,
+              "method": "GET",
+              "path": "/",
+              "key": "carol",
+              "status": 403,
+              "bodySha256": "d9228b355c91a1939be25f83f7d6acc1f39db8dfa5c37643fb710934f4e5cd40"
+            },
+            {
+              "port": 34599,
+              "method": "GET",
+              "path": "/",
+              "key": "carol",
+              "status": 403,
+              "bodySha256": "d9228b355c91a1939be25f83f7d6acc1f39db8dfa5c37643fb710934f4e5cd40"
+            },
+            {
+              "port": 41229,
+              "method": "GET",
+              "path": "/bucket/static.txt",
+              "key": "static",
+              "status": 200,
+              "bodySha256": "5392d134779cd465559d10d097841deb8bab697b7973ea75a91ddedbc10d1f7b"
+            },
+            {
+              "port": 41229,
+              "method": "PUT",
+              "path": "/bucket/written.txt",
+              "key": "static",
+              "status": 200,
+              "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "port": 41229,
+              "method": "GET",
+              "path": "/bucket/written.txt",
+              "key": "static",
+              "status": 200,
+              "bodySha256": "14fdf91e02ec7262d02e5767da49d673e80a6911443bd9cf05039ba8c4d52f9f"
+            },
+            {
+              "port": 34667,
+              "method": "GET",
+              "path": "/",
+              "key": "unknown",
+              "status": 403,
+              "bodySha256": "d9228b355c91a1939be25f83f7d6acc1f39db8dfa5c37643fb710934f4e5cd40"
+            },
+            {
+              "port": 34667,
+              "method": "GET",
+              "path": "/",
+              "key": "unknown",
+              "status": 403,
+              "bodySha256": "d9228b355c91a1939be25f83f7d6acc1f39db8dfa5c37643fb710934f4e5cd40"
+            },
+            {
+              "port": 34667,
+              "method": "GET",
+              "path": "/",
+              "key": "empty",
+              "status": 403,
+              "bodySha256": "d9228b355c91a1939be25f83f7d6acc1f39db8dfa5c37643fb710934f4e5cd40"
+            },
+            {
+              "port": 34667,
+              "method": "GET",
+              "path": "/",
+              "key": "fallback",
+              "status": 403,
+              "bodySha256": "d9228b355c91a1939be25f83f7d6acc1f39db8dfa5c37643fb710934f4e5cd40"
+            },
+            {
+              "port": 34599,
+              "method": "GET",
+              "path": "/",
+              "key": "unknown",
+              "status": 403,
+              "bodySha256": "d9228b355c91a1939be25f83f7d6acc1f39db8dfa5c37643fb710934f4e5cd40"
+            },
+            {
+              "port": 34599,
+              "method": "GET",
+              "path": "/",
+              "key": "unknown",
+              "status": 403,
+              "bodySha256": "d9228b355c91a1939be25f83f7d6acc1f39db8dfa5c37643fb710934f4e5cd40"
+            },
+            {
+              "port": 34599,
+              "method": "GET",
+              "path": "/",
+              "key": "empty",
+              "status": 403,
+              "bodySha256": "d9228b355c91a1939be25f83f7d6acc1f39db8dfa5c37643fb710934f4e5cd40"
+            },
+            {
+              "port": 34599,
+              "method": "GET",
+              "path": "/",
+              "key": "fallback",
+              "status": 403,
+              "bodySha256": "d9228b355c91a1939be25f83f7d6acc1f39db8dfa5c37643fb710934f4e5cd40"
+            },
+            {
+              "port": 34599,
+              "method": "GET",
+              "path": "/",
+              "key": "alice",
+              "status": 403,
+              "bodySha256": "d9228b355c91a1939be25f83f7d6acc1f39db8dfa5c37643fb710934f4e5cd40"
+            },
+            {
+              "port": 41229,
+              "method": "GET",
+              "path": "/",
+              "key": "alice",
+              "status": 403,
+              "bodySha256": "5e922b37b0e4d04eb1235c3b53e9bb745c5055cc42fcd9e31f1e986b1837350e"
+            },
+            {
+              "port": 34599,
+              "method": "GET",
+              "path": "/",
+              "key": "bob",
+              "status": 403,
+              "bodySha256": "d9228b355c91a1939be25f83f7d6acc1f39db8dfa5c37643fb710934f4e5cd40"
+            },
+            {
+              "port": 41229,
+              "method": "GET",
+              "path": "/",
+              "key": "bob",
+              "status": 403,
+              "bodySha256": "5e922b37b0e4d04eb1235c3b53e9bb745c5055cc42fcd9e31f1e986b1837350e"
+            },
+            {
+              "port": 34667,
+              "method": "GET",
+              "path": "/",
+              "key": "carol",
+              "status": 403,
+              "bodySha256": "d9228b355c91a1939be25f83f7d6acc1f39db8dfa5c37643fb710934f4e5cd40"
+            },
+            {
+              "port": 34667,
+              "method": "GET",
+              "path": "/",
+              "key": "static",
+              "status": 403,
+              "bodySha256": "d9228b355c91a1939be25f83f7d6acc1f39db8dfa5c37643fb710934f4e5cd40"
+            },
+            {
+              "port": 34667,
+              "method": "GET",
+              "path": "/bucket/written.txt",
+              "key": "alice",
+              "status": 200,
+              "bodySha256": "b0e0fc5493d526ff4bcf24fd0a8acbe20309ee470c960886ecfd096389eed3f8"
+            },
+            {
+              "port": 34667,
+              "method": "GET",
+              "path": "/bucket/bob.txt",
+              "key": "alice",
+              "status": 404,
+              "bodySha256": "92422cc1e907257967b4413aa5c3d9d4e731912a764fdcbb48d4e1d9c258efc3"
+            },
+            {
+              "port": 34667,
+              "method": "GET",
+              "path": "/trap-bucket/secret",
+              "key": "alice",
+              "status": 404,
+              "bodySha256": "ab80b4b0fa352d14e447d68187244402b55786213215ae108d89340ebf4cd15a"
+            },
+            {
+              "port": 34667,
+              "method": "GET",
+              "path": "/bucket/written.txt",
+              "key": "bob",
+              "status": 200,
+              "bodySha256": "d695606a33b5447110535c07b3f089fe6dca5108c2f14ae021661d7d8a3f5f4f"
+            },
+            {
+              "port": 34667,
+              "method": "GET",
+              "path": "/bucket/alice.txt",
+              "key": "bob",
+              "status": 404,
+              "bodySha256": "0633405c2f8265b1af1b8423d6d2439316087590e9ddbcba7d7ebf169112e3d4"
+            },
+            {
+              "port": 34667,
+              "method": "GET",
+              "path": "/trap-bucket/secret",
+              "key": "bob",
+              "status": 404,
+              "bodySha256": "ab80b4b0fa352d14e447d68187244402b55786213215ae108d89340ebf4cd15a"
+            }
+          ],
+          "scope": "Distinct backends; shared-backend multipart and metadata remain explicit gaps."
+        }
+      },
+      {
+        "id": "restic-root-traversal",
+        "advisory": "GHSA-45pq-889g-fcgh",
+        "status": "pass",
+        "evidence": {
+          "contracts": [
+            "memory-backend-positive-read",
+            "literal-and-encoded-traversal-rejected",
+            "outside-sentinel-unchanged"
+          ]
+        }
+      },
+      {
+        "id": "restic-private-repository",
+        "advisory": "GHSA-fqj9-69pf-6pjg",
+        "status": "pass",
+        "evidence": {
+          "contracts": [
+            "memory-backend-positive-read",
+            "literal-and-encoded-traversal-rejected",
+            "outside-sentinel-unchanged"
+          ]
+        }
+      }
+    ],
+    "gaps": [
+      {
+        "id": "sftp-powershell-quote",
+        "advisory": "GHSA-2m8m-jhrm-w6j2",
+        "status": "not-covered",
+        "reason": "Requires exact captured SFTP shell invocation and separate real Windows interoperability fixture."
+      },
+      {
+        "id": "s3-shared-backend-multipart-metadata",
+        "advisory": "GHSA-xwwr-4h3p-r22c",
+        "status": "not-covered",
+        "reason": "Distinct-root identity checks do not prove shared-backend multipart ownership or metadata isolation."
+      },
+      {
+        "id": "mount",
+        "status": "not-covered",
+        "reason": "This capability-free container does not qualify FUSE mounting."
+      }
+    ],
+    "coverageComplete": false,
+    "releaseEligible": false,
+    "installationApproved": false,
+    "candidateBindingUnproven": true,
+    "dispositionsGranted": [],
+    "commands": [
+      {
+        "args": [
+          "version"
+        ],
+        "returncode": 0,
+        "stdoutSha256": "e272366da81c33c454aa778e4c9d5b5139d181cdefc2397b6071d23d4a47bae8",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrTail": ""
+      },
+      {
+        "args": [
+          "copy",
+          "/tmp/finite-rclone-compat-p9t_1jhd/ordinary-copy-sync/source",
+          "/tmp/finite-rclone-compat-p9t_1jhd/ordinary-copy-sync/destination"
+        ],
+        "returncode": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrTail": ""
+      },
+      {
+        "args": [
+          "sync",
+          "/tmp/finite-rclone-compat-p9t_1jhd/ordinary-copy-sync/source",
+          "/tmp/finite-rclone-compat-p9t_1jhd/ordinary-copy-sync/destination"
+        ],
+        "returncode": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrTail": ""
+      },
+      {
+        "args": [
+          "check",
+          "/tmp/finite-rclone-compat-p9t_1jhd/ordinary-copy-sync/source",
+          "/tmp/finite-rclone-compat-p9t_1jhd/ordinary-copy-sync/destination"
+        ],
+        "returncode": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "9339abb83205e4c1007f37ab869f70c86a967ecbfa4eaeaaa55ad40640cc67b0",
+        "stderrTail": "2026/10/13 08:22:04 NOTICE: Local file system at /tmp/finite-rclone-compat-p9t_1jhd/ordinary-copy-sync/destination: 0 differences found\n2026/10/13 08:22:04 NOTICE: Local file system at /tmp/finite-rclone-compat-p9t_1jhd/ordinary-copy-sync/destination: 1 matching files\n"
+      },
+      {
+        "args": [
+          "copyto",
+          "/tmp/finite-rclone-compat-p9t_1jhd/links-root-confinement/target",
+          "/tmp/finite-rclone-compat-p9t_1jhd/links-root-confinement/destination/pwn.rclonelink",
+          "--links"
+        ],
+        "returncode": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrTail": ""
+      },
+      {
+        "args": [
+          "copy",
+          "/tmp/finite-rclone-compat-p9t_1jhd/links-root-confinement/source-0",
+          "/tmp/finite-rclone-compat-p9t_1jhd/links-root-confinement/destination",
+          "--links"
+        ],
+        "returncode": 1,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "ebc788630910942ec3efc9a204516ef661ab8a13189a8f4cfe0c95daa06020a0",
+        "stderrTail": "2026/10/13 08:22:04 ERROR : pwn/authkeys: Failed to copy: mkdirat pwn: statat pwn: path escapes from parent\n2026/10/13 08:22:04 ERROR : pwn: Failed to update directory timestamp or metadata: chtimesat pwn: path escapes from parent\n2026/10/13 08:22:04 ERROR : Attempt 1/1 failed with 3 errors and: failed to set directory modtime: chtimesat pwn: path escapes from parent\n2026/10/13 08:22:04 NOTICE: Failed to copy with 3 errors: last error was: failed to set directory modtime: chtimesat pwn: path escapes from parent\n"
+      },
+      {
+        "args": [
+          "copy",
+          "/tmp/finite-rclone-compat-p9t_1jhd/links-root-confinement/source-1",
+          "/tmp/finite-rclone-compat-p9t_1jhd/links-root-confinement/destination",
+          "--links"
+        ],
+        "returncode": 1,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "c455be08ed8cc8f0115715a9d06413c4342768d92d031f8bfc55614e9a279177",
+        "stderrTail": "2026/10/13 08:22:04 ERROR : evil/pwn/authkeys: Failed to copy: mkdirat pwn: statat evil/pwn: path escapes from parent\n2026/10/13 08:22:04 ERROR : evil/pwn: Failed to update directory timestamp or metadata: chtimesat evil/pwn: path escapes from parent\n2026/10/13 08:22:04 ERROR : Attempt 1/1 failed with 3 errors and: failed to set directory modtime: chtimesat evil/pwn: path escapes from parent\n2026/10/13 08:22:04 NOTICE: Failed to copy with 3 errors: last error was: failed to set directory modtime: chtimesat evil/pwn: path escapes from parent\n"
+      },
+      {
+        "args": [
+          "copy",
+          "/tmp/finite-rclone-compat-p9t_1jhd/links-root-confinement/positive",
+          "/tmp/finite-rclone-compat-p9t_1jhd/links-root-confinement/destination",
+          "--links"
+        ],
+        "returncode": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrTail": ""
+      },
+      {
+        "args": [
+          "--log-level",
+          "DEBUG",
+          "serve",
+          "ftp",
+          "--addr",
+          "127.0.0.1:60853",
+          "--passive-port",
+          "44211-44219",
+          "--auth-proxy",
+          "/usr/bin/python3 /tmp/finite-rclone-compat-p9t_1jhd/ftp-session-authority/proxy.py"
+        ],
+        "returncode": -9,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "a23007a75f78406d28bdd032b0cd0ae48bf81377c52fcbfc70bb330f485d60d5",
+        "stderrTail": "group:10001}, err = <nil>\n2026/10/13 08:22:05 DEBUG : /: ListDir: \n2026/10/13 08:22:05 DEBUG : /: >ListDir: err = <nil>\n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: < 150 Opening ASCII mode data connection for file list\n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: < 226 Closing data connection, sent 14 bytes\n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: > TYPE I\n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: < 200 Type set to binary\n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: > PASV \n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: < 227 Entering Passive Mode (127,0,0,1,172,179)\n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: > RETR attacker.txt\n2026/10/13 08:22:05 DEBUG : /attacker.txt: GetFile: offset=0\n2026/10/13 08:22:05 DEBUG : attacker.txt: Open: flags=O_RDONLY\n2026/10/13 08:22:05 DEBUG : attacker.txt: >Open: fd=attacker.txt (r), err=<nil>\n2026/10/13 08:22:05 DEBUG : /attacker.txt: >GetFile: err = <nil>\n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: < 150 Data transfer starting 14 bytes\n2026/10/13 08:22:05 DEBUG : attacker.txt: ChunkedReader.openRange at 0 length 134217728\n2026/10/13 08:22:05 DEBUG : attacker.txt: ChunkedReader.Read at 0 length 32768 chunkOffset 0 chunkSize 134217728\n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: < 226 Closing data connection, sent 14 bytes\n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: > TYPE A\n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: < 200 Type set to ASCII\n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: > PASV \n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: < 227 Entering Passive Mode (127,0,0,1,172,180)\n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: > NLST \n2026/10/13 08:22:05 DEBUG : /: Stat: \n2026/10/13 08:22:05 DEBUG : /: >Stat: fi=&{FileInfo:/ mode:2147484096 owner:10001 group:10001}, err = <nil>\n2026/10/13 08:22:05 DEBUG : /: ListDir: \n2026/10/13 08:22:05 DEBUG : /: >ListDir: err = <nil>\n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: < 150 Opening ASCII mode data connection for file list\n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: < 226 Closing data connection, sent 12 bytes\n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: > TYPE I\n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: < 200 Type set to binary\n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: > PASV \n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: < 227 Entering Passive Mode (127,0,0,1,172,179)\n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: > RETR attacker.txt\n2026/10/13 08:22:05 DEBUG : /attacker.txt: GetFile: offset=0\n2026/10/13 08:22:05 INFO  : /attacker.txt: File not found\n2026/10/13 08:22:05 DEBUG : /attacker.txt: >GetFile: err = file not found\n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: < 551 File not available\n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: > QUIT \n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: < 221 Goodbye\n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: Connection Terminated\n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: > QUIT \n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: < 221 Goodbye\n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: Connection Terminated\n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: Connection Established\n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: < 220 Welcome to Rclone v1.75.2 FTP Server\n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: > USER shared\n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: < 331 User name ok, password required\n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: > PASS ****\n2026/10/13 08:22:05 DEBUG : Calling proxy [/usr/bin/python3 /tmp/finite-rclone-compat-p9t_1jhd/ftp-session-authority/proxy.py]\n2026/10/13 08:22:05 INFO  : proxy login failed: proxy: failed on [/usr/bin/python3 /tmp/finite-rclone-compat-p9t_1jhd/ftp-session-authority/proxy.py]: \"\": exit status 1\n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: < 530 Incorrect password, not logged in\n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: > QUIT \n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: < 221 Goodbye\n2026/10/13 08:22:05 INFO  : 055649ac0974ef903832: Connection Terminated\n"
+      },
+      {
+        "args": [
+          "rcd",
+          "--rc-addr",
+          "127.0.0.1:57343",
+          "--rc-no-auth"
+        ],
+        "returncode": -9,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "5103b5fed6f1fedaac2b8670890849f129aad5ca487c055431ce3d27f92a15f9",
+        "stderrTail": "2026/10/13 08:22:05 NOTICE: Serving remote control on http://127.0.0.1:57343/\n2026/10/13 08:22:05 NOTICE: Local file system at /tmp/finite-rclone-compat-p9t_1jhd/rc-per-server-proxy/trap: Serving FTP on 127.0.0.1:45639\n2026/10/13 08:22:05 NOTICE: Local file system at /tmp/finite-rclone-compat-p9t_1jhd/rc-per-server-proxy/trap: Serving FTP on 127.0.0.1:34523\n2026/10/13 08:22:05 NOTICE: Local file system at /tmp/finite-rclone-compat-p9t_1jhd/rc-per-server-proxy/trap: Stopping FTP on 127.0.0.1:34523\n2026/10/13 08:22:05 NOTICE: Local file system at /tmp/finite-rclone-compat-p9t_1jhd/rc-per-server-proxy/trap: Stopping FTP on 127.0.0.1:45639\n"
+      },
+      {
+        "args": [
+          "rcd",
+          "--rc-addr",
+          "127.0.0.1:56353",
+          "--rc-no-auth"
+        ],
+        "returncode": -9,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "7412ccd196cea0731aefb385a28425e4bb63016f98021dca116d826e7c19dce4",
+        "stderrTail": "2026/10/13 08:22:05 NOTICE: Serving remote control on http://127.0.0.1:56353/\n2026/10/13 08:22:05 NOTICE: Local file system at /tmp/finite-rclone-compat-p9t_1jhd/s3-proxy-secret-and-authority/trap: Starting s3 server on [http://127.0.0.1:34667/]\n2026/10/13 08:22:05 NOTICE: serve s3: --auth-key is ignored when --auth-proxy is set - the proxy must supply the secret for each access key ID\n2026/10/13 08:22:05 NOTICE: Local file system at /tmp/finite-rclone-compat-p9t_1jhd/s3-proxy-secret-and-authority/trap: Starting s3 server on [http://127.0.0.1:34599/]\n2026/10/13 08:22:05 NOTICE: Local file system at /tmp/finite-rclone-compat-p9t_1jhd/s3-proxy-secret-and-authority/static: Starting s3 server on [http://127.0.0.1:41229/]\n"
+      },
+      {
+        "args": [
+          "rcd",
+          "--rc-addr",
+          "127.0.0.1:33639",
+          "--rc-no-auth"
+        ],
+        "returncode": -9,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "235941240fd345eed3893c1e6881f65d3c583d4480a4c9ae90ac9e65def3002a",
+        "stderrTail": "2026/10/13 08:22:06 NOTICE: Serving remote control on http://127.0.0.1:33639/\n"
+      },
+      {
+        "args": [
+          "rcd",
+          "--rc-addr",
+          "127.0.0.1:37427",
+          "--rc-no-auth"
+        ],
+        "returncode": -9,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "4153fa14eda311a56483003fb26431d1e601c8638c3c38fbf04d7efa7b03eb21",
+        "stderrTail": "2026/10/13 08:22:06 NOTICE: Serving remote control on http://127.0.0.1:37427/\n"
+      }
+    ]
+  },
+  "files": {
+    "compatibility/collector-sha256.txt": "ee5bea0e6e3ec61c79ab0f2b390bf014219dd86a880d7159624e195bf9ea0afc",
+    "compatibility/container-configuration.json": "2fe5a914e30f4d4c9e052be3969842334eff15c121bc62838bf1332b493b189a",
+    "compatibility/execution-status.txt": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "compatibility/execution.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compatibility/fedora-base.json": "0064571f2b15089521e7b1496039743626508607294e3de17b598b257260b9d3",
+    "compatibility/host-python.txt": "5b3e43dc38ca01e3f5a7854ba50d4330864b0c1e0f646650b2c78cf072acc366",
+    "compatibility/host-rpm.txt": "436a6c3d4bffa5d089bf791dca143fc7675aeb477a1cc664801070364b9058df",
+    "compatibility/python-environment-id.txt": "0474e3a74f68d066a080edb479f4eb20930fda34653db2c5dfefec4ef49605bc",
+    "compatibility/python-environment.json": "1406a476c8ed2277271afee127f01961738236dcfeb5a45ba1aae514c3f23931",
+    "compatibility/python-environment.log": "3d79340cb2957c9a2733f8f214a10c98b5f4595d9c6f4e10c557e914e4d78220",
+    "compatibility/reference-binary-sha256.txt": "1a8fe94db174de83ea657e9fe0a7e46bd3285d6c4d4920646850e79951ab4250",
+    "compatibility/report.json": "9b3c3973a787555ecdae521c0b7cc1817b7c16475ccef9bab4427abf26f653a7",
+    "rclone-reference/rclone-signature.txt": "c7974b191a4fd7217db61f94737fd43ba9353bf196cedf4a06b7d20030d63de3",
+    "rclone-reference/reference-evidence.json": "18b025fb7e26dad1d833b6001ca2164e477f1242c0de3ded96e4af0ad41a3b12"
+  },
+  "priorEvidence": "rclone-compatibility-evidence-2026-10-13.json",
+  "interpretation": "All seven implemented cases pass. Missing shared-backend multipart/metadata, SFTP/Windows protocol and FUSE coverage is explicit; no stable adoption or current-image clearance."
+}

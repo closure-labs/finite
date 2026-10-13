@@ -1,0 +1,564 @@
+{
+  "schema": 1,
+  "observedAt": "2026-10-13T14:20:00.637106+00:00",
+  "image": "ghcr.io/closure-labs/finite@sha256:3b18003a2267bf22b455254f29c9324805c48cfff0f9115d00a77d041035eece",
+  "status": "diagnostic-complete",
+  "removalApproved": false,
+  "releaseEligible": false,
+  "packages": [
+    {
+      "package": "rclone",
+      "installed": {
+        "command": [
+          "rpm",
+          "-q",
+          "--qf",
+          "%{NAME}\t%{EPOCHNUM}:%{VERSION}-%{RELEASE}\t%{ARCH}\n",
+          "rclone"
+        ],
+        "exitCode": 0,
+        "error": null,
+        "output": "rclone\t0:1.74.3-1.fc44\tx86_64\n",
+        "outputLimitReached": false
+      },
+      "provides": {
+        "command": [
+          "rpm",
+          "-q",
+          "--provides",
+          "rclone"
+        ],
+        "exitCode": 0,
+        "error": null,
+        "output": "bundled(golang(bazil.org/fuse)) = 62a210f\nbundled(golang(cloud.google.com/go/auth)) = 0.20.0\nbundled(golang(cloud.google.com/go/auth/oauth2adapt)) = 0.2.8\nbundled(golang(cloud.google.com/go/compute/metadata)) = 0.9.0\nbundled(golang(github.com/Azure/azure-sdk-for-go/sdk/azcore)) = 1.21.0\nbundled(golang(github.com/Azure/azure-sdk-for-go/sdk/azidentity)) = 1.13.1\nbundled(golang(github.com/Azure/azure-sdk-for-go/sdk/internal)) = 1.11.2\nbundled(golang(github.com/Azure/azure-sdk-for-go/sdk/storage/azblob)) = 1.6.4\nbundled(golang(github.com/Azure/azure-sdk-for-go/sdk/storage/azfile)) = 1.5.4\nbundled(golang(github.com/Azure/go-ntlmssp)) = 0.1.1\nbundled(golang(github.com/AzureAD/microsoft-authentication-library-for-go)) = 1.6.0\nbundled(golang(github.com/FilenCloudDienste/filen-sdk-go)) = 0.0.39\nbundled(golang(github.com/Files-com/files-sdk-go/v3)) = 3.3.82\nbundled(golang(github.com/IBM/go-sdk-core/v5)) = 5.21.2\nbundled(golang(github.com/Max-Sum/base32768)) = 18e6ce5\nbundled(golang(github.com/Microsoft/go-winio)) = 0.6.2\nbundled(golang(github.com/ProtonMail/bcrypt)) = e235017\nbundled(golang(github.com/ProtonMail/gluon)) = 308be39\nbundled(golang(github.com/ProtonMail/go-crypto)) = 1.4.1\nbundled(golang(github.com/ProtonMail/go-mime)) = 7d82a38\nbundled(golang(github.com/ProtonMail/go-srp)) = 0.0.7\nbundled(golang(github.com/ProtonMail/gopenpgp/v2)) = 2.9.0\nbundled(golang(github.com/PuerkitoBio/goquery)) = 1.11.0\nbundled(golang(github.com/STARRY-S/zip)) = 0.2.3\nbundled(golang(github.com/a1ex3/zstd-seekable-format-go/pkg)) = 0.10.0\nbundled(golang(github.com/a8m/tree)) = 2c8764a\nbundled(golang(github.com/aalpar/deheap)) = 1.1.2\nbundled(golang(github.com/abbot/go-http-auth)) = 0.4.0\nbundled(golang(github.com/adrg/xdg)) = 0.5.3\nbundled(golang(github.com/akavel/rsrc)) = 0.10.2\nbundled(golang(github.com/anacrolix/dms)) = 1.7.2\nbundled(golang(github.com/anacrolix/generics)) = 0.2.0\nbundled(golang(github.com/anacrolix/log)) = 0.17.0\nbundled(golang(github.com/anchore/go-lzo)) = 0.1.0\nbundled(golang(github.com/andybalholm/brotli)) = 1.2.0\nbundled(golang(github.com/andybalholm/cascadia)) = 1.3.3\nbundled(golang(github.com/appscode/go-querystring)) = 0126cfb\nbundled(golang(github.com/atotto/clipboard)) = 0.1.4\nbundled(golang(github.com/aws/aws-sdk-go-v2)) = 1.41.5\nbundled(golang(github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream)) = 1.7.8\nbundled(golang(github.com/aws/aws-sdk-go-v2/config)) = 1.32.14\nbundled(golang(github.com/aws/aws-sdk-go-v2/credentials)) = 1.19.14\nbundled(golang(github.com/aws/aws-sdk-go-v2/feature/ec2/imds)) = 1.18.21\nbundled(golang(github.com/aws/aws-sdk-go-v2/feature/s3/manager)) = 1.22.13\nbundled(golang(github.com/aws/aws-sdk-go-v2/internal/configsources)) = 1.4.21\nbundled(golang(github.com/aws/aws-sdk-go-v2/internal/endpoints/v2)) = 2.7.21\nbundled(golang(github.com/aws/aws-sdk-go-v2/internal/ini)) = 1.8.6\nbundled(golang(github.com/aws/aws-sdk-go-v2/internal/v4a)) = 1.4.22\nbundled(golang(github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding)) = 1.13.7\nbundled(golang(github.com/aws/aws-sdk-go-v2/service/internal/checksum)) = 1.9.13\nbundled(golang(github.com/aws/aws-sdk-go-v2/service/internal/presigned-url)) = 1.13.21\nbundled(golang(github.com/aws/aws-sdk-go-v2/service/internal/s3shared)) = 1.19.21\nbundled(golang(github.com/aws/aws-sdk-go-v2/service/s3)) = 1.99.0\nbundled(golang(github.com/aws/aws-sdk-go-v2/service/signin)) = 1.0.9\nbundled(golang(github.com/aws/aws-sdk-go-v2/service/sso)) = 1.30.15\nbundled(golang(github.com/aws/aws-sdk-go-v2/service/ssooidc)) = 1.35.19\nbundled(golang(github.com/aws/aws-sdk-go-v2/service/sts)) = 1.41.10\nbundled(golang(github.com/aws/smithy-go)) = 1.24.3\nbundled(golang(github.com/bahlo/generic-list-go)) = 0.2.0\nbundled(golang(github.com/beorn7/perks)) = 1.0.1\nbundled(golang(github.com/bodgit/plumbing)) = 1.3.0\nbundled(golang(github.com/bodgit/sevenzip)) = 1.6.1\nbundled(golang(github.com/bodgit/windows)) = 1.0.1\nbundled(golang(github.com/boombuler/barcode)) = 1.1.0\nbundled(golang(github.com/bradenaw/juniper)) = 0.15.3\nbundled(golang(github.com/bradfitz/iter)) = e8f45d3\nbundled(golang(github.com/buengese/sgzip)) = 0.1.1\nbundled(golang(github.com/buger/jsonparser)) = 1.1.2\nbundled(golang(github.com/calebcase/tmpfile)) = 1.0.3\nbundled(golang(github.com/cespare/xxhash/v2)) = 2.3.0\nbundled(golang(github.com/chilts/sid)) = 660e947\nbundled(golang(github.com/clipperhouse/uax29/v2)) = 2.7.0\nbundled(golang(github.com/cloudflare/circl)) = 1.6.3\nbundled(golang(github.com/cloudinary/cloudinary-go/v2)) = 2.15.0\nbundled(golang(github.com/cloudsoda/go-smb2)) = d4c70e6\nbundled(golang(github.com/cloudsoda/sddl)) = 926454e\nbundled(golang(github.com/colinmarc/hdfs/v2)) = 2.4.0\nbundled(golang(github.com/coreos/go-semver)) = 0.3.1\nbundled(golang(github.com/coreos/go-systemd/v22)) = 22.6.0\nbundled(golang(github.com/cpuguy83/go-md2man/v2)) = 2.0.7\nbundled(golang(github.com/creasty/defaults)) = 1.8.0\nbundled(golang(github.com/cronokirby/saferith)) = 1f11f94\nbundled(golang(github.com/davecgh/go-spew)) = d8f796a\nbundled(golang(github.com/diskfs/go-diskfs)) = 1.7.0\nbundled(golang(github.com/dop251/scsu)) = 84ac880\nbundled(golang(github.com/dromara/dongle)) = 1.0.1\nbundled(golang(github.com/dropbox/dropbox-sdk-go-unofficial/v6)) = 6.0.5\nbundled(golang(github.com/dsnet/compress)) = 39efe44\nbundled(golang(github.com/dustin/go-humanize)) = 1.0.1\nbundled(golang(github.com/ebitengine/purego)) = 0.10.0\nbundled(golang(github.com/emersion/go-message)) = 0.18.2\nbundled(golang(github.com/emersion/go-vcard)) = c9703dd\nbundled(golang(github.com/felixge/httpsnoop)) = 1.0.4\nbundled(golang(github.com/flynn/noise)) = 1.1.0\nbundled(golang(github.com/gabriel-vasile/mimetype)) = 1.4.13\nbundled(golang(github.com/gdamore/encoding)) = 1.0.1\nbundled(golang(github.com/gdamore/tcell/v2)) = 2.13.8\nbundled(golang(github.com/geoffgarside/ber)) = 1.2.0\nbundled(golang(github.com/go-chi/chi/v5)) = 5.2.5\nbundled(golang(github.com/go-darwin/apfs)) = f84b94d\nbundled(golang(github.com/go-git/go-billy/v5)) = 5.9.0\nbundled(golang(github.com/go-ini/ini)) = 1.67.0\nbundled(golang(github.com/go-logr/logr)) = 1.4.3\nbundled(golang(github.com/go-logr/stdr)) = 1.2.2\nbundled(golang(github.com/go-ole/go-ole)) = 1.3.0\nbundled(golang(github.com/go-openapi/errors)) = 0.22.6\nbundled(golang(github.com/go-openapi/strfmt)) = 0.25.0\nbundled(golang(github.com/go-playground/locales)) = 0.14.1\nbundled(golang(github.com/go-playground/universal-translator)) = 0.18.1\nbundled(golang(github.com/go-playground/validator/v10)) = 10.30.1\nbundled(golang(github.com/go-resty/resty/v2)) = 2.17.2\nbundled(golang(github.com/go-viper/mapstructure/v2)) = 2.5.0\nbundled(golang(github.com/gofrs/flock)) = 0.13.0\nbundled(golang(github.com/gogo/protobuf)) = 1.3.2\nbundled(golang(github.com/golang-jwt/jwt/v4)) = 4.5.2\nbundled(golang(github.com/golang-jwt/jwt/v5)) = 5.3.1\nbundled(golang(github.com/google/btree)) = 1.1.3\nbundled(golang(github.com/google/s2a-go)) = 0.1.9\nbundled(golang(github.com/google/uuid)) = 1.6.0\nbundled(golang(github.com/googleapis/enterprise-certificate-proxy)) = 0.3.14\nbundled(golang(github.com/googleapis/gax-go/v2)) = 2.21.0\nbundled(golang(github.com/gorilla/schema)) = 1.4.1\nbundled(golang(github.com/hanwen/go-fuse/v2)) = 2.9.0\nbundled(golang(github.com/hashicorp/errwrap)) = 1.1.0\nbundled(golang(github.com/hashicorp/go-cleanhttp)) = 0.5.2\nbundled(golang(github.com/hashicorp/go-multierror)) = 1.1.1\nbundled(golang(github.com/hashicorp/go-retryablehttp)) = 0.7.8\nbundled(golang(github.com/hashicorp/go-uuid)) = 1.0.3\nbundled(golang(github.com/hashicorp/golang-lru/v2)) = 2.0.7\nbundled(golang(github.com/inconshreveable/mousetrap)) = 1.1.0\nbundled(golang(github.com/internxt/rclone-adapter)) = 036f908\nbundled(golang(github.com/jcmturner/aescts/v2)) = 2.0.0\nbundled(golang(github.com/jcmturner/dnsutils/v2)) = 2.0.0\nbundled(golang(github.com/jcmturner/gofork)) = 1.7.6\nbundled(golang(github.com/jcmturner/goidentity/v6)) = 6.0.1\nbundled(golang(github.com/jcmturner/gokrb5/v8)) = 8.4.4\nbundled(golang(github.com/jcmturner/rpc/v2)) = 2.0.3\nbundled(golang(github.com/jlaffaye/ftp)) = 6602e98\nbundled(golang(github.com/josephspurrier/goversioninfo)) = 1.5.0\nbundled(golang(github.com/jtolio/noiseconn)) = f6d9ecb\nbundled(golang(github.com/jzelinskie/whirlpool)) = 0675e54\nbundled(golang(github.com/klauspost/compress)) = 1.18.5\nbundled(golang(github.com/klauspost/cpuid/v2)) = 2.3.0\nbundled(golang(github.com/klauspost/crc32)) = 1.3.0\nbundled(golang(github.com/klauspost/pgzip)) = 1.2.6\nbundled(golang(github.com/koofr/go-httpclient)) = e20f8f2\nbundled(golang(github.com/koofr/go-koofrclient)) = cbd7fc9\nbundled(golang(github.com/kr/fs)) = 0.1.0\nbundled(golang(github.com/kylelemons/godebug)) = 1.1.0\nbundled(golang(github.com/lanrat/extsort)) = 1.4.2\nbundled(golang(github.com/leodido/go-urn)) = 1.4.0\nbundled(golang(github.com/lpar/date)) = 1.0.0\nbundled(golang(github.com/lucasb-eyer/go-colorful)) = 1.3.0\nbundled(golang(github.com/lufia/plan9stats)) = b3301c5\nbundled(golang(github.com/mailru/easyjson)) = 0.9.1\nbundled(golang(github.com/mattn/go-colorable)) = 0.1.14\nbundled(golang(github.com/mattn/go-isatty)) = 0.0.20\nbundled(golang(github.com/mattn/go-runewidth)) = 0.0.22\nbundled(golang(github.com/mholt/archives)) = 0.1.5\nbundled(golang(github.com/mikelolasagasti/xz)) = 1.0.1\nbundled(golang(github.com/minio/crc64nvme)) = 1.1.1\nbundled(golang(github.com/minio/md5-simd)) = 1.1.2\nbundled(golang(github.com/minio/minio-go/v7)) = 7.0.100\nbundled(golang(github.com/minio/minlz)) = 1.0.1\nbundled(golang(github.com/minio/xxml)) = 0.0.3\nbundled(golang(github.com/mitchellh/go-homedir)) = 1.1.0\nbundled(golang(github.com/moby/sys/mountinfo)) = 0.7.2\nbundled(golang(github.com/muesli/reflow)) = 0.3.0\nbundled(golang(github.com/munnerz/goautoneg)) = a7dc8b6\nbundled(golang(github.com/ncw/swift/v2)) = 2.0.5\nbundled(golang(github.com/nwaples/rardecode/v2)) = 2.2.2\nbundled(golang(github.com/oklog/ulid)) = 1.3.1\nbundled(golang(github.com/oracle/oci-go-sdk/v65)) = 65.111.0\nbundled(golang(github.com/panjf2000/ants/v2)) = 2.11.5\nbundled(golang(github.com/patrickmn/go-cache)) = 2.1.0+incompatible\nbundled(golang(github.com/pengsrc/go-shared)) = 1999055\nbundled(golang(github.com/peterh/liner)) = 1.2.2\nbundled(golang(github.com/philhofer/fwd)) = 1.2.0\nbundled(golang(github.com/pierrec/lz4/v4)) = 4.1.25\nbundled(golang(github.com/pkg/browser)) = 5ac0b6a\nbundled(golang(github.com/pkg/errors)) = 0.9.1\nbundled(golang(github.com/pkg/sftp)) = 1.13.10\nbundled(golang(github.com/pkg/xattr)) = 0.4.12\nbundled(golang(github.com/pmezard/go-difflib)) = 5d4384e\nbundled(golang(github.com/power-devops/perfstat)) = 82ca368\nbundled(golang(github.com/pquerna/otp)) = 1.5.0\nbundled(golang(github.com/prometheus/client_golang)) = 1.23.2\nbundled(golang(github.com/prometheus/client_model)) = 0.6.2\nbundled(golang(github.com/prometheus/common)) = 0.67.5\nbundled(golang(github.com/prometheus/procfs)) = 0.19.2\nbundled(golang(github.com/putdotio/go-putio/putio)) = 16d982c\nbundled(golang(github.com/quasilyte/go-ruleguard/dsl)) = 0.3.23\nbundled(golang(github.com/rasky/go-xdr)) = 1a41d1a\nbundled(golang(github.com/rclone/Proton-API-Bridge)) = 1.0.3\nbundled(golang(github.com/rclone/go-proton-api)) = 1.0.2\nbundled(golang(github.com/rclone/gofakes3)) = 0.0.6\nbundled(golang(github.com/relvacode/iso8601)) = 1.7.0\nbundled(golang(github.com/rfjakob/eme)) = 1.2.0\nbundled(golang(github.com/rivo/uniseg)) = 0.4.7\nbundled(golang(github.com/rogpeppe/go-internal)) = 1.14.1\nbundled(golang(github.com/rs/xid)) = 1.6.0\nbundled(golang(github.com/russross/blackfriday/v2)) = 2.1.0\nbundled(golang(github.com/ryszard/goskiplist)) = 2dfbae5\nbundled(golang(github.com/sabhiram/go-gitignore)) = 525f6e1\nbundled(golang(github.com/samber/lo)) = 1.52.0\nbundled(golang(github.com/shabbyrobe/gocovmerge)) = c3350d9\nbundled(golang(github.com/shirou/gopsutil/v4)) = 4.26.3\nbundled(golang(github.com/sirupsen/logrus)) = 1.9.4\nbundled(golang(github.com/skratchdot/open-golang)) = eef8423\nbundled(golang(github.com/smartystreets/goconvey)) = 1.8.1\nbundled(golang(github.com/sony/gobreaker)) = 1.0.0\nbundled(golang(github.com/sorairolake/lzip-go)) = 0.3.8\nbundled(golang(github.com/spacemonkeygo/monkit/v3)) = eb24eb1\nbundled(golang(github.com/spf13/afero)) = 1.15.0\nbundled(golang(github.com/spf13/cobra)) = 1.10.2\nbundled(golang(github.com/spf13/pflag)) = 1.0.10\nbundled(golang(github.com/stretchr/testify)) = 1.11.1\nbundled(golang(github.com/t3rm1n4l/go-mega)) = 6845944\nbundled(golang(github.com/tinylib/msgp)) = 1.6.3\nbundled(golang(github.com/tklauser/go-sysconf)) = 0.3.16\nbundled(golang(github.com/tklauser/numcpus)) = 0.11.0\nbundled(golang(github.com/tyler-smith/go-bip39)) = 1.1.0\nbundled(golang(github.com/ulikunitz/xz)) = 0.5.15\nbundled(golang(github.com/unknwon/goconfig)) = 1.0.0\nbundled(golang(github.com/willscott/go-nfs)) = 0.0.4\nbundled(golang(github.com/willscott/go-nfs-client)) = 801f10d\nbundled(golang(github.com/winfsp/cgofuse)) = f2c4fcc\nbundled(golang(github.com/wk8/go-ordered-map/v2)) = 2.1.8\nbundled(golang(github.com/xanzy/ssh-agent)) = 0.3.3\nbundled(golang(github.com/youmark/pkcs8)) = a2c0da2\nbundled(golang(github.com/yunify/qingstor-sdk-go/v3)) = 3.2.0\nbundled(golang(github.com/yusufpapurcu/wmi)) = 1.2.4\nbundled(golang(github.com/zeebo/blake3)) = 0.2.4\nbundled(golang(github.com/zeebo/errs)) = 1.4.0\nbundled(golang(github.com/zeebo/xxh3)) = 1.1.0\nbundled(golang(go.etcd.io/bbolt)) = 1.4.3\nbundled(golang(go.mongodb.org/mongo-driver)) = 1.17.9\nbundled(golang(go.opentelemetry.io/auto/sdk)) = 1.2.1\nbundled(golang(go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp)) = 0.67.0\nbundled(golang(go.opentelemetry.io/otel)) = 1.43.0\nbundled(golang(go.opentelemetry.io/otel/metric)) = 1.43.0\nbundled(golang(go.opentelemetry.io/otel/trace)) = 1.43.0\nbundled(golang(go.yaml.in/yaml/v2)) = 2.4.3\nbundled(golang(go.yaml.in/yaml/v3)) = 3.0.4\nbundled(golang(go4.org)) = a507140\nbundled(golang(goftp.io/server/v2)) = 2.0.2\nbundled(golang(golang.org/x/crypto)) = 0.52.0\nbundled(golang(golang.org/x/exp)) = 746e56f\nbundled(golang(golang.org/x/image)) = 0.41.0\nbundled(golang(golang.org/x/mobile)) = 81488f6\nbundled(golang(golang.org/x/net)) = 0.55.0\nbundled(golang(golang.org/x/oauth2)) = 0.36.0\nbundled(golang(golang.org/x/sync)) = 0.20.0\nbundled(golang(golang.org/x/sys)) = 0.45.0\nbundled(golang(golang.org/x/term)) = 0.43.0\nbundled(golang(golang.org/x/text)) = 0.37.0\nbundled(golang(golang.org/x/time)) = 0.15.0\nbundled(golang(golang.org/x/tools)) = 0.44.0\nbundled(golang(google.golang.org/api)) = 0.275.0\nbundled(golang(google.golang.org/genproto/googleapis/rpc)) = 9d38bb4\nbundled(golang(google.golang.org/grpc)) = 1.80.0\nbundled(golang(google.golang.org/protobuf)) = 1.36.11\nbundled(golang(gopkg.in/natefinch/lumberjack.v2)) = 2.2.1\nbundled(golang(gopkg.in/validator.v2)) = 2.0.1\nbundled(golang(gopkg.in/yaml.v2)) = 2.4.0\nbundled(golang(gopkg.in/yaml.v3)) = 3.0.1\nbundled(golang(moul.io/http2curl/v2)) = 2.3.0\nbundled(golang(sigs.k8s.io/yaml)) = 1.6.0\nbundled(golang(storj.io/common)) = 9915564\nbundled(golang(storj.io/drpc)) = f7819ea\nbundled(golang(storj.io/eventkit)) = 61f26d3\nbundled(golang(storj.io/infectious)) = 0.0.2\nbundled(golang(storj.io/picobuf)) = 0.0.4\nbundled(golang(storj.io/uplink)) = 1.14.0\nrclone = 1.74.3-1.fc44\nrclone(x86-64) = 1.74.3-1.fc44\n",
+        "outputLimitReached": false
+      },
+      "requires": {
+        "command": [
+          "rpm",
+          "-q",
+          "--requires",
+          "rclone"
+        ],
+        "exitCode": 0,
+        "error": null,
+        "output": "filesystem(unmerged-sbin-symlinks)\nlibc.so.6()(64bit)\nlibc.so.6(GLIBC_2.2.5)(64bit)\nlibc.so.6(GLIBC_2.3)(64bit)\nlibc.so.6(GLIBC_2.3.2)(64bit)\nlibc.so.6(GLIBC_2.32)(64bit)\nlibc.so.6(GLIBC_2.34)(64bit)\nlibc.so.6(GLIBC_ABI_DT_RELR)(64bit)\nlibresolv.so.2()(64bit)\nrpmlib(CompressedFileNames) <= 3.0.4-1\nrpmlib(FileDigests) <= 4.6.0-1\nrpmlib(PartialHardlinkSets) <= 4.0.4-1\nrpmlib(PayloadFilesHavePrefix) <= 4.0-1\nrpmlib(PayloadIsZstd) <= 5.4.18-1\nrtld(GNU_HASH)\n",
+        "outputLimitReached": false
+      },
+      "reverseRequirements": {
+        "command": [
+          "rpm",
+          "-q",
+          "--whatrequires",
+          "--alldeps",
+          "rclone"
+        ],
+        "exitCode": 1,
+        "error": null,
+        "output": "rpm: --alldeps: unknown option\n",
+        "outputLimitReached": false
+      },
+      "removalPreview": {
+        "command": [
+          "dnf5",
+          "--cacheonly",
+          "--assumeno",
+          "remove",
+          "rclone"
+        ],
+        "exitCode": 1,
+        "error": null,
+        "output": "Package Arch   Version         Repository      Size\nRemoving:\n rclone x86_64 0:1.74.3-1.fc44 updates    108.9 MiB\n\nTransaction Summary:\n Removing:           1 package\n\nAfter this operation, 109 MiB will be freed (install 0 B, remove 109 MiB).\nOperation aborted by the user.\n",
+        "outputLimitReached": false,
+        "classification": "transaction-preview-declined",
+        "transactionSummaryObserved": true,
+        "declineObserved": true
+      }
+    },
+    {
+      "package": "python3-anyio",
+      "installed": {
+        "command": [
+          "rpm",
+          "-q",
+          "--qf",
+          "%{NAME}\t%{EPOCHNUM}:%{VERSION}-%{RELEASE}\t%{ARCH}\n",
+          "python3-anyio"
+        ],
+        "exitCode": 0,
+        "error": null,
+        "output": "python3-anyio\t0:4.13.0-1.fc44\tnoarch\n",
+        "outputLimitReached": false
+      },
+      "provides": {
+        "command": [
+          "rpm",
+          "-q",
+          "--provides",
+          "python3-anyio"
+        ],
+        "exitCode": 0,
+        "error": null,
+        "output": "python-anyio = 4.13.0-1.fc44\npython3-anyio = 4.13.0-1.fc44\npython3.14-anyio = 4.13.0-1.fc44\npython3.14dist(anyio) = 4.13\npython3dist(anyio) = 4.13\n",
+        "outputLimitReached": false
+      },
+      "requires": {
+        "command": [
+          "rpm",
+          "-q",
+          "--requires",
+          "python3-anyio"
+        ],
+        "exitCode": 0,
+        "error": null,
+        "output": "python(abi) = 3.14\npython3.14dist(idna) >= 2.8\nrpmlib(CompressedFileNames) <= 3.0.4-1\nrpmlib(FileDigests) <= 4.6.0-1\nrpmlib(PartialHardlinkSets) <= 4.0.4-1\nrpmlib(PayloadFilesHavePrefix) <= 4.0-1\nrpmlib(PayloadIsZstd) <= 5.4.18-1\n",
+        "outputLimitReached": false
+      },
+      "reverseRequirements": {
+        "command": [
+          "rpm",
+          "-q",
+          "--whatrequires",
+          "--alldeps",
+          "python3-anyio"
+        ],
+        "exitCode": 1,
+        "error": null,
+        "output": "rpm: --alldeps: unknown option\n",
+        "outputLimitReached": false
+      },
+      "removalPreview": {
+        "command": [
+          "dnf5",
+          "--cacheonly",
+          "--assumeno",
+          "remove",
+          "python3-anyio"
+        ],
+        "exitCode": 1,
+        "error": null,
+        "output": "Package        Arch   Version          Repository      Size\nRemoving:\n python3-anyio noarch 0:4.13.0-1.fc44  <unknown>    1.5 MiB\nRemoving dependent packages:\n python3-httpx noarch 0:0.28.1-11.fc44 <unknown>  992.1 KiB\n\nTransaction Summary:\n Removing:           2 packages\n\nAfter this operation, 2 MiB will be freed (install 0 B, remove 2 MiB).\nOperation aborted by the user.\n",
+        "outputLimitReached": false,
+        "classification": "transaction-preview-declined",
+        "transactionSummaryObserved": true,
+        "declineObserved": true
+      }
+    },
+    {
+      "package": "gum",
+      "installed": {
+        "command": [
+          "rpm",
+          "-q",
+          "--qf",
+          "%{NAME}\t%{EPOCHNUM}:%{VERSION}-%{RELEASE}\t%{ARCH}\n",
+          "gum"
+        ],
+        "exitCode": 0,
+        "error": null,
+        "output": "gum\t0:0.17.0-3.fc44\tx86_64\n",
+        "outputLimitReached": false
+      },
+      "provides": {
+        "command": [
+          "rpm",
+          "-q",
+          "--provides",
+          "gum"
+        ],
+        "exitCode": 0,
+        "error": null,
+        "output": "bundled(golang(github.com/Masterminds/semver/v3)) = 3.4.0\nbundled(golang(github.com/alecthomas/chroma/v2)) = fc18a48\nbundled(golang(github.com/alecthomas/kong)) = 1.12.1\nbundled(golang(github.com/alecthomas/mango-kong)) = 0.1.0\nbundled(golang(github.com/atotto/clipboard)) = 0.1.4\nbundled(golang(github.com/aymanbagabas/go-osc52/v2)) = 2.0.1\nbundled(golang(github.com/aymerick/douceur)) = 0.2.0\nbundled(golang(github.com/charmbracelet/bubbles)) = 0.21.0\nbundled(golang(github.com/charmbracelet/bubbletea)) = 1.3.6\nbundled(golang(github.com/charmbracelet/colorprofile)) = f60798e\nbundled(golang(github.com/charmbracelet/glamour)) = 0.10.0\nbundled(golang(github.com/charmbracelet/lipgloss)) = 76690c6\nbundled(golang(github.com/charmbracelet/log)) = 0.4.2\nbundled(golang(github.com/charmbracelet/x/ansi)) = 0.10.1\nbundled(golang(github.com/charmbracelet/x/cellbuf)) = 0.0.13\nbundled(golang(github.com/charmbracelet/x/conpty)) = 0.1.0\nbundled(golang(github.com/charmbracelet/x/editor)) = 0.1.0\nbundled(golang(github.com/charmbracelet/x/errors)) = e8d8b6e\nbundled(golang(github.com/charmbracelet/x/exp/ordered)) = 0.1.0\nbundled(golang(github.com/charmbracelet/x/exp/slice)) = 2fdc977\nbundled(golang(github.com/charmbracelet/x/term)) = 0.2.1\nbundled(golang(github.com/charmbracelet/x/termios)) = 0.1.1\nbundled(golang(github.com/charmbracelet/x/xpty)) = 0.1.2\nbundled(golang(github.com/creack/pty)) = 1.1.24\nbundled(golang(github.com/dlclark/regexp2)) = 1.11.5\nbundled(golang(github.com/dustin/go-humanize)) = 1.0.1\nbundled(golang(github.com/erikgeiser/coninput)) = 1c3628e\nbundled(golang(github.com/go-logfmt/logfmt)) = 0.6.0\nbundled(golang(github.com/gorilla/css)) = 1.0.1\nbundled(golang(github.com/lucasb-eyer/go-colorful)) = 1.2.0\nbundled(golang(github.com/mattn/go-isatty)) = 0.0.20\nbundled(golang(github.com/mattn/go-localereader)) = 2491eb6\nbundled(golang(github.com/mattn/go-runewidth)) = 0.0.16\nbundled(golang(github.com/microcosm-cc/bluemonday)) = 1.0.27\nbundled(golang(github.com/muesli/ansi)) = 276c624\nbundled(golang(github.com/muesli/cancelreader)) = 0.2.2\nbundled(golang(github.com/muesli/mango)) = 0.2.0\nbundled(golang(github.com/muesli/reflow)) = 0.3.0\nbundled(golang(github.com/muesli/roff)) = 0.1.0\nbundled(golang(github.com/muesli/termenv)) = 0.16.0\nbundled(golang(github.com/rivo/uniseg)) = 0.4.7\nbundled(golang(github.com/sahilm/fuzzy)) = 0.1.1\nbundled(golang(github.com/xo/terminfo)) = abceb7e\nbundled(golang(github.com/yuin/goldmark)) = 1.7.17\nbundled(golang(github.com/yuin/goldmark-emoji)) = 1.0.5\nbundled(golang(golang.org/x/exp)) = 7f521ea\nbundled(golang(golang.org/x/net)) = 0.40.0\nbundled(golang(golang.org/x/sync)) = 0.16.0\nbundled(golang(golang.org/x/sys)) = 0.33.0\nbundled(golang(golang.org/x/term)) = 0.32.0\nbundled(golang(golang.org/x/text)) = 0.28.0\ngum = 0.17.0-3.fc44\ngum(x86-64) = 0.17.0-3.fc44\n",
+        "outputLimitReached": false
+      },
+      "requires": {
+        "command": [
+          "rpm",
+          "-q",
+          "--requires",
+          "gum"
+        ],
+        "exitCode": 0,
+        "error": null,
+        "output": "libc.so.6()(64bit)\nlibc.so.6(GLIBC_2.2.5)(64bit)\nlibc.so.6(GLIBC_2.3.2)(64bit)\nlibc.so.6(GLIBC_2.32)(64bit)\nlibc.so.6(GLIBC_2.34)(64bit)\nlibc.so.6(GLIBC_ABI_DT_RELR)(64bit)\nrpmlib(CompressedFileNames) <= 3.0.4-1\nrpmlib(FileDigests) <= 4.6.0-1\nrpmlib(PartialHardlinkSets) <= 4.0.4-1\nrpmlib(PayloadFilesHavePrefix) <= 4.0-1\nrpmlib(PayloadIsZstd) <= 5.4.18-1\nrtld(GNU_HASH)\n",
+        "outputLimitReached": false
+      },
+      "reverseRequirements": {
+        "command": [
+          "rpm",
+          "-q",
+          "--whatrequires",
+          "--alldeps",
+          "gum"
+        ],
+        "exitCode": 1,
+        "error": null,
+        "output": "rpm: --alldeps: unknown option\n",
+        "outputLimitReached": false
+      },
+      "removalPreview": {
+        "command": [
+          "dnf5",
+          "--cacheonly",
+          "--assumeno",
+          "remove",
+          "gum"
+        ],
+        "exitCode": 1,
+        "error": null,
+        "output": "Package Arch   Version         Repository      Size\nRemoving:\n gum    x86_64 0:0.17.0-3.fc44 updates     13.2 MiB\n\nTransaction Summary:\n Removing:           1 package\n\nAfter this operation, 13 MiB will be freed (install 0 B, remove 13 MiB).\nOperation aborted by the user.\n",
+        "outputLimitReached": false,
+        "classification": "transaction-preview-declined",
+        "transactionSummaryObserved": true,
+        "declineObserved": true
+      }
+    },
+    {
+      "package": "glow",
+      "installed": {
+        "command": [
+          "rpm",
+          "-q",
+          "--qf",
+          "%{NAME}\t%{EPOCHNUM}:%{VERSION}-%{RELEASE}\t%{ARCH}\n",
+          "glow"
+        ],
+        "exitCode": 0,
+        "error": null,
+        "output": "glow\t0:2.1.2-1.fc44\tx86_64\n",
+        "outputLimitReached": false
+      },
+      "provides": {
+        "command": [
+          "rpm",
+          "-q",
+          "--provides",
+          "glow"
+        ],
+        "exitCode": 0,
+        "error": null,
+        "output": "bundled(golang(github.com/alecthomas/chroma/v2)) = fc18a48\nbundled(golang(github.com/atotto/clipboard)) = 0.1.4\nbundled(golang(github.com/aymanbagabas/go-osc52/v2)) = 2.0.1\nbundled(golang(github.com/aymerick/douceur)) = 0.2.0\nbundled(golang(github.com/caarlos0/env/v11)) = 11.3.1\nbundled(golang(github.com/charmbracelet/bubbles)) = 0.21.0\nbundled(golang(github.com/charmbracelet/bubbletea)) = 1.3.10\nbundled(golang(github.com/charmbracelet/colorprofile)) = f60798e\nbundled(golang(github.com/charmbracelet/glamour)) = 0.10.0\nbundled(golang(github.com/charmbracelet/lipgloss)) = 76690c6\nbundled(golang(github.com/charmbracelet/log)) = 0.4.2\nbundled(golang(github.com/charmbracelet/x/ansi)) = 0.10.1\nbundled(golang(github.com/charmbracelet/x/cellbuf)) = 0.0.13\nbundled(golang(github.com/charmbracelet/x/editor)) = 0.1.0\nbundled(golang(github.com/charmbracelet/x/exp/slice)) = 2fdc977\nbundled(golang(github.com/charmbracelet/x/term)) = 0.2.1\nbundled(golang(github.com/clipperhouse/uax29/v2)) = 2.2.0\nbundled(golang(github.com/dlclark/regexp2)) = 1.11.5\nbundled(golang(github.com/dustin/go-humanize)) = 1.0.1\nbundled(golang(github.com/erikgeiser/coninput)) = 1c3628e\nbundled(golang(github.com/fsnotify/fsnotify)) = 1.9.0\nbundled(golang(github.com/go-logfmt/logfmt)) = 0.6.0\nbundled(golang(github.com/go-viper/mapstructure/v2)) = 2.4.0\nbundled(golang(github.com/gorilla/css)) = 1.0.1\nbundled(golang(github.com/inconshreveable/mousetrap)) = 1.1.0\nbundled(golang(github.com/lucasb-eyer/go-colorful)) = 1.2.0\nbundled(golang(github.com/mattn/go-isatty)) = 0.0.20\nbundled(golang(github.com/mattn/go-localereader)) = 2491eb6\nbundled(golang(github.com/mattn/go-runewidth)) = 0.0.19\nbundled(golang(github.com/microcosm-cc/bluemonday)) = 1.0.27\nbundled(golang(github.com/mitchellh/go-homedir)) = 1.1.0\nbundled(golang(github.com/muesli/ansi)) = 276c624\nbundled(golang(github.com/muesli/cancelreader)) = 0.2.2\nbundled(golang(github.com/muesli/gitcha)) = 0.3.0\nbundled(golang(github.com/muesli/go-app-paths)) = 0.2.2\nbundled(golang(github.com/muesli/mango)) = 0.2.0\nbundled(golang(github.com/muesli/mango-cobra)) = 1.3.0\nbundled(golang(github.com/muesli/mango-pflag)) = 0.1.0\nbundled(golang(github.com/muesli/reflow)) = 0.3.0\nbundled(golang(github.com/muesli/roff)) = 0.1.0\nbundled(golang(github.com/muesli/termenv)) = 0.16.0\nbundled(golang(github.com/pelletier/go-toml/v2)) = 2.2.4\nbundled(golang(github.com/rivo/uniseg)) = 0.4.7\nbundled(golang(github.com/sabhiram/go-gitignore)) = d310757\nbundled(golang(github.com/sagikazarmark/locafero)) = 0.11.0\nbundled(golang(github.com/sahilm/fuzzy)) = 0.1.1\nbundled(golang(github.com/sourcegraph/conc)) = 5f936ab\nbundled(golang(github.com/spf13/afero)) = 1.15.0\nbundled(golang(github.com/spf13/cast)) = 1.10.0\nbundled(golang(github.com/spf13/cobra)) = 1.10.2\nbundled(golang(github.com/spf13/pflag)) = 1.0.10\nbundled(golang(github.com/spf13/viper)) = 1.21.0\nbundled(golang(github.com/subosito/gotenv)) = 1.6.0\nbundled(golang(github.com/xo/terminfo)) = abceb7e\nbundled(golang(github.com/yuin/goldmark)) = 1.7.17\nbundled(golang(github.com/yuin/goldmark-emoji)) = 1.0.5\nbundled(golang(go.yaml.in/yaml/v3)) = 3.0.4\nbundled(golang(golang.org/x/exp)) = fc45aab\nbundled(golang(golang.org/x/net)) = 0.40.0\nbundled(golang(golang.org/x/sys)) = 0.42.0\nbundled(golang(golang.org/x/term)) = 0.41.0\nbundled(golang(golang.org/x/text)) = 0.32.0\nbundled(golang(gopkg.in/check.v1)) = 10cb982\nbundled(golang(mvdan.cc/sh/v3)) = 3.13.1\nglow = 2.1.2-1.fc44\nglow(x86-64) = 2.1.2-1.fc44\n",
+        "outputLimitReached": false
+      },
+      "requires": {
+        "command": [
+          "rpm",
+          "-q",
+          "--requires",
+          "glow"
+        ],
+        "exitCode": 0,
+        "error": null,
+        "output": "libc.so.6()(64bit)\nlibc.so.6(GLIBC_2.2.5)(64bit)\nlibc.so.6(GLIBC_2.3.2)(64bit)\nlibc.so.6(GLIBC_2.32)(64bit)\nlibc.so.6(GLIBC_2.34)(64bit)\nlibc.so.6(GLIBC_ABI_DT_RELR)(64bit)\nlibresolv.so.2()(64bit)\nrpmlib(CompressedFileNames) <= 3.0.4-1\nrpmlib(FileDigests) <= 4.6.0-1\nrpmlib(PartialHardlinkSets) <= 4.0.4-1\nrpmlib(PayloadFilesHavePrefix) <= 4.0-1\nrpmlib(PayloadIsZstd) <= 5.4.18-1\nrtld(GNU_HASH)\n",
+        "outputLimitReached": false
+      },
+      "reverseRequirements": {
+        "command": [
+          "rpm",
+          "-q",
+          "--whatrequires",
+          "--alldeps",
+          "glow"
+        ],
+        "exitCode": 1,
+        "error": null,
+        "output": "rpm: --alldeps: unknown option\n",
+        "outputLimitReached": false
+      },
+      "removalPreview": {
+        "command": [
+          "dnf5",
+          "--cacheonly",
+          "--assumeno",
+          "remove",
+          "glow"
+        ],
+        "exitCode": 1,
+        "error": null,
+        "output": "Package Arch   Version        Repository      Size\nRemoving:\n glow   x86_64 0:2.1.2-1.fc44 updates     17.2 MiB\n\nTransaction Summary:\n Removing:           1 package\n\nAfter this operation, 17 MiB will be freed (install 0 B, remove 17 MiB).\nOperation aborted by the user.\n",
+        "outputLimitReached": false,
+        "classification": "transaction-preview-declined",
+        "transactionSummaryObserved": true,
+        "declineObserved": true
+      }
+    },
+    {
+      "package": "toolbox",
+      "installed": {
+        "command": [
+          "rpm",
+          "-q",
+          "--qf",
+          "%{NAME}\t%{EPOCHNUM}:%{VERSION}-%{RELEASE}\t%{ARCH}\n",
+          "toolbox"
+        ],
+        "exitCode": 0,
+        "error": null,
+        "output": "toolbox\t0:0.3-4.fc44\tx86_64\n",
+        "outputLimitReached": false
+      },
+      "provides": {
+        "command": [
+          "rpm",
+          "-q",
+          "--provides",
+          "toolbox"
+        ],
+        "exitCode": 0,
+        "error": null,
+        "output": "bundled(golang(github.com/HarryMichal/go-version)) = 1.0.1\nbundled(golang(github.com/NVIDIA/go-nvlib)) = 0.7.2\nbundled(golang(github.com/NVIDIA/go-nvml)) = 0.12.4_1\nbundled(golang(github.com/NVIDIA/nvidia-container-toolkit)) = 1.17.8\nbundled(golang(github.com/acobaugh/osrelease)) = 0.1.0\nbundled(golang(github.com/briandowns/spinner)) = 1.23.2\nbundled(golang(github.com/davecgh/go-spew)) = d8f796a\nbundled(golang(github.com/docker/go-units)) = 0.5.0\nbundled(golang(github.com/fatih/color)) = 1.14.1\nbundled(golang(github.com/fsnotify/fsnotify)) = 1.8.0\nbundled(golang(github.com/go-logfmt/logfmt)) = 0.5.0\nbundled(golang(github.com/go-viper/mapstructure/v2)) = 2.4.0\nbundled(golang(github.com/godbus/dbus/v5)) = 5.0.6\nbundled(golang(github.com/google/renameio/v2)) = 2.0.0\nbundled(golang(github.com/google/uuid)) = 1.6.0\nbundled(golang(github.com/inconshreveable/mousetrap)) = 1.0.0\nbundled(golang(github.com/mattn/go-colorable)) = 0.1.13\nbundled(golang(github.com/mattn/go-isatty)) = 0.0.17\nbundled(golang(github.com/opencontainers/runtime-spec)) = 1.2.1\nbundled(golang(github.com/opencontainers/runtime-tools)) = 2e043c6\nbundled(golang(github.com/pelletier/go-toml/v2)) = 2.2.3\nbundled(golang(github.com/pmezard/go-difflib)) = 5d4384e\nbundled(golang(github.com/rogpeppe/go-internal)) = 1.12.0\nbundled(golang(github.com/sagikazarmark/locafero)) = 0.7.0\nbundled(golang(github.com/sirupsen/logrus)) = 1.9.3\nbundled(golang(github.com/sourcegraph/conc)) = 0.3.0\nbundled(golang(github.com/spf13/afero)) = 1.12.0\nbundled(golang(github.com/spf13/cast)) = 1.7.1\nbundled(golang(github.com/spf13/cobra)) = 1.3.0\nbundled(golang(github.com/spf13/pflag)) = 1.0.6\nbundled(golang(github.com/spf13/viper)) = 1.20.1\nbundled(golang(github.com/stretchr/testify)) = 1.10.0\nbundled(golang(github.com/subosito/gotenv)) = 1.6.0\nbundled(golang(github.com/syndtr/gocapability)) = 42c35b4\nbundled(golang(go.uber.org/atomic)) = 1.9.0\nbundled(golang(go.uber.org/multierr)) = 1.9.0\nbundled(golang(golang.org/x/mod)) = 0.20.0\nbundled(golang(golang.org/x/sys)) = 0.29.0\nbundled(golang(golang.org/x/term)) = 0.1.0\nbundled(golang(golang.org/x/text)) = 0.21.0\nbundled(golang(gopkg.in/yaml.v2)) = 2.4.0\nbundled(golang(gopkg.in/yaml.v3)) = 3.0.1\nbundled(golang(sigs.k8s.io/yaml)) = 1.3.0\nbundled(golang(tags.cncf.io/container-device-interface)) = 0.8.1\nbundled(golang(tags.cncf.io/container-device-interface/specs-go)) = 0.8.0\nconfig(toolbox) = 0.3-4.fc44\ntoolbox = 0.3-4.fc44\ntoolbox(x86-64) = 0.3-4.fc44\n",
+        "outputLimitReached": false
+      },
+      "requires": {
+        "command": [
+          "rpm",
+          "-q",
+          "--requires",
+          "toolbox"
+        ],
+        "exitCode": 0,
+        "error": null,
+        "output": "config(toolbox) = 0.3-4.fc44\ncontainers-common\nflatpak-session-helper\nlibc.so.6()(64bit)\nlibc.so.6(GLIBC_2.2.5)(64bit)\nlibc.so.6(GLIBC_2.3.2)(64bit)\nlibc.so.6(GLIBC_2.3.4)(64bit)\nlibc.so.6(GLIBC_2.32)(64bit)\nlibc.so.6(GLIBC_2.34)(64bit)\nlibc.so.6(GLIBC_2.4)(64bit)\nlibresolv.so.2()(64bit)\npodman >= 1.6.4\nrpmlib(CompressedFileNames) <= 3.0.4-1\nrpmlib(FileDigests) <= 4.6.0-1\nrpmlib(PayloadFilesHavePrefix) <= 4.0-1\nrpmlib(PayloadIsZstd) <= 5.4.18-1\nrtld(GNU_HASH)\nshadow-utils-subid(x86-64) >= 4.16.0\n",
+        "outputLimitReached": false
+      },
+      "reverseRequirements": {
+        "command": [
+          "rpm",
+          "-q",
+          "--whatrequires",
+          "--alldeps",
+          "toolbox"
+        ],
+        "exitCode": 1,
+        "error": null,
+        "output": "rpm: --alldeps: unknown option\n",
+        "outputLimitReached": false
+      },
+      "removalPreview": {
+        "command": [
+          "dnf5",
+          "--cacheonly",
+          "--assumeno",
+          "remove",
+          "toolbox"
+        ],
+        "exitCode": 1,
+        "error": null,
+        "output": "Package  Arch   Version      Repository      Size\nRemoving:\n toolbox x86_64 0:0.3-4.fc44 <unknown>   12.1 MiB\n\nTransaction Summary:\n Removing:           1 package\n\nAfter this operation, 12 MiB will be freed (install 0 B, remove 12 MiB).\nOperation aborted by the user.\n",
+        "outputLimitReached": false,
+        "classification": "transaction-preview-declined",
+        "transactionSummaryObserved": true,
+        "declineObserved": true
+      }
+    }
+  ],
+  "versions": [
+    {
+      "command": [
+        "rpm",
+        "--version"
+      ],
+      "exitCode": 0,
+      "error": null,
+      "output": "RPM version 6.0.2\n",
+      "outputLimitReached": false
+    },
+    {
+      "command": [
+        "dnf5",
+        "--version"
+      ],
+      "exitCode": 0,
+      "error": null,
+      "output": "dnf5 version 5.4.6.0\ndnf5 plugin API version 2.0\nlibdnf5 version 5.4.6.0\nlibdnf5 plugin API version 2.2\n\nLoaded dnf5 plugins:\n  name: builddep\n  version: 1.0.0\n  API version: 2.0\n\n  name: changelog\n  version: 1.0.0\n  API version: 2.0\n\n  name: config-manager\n  version: 0.1.0\n  API version: 2.0\n\n  name: copr\n  version: 0.1.0\n  API version: 2.0\n\n  name: needs_restarting\n  version: 1.0.0\n  API version: 2.0\n\n  name: repoclosure\n  version: 1.0.0\n  API version: 2.0\n\n  name: repomanage\n  version: 1.0.0\n  API version: 2.0\n\n  name: reposync\n  version: 1.0.0\n  API version: 2.0\n\nLoaded libdnf5 plugins:\n  name: systemd-inhibit\n  version: 1.0.0\n  API version: 2.2\n\n  name: appstream\n  version: 1.0.0\n  API version: 2.0\n\n  name: expired-pgp-keys\n  version: 1.0.0\n  API version: 2.1\n",
+      "outputLimitReached": false
+    }
+  ],
+  "textConsumers": {
+    "roots": [
+      "/usr/share/ublue-os",
+      "/usr/share/just",
+      "/usr/share/ublue",
+      "/usr/bin/ujust",
+      "/usr/lib/systemd/system",
+      "/etc/systemd/system",
+      "/usr/etc/systemd/system"
+    ],
+    "filesRead": 645,
+    "bytesRead": 801802,
+    "boundedSearchTruncated": false,
+    "matches": [
+      {
+        "path": "/usr/share/ublue-os/motd/tips/10-tips.md",
+        "line": 18,
+        "text": "`ujust jetbrains-toolbox` installs JetBrains tools in your home directory, all ready to go!"
+      },
+      {
+        "path": "/usr/share/ublue-os/homebrew/ide.Brewfile",
+        "line": 6,
+        "text": "cask \"ublue-os/tap/jetbrains-toolbox-linux\""
+      },
+      {
+        "path": "/usr/share/ublue-os/just/shared.just",
+        "line": 13,
+        "text": "    FIRST_CONFIRMATION=$(gum choose --header='Warning: This is an experimental feature that will reset this device to its factory state.' \"No\" \"Yes - wipe this machine\")"
+      },
+      {
+        "path": "/usr/share/ublue-os/just/shared.just",
+        "line": 18,
+        "text": "    SECOND_CONFIRMATION=$(gum choose --header='Are you sure?' \"No\" \"Yes - wipe this machine\")"
+      },
+      {
+        "path": "/usr/share/ublue-os/just/apps.just",
+        "line": 3,
+        "text": "# alias for install-jetbrains-toolbox"
+      },
+      {
+        "path": "/usr/share/ublue-os/just/apps.just",
+        "line": 5,
+        "text": "jetbrains-toolbox:"
+      },
+      {
+        "path": "/usr/share/ublue-os/just/apps.just",
+        "line": 6,
+        "text": "    @ujust install-jetbrains-toolbox"
+      },
+      {
+        "path": "/usr/share/ublue-os/just/apps.just",
+        "line": 8,
+        "text": "# Install JetBrains Toolbox | https://www.jetbrains.com/toolbox-app/"
+      },
+      {
+        "path": "/usr/share/ublue-os/just/apps.just",
+        "line": 10,
+        "text": "install-jetbrains-toolbox:"
+      },
+      {
+        "path": "/usr/share/ublue-os/just/apps.just",
+        "line": 13,
+        "text": "    brew install --cask jetbrains-toolbox-linux"
+      },
+      {
+        "path": "/usr/share/ublue-os/just/apps.just",
+        "line": 19,
+        "text": "    gum confirm --affirmative=\"Install\" --negative=\"Uninstall\" \"Installer for OpenTabletDriver\""
+      },
+      {
+        "path": "/usr/share/ublue-os/just/apps.just",
+        "line": 54,
+        "text": "        if gum confirm \"Bold Brew is not installed, would you like to install it?\" ; then"
+      },
+      {
+        "path": "/usr/share/ublue-os/just/apps.just",
+        "line": 63,
+        "text": "    bbrew -f \"/usr/share/ublue-os/homebrew/$(gum choose $(find \"/usr/share/ublue-os/homebrew\"/*.Brewfile -exec basename '{}' '.Brewfile' ';')).Brewfile\""
+      },
+      {
+        "path": "/usr/share/ublue-os/just/apps.just",
+        "line": 68,
+        "text": "        if gum confirm \"Bold Brew is not installed, would you like to install it?\" ; then"
+      },
+      {
+        "path": "/usr/share/ublue-os/just/default.just",
+        "line": 15,
+        "text": "    if gum confirm \"Reboot into BIOS?\" ; then"
+      },
+      {
+        "path": "/usr/share/ublue-os/just/default.just",
+        "line": 31,
+        "text": "    if gum confirm \"Prune all Podman images and volumes?\"; then"
+      },
+      {
+        "path": "/usr/share/ublue-os/just/default.just",
+        "line": 37,
+        "text": "      if gum confirm \"Prune all Docker images and volumes?\"; then"
+      },
+      {
+        "path": "/usr/share/ublue-os/just/default.just",
+        "line": 72,
+        "text": "      if gum confirm \"Would you like to enable the MOTD?\" ; then"
+      },
+      {
+        "path": "/usr/share/ublue-os/just/default.just",
+        "line": 78,
+        "text": "    if gum confirm \"Would you like to disable the MOTD?\" ; then"
+      },
+      {
+        "path": "/usr/share/ublue-os/just/default.just",
+        "line": 138,
+        "text": "    if ! gum confirm \"Submit information to the CentOS pastebin?\" ; then"
+      },
+      {
+        "path": "/usr/share/ublue-os/just/default.just",
+        "line": 167,
+        "text": "        if gum confirm \"Stress does not seem to be on your path, do you wish to install it?\" ; then"
+      },
+      {
+        "path": "/usr/share/ublue-os/just/changelog.just",
+        "line": 20,
+        "text": "        echo \"$CONTENT\" | glow -p"
+      },
+      {
+        "path": "/usr/share/ublue-os/just/changelog.just",
+        "line": 23,
+        "text": "        curl -Ls \"https://api.github.com/repos/ublue-os/bluefin/releases/latest\" | jq -r \".body\" | glow -p"
+      },
+      {
+        "path": "/usr/share/ublue-os/just/system.just",
+        "line": 28,
+        "text": "        gum confirm \"Would you like to disable developer mode?\" || exit 0"
+      },
+      {
+        "path": "/usr/share/ublue-os/just/system.just",
+        "line": 35,
+        "text": "    gum confirm \"Would you like to enable developer mode?\" || exit 0"
+      },
+      {
+        "path": "/usr/share/ublue-os/just/system.just",
+        "line": 39,
+        "text": "    if gum confirm \"Do you want to also install the default development flatpaks?\" ; then"
+      },
+      {
+        "path": "/usr/share/ublue-os/just/system.just",
+        "line": 42,
+        "text": "    if gum confirm \"Do you want to install extra monospace fonts?\" ; then"
+      },
+      {
+        "path": "/usr/share/ublue-os/just/system.just",
+        "line": 77,
+        "text": "            gum confirm \"Install development flatpaks?\" || exit 0"
+      },
+      {
+        "path": "/usr/share/ublue-os/just/system.just",
+        "line": 83,
+        "text": "        gum confirm \"Install system flatpaks?\" || exit 0"
+      },
+      {
+        "path": "/usr/share/ublue-os/just/update.just",
+        "line": 50,
+        "text": "    SELECTED_OPTION=\"$(gum choose --header=\"Toggle automatic updates?\" \"Enable\" \"Disable\" \"Cancel\")\""
+      }
+    ],
+    "errors": []
+  },
+  "limits": "Disposable offline --assumeno solver previews only; no removal, package download, updated metadata, image rebuild or desktop execution. Direct RPM name reverse requirements are incomplete for virtual/file/weak/runtime dependencies; inspect the full DNF transaction output. Bounded selected-path text search does not prove consumer absence. Missing cache, solver failures and unrecognized abort output remain probe errors or unknown, never safe removal proof.",
+  "imageId": "sha256:808652ff652652bb6568e94b152046069a4c64ff52656dda308a41293b31528d",
+  "helperSha256": "9d66572112f3e056194dd54beb2ac999154404cca9b71662e8c726d71d03fe42",
+  "sourceRevision": "08408c7487289193bf9247aaa3810fa636cb7a5d",
+  "runId": "38411928635",
+  "provenance": {
+    "run": 38411928635,
+    "url": "https://github.com/closure-labs/finite/actions/runs/38411928635",
+    "artifactId": 11823101790,
+    "artifactSha256": "9efc84dd18101cd839920e58d572f4f32af06f1d1959a727a99943628e357154",
+    "reportSha256": "9832fb20315ef23c15a0edf0e4e1945ccd059bde327af3bbf33f74b652fb17e3"
+  },
+  "review": {
+    "rclone": "Solver removes only rclone; no selected-path text consumers observed. This is a candidate removal route, not complete runtime/retained-file proof.",
+    "anyio": "Solver also removes python3-httpx; direct/custom TLS consumers and HTTPX callers need review before removal.",
+    "gum": "Do not remove blindly: inherited factory-reset, application, developer-mode and update confirmation scripts invoke gum.",
+    "glow": "Inherited changelog command uses glow; needs compatible replacement or explicit feature removal.",
+    "toolbox": "Container development remains supported; removing toolbox needs explicit supported alternative and compatibility evidence. JetBrains Toolbox text hits refer to a different product.",
+    "decision": "No image mutation in this probe. Batch verified remediations before building another candidate; do not rescan unchanged blocked payloads."
+  }
+}

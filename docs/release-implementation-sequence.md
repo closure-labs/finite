@@ -182,3 +182,90 @@ Source/build-contract verdict: PASS. Vulnerability-clearance verdict: BLOCKED.
 Release-eligibility verdict: INELIGIBLE. The temporary validation branch was
 deleted after retaining artifacts; no image rebuild, merge or release publication
 was performed by this continuation.
+
+
+## VM-sufficient desktop qualification continuation
+
+The release owner explicitly selected VM qualification as sufficient; a separate
+physical-hardware or manual graphical-desktop gate is not required. The new
+[qualification contract](desktop-release-qualification.md) retains untested
+physical/GUI coverage as informational and preserves security, signing, encrypted
+Secure Boot install, upgrade and rollback requirements.
+
+The [official prerequisite refresh](release-prerequisites-refresh-2026-10-13.json)
+found rclone1.75.2 still testing-only and no fixed AnyIO4.14.2 Fedora44 build.
+Next7.2.9-301 now meets testing requirements and has a stable request/pending tag,
+but approved stable promotion was not observed. No package floor/source changes
+are justified yet; a stable request is not an approved repository transaction.
+
+RC per-server proxy and S3 identity-secret compatibility contracts have been
+implemented, with30 offline fixtures passing and independent review approval.
+[Actual hosted validation](rclone-protocol-compatibility-2026-10-13.json)
+passed all seven implemented cases in run38368702487. Shared-backend S3 multipart/metadata,
+SFTP/Windows and mounting remain explicit package-compatibility gaps; these are
+distinct from the rejected physical-workstation qualification requirement.
+
+The [implementation validation ledger](desktop-qualification-validation-2026-10-13.json)
+records612 passing offline tests and the source-CI fixture correction. PR151
+tracks exact-head hosted checks. Actual new VM execution remains pending a useful
+changed candidate; source fixtures do not count as an end-to-end boot pass.
+
+## Critical-only desktop release threshold
+
+The release owner narrowed vulnerability blocking to Critical findings applicable
+to desktop use with SELinux enforcing. Lower severities remain tracked even when
+previously categorized serious or known exploited. This is explicit risk acceptance,
+not evidence that those vulnerabilities were repaired. Unknown Critical applicability
+stays pending review; exact nonapplicability/backport proof and all authenticity,
+security-evidence validity and VM boot gates remain required.
+
+[Hosted reevaluation](critical-desktop-policy-evidence-2026-10-13.json) reused
+all four fresh native scans from run38395796884 without rebuilding or rescanning.
+The original policy results reproduce and observations remain unchanged.
+Standard Generic/Next each move93→24 blocking component/advisory pairs;
+development Generic/Next each move146→54. Different package versions can share
+one advisory; these counts are not distinct exploits. Current candidate digests
+are recorded in the ledger. Historical digest-scoped dispositions do not silently
+transfer to these newer digests.
+
+Generic evaluations completed in38411151441 before a Next baseline filename
+error stopped that diagnostic. Run38411349067 completed only the missing Next
+comparisons. The first38410999928 failure exposed legacy output-shape drift;
+that compatibility defect was corrected and regression tested. These probe failures
+are distinct from the resulting Critical applicability blockers.
+
+PR150 merged externally at5c7480cb87e32379834bd6f34b23c07ce1644d73;
+PR151 is rebased on main. The redundant four-image post-merge run38410619261
+was cancelled after verifying only policy/evidence/validation inputs changed and
+the latest same-payload native evidence already existed. No release was performed.
+
+Next work is exact consumer applicability and safe optional-package removal
+validation for the remaining Critical findings. Pending noncritical fixes and
+optional-upgrade compatibility work no longer categorically hold release.
+
+## Advisory pairs are not release blockers
+
+The owner clarified that scanner/advisory pairs alone cannot justify blocking
+release. The explicit `reviewed-desktop-exploitability` basis supersedes the
+prior pair-based verdicts above. Critical matches with unresolved applicability
+are retained as nonblocking review work, not declared fixed or harmless.
+
+Only a reviewed Critical record with the exact image/profile/component/files,
+affected-code evidence, supported attacker path/preconditions, impact and
+SELinux assessment can block vulnerability acceptance. Confirmed records work
+even without a scanner match. Complete source/caller/configuration evidence is
+admissible; executing an exploit is not mandatory.
+
+Independent review found no existing receipt satisfying that full confirmation
+standard for the four current candidates. The current confirmed registry is
+therefore explicitly empty. Signing, freshness/integrity of security evidence,
+SELinux-enforcing VM installation/upgrade/rollback and release approval remain
+required. Do not delay those gates solely for unresolved advisory counts.
+
+[Hosted verification38414548421](reviewed-desktop-policy-evidence-2026-10-13.json)
+passes the revised vulnerability policy for all four immutable candidates with
+zero confirmed blockers. All original native observations remain unchanged.
+Standard24/development54 Critical pairs remain unresolved advisories, not release
+holds. No new scan, image build or package mutation was performed. The next
+release work is trusted-main signing and exact-candidate VM qualification, with
+standard Generic first; it is no longer gated on advisory-count reduction.
