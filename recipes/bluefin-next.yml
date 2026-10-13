@@ -4,7 +4,7 @@ version: 1
 name: finite
 description: Finite bluefin with Home Manager and next-x86_64
 base-image: ghcr.io/ublue-os/bluefin
-image-version: stable@sha256:61c3d546bea3a0012378214de3603d9eadc2111330765a4a31b14215d4bacaea
+image-version: stable@sha256:23b7bf54349f1a93c2fea4168c7725a632641ee67ae29b0951ef1976c1ba2bc9
 blue-build-tag: v0.9.37
 cosign-version: 3.1.3@sha256:9e5c2f2edc34351160407ca3416c61855bdf9403c3c5936e0f0be7fc261611b8
 alt-tags: [finite-next]
