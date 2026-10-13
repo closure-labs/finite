@@ -4,6 +4,28 @@ Finite is a Jujutsu repository, using Bluefin/bootc with Nix/Home Manager. All
 four desktop profiles and container tools remain supported. This is the current
 execution order; older audit ledgers remain historical evidence.
 
+## Current release continuation
+
+PR #151 merged at `2cb7b1ed0db02aeb9a82a90bffdd511dc843c8c0`.
+[Run38426200092](https://github.com/closure-labs/finite/actions/runs/38426200092)
+passed all four image builds and security-policy jobs. Signing failed because
+Cosign's signing-config default conflicts with the requested legacy format.
+The explicit compatible flags passed a hosted ephemeral-key test, including
+real transparency verification and wrong-key rejection. Exact candidates and
+artifact bindings are in [the signing ledger](signing-resume-evidence-2026-10-13.json).
+
+Resume standard generic first, then Next independently after the reviewed fix
+reaches main. Reuse authenticated fresh native security evidence, reevaluate
+current policy, and retain original timestamps. Only absent or expired evidence
+permits a fresh scan; malformed evidence or policy failures stop qualification.
+The resume path retains protected signing, current-main checks and enforcing VM
+install/upgrade/rollback gates. No physical desktop test is required.
+
+The historical findings below are remediation work, not automatic release holds.
+Only reviewed confirmed Critical desktop exploitability can block vulnerability
+acceptance under current policy; advisory/component pairs alone cannot.
+Unresolved observations remain visible and are not asserted fixed or harmless.
+
 ## Verified starting point
 
 PR #147 merged at `9d1b0c5b5ebdc7314497ee6500fba4a9c289f706`.

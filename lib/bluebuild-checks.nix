@@ -107,6 +107,7 @@ in {
     python3 tests/bluebuild/tailscale-security.py
     python3 tests/bluebuild/desktop-qualification.py
     python3 tests/bluebuild/reliability.py
+    python3 tests/ci/reuse-candidate-security.py
     python3 tests/bluebuild/resume.py
     python3 tests/bluebuild/extraction-layout.py
   '';

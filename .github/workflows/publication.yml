@@ -53,10 +53,12 @@ jobs:
       CANDIDATE_DIGEST: ${{ needs.build.outputs.digest }}
       BUILD_IDENTITY: ${{ needs.build.outputs.identity }}
       SOURCE_REVISION: ${{ needs.build.outputs.source_revision }}
+      RESUME_RUN: ${{ inputs.resume_run }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: ./.github/actions/setup-nix
       - name: Reuse authenticated publisher evidence from this build
         env:
@@ -68,18 +70,54 @@ jobs:
           gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" \
             --name "$BUILD_EVIDENCE" --dir .bluebuild/upstream-build
           test -f .bluebuild/upstream-build/upstream-verified.json
+      - name: Revalidate fresh security evidence for a resumed candidate
+        id: reuse
+        if: inputs.resume_run != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          set +e
+          # Expand these variables inside the Nix-provided child shell.
+          # shellcheck disable=SC2016
+          nix develop --file lib/ci-tools.nix release --command bash -c '
+            sudo --preserve-env=GH_TOKEN,GITHUB_ACTIONS,GITHUB_REPOSITORY,GITHUB_REF,GITHUB_EVENT_NAME,GITHUB_WORKFLOW_REF,GITHUB_SHA \
+              systemd-run --quiet --wait --pipe --service-type=exec \
+              --unit="finite-security-reuse-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" \
+              --property=MemoryMax=2G --property=MemorySwapMax=0 --property=RuntimeMaxSec=300 \
+              --property=NoNewPrivileges=yes --property=CapabilityBoundingSet= \
+              --uid="$(id -u)" --gid="$(id -g)" --working-directory="$PWD" \
+              --setenv="PATH=$PATH" --setenv=GH_TOKEN --setenv=GITHUB_ACTIONS \
+              --setenv=GITHUB_REPOSITORY --setenv=GITHUB_REF --setenv=GITHUB_EVENT_NAME \
+              --setenv=GITHUB_WORKFLOW_REF --setenv=GITHUB_SHA \
+              python3 scripts/ci/reuse-candidate-security.py \
+              --origin-run "$RESUME_RUN" --profile "$PROFILE" --digest "$CANDIDATE_DIGEST" \
+              --output ".bluebuild/security-$PROFILE"
+          '
+          status=$?
+          set -e
+          case "$status" in
+            0) echo 'reused=true' >>"$GITHUB_OUTPUT" ;;
+            3) echo 'Reusable evidence unavailable or expired; scanning the same candidate.' ;;
+            *) exit "$status" ;;
+          esac
       - name: Make room for the immutable image inventory
+        if: steps.reuse.outputs.reused != 'true'
         uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
         with:
           skip-if-available: "80G"
       - name: Scan exact candidate and enforce image security policy
         id: scan
+        env:
+          REUSED_SECURITY: ${{ steps.reuse.outputs.reused }}
         run: |
-          nix develop --file lib/ci-tools.nix release --command bash scripts/bluebuild/security-run.sh \
+          if [[ $REUSED_SECURITY != true ]]; then
+            nix develop --file lib/ci-tools.nix release --command bash scripts/bluebuild/security-run.sh \
             "ghcr.io/closure-labs/finite@$CANDIDATE_DIGEST" ".bluebuild/security-$PROFILE" \
             --profile "$PROFILE" --identity "$BUILD_IDENTITY" \
             --source-revision "$SOURCE_REVISION" \
             --upstream-receipt .bluebuild/upstream-build/upstream-verified.json
+          fi
           echo "digest=$CANDIDATE_DIGEST" >>"$GITHUB_OUTPUT"
           echo "evidence=security-$PROFILE-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >>"$GITHUB_OUTPUT"
       - name: Retain scanner evidence including failures
@@ -107,6 +145,8 @@ jobs:
           sparse-checkout: cosign.pub
           sparse-checkout-cone-mode: false
       - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        with:
+          cosign-release: v3.1.3
       - name: Sign the independently scanned immutable digest
         env:
           CANDIDATE_DIGEST: ${{ needs.security.outputs.digest }}
@@ -120,7 +160,7 @@ jobs:
           image="ghcr.io/closure-labs/finite@$CANDIDATE_DIGEST"
           trap 'docker logout ghcr.io >/dev/null 2>&1 || true' EXIT
           printf '%s' "$REGISTRY_TOKEN" | docker login --username "$REGISTRY_USER" --password-stdin ghcr.io
-          cosign sign --yes --new-bundle-format=false --key env://COSIGN_PRIVATE_KEY "$image"
+          cosign sign --yes --new-bundle-format=false --use-signing-config=false --key env://COSIGN_PRIVATE_KEY "$image"
           cosign verify --new-bundle-format=false --key cosign.pub "$image"
 
   qualification:

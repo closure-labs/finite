@@ -17,6 +17,7 @@ GENERIC = set(PROFILES) - NEXT
 # These files qualify an existing immutable image; they are not filesystem
 # inputs. Keep source/security checks while reusing already validated builds.
 QUALIFICATION_ONLY = {
+    'scripts/ci/reuse-candidate-security.py',
     'automation/security/image-policy.json',
     'scripts/ci/approved-baseline.py', 'scripts/ci/security-remediation-diff.py',
     'scripts/ci/bluefin-upstream.py', 'scripts/ci/impact.py', 'scripts/ci/image_identity.py',

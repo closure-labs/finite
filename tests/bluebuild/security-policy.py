@@ -625,7 +625,12 @@ class PublicationBoundary(unittest.TestCase):
         sign = next(step for step in signer['steps'] if 'COSIGN_PRIVATE_KEY' in step.get('env', {}))
         self.assertEqual(sign['env']['CANDIDATE_DIGEST'], '${{ needs.security.outputs.digest }}')
         self.assertEqual(sign['env']['COSIGN_PRIVATE_KEY'], '${{ secrets.COSIGN_PRIVATE_KEY }}')
-        self.assertIn('--new-bundle-format=false', sign['run'])
+        self.assertIn('--new-bundle-format=false --use-signing-config=false', sign['run'])
+        self.assertNotIn('--tlog-upload=false', sign['run'])
+        self.assertNotIn('--insecure-ignore', sign['run'])
+        installer = next(step for step in signer['steps'] if step.get('uses', '').startswith('sigstore/cosign-installer@'))
+        runtime = json.loads((ROOT / 'sources/cosign-runtime.json').read_text())
+        self.assertEqual(installer['with']['cosign-release'], 'v' + runtime['version'])
         self.assertNotIn('scripts/', sign['run'])
         self.assertNotIn('run download', sign['run'])
         for dependency in ('security', 'sign', 'qualification'):
