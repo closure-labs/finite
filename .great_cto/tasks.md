@@ -280,8 +280,27 @@ hold remain explicit. Release eligibility has not been established.
 - [x] Senior developer: add explicit single-package signed reference inspection with unchanged default behavior and bounded inputs.
 - [x] Security/QA: independently validate selectors, staged-source status, signature/payload checks and no release claim.
 - [x] Hosted evidence: inspect only Fedora's signed rclone1.75.2 candidate; do not enable testing, install or execute package payloads.
-- [ ] Security reviewers: resolve specific gRPC and HTTP handler call paths or retain concrete remaining proof gaps.
+- [x] HTTP reviewer: retained23 authenticated source files and concrete caller paths; no blanket client-only clearance.
+- [x] gRPC security and independent QA: approve six exact Podman/Buildah authorization-only scopes; transport and podman-tui remain blocked.
 - Preserve externally initiated PR148 merge-queue validation; follow-up work uses a separate JJ child branch.
 
 - Signed rclone probe38361178024 passed: Fedora44 signature and executable bytes authenticated; actual Go1.26.9, x/crypto0.57.0, x/net0.60.0. Compare official advisory ranges before claiming prospective fixes; no current image clearance.
 - PR148 merged externally at4bab5195db5d; its merge-queue source gates passed38360619132.
+
+- [x] Rclone prospective review supports all14 recorded owning pairs in selected candidates; stage compatibility tests before stable adoption. No installed-image findings cleared.
+- [x] Cancel redundant main reconciliation38361032151; no further image build/scan requested.
+
+- [x] PR149 merged externally at124049058307; queue38362921128 passed. Cancelled redundant main image run38363454043.
+- [x] Apply six reviewed scopes (156 total);69 policy fixtures pass. Hosted reevaluation38364577930 passed with unchanged observations: standard70, development119.
+- [x] Validate partial rclone compatibility contracts on hosted isolated runner; preserve missing coverage explicitly.
+
+- [x] PR150 initial head96f984360e6e source checks passed38364965874 (all source gates passed).
+- [x] Actual signed rclone run38364908523: ordinary operations, links and both Restic cases passed; FTP timeout is a probe error under investigation, not a vulnerability finding.
+
+- [x] FTP fixture correction: nonempty passive-port range and phase diagnostics;16 offline tests and independent QA pass. Retry38365757103 identified source-confirmed551 response mismatch; corrected with own-file retrieval controls.
+
+- [x] Final actual compatibility38366200031: all five implemented contracts pass;19 offline fixtures pass. Evidence retains both probe errors and remaining coverage gaps.
+- [x] Cancel superseded source run38365814706; final code1b4d0cf2 source validation38366217513 passed all gates.
+- [ ] Finite: complete SFTP/Windows, RC proxy, S3 identity-secret and mount compatibility before full package adoption.
+
+- [x] Remove temporary audit/rclone-reference branch and forget probe workspace after retaining hosted artifacts and receipts.

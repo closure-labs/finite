@@ -5497,6 +5497,204 @@
         "All four current matched locations join to Podman authenticated SHA a844579b\u2026 or Buildah authenticated SHA 8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2; sourceProofRun38354387254 ata4012ae37d374ec09a23a988d228907bd0f5d5bf; source-evidence SHA256 578c068c9b1d80be2c80710b96da9657aef08b561f87693054a007f96dd2a5c4; signed Buildah reference SHA256 c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493.",
         "Exact immutable archive/vendor/file hashes, actual owning build commands/package blocks and Buildah binary tags/module/buildinfo provenance are recorded in sourcePackages and joinEvidence for sumdb-semver-6180-main-bluefin-next-a36f46afcc2a-61668157. Vendor mode is inferred by official Go semantics, not represented as an explicit observed flag."
       ]
+    },
+    {
+      "id": "grpc-auth-client-bluefin-dx-generic-7848ba4cfb",
+      "digest": "sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "component": "pkg:golang/google.golang.org/grpc@v1.72.2",
+      "platform": "linux/amd64",
+      "advisories": [
+        "CVE-2026-33186",
+        "GHSA-p77j-4mvh-x3m3"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "Exact signed Podman/Buildah executables and authenticated owning source use gRPC through ocicrypt keyprovider Dial/client Invoke. Exhaustive whole-source import/linkname/constructor census plus manual complete importer/dependency initializer review shows no grpc Server construction, generated-server-helper caller, registration or serving path. This authorization-only advisory requires a grpc server with path-based deny/fallback-allow authorization. Only these exact executable paths are covered; podman-tui and bundled transport risks stay unproven.",
+      "officialSources": [
+        "https://github.com/grpc/grpc-go/security/advisories/GHSA-p77j-4mvh-x3m3",
+        "https://raw.githubusercontent.com/containers/podman/c593b672bf3db1173aebea565ebf1a724ea196dc/vendor/github.com/containers/ocicrypt/keywrap/keyprovider/keyprovider.go",
+        "https://raw.githubusercontent.com/containers/buildah/c7061d00bae87f95000d550c015bc4d9be0b53af/vendor/github.com/containers/ocicrypt/utils/keyprovider/keyprovider.pb.go"
+      ],
+      "evidence": [
+        "https://github.com/closure-labs/finite/actions/runs/38362940891#grpc-source-census.json:sha256:a1000693e4e93e7c7b286b36c357ca05d7dcc188dcedae0ff24cb684d4a86b85",
+        "https://github.com/closure-labs/finite/actions/runs/38354387254#consumer-source-evidence/source-evidence.json:sha256:578c068c9b1d80be2c80710b96da9657aef08b561f87693054a007f96dd2a5c4",
+        "https://github.com/closure-labs/finite/actions/runs/38354387254#consumer-reference-evidence/reference-evidence.json:sha256:c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#bluefin-dx-generic-native.json:sha256:90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / desktop_risk_review",
+      "reviewedAt": "2026-10-13T07:39:06.489964+00:00",
+      "expiresAt": "2026-10-27T07:39:06.489964+00:00"
+    },
+    {
+      "id": "grpc-auth-client-bluefin-generic-e98ca0ceb4",
+      "digest": "sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+      "component": "pkg:golang/google.golang.org/grpc@v1.72.2",
+      "platform": "linux/amd64",
+      "advisories": [
+        "CVE-2026-33186",
+        "GHSA-p77j-4mvh-x3m3"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "Exact signed Podman/Buildah executables and authenticated owning source use gRPC through ocicrypt keyprovider Dial/client Invoke. Exhaustive whole-source import/linkname/constructor census plus manual complete importer/dependency initializer review shows no grpc Server construction, generated-server-helper caller, registration or serving path. This authorization-only advisory requires a grpc server with path-based deny/fallback-allow authorization. Only these exact executable paths are covered; podman-tui and bundled transport risks stay unproven.",
+      "officialSources": [
+        "https://github.com/grpc/grpc-go/security/advisories/GHSA-p77j-4mvh-x3m3",
+        "https://raw.githubusercontent.com/containers/podman/c593b672bf3db1173aebea565ebf1a724ea196dc/vendor/github.com/containers/ocicrypt/keywrap/keyprovider/keyprovider.go",
+        "https://raw.githubusercontent.com/containers/buildah/c7061d00bae87f95000d550c015bc4d9be0b53af/vendor/github.com/containers/ocicrypt/utils/keyprovider/keyprovider.pb.go"
+      ],
+      "evidence": [
+        "https://github.com/closure-labs/finite/actions/runs/38362940891#grpc-source-census.json:sha256:a1000693e4e93e7c7b286b36c357ca05d7dcc188dcedae0ff24cb684d4a86b85",
+        "https://github.com/closure-labs/finite/actions/runs/38354387254#consumer-source-evidence/source-evidence.json:sha256:578c068c9b1d80be2c80710b96da9657aef08b561f87693054a007f96dd2a5c4",
+        "https://github.com/closure-labs/finite/actions/runs/38354387254#consumer-reference-evidence/reference-evidence.json:sha256:c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#bluefin-generic-native.json:sha256:868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f",
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / desktop_risk_review",
+      "reviewedAt": "2026-10-13T07:39:06.489964+00:00",
+      "expiresAt": "2026-10-27T07:39:06.489964+00:00"
+    },
+    {
+      "id": "grpc-auth-client-main-bluefin-dx-generic-3fd7e10d0e",
+      "digest": "sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/google.golang.org/grpc@v1.72.2",
+      "platform": "linux/amd64",
+      "advisories": [
+        "CVE-2026-33186",
+        "GHSA-p77j-4mvh-x3m3"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "Exact signed Podman/Buildah executables and authenticated owning source use gRPC through ocicrypt keyprovider Dial/client Invoke. Exhaustive whole-source import/linkname/constructor census plus manual complete importer/dependency initializer review shows no grpc Server construction, generated-server-helper caller, registration or serving path. This authorization-only advisory requires a grpc server with path-based deny/fallback-allow authorization. Only these exact executable paths are covered; podman-tui and bundled transport risks stay unproven.",
+      "officialSources": [
+        "https://github.com/grpc/grpc-go/security/advisories/GHSA-p77j-4mvh-x3m3",
+        "https://raw.githubusercontent.com/containers/podman/c593b672bf3db1173aebea565ebf1a724ea196dc/vendor/github.com/containers/ocicrypt/keywrap/keyprovider/keyprovider.go",
+        "https://raw.githubusercontent.com/containers/buildah/c7061d00bae87f95000d550c015bc4d9be0b53af/vendor/github.com/containers/ocicrypt/utils/keyprovider/keyprovider.pb.go"
+      ],
+      "evidence": [
+        "https://github.com/closure-labs/finite/actions/runs/38362940891#grpc-source-census.json:sha256:a1000693e4e93e7c7b286b36c357ca05d7dcc188dcedae0ff24cb684d4a86b85",
+        "https://github.com/closure-labs/finite/actions/runs/38354387254#consumer-source-evidence/source-evidence.json:sha256:578c068c9b1d80be2c80710b96da9657aef08b561f87693054a007f96dd2a5c4",
+        "https://github.com/closure-labs/finite/actions/runs/38354387254#consumer-reference-evidence/reference-evidence.json:sha256:c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-dx-generic-native.json:sha256:21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / desktop_risk_review",
+      "reviewedAt": "2026-10-13T07:39:06.489964+00:00",
+      "expiresAt": "2026-10-27T07:39:06.489964+00:00"
+    },
+    {
+      "id": "grpc-auth-client-main-bluefin-dx-next-a851083d1a",
+      "digest": "sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "component": "pkg:golang/google.golang.org/grpc@v1.72.2",
+      "platform": "linux/amd64",
+      "advisories": [
+        "CVE-2026-33186",
+        "GHSA-p77j-4mvh-x3m3"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "Exact signed Podman/Buildah executables and authenticated owning source use gRPC through ocicrypt keyprovider Dial/client Invoke. Exhaustive whole-source import/linkname/constructor census plus manual complete importer/dependency initializer review shows no grpc Server construction, generated-server-helper caller, registration or serving path. This authorization-only advisory requires a grpc server with path-based deny/fallback-allow authorization. Only these exact executable paths are covered; podman-tui and bundled transport risks stay unproven.",
+      "officialSources": [
+        "https://github.com/grpc/grpc-go/security/advisories/GHSA-p77j-4mvh-x3m3",
+        "https://raw.githubusercontent.com/containers/podman/c593b672bf3db1173aebea565ebf1a724ea196dc/vendor/github.com/containers/ocicrypt/keywrap/keyprovider/keyprovider.go",
+        "https://raw.githubusercontent.com/containers/buildah/c7061d00bae87f95000d550c015bc4d9be0b53af/vendor/github.com/containers/ocicrypt/utils/keyprovider/keyprovider.pb.go"
+      ],
+      "evidence": [
+        "https://github.com/closure-labs/finite/actions/runs/38362940891#grpc-source-census.json:sha256:a1000693e4e93e7c7b286b36c357ca05d7dcc188dcedae0ff24cb684d4a86b85",
+        "https://github.com/closure-labs/finite/actions/runs/38354387254#consumer-source-evidence/source-evidence.json:sha256:578c068c9b1d80be2c80710b96da9657aef08b561f87693054a007f96dd2a5c4",
+        "https://github.com/closure-labs/finite/actions/runs/38354387254#consumer-reference-evidence/reference-evidence.json:sha256:c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-dx-next-native.json:sha256:fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / desktop_risk_review",
+      "reviewedAt": "2026-10-13T07:39:06.489964+00:00",
+      "expiresAt": "2026-10-27T07:39:06.489964+00:00"
+    },
+    {
+      "id": "grpc-auth-client-main-bluefin-generic-3d4693f25f",
+      "digest": "sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/google.golang.org/grpc@v1.72.2",
+      "platform": "linux/amd64",
+      "advisories": [
+        "CVE-2026-33186",
+        "GHSA-p77j-4mvh-x3m3"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "Exact signed Podman/Buildah executables and authenticated owning source use gRPC through ocicrypt keyprovider Dial/client Invoke. Exhaustive whole-source import/linkname/constructor census plus manual complete importer/dependency initializer review shows no grpc Server construction, generated-server-helper caller, registration or serving path. This authorization-only advisory requires a grpc server with path-based deny/fallback-allow authorization. Only these exact executable paths are covered; podman-tui and bundled transport risks stay unproven.",
+      "officialSources": [
+        "https://github.com/grpc/grpc-go/security/advisories/GHSA-p77j-4mvh-x3m3",
+        "https://raw.githubusercontent.com/containers/podman/c593b672bf3db1173aebea565ebf1a724ea196dc/vendor/github.com/containers/ocicrypt/keywrap/keyprovider/keyprovider.go",
+        "https://raw.githubusercontent.com/containers/buildah/c7061d00bae87f95000d550c015bc4d9be0b53af/vendor/github.com/containers/ocicrypt/utils/keyprovider/keyprovider.pb.go"
+      ],
+      "evidence": [
+        "https://github.com/closure-labs/finite/actions/runs/38362940891#grpc-source-census.json:sha256:a1000693e4e93e7c7b286b36c357ca05d7dcc188dcedae0ff24cb684d4a86b85",
+        "https://github.com/closure-labs/finite/actions/runs/38354387254#consumer-source-evidence/source-evidence.json:sha256:578c068c9b1d80be2c80710b96da9657aef08b561f87693054a007f96dd2a5c4",
+        "https://github.com/closure-labs/finite/actions/runs/38354387254#consumer-reference-evidence/reference-evidence.json:sha256:c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-generic-native.json:sha256:5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9",
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / desktop_risk_review",
+      "reviewedAt": "2026-10-13T07:39:06.489964+00:00",
+      "expiresAt": "2026-10-27T07:39:06.489964+00:00"
+    },
+    {
+      "id": "grpc-auth-client-main-bluefin-next-a36f46afcc",
+      "digest": "sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+      "component": "pkg:golang/google.golang.org/grpc@v1.72.2",
+      "platform": "linux/amd64",
+      "advisories": [
+        "CVE-2026-33186",
+        "GHSA-p77j-4mvh-x3m3"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "Exact signed Podman/Buildah executables and authenticated owning source use gRPC through ocicrypt keyprovider Dial/client Invoke. Exhaustive whole-source import/linkname/constructor census plus manual complete importer/dependency initializer review shows no grpc Server construction, generated-server-helper caller, registration or serving path. This authorization-only advisory requires a grpc server with path-based deny/fallback-allow authorization. Only these exact executable paths are covered; podman-tui and bundled transport risks stay unproven.",
+      "officialSources": [
+        "https://github.com/grpc/grpc-go/security/advisories/GHSA-p77j-4mvh-x3m3",
+        "https://raw.githubusercontent.com/containers/podman/c593b672bf3db1173aebea565ebf1a724ea196dc/vendor/github.com/containers/ocicrypt/keywrap/keyprovider/keyprovider.go",
+        "https://raw.githubusercontent.com/containers/buildah/c7061d00bae87f95000d550c015bc4d9be0b53af/vendor/github.com/containers/ocicrypt/utils/keyprovider/keyprovider.pb.go"
+      ],
+      "evidence": [
+        "https://github.com/closure-labs/finite/actions/runs/38362940891#grpc-source-census.json:sha256:a1000693e4e93e7c7b286b36c357ca05d7dcc188dcedae0ff24cb684d4a86b85",
+        "https://github.com/closure-labs/finite/actions/runs/38354387254#consumer-source-evidence/source-evidence.json:sha256:578c068c9b1d80be2c80710b96da9657aef08b561f87693054a007f96dd2a5c4",
+        "https://github.com/closure-labs/finite/actions/runs/38354387254#consumer-reference-evidence/reference-evidence.json:sha256:c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-next-native.json:sha256:81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f",
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / desktop_risk_review",
+      "reviewedAt": "2026-10-13T07:39:06.489964+00:00",
+      "expiresAt": "2026-10-27T07:39:06.489964+00:00"
     }
   ],
   "releaseBlockers": [

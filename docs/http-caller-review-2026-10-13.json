@@ -1,0 +1,1085 @@
+{
+  "schema": 1,
+  "status": "source-caller-triage-no-dispositions",
+  "reviewedAt": "2026-10-13T07:19:04.652406+00:00",
+  "sourceProofRun": 38354387254,
+  "sourceProofRevision": "a4012ae37d374ec09a23a988d228907bd0f5d5bf",
+  "sourceEvidenceSha256": "578c068c9b1d80be2c80710b96da9657aef08b561f87693054a007f96dd2a5c4",
+  "signedConsumerReferenceSha256": "c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+  "sourceFiles": [
+    {
+      "consumer": "podman",
+      "path": "cmd/podman/system/service.go",
+      "sourceRevision": "c593b672bf3db1173aebea565ebf1a724ea196dc",
+      "gitBlob": "09105940e0b954d3bc38e51cd09da0afa40fda39",
+      "sha256": "369cd4b970e42871f5668acb4957d212909f8bbd90de542c616dd3c3a5c4a44f",
+      "size": 5576,
+      "url": "https://raw.githubusercontent.com/containers/podman/c593b672bf3db1173aebea565ebf1a724ea196dc/cmd/podman/system/service.go",
+      "localProof": "/tmp/finite-http-source-proofs/podman-cmd__podman__system__service.go"
+    },
+    {
+      "consumer": "podman",
+      "path": "cmd/podman/system/service_abi.go",
+      "sourceRevision": "c593b672bf3db1173aebea565ebf1a724ea196dc",
+      "gitBlob": "c8b1cd5531ae6c073251c09b3e74a2f5b74be977",
+      "sha256": "f6532356f7605f5922529929654199a31279a271b8d4f006557e5d063e5d848f",
+      "size": 4351,
+      "url": "https://raw.githubusercontent.com/containers/podman/c593b672bf3db1173aebea565ebf1a724ea196dc/cmd/podman/system/service_abi.go",
+      "localProof": "/tmp/finite-http-source-proofs/podman-cmd__podman__system__service_abi.go"
+    },
+    {
+      "consumer": "podman",
+      "path": "cmd/podman/system/service_abi_common.go",
+      "sourceRevision": "c593b672bf3db1173aebea565ebf1a724ea196dc",
+      "gitBlob": "697e8b66e84850e02d9c96e09c80a57023dd29d0",
+      "sha256": "e2d6da02aa154d456c733acb788dcb63d5429e0c49f83cf41efb12fce48a674e",
+      "size": 223,
+      "url": "https://raw.githubusercontent.com/containers/podman/c593b672bf3db1173aebea565ebf1a724ea196dc/cmd/podman/system/service_abi_common.go",
+      "localProof": "/tmp/finite-http-source-proofs/podman-cmd__podman__system__service_abi_common.go"
+    },
+    {
+      "consumer": "podman",
+      "path": "cmd/podman/system/service_abi_linux.go",
+      "sourceRevision": "c593b672bf3db1173aebea565ebf1a724ea196dc",
+      "gitBlob": "326f57de732772be31ecdbfc746398a198427e7d",
+      "sha256": "df2253019412700777c418dfe88fd21a8171993baa55d57d05fe8cd056a81871",
+      "size": 803,
+      "url": "https://raw.githubusercontent.com/containers/podman/c593b672bf3db1173aebea565ebf1a724ea196dc/cmd/podman/system/service_abi_linux.go",
+      "localProof": "/tmp/finite-http-source-proofs/podman-cmd__podman__system__service_abi_linux.go"
+    },
+    {
+      "consumer": "podman",
+      "path": "pkg/api/server/server.go",
+      "sourceRevision": "c593b672bf3db1173aebea565ebf1a724ea196dc",
+      "gitBlob": "b23fb46ad1fab3ce46e378f2a4d663a39ac2e088",
+      "sha256": "8af440ff30170ad8067ae9c8d3911158713b9b80f46adeed328f3b39b4682acf",
+      "size": 10616,
+      "url": "https://raw.githubusercontent.com/containers/podman/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/api/server/server.go",
+      "localProof": "/tmp/finite-http-source-proofs/podman-pkg__api__server__server.go"
+    },
+    {
+      "consumer": "podman",
+      "path": "pkg/api/server/handler_api.go",
+      "sourceRevision": "c593b672bf3db1173aebea565ebf1a724ea196dc",
+      "gitBlob": "9a895f0814bffe1d62a4f9dd03760b0aaeb0bfd5",
+      "sha256": "0776a493974c4e08ed8a9ff5f66528dc3d23cfd4fa9cf1f3c1943e3d7bd23262",
+      "size": 2984,
+      "url": "https://raw.githubusercontent.com/containers/podman/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/api/server/handler_api.go",
+      "localProof": "/tmp/finite-http-source-proofs/podman-pkg__api__server__handler_api.go"
+    },
+    {
+      "consumer": "podman",
+      "path": "pkg/api/server/register_containers.go",
+      "sourceRevision": "c593b672bf3db1173aebea565ebf1a724ea196dc",
+      "gitBlob": "fee3a8aca316352d3a0c9e569fb9e217c274ede8",
+      "sha256": "a935faddde0d56aae5a211b81b8bcca8c580fa5adb436aef2edbe095f7781b80",
+      "size": 62215,
+      "url": "https://raw.githubusercontent.com/containers/podman/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/api/server/register_containers.go",
+      "localProof": "/tmp/finite-http-source-proofs/podman-pkg__api__server__register_containers.go"
+    },
+    {
+      "consumer": "podman",
+      "path": "pkg/api/handlers/libpod/containers_create.go",
+      "sourceRevision": "c593b672bf3db1173aebea565ebf1a724ea196dc",
+      "gitBlob": "1c9dd63dc504095bd822b2c597141633928c7af0",
+      "sha256": "04f651c730f9d467b26894bd93482f8ba95d99e1b663cdea8e1278026f60d794",
+      "size": 4087,
+      "url": "https://raw.githubusercontent.com/containers/podman/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/api/handlers/libpod/containers_create.go",
+      "localProof": "/tmp/finite-http-source-proofs/podman-pkg__api__handlers__libpod__containers_create.go"
+    },
+    {
+      "consumer": "podman",
+      "path": "pkg/api/server/register_ping.go",
+      "sourceRevision": "c593b672bf3db1173aebea565ebf1a724ea196dc",
+      "gitBlob": "ee0098e9afe92074a96eb6852da019f32b2585bf",
+      "sha256": "d54c5e586e503122bb6469c658c49f59a081b17f92103a5bf8d9eb2b97bb9813",
+      "size": 2485,
+      "url": "https://raw.githubusercontent.com/containers/podman/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/api/server/register_ping.go",
+      "localProof": "/tmp/finite-http-source-proofs/podman-pkg__api__server__register_ping.go"
+    },
+    {
+      "consumer": "podman",
+      "path": "cmd/podman/main.go",
+      "sourceRevision": "c593b672bf3db1173aebea565ebf1a724ea196dc",
+      "gitBlob": "21585116d424fa7629fafd4904f6890fc582f8eb",
+      "sha256": "8bfaed8c9ac5e0b2b738ced8de04259e29546530bf18e705ea73896502cb6f15",
+      "size": 4783,
+      "url": "https://raw.githubusercontent.com/containers/podman/c593b672bf3db1173aebea565ebf1a724ea196dc/cmd/podman/main.go",
+      "localProof": "/tmp/finite-http-source-proofs/podman-cmd__podman__main.go"
+    },
+    {
+      "consumer": "podman",
+      "path": "cmd/podman/root.go",
+      "sourceRevision": "c593b672bf3db1173aebea565ebf1a724ea196dc",
+      "gitBlob": "13a4aa210ddd1d12e27e1da3498533fc17ee940b",
+      "sha256": "00335ae1cb0d1c231dcd36d336a931fcbb1b29a9025144e325bf562e2b7fb222",
+      "size": 29631,
+      "url": "https://raw.githubusercontent.com/containers/podman/c593b672bf3db1173aebea565ebf1a724ea196dc/cmd/podman/root.go",
+      "localProof": "/tmp/finite-http-source-proofs/podman-cmd__podman__root.go"
+    },
+    {
+      "consumer": "podman",
+      "path": "vendor/go.podman.io/image/v5/signature/sigstore/fulcio/fulcio.go",
+      "sourceRevision": "c593b672bf3db1173aebea565ebf1a724ea196dc",
+      "gitBlob": "ad82bd0d6b540c504dfde22e1c14f51e82dc62ad",
+      "sha256": "8f4aadb6e14d5c840e2bd28d21a8c5783f220e45afc70d1d734b05ba647742f9",
+      "size": 7310,
+      "url": "https://raw.githubusercontent.com/containers/podman/c593b672bf3db1173aebea565ebf1a724ea196dc/vendor/go.podman.io/image/v5/signature/sigstore/fulcio/fulcio.go",
+      "localProof": "/tmp/finite-http-source-proofs/podman-vendor__go.podman.io__image__v5__signature__sigstore__fulcio__fulcio.go"
+    },
+    {
+      "consumer": "podman",
+      "path": "vendor/github.com/sigstore/sigstore/pkg/oauthflow/interactive.go",
+      "sourceRevision": "c593b672bf3db1173aebea565ebf1a724ea196dc",
+      "gitBlob": "6714b3488eebdaaa7047fa29896214f77624f208",
+      "sha256": "7b6000d7fa7f44b534922c2e033ff6fc4887b8b620a616f85f4c7baaf3fdc4cc",
+      "size": 6840,
+      "url": "https://raw.githubusercontent.com/containers/podman/c593b672bf3db1173aebea565ebf1a724ea196dc/vendor/github.com/sigstore/sigstore/pkg/oauthflow/interactive.go",
+      "localProof": "/tmp/finite-http-source-proofs/podman-vendor__github.com__sigstore__sigstore__pkg__oauthflow__interactive.go"
+    },
+    {
+      "consumer": "podman",
+      "path": "vendor/github.com/sigstore/sigstore/pkg/oauthflow/interactive.go",
+      "sourceRevision": "c593b672bf3db1173aebea565ebf1a724ea196dc",
+      "gitBlob": "6714b3488eebdaaa7047fa29896214f77624f208",
+      "sha256": "7b6000d7fa7f44b534922c2e033ff6fc4887b8b620a616f85f4c7baaf3fdc4cc",
+      "size": 6840,
+      "url": "https://raw.githubusercontent.com/containers/podman/c593b672bf3db1173aebea565ebf1a724ea196dc/vendor/github.com/sigstore/sigstore/pkg/oauthflow/interactive.go",
+      "localProof": "/tmp/finite-http-source-proofs/podman-vendor__github.com__sigstore__sigstore__pkg__oauthflow__interactive.go"
+    },
+    {
+      "consumer": "podman",
+      "path": "vendor/github.com/sigstore/sigstore/pkg/oauthflow/flow.go",
+      "sourceRevision": "c593b672bf3db1173aebea565ebf1a724ea196dc",
+      "gitBlob": "fb5e1ae9014d7ade58b75914dc13fcb5d5d5e7c1",
+      "sha256": "ba713d5f84fdb1628aac54ceb3f84bc9198856d978ceb82bd4e48ed5ea85fbda",
+      "size": 7168,
+      "url": "https://raw.githubusercontent.com/containers/podman/c593b672bf3db1173aebea565ebf1a724ea196dc/vendor/github.com/sigstore/sigstore/pkg/oauthflow/flow.go",
+      "localProof": "/tmp/finite-http-source-proofs/podman-vendor__github.com__sigstore__sigstore__pkg__oauthflow__flow.go"
+    },
+    {
+      "consumer": "skopeo",
+      "path": "vendor/go.podman.io/image/v5/pkg/cli/sigstore/sigstore.go",
+      "sourceRevision": "725f4f628374165f5ac7c4a8c479a977d216812a",
+      "gitBlob": "638f6c02965f4f5102d305c346a218bfc1cb2a2b",
+      "sha256": "3a115e4e3d31594337fcc389085b31505a8dd0c9b11f5775a1d6f28d9a1644b4",
+      "size": 4236,
+      "url": "https://raw.githubusercontent.com/containers/skopeo/725f4f628374165f5ac7c4a8c479a977d216812a/vendor/go.podman.io/image/v5/pkg/cli/sigstore/sigstore.go",
+      "localProof": "/tmp/finite-http-source-proofs/skopeo-vendor__go.podman.io__image__v5__pkg__cli__sigstore__sigstore.go"
+    },
+    {
+      "consumer": "skopeo",
+      "path": "cmd/skopeo/utils.go",
+      "sourceRevision": "725f4f628374165f5ac7c4a8c479a977d216812a",
+      "gitBlob": "1e4395a4299b7f306f387448f5cda976109f8ede",
+      "sha256": "c68be206b5d3c9ad7ec232ab21989e9a437803c5162b1ce7520443cc3af9759c",
+      "size": 27500,
+      "url": "https://raw.githubusercontent.com/containers/skopeo/725f4f628374165f5ac7c4a8c479a977d216812a/cmd/skopeo/utils.go",
+      "localProof": "/tmp/finite-http-source-proofs/skopeo-cmd__skopeo__utils.go"
+    },
+    {
+      "consumer": "skopeo",
+      "path": "vendor/go.podman.io/image/v5/pkg/cli/sigstore/params/sigstore.go",
+      "sourceRevision": "725f4f628374165f5ac7c4a8c479a977d216812a",
+      "gitBlob": "0151b9acb026d4a7432d8dc2474d327a4b96e5f3",
+      "sha256": "81d11c9519798131aa4bf2d9f64888a8b9baf012594b501fe7f2fd2697ec1af8",
+      "size": 3087,
+      "url": "https://raw.githubusercontent.com/containers/skopeo/725f4f628374165f5ac7c4a8c479a977d216812a/vendor/go.podman.io/image/v5/pkg/cli/sigstore/params/sigstore.go",
+      "localProof": "/tmp/finite-http-source-proofs/skopeo-vendor__go.podman.io__image__v5__pkg__cli__sigstore__params__sigstore.go"
+    },
+    {
+      "consumer": "skopeo",
+      "path": "cmd/skopeo/copy.go",
+      "sourceRevision": "725f4f628374165f5ac7c4a8c479a977d216812a",
+      "gitBlob": "57ee7a1905eab5697dede35cc10a6ab1a32a5dc6",
+      "sha256": "046cfe464cbe9e1a060a45357ae72d3a7de9eec93b6e8064514de16a62cc56f1",
+      "size": 10166,
+      "url": "https://raw.githubusercontent.com/containers/skopeo/725f4f628374165f5ac7c4a8c479a977d216812a/cmd/skopeo/copy.go",
+      "localProof": "/tmp/finite-http-source-proofs/skopeo-cmd__skopeo__copy.go"
+    },
+    {
+      "consumer": "skopeo",
+      "path": "vendor/go.podman.io/image/v5/signature/sigstore/fulcio/fulcio.go",
+      "sourceRevision": "725f4f628374165f5ac7c4a8c479a977d216812a",
+      "gitBlob": "ad82bd0d6b540c504dfde22e1c14f51e82dc62ad",
+      "sha256": "8f4aadb6e14d5c840e2bd28d21a8c5783f220e45afc70d1d734b05ba647742f9",
+      "size": 7310,
+      "url": "https://raw.githubusercontent.com/containers/skopeo/725f4f628374165f5ac7c4a8c479a977d216812a/vendor/go.podman.io/image/v5/signature/sigstore/fulcio/fulcio.go",
+      "localProof": "/tmp/finite-http-source-proofs/skopeo-vendor__go.podman.io__image__v5__signature__sigstore__fulcio__fulcio.go"
+    },
+    {
+      "consumer": "skopeo",
+      "path": "vendor/github.com/sigstore/sigstore/pkg/oauthflow/interactive.go",
+      "sourceRevision": "725f4f628374165f5ac7c4a8c479a977d216812a",
+      "gitBlob": "6714b3488eebdaaa7047fa29896214f77624f208",
+      "sha256": "7b6000d7fa7f44b534922c2e033ff6fc4887b8b620a616f85f4c7baaf3fdc4cc",
+      "size": 6840,
+      "url": "https://raw.githubusercontent.com/containers/skopeo/725f4f628374165f5ac7c4a8c479a977d216812a/vendor/github.com/sigstore/sigstore/pkg/oauthflow/interactive.go",
+      "localProof": "/tmp/finite-http-source-proofs/skopeo-vendor__github.com__sigstore__sigstore__pkg__oauthflow__interactive.go"
+    },
+    {
+      "consumer": "skopeo",
+      "path": "vendor/github.com/sigstore/sigstore/pkg/oauthflow/interactive.go",
+      "sourceRevision": "725f4f628374165f5ac7c4a8c479a977d216812a",
+      "gitBlob": "6714b3488eebdaaa7047fa29896214f77624f208",
+      "sha256": "7b6000d7fa7f44b534922c2e033ff6fc4887b8b620a616f85f4c7baaf3fdc4cc",
+      "size": 6840,
+      "url": "https://raw.githubusercontent.com/containers/skopeo/725f4f628374165f5ac7c4a8c479a977d216812a/vendor/github.com/sigstore/sigstore/pkg/oauthflow/interactive.go",
+      "localProof": "/tmp/finite-http-source-proofs/skopeo-vendor__github.com__sigstore__sigstore__pkg__oauthflow__interactive.go"
+    },
+    {
+      "consumer": "skopeo",
+      "path": "vendor/github.com/sigstore/sigstore/pkg/oauthflow/flow.go",
+      "sourceRevision": "725f4f628374165f5ac7c4a8c479a977d216812a",
+      "gitBlob": "fb5e1ae9014d7ade58b75914dc13fcb5d5d5e7c1",
+      "sha256": "ba713d5f84fdb1628aac54ceb3f84bc9198856d978ceb82bd4e48ed5ea85fbda",
+      "size": 7168,
+      "url": "https://raw.githubusercontent.com/containers/skopeo/725f4f628374165f5ac7c4a8c479a977d216812a/vendor/github.com/sigstore/sigstore/pkg/oauthflow/flow.go",
+      "localProof": "/tmp/finite-http-source-proofs/skopeo-vendor__github.com__sigstore__sigstore__pkg__oauthflow__flow.go"
+    }
+  ],
+  "officialAdvisories": {
+    "GO-2026-6612": {
+      "aliases": [
+        "CVE-2026-78663"
+      ],
+      "source": "https://vuln.go.dev/ID/GO-2026-6612.json",
+      "sourceSha256": "76c44a4cbdbc463286fb968abd288a26025b8576fe2aed3dcda542fde9518452",
+      "publisherPrerequisites": "The HTTP/2 server can refund connection-level flow control twice for the same data: Once when a client resets a stream (refunding data for any sent-but-unread portion of the stream), and again when a request handler reads the buffered data. A malicious client can exploit this to bypass the configured connection-level flow control limit (MaxReceiveBufferPerConnection). Total buffered data is still limited by the concurrent stream limit and stream-level flow control.",
+      "affectedPackages": [
+        "stdlib",
+        "stdlib",
+        "golang.org/x/net"
+      ],
+      "fixReferences": [
+        "https://go.dev/cl/847187",
+        "https://go.dev/cl/847310"
+      ]
+    },
+    "GO-2026-6613": {
+      "aliases": [
+        "CVE-2026-94439"
+      ],
+      "source": "https://vuln.go.dev/ID/GO-2026-6613.json",
+      "sourceSha256": "6c2bd0f788183c22cae14deb2b3c80fdf1552bd12f5f09614b084ed3233967d0",
+      "publisherPrerequisites": "When an HTTP server handler sends a 2xx response to an HTTP/1 CONNECT request and returns without hijacking the connection, the server improperly continues to read and serve requests from the connection. Since a 2xx response to an HTTP/1 CONNECT converts the connection into a tunnel, the server should not treat the connection as continuing to contain HTTP.\n\nThe impact of this misbehavior is mostly limited to potential request smuggling, where an intermediate proxy considers the data on the connection to be tunneled and the server considers it to be HTTP.",
+      "affectedPackages": [
+        "stdlib"
+      ],
+      "fixReferences": [
+        "https://go.dev/cl/847311"
+      ]
+    }
+  },
+  "consumerVerdicts": [
+    {
+      "consumer": "podman",
+      "sourceRevision": "c593b672bf3db1173aebea565ebf1a724ea196dc",
+      "binarySha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+      "goVersion": "go1.26.8-X:nodwarf5",
+      "buildSelection": "Main build ./cmd/podman; GOOSlinux amd64 current byte proof; owning -a -v compile block includes cmd/podman/system and pkg/api/server. Source service files require (linux||freebsd)&&!remote, API server requires !remote; supported native binary is not podman-remote.",
+      "GO-2026-6612": {
+        "verdict": "conditional-source-prerequisite-present; keep unknown/blocking",
+        "positiveCallerChain": [
+          "cmd/podman/main.go:25 blank-imports system, :74 Execute",
+          "cmd/podman/system/service.go:38 RunE service; :79 tls-cert and :82 tls-key supported CLI flags",
+          "cmd/podman/system/service.go:126 restService passes TLS options",
+          "cmd/podman/system/service_abi.go:130 api.NewServerWithSettings; :140 server.Serve",
+          "pkg/api/server/server.go:74 http.Server literal with router Handler, no HTTP2/Protocols/TLSNextProto override; :244 Server.ServeTLS for configured TLS key/certificate",
+          "pkg/api/server/server.go:140 registers container handlers; register_containers.go:739 POST libpod/containers/create routes to CreateContainer",
+          "pkg/api/handlers/libpod/containers_create.go:65 json.NewDecoder(r.Body).Decode reads received request body"
+        ],
+        "protocolEvidence": "https://pkg.go.dev/net/http#Server.ServeTLS; default nil server Protocols and TLSNextProto permit HTTP2 under TLS. This is stdlib server path, not proof of x/net.ConfigureServer call.",
+        "unknowns": [
+          "No complete aggregate accepted-connection/server-memory ceiling or enforced process cgroup proof. Concurrent-stream/stream-flow limits alone do not establish host-safe aggregate memory.",
+          "Actual caller is affected standard-library server (<1.26.9); scanner component x/net may describe a different dependency. Do not clear overall threat based on client-only x/net use.",
+          "No exploit, host OOM, or confidentiality/integrity consequence demonstrated. Desktop TLS API use and remote/VPN access are supported conditional exposures."
+        ]
+      },
+      "GO-2026-6613": {
+        "verdict": "no nonapplicable scope: supported profiling handler has CONNECT success prerequisite; actual proxy impact conditional",
+        "positiveCallerChain": [
+          "cmd/podman/system/service.go:75 supports hidden --pprof-address; opts PProfAddr reaches APIServer",
+          "pkg/api/server/server.go:210 Serve calls setupPprof",
+          "pkg/api/server/server.go:273 setupPprof accepts configured address; :287 PathPrefix(/debug/pprof/).HandlerFunc(pprof.Index) has no Methods filter",
+          "pkg/api/server/server.go:289 http.ListenAndServe creates HTTP1 server for profiling",
+          "Official go1.26.8 net/http/pprof/pprof.go:394 Index writes profiling index HTML and returns without request-method guard or connection hijack"
+        ],
+        "scopeLimit": "Regular API routes examined use method-specific registrations and 404/405 fallback; complete registration proof not established here. Even complete API rejection would not exempt separate profiling/OAuth listeners from a binary-wide disposition. Hidden optional profiling is not excluded from supported-use scope automatically.",
+        "unknowns": [
+          "Actual reverse proxy/tunnel topology and security boundary impact are not established. CONNECT+2xx handler source is a vulnerability prerequisite, not a proven desktop takeover.",
+          "No independent Fedora backport proof or actual binary CONNECT response probe."
+        ]
+      }
+    },
+    {
+      "consumer": "skopeo",
+      "sourceRevision": "725f4f628374165f5ac7c4a8c479a977d216812a",
+      "binarySha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+      "goVersion": "go1.26.8-X:nodwarf5",
+      "buildSelection": [
+        "build\t-buildmode=pie",
+        "build\t-compiler=gc",
+        "build\t-ldflags=\"  -B 0x7f9a74c6f90339d7e68aa726de4b44c15e40b99b -compressdwarf=false -linkmode=external -extldflags '-Wl,-z,relro -Wl,--as-needed  -Wl,-z,pack-relative-relocs -Wl,-z,now -specs=/usr/lib/rpm/redhat/redhat-hardened-ld -specs=/usr/lib/rpm/redhat/redhat-hardened-ld-errors -specs=/usr/lib/rpm/redhat/redhat-annobin-cc1  -Wl,--build-id=sha1 -specs=/usr/lib/rpm/redhat/redhat-package-notes   '\"",
+        "build\t-tags=rpm_crashtraceback,libsubid,libsqlite3,containers_image_sequoia",
+        "build\tDefaultGODEBUG=cryptocustomrand=1,tlssecpmlkem=0,urlstrictcolons=0",
+        "build\tCGO_ENABLED=1",
+        "build\tCGO_CFLAGS=\"-O2 -ffat-lto-objects -fexceptions -g -grecord-gcc-switches -pipe -Wall -Werror=format-security -Wp,-U_FORTIFY_SOURCE,-D_FORTIFY_SOURCE=3 -Wp,-D_GLIBCXX_ASSERTIONS -specs=/usr/lib/rpm/redhat/redhat-hardened-cc1 -fstack-protector-strong  -m64 -march=x86-64 -mtune=generic -fasynchronous-unwind-tables -fstack-clash-protection -fcf-protection -mtls-dialect=gnu2 -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -m64 -mtune=generic -fcf-protection=full\"",
+        "build\tCGO_CPPFLAGS=",
+        "build\tCGO_CXXFLAGS=",
+        "build\tCGO_LDFLAGS=",
+        "build\tGOARCH=amd64",
+        "build\tGOEXPERIMENT=nodwarf5",
+        "build\tGOOS=linux",
+        "build\tGOAMD64=v1",
+        "build\tvcs=git",
+        "build\tvcs.revision=92397d5ba399784c6e2f9f229a4244b724743dba",
+        "build\tvcs.time=2026-09-16T00:00:00Z",
+        "build\tvcs.modified=true"
+      ],
+      "GO-2026-6613": {
+        "verdict": "no client-only waiver; supported keyless signing positively starts an HTTP server",
+        "positiveCallerChain": [
+          "cmd/skopeo/copy.go:229 opts.copy.copyOptions(stdout)",
+          "cmd/skopeo/utils.go:348 supported --sign-by-sigstore parameter file; :424 calls sigstore.NewSignerFromParameterFile",
+          "vendor/go.podman.io/image/v5/pkg/cli/sigstore/sigstore.go:107 oidcMode interactive calls WithFulcioAndInteractiveOIDC",
+          "vendor/go.podman.io/image/v5/signature/sigstore/fulcio/fulcio.go:147 creates InteractiveIDTokenGetter; :152 OIDConnect invokes getter",
+          "vendor/github.com/sigstore/sigstore/pkg/oauthflow/interactive.go:56 GetIDToken starts redirect listener; :161 startRedirectListener; :167 localhost:0 listener",
+          "interactive.go:194 ServeMux and :195 http.Server; :203 path-only HandleFunc has no method selector; invalid state sends error and returns without explicit error HTTP status; success writes HTML without hijack; :215 server.Serve(listener)"
+        ],
+        "limits": [
+          "Listener defaults to ephemeral localhost, interactive browser signing is opt-in, and OAuth nonce/state/token validation remains present. No credential/signature validation bypass claimed.",
+          "Callback accepts method-agnostic request path; however exact Go ServeMux CONNECT target matching, listener lifetime and intermediate proxy prerequisites are not dynamically demonstrated.",
+          "GO6613 is not observed for this compiler-suffixed binary in the six retained native blocking summaries; no fabricated disposition. Positive source server evidence prevents a global client-only assertion."
+        ]
+      },
+      "GO-2026-6612": {
+        "verdict": "this callback is plaintext HTTP1; binary-wide applicability still unknown",
+        "positiveEvidence": "Interactive callback uses Server.Serve without TLS or h2c/Protocols customization; no HTTP2 negotiation is demonstrated for that specific listener.",
+        "missingProof": "Complete application/dependency caller closure for every other server/gRPC entry point in the owning selected source is not established. Imported HTTP2/gRPC clients alone neither prove affected server usage nor prove no server usage. No nonapplicability entry."
+      }
+    },
+    {
+      "consumer": "buildah",
+      "sourceRevision": "c7061d00bae87f95000d550c015bc4d9be0b53af",
+      "binarySha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+      "goVersion": "go1.26.8-X:nodwarf5",
+      "buildSelection": [
+        "build\t-buildmode=pie",
+        "build\t-compiler=gc",
+        "build\t-ldflags=\"-X main.buildInfo=1789591169 -X main.cniVersion=  -B 0x613dfa5878c6f7983dec89f2f71ef02443df9f28 -compressdwarf=false -linkmode=external -extldflags '-Wl,-z,relro -Wl,--as-needed  -Wl,-z,pack-relative-relocs -Wl,-z,now -specs=/usr/lib/rpm/redhat/redhat-hardened-ld -specs=/usr/lib/rpm/redhat/redhat-hardened-ld-errors -specs=/usr/lib/rpm/redhat/redhat-annobin-cc1  -Wl,--build-id=sha1 -specs=/usr/lib/rpm/redhat/redhat-package-notes   '\"",
+        "build\t-tags=rpm_crashtraceback,seccomp,systemd,libsubid,libsqlite3,containers_image_sequoia",
+        "build\tCGO_ENABLED=1",
+        "build\tCGO_CFLAGS=\"-O2 -ffat-lto-objects -fexceptions -g -grecord-gcc-switches -pipe -Wall -Werror=format-security -Wp,-U_FORTIFY_SOURCE,-D_FORTIFY_SOURCE=3 -Wp,-D_GLIBCXX_ASSERTIONS -specs=/usr/lib/rpm/redhat/redhat-hardened-cc1 -fstack-protector-strong  -m64 -march=x86-64 -mtune=generic -fasynchronous-unwind-tables -fstack-clash-protection -fcf-protection -mtls-dialect=gnu2 -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -m64 -mtune=generic -fcf-protection=full\"",
+        "build\tCGO_CPPFLAGS=",
+        "build\tCGO_CXXFLAGS=",
+        "build\tCGO_LDFLAGS=",
+        "build\tGOARCH=amd64",
+        "build\tGOEXPERIMENT=nodwarf5",
+        "build\tGOOS=linux",
+        "build\tGOAMD64=v1",
+        "build\tvcs=git",
+        "build\tvcs.revision=87cbbc088390d67d1d991b9a8c4ea278a6770669",
+        "build\tvcs.time=2026-09-15T00:00:00Z",
+        "build\tvcs.modified=false"
+      ],
+      "GO-2026-6612": {
+        "verdict": "unknown; no source proof of whole-binary server absence",
+        "positiveEvidence": "Authenticated selected owning application source/compile block is available. Main is github.com/containers/buildah/cmd/buildah and source has no standalone API service entry reviewed here.",
+        "missingProof": "Complete selected application and dependency caller inventory is required for HTTP Server/HTTP2 ConfigureServer/ServeConn/grpc.Server use, including aliases, wrapper constructors and callbacks. Package-level role or absence-of-symbol argument cannot authorize an exception."
+      },
+      "GO-2026-6613": {
+        "verdict": "not observed in current blocking summaries; no fixed/nonapplicable assertion",
+        "missingProof": "No complete handler/caller closure reviewed. Do not transfer Skopeo/Podman listener semantics or sumdb semver-only source proof to net/http."
+      }
+    }
+  ],
+  "currentCandidateObservations": [
+    {
+      "candidate": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "configurationDigest": "sha256:f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357",
+      "sbomSha256": "afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+      "sourceResultSha256": "7cdbb3e6a941de295d48ef0f2a7cfc8c72b4ec383ca990e6a17de0cf114605bb",
+      "nativeSummarySha256": "90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+      "observations": [
+        {
+          "consumer": "skopeo",
+          "path": "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+          "component": "pkg:golang/golang.org/x/net@v0.48.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        },
+        {
+          "consumer": "skopeo",
+          "path": "/usr/bin/skopeo",
+          "component": "pkg:golang/golang.org/x/net@v0.48.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        },
+        {
+          "consumer": "podman",
+          "path": "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+          "component": "pkg:golang/golang.org/x/net@v0.57.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        },
+        {
+          "consumer": "buildah",
+          "path": "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+          "component": "pkg:golang/golang.org/x/net@v0.57.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        },
+        {
+          "consumer": "buildah",
+          "path": "/usr/bin/buildah",
+          "component": "pkg:golang/golang.org/x/net@v0.57.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        },
+        {
+          "consumer": "podman",
+          "path": "/usr/bin/podman",
+          "component": "pkg:golang/golang.org/x/net@v0.57.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        }
+      ],
+      "releaseEligible": false
+    },
+    {
+      "candidate": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+      "configurationDigest": "sha256:97b4843f19705f7d6d29988bfbe591594388af5a9b7785e4edb08a7b6fb6abef",
+      "sbomSha256": "8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199",
+      "sourceResultSha256": "814aab9be9c5872dd844ffcbe4d8205a092c6ca43dec11167c4a49aeaa891805",
+      "nativeSummarySha256": "868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f",
+      "observations": [
+        {
+          "consumer": "skopeo",
+          "path": "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+          "component": "pkg:golang/golang.org/x/net@v0.48.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        },
+        {
+          "consumer": "skopeo",
+          "path": "/usr/bin/skopeo",
+          "component": "pkg:golang/golang.org/x/net@v0.48.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        },
+        {
+          "consumer": "podman",
+          "path": "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+          "component": "pkg:golang/golang.org/x/net@v0.57.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        },
+        {
+          "consumer": "buildah",
+          "path": "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+          "component": "pkg:golang/golang.org/x/net@v0.57.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        },
+        {
+          "consumer": "buildah",
+          "path": "/usr/bin/buildah",
+          "component": "pkg:golang/golang.org/x/net@v0.57.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        },
+        {
+          "consumer": "podman",
+          "path": "/usr/bin/podman",
+          "component": "pkg:golang/golang.org/x/net@v0.57.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        }
+      ],
+      "releaseEligible": false
+    },
+    {
+      "candidate": "main-bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "configurationDigest": "sha256:5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78",
+      "sbomSha256": "d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64",
+      "sourceResultSha256": "b6439aee802b91d107231e19cdd6ddc405d5546204db05d46f14b99ba3086f56",
+      "nativeSummarySha256": "21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+      "observations": [
+        {
+          "consumer": "skopeo",
+          "path": "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+          "component": "pkg:golang/golang.org/x/net@v0.48.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        },
+        {
+          "consumer": "skopeo",
+          "path": "/usr/bin/skopeo",
+          "component": "pkg:golang/golang.org/x/net@v0.48.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        },
+        {
+          "consumer": "podman",
+          "path": "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+          "component": "pkg:golang/golang.org/x/net@v0.57.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        },
+        {
+          "consumer": "buildah",
+          "path": "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+          "component": "pkg:golang/golang.org/x/net@v0.57.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        },
+        {
+          "consumer": "buildah",
+          "path": "/usr/bin/buildah",
+          "component": "pkg:golang/golang.org/x/net@v0.57.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        },
+        {
+          "consumer": "podman",
+          "path": "/usr/bin/podman",
+          "component": "pkg:golang/golang.org/x/net@v0.57.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        }
+      ],
+      "releaseEligible": false
+    },
+    {
+      "candidate": "main-bluefin-dx-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "configurationDigest": "sha256:3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44",
+      "sbomSha256": "46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5",
+      "sourceResultSha256": "5724e3de7bbfd54999a962439452e4d9713f6ce1226c3fdbe126454868ba734b",
+      "nativeSummarySha256": "fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+      "observations": [
+        {
+          "consumer": "skopeo",
+          "path": "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+          "component": "pkg:golang/golang.org/x/net@v0.48.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        },
+        {
+          "consumer": "skopeo",
+          "path": "/usr/bin/skopeo",
+          "component": "pkg:golang/golang.org/x/net@v0.48.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        },
+        {
+          "consumer": "podman",
+          "path": "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+          "component": "pkg:golang/golang.org/x/net@v0.57.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        },
+        {
+          "consumer": "buildah",
+          "path": "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+          "component": "pkg:golang/golang.org/x/net@v0.57.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        },
+        {
+          "consumer": "buildah",
+          "path": "/usr/bin/buildah",
+          "component": "pkg:golang/golang.org/x/net@v0.57.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        },
+        {
+          "consumer": "podman",
+          "path": "/usr/bin/podman",
+          "component": "pkg:golang/golang.org/x/net@v0.57.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        }
+      ],
+      "releaseEligible": false
+    },
+    {
+      "candidate": "main-bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "configurationDigest": "sha256:eb2542e972cdd6c71f3448674c57b0c41252fdc4c986252bc8ff3621e2119cf4",
+      "sbomSha256": "4902fdd4b2afca8374a3197770f25daa11c7626cb5c83c46fb614ad1f5441201",
+      "sourceResultSha256": "92127eae6a60001c57937bb329061da88bdc6a933a993a6a047c6be7466518ca",
+      "nativeSummarySha256": "5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9",
+      "observations": [
+        {
+          "consumer": "skopeo",
+          "path": "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+          "component": "pkg:golang/golang.org/x/net@v0.48.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        },
+        {
+          "consumer": "skopeo",
+          "path": "/usr/bin/skopeo",
+          "component": "pkg:golang/golang.org/x/net@v0.48.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        },
+        {
+          "consumer": "podman",
+          "path": "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+          "component": "pkg:golang/golang.org/x/net@v0.57.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        },
+        {
+          "consumer": "buildah",
+          "path": "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+          "component": "pkg:golang/golang.org/x/net@v0.57.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        },
+        {
+          "consumer": "buildah",
+          "path": "/usr/bin/buildah",
+          "component": "pkg:golang/golang.org/x/net@v0.57.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        },
+        {
+          "consumer": "podman",
+          "path": "/usr/bin/podman",
+          "component": "pkg:golang/golang.org/x/net@v0.57.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        }
+      ],
+      "releaseEligible": false
+    },
+    {
+      "candidate": "main-bluefin-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+      "configurationDigest": "sha256:fce1315ea7763cf210b19f4e7c83334ab5e36be9a490d97e0ccc2b2c69491497",
+      "sbomSha256": "bcf12455b002324b0c5923110de414cde3528d164bbb6b230dc2e8efb69f56b4",
+      "sourceResultSha256": "64182a6c9df652cdfdf3c07d19b7983a7ac297d43bff97f18cac74cd12d8f95c",
+      "nativeSummarySha256": "81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f",
+      "observations": [
+        {
+          "consumer": "skopeo",
+          "path": "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+          "component": "pkg:golang/golang.org/x/net@v0.48.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        },
+        {
+          "consumer": "skopeo",
+          "path": "/usr/bin/skopeo",
+          "component": "pkg:golang/golang.org/x/net@v0.48.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+          "size": 26175536,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        },
+        {
+          "consumer": "podman",
+          "path": "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+          "component": "pkg:golang/golang.org/x/net@v0.57.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        },
+        {
+          "consumer": "buildah",
+          "path": "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+          "component": "pkg:golang/golang.org/x/net@v0.57.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        },
+        {
+          "consumer": "buildah",
+          "path": "/usr/bin/buildah",
+          "component": "pkg:golang/golang.org/x/net@v0.57.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "8c384fce61ee08b5bcf24eb27922351c1717f139c5d41fe81005ce23f48cb6c2",
+          "size": 33236984,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        },
+        {
+          "consumer": "podman",
+          "path": "/usr/bin/podman",
+          "component": "pkg:golang/golang.org/x/net@v0.57.0",
+          "advisory": "GO-2026-6612",
+          "aliases": [
+            "CVE-2026-78663",
+            "GO-2026-6612"
+          ],
+          "knownExploited": false,
+          "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "size": 45362352,
+          "artifactCompilerMetadata": [
+            "go1.26.8-X:nodwarf5"
+          ]
+        }
+      ],
+      "releaseEligible": false
+    }
+  ],
+  "proposedReviewedDispositions": [],
+  "newScanPerformed": false,
+  "newImagePulled": false,
+  "policyChanged": false,
+  "releaseEligible": false,
+  "stdlibPprofProof": {
+    "version": "go1.26.8",
+    "source": "https://github.com/golang/go/blob/go1.26.8/src/net/http/pprof/pprof.go",
+    "sha256": "ac1b7b79f760d1e6f4014356f889124b1da718b939ee58d5347e553cbdbddf1a",
+    "registeredGETPrefixLines": [
+      97,
+      104
+    ],
+    "directIndexLines": [
+      394,
+      438
+    ],
+    "finding": "GET-only standard DefaultServeMux registration is separate from the exported Index handler; Index has no method guard and writes HTML on the profiling index path. Podman directly registers Index with gorilla path-prefix, bypassing that GET-only registration.",
+    "limits": "This is exact upstream Go source; Fedora 1.26.8-X compiler patch/backport behavior has not been independently attested. No existing Fedora backport evidence justifies an exception."
+  },
+  "concreteNextEvidence": [
+    {
+      "priority": 1,
+      "owner": "Fedora owning package publisher / Finite package source reviewer",
+      "action": "Prefer authenticated owning Podman/Buildah/Skopeo binary rebuild using fixed Go>=1.26.9 and x/net>=0.60.0 where actually needed; verify exact package source+binary metadata. Updating installed compiler does not repair existing binaries. No upgrade floor invented here."
+    },
+    {
+      "priority": 2,
+      "owner": "Hosted applicability collector",
+      "action": "Reuse already authenticated source archives to generate a bounded selected-source server call-site index for Buildah/Skopeo. Retain exact build tags/module/vendor/source hashes and review every emitted constructor/Serve call plus root reachability. No second image build or scan necessary for source evidence.",
+      "bounds": "Read-only source inventory, <=180sec/2GiB hosted; no source execution, image pull, Nix, or module download."
+    },
+    {
+      "priority": 3,
+      "owner": "Hosted runtime validation if policy decision requires actual CONNECT behavior",
+      "action": "A tiny HTTP1 socket probe against exact current Podman profiling and Skopeo OAuth callback bytes can distinguish source lead from actual behavior; run only when existing hosted materialized candidate is available. Record CONNECT target/status/second-request behavior; no exploit against external systems. Do not repeat an image pull solely for this lead."
+    }
+  ],
+  "limits": [
+    "No disposition is proposed: source review finds conditional real server prerequisites and specific remaining closure gaps.",
+    "All official repository source reads are immutable reviewed Git revision and blob-hash verified; no application/source execution or compilation occurred.",
+    "Current scanner observations are preserved separately from publisher applicability; not observed does not mean fixed.",
+    "No SELinux confinement exemption, server-default-absence exemption, blanket suppression, or release eligibility asserted."
+  ]
+}

@@ -79,6 +79,7 @@ in {
     python3 tests/ci/podman-reference-evidence.py
     python3 tests/ci/httpd-reference-evidence.py
     python3 tests/ci/go-consumer-reference.py
+    python3 tests/ci/rclone-compatibility.py
     python3 tests/ci/nix-checks.py
     python3 tests/ci/toolchain.py
     python3 tests/ci/delivery-policy.py

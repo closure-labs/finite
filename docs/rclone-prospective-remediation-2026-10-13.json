@@ -1,0 +1,1139 @@
+{
+  "schema": 1,
+  "status": "prospective-signed-reference-remediation-supported-no-current-clearance",
+  "reviewedAt": "2026-10-13T07:18:24.594425+00:00",
+  "reviewedBy": "great_cto security-officer/package specialist ownership_followup",
+  "inputs": {
+    "ledger": "/tmp/finite-policy-security/docs/release-remaining-findings-2026-10-13.json",
+    "ledgerSha256": "10f37ba0ee488cf3222526bd90f5fdf800fac48672b7d9681cc032cd228741b6",
+    "ledgerSourceRun": 38356296590,
+    "signedReference": "/tmp/finite-rclone-reference-38361178024/reference-evidence.json",
+    "signedReferenceSha256": "8b1d23968077dab2f4d2e88df23fd243161f7b8baba23ed7acdb2510b3312e93",
+    "signedReferenceRun": 38361178024,
+    "signedReferenceRevision": "9423e8d9854c"
+  },
+  "reference": {
+    "rpm": {
+      "name": "rclone",
+      "epoch": 0,
+      "version": "1.75.2",
+      "release": "1.fc44",
+      "sourceRpm": "rclone-1.75.2-1.fc44.src.rpm",
+      "vendor": "Fedora Project"
+    },
+    "sourceCommit": "2c9e6ea83beab2b4e5fea95aabb46d7936609b8f",
+    "kojiBuildId": 3118644,
+    "kojiRpmId": 49086983,
+    "signatureVerified": true,
+    "keyFingerprint": "36f612dcf27f7d1a48a835e4dbfcf71c6d9f90a6",
+    "rpmSha256": "27864f31cdb6580f942b03c51ec59e95ea2ac6c426d1a871d188d92df7281219",
+    "fileSha256": "0343a46124ac5f3d64396bfb33102e6d734541979036f5d0d931358902cd686e",
+    "fileSize": 111887840,
+    "fileMode": 33261,
+    "goVersion": "go1.26.9-X:nodwarf5",
+    "CGO_ENABLED": "1",
+    "mainModule": "(devel)",
+    "moduleFacts": [
+      "golang.org/x/crypto v0.57.0",
+      "golang.org/x/net v0.60.0",
+      "google.golang.org/grpc v1.85.0-dev.0.20260825072537-93e31b48545e"
+    ],
+    "fedoraSourceMetadata": [
+      {
+        "url": "https://src.fedoraproject.org/rpms/rclone/raw/2c9e6ea83beab2b4e5fea95aabb46d7936609b8f/f/rclone.spec",
+        "sha256": "57e21d9ddc54636744b36c092dca46a07d4ed41061379ba2858f9a6e195693d9",
+        "bytes": 3172
+      },
+      {
+        "url": "https://src.fedoraproject.org/rpms/rclone/raw/2c9e6ea83beab2b4e5fea95aabb46d7936609b8f/f/sources",
+        "sha256": "b5c175699f014c8abc66e0438589778d52f2cc08685c74970a592b0a4ff29c57",
+        "bytes": 330
+      }
+    ]
+  },
+  "summary": {
+    "uniqueRcloneOwnedPairs": 14,
+    "profilesRepresentedInCurrentLedger": [
+      "bluefin-generic",
+      "bluefin-dx-generic"
+    ],
+    "supportsProspectiveFixPairs": 14,
+    "currentImagePairsCleared": 0,
+    "newDispositions": 0,
+    "scopeLimitation": "Ledger contains only these two remaining-profile entries. Do not invent all-four successful bindings or infer absence in unlisted profiles; future supported image/profile qualification remains explicit.",
+    "groupedCounts": {
+      "rcloneMain": 7,
+      "xNet": 2,
+      "xCrypto": 1,
+      "GoCompilerBranch": 3,
+      "gRPC": 1
+    }
+  },
+  "perAdvisory": [
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.55.0",
+      "advisory": "GO-2026-6612",
+      "aliases": [
+        "CVE-2026-78663",
+        "GO-2026-6612"
+      ],
+      "riskClasses": [],
+      "locations": [
+        "/sysroot/ostree/repo/objects/19/07b725d2d82866531bee698973a08e6c438abaace3b61723709ea531853945.file",
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/sysroot/ostree/repo/objects/70/1bccba378f262def36123d3245e03a4442eb1f5cb37e43e901bd1c68954622.file",
+        "/sysroot/ostree/repo/objects/75/3546d15a9cdd047adccb841b239b2b0c2c25deb15c5edcd9d94801f60325c3.file",
+        "/sysroot/ostree/repo/objects/8e/c5583db8e1709e446e0abbcb470108ba680fcf718835713b907e0f9ab05d02.file",
+        "/sysroot/ostree/repo/objects/d1/6202c07880b5c003452384c62878ebf5155cd81a4e9befa180f485ebcc9693.file",
+        "/sysroot/ostree/repo/objects/f4/4b3304bc30b41a152a41fe1248228b052d2d2c31c69c131e4d85e874530d1c.file",
+        "/usr/bin/containerd",
+        "/usr/bin/containerd-shim-runc-v2",
+        "/usr/bin/containerd-stress",
+        "/usr/bin/ctr",
+        "/usr/bin/rclone",
+        "/usr/bin/restic",
+        "/usr/bin/runc",
+        "/usr/bin/yq"
+      ],
+      "fixVersions": [
+        "0.60.0"
+      ],
+      "status": "blocked-requires-fix-or-positive-applicability-proof",
+      "profiles": [
+        "bluefin-generic",
+        "bluefin-dx-generic"
+      ],
+      "referenceSupportsFix": true,
+      "currentImageCleared": false,
+      "referenceFileSha256": "0343a46124ac5f3d64396bfb33102e6d734541979036f5d0d931358902cd686e",
+      "futureRcloneLocations": [
+        "/usr/bin/rclone",
+        "ALL retained objects containing prior rclone bytes, not assumed absent after RPM replacement"
+      ],
+      "nonRcloneLocationsAlsoListedRemainSeparate": true,
+      "referenceVersionEvidence": "golang.org/x/net v0.60.0 AND go1.26.9-X:nodwarf5",
+      "officialAdvisory": "GO-2026-6612",
+      "officialAffected": [
+        {
+          "package": {
+            "name": "stdlib",
+            "ecosystem": "Go"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.26.9"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "package": {
+            "name": "stdlib",
+            "ecosystem": "Go"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "1.27.0-0"
+                },
+                {
+                  "fixed": "1.27.2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "package": {
+            "name": "golang.org/x/net",
+            "ecosystem": "Go"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "0.60.0"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "officialSources": [
+        "https://vuln.go.dev/ID/GO-2026-6612.json",
+        "https://go.dev/cl/847187",
+        "https://go.dev/cl/847310"
+      ],
+      "decisionReason": "Both actual embeddedx/net version and actual Go1.26 compiler match official fixed0.60.0 and1.26.9 branches; no1.27.2requirement imposed on the1.26branch.",
+      "remainingUnknowns": [
+        "Replacement package is still a testing candidate; no stable promotion or explicit testing adoption approved.",
+        "Reference package has not replaced current live/retained candidate bytes; future candidate digest/all-path ownership and byte binding required.",
+        "No prospective candidate native scan, runtime integration test, signing or boot qualification performed by this review."
+      ]
+    },
+    {
+      "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+      "advisory": "GHSA-xwwr-4h3p-r22c",
+      "aliases": [
+        "CVE-2026-88018",
+        "GHSA-xwwr-4h3p-r22c"
+      ],
+      "riskClasses": [
+        "authentication-bypass"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/usr/bin/rclone"
+      ],
+      "fixVersions": [
+        "1.75.1"
+      ],
+      "status": "blocked-requires-fix-or-positive-applicability-proof",
+      "profiles": [
+        "bluefin-generic",
+        "bluefin-dx-generic"
+      ],
+      "referenceSupportsFix": true,
+      "currentImageCleared": false,
+      "referenceFileSha256": "0343a46124ac5f3d64396bfb33102e6d734541979036f5d0d931358902cd686e",
+      "futureRcloneLocations": [
+        "/usr/bin/rclone",
+        "ALL retained objects containing prior rclone bytes, not assumed absent after RPM replacement"
+      ],
+      "nonRcloneLocationsAlsoListedRemainSeparate": false,
+      "referenceVersionEvidence": "Authenticated Fedora owning RPM0:1.75.2-1.fc44, immutable dist-gitVersion1.75.2/Source0 upstream gometa, and actual embedded fs.Version=v1.75.2 ldflag. Go main(devel) alone is not a semantic version proof.",
+      "officialAffected": [
+        {
+          "package": {
+            "ecosystem": "go",
+            "name": "github.com/rclone/rclone"
+          },
+          "patched_versions": "1.75.1",
+          "vulnerable_functions": [],
+          "vulnerable_version_range": ">= 1.68.0, < 1.75.1"
+        }
+      ],
+      "officialSources": [
+        "https://github.com/rclone/rclone/security/advisories/GHSA-xwwr-4h3p-r22c"
+      ],
+      "decisionReason": "Owning-package/source version1.75.2 is outside official affected range and contains the documented upstream fix; compatibility still requires supported-mode regression tests.",
+      "remainingUnknowns": [
+        "Replacement package is still a testing candidate; no stable promotion or explicit testing adoption approved.",
+        "Reference package has not replaced current live/retained candidate bytes; future candidate digest/all-path ownership and byte binding required.",
+        "No prospective candidate native scan, runtime integration test, signing or boot qualification performed by this review."
+      ]
+    },
+    {
+      "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+      "advisory": "GHSA-fqj9-69pf-6pjg",
+      "aliases": [
+        "CVE-2026-59733",
+        "GHSA-fqj9-69pf-6pjg"
+      ],
+      "riskClasses": [
+        "major-data-loss"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/usr/bin/rclone"
+      ],
+      "fixVersions": [
+        "1.74.4"
+      ],
+      "status": "blocked-requires-fix-or-positive-applicability-proof",
+      "profiles": [
+        "bluefin-generic",
+        "bluefin-dx-generic"
+      ],
+      "referenceSupportsFix": true,
+      "currentImageCleared": false,
+      "referenceFileSha256": "0343a46124ac5f3d64396bfb33102e6d734541979036f5d0d931358902cd686e",
+      "futureRcloneLocations": [
+        "/usr/bin/rclone",
+        "ALL retained objects containing prior rclone bytes, not assumed absent after RPM replacement"
+      ],
+      "nonRcloneLocationsAlsoListedRemainSeparate": false,
+      "referenceVersionEvidence": "Authenticated Fedora owning RPM0:1.75.2-1.fc44, immutable dist-gitVersion1.75.2/Source0 upstream gometa, and actual embedded fs.Version=v1.75.2 ldflag. Go main(devel) alone is not a semantic version proof.",
+      "officialAffected": [
+        {
+          "package": {
+            "ecosystem": "self-hosted",
+            "name": "github.com/rclone/rclone"
+          },
+          "patched_versions": "1.74.4",
+          "vulnerable_functions": [],
+          "vulnerable_version_range": "<= 1.74.3"
+        }
+      ],
+      "officialSources": [
+        "https://github.com/rclone/rclone/security/advisories/GHSA-fqj9-69pf-6pjg"
+      ],
+      "decisionReason": "Owning-package/source version1.75.2 is outside official affected range and contains the documented upstream fix; compatibility still requires supported-mode regression tests.",
+      "remainingUnknowns": [
+        "Replacement package is still a testing candidate; no stable promotion or explicit testing adoption approved.",
+        "Reference package has not replaced current live/retained candidate bytes; future candidate digest/all-path ownership and byte binding required.",
+        "No prospective candidate native scan, runtime integration test, signing or boot qualification performed by this review."
+      ]
+    },
+    {
+      "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+      "advisory": "GHSA-p569-5gjg-9cmj",
+      "aliases": [
+        "CVE-2026-88044",
+        "GHSA-p569-5gjg-9cmj"
+      ],
+      "riskClasses": [
+        "authentication-bypass"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/usr/bin/rclone"
+      ],
+      "fixVersions": [
+        "1.75.1"
+      ],
+      "status": "blocked-requires-fix-or-positive-applicability-proof",
+      "profiles": [
+        "bluefin-generic",
+        "bluefin-dx-generic"
+      ],
+      "referenceSupportsFix": true,
+      "currentImageCleared": false,
+      "referenceFileSha256": "0343a46124ac5f3d64396bfb33102e6d734541979036f5d0d931358902cd686e",
+      "futureRcloneLocations": [
+        "/usr/bin/rclone",
+        "ALL retained objects containing prior rclone bytes, not assumed absent after RPM replacement"
+      ],
+      "nonRcloneLocationsAlsoListedRemainSeparate": false,
+      "referenceVersionEvidence": "Authenticated Fedora owning RPM0:1.75.2-1.fc44, immutable dist-gitVersion1.75.2/Source0 upstream gometa, and actual embedded fs.Version=v1.75.2 ldflag. Go main(devel) alone is not a semantic version proof.",
+      "officialAffected": [
+        {
+          "package": {
+            "ecosystem": "go",
+            "name": "github.com/rclone/rclone"
+          },
+          "patched_versions": "v1.75.1",
+          "vulnerable_functions": [],
+          "vulnerable_version_range": ">= v1.70.0, <= v1.75.0"
+        }
+      ],
+      "officialSources": [
+        "https://github.com/rclone/rclone/security/advisories/GHSA-p569-5gjg-9cmj"
+      ],
+      "decisionReason": "Owning-package/source version1.75.2 is outside official affected range and contains the documented upstream fix; compatibility still requires supported-mode regression tests.",
+      "remainingUnknowns": [
+        "Replacement package is still a testing candidate; no stable promotion or explicit testing adoption approved.",
+        "Reference package has not replaced current live/retained candidate bytes; future candidate digest/all-path ownership and byte binding required.",
+        "No prospective candidate native scan, runtime integration test, signing or boot qualification performed by this review."
+      ]
+    },
+    {
+      "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+      "advisory": "GHSA-2m8m-jhrm-w6j2",
+      "aliases": [
+        "CVE-2026-71312",
+        "GHSA-2m8m-jhrm-w6j2"
+      ],
+      "riskClasses": [
+        "desktop-takeover"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/usr/bin/rclone"
+      ],
+      "fixVersions": [
+        "1.75.0"
+      ],
+      "status": "blocked-requires-fix-or-positive-applicability-proof",
+      "profiles": [
+        "bluefin-generic",
+        "bluefin-dx-generic"
+      ],
+      "referenceSupportsFix": true,
+      "currentImageCleared": false,
+      "referenceFileSha256": "0343a46124ac5f3d64396bfb33102e6d734541979036f5d0d931358902cd686e",
+      "futureRcloneLocations": [
+        "/usr/bin/rclone",
+        "ALL retained objects containing prior rclone bytes, not assumed absent after RPM replacement"
+      ],
+      "nonRcloneLocationsAlsoListedRemainSeparate": false,
+      "referenceVersionEvidence": "Authenticated Fedora owning RPM0:1.75.2-1.fc44, immutable dist-gitVersion1.75.2/Source0 upstream gometa, and actual embedded fs.Version=v1.75.2 ldflag. Go main(devel) alone is not a semantic version proof.",
+      "officialAffected": [
+        {
+          "package": {
+            "ecosystem": "go",
+            "name": "github.com/rclone/rclone"
+          },
+          "patched_versions": "v1.75.0",
+          "vulnerable_functions": [],
+          "vulnerable_version_range": "<= v1.74.4"
+        }
+      ],
+      "officialSources": [
+        "https://github.com/rclone/rclone/security/advisories/GHSA-2m8m-jhrm-w6j2"
+      ],
+      "decisionReason": "Owning-package/source version1.75.2 is outside official affected range and contains the documented upstream fix; compatibility still requires supported-mode regression tests.",
+      "remainingUnknowns": [
+        "Replacement package is still a testing candidate; no stable promotion or explicit testing adoption approved.",
+        "Reference package has not replaced current live/retained candidate bytes; future candidate digest/all-path ownership and byte binding required.",
+        "No prospective candidate native scan, runtime integration test, signing or boot qualification performed by this review."
+      ]
+    },
+    {
+      "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+      "advisory": "GHSA-45pq-889g-fcgh",
+      "aliases": [
+        "CVE-2026-71309",
+        "GHSA-45pq-889g-fcgh"
+      ],
+      "riskClasses": [
+        "major-data-loss"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/usr/bin/rclone"
+      ],
+      "fixVersions": [
+        "1.75.0"
+      ],
+      "status": "blocked-requires-fix-or-positive-applicability-proof",
+      "profiles": [
+        "bluefin-generic",
+        "bluefin-dx-generic"
+      ],
+      "referenceSupportsFix": true,
+      "currentImageCleared": false,
+      "referenceFileSha256": "0343a46124ac5f3d64396bfb33102e6d734541979036f5d0d931358902cd686e",
+      "futureRcloneLocations": [
+        "/usr/bin/rclone",
+        "ALL retained objects containing prior rclone bytes, not assumed absent after RPM replacement"
+      ],
+      "nonRcloneLocationsAlsoListedRemainSeparate": false,
+      "referenceVersionEvidence": "Authenticated Fedora owning RPM0:1.75.2-1.fc44, immutable dist-gitVersion1.75.2/Source0 upstream gometa, and actual embedded fs.Version=v1.75.2 ldflag. Go main(devel) alone is not a semantic version proof.",
+      "officialAffected": [
+        {
+          "package": {
+            "ecosystem": "go",
+            "name": "github.com/rclone/rclone"
+          },
+          "patched_versions": "1.75.0",
+          "vulnerable_functions": [],
+          "vulnerable_version_range": ">= 1.40.0, < 1.75.0"
+        }
+      ],
+      "officialSources": [
+        "https://github.com/rclone/rclone/security/advisories/GHSA-45pq-889g-fcgh"
+      ],
+      "decisionReason": "Owning-package/source version1.75.2 is outside official affected range and contains the documented upstream fix; compatibility still requires supported-mode regression tests.",
+      "remainingUnknowns": [
+        "Replacement package is still a testing candidate; no stable promotion or explicit testing adoption approved.",
+        "Reference package has not replaced current live/retained candidate bytes; future candidate digest/all-path ownership and byte binding required.",
+        "No prospective candidate native scan, runtime integration test, signing or boot qualification performed by this review."
+      ]
+    },
+    {
+      "component": "pkg:golang/golang.org/x/crypto@v0.52.0",
+      "advisory": "GO-2026-6303",
+      "aliases": [
+        "CVE-2026-56854",
+        "GO-2026-6303"
+      ],
+      "riskClasses": [
+        "authentication-bypass"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/sysroot/ostree/repo/objects/8e/c5583db8e1709e446e0abbcb470108ba680fcf718835713b907e0f9ab05d02.file",
+        "/usr/bin/rclone",
+        "/usr/bin/restic"
+      ],
+      "fixVersions": [
+        "0.55.0"
+      ],
+      "status": "blocked-requires-fix-or-positive-applicability-proof",
+      "profiles": [
+        "bluefin-generic",
+        "bluefin-dx-generic"
+      ],
+      "referenceSupportsFix": true,
+      "currentImageCleared": false,
+      "referenceFileSha256": "0343a46124ac5f3d64396bfb33102e6d734541979036f5d0d931358902cd686e",
+      "futureRcloneLocations": [
+        "/usr/bin/rclone",
+        "ALL retained objects containing prior rclone bytes, not assumed absent after RPM replacement"
+      ],
+      "nonRcloneLocationsAlsoListedRemainSeparate": true,
+      "referenceVersionEvidence": "golang.org/x/crypto v0.57.0",
+      "officialAdvisory": "GO-2026-6303",
+      "officialAffected": [
+        {
+          "package": {
+            "name": "golang.org/x/crypto",
+            "ecosystem": "Go"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "0.55.0"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "officialSources": [
+        "https://vuln.go.dev/ID/GO-2026-6303.json",
+        "https://go.dev/cl/797040"
+      ],
+      "decisionReason": "Actual embedded0.57.0 exceeds official fixed0.55.0, resolving this SSH source-address callback defect for this reference binary.",
+      "remainingUnknowns": [
+        "Replacement package is still a testing candidate; no stable promotion or explicit testing adoption approved.",
+        "Reference package has not replaced current live/retained candidate bytes; future candidate digest/all-path ownership and byte binding required.",
+        "No prospective candidate native scan, runtime integration test, signing or boot qualification performed by this review."
+      ]
+    },
+    {
+      "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+      "advisory": "GHSA-cf44-9pgv-m4xc",
+      "aliases": [
+        "CVE-2026-54572",
+        "GHSA-cf44-9pgv-m4xc"
+      ],
+      "riskClasses": [
+        "desktop-takeover"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/usr/bin/rclone"
+      ],
+      "fixVersions": [
+        "1.74.4"
+      ],
+      "status": "blocked-requires-fix-or-positive-applicability-proof",
+      "profiles": [
+        "bluefin-generic",
+        "bluefin-dx-generic"
+      ],
+      "referenceSupportsFix": true,
+      "currentImageCleared": false,
+      "referenceFileSha256": "0343a46124ac5f3d64396bfb33102e6d734541979036f5d0d931358902cd686e",
+      "futureRcloneLocations": [
+        "/usr/bin/rclone",
+        "ALL retained objects containing prior rclone bytes, not assumed absent after RPM replacement"
+      ],
+      "nonRcloneLocationsAlsoListedRemainSeparate": false,
+      "referenceVersionEvidence": "Authenticated Fedora owning RPM0:1.75.2-1.fc44, immutable dist-gitVersion1.75.2/Source0 upstream gometa, and actual embedded fs.Version=v1.75.2 ldflag. Go main(devel) alone is not a semantic version proof.",
+      "officialAffected": [
+        {
+          "package": {
+            "ecosystem": "go",
+            "name": "github.com/rclone/rclone"
+          },
+          "patched_versions": "1.74.4",
+          "vulnerable_functions": [],
+          "vulnerable_version_range": "<= v1.74.3"
+        }
+      ],
+      "officialSources": [
+        "https://github.com/rclone/rclone/security/advisories/GHSA-cf44-9pgv-m4xc"
+      ],
+      "decisionReason": "Owning-package/source version1.75.2 is outside official affected range and contains the documented upstream fix; compatibility still requires supported-mode regression tests.",
+      "remainingUnknowns": [
+        "Replacement package is still a testing candidate; no stable promotion or explicit testing adoption approved.",
+        "Reference package has not replaced current live/retained candidate bytes; future candidate digest/all-path ownership and byte binding required.",
+        "No prospective candidate native scan, runtime integration test, signing or boot qualification performed by this review."
+      ]
+    },
+    {
+      "component": "pkg:golang/golang.org/x/net@v0.55.0",
+      "advisory": "GO-2026-6610",
+      "aliases": [
+        "CVE-2026-78660",
+        "GO-2026-6610"
+      ],
+      "riskClasses": [
+        "unresolved-serious"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/19/07b725d2d82866531bee698973a08e6c438abaace3b61723709ea531853945.file",
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/sysroot/ostree/repo/objects/70/1bccba378f262def36123d3245e03a4442eb1f5cb37e43e901bd1c68954622.file",
+        "/sysroot/ostree/repo/objects/75/3546d15a9cdd047adccb841b239b2b0c2c25deb15c5edcd9d94801f60325c3.file",
+        "/sysroot/ostree/repo/objects/8e/c5583db8e1709e446e0abbcb470108ba680fcf718835713b907e0f9ab05d02.file",
+        "/sysroot/ostree/repo/objects/d1/6202c07880b5c003452384c62878ebf5155cd81a4e9befa180f485ebcc9693.file",
+        "/sysroot/ostree/repo/objects/f4/4b3304bc30b41a152a41fe1248228b052d2d2c31c69c131e4d85e874530d1c.file",
+        "/usr/bin/containerd",
+        "/usr/bin/containerd-shim-runc-v2",
+        "/usr/bin/containerd-stress",
+        "/usr/bin/ctr",
+        "/usr/bin/rclone",
+        "/usr/bin/restic",
+        "/usr/bin/runc",
+        "/usr/bin/yq"
+      ],
+      "fixVersions": [
+        "0.60.0"
+      ],
+      "status": "blocked-requires-fix-or-positive-applicability-proof",
+      "profiles": [
+        "bluefin-generic",
+        "bluefin-dx-generic"
+      ],
+      "referenceSupportsFix": true,
+      "currentImageCleared": false,
+      "referenceFileSha256": "0343a46124ac5f3d64396bfb33102e6d734541979036f5d0d931358902cd686e",
+      "futureRcloneLocations": [
+        "/usr/bin/rclone",
+        "ALL retained objects containing prior rclone bytes, not assumed absent after RPM replacement"
+      ],
+      "nonRcloneLocationsAlsoListedRemainSeparate": true,
+      "referenceVersionEvidence": "golang.org/x/net v0.60.0 AND go1.26.9-X:nodwarf5",
+      "officialAdvisory": "GO-2026-6610",
+      "officialAffected": [
+        {
+          "package": {
+            "name": "stdlib",
+            "ecosystem": "Go"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.26.9"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "package": {
+            "name": "stdlib",
+            "ecosystem": "Go"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "1.27.0-0"
+                },
+                {
+                  "fixed": "1.27.2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "package": {
+            "name": "golang.org/x/net",
+            "ecosystem": "Go"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "0.60.0"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "officialSources": [
+        "https://vuln.go.dev/ID/GO-2026-6610.json",
+        "https://go.dev/cl/835145",
+        "https://go.dev/cl/836385"
+      ],
+      "decisionReason": "Both actual embeddedx/net version and actual Go1.26 compiler match official fixed0.60.0 and1.26.9 branches; no1.27.2requirement imposed on the1.26branch.",
+      "remainingUnknowns": [
+        "Replacement package is still a testing candidate; no stable promotion or explicit testing adoption approved.",
+        "Reference package has not replaced current live/retained candidate bytes; future candidate digest/all-path ownership and byte binding required.",
+        "No prospective candidate native scan, runtime integration test, signing or boot qualification performed by this review."
+      ]
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.4-X%3Anodwarf5",
+      "advisory": "CVE-2026-56864",
+      "aliases": [
+        "CVE-2026-56864"
+      ],
+      "riskClasses": [
+        "desktop-takeover"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/sysroot/ostree/repo/objects/cb/41b7c77feb2ecdb70d6190f3ec74a9e5830b713396db0b33888e3a31fb1d80.file",
+        "/usr/bin/ipp-usb",
+        "/usr/bin/rclone"
+      ],
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "status": "blocked-requires-fix-or-positive-applicability-proof",
+      "profiles": [
+        "bluefin-generic",
+        "bluefin-dx-generic"
+      ],
+      "referenceSupportsFix": true,
+      "currentImageCleared": false,
+      "referenceFileSha256": "0343a46124ac5f3d64396bfb33102e6d734541979036f5d0d931358902cd686e",
+      "futureRcloneLocations": [
+        "/usr/bin/rclone",
+        "ALL retained objects containing prior rclone bytes, not assumed absent after RPM replacement"
+      ],
+      "nonRcloneLocationsAlsoListedRemainSeparate": true,
+      "referenceVersionEvidence": "go1.26.9-X:nodwarf5",
+      "officialAdvisory": "GO-2026-6180",
+      "officialAffected": [
+        {
+          "package": {
+            "name": "toolchain",
+            "ecosystem": "Go"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.25.13"
+                },
+                {
+                  "introduced": "1.26.0-0"
+                },
+                {
+                  "fixed": "1.26.6"
+                },
+                {
+                  "introduced": "1.27.0-0"
+                },
+                {
+                  "fixed": "1.27.0-rc.3"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "package": {
+            "name": "golang.org/x/mod",
+            "ecosystem": "Go"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "0.40.0"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "officialSources": [
+        "https://vuln.go.dev/ID/GO-2026-6180.json",
+        "https://go.dev/cl/815000",
+        "https://go.dev/cl/815020"
+      ],
+      "decisionReason": "Compare actual compiler release1.26.9 within its1.26 branch: fixed1.26.5 (os.Root) or1.26.6 (sumdb/toolchain), not lexicographic comparison with1.27rc orglobalmaximum. Experiment suffix nodwarf5 does not select another release branch.",
+      "advisoryScopeNote": "Official Go record affects cmd/go toolchain and specific x/mod sumdb APIs, rather than all runtime stdlib calls. Fixed compiler branch supports this prospective scanner match; no arbitrary x/mod/compiler absence waiver is granted.",
+      "remainingUnknowns": [
+        "Replacement package is still a testing candidate; no stable promotion or explicit testing adoption approved.",
+        "Reference package has not replaced current live/retained candidate bytes; future candidate digest/all-path ownership and byte binding required.",
+        "No prospective candidate native scan, runtime integration test, signing or boot qualification performed by this review."
+      ]
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.4-X%3Anodwarf5",
+      "advisory": "CVE-2026-39822",
+      "aliases": [
+        "CVE-2026-39822"
+      ],
+      "riskClasses": [
+        "desktop-takeover"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/sysroot/ostree/repo/objects/cb/41b7c77feb2ecdb70d6190f3ec74a9e5830b713396db0b33888e3a31fb1d80.file",
+        "/usr/bin/ipp-usb",
+        "/usr/bin/rclone"
+      ],
+      "fixVersions": [
+        "1.25.12",
+        "1.26.5",
+        "1.27.0-rc.2"
+      ],
+      "status": "blocked-requires-fix-or-positive-applicability-proof",
+      "profiles": [
+        "bluefin-generic",
+        "bluefin-dx-generic"
+      ],
+      "referenceSupportsFix": true,
+      "currentImageCleared": false,
+      "referenceFileSha256": "0343a46124ac5f3d64396bfb33102e6d734541979036f5d0d931358902cd686e",
+      "futureRcloneLocations": [
+        "/usr/bin/rclone",
+        "ALL retained objects containing prior rclone bytes, not assumed absent after RPM replacement"
+      ],
+      "nonRcloneLocationsAlsoListedRemainSeparate": true,
+      "referenceVersionEvidence": "go1.26.9-X:nodwarf5",
+      "officialAdvisory": "GO-2026-4970",
+      "officialAffected": [
+        {
+          "package": {
+            "name": "stdlib",
+            "ecosystem": "Go"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.25.12"
+                },
+                {
+                  "introduced": "1.26.0-0"
+                },
+                {
+                  "fixed": "1.26.5"
+                },
+                {
+                  "introduced": "1.27.0-0"
+                },
+                {
+                  "fixed": "1.27.0-rc.2"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "officialSources": [
+        "https://vuln.go.dev/ID/GO-2026-4970.json",
+        "https://go.dev/cl/797880"
+      ],
+      "decisionReason": "Compare actual compiler release1.26.9 within its1.26 branch: fixed1.26.5 (os.Root) or1.26.6 (sumdb/toolchain), not lexicographic comparison with1.27rc orglobalmaximum. Experiment suffix nodwarf5 does not select another release branch.",
+      "remainingUnknowns": [
+        "Replacement package is still a testing candidate; no stable promotion or explicit testing adoption approved.",
+        "Reference package has not replaced current live/retained candidate bytes; future candidate digest/all-path ownership and byte binding required.",
+        "No prospective candidate native scan, runtime integration test, signing or boot qualification performed by this review."
+      ]
+    },
+    {
+      "component": "pkg:golang/github.com/rclone/rclone@v1.74.3",
+      "advisory": "GHSA-c476-6w5q-jw77",
+      "aliases": [
+        "CVE-2026-88017",
+        "GHSA-c476-6w5q-jw77"
+      ],
+      "riskClasses": [
+        "authentication-bypass"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/usr/bin/rclone"
+      ],
+      "fixVersions": [
+        "1.75.1"
+      ],
+      "status": "blocked-requires-fix-or-positive-applicability-proof",
+      "profiles": [
+        "bluefin-generic",
+        "bluefin-dx-generic"
+      ],
+      "referenceSupportsFix": true,
+      "currentImageCleared": false,
+      "referenceFileSha256": "0343a46124ac5f3d64396bfb33102e6d734541979036f5d0d931358902cd686e",
+      "futureRcloneLocations": [
+        "/usr/bin/rclone",
+        "ALL retained objects containing prior rclone bytes, not assumed absent after RPM replacement"
+      ],
+      "nonRcloneLocationsAlsoListedRemainSeparate": false,
+      "referenceVersionEvidence": "Authenticated Fedora owning RPM0:1.75.2-1.fc44, immutable dist-gitVersion1.75.2/Source0 upstream gometa, and actual embedded fs.Version=v1.75.2 ldflag. Go main(devel) alone is not a semantic version proof.",
+      "officialAffected": [
+        {
+          "package": {
+            "ecosystem": "go",
+            "name": "github.com/rclone/rclone"
+          },
+          "patched_versions": "1.75.1",
+          "vulnerable_functions": [],
+          "vulnerable_version_range": ">= 1.64.0, <= 1.75.0"
+        }
+      ],
+      "officialSources": [
+        "https://github.com/rclone/rclone/security/advisories/GHSA-c476-6w5q-jw77"
+      ],
+      "decisionReason": "Owning-package/source version1.75.2 is outside official affected range and contains the documented upstream fix; compatibility still requires supported-mode regression tests.",
+      "remainingUnknowns": [
+        "Replacement package is still a testing candidate; no stable promotion or explicit testing adoption approved.",
+        "Reference package has not replaced current live/retained candidate bytes; future candidate digest/all-path ownership and byte binding required.",
+        "No prospective candidate native scan, runtime integration test, signing or boot qualification performed by this review."
+      ]
+    },
+    {
+      "component": "pkg:golang/stdlib@1.26.4-X%3Anodwarf5",
+      "advisory": "CVE-2026-56865",
+      "aliases": [
+        "CVE-2026-56865"
+      ],
+      "riskClasses": [
+        "desktop-takeover"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/sysroot/ostree/repo/objects/cb/41b7c77feb2ecdb70d6190f3ec74a9e5830b713396db0b33888e3a31fb1d80.file",
+        "/usr/bin/ipp-usb",
+        "/usr/bin/rclone"
+      ],
+      "fixVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "status": "blocked-requires-fix-or-positive-applicability-proof",
+      "profiles": [
+        "bluefin-generic",
+        "bluefin-dx-generic"
+      ],
+      "referenceSupportsFix": true,
+      "currentImageCleared": false,
+      "referenceFileSha256": "0343a46124ac5f3d64396bfb33102e6d734541979036f5d0d931358902cd686e",
+      "futureRcloneLocations": [
+        "/usr/bin/rclone",
+        "ALL retained objects containing prior rclone bytes, not assumed absent after RPM replacement"
+      ],
+      "nonRcloneLocationsAlsoListedRemainSeparate": true,
+      "referenceVersionEvidence": "go1.26.9-X:nodwarf5",
+      "officialAdvisory": "GO-2026-6179",
+      "officialAffected": [
+        {
+          "package": {
+            "name": "toolchain",
+            "ecosystem": "Go"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.25.13"
+                },
+                {
+                  "introduced": "1.26.0-0"
+                },
+                {
+                  "fixed": "1.26.6"
+                },
+                {
+                  "introduced": "1.27.0-0"
+                },
+                {
+                  "fixed": "1.27.0-rc.3"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "package": {
+            "name": "golang.org/x/mod",
+            "ecosystem": "Go"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "0.40.0"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "officialSources": [
+        "https://vuln.go.dev/ID/GO-2026-6179.json",
+        "https://go.dev/cl/814960",
+        "https://go.dev/cl/815020"
+      ],
+      "decisionReason": "Compare actual compiler release1.26.9 within its1.26 branch: fixed1.26.5 (os.Root) or1.26.6 (sumdb/toolchain), not lexicographic comparison with1.27rc orglobalmaximum. Experiment suffix nodwarf5 does not select another release branch.",
+      "advisoryScopeNote": "Official Go record affects cmd/go toolchain and specific x/mod sumdb APIs, rather than all runtime stdlib calls. Fixed compiler branch supports this prospective scanner match; no arbitrary x/mod/compiler absence waiver is granted.",
+      "remainingUnknowns": [
+        "Replacement package is still a testing candidate; no stable promotion or explicit testing adoption approved.",
+        "Reference package has not replaced current live/retained candidate bytes; future candidate digest/all-path ownership and byte binding required.",
+        "No prospective candidate native scan, runtime integration test, signing or boot qualification performed by this review."
+      ]
+    },
+    {
+      "component": "pkg:golang/google.golang.org/grpc@v1.80.0",
+      "advisory": "GHSA-hrxh-6v49-42gf",
+      "aliases": [
+        "GHSA-hrxh-6v49-42gf"
+      ],
+      "riskClasses": [
+        "authentication-bypass"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/sysroot/ostree/repo/objects/70/1bccba378f262def36123d3245e03a4442eb1f5cb37e43e901bd1c68954622.file",
+        "/sysroot/ostree/repo/objects/75/3546d15a9cdd047adccb841b239b2b0c2c25deb15c5edcd9d94801f60325c3.file",
+        "/sysroot/ostree/repo/objects/d1/6202c07880b5c003452384c62878ebf5155cd81a4e9befa180f485ebcc9693.file",
+        "/sysroot/ostree/repo/objects/f4/4b3304bc30b41a152a41fe1248228b052d2d2c31c69c131e4d85e874530d1c.file",
+        "/usr/bin/containerd",
+        "/usr/bin/containerd-shim-runc-v2",
+        "/usr/bin/containerd-stress",
+        "/usr/bin/ctr",
+        "/usr/bin/rclone"
+      ],
+      "fixVersions": [
+        "1.82.1"
+      ],
+      "status": "blocked-requires-fix-or-positive-applicability-proof",
+      "profiles": [
+        "bluefin-generic",
+        "bluefin-dx-generic"
+      ],
+      "referenceSupportsFix": true,
+      "currentImageCleared": false,
+      "referenceFileSha256": "0343a46124ac5f3d64396bfb33102e6d734541979036f5d0d931358902cd686e",
+      "futureRcloneLocations": [
+        "/usr/bin/rclone",
+        "ALL retained objects containing prior rclone bytes, not assumed absent after RPM replacement"
+      ],
+      "nonRcloneLocationsAlsoListedRemainSeparate": true,
+      "referenceVersionEvidence": "Actual embedded module v1.85.0-dev.0.20260825072537-93e31b48545e; canonical SemVer is later than1.82.1, with exact dev source reviewed rather than scanner fix string alone.",
+      "officialAffected": [
+        {
+          "package": {
+            "ecosystem": "go",
+            "name": "google.golang.org/grpc"
+          },
+          "vulnerable_version_range": "<1.82.1",
+          "patched_versions": "1.82.1",
+          "vulnerable_functions": []
+        }
+      ],
+      "officialSources": [
+        "https://github.com/grpc/grpc-go/security/advisories/GHSA-hrxh-6v49-42gf",
+        "https://github.com/grpc/grpc-go/commit/4ea465d4ab98013f72a142fe0fc89c19770b2935",
+        "https://github.com/grpc/grpc-go/blob/93e31b48545e2a8aaeb6e06b47fb249f94e6297f/internal/xds/rbac/matchers.go",
+        "https://github.com/grpc/grpc-go/blob/93e31b48545e2a8aaeb6e06b47fb249f94e6297f/internal/transport/controlbuf.go"
+      ],
+      "decisionReason": "Exact devsource retains all RBAC Metadata/RequestedServerName matchers, rejection of unsupported permission/principal types, NotRule/NotId length guards, and throttled cleanup/early-abort/controlbuffer items. Releasebranch diverged; security changes are positively present.",
+      "sourceProof": {
+        "fixedReleaseCommit": "ebd8f06a09426fbece97157c95c3917abff28f4e",
+        "embeddedCommit": "93e31b48545e2a8aaeb6e06b47fb249f94e6297f",
+        "compareStatus": "diverged:97developmentcommits vs4releasebranchcommits",
+        "releaseSecurityPatchCommit": "4ea465d4ab98013f72a142fe0fc89c19770b2935",
+        "matcherDiff": "Only two existing CIDR matcher dereferences change to nil-safe protobuf Get accessors; advisory fix code unchanged.",
+        "controlBufferDiff": "Only additional test-accounting outStreamRequestForTesting message/handler; advisory throttle protections unchanged.",
+        "fileHashes": [
+          {
+            "path": "internal/xds/rbac/matchers.go",
+            "ref": "ebd8f06a09426fbece97157c95c3917abff28f4e",
+            "sha256": "bb68bfe1dd74f7405b1002de9fbc7fb059c32650f90c6c842ee2eb197d800cd9"
+          },
+          {
+            "path": "internal/xds/rbac/matchers.go",
+            "ref": "93e31b48545e2a8aaeb6e06b47fb249f94e6297f",
+            "sha256": "c0392d1cd907d07148da1eae650eee395f6f0d37763626fc63c969663a39093b"
+          },
+          {
+            "path": "internal/transport/controlbuf.go",
+            "ref": "ebd8f06a09426fbece97157c95c3917abff28f4e",
+            "sha256": "9d0148757ecf51ad6155b62d4b33802635806a5651c79b6f6bdaba6843e1823b"
+          },
+          {
+            "path": "internal/transport/controlbuf.go",
+            "ref": "93e31b48545e2a8aaeb6e06b47fb249f94e6297f",
+            "sha256": "48c62d0504d7e5a1c7a2bbb05eab93076a4176b0c3267cc755d6a2db4cf59035"
+          },
+          {
+            "path": "internal/envconfig/envconfig.go",
+            "ref": "ebd8f06a09426fbece97157c95c3917abff28f4e",
+            "sha256": "6878cf4ac6f7c980be3a5728fd8d49ed0c9d361d61219585e67f9f4ab8d07eeb"
+          },
+          {
+            "path": "internal/envconfig/envconfig.go",
+            "ref": "93e31b48545e2a8aaeb6e06b47fb249f94e6297f",
+            "sha256": "a989d4ee800ee59b386b3d01c4098b6dcc697894690d4a2b3168ac38e456614f"
+          }
+        ]
+      },
+      "remainingUnknowns": [
+        "Replacement package is still a testing candidate; no stable promotion or explicit testing adoption approved.",
+        "Reference package has not replaced current live/retained candidate bytes; future candidate digest/all-path ownership and byte binding required.",
+        "No prospective candidate native scan, runtime integration test, signing or boot qualification performed by this review."
+      ]
+    }
+  ],
+  "qualificationRequired": {
+    "publisher": "Bodhi stable promotion/f44-updates or explicit separately approved testing decision; no policy change or testing install here.",
+    "compatibility": "Immutable Fedora spec skips TestS3/TestFTP/TestSftp etc and excludes mount/sftp/ftp backends from portions of %gocheck. Gating success does not substitute Finite focused sync/copy/mount, links, PowerShell hashing, RCFTP/S3/authproxy session and changed per-identity-secret proxy regressions.",
+    "candidate": "Hosted installed-only transaction preserving signatures/protected-stack/unrelated inventory, changed immutable candidate, current native all-location byte/module/owner proof. Retained old OSTree objects do not become fixed simply because /usr/bin/rclone updates.",
+    "security": "Re-evaluate actual candidate against current official advisory DB and existing comparison helper, including other components sharing grouped rows; reference does not clear other binaries or newly discovered advisories.",
+    "release": "Applicable security, isolated signing, and boot qualification gates remain independent."
+  },
+  "remainingBlockers": [
+    {
+      "owner": "Fedora rclone maintainer/QA",
+      "event": "Stable promotion of signed3118644 or later qualified fixed owning build."
+    },
+    {
+      "owner": "Finite",
+      "event": "Hosted package/runtime compatibility and immutable candidate native/live/retained binding, then security/sign/boot qualification."
+    }
+  ],
+  "releaseEligible": false,
+  "candidateBindingUnproven": true,
+  "scannerRunPerformed": false,
+  "packageInstalled": false,
+  "imagePulled": false,
+  "repoMutated": false,
+  "jjMutated": false
+}

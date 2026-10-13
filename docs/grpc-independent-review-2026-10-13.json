@@ -1,0 +1,64 @@
+{
+  "schema": 1,
+  "verdict": "APPROVED",
+  "reviewedAt": "2026-10-13T07:42:43.549025+00:00",
+  "reviewSha256": "d3a2e60632ec963c6edcd0e4490bd9ede9472ff9e6b6c770b9e0c6623deac5c4",
+  "sourceCensusSha256": "a1000693e4e93e7c7b286b36c357ca05d7dcc188dcedae0ff24cb684d4a86b85",
+  "sourceCensusRun": 38362940891,
+  "typedPolicyValidation": "passed in memory without repository changes",
+  "nativeConfigSbomProbeJoinsVerified": 24,
+  "scopeChecks": [
+    {
+      "id": "grpc-auth-client-bluefin-dx-generic-7848ba4cfb",
+      "image": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "selectedPaths": 4,
+      "unprovenPathsPreserved": [
+        "/sysroot/ostree/repo/objects/90/2251a93331aa5e6a9393d0850cd6e647ef9be08f4fd745c9fa3e861c9aa058.file",
+        "/usr/bin/podman-tui"
+      ]
+    },
+    {
+      "id": "grpc-auth-client-bluefin-generic-e98ca0ceb4",
+      "image": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+      "selectedPaths": 4,
+      "unprovenPathsPreserved": []
+    },
+    {
+      "id": "grpc-auth-client-main-bluefin-dx-generic-3fd7e10d0e",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "selectedPaths": 4,
+      "unprovenPathsPreserved": [
+        "/sysroot/ostree/repo/objects/90/2251a93331aa5e6a9393d0850cd6e647ef9be08f4fd745c9fa3e861c9aa058.file",
+        "/usr/bin/podman-tui"
+      ]
+    },
+    {
+      "id": "grpc-auth-client-main-bluefin-dx-next-a851083d1a",
+      "image": "ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "selectedPaths": 4,
+      "unprovenPathsPreserved": [
+        "/sysroot/ostree/repo/objects/90/2251a93331aa5e6a9393d0850cd6e647ef9be08f4fd745c9fa3e861c9aa058.file",
+        "/usr/bin/podman-tui"
+      ]
+    },
+    {
+      "id": "grpc-auth-client-main-bluefin-generic-3d4693f25f",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "selectedPaths": 4,
+      "unprovenPathsPreserved": []
+    },
+    {
+      "id": "grpc-auth-client-main-bluefin-next-a36f46afcc",
+      "image": "ghcr.io/closure-labs/finite@sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+      "selectedPaths": 4,
+      "unprovenPathsPreserved": []
+    }
+  ],
+  "limits": [
+    "Authorization-only CVE-2026-33186/GHSA-p77j-4mvh-x3m3; exact six historical digests and four Podman/Buildah files each.",
+    "DX podman-tui live and retained locations remain blocked.",
+    "GHSA-hrxh-6v49-42gf remains blocked: peer WINDOW_UPDATE creates uncounted client control-buffer work.",
+    "Current main/future digests receive no grant from these historical joins.",
+    "Compiler/cgo, kernel, signing, boot and release gates unchanged."
+  ]
+}

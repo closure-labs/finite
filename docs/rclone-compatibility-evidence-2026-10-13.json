@@ -1,0 +1,749 @@
+{
+  "schema": 1,
+  "status": "partial-pass",
+  "run": 38366200031,
+  "url": "https://github.com/closure-labs/finite/actions/runs/38366200031",
+  "revision": "cf349b5a62f577de31fc04d0f65bb8a709539d4d",
+  "artifactId": 11797137537,
+  "artifactSha256": "79858b9396cb51fce5ad089293bec4cc3ed9667405391fe88c08ff8bb95593ee",
+  "report": {
+    "schema": 1,
+    "binarySha256": "0343a46124ac5f3d64396bfb33102e6d734541979036f5d0d931358902cd686e",
+    "sourceRevision": "cf349b5a62f577de31fc04d0f65bb8a709539d4d",
+    "referenceScope": "testing-candidate",
+    "status": "partial-pass",
+    "cases": [
+      {
+        "id": "ordinary-copy-sync",
+        "advisory": null,
+        "status": "pass",
+        "evidence": {
+          "controls": [
+            "version",
+            "copy",
+            "sync",
+            "check"
+          ]
+        }
+      },
+      {
+        "id": "links-root-confinement",
+        "advisory": "GHSA-cf44-9pgv-m4xc",
+        "status": "pass",
+        "evidence": {
+          "contracts": [
+            "external-link-refused",
+            "nested-link-refused",
+            "in-tree-link-allowed"
+          ],
+          "remainingScope": "Concurrent link races and directory metadata writes are not covered here."
+        }
+      },
+      {
+        "id": "ftp-session-authority",
+        "advisory": "GHSA-c476-6w5q-jw77",
+        "status": "pass",
+        "evidence": {
+          "contracts": [
+            "simultaneous-same-user-isolation-both-orders",
+            "cross-root-retrieval-denied",
+            "unknown-token-denied"
+          ]
+        }
+      },
+      {
+        "id": "restic-root-traversal",
+        "advisory": "GHSA-45pq-889g-fcgh",
+        "status": "pass",
+        "evidence": {
+          "contracts": [
+            "memory-backend-positive-read",
+            "literal-and-encoded-traversal-rejected",
+            "outside-sentinel-unchanged"
+          ]
+        }
+      },
+      {
+        "id": "restic-private-repository",
+        "advisory": "GHSA-fqj9-69pf-6pjg",
+        "status": "pass",
+        "evidence": {
+          "contracts": [
+            "memory-backend-positive-read",
+            "literal-and-encoded-traversal-rejected",
+            "outside-sentinel-unchanged"
+          ]
+        }
+      }
+    ],
+    "gaps": [
+      {
+        "id": "sftp-powershell-quote",
+        "advisory": "GHSA-2m8m-jhrm-w6j2",
+        "status": "not-covered",
+        "reason": "Requires exact captured SFTP shell invocation and separate real Windows interoperability fixture."
+      },
+      {
+        "id": "rc-per-server-proxy",
+        "advisory": "GHSA-p569-5gjg-9cmj",
+        "status": "not-covered",
+        "reason": "FTP direct-server session test does not exercise RC-started FTP/S3 request-local proxies."
+      },
+      {
+        "id": "s3-proxy-secret-and-authority",
+        "advisory": "GHSA-xwwr-4h3p-r22c",
+        "status": "not-covered",
+        "reason": "Per-identity SigV4 secret and cross-server authority fixture remains required."
+      },
+      {
+        "id": "mount",
+        "status": "not-covered",
+        "reason": "This capability-free container does not qualify FUSE mounting."
+      }
+    ],
+    "coverageComplete": false,
+    "releaseEligible": false,
+    "installationApproved": false,
+    "candidateBindingUnproven": true,
+    "dispositionsGranted": [],
+    "commands": [
+      {
+        "args": [
+          "version"
+        ],
+        "returncode": 0,
+        "stdoutSha256": "e272366da81c33c454aa778e4c9d5b5139d181cdefc2397b6071d23d4a47bae8",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrTail": ""
+      },
+      {
+        "args": [
+          "copy",
+          "/tmp/finite-rclone-compat-58c7i1jh/ordinary-copy-sync/source",
+          "/tmp/finite-rclone-compat-58c7i1jh/ordinary-copy-sync/destination"
+        ],
+        "returncode": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrTail": ""
+      },
+      {
+        "args": [
+          "sync",
+          "/tmp/finite-rclone-compat-58c7i1jh/ordinary-copy-sync/source",
+          "/tmp/finite-rclone-compat-58c7i1jh/ordinary-copy-sync/destination"
+        ],
+        "returncode": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrTail": ""
+      },
+      {
+        "args": [
+          "check",
+          "/tmp/finite-rclone-compat-58c7i1jh/ordinary-copy-sync/source",
+          "/tmp/finite-rclone-compat-58c7i1jh/ordinary-copy-sync/destination"
+        ],
+        "returncode": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "86fdb6c6059972f38f5fcf4382a78910b39e4256825f34e96e162c5f66b841fc",
+        "stderrTail": "2026/10/13 07:59:37 NOTICE: Local file system at /tmp/finite-rclone-compat-58c7i1jh/ordinary-copy-sync/destination: 0 differences found\n2026/10/13 07:59:37 NOTICE: Local file system at /tmp/finite-rclone-compat-58c7i1jh/ordinary-copy-sync/destination: 1 matching files\n"
+      },
+      {
+        "args": [
+          "copyto",
+          "/tmp/finite-rclone-compat-58c7i1jh/links-root-confinement/target",
+          "/tmp/finite-rclone-compat-58c7i1jh/links-root-confinement/destination/pwn.rclonelink",
+          "--links"
+        ],
+        "returncode": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrTail": ""
+      },
+      {
+        "args": [
+          "copy",
+          "/tmp/finite-rclone-compat-58c7i1jh/links-root-confinement/source-0",
+          "/tmp/finite-rclone-compat-58c7i1jh/links-root-confinement/destination",
+          "--links"
+        ],
+        "returncode": 1,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "1cdee4195cb64a6a0446cbd14223868b1e579b50b1f137d62760a6754287032d",
+        "stderrTail": "2026/10/13 07:59:38 ERROR : pwn/authkeys: Failed to copy: mkdirat pwn: statat pwn: path escapes from parent\n2026/10/13 07:59:38 ERROR : pwn: Failed to update directory timestamp or metadata: chtimesat pwn: path escapes from parent\n2026/10/13 07:59:38 ERROR : Attempt 1/1 failed with 3 errors and: failed to set directory modtime: chtimesat pwn: path escapes from parent\n2026/10/13 07:59:38 NOTICE: Failed to copy with 3 errors: last error was: failed to set directory modtime: chtimesat pwn: path escapes from parent\n"
+      },
+      {
+        "args": [
+          "copy",
+          "/tmp/finite-rclone-compat-58c7i1jh/links-root-confinement/source-1",
+          "/tmp/finite-rclone-compat-58c7i1jh/links-root-confinement/destination",
+          "--links"
+        ],
+        "returncode": 1,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "59893c90f0f2de09ce0a487380f1b453b65d7529a085aa7e8fc6ead9b638e5c8",
+        "stderrTail": "2026/10/13 07:59:38 ERROR : evil/pwn/authkeys: Failed to copy: mkdirat pwn: statat evil/pwn: path escapes from parent\n2026/10/13 07:59:38 ERROR : evil/pwn: Failed to update directory timestamp or metadata: chtimesat evil/pwn: path escapes from parent\n2026/10/13 07:59:38 ERROR : Attempt 1/1 failed with 3 errors and: failed to set directory modtime: chtimesat evil/pwn: path escapes from parent\n2026/10/13 07:59:38 NOTICE: Failed to copy with 3 errors: last error was: failed to set directory modtime: chtimesat evil/pwn: path escapes from parent\n"
+      },
+      {
+        "args": [
+          "copy",
+          "/tmp/finite-rclone-compat-58c7i1jh/links-root-confinement/positive",
+          "/tmp/finite-rclone-compat-58c7i1jh/links-root-confinement/destination",
+          "--links"
+        ],
+        "returncode": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrTail": ""
+      },
+      {
+        "args": [
+          "--log-level",
+          "DEBUG",
+          "serve",
+          "ftp",
+          "--addr",
+          "127.0.0.1:52427",
+          "--passive-port",
+          "45805-45813",
+          "--auth-proxy",
+          "/usr/bin/python3 /tmp/finite-rclone-compat-58c7i1jh/ftp-session-authority/proxy.py"
+        ],
+        "returncode": -9,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "d7430380934fe72fcbebface5d4299625d761ce5ed26b2ae185cd68eae485b17",
+        "stderrTail": "group:10001}, err = <nil>\n2026/10/13 07:59:38 DEBUG : /: ListDir: \n2026/10/13 07:59:38 DEBUG : /: >ListDir: err = <nil>\n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: < 150 Opening ASCII mode data connection for file list\n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: < 226 Closing data connection, sent 14 bytes\n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: > TYPE I\n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: < 200 Type set to binary\n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: > PASV \n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: < 227 Entering Passive Mode (127,0,0,1,178,241)\n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: > RETR attacker.txt\n2026/10/13 07:59:38 DEBUG : /attacker.txt: GetFile: offset=0\n2026/10/13 07:59:38 DEBUG : attacker.txt: Open: flags=O_RDONLY\n2026/10/13 07:59:38 DEBUG : attacker.txt: >Open: fd=attacker.txt (r), err=<nil>\n2026/10/13 07:59:38 DEBUG : /attacker.txt: >GetFile: err = <nil>\n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: < 150 Data transfer starting 14 bytes\n2026/10/13 07:59:38 DEBUG : attacker.txt: ChunkedReader.openRange at 0 length 134217728\n2026/10/13 07:59:38 DEBUG : attacker.txt: ChunkedReader.Read at 0 length 32768 chunkOffset 0 chunkSize 134217728\n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: < 226 Closing data connection, sent 14 bytes\n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: > TYPE A\n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: < 200 Type set to ASCII\n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: > PASV \n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: < 227 Entering Passive Mode (127,0,0,1,178,242)\n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: > NLST \n2026/10/13 07:59:38 DEBUG : /: Stat: \n2026/10/13 07:59:38 DEBUG : /: >Stat: fi=&{FileInfo:/ mode:2147484096 owner:10001 group:10001}, err = <nil>\n2026/10/13 07:59:38 DEBUG : /: ListDir: \n2026/10/13 07:59:38 DEBUG : /: >ListDir: err = <nil>\n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: < 150 Opening ASCII mode data connection for file list\n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: < 226 Closing data connection, sent 12 bytes\n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: > TYPE I\n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: < 200 Type set to binary\n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: > PASV \n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: < 227 Entering Passive Mode (127,0,0,1,178,241)\n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: > RETR attacker.txt\n2026/10/13 07:59:38 DEBUG : /attacker.txt: GetFile: offset=0\n2026/10/13 07:59:38 INFO  : /attacker.txt: File not found\n2026/10/13 07:59:38 DEBUG : /attacker.txt: >GetFile: err = file not found\n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: < 551 File not available\n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: > QUIT \n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: < 221 Goodbye\n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: Connection Terminated\n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: > QUIT \n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: < 221 Goodbye\n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: Connection Terminated\n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: Connection Established\n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: < 220 Welcome to Rclone v1.75.2 FTP Server\n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: > USER shared\n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: < 331 User name ok, password required\n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: > PASS ****\n2026/10/13 07:59:38 DEBUG : Calling proxy [/usr/bin/python3 /tmp/finite-rclone-compat-58c7i1jh/ftp-session-authority/proxy.py]\n2026/10/13 07:59:38 INFO  : proxy login failed: proxy: failed on [/usr/bin/python3 /tmp/finite-rclone-compat-58c7i1jh/ftp-session-authority/proxy.py]: \"\": exit status 1\n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: < 530 Incorrect password, not logged in\n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: > QUIT \n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: < 221 Goodbye\n2026/10/13 07:59:38 INFO  : 4894273e74ba7a77a478: Connection Terminated\n"
+      },
+      {
+        "args": [
+          "rcd",
+          "--rc-addr",
+          "127.0.0.1:60761",
+          "--rc-no-auth"
+        ],
+        "returncode": -9,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "31556d0f9caf632309f5f3fc4f946cd515093d7def6d007131255af35c585763",
+        "stderrTail": "2026/10/13 07:59:38 NOTICE: Serving remote control on http://127.0.0.1:60761/\n"
+      },
+      {
+        "args": [
+          "rcd",
+          "--rc-addr",
+          "127.0.0.1:43785",
+          "--rc-no-auth"
+        ],
+        "returncode": -9,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "82c4445e5946833c15e331246920fed5cbfcba9f5a5aee0a04d823823330d062",
+        "stderrTail": "2026/10/13 07:59:38 NOTICE: Serving remote control on http://127.0.0.1:43785/\n"
+      }
+    ]
+  },
+  "files": {
+    "compatibility/collector-sha256.txt": "17ec97a314dfe74ef73cb65634464de8608143ad53e81c3c802f9a8cd26da99f",
+    "compatibility/container-configuration.json": "eaea7226c9dc7dd0649940fe3f7890a22a8bc0762af11fd3f35eeaab94ccd441",
+    "compatibility/execution-status.txt": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "compatibility/execution.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compatibility/fedora-base.json": "69b2bad8ad1ada15831debc0b2e7d6fc9674462d45e43c4f610bf7a25d16b16b",
+    "compatibility/host-python.txt": "5b3e43dc38ca01e3f5a7854ba50d4330864b0c1e0f646650b2c78cf072acc366",
+    "compatibility/host-rpm.txt": "436a6c3d4bffa5d089bf791dca143fc7675aeb477a1cc664801070364b9058df",
+    "compatibility/python-environment-id.txt": "d31e885e33d3faf7e977f63e01e06dd04c0d771db6b6b679ed552a1a88f3ee8f",
+    "compatibility/python-environment.json": "11ad3f473fd60d8f0f5c25f41c6107ef461a5709f328e17cdbb0ea0e6cb43f8f",
+    "compatibility/python-environment.log": "bd70b0cb1d0cca6a28e009a74de5b32ddc4ac5c7fd727b51f3800a06b521f91b",
+    "compatibility/reference-binary-sha256.txt": "1a8fe94db174de83ea657e9fe0a7e46bd3285d6c4d4920646850e79951ab4250",
+    "compatibility/report.json": "e79d49b532fe795ea153202c56be995c2496a42596a72bce68dbca94670befda",
+    "rclone-reference/rclone-signature.txt": "c7974b191a4fd7217db61f94737fd43ba9353bf196cedf4a06b7d20030d63de3",
+    "rclone-reference/reference-evidence.json": "8b98b3dd221deb8fa860ab7d6b4014aef691e1ace98bcad6a301968247ad38ec"
+  },
+  "priorAttempts": [
+    {
+      "schema": 1,
+      "run": 38364908523,
+      "url": "https://github.com/closure-labs/finite/actions/runs/38364908523",
+      "revision": "1fb365b8ac25ffeefc9bc8eb8e97f9de0a4efefb",
+      "artifactId": 11795914856,
+      "artifactSha256": "e06678679aeef115a819171c33c265cd60d1569de84d6c757edc3111d04c13c8",
+      "status": "probe-error",
+      "report": {
+        "schema": 1,
+        "binarySha256": "0343a46124ac5f3d64396bfb33102e6d734541979036f5d0d931358902cd686e",
+        "sourceRevision": "1fb365b8ac25ffeefc9bc8eb8e97f9de0a4efefb",
+        "referenceScope": "testing-candidate",
+        "status": "probe-error",
+        "cases": [
+          {
+            "id": "ordinary-copy-sync",
+            "advisory": null,
+            "status": "pass",
+            "evidence": {
+              "controls": [
+                "version",
+                "copy",
+                "sync",
+                "check"
+              ]
+            }
+          },
+          {
+            "id": "links-root-confinement",
+            "advisory": "GHSA-cf44-9pgv-m4xc",
+            "status": "pass",
+            "evidence": {
+              "contracts": [
+                "external-link-refused",
+                "nested-link-refused",
+                "in-tree-link-allowed"
+              ],
+              "remainingScope": "Concurrent link races and directory metadata writes are not covered here."
+            }
+          },
+          {
+            "id": "ftp-session-authority",
+            "advisory": "GHSA-c476-6w5q-jw77",
+            "status": "probe-error",
+            "reason": "timed out"
+          },
+          {
+            "id": "restic-root-traversal",
+            "advisory": "GHSA-45pq-889g-fcgh",
+            "status": "pass",
+            "evidence": {
+              "contracts": [
+                "memory-backend-positive-read",
+                "literal-and-encoded-traversal-rejected",
+                "outside-sentinel-unchanged"
+              ]
+            }
+          },
+          {
+            "id": "restic-private-repository",
+            "advisory": "GHSA-fqj9-69pf-6pjg",
+            "status": "pass",
+            "evidence": {
+              "contracts": [
+                "memory-backend-positive-read",
+                "literal-and-encoded-traversal-rejected",
+                "outside-sentinel-unchanged"
+              ]
+            }
+          }
+        ],
+        "gaps": [
+          {
+            "id": "sftp-powershell-quote",
+            "advisory": "GHSA-2m8m-jhrm-w6j2",
+            "status": "not-covered",
+            "reason": "Requires exact captured SFTP shell invocation and separate real Windows interoperability fixture."
+          },
+          {
+            "id": "rc-per-server-proxy",
+            "advisory": "GHSA-p569-5gjg-9cmj",
+            "status": "not-covered",
+            "reason": "FTP direct-server session test does not exercise RC-started FTP/S3 request-local proxies."
+          },
+          {
+            "id": "s3-proxy-secret-and-authority",
+            "advisory": "GHSA-xwwr-4h3p-r22c",
+            "status": "not-covered",
+            "reason": "Per-identity SigV4 secret and cross-server authority fixture remains required."
+          },
+          {
+            "id": "mount",
+            "status": "not-covered",
+            "reason": "This capability-free container does not qualify FUSE mounting."
+          }
+        ],
+        "coverageComplete": false,
+        "releaseEligible": false,
+        "installationApproved": false,
+        "candidateBindingUnproven": true,
+        "dispositionsGranted": [],
+        "commands": [
+          {
+            "args": [
+              "version"
+            ],
+            "returncode": 0,
+            "stdoutSha256": "e272366da81c33c454aa778e4c9d5b5139d181cdefc2397b6071d23d4a47bae8",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrTail": ""
+          },
+          {
+            "args": [
+              "copy",
+              "/tmp/finite-rclone-compat-1ws9yvuh/ordinary-copy-sync/source",
+              "/tmp/finite-rclone-compat-1ws9yvuh/ordinary-copy-sync/destination"
+            ],
+            "returncode": 0,
+            "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrTail": ""
+          },
+          {
+            "args": [
+              "sync",
+              "/tmp/finite-rclone-compat-1ws9yvuh/ordinary-copy-sync/source",
+              "/tmp/finite-rclone-compat-1ws9yvuh/ordinary-copy-sync/destination"
+            ],
+            "returncode": 0,
+            "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrTail": ""
+          },
+          {
+            "args": [
+              "check",
+              "/tmp/finite-rclone-compat-1ws9yvuh/ordinary-copy-sync/source",
+              "/tmp/finite-rclone-compat-1ws9yvuh/ordinary-copy-sync/destination"
+            ],
+            "returncode": 0,
+            "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrSha256": "bcc0650aecdfbd0b92443954367bfd67d8bd5a9c31b0dc12f13f17dbca482b3d",
+            "stderrTail": "2026/10/13 07:47:52 NOTICE: Local file system at /tmp/finite-rclone-compat-1ws9yvuh/ordinary-copy-sync/destination: 0 differences found\n2026/10/13 07:47:52 NOTICE: Local file system at /tmp/finite-rclone-compat-1ws9yvuh/ordinary-copy-sync/destination: 1 matching files\n"
+          },
+          {
+            "args": [
+              "copyto",
+              "/tmp/finite-rclone-compat-1ws9yvuh/links-root-confinement/target",
+              "/tmp/finite-rclone-compat-1ws9yvuh/links-root-confinement/destination/pwn.rclonelink",
+              "--links"
+            ],
+            "returncode": 0,
+            "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrTail": ""
+          },
+          {
+            "args": [
+              "copy",
+              "/tmp/finite-rclone-compat-1ws9yvuh/links-root-confinement/source-0",
+              "/tmp/finite-rclone-compat-1ws9yvuh/links-root-confinement/destination",
+              "--links"
+            ],
+            "returncode": 1,
+            "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrSha256": "49e7c7769a13d272f0be4c009af921a94eea8d8ca123cba3041427cbe7135220",
+            "stderrTail": "2026/10/13 07:47:52 ERROR : pwn/authkeys: Failed to copy: mkdirat pwn: statat pwn: path escapes from parent\n2026/10/13 07:47:52 ERROR : pwn: Failed to update directory timestamp or metadata: chtimesat pwn: path escapes from parent\n2026/10/13 07:47:52 ERROR : Attempt 1/1 failed with 3 errors and: failed to set directory modtime: chtimesat pwn: path escapes from parent\n2026/10/13 07:47:52 NOTICE: Failed to copy with 3 errors: last error was: failed to set directory modtime: chtimesat pwn: path escapes from parent\n"
+          },
+          {
+            "args": [
+              "copy",
+              "/tmp/finite-rclone-compat-1ws9yvuh/links-root-confinement/source-1",
+              "/tmp/finite-rclone-compat-1ws9yvuh/links-root-confinement/destination",
+              "--links"
+            ],
+            "returncode": 1,
+            "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrSha256": "93082a6b263b8b9b5844167e621cd4bba73afbc7bf7856d9d5af0b5cd058ea9c",
+            "stderrTail": "2026/10/13 07:47:52 ERROR : evil/pwn/authkeys: Failed to copy: mkdirat pwn: statat evil/pwn: path escapes from parent\n2026/10/13 07:47:52 ERROR : evil/pwn: Failed to update directory timestamp or metadata: chtimesat evil/pwn: path escapes from parent\n2026/10/13 07:47:52 ERROR : Attempt 1/1 failed with 3 errors and: failed to set directory modtime: chtimesat evil/pwn: path escapes from parent\n2026/10/13 07:47:52 NOTICE: Failed to copy with 3 errors: last error was: failed to set directory modtime: chtimesat evil/pwn: path escapes from parent\n"
+          },
+          {
+            "args": [
+              "copy",
+              "/tmp/finite-rclone-compat-1ws9yvuh/links-root-confinement/positive",
+              "/tmp/finite-rclone-compat-1ws9yvuh/links-root-confinement/destination",
+              "--links"
+            ],
+            "returncode": 0,
+            "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrTail": ""
+          },
+          {
+            "args": [
+              "serve",
+              "ftp",
+              "--addr",
+              "127.0.0.1:56209",
+              "--passive-port",
+              "37153-37153",
+              "--auth-proxy",
+              "/usr/bin/python3 /tmp/finite-rclone-compat-1ws9yvuh/ftp-session-authority/proxy.py"
+            ],
+            "returncode": -9,
+            "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrSha256": "8f8247c0a838cea7c68c1036d09bcfc377b067754c8b7de3c9d4c73d2dba6c49",
+            "stderrTail": "2026/10/13 07:47:52 NOTICE: Serving FTP on 127.0.0.1:56209\n"
+          },
+          {
+            "args": [
+              "rcd",
+              "--rc-addr",
+              "127.0.0.1:47163",
+              "--rc-no-auth"
+            ],
+            "returncode": -9,
+            "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrSha256": "f6ebf2011b40032292fa016f457c776c737acc6f4a52d64b43523df1e114a4d3",
+            "stderrTail": "2026/10/13 07:47:55 NOTICE: Serving remote control on http://127.0.0.1:47163/\n"
+          },
+          {
+            "args": [
+              "rcd",
+              "--rc-addr",
+              "127.0.0.1:56215",
+              "--rc-no-auth"
+            ],
+            "returncode": -9,
+            "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrSha256": "d6edb2ae0ba7c0bda3ab9adc677d8885ed154c8303d380376b34d5cb8d18ab85",
+            "stderrTail": "2026/10/13 07:47:55 NOTICE: Serving remote control on http://127.0.0.1:56215/\n"
+          }
+        ]
+      },
+      "interpretation": "Four actual contracts passed; FTP timeout is a probe error requiring fixture investigation, not a demonstrated vulnerability. No adoption or release clearance."
+    },
+    {
+      "run": 38365757103,
+      "revision": "5e670a0dbc510559c69f3add6eed9cf47b7f0d6d",
+      "artifactId": 11797360409,
+      "artifactSha256": "a464908167e6aa0261aa9c884f8ea5768fb2a175f867f53851ab460c62e89389",
+      "report": {
+        "schema": 1,
+        "binarySha256": "0343a46124ac5f3d64396bfb33102e6d734541979036f5d0d931358902cd686e",
+        "sourceRevision": "5e670a0dbc510559c69f3add6eed9cf47b7f0d6d",
+        "referenceScope": "testing-candidate",
+        "status": "probe-error",
+        "cases": [
+          {
+            "id": "ordinary-copy-sync",
+            "advisory": null,
+            "status": "pass",
+            "evidence": {
+              "controls": [
+                "version",
+                "copy",
+                "sync",
+                "check"
+              ]
+            }
+          },
+          {
+            "id": "links-root-confinement",
+            "advisory": "GHSA-cf44-9pgv-m4xc",
+            "status": "pass",
+            "evidence": {
+              "contracts": [
+                "external-link-refused",
+                "nested-link-refused",
+                "in-tree-link-allowed"
+              ],
+              "remainingScope": "Concurrent link races and directory metadata writes are not covered here."
+            }
+          },
+          {
+            "id": "ftp-session-authority",
+            "advisory": "GHSA-c476-6w5q-jw77",
+            "status": "probe-error",
+            "reason": "FTP denial was not a file authorization refusal"
+          },
+          {
+            "id": "restic-root-traversal",
+            "advisory": "GHSA-45pq-889g-fcgh",
+            "status": "pass",
+            "evidence": {
+              "contracts": [
+                "memory-backend-positive-read",
+                "literal-and-encoded-traversal-rejected",
+                "outside-sentinel-unchanged"
+              ]
+            }
+          },
+          {
+            "id": "restic-private-repository",
+            "advisory": "GHSA-fqj9-69pf-6pjg",
+            "status": "pass",
+            "evidence": {
+              "contracts": [
+                "memory-backend-positive-read",
+                "literal-and-encoded-traversal-rejected",
+                "outside-sentinel-unchanged"
+              ]
+            }
+          }
+        ],
+        "gaps": [
+          {
+            "id": "sftp-powershell-quote",
+            "advisory": "GHSA-2m8m-jhrm-w6j2",
+            "status": "not-covered",
+            "reason": "Requires exact captured SFTP shell invocation and separate real Windows interoperability fixture."
+          },
+          {
+            "id": "rc-per-server-proxy",
+            "advisory": "GHSA-p569-5gjg-9cmj",
+            "status": "not-covered",
+            "reason": "FTP direct-server session test does not exercise RC-started FTP/S3 request-local proxies."
+          },
+          {
+            "id": "s3-proxy-secret-and-authority",
+            "advisory": "GHSA-xwwr-4h3p-r22c",
+            "status": "not-covered",
+            "reason": "Per-identity SigV4 secret and cross-server authority fixture remains required."
+          },
+          {
+            "id": "mount",
+            "status": "not-covered",
+            "reason": "This capability-free container does not qualify FUSE mounting."
+          }
+        ],
+        "coverageComplete": false,
+        "releaseEligible": false,
+        "installationApproved": false,
+        "candidateBindingUnproven": true,
+        "dispositionsGranted": [],
+        "commands": [
+          {
+            "args": [
+              "version"
+            ],
+            "returncode": 0,
+            "stdoutSha256": "e272366da81c33c454aa778e4c9d5b5139d181cdefc2397b6071d23d4a47bae8",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrTail": ""
+          },
+          {
+            "args": [
+              "copy",
+              "/tmp/finite-rclone-compat-zgnji7e7/ordinary-copy-sync/source",
+              "/tmp/finite-rclone-compat-zgnji7e7/ordinary-copy-sync/destination"
+            ],
+            "returncode": 0,
+            "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrTail": ""
+          },
+          {
+            "args": [
+              "sync",
+              "/tmp/finite-rclone-compat-zgnji7e7/ordinary-copy-sync/source",
+              "/tmp/finite-rclone-compat-zgnji7e7/ordinary-copy-sync/destination"
+            ],
+            "returncode": 0,
+            "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrTail": ""
+          },
+          {
+            "args": [
+              "check",
+              "/tmp/finite-rclone-compat-zgnji7e7/ordinary-copy-sync/source",
+              "/tmp/finite-rclone-compat-zgnji7e7/ordinary-copy-sync/destination"
+            ],
+            "returncode": 0,
+            "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrSha256": "95d29312711c74014d9b07a9931ca4f54e9e82788033737de41dbf26b38b8492",
+            "stderrTail": "2026/10/13 07:55:34 NOTICE: Local file system at /tmp/finite-rclone-compat-zgnji7e7/ordinary-copy-sync/destination: 0 differences found\n2026/10/13 07:55:34 NOTICE: Local file system at /tmp/finite-rclone-compat-zgnji7e7/ordinary-copy-sync/destination: 1 matching files\n"
+          },
+          {
+            "args": [
+              "copyto",
+              "/tmp/finite-rclone-compat-zgnji7e7/links-root-confinement/target",
+              "/tmp/finite-rclone-compat-zgnji7e7/links-root-confinement/destination/pwn.rclonelink",
+              "--links"
+            ],
+            "returncode": 0,
+            "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrTail": ""
+          },
+          {
+            "args": [
+              "copy",
+              "/tmp/finite-rclone-compat-zgnji7e7/links-root-confinement/source-0",
+              "/tmp/finite-rclone-compat-zgnji7e7/links-root-confinement/destination",
+              "--links"
+            ],
+            "returncode": 1,
+            "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrSha256": "3b9c244c3444bdc89a01020df78ce21154a8bad208109e029d79ca5733dfcb95",
+            "stderrTail": "2026/10/13 07:55:34 ERROR : pwn/authkeys: Failed to copy: mkdirat pwn: statat pwn: path escapes from parent\n2026/10/13 07:55:34 ERROR : pwn: Failed to update directory timestamp or metadata: chtimesat pwn: path escapes from parent\n2026/10/13 07:55:34 ERROR : Attempt 1/1 failed with 3 errors and: failed to set directory modtime: chtimesat pwn: path escapes from parent\n2026/10/13 07:55:34 NOTICE: Failed to copy with 3 errors: last error was: failed to set directory modtime: chtimesat pwn: path escapes from parent\n"
+          },
+          {
+            "args": [
+              "copy",
+              "/tmp/finite-rclone-compat-zgnji7e7/links-root-confinement/source-1",
+              "/tmp/finite-rclone-compat-zgnji7e7/links-root-confinement/destination",
+              "--links"
+            ],
+            "returncode": 1,
+            "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrSha256": "41acd05a1833056167cec150f9bb4ceeef65a4b6d98c9b7ba1580478c3cd3bd3",
+            "stderrTail": "2026/10/13 07:55:34 ERROR : evil/pwn/authkeys: Failed to copy: mkdirat pwn: statat evil/pwn: path escapes from parent\n2026/10/13 07:55:34 ERROR : evil/pwn: Failed to update directory timestamp or metadata: chtimesat evil/pwn: path escapes from parent\n2026/10/13 07:55:34 ERROR : Attempt 1/1 failed with 3 errors and: failed to set directory modtime: chtimesat evil/pwn: path escapes from parent\n2026/10/13 07:55:34 NOTICE: Failed to copy with 3 errors: last error was: failed to set directory modtime: chtimesat evil/pwn: path escapes from parent\n"
+          },
+          {
+            "args": [
+              "copy",
+              "/tmp/finite-rclone-compat-zgnji7e7/links-root-confinement/positive",
+              "/tmp/finite-rclone-compat-zgnji7e7/links-root-confinement/destination",
+              "--links"
+            ],
+            "returncode": 0,
+            "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrTail": ""
+          },
+          {
+            "args": [
+              "--log-level",
+              "DEBUG",
+              "serve",
+              "ftp",
+              "--addr",
+              "127.0.0.1:58381",
+              "--passive-port",
+              "40735-40743",
+              "--auth-proxy",
+              "/usr/bin/python3 /tmp/finite-rclone-compat-zgnji7e7/ftp-session-authority/proxy.py"
+            ],
+            "returncode": -9,
+            "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrSha256": "a6d9213bbdce9db9920a6e4b4f48e4c3212a83a6600a405882fcc475464d5306",
+            "stderrTail": ":55:34 INFO  : e396a2e14326dd20f006: < 200 Type set to ASCII\n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: > PASV \n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: < 227 Entering Passive Mode (127,0,0,1,159,35)\n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: > NLST \n2026/10/13 07:55:34 DEBUG : /: Stat: \n2026/10/13 07:55:34 DEBUG : /: >Stat: fi=&{FileInfo:/ mode:2147484096 owner:10001 group:10001}, err = <nil>\n2026/10/13 07:55:34 DEBUG : /: ListDir: \n2026/10/13 07:55:34 DEBUG : /: >ListDir: err = <nil>\n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: < 150 Opening ASCII mode data connection for file list\n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: < 226 Closing data connection, sent 14 bytes\n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: Connection Established\n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: < 220 Welcome to Rclone v1.75.2 FTP Server\n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: > USER shared\n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: < 331 User name ok, password required\n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: > PASS ****\n2026/10/13 07:55:34 DEBUG : Calling proxy [/usr/bin/python3 /tmp/finite-rclone-compat-zgnji7e7/ftp-session-authority/proxy.py]\n2026/10/13 07:55:34 DEBUG : Proxy returned in 21.954408ms\n2026/10/13 07:55:34 INFO  : Local file system at /tmp/finite-rclone-compat-zgnji7e7/ftp-session-authority/victim: poll-interval is not supported by this remote\n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: < 230 Password ok, continue\n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: > TYPE A\n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: < 200 Type set to ASCII\n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: > PASV \n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: < 227 Entering Passive Mode (127,0,0,1,159,31)\n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: > NLST \n2026/10/13 07:55:34 DEBUG : /: Stat: \n2026/10/13 07:55:34 DEBUG : /: >Stat: fi=&{FileInfo:/ mode:2147484096 owner:10001 group:10001}, err = <nil>\n2026/10/13 07:55:34 DEBUG : /: ListDir: \n2026/10/13 07:55:34 DEBUG : /: >ListDir: err = <nil>\n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: < 150 Opening ASCII mode data connection for file list\n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: < 226 Closing data connection, sent 12 bytes\n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: > TYPE A\n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: < 200 Type set to ASCII\n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: > PASV \n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: < 227 Entering Passive Mode (127,0,0,1,159,32)\n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: > NLST \n2026/10/13 07:55:34 DEBUG : /: Stat: \n2026/10/13 07:55:34 DEBUG : /: >Stat: fi=&{FileInfo:/ mode:2147484096 owner:10001 group:10001}, err = <nil>\n2026/10/13 07:55:34 DEBUG : /: ListDir: \n2026/10/13 07:55:34 DEBUG : /: >ListDir: err = <nil>\n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: < 150 Opening ASCII mode data connection for file list\n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: < 226 Closing data connection, sent 14 bytes\n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: > TYPE I\n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: < 200 Type set to binary\n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: > PASV \n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: < 227 Entering Passive Mode (127,0,0,1,159,36)\n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: > RETR victim.txt\n2026/10/13 07:55:34 DEBUG : /victim.txt: GetFile: offset=0\n2026/10/13 07:55:34 INFO  : /victim.txt: File not found\n2026/10/13 07:55:34 DEBUG : /victim.txt: >GetFile: err = file not found\n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: < 551 File not available\n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: > QUIT \n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: < 221 Goodbye\n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: Connection Terminated\n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: > QUIT \n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: < 221 Goodbye\n2026/10/13 07:55:34 INFO  : e396a2e14326dd20f006: Connection Terminated\n"
+          },
+          {
+            "args": [
+              "rcd",
+              "--rc-addr",
+              "127.0.0.1:44435",
+              "--rc-no-auth"
+            ],
+            "returncode": -9,
+            "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrSha256": "3936df7981fc3c3e9c6e4d476f193d609df591a65f1d6727a002b764afdfc887",
+            "stderrTail": "2026/10/13 07:55:34 NOTICE: Serving remote control on http://127.0.0.1:44435/\n"
+          },
+          {
+            "args": [
+              "rcd",
+              "--rc-addr",
+              "127.0.0.1:55461",
+              "--rc-no-auth"
+            ],
+            "returncode": -9,
+            "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrSha256": "350a163745abd3c42f444e436b192f320979dcc787a300500d89837789e59903",
+            "stderrTail": "2026/10/13 07:55:35 NOTICE: Serving remote control on http://127.0.0.1:55461/\n"
+          }
+        ]
+      },
+      "interpretation": "FTP positive root controls and retained session isolation passed, but narrow response-code expectation rejected actual 551 File not available. Fixture correction required; not a demonstrated vulnerability."
+    }
+  ],
+  "interpretation": "All five implemented contracts pass on authenticated signed testing-candidate bytes in an isolated hosted Fedora44 container. Explicit missing coverage remains; no package adoption, current-image vulnerability clearance or release eligibility.",
+  "independentReview": {
+    "reviewer": "continuation_qa",
+    "verdict": "approved-partial-evidence",
+    "verified": [
+      "all15 retained file hashes",
+      "report equality and exact source/helper hashes",
+      "signed executable hash and size",
+      "five actual contract passes and execution0",
+      "nonroot/network-none/read-only/capability/resource isolation",
+      "explicit remaining coverage gaps and false release/adoption fields"
+    ],
+    "scope": "Partial compatibility only; no stable adoption or image clearance."
+  }
+}
