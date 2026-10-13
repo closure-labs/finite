@@ -212,6 +212,11 @@
       "revision": "318d191af7bcab51ca57e0cb849c6311a32706db",
       "run": 38356430718,
       "status": "passed"
+    },
+    "finalSourceChecks": {
+      "revision": "29e8d962c063c9321ed4d4004298e4d28d77b769",
+      "run": 38356992553,
+      "status": "passed"
     }
   },
   "review": {
@@ -244,7 +249,7 @@
     }
   ],
   "verdicts": {
-    "sourceBuild": "All four main builds passed run38353294526; applicability source checks passed run38356430718; follow-up scanner fix requires updated source checks",
+    "sourceBuild": "All four main builds passed run38353294526; final applicability/scanner source checks passed run38356992553",
     "vulnerabilityClearance": "blocked",
     "releaseEligibility": "ineligible pending applicable security/signing/boot gates"
   },

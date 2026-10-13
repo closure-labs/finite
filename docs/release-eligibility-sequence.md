@@ -1,5 +1,7 @@
 # Release eligibility sequence
 
+Current execution order: [remediation and independent release sequence](release-implementation-sequence.md).
+
 Finite is a Jujutsu (JJ) repository using Bluefin/bootc with Nix/Home Manager;
 it is not NixOS. This sequence covers all four profiles and container tools.
 It began at externally merged PR145, `7dba29d3da8770b11ae633545a53854ba10ee353`.

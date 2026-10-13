@@ -261,3 +261,16 @@ hold remain explicit. Release eligibility has not been established.
   policy blocker; canonical caller-path remediation and three regression tests now pass.
 - Temporary read-only validation branch was deleted after successful retained
   reevaluation38356296590; evidence remains in the ledger and hosted artifacts.
+
+## Current implementation and release sequencing
+
+- [x] Final PR148 applicability/scanner head29e8d962 passed all hosted source gates38356992553.
+- [x] Sequence standard generic first, development and Next independently; retain all supported threat surfaces.
+- [ ] Resolve signed package prerequisites and remaining exact consumer proof; owners and acceptance evidence are in docs/release-implementation-sequence.md.
+- [ ] Validate one genuinely changed representative candidate before broadening image work.
+- [ ] Prepare exact-digest security, signing, boot, ISO and rollback packet for each cleared channel.
+- [ ] Release owner approves concrete qualified publication; no release eligibility exists yet.
+
+- [x] Identify rclone fixed owning build3118644 / FEDORA-2026-e27d24d18c in testing; retain exact publisher evidence.
+- [ ] After approved stable promotion, authenticate RPM payload and validate transaction, compiler/modules and auth-proxy compatibility on hosted runners.
+- [ ] AnyIO: await signed owning4.14.2 update or verified specific backport; no qualifying Fedora44 build observed.

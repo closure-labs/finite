@@ -1,0 +1,238 @@
+{
+  "schema": 1,
+  "reviewedAt": "2026-10-13T06:48:48.140753+00:00",
+  "reviewedBy": "great_cto security-officer / ownership_followup",
+  "status": "concrete-owning-publisher-route-awaits-stable-promotion-and-qualification",
+  "scope": "Read-only bounded official package metadata; no package installs, builds, scanner runs or candidate image pulls.",
+  "inputs": {
+    "consumerReview": "/tmp/finite-policy-security/docs/current-desktop-consumer-review-2026-10-13.json",
+    "consumerReviewSha256": "ed7fc5bac0e2b1753928b35604e241399813805ceb4bd745206efcedf9326eda",
+    "continuationLedger": "/tmp/finite-policy-security/docs/desktop-applicability-continuation-2026-10-13.json",
+    "historicalAvailabilityRuns": [
+      "38331234974",
+      "38336026926"
+    ],
+    "refreshReason": "User explicitly requested current fixed owning-package routes; rclone Fedora update was pushed to testing after retained availability probes."
+  },
+  "rclone": {
+    "currentOwningPackage": "rclone-1.74.3-1.fc44",
+    "verifiedUpstreamSource": {
+      "release": "1.75.2",
+      "publishedAt": "2026-10-09T11:03:19Z",
+      "upstreamCommit": "be8d6044eacb843b74d335db0c5fbe09222031fe",
+      "sourceModuleFacts": {
+        "minimumGoDirective": "1.26.0",
+        "golang.org/x/net": "0.60.0",
+        "golang.org/x/crypto": "0.57.0",
+        "actualReleaseBinaryCompiler": "unknown/not downloaded or inspected"
+      },
+      "verdict": "Real potential partial remediation of seven rclone main-module findings and embedded module floors; not yet a compatible approved package/source or stdlib clearance.",
+      "existingPublisherRoute": "Fedora-signed owning update/backport/rebuild; do not repeat unchanged availability query until publication event.",
+      "newOfficialPublisherRoute": "Requires explicit source/trust review and actual compatible RPM transaction/binary module proof; do not silently substitute an unsigned archive or overwrite RPM files.",
+      "signingMetadataProbe": {
+        "releaseAssetId": 624718850,
+        "checksumUrl": "https://github.com/rclone/rclone/releases/download/v1.75.2/SHA256SUMS",
+        "checksumSha256": "73ede5aab2b8f2dd4b1315f7f063cdd5df10de6338749bba49cbc0c240bda976",
+        "checksumBytes": 4795,
+        "keysSource": "https://github.com/rclone/rclone/blob/v1.75.2/docs/content/KEYS",
+        "keysSha256": "398761407ca77bd5a4aafda1b0176605aa9cb4cf0ae0c5a6dd1d2c2d11175100",
+        "validSignature": true,
+        "signingFingerprint": "FBF737ECE9F8AB18604BD2AC93935E02FF3B54FA",
+        "publicKeyAlgorithm": "DSA1024",
+        "signatureDigest": "SHA1",
+        "actualGpgStatusAlgorithms": [
+          17,
+          2
+        ],
+        "strongGitTagKeyFingerprint": "E3B358DC858FB307F48170B9CB0DBEBC5F32C81D",
+        "gitTagIsNotBinaryChecksumAuthority": true,
+        "rpmSha256": "d5174054cf94075c32faf25961687622b8d366b788972ea9fbcedba59013e320",
+        "zipSha256": "349ac8fba6ff65d6247043f1750cdcb518ec5d500ef91463a10d37c0ccdf3702",
+        "modernAttestationProbe": "GitHub attestations endpoint returned404; modern attestation not proven, absence not inferred.",
+        "cdnProbe": "downloads.rclone.org checksum GET returned403; official GitHub release metadata fallback used.",
+        "trustConclusion": "The checksum is authentic under the historical documented key, but introduces legacy DSA1024/SHA1 authentication; do not present as equivalent to current reviewed Fedora RSA/SHA256 source. Prefer owning publisher rebuild or a separately reviewed modern signature/attestation path."
+      },
+      "compatibilityRequirements": [
+        "Validate S3 auth-proxy per-identity-secret protocol and AuthKey behavior; source differs from the advisory illustrative minimal fix.",
+        "Validate RC-started FTP/S3 per-server proxies and FTP session isolation.",
+        "Validate ordinary sync/mount/copy, --links and SFTP hash behavior at all supported profiles.",
+        "Inspect actual embedded compiler/module versions before assessing other Go advisories; changed source go.mod does not prove binary contents."
+      ],
+      "officialSources": [
+        "https://rclone.org/downloads/",
+        "https://rclone.org/release_signing/",
+        "https://github.com/rclone/rclone/releases/tag/v1.75.2",
+        "https://github.com/rclone/rclone/blob/be8d6044eacb843b74d335db0c5fbe09222031fe/go.mod"
+      ]
+    },
+    "officialVendorRpm": {
+      "assetId": 624695319,
+      "size": 32247519,
+      "sha256": "d5174054cf94075c32faf25961687622b8d366b788972ea9fbcedba59013e320",
+      "headerProbe": {
+        "url": "https://github.com/rclone/rclone/releases/download/v1.75.2/rclone-v1.75.2-linux-amd64.rpm",
+        "status": 206,
+        "contentRange": "bytes 0-262143/32247519",
+        "bytesRead": 262144,
+        "headerPrefixSha256": "b32e2999466fe6b678680748d5409edd3fd26131c25b463c8b0de29112a43998",
+        "signatureHeader": [
+          [
+            62,
+            7,
+            76,
+            16
+          ],
+          [
+            273,
+            6,
+            0,
+            1
+          ],
+          [
+            1000,
+            4,
+            68,
+            1
+          ],
+          [
+            1007,
+            4,
+            72,
+            1
+          ]
+        ],
+        "mainHeaderEnd": 2024
+      },
+      "signaturePresent": false,
+      "signatureEvidence": "Complete RPM signature header contains tags62(signature-header region),273(SHA256 header digest),1000(header+payload size),1007(uncompressed payload size), and no cryptographic signature tags. A digest is not a signature. Only262144bytes read via HTTP206; payload never downloaded.",
+      "packagingSource": "https://github.com/rclone/rclone/blob/be8d6044eacb843b74d335db0c5fbe09222031fe/bin/nfpm.yaml",
+      "tagDefinitions": "https://github.com/rpm-software-management/rpm/blob/master/include/rpm/rpmtag.h",
+      "trustVerdict": "No independent strong RPM signature. Existing authentic legacyDSA1024/SHA1 checksum verification is not equivalent to reviewed Fedora source; no new vendor trust or installation approved."
+    },
+    "fedoraCandidate": {
+      "nvr": "rclone-1.75.2-1.fc44",
+      "epoch": 0,
+      "bodhi": {
+        "alias": "FEDORA-2026-e27d24d18c",
+        "status": "testing",
+        "request": null,
+        "date_submitted": "2026-10-11 09:37:01",
+        "date_testing": "2026-10-13 02:30:13",
+        "date_stable": null,
+        "test_gating_status": "passed",
+        "meets_testing_requirements": false,
+        "stable_days": 7,
+        "stable_karma": 3,
+        "url": "https://bodhi.fedoraproject.org/updates/FEDORA-2026-e27d24d18c"
+      },
+      "kojiBuildId": 3118644,
+      "kojiBuildState": 1,
+      "source": "git+https://src.fedoraproject.org/rpms/rclone.git#2c9e6ea83beab2b4e5fea95aabb46d7936609b8f",
+      "tags": [
+        "f44-updates-testing"
+      ],
+      "x86_64Rpm": {
+        "arch": "x86_64",
+        "build_id": 3118644,
+        "buildroot_id": 71772200,
+        "buildtime": 1791709044,
+        "draft": false,
+        "epoch": null,
+        "external_repo_id": 0,
+        "external_repo_name": "INTERNAL",
+        "extra": null,
+        "id": 49086983,
+        "metadata_only": false,
+        "name": "rclone",
+        "nvr": "rclone-1.75.2-1.fc44",
+        "payloadhash": "004c766dc9163b750128d5fe2c923158",
+        "release": "1.fc44",
+        "sha1header": "1379ce00a60f4ba07d39d4c717da45ce0d4e8214",
+        "sha256header": "b72df7ac9c68709ec77f565af20a243e3b52d271d282ff0c06c5054b5447565e",
+        "sha3_256header": null,
+        "sigmd5": "004c766dc9163b750128d5fe2c923158",
+        "size": 33000334,
+        "version": "1.75.2"
+      },
+      "signatureRecords": [
+        {
+          "rpm_id": 49086983,
+          "sighash": "4451fbfbe08aac34e9cb3e08aeab2ddf",
+          "sigkey": ""
+        },
+        {
+          "rpm_id": 49086983,
+          "sighash": "529e7dfd2e7125e927ec0c4b56da47d9",
+          "sigkey": "6d9f90a6"
+        }
+      ],
+      "signedReferenceUrl": "https://kojipkgs.fedoraproject.org/packages/rclone/1.75.2/1.fc44/data/signed/6d9f90a6/x86_64/rclone-1.75.2-1.fc44.x86_64.rpm",
+      "approvedFedora44KeyFingerprint": "36F612DCF27F7D1A48A835E4DBFCF71C6D9F90A6",
+      "signatureQualification": "Official Koji signature-presence metadata only; full isolated-key signature and payload verification NOT performed. Signed RPM33MB exceeds this task local download bound.",
+      "approvedStableAvailable": false
+    },
+    "recommendedRoute": "Retain stable-only policy. Once FEDORA-2026-e27d24d18c is stable and exact build tagged f44-updates, qualify the signed owning Fedora44RPM on hosted runners, then implement installed-only floor1.75.2-1.fc44. No need to introduce a new publisher.",
+    "qualificationSequence": [
+      "Verify exact Fedora44 key fingerprint, full RPM signatures and payload digests; pin authenticated package/hash/source metadata.",
+      "Inspect actual compiled Go compiler and every embedded module from signed RPM; source go.mod is not binary proof. Treat compiler/other module advisories independently.",
+      "Perform representative hosted installed-only DNF transaction; preserve protected boot stack and unrelated package inventory; require no cross-release dependencies.",
+      "Exercise ordinary sync/copy/mount, --links confinement, SFTP PowerShell hashing, RC per-server FTP/S3 isolation, FTP auth-proxy session isolation, and the changed S3 per-identity-secret auth-proxy contract.",
+      "Build only changed candidate when package/source prerequisites support it; bind live and retained paths to new immutable digest, reuse comparison helper, preserve scan/sign/boot gates."
+    ],
+    "owner": "Fedora rclone maintainer/QA promotes source; Finite qualifies compatibility, binary contents and image evidence.",
+    "unblockEvent": "Bodhi stable promotion of signed rclone1.75.2 Fedora44 build plus applicable hosted signature/transaction/runtime/scan proof. Gating passed alone is not stable promotion.",
+    "limits": [
+      "Seven retained rclone main-module fixes are actual partial-remediation leads, not automatic clearance of all embedded Go/compiler findings.",
+      "No testing repository enabled; no user approval for testing substitution inferred.",
+      "Removing server functionality alone would leave client --links and remote PowerShell risks; any feature restriction requires explicit enforceable product decision."
+    ]
+  },
+  "anyio": {
+    "currentOwningPackage": "python3-anyio-4.13.0-1.fc44",
+    "fixedVersion": "4.14.2",
+    "securityFixCommit": "68f58915f82d9be8109ebbbd8f5d70577d43f2ce",
+    "securityFixSource": "https://github.com/agronholm/anyio/commit/68f58915f82d9be8109ebbbd8f5d70577d43f2ce",
+    "officialAdvisory": "https://github.com/agronholm/anyio/security/advisories/GHSA-82r6-8w77-94w6",
+    "fedora44PublicationProbe": {
+      "url": "https://bodhi.fedoraproject.org/updates/?packages=python-anyio&releases=F44&rows_per_page=20",
+      "latestPublishedNvr": "python-anyio-4.13.0-1.fc44",
+      "fixedPublishedUpdateObserved": false
+    },
+    "exactKojiBuildProbe": {
+      "endpoint": "https://koji.fedoraproject.org/kojihub",
+      "queriedAt": "2026-10-13T06:47:46.483018+00:00",
+      "package": {
+        "id": 28928,
+        "name": "python-anyio"
+      },
+      "pattern": "python-anyio-4.14.2-*.fc44",
+      "builds": []
+    },
+    "interpretation": "No Fedora44 4.14.2 build or published update observed in these bounded exact queries; no conclusion about unqueried revisions/private work. Existing4.13 backport coverage remains unproven.",
+    "recommendedRoute": "Fedora-signed owning update or narrow backport of security commit68f58915. Preserve RPM ownership; do not pip-overlay files.",
+    "qualificationSequence": [
+      "Authenticate exact owning Fedora44RPM/source and prove IDNA2008 normalization before both standard and external SSLContext.wrap_bio.",
+      "Run upstream sharp-s/fa\u00df.de certificate regression and current supported Python consumers; evaluate current API compatibility.",
+      "Bind corrected Python files and metadata at every shipped/current matched path to changed candidate; no package-wide exemption based only on ordinary HTTPX normalization."
+    ],
+    "owner": "Fedora python-anyio maintainer/Bluefin supplies signed owning fix; Finite verifies backport and supported consumers.",
+    "unblockEvent": "Published approved signed compatible owning RPM carrying68f58915 or exact authenticated backport proof; alternatively complete enforceable positive caller/hostname proof across every supported direct/custom SNI path.",
+    "limits": [
+      "Upstream4.14.2 source is available; package publishing is external dependency.",
+      "No owning package rebuild or repository replacement authorized in this task.",
+      "Ordinary HTTPX ASCII normalization is a narrow consumer lead, not package-wide TLS nonapplicability."
+    ]
+  },
+  "decision": {
+    "sourceBuildValidation": "Metadata review completed; no runtime remediation implemented here.",
+    "vulnerabilityClearance": "Blocked pending signed stable packages or exact accepted applicability/backport evidence; no dispositions added.",
+    "releaseEligible": false,
+    "immediateCheapWork": "Record concrete new rclone testing event and prepare installed-only floor/hosted verification fixtures without enabling testing; continue independent applicability work. AnyIO owning fix remains external.",
+    "noRepeatedPolling": "Wait for Fedora stable promotion/new owning AnyIO publication event, or explicit alternative-source decision; no repeated unchanged mirror queries."
+  },
+  "newFullPackageDownloaded": false,
+  "repoEdited": false,
+  "jjMutated": false,
+  "githubWritten": false,
+  "rpmHeaderBytesDownloaded": 262144
+}

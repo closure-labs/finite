@@ -1,0 +1,2465 @@
+{
+  "schema": 1,
+  "status": "bounded-review-complete-no-new-release-affecting-proof",
+  "reviewedAt": "2026-10-13T06:52:19.177368+00:00",
+  "reviewedBy": "great_cto security-officer / desktop_risk_review",
+  "sourceRun": 38356296590,
+  "repositoryRevisionObservedByParent": "29e8d962c063c9321ed4d4004298e4d28d77b769",
+  "scope": "all four desktop profiles and container tools; old retained immutable candidates only",
+  "inputs": {
+    "remainingLedger": {
+      "path": "/tmp/finite-policy-security/docs/release-remaining-findings-2026-10-13.json",
+      "sha256": "10f37ba0ee488cf3222526bd90f5fdf800fac48672b7d9681cc032cd228741b6"
+    },
+    "priorExpandedConsumerReview": {
+      "path": "/tmp/finite-new-consumer-expanded-review.json",
+      "sha256": "9f051a392dbdfcae7e1b096035696baffe85a9f04dee38f7a9180aba6bc494eb"
+    },
+    "signedReferenceEvidence": {
+      "path": "/tmp/finite-consumer-reference-38354387254/consumer-reference-evidence/reference-evidence.json",
+      "sha256": "c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493"
+    },
+    "authenticatedSourceEvidence": {
+      "path": "/tmp/finite-consumer-reference-38354387254/consumer-source-evidence/source-evidence.json",
+      "sha256": "578c068c9b1d80be2c80710b96da9657aef08b561f87693054a007f96dd2a5c4"
+    }
+  },
+  "retainedCandidates": [
+    {
+      "candidate": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "file": "/tmp/finite-policy-reevaluation-38356296590/bluefin-dx-generic-security-result.json",
+      "sha256": "2c333d97fa04caa0ecb7e5363ec72cbc976aa7ba5502af56bdfbf4ff38af1ffd",
+      "policySha256": "26fed6440bfaefab3d0c1cbc49302adf3210e747cc278576cd872428cf06d3ef",
+      "newScanPerformed": false,
+      "blockingPairs": 119
+    },
+    {
+      "candidate": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+      "file": "/tmp/finite-policy-reevaluation-38356296590/bluefin-generic-security-result.json",
+      "sha256": "f93ee52e61509a98a9124a32e64dd2a636a393d3cc08c95b683b10499385bc04",
+      "policySha256": "26fed6440bfaefab3d0c1cbc49302adf3210e747cc278576cd872428cf06d3ef",
+      "newScanPerformed": false,
+      "blockingPairs": 71
+    },
+    {
+      "candidate": "main-bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "file": "/tmp/finite-policy-reevaluation-38356296590/main-bluefin-dx-generic-security-result.json",
+      "sha256": "6301627e5805ee52198365303c1fa817517c4354b0b3c9b09f52bc49085e6e34",
+      "policySha256": "26fed6440bfaefab3d0c1cbc49302adf3210e747cc278576cd872428cf06d3ef",
+      "newScanPerformed": false,
+      "blockingPairs": 119
+    },
+    {
+      "candidate": "main-bluefin-dx-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "file": "/tmp/finite-policy-reevaluation-38356296590/main-bluefin-dx-next-security-result.json",
+      "sha256": "c2d67ab642fa56b48d9e9a34d930ad0d416eec591089969d73c6bafe8b77c2c6",
+      "policySha256": "26fed6440bfaefab3d0c1cbc49302adf3210e747cc278576cd872428cf06d3ef",
+      "newScanPerformed": false,
+      "blockingPairs": 119
+    },
+    {
+      "candidate": "main-bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "file": "/tmp/finite-policy-reevaluation-38356296590/main-bluefin-generic-security-result.json",
+      "sha256": "5e4e307036c0cbf8b6d877c148aca1eb4d55164fffd886becbeb3a320e8fdc79",
+      "policySha256": "26fed6440bfaefab3d0c1cbc49302adf3210e747cc278576cd872428cf06d3ef",
+      "newScanPerformed": false,
+      "blockingPairs": 71
+    },
+    {
+      "candidate": "main-bluefin-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+      "file": "/tmp/finite-policy-reevaluation-38356296590/main-bluefin-next-security-result.json",
+      "sha256": "d60a6d128666810f035dc5391cf57c5b822131d7e288a8400596beea5875b940",
+      "policySha256": "26fed6440bfaefab3d0c1cbc49302adf3210e747cc278576cd872428cf06d3ef",
+      "newScanPerformed": false,
+      "blockingPairs": 71
+    }
+  ],
+  "proposedDispositions": [],
+  "newBlockingPairsCleared": 0,
+  "optionalExactNonapplicableProof": [
+    {
+      "candidate": "bluefin-dx-generic",
+      "digest": "sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq",
+        "GO-2026-5020"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "conclusion": "nonapplicable-to-these-exact-skopeo-bytes",
+      "currentPolicyClassification": "advisory-reviewed-routine",
+      "blockingPairsRemoved": 0,
+      "action": "retain proof; do not add redundant policy scope or rerun unchanged image",
+      "proof": {
+        "signedSourceClosureChecksPassed": true,
+        "locationJoins": [
+          {
+            "path": "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "owner": "skopeo",
+            "signedReferencePath": "/usr/bin/skopeo",
+            "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+            "size": 26175536,
+            "mode": 33261,
+            "goVersion": "go1.26.8-X:nodwarf5",
+            "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+            "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+            "goModuleInfoSha256": "a9a4fdc6cc7615e9caa9f6599ce52b3e869fa12e0be61ee4ac864ab0d5242e4e",
+            "binding": "independent-current-diagnostic-byte-and-metadata-probe-plus-native-file-record",
+            "independentProbeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845"
+          },
+          {
+            "path": "/usr/bin/skopeo",
+            "owner": "skopeo",
+            "signedReferencePath": "/usr/bin/skopeo",
+            "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+            "size": 26175536,
+            "mode": 33261,
+            "goVersion": "go1.26.8-X:nodwarf5",
+            "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+            "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+            "goModuleInfoSha256": "a9a4fdc6cc7615e9caa9f6599ce52b3e869fa12e0be61ee4ac864ab0d5242e4e",
+            "binding": "independent-current-diagnostic-byte-and-metadata-probe-plus-native-file-record",
+            "independentProbeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845"
+          }
+        ],
+        "evidence": [
+          "https://github.com/closure-labs/finite/actions/runs/38354387254#consumer-source-evidence/source-evidence.json:sha256:578c068c9b1d80be2c80710b96da9657aef08b561f87693054a007f96dd2a5c4",
+          "https://github.com/closure-labs/finite/actions/runs/38354387254#consumer-reference-evidence/reference-evidence.json:sha256:c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+          "https://github.com/closure-labs/finite/actions/runs/38344754471#bluefin-dx-generic-native.json:sha256:90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+          "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+        ]
+      },
+      "officialSources": [
+        "https://vuln.go.dev/ID/GO-2026-5020.json"
+      ]
+    },
+    {
+      "candidate": "bluefin-generic",
+      "digest": "sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq",
+        "GO-2026-5020"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "conclusion": "nonapplicable-to-these-exact-skopeo-bytes",
+      "currentPolicyClassification": "advisory-reviewed-routine",
+      "blockingPairsRemoved": 0,
+      "action": "retain proof; do not add redundant policy scope or rerun unchanged image",
+      "proof": {
+        "signedSourceClosureChecksPassed": true,
+        "locationJoins": [
+          {
+            "path": "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "owner": "skopeo",
+            "signedReferencePath": "/usr/bin/skopeo",
+            "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+            "size": 26175536,
+            "mode": 33261,
+            "goVersion": "go1.26.8-X:nodwarf5",
+            "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+            "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+            "goModuleInfoSha256": "a9a4fdc6cc7615e9caa9f6599ce52b3e869fa12e0be61ee4ac864ab0d5242e4e",
+            "binding": "independent-current-diagnostic-byte-and-metadata-probe-plus-native-file-record",
+            "independentProbeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7"
+          },
+          {
+            "path": "/usr/bin/skopeo",
+            "owner": "skopeo",
+            "signedReferencePath": "/usr/bin/skopeo",
+            "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+            "size": 26175536,
+            "mode": 33261,
+            "goVersion": "go1.26.8-X:nodwarf5",
+            "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+            "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+            "goModuleInfoSha256": "a9a4fdc6cc7615e9caa9f6599ce52b3e869fa12e0be61ee4ac864ab0d5242e4e",
+            "binding": "independent-current-diagnostic-byte-and-metadata-probe-plus-native-file-record",
+            "independentProbeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7"
+          }
+        ],
+        "evidence": [
+          "https://github.com/closure-labs/finite/actions/runs/38354387254#consumer-source-evidence/source-evidence.json:sha256:578c068c9b1d80be2c80710b96da9657aef08b561f87693054a007f96dd2a5c4",
+          "https://github.com/closure-labs/finite/actions/runs/38354387254#consumer-reference-evidence/reference-evidence.json:sha256:c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+          "https://github.com/closure-labs/finite/actions/runs/38344754471#bluefin-generic-native.json:sha256:868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f",
+          "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+        ]
+      },
+      "officialSources": [
+        "https://vuln.go.dev/ID/GO-2026-5020.json"
+      ]
+    },
+    {
+      "candidate": "main-bluefin-dx-generic",
+      "digest": "sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq",
+        "GO-2026-5020"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "conclusion": "nonapplicable-to-these-exact-skopeo-bytes",
+      "currentPolicyClassification": "advisory-reviewed-routine",
+      "blockingPairsRemoved": 0,
+      "action": "retain proof; do not add redundant policy scope or rerun unchanged image",
+      "proof": {
+        "signedSourceClosureChecksPassed": true,
+        "locationJoins": [
+          {
+            "path": "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "owner": "skopeo",
+            "signedReferencePath": "/usr/bin/skopeo",
+            "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+            "size": 26175536,
+            "mode": 33261,
+            "goVersion": "go1.26.8-X:nodwarf5",
+            "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+            "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+            "goModuleInfoSha256": "a9a4fdc6cc7615e9caa9f6599ce52b3e869fa12e0be61ee4ac864ab0d5242e4e",
+            "binding": "this-exact-main-native-file-sha256-size-mode-and-compiler-main-module-identity-equal-to-authenticated-reference; independent-metadata-borrowed-only-after-byte-equality",
+            "independentProbeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7"
+          },
+          {
+            "path": "/usr/bin/skopeo",
+            "owner": "skopeo",
+            "signedReferencePath": "/usr/bin/skopeo",
+            "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+            "size": 26175536,
+            "mode": 33261,
+            "goVersion": "go1.26.8-X:nodwarf5",
+            "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+            "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+            "goModuleInfoSha256": "a9a4fdc6cc7615e9caa9f6599ce52b3e869fa12e0be61ee4ac864ab0d5242e4e",
+            "binding": "this-exact-main-native-file-sha256-size-mode-and-compiler-main-module-identity-equal-to-authenticated-reference; independent-metadata-borrowed-only-after-byte-equality",
+            "independentProbeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7"
+          }
+        ],
+        "evidence": [
+          "https://github.com/closure-labs/finite/actions/runs/38354387254#consumer-source-evidence/source-evidence.json:sha256:578c068c9b1d80be2c80710b96da9657aef08b561f87693054a007f96dd2a5c4",
+          "https://github.com/closure-labs/finite/actions/runs/38354387254#consumer-reference-evidence/reference-evidence.json:sha256:c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+          "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-dx-generic-native.json:sha256:21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+          "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+        ]
+      },
+      "officialSources": [
+        "https://vuln.go.dev/ID/GO-2026-5020.json"
+      ]
+    },
+    {
+      "candidate": "main-bluefin-dx-next",
+      "digest": "sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq",
+        "GO-2026-5020"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "conclusion": "nonapplicable-to-these-exact-skopeo-bytes",
+      "currentPolicyClassification": "advisory-reviewed-routine",
+      "blockingPairsRemoved": 0,
+      "action": "retain proof; do not add redundant policy scope or rerun unchanged image",
+      "proof": {
+        "signedSourceClosureChecksPassed": true,
+        "locationJoins": [
+          {
+            "path": "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "owner": "skopeo",
+            "signedReferencePath": "/usr/bin/skopeo",
+            "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+            "size": 26175536,
+            "mode": 33261,
+            "goVersion": "go1.26.8-X:nodwarf5",
+            "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+            "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+            "goModuleInfoSha256": "a9a4fdc6cc7615e9caa9f6599ce52b3e869fa12e0be61ee4ac864ab0d5242e4e",
+            "binding": "this-exact-main-native-file-sha256-size-mode-and-compiler-main-module-identity-equal-to-authenticated-reference; independent-metadata-borrowed-only-after-byte-equality",
+            "independentProbeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7"
+          },
+          {
+            "path": "/usr/bin/skopeo",
+            "owner": "skopeo",
+            "signedReferencePath": "/usr/bin/skopeo",
+            "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+            "size": 26175536,
+            "mode": 33261,
+            "goVersion": "go1.26.8-X:nodwarf5",
+            "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+            "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+            "goModuleInfoSha256": "a9a4fdc6cc7615e9caa9f6599ce52b3e869fa12e0be61ee4ac864ab0d5242e4e",
+            "binding": "this-exact-main-native-file-sha256-size-mode-and-compiler-main-module-identity-equal-to-authenticated-reference; independent-metadata-borrowed-only-after-byte-equality",
+            "independentProbeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7"
+          }
+        ],
+        "evidence": [
+          "https://github.com/closure-labs/finite/actions/runs/38354387254#consumer-source-evidence/source-evidence.json:sha256:578c068c9b1d80be2c80710b96da9657aef08b561f87693054a007f96dd2a5c4",
+          "https://github.com/closure-labs/finite/actions/runs/38354387254#consumer-reference-evidence/reference-evidence.json:sha256:c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+          "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-dx-next-native.json:sha256:fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+          "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+        ]
+      },
+      "officialSources": [
+        "https://vuln.go.dev/ID/GO-2026-5020.json"
+      ]
+    },
+    {
+      "candidate": "main-bluefin-generic",
+      "digest": "sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq",
+        "GO-2026-5020"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "conclusion": "nonapplicable-to-these-exact-skopeo-bytes",
+      "currentPolicyClassification": "advisory-reviewed-routine",
+      "blockingPairsRemoved": 0,
+      "action": "retain proof; do not add redundant policy scope or rerun unchanged image",
+      "proof": {
+        "signedSourceClosureChecksPassed": true,
+        "locationJoins": [
+          {
+            "path": "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "owner": "skopeo",
+            "signedReferencePath": "/usr/bin/skopeo",
+            "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+            "size": 26175536,
+            "mode": 33261,
+            "goVersion": "go1.26.8-X:nodwarf5",
+            "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+            "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+            "goModuleInfoSha256": "a9a4fdc6cc7615e9caa9f6599ce52b3e869fa12e0be61ee4ac864ab0d5242e4e",
+            "binding": "this-exact-main-native-file-sha256-size-mode-and-compiler-main-module-identity-equal-to-authenticated-reference; independent-metadata-borrowed-only-after-byte-equality",
+            "independentProbeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7"
+          },
+          {
+            "path": "/usr/bin/skopeo",
+            "owner": "skopeo",
+            "signedReferencePath": "/usr/bin/skopeo",
+            "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+            "size": 26175536,
+            "mode": 33261,
+            "goVersion": "go1.26.8-X:nodwarf5",
+            "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+            "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+            "goModuleInfoSha256": "a9a4fdc6cc7615e9caa9f6599ce52b3e869fa12e0be61ee4ac864ab0d5242e4e",
+            "binding": "this-exact-main-native-file-sha256-size-mode-and-compiler-main-module-identity-equal-to-authenticated-reference; independent-metadata-borrowed-only-after-byte-equality",
+            "independentProbeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7"
+          }
+        ],
+        "evidence": [
+          "https://github.com/closure-labs/finite/actions/runs/38354387254#consumer-source-evidence/source-evidence.json:sha256:578c068c9b1d80be2c80710b96da9657aef08b561f87693054a007f96dd2a5c4",
+          "https://github.com/closure-labs/finite/actions/runs/38354387254#consumer-reference-evidence/reference-evidence.json:sha256:c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+          "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-generic-native.json:sha256:5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9",
+          "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+        ]
+      },
+      "officialSources": [
+        "https://vuln.go.dev/ID/GO-2026-5020.json"
+      ]
+    },
+    {
+      "candidate": "main-bluefin-next",
+      "digest": "sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq",
+        "GO-2026-5020"
+      ],
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "conclusion": "nonapplicable-to-these-exact-skopeo-bytes",
+      "currentPolicyClassification": "advisory-reviewed-routine",
+      "blockingPairsRemoved": 0,
+      "action": "retain proof; do not add redundant policy scope or rerun unchanged image",
+      "proof": {
+        "signedSourceClosureChecksPassed": true,
+        "locationJoins": [
+          {
+            "path": "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+            "owner": "skopeo",
+            "signedReferencePath": "/usr/bin/skopeo",
+            "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+            "size": 26175536,
+            "mode": 33261,
+            "goVersion": "go1.26.8-X:nodwarf5",
+            "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+            "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+            "goModuleInfoSha256": "a9a4fdc6cc7615e9caa9f6599ce52b3e869fa12e0be61ee4ac864ab0d5242e4e",
+            "binding": "this-exact-main-native-file-sha256-size-mode-and-compiler-main-module-identity-equal-to-authenticated-reference; independent-metadata-borrowed-only-after-byte-equality",
+            "independentProbeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7"
+          },
+          {
+            "path": "/usr/bin/skopeo",
+            "owner": "skopeo",
+            "signedReferencePath": "/usr/bin/skopeo",
+            "sha256": "5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34",
+            "size": 26175536,
+            "mode": 33261,
+            "goVersion": "go1.26.8-X:nodwarf5",
+            "mainPackage": "github.com/containers/skopeo/cmd/skopeo",
+            "goBuildInfoSha256": "608637ab2da113f52f2e52922eaf08164eb2d49a0305bbf50abc8ce6b46b6969",
+            "goModuleInfoSha256": "a9a4fdc6cc7615e9caa9f6599ce52b3e869fa12e0be61ee4ac864ab0d5242e4e",
+            "binding": "this-exact-main-native-file-sha256-size-mode-and-compiler-main-module-identity-equal-to-authenticated-reference; independent-metadata-borrowed-only-after-byte-equality",
+            "independentProbeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7"
+          }
+        ],
+        "evidence": [
+          "https://github.com/closure-labs/finite/actions/runs/38354387254#consumer-source-evidence/source-evidence.json:sha256:578c068c9b1d80be2c80710b96da9657aef08b561f87693054a007f96dd2a5c4",
+          "https://github.com/closure-labs/finite/actions/runs/38354387254#consumer-reference-evidence/reference-evidence.json:sha256:c55ddfc4c5ff8d3232af9aa570299ec8aec009d013fa2ef519be3c64c708a493",
+          "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-next-native.json:sha256:81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f",
+          "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+        ]
+      },
+      "officialSources": [
+        "https://vuln.go.dev/ID/GO-2026-5020.json"
+      ]
+    }
+  ],
+  "consumerApplicabilityReview": [
+    {
+      "advisories": [
+        "GHSA-p77j-4mvh-x3m3"
+      ],
+      "precondition": "gRPC server with method-path authorization interceptor using canonical DENY rules and fallback ALLOW",
+      "source": "https://github.com/grpc/grpc-go/security/advisories/GHSA-p77j-4mvh-x3m3",
+      "decision": "unknown; preserve blocking",
+      "proofNeeded": "Complete build-tag-selected consumer source/call closure showing no gRPC server or no affected authorization pattern. root gRPC package compilation alone cannot prove client role."
+    },
+    {
+      "advisories": [
+        "GHSA-hrxh-6v49-42gf"
+      ],
+      "precondition": "xDS/authz RBAC flaws OR generic HTTP2 gRPC server rapid-reset resource exhaustion",
+      "source": "https://github.com/grpc/grpc-go/security/advisories/GHSA-hrxh-6v49-42gf",
+      "decision": "unknown; preserve blocking",
+      "proofNeeded": "Cover every advisory branch. Proven absence of xDS/authz in the three authenticated consumers only closes those branches; establish actual generic server absence by complete consumer closure."
+    },
+    {
+      "advisories": [
+        "GO-2026-6612"
+      ],
+      "precondition": "HTTP2 server permits duplicate connection-level flow-control refund when reset stream data is later read",
+      "source": "https://vuln.go.dev/ID/GO-2026-6612.json",
+      "decision": "unknown; server-only applicability lead",
+      "proofNeeded": "Actual owning compiled source closure proving no reachable HTTP2 server; do not treat broad generated client-symbol list as proof of client vulnerability or absence of server."
+    },
+    {
+      "advisories": [
+        "GO-2026-6613"
+      ],
+      "precondition": "HTTP1 server handler returns a 2xx CONNECT response without hijacking, enabling tunnel/request interpretation mismatch",
+      "source": "https://vuln.go.dev/ID/GO-2026-6613.json",
+      "decision": "unknown; narrow handler applicability lead",
+      "proofNeeded": "Complete reachable handler routing and CONNECT behavior at shipped source/tag/byte identity. Server presence alone does not establish vulnerable CONNECT behavior."
+    },
+    {
+      "advisories": [
+        "GO-2026-5026"
+      ],
+      "precondition": "IDNA normalization disagreement is used for host privilege checks; vulnerable HTTP client or IDNA conversions participate",
+      "source": "https://vuln.go.dev/ID/GO-2026-5026.json",
+      "decision": "unknown; client-only label does not clear",
+      "proofNeeded": "Specific hostname authorization/normalization flow or owning fixed package, including vendored and standard-library variants."
+    },
+    {
+      "advisories": [
+        "GO-2026-6610"
+      ],
+      "precondition": "HTTP2 client accepts malformed response framing headers that are forwarded to insufficiently strict HTTP1 peer",
+      "source": "https://vuln.go.dev/ID/GO-2026-6610.json",
+      "decision": "unknown; client-only label does not clear",
+      "proofNeeded": "Complete response-forwarding closure proving no relevant proxy/HTTP1 sink, or verified owning fixed package."
+    },
+    {
+      "advisories": [
+        "GO-2026-6605"
+      ],
+      "precondition": "HTTP1 CONNECT request with nonempty body is rejected with keep-alive response; Transport reuse can expose a poisoned subsequent response",
+      "source": "https://vuln.go.dev/ID/GO-2026-6605.json",
+      "decision": "unknown; client-only label does not clear",
+      "proofNeeded": "Complete CONNECT request construction/body and shared Transport reuse behavior, or verified owning fixed package."
+    },
+    {
+      "advisories": [
+        "GO-2026-6179",
+        "GO-2026-6180"
+      ],
+      "precondition": "Active Go module fetching with affected sumdb/tlog code; malicious GOPROXY or coordinated GOPROXY/GOSUMDB breaks module authenticity",
+      "source": "https://vuln.go.dev/ID/GO-2026-6179.json",
+      "additionalSource": "https://vuln.go.dev/ID/GO-2026-6180.json",
+      "decision": "unknown; security-sensitive client flow, no server exemption",
+      "proofNeeded": "Exact owning compiled package closure proving affected sumdb/tlog implementation uncompiled or inactive. Packages containing toolchain cmd/go require fixed toolchain/source/backport evidence."
+    }
+  ],
+  "remainingScopedConsumerFindings": [
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/google.golang.org/grpc@v1.72.2",
+      "advisory": "GHSA-p77j-4mvh-x3m3",
+      "liveLocations": [
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "scannerFixedVersions": [
+        "1.79.3"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/golang.org/x/net@v0.40.0",
+      "advisory": "GO-2026-5026",
+      "liveLocations": [
+        "/usr/bin/glow",
+        "/usr/bin/gum"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+        "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+        "/usr/bin/glow",
+        "/usr/bin/gum"
+      ],
+      "scannerFixedVersions": [
+        "0.55.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/golang.org/x/net@v0.48.0",
+      "advisory": "GO-2026-5026",
+      "liveLocations": [
+        "/usr/bin/skopeo"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "scannerFixedVersions": [
+        "0.55.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/stdlib@1.26.4",
+      "advisory": "GO-2026-5026",
+      "liveLocations": [
+        "/usr/bin/cosign"
+      ],
+      "allLocations": [
+        "/usr/bin/cosign"
+      ],
+      "scannerFixedVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/golang.org/x/net@v0.40.0",
+      "advisory": "GO-2026-6612",
+      "liveLocations": [
+        "/usr/bin/glow",
+        "/usr/bin/gum"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+        "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+        "/usr/bin/glow",
+        "/usr/bin/gum"
+      ],
+      "scannerFixedVersions": [
+        "0.60.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/golang.org/x/net@v0.48.0",
+      "advisory": "GO-2026-6612",
+      "liveLocations": [
+        "/usr/bin/skopeo"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "scannerFixedVersions": [
+        "0.60.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/golang.org/x/net@v0.55.0",
+      "advisory": "GO-2026-6612",
+      "liveLocations": [
+        "/usr/bin/containerd",
+        "/usr/bin/containerd-shim-runc-v2",
+        "/usr/bin/containerd-stress",
+        "/usr/bin/ctr",
+        "/usr/bin/rclone",
+        "/usr/bin/restic",
+        "/usr/bin/runc",
+        "/usr/bin/yq"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/19/07b725d2d82866531bee698973a08e6c438abaace3b61723709ea531853945.file",
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/sysroot/ostree/repo/objects/70/1bccba378f262def36123d3245e03a4442eb1f5cb37e43e901bd1c68954622.file",
+        "/sysroot/ostree/repo/objects/75/3546d15a9cdd047adccb841b239b2b0c2c25deb15c5edcd9d94801f60325c3.file",
+        "/sysroot/ostree/repo/objects/8e/c5583db8e1709e446e0abbcb470108ba680fcf718835713b907e0f9ab05d02.file",
+        "/sysroot/ostree/repo/objects/d1/6202c07880b5c003452384c62878ebf5155cd81a4e9befa180f485ebcc9693.file",
+        "/sysroot/ostree/repo/objects/f4/4b3304bc30b41a152a41fe1248228b052d2d2c31c69c131e4d85e874530d1c.file",
+        "/usr/bin/containerd",
+        "/usr/bin/containerd-shim-runc-v2",
+        "/usr/bin/containerd-stress",
+        "/usr/bin/ctr",
+        "/usr/bin/rclone",
+        "/usr/bin/restic",
+        "/usr/bin/runc",
+        "/usr/bin/yq"
+      ],
+      "scannerFixedVersions": [
+        "0.60.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/golang.org/x/net@v0.56.0",
+      "advisory": "GO-2026-6612",
+      "liveLocations": [
+        "/usr/bin/cosign"
+      ],
+      "allLocations": [
+        "/usr/bin/cosign"
+      ],
+      "scannerFixedVersions": [
+        "0.60.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/golang.org/x/net@v0.57.0",
+      "advisory": "GO-2026-6612",
+      "liveLocations": [
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "scannerFixedVersions": [
+        "0.60.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/golang.org/x/net@v0.59.0",
+      "advisory": "GO-2026-6612",
+      "liveLocations": [
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+        "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "scannerFixedVersions": [
+        "0.60.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/stdlib@1.26.4",
+      "advisory": "GO-2026-6612",
+      "liveLocations": [
+        "/usr/bin/cosign"
+      ],
+      "allLocations": [
+        "/usr/bin/cosign"
+      ],
+      "scannerFixedVersions": [
+        "1.26.9"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/stdlib@1.27.1",
+      "advisory": "GO-2026-6612",
+      "liveLocations": [
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+        "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "scannerFixedVersions": [
+        "1.27.2"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/github.com/opencontainers/selinux@v1.12.0",
+      "advisory": "GHSA-cgrx-mc8f-2prm",
+      "liveLocations": [
+        "/usr/bin/skopeo"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "scannerFixedVersions": [
+        "1.13.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/github.com/moby/go-archive@v0.1.0",
+      "advisory": "GHSA-hfg8-hc9c-6c3h",
+      "liveLocations": [
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "scannerFixedVersions": [
+        "0.3.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:pypi/anyio@4.13.0",
+      "advisory": "GHSA-82r6-8w77-94w6",
+      "liveLocations": [
+        "/usr/lib/python3.14/site-packages/anyio-4.13.0.dist-info/METADATA",
+        "/usr/lib/python3.14/site-packages/anyio-4.13.0.dist-info/top_level.txt"
+      ],
+      "allLocations": [
+        "/usr/lib/python3.14/site-packages/anyio-4.13.0.dist-info/METADATA",
+        "/usr/lib/python3.14/site-packages/anyio-4.13.0.dist-info/top_level.txt"
+      ],
+      "scannerFixedVersions": [
+        "4.14.2"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/stdlib@1.26.4",
+      "advisory": "GO-2026-6613",
+      "liveLocations": [
+        "/usr/bin/cosign"
+      ],
+      "allLocations": [
+        "/usr/bin/cosign"
+      ],
+      "scannerFixedVersions": [
+        "1.26.9",
+        "1.27.2"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/stdlib@1.27.1",
+      "advisory": "GO-2026-6613",
+      "liveLocations": [
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+        "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "scannerFixedVersions": [
+        "1.26.9",
+        "1.27.2"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/stdlib@1.26.4",
+      "advisory": "GO-2026-6605",
+      "liveLocations": [
+        "/usr/bin/cosign"
+      ],
+      "allLocations": [
+        "/usr/bin/cosign"
+      ],
+      "scannerFixedVersions": [
+        "1.26.9",
+        "1.27.2"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/stdlib@1.27.1",
+      "advisory": "GO-2026-6605",
+      "liveLocations": [
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+        "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "scannerFixedVersions": [
+        "1.26.9",
+        "1.27.2"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/golang.org/x/net@v0.40.0",
+      "advisory": "GO-2026-6610",
+      "liveLocations": [
+        "/usr/bin/glow",
+        "/usr/bin/gum"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+        "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+        "/usr/bin/glow",
+        "/usr/bin/gum"
+      ],
+      "scannerFixedVersions": [
+        "0.60.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/golang.org/x/net@v0.48.0",
+      "advisory": "GO-2026-6610",
+      "liveLocations": [
+        "/usr/bin/skopeo"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "scannerFixedVersions": [
+        "0.60.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/golang.org/x/net@v0.55.0",
+      "advisory": "GO-2026-6610",
+      "liveLocations": [
+        "/usr/bin/containerd",
+        "/usr/bin/containerd-shim-runc-v2",
+        "/usr/bin/containerd-stress",
+        "/usr/bin/ctr",
+        "/usr/bin/rclone",
+        "/usr/bin/restic",
+        "/usr/bin/runc",
+        "/usr/bin/yq"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/19/07b725d2d82866531bee698973a08e6c438abaace3b61723709ea531853945.file",
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/sysroot/ostree/repo/objects/70/1bccba378f262def36123d3245e03a4442eb1f5cb37e43e901bd1c68954622.file",
+        "/sysroot/ostree/repo/objects/75/3546d15a9cdd047adccb841b239b2b0c2c25deb15c5edcd9d94801f60325c3.file",
+        "/sysroot/ostree/repo/objects/8e/c5583db8e1709e446e0abbcb470108ba680fcf718835713b907e0f9ab05d02.file",
+        "/sysroot/ostree/repo/objects/d1/6202c07880b5c003452384c62878ebf5155cd81a4e9befa180f485ebcc9693.file",
+        "/sysroot/ostree/repo/objects/f4/4b3304bc30b41a152a41fe1248228b052d2d2c31c69c131e4d85e874530d1c.file",
+        "/usr/bin/containerd",
+        "/usr/bin/containerd-shim-runc-v2",
+        "/usr/bin/containerd-stress",
+        "/usr/bin/ctr",
+        "/usr/bin/rclone",
+        "/usr/bin/restic",
+        "/usr/bin/runc",
+        "/usr/bin/yq"
+      ],
+      "scannerFixedVersions": [
+        "0.60.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/golang.org/x/net@v0.56.0",
+      "advisory": "GO-2026-6610",
+      "liveLocations": [
+        "/usr/bin/cosign"
+      ],
+      "allLocations": [
+        "/usr/bin/cosign"
+      ],
+      "scannerFixedVersions": [
+        "0.60.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/golang.org/x/net@v0.57.0",
+      "advisory": "GO-2026-6610",
+      "liveLocations": [
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "scannerFixedVersions": [
+        "0.60.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/golang.org/x/net@v0.59.0",
+      "advisory": "GO-2026-6610",
+      "liveLocations": [
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+        "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "scannerFixedVersions": [
+        "0.60.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/stdlib@1.26.4",
+      "advisory": "GO-2026-6610",
+      "liveLocations": [
+        "/usr/bin/cosign"
+      ],
+      "allLocations": [
+        "/usr/bin/cosign"
+      ],
+      "scannerFixedVersions": [
+        "1.26.9"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/stdlib@1.27.1",
+      "advisory": "GO-2026-6610",
+      "liveLocations": [
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+        "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "scannerFixedVersions": [
+        "1.27.2"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/golang.org/x/mod@v0.20.0",
+      "advisory": "GO-2026-6180",
+      "liveLocations": [
+        "/usr/bin/toolbox"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+        "/usr/bin/toolbox"
+      ],
+      "scannerFixedVersions": [
+        "0.40.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/golang.org/x/mod@v0.36.0",
+      "advisory": "GO-2026-6180",
+      "liveLocations": [
+        "/usr/bin/containerd",
+        "/usr/bin/ctr"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/75/3546d15a9cdd047adccb841b239b2b0c2c25deb15c5edcd9d94801f60325c3.file",
+        "/sysroot/ostree/repo/objects/f4/4b3304bc30b41a152a41fe1248228b052d2d2c31c69c131e4d85e874530d1c.file",
+        "/usr/bin/containerd",
+        "/usr/bin/ctr"
+      ],
+      "scannerFixedVersions": [
+        "0.40.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/golang.org/x/mod@v0.37.0",
+      "advisory": "GO-2026-6180",
+      "liveLocations": [
+        "/usr/bin/cosign"
+      ],
+      "allLocations": [
+        "/usr/bin/cosign"
+      ],
+      "scannerFixedVersions": [
+        "0.40.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/golang.org/x/mod@v0.20.0",
+      "advisory": "GO-2026-6179",
+      "liveLocations": [
+        "/usr/bin/toolbox"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+        "/usr/bin/toolbox"
+      ],
+      "scannerFixedVersions": [
+        "0.40.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/golang.org/x/mod@v0.36.0",
+      "advisory": "GO-2026-6179",
+      "liveLocations": [
+        "/usr/bin/containerd",
+        "/usr/bin/ctr"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/75/3546d15a9cdd047adccb841b239b2b0c2c25deb15c5edcd9d94801f60325c3.file",
+        "/sysroot/ostree/repo/objects/f4/4b3304bc30b41a152a41fe1248228b052d2d2c31c69c131e4d85e874530d1c.file",
+        "/usr/bin/containerd",
+        "/usr/bin/ctr"
+      ],
+      "scannerFixedVersions": [
+        "0.40.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/golang.org/x/mod@v0.37.0",
+      "advisory": "GO-2026-6179",
+      "liveLocations": [
+        "/usr/bin/cosign"
+      ],
+      "allLocations": [
+        "/usr/bin/cosign"
+      ],
+      "scannerFixedVersions": [
+        "0.40.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/google.golang.org/grpc@v1.72.2",
+      "advisory": "GHSA-hrxh-6v49-42gf",
+      "liveLocations": [
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "scannerFixedVersions": [
+        "1.82.1"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/google.golang.org/grpc@v1.79.3",
+      "advisory": "GHSA-hrxh-6v49-42gf",
+      "liveLocations": [
+        "/usr/bin/skopeo"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "scannerFixedVersions": [
+        "1.82.1"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/google.golang.org/grpc@v1.80.0",
+      "advisory": "GHSA-hrxh-6v49-42gf",
+      "liveLocations": [
+        "/usr/bin/containerd",
+        "/usr/bin/containerd-shim-runc-v2",
+        "/usr/bin/containerd-stress",
+        "/usr/bin/ctr",
+        "/usr/bin/rclone"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/sysroot/ostree/repo/objects/70/1bccba378f262def36123d3245e03a4442eb1f5cb37e43e901bd1c68954622.file",
+        "/sysroot/ostree/repo/objects/75/3546d15a9cdd047adccb841b239b2b0c2c25deb15c5edcd9d94801f60325c3.file",
+        "/sysroot/ostree/repo/objects/d1/6202c07880b5c003452384c62878ebf5155cd81a4e9befa180f485ebcc9693.file",
+        "/sysroot/ostree/repo/objects/f4/4b3304bc30b41a152a41fe1248228b052d2d2c31c69c131e4d85e874530d1c.file",
+        "/usr/bin/containerd",
+        "/usr/bin/containerd-shim-runc-v2",
+        "/usr/bin/containerd-stress",
+        "/usr/bin/ctr",
+        "/usr/bin/rclone"
+      ],
+      "scannerFixedVersions": [
+        "1.82.1"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/google.golang.org/grpc@v1.81.1",
+      "advisory": "GHSA-hrxh-6v49-42gf",
+      "liveLocations": [
+        "/usr/bin/restic"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/8e/c5583db8e1709e446e0abbcb470108ba680fcf718835713b907e0f9ab05d02.file",
+        "/usr/bin/restic"
+      ],
+      "scannerFixedVersions": [
+        "1.82.1"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/google.golang.org/grpc@v1.82.0",
+      "advisory": "GHSA-hrxh-6v49-42gf",
+      "liveLocations": [
+        "/usr/bin/cosign"
+      ],
+      "allLocations": [
+        "/usr/bin/cosign"
+      ],
+      "scannerFixedVersions": [
+        "1.82.1"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/google.golang.org/grpc@v1.72.2",
+      "advisory": "GHSA-p77j-4mvh-x3m3",
+      "liveLocations": [
+        "/usr/bin/buildah",
+        "/usr/bin/podman",
+        "/usr/bin/podman-tui"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/90/2251a93331aa5e6a9393d0850cd6e647ef9be08f4fd745c9fa3e861c9aa058.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman",
+        "/usr/bin/podman-tui"
+      ],
+      "scannerFixedVersions": [
+        "1.79.3"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/net@v0.38.0",
+      "advisory": "GO-2026-5026",
+      "liveLocations": [
+        "/usr/bin/git-lfs"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+        "/usr/bin/git-lfs"
+      ],
+      "scannerFixedVersions": [
+        "0.55.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/net@v0.40.0",
+      "advisory": "GO-2026-5026",
+      "liveLocations": [
+        "/usr/bin/glow",
+        "/usr/bin/gum"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+        "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+        "/usr/bin/glow",
+        "/usr/bin/gum"
+      ],
+      "scannerFixedVersions": [
+        "0.55.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/net@v0.48.0",
+      "advisory": "GO-2026-5026",
+      "liveLocations": [
+        "/usr/bin/skopeo"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "scannerFixedVersions": [
+        "0.55.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/net@v0.52.0",
+      "advisory": "GO-2026-5026",
+      "liveLocations": [
+        "/usr/bin/incus-agent"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+        "/usr/bin/incus-agent"
+      ],
+      "scannerFixedVersions": [
+        "0.55.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/net@v0.53.0",
+      "advisory": "GO-2026-5026",
+      "liveLocations": [
+        "/usr/libexec/podman/gvforwarder",
+        "/usr/libexec/podman/gvproxy"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/6d/94a749c1087ec61710ab873c0d3277269eb47debe4b51c7602409969f732a8.file",
+        "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+        "/usr/libexec/podman/gvforwarder",
+        "/usr/libexec/podman/gvproxy"
+      ],
+      "scannerFixedVersions": [
+        "0.55.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/stdlib@1.25.12",
+      "advisory": "GO-2026-5026",
+      "liveLocations": [
+        "/usr/libexec/docker/cli-plugins/docker-model"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+        "/usr/libexec/docker/cli-plugins/docker-model"
+      ],
+      "scannerFixedVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/stdlib@1.26.4",
+      "advisory": "GO-2026-5026",
+      "liveLocations": [
+        "/usr/bin/cosign"
+      ],
+      "allLocations": [
+        "/usr/bin/cosign"
+      ],
+      "scannerFixedVersions": [
+        "1.25.13",
+        "1.26.6",
+        "1.27.0-rc.3"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/net@v0.38.0",
+      "advisory": "GO-2026-6612",
+      "liveLocations": [
+        "/usr/bin/git-lfs"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+        "/usr/bin/git-lfs"
+      ],
+      "scannerFixedVersions": [
+        "0.60.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/net@v0.40.0",
+      "advisory": "GO-2026-6612",
+      "liveLocations": [
+        "/usr/bin/glow",
+        "/usr/bin/gum"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+        "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+        "/usr/bin/glow",
+        "/usr/bin/gum"
+      ],
+      "scannerFixedVersions": [
+        "0.60.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/net@v0.48.0",
+      "advisory": "GO-2026-6612",
+      "liveLocations": [
+        "/usr/bin/skopeo"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "scannerFixedVersions": [
+        "0.60.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/net@v0.52.0",
+      "advisory": "GO-2026-6612",
+      "liveLocations": [
+        "/usr/bin/incus-agent"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+        "/usr/bin/incus-agent"
+      ],
+      "scannerFixedVersions": [
+        "0.60.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/net@v0.53.0",
+      "advisory": "GO-2026-6612",
+      "liveLocations": [
+        "/usr/libexec/podman/gvforwarder",
+        "/usr/libexec/podman/gvproxy"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/6d/94a749c1087ec61710ab873c0d3277269eb47debe4b51c7602409969f732a8.file",
+        "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+        "/usr/libexec/podman/gvforwarder",
+        "/usr/libexec/podman/gvproxy"
+      ],
+      "scannerFixedVersions": [
+        "0.60.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/net@v0.55.0",
+      "advisory": "GO-2026-6612",
+      "liveLocations": [
+        "/usr/bin/podman-tui",
+        "/usr/bin/rclone",
+        "/usr/bin/restic",
+        "/usr/bin/runc",
+        "/usr/bin/yq",
+        "/usr/libexec/docker/cli-plugins/docker-model"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+        "/sysroot/ostree/repo/objects/8e/c5583db8e1709e446e0abbcb470108ba680fcf718835713b907e0f9ab05d02.file",
+        "/sysroot/ostree/repo/objects/90/2251a93331aa5e6a9393d0850cd6e647ef9be08f4fd745c9fa3e861c9aa058.file",
+        "/sysroot/ostree/repo/objects/94/edb58e77e87ab78c64d120de2d6c5e76d12a9fc90671dd9ebfa18e03f72029.file",
+        "/usr/bin/podman-tui",
+        "/usr/bin/rclone",
+        "/usr/bin/restic",
+        "/usr/bin/runc",
+        "/usr/bin/yq",
+        "/usr/libexec/docker/cli-plugins/docker-model"
+      ],
+      "scannerFixedVersions": [
+        "0.60.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/net@v0.56.0",
+      "advisory": "GO-2026-6612",
+      "liveLocations": [
+        "/usr/bin/cosign"
+      ],
+      "allLocations": [
+        "/usr/bin/cosign"
+      ],
+      "scannerFixedVersions": [
+        "0.60.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/net@v0.57.0",
+      "advisory": "GO-2026-6612",
+      "liveLocations": [
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "scannerFixedVersions": [
+        "0.60.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/net@v0.58.0",
+      "advisory": "GO-2026-6612",
+      "liveLocations": [
+        "/usr/bin/containerd",
+        "/usr/bin/containerd-shim-runc-v2",
+        "/usr/bin/ctr",
+        "/usr/bin/gen-manpages",
+        "/usr/bin/rootlesskit",
+        "/usr/libexec/docker/cli-plugins/docker-compose"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file",
+        "/sysroot/ostree/repo/objects/28/9a163069c0d420700e407d2936c88343c7199051fcb2167a4e0dd505f8b123.file",
+        "/sysroot/ostree/repo/objects/2d/22e9d3905518951cfb5facea21864b7c403d447ceb4b10fd2c95e39dff293f.file",
+        "/sysroot/ostree/repo/objects/2e/801e49da654ab9f6d28238d987b7387d825ee88c8f7d7f47535edcf7d7f8a4.file",
+        "/sysroot/ostree/repo/objects/89/38c593efda2631da84deb9abdc8d6a48d14cd3f582ef6c7e0d63092bae1cbb.file",
+        "/sysroot/ostree/repo/objects/ac/79a1c7b0143c61cbb6938d323c81a7f1aa4fe3939e910855dca32dd82acfba.file",
+        "/usr/bin/containerd",
+        "/usr/bin/containerd-shim-runc-v2",
+        "/usr/bin/ctr",
+        "/usr/bin/gen-manpages",
+        "/usr/bin/rootlesskit",
+        "/usr/libexec/docker/cli-plugins/docker-compose"
+      ],
+      "scannerFixedVersions": [
+        "0.60.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/net@v0.59.0",
+      "advisory": "GO-2026-6612",
+      "liveLocations": [
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled",
+        "/usr/libexec/docker/cli-plugins/docker-buildx"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+        "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+        "/sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file",
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled",
+        "/usr/libexec/docker/cli-plugins/docker-buildx"
+      ],
+      "scannerFixedVersions": [
+        "0.60.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/stdlib@1.25.12",
+      "advisory": "GO-2026-6612",
+      "liveLocations": [
+        "/usr/libexec/docker/cli-plugins/docker-model"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+        "/usr/libexec/docker/cli-plugins/docker-model"
+      ],
+      "scannerFixedVersions": [
+        "1.26.9"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/stdlib@1.26.4",
+      "advisory": "GO-2026-6612",
+      "liveLocations": [
+        "/usr/bin/cosign"
+      ],
+      "allLocations": [
+        "/usr/bin/cosign"
+      ],
+      "scannerFixedVersions": [
+        "1.26.9"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/stdlib@1.26.8",
+      "advisory": "GO-2026-6612",
+      "liveLocations": [
+        "/usr/libexec/docker/cli-plugins/docker-buildx",
+        "/usr/libexec/docker/cli-plugins/docker-compose"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file",
+        "/sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file",
+        "/usr/libexec/docker/cli-plugins/docker-buildx",
+        "/usr/libexec/docker/cli-plugins/docker-compose"
+      ],
+      "scannerFixedVersions": [
+        "1.26.9"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/stdlib@1.27.1",
+      "advisory": "GO-2026-6612",
+      "liveLocations": [
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+        "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "scannerFixedVersions": [
+        "1.27.2"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/github.com/opencontainers/selinux@v1.12.0",
+      "advisory": "GHSA-cgrx-mc8f-2prm",
+      "liveLocations": [
+        "/usr/bin/skopeo"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "scannerFixedVersions": [
+        "1.13.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/github.com/moby/go-archive@v0.1.0",
+      "advisory": "GHSA-hfg8-hc9c-6c3h",
+      "liveLocations": [
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "scannerFixedVersions": [
+        "0.3.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/github.com/moby/go-archive@v0.2.0",
+      "advisory": "GHSA-hfg8-hc9c-6c3h",
+      "liveLocations": [
+        "/usr/libexec/docker/cli-plugins/docker-buildx"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file",
+        "/usr/libexec/docker/cli-plugins/docker-buildx"
+      ],
+      "scannerFixedVersions": [
+        "0.3.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:pypi/anyio@4.13.0",
+      "advisory": "GHSA-82r6-8w77-94w6",
+      "liveLocations": [
+        "/usr/lib/python3.14/site-packages/anyio-4.13.0.dist-info/METADATA",
+        "/usr/lib/python3.14/site-packages/anyio-4.13.0.dist-info/top_level.txt"
+      ],
+      "allLocations": [
+        "/usr/lib/python3.14/site-packages/anyio-4.13.0.dist-info/METADATA",
+        "/usr/lib/python3.14/site-packages/anyio-4.13.0.dist-info/top_level.txt"
+      ],
+      "scannerFixedVersions": [
+        "4.14.2"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/stdlib@1.25.12",
+      "advisory": "GO-2026-6613",
+      "liveLocations": [
+        "/usr/libexec/docker/cli-plugins/docker-model"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+        "/usr/libexec/docker/cli-plugins/docker-model"
+      ],
+      "scannerFixedVersions": [
+        "1.26.9",
+        "1.27.2"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/stdlib@1.26.4",
+      "advisory": "GO-2026-6613",
+      "liveLocations": [
+        "/usr/bin/cosign"
+      ],
+      "allLocations": [
+        "/usr/bin/cosign"
+      ],
+      "scannerFixedVersions": [
+        "1.26.9",
+        "1.27.2"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/stdlib@1.26.8",
+      "advisory": "GO-2026-6613",
+      "liveLocations": [
+        "/usr/libexec/docker/cli-plugins/docker-buildx",
+        "/usr/libexec/docker/cli-plugins/docker-compose"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file",
+        "/sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file",
+        "/usr/libexec/docker/cli-plugins/docker-buildx",
+        "/usr/libexec/docker/cli-plugins/docker-compose"
+      ],
+      "scannerFixedVersions": [
+        "1.26.9",
+        "1.27.2"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/stdlib@1.27.1",
+      "advisory": "GO-2026-6613",
+      "liveLocations": [
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+        "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "scannerFixedVersions": [
+        "1.26.9",
+        "1.27.2"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/stdlib@1.25.12",
+      "advisory": "GO-2026-6605",
+      "liveLocations": [
+        "/usr/libexec/docker/cli-plugins/docker-model"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+        "/usr/libexec/docker/cli-plugins/docker-model"
+      ],
+      "scannerFixedVersions": [
+        "1.26.9",
+        "1.27.2"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/stdlib@1.26.4",
+      "advisory": "GO-2026-6605",
+      "liveLocations": [
+        "/usr/bin/cosign"
+      ],
+      "allLocations": [
+        "/usr/bin/cosign"
+      ],
+      "scannerFixedVersions": [
+        "1.26.9",
+        "1.27.2"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/stdlib@1.26.8",
+      "advisory": "GO-2026-6605",
+      "liveLocations": [
+        "/usr/libexec/docker/cli-plugins/docker-buildx",
+        "/usr/libexec/docker/cli-plugins/docker-compose"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file",
+        "/sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file",
+        "/usr/libexec/docker/cli-plugins/docker-buildx",
+        "/usr/libexec/docker/cli-plugins/docker-compose"
+      ],
+      "scannerFixedVersions": [
+        "1.26.9",
+        "1.27.2"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/stdlib@1.27.1",
+      "advisory": "GO-2026-6605",
+      "liveLocations": [
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+        "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "scannerFixedVersions": [
+        "1.26.9",
+        "1.27.2"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/net@v0.38.0",
+      "advisory": "GO-2026-6610",
+      "liveLocations": [
+        "/usr/bin/git-lfs"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+        "/usr/bin/git-lfs"
+      ],
+      "scannerFixedVersions": [
+        "0.60.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/net@v0.40.0",
+      "advisory": "GO-2026-6610",
+      "liveLocations": [
+        "/usr/bin/glow",
+        "/usr/bin/gum"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+        "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+        "/usr/bin/glow",
+        "/usr/bin/gum"
+      ],
+      "scannerFixedVersions": [
+        "0.60.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/net@v0.48.0",
+      "advisory": "GO-2026-6610",
+      "liveLocations": [
+        "/usr/bin/skopeo"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "scannerFixedVersions": [
+        "0.60.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/net@v0.52.0",
+      "advisory": "GO-2026-6610",
+      "liveLocations": [
+        "/usr/bin/incus-agent"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+        "/usr/bin/incus-agent"
+      ],
+      "scannerFixedVersions": [
+        "0.60.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/net@v0.53.0",
+      "advisory": "GO-2026-6610",
+      "liveLocations": [
+        "/usr/libexec/podman/gvforwarder",
+        "/usr/libexec/podman/gvproxy"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/6d/94a749c1087ec61710ab873c0d3277269eb47debe4b51c7602409969f732a8.file",
+        "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+        "/usr/libexec/podman/gvforwarder",
+        "/usr/libexec/podman/gvproxy"
+      ],
+      "scannerFixedVersions": [
+        "0.60.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/net@v0.55.0",
+      "advisory": "GO-2026-6610",
+      "liveLocations": [
+        "/usr/bin/podman-tui",
+        "/usr/bin/rclone",
+        "/usr/bin/restic",
+        "/usr/bin/runc",
+        "/usr/bin/yq",
+        "/usr/libexec/docker/cli-plugins/docker-model"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+        "/sysroot/ostree/repo/objects/8e/c5583db8e1709e446e0abbcb470108ba680fcf718835713b907e0f9ab05d02.file",
+        "/sysroot/ostree/repo/objects/90/2251a93331aa5e6a9393d0850cd6e647ef9be08f4fd745c9fa3e861c9aa058.file",
+        "/sysroot/ostree/repo/objects/94/edb58e77e87ab78c64d120de2d6c5e76d12a9fc90671dd9ebfa18e03f72029.file",
+        "/usr/bin/podman-tui",
+        "/usr/bin/rclone",
+        "/usr/bin/restic",
+        "/usr/bin/runc",
+        "/usr/bin/yq",
+        "/usr/libexec/docker/cli-plugins/docker-model"
+      ],
+      "scannerFixedVersions": [
+        "0.60.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/net@v0.56.0",
+      "advisory": "GO-2026-6610",
+      "liveLocations": [
+        "/usr/bin/cosign"
+      ],
+      "allLocations": [
+        "/usr/bin/cosign"
+      ],
+      "scannerFixedVersions": [
+        "0.60.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/net@v0.57.0",
+      "advisory": "GO-2026-6610",
+      "liveLocations": [
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman"
+      ],
+      "scannerFixedVersions": [
+        "0.60.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/net@v0.58.0",
+      "advisory": "GO-2026-6610",
+      "liveLocations": [
+        "/usr/bin/containerd",
+        "/usr/bin/containerd-shim-runc-v2",
+        "/usr/bin/ctr",
+        "/usr/bin/gen-manpages",
+        "/usr/bin/rootlesskit",
+        "/usr/libexec/docker/cli-plugins/docker-compose"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file",
+        "/sysroot/ostree/repo/objects/28/9a163069c0d420700e407d2936c88343c7199051fcb2167a4e0dd505f8b123.file",
+        "/sysroot/ostree/repo/objects/2d/22e9d3905518951cfb5facea21864b7c403d447ceb4b10fd2c95e39dff293f.file",
+        "/sysroot/ostree/repo/objects/2e/801e49da654ab9f6d28238d987b7387d825ee88c8f7d7f47535edcf7d7f8a4.file",
+        "/sysroot/ostree/repo/objects/89/38c593efda2631da84deb9abdc8d6a48d14cd3f582ef6c7e0d63092bae1cbb.file",
+        "/sysroot/ostree/repo/objects/ac/79a1c7b0143c61cbb6938d323c81a7f1aa4fe3939e910855dca32dd82acfba.file",
+        "/usr/bin/containerd",
+        "/usr/bin/containerd-shim-runc-v2",
+        "/usr/bin/ctr",
+        "/usr/bin/gen-manpages",
+        "/usr/bin/rootlesskit",
+        "/usr/libexec/docker/cli-plugins/docker-compose"
+      ],
+      "scannerFixedVersions": [
+        "0.60.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/net@v0.59.0",
+      "advisory": "GO-2026-6610",
+      "liveLocations": [
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled",
+        "/usr/libexec/docker/cli-plugins/docker-buildx"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+        "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+        "/sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file",
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled",
+        "/usr/libexec/docker/cli-plugins/docker-buildx"
+      ],
+      "scannerFixedVersions": [
+        "0.60.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/stdlib@1.25.12",
+      "advisory": "GO-2026-6610",
+      "liveLocations": [
+        "/usr/libexec/docker/cli-plugins/docker-model"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+        "/usr/libexec/docker/cli-plugins/docker-model"
+      ],
+      "scannerFixedVersions": [
+        "1.26.9"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/stdlib@1.26.4",
+      "advisory": "GO-2026-6610",
+      "liveLocations": [
+        "/usr/bin/cosign"
+      ],
+      "allLocations": [
+        "/usr/bin/cosign"
+      ],
+      "scannerFixedVersions": [
+        "1.26.9"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/stdlib@1.26.8",
+      "advisory": "GO-2026-6610",
+      "liveLocations": [
+        "/usr/libexec/docker/cli-plugins/docker-buildx",
+        "/usr/libexec/docker/cli-plugins/docker-compose"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file",
+        "/sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file",
+        "/usr/libexec/docker/cli-plugins/docker-buildx",
+        "/usr/libexec/docker/cli-plugins/docker-compose"
+      ],
+      "scannerFixedVersions": [
+        "1.26.9"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/stdlib@1.27.1",
+      "advisory": "GO-2026-6610",
+      "liveLocations": [
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+        "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "scannerFixedVersions": [
+        "1.27.2"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/mod@v0.20.0",
+      "advisory": "GO-2026-6180",
+      "liveLocations": [
+        "/usr/bin/toolbox"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+        "/usr/bin/toolbox"
+      ],
+      "scannerFixedVersions": [
+        "0.40.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/mod@v0.37.0",
+      "advisory": "GO-2026-6180",
+      "liveLocations": [
+        "/usr/bin/cosign"
+      ],
+      "allLocations": [
+        "/usr/bin/cosign"
+      ],
+      "scannerFixedVersions": [
+        "0.40.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/mod@v0.20.0",
+      "advisory": "GO-2026-6179",
+      "liveLocations": [
+        "/usr/bin/toolbox"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/75/5cc7cfe2e3b547556eb117093d626800f1dcb3751e3b31952cec86177bdcab.file",
+        "/usr/bin/toolbox"
+      ],
+      "scannerFixedVersions": [
+        "0.40.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/mod@v0.37.0",
+      "advisory": "GO-2026-6179",
+      "liveLocations": [
+        "/usr/bin/cosign"
+      ],
+      "allLocations": [
+        "/usr/bin/cosign"
+      ],
+      "scannerFixedVersions": [
+        "0.40.0"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/google.golang.org/grpc@v1.72.2",
+      "advisory": "GHSA-hrxh-6v49-42gf",
+      "liveLocations": [
+        "/usr/bin/buildah",
+        "/usr/bin/podman",
+        "/usr/bin/podman-tui"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/90/2251a93331aa5e6a9393d0850cd6e647ef9be08f4fd745c9fa3e861c9aa058.file",
+        "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+        "/usr/bin/buildah",
+        "/usr/bin/podman",
+        "/usr/bin/podman-tui"
+      ],
+      "scannerFixedVersions": [
+        "1.82.1"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/google.golang.org/grpc@v1.79.3",
+      "advisory": "GHSA-hrxh-6v49-42gf",
+      "liveLocations": [
+        "/usr/bin/skopeo",
+        "/usr/libexec/docker/cli-plugins/docker-model"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+        "/usr/bin/skopeo",
+        "/usr/libexec/docker/cli-plugins/docker-model"
+      ],
+      "scannerFixedVersions": [
+        "1.82.1"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/google.golang.org/grpc@v1.80.0",
+      "advisory": "GHSA-hrxh-6v49-42gf",
+      "liveLocations": [
+        "/usr/bin/rclone"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+        "/usr/bin/rclone"
+      ],
+      "scannerFixedVersions": [
+        "1.82.1"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/google.golang.org/grpc@v1.81.1",
+      "advisory": "GHSA-hrxh-6v49-42gf",
+      "liveLocations": [
+        "/usr/bin/restic"
+      ],
+      "allLocations": [
+        "/sysroot/ostree/repo/objects/8e/c5583db8e1709e446e0abbcb470108ba680fcf718835713b907e0f9ab05d02.file",
+        "/usr/bin/restic"
+      ],
+      "scannerFixedVersions": [
+        "1.82.1"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    },
+    {
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/google.golang.org/grpc@v1.82.0",
+      "advisory": "GHSA-hrxh-6v49-42gf",
+      "liveLocations": [
+        "/usr/bin/cosign"
+      ],
+      "allLocations": [
+        "/usr/bin/cosign"
+      ],
+      "scannerFixedVersions": [
+        "1.82.1"
+      ],
+      "disposition": "blocked-requires-fix-or-positive-applicability-proof"
+    }
+  ],
+  "recommendedSequence": [
+    {
+      "priority": 1,
+      "owner": "Finite security reviewer",
+      "action": "Reuse existing source/binary evidence for one bounded hosted complete consumer-edge extraction at exact three authenticated source trees and shipped build tags, only if payoff warrants it. Extract actual imports and server/handler constructors/call edges outside the vulnerable library; include init/reflection/registration, test and build-tag selection. No rebuild or native rescan until proof or fixed candidate changes.",
+      "targets": [
+        "Podman/Buildah gRPC 1.72.2 authorization path",
+        "Skopeo gRPC 1.79.3 generic server branch",
+        "HTTP2 server/CONNECT handler cases where actual remaining owner is bound"
+      ],
+      "acceptance": "Authenticated owning source/archive plus exact current bytes and complete affected-implementation closure; subset paths only; preserve unresolved branches."
+    },
+    {
+      "priority": 2,
+      "owner": "Fedora package maintainers + owning upstreams; Finite packaging integrator",
+      "action": "Obtain signed compatible owning-package updates/backports for actual AnyIO, rclone, Go client/network and archive risk. An updated compiler does not patch embedded modules.",
+      "unblockEvent": "Approved publisher package/source release or documented specific backport; authenticated transaction and new affected executable/module identities."
+    },
+    {
+      "priority": 3,
+      "owner": "Finite security reviewer + Fedora container tools maintainers",
+      "action": "Retain go-archive crafted tar overwrite and Skopeo SELinux process-label findings until targeted source proof or owning fix. SELinux-enforcing desktop does not establish mitigation.",
+      "unblockEvent": "Specific validated archive traversal fix, or exact absent/protected extraction path; exact Skopeo labeling call closure covering affected procfs operations."
+    },
+    {
+      "priority": 4,
+      "owner": "Microsoft/Docker/Fedora + Finite development-profile maintainers",
+      "action": "Continue development-only signed package and dependency remediation independently of cleared standard profiles.",
+      "unblockEvent": "Shipped bytes/source join and verified upstream fix/backport for each affected development consumer."
+    }
+  ],
+  "availabilityRequeried": false,
+  "availabilityLimit": "This review fetched official advisory records only. Historical package unavailability is not asserted current; parent tracks publisher events and lightweight prerequisite checks.",
+  "advisoryInputs": [
+    {
+      "path": "/tmp/finite-release-next-advisories/GO-2026-5020.json",
+      "sha256": "73b72fdce63562ab7cb226d1d5278b5329967548cddca2ee54821f7a136ade86",
+      "officialURL": "https://vuln.go.dev/ID/GO-2026-5020.json"
+    },
+    {
+      "path": "/tmp/finite-release-next-advisories/GO-2026-5026.json",
+      "sha256": "6c8aed80ae71362ee6a2c4ca36ace9d5f6d991040d5242ffc4713e2a7a9a750c",
+      "officialURL": "https://vuln.go.dev/ID/GO-2026-5026.json"
+    },
+    {
+      "path": "/tmp/finite-release-next-advisories/GO-2026-6179.json",
+      "sha256": "0c9188802ec6e0fe75d24c187ec7af3e75e9dee649fcba31caed55d6b14dc6ae",
+      "officialURL": "https://vuln.go.dev/ID/GO-2026-6179.json"
+    },
+    {
+      "path": "/tmp/finite-release-next-advisories/GO-2026-6180.json",
+      "sha256": "440cf96581be963cc51ab4bb32029107d682138dfb2156d935132c981f76fa4d",
+      "officialURL": "https://vuln.go.dev/ID/GO-2026-6180.json"
+    },
+    {
+      "path": "/tmp/finite-release-next-advisories/GO-2026-6605.json",
+      "sha256": "d49f2ab0c0d4c1c2e854008c2434e132ec422ce378e8a91170169cef30a727f1",
+      "officialURL": "https://vuln.go.dev/ID/GO-2026-6605.json"
+    },
+    {
+      "path": "/tmp/finite-release-next-advisories/GO-2026-6610.json",
+      "sha256": "2c7881c7945c7c5eadefd3d0caceb1a23b14467373fb28c601141545ff21f190",
+      "officialURL": "https://vuln.go.dev/ID/GO-2026-6610.json"
+    },
+    {
+      "path": "/tmp/finite-release-next-advisories/GO-2026-6612.json",
+      "sha256": "76c44a4cbdbc463286fb968abd288a26025b8576fe2aed3dcda542fde9518452",
+      "officialURL": "https://vuln.go.dev/ID/GO-2026-6612.json"
+    },
+    {
+      "path": "/tmp/finite-release-next-advisories/GO-2026-6613.json",
+      "sha256": "6c2bd0f788183c22cae14deb2b3c80fdf1552bd12f5f09614b084ed3233967d0",
+      "officialURL": "https://vuln.go.dev/ID/GO-2026-6613.json"
+    }
+  ],
+  "sourceBuildVerdict": "prior source/build validation retained; this read-only review introduces no source change",
+  "vulnerabilityClearance": "blocked / unresolved; unchanged71 standard119 development retained pairs",
+  "releaseEligible": false,
+  "newScanPerformed": false,
+  "repositoryEdited": false,
+  "policyEdited": false,
+  "limits": [
+    "No full SBOM, image pull/build/scan, local heavy analysis or publication performed.",
+    "Whole grpc and net/http packages compile server and client library code; package list alone is not a complete runtime consumer graph.",
+    "Absence of xDS packages does not clear bundled generic gRPC server vulnerability.",
+    "Client role does not clear IDNA, HTTP2 response forwarding, CONNECT Transport or module supply-chain flaws.",
+    "Existing exact Skopeo SSH proof changes zero currently blocked pairs; retain without redundant run or policy churn.",
+    "No old-digest scope applies to newly built main candidates without fresh exact source/byte binding."
+  ]
+}

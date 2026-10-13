@@ -90,9 +90,72 @@ class Resume(unittest.TestCase):
             self.run['event'] = event
             self.metadata()
 
+    def test_cancelled_parent_with_completed_trusted_build_can_resume_for_fresh_checks(self):
+        self.run['conclusion'] = 'cancelled'
+        self.invoke()
+        evidence = self.root / '.bluebuild'
+        record = json.loads((evidence / (self.profile + '-publication.json')).read_text())
+        self.assertEqual(record['resumeOrigin']['runId'], self.run['id'])
+        self.assertEqual(record['resumeOrigin']['runAttempt'], self.run['run_attempt'])
+        self.assertEqual(record['resumeOrigin']['artifactDigest'], self.artifact['digest'])
+        self.assertEqual(record['sourceRevision'], self.source)
+        self.assertEqual(record['revision'], self.head)
+        self.assertTrue(record['qualify'])
+        self.assertEqual((evidence / (self.profile + '-image-ref.txt')).read_text().strip(), self.image)
+        self.assertFalse((evidence / (self.profile + '-acceptance.json')).exists())
+        self.assertFalse((evidence / (self.profile + '-promoted.json')).exists())
+
+    def test_cancelled_parent_cannot_resume_cancelled_missing_or_partial_required_jobs(self):
+        self.run['conclusion'] = 'cancelled'
+        original = copy.deepcopy(self.jobs)
+        for index in range(len(original)):
+            for field, value in (('conclusion', 'cancelled'), ('conclusion', None),
+                                 ('status', 'in_progress'), ('run_attempt', 2),
+                                 ('head_sha', self.head), ('run_id', 124)):
+                self.jobs = copy.deepcopy(original)
+                self.jobs[index][field] = value
+                with self.subTest(job=index, field=field, value=value), self.assertRaises(ValueError):
+                    self.invoke()
+            self.jobs = copy.deepcopy(original)
+            del self.jobs[index]
+            with self.subTest(missing=index), self.assertRaises(ValueError):
+                self.invoke()
+        self.assertFalse((self.root / '.bluebuild').exists())
+
+    def test_cancelled_parent_cannot_resume_partial_steps_or_substituted_artifact(self):
+        self.run['conclusion'] = 'cancelled'
+        original = copy.deepcopy(self.jobs)
+        for index in range(4):
+            for conclusion in ('cancelled', 'skipped', None):
+                self.jobs = copy.deepcopy(original)
+                self.jobs[-1]['steps'][index]['conclusion'] = conclusion
+                with self.subTest(step=index, conclusion=conclusion), self.assertRaises(ValueError):
+                    self.invoke()
+            self.jobs = copy.deepcopy(original)
+            del self.jobs[-1]['steps'][index]
+            with self.subTest(missing_step=index), self.assertRaises(ValueError):
+                self.invoke()
+        self.jobs = original
+        original_artifact = copy.deepcopy(self.artifact)
+        for field, value in (('name', 'image-bluefin-generic-123-2'), ('digest', None),
+                             ('workflow_run', {'id': 123, 'head_sha': self.head})):
+            self.artifact = {**original_artifact, field: value}
+            with self.subTest(artifact_field=field), self.assertRaises(ValueError):
+                self.invoke()
+        self.assertFalse((self.root / '.bluebuild').exists())
+
+    def test_cancelled_build_origin_is_not_successful_release_evidence(self):
+        spec = importlib.util.spec_from_file_location('resume_release_gate', ROOT / 'scripts/bluebuild/release-evidence.py')
+        release = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(release)
+        self.run['conclusion'] = 'cancelled'
+        self.metadata()
+        with self.assertRaisesRegex(ValueError, 'successful matching main-branch'):
+            release.validate_run(self.run, 'build.yml', self.source)
+
     def test_origin_run_cannot_be_foreign_untrusted_incomplete_or_another_workflow(self):
         original = copy.deepcopy(self.run)
-        changes = {'id': 124, 'status': 'in_progress', 'conclusion': 'cancelled', 'event': 'pull_request',
+        changes = {'id': 124, 'status': 'in_progress', 'conclusion': 'timed_out', 'event': 'pull_request',
                    'head_branch': 'feature', 'path': '.github/workflows/image.yml', 'head_sha': 'invalid',
                    'run_attempt': True, 'repository': {'full_name': 'attacker/finite'},
                    'head_repository': {'full_name': 'attacker/finite'}}

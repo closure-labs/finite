@@ -31,9 +31,9 @@ def github(path, paginated=False):
 
 
 def origin_metadata(run, jobs, artifacts, profile, run_id):
-    """An unsuccessful security job does not erase a successful trusted build."""
+    """Later failure/cancellation cannot erase a fully evidenced trusted build."""
     if (run.get('id') != int(run_id) or run.get('status') != 'completed'
-            or run.get('conclusion') not in ('success', 'failure')
+            or run.get('conclusion') not in ('success', 'failure', 'cancelled')
             or run.get('event') not in ('push', 'workflow_dispatch')
             or run.get('head_branch') != 'main' or run.get('path') != '.github/workflows/build.yml'
             or run.get('repository', {}).get('full_name') != REPOSITORY
@@ -41,6 +41,9 @@ def origin_metadata(run, jobs, artifacts, profile, run_id):
             or not isinstance(run.get('head_sha'), str) or not SHA.fullmatch(run['head_sha'])
             or type(run.get('run_attempt')) is not int or run['run_attempt'] < 1):
         raise ValueError('Resume origin must be a completed trusted main Build Finite push/manual run')
+    # A cancelled parent is reusable only after every required source/build job
+    # and named build step below succeeded at this exact revision and attempt.
+    # This authorizes fresh qualification, never release or promotion by itself.
     image_job = f'Publish ({profile}) / build / build'
     required = ('Select checks', 'Documentation checks', 'Nix and runtime contracts', image_job)
     selected = {}

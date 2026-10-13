@@ -1,5 +1,7 @@
 # Validation and remediation plan
 
+Current execution order: [remediation and independent release sequence](release-implementation-sequence.md).
+
 The current all-profile desktop applicability work is tracked in
 [the desktop continuation plan](desktop-security-validation-plan.md). Its threat
 scope and later queue events update the historical continuation below; prior
