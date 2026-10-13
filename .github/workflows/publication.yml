@@ -84,13 +84,13 @@ jobs:
           # Expand these variables inside the Nix-provided child shell.
           # shellcheck disable=SC2016
           nix develop --file lib/ci-tools.nix release --command bash -c '
-            sudo --preserve-env=GH_TOKEN,GITHUB_ACTIONS,GITHUB_REPOSITORY,GITHUB_REF,GITHUB_EVENT_NAME,GITHUB_WORKFLOW_REF,GITHUB_SHA \
+            sudo --preserve-env=GH_TOKEN,GITHUB_ACTOR,GITHUB_ACTIONS,GITHUB_REPOSITORY,GITHUB_REF,GITHUB_EVENT_NAME,GITHUB_WORKFLOW_REF,GITHUB_SHA \
               systemd-run --quiet --wait --pipe --service-type=exec \
               --unit="finite-security-reuse-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" \
               --property=MemoryMax=2G --property=MemorySwapMax=0 --property=RuntimeMaxSec=300 \
               --property=NoNewPrivileges=yes --property=CapabilityBoundingSet= \
               --uid="$(id -u)" --gid="$(id -g)" --working-directory="$PWD" \
-              --setenv="PATH=$PATH" --setenv=GH_TOKEN --setenv=GITHUB_ACTIONS \
+              --setenv="PATH=$PATH" --setenv=GH_TOKEN --setenv=GITHUB_ACTOR --setenv=GITHUB_ACTIONS \
               --setenv=GITHUB_REPOSITORY --setenv=GITHUB_REF --setenv=GITHUB_EVENT_NAME \
               --setenv=GITHUB_WORKFLOW_REF --setenv=GITHUB_SHA \
               python3 scripts/ci/reuse-candidate-security.py \

@@ -109,15 +109,39 @@
   },
   "cancelledRedundantRuns": [
     38435847079,
-    38439666375
+    38439666375,
+    38452072161
   ],
   "secretForwardingRepair": {
-    "status": "implemented-awaiting-hosted-validation",
+    "status": "merged-after-source-and-queue-pass",
     "namedSecretOnly": true,
     "publicKeyPreflightSeconds": 30,
     "focusedTests": 215,
     "newImageRequired": false,
     "candidateRun": 38439778084,
-    "candidateDigest": "sha256:60b12153f6c3db4152225e6213ff5ae95971190cca87920b969a848b5fa423ef"
+    "candidateDigest": "sha256:60b12153f6c3db4152225e6213ff5ae95971190cca87920b969a848b5fa423ef",
+    "pr": 154,
+    "sourceRun": 38450595473,
+    "queueRun": 38451388697,
+    "mergeRevision": "31e47a59f456caceaacda75557c7971eba3a172d",
+    "resumeRun": 38452104611,
+    "resumeUrl": "https://github.com/closure-labs/finite/actions/runs/38452104611",
+    "resumeStatus": "failed-before-signing-registry-auth-path"
+  },
+  "securityReuseRuntimeFailure": {
+    "run": 38452104611,
+    "url": "https://github.com/closure-labs/finite/actions/runs/38452104611",
+    "stage": "sandboxed skopeo candidate inspection",
+    "error": "permission denied reading default /run/containers/1001/auth.json",
+    "sourceAndCandidateRecovery": "pass",
+    "signingAttempted": false,
+    "newImageRequired": false,
+    "remediation": "Use explicitly scoped runner-owned registry authentication; retain non-root execution and resource/trust limits.",
+    "repairValidation": {
+      "focusedTests": 153,
+      "workflowLint": "pass",
+      "implementation": "scoped runner-owned registry auth file, restored environment, success/failure cleanup, credential-error redaction",
+      "hosted": "pending"
+    }
   }
 }

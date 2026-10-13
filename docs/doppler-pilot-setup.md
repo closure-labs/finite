@@ -5,6 +5,11 @@ production credentials. It executes inline workflow code without checking out
 or executing repository scripts. The fetch action is pinned to reviewed v2.0.0
 commit `451892f16195f9ac360e1a5bcbf0b5fd0e957534`.
 
+GitHub-side rollout is deployed by [PR #154](https://github.com/closure-labs/finite/pull/154).
+[Claims-only run38452109711](https://github.com/closure-labs/finite/actions/runs/38452109711)
+passed at `31e47a59f456caceaacda75557c7971eba3a172d`; the public claims below were
+observed exactly. Doppler authentication remains untested because no workspace exists.
+
 ## Configure the two control planes
 
 1. GitHub environment `doppler-pilot` is configured with deployment branches limited

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Small fixtures authenticate reuse without downloading or parsing actual inventories."""
 from copy import deepcopy
+import base64
 from datetime import datetime, timedelta, timezone
 import hashlib
 import importlib.util
@@ -30,7 +31,7 @@ STAMP = datetime.now(timezone.utc).isoformat()
 
 
 def environment():
-    return {'GITHUB_ACTIONS': 'true', 'GITHUB_REPOSITORY': 'closure-labs/finite',
+    return {'GITHUB_ACTOR': 'fixture-user', 'GH_TOKEN': 'fixture-token', 'GITHUB_ACTIONS': 'true', 'GITHUB_REPOSITORY': 'closure-labs/finite',
         'GITHUB_REF': 'refs/heads/main', 'GITHUB_EVENT_NAME': 'workflow_dispatch', 'GITHUB_SHA': SHA,
         'GITHUB_WORKFLOW_REF': 'closure-labs/finite/.github/workflows/build.yml@refs/heads/main'}
 
@@ -244,6 +245,58 @@ class Reuse(unittest.TestCase):
             self.assertEqual(provenance['artifactSha256'], self.artifacts[-1]['digest'])
             self.assertFalse(provenance['newScanPerformed'])
             self.assertFalse(provenance['releaseEligibilityEstablished'])
+
+    def test_scoped_registry_auth_permissions_cleanup_restore_and_no_credential_arguments(self):
+        for previous in (None, '', '/previous/auth.json'):
+            for failed in (False, True):
+                observed = []
+                def inspect(command, **kwargs):
+                    self.assertEqual(command[0], 'skopeo')
+                    self.assertNotIn('fixture-token', ' '.join(command))
+                    self.assertNotIn('fixture-user', ' '.join(command))
+                    self.assertNotIn('--creds', command)
+                    path = Path(os.environ['REGISTRY_AUTH_FILE'])
+                    observed.append(path)
+                    self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o600)
+                    self.assertEqual(stat.S_IMODE(path.parent.stat().st_mode), 0o700)
+                    self.assertEqual(path.stat().st_uid, os.getuid())
+                    self.assertEqual(path.parent.stat().st_uid, os.getuid())
+                    data = json.loads(path.read_text())
+                    decoded = base64.b64decode(data['auths']['ghcr.io']['auth']).decode()
+                    self.assertEqual(decoded, 'fixture-user:fixture-token')
+                    return subprocess.CompletedProcess(command, 1 if failed else 0,
+                        stdout=json.dumps({'Digest': DIGEST}).encode(),
+                        stderr=b'credential detail fixture-token' if failed else b'')
+                env = environment()
+                if previous is not None: env['REGISTRY_AUTH_FILE'] = previous
+                with patch.dict(os.environ, env, clear=True), patch.object(reuse.publication.upstream.subprocess, 'run', side_effect=inspect), \
+                     patch('sys.stdout', new_callable=io.StringIO) as out, patch('sys.stderr', new_callable=io.StringIO) as error:
+                    if failed:
+                        with self.assertRaisesRegex(ValueError, '^Authenticated candidate registry inspection failed$') as caught:
+                            reuse.inspect_candidate(IMAGE)
+                        self.assertNotIn('fixture-token', str(caught.exception))
+                    else:
+                        self.assertEqual(reuse.inspect_candidate(IMAGE), {'Digest': DIGEST})
+                    self.assertEqual(os.environ.get('REGISTRY_AUTH_FILE'), previous)
+                    self.assertNotIn('fixture-token', out.getvalue() + error.getvalue())
+                self.assertTrue(observed)
+                self.assertTrue(all(not path.exists() and not path.parent.exists() for path in observed))
+
+    def test_registry_auth_missing_actor_or_token_fails_before_inspection(self):
+        for key in ('GITHUB_ACTOR', 'GH_TOKEN'):
+            env = environment()
+            env.pop(key)
+            with patch.dict(os.environ, env, clear=True), patch.object(reuse.publication.upstream, 'inspect') as inspect:
+                with self.assertRaises(ValueError): reuse.inspect_candidate(IMAGE)
+                inspect.assert_not_called()
+
+    def test_bounded_reuse_unit_receives_actor_without_credential_command_arguments(self):
+        workflow = (ROOT / '.github/workflows/publication.yml').read_text()
+        self.assertIn('--preserve-env=GH_TOKEN,GITHUB_ACTOR,GITHUB_ACTIONS', workflow)
+        self.assertIn('--setenv=GH_TOKEN --setenv=GITHUB_ACTOR', workflow)
+        self.assertNotIn('--setenv="GH_TOKEN=', workflow)
+        self.assertIn('--uid="$(id -u)" --gid="$(id -g)"', workflow)
+        self.assertIn('--property=MemoryMax=2G --property=MemorySwapMax=0', workflow)
 
     def test_existing_or_symlinked_output_is_never_reused(self):
         with tempfile.TemporaryDirectory() as temporary:

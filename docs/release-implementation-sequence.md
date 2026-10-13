@@ -25,6 +25,14 @@ is not evidence of stored-key corruption. The candidate digest is
 The [Doppler assessment](doppler-oidc-assessment-2026-10-13.md) records trust
 requirements and limits. Secret-store adoption is independent of image release.
 
+PR #154 deployed the named signing boundary and Doppler pilot after source/queue
+validation passed. The claims-only pilot passed; no Doppler workspace exists.
+Resume38452104611 recovered the immutable candidate but stopped before signing:
+sandboxed Skopeo could not read its default credential path. The next repair
+provides a private, short-lived registry auth file only around candidate
+inspection, preserving the non-root resource limits and all trust checks.
+No image rebuild or policy exception is needed for this runtime error.
+
 ## Historical candidate identity correction
 
 PR #152 merged at `31cdca7ffc15b537613d0f694191fcf8e06c1f4f` after
