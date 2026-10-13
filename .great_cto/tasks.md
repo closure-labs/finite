@@ -362,7 +362,15 @@ hold remain explicit. Release eligibility has not been established.
 - [x] Hosted smoke38432226349: ephemeral-key sign/verify passed, wrong key rejected, real transparency verified; no production key used.
 - [x] Implement authenticated native security-evidence reuse with current policy/freshness reevaluation and retained original timestamps; 12 helper,90 policy,20 resume,16 selection tests pass.
 - [x] Independent security/CI review approved; helper source loading avoids introducing bytecode into image identity.
-- [ ] Hosted source checks for signing/resume PR #152.
-- [ ] Resume exact standard candidate from38426200092; verify signing and enforcing VM install/upgrade/rollback before promotion.
-- [ ] Resume Next independently after standard; record exact release/rollback evidence.
+- [x] Hosted source38434206098 and merge-queue38435138430 passed; PR #152 merged at31cdca7ffc15.
+- [x] Attempt trusted standard resume38435953230; rejected current-input identity mismatch before signing. Preserve failed evidence; do not bypass guard.
+- Next resume is superseded by the fresh deterministic-identity build sequence below; do not repeat the same mismatch.
 - No additional vulnerability-count reduction or physical hardware test is required by current policy. Outstanding release gates are operational evidence, not advisory-pair counts.
+
+## Deterministic image input identity
+
+- [x] Exclude only generated tooling .pyc/.pyo from identity; authored/shipped inputs remain bound.120 focused tests and independent review pass.
+- [ ] Validate and merge identity correction. Defer the build-only disk cleanup optimization to a later image-workflow change so this tooling PR does not trigger four unnecessary validation builds.
+- [ ] Build one fresh standard candidate under corrected identity; scan, sign and VM qualify before promotion.
+- [ ] Build and qualify Next independently; do not retry old mismatched identities.
+- This is a release tooling/provenance correction, not a vulnerability-policy failure or additional security exception.

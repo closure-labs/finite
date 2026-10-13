@@ -35,7 +35,14 @@ def identity(profile, root, payload=None):
         'scripts/bluebuild/security-run.sh', 'scripts/bluebuild/audit-published.sh',
     }
     for path in sorted(set(paths)):
-        relative = path.relative_to(root).as_posix()
+        relative_path = path.relative_to(root)
+        relative = relative_path.as_posix()
+        # Python imports generate host/checkout-specific bytecode for these
+        # build helpers. Exclude only their caches, never similarly named files
+        # under shipped payload inputs such as files/system or files/scripts.
+        if (relative_path.parts[:2] == ('scripts', 'bluebuild') and
+                path.suffix in ('.pyc', '.pyo')):
+            continue
         # The current security policy is bound separately by policySha256 and
         # re-evaluated before signing. Changing it does not change image bytes.
         if relative in qualification_only:
@@ -48,5 +55,8 @@ def identity(profile, root, payload=None):
             continue
         content = str(path.readlink()).encode() if path.is_symlink() else path.read_bytes()
         entries.append([relative, bool(path.lstat().st_mode & 0o111), hashlib.sha256(content).hexdigest()])
-    value = {'schema': 1, 'profile': profile, 'payload': payload, 'files': entries}
+    # Schema 2 changes the hashed input contract; v1 remains the transport
+    # format accepted by existing evidence readers. Old hashes are not migrated:
+    # candidates built under the former contract must be rebuilt and qualified.
+    value = {'schema': 2, 'profile': profile, 'payload': payload, 'files': entries}
     return 'v1:' + hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
