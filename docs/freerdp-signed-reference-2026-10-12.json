@@ -1,0 +1,703 @@
+{
+  "schema": 1,
+  "status": "signed-reference-bytes-proven",
+  "observedAt": "2026-10-13T03:09:37.125060+00:00",
+  "kojiBuildId": 3091519,
+  "sourceCommit": "199c380597cb7f4642ebd299865a3032aef4e89b",
+  "sourceRpm": "freerdp-3.31.1-1.fc44.src.rpm",
+  "sourceUrl": "https://src.fedoraproject.org/rpms/freerdp/tree/199c380597cb7f4642ebd299865a3032aef4e89b",
+  "reviewedSourcePackaging": {
+    "specUrl": "https://src.fedoraproject.org/rpms/freerdp/raw/199c380597cb7f4642ebd299865a3032aef4e89b/f/freerdp.spec",
+    "specSha256": "59e4ef58cc58a63193e6d920041b8347cd2267290fc89e0ba32d9b983d6d96d7",
+    "manifestSha256": "38f2b3036c88c09da2e62b7bacf81eca3722fb20818e30883afb9b6d98169534",
+    "sourceTarballSha512": "be669db38cecfc8d774c6165a069c50249fdcb2f8877e767a10e7dc009131ed35363db50b484536f888b7ec9214cbeb1acfc3e129c9cd2694cd498b42718245e",
+    "repackScriptSha256": "6cbde8ae53e1987f6e17bf3dfeec2530c7829b43ac3bf5ac9373a75c894554e0",
+    "review": "Immutable Fedora spec has no code patches; prep changes file permissions only; repack removes only unrelated winpr/crt/unicode_builtin.c. Upstream3.31.1 source guards were reviewed separately; these hashes are retained source-review evidence, not a new source download."
+  },
+  "mappingSha256": "bd245ded90b12b77a61408cb0d8db81080903e98ab31917af7bad7d899db2d4d",
+  "originalSelectorImage": "ghcr.io/closure-labs/finite@sha256:66ff1f5c91ae5ddf97ac5c09bd510765888afd30457e535ae5710abb8a37f01e",
+  "originalSelectorSbomSha256": "23419f2a7c9a103f3552a5fae65a2e5a1044af50da96a797e001ed13bd254aa8",
+  "originalSelectorSummarySha256": "901cc5af571ed932852c9a7351b6480192e0a83acd017c53f27e3bbf80bcd8e1",
+  "collectorSha256": "75be7827f8b104b3bc50c60fc2786056e3fdafeadbf8a5fc0c3e6bcea696b582",
+  "packages": [
+    {
+      "rpm": {
+        "name": "freerdp-libs",
+        "epoch": 2,
+        "version": "3.31.1",
+        "release": "1.fc44",
+        "architecture": "x86_64",
+        "sourceRpm": "freerdp-3.31.1-1.fc44.src.rpm"
+      },
+      "kojiRpmId": 48625980,
+      "download": {
+        "url": "https://kojipkgs.fedoraproject.org/packages/freerdp/3.31.1/1.fc44/data/signed/6d9f90a6/x86_64/freerdp-libs-3.31.1-1.fc44.x86_64.rpm",
+        "sha256": "1d02c9e8b0d4d221657c158c45a9c325653a7eb3efaf055f5ecdf63c45493788",
+        "bytes": 1480159
+      },
+      "signatureVerified": true,
+      "signatureSha256": "7ae9833cd2123c0b0cd676467479c8847c1ba30af78f616d44658f1600d5a8ba",
+      "signatureKeyFingerprint": "36f612dcf27f7d1a48a835e4dbfcf71c6d9f90a6",
+      "signatureKeySha256": "93642aec521a1e5e96dd715f7ae0ec0850ebc9de09a94ce03cae5263f26cc18a",
+      "rpmFileManifestSha256": "cfde8e557aa7a75035a3c4e91e3dd85af0c28e19b310ad001ee55d5a2818a833",
+      "selectedFileCount": 10
+    },
+    {
+      "rpm": {
+        "name": "libwinpr",
+        "epoch": 2,
+        "version": "3.31.1",
+        "release": "1.fc44",
+        "architecture": "x86_64",
+        "sourceRpm": "freerdp-3.31.1-1.fc44.src.rpm"
+      },
+      "kojiRpmId": 48625977,
+      "download": {
+        "url": "https://kojipkgs.fedoraproject.org/packages/freerdp/3.31.1/1.fc44/data/signed/6d9f90a6/x86_64/libwinpr-3.31.1-1.fc44.x86_64.rpm",
+        "sha256": "12202ec8106f575f7e88b7e337cd715780d9e3976f4df6c9a275b2c5f8875b5b",
+        "bytes": 439052
+      },
+      "signatureVerified": true,
+      "signatureSha256": "effc58d8fa88c41fa5e0a47a6c1f2920a7e4f83dc2678a2e8fe7cde56b88a4e9",
+      "signatureKeyFingerprint": "36f612dcf27f7d1a48a835e4dbfcf71c6d9f90a6",
+      "signatureKeySha256": "93642aec521a1e5e96dd715f7ae0ec0850ebc9de09a94ce03cae5263f26cc18a",
+      "rpmFileManifestSha256": "5bc3a2d71dc0187f57a289f38205ef4762415c154eef3a822ef155c2a554e665",
+      "selectedFileCount": 2
+    }
+  ],
+  "matches": [
+    {
+      "selectorPath": "/sysroot/ostree/repo/objects/08/fc2ca9ea6a75d0922298a81303b6728909c61fbfce06e2d3fd67fc0dd37eb3.file",
+      "selectorSha256": "8762e31cb0f42d60a54c20d64a3715f8426d7aca7a1445d86f8b034bcc6aa77e",
+      "selectorSize": 98304,
+      "referenceRpm": "freerdp-libs",
+      "referencePath": "/usr/lib64/libfreerdp-shadow3.so.3.31.1",
+      "referenceBytes": {
+        "path": "/usr/lib64/libfreerdp-shadow3.so.3.31.1",
+        "status": "matches-rpm-manifest",
+        "actualFileIntegrityVerified": true,
+        "expected": {
+          "mode": 33261,
+          "size": 98304,
+          "digest": {
+            "algorithm": "sha256",
+            "value": "8762e31cb0f42d60a54c20d64a3715f8426d7aca7a1445d86f8b034bcc6aa77e"
+          },
+          "flags": "",
+          "userName": null,
+          "groupName": null
+        },
+        "observedStat": {
+          "device": 2049,
+          "inode": 9185608,
+          "mode": 33261,
+          "size": 98304,
+          "mtimeNs": 1791860976563405222,
+          "ctimeNs": 1791860976563405222,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "actualSha256": "8762e31cb0f42d60a54c20d64a3715f8426d7aca7a1445d86f8b034bcc6aa77e",
+        "bytesRead": 98304,
+        "elfHeader": "7f454c4602010100000000000000000003003e00",
+        "afterStat": {
+          "device": 2049,
+          "inode": 9185608,
+          "mode": 33261,
+          "size": 98304,
+          "mtimeNs": 1791860976563405222,
+          "ctimeNs": 1791860976563405222,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "reason": "stable-regular-file-size-sha256-and-mode-match",
+        "configFile": false
+      },
+      "signedReferenceByteMatch": true,
+      "actualCandidateBytesIndependentlyObserved": false
+    },
+    {
+      "selectorPath": "/sysroot/ostree/repo/objects/21/3a5c69e6bcc3bcf7d7956b19a8da41060a82fa75bd699c3c9959f0b26bcf00.file",
+      "selectorSha256": "1df7b243ab735901076c66b61509acd5b6abd03e8222dae6f7cf89e9a2d09306",
+      "selectorSize": 318088,
+      "referenceRpm": "freerdp-libs",
+      "referencePath": "/usr/lib64/libfreerdp-server3.so.3.31.1",
+      "referenceBytes": {
+        "path": "/usr/lib64/libfreerdp-server3.so.3.31.1",
+        "status": "matches-rpm-manifest",
+        "actualFileIntegrityVerified": true,
+        "expected": {
+          "mode": 33261,
+          "size": 318088,
+          "digest": {
+            "algorithm": "sha256",
+            "value": "1df7b243ab735901076c66b61509acd5b6abd03e8222dae6f7cf89e9a2d09306"
+          },
+          "flags": "",
+          "userName": null,
+          "groupName": null
+        },
+        "observedStat": {
+          "device": 2049,
+          "inode": 9185606,
+          "mode": 33261,
+          "size": 318088,
+          "mtimeNs": 1791860976562405211,
+          "ctimeNs": 1791860976562405211,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "actualSha256": "1df7b243ab735901076c66b61509acd5b6abd03e8222dae6f7cf89e9a2d09306",
+        "bytesRead": 318088,
+        "elfHeader": "7f454c4602010100000000000000000003003e00",
+        "afterStat": {
+          "device": 2049,
+          "inode": 9185606,
+          "mode": 33261,
+          "size": 318088,
+          "mtimeNs": 1791860976562405211,
+          "ctimeNs": 1791860976562405211,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "reason": "stable-regular-file-size-sha256-and-mode-match",
+        "configFile": false
+      },
+      "signedReferenceByteMatch": true,
+      "actualCandidateBytesIndependentlyObserved": false
+    },
+    {
+      "selectorPath": "/sysroot/ostree/repo/objects/38/3c2d58d5f6e2c6b1bdc557e0e30359ef541c6334c1e30512b9834a45198f3d.file",
+      "selectorSha256": "e0102151531e0c71f613c7d7f1543ec70b11f2704ac426f3e38326391a62c4ca",
+      "selectorSize": 20120,
+      "referenceRpm": "freerdp-libs",
+      "referencePath": "/usr/lib64/freerdp3/proxy/libproxy-bitmap-filter-plugin.so",
+      "referenceBytes": {
+        "path": "/usr/lib64/freerdp3/proxy/libproxy-bitmap-filter-plugin.so",
+        "status": "matches-rpm-manifest",
+        "actualFileIntegrityVerified": true,
+        "expected": {
+          "mode": 33261,
+          "size": 20120,
+          "digest": {
+            "algorithm": "sha256",
+            "value": "e0102151531e0c71f613c7d7f1543ec70b11f2704ac426f3e38326391a62c4ca"
+          },
+          "flags": "",
+          "userName": null,
+          "groupName": null
+        },
+        "observedStat": {
+          "device": 2049,
+          "inode": 9185601,
+          "mode": 33261,
+          "size": 20120,
+          "mtimeNs": 1791860976557043691,
+          "ctimeNs": 1791860976557043691,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "actualSha256": "e0102151531e0c71f613c7d7f1543ec70b11f2704ac426f3e38326391a62c4ca",
+        "bytesRead": 20120,
+        "elfHeader": "7f454c4602010100000000000000000003003e00",
+        "afterStat": {
+          "device": 2049,
+          "inode": 9185601,
+          "mode": 33261,
+          "size": 20120,
+          "mtimeNs": 1791860976557043691,
+          "ctimeNs": 1791860976557043691,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "reason": "stable-regular-file-size-sha256-and-mode-match",
+        "configFile": false
+      },
+      "signedReferenceByteMatch": true,
+      "actualCandidateBytesIndependentlyObserved": false
+    },
+    {
+      "selectorPath": "/sysroot/ostree/repo/objects/3f/e28168bfafc35f4c5a75f362a35bd64321ad763f4b66847e9662af7ed94e24.file",
+      "selectorSha256": "b6ec87072b5a7d70f915ca9f129271be4b9770a1713c0315deaab8ac2e9dd7d9",
+      "selectorSize": 187600,
+      "referenceRpm": "freerdp-libs",
+      "referencePath": "/usr/lib64/freerdp3/proxy/libproxy-dyn-channel-dump-plugin.so",
+      "referenceBytes": {
+        "path": "/usr/lib64/freerdp3/proxy/libproxy-dyn-channel-dump-plugin.so",
+        "status": "matches-rpm-manifest",
+        "actualFileIntegrityVerified": true,
+        "expected": {
+          "mode": 33261,
+          "size": 187600,
+          "digest": {
+            "algorithm": "sha256",
+            "value": "b6ec87072b5a7d70f915ca9f129271be4b9770a1713c0315deaab8ac2e9dd7d9"
+          },
+          "flags": "",
+          "userName": null,
+          "groupName": null
+        },
+        "observedStat": {
+          "device": 2049,
+          "inode": 9185603,
+          "mode": 33261,
+          "size": 187600,
+          "mtimeNs": 1791860976557043691,
+          "ctimeNs": 1791860976557043691,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "actualSha256": "b6ec87072b5a7d70f915ca9f129271be4b9770a1713c0315deaab8ac2e9dd7d9",
+        "bytesRead": 187600,
+        "elfHeader": "7f454c4602010100000000000000000003003e00",
+        "afterStat": {
+          "device": 2049,
+          "inode": 9185603,
+          "mode": 33261,
+          "size": 187600,
+          "mtimeNs": 1791860976557043691,
+          "ctimeNs": 1791860976557043691,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "reason": "stable-regular-file-size-sha256-and-mode-match",
+        "configFile": false
+      },
+      "signedReferenceByteMatch": true,
+      "actualCandidateBytesIndependentlyObserved": false
+    },
+    {
+      "selectorPath": "/sysroot/ostree/repo/objects/5e/2a0930df64e6f7b5947801ac477c9df8fc342dce35a952c101057e9ce8de4d.file",
+      "selectorSha256": "a25d541bfab8bf2a1cb076b182ebd2d7a43a3f7eff52db5447337a37bc21349a",
+      "selectorSize": 2254640,
+      "referenceRpm": "freerdp-libs",
+      "referencePath": "/usr/lib64/libfreerdp3.so.3.31.1",
+      "referenceBytes": {
+        "path": "/usr/lib64/libfreerdp3.so.3.31.1",
+        "status": "matches-rpm-manifest",
+        "actualFileIntegrityVerified": true,
+        "expected": {
+          "mode": 33261,
+          "size": 2254640,
+          "digest": {
+            "algorithm": "sha256",
+            "value": "a25d541bfab8bf2a1cb076b182ebd2d7a43a3f7eff52db5447337a37bc21349a"
+          },
+          "flags": "",
+          "userName": null,
+          "groupName": null
+        },
+        "observedStat": {
+          "device": 2049,
+          "inode": 9185609,
+          "mode": 33261,
+          "size": 2254640,
+          "mtimeNs": 1791860976573405340,
+          "ctimeNs": 1791860976573405340,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "actualSha256": "a25d541bfab8bf2a1cb076b182ebd2d7a43a3f7eff52db5447337a37bc21349a",
+        "bytesRead": 2254640,
+        "elfHeader": "7f454c4602010100000000000000000003003e00",
+        "afterStat": {
+          "device": 2049,
+          "inode": 9185609,
+          "mode": 33261,
+          "size": 2254640,
+          "mtimeNs": 1791860976573405340,
+          "ctimeNs": 1791860976573405340,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "reason": "stable-regular-file-size-sha256-and-mode-match",
+        "configFile": false
+      },
+      "signedReferenceByteMatch": true,
+      "actualCandidateBytesIndependentlyObserved": false
+    },
+    {
+      "selectorPath": "/sysroot/ostree/repo/objects/70/fb1cf6e02ee270a7716b0af74394d3cd67703795803cd3e91e73ed4719444a.file",
+      "selectorSha256": "31c28efcf2933f765be7ddb23422c27fc6854efd935e64e04c55d7836ea7509d",
+      "selectorSize": 136232,
+      "referenceRpm": "freerdp-libs",
+      "referencePath": "/usr/lib64/libfreerdp-server-proxy3.so.3.31.1",
+      "referenceBytes": {
+        "path": "/usr/lib64/libfreerdp-server-proxy3.so.3.31.1",
+        "status": "matches-rpm-manifest",
+        "actualFileIntegrityVerified": true,
+        "expected": {
+          "mode": 33261,
+          "size": 136232,
+          "digest": {
+            "algorithm": "sha256",
+            "value": "31c28efcf2933f765be7ddb23422c27fc6854efd935e64e04c55d7836ea7509d"
+          },
+          "flags": "",
+          "userName": null,
+          "groupName": null
+        },
+        "observedStat": {
+          "device": 2049,
+          "inode": 9185605,
+          "mode": 33261,
+          "size": 136232,
+          "mtimeNs": 1791860976561405199,
+          "ctimeNs": 1791860976561405199,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "actualSha256": "31c28efcf2933f765be7ddb23422c27fc6854efd935e64e04c55d7836ea7509d",
+        "bytesRead": 136232,
+        "elfHeader": "7f454c4602010100000000000000000003003e00",
+        "afterStat": {
+          "device": 2049,
+          "inode": 9185605,
+          "mode": 33261,
+          "size": 136232,
+          "mtimeNs": 1791860976561405199,
+          "ctimeNs": 1791860976561405199,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "reason": "stable-regular-file-size-sha256-and-mode-match",
+        "configFile": false
+      },
+      "signedReferenceByteMatch": true,
+      "actualCandidateBytesIndependentlyObserved": false
+    },
+    {
+      "selectorPath": "/sysroot/ostree/repo/objects/78/c899ea8fe1653195352490c6c08f1d834ce020a03a05d1c0a560ce0ee28066.file",
+      "selectorSha256": "f5bc9cbc971513912720b4b2d434217feed57b959f66ecce94389dd62be69990",
+      "selectorSize": 36112,
+      "referenceRpm": "freerdp-libs",
+      "referencePath": "/usr/lib64/librdtk0.so.0.2.0",
+      "referenceBytes": {
+        "path": "/usr/lib64/librdtk0.so.0.2.0",
+        "status": "matches-rpm-manifest",
+        "actualFileIntegrityVerified": true,
+        "expected": {
+          "mode": 33261,
+          "size": 36112,
+          "digest": {
+            "algorithm": "sha256",
+            "value": "f5bc9cbc971513912720b4b2d434217feed57b959f66ecce94389dd62be69990"
+          },
+          "flags": "",
+          "userName": null,
+          "groupName": null
+        },
+        "observedStat": {
+          "device": 2049,
+          "inode": 9185610,
+          "mode": 33261,
+          "size": 36112,
+          "mtimeNs": 1791860976573405340,
+          "ctimeNs": 1791860976573405340,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "actualSha256": "f5bc9cbc971513912720b4b2d434217feed57b959f66ecce94389dd62be69990",
+        "bytesRead": 36112,
+        "elfHeader": "7f454c4602010100000000000000000003003e00",
+        "afterStat": {
+          "device": 2049,
+          "inode": 9185610,
+          "mode": 33261,
+          "size": 36112,
+          "mtimeNs": 1791860976573405340,
+          "ctimeNs": 1791860976573405340,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "reason": "stable-regular-file-size-sha256-and-mode-match",
+        "configFile": false
+      },
+      "signedReferenceByteMatch": true,
+      "actualCandidateBytesIndependentlyObserved": false
+    },
+    {
+      "selectorPath": "/sysroot/ostree/repo/objects/90/0f5a7ce94df3978f0fa90ae76c51e003545a6198a1e1dc1574da12735290be.file",
+      "selectorSha256": "e99f8050bc7aa7a48805554b2f559336a7d1cd782a140c33548f1eb9a90f96fa",
+      "selectorSize": 787784,
+      "referenceRpm": "freerdp-libs",
+      "referencePath": "/usr/lib64/libfreerdp-client3.so.3.31.1",
+      "referenceBytes": {
+        "path": "/usr/lib64/libfreerdp-client3.so.3.31.1",
+        "status": "matches-rpm-manifest",
+        "actualFileIntegrityVerified": true,
+        "expected": {
+          "mode": 33261,
+          "size": 787784,
+          "digest": {
+            "algorithm": "sha256",
+            "value": "e99f8050bc7aa7a48805554b2f559336a7d1cd782a140c33548f1eb9a90f96fa"
+          },
+          "flags": "",
+          "userName": null,
+          "groupName": null
+        },
+        "observedStat": {
+          "device": 2049,
+          "inode": 9185604,
+          "mode": 33261,
+          "size": 787784,
+          "mtimeNs": 1791860976560405187,
+          "ctimeNs": 1791860976560405187,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "actualSha256": "e99f8050bc7aa7a48805554b2f559336a7d1cd782a140c33548f1eb9a90f96fa",
+        "bytesRead": 787784,
+        "elfHeader": "7f454c4602010100000000000000000003003e00",
+        "afterStat": {
+          "device": 2049,
+          "inode": 9185604,
+          "mode": 33261,
+          "size": 787784,
+          "mtimeNs": 1791860976560405187,
+          "ctimeNs": 1791860976560405187,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "reason": "stable-regular-file-size-sha256-and-mode-match",
+        "configFile": false
+      },
+      "signedReferenceByteMatch": true,
+      "actualCandidateBytesIndependentlyObserved": false
+    },
+    {
+      "selectorPath": "/sysroot/ostree/repo/objects/cc/660fa41e8c2552a6420a11618989048bd2839fda442f4fb88f5f1f9e71544f.file",
+      "selectorSha256": "9db3600e92d6362f306d7f2f7d8b5d99b41c7dd57f4da4d93db3d5ea80f1e0fb",
+      "selectorSize": 20008,
+      "referenceRpm": "freerdp-libs",
+      "referencePath": "/usr/lib64/freerdp3/proxy/libproxy-demo-plugin.so",
+      "referenceBytes": {
+        "path": "/usr/lib64/freerdp3/proxy/libproxy-demo-plugin.so",
+        "status": "matches-rpm-manifest",
+        "actualFileIntegrityVerified": true,
+        "expected": {
+          "mode": 33261,
+          "size": 20008,
+          "digest": {
+            "algorithm": "sha256",
+            "value": "9db3600e92d6362f306d7f2f7d8b5d99b41c7dd57f4da4d93db3d5ea80f1e0fb"
+          },
+          "flags": "",
+          "userName": null,
+          "groupName": null
+        },
+        "observedStat": {
+          "device": 2049,
+          "inode": 9185602,
+          "mode": 33261,
+          "size": 20008,
+          "mtimeNs": 1791860976557043691,
+          "ctimeNs": 1791860976557043691,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "actualSha256": "9db3600e92d6362f306d7f2f7d8b5d99b41c7dd57f4da4d93db3d5ea80f1e0fb",
+        "bytesRead": 20008,
+        "elfHeader": "7f454c4602010100000000000000000003003e00",
+        "afterStat": {
+          "device": 2049,
+          "inode": 9185602,
+          "mode": 33261,
+          "size": 20008,
+          "mtimeNs": 1791860976557043691,
+          "ctimeNs": 1791860976557043691,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "reason": "stable-regular-file-size-sha256-and-mode-match",
+        "configFile": false
+      },
+      "signedReferenceByteMatch": true,
+      "actualCandidateBytesIndependentlyObserved": false
+    },
+    {
+      "selectorPath": "/sysroot/ostree/repo/objects/dd/d3626787a3803f4939a8a4fdfefad644e87d69a98be326d692a5fb300b09c8.file",
+      "selectorSha256": "791113ce1c3c69920c892e01a0e97a8275627bf6fde874adf0859ac935983a30",
+      "selectorSize": 36240,
+      "referenceRpm": "freerdp-libs",
+      "referencePath": "/usr/lib64/libfreerdp-shadow-subsystem3.so.3.31.1",
+      "referenceBytes": {
+        "path": "/usr/lib64/libfreerdp-shadow-subsystem3.so.3.31.1",
+        "status": "matches-rpm-manifest",
+        "actualFileIntegrityVerified": true,
+        "expected": {
+          "mode": 33261,
+          "size": 36240,
+          "digest": {
+            "algorithm": "sha256",
+            "value": "791113ce1c3c69920c892e01a0e97a8275627bf6fde874adf0859ac935983a30"
+          },
+          "flags": "",
+          "userName": null,
+          "groupName": null
+        },
+        "observedStat": {
+          "device": 2049,
+          "inode": 9185607,
+          "mode": 33261,
+          "size": 36240,
+          "mtimeNs": 1791860976562405211,
+          "ctimeNs": 1791860976562405211,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "actualSha256": "791113ce1c3c69920c892e01a0e97a8275627bf6fde874adf0859ac935983a30",
+        "bytesRead": 36240,
+        "elfHeader": "7f454c4602010100000000000000000003003e00",
+        "afterStat": {
+          "device": 2049,
+          "inode": 9185607,
+          "mode": 33261,
+          "size": 36240,
+          "mtimeNs": 1791860976562405211,
+          "ctimeNs": 1791860976562405211,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "reason": "stable-regular-file-size-sha256-and-mode-match",
+        "configFile": false
+      },
+      "signedReferenceByteMatch": true,
+      "actualCandidateBytesIndependentlyObserved": false
+    },
+    {
+      "selectorPath": "/sysroot/ostree/repo/objects/e5/b082ca2a33265d41523bc7e190657afa530421ff868267bfcc94d39c330c36.file",
+      "selectorSha256": "e78e7be59b0199ebe51bb05bb29592636bfa20acd4567b1d6f8774b1577f0757",
+      "selectorSize": 1161720,
+      "referenceRpm": "libwinpr",
+      "referencePath": "/usr/lib64/libwinpr3.so.3.31.1",
+      "referenceBytes": {
+        "path": "/usr/lib64/libwinpr3.so.3.31.1",
+        "status": "matches-rpm-manifest",
+        "actualFileIntegrityVerified": true,
+        "expected": {
+          "mode": 33261,
+          "size": 1161720,
+          "digest": {
+            "algorithm": "sha256",
+            "value": "e78e7be59b0199ebe51bb05bb29592636bfa20acd4567b1d6f8774b1577f0757"
+          },
+          "flags": "",
+          "userName": null,
+          "groupName": null
+        },
+        "observedStat": {
+          "device": 2049,
+          "inode": 9185617,
+          "mode": 33261,
+          "size": 1161720,
+          "mtimeNs": 1791860977121411807,
+          "ctimeNs": 1791860977121411807,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "actualSha256": "e78e7be59b0199ebe51bb05bb29592636bfa20acd4567b1d6f8774b1577f0757",
+        "bytesRead": 1161720,
+        "elfHeader": "7f454c4602010100000000000000000003003e00",
+        "afterStat": {
+          "device": 2049,
+          "inode": 9185617,
+          "mode": 33261,
+          "size": 1161720,
+          "mtimeNs": 1791860977121411807,
+          "ctimeNs": 1791860977121411807,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "reason": "stable-regular-file-size-sha256-and-mode-match",
+        "configFile": false
+      },
+      "signedReferenceByteMatch": true,
+      "actualCandidateBytesIndependentlyObserved": false
+    },
+    {
+      "selectorPath": "/sysroot/ostree/repo/objects/fe/06c8a0dd65816aa82b8308cb2dbbca135ff7716470b8cbe06caa20fdda2a01.file",
+      "selectorSha256": "2d37663e2fb2048a0ebedfd9b6972acc2edd92783f488f698c306711c7a1048c",
+      "selectorSize": 34736,
+      "referenceRpm": "libwinpr",
+      "referencePath": "/usr/lib64/libwinpr-tools3.so.3.31.1",
+      "referenceBytes": {
+        "path": "/usr/lib64/libwinpr-tools3.so.3.31.1",
+        "status": "matches-rpm-manifest",
+        "actualFileIntegrityVerified": true,
+        "expected": {
+          "mode": 33261,
+          "size": 34736,
+          "digest": {
+            "algorithm": "sha256",
+            "value": "2d37663e2fb2048a0ebedfd9b6972acc2edd92783f488f698c306711c7a1048c"
+          },
+          "flags": "",
+          "userName": null,
+          "groupName": null
+        },
+        "observedStat": {
+          "device": 2049,
+          "inode": 9185616,
+          "mode": 33261,
+          "size": 34736,
+          "mtimeNs": 1791860977116865697,
+          "ctimeNs": 1791860977116865697,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "actualSha256": "2d37663e2fb2048a0ebedfd9b6972acc2edd92783f488f698c306711c7a1048c",
+        "bytesRead": 34736,
+        "elfHeader": "7f454c4602010100000000000000000003003e00",
+        "afterStat": {
+          "device": 2049,
+          "inode": 9185616,
+          "mode": 33261,
+          "size": 34736,
+          "mtimeNs": 1791860977116865697,
+          "ctimeNs": 1791860977116865697,
+          "linkCount": 1,
+          "uid": 0,
+          "gid": 0
+        },
+        "reason": "stable-regular-file-size-sha256-and-mode-match",
+        "configFile": false
+      },
+      "signedReferenceByteMatch": true,
+      "actualCandidateBytesIndependentlyObserved": false
+    }
+  ],
+  "releaseEligible": false,
+  "dispositionsGranted": [],
+  "vulnerabilityClearance": "not-assessed",
+  "limits": [
+    "No image pull, native scan, RPM installation/downgrade or image code execution performed.",
+    "Original selector hashes/locations are caller metadata; this proof authenticates reference bytes, not current candidate bytes.",
+    "The exact current candidate digest, aliases, component and every native location must independently join these reference digests before any disposition.",
+    "Source-fixed advisory/platform review and production security/signing/boot qualification remain separate."
+  ]
+}

@@ -32,6 +32,29 @@ release = load('release_test', 'scripts/bluebuild/release-evidence.py')
 publication = load('publication_reliability', 'scripts/bluebuild/publication.py')
 unlock = load('unlock_vm_test', 'scripts/bluebuild/unlock-vm.py')
 redact = load('redact_vm_test', 'scripts/bluebuild/redact-vm-logs.py')
+scan = load('scanner_identity_test', 'scripts/bluebuild/security-scan.py')
+
+
+class ScannerSourceIdentity(unittest.TestCase):
+    def test_original_source_is_bound_independently_of_current_policy_revision(self):
+        image = 'ghcr.io/closure-labs/finite@sha256:' + 'a' * 64
+        source = 'b' * 40
+        labels = {'org.opencontainers.image.revision': source,
+                  'org.opencontainers.image.source': 'https://github.com/closure-labs/finite',
+                  'io.finite.profile': 'bluefin-generic', 'io.finite.build-inputs': 'v1:' + 'c' * 64}
+        metadata = {'Digest': 'sha256:' + 'a' * 64, 'Labels': labels}
+        with patch.dict(os.environ, GITHUB_SHA='d' * 40):
+            scan.candidate_identity(metadata, image, 'bluefin-generic', labels['io.finite.build-inputs'], source)
+            for key in labels:
+                with self.subTest(label=key), self.assertRaises(ValueError):
+                    scan.candidate_identity({**metadata, 'Labels': {**labels, key: 'wrong'}},
+                                            image, 'bluefin-generic', labels['io.finite.build-inputs'], source)
+            for bad in ('invalid', 'd' * 40):
+                with self.subTest(revision=bad), self.assertRaises(ValueError):
+                    scan.candidate_identity(metadata, image, 'bluefin-generic', labels['io.finite.build-inputs'], bad)
+            with self.assertRaises(ValueError):
+                scan.candidate_identity({**metadata, 'Digest': 'sha256:' + 'e' * 64},
+                                        image, 'bluefin-generic', labels['io.finite.build-inputs'], source)
 
 
 class ImageIdentity(unittest.TestCase):
@@ -219,30 +242,30 @@ class ReleaseEvidence(unittest.TestCase):
         self.image = 'ghcr.io/closure-labs/finite@sha256:' + 'a' * 64
         self.installation = {'image': self.image, 'profile': 'bluefin-generic',
                              'updateChannel': 'ghcr.io/closure-labs/finite:finite',
-                             'installer': {'finiteRevision': 'revision'}}
+                             'installer': {'finiteRevision': 'd' * 40}}
         self.acceptance = {'candidate': self.image, 'profile': 'bluefin-generic',
-                           'accepted': True, 'secureBoot': True, 'encryptedRoot': True, 'revision': 'revision',
+                           'accepted': True, 'secureBoot': True, 'encryptedRoot': True, 'revision': 'd' * 40,
                            'buildIdentity': 'identity', 'previousDigest': 'previous'}
-        self.publication = {'revision': 'revision', 'profile': 'bluefin-generic',
+        self.publication = {'revision': 'd' * 40, 'profile': 'bluefin-generic',
                             'buildIdentity': 'identity', 'previousDigest': 'previous'}
 
     def test_exact_evidence_is_accepted(self):
         self.assertEqual(release.validate_evidence(self.installation, self.acceptance,
-                                                   self.publication, 'finite', 'revision'), self.image)
+                                                   self.publication, 'finite', 'd' * 40), self.image)
 
     def test_mismatched_or_unsuccessful_evidence_is_rejected(self):
         for field in self.acceptance:
             with self.subTest(field=field), self.assertRaises(ValueError):
                 release.validate_evidence(self.installation, {**self.acceptance, field: None},
-                                          self.publication, 'finite', 'revision')
+                                          self.publication, 'finite', 'd' * 40)
 
     def test_only_matching_successful_main_runs_are_trusted(self):
-        run = {'conclusion': 'success', 'head_branch': 'main', 'head_sha': 'revision',
+        run = {'conclusion': 'success', 'head_branch': 'main', 'head_sha': 'd' * 40,
                'path': '.github/workflows/build.yml', 'head_repository': {'full_name': 'closure-labs/finite'}}
-        release.validate_run(run, 'build.yml', 'revision')
+        release.validate_run(run, 'build.yml', 'd' * 40)
         for field in ('conclusion', 'head_branch', 'head_sha', 'path'):
             with self.subTest(field=field), self.assertRaises(ValueError):
-                release.validate_run({**run, field: 'wrong'}, 'build.yml', 'revision')
+                release.validate_run({**run, field: 'wrong'}, 'build.yml', 'd' * 40)
 
     def test_reruns_can_reuse_successful_jobs_from_earlier_attempts(self):
         prefix = 'image-bluefin-generic-123-'
@@ -254,6 +277,20 @@ class ReleaseEvidence(unittest.TestCase):
             release.latest_artifact([{'name': prefix + '1', 'expired': True}], prefix)
 
 
+    def test_policy_revision_can_qualify_an_unchanged_older_source(self):
+        source = 'b' * 40
+        publication = {**self.publication, 'sourceRevision': source}
+        acceptance = {**self.acceptance, 'sourceRevision': source}
+        self.assertEqual(release.validate_evidence(self.installation, acceptance,
+                         publication, 'finite', 'd' * 40), self.image)
+        for bad in ('c' * 40, 'invalid', None):
+            with self.subTest(source=bad), self.assertRaises(ValueError):
+                release.validate_evidence(self.installation,
+                    {**acceptance, 'sourceRevision': bad}, publication, 'finite', 'd' * 40)
+        with self.assertRaises(ValueError):
+            release.validate_evidence(self.installation, self.acceptance,
+                                     publication, 'finite', 'd' * 40)
+
 class PromotionQualification(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
@@ -264,17 +301,17 @@ class PromotionQualification(unittest.TestCase):
         self.profile = 'bluefin-generic'
         self.image = 'ghcr.io/closure-labs/finite@sha256:' + 'a' * 64
         self.record = {'publish': True, 'profile': self.profile, 'tags': ['finite', 'latest'],
-                       'revision': 'revision', 'publishedDigest': '', 'previousDigest': '',
+                       'revision': 'd' * 40, 'publishedDigest': '', 'previousDigest': '',
                        'recoveryReason': '', 'buildIdentity': 'identity',
                        'qualificationMode': 'enforce', 'qualify': False}
         self.acceptance = {'accepted': True, 'candidate': self.image, 'previousDigest': '',
-                           'profile': self.profile, 'revision': 'revision', 'buildIdentity': 'identity',
+                           'profile': self.profile, 'revision': 'd' * 40, 'buildIdentity': 'identity',
                            'secureBoot': True, 'encryptedRoot': True}
         (self.evidence / (self.profile + '-publication.json')).write_text(json.dumps(self.record))
         (self.evidence / (self.profile + '-image-ref.txt')).write_text(self.image)
 
     def promote(self):
-        with patch.dict(os.environ, {'GITHUB_SHA': 'revision', 'FINITE_QUALIFICATION_MODE': 'enforce'}):
+        with patch.dict(os.environ, {'GITHUB_SHA': 'd' * 40, 'FINITE_QUALIFICATION_MODE': 'enforce'}):
             publication.promote(self.profile, self.root)
 
     def test_daily_rebuild_with_unchanged_inputs_requires_fresh_qualification(self):
@@ -333,7 +370,10 @@ class PromotionQualification(unittest.TestCase):
         (self.evidence / (self.profile + '-acceptance.json')).write_text(json.dumps(self.acceptance))
         with patch.object(publication.subprocess, 'run') as copy_image, \
                 patch.object(publication.security, 'verify'), \
-                patch.object(publication.upstream, 'inspect', return_value={'Digest': 'sha256:' + 'a' * 64}):
+                patch.object(publication, 'github', return_value={'ref': 'refs/heads/main',
+                        'object': {'type': 'commit', 'sha': 'd' * 40}}), \
+                patch.object(publication.upstream, 'inspect', side_effect=[None,
+                    {'Digest': 'sha256:' + 'a' * 64}, {'Digest': 'sha256:' + 'a' * 64}]):
             self.promote()
         self.assertEqual(copy_image.call_count, 3)
         self.assertEqual(copy_image.call_args_list[0].args[0][0:2], ['cosign', 'verify'])

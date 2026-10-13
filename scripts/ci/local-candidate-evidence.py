@@ -207,6 +207,17 @@ def scan_candidate(layout, directory, candidate, approved_baseline=None):
         scan_module.run(['umoci', 'unpack', '--rootless', '--image', str(pointer) + ':audit', str(temporary / 'bundle')])
         scan_module.run(['syft', 'dir:' + str(rootfs), '--base-path', str(rootfs), '--override-default-catalogers', 'image',
                          '-o', 'syft-json=' + str(directory / 'sbom.syft.json'), '-o', 'spdx-json=' + str(directory / 'sbom.spdx.json')])
+        if approved_baseline is not None:
+            scan_module.run(['python3', str(ROOT / 'scripts/ci/rpm-file-evidence.py'),
+                             '--rootfs', str(rootfs), '--sbom', str(directory / 'sbom.syft.json'),
+                             '--image', candidate['image'], '--output', str(directory / 'rpm-file-evidence.json')])
+            scan_module.run(['python3', str(ROOT / 'scripts/ci/applicability-evidence.py'),
+                             '--rootfs', str(rootfs), '--manifest-dir', str(directory),
+                             '--image', candidate['image'], '--profile', approved_baseline['profile'],
+                             '--revision', approved_baseline['sourceRevision'],
+                             '--identity', approved_baseline['buildIdentity'],
+                             '--sbom', str(directory / 'sbom.syft.json'),
+                             '--output', str(directory / 'applicability-evidence.json')])
         # signedDigest is a legacy policy field binding the input digest. This
         # candidate is unsigned/unpublished; explicit provenance forbids release.
         write_json(directory / 'extraction.json', {

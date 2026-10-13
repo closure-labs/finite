@@ -1,0 +1,182 @@
+{
+  "schema": 1,
+  "status": "all12-reference-metadata-matched; signature/payload proof pending",
+  "selectorImage": "ghcr.io/closure-labs/finite@sha256:66ff1f5c91ae5ddf97ac5c09bd510765888afd30457e535ae5710abb8a37f01e",
+  "sourceSummarySha256": "901cc5af571ed932852c9a7351b6480192e0a83acd017c53f27e3bbf80bcd8e1",
+  "sbomSha256": "23419f2a7c9a103f3552a5fae65a2e5a1044af50da96a797e001ed13bd254aa8",
+  "kojiBuild": 3091519,
+  "epoch": 2,
+  "sourceCommit": "199c380597cb7f4642ebd299865a3032aef4e89b",
+  "matches": [
+    {
+      "path": "/sysroot/ostree/repo/objects/08/fc2ca9ea6a75d0922298a81303b6728909c61fbfce06e2d3fd67fc0dd37eb3.file",
+      "size": 98304,
+      "sha256": "8762e31cb0f42d60a54c20d64a3715f8426d7aca7a1445d86f8b034bcc6aa77e",
+      "officialMetadataMatches": [
+        {
+          "rpm": "freerdp-libs",
+          "referencePath": "/usr/lib64/libfreerdp-shadow3.so.3.31.1",
+          "expectedSha256": "8762e31cb0f42d60a54c20d64a3715f8426d7aca7a1445d86f8b034bcc6aa77e",
+          "expectedSize": 98304,
+          "expectedMode": 33261
+        }
+      ]
+    },
+    {
+      "path": "/sysroot/ostree/repo/objects/21/3a5c69e6bcc3bcf7d7956b19a8da41060a82fa75bd699c3c9959f0b26bcf00.file",
+      "size": 318088,
+      "sha256": "1df7b243ab735901076c66b61509acd5b6abd03e8222dae6f7cf89e9a2d09306",
+      "officialMetadataMatches": [
+        {
+          "rpm": "freerdp-libs",
+          "referencePath": "/usr/lib64/libfreerdp-server3.so.3.31.1",
+          "expectedSha256": "1df7b243ab735901076c66b61509acd5b6abd03e8222dae6f7cf89e9a2d09306",
+          "expectedSize": 318088,
+          "expectedMode": 33261
+        }
+      ]
+    },
+    {
+      "path": "/sysroot/ostree/repo/objects/38/3c2d58d5f6e2c6b1bdc557e0e30359ef541c6334c1e30512b9834a45198f3d.file",
+      "size": 20120,
+      "sha256": "e0102151531e0c71f613c7d7f1543ec70b11f2704ac426f3e38326391a62c4ca",
+      "officialMetadataMatches": [
+        {
+          "rpm": "freerdp-libs",
+          "referencePath": "/usr/lib64/freerdp3/proxy/libproxy-bitmap-filter-plugin.so",
+          "expectedSha256": "e0102151531e0c71f613c7d7f1543ec70b11f2704ac426f3e38326391a62c4ca",
+          "expectedSize": 20120,
+          "expectedMode": 33261
+        }
+      ]
+    },
+    {
+      "path": "/sysroot/ostree/repo/objects/3f/e28168bfafc35f4c5a75f362a35bd64321ad763f4b66847e9662af7ed94e24.file",
+      "size": 187600,
+      "sha256": "b6ec87072b5a7d70f915ca9f129271be4b9770a1713c0315deaab8ac2e9dd7d9",
+      "officialMetadataMatches": [
+        {
+          "rpm": "freerdp-libs",
+          "referencePath": "/usr/lib64/freerdp3/proxy/libproxy-dyn-channel-dump-plugin.so",
+          "expectedSha256": "b6ec87072b5a7d70f915ca9f129271be4b9770a1713c0315deaab8ac2e9dd7d9",
+          "expectedSize": 187600,
+          "expectedMode": 33261
+        }
+      ]
+    },
+    {
+      "path": "/sysroot/ostree/repo/objects/5e/2a0930df64e6f7b5947801ac477c9df8fc342dce35a952c101057e9ce8de4d.file",
+      "size": 2254640,
+      "sha256": "a25d541bfab8bf2a1cb076b182ebd2d7a43a3f7eff52db5447337a37bc21349a",
+      "officialMetadataMatches": [
+        {
+          "rpm": "freerdp-libs",
+          "referencePath": "/usr/lib64/libfreerdp3.so.3.31.1",
+          "expectedSha256": "a25d541bfab8bf2a1cb076b182ebd2d7a43a3f7eff52db5447337a37bc21349a",
+          "expectedSize": 2254640,
+          "expectedMode": 33261
+        }
+      ]
+    },
+    {
+      "path": "/sysroot/ostree/repo/objects/70/fb1cf6e02ee270a7716b0af74394d3cd67703795803cd3e91e73ed4719444a.file",
+      "size": 136232,
+      "sha256": "31c28efcf2933f765be7ddb23422c27fc6854efd935e64e04c55d7836ea7509d",
+      "officialMetadataMatches": [
+        {
+          "rpm": "freerdp-libs",
+          "referencePath": "/usr/lib64/libfreerdp-server-proxy3.so.3.31.1",
+          "expectedSha256": "31c28efcf2933f765be7ddb23422c27fc6854efd935e64e04c55d7836ea7509d",
+          "expectedSize": 136232,
+          "expectedMode": 33261
+        }
+      ]
+    },
+    {
+      "path": "/sysroot/ostree/repo/objects/78/c899ea8fe1653195352490c6c08f1d834ce020a03a05d1c0a560ce0ee28066.file",
+      "size": 36112,
+      "sha256": "f5bc9cbc971513912720b4b2d434217feed57b959f66ecce94389dd62be69990",
+      "officialMetadataMatches": [
+        {
+          "rpm": "freerdp-libs",
+          "referencePath": "/usr/lib64/librdtk0.so.0.2.0",
+          "expectedSha256": "f5bc9cbc971513912720b4b2d434217feed57b959f66ecce94389dd62be69990",
+          "expectedSize": 36112,
+          "expectedMode": 33261
+        }
+      ]
+    },
+    {
+      "path": "/sysroot/ostree/repo/objects/90/0f5a7ce94df3978f0fa90ae76c51e003545a6198a1e1dc1574da12735290be.file",
+      "size": 787784,
+      "sha256": "e99f8050bc7aa7a48805554b2f559336a7d1cd782a140c33548f1eb9a90f96fa",
+      "officialMetadataMatches": [
+        {
+          "rpm": "freerdp-libs",
+          "referencePath": "/usr/lib64/libfreerdp-client3.so.3.31.1",
+          "expectedSha256": "e99f8050bc7aa7a48805554b2f559336a7d1cd782a140c33548f1eb9a90f96fa",
+          "expectedSize": 787784,
+          "expectedMode": 33261
+        }
+      ]
+    },
+    {
+      "path": "/sysroot/ostree/repo/objects/cc/660fa41e8c2552a6420a11618989048bd2839fda442f4fb88f5f1f9e71544f.file",
+      "size": 20008,
+      "sha256": "9db3600e92d6362f306d7f2f7d8b5d99b41c7dd57f4da4d93db3d5ea80f1e0fb",
+      "officialMetadataMatches": [
+        {
+          "rpm": "freerdp-libs",
+          "referencePath": "/usr/lib64/freerdp3/proxy/libproxy-demo-plugin.so",
+          "expectedSha256": "9db3600e92d6362f306d7f2f7d8b5d99b41c7dd57f4da4d93db3d5ea80f1e0fb",
+          "expectedSize": 20008,
+          "expectedMode": 33261
+        }
+      ]
+    },
+    {
+      "path": "/sysroot/ostree/repo/objects/dd/d3626787a3803f4939a8a4fdfefad644e87d69a98be326d692a5fb300b09c8.file",
+      "size": 36240,
+      "sha256": "791113ce1c3c69920c892e01a0e97a8275627bf6fde874adf0859ac935983a30",
+      "officialMetadataMatches": [
+        {
+          "rpm": "freerdp-libs",
+          "referencePath": "/usr/lib64/libfreerdp-shadow-subsystem3.so.3.31.1",
+          "expectedSha256": "791113ce1c3c69920c892e01a0e97a8275627bf6fde874adf0859ac935983a30",
+          "expectedSize": 36240,
+          "expectedMode": 33261
+        }
+      ]
+    },
+    {
+      "path": "/sysroot/ostree/repo/objects/e5/b082ca2a33265d41523bc7e190657afa530421ff868267bfcc94d39c330c36.file",
+      "size": 1161720,
+      "sha256": "e78e7be59b0199ebe51bb05bb29592636bfa20acd4567b1d6f8774b1577f0757",
+      "officialMetadataMatches": [
+        {
+          "rpm": "libwinpr",
+          "referencePath": "/usr/lib64/libwinpr3.so.3.31.1",
+          "expectedSha256": "e78e7be59b0199ebe51bb05bb29592636bfa20acd4567b1d6f8774b1577f0757",
+          "expectedSize": 1161720,
+          "expectedMode": 33261
+        }
+      ]
+    },
+    {
+      "path": "/sysroot/ostree/repo/objects/fe/06c8a0dd65816aa82b8308cb2dbbca135ff7716470b8cbe06caa20fdda2a01.file",
+      "size": 34736,
+      "sha256": "2d37663e2fb2048a0ebedfd9b6972acc2edd92783f488f698c306711c7a1048c",
+      "officialMetadataMatches": [
+        {
+          "rpm": "libwinpr",
+          "referencePath": "/usr/lib64/libwinpr-tools3.so.3.31.1",
+          "expectedSha256": "2d37663e2fb2048a0ebedfd9b6972acc2edd92783f488f698c306711c7a1048c",
+          "expectedSize": 34736,
+          "expectedMode": 33261
+        }
+      ]
+    }
+  ],
+  "releaseEligible": false,
+  "dispositionsGranted": []
+}

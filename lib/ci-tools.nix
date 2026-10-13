@@ -18,6 +18,7 @@ let
 in {
   shell = shells.ci;
   image-tools = shells.imageTools;
+  scanner-tools = shells.scannerTools;
   release = shells.release;
   ci-github-actions-secrets = repository.githubActionsSecrets;
   ci-repository-security-audit = import ./ci-applications/repository-security-audit.nix {

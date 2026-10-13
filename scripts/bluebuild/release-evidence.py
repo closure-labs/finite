@@ -50,6 +50,10 @@ def validate_evidence(installation, acceptance, publication, channel, revision):
     image = installation['image']
     if not re.fullmatch(r'ghcr.io/closure-labs/finite@sha256:[0-9a-f]{64}', image):
         raise ValueError('Invalid release image')
+    source_revision = publication.get('sourceRevision', revision)
+    if (not re.fullmatch(r'[0-9a-f]{40}', source_revision)
+            or acceptance.get('sourceRevision', revision) != source_revision):
+        raise ValueError('Release evidence has inconsistent image source provenance')
     if not all((installation['profile'] == profile,
                 installation['updateChannel'] == 'ghcr.io/closure-labs/finite:' + channel,
                 acceptance['candidate'] == image, acceptance['profile'] == profile,
@@ -101,6 +105,7 @@ def main():
         for path in (temporary / 'image').glob('*.Containerfile'):
             shutil.copy2(path, destination / path.name)
         provenance = {'schema': 1, 'image': image, 'revision': revision,
+                      'sourceRevision': publication.get('sourceRevision', revision),
                       'buildIdentity': publication['buildIdentity'],
                       'buildRun': build_run['html_url'], 'isoRun': iso_run['html_url'],
                       'qualification': acceptance, 'installer': installation['installer']}

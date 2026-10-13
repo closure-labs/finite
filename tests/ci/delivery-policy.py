@@ -54,7 +54,7 @@ class DeliveryPolicy(unittest.TestCase):
         self.assertEqual(reconcile['if'], "inputs.reconcile || (github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && github.event_name == 'push')")
         self.assertEqual(reconcile['env']['IMPACT'], '${{ toJSON(steps.impact.outputs) }}')
         impact = next(step for step in steps if step.get('id') == 'impact')
-        self.assertEqual(impact['if'], '${{ !inputs.reconcile }}')
+        self.assertEqual(impact['if'], "${{ !inputs.reconcile && steps.target.outputs.selected != 'true' }}")
 
     def test_audit_is_read_only_and_never_uses_update_credential(self):
         audit = workflow('repository-security')

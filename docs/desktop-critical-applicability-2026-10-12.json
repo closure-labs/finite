@@ -1,0 +1,1599 @@
+{
+  "schema": 1,
+  "purpose": "Critical applicability/source investigation; no active disposition or automatic finding resolution",
+  "reviewedAt": "2026-10-13T01:23:31Z",
+  "reviewedBy": "great_cto security-officer applicability review",
+  "sourceBlockerLedger": "docs/desktop-risk-blockers-2026-10-12.json",
+  "sourceBlockerLedgerSha256": "e31d779012b39f089258b38bc3f4c7fed5ab997e16498f4e14f934b0eea94fd2",
+  "reviewedImage": "ghcr.io/closure-labs/finite@sha256:567c7e90da2020ebb83f144521fdcca2ddc21009b5f42e86704be5312d9ab835",
+  "nativeEvidenceRun": 38321177037,
+  "reevaluationRun": 38327429782,
+  "advisoryIdCount": 11,
+  "componentAdvisoryPairCount": 26,
+  "activeDispositions": 0,
+  "reviewedProofStatus": "Publisher source/range/impact established; exact shipped-byte/all-location binding remains incomplete; no source-only exception authorized",
+  "summary": {
+    "compatibleRemediationLead": "Approved stable Fedora44 curl 0:8.18.0-12.fc44 backport is verified at exact Bodhi/Koji/immutable source. Root owns signed installed-only transaction and offline repeat; no installed-payload proof inferred.",
+    "fixedRangeConflicts": [
+      "httpd 2.4.68 vs affected<=2.4.67",
+      "FreeRDP 3.31.1 vs fixed3.28.0; specific upstream tag fixes verified"
+    ],
+    "positivePlatformLead": "FreeRDP57156 is 32-bit-only; Go6604 is Windows-only; exact every-file proof pending",
+    "routineImpactLeads": [
+      "HPLIP91099/91101/91103 with caveats",
+      "SSH39830/39834 process DoS",
+      "Go6612 HTTP2 resource accounting with host/resource-boundary caveat"
+    ],
+    "upstreamPrerequisites": "No duplicate availability poll; historical AnyIO/msgpack/rclone unavailable states are not asserted as current. Root owns refreshed approved publisher metadata."
+  },
+  "reviews": [
+    {
+      "advisory": "CVE-2026-18924",
+      "knownAliases": [
+        "CVE-2026-18924",
+        "GHSA-xcm8-9xjx-f5jq"
+      ],
+      "classification": "conditional-memory-safety-with-compatible-backport-lead",
+      "publisherImpact": "Publisher describes HTTP/2 server-push use-after-free. All five prerequisites are required: enable CURLMOPT_PUSHFUNCTION, share connections with CURL_LOCK_DATA_CONNECT, HTTPS/HTTP2, peer sends push and callback accepts it. curl CLI is explicitly unaffected; libcurl is affected. Publisher Low is not proof that memory-safety consequences are harmless.",
+      "decision": "Keep libcurl match blocked; prefer authenticated installed-only Fedora 44 backport. Curl RPM has a CLI-only nonapplicability lead, requiring exact owned-file/source binding. Do not classify the whole curl/libcurl family routine.",
+      "confidence": {
+        "publisherImpact": "high",
+        "shippedBackport": "not-established",
+        "approvedSourceBackport": "high; exact Bodhi stable build, Koji immutable source and matching cherry-picked patch verified"
+      },
+      "officialSources": [
+        "https://cveawg.mitre.org/api/cve/CVE-2026-18924",
+        "https://curl.se/docs/CVE-2026-18924.html",
+        "https://github.com/curl/curl/commit/90325ff0444cbdff368bda5d26d6405a0bb6ee43",
+        "https://src.fedoraproject.org/rpms/curl/raw/f44/f/curl.spec",
+        "https://src.fedoraproject.org/rpms/curl/raw/f44/f/0026-curl-8.18.0-CVE-2026-18924.patch",
+        "https://src.fedoraproject.org/rpms/curl/raw/e46a65e7ceb9ce9ec4b9c2f9325a5df7e9c84bed/f/curl.spec",
+        "https://src.fedoraproject.org/rpms/curl/raw/e46a65e7ceb9ce9ec4b9c2f9325a5df7e9c84bed/f/0026-curl-8.18.0-CVE-2026-18924.patch",
+        "https://bodhi.fedoraproject.org/updates/FEDORA-2026-8efcd7a2a0",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3114241",
+        "https://src.fedoraproject.org/rpms/curl/raw/f526fe6df17eb86ac836adb63a202b39b9a7c692/f/curl.spec",
+        "https://src.fedoraproject.org/rpms/curl/raw/f526fe6df17eb86ac836adb63a202b39b9a7c692/f/0026-curl-8.18.0-CVE-2026-18924.patch"
+      ],
+      "sourceEvidence": [
+        {
+          "url": "https://cveawg.mitre.org/api/cve/CVE-2026-18924",
+          "sha256": "e675cf0169c3e0086713ee44a2d6ee0786389700f67eb0cb0359ec47a71c7e12",
+          "bytes": 9053,
+          "retainedFile": "/tmp/finite-critical-applicability/CVE-2026-18924-cna.json"
+        },
+        {
+          "url": "https://curl.se/docs/CVE-2026-18924.html",
+          "sha256": "0338b78ce38b2943edf3d86705fbcd254231373831643e11036ef575cfc0bece",
+          "bytes": 9720,
+          "retainedFile": "/tmp/finite-critical-applicability/curl-advisory.txt"
+        },
+        {
+          "url": "https://github.com/curl/curl/commit/90325ff0444cbdff368bda5d26d6405a0bb6ee43",
+          "sha256": "e0836b2748c9069d4489058c60779b4eedfda03bb052c886a78d2faa5c42a222",
+          "bytes": 5159,
+          "retainedFile": "/tmp/finite-critical-applicability/curl-fix.json"
+        },
+        {
+          "url": "https://src.fedoraproject.org/rpms/curl/raw/f44/f/curl.spec",
+          "sha256": "da5abc848453d6bac811fe51f8fd0342f5e4c9cd2723b05b5aefb58c4eece98c",
+          "bytes": 65093,
+          "retainedFile": "/tmp/finite-critical-applicability/fedora-curl-f44-spec.spec"
+        },
+        {
+          "url": "https://src.fedoraproject.org/rpms/curl/raw/f44/f/0026-curl-8.18.0-CVE-2026-18924.patch",
+          "sha256": "875d9f0aff4324f596283149f5f3cbab7281ebbe705b8e2f2a2d9b92a2e5b6a2",
+          "bytes": 876,
+          "retainedFile": "/tmp/finite-critical-applicability/fedora-curl-CVE-2026-18924.patch"
+        },
+        {
+          "url": "https://src.fedoraproject.org/rpms/curl/raw/e46a65e7ceb9ce9ec4b9c2f9325a5df7e9c84bed/f/curl.spec",
+          "sha256": "da5abc848453d6bac811fe51f8fd0342f5e4c9cd2723b05b5aefb58c4eece98c",
+          "bytes": 65093,
+          "retainedFile": "/tmp/finite-critical-applicability/fedora-curl-pinned-spec.txt"
+        },
+        {
+          "url": "https://src.fedoraproject.org/rpms/curl/raw/e46a65e7ceb9ce9ec4b9c2f9325a5df7e9c84bed/f/0026-curl-8.18.0-CVE-2026-18924.patch",
+          "sha256": "875d9f0aff4324f596283149f5f3cbab7281ebbe705b8e2f2a2d9b92a2e5b6a2",
+          "bytes": 876,
+          "retainedFile": "/tmp/finite-critical-applicability/fedora-curl-pinned-patch.txt"
+        },
+        {
+          "url": "https://bodhi.fedoraproject.org/updates/FEDORA-2026-8efcd7a2a0",
+          "sha256": "b69bbb2005ff4814e6de52f6ddd4690c94e3a7133769561f9064bc4365c23979",
+          "bytes": 24792,
+          "retainedFile": "/tmp/finite-critical-applicability/curl-8.18.0-12-bodhi.json"
+        },
+        {
+          "url": "https://koji.fedoraproject.org/koji/buildinfo?buildID=3114241",
+          "sha256": "032409fea1bbeb47a3909f5c4a0a97151d5b9ef03679c29daa897a4681880605",
+          "bytes": 1049,
+          "retainedFile": "/tmp/finite-critical-applicability/curl-8.18.0-12-koji.json"
+        },
+        {
+          "url": "https://src.fedoraproject.org/rpms/curl/raw/f526fe6df17eb86ac836adb63a202b39b9a7c692/f/curl.spec",
+          "sha256": "2b7039d91fb3535d3e4bbee82ca45cd0f1f7e7a394b883acc40345a5f3475e5e",
+          "bytes": 64314,
+          "retainedFile": "/tmp/finite-critical-applicability/curl-12-curl.spec"
+        },
+        {
+          "url": "https://src.fedoraproject.org/rpms/curl/raw/f526fe6df17eb86ac836adb63a202b39b9a7c692/f/0026-curl-8.18.0-CVE-2026-18924.patch",
+          "sha256": "875d9f0aff4324f596283149f5f3cbab7281ebbe705b8e2f2a2d9b92a2e5b6a2",
+          "bytes": 876,
+          "retainedFile": "/tmp/finite-critical-applicability/curl-12-0026-curl-8.18.0-CVE-2026-18924.patch"
+        }
+      ],
+      "matchedPairCount": 2,
+      "bindingScope": {
+        "image": "ghcr.io/closure-labs/finite@sha256:567c7e90da2020ebb83f144521fdcca2ddc21009b5f42e86704be5312d9ab835",
+        "sourceResultSha256": "d79824b95b9e61cd0a97887a81a74bd003617634cbb5d38b1177e81c9ba64ba7",
+        "blockerLedgerSha256": "e31d779012b39f089258b38bc3f4c7fed5ab997e16498f4e14f934b0eea94fd2",
+        "platform": "linux/amd64",
+        "diagnosticOnly": true,
+        "matches": [
+          {
+            "component": "pkg:rpm/bluefin/curl@8.18.0-10.fc44?arch=x86_64&distro=bluefin-44&upstream=curl-8.18.0-10.fc44.src.rpm",
+            "observedAliases": [
+              "CVE-2026-18924"
+            ],
+            "locations": [
+              "/usr/share/rpm/rpmdb.sqlite"
+            ],
+            "occurrences": 1
+          },
+          {
+            "component": "pkg:rpm/bluefin/libcurl-minimal@8.18.0-10.fc44?arch=x86_64&distro=bluefin-44&upstream=curl-8.18.0-10.fc44.src.rpm",
+            "observedAliases": [
+              "CVE-2026-18924"
+            ],
+            "locations": [
+              "/usr/share/rpm/rpmdb.sqlite"
+            ],
+            "occurrences": 1
+          }
+        ]
+      },
+      "missingProof": [
+        "Authenticate exact approved Fedora44 curl/libcurl/libcurl-minimal 0:8.18.0-12.fc44 RPM signatures/hashes; source backport and stable metadata are now verified, payloads remain root-hosted work.",
+        "Confirm installed-only compatible solver transaction preserves unrelated/protected packages.",
+        "Bind each actual file to owning signed RPM and exact source patch; for CLI-only nonapplicability inventory every file owned by curl RPM and establish the affected API is solely in separately owned libcurl.",
+        "For future complete candidate refresh digest/component/alias/all-location binding; diagnostic 567 proof cannot qualify another digest."
+      ],
+      "activeDisposition": false,
+      "fixedSourceEvidence": {
+        "upstreamFixCommit": "90325ff0444cbdff368bda5d26d6405a0bb6ee43",
+        "upstreamFixedBranches": [
+          "8.14.2",
+          "8.16.1",
+          "8.20.1",
+          "8.22.0"
+        ],
+        "fedora44Patch": "0026-curl-8.18.0-CVE-2026-18924.patch",
+        "fedoraBackportCommitHeader": "9a23169d37eb22cf3a05b6c00b9bcbaad938ca66",
+        "firstSpecChangelogFix": "8.18.0-11 on 2026-09-30",
+        "observedNativeEvr": "8.18.0-10.fc44",
+        "currentPackagingBranch": "8.18.0-14; not an approved repository availability assertion",
+        "patchRelationship": "Explicit cherry-pick of upstream 90325; share inherited through curl_easy_setopt(second,CURLOPT_SHARE,data->share) for this branch.",
+        "immutableFedora44Commit": "e46a65e7ceb9ce9ec4b9c2f9325a5df7e9c84bed",
+        "approvedAvailabilityObservation": {
+          "run": "https://github.com/closure-labs/finite/actions/runs/38331234974",
+          "sourceRevisionPrefix": "28d71573",
+          "status": "Metadata PASS reported by root; updates curl/libcurl/libcurl-minimal 8.18.0-12 provides source-floor>=11",
+          "signatureOrTransactionProof": false
+        },
+        "approvedStableFix": {
+          "bodhi": "FEDORA-2026-8efcd7a2a0",
+          "status": "stable",
+          "dateStable": "2026-10-08 01:15:47",
+          "gating": "passed",
+          "reportedSigned": true,
+          "nvr": "curl-8.18.0-12.fc44",
+          "epoch": 0,
+          "kojiBuildId": 3114241,
+          "sourceCommit": "f526fe6df17eb86ac836adb63a202b39b9a7c692",
+          "sourceSpecSha256": "2b7039d91fb3535d3e4bbee82ca45cd0f1f7e7a394b883acc40345a5f3475e5e",
+          "sourcePatchSha256": "875d9f0aff4324f596283149f5f3cbab7281ebbe705b8e2f2a2d9b92a2e5b6a2",
+          "payloadAuthentication": "Root-hosted verification still required; reportedSigned is publisher metadata, not locally verified RPM signature."
+        }
+      }
+    },
+    {
+      "advisory": "CVE-2026-29167",
+      "knownAliases": [
+        "CVE-2026-29167",
+        "GHSA-85f4-9pxx-739j"
+      ],
+      "classification": "publisher-fixed-range-conflict",
+      "publisherImpact": "Apache identifies mod_ldap per-directory configuration use-after-free in 2.4.0 through2.4.67; its CNA labels severity low and recommends2.4.68. All five matched RPM components are 2.4.68-1.fc44. Default server absence is not used.",
+      "decision": "Official exact Fedora build source is bound to fixed Apache 2.4.68 tarball. Review candidate for exact nonapplicable/fixed-source disposition after actual signed owning-RPM/file binding; no blind HTTPD upgrade required.",
+      "confidence": {
+        "affectedRange": "high",
+        "shippedSourceBinding": "incomplete",
+        "fedoraBuildSourceBinding": "high; official exact KojiNVR/sourceGit ref and Apache/Fedora source checksum agree"
+      },
+      "officialSources": [
+        "https://cveawg.mitre.org/api/cve/CVE-2026-29167",
+        "https://src.fedoraproject.org/rpms/httpd/raw/f44/f/httpd.spec",
+        "https://src.fedoraproject.org/rpms/httpd/raw/3b7cd5bc56d859c0b5257ffa0c5d576b85125b4c/f/httpd.spec",
+        "https://src.fedoraproject.org/rpms/httpd/raw/3b7cd5bc56d859c0b5257ffa0c5d576b85125b4c/f/sources",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3014347",
+        "https://archive.apache.org/dist/httpd/httpd-2.4.68.tar.bz2.sha512"
+      ],
+      "sourceEvidence": [
+        {
+          "url": "https://cveawg.mitre.org/api/cve/CVE-2026-29167",
+          "sha256": "a99e0282513456f62d4dfb3ae5b205a5ab8e2452aa3a823c734aa767f640340b",
+          "bytes": 3150,
+          "retainedFile": "/tmp/finite-critical-applicability/CVE-2026-29167-cna.json"
+        },
+        {
+          "url": "https://src.fedoraproject.org/rpms/httpd/raw/f44/f/httpd.spec",
+          "sha256": "b7eadd36b8c484e2660d8e224a498cfe73309151e1ab1ffe449bf7c7b30d691b",
+          "bytes": 71209,
+          "retainedFile": "/tmp/finite-critical-applicability/fedora-httpd-f44-spec.spec"
+        },
+        {
+          "url": "https://src.fedoraproject.org/rpms/httpd/raw/3b7cd5bc56d859c0b5257ffa0c5d576b85125b4c/f/httpd.spec",
+          "sha256": "76366115d4901ffb2dd4480c4c6f37de5526865eebe46e01ecb8878ae6d1c93a",
+          "bytes": 69590,
+          "retainedFile": "/tmp/finite-critical-applicability/httpd-3b7cd5bc56d859c0b5257ffa0c5d576b85125b4c-httpd.spec"
+        },
+        {
+          "url": "https://src.fedoraproject.org/rpms/httpd/raw/3b7cd5bc56d859c0b5257ffa0c5d576b85125b4c/f/sources",
+          "sha256": "296beeb6e435d1fddd14645723056becb94bd2f9b6d6c9cb325d5fdbb42170f6",
+          "bytes": 471,
+          "retainedFile": "/tmp/finite-critical-applicability/httpd-3b7cd5bc56d859c0b5257ffa0c5d576b85125b4c-sources"
+        },
+        {
+          "url": "https://koji.fedoraproject.org/koji/buildinfo?buildID=3014347",
+          "sha256": "31020c96f121c4ad68b122385747ad13edb6b0813db44ac1713b2f4b36d3740e",
+          "bytes": 1054,
+          "retainedFile": "/tmp/finite-critical-applicability/httpd-koji-build.json"
+        },
+        {
+          "url": "https://archive.apache.org/dist/httpd/httpd-2.4.68.tar.bz2.sha512",
+          "sha256": "d90fa2618198fac94c25e75c4b9b0aac1c1222cba2d6e08834d2cb6afce5b0a1",
+          "bytes": 151,
+          "retainedFile": "/tmp/finite-critical-applicability/apache-httpd-2.4.68.sha512"
+        }
+      ],
+      "matchedPairCount": 5,
+      "bindingScope": {
+        "image": "ghcr.io/closure-labs/finite@sha256:567c7e90da2020ebb83f144521fdcca2ddc21009b5f42e86704be5312d9ab835",
+        "sourceResultSha256": "d79824b95b9e61cd0a97887a81a74bd003617634cbb5d38b1177e81c9ba64ba7",
+        "blockerLedgerSha256": "e31d779012b39f089258b38bc3f4c7fed5ab997e16498f4e14f934b0eea94fd2",
+        "platform": "linux/amd64",
+        "diagnosticOnly": true,
+        "matches": [
+          {
+            "component": "pkg:rpm/bluefin/httpd-core@2.4.68-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.68-1.fc44.src.rpm",
+            "observedAliases": [
+              "CVE-2026-29167"
+            ],
+            "locations": [
+              "/usr/share/rpm/rpmdb.sqlite"
+            ],
+            "occurrences": 1
+          },
+          {
+            "component": "pkg:rpm/bluefin/httpd-filesystem@2.4.68-1.fc44?arch=noarch&distro=bluefin-44&upstream=httpd-2.4.68-1.fc44.src.rpm",
+            "observedAliases": [
+              "CVE-2026-29167"
+            ],
+            "locations": [
+              "/usr/share/rpm/rpmdb.sqlite"
+            ],
+            "occurrences": 1
+          },
+          {
+            "component": "pkg:rpm/bluefin/httpd-tools@2.4.68-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.68-1.fc44.src.rpm",
+            "observedAliases": [
+              "CVE-2026-29167"
+            ],
+            "locations": [
+              "/usr/share/rpm/rpmdb.sqlite"
+            ],
+            "occurrences": 1
+          },
+          {
+            "component": "pkg:rpm/bluefin/httpd@2.4.68-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.68-1.fc44.src.rpm",
+            "observedAliases": [
+              "CVE-2026-29167"
+            ],
+            "locations": [
+              "/usr/share/rpm/rpmdb.sqlite"
+            ],
+            "occurrences": 1
+          },
+          {
+            "component": "pkg:rpm/bluefin/mod_lua@2.4.68-1.fc44?arch=x86_64&distro=bluefin-44&upstream=httpd-2.4.68-1.fc44.src.rpm",
+            "observedAliases": [
+              "CVE-2026-29167"
+            ],
+            "locations": [
+              "/usr/share/rpm/rpmdb.sqlite"
+            ],
+            "occurrences": 1
+          }
+        ]
+      },
+      "missingProof": [
+        "Bind five matched installed RPM components and all files to authenticated Fedora build 3014347/source RPM, retaining stored signature and integrity evidence on exact full candidate.",
+        "Verify actual built mod_ldap code/source remains consistent with fixed tarball and downstream patches; source hashes alone are not shipped-byte authentication.",
+        "Cover every observed alias and RPM artifact location in exact changed candidate; native rpmdb catalog location is package metadata, not direct function proof."
+      ],
+      "activeDisposition": false,
+      "fixedSourceEvidence": {
+        "publisherFixedRelease": "2.4.68",
+        "apacheFixRevision": "r1934935 on 2026-06-03",
+        "releaseDate": "2026-06-08",
+        "matchedRelease": "2.4.68-1.fc44",
+        "officialPublisherAdvisory": "https://httpd.apache.org/security/vulnerabilities_24.html",
+        "fedoraBuildId": 3014347,
+        "fedoraBuildNvr": "httpd-2.4.68-1.fc44",
+        "fedoraSourceCommit": "3b7cd5bc56d859c0b5257ffa0c5d576b85125b4c",
+        "fedoraBuildSource": "git+https://src.fedoraproject.org/rpms/httpd.git#3b7cd5bc56d859c0b5257ffa0c5d576b85125b4c",
+        "sourceTarball": "httpd-2.4.68.tar.bz2",
+        "fedoraAndApacheSha512": "134a5bbd3ffe97523ac750490531bcb9441c532cedf0229aa006aa1368e9d25040507c6f519bed6754044f62c371f7c7f9a11b6a311f79b9680d478bf4373eb3",
+        "specVersionRelease": "2.4.68-1",
+        "affectedModulePackage": "Exact spec packages mod_*ldap.so separately as mod_ldap; this is positive source packaging evidence, not an assumption about actual installed contents or listener absence."
+      }
+    },
+    {
+      "advisory": "CVE-2026-57156",
+      "knownAliases": [
+        "CVE-2026-57156",
+        "GHSA-v5wf-j8j4-77h7"
+      ],
+      "classification": "architecture-and-publisher-fixed-range-conflict",
+      "publisherImpact": "FreeRDP publisher restricts this heap-overflow vulnerability to 32-bit clients (32-bit SIZE_MAX) before 3.28.0. Retained ELF artifact is cataloged3.31.1-1.fc44,x86_64 at12 OSTree locations; live RPM is 3.32.1. These are strong architecture/version leads, not proof every historical byte is harmless.",
+      "decision": "Prefer exact fixed-source and per-file ELF64 proof; do not grant a routine disposition to a code-execution-capable overflow.",
+      "confidence": {
+        "publisherBoundary": "high",
+        "catalogedArchitecture": "positive-metadata-only",
+        "shippedByteBinding": "incomplete"
+      },
+      "officialSources": [
+        "https://cveawg.mitre.org/api/cve/CVE-2026-57156",
+        "https://github.com/FreeRDP/FreeRDP/security/advisories/GHSA-v5wf-j8j4-77h7",
+        "https://github.com/FreeRDP/FreeRDP/commit/487f35daccb36a6224e530dcd8fa60850825f823",
+        "https://github.com/FreeRDP/FreeRDP/blob/3.31.1/libfreerdp/core/orders.c"
+      ],
+      "sourceEvidence": [
+        {
+          "url": "https://cveawg.mitre.org/api/cve/CVE-2026-57156",
+          "sha256": "863fe41a2450bd6ce8393099c5c65681afd94583b23f0ea1a765afa2714f7d37",
+          "bytes": 3215,
+          "retainedFile": "/tmp/finite-critical-applicability/CVE-2026-57156-cna.json"
+        },
+        {
+          "url": "https://github.com/FreeRDP/FreeRDP/security/advisories/GHSA-v5wf-j8j4-77h7",
+          "sha256": "34f587aebcae2317173609d287434571e8b285bb6d540ca404b5152d01389c69",
+          "bytes": 5612,
+          "retainedFile": "/tmp/finite-critical-applicability/GHSA-v5wf-j8j4-77h7.json"
+        },
+        {
+          "url": "https://github.com/FreeRDP/FreeRDP/commit/487f35daccb36a6224e530dcd8fa60850825f823",
+          "sha256": "66442eba4d7defa7ffa1ff578e09c943e7af081b42a10e09fb835c23dd76018c",
+          "bytes": 5800,
+          "retainedFile": "/tmp/finite-critical-applicability/freerdp-orders-fix.json"
+        },
+        {
+          "url": "https://github.com/FreeRDP/FreeRDP/blob/3.31.1/libfreerdp/core/orders.c",
+          "sha256": "214a20ba645414e710a486ca2258d86b92bf507d38c537a7cdc7f8ff128e1335",
+          "bytes": 145166,
+          "retainedFile": "/tmp/finite-critical-applicability/freerdp-orders-3.31.1.c"
+        }
+      ],
+      "matchedPairCount": 1,
+      "bindingScope": {
+        "image": "ghcr.io/closure-labs/finite@sha256:567c7e90da2020ebb83f144521fdcca2ddc21009b5f42e86704be5312d9ab835",
+        "sourceResultSha256": "d79824b95b9e61cd0a97887a81a74bd003617634cbb5d38b1177e81c9ba64ba7",
+        "blockerLedgerSha256": "e31d779012b39f089258b38bc3f4c7fed5ab997e16498f4e14f934b0eea94fd2",
+        "platform": "linux/amd64",
+        "diagnosticOnly": true,
+        "matches": [
+          {
+            "component": "pkg:rpm/fedora/freerdp@3.31.1-1.fc44?distro=fedora-44",
+            "observedAliases": [
+              "CVE-2026-57156"
+            ],
+            "locations": [
+              "/sysroot/ostree/repo/objects/08/fc2ca9ea6a75d0922298a81303b6728909c61fbfce06e2d3fd67fc0dd37eb3.file",
+              "/sysroot/ostree/repo/objects/21/3a5c69e6bcc3bcf7d7956b19a8da41060a82fa75bd699c3c9959f0b26bcf00.file",
+              "/sysroot/ostree/repo/objects/38/3c2d58d5f6e2c6b1bdc557e0e30359ef541c6334c1e30512b9834a45198f3d.file",
+              "/sysroot/ostree/repo/objects/3f/e28168bfafc35f4c5a75f362a35bd64321ad763f4b66847e9662af7ed94e24.file",
+              "/sysroot/ostree/repo/objects/5e/2a0930df64e6f7b5947801ac477c9df8fc342dce35a952c101057e9ce8de4d.file",
+              "/sysroot/ostree/repo/objects/70/fb1cf6e02ee270a7716b0af74394d3cd67703795803cd3e91e73ed4719444a.file",
+              "/sysroot/ostree/repo/objects/78/c899ea8fe1653195352490c6c08f1d834ce020a03a05d1c0a560ce0ee28066.file",
+              "/sysroot/ostree/repo/objects/90/0f5a7ce94df3978f0fa90ae76c51e003545a6198a1e1dc1574da12735290be.file",
+              "/sysroot/ostree/repo/objects/cc/660fa41e8c2552a6420a11618989048bd2839fda442f4fb88f5f1f9e71544f.file",
+              "/sysroot/ostree/repo/objects/dd/d3626787a3803f4939a8a4fdfefad644e87d69a98be326d692a5fb300b09c8.file",
+              "/sysroot/ostree/repo/objects/e5/b082ca2a33265d41523bc7e190657afa530421ff868267bfcc94d39c330c36.file",
+              "/sysroot/ostree/repo/objects/fe/06c8a0dd65816aa82b8308cb2dbbca135ff7716470b8cbe06caa20fdda2a01.file"
+            ],
+            "occurrences": 1
+          }
+        ]
+      },
+      "missingProof": [
+        "For all 12 matched OSTree files, retain SHA256, ELF class/architecture and package/build/source identity; one top-level Linux image assertion is insufficient.",
+        "Bind historical ELF 3.31.1 to authenticated owning/source package and verify patched update_read_delta_points code, or prove every relevant artifact is 64-bit.",
+        "Future digest must get fresh all-location and alias proof; retained object reachability stays unknown and is not the justification."
+      ],
+      "activeDisposition": false,
+      "fixedSourceEvidence": {
+        "fixedRelease": "3.28.0",
+        "fixCommit": "487f35daccb36a6224e530dcd8fa60850825f823",
+        "reviewedTag": "3.31.1",
+        "reviewedGitBlob": "e2490d7e98a5f8436c8526456c3bd12e3b2a9002",
+        "line": 1111,
+        "observedSourceGuard": "if (SIZE_MAX / number <= sizeof(DELTA_POINT)) return FALSE;",
+        "actualShippedGuard": "not-yet-proven"
+      }
+    },
+    {
+      "advisory": "CVE-2026-57158",
+      "knownAliases": [
+        "CVE-2026-57158",
+        "GHSA-mp3f-59pg-c5pp"
+      ],
+      "classification": "publisher-fixed-range-conflict-with-routine-impact-lead",
+      "publisherImpact": "CNA describes a one-byte out-of-bounds read/low confidentiality and availability, no integrity impact, in FreeRDP GFX planar decoding from 3.21.0 before 3.28.0. Structured publisher advisory patched_versions=3.28.0; its prose still says no patch, so exact patch/tag evidence is retained.",
+      "decision": "Prefer source-fixed/nonapplicable-version proof for cataloged3.31.1 OSTree artifact; leave blocked until all 12 shipped files bind to that fixed source. One-byte read is not automatically RCE or package-wide clearance.",
+      "confidence": {
+        "publisherRangeAndPatch": "high",
+        "shippedByteBinding": "incomplete"
+      },
+      "officialSources": [
+        "https://cveawg.mitre.org/api/cve/CVE-2026-57158",
+        "https://github.com/FreeRDP/FreeRDP/security/advisories/GHSA-mp3f-59pg-c5pp",
+        "https://github.com/FreeRDP/FreeRDP/commit/a7e797626fcb7f1d556ce63febb84f9f4a822731",
+        "https://github.com/FreeRDP/FreeRDP/blob/3.31.1/libfreerdp/codec/planar.c"
+      ],
+      "sourceEvidence": [
+        {
+          "url": "https://cveawg.mitre.org/api/cve/CVE-2026-57158",
+          "sha256": "97c78f90f61a1626540db8a3b57da040373b45d099122ad831ca7ea56870fcc8",
+          "bytes": 3097,
+          "retainedFile": "/tmp/finite-critical-applicability/CVE-2026-57158-cna.json"
+        },
+        {
+          "url": "https://github.com/FreeRDP/FreeRDP/security/advisories/GHSA-mp3f-59pg-c5pp",
+          "sha256": "3bba93d74db9eb2b8f2e6e891e774721e59820596fc06753f8cf16c216e59b60",
+          "bytes": 8998,
+          "retainedFile": "/tmp/finite-critical-applicability/GHSA-mp3f-59pg-c5pp.json"
+        },
+        {
+          "url": "https://github.com/FreeRDP/FreeRDP/commit/a7e797626fcb7f1d556ce63febb84f9f4a822731",
+          "sha256": "c97a3dca4476925b3c9f612f7b37e277bdd92d538d631d8823020ae158712e76",
+          "bytes": 6033,
+          "retainedFile": "/tmp/finite-critical-applicability/freerdp-planar-fix.json"
+        },
+        {
+          "url": "https://github.com/FreeRDP/FreeRDP/blob/3.31.1/libfreerdp/codec/planar.c",
+          "sha256": "d915d378a9395df3d2f45d0afd7984f0c3cee33713c6ad7f5ebfadd66ba1ccdd",
+          "bytes": 48579,
+          "retainedFile": "/tmp/finite-critical-applicability/freerdp-planar-3.31.1.c"
+        }
+      ],
+      "matchedPairCount": 1,
+      "bindingScope": {
+        "image": "ghcr.io/closure-labs/finite@sha256:567c7e90da2020ebb83f144521fdcca2ddc21009b5f42e86704be5312d9ab835",
+        "sourceResultSha256": "d79824b95b9e61cd0a97887a81a74bd003617634cbb5d38b1177e81c9ba64ba7",
+        "blockerLedgerSha256": "e31d779012b39f089258b38bc3f4c7fed5ab997e16498f4e14f934b0eea94fd2",
+        "platform": "linux/amd64",
+        "diagnosticOnly": true,
+        "matches": [
+          {
+            "component": "pkg:rpm/fedora/freerdp@3.31.1-1.fc44?distro=fedora-44",
+            "observedAliases": [
+              "CVE-2026-57158"
+            ],
+            "locations": [
+              "/sysroot/ostree/repo/objects/08/fc2ca9ea6a75d0922298a81303b6728909c61fbfce06e2d3fd67fc0dd37eb3.file",
+              "/sysroot/ostree/repo/objects/21/3a5c69e6bcc3bcf7d7956b19a8da41060a82fa75bd699c3c9959f0b26bcf00.file",
+              "/sysroot/ostree/repo/objects/38/3c2d58d5f6e2c6b1bdc557e0e30359ef541c6334c1e30512b9834a45198f3d.file",
+              "/sysroot/ostree/repo/objects/3f/e28168bfafc35f4c5a75f362a35bd64321ad763f4b66847e9662af7ed94e24.file",
+              "/sysroot/ostree/repo/objects/5e/2a0930df64e6f7b5947801ac477c9df8fc342dce35a952c101057e9ce8de4d.file",
+              "/sysroot/ostree/repo/objects/70/fb1cf6e02ee270a7716b0af74394d3cd67703795803cd3e91e73ed4719444a.file",
+              "/sysroot/ostree/repo/objects/78/c899ea8fe1653195352490c6c08f1d834ce020a03a05d1c0a560ce0ee28066.file",
+              "/sysroot/ostree/repo/objects/90/0f5a7ce94df3978f0fa90ae76c51e003545a6198a1e1dc1574da12735290be.file",
+              "/sysroot/ostree/repo/objects/cc/660fa41e8c2552a6420a11618989048bd2839fda442f4fb88f5f1f9e71544f.file",
+              "/sysroot/ostree/repo/objects/dd/d3626787a3803f4939a8a4fdfefad644e87d69a98be326d692a5fb300b09c8.file",
+              "/sysroot/ostree/repo/objects/e5/b082ca2a33265d41523bc7e190657afa530421ff868267bfcc94d39c330c36.file",
+              "/sysroot/ostree/repo/objects/fe/06c8a0dd65816aa82b8308cb2dbbca135ff7716470b8cbe06caa20fdda2a01.file"
+            ],
+            "occurrences": 1
+          }
+        ]
+      },
+      "missingProof": [
+        "Bind cataloged historical 3.31.1 ELF locations to authenticated package/source and verify checked input read before dereference in actual code.",
+        "Review all aliases/12 locations on exact future candidate; neither retained-path status nor updated live 3.32.1 RPM proves old bytes fixed/unreachable."
+      ],
+      "activeDisposition": false,
+      "fixedSourceEvidence": {
+        "fixedRelease": "3.28.0",
+        "fixCommit": "a7e797626fcb7f1d556ce63febb84f9f4a822731",
+        "reviewedTag": "3.31.1",
+        "reviewedGitBlob": "6b74a25966552ce819a84cd4e04b6c20f1dcc14e",
+        "sourceLines": [
+          281,
+          284
+        ],
+        "sourceProof": "check_source_available(...,1) precedes controlByte=*srcp++; upstream fix likewise moves bounds check before read.",
+        "publisherDescriptionConflict": "GHSA prose says no patch while structured patched_versions and newer CNA identify3.28.0; exact fix/source evidence resolves source-level ambiguity, not shipped-byte binding."
+      }
+    },
+    {
+      "advisory": "CVE-2026-91099",
+      "knownAliases": [
+        "CVE-2026-91099",
+        "GHSA-qw6g-m8fg-ffvm"
+      ],
+      "classification": "routine-impact-lead-not-active",
+      "publisherImpact": "Publisher CNA identifies local symlink following with low confidentiality/integrity, no availability or subsequent-system impact. This supports a low-impact lead but does not identify affected files or establish no privileged write escalation.",
+      "decision": "Candidate for exact artifact-scoped routine review based on positive publisher impact; remain untriaged Critical until source/input boundary and every matched artifact/location are fully bound. Do not infer fixed merely because live HPLIP is 3.26.6.",
+      "confidence": {
+        "publisherMetrics": "high",
+        "perFunctionImpact": "incomplete",
+        "shippedArtifactBinding": "incomplete"
+      },
+      "officialSources": [
+        "https://cveawg.mitre.org/api/cve/CVE-2026-91099"
+      ],
+      "sourceEvidence": [
+        {
+          "url": "https://cveawg.mitre.org/api/cve/CVE-2026-91099",
+          "sha256": "f3b9d000604d25a858d601bdd701478b0412c6774c7be64230503adc9b634f65",
+          "bytes": 3379,
+          "retainedFile": "/tmp/finite-risk-advisories/CVE-2026-91099-cna.json"
+        }
+      ],
+      "matchedPairCount": 1,
+      "bindingScope": {
+        "image": "ghcr.io/closure-labs/finite@sha256:567c7e90da2020ebb83f144521fdcca2ddc21009b5f42e86704be5312d9ab835",
+        "sourceResultSha256": "d79824b95b9e61cd0a97887a81a74bd003617634cbb5d38b1177e81c9ba64ba7",
+        "blockerLedgerSha256": "e31d779012b39f089258b38bc3f4c7fed5ab997e16498f4e14f934b0eea94fd2",
+        "platform": "linux/amd64",
+        "diagnosticOnly": true,
+        "matches": [
+          {
+            "component": "pkg:rpm/fedora/hplip@3.26.4-7.fc44?distro=fedora-44",
+            "observedAliases": [
+              "CVE-2026-91099"
+            ],
+            "locations": [
+              "/sysroot/ostree/repo/objects/00/de3f9c4c554a6a5c1f16b8ff12b2e2337f1ae813727b6409331079b8fd1a73.file",
+              "/sysroot/ostree/repo/objects/04/79590e9fd51a07ff34f19a0271b45f9664333ef16d3614821291d7cbc7a2bb.file",
+              "/sysroot/ostree/repo/objects/0d/f073805f0b58f234cecfb49a6f2253df37d4635dbd7daa57b34cdabb4c0fe0.file",
+              "/sysroot/ostree/repo/objects/27/1eed261f27cc08f7f488c8be691422ca801f179667b97a17aeff4ff9947265.file",
+              "/sysroot/ostree/repo/objects/35/78e5c92f01d8c902afb1cdaa259f4bdf4f1a8cc026a7103cff3758ed3174ba.file",
+              "/sysroot/ostree/repo/objects/3c/6cbb12cdb934c571f6bc7d5dbca27ae49fb9fd2eddf5a4ab2a36fe4822c360.file",
+              "/sysroot/ostree/repo/objects/3d/bff1c4c23af3979b4508bec9e74f7b513e1afc88d6fbd22728286ec67aa1a6.file",
+              "/sysroot/ostree/repo/objects/4a/46a724a8c53b5d60885396efa8efc3fc78c38833883ce0810d101affa3a0b5.file",
+              "/sysroot/ostree/repo/objects/6c/7699708ea8bcd9a2b3fbce5f943c3727b9935caf1b2e94c34c9ebb4673daf3.file",
+              "/sysroot/ostree/repo/objects/8a/9b406d16cbb52d90e4c0d4d8047a719c0dff9233102b09b86820bcce2591db.file",
+              "/sysroot/ostree/repo/objects/a0/bc785d5832bdef2bd456060d604604df5471c683d089ee264bfaeddfa2173a.file",
+              "/sysroot/ostree/repo/objects/a7/85ae7943bc7fed41a880c18ff3cbd3aa7c2b7dc933d98f37cb1f4a502e8cb6.file",
+              "/sysroot/ostree/repo/objects/ad/bb8a20025d62efdcab860ad753abeed882d3c610f9536443fc099d35ad5096.file",
+              "/sysroot/ostree/repo/objects/fb/bb149c97996a60d4683c81e44a3ab8cb0600147a0d3d2e270a7ce8d765ef97.file"
+            ],
+            "occurrences": 1
+          }
+        ]
+      },
+      "missingProof": [
+        "Obtain publisher per-function/source fix and tie the modeled impact to the actual 14 retained HPLIP 3.26.4 ELF files, not a family-level description.",
+        "Record exact aliases including known GHSA, all native canonical locations and artifact hashes on exact candidate digest.",
+        "For local symlink flaw establish actual source permissions/target boundary; for physical DoS establish which component loses availability and avoid assuming host/system effects are excluded from metrics alone.",
+        "Authenticated live 3.26.6 fixes the current owning RPM family only; retained3.26.4 objects remain separate unknowns."
+      ],
+      "activeDisposition": false,
+      "fixedSourceEvidence": {
+        "publisherFixedThreshold": "3.26.6",
+        "publisherCnaVector": "CVSS:4.0/AV:L/AC:L/AT:N/PR:N/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N",
+        "publisherCnaSeverity": "MEDIUM",
+        "matchedRetainedRelease": "3.26.4-7.fc44",
+        "observedLiveRpm": "3.26.6-1.fc44"
+      }
+    },
+    {
+      "advisory": "CVE-2026-91101",
+      "knownAliases": [
+        "CVE-2026-91101",
+        "GHSA-5v83-hx8m-fvhf"
+      ],
+      "classification": "routine-impact-lead-not-active",
+      "publisherImpact": "Publisher CNA gives physical attack vector, availability-only impact, no confidentiality/integrity or subsequent-system impact; CWE array validation/integer underflow. This supports routine physical process/device availability risk, not takeover.",
+      "decision": "Candidate for exact artifact-scoped routine review based on positive publisher impact; remain untriaged Critical until source/input boundary and every matched artifact/location are fully bound. Do not infer fixed merely because live HPLIP is 3.26.6.",
+      "confidence": {
+        "publisherMetrics": "high",
+        "perFunctionImpact": "incomplete",
+        "shippedArtifactBinding": "incomplete"
+      },
+      "officialSources": [
+        "https://cveawg.mitre.org/api/cve/CVE-2026-91101"
+      ],
+      "sourceEvidence": [
+        {
+          "url": "https://cveawg.mitre.org/api/cve/CVE-2026-91101",
+          "sha256": "9ee35c7a186e818df68be86352c75fdefdab724f4c52482a81042214672cf33f",
+          "bytes": 3382,
+          "retainedFile": "/tmp/finite-risk-advisories/CVE-2026-91101-cna.json"
+        }
+      ],
+      "matchedPairCount": 1,
+      "bindingScope": {
+        "image": "ghcr.io/closure-labs/finite@sha256:567c7e90da2020ebb83f144521fdcca2ddc21009b5f42e86704be5312d9ab835",
+        "sourceResultSha256": "d79824b95b9e61cd0a97887a81a74bd003617634cbb5d38b1177e81c9ba64ba7",
+        "blockerLedgerSha256": "e31d779012b39f089258b38bc3f4c7fed5ab997e16498f4e14f934b0eea94fd2",
+        "platform": "linux/amd64",
+        "diagnosticOnly": true,
+        "matches": [
+          {
+            "component": "pkg:rpm/fedora/hplip@3.26.4-7.fc44?distro=fedora-44",
+            "observedAliases": [
+              "CVE-2026-91101"
+            ],
+            "locations": [
+              "/sysroot/ostree/repo/objects/00/de3f9c4c554a6a5c1f16b8ff12b2e2337f1ae813727b6409331079b8fd1a73.file",
+              "/sysroot/ostree/repo/objects/04/79590e9fd51a07ff34f19a0271b45f9664333ef16d3614821291d7cbc7a2bb.file",
+              "/sysroot/ostree/repo/objects/0d/f073805f0b58f234cecfb49a6f2253df37d4635dbd7daa57b34cdabb4c0fe0.file",
+              "/sysroot/ostree/repo/objects/27/1eed261f27cc08f7f488c8be691422ca801f179667b97a17aeff4ff9947265.file",
+              "/sysroot/ostree/repo/objects/35/78e5c92f01d8c902afb1cdaa259f4bdf4f1a8cc026a7103cff3758ed3174ba.file",
+              "/sysroot/ostree/repo/objects/3c/6cbb12cdb934c571f6bc7d5dbca27ae49fb9fd2eddf5a4ab2a36fe4822c360.file",
+              "/sysroot/ostree/repo/objects/3d/bff1c4c23af3979b4508bec9e74f7b513e1afc88d6fbd22728286ec67aa1a6.file",
+              "/sysroot/ostree/repo/objects/4a/46a724a8c53b5d60885396efa8efc3fc78c38833883ce0810d101affa3a0b5.file",
+              "/sysroot/ostree/repo/objects/6c/7699708ea8bcd9a2b3fbce5f943c3727b9935caf1b2e94c34c9ebb4673daf3.file",
+              "/sysroot/ostree/repo/objects/8a/9b406d16cbb52d90e4c0d4d8047a719c0dff9233102b09b86820bcce2591db.file",
+              "/sysroot/ostree/repo/objects/a0/bc785d5832bdef2bd456060d604604df5471c683d089ee264bfaeddfa2173a.file",
+              "/sysroot/ostree/repo/objects/a7/85ae7943bc7fed41a880c18ff3cbd3aa7c2b7dc933d98f37cb1f4a502e8cb6.file",
+              "/sysroot/ostree/repo/objects/ad/bb8a20025d62efdcab860ad753abeed882d3c610f9536443fc099d35ad5096.file",
+              "/sysroot/ostree/repo/objects/fb/bb149c97996a60d4683c81e44a3ab8cb0600147a0d3d2e270a7ce8d765ef97.file"
+            ],
+            "occurrences": 1
+          }
+        ]
+      },
+      "missingProof": [
+        "Obtain publisher per-function/source fix and tie the modeled impact to the actual 14 retained HPLIP 3.26.4 ELF files, not a family-level description.",
+        "Record exact aliases including known GHSA, all native canonical locations and artifact hashes on exact candidate digest.",
+        "For local symlink flaw establish actual source permissions/target boundary; for physical DoS establish which component loses availability and avoid assuming host/system effects are excluded from metrics alone.",
+        "Authenticated live 3.26.6 fixes the current owning RPM family only; retained3.26.4 objects remain separate unknowns."
+      ],
+      "activeDisposition": false,
+      "fixedSourceEvidence": {
+        "publisherFixedThreshold": "3.26.6",
+        "publisherCnaVector": "CVSS:4.0/AV:P/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N",
+        "publisherCnaSeverity": "MEDIUM",
+        "matchedRetainedRelease": "3.26.4-7.fc44",
+        "observedLiveRpm": "3.26.6-1.fc44"
+      }
+    },
+    {
+      "advisory": "CVE-2026-91103",
+      "knownAliases": [
+        "CVE-2026-91103",
+        "GHSA-j77g-j672-q3j5"
+      ],
+      "classification": "routine-impact-lead-not-active",
+      "publisherImpact": "Publisher CNA gives physical attack vector, availability-only impact, no confidentiality/integrity or subsequent-system impact; CWE array validation/integer underflow. This supports routine physical process/device availability risk, not takeover.",
+      "decision": "Candidate for exact artifact-scoped routine review based on positive publisher impact; remain untriaged Critical until source/input boundary and every matched artifact/location are fully bound. Do not infer fixed merely because live HPLIP is 3.26.6.",
+      "confidence": {
+        "publisherMetrics": "high",
+        "perFunctionImpact": "incomplete",
+        "shippedArtifactBinding": "incomplete"
+      },
+      "officialSources": [
+        "https://cveawg.mitre.org/api/cve/CVE-2026-91103"
+      ],
+      "sourceEvidence": [
+        {
+          "url": "https://cveawg.mitre.org/api/cve/CVE-2026-91103",
+          "sha256": "4dc73d7748c1f1e3d3aac8ae2f31112c80c5ffd972abb73e03bfc7815454a69a",
+          "bytes": 3386,
+          "retainedFile": "/tmp/finite-risk-advisories/CVE-2026-91103-cna.json"
+        }
+      ],
+      "matchedPairCount": 1,
+      "bindingScope": {
+        "image": "ghcr.io/closure-labs/finite@sha256:567c7e90da2020ebb83f144521fdcca2ddc21009b5f42e86704be5312d9ab835",
+        "sourceResultSha256": "d79824b95b9e61cd0a97887a81a74bd003617634cbb5d38b1177e81c9ba64ba7",
+        "blockerLedgerSha256": "e31d779012b39f089258b38bc3f4c7fed5ab997e16498f4e14f934b0eea94fd2",
+        "platform": "linux/amd64",
+        "diagnosticOnly": true,
+        "matches": [
+          {
+            "component": "pkg:rpm/fedora/hplip@3.26.4-7.fc44?distro=fedora-44",
+            "observedAliases": [
+              "CVE-2026-91103"
+            ],
+            "locations": [
+              "/sysroot/ostree/repo/objects/00/de3f9c4c554a6a5c1f16b8ff12b2e2337f1ae813727b6409331079b8fd1a73.file",
+              "/sysroot/ostree/repo/objects/04/79590e9fd51a07ff34f19a0271b45f9664333ef16d3614821291d7cbc7a2bb.file",
+              "/sysroot/ostree/repo/objects/0d/f073805f0b58f234cecfb49a6f2253df37d4635dbd7daa57b34cdabb4c0fe0.file",
+              "/sysroot/ostree/repo/objects/27/1eed261f27cc08f7f488c8be691422ca801f179667b97a17aeff4ff9947265.file",
+              "/sysroot/ostree/repo/objects/35/78e5c92f01d8c902afb1cdaa259f4bdf4f1a8cc026a7103cff3758ed3174ba.file",
+              "/sysroot/ostree/repo/objects/3c/6cbb12cdb934c571f6bc7d5dbca27ae49fb9fd2eddf5a4ab2a36fe4822c360.file",
+              "/sysroot/ostree/repo/objects/3d/bff1c4c23af3979b4508bec9e74f7b513e1afc88d6fbd22728286ec67aa1a6.file",
+              "/sysroot/ostree/repo/objects/4a/46a724a8c53b5d60885396efa8efc3fc78c38833883ce0810d101affa3a0b5.file",
+              "/sysroot/ostree/repo/objects/6c/7699708ea8bcd9a2b3fbce5f943c3727b9935caf1b2e94c34c9ebb4673daf3.file",
+              "/sysroot/ostree/repo/objects/8a/9b406d16cbb52d90e4c0d4d8047a719c0dff9233102b09b86820bcce2591db.file",
+              "/sysroot/ostree/repo/objects/a0/bc785d5832bdef2bd456060d604604df5471c683d089ee264bfaeddfa2173a.file",
+              "/sysroot/ostree/repo/objects/a7/85ae7943bc7fed41a880c18ff3cbd3aa7c2b7dc933d98f37cb1f4a502e8cb6.file",
+              "/sysroot/ostree/repo/objects/ad/bb8a20025d62efdcab860ad753abeed882d3c610f9536443fc099d35ad5096.file",
+              "/sysroot/ostree/repo/objects/fb/bb149c97996a60d4683c81e44a3ab8cb0600147a0d3d2e270a7ce8d765ef97.file"
+            ],
+            "occurrences": 1
+          }
+        ]
+      },
+      "missingProof": [
+        "Obtain publisher per-function/source fix and tie the modeled impact to the actual 14 retained HPLIP 3.26.4 ELF files, not a family-level description.",
+        "Record exact aliases including known GHSA, all native canonical locations and artifact hashes on exact candidate digest.",
+        "For local symlink flaw establish actual source permissions/target boundary; for physical DoS establish which component loses availability and avoid assuming host/system effects are excluded from metrics alone.",
+        "Authenticated live 3.26.6 fixes the current owning RPM family only; retained3.26.4 objects remain separate unknowns."
+      ],
+      "activeDisposition": false,
+      "fixedSourceEvidence": {
+        "publisherFixedThreshold": "3.26.6",
+        "publisherCnaVector": "CVSS:4.0/AV:P/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N",
+        "publisherCnaSeverity": "MEDIUM",
+        "matchedRetainedRelease": "3.26.4-7.fc44",
+        "observedLiveRpm": "3.26.6-1.fc44"
+      }
+    },
+    {
+      "advisory": "GHSA-rm3j-f69w-wqmq",
+      "knownAliases": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq",
+        "GO-2026-5020"
+      ],
+      "classification": "routine-process-dos-lead-not-active",
+      "publisherImpact": "When writing data larger than 4GB in a single Write call on an SSH channel, an integer overflow in the internal payload size calculation caused the write loop to spin indefinitely, sending empty packets without making progress. The size comparison now uses int64 to prevent truncation.",
+      "decision": "Publisher impact supports routine process/resource DoS review rather than desktop takeover; exact skopeo and retained-object artifact binding and consumer/system impact remain to be qualified. No negative reachability claim.",
+      "confidence": {
+        "publisherMechanism": "high",
+        "consumerSystemBoundary": "incomplete"
+      },
+      "officialSources": [
+        "https://github.com/advisories/GHSA-rm3j-f69w-wqmq"
+      ],
+      "sourceEvidence": [
+        {
+          "url": "https://github.com/advisories/GHSA-rm3j-f69w-wqmq",
+          "sha256": "33fd0d6749a3b6f102dfb0f69f95998afa467c2f6deae0872c101d03d723f7da",
+          "bytes": 1821,
+          "retainedFile": "/tmp/finite-risk-advisories/GHSA-rm3j-f69w-wqmq.json"
+        }
+      ],
+      "matchedPairCount": 1,
+      "bindingScope": {
+        "image": "ghcr.io/closure-labs/finite@sha256:567c7e90da2020ebb83f144521fdcca2ddc21009b5f42e86704be5312d9ab835",
+        "sourceResultSha256": "d79824b95b9e61cd0a97887a81a74bd003617634cbb5d38b1177e81c9ba64ba7",
+        "blockerLedgerSha256": "e31d779012b39f089258b38bc3f4c7fed5ab997e16498f4e14f934b0eea94fd2",
+        "platform": "linux/amd64",
+        "diagnosticOnly": true,
+        "matches": [
+          {
+            "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+            "observedAliases": [
+              "CVE-2026-39834",
+              "GHSA-rm3j-f69w-wqmq"
+            ],
+            "locations": [
+              "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+              "/usr/bin/skopeo"
+            ],
+            "occurrences": 2
+          }
+        ]
+      },
+      "missingProof": [
+        "Bind both skopeo/OSTree locations, component version and every alias to exact candidate file hashes and approved publisher binaries.",
+        "Verify whether the actual consumer creates any serious system/credential/data-loss boundary beyond the described process DoS; do not assume a privileged use is confined by SELinux.",
+        "Root must approve a digest/component/platform/all-location routine disposition; no active policy change by this review."
+      ],
+      "activeDisposition": false,
+      "fixedSourceEvidence": {
+        "fixedXCryptoVersion": "0.52.0",
+        "publisherGoAlias": "GO-2026-5020"
+      }
+    },
+    {
+      "advisory": "GHSA-vgwf-h737-ff37",
+      "knownAliases": [
+        "CVE-2026-39830",
+        "GHSA-vgwf-h737-ff37",
+        "GO-2026-5017"
+      ],
+      "classification": "routine-process-dos-lead-not-active",
+      "publisherImpact": "A malicious SSH peer could send unsolicited global request responses to fill an internal buffer, blocking the connection's read loop. The blocked goroutine could not be released by calling Close(), resulting in a resource leak per connection. Unsolicited global responses are now discarded.",
+      "decision": "Publisher impact supports routine process/resource DoS review rather than desktop takeover; exact skopeo and retained-object artifact binding and consumer/system impact remain to be qualified. No negative reachability claim.",
+      "confidence": {
+        "publisherMechanism": "high",
+        "consumerSystemBoundary": "incomplete"
+      },
+      "officialSources": [
+        "https://github.com/advisories/GHSA-vgwf-h737-ff37"
+      ],
+      "sourceEvidence": [
+        {
+          "url": "https://github.com/advisories/GHSA-vgwf-h737-ff37",
+          "sha256": "abb5aef8e1f6ffd3d29d2c9f6fc73644c3bedb2bb36adb142e161bd068a27903",
+          "bytes": 4833,
+          "retainedFile": "/tmp/finite-risk-advisories/GHSA-vgwf-h737-ff37.json"
+        }
+      ],
+      "matchedPairCount": 1,
+      "bindingScope": {
+        "image": "ghcr.io/closure-labs/finite@sha256:567c7e90da2020ebb83f144521fdcca2ddc21009b5f42e86704be5312d9ab835",
+        "sourceResultSha256": "d79824b95b9e61cd0a97887a81a74bd003617634cbb5d38b1177e81c9ba64ba7",
+        "blockerLedgerSha256": "e31d779012b39f089258b38bc3f4c7fed5ab997e16498f4e14f934b0eea94fd2",
+        "platform": "linux/amd64",
+        "diagnosticOnly": true,
+        "matches": [
+          {
+            "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+            "observedAliases": [
+              "CVE-2026-39830",
+              "GHSA-vgwf-h737-ff37"
+            ],
+            "locations": [
+              "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+              "/usr/bin/skopeo"
+            ],
+            "occurrences": 2
+          }
+        ]
+      },
+      "missingProof": [
+        "Bind both skopeo/OSTree locations, component version and every alias to exact candidate file hashes and approved publisher binaries.",
+        "Verify whether the actual consumer creates any serious system/credential/data-loss boundary beyond the described process DoS; do not assume a privileged use is confined by SELinux.",
+        "Root must approve a digest/component/platform/all-location routine disposition; no active policy change by this review."
+      ],
+      "activeDisposition": false,
+      "fixedSourceEvidence": {
+        "fixedXCryptoVersion": "0.52.0",
+        "publisherGoAlias": "GO-2026-5017"
+      }
+    },
+    {
+      "advisory": "GO-2026-6604",
+      "knownAliases": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "classification": "windows-only-positive-source-boundary",
+      "publisherImpact": "On Windows, when the target of Root.Mkdir or Root.MkdirAll is a junction pointing to an empty location, the operation can create a directory at the junction target even when that target is located outside the root. This only applies to operations where the last path component is a junction (path/to/junction, but not path/junction/target).",
+      "decision": "Use exact all-location OS/ELF proof for nonapplicability; Linux image identity alone is insufficient.",
+      "confidence": {
+        "publisherMechanism": "high",
+        "allShippedArtifacts": "incomplete"
+      },
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604"
+      ],
+      "sourceEvidence": [
+        {
+          "url": "https://pkg.go.dev/vuln/GO-2026-6604",
+          "sha256": "f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9",
+          "bytes": 2341,
+          "retainedFile": "/tmp/finite-risk-advisories/GO-2026-6604.json"
+        }
+      ],
+      "matchedPairCount": 3,
+      "bindingScope": {
+        "image": "ghcr.io/closure-labs/finite@sha256:567c7e90da2020ebb83f144521fdcca2ddc21009b5f42e86704be5312d9ab835",
+        "sourceResultSha256": "d79824b95b9e61cd0a97887a81a74bd003617634cbb5d38b1177e81c9ba64ba7",
+        "blockerLedgerSha256": "e31d779012b39f089258b38bc3f4c7fed5ab997e16498f4e14f934b0eea94fd2",
+        "platform": "linux/amd64",
+        "diagnosticOnly": true,
+        "matches": [
+          {
+            "component": "pkg:golang/stdlib@1.26.4",
+            "observedAliases": [
+              "CVE-2026-56857",
+              "GO-2026-6604"
+            ],
+            "locations": [
+              "/usr/bin/cosign"
+            ],
+            "occurrences": 1
+          },
+          {
+            "component": "pkg:golang/stdlib@1.26.6",
+            "observedAliases": [
+              "CVE-2026-56857",
+              "GO-2026-6604"
+            ],
+            "locations": [
+              "/sysroot/ostree/repo/objects/44/ddc02df5529aa029c5c6300fc06197b0de5cba60e3b35a68084c0bd0c51547.file",
+              "/sysroot/ostree/repo/objects/7e/2c48dd26ae1957c2be4ebfc6f5dbf6c1c478dd80e70482985d8d9ba08addc9.file"
+            ],
+            "occurrences": 2
+          },
+          {
+            "component": "pkg:golang/stdlib@1.27.1",
+            "observedAliases": [
+              "CVE-2026-56857",
+              "GO-2026-6604"
+            ],
+            "locations": [
+              "/usr/bin/tailscale",
+              "/usr/bin/tailscaled"
+            ],
+            "occurrences": 2
+          }
+        ]
+      },
+      "missingProof": [
+        "For every matched component/location, bind actual ELF/Go metadata OS, file hash, compiler/module version and all aliases on exact candidate.",
+        "For Windows flaw prove each actual file is a Linux build, including both retained stdlib 1.26.6 objects; selected live baseline evidence alone does not cover them.",
+        "Rebind evidence to forthcoming full-profile candidate; diagnostic 567 proof is not portable to another digest."
+      ],
+      "activeDisposition": false,
+      "fixedSourceEvidence": {
+        "officialAffectedData": [
+          {
+            "package": {
+              "name": "stdlib",
+              "ecosystem": "Go"
+            },
+            "ranges": [
+              {
+                "type": "SEMVER",
+                "events": [
+                  {
+                    "introduced": "0"
+                  },
+                  {
+                    "fixed": "1.26.9"
+                  },
+                  {
+                    "introduced": "1.27.0-0"
+                  },
+                  {
+                    "fixed": "1.27.2"
+                  }
+                ]
+              }
+            ],
+            "ecosystem_specific": {
+              "imports": [
+                {
+                  "path": "os",
+                  "goos": [
+                    "windows"
+                  ],
+                  "symbols": [
+                    "Root.Chmod",
+                    "Root.Chown",
+                    "Root.Chtimes",
+                    "Root.Lchown",
+                    "Root.Link",
+                    "Root.Mkdir",
+                    "Root.MkdirAll",
+                    "Root.Remove",
+                    "Root.RemoveAll",
+                    "Root.Rename",
+                    "Root.Symlink",
+                    "doInRoot",
+                    "rootMkdirAll"
+                  ]
+                },
+                {
+                  "path": "internal/syscall/windows",
+                  "goos": [
+                    "windows"
+                  ],
+                  "symbols": [
+                    "Mkdirat"
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "advisory": "GO-2026-6612",
+      "knownAliases": [
+        "CVE-2026-78663",
+        "GO-2026-6612"
+      ],
+      "classification": "routine-resource-exhaustion-lead-not-active",
+      "publisherImpact": "The HTTP/2 server can refund connection-level flow control twice for the same data: Once when a client resets a stream (refunding data for any sent-but-unread portion of the stream), and again when a request handler reads the buffered data. A malicious client can exploit this to bypass the configured connection-level flow control limit (MaxReceiveBufferPerConnection). Total buffered data is still limited by the concurrent stream limit and stream-level flow control.",
+      "decision": "Publisher describes connection-limit bypass with total buffer bounded by stream/concurrency limits. This supports process resource-exhaustion review, but actual server/configuration/system isolation needs proof before routine disposition.",
+      "confidence": {
+        "publisherMechanism": "high",
+        "allShippedArtifacts": "incomplete"
+      },
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6612"
+      ],
+      "sourceEvidence": [
+        {
+          "url": "https://pkg.go.dev/vuln/GO-2026-6612",
+          "sha256": "6afa8e66a2e881755c22fcb3c71eb240d3113f0fc26889bf94c8d167c502bb80",
+          "bytes": 15889,
+          "retainedFile": "/tmp/finite-risk-advisories/GO-2026-6612.json"
+        }
+      ],
+      "matchedPairCount": 9,
+      "bindingScope": {
+        "image": "ghcr.io/closure-labs/finite@sha256:567c7e90da2020ebb83f144521fdcca2ddc21009b5f42e86704be5312d9ab835",
+        "sourceResultSha256": "d79824b95b9e61cd0a97887a81a74bd003617634cbb5d38b1177e81c9ba64ba7",
+        "blockerLedgerSha256": "e31d779012b39f089258b38bc3f4c7fed5ab997e16498f4e14f934b0eea94fd2",
+        "platform": "linux/amd64",
+        "diagnosticOnly": true,
+        "matches": [
+          {
+            "component": "pkg:golang/golang.org/x/net@v0.40.0",
+            "observedAliases": [
+              "CVE-2026-78663",
+              "GO-2026-6612"
+            ],
+            "locations": [
+              "/sysroot/ostree/repo/objects/78/4b3d8dec05639fa18bbe0ee52d54cd11047917379a6b97ee9975194de93559.file",
+              "/sysroot/ostree/repo/objects/bd/5c9d3cdf92a1453660f6bf15a60a0fffbeefabcd78ea0e7b98329aed29ceef.file",
+              "/usr/bin/glow",
+              "/usr/bin/gum"
+            ],
+            "occurrences": 4
+          },
+          {
+            "component": "pkg:golang/golang.org/x/net@v0.48.0",
+            "observedAliases": [
+              "CVE-2026-78663",
+              "GO-2026-6612"
+            ],
+            "locations": [
+              "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+              "/usr/bin/skopeo"
+            ],
+            "occurrences": 2
+          },
+          {
+            "component": "pkg:golang/golang.org/x/net@v0.55.0",
+            "observedAliases": [
+              "CVE-2026-78663",
+              "GO-2026-6612"
+            ],
+            "locations": [
+              "/sysroot/ostree/repo/objects/19/07b725d2d82866531bee698973a08e6c438abaace3b61723709ea531853945.file",
+              "/sysroot/ostree/repo/objects/25/2941f722eccbf9991b7803f7cb6a358974451a84272a6fbebc3de8ef7defae.file",
+              "/sysroot/ostree/repo/objects/70/1bccba378f262def36123d3245e03a4442eb1f5cb37e43e901bd1c68954622.file",
+              "/sysroot/ostree/repo/objects/75/3546d15a9cdd047adccb841b239b2b0c2c25deb15c5edcd9d94801f60325c3.file",
+              "/sysroot/ostree/repo/objects/8e/c5583db8e1709e446e0abbcb470108ba680fcf718835713b907e0f9ab05d02.file",
+              "/sysroot/ostree/repo/objects/d1/6202c07880b5c003452384c62878ebf5155cd81a4e9befa180f485ebcc9693.file",
+              "/sysroot/ostree/repo/objects/f4/4b3304bc30b41a152a41fe1248228b052d2d2c31c69c131e4d85e874530d1c.file",
+              "/usr/bin/containerd",
+              "/usr/bin/containerd-shim-runc-v2",
+              "/usr/bin/containerd-stress",
+              "/usr/bin/ctr",
+              "/usr/bin/rclone",
+              "/usr/bin/restic",
+              "/usr/bin/runc",
+              "/usr/bin/yq"
+            ],
+            "occurrences": 15
+          },
+          {
+            "component": "pkg:golang/golang.org/x/net@v0.56.0",
+            "observedAliases": [
+              "CVE-2026-78663",
+              "GO-2026-6612"
+            ],
+            "locations": [
+              "/sysroot/ostree/repo/objects/44/ddc02df5529aa029c5c6300fc06197b0de5cba60e3b35a68084c0bd0c51547.file",
+              "/sysroot/ostree/repo/objects/7e/2c48dd26ae1957c2be4ebfc6f5dbf6c1c478dd80e70482985d8d9ba08addc9.file",
+              "/usr/bin/cosign"
+            ],
+            "occurrences": 3
+          },
+          {
+            "component": "pkg:golang/golang.org/x/net@v0.57.0",
+            "observedAliases": [
+              "CVE-2026-78663",
+              "GO-2026-6612"
+            ],
+            "locations": [
+              "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+              "/sysroot/ostree/repo/objects/ac/87712b275ac6fd87ea557ce994223e9758244bcf96aa47ff82a1ed96443ab0.file",
+              "/usr/bin/buildah",
+              "/usr/bin/podman"
+            ],
+            "occurrences": 4
+          },
+          {
+            "component": "pkg:golang/golang.org/x/net@v0.59.0",
+            "observedAliases": [
+              "CVE-2026-78663",
+              "GO-2026-6612"
+            ],
+            "locations": [
+              "/usr/bin/tailscale",
+              "/usr/bin/tailscaled"
+            ],
+            "occurrences": 2
+          },
+          {
+            "component": "pkg:golang/stdlib@1.26.4",
+            "observedAliases": [
+              "CVE-2026-78663",
+              "GO-2026-6612"
+            ],
+            "locations": [
+              "/usr/bin/cosign"
+            ],
+            "occurrences": 1
+          },
+          {
+            "component": "pkg:golang/stdlib@1.26.6",
+            "observedAliases": [
+              "CVE-2026-78663",
+              "GO-2026-6612"
+            ],
+            "locations": [
+              "/sysroot/ostree/repo/objects/44/ddc02df5529aa029c5c6300fc06197b0de5cba60e3b35a68084c0bd0c51547.file",
+              "/sysroot/ostree/repo/objects/7e/2c48dd26ae1957c2be4ebfc6f5dbf6c1c478dd80e70482985d8d9ba08addc9.file"
+            ],
+            "occurrences": 2
+          },
+          {
+            "component": "pkg:golang/stdlib@1.27.1",
+            "observedAliases": [
+              "CVE-2026-78663",
+              "GO-2026-6612"
+            ],
+            "locations": [
+              "/usr/bin/tailscale",
+              "/usr/bin/tailscaled"
+            ],
+            "occurrences": 2
+          }
+        ]
+      },
+      "missingProof": [
+        "For every matched component/location, bind actual ELF/Go metadata OS, file hash, compiler/module version and all aliases on exact candidate.",
+        "Review server limits and isolation across container/VPN/development tools; bounded buffers per stream do not by themselves establish host OOM is impossible.",
+        "Rebind evidence to forthcoming full-profile candidate; diagnostic 567 proof is not portable to another digest."
+      ],
+      "activeDisposition": false,
+      "fixedSourceEvidence": {
+        "officialAffectedData": [
+          {
+            "package": {
+              "name": "stdlib",
+              "ecosystem": "Go"
+            },
+            "ranges": [
+              {
+                "type": "SEMVER",
+                "events": [
+                  {
+                    "introduced": "0"
+                  },
+                  {
+                    "fixed": "1.26.9"
+                  }
+                ]
+              }
+            ],
+            "ecosystem_specific": {
+              "imports": [
+                {
+                  "path": "net/http",
+                  "symbols": [
+                    "CanonicalHeaderKey",
+                    "Client.CloseIdleConnections",
+                    "Client.Do",
+                    "Client.Get",
+                    "Client.Head",
+                    "Client.Post",
+                    "Client.PostForm",
+                    "ClientConn.Close",
+                    "ClientConn.RoundTrip",
+                    "Cookie.String",
+                    "Cookie.Valid",
+                    "CrossOriginProtection.AddInsecureBypassPattern",
+                    "CrossOriginProtection.AddTrustedOrigin",
+                    "CrossOriginProtection.Check",
+                    "Dir.Open",
+                    "Error",
+                    "Get",
+                    "Handle",
+                    "HandleFunc",
+                    "HandlerFunc.ServeHTTP",
+                    "Head",
+                    "Header.Add",
+                    "Header.Del",
+                    "Header.Get",
+                    "Header.Set",
+                    "Header.Values",
+                    "Header.Write",
+                    "Header.WriteSubset",
+                    "ListenAndServe",
+                    "ListenAndServeTLS",
+                    "NewRequest",
+                    "NewRequestWithContext",
+                    "NotFound",
+                    "ParseCookie",
+                    "ParseSetCookie",
+                    "ParseTime",
+                    "Post",
+                    "PostForm",
+                    "ProxyFromEnvironment",
+                    "ReadRequest",
+                    "ReadResponse",
+                    "Redirect",
+                    "Request.AddCookie",
+                    "Request.BasicAuth",
+                    "Request.Cookie",
+                    "Request.Cookies",
+                    "Request.CookiesNamed",
+                    "Request.FormFile",
+                    "Request.FormValue",
+                    "Request.MultipartReader",
+                    "Request.ParseForm",
+                    "Request.ParseMultipartForm",
+                    "Request.PostFormValue",
+                    "Request.Referer",
+                    "Request.SetBasicAuth",
+                    "Request.UserAgent",
+                    "Request.Write",
+                    "Request.WriteProxy",
+                    "Response.Cookies",
+                    "Response.Location",
+                    "Response.Write",
+                    "ResponseController.EnableFullDuplex",
+                    "ResponseController.Flush",
+                    "ResponseController.Hijack",
+                    "ResponseController.SetReadDeadline",
+                    "ResponseController.SetWriteDeadline",
+                    "Serve",
+                    "ServeContent",
+                    "ServeFile",
+                    "ServeFileFS",
+                    "ServeMux.Handle",
+                    "ServeMux.HandleFunc",
+                    "ServeMux.ServeHTTP",
+                    "ServeTLS",
+                    "Server.Close",
+                    "Server.ListenAndServe",
+                    "Server.ListenAndServeTLS",
+                    "Server.Serve",
+                    "Server.ServeTLS",
+                    "Server.SetKeepAlivesEnabled",
+                    "Server.Shutdown",
+                    "SetCookie",
+                    "Transport.CancelRequest",
+                    "Transport.Clone",
+                    "Transport.CloseIdleConnections",
+                    "Transport.NewClientConn",
+                    "Transport.RoundTrip",
+                    "body.Close",
+                    "body.Read",
+                    "bodyEOFSignal.Close",
+                    "bodyEOFSignal.Read",
+                    "bodyLocked.Read",
+                    "bufioFlushWriter.Write",
+                    "cancelTimerBody.Close",
+                    "cancelTimerBody.Read",
+                    "checkConnErrorWriter.Write",
+                    "chunkWriter.Write",
+                    "connReader.Read",
+                    "connectMethodKey.String",
+                    "expectContinueReader.Close",
+                    "expectContinueReader.Read",
+                    "extraHeader.Write",
+                    "fileHandler.ServeHTTP",
+                    "fileTransport.RoundTrip",
+                    "globalOptionsHandler.ServeHTTP",
+                    "gzipReader.Close",
+                    "gzipReader.Read",
+                    "http1ClientConn.Close",
+                    "http1ClientConn.RoundTrip",
+                    "http2ClientConn.Close",
+                    "http2ClientConn.Ping",
+                    "http2ClientConn.RoundTrip",
+                    "http2ClientConn.Shutdown",
+                    "http2ConnectionError.Error",
+                    "http2ErrCode.String",
+                    "http2FrameHeader.String",
+                    "http2FrameType.String",
+                    "http2FrameWriteRequest.String",
+                    "http2Framer.ReadFrame",
+                    "http2Framer.ReadFrameForHeader",
+                    "http2Framer.ReadFrameHeader",
+                    "http2Framer.WriteContinuation",
+                    "http2Framer.WriteData",
+                    "http2Framer.WriteDataPadded",
+                    "http2Framer.WriteGoAway",
+                    "http2Framer.WriteHeaders",
+                    "http2Framer.WritePing",
+                    "http2Framer.WritePriority",
+                    "http2Framer.WritePushPromise",
+                    "http2Framer.WriteRSTStream",
+                    "http2Framer.WriteRawFrame",
+                    "http2Framer.WriteSettings",
+                    "http2Framer.WriteSettingsAck",
+                    "http2Framer.WriteWindowUpdate",
+                    "http2GoAwayError.Error",
+                    "http2Server.ServeConn",
+                    "http2Setting.String",
+                    "http2SettingID.String",
+                    "http2SettingsFrame.ForeachSetting",
+                    "http2StreamError.Error",
+                    "http2Transport.CloseIdleConnections",
+                    "http2Transport.NewClientConn",
+                    "http2Transport.RoundTrip",
+                    "http2Transport.RoundTripOpt",
+                    "http2bufferedWriter.Flush",
+                    "http2bufferedWriter.Write",
+                    "http2bufferedWriterTimeoutWriter.Write",
+                    "http2chunkWriter.Write",
+                    "http2clientConnPool.GetClientConn",
+                    "http2connError.Error",
+                    "http2dataBuffer.Read",
+                    "http2duplicatePseudoHeaderError.Error",
+                    "http2gzipReader.Close",
+                    "http2gzipReader.Read",
+                    "http2headerFieldNameError.Error",
+                    "http2headerFieldValueError.Error",
+                    "http2netHTTPClientConn.Close",
+                    "http2netHTTPClientConn.RoundTrip",
+                    "http2noDialClientConnPool.GetClientConn",
+                    "http2noDialH2RoundTripper.NewClientConn",
+                    "http2noDialH2RoundTripper.RoundTrip",
+                    "http2pipe.Read",
+                    "http2priorityWriteSchedulerRFC7540.CloseStream",
+                    "http2priorityWriteSchedulerRFC7540.OpenStream",
+                    "http2priorityWriteSchedulerRFC9218.OpenStream",
+                    "http2pseudoHeaderError.Error",
+                    "http2requestBody.Close",
+                    "http2requestBody.Read",
+                    "http2responseWriter.Flush",
+                    "http2responseWriter.FlushError",
+                    "http2responseWriter.Push",
+                    "http2responseWriter.SetReadDeadline",
+                    "http2responseWriter.SetWriteDeadline",
+                    "http2responseWriter.Write",
+                    "http2responseWriter.WriteHeader",
+                    "http2responseWriter.WriteString",
+                    "http2roundRobinWriteScheduler.OpenStream",
+                    "http2serverConn.CloseConn",
+                    "http2serverConn.Flush",
+                    "http2serverConn.closeStream",
+                    "http2serverConn.handlerDone",
+                    "http2serverConn.newWriterAndRequest",
+                    "http2serverConn.newWriterAndRequestNoBody",
+                    "http2serverConn.noteBodyRead",
+                    "http2serverConn.processHeaders",
+                    "http2serverConn.runHandler",
+                    "http2serverConn.scheduleHandler",
+                    "http2stickyErrWriter.Write",
+                    "http2transportResponseBody.Close",
+                    "http2transportResponseBody.Read",
+                    "http2unencryptedTransport.RoundTrip",
+                    "http2writeData.String",
+                    "initALPNRequest.ServeHTTP",
+                    "loggingConn.Close",
+                    "loggingConn.Read",
+                    "loggingConn.Write",
+                    "maxBytesReader.Close",
+                    "maxBytesReader.Read",
+                    "onceCloseListener.Close",
+                    "persistConn.Read",
+                    "persistConnWriter.ReadFrom",
+                    "persistConnWriter.Write",
+                    "populateResponse.Write",
+                    "populateResponse.WriteHeader",
+                    "readTrackingBody.Close",
+                    "readTrackingBody.Read",
+                    "readWriteCloserBody.CloseWrite",
+                    "readWriteCloserBody.Read",
+                    "redirectHandler.ServeHTTP",
+                    "response.Flush",
+                    "response.FlushError",
+                    "response.Hijack",
+                    "response.ReadFrom",
+                    "response.Write",
+                    "response.WriteHeader",
+                    "response.WriteString",
+                    "serverHandler.ServeHTTP",
+                    "socksDialer.DialWithConn",
+                    "socksUsernamePassword.Authenticate",
+                    "stringWriter.WriteString",
+                    "timeoutHandler.ServeHTTP",
+                    "timeoutWriter.Write",
+                    "timeoutWriter.WriteHeader",
+                    "transportReadFromServerError.Error",
+                    "unencryptedHTTP2Request.ServeHTTP"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "package": {
+              "name": "stdlib",
+              "ecosystem": "Go"
+            },
+            "ranges": [
+              {
+                "type": "SEMVER",
+                "events": [
+                  {
+                    "introduced": "1.27.0-0"
+                  },
+                  {
+                    "fixed": "1.27.2"
+                  }
+                ]
+              }
+            ],
+            "ecosystem_specific": {
+              "imports": [
+                {
+                  "path": "net/http/internal/http2",
+                  "symbols": [
+                    "Server.ServeConn",
+                    "requestBody.Close",
+                    "requestBody.Read",
+                    "serverConn.closeStream",
+                    "serverConn.handlerDone",
+                    "serverConn.newWriterAndRequest",
+                    "serverConn.newWriterAndRequestNoBody",
+                    "serverConn.noteBodyRead",
+                    "serverConn.processHeaders",
+                    "serverConn.runHandler",
+                    "serverConn.scheduleHandler"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "package": {
+              "name": "golang.org/x/net",
+              "ecosystem": "Go"
+            },
+            "ranges": [
+              {
+                "type": "SEMVER",
+                "events": [
+                  {
+                    "introduced": "0"
+                  },
+                  {
+                    "fixed": "0.60.0"
+                  }
+                ]
+              }
+            ],
+            "ecosystem_specific": {
+              "imports": [
+                {
+                  "path": "golang.org/x/net/http2",
+                  "symbols": [
+                    "ClientConn.Close",
+                    "ClientConn.Ping",
+                    "ClientConn.RoundTrip",
+                    "ClientConn.Shutdown",
+                    "ConfigureServer",
+                    "ConfigureTransport",
+                    "ConfigureTransports",
+                    "ConnectionError.Error",
+                    "ErrCode.String",
+                    "FrameHeader.String",
+                    "FrameType.String",
+                    "FrameWriteRequest.String",
+                    "Framer.ReadFrame",
+                    "Framer.ReadFrameForHeader",
+                    "Framer.ReadFrameHeader",
+                    "Framer.WriteContinuation",
+                    "Framer.WriteData",
+                    "Framer.WriteDataPadded",
+                    "Framer.WriteGoAway",
+                    "Framer.WriteHeaders",
+                    "Framer.WritePing",
+                    "Framer.WritePriority",
+                    "Framer.WritePriorityUpdate",
+                    "Framer.WritePushPromise",
+                    "Framer.WriteRSTStream",
+                    "Framer.WriteRawFrame",
+                    "Framer.WriteSettings",
+                    "Framer.WriteSettingsAck",
+                    "Framer.WriteWindowUpdate",
+                    "GoAwayError.Error",
+                    "ReadFrameHeader",
+                    "Server.ServeConn",
+                    "Setting.String",
+                    "SettingID.String",
+                    "SettingsFrame.ForeachSetting",
+                    "StreamError.Error",
+                    "Transport.CloseIdleConnections",
+                    "Transport.NewClientConn",
+                    "Transport.RoundTrip",
+                    "Transport.RoundTripOpt",
+                    "bufferedWriter.Flush",
+                    "bufferedWriter.Write",
+                    "bufferedWriterTimeoutWriter.Write",
+                    "chunkWriter.Write",
+                    "clientConnPool.GetClientConn",
+                    "connError.Error",
+                    "dataBuffer.Read",
+                    "duplicatePseudoHeaderError.Error",
+                    "gzipReader.Close",
+                    "gzipReader.Read",
+                    "headerFieldNameError.Error",
+                    "headerFieldValueError.Error",
+                    "netHTTPClientConn.Close",
+                    "netHTTPClientConn.RoundTrip",
+                    "noDialClientConnPool.GetClientConn",
+                    "noDialH2RoundTripper.NewClientConn",
+                    "noDialH2RoundTripper.RoundTrip",
+                    "pipe.Read",
+                    "priorityWriteSchedulerRFC7540.CloseStream",
+                    "priorityWriteSchedulerRFC7540.OpenStream",
+                    "priorityWriteSchedulerRFC9218.OpenStream",
+                    "pseudoHeaderError.Error",
+                    "requestBody.Close",
+                    "requestBody.Read",
+                    "responseWriter.Flush",
+                    "responseWriter.FlushError",
+                    "responseWriter.Push",
+                    "responseWriter.SetReadDeadline",
+                    "responseWriter.SetWriteDeadline",
+                    "responseWriter.Write",
+                    "responseWriter.WriteHeader",
+                    "responseWriter.WriteString",
+                    "roundRobinWriteScheduler.OpenStream",
+                    "serverConn.CloseConn",
+                    "serverConn.Flush",
+                    "serverConn.closeStream",
+                    "serverConn.handlerDone",
+                    "serverConn.newWriterAndRequest",
+                    "serverConn.newWriterAndRequestNoBody",
+                    "serverConn.noteBodyRead",
+                    "serverConn.processHeaders",
+                    "serverConn.runHandler",
+                    "serverConn.scheduleHandler",
+                    "stickyErrWriter.Write",
+                    "transportResponseBody.Close",
+                    "transportResponseBody.Read",
+                    "unencryptedTransport.RoundTrip",
+                    "writeData.String"
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "limits": [
+    "No image pull/build/VM/Nix/fullSBOM parse or malicious-file execution performed.",
+    "Exact native567 is unpublished diagnostic evidence; forthcoming complete candidate needs its own digest and all observed aliases/locations.",
+    "No policyJSON edits, suppression, negative reachability inference, SELinux waiver or default-listener exemption.",
+    "A source branch/changelog proves a lead, not authenticated package availability, shipped bytes or signed release qualification."
+  ],
+  "compatibleRemediationObservation": {
+    "run": "https://github.com/closure-labs/finite/actions/runs/38331234974",
+    "sourceRevisionPrefix": "28d71573",
+    "status": "Root-reported fresh approved Fedora44 metadata PASS",
+    "curlFamily": "updates 8.18.0-12 >= required 18924 backport floor 8.18.0-11",
+    "httpd": "updates 2.4.69 available but existing 2.4.68 already publisher-fixed; no upgrade is proposed solely for29167",
+    "anyio": "4.13.0 still below4.14.2 fix",
+    "rclone": "1.74.3 still below1.75.1 fix",
+    "msgpack": "outdated but ordinary advisory under approved model",
+    "scope": "Metadata only; root owns payload authentication and focused transactions. No repeated availability poll performed by this reviewer.",
+    "curlStablePublisherSource": "Directly verified FEDORA-2026-8efcd7a2a0 stable/gating-passed; exact Koji 3114241/source f526fe6 and matching patch; root payload/transaction pending."
+  }
+}

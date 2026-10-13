@@ -23,6 +23,12 @@ QUALIFICATION_ONLY = {
     'scripts/bluebuild/security-policy.py', 'scripts/bluebuild/security-scan.py',
     'scripts/bluebuild/security-run.sh', 'scripts/bluebuild/audit-published.sh',
     '.github/workflows/publication.yml', '.github/workflows/image-security.yml',
+    '.github/workflows/build.yml', 'scripts/ci/release-selection.py',
+    'scripts/ci/remediation-preflight.py', 'scripts/ci/applicability-evidence.py',
+    'scripts/ci/native-evidence-summary.py',
+    'scripts/ci/diagnose-built-candidate.sh', 'scripts/ci/rpm-file-evidence.py',
+    'scripts/ci/extraction-layout-smoke.py',
+    'scripts/ci/freerdp-reference-evidence.py',
 }
 
 

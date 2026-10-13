@@ -38,6 +38,10 @@ class BluefinTests(unittest.TestCase):
         security = patch.object(publication.security, 'verify')
         security.start()
         self.addCleanup(security.stop)
+        current_main = patch.object(publication, 'github', return_value={
+            'ref': 'refs/heads/main', 'object': {'type': 'commit', 'sha': 'f' * 40}})
+        current_main.start()
+        self.addCleanup(current_main.stop)
         self.approved = upstream.recipes(self.root)
         self.observed = {r['base']: r['digest'] for r in self.approved.values()}
         verification = patch.object(upstream, 'authenticate', return_value={'verified': True})
@@ -306,7 +310,8 @@ class BluefinTests(unittest.TestCase):
             with patch.object(publication.upstream, 'inspect', return_value={'Digest': NEW}):
                 with self.assertRaisesRegex(ValueError, 'Public channel changed'):
                     publication.promote('bluefin-generic', self.root)
-            run.assert_not_called()
+            self.assertFalse(any(call.args[0][0] == 'skopeo' for call in run.call_args_list))
+            run.reset_mock()
             with patch.object(publication.upstream, 'inspect', side_effect=[{'Digest': IMAGE},
                     {'Digest': candidate.split('@')[1]}, {'Digest': candidate.split('@')[1]}]):
                 publication.promote('bluefin-generic', self.root)

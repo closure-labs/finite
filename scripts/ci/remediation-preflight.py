@@ -14,8 +14,12 @@ ROOT = Path(__file__).resolve().parents[2]
 SPEC = importlib.util.spec_from_file_location('remediation', ROOT / 'files/scripts/security-remediate.py')
 remediation = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(remediation)
+SECURITY_SPEC = importlib.util.spec_from_file_location('preflight_security', ROOT / 'scripts/bluebuild/security-policy.py')
+security = importlib.util.module_from_spec(SECURITY_SPEC)
+SECURITY_SPEC.loader.exec_module(security)
 OBSERVE = ('python3-anyio', 'python3-msgpack', 'rclone', 'yq', 'podman', 'buildah', 'skopeo',
-           'cosign', 'tailscale', 'gum', 'glow', 'toolbox', 'restic', 'containerd', 'runc', 'ipp-usb', 'uupd')
+           'cosign', 'tailscale', 'gum', 'glow', 'toolbox', 'restic', 'containerd', 'runc', 'ipp-usb', 'uupd', 'curl', 'libcurl', 'libcurl-minimal',
+           'httpd', 'httpd-core', 'httpd-tools', 'mod_lua')
 FEDORA_IMAGE = 'registry.fedoraproject.org/fedora@sha256:1ff9eb02e4e2d7fb1175becac7139b2960c4fdcccedce81c86ec25b98ef3124d'
 FORMAT = '%{name}\t%{evr}\t%{arch}\t%{repoid}\t%{full_nevra}\n'
 
@@ -84,8 +88,11 @@ def upstream_meets(evr, minimum, runner):
     return compare('0:' + version + '-0', '0:' + minimum + '-0', runner) >= 0
 
 
-def probe(policy, prerequisites, runner=None):
+def probe(policy, prerequisites, runner=None, risk_policy=None):
     runner = runner or run
+    mode = security.validate_policy(risk_policy) if risk_policy is not None else 'fixable-severity'
+    serious_aliases = {alias for entry in (risk_policy or {}).get('seriousAdvisories', [])
+                      for alias in entry['advisories']}
     names = set(policy['packages']) | set(OBSERVE) | set(prerequisites['packages'])
     packages = parse(runner(command(names)), names)
     findings = []
@@ -104,18 +111,25 @@ def probe(policy, prerequisites, runner=None):
         records = [{**record, 'meetsUpstreamMinimum': upstream_meets(record['evr'], entry['minimumUpstreamVersion'], runner)}
                    for record in packages[name]]
         status = 'missing' if not records else 'available' if any(row['meetsUpstreamMinimum'] for row in records) else 'outdated'
-        prerequisite_rows.append({'name': name, **entry, 'status': status, 'available': records, 'scannerResolution': 'unknown'})
-    prerequisite_ready = all(row['status'] == 'available' for row in prerequisite_rows)
+        blocking = mode != 'upstream-maintained-risk' or bool(serious_aliases.intersection(entry['advisories']))
+        prerequisite_rows.append({'name': name, **entry, 'status': status, 'available': records,
+                                  'blockingUnderCurrentPolicy': blocking, 'scannerResolution': 'unknown'})
+    prerequisite_ready = all(row['status'] == 'available' for row in prerequisite_rows
+                             if row['blockingUnderCurrentPolicy'])
+    all_requested_available = all(row['status'] == 'available' for row in prerequisite_rows)
     ready = floors_available and prerequisite_ready
     return {'schema': 1, 'status': 'available' if ready else 'blocked',
             'queriedAt': datetime.now(timezone.utc).isoformat(), 'fedora': policy['fedora'],
             'sourceImage': policy['sourceImage'], 'architectures': ['x86_64', 'noarch'],
             'scannerResolution': 'unknown', 'findings': findings,
             'packageFloorsAvailable': floors_available, 'prerequisiteReady': prerequisite_ready,
+            'policyMode': mode, 'allRequestedFixesAvailable': all_requested_available,
             'prerequisites': prerequisite_rows,
             'limits': 'Metadata availability only; no RPM payload signature or transaction verification, '
                       'no installation, no multilib solver proof, and no new image vulnerability scan. '
-                      'Even available prerequisites are not a passing security scan or proof of embedded fixes.'}
+                      'Even available prerequisites are not a passing security scan or proof of embedded fixes. '
+                      'Advisory-only metadata rows are retained but do not block readiness; actual Critical/KEV, '
+                      'artifact applicability and source holds remain enforced by the candidate security policy.'}
 
 
 def main(argv=None):
@@ -147,7 +161,8 @@ def main(argv=None):
         prerequisites = load_prerequisites(args.prerequisites)
         if prerequisites['sourceImage'] != policy['sourceImage'] or prerequisites['fedora'] != policy['fedora']:
             raise ValueError('Prerequisites do not match the reviewed remediation baseline')
-        report = probe(policy, prerequisites, runner)
+        risk_policy = security.load_policy(ROOT / 'automation/security/image-policy.json')
+        report = probe(policy, prerequisites, runner, risk_policy)
         report['containerImage'] = FEDORA_IMAGE
         report['inventoryPackages'] = sum(len(records) for records in installed.values())
         report['inventoryParser'] = 'passed'

@@ -1,5 +1,9 @@
 # Desktop security validation
 
+The active [release eligibility sequence](release-eligibility-sequence.md) starts
+from externally merged PR145 and records new remediation/proof work. The sections
+below retain the completed desktop-policy validation history.
+
 This continuation covers all four Finite profiles, their desktop applications,
 development tools and container runtimes. Finite uses Bluefin/bootc with Nix/Home
 Manager. Changes use Jujutsu in isolated security workspaces. The
