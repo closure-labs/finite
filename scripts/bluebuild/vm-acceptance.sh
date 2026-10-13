@@ -379,11 +379,23 @@ if [[ -z $target ]]; then
 fi
 # Use a deliberately wrong public key, then restore policy even if the test fails.
 echo 'Testing rejection with the wrong signing key'
-ssh "${ssh_args[@]}" bash -s -- "$target" <<'GUEST'
+ssh "${ssh_args[@]}" bash -s -- "$target" >"$state/signature-rejection.log" 2>&1 <<'GUEST'
 set -euo pipefail
+umask 077
 work=$(mktemp -d)
-trap 'sudo cp "$work/policy.json" /etc/containers/policy.json; sudo rm -f /etc/pki/containers/finite-acceptance-wrong.pub; rm -rf "$work"' EXIT
+cleanup() {
+  result=$?
+  set +e
+  sudo cp "$work/policy.json" /etc/containers/policy.json || result=1
+  if [[ -f $work/rejection.log ]]; then
+    cat "$work/rejection.log" || result=1
+  fi
+  sudo rm -f /etc/pki/containers/finite-acceptance-wrong.pub || result=1
+  rm -rf "$work" || result=1
+  exit "$result"
+}
 sudo cp /etc/containers/policy.json "$work/policy.json"
+trap cleanup EXIT
 sudo chown "$(id -u):$(id -g)" "$work/policy.json"
 COSIGN_PASSWORD='' cosign generate-key-pair --output-key-prefix "$work/wrong" >/dev/null
 sudo install -m 0644 "$work/wrong.pub" /etc/pki/containers/finite-acceptance-wrong.pub
@@ -395,7 +407,7 @@ if sudo bootc switch --enforce-container-sigpolicy "$1" >"$work/rejection.log" 2
   echo 'bootc accepted an image with the wrong signing key' >&2
   exit 1
 fi
-grep -Ei 'invalid signature|no matching signatures|none of the signatures|signature verification failed' "$work/rejection.log"
+grep -Eqi 'invalid signature|no matching signatures|none of the signatures|signature verification failed|A signature was required, but no signature exists' "$work/rejection.log"
 GUEST
 echo 'Selecting the signed ongoing update channel'
 ssh "${ssh_args[@]}" sudo bootc switch --enforce-container-sigpolicy "$target"

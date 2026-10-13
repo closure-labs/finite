@@ -381,7 +381,7 @@ hold remain explicit. Release eligibility has not been established.
 
 - [x] Review official action source, OIDC claims, live repository settings and protected-environment metadata; independent security/integration review supports a canary-only pilot.
 - [x] Diagnose38439778084: build and security pass; signer receives empty COSIGN_PRIVATE_KEY because the reusable caller does not forward the secret. No stored-key corruption established.
-- [x] Implement explicit named secret forwarding and a bounded public-key preflight; 151 focused signing/selection/resume/pilot tests pass. Hosted validation and exact-digest resume remain pending.
+- [x] Implement explicit named secret forwarding and a bounded public-key preflight; 151 focused signing/selection/resume/pilot tests pass. Hosted validation and exact-digest signing passed; upgrade VM qualification remains incomplete.
 - [ ] Resume exact digest60b12153f6c3 without rebuilding; retain fresh security evidence where valid.
 - Doppler adoption is optional and requires verified subscription/workspace configuration and positive/negative canary tests; no integration or secret migration performed by this assessment.
 - Assessment and rollout constraints: docs/doppler-oidc-assessment-2026-10-13.md.
@@ -397,5 +397,11 @@ hold remain explicit. Release eligibility has not been established.
 - [x] Hosted38448894056 caught missing action allowlist entry. Add only the reviewed Doppler SHA and main-only pilot environment to tracked/live security policy; delivery and full repository-policy fixtures pass.
 - [x] Hosted38449803661 exposed a stale blanket no-secret-forwarding assertion. Require exactly the named signing key and retain nested-job isolation; 215 broadened focused tests pass before retry.
 - [x] PR #154 merged at31e47a59f456 after source38450595473 and queue38451388697 passed. Redundant automatic build38452072161 cancelled; exact standard candidate resumed in38452104611 and claims-only pilot38452109711 launched.
-- [ ] Repair sandboxed Skopeo credential lookup exposed by resume38452104611; source/candidate recovery passed, but default /run/containers/1001/auth.json is unreadable. Signing not attempted; reuse same digest after scoped authentication fix.
-- [x] Implement scoped registry-auth repair with153focusedtests and workflow lint passing; helper preserves all current trust/resource gates and candidate identity. Hosted rollout pending.
+- [x] Repair sandboxed Skopeo credential lookup exposed by resume38452104611; source/candidate recovery passed, but default /run/containers/1001/auth.json is unreadable. Signing was not attempted in that failed run; corrected resume38455754348 reused the same digest and passed signing.
+- [x] Implement scoped registry-auth repair with153focusedtests and workflow lint passing; helper preserves all current trust/resource gates and candidate identity. Hosted rollout passed in38455754348.
+- [x] PR #155 merged at3fd275c98d98 after source38454295599 and queue38454956311 passed; independent registry-auth review approved. Cancelled redundant38455635843 and resumed same candidate in38455754348.
+- [x] Live corrected reuse38455754348 passed: original native evidence revalidated under current policy and original timestamps, no new scan. Protected signing passed key-match, signature and transparency verification; fresh Secure Boot/encrypted-root/enforcing VM passed; upgrade stopped at the wrong-key rejection probe, whose error log was discarded. No promotion.
+
+- [ ] Diagnose and retain the wrong-key bootc rejection error from qualification38455754348. Fresh candidate VM passed, but upgrade/rollback did not run; do not treat any bootc error as valid signature rejection.
+
+- [x] Implement the explicit missing-signature rejection match and private/sanitized VM diagnostic retention;32focusedVM/desktop/resumetests and shellcheck/docs pass. Hosted source/queue and a fresh standard candidate remain required because the harness is identity-bound.

@@ -3,7 +3,7 @@
   "sourceRevision": "2cb7b1ed0db02aeb9a82a90bffdd511dc843c8c0",
   "buildVerdict": "all-four-passed",
   "vulnerabilityPolicyVerdict": "all-four-passed-reviewed-desktop-exploitability-policy; unresolved advisories retained",
-  "releaseVerdict": "pending-secret-forwarding-repair-protected-signing-and-enforcing-VM-qualification",
+  "releaseVerdict": "blocked-incomplete-upgrade-VM-qualification",
   "signingFailure": "Cosign legacy format conflicted with default use-signing-config=true",
   "fix": {
     "version": "v3.1.3",
@@ -110,7 +110,8 @@
   "cancelledRedundantRuns": [
     38435847079,
     38439666375,
-    38452072161
+    38452072161,
+    38455635843
   ],
   "secretForwardingRepair": {
     "status": "merged-after-source-and-queue-pass",
@@ -126,7 +127,8 @@
     "mergeRevision": "31e47a59f456caceaacda75557c7971eba3a172d",
     "resumeRun": 38452104611,
     "resumeUrl": "https://github.com/closure-labs/finite/actions/runs/38452104611",
-    "resumeStatus": "failed-before-signing-registry-auth-path"
+    "resumeStatus": "failed-before-signing-registry-auth-path",
+    "runtime": "pass-key-match-signature-and-transparency-verification"
   },
   "securityReuseRuntimeFailure": {
     "run": 38452104611,
@@ -141,7 +143,107 @@
       "focusedTests": 153,
       "workflowLint": "pass",
       "implementation": "scoped runner-owned registry auth file, restored environment, success/failure cleanup, credential-error redaction",
-      "hosted": "pending"
+      "hosted": "source-and-queue-pass",
+      "pr": 155,
+      "sourceRevision": "c6554daf15a33e22547e9b496d0d7a3359bbf546",
+      "sourceRun": 38454295599,
+      "queueRun": 38454956311,
+      "mergeRevision": "3fd275c98d98a3a1c5fa028b32d64a7e692d18f7",
+      "resumeRun": 38455754348,
+      "resumeUrl": "https://github.com/closure-labs/finite/actions/runs/38455754348",
+      "runtime": "pass"
     }
+  },
+  "liveSecurityReuse": {
+    "schema": 1,
+    "status": "revalidated-native-evidence",
+    "image": "ghcr.io/closure-labs/finite@sha256:60b12153f6c3db4152225e6213ff5ae95971190cca87920b969a848b5fa423ef",
+    "profile": "bluefin-generic",
+    "originRun": 38439778084,
+    "originAttempt": 1,
+    "originBuildJob": 115445392447,
+    "originSecurityJob": 115451111641,
+    "artifactId": 11836309039,
+    "artifactSha256": "sha256:4a13efa93b9dd7ca0553e0817a8189bda19c7213f9d802dc4688ced7dff28fbc",
+    "sourceRevision": "b274129fc76f2bdf588b4b312d83af4759e0d1a7",
+    "validationRevision": "3fd275c98d98a3a1c5fa028b32d64a7e692d18f7",
+    "originalResultSha256": "e750bed89e22d082b106189fb7fad6339ce091323cabb0940fd1b0f787dad421",
+    "originalPolicySha256": "2e7848880b90bfdf07c1f17dd97d010b02e59834c9110fb1da2364ceaf55230d",
+    "currentPolicySha256": "2e7848880b90bfdf07c1f17dd97d010b02e59834c9110fb1da2364ceaf55230d",
+    "originalScannedAt": "2026-10-13T18:04:53.761458451Z",
+    "scannedAt": "2026-10-13T18:04:53.761458451Z",
+    "revalidatedAt": "2026-10-13T19:45:07.232191+00:00",
+    "newScanPerformed": false,
+    "releaseEligibilityEstablished": false,
+    "run": 38455754348,
+    "job": 115502355771,
+    "url": "https://github.com/closure-labs/finite/actions/runs/38455754348"
+  },
+  "liveSigning": {
+    "run": 38455754348,
+    "job": 115503338220,
+    "url": "https://github.com/closure-labs/finite/actions/runs/38455754348/job/115503338220",
+    "validationRevision": "3fd275c98d98a3a1c5fa028b32d64a7e692d18f7",
+    "candidate": "ghcr.io/closure-labs/finite@sha256:60b12153f6c3db4152225e6213ff5ae95971190cca87920b969a848b5fa423ef",
+    "status": "pass",
+    "publicKeyMatch": true,
+    "signatureVerification": true,
+    "transparencyVerification": true,
+    "completedAt": "2026-10-13T19:45:32Z"
+  },
+  "currentStandardCandidate": {
+    "image": "ghcr.io/closure-labs/finite@sha256:60b12153f6c3db4152225e6213ff5ae95971190cca87920b969a848b5fa423ef",
+    "sourceRevision": "b274129fc76f2bdf588b4b312d83af4759e0d1a7",
+    "validationRevision": "3fd275c98d98a3a1c5fa028b32d64a7e692d18f7",
+    "buildIdentity": "v1:c18c0a03ca5aec8050fff90ec4148a9c8107a7b619bdad642e1569b763cc03e3",
+    "run": 38455754348,
+    "imageArtifact": {
+      "id": 11844316079,
+      "sha256": "0c0af48a67671d875abe3d39e2ba23abba70c65fabcbe9bb0ce64bb4cceada3c"
+    },
+    "securityArtifact": {
+      "id": 11844785081,
+      "sha256": "b11436e44df30ea1fddfa29ce476091fdeb8599f06e374cc41bbb15df06fc214"
+    },
+    "sourceAndBuild": "pass",
+    "vulnerabilityPolicy": "pass-reviewed-desktop-policy; unresolved advisories retained",
+    "signing": "pass",
+    "qualification": {
+      "job": 115503475912,
+      "status": "failed",
+      "artifact": 11848720476,
+      "artifactSha256": "9362e289ac881682de517d0cab7a9a934064e318694fab45cfc157f42d3029b5",
+      "freshCandidate": "pass-SecureBoot-encryptedRoot-SELinux-Enforcing",
+      "upgradePredecessorBoot": "pass",
+      "failureStage": "wrong-key signature rejection probe",
+      "rootCause": "unknown; bootc failed but rejection text did not match expected pattern and guest temporary log was deleted",
+      "upgradeAndRollback": "not-executed",
+      "promotion": "skipped"
+    },
+    "releaseEligibility": "blocked-incomplete-upgrade-VM-qualification",
+    "previousDigest": "sha256:0079daf9eb090e3304cbd9f719096d4e0c1ce461873a99af123bf14b989eee98"
+  },
+  "signaturePolicyDiagnostic": {
+    "run": 38465007600,
+    "url": "https://github.com/closure-labs/finite/actions/runs/38465007600",
+    "revision": "606c825dd7d11f341c9ea689bf738765d8f27fd6",
+    "artifact": 11847354805,
+    "artifactSha256": "2c4ecde813be02b2729ee68c9fed478625e2200e4650508c0ce91011a64ff273",
+    "verdict": "unknown-despite-workflow-success",
+    "correctKey": "OpenImage policy accepted; subsequent manifest pipe timed out",
+    "wrongKey": "A signature was required, but no signature exists",
+    "blobRequests": 0,
+    "authentication": "anonymous",
+    "limitation": "Does not recover deleted bootc error or establish VM upgrade/rollback",
+    "probeRepair": "Use policy-enforcing OpenImage only; propagate shell pipeline failures",
+    "correctedRun": 38466268480
+  },
+  "vmSignatureProbeRepair": {
+    "status": "focused-tests-pass-hosted-pending",
+    "focusedTests": 32,
+    "change": "Recognize observed missing-signature rejection; preserve sanitized guest diagnostics; always restore original policy and remove disposable keys",
+    "unrelatedErrorsAccepted": false,
+    "newCandidateRequired": true,
+    "reason": "Current image identity binds vm-acceptance.sh; keep identity enforcement"
   }
 }
