@@ -274,3 +274,14 @@ hold remain explicit. Release eligibility has not been established.
 - [x] Identify rclone fixed owning build3118644 / FEDORA-2026-e27d24d18c in testing; retain exact publisher evidence.
 - [ ] After approved stable promotion, authenticate RPM payload and validate transaction, compiler/modules and auth-proxy compatibility on hosted runners.
 - [ ] AnyIO: await signed owning4.14.2 update or verified specific backport; no qualifying Fedora44 build observed.
+
+## Rclone reference and consumer-call follow-up
+
+- [x] Senior developer: add explicit single-package signed reference inspection with unchanged default behavior and bounded inputs.
+- [x] Security/QA: independently validate selectors, staged-source status, signature/payload checks and no release claim.
+- [x] Hosted evidence: inspect only Fedora's signed rclone1.75.2 candidate; do not enable testing, install or execute package payloads.
+- [ ] Security reviewers: resolve specific gRPC and HTTP handler call paths or retain concrete remaining proof gaps.
+- Preserve externally initiated PR148 merge-queue validation; follow-up work uses a separate JJ child branch.
+
+- Signed rclone probe38361178024 passed: Fedora44 signature and executable bytes authenticated; actual Go1.26.9, x/crypto0.57.0, x/net0.60.0. Compare official advisory ranges before claiming prospective fixes; no current image clearance.
+- PR148 merged externally at4bab5195db5d; its merge-queue source gates passed38360619132.

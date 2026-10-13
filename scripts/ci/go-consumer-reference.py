@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Authenticate exact Fedora Buildah/Skopeo reference bytes on hosted runners.
+"""Authenticate explicitly selected Fedora Go consumer references on hosted runners.
 
 No package is installed or executed. Source/caller applicability and current
 candidate binding require separate review; this collector grants no clearance.
@@ -27,25 +27,42 @@ def module(name, path):
 utilities = module('consumer_reference_utilities', 'scripts/ci/freerdp-reference-evidence.py')
 app = module('consumer_build_info', 'scripts/ci/applicability-evidence.py')
 bounds = utilities.bounds
-MAX_RPM = 16 * 1024 * 1024
+MAX_RPM = 64 * 1024 * 1024
+DEFAULT_PACKAGES = ('buildah', 'skopeo')
 RPMS = {
-    'buildah': {'version': '1.43.4', 'epoch': '2', 'bytes': 10506112,
+    'buildah': {'version': '1.43.4', 'epoch': '2', 'bytes': 10506112, 'maxBytes': 16 * 1024 * 1024,
                'build': 3103124, 'rpm': 48829555,
                'sourceCommit': 'b99f65ea1800c6488c54aff69f29336f74f6e68f'},
-    'skopeo': {'version': '1.22.3', 'epoch': '1', 'bytes': 8184004,
+    'skopeo': {'version': '1.22.3', 'epoch': '1', 'bytes': 8184004, 'maxBytes': 16 * 1024 * 1024,
                'build': 3103472, 'rpm': 48834791,
                'sourceCommit': 'fb2d82ad5e8374f1f6cbe13994fe421a7b02cceb'},
+    # Signed Koji object Content-Length differs from the unsigned RPM metadata.
+    # This opt-in reference remains a testing candidate, not stable approval.
+    'rclone': {'version': '1.75.2', 'epoch': '0', 'bytes': 33108438, 'maxBytes': 48 * 1024 * 1024,
+               'build': 3118644, 'rpm': 49086983,
+               'sourceCommit': '2c9e6ea83beab2b4e5fea95aabb46d7936609b8f',
+               'repositoryStatusAtReview': 'updates-testing', 'approvedStableAvailable': False},
 }
 
 
+def reference_spec(name):
+    if name not in RPMS:
+        raise ValueError('Unknown reference package selector')
+    spec = RPMS[name]
+    if (type(spec['bytes']) is not int or type(spec['maxBytes']) is not int
+            or not 0 < spec['bytes'] <= spec['maxBytes'] < MAX_RPM):
+        raise ValueError('Reference requires an exact size within its reviewed package bound')
+    return spec
+
+
 def rpm_url(name):
-    version = RPMS[name]['version']
+    version = reference_spec(name)['version']
     return ('https://kojipkgs.fedoraproject.org/packages/' + name + '/' + version
             + '/1.fc44/data/signed/6d9f90a6/x86_64/' + name + '-' + version + '-1.fc44.x86_64.rpm')
 
 
 def download(name, destination):
-    expected, url = RPMS[name]['bytes'], rpm_url(name)
+    expected, url = reference_spec(name)['bytes'], rpm_url(name)
     class NoRedirect(urllib.request.HTTPRedirectHandler):
         def redirect_request(self, *args):
             raise ValueError('Reference redirects require separate publisher review')
@@ -117,7 +134,10 @@ def extract(name, archive, directory):
                 process.communicate()
 
 
-def collect(key, directory, runner=utilities.command, downloader=download, extractor=extract):
+def collect(key, directory, runner=utilities.command, downloader=download, extractor=extract, *, package=None):
+    selected = DEFAULT_PACKAGES if package is None else (package,)
+    for name in selected:
+        reference_spec(name)
     key_raw = utilities.read_regular(key, 65536)
     if hashlib.sha256(key_raw).hexdigest() != utilities.KEY_SHA256:
         raise ValueError('Require exact reviewed Fedora44 signing key')
@@ -135,10 +155,11 @@ def collect(key, directory, runner=utilities.command, downloader=download, extra
     database.mkdir(mode=0o700)
     runner(['rpmkeys', '--dbpath', str(database), '--import', str(key_copy)])
     packages = []
-    for name, spec in RPMS.items():
+    for name in selected:
+        spec = reference_spec(name)
         archive = directory / (name + '.rpm')
         downloaded = downloader(name, archive)
-        archive_raw = utilities.read_regular(archive, MAX_RPM)
+        archive_raw = utilities.read_regular(archive, spec['maxBytes'])
         sha = hashlib.sha256(archive_raw).hexdigest()
         if downloaded != {'url': rpm_url(name), 'bytes': len(archive_raw), 'sha256': sha} or len(archive_raw) != spec['bytes']:
             raise ValueError('Reference download binding mismatch')
@@ -159,17 +180,21 @@ def collect(key, directory, runner=utilities.command, downloader=download, extra
         go = app.inspect(payload / 'usr/bin' / name)
         if go['status'] != 'platform-proven' or go['sha256'] != expected['digest']['value'] or go['size'] != expected['size']:
             raise ValueError('Go metadata is not bound to authenticated reference bytes')
-        if hashlib.sha256(utilities.read_regular(archive, MAX_RPM)).hexdigest() != sha:
+        if hashlib.sha256(utilities.read_regular(archive, spec['maxBytes'])).hexdigest() != sha:
             raise ValueError('Reference archive changed during extraction')
         packages.append({'rpm': identity, 'kojiBuildId': spec['build'], 'kojiRpmId': spec['rpm'],
             'sourceCommit': spec['sourceCommit'], 'download': downloaded, 'signatureVerified': True,
             'signatureKeyFingerprint': utilities.FINGERPRINT, 'signatureKeySha256': utilities.KEY_SHA256,
             'signatureSha256': hashlib.sha256(signature.encode()).hexdigest(),
             'rpmFileManifestSha256': hashlib.sha256(manifest.encode()).hexdigest(),
-            'referencePath': '/usr/bin/' + name, 'referenceBytes': observed, 'goBuildInfo': go})
+            'referencePath': '/usr/bin/' + name, 'referenceBytes': observed, 'goBuildInfo': go,
+            'referenceScope': 'testing-candidate' if name == 'rclone' else 'historical-signed-reference',
+            'installationApproved': False, 'stableApprovalGranted': False,
+            **({key: spec[key] for key in ('repositoryStatusAtReview', 'approvedStableAvailable')}
+               if name == 'rclone' else {})})
     return {'schema': 1, 'status': 'signed-reference-bytes-proven', 'packages': packages,
         'observedAt': datetime.now(timezone.utc).isoformat(), 'releaseEligible': False,
-        'candidateBindingUnproven': True, 'dispositionsGranted': [], 'vulnerabilityClearance': 'not-assessed',
+        'candidateBindingUnproven': True, 'selectedPackages': list(selected), 'dispositionsGranted': [], 'vulnerabilityClearance': 'not-assessed',
         'collectorSha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         'supportingCollectors': {p: hashlib.sha256((ROOT / p).read_bytes()).hexdigest() for p in (
             'scripts/ci/applicability-evidence.py', 'scripts/ci/rpm-file-evidence.py', 'scripts/ci/freerdp-reference-evidence.py')},
@@ -181,13 +206,15 @@ def collect(key, directory, runner=utilities.command, downloader=download, extra
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--package', choices=tuple(RPMS),
+                        help='Collect only this reviewed reference (default: buildah and skopeo)')
     parser.add_argument('--key', type=Path, required=True)
     parser.add_argument('--directory', type=Path, required=True)
     args = parser.parse_args(argv)
     if os.environ.get('GITHUB_ACTIONS') != 'true' or os.environ.get('GITHUB_REPOSITORY') != 'closure-labs/finite':
         parser.error('Reference collection requires hosted Finite runners')
     try:
-        report = collect(args.key, args.directory)
+        report = collect(args.key, args.directory, package=args.package)
         encoded = json.dumps(report, indent=2) + '\n'
         if len(encoded.encode()) > 2 * 1024 * 1024:
             raise ValueError('Reference report exceeds bounds')

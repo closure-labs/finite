@@ -2,10 +2,11 @@
 """Authentication and actual collector integration regressions without downloads."""
 import hashlib
 import importlib.util
+import io
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parents[2]
 def load(name, path):
@@ -32,6 +33,7 @@ class ReferenceTests(unittest.TestCase):
             + app.utilities.FINGERPRINT + ': OK\nPayload SHA256 digest: OK\n')
         self.error = None
         self.executed = []
+        self.downloaded = []
 
     def runner(self, argv):
         self.executed.append(argv)
@@ -51,6 +53,7 @@ class ReferenceTests(unittest.TestCase):
             name + '-' + spec['version'] + '-1.fc44.src.rpm', '8', 'Fedora Project']) + '\n'
 
     def downloader(self, name, target):
+        self.downloaded.append(name)
         target.write_bytes(self.archive)
         result = {'url': app.rpm_url(name), 'bytes': len(self.archive), 'sha256': hashlib.sha256(self.archive).hexdigest()}
         if self.error == 'download': result['url'] = 'https://unapproved.example/package.rpm'
@@ -65,9 +68,9 @@ class ReferenceTests(unittest.TestCase):
             target.rename(target.with_suffix('.real'))
             target.symlink_to(target.name + '.real')
 
-    def collect(self, name='result'):
+    def collect(self, name='result', package=None):
         with patch.dict(app.RPMS, self.specs, clear=True), patch.object(app.utilities, 'KEY_SHA256', hashlib.sha256(self.key.read_bytes()).hexdigest()):
-            return app.collect(self.key, self.root / name, self.runner, self.downloader, self.extractor)
+            return app.collect(self.key, self.root / name, self.runner, self.downloader, self.extractor, package=package)
 
     def test_complete_collection_authenticates_bytes_and_records_metadata_without_payload_execution(self):
         result = self.collect()
@@ -76,6 +79,9 @@ class ReferenceTests(unittest.TestCase):
         self.assertTrue(result['candidateBindingUnproven'])
         self.assertEqual(result['dispositionsGranted'], [])
         self.assertEqual(len(result['packages']), 2)
+        self.assertEqual(result['selectedPackages'], ['buildah', 'skopeo'])
+        self.assertEqual(self.downloaded, ['buildah', 'skopeo'])
+        self.assertEqual([p['rpm']['name'] for p in result['packages']], ['buildah', 'skopeo'])
         for p in result['packages']:
             self.assertTrue(p['signatureVerified'])
             self.assertTrue(p['referenceBytes']['actualFileIntegrityVerified'])
@@ -109,6 +115,96 @@ class ReferenceTests(unittest.TestCase):
     def test_unreviewed_key_rejected_before_fetch(self):
         with self.assertRaises(ValueError): app.collect(self.key, self.root / 'out')
         self.assertEqual(self.executed, [])
+
+    def test_selected_rclone_authenticates_only_testing_reference_and_grants_no_approval(self):
+        result = self.collect(package='rclone')
+        self.assertEqual(self.downloaded, ['rclone'])
+        self.assertEqual(result['selectedPackages'], ['rclone'])
+        self.assertEqual(len(result['packages']), 1)
+        package = result['packages'][0]
+        self.assertEqual(package['rpm']['name'], 'rclone')
+        self.assertEqual(package['rpm']['epoch'], 0)
+        self.assertEqual(package['rpm']['version'], '1.75.2')
+        self.assertEqual(package['kojiBuildId'], 3118644)
+        self.assertEqual(package['kojiRpmId'], 49086983)
+        self.assertEqual(package['sourceCommit'], '2c9e6ea83beab2b4e5fea95aabb46d7936609b8f')
+        self.assertEqual(package['referenceScope'], 'testing-candidate')
+        self.assertEqual(package['repositoryStatusAtReview'], 'updates-testing')
+        for field in ('approvedStableAvailable', 'installationApproved', 'stableApprovalGranted'):
+            self.assertFalse(package[field])
+        self.assertFalse(result['releaseEligible'])
+        self.assertEqual(result['dispositionsGranted'], [])
+        self.assertTrue(package['signatureVerified'])
+        self.assertTrue(package['referenceBytes']['actualFileIntegrityVerified'])
+        self.assertEqual(package['goBuildInfo']['status'], 'platform-proven')
+        self.assertTrue(all(command[0] in ('rpmkeys', 'rpm') for command in self.executed))
+
+    def test_existing_single_package_selectors_do_not_repeat_other_reference(self):
+        for name in ('buildah', 'skopeo'):
+            self.downloaded.clear()
+            result = self.collect(name, package=name)
+            self.assertEqual(self.downloaded, [name])
+            self.assertEqual(result['selectedPackages'], [name])
+
+    def test_reviewed_signed_size_and_per_package_bounds(self):
+        self.assertEqual(app.RPMS['rclone']['bytes'], 33108438)
+        self.assertNotEqual(app.RPMS['rclone']['bytes'], 33000334)
+        for name in app.RPMS:
+            spec = app.reference_spec(name)
+            self.assertLess(spec['maxBytes'], 64 * 1024 * 1024)
+            self.assertLessEqual(spec['bytes'], spec['maxBytes'])
+        for field, value in (('bytes', 0), ('bytes', True), ('bytes', 64 * 1024 * 1024),
+                             ('maxBytes', 0), ('maxBytes', 64 * 1024 * 1024)):
+            with self.subTest(field=field, value=value), patch.dict(app.RPMS['rclone'], {field: value}):
+                with self.assertRaisesRegex(ValueError, 'reviewed package bound'):
+                    app.collect(self.key, self.root / 'invalid', package='rclone')
+        self.assertFalse((self.root / 'invalid').exists())
+
+    def test_rclone_signature_and_payload_fail_closed(self):
+        self.signature = 'Payload SHA256 digest: OK'
+        with self.assertRaises(ValueError):
+            self.collect('unsigned-rclone', package='rclone')
+        self.signature = ('Header OpenPGP V4 RSA/SHA256 signature, key fingerprint: '
+                          + app.utilities.FINGERPRINT + ': OK\nPayload SHA256 digest: OK\n')
+        self.error = 'payload'
+        with self.assertRaises(ValueError):
+            self.collect('altered-rclone', package='rclone')
+
+    def test_download_exact_size_rejects_header_truncation_and_extra_bytes(self):
+        for index, (raw, length) in enumerate(((self.archive, '999'),
+                                              (self.archive[:-1], None),
+                                              (self.archive + b'extra', None))):
+            response = io.BytesIO(raw)
+            response.status = 200
+            response.headers = {} if length is None else {'Content-Length': length}
+            response.geturl = lambda: app.rpm_url('rclone')
+            opener = Mock()
+            opener.open.return_value = response
+            with patch.dict(app.RPMS, self.specs, clear=True), \
+                    patch.object(app.urllib.request, 'build_opener', return_value=opener), \
+                    self.assertRaisesRegex(ValueError, 'length|size|bound'):
+                app.download('rclone', self.root / ('download-' + str(index)))
+
+    def test_unknown_selector_is_rejected_before_io(self):
+        with self.assertRaisesRegex(ValueError, 'Unknown reference package'):
+            app.collect(self.key, self.root / 'unknown', package='other')
+        self.assertFalse((self.root / 'unknown').exists())
+        with patch.object(app, 'collect') as collect, self.assertRaises(SystemExit) as error:
+            app.main(['--key', str(self.key), '--directory', str(self.root / 'out'), '--package', 'other'])
+        self.assertEqual(error.exception.code, 2)
+        collect.assert_not_called()
+
+    def test_cli_forwards_explicit_selector_and_default(self):
+        for index, selector in enumerate((None, 'rclone')):
+            directory = self.root / ('cli-' + str(index))
+            directory.mkdir()
+            args = ['--key', str(self.key), '--directory', str(directory)]
+            if selector:
+                args.extend(['--package', selector])
+            with patch.dict('os.environ', GITHUB_ACTIONS='true', GITHUB_REPOSITORY='closure-labs/finite'), \
+                    patch.object(app, 'collect', return_value={'releaseEligible': False}) as collect:
+                self.assertEqual(app.main(args), 0)
+                collect.assert_called_once_with(self.key, directory, package=selector)
 
     def test_main_requires_hosted_canonical_repository(self):
         with patch.dict('os.environ', {}, clear=True), self.assertRaises(SystemExit) as error:
