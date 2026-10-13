@@ -4,6 +4,26 @@ Finite is a Jujutsu repository, using Bluefin/bootc with Nix/Home Manager. All
 four desktop profiles and container tools remain supported. This is the current
 execution order; older audit ledgers remain historical evidence.
 
+## Candidate identity correction
+
+PR #152 merged at `31cdca7ffc15b537613d0f694191fcf8e06c1f4f` after
+[source](https://github.com/closure-labs/finite/actions/runs/38434206098) and
+[queue](https://github.com/closure-labs/finite/actions/runs/38435138430) checks passed.
+The trusted push-origin standard resume in
+[38435953230](https://github.com/closure-labs/finite/actions/runs/38435953230)
+stopped at the current-input identity guard before scanning or signing. The
+identity enumerates generated Python bytecode, whose timestamp headers can
+change between otherwise identical source checkouts.
+
+Correct the identity calculation to exclude generated tooling caches while
+retaining authored/shipped inputs. Validate deterministic identities, then build
+one fresh standard candidate under the corrected identity. Old mismatched
+identities are not accepted or rewritten. Standard and Next each still require
+fresh exact-candidate security, protected signing and enforcing VM qualification.
+Defer resume disk-cleanup optimization until the next image-workflow change;
+changing that workflow now selects four extra PR builds. Do not retry the old
+candidate or start Next against the same known identity failure.
+
 ## Current release continuation
 
 PR #151 merged at `2cb7b1ed0db02aeb9a82a90bffdd511dc843c8c0`.
@@ -14,8 +34,8 @@ The explicit compatible flags passed a hosted ephemeral-key test, including
 real transparency verification and wrong-key rejection. Exact candidates and
 artifact bindings are in [the signing ledger](signing-resume-evidence-2026-10-13.json).
 
-Resume standard generic first, then Next independently after the reviewed fix
-reaches main. Reuse authenticated fresh native security evidence, reevaluate
+The initial plan was to resume standard generic first, then Next independently.
+The identity failure above supersedes that attempt and requires fresh candidates. Reuse authenticated fresh native security evidence, reevaluate
 current policy, and retain original timestamps. Only absent or expired evidence
 permits a fresh scan; malformed evidence or policy failures stop qualification.
 The resume path retains protected signing, current-main checks and enforcing VM

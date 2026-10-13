@@ -1,11 +1,9 @@
 {
   "schema": 1,
   "sourceRevision": "2cb7b1ed0db02aeb9a82a90bffdd511dc843c8c0",
-  "originRun": 38426200092,
-  "originRunUrl": "https://github.com/closure-labs/finite/actions/runs/38426200092",
   "buildVerdict": "all-four-passed",
   "vulnerabilityPolicyVerdict": "all-four-passed-reviewed-desktop-exploitability-policy; unresolved advisories retained",
-  "releaseVerdict": "pending-protected-signing-and-enforcing-VM-qualification",
+  "releaseVerdict": "pending-deterministic-identity-fix-fresh-build-signing-and-enforcing-VM-qualification",
   "signingFailure": "Cosign legacy format conflicted with default use-signing-config=true",
   "fix": {
     "version": "v3.1.3",
@@ -30,26 +28,54 @@
     {
       "channel": "finite",
       "profile": "bluefin-generic",
-      "digest": "sha256:6eb02f393ad881f7816f0cce4861fc234d73e39c4afaacab139297df6e9af1e6",
-      "buildArtifact": 11829651464
+      "digest": "sha256:22cceae5f5ac7df135edcc9b973833ffaa2c455417d5d1ea8b3945216164baed",
+      "buildArtifact": 11826905461,
+      "buildArtifactSha256": "e5751a0b78b8ce900856cc65791ac16e13790cebda50ea63a62cbd9b3f60646e",
+      "qualificationRun": 38435953230
     },
     {
       "channel": "finite-next",
       "profile": "bluefin-next",
-      "digest": "sha256:c5788f2b79411b91ea5eb515201ca559dab10f958981778df930c9be7eca1857",
-      "buildArtifact": 11830500430
+      "digest": "sha256:c36c43f637741a7273e462c30d2714362288acfefd8f07012ce14c2ad6b935ed",
+      "buildArtifact": 11825787020,
+      "buildArtifactSha256": "88e6d96e2dc0d8565a026999fd9cae747fd53bbe70d57a89de37dd73ec4a46ad"
     }
   ],
   "sequence": [
-    "merge validated signing compatibility and bounded evidence reuse change",
-    "resume finite from exact origin candidate; reevaluate fresh evidence or scan if expired",
-    "verify protected signature and enforcing VM install/upgrade/rollback before promotion",
-    "repeat independently for finite-next"
+    "validate and merge deterministic image-input identity correction",
+    "build one fresh standard candidate with stable identity; scan sign and VM qualify exactdigest",
+    "promote standard only after all gates pass",
+    "repeat independently for Next"
   ],
   "owner": "Finite maintainers",
   "externalVulnerabilityBlockers": [],
   "limitations": [
     "No VM pass or release eligibility established by signing smoke",
     "Unresolved advisories accepted under explicit desktop risk policy are not fixed or proven harmless"
-  ]
+  ],
+  "scheduledOriginRun": 38426200092,
+  "scheduledOriginRunUrl": "https://github.com/closure-labs/finite/actions/runs/38426200092",
+  "originRun": 38417867223,
+  "originRunUrl": "https://github.com/closure-labs/finite/actions/runs/38417867223",
+  "originSelectionReason": "Existing resume policy accepts trusted main push/manual origins, not scheduled origins; use earlier passing build/security jobs at the same source revision without broadening trust.",
+  "validation": {
+    "revision": "2a8567c3556029fd1a2aaa0035f6259982f6e99b",
+    "sourceRun": 38434206098,
+    "mergeRun": 38435138430,
+    "mergeRevision": "31cdca7ffc15b537613d0f694191fcf8e06c1f4f",
+    "pr": 152,
+    "status": "pass",
+    "focusedTests": 138
+  },
+  "cancelledRedundantRun": 38435847079,
+  "resumeFailure": {
+    "run": 38435953230,
+    "url": "https://github.com/closure-labs/finite/actions/runs/38435953230",
+    "stage": "candidate-origin/current-runtime identity validation",
+    "error": "Origin candidate does not match the requested digest and current runtime inputs",
+    "signingAttempted": false,
+    "securityReevaluationAttempted": false,
+    "finding": "Identity enumerates generated scripts/bluebuild Python bytecode; cache headers depend on checkout modification times. Identical source can hash differently.",
+    "remediation": "Exclude generated Python caches from tooling identity, retain authored and shipped inputs, version canonical identity payload, and build new candidates without accepting old mismatched identities."
+  }
 }

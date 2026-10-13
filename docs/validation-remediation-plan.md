@@ -1,6 +1,6 @@
 # Validation and remediation plan
 
-Current signing/resume status: [exact candidates and signing validation](signing-resume-evidence-2026-10-13.json). All four current builds and vulnerability-policy checks passed; protected signing and enforcing VM qualification remain pending.
+Current signing/resume status: [exact candidates and signing validation](signing-resume-evidence-2026-10-13.json). Prior builds and vulnerability-policy checks passed, but candidate reuse failed its identity guard. Correct generated-cache identity drift, then build and qualify fresh candidates; protected signing and enforcing VM gates remain pending.
 
 Current execution order: [remediation and independent release sequence](release-implementation-sequence.md).
 

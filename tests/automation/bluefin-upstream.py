@@ -5,6 +5,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import py_compile
 from pathlib import Path
 import shutil
 import subprocess
@@ -24,6 +25,7 @@ def load(name, path):
 
 upstream = load('upstream', 'scripts/ci/bluefin-upstream.py')
 publication = load('publication', 'scripts/bluebuild/publication.py')
+identity_module = load('identity_cache_contract', 'scripts/ci/image_identity.py')
 NEW = 'sha256:' + 'a' * 64
 IMAGE = 'sha256:' + 'b' * 64
 IDENTITY = 'v1:' + 'c' * 64
@@ -605,6 +607,98 @@ class PublisherAuthentication(unittest.TestCase):
         self.assertEqual(len(evidence['verified']), 2)
         self.assertEqual({call.args[0][-1] for call in run.call_args_list},
                          {recipe['base'] + '@' + recipe['digest'] for recipe in upstream.recipes(self.root).values()})
+
+
+class DeterministicIdentity(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        for directory in ('recipes', 'files', 'sources', 'scripts', '.github'):
+            shutil.copytree(ROOT / directory, self.root / directory,
+                            ignore=shutil.ignore_patterns('payload', '__pycache__', '*.pyc', '*.pyo'))
+        shutil.copy2(ROOT / 'cosign.pub', self.root / 'cosign.pub')
+
+    def identity(self, profile='bluefin-generic'):
+        return identity_module.identity(profile, self.root, '/nix/store/fixture.drv')
+
+    def test_timestamp_bytecode_presence_and_changed_headers_do_not_change_identity(self):
+        source = self.root / 'scripts/bluebuild/publication.py'
+        original = {profile: self.identity(profile) for profile in ('bluefin-generic', 'bluefin-next')}
+        first = Path(py_compile.compile(str(source), doraise=True,
+                                       invalidation_mode=py_compile.PycInvalidationMode.TIMESTAMP))
+        first_bytes = first.read_bytes()
+        for profile, expected in original.items():
+            self.assertEqual(expected, self.identity(profile))
+        os.utime(source, (source.stat().st_atime, source.stat().st_mtime + 60))
+        py_compile.compile(str(source), doraise=True,
+                           invalidation_mode=py_compile.PycInvalidationMode.TIMESTAMP)
+        self.assertNotEqual(first_bytes, first.read_bytes())
+        (source.parent / 'publication.pyc').write_bytes(b'different interpreter cache')
+        (source.parent / 'publication.pyo').write_bytes(b'legacy optimization cache')
+        nested = source.parent / 'nested/__pycache__'
+        nested.mkdir(parents=True)
+        (nested / 'helper.cpython-999.pyc').write_bytes(b'other cache')
+        for profile, expected in original.items():
+            self.assertEqual(expected, self.identity(profile))
+        first.unlink()
+        for profile, expected in original.items():
+            self.assertEqual(expected, self.identity(profile))
+
+    def test_authored_helper_bytes_still_change_both_profile_identities(self):
+        before = {profile: self.identity(profile) for profile in ('bluefin-generic', 'bluefin-next')}
+        source = self.root / 'scripts/bluebuild/build.sh'
+        source.write_bytes(source.read_bytes() + b'\n# Authored change\n')
+        for profile, expected in before.items():
+            self.assertNotEqual(expected, self.identity(profile))
+
+    def test_authored_source_inside_cache_directory_remains_an_input(self):
+        for name in ('helper.py', 'helper.sh'):
+            before = self.identity()
+            path = self.root / 'scripts/bluebuild/__pycache__' / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text('# Authored source in an unusual directory\n')
+            self.assertNotEqual(before, self.identity())
+            before = self.identity()
+            path.write_text('# Changed authored source\n')
+            self.assertNotEqual(before, self.identity())
+
+    def test_python_cache_names_in_shipped_inputs_are_not_excluded(self):
+        for relative in ('files/scripts/example.pyc', 'files/system/__pycache__/example.pyc'):
+            before = self.identity()
+            path = self.root / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b'shipped bytes must remain an input')
+            self.assertNotEqual(before, self.identity())
+            before = self.identity()
+            path.write_bytes(b'changed shipped bytes')
+            self.assertNotEqual(before, self.identity())
+
+    def test_generic_and_next_kernel_inputs_remain_isolated(self):
+        generic, next_image = self.identity(), self.identity('bluefin-next')
+        path = self.root / 'files/scripts/kernel-next.sh'
+        path.write_bytes(path.read_bytes() + b'\n')
+        self.assertEqual(generic, self.identity())
+        self.assertNotEqual(next_image, self.identity('bluefin-next'))
+        generic, next_image = self.identity(), self.identity('bluefin-next')
+        path = self.root / 'files/scripts/kernel-generic-security.py'
+        path.write_bytes(path.read_bytes() + b'\n')
+        self.assertNotEqual(generic, self.identity())
+        self.assertEqual(next_image, self.identity('bluefin-next'))
+
+    def test_new_input_schema_changes_hash_without_changing_transport_format(self):
+        captured = []
+        dumps = identity_module.json.dumps
+        def observe(value, **kwargs):
+            captured.append(value)
+            return dumps(value, **kwargs)
+        with patch.object(identity_module.json, 'dumps', side_effect=observe):
+            current = self.identity()
+        self.assertEqual(captured[0]['schema'], 2)
+        previous_contract = {**captured[0], 'schema': 1}
+        prior = 'v1:' + hashlib.sha256(dumps(previous_contract, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+        self.assertRegex(current, r'^v1:[a-f0-9]{64}$')
+        self.assertNotEqual(current, prior)
 
 
 if __name__ == '__main__':
