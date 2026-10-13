@@ -28,10 +28,14 @@ requirements and limits. Secret-store adoption is independent of image release.
 PR #154 deployed the named signing boundary and Doppler pilot after source/queue
 validation passed. The claims-only pilot passed; no Doppler workspace exists.
 Resume38452104611 recovered the immutable candidate but stopped before signing:
-sandboxed Skopeo could not read its default credential path. The next repair
-provides a private, short-lived registry auth file only around candidate
-inspection, preserving the non-root resource limits and all trust checks.
-No image rebuild or policy exception is needed for this runtime error.
+sandboxed Skopeo could not read its default credential path. PR #155 provides a
+private, short-lived registry auth file only around candidate inspection, preserving the non-root resource limits and all trust checks.
+Corrected resume38455754348 passed native security reuse and protected signing
+without rebuilding or rescanning. The key matched `cosign.pub`, and signature
+and transparency verification passed. Fresh Secure Boot/encrypted-root/enforcing VM qualification passed. The upgrade
+path stopped at the wrong-key rejection probe; its temporary diagnostic was
+deleted, so the underlying bootc error is unknown. Preserve diagnostics and
+resolve that failure before claiming upgrade/rollback or release eligibility.
 
 ## Historical candidate identity correction
 
