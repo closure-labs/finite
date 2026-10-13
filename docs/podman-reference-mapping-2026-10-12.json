@@ -1,0 +1,71 @@
+{
+  "schema": 1,
+  "status": "native hashes match declared files; signed reference payload proof pending",
+  "selectorImage": "ghcr.io/closure-labs/finite@sha256:66ff1f5c91ae5ddf97ac5c09bd510765888afd30457e535ae5710abb8a37f01e",
+  "sourceSummarySha256": "901cc5af571ed932852c9a7351b6480192e0a83acd017c53f27e3bbf80bcd8e1",
+  "sbomSha256": "23419f2a7c9a103f3552a5fae65a2e5a1044af50da96a797e001ed13bd254aa8",
+  "kojiBuild": 3103127,
+  "kojiRpm": 48829615,
+  "epoch": 5,
+  "version": "5.8.7",
+  "release": "1.fc44",
+  "architecture": "x86_64",
+  "sourceCommit": "4d5daf480eb219a34e6c4cb96818c3d1de6d80a5",
+  "upstreamCommit": "c593b672bf3db1173aebea565ebf1a724ea196dc",
+  "sourceRpm": "podman-5.8.7-1.fc44.src.rpm",
+  "rpmUrl": "https://kojipkgs.fedoraproject.org/packages/podman/5.8.7/1.fc44/data/signed/6d9f90a6/x86_64/podman-5.8.7-1.fc44.x86_64.rpm",
+  "rpmBytes": 16107978,
+  "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+  "advisories": [
+    "CVE-2025-6032",
+    "CVE-2025-9566",
+    "CVE-2026-57231",
+    "GHSA-4hq8-gpf5-8p68",
+    "GHSA-65gg-3w2w-hr4h",
+    "GHSA-wp3j-xq48-xpjw"
+  ],
+  "matches": [
+    {
+      "path": "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+      "referencePath": "/usr/bin/podman",
+      "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+      "size": 45362352,
+      "mode": 33261
+    },
+    {
+      "path": "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+      "referencePath": "/usr/libexec/podman/rootlessport",
+      "sha256": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd",
+      "size": 3210992,
+      "mode": 33261
+    },
+    {
+      "path": "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+      "referencePath": "/usr/libexec/podman/quadlet",
+      "sha256": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454",
+      "size": 2515640,
+      "mode": 33261
+    },
+    {
+      "path": "/usr/bin/podman",
+      "referencePath": "/usr/bin/podman",
+      "sha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+      "size": 45362352,
+      "mode": 33261
+    },
+    {
+      "path": "/usr/libexec/podman/quadlet",
+      "referencePath": "/usr/libexec/podman/quadlet",
+      "sha256": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454",
+      "size": 2515640,
+      "mode": 33261
+    },
+    {
+      "path": "/usr/libexec/podman/rootlessport",
+      "referencePath": "/usr/libexec/podman/rootlessport",
+      "sha256": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd",
+      "size": 3210992,
+      "mode": 33261
+    }
+  ]
+}

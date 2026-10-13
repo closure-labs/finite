@@ -237,7 +237,7 @@
   "sourceValidation": {
     "focusedTests": 260,
     "independentReview": "approved; no open source-integration findings",
-    "hostedFinalSource": "pending",
+    "hostedFinalSource": "PR147 PASS38342366434; stacked PR148 PASS38349399433; final evidence-retention revision and run are recorded in the PR description after ordinary checks",
     "focusedTestBreakdown": {
       "rpmFloors": 17,
       "prerequisites": 10,
@@ -256,7 +256,7 @@
   "completeCandidateEvidence": {
     "run": 38330308713,
     "sourceRevision": "7dba29d3da8770b11ae633545a53854ba10ee353",
-    "status": "first complete production security scans running under approved policy; existing run reused",
+    "status": "Complete four-profile source/build/runtime PASS; native policy BLOCKED; signing/qualification/promotion skipped",
     "newCurlFloorIncluded": false,
     "newCollectorIncluded": false,
     "profiles": {
@@ -267,7 +267,7 @@
         "previousPublicImage": "ghcr.io/closure-labs/finite@sha256:33e7b69d9c597dfbd5f907d63823cb9a6fe96533a3c5393b8a48caa440bba32c",
         "upstreamFoundation": "ghcr.io/ublue-os/bluefin-dx@sha256:425db37c0d8e2791b29a41a04cc744b8f17c707b3ceeb8c46bdc0b155ce14b7a",
         "qualificationRequired": true,
-        "buildArtifactSha256": "b8ef58a3a6bd1d94288d7ef59d12f41aef8b23978d72130b53db086351ea7a3e"
+        "publicationRecordSha256": "b8ef58a3a6bd1d94288d7ef59d12f41aef8b23978d72130b53db086351ea7a3e"
       },
       "bluefin-dx-generic": {
         "candidateImage": "ghcr.io/closure-labs/finite@sha256:615b3c01d3b6cebe3ecd67d1005b1d8fa2918675dff20d28191deea5313279a3",
@@ -276,7 +276,7 @@
         "previousPublicImage": "ghcr.io/closure-labs/finite@sha256:b64254f3ba54fa5a6ce3802147812d54f4873e124a4b683e486d8cad535dd490",
         "upstreamFoundation": "ghcr.io/ublue-os/bluefin-dx@sha256:425db37c0d8e2791b29a41a04cc744b8f17c707b3ceeb8c46bdc0b155ce14b7a",
         "qualificationRequired": true,
-        "buildArtifactSha256": "e341de8d424f127aae24486579a5adbfae2c48b42bc773a16ae509a9f8b20b98"
+        "publicationRecordSha256": "e341de8d424f127aae24486579a5adbfae2c48b42bc773a16ae509a9f8b20b98"
       },
       "bluefin-next": {
         "candidateImage": "ghcr.io/closure-labs/finite@sha256:a85115bb4155b848867a0518c3c3c3bb59f73586bcfa73108cf0ba21dafbc790",
@@ -285,7 +285,7 @@
         "previousPublicImage": "ghcr.io/closure-labs/finite@sha256:befdd47f9be55a4cf4824ed0351e077513008339201a6c688dbc03932507e893",
         "upstreamFoundation": "ghcr.io/ublue-os/bluefin@sha256:61c3d546bea3a0012378214de3603d9eadc2111330765a4a31b14215d4bacaea",
         "qualificationRequired": true,
-        "buildArtifactSha256": "487fe0ddd901e609dfd8a06834610d92ff765eaf0bfc4e3ce939d23bd1652008"
+        "publicationRecordSha256": "487fe0ddd901e609dfd8a06834610d92ff765eaf0bfc4e3ce939d23bd1652008"
       },
       "bluefin-generic": {
         "candidateImage": "ghcr.io/closure-labs/finite@sha256:66ff1f5c91ae5ddf97ac5c09bd510765888afd30457e535ae5710abb8a37f01e",
@@ -294,13 +294,13 @@
         "previousPublicImage": "ghcr.io/closure-labs/finite@sha256:0079daf9eb090e3304cbd9f719096d4e0c1ce461873a99af123bf14b989eee98",
         "upstreamFoundation": "ghcr.io/ublue-os/bluefin@sha256:61c3d546bea3a0012378214de3603d9eadc2111330765a4a31b14215d4bacaea",
         "qualificationRequired": true,
-        "buildArtifactSha256": "4ff273751802ad71a7e8462f46c04a11e5c23e4cf4dcbfef6d3ff4bf99500254"
+        "publicationRecordSha256": "4ff273751802ad71a7e8462f46c04a11e5c23e4cf4dcbfef6d3ff4bf99500254"
       }
     }
   },
   "verdicts": {
-    "sourceBuild": "Focused source and signed Curl transaction PASS; final hosted source/matrix pending",
-    "vulnerabilityClearance": "BLOCKED; prior diagnostic121pairs not automatically resolved by new source or official-range leads",
+    "sourceBuild": "PASS PR147 four-profile38342366434 and PR148 source/payload/CI gate38349399433; final documentation retention revision requires its ordinary checks",
+    "vulnerabilityClearance": "BLOCKED standard87pairs/266records andDX135pairs/481records; bothNext profiles retain kernel source hold",
     "releaseEligibility": "INELIGIBLE until current full-candidate risk policy, applicable source holds, isolated signing and boot qualification pass"
   },
   "mainCandidateSecurity": {
@@ -437,7 +437,7 @@
   },
   "finalFocusedSourceValidation": {
     "status": "PASS",
-    "tests": 369,
+    "tests": 401,
     "files": [
       {
         "path": "tests/automation/bluefin-upstream.py",
@@ -527,6 +527,16 @@
       {
         "path": "tests/ci/approved-baseline.py",
         "tests": 11,
+        "status": "PASS"
+      },
+      {
+        "path": "tests/ci/podman-reference-evidence.py",
+        "tests": 15,
+        "status": "PASS"
+      },
+      {
+        "path": "tests/ci/httpd-reference-evidence.py",
+        "tests": 17,
         "status": "PASS"
       }
     ],
@@ -724,10 +734,14 @@
     "standardRun": 38341281199,
     "developmentRun": 38341284379,
     "sourceChecks": "PASS documentation and pinned Nix/runtime contracts for both runs",
-    "nativeVerdicts": "pending",
+    "nativeVerdicts": "Both complete BLOCKED with valid evidence; no scanner errors",
     "publication": false,
     "signing": false,
-    "releaseEligible": false
+    "releaseEligible": false,
+    "standardVerdict": "Completed native policy BLOCKED; build/runtime PASS, scanner/collector path successful;291blocking and876advisoryrecords",
+    "standardImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+    "developmentVerdict": "Completed native policy BLOCKED; build/runtime PASS and collector/scanner path successful;518blocking and1482advisoryrecords",
+    "developmentImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845"
   },
   "independentFinalReview": {
     "verdict": "APPROVED",
@@ -745,9 +759,746 @@
     "sourceRpm": "freerdp-3.31.1-1.fc44.src.rpm",
     "sourceCommit": "199c380597cb7f4642ebd299865a3032aef4e89b",
     "signatureFingerprint": "36F612DCF27F7D1A48A835E4DBFCF71C6D9F90A6",
-    "candidateBinding": "old main66 native selectors match all12; new changed candidate join pending",
+    "candidateBinding": "Historical main66 byte proof PASS; current3.32.1 matches not observed, old12object byte join unknown; no current disposition",
     "dispositionsGranted": [],
     "releaseEligible": false,
     "limits": "Runs a bounded Fedora tooling container; does not pull or execute a Finite candidate or perform a new image scan"
+  },
+  "guardedResumeRealOriginValidation": {
+    "schema": 1,
+    "status": "PASS origin metadata and previously verified archive/named files",
+    "run": 38330308713,
+    "sourceRevision": "7dba29d3da8770b11ae633545a53854ba10ee353",
+    "imageJobId": 115079706653,
+    "artifactId": 11783266938,
+    "archiveDigest": "sha256:7a6ff57331f3223df329532b130aec5da4a0edcce069f82b2c13197c68a44b21",
+    "profile": "bluefin-generic",
+    "namedFileSha256": {
+      "bluefin-generic-publication.json": "4ff273751802ad71a7e8462f46c04a11e5c23e4cf4dcbfef6d3ff4bf99500254",
+      "bluefin-generic-image-ref.txt": "3b47acebcd38e934e3b1445a15745d391afcee0894b92df792ae826fc607f725",
+      "bluefin-generic.Containerfile": "33f2a30a8397c9501d3be1501108ea434eaa2ee34e12123e2b0ff8450195ab6e"
+    },
+    "resumePerformed": false,
+    "releaseEligible": false
+  },
+  "pullRequest": {
+    "number": 147,
+    "url": "https://github.com/closure-labs/finite/pull/147",
+    "baseRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+    "validationHead": "68fbf8759df3208dc6879640aa7d211d9162addf",
+    "run": 38342366434,
+    "status": "PASS all four image builds/runtime inspections, documentation, pinned Nix contracts and CI gate",
+    "profiles": [
+      {
+        "profile": "bluefin-dx-generic",
+        "testedRevision": "cbc84b982c59c2dcfd793165a55963045c2eef4d",
+        "buildIdentity": "v1:63b894c31065a8f67da6f98654456fb556b58d368e655e9d0b45466f25b65cc4",
+        "baseImage": "ghcr.io/ublue-os/bluefin-dx@sha256:a41cf1ebc4b6718cab813f221b8394c963ed3f0777b52e19fe6c3784b15c52ed",
+        "localDockerId": "sha256:3a5b5eabe5b17df9b51690dc715919bbb8ecb9b2e0cdf78a30d40ff3ebadc031",
+        "publicationRecordSha256": "441eacd6e68682ce627817c2c7b2fc168e0154f0400e6baf9216d1f6cb91624b",
+        "imageInspectSha256": "2b53bab0b228a9ca00329af7a173b941fd85ad72c59794905d65f06a4274a7a4",
+        "published": false,
+        "artifactId": 11787607781,
+        "artifactName": "image-bluefin-dx-generic-38342366434-1",
+        "artifactArchiveSha256": "8ea8559e1868ea9744331c70104ce5ea97ad3b87930975f87f7d1b0b7817bf9c"
+      },
+      {
+        "profile": "bluefin-dx-next",
+        "testedRevision": "cbc84b982c59c2dcfd793165a55963045c2eef4d",
+        "buildIdentity": "v1:343e5123a70f4bc360f25941e16fe395e69abacd441b27df5fa5af0f8a6b3576",
+        "baseImage": "ghcr.io/ublue-os/bluefin-dx@sha256:a41cf1ebc4b6718cab813f221b8394c963ed3f0777b52e19fe6c3784b15c52ed",
+        "localDockerId": "sha256:ccbb1358c5d26a20a5ee8f8fb8937cd18d859338908d1ad9247939de18d9e8bc",
+        "publicationRecordSha256": "3858f465db346fa0ffd0003e704704e853ec2599f8ddbf97d9d2e655dee1ccbe",
+        "imageInspectSha256": "5066a31f1e2c6d4aa916086d7d50ad43d7d7c01f6c97e9298904499b94229af2",
+        "published": false,
+        "artifactId": 11788261115,
+        "artifactName": "image-bluefin-dx-next-38342366434-1",
+        "artifactArchiveSha256": "e939c3bfe7e23c67cd95c6ab30fe29f011d2f83a145a2c97b1eabba2444aef94"
+      },
+      {
+        "profile": "bluefin-generic",
+        "testedRevision": "cbc84b982c59c2dcfd793165a55963045c2eef4d",
+        "buildIdentity": "v1:06f2fcf0615f63fbfca5e04a0d7203d153658e62c51306dd2e07fb79c6ac2830",
+        "baseImage": "ghcr.io/ublue-os/bluefin@sha256:23b7bf54349f1a93c2fea4168c7725a632641ee67ae29b0951ef1976c1ba2bc9",
+        "localDockerId": "sha256:6c964145eb25fa17cc8b80de29c6689dab4ff51b376a69f4e85a4e4c7764bb99",
+        "publicationRecordSha256": "8e3dd3679a43831882f3c818e2415132a0d85c0ea4d3309cd3df303321e0ea79",
+        "imageInspectSha256": "0be53e70b5c641fdca8d1411f29b6b942eeb8d4cb082a6e50e59e62e8ef41b19",
+        "published": false,
+        "artifactId": 11787987033,
+        "artifactName": "image-bluefin-generic-38342366434-1",
+        "artifactArchiveSha256": "76b4a27624275b249c0d3c504cb02bb2b752326dbd34f9e94ee38c358993a6ba"
+      },
+      {
+        "profile": "bluefin-next",
+        "testedRevision": "cbc84b982c59c2dcfd793165a55963045c2eef4d",
+        "buildIdentity": "v1:5e706df7ee4ae16a586597625715d062954d5b00943db7e6c9e33724fc5c18b0",
+        "baseImage": "ghcr.io/ublue-os/bluefin@sha256:23b7bf54349f1a93c2fea4168c7725a632641ee67ae29b0951ef1976c1ba2bc9",
+        "localDockerId": "sha256:a4491d769dc84cbcccd768be2ce1c60408e491d0cf4bb76987c347d74c2feb3a",
+        "publicationRecordSha256": "94f20e67c43f1b3f5d3497d570e7afb8306b66d4947338356b9522cce3ec5f47",
+        "imageInspectSha256": "450561e86de3750a3ad66eeb98a62d91416a840bf0fa185cdd7845a1c3f97e79",
+        "published": false,
+        "artifactId": 11787499799,
+        "artifactName": "image-bluefin-next-38342366434-1",
+        "artifactArchiveSha256": "018b3c5bf5f345f3dc7f5c2178cb673c8dd768691fd4c61d5cee98d02133fdf9"
+      }
+    ]
+  },
+  "signedPodmanReference": {
+    "run": 38344182246,
+    "url": "https://github.com/closure-labs/finite/actions/runs/38344182246",
+    "sourceRevision": "ea3c94813e7106f3a1bad8ffb16e3023402b30a1",
+    "status": "PASS signed reference bytes",
+    "report": "docs/podman-signed-reference-2026-10-12.json",
+    "reportSha256": "0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+    "referencePayloads": 3,
+    "historicalSelectorPaths": 6,
+    "sourceRpm": "podman-5.8.7-1.fc44.src.rpm",
+    "sourceCommit": "4d5daf480eb219a34e6c4cb96818c3d1de6d80a5",
+    "scope": "Three main-module advisories only; all new candidate aliases/locations require independent byte binding; embedded dependencies/compiler remain separate",
+    "candidateBinding": "PASS six exact current candidates/all aliases/paths;3main-module advisories perimage",
+    "dispositionsGranted": [],
+    "releaseEligible": false
+  },
+  "currentCandidateSummary": {
+    "run": 38344754471,
+    "sourceRevision": "bfa94d443c4e",
+    "status": "PASS retained-native summary and existing comparison helper; no new scan",
+    "candidates": [
+      {
+        "label": "bluefin-dx-generic",
+        "image": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+        "sbomSha256": "afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "nativeResultSha256": "7cdbb3e6a941de295d48ef0f2a7cfc8c72b4ec383ca990e6a17de0cf114605bb",
+        "summarySha256": "90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+        "blockingPairs": 146,
+        "blockingRecords": 518,
+        "sourceHolds": [],
+        "comparisonSha256": "31395bd61836e10e78d130548b68fd56b390ddc83ba3e02075749edb4891ea6a",
+        "comparisonCounts": {
+          "persistent": 590,
+          "new": 0,
+          "notObserved": 169,
+          "dispositionChanges": 0
+        }
+      },
+      {
+        "label": "bluefin-generic",
+        "image": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+        "sbomSha256": "8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199",
+        "nativeResultSha256": "814aab9be9c5872dd844ffcbe4d8205a092c6ca43dec11167c4a49aeaa891805",
+        "summarySha256": "868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f",
+        "blockingPairs": 93,
+        "blockingRecords": 291,
+        "sourceHolds": [],
+        "comparisonSha256": "5e3d471dc257253e8a8c419dab459919d2686bbcd424c3711e44aa04ff80df85",
+        "comparisonCounts": {
+          "persistent": 405,
+          "new": 0,
+          "notObserved": 137,
+          "dispositionChanges": 0
+        }
+      },
+      {
+        "label": "main-bluefin-dx-generic",
+        "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+        "sbomSha256": "d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64",
+        "nativeResultSha256": "b6439aee802b91d107231e19cdd6ddc405d5546204db05d46f14b99ba3086f56",
+        "summarySha256": "21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+        "blockingPairs": 146,
+        "blockingRecords": 518,
+        "sourceHolds": [],
+        "comparisonSha256": "b582cbe5494e10f7dcfd1362bf9ad0adca1c5f614bf0e6cdb8075005f6ec9458",
+        "comparisonCounts": {
+          "persistent": 590,
+          "new": 0,
+          "notObserved": 169,
+          "dispositionChanges": 0
+        }
+      },
+      {
+        "label": "main-bluefin-dx-next",
+        "image": "ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+        "sbomSha256": "46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5",
+        "nativeResultSha256": "5724e3de7bbfd54999a962439452e4d9713f6ce1226c3fdbe126454868ba734b",
+        "summarySha256": "fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+        "blockingPairs": 146,
+        "blockingRecords": 518,
+        "sourceHolds": [
+          "next-kernel-october-source-fixes"
+        ],
+        "comparisonSha256": "beaf75309c4f1c5494873e2d6acf8fe3a9d677e6158de1f6ab48b46646b6ec95",
+        "comparisonCounts": {
+          "persistent": 590,
+          "new": 0,
+          "notObserved": 169,
+          "dispositionChanges": 0
+        }
+      },
+      {
+        "label": "main-bluefin-generic",
+        "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+        "sbomSha256": "4902fdd4b2afca8374a3197770f25daa11c7626cb5c83c46fb614ad1f5441201",
+        "nativeResultSha256": "92127eae6a60001c57937bb329061da88bdc6a933a993a6a047c6be7466518ca",
+        "summarySha256": "5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9",
+        "blockingPairs": 93,
+        "blockingRecords": 291,
+        "sourceHolds": [],
+        "comparisonSha256": "55c4606905473799fceebfb530a665a6098017ae10d7152486484150a85eafbb",
+        "comparisonCounts": {
+          "persistent": 405,
+          "new": 0,
+          "notObserved": 137,
+          "dispositionChanges": 0
+        }
+      },
+      {
+        "label": "main-bluefin-next",
+        "image": "ghcr.io/closure-labs/finite@sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+        "sbomSha256": "bcf12455b002324b0c5923110de414cde3528d164bbb6b230dc2e8efb69f56b4",
+        "nativeResultSha256": "64182a6c9df652cdfdf3c07d19b7983a7ac297d43bff97f18cac74cd12d8f95c",
+        "summarySha256": "81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f",
+        "blockingPairs": 93,
+        "blockingRecords": 291,
+        "sourceHolds": [
+          "next-kernel-october-source-fixes"
+        ],
+        "comparisonSha256": "0aac0ecb66f1f05fd197458901b6918af913fae63168584ba099caf2b995ca0b",
+        "comparisonCounts": {
+          "persistent": 405,
+          "new": 0,
+          "notObserved": 137,
+          "dispositionChanges": 0
+        }
+      }
+    ]
+  },
+  "currentProofReview": {
+    "status": "APPROVED independent security/QA; final full-native reevaluation PASS38348146097",
+    "policySha256": "cb55ca02a90c70857a858911ca37820a2add7d1a5b4a5c29c0b7db6caf69dee9",
+    "reviewedDispositions": 51,
+    "scope": "36 exact nonapplicability scopes plus15 exact accepted SSH large-write availability-risk scopes, all14dayexpiry; unreleasable SSH resource leaks/HTTP2 host-memory risks remain blocked",
+    "goJoin": "docs/current-go-applicability-2026-10-12.json",
+    "goJoinSha256": "20c0e3d9324db1c021ff0891752784443173138a17642fad1817b29764e64bba",
+    "podmanJoin": "docs/current-podman-applicability-2026-10-12.json",
+    "podmanJoinSha256": "02edba7bb6ab7755644977eac789fdd66e4fbff439785297696ee53d418571db",
+    "unknownRpmJoin": "docs/current-rpm-applicability-2026-10-12.json",
+    "newScans": false,
+    "releaseEligible": false,
+    "sshAvailabilityReview": "docs/current-ssh-availability-review-2026-10-12.json",
+    "sshAvailabilityReviewSha256": "ee188ecfbcd0fcfddc1ba1b275dc2ded7471fd9898590e7621f52121979687c9"
+  },
+  "signedHttpdHistoricalReference": {
+    "run": 38344687698,
+    "sourceRevision": "97b0adc1a4b3c32e8d2724ec1e270daf6f66774f",
+    "status": "PASS five signedRPMs and392files; historical version2.4.68 only",
+    "report": "docs/httpd-signed-reference-2026-10-12.json",
+    "reportSha256": "9eeb6dc7dd99830b56aa5a90c66383d6221e13b5e9241f605b291fc3a0ea25b5",
+    "currentVersion": "2.4.69-1.fc44",
+    "currentByteEquivalence": "unproven;276unchanged/115different/1unavailable percurrentdeclaredmanifest",
+    "dispositionsGranted": [],
+    "releaseEligible": false,
+    "retainedSummarySha256": "8d8b50c961af46eb2a48dfd716a6cf672e84e78655103b11e155198a63425d10"
+  },
+  "policyReevaluation": {
+    "run": 38348146097,
+    "sourceRevision": "e69877336ca1370d71765710fb7477dacdc92d00",
+    "status": "PASS reproduced all six original results, preserved observations and evaluated final scoped policy; no builds, image pulls or new scans",
+    "policySha256": "cb55ca02a90c70857a858911ca37820a2add7d1a5b4a5c29c0b7db6caf69dee9",
+    "candidates": [
+      {
+        "schema": 1,
+        "status": "blocked",
+        "image": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+        "profile": "bluefin-dx-generic",
+        "sourceRun": 38341284379,
+        "sourceRevision": "1d347b7456b0cf64d4372cc0e7a562a9e63eb45b",
+        "policySha256": "cb55ca02a90c70857a858911ca37820a2add7d1a5b4a5c29c0b7db6caf69dee9",
+        "sourceResultSha256": "7cdbb3e6a941de295d48ef0f2a7cfc8c72b4ec383ca990e6a17de0cf114605bb",
+        "resultSha256": "10ecc4dcc625637552a53c03d00ed9bce3c60df68ed29b46b079d3b9591908f0",
+        "sbomSha256": "afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "vulnerabilitiesSha256": "7f2023d2ed029d4e6532ef34650640b53060464d56ea9c017c745da547cc60e8",
+        "configurationDigest": "sha256:f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357",
+        "originalPolicyReproduced": true,
+        "observationsUnchanged": true,
+        "newScanPerformed": false,
+        "releaseEligible": false,
+        "beforeBlockingPairs": 146,
+        "blockingPairs": 135,
+        "blockingRecords": 481,
+        "advisoryRecords": 1519,
+        "reviewedNonapplicableRecords": 29,
+        "releaseBlockers": [],
+        "summarySha256": "a0acb36521bcc4c5f33fa90ee25666744d055866f3af0767a8ec2f8e8aef45e5",
+        "comparisonSha256": "00408194571684f28f4af01b169e96d56a878a855533de39ab6fc7fbd5b4ff6f",
+        "reviewedRoutineRecords": 8,
+        "comparisonCounts": {
+          "persistent": 590,
+          "new": 0,
+          "notObserved": 169,
+          "dispositionChanges": 11
+        }
+      },
+      {
+        "schema": 1,
+        "status": "blocked",
+        "image": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+        "profile": "bluefin-generic",
+        "sourceRun": 38341281199,
+        "sourceRevision": "1d347b7456b0cf64d4372cc0e7a562a9e63eb45b",
+        "policySha256": "cb55ca02a90c70857a858911ca37820a2add7d1a5b4a5c29c0b7db6caf69dee9",
+        "sourceResultSha256": "814aab9be9c5872dd844ffcbe4d8205a092c6ca43dec11167c4a49aeaa891805",
+        "resultSha256": "05aea391201514fd9eef355681536a5db039b93c084542a778ff579b51e5fc43",
+        "sbomSha256": "8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199",
+        "vulnerabilitiesSha256": "dc2f17b51f30e6aceb672725cecfacdf53090733df29574ba13aea677fdc719c",
+        "configurationDigest": "sha256:97b4843f19705f7d6d29988bfbe591594388af5a9b7785e4edb08a7b6fb6abef",
+        "originalPolicyReproduced": true,
+        "observationsUnchanged": true,
+        "newScanPerformed": false,
+        "releaseEligible": false,
+        "beforeBlockingPairs": 93,
+        "blockingPairs": 87,
+        "blockingRecords": 266,
+        "advisoryRecords": 901,
+        "reviewedNonapplicableRecords": 23,
+        "releaseBlockers": [],
+        "summarySha256": "265d41dbfe6175ee3189c24bdcf95abaa6dffc3e4e4d641ce8217614a58e9d86",
+        "comparisonSha256": "8b530322c173fa4d157d9b93fdc992a540aad3da0b423fd9069465381dc0b2e3",
+        "reviewedRoutineRecords": 2,
+        "comparisonCounts": {
+          "persistent": 405,
+          "new": 0,
+          "notObserved": 137,
+          "dispositionChanges": 6
+        }
+      },
+      {
+        "schema": 1,
+        "status": "blocked",
+        "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+        "profile": "bluefin-dx-generic",
+        "sourceRun": 38340112122,
+        "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+        "policySha256": "cb55ca02a90c70857a858911ca37820a2add7d1a5b4a5c29c0b7db6caf69dee9",
+        "sourceResultSha256": "b6439aee802b91d107231e19cdd6ddc405d5546204db05d46f14b99ba3086f56",
+        "resultSha256": "dc1d2edffbfbe60a76f2f41294417dad794ff23c8934e6e991de8c1d9938f831",
+        "sbomSha256": "d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64",
+        "vulnerabilitiesSha256": "53d9bba5e04edcfb53294c604a6dbfb0f4ec8fc0f93334575bee101b17971655",
+        "configurationDigest": "sha256:5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78",
+        "originalPolicyReproduced": true,
+        "observationsUnchanged": true,
+        "newScanPerformed": false,
+        "releaseEligible": false,
+        "beforeBlockingPairs": 146,
+        "blockingPairs": 135,
+        "blockingRecords": 481,
+        "advisoryRecords": 1519,
+        "reviewedNonapplicableRecords": 29,
+        "releaseBlockers": [],
+        "summarySha256": "7849870b95b1e81c4304a7e332edcfafe04aaeb5103bbdf67cb96a68fee8628a",
+        "comparisonSha256": "c19aabf7b93984af10e81954665400edd814cdc6179c93b91a336bdf1312e2e8",
+        "reviewedRoutineRecords": 8,
+        "comparisonCounts": {
+          "persistent": 590,
+          "new": 0,
+          "notObserved": 169,
+          "dispositionChanges": 11
+        }
+      },
+      {
+        "schema": 1,
+        "status": "blocked",
+        "image": "ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+        "profile": "bluefin-dx-next",
+        "sourceRun": 38340112122,
+        "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+        "policySha256": "cb55ca02a90c70857a858911ca37820a2add7d1a5b4a5c29c0b7db6caf69dee9",
+        "sourceResultSha256": "5724e3de7bbfd54999a962439452e4d9713f6ce1226c3fdbe126454868ba734b",
+        "resultSha256": "f9468aa2a8538edc4a99aa5ee21a3c31cffb3f214defd2c9ab7fce8c51816fff",
+        "sbomSha256": "46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5",
+        "vulnerabilitiesSha256": "eedf0c80d2370c5421832469412abfae9db32b8017bdf29c10ca3b487a0ca362",
+        "configurationDigest": "sha256:3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44",
+        "originalPolicyReproduced": true,
+        "observationsUnchanged": true,
+        "newScanPerformed": false,
+        "releaseEligible": false,
+        "beforeBlockingPairs": 146,
+        "blockingPairs": 135,
+        "blockingRecords": 481,
+        "advisoryRecords": 1519,
+        "reviewedNonapplicableRecords": 29,
+        "releaseBlockers": [
+          {
+            "id": "next-kernel-october-source-fixes",
+            "profiles": [
+              "bluefin-next",
+              "bluefin-dx-next"
+            ],
+            "riskClass": "major-data-loss",
+            "reason": "Pinned Fedora 45 kernel 7.2.9-300 lacks the reviewed October XFS/AMD fixes. Missing scanner matches do not establish source-fix coverage. The fixed 301 build has not reached an approved stable tag in retained official evidence.",
+            "officialSources": [
+              "https://src.fedoraproject.org/rpms/kernel/c/c2cdc6c5c0c6ccc0128613fc7c9d276ebaf870c7.patch",
+              "https://gitlab.com/cki-project/kernel-ark/-/commit/fa3bfc1343f7f3b1ebd873eee5e3e6618918f434.patch"
+            ],
+            "reviewedBy": "great_cto desktop kernel source review",
+            "reviewedAt": "2026-10-13T00:00:29Z",
+            "unblockEvidence": "Approved same-stream stable kernel containing the reviewed fixes, or separately explicit reviewed testing approval; authenticate exact Fedora payloads and validate transaction, module preservation, initramfs and boot qualification before reviewing removal of this hold."
+          }
+        ],
+        "summarySha256": "de9bcf0873d4221ff30af925f0a3b6fd6afdbfd87b03fad21962088f836982b1",
+        "comparisonSha256": "093a0858b33e21fb9d59852bf6f8c3cfa86d2e5988d1b90a528c1fa8523fd637",
+        "reviewedRoutineRecords": 8,
+        "comparisonCounts": {
+          "persistent": 590,
+          "new": 0,
+          "notObserved": 169,
+          "dispositionChanges": 11
+        }
+      },
+      {
+        "schema": 1,
+        "status": "blocked",
+        "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+        "profile": "bluefin-generic",
+        "sourceRun": 38340112122,
+        "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+        "policySha256": "cb55ca02a90c70857a858911ca37820a2add7d1a5b4a5c29c0b7db6caf69dee9",
+        "sourceResultSha256": "92127eae6a60001c57937bb329061da88bdc6a933a993a6a047c6be7466518ca",
+        "resultSha256": "9aca347bf8c292eeb380d6e7f244304056e8f094c528dc8a8e34b2d422027ec5",
+        "sbomSha256": "4902fdd4b2afca8374a3197770f25daa11c7626cb5c83c46fb614ad1f5441201",
+        "vulnerabilitiesSha256": "231611b8f55e1b8a756a9b78ccf88f96eeba9881e3387d3ef2fe93ca420d168f",
+        "configurationDigest": "sha256:eb2542e972cdd6c71f3448674c57b0c41252fdc4c986252bc8ff3621e2119cf4",
+        "originalPolicyReproduced": true,
+        "observationsUnchanged": true,
+        "newScanPerformed": false,
+        "releaseEligible": false,
+        "beforeBlockingPairs": 93,
+        "blockingPairs": 87,
+        "blockingRecords": 266,
+        "advisoryRecords": 901,
+        "reviewedNonapplicableRecords": 23,
+        "releaseBlockers": [],
+        "summarySha256": "046341d22684f34981c0a26f7f6571f259d3cf1977da8b79c9a404d8b8e356b3",
+        "comparisonSha256": "60d8ea9c9048786efe2f3c77e11f505375a5da4a1d639c67e7b8f41d7fe88d2b",
+        "reviewedRoutineRecords": 2,
+        "comparisonCounts": {
+          "persistent": 405,
+          "new": 0,
+          "notObserved": 137,
+          "dispositionChanges": 6
+        }
+      },
+      {
+        "schema": 1,
+        "status": "blocked",
+        "image": "ghcr.io/closure-labs/finite@sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+        "profile": "bluefin-next",
+        "sourceRun": 38340112122,
+        "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+        "policySha256": "cb55ca02a90c70857a858911ca37820a2add7d1a5b4a5c29c0b7db6caf69dee9",
+        "sourceResultSha256": "64182a6c9df652cdfdf3c07d19b7983a7ac297d43bff97f18cac74cd12d8f95c",
+        "resultSha256": "4d887e1c67051efd83270caa30fdc4fec5b4428979e5a431ec8a0731ae27d6e3",
+        "sbomSha256": "bcf12455b002324b0c5923110de414cde3528d164bbb6b230dc2e8efb69f56b4",
+        "vulnerabilitiesSha256": "010f4472f5ba934a3bb65f7089cd32816ee000dd7bd100eb6df2a574cb49aca3",
+        "configurationDigest": "sha256:fce1315ea7763cf210b19f4e7c83334ab5e36be9a490d97e0ccc2b2c69491497",
+        "originalPolicyReproduced": true,
+        "observationsUnchanged": true,
+        "newScanPerformed": false,
+        "releaseEligible": false,
+        "beforeBlockingPairs": 93,
+        "blockingPairs": 87,
+        "blockingRecords": 266,
+        "advisoryRecords": 901,
+        "reviewedNonapplicableRecords": 23,
+        "releaseBlockers": [
+          {
+            "id": "next-kernel-october-source-fixes",
+            "profiles": [
+              "bluefin-next",
+              "bluefin-dx-next"
+            ],
+            "riskClass": "major-data-loss",
+            "reason": "Pinned Fedora 45 kernel 7.2.9-300 lacks the reviewed October XFS/AMD fixes. Missing scanner matches do not establish source-fix coverage. The fixed 301 build has not reached an approved stable tag in retained official evidence.",
+            "officialSources": [
+              "https://src.fedoraproject.org/rpms/kernel/c/c2cdc6c5c0c6ccc0128613fc7c9d276ebaf870c7.patch",
+              "https://gitlab.com/cki-project/kernel-ark/-/commit/fa3bfc1343f7f3b1ebd873eee5e3e6618918f434.patch"
+            ],
+            "reviewedBy": "great_cto desktop kernel source review",
+            "reviewedAt": "2026-10-13T00:00:29Z",
+            "unblockEvidence": "Approved same-stream stable kernel containing the reviewed fixes, or separately explicit reviewed testing approval; authenticate exact Fedora payloads and validate transaction, module preservation, initramfs and boot qualification before reviewing removal of this hold."
+          }
+        ],
+        "summarySha256": "a3f9440ec0ab1964bfa554e6d1ee367f81f65059aaac7ec291135a9616cb7f23",
+        "comparisonSha256": "2fc5d66b9e8d3a8228dbad3c14b32b265c1269316d133dbf0dee114fb99fc0cf",
+        "reviewedRoutineRecords": 2,
+        "comparisonCounts": {
+          "persistent": 405,
+          "new": 0,
+          "notObserved": 137,
+          "dispositionChanges": 6
+        }
+      }
+    ]
+  },
+  "priorPolicyReevaluation36Scopes": {
+    "run": 38346130574,
+    "sourceRevision": "3e97be59d182",
+    "status": "PASS all six original results reproduced; full-native policy evaluated; no image builds/pulls/new scans",
+    "policySha256": "1f97d4f396ee34c664531e8f6c4aa6ff21b01f44ca531deeef0bb03d686a006d",
+    "candidates": [
+      {
+        "schema": 1,
+        "status": "blocked",
+        "image": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+        "profile": "bluefin-dx-generic",
+        "sourceRun": 38341284379,
+        "sourceRevision": "1d347b7456b0cf64d4372cc0e7a562a9e63eb45b",
+        "policySha256": "1f97d4f396ee34c664531e8f6c4aa6ff21b01f44ca531deeef0bb03d686a006d",
+        "sourceResultSha256": "7cdbb3e6a941de295d48ef0f2a7cfc8c72b4ec383ca990e6a17de0cf114605bb",
+        "resultSha256": "440d4c9cc08cd64d5caa80952be5698657c58f329e91045bafcd873175d8cd94",
+        "sbomSha256": "afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "vulnerabilitiesSha256": "7f2023d2ed029d4e6532ef34650640b53060464d56ea9c017c745da547cc60e8",
+        "configurationDigest": "sha256:f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357",
+        "originalPolicyReproduced": true,
+        "observationsUnchanged": true,
+        "newScanPerformed": false,
+        "releaseEligible": false,
+        "beforeBlockingPairs": 146,
+        "blockingPairs": 139,
+        "blockingRecords": 489,
+        "advisoryRecords": 1511,
+        "reviewedNonapplicableRecords": 29,
+        "releaseBlockers": [],
+        "summarySha256": "7d416c908fece7a7840d0c1022726bc978847e3f2024d8da77f16f90a117efe6",
+        "comparisonSha256": "420c3939294f72afa20f75cf51addd1036c91dd4b1bcbef7734c7caa020aadd7",
+        "comparisonCounts": {
+          "persistent": 590,
+          "new": 0,
+          "notObserved": 169,
+          "dispositionChanges": 7
+        }
+      },
+      {
+        "schema": 1,
+        "status": "blocked",
+        "image": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+        "profile": "bluefin-generic",
+        "sourceRun": 38341281199,
+        "sourceRevision": "1d347b7456b0cf64d4372cc0e7a562a9e63eb45b",
+        "policySha256": "1f97d4f396ee34c664531e8f6c4aa6ff21b01f44ca531deeef0bb03d686a006d",
+        "sourceResultSha256": "814aab9be9c5872dd844ffcbe4d8205a092c6ca43dec11167c4a49aeaa891805",
+        "resultSha256": "dede7498530f61a6c084a3b97d2c4c06fdb9d3b6e6dfdf679588c187193b2488",
+        "sbomSha256": "8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199",
+        "vulnerabilitiesSha256": "dc2f17b51f30e6aceb672725cecfacdf53090733df29574ba13aea677fdc719c",
+        "configurationDigest": "sha256:97b4843f19705f7d6d29988bfbe591594388af5a9b7785e4edb08a7b6fb6abef",
+        "originalPolicyReproduced": true,
+        "observationsUnchanged": true,
+        "newScanPerformed": false,
+        "releaseEligible": false,
+        "beforeBlockingPairs": 93,
+        "blockingPairs": 88,
+        "blockingRecords": 268,
+        "advisoryRecords": 899,
+        "reviewedNonapplicableRecords": 23,
+        "releaseBlockers": [],
+        "summarySha256": "76dded75ce503d2aa6116a995aa49758bfeb3ae4295d88d6b7d201fe517ff7b6",
+        "comparisonSha256": "dc38da45080625cbb6f45ef637d13a860a0c5c8d4970f0106946368c9f1d7aa7",
+        "comparisonCounts": {
+          "persistent": 405,
+          "new": 0,
+          "notObserved": 137,
+          "dispositionChanges": 5
+        }
+      },
+      {
+        "schema": 1,
+        "status": "blocked",
+        "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+        "profile": "bluefin-dx-generic",
+        "sourceRun": 38340112122,
+        "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+        "policySha256": "1f97d4f396ee34c664531e8f6c4aa6ff21b01f44ca531deeef0bb03d686a006d",
+        "sourceResultSha256": "b6439aee802b91d107231e19cdd6ddc405d5546204db05d46f14b99ba3086f56",
+        "resultSha256": "cd126c61b033e909d7e31e49a12ea18a1181dc2164eac2fe6921eee1cd2065df",
+        "sbomSha256": "d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64",
+        "vulnerabilitiesSha256": "53d9bba5e04edcfb53294c604a6dbfb0f4ec8fc0f93334575bee101b17971655",
+        "configurationDigest": "sha256:5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78",
+        "originalPolicyReproduced": true,
+        "observationsUnchanged": true,
+        "newScanPerformed": false,
+        "releaseEligible": false,
+        "beforeBlockingPairs": 146,
+        "blockingPairs": 139,
+        "blockingRecords": 489,
+        "advisoryRecords": 1511,
+        "reviewedNonapplicableRecords": 29,
+        "releaseBlockers": [],
+        "summarySha256": "a9683fb151dec5761ab7ca862fb03426ceae3c24c7b16a7c498d21664b548397",
+        "comparisonSha256": "164f9b08f774beeb553f66a956ea0182ed1b3d0ba6056ad4d16d2d89ecd6e94f",
+        "comparisonCounts": {
+          "persistent": 590,
+          "new": 0,
+          "notObserved": 169,
+          "dispositionChanges": 7
+        }
+      },
+      {
+        "schema": 1,
+        "status": "blocked",
+        "image": "ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+        "profile": "bluefin-dx-next",
+        "sourceRun": 38340112122,
+        "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+        "policySha256": "1f97d4f396ee34c664531e8f6c4aa6ff21b01f44ca531deeef0bb03d686a006d",
+        "sourceResultSha256": "5724e3de7bbfd54999a962439452e4d9713f6ce1226c3fdbe126454868ba734b",
+        "resultSha256": "4ec5425fcf67492ce00d3fefdddbbf74363aa5e9d01c0c7be4d11af2b500f8bb",
+        "sbomSha256": "46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5",
+        "vulnerabilitiesSha256": "eedf0c80d2370c5421832469412abfae9db32b8017bdf29c10ca3b487a0ca362",
+        "configurationDigest": "sha256:3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44",
+        "originalPolicyReproduced": true,
+        "observationsUnchanged": true,
+        "newScanPerformed": false,
+        "releaseEligible": false,
+        "beforeBlockingPairs": 146,
+        "blockingPairs": 139,
+        "blockingRecords": 489,
+        "advisoryRecords": 1511,
+        "reviewedNonapplicableRecords": 29,
+        "releaseBlockers": [
+          {
+            "id": "next-kernel-october-source-fixes",
+            "profiles": [
+              "bluefin-next",
+              "bluefin-dx-next"
+            ],
+            "riskClass": "major-data-loss",
+            "reason": "Pinned Fedora 45 kernel 7.2.9-300 lacks the reviewed October XFS/AMD fixes. Missing scanner matches do not establish source-fix coverage. The fixed 301 build has not reached an approved stable tag in retained official evidence.",
+            "officialSources": [
+              "https://src.fedoraproject.org/rpms/kernel/c/c2cdc6c5c0c6ccc0128613fc7c9d276ebaf870c7.patch",
+              "https://gitlab.com/cki-project/kernel-ark/-/commit/fa3bfc1343f7f3b1ebd873eee5e3e6618918f434.patch"
+            ],
+            "reviewedBy": "great_cto desktop kernel source review",
+            "reviewedAt": "2026-10-13T00:00:29Z",
+            "unblockEvidence": "Approved same-stream stable kernel containing the reviewed fixes, or separately explicit reviewed testing approval; authenticate exact Fedora payloads and validate transaction, module preservation, initramfs and boot qualification before reviewing removal of this hold."
+          }
+        ],
+        "summarySha256": "f198f9288d07c2adc2374020e7a853a96a59b82996c5e58b46d0c611d547540b",
+        "comparisonSha256": "1cb468242d6f31eb5896b29bd224202d5274c609c88dbe84d330a5b1cea556b8",
+        "comparisonCounts": {
+          "persistent": 590,
+          "new": 0,
+          "notObserved": 169,
+          "dispositionChanges": 7
+        }
+      },
+      {
+        "schema": 1,
+        "status": "blocked",
+        "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+        "profile": "bluefin-generic",
+        "sourceRun": 38340112122,
+        "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+        "policySha256": "1f97d4f396ee34c664531e8f6c4aa6ff21b01f44ca531deeef0bb03d686a006d",
+        "sourceResultSha256": "92127eae6a60001c57937bb329061da88bdc6a933a993a6a047c6be7466518ca",
+        "resultSha256": "3222b174330e244407d7eeb771a849a968db7b293ce23c419eb2a75b84dc112a",
+        "sbomSha256": "4902fdd4b2afca8374a3197770f25daa11c7626cb5c83c46fb614ad1f5441201",
+        "vulnerabilitiesSha256": "231611b8f55e1b8a756a9b78ccf88f96eeba9881e3387d3ef2fe93ca420d168f",
+        "configurationDigest": "sha256:eb2542e972cdd6c71f3448674c57b0c41252fdc4c986252bc8ff3621e2119cf4",
+        "originalPolicyReproduced": true,
+        "observationsUnchanged": true,
+        "newScanPerformed": false,
+        "releaseEligible": false,
+        "beforeBlockingPairs": 93,
+        "blockingPairs": 88,
+        "blockingRecords": 268,
+        "advisoryRecords": 899,
+        "reviewedNonapplicableRecords": 23,
+        "releaseBlockers": [],
+        "summarySha256": "3c47f61af0d56c33e120f02337544735940f4136c9664731785b64b0ff2f80ad",
+        "comparisonSha256": "cae8034b7ecb003f8d7e7bc92e7bb4edbfbf9c20b210b593f500da58573ce845",
+        "comparisonCounts": {
+          "persistent": 405,
+          "new": 0,
+          "notObserved": 137,
+          "dispositionChanges": 5
+        }
+      },
+      {
+        "schema": 1,
+        "status": "blocked",
+        "image": "ghcr.io/closure-labs/finite@sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+        "profile": "bluefin-next",
+        "sourceRun": 38340112122,
+        "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+        "policySha256": "1f97d4f396ee34c664531e8f6c4aa6ff21b01f44ca531deeef0bb03d686a006d",
+        "sourceResultSha256": "64182a6c9df652cdfdf3c07d19b7983a7ac297d43bff97f18cac74cd12d8f95c",
+        "resultSha256": "f0b72c27606d52a6468b841dd73a05b20df54defb77fdb72600c516aa89088e1",
+        "sbomSha256": "bcf12455b002324b0c5923110de414cde3528d164bbb6b230dc2e8efb69f56b4",
+        "vulnerabilitiesSha256": "010f4472f5ba934a3bb65f7089cd32816ee000dd7bd100eb6df2a574cb49aca3",
+        "configurationDigest": "sha256:fce1315ea7763cf210b19f4e7c83334ab5e36be9a490d97e0ccc2b2c69491497",
+        "originalPolicyReproduced": true,
+        "observationsUnchanged": true,
+        "newScanPerformed": false,
+        "releaseEligible": false,
+        "beforeBlockingPairs": 93,
+        "blockingPairs": 88,
+        "blockingRecords": 268,
+        "advisoryRecords": 899,
+        "reviewedNonapplicableRecords": 23,
+        "releaseBlockers": [
+          {
+            "id": "next-kernel-october-source-fixes",
+            "profiles": [
+              "bluefin-next",
+              "bluefin-dx-next"
+            ],
+            "riskClass": "major-data-loss",
+            "reason": "Pinned Fedora 45 kernel 7.2.9-300 lacks the reviewed October XFS/AMD fixes. Missing scanner matches do not establish source-fix coverage. The fixed 301 build has not reached an approved stable tag in retained official evidence.",
+            "officialSources": [
+              "https://src.fedoraproject.org/rpms/kernel/c/c2cdc6c5c0c6ccc0128613fc7c9d276ebaf870c7.patch",
+              "https://gitlab.com/cki-project/kernel-ark/-/commit/fa3bfc1343f7f3b1ebd873eee5e3e6618918f434.patch"
+            ],
+            "reviewedBy": "great_cto desktop kernel source review",
+            "reviewedAt": "2026-10-13T00:00:29Z",
+            "unblockEvidence": "Approved same-stream stable kernel containing the reviewed fixes, or separately explicit reviewed testing approval; authenticate exact Fedora payloads and validate transaction, module preservation, initramfs and boot qualification before reviewing removal of this hold."
+          }
+        ],
+        "summarySha256": "48fce6511b4c56f2db4b7a7c5ff0b8638b4631308b3d57e2b5d22f95afb0413b",
+        "comparisonSha256": "93fba13293777b7c4e219d7b397444413103f970b0c01b4fd30c34eef6859738",
+        "comparisonCounts": {
+          "persistent": 405,
+          "new": 0,
+          "notObserved": 137,
+          "dispositionChanges": 5
+        }
+      }
+    ]
+  },
+  "remainingOwnershipLedger": {
+    "path": "docs/current-desktop-risk-blockers-2026-10-12.json",
+    "sha256": "71390eaf0fcb5a8c2a70a267bb81314df07f5391d7805a3aaea5c3adbfbbd80e",
+    "method": "All four actual registry candidate scopes; live RPM ownership and exact current-content links for retained files are metadata relationships, not independent package signature claims"
+  },
+  "reusedPublisherMetadata": {
+    "run": 38331234974,
+    "queriedAt": "2026-10-13T01:15:36.714886+00:00",
+    "source": "Approved Fedora44/fedora+updates",
+    "coreOwningVersions": "Current buildah/containerd/podman/runc/skopeo/restic/yq/gum/glow/toolbox inventory equals latest in recorded query; available versions do not establish embedded-module fixes",
+    "additionalDevelopmentQuery": 38336026926,
+    "newAvailabilityPoll": false
+  },
+  "criticalEvidenceRetainedDocumentSha256": "3516410b608b744e241d9a089a8f8514e1c57eff993be12df1484c3015f09e1e",
+  "followUpDelivery": {
+    "basePr": 147,
+    "baseValidatedRevision": "68fbf8759df3208dc6879640aa7d211d9162addf",
+    "branch": "security/reference-applicability",
+    "purpose": "Proof/data/reference helpers and fixture scalability; reuse validated runtime builds",
+    "requiredHostedChecks": "Source, documentation and unchanged Nix payload selection; no new runtime remediation in this follow-up",
+    "number": 148,
+    "url": "https://github.com/closure-labs/finite/pull/148",
+    "validationHead": "d92707dea0f1983742fc98fcd98a9c038000fc87",
+    "run": 38349399433,
+    "status": "PASS38349399433 source/docs/Nix contracts/CI gate; payload dependency selection reused PR147 runtime builds and skipped new image work",
+    "testedRevision": "eb5dc0a05af1a2094be16ce36afeb7979b193a16",
+    "finalRetentionChecks": "Final documentation/metadata-only revision is monitored separately; its exact head/run are recorded in the PR description to avoid a self-referential evidence commit"
   }
 }

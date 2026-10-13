@@ -1,0 +1,2521 @@
+{
+  "schema": 1,
+  "status": "reviewed-proposals-not-applied",
+  "reviewedAt": "2026-10-13T04:10:36+00:00",
+  "compactSummaryRun": 38344754471,
+  "officialGo6604Source": {
+    "url": "https://pkg.go.dev/vuln/GO-2026-6604",
+    "sha256": "f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9",
+    "affectedImports": [
+      {
+        "path": "os",
+        "goos": [
+          "windows"
+        ],
+        "symbols": [
+          "Root.Chmod",
+          "Root.Chown",
+          "Root.Chtimes",
+          "Root.Lchown",
+          "Root.Link",
+          "Root.Mkdir",
+          "Root.MkdirAll",
+          "Root.Remove",
+          "Root.RemoveAll",
+          "Root.Rename",
+          "Root.Symlink",
+          "doInRoot",
+          "rootMkdirAll"
+        ]
+      },
+      {
+        "path": "internal/syscall/windows",
+        "goos": [
+          "windows"
+        ],
+        "symbols": [
+          "Mkdirat"
+        ]
+      }
+    ]
+  },
+  "publisherAuthenticationScope": "Reused from the completed hosted native jobs supplied by parent; this local join verifies exact retained bindings and performs no new signature check.",
+  "candidates": [
+    {
+      "candidate": "bluefin-generic",
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+      "sourceRun": 38341281199,
+      "sourceRevision": "1d347b7456b0cf64d4372cc0e7a562a9e63eb45b",
+      "configurationDigest": "sha256:97b4843f19705f7d6d29988bfbe591594388af5a9b7785e4edb08a7b6fb6abef",
+      "sbomSha256": "8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199",
+      "nativeBlockedPairs": 93,
+      "actualGo6604BlockedPairs": 2,
+      "proposedGo6604Pairs": 2,
+      "rejectedGo6604Pairs": 0,
+      "actualCmdGo4871Or4984BlockedPairs": 0,
+      "proposedCmdGoPairs": 0,
+      "cmdGoVerdict": "not-observed-in-current-blocked-scope; no fix/nonapplicability claimed",
+      "releaseBlockers": [],
+      "releaseEligible": false
+    },
+    {
+      "candidate": "bluefin-dx-generic",
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "sourceRun": 38341284379,
+      "sourceRevision": "1d347b7456b0cf64d4372cc0e7a562a9e63eb45b",
+      "configurationDigest": "sha256:f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357",
+      "sbomSha256": "afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+      "nativeBlockedPairs": 146,
+      "actualGo6604BlockedPairs": 4,
+      "proposedGo6604Pairs": 4,
+      "rejectedGo6604Pairs": 0,
+      "actualCmdGo4871Or4984BlockedPairs": 0,
+      "proposedCmdGoPairs": 0,
+      "cmdGoVerdict": "not-observed-in-current-blocked-scope; no fix/nonapplicability claimed",
+      "releaseBlockers": [],
+      "releaseEligible": false
+    },
+    {
+      "candidate": "main-bluefin-generic",
+      "profile": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "sourceRun": 38340112122,
+      "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+      "configurationDigest": "sha256:eb2542e972cdd6c71f3448674c57b0c41252fdc4c986252bc8ff3621e2119cf4",
+      "sbomSha256": "4902fdd4b2afca8374a3197770f25daa11c7626cb5c83c46fb614ad1f5441201",
+      "nativeBlockedPairs": 93,
+      "actualGo6604BlockedPairs": 2,
+      "proposedGo6604Pairs": 2,
+      "rejectedGo6604Pairs": 0,
+      "actualCmdGo4871Or4984BlockedPairs": 0,
+      "proposedCmdGoPairs": 0,
+      "cmdGoVerdict": "not-observed-in-current-blocked-scope; no fix/nonapplicability claimed",
+      "releaseBlockers": [],
+      "releaseEligible": false
+    },
+    {
+      "candidate": "main-bluefin-next",
+      "profile": "bluefin-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+      "sourceRun": 38340112122,
+      "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+      "configurationDigest": "sha256:fce1315ea7763cf210b19f4e7c83334ab5e36be9a490d97e0ccc2b2c69491497",
+      "sbomSha256": "bcf12455b002324b0c5923110de414cde3528d164bbb6b230dc2e8efb69f56b4",
+      "nativeBlockedPairs": 93,
+      "actualGo6604BlockedPairs": 2,
+      "proposedGo6604Pairs": 2,
+      "rejectedGo6604Pairs": 0,
+      "actualCmdGo4871Or4984BlockedPairs": 0,
+      "proposedCmdGoPairs": 0,
+      "cmdGoVerdict": "not-observed-in-current-blocked-scope; no fix/nonapplicability claimed",
+      "releaseBlockers": [
+        {
+          "id": "next-kernel-october-source-fixes",
+          "profiles": [
+            "bluefin-next",
+            "bluefin-dx-next"
+          ],
+          "riskClass": "major-data-loss",
+          "reason": "Pinned Fedora 45 kernel 7.2.9-300 lacks the reviewed October XFS/AMD fixes. Missing scanner matches do not establish source-fix coverage. The fixed 301 build has not reached an approved stable tag in retained official evidence.",
+          "officialSources": [
+            "https://src.fedoraproject.org/rpms/kernel/c/c2cdc6c5c0c6ccc0128613fc7c9d276ebaf870c7.patch",
+            "https://gitlab.com/cki-project/kernel-ark/-/commit/fa3bfc1343f7f3b1ebd873eee5e3e6618918f434.patch"
+          ],
+          "reviewedBy": "great_cto desktop kernel source review",
+          "reviewedAt": "2026-10-13T00:00:29Z",
+          "unblockEvidence": "Approved same-stream stable kernel containing the reviewed fixes, or separately explicit reviewed testing approval; authenticate exact Fedora payloads and validate transaction, module preservation, initramfs and boot qualification before reviewing removal of this hold."
+        }
+      ],
+      "releaseEligible": false
+    },
+    {
+      "candidate": "main-bluefin-dx-generic",
+      "profile": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "sourceRun": 38340112122,
+      "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+      "configurationDigest": "sha256:5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78",
+      "sbomSha256": "d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64",
+      "nativeBlockedPairs": 146,
+      "actualGo6604BlockedPairs": 4,
+      "proposedGo6604Pairs": 4,
+      "rejectedGo6604Pairs": 0,
+      "actualCmdGo4871Or4984BlockedPairs": 0,
+      "proposedCmdGoPairs": 0,
+      "cmdGoVerdict": "not-observed-in-current-blocked-scope; no fix/nonapplicability claimed",
+      "releaseBlockers": [],
+      "releaseEligible": false
+    },
+    {
+      "candidate": "main-bluefin-dx-next",
+      "profile": "bluefin-dx-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "sourceRun": 38340112122,
+      "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+      "configurationDigest": "sha256:3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44",
+      "sbomSha256": "46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5",
+      "nativeBlockedPairs": 146,
+      "actualGo6604BlockedPairs": 4,
+      "proposedGo6604Pairs": 4,
+      "rejectedGo6604Pairs": 0,
+      "actualCmdGo4871Or4984BlockedPairs": 0,
+      "proposedCmdGoPairs": 0,
+      "cmdGoVerdict": "not-observed-in-current-blocked-scope; no fix/nonapplicability claimed",
+      "releaseBlockers": [
+        {
+          "id": "next-kernel-october-source-fixes",
+          "profiles": [
+            "bluefin-next",
+            "bluefin-dx-next"
+          ],
+          "riskClass": "major-data-loss",
+          "reason": "Pinned Fedora 45 kernel 7.2.9-300 lacks the reviewed October XFS/AMD fixes. Missing scanner matches do not establish source-fix coverage. The fixed 301 build has not reached an approved stable tag in retained official evidence.",
+          "officialSources": [
+            "https://src.fedoraproject.org/rpms/kernel/c/c2cdc6c5c0c6ccc0128613fc7c9d276ebaf870c7.patch",
+            "https://gitlab.com/cki-project/kernel-ark/-/commit/fa3bfc1343f7f3b1ebd873eee5e3e6618918f434.patch"
+          ],
+          "reviewedBy": "great_cto desktop kernel source review",
+          "reviewedAt": "2026-10-13T00:00:29Z",
+          "unblockEvidence": "Approved same-stream stable kernel containing the reviewed fixes, or separately explicit reviewed testing approval; authenticate exact Fedora payloads and validate transaction, module preservation, initramfs and boot qualification before reviewing removal of this hold."
+        }
+      ],
+      "releaseEligible": false
+    }
+  ],
+  "proposedReviewedDispositions": [
+    {
+      "id": "go6604-linux-bluefin-generic-e98ca0ceb484-e1840732",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+      "component": "pkg:golang/stdlib@1.26.4",
+      "platform": "linux/amd64",
+      "locations": [
+        "/usr/bin/cosign"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7; native summary run 38344754471 bluefin-generic-native.json SHA256 868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f; source native run 38341281199; result SHA256 814aab9be9c5872dd844ffcbe4d8205a092c6ca43dec11167c4a49aeaa891805; SBOM SHA256 8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199",
+        "Exact candidate config SHA256 97b4843f19705f7d6d29988bfbe591594388af5a9b7785e4edb08a7b6fb6abef; source 1d347b7456b0cf64d4372cc0e7a562a9e63eb45b; profile bluefin-generic; build identity v1:29a6920037b0251e2c54a53719a00eb9c7085a75e59c8db76839b214703d8e0b",
+        "Independent file platform probe run 38341281199; image ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7; applicability JSON SHA256 f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af; probe SBOM SHA256 8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /usr/bin/cosign; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both a57926e24b07f02b5baf3be81f9a5988e9e45d8a1ca8ca500cdf56d10e69f887; size 141178082; exact compiler go1.26.4; build-info SHA256 cb81ae1aa3a5ef4b7756d98a44577fa147db791d84e854fb080c0ec3d8c867e5"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-generic-e98ca0ceb484-2331f11e",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+      "component": "pkg:golang/stdlib@1.27.1",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+        "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7; native summary run 38344754471 bluefin-generic-native.json SHA256 868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f; source native run 38341281199; result SHA256 814aab9be9c5872dd844ffcbe4d8205a092c6ca43dec11167c4a49aeaa891805; SBOM SHA256 8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199",
+        "Exact candidate config SHA256 97b4843f19705f7d6d29988bfbe591594388af5a9b7785e4edb08a7b6fb6abef; source 1d347b7456b0cf64d4372cc0e7a562a9e63eb45b; profile bluefin-generic; build identity v1:29a6920037b0251e2c54a53719a00eb9c7085a75e59c8db76839b214703d8e0b",
+        "Independent file platform probe run 38341281199; image ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7; applicability JSON SHA256 f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af; probe SBOM SHA256 8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c; size 43464671; exact compiler go1.27.1; build-info SHA256 fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef",
+        "Path /sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d; size 34323303; exact compiler go1.27.1; build-info SHA256 798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+        "Path /usr/bin/tailscale; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d; size 34323303; exact compiler go1.27.1; build-info SHA256 798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+        "Path /usr/bin/tailscaled; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c; size 43464671; exact compiler go1.27.1; build-info SHA256 fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-generic-7848ba4cfbc9-15e16f9f",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "component": "pkg:golang/stdlib@1.25.12",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+        "/usr/libexec/docker/cli-plugins/docker-model"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; native summary run 38344754471 bluefin-dx-generic-native.json SHA256 90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813; source native run 38341284379; result SHA256 7cdbb3e6a941de295d48ef0f2a7cfc8c72b4ec383ca990e6a17de0cf114605bb; SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Exact candidate config SHA256 f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357; source 1d347b7456b0cf64d4372cc0e7a562a9e63eb45b; profile bluefin-dx-generic; build identity v1:b30ea5e8bfe8ec02caa2f4118aa91ba47c6c4283c3fe44cf1d73568f6954c76b",
+        "Independent file platform probe run 38341284379; image ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; applicability JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594; probe SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both cca3debb839dac976bab9c76b47d38754cad417c02a5602b1eadd312900af140; size 27559496; exact compiler go1.25.12; build-info SHA256 d62cae4605d860b275f7ad91046786cae9e421fb02cf13bbc6af54fa6dc8a962",
+        "Path /usr/libexec/docker/cli-plugins/docker-model; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both cca3debb839dac976bab9c76b47d38754cad417c02a5602b1eadd312900af140; size 27559496; exact compiler go1.25.12; build-info SHA256 d62cae4605d860b275f7ad91046786cae9e421fb02cf13bbc6af54fa6dc8a962"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-generic-7848ba4cfbc9-e1840732",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "component": "pkg:golang/stdlib@1.26.4",
+      "platform": "linux/amd64",
+      "locations": [
+        "/usr/bin/cosign"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; native summary run 38344754471 bluefin-dx-generic-native.json SHA256 90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813; source native run 38341284379; result SHA256 7cdbb3e6a941de295d48ef0f2a7cfc8c72b4ec383ca990e6a17de0cf114605bb; SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Exact candidate config SHA256 f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357; source 1d347b7456b0cf64d4372cc0e7a562a9e63eb45b; profile bluefin-dx-generic; build identity v1:b30ea5e8bfe8ec02caa2f4118aa91ba47c6c4283c3fe44cf1d73568f6954c76b",
+        "Independent file platform probe run 38341284379; image ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; applicability JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594; probe SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /usr/bin/cosign; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both a57926e24b07f02b5baf3be81f9a5988e9e45d8a1ca8ca500cdf56d10e69f887; size 141178082; exact compiler go1.26.4; build-info SHA256 cb81ae1aa3a5ef4b7756d98a44577fa147db791d84e854fb080c0ec3d8c867e5"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-generic-7848ba4cfbc9-007fffd0",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "component": "pkg:golang/stdlib@1.26.8",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file",
+        "/sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file",
+        "/usr/libexec/docker/cli-plugins/docker-buildx",
+        "/usr/libexec/docker/cli-plugins/docker-compose"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; native summary run 38344754471 bluefin-dx-generic-native.json SHA256 90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813; source native run 38341284379; result SHA256 7cdbb3e6a941de295d48ef0f2a7cfc8c72b4ec383ca990e6a17de0cf114605bb; SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Exact candidate config SHA256 f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357; source 1d347b7456b0cf64d4372cc0e7a562a9e63eb45b; profile bluefin-dx-generic; build identity v1:b30ea5e8bfe8ec02caa2f4118aa91ba47c6c4283c3fe44cf1d73568f6954c76b",
+        "Independent file platform probe run 38341284379; image ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; applicability JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594; probe SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 1c90a477e132d768ebd29338f75e9f3a039d2be45e28b316f4f617488dd718c8; size 32652720; exact compiler go1.26.8; build-info SHA256 d21d930208dc6d9c64b11984261dbeddae0691bf64529e2c63d788a32f5ea916",
+        "Path /sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 7d9509f9798d32eb120679cfbe7937088a0bfd202524f6c8ad594d4a0d7f1f82; size 75846304; exact compiler go1.26.8; build-info SHA256 d11608f3c4fc6b8855d9fe0d0ba0b048b45042549b3dd1e449ab4dabc956a61b",
+        "Path /usr/libexec/docker/cli-plugins/docker-buildx; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 7d9509f9798d32eb120679cfbe7937088a0bfd202524f6c8ad594d4a0d7f1f82; size 75846304; exact compiler go1.26.8; build-info SHA256 d11608f3c4fc6b8855d9fe0d0ba0b048b45042549b3dd1e449ab4dabc956a61b",
+        "Path /usr/libexec/docker/cli-plugins/docker-compose; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 1c90a477e132d768ebd29338f75e9f3a039d2be45e28b316f4f617488dd718c8; size 32652720; exact compiler go1.26.8; build-info SHA256 d21d930208dc6d9c64b11984261dbeddae0691bf64529e2c63d788a32f5ea916"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-generic-7848ba4cfbc9-2331f11e",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "component": "pkg:golang/stdlib@1.27.1",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+        "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; native summary run 38344754471 bluefin-dx-generic-native.json SHA256 90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813; source native run 38341284379; result SHA256 7cdbb3e6a941de295d48ef0f2a7cfc8c72b4ec383ca990e6a17de0cf114605bb; SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Exact candidate config SHA256 f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357; source 1d347b7456b0cf64d4372cc0e7a562a9e63eb45b; profile bluefin-dx-generic; build identity v1:b30ea5e8bfe8ec02caa2f4118aa91ba47c6c4283c3fe44cf1d73568f6954c76b",
+        "Independent file platform probe run 38341284379; image ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; applicability JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594; probe SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c; size 43464671; exact compiler go1.27.1; build-info SHA256 fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef",
+        "Path /sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d; size 34323303; exact compiler go1.27.1; build-info SHA256 798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+        "Path /usr/bin/tailscale; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d; size 34323303; exact compiler go1.27.1; build-info SHA256 798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+        "Path /usr/bin/tailscaled; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c; size 43464671; exact compiler go1.27.1; build-info SHA256 fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-generic-3d4693f25f09-e1840732",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/stdlib@1.26.4",
+      "platform": "linux/amd64",
+      "locations": [
+        "/usr/bin/cosign"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844; native summary run 38344754471 main-bluefin-generic-native.json SHA256 5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9; source native run 38340112122; result SHA256 92127eae6a60001c57937bb329061da88bdc6a933a993a6a047c6be7466518ca; SBOM SHA256 4902fdd4b2afca8374a3197770f25daa11c7626cb5c83c46fb614ad1f5441201",
+        "Exact candidate config SHA256 eb2542e972cdd6c71f3448674c57b0c41252fdc4c986252bc8ff3621e2119cf4; source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-generic; build identity v1:357fa0799580560ed50f4045d429e0e9d19ad76e8deb9e647e45b0be33885a38",
+        "Independent file platform probe run 38341281199; image ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7; applicability JSON SHA256 f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af; probe SBOM SHA256 8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /usr/bin/cosign; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both a57926e24b07f02b5baf3be81f9a5988e9e45d8a1ca8ca500cdf56d10e69f887; size 141178082; exact compiler go1.26.4; build-info SHA256 cb81ae1aa3a5ef4b7756d98a44577fa147db791d84e854fb080c0ec3d8c867e5"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-generic-3d4693f25f09-2331f11e",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/stdlib@1.27.1",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+        "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844; native summary run 38344754471 main-bluefin-generic-native.json SHA256 5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9; source native run 38340112122; result SHA256 92127eae6a60001c57937bb329061da88bdc6a933a993a6a047c6be7466518ca; SBOM SHA256 4902fdd4b2afca8374a3197770f25daa11c7626cb5c83c46fb614ad1f5441201",
+        "Exact candidate config SHA256 eb2542e972cdd6c71f3448674c57b0c41252fdc4c986252bc8ff3621e2119cf4; source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-generic; build identity v1:357fa0799580560ed50f4045d429e0e9d19ad76e8deb9e647e45b0be33885a38",
+        "Independent file platform probe run 38341281199; image ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7; applicability JSON SHA256 f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af; probe SBOM SHA256 8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c; size 43464671; exact compiler go1.27.1; build-info SHA256 fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef",
+        "Path /sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d; size 34323303; exact compiler go1.27.1; build-info SHA256 798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+        "Path /usr/bin/tailscale; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d; size 34323303; exact compiler go1.27.1; build-info SHA256 798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+        "Path /usr/bin/tailscaled; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c; size 43464671; exact compiler go1.27.1; build-info SHA256 fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-next-a36f46afcc2a-e1840732",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+      "component": "pkg:golang/stdlib@1.26.4",
+      "platform": "linux/amd64",
+      "locations": [
+        "/usr/bin/cosign"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db; native summary run 38344754471 main-bluefin-next-native.json SHA256 81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f; source native run 38340112122; result SHA256 64182a6c9df652cdfdf3c07d19b7983a7ac297d43bff97f18cac74cd12d8f95c; SBOM SHA256 bcf12455b002324b0c5923110de414cde3528d164bbb6b230dc2e8efb69f56b4",
+        "Exact candidate config SHA256 fce1315ea7763cf210b19f4e7c83334ab5e36be9a490d97e0ccc2b2c69491497; source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-next; build identity v1:204a54980664eb886d8b5a949b4a2bcd50c5fd6074f82e5d60ae6362241bb47c",
+        "Independent file platform probe run 38341281199; image ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7; applicability JSON SHA256 f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af; probe SBOM SHA256 8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /usr/bin/cosign; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both a57926e24b07f02b5baf3be81f9a5988e9e45d8a1ca8ca500cdf56d10e69f887; size 141178082; exact compiler go1.26.4; build-info SHA256 cb81ae1aa3a5ef4b7756d98a44577fa147db791d84e854fb080c0ec3d8c867e5"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-next-a36f46afcc2a-2331f11e",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+      "component": "pkg:golang/stdlib@1.27.1",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+        "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db; native summary run 38344754471 main-bluefin-next-native.json SHA256 81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f; source native run 38340112122; result SHA256 64182a6c9df652cdfdf3c07d19b7983a7ac297d43bff97f18cac74cd12d8f95c; SBOM SHA256 bcf12455b002324b0c5923110de414cde3528d164bbb6b230dc2e8efb69f56b4",
+        "Exact candidate config SHA256 fce1315ea7763cf210b19f4e7c83334ab5e36be9a490d97e0ccc2b2c69491497; source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-next; build identity v1:204a54980664eb886d8b5a949b4a2bcd50c5fd6074f82e5d60ae6362241bb47c",
+        "Independent file platform probe run 38341281199; image ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7; applicability JSON SHA256 f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af; probe SBOM SHA256 8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c; size 43464671; exact compiler go1.27.1; build-info SHA256 fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef",
+        "Path /sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d; size 34323303; exact compiler go1.27.1; build-info SHA256 798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+        "Path /usr/bin/tailscale; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d; size 34323303; exact compiler go1.27.1; build-info SHA256 798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+        "Path /usr/bin/tailscaled; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c; size 43464671; exact compiler go1.27.1; build-info SHA256 fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-generic-3fd7e10d0e29-15e16f9f",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/stdlib@1.25.12",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+        "/usr/libexec/docker/cli-plugins/docker-model"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c; native summary run 38344754471 main-bluefin-dx-generic-native.json SHA256 21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf; source native run 38340112122; result SHA256 b6439aee802b91d107231e19cdd6ddc405d5546204db05d46f14b99ba3086f56; SBOM SHA256 d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64",
+        "Exact candidate config SHA256 5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78; source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-dx-generic; build identity v1:05fb59c6ab874df5cdba42675aeacfb37f7ba34df2053d198be408edb85ed247",
+        "Independent file platform probe run 38341284379; image ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; applicability JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594; probe SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both cca3debb839dac976bab9c76b47d38754cad417c02a5602b1eadd312900af140; size 27559496; exact compiler go1.25.12; build-info SHA256 d62cae4605d860b275f7ad91046786cae9e421fb02cf13bbc6af54fa6dc8a962",
+        "Path /usr/libexec/docker/cli-plugins/docker-model; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both cca3debb839dac976bab9c76b47d38754cad417c02a5602b1eadd312900af140; size 27559496; exact compiler go1.25.12; build-info SHA256 d62cae4605d860b275f7ad91046786cae9e421fb02cf13bbc6af54fa6dc8a962"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-generic-3fd7e10d0e29-e1840732",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/stdlib@1.26.4",
+      "platform": "linux/amd64",
+      "locations": [
+        "/usr/bin/cosign"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c; native summary run 38344754471 main-bluefin-dx-generic-native.json SHA256 21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf; source native run 38340112122; result SHA256 b6439aee802b91d107231e19cdd6ddc405d5546204db05d46f14b99ba3086f56; SBOM SHA256 d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64",
+        "Exact candidate config SHA256 5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78; source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-dx-generic; build identity v1:05fb59c6ab874df5cdba42675aeacfb37f7ba34df2053d198be408edb85ed247",
+        "Independent file platform probe run 38341284379; image ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; applicability JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594; probe SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /usr/bin/cosign; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both a57926e24b07f02b5baf3be81f9a5988e9e45d8a1ca8ca500cdf56d10e69f887; size 141178082; exact compiler go1.26.4; build-info SHA256 cb81ae1aa3a5ef4b7756d98a44577fa147db791d84e854fb080c0ec3d8c867e5"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-generic-3fd7e10d0e29-007fffd0",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/stdlib@1.26.8",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file",
+        "/sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file",
+        "/usr/libexec/docker/cli-plugins/docker-buildx",
+        "/usr/libexec/docker/cli-plugins/docker-compose"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c; native summary run 38344754471 main-bluefin-dx-generic-native.json SHA256 21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf; source native run 38340112122; result SHA256 b6439aee802b91d107231e19cdd6ddc405d5546204db05d46f14b99ba3086f56; SBOM SHA256 d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64",
+        "Exact candidate config SHA256 5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78; source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-dx-generic; build identity v1:05fb59c6ab874df5cdba42675aeacfb37f7ba34df2053d198be408edb85ed247",
+        "Independent file platform probe run 38341284379; image ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; applicability JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594; probe SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 1c90a477e132d768ebd29338f75e9f3a039d2be45e28b316f4f617488dd718c8; size 32652720; exact compiler go1.26.8; build-info SHA256 d21d930208dc6d9c64b11984261dbeddae0691bf64529e2c63d788a32f5ea916",
+        "Path /sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 7d9509f9798d32eb120679cfbe7937088a0bfd202524f6c8ad594d4a0d7f1f82; size 75846304; exact compiler go1.26.8; build-info SHA256 d11608f3c4fc6b8855d9fe0d0ba0b048b45042549b3dd1e449ab4dabc956a61b",
+        "Path /usr/libexec/docker/cli-plugins/docker-buildx; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 7d9509f9798d32eb120679cfbe7937088a0bfd202524f6c8ad594d4a0d7f1f82; size 75846304; exact compiler go1.26.8; build-info SHA256 d11608f3c4fc6b8855d9fe0d0ba0b048b45042549b3dd1e449ab4dabc956a61b",
+        "Path /usr/libexec/docker/cli-plugins/docker-compose; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 1c90a477e132d768ebd29338f75e9f3a039d2be45e28b316f4f617488dd718c8; size 32652720; exact compiler go1.26.8; build-info SHA256 d21d930208dc6d9c64b11984261dbeddae0691bf64529e2c63d788a32f5ea916"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-generic-3fd7e10d0e29-2331f11e",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/stdlib@1.27.1",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+        "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c; native summary run 38344754471 main-bluefin-dx-generic-native.json SHA256 21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf; source native run 38340112122; result SHA256 b6439aee802b91d107231e19cdd6ddc405d5546204db05d46f14b99ba3086f56; SBOM SHA256 d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64",
+        "Exact candidate config SHA256 5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78; source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-dx-generic; build identity v1:05fb59c6ab874df5cdba42675aeacfb37f7ba34df2053d198be408edb85ed247",
+        "Independent file platform probe run 38341284379; image ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; applicability JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594; probe SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c; size 43464671; exact compiler go1.27.1; build-info SHA256 fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef",
+        "Path /sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d; size 34323303; exact compiler go1.27.1; build-info SHA256 798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+        "Path /usr/bin/tailscale; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d; size 34323303; exact compiler go1.27.1; build-info SHA256 798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+        "Path /usr/bin/tailscaled; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c; size 43464671; exact compiler go1.27.1; build-info SHA256 fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-next-a851083d1a9e-15e16f9f",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "component": "pkg:golang/stdlib@1.25.12",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+        "/usr/libexec/docker/cli-plugins/docker-model"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26; native summary run 38344754471 main-bluefin-dx-next-native.json SHA256 fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96; source native run 38340112122; result SHA256 5724e3de7bbfd54999a962439452e4d9713f6ce1226c3fdbe126454868ba734b; SBOM SHA256 46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5",
+        "Exact candidate config SHA256 3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44; source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-dx-next; build identity v1:13ab0d947b649d17a43851dbea491a445b2c123fcaba02eb1d21bff47ac94ccc",
+        "Independent file platform probe run 38341284379; image ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; applicability JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594; probe SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both cca3debb839dac976bab9c76b47d38754cad417c02a5602b1eadd312900af140; size 27559496; exact compiler go1.25.12; build-info SHA256 d62cae4605d860b275f7ad91046786cae9e421fb02cf13bbc6af54fa6dc8a962",
+        "Path /usr/libexec/docker/cli-plugins/docker-model; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both cca3debb839dac976bab9c76b47d38754cad417c02a5602b1eadd312900af140; size 27559496; exact compiler go1.25.12; build-info SHA256 d62cae4605d860b275f7ad91046786cae9e421fb02cf13bbc6af54fa6dc8a962"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-next-a851083d1a9e-e1840732",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "component": "pkg:golang/stdlib@1.26.4",
+      "platform": "linux/amd64",
+      "locations": [
+        "/usr/bin/cosign"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26; native summary run 38344754471 main-bluefin-dx-next-native.json SHA256 fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96; source native run 38340112122; result SHA256 5724e3de7bbfd54999a962439452e4d9713f6ce1226c3fdbe126454868ba734b; SBOM SHA256 46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5",
+        "Exact candidate config SHA256 3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44; source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-dx-next; build identity v1:13ab0d947b649d17a43851dbea491a445b2c123fcaba02eb1d21bff47ac94ccc",
+        "Independent file platform probe run 38341284379; image ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; applicability JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594; probe SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /usr/bin/cosign; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both a57926e24b07f02b5baf3be81f9a5988e9e45d8a1ca8ca500cdf56d10e69f887; size 141178082; exact compiler go1.26.4; build-info SHA256 cb81ae1aa3a5ef4b7756d98a44577fa147db791d84e854fb080c0ec3d8c867e5"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-next-a851083d1a9e-007fffd0",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "component": "pkg:golang/stdlib@1.26.8",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file",
+        "/sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file",
+        "/usr/libexec/docker/cli-plugins/docker-buildx",
+        "/usr/libexec/docker/cli-plugins/docker-compose"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26; native summary run 38344754471 main-bluefin-dx-next-native.json SHA256 fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96; source native run 38340112122; result SHA256 5724e3de7bbfd54999a962439452e4d9713f6ce1226c3fdbe126454868ba734b; SBOM SHA256 46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5",
+        "Exact candidate config SHA256 3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44; source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-dx-next; build identity v1:13ab0d947b649d17a43851dbea491a445b2c123fcaba02eb1d21bff47ac94ccc",
+        "Independent file platform probe run 38341284379; image ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; applicability JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594; probe SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 1c90a477e132d768ebd29338f75e9f3a039d2be45e28b316f4f617488dd718c8; size 32652720; exact compiler go1.26.8; build-info SHA256 d21d930208dc6d9c64b11984261dbeddae0691bf64529e2c63d788a32f5ea916",
+        "Path /sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 7d9509f9798d32eb120679cfbe7937088a0bfd202524f6c8ad594d4a0d7f1f82; size 75846304; exact compiler go1.26.8; build-info SHA256 d11608f3c4fc6b8855d9fe0d0ba0b048b45042549b3dd1e449ab4dabc956a61b",
+        "Path /usr/libexec/docker/cli-plugins/docker-buildx; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 7d9509f9798d32eb120679cfbe7937088a0bfd202524f6c8ad594d4a0d7f1f82; size 75846304; exact compiler go1.26.8; build-info SHA256 d11608f3c4fc6b8855d9fe0d0ba0b048b45042549b3dd1e449ab4dabc956a61b",
+        "Path /usr/libexec/docker/cli-plugins/docker-compose; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 1c90a477e132d768ebd29338f75e9f3a039d2be45e28b316f4f617488dd718c8; size 32652720; exact compiler go1.26.8; build-info SHA256 d21d930208dc6d9c64b11984261dbeddae0691bf64529e2c63d788a32f5ea916"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-next-a851083d1a9e-2331f11e",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "component": "pkg:golang/stdlib@1.27.1",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+        "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26; native summary run 38344754471 main-bluefin-dx-next-native.json SHA256 fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96; source native run 38340112122; result SHA256 5724e3de7bbfd54999a962439452e4d9713f6ce1226c3fdbe126454868ba734b; SBOM SHA256 46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5",
+        "Exact candidate config SHA256 3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44; source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-dx-next; build identity v1:13ab0d947b649d17a43851dbea491a445b2c123fcaba02eb1d21bff47ac94ccc",
+        "Independent file platform probe run 38341284379; image ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; applicability JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594; probe SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c; size 43464671; exact compiler go1.27.1; build-info SHA256 fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef",
+        "Path /sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d; size 34323303; exact compiler go1.27.1; build-info SHA256 798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+        "Path /usr/bin/tailscale; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d; size 34323303; exact compiler go1.27.1; build-info SHA256 798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+        "Path /usr/bin/tailscaled; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c; size 43464671; exact compiler go1.27.1; build-info SHA256 fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    }
+  ],
+  "joinEvidence": [
+    {
+      "id": "go6604-linux-bluefin-generic-e98ca0ceb484-e1840732",
+      "candidate": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+      "proof": [
+        {
+          "path": "/usr/bin/cosign",
+          "join": "same-candidate-byte-proof",
+          "sha256": "a57926e24b07f02b5baf3be81f9a5988e9e45d8a1ca8ca500cdf56d10e69f887",
+          "size": 141178082,
+          "goVersion": "go1.26.4",
+          "mainPackage": "github.com/sigstore/cosign/v3/cmd/cosign",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "cb81ae1aa3a5ef4b7756d98a44577fa147db791d84e854fb080c0ec3d8c867e5",
+          "goModuleInfoSha256": "22eb8914213a086a83b814cd3a357f123cdb0195771037c172747b878dfb85eb",
+          "currentNativeFileId": "44be93e37d63a826",
+          "currentNativeArtifactId": "2f414c0dcf8564b0",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeSummarySha256": "868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f",
+          "currentNativeSbomSha256": "8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199"
+        }
+      ],
+      "candidateBindings": {
+        "nativeSummarySha256": "868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f",
+        "sourceResultSha256": "814aab9be9c5872dd844ffcbe4d8205a092c6ca43dec11167c4a49aeaa891805",
+        "extractionSha256": "1090f5bcb0b10b19e09f748847587bf9e8da6c1bd304f86c73defaba48b08025",
+        "configurationSha256": "97b4843f19705f7d6d29988bfbe591594388af5a9b7785e4edb08a7b6fb6abef",
+        "approvedBaselineSha256": "e2fe93d2a9252be9cd06615ffcf0675c6257c913764522ab574fec732c05396a",
+        "bindingSha256": "6a95e6f351fa48571175409349a8c4ecc4899b93967e5b53808e5b34f8a4fa2b",
+        "parentManifestSha256": "e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+        "platformManifestSha256": null
+      },
+      "approvedContext": {
+        "schema": 1,
+        "status": "verified",
+        "profile": "bluefin-generic",
+        "sourceRevision": "1d347b7456b0cf64d4372cc0e7a562a9e63eb45b",
+        "buildIdentity": "v1:29a6920037b0251e2c54a53719a00eb9c7085a75e59c8db76839b214703d8e0b",
+        "baseImage": "ghcr.io/ublue-os/bluefin@sha256:23b7bf54349f1a93c2fea4168c7725a632641ee67ae29b0951ef1976c1ba2bc9",
+        "trustPolicySha256": "34ed988effc0db09834e820d3c022c22fe3df54247727f7634a09be4270a7c24",
+        "image": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7"
+      },
+      "actualNativeComponentAdvisoryOccurrences": 1,
+      "probeArtifactSha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+      "probeExtractionLayoutSha256": "b787531d4f4d361f5d802e7f828479326ab7af2ed4e58f1903d52a68badda47c",
+      "probeSourceProvenanceSha256": "850182b9c57328d8c96f9327611d748d0c2c6850852e0df0104045c8d5521b18"
+    },
+    {
+      "id": "go6604-linux-bluefin-generic-e98ca0ceb484-2331f11e",
+      "candidate": "bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+      "proof": [
+        {
+          "path": "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+          "join": "same-candidate-byte-proof",
+          "sha256": "8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c",
+          "size": 43464671,
+          "goVersion": "go1.27.1",
+          "mainPackage": "tailscale.com/cmd/tailscaled",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef",
+          "goModuleInfoSha256": "d3fe1ec25833bf34e69ee3de1c74ccc9c885a06180da37ecb97ff08523ac5663",
+          "currentNativeFileId": "93ff4afdc8dfb218",
+          "currentNativeArtifactId": "d2e29f5444c0b981",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeSummarySha256": "868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f",
+          "currentNativeSbomSha256": "8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199"
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+          "join": "same-candidate-byte-proof",
+          "sha256": "64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d",
+          "size": 34323303,
+          "goVersion": "go1.27.1",
+          "mainPackage": "tailscale.com/cmd/tailscale",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+          "goModuleInfoSha256": "cbaa58a32abab04d995d12644e71c27391f599c245740aa821c1c03ee3b3caab",
+          "currentNativeFileId": "881f482c93039e79",
+          "currentNativeArtifactId": "4908b8e6e85aac1a",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeSummarySha256": "868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f",
+          "currentNativeSbomSha256": "8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199"
+        },
+        {
+          "path": "/usr/bin/tailscale",
+          "join": "same-candidate-byte-proof",
+          "sha256": "64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d",
+          "size": 34323303,
+          "goVersion": "go1.27.1",
+          "mainPackage": "tailscale.com/cmd/tailscale",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+          "goModuleInfoSha256": "cbaa58a32abab04d995d12644e71c27391f599c245740aa821c1c03ee3b3caab",
+          "currentNativeFileId": "2fdfafb02dc34aa8",
+          "currentNativeArtifactId": "08847bdf74236cbd",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeSummarySha256": "868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f",
+          "currentNativeSbomSha256": "8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199"
+        },
+        {
+          "path": "/usr/bin/tailscaled",
+          "join": "same-candidate-byte-proof",
+          "sha256": "8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c",
+          "size": 43464671,
+          "goVersion": "go1.27.1",
+          "mainPackage": "tailscale.com/cmd/tailscaled",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef",
+          "goModuleInfoSha256": "d3fe1ec25833bf34e69ee3de1c74ccc9c885a06180da37ecb97ff08523ac5663",
+          "currentNativeFileId": "012f4cafb160ffc7",
+          "currentNativeArtifactId": "44fd734089c6c838",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeSummarySha256": "868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f",
+          "currentNativeSbomSha256": "8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199"
+        }
+      ],
+      "candidateBindings": {
+        "nativeSummarySha256": "868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f",
+        "sourceResultSha256": "814aab9be9c5872dd844ffcbe4d8205a092c6ca43dec11167c4a49aeaa891805",
+        "extractionSha256": "1090f5bcb0b10b19e09f748847587bf9e8da6c1bd304f86c73defaba48b08025",
+        "configurationSha256": "97b4843f19705f7d6d29988bfbe591594388af5a9b7785e4edb08a7b6fb6abef",
+        "approvedBaselineSha256": "e2fe93d2a9252be9cd06615ffcf0675c6257c913764522ab574fec732c05396a",
+        "bindingSha256": "6a95e6f351fa48571175409349a8c4ecc4899b93967e5b53808e5b34f8a4fa2b",
+        "parentManifestSha256": "e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+        "platformManifestSha256": null
+      },
+      "approvedContext": {
+        "schema": 1,
+        "status": "verified",
+        "profile": "bluefin-generic",
+        "sourceRevision": "1d347b7456b0cf64d4372cc0e7a562a9e63eb45b",
+        "buildIdentity": "v1:29a6920037b0251e2c54a53719a00eb9c7085a75e59c8db76839b214703d8e0b",
+        "baseImage": "ghcr.io/ublue-os/bluefin@sha256:23b7bf54349f1a93c2fea4168c7725a632641ee67ae29b0951ef1976c1ba2bc9",
+        "trustPolicySha256": "34ed988effc0db09834e820d3c022c22fe3df54247727f7634a09be4270a7c24",
+        "image": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7"
+      },
+      "actualNativeComponentAdvisoryOccurrences": 4,
+      "probeArtifactSha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+      "probeExtractionLayoutSha256": "b787531d4f4d361f5d802e7f828479326ab7af2ed4e58f1903d52a68badda47c",
+      "probeSourceProvenanceSha256": "850182b9c57328d8c96f9327611d748d0c2c6850852e0df0104045c8d5521b18"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-generic-7848ba4cfbc9-15e16f9f",
+      "candidate": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "proof": [
+        {
+          "path": "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+          "join": "same-candidate-byte-proof",
+          "sha256": "cca3debb839dac976bab9c76b47d38754cad417c02a5602b1eadd312900af140",
+          "size": 27559496,
+          "goVersion": "go1.25.12",
+          "mainPackage": "github.com/docker/model-runner/cmd/cli",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "d62cae4605d860b275f7ad91046786cae9e421fb02cf13bbc6af54fa6dc8a962",
+          "goModuleInfoSha256": "02c560dd4da18bc88dbd2e98bae98ebcaf846c15158103073dcf1482d48a6341",
+          "currentNativeFileId": "2867c29092cccdf7",
+          "currentNativeArtifactId": "130f0c4f0076581e",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+          "currentNativeSbomSha256": "afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54"
+        },
+        {
+          "path": "/usr/libexec/docker/cli-plugins/docker-model",
+          "join": "same-candidate-byte-proof",
+          "sha256": "cca3debb839dac976bab9c76b47d38754cad417c02a5602b1eadd312900af140",
+          "size": 27559496,
+          "goVersion": "go1.25.12",
+          "mainPackage": "github.com/docker/model-runner/cmd/cli",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "d62cae4605d860b275f7ad91046786cae9e421fb02cf13bbc6af54fa6dc8a962",
+          "goModuleInfoSha256": "02c560dd4da18bc88dbd2e98bae98ebcaf846c15158103073dcf1482d48a6341",
+          "currentNativeFileId": "40cb4da7b8e7525c",
+          "currentNativeArtifactId": "2f76a588decba2e6",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+          "currentNativeSbomSha256": "afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54"
+        }
+      ],
+      "candidateBindings": {
+        "nativeSummarySha256": "90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+        "sourceResultSha256": "7cdbb3e6a941de295d48ef0f2a7cfc8c72b4ec383ca990e6a17de0cf114605bb",
+        "extractionSha256": "764adc980272907e1e4b918164d649cb71448c44a3021ba29d86a93dcf32d1ba",
+        "configurationSha256": "f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357",
+        "approvedBaselineSha256": "3f18263a41b8fda45ff80d84d88a1293c2d243bab7f53da6b4b9af8d6e3520f5",
+        "bindingSha256": "0455f967e75f684f3c513dc044a549c0a2ab975c11e8c328d86d88139a8477a2",
+        "parentManifestSha256": "7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+        "platformManifestSha256": null
+      },
+      "approvedContext": {
+        "schema": 1,
+        "status": "verified",
+        "profile": "bluefin-dx-generic",
+        "sourceRevision": "1d347b7456b0cf64d4372cc0e7a562a9e63eb45b",
+        "buildIdentity": "v1:b30ea5e8bfe8ec02caa2f4118aa91ba47c6c4283c3fe44cf1d73568f6954c76b",
+        "baseImage": "ghcr.io/ublue-os/bluefin-dx@sha256:a41cf1ebc4b6718cab813f221b8394c963ed3f0777b52e19fe6c3784b15c52ed",
+        "trustPolicySha256": "34ed988effc0db09834e820d3c022c22fe3df54247727f7634a09be4270a7c24",
+        "image": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845"
+      },
+      "actualNativeComponentAdvisoryOccurrences": 2,
+      "probeArtifactSha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+      "probeExtractionLayoutSha256": "3cd41c675d772aa22ece1f0ac1d1227f85ea646ae45b35638b635fe926692cb8",
+      "probeSourceProvenanceSha256": "42e0a2cbab515ec7e86d7027460b39c4ec1e63f16cc8f15cb869cc4dce1b7161"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-generic-7848ba4cfbc9-e1840732",
+      "candidate": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "proof": [
+        {
+          "path": "/usr/bin/cosign",
+          "join": "same-candidate-byte-proof",
+          "sha256": "a57926e24b07f02b5baf3be81f9a5988e9e45d8a1ca8ca500cdf56d10e69f887",
+          "size": 141178082,
+          "goVersion": "go1.26.4",
+          "mainPackage": "github.com/sigstore/cosign/v3/cmd/cosign",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "cb81ae1aa3a5ef4b7756d98a44577fa147db791d84e854fb080c0ec3d8c867e5",
+          "goModuleInfoSha256": "22eb8914213a086a83b814cd3a357f123cdb0195771037c172747b878dfb85eb",
+          "currentNativeFileId": "44be93e37d63a826",
+          "currentNativeArtifactId": "2f414c0dcf8564b0",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+          "currentNativeSbomSha256": "afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54"
+        }
+      ],
+      "candidateBindings": {
+        "nativeSummarySha256": "90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+        "sourceResultSha256": "7cdbb3e6a941de295d48ef0f2a7cfc8c72b4ec383ca990e6a17de0cf114605bb",
+        "extractionSha256": "764adc980272907e1e4b918164d649cb71448c44a3021ba29d86a93dcf32d1ba",
+        "configurationSha256": "f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357",
+        "approvedBaselineSha256": "3f18263a41b8fda45ff80d84d88a1293c2d243bab7f53da6b4b9af8d6e3520f5",
+        "bindingSha256": "0455f967e75f684f3c513dc044a549c0a2ab975c11e8c328d86d88139a8477a2",
+        "parentManifestSha256": "7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+        "platformManifestSha256": null
+      },
+      "approvedContext": {
+        "schema": 1,
+        "status": "verified",
+        "profile": "bluefin-dx-generic",
+        "sourceRevision": "1d347b7456b0cf64d4372cc0e7a562a9e63eb45b",
+        "buildIdentity": "v1:b30ea5e8bfe8ec02caa2f4118aa91ba47c6c4283c3fe44cf1d73568f6954c76b",
+        "baseImage": "ghcr.io/ublue-os/bluefin-dx@sha256:a41cf1ebc4b6718cab813f221b8394c963ed3f0777b52e19fe6c3784b15c52ed",
+        "trustPolicySha256": "34ed988effc0db09834e820d3c022c22fe3df54247727f7634a09be4270a7c24",
+        "image": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845"
+      },
+      "actualNativeComponentAdvisoryOccurrences": 1,
+      "probeArtifactSha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+      "probeExtractionLayoutSha256": "3cd41c675d772aa22ece1f0ac1d1227f85ea646ae45b35638b635fe926692cb8",
+      "probeSourceProvenanceSha256": "42e0a2cbab515ec7e86d7027460b39c4ec1e63f16cc8f15cb869cc4dce1b7161"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-generic-7848ba4cfbc9-007fffd0",
+      "candidate": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "proof": [
+        {
+          "path": "/sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file",
+          "join": "same-candidate-byte-proof",
+          "sha256": "1c90a477e132d768ebd29338f75e9f3a039d2be45e28b316f4f617488dd718c8",
+          "size": 32652720,
+          "goVersion": "go1.26.8",
+          "mainPackage": "github.com/docker/compose/v5/cmd",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "d21d930208dc6d9c64b11984261dbeddae0691bf64529e2c63d788a32f5ea916",
+          "goModuleInfoSha256": "1eb242105ec7e0eeae5452cb30b5a5613336bdb1f59d6ae70966a53eef12e975",
+          "currentNativeFileId": "8bcaf685468490fd",
+          "currentNativeArtifactId": "47d474a5fb98bb24",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+          "currentNativeSbomSha256": "afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54"
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file",
+          "join": "same-candidate-byte-proof",
+          "sha256": "7d9509f9798d32eb120679cfbe7937088a0bfd202524f6c8ad594d4a0d7f1f82",
+          "size": 75846304,
+          "goVersion": "go1.26.8",
+          "mainPackage": "github.com/docker/buildx/cmd/buildx",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "d11608f3c4fc6b8855d9fe0d0ba0b048b45042549b3dd1e449ab4dabc956a61b",
+          "goModuleInfoSha256": "2990479179fb764660a1df4936d2c7f9a5bce5c489ea3d342ef17e7fe564a12d",
+          "currentNativeFileId": "f4d2f43ea91af87b",
+          "currentNativeArtifactId": "0264be8960c34c02",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+          "currentNativeSbomSha256": "afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54"
+        },
+        {
+          "path": "/usr/libexec/docker/cli-plugins/docker-buildx",
+          "join": "same-candidate-byte-proof",
+          "sha256": "7d9509f9798d32eb120679cfbe7937088a0bfd202524f6c8ad594d4a0d7f1f82",
+          "size": 75846304,
+          "goVersion": "go1.26.8",
+          "mainPackage": "github.com/docker/buildx/cmd/buildx",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "d11608f3c4fc6b8855d9fe0d0ba0b048b45042549b3dd1e449ab4dabc956a61b",
+          "goModuleInfoSha256": "2990479179fb764660a1df4936d2c7f9a5bce5c489ea3d342ef17e7fe564a12d",
+          "currentNativeFileId": "3a0e7ed944264b97",
+          "currentNativeArtifactId": "caf6564853f34849",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+          "currentNativeSbomSha256": "afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54"
+        },
+        {
+          "path": "/usr/libexec/docker/cli-plugins/docker-compose",
+          "join": "same-candidate-byte-proof",
+          "sha256": "1c90a477e132d768ebd29338f75e9f3a039d2be45e28b316f4f617488dd718c8",
+          "size": 32652720,
+          "goVersion": "go1.26.8",
+          "mainPackage": "github.com/docker/compose/v5/cmd",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "d21d930208dc6d9c64b11984261dbeddae0691bf64529e2c63d788a32f5ea916",
+          "goModuleInfoSha256": "1eb242105ec7e0eeae5452cb30b5a5613336bdb1f59d6ae70966a53eef12e975",
+          "currentNativeFileId": "622d8bc905c6d964",
+          "currentNativeArtifactId": "4c95f43c49bd7b39",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+          "currentNativeSbomSha256": "afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54"
+        }
+      ],
+      "candidateBindings": {
+        "nativeSummarySha256": "90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+        "sourceResultSha256": "7cdbb3e6a941de295d48ef0f2a7cfc8c72b4ec383ca990e6a17de0cf114605bb",
+        "extractionSha256": "764adc980272907e1e4b918164d649cb71448c44a3021ba29d86a93dcf32d1ba",
+        "configurationSha256": "f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357",
+        "approvedBaselineSha256": "3f18263a41b8fda45ff80d84d88a1293c2d243bab7f53da6b4b9af8d6e3520f5",
+        "bindingSha256": "0455f967e75f684f3c513dc044a549c0a2ab975c11e8c328d86d88139a8477a2",
+        "parentManifestSha256": "7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+        "platformManifestSha256": null
+      },
+      "approvedContext": {
+        "schema": 1,
+        "status": "verified",
+        "profile": "bluefin-dx-generic",
+        "sourceRevision": "1d347b7456b0cf64d4372cc0e7a562a9e63eb45b",
+        "buildIdentity": "v1:b30ea5e8bfe8ec02caa2f4118aa91ba47c6c4283c3fe44cf1d73568f6954c76b",
+        "baseImage": "ghcr.io/ublue-os/bluefin-dx@sha256:a41cf1ebc4b6718cab813f221b8394c963ed3f0777b52e19fe6c3784b15c52ed",
+        "trustPolicySha256": "34ed988effc0db09834e820d3c022c22fe3df54247727f7634a09be4270a7c24",
+        "image": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845"
+      },
+      "actualNativeComponentAdvisoryOccurrences": 4,
+      "probeArtifactSha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+      "probeExtractionLayoutSha256": "3cd41c675d772aa22ece1f0ac1d1227f85ea646ae45b35638b635fe926692cb8",
+      "probeSourceProvenanceSha256": "42e0a2cbab515ec7e86d7027460b39c4ec1e63f16cc8f15cb869cc4dce1b7161"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-generic-7848ba4cfbc9-2331f11e",
+      "candidate": "bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "proof": [
+        {
+          "path": "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+          "join": "same-candidate-byte-proof",
+          "sha256": "8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c",
+          "size": 43464671,
+          "goVersion": "go1.27.1",
+          "mainPackage": "tailscale.com/cmd/tailscaled",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef",
+          "goModuleInfoSha256": "d3fe1ec25833bf34e69ee3de1c74ccc9c885a06180da37ecb97ff08523ac5663",
+          "currentNativeFileId": "93ff4afdc8dfb218",
+          "currentNativeArtifactId": "d2e29f5444c0b981",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+          "currentNativeSbomSha256": "afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54"
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+          "join": "same-candidate-byte-proof",
+          "sha256": "64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d",
+          "size": 34323303,
+          "goVersion": "go1.27.1",
+          "mainPackage": "tailscale.com/cmd/tailscale",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+          "goModuleInfoSha256": "cbaa58a32abab04d995d12644e71c27391f599c245740aa821c1c03ee3b3caab",
+          "currentNativeFileId": "881f482c93039e79",
+          "currentNativeArtifactId": "4908b8e6e85aac1a",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+          "currentNativeSbomSha256": "afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54"
+        },
+        {
+          "path": "/usr/bin/tailscale",
+          "join": "same-candidate-byte-proof",
+          "sha256": "64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d",
+          "size": 34323303,
+          "goVersion": "go1.27.1",
+          "mainPackage": "tailscale.com/cmd/tailscale",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+          "goModuleInfoSha256": "cbaa58a32abab04d995d12644e71c27391f599c245740aa821c1c03ee3b3caab",
+          "currentNativeFileId": "2fdfafb02dc34aa8",
+          "currentNativeArtifactId": "08847bdf74236cbd",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+          "currentNativeSbomSha256": "afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54"
+        },
+        {
+          "path": "/usr/bin/tailscaled",
+          "join": "same-candidate-byte-proof",
+          "sha256": "8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c",
+          "size": 43464671,
+          "goVersion": "go1.27.1",
+          "mainPackage": "tailscale.com/cmd/tailscaled",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef",
+          "goModuleInfoSha256": "d3fe1ec25833bf34e69ee3de1c74ccc9c885a06180da37ecb97ff08523ac5663",
+          "currentNativeFileId": "012f4cafb160ffc7",
+          "currentNativeArtifactId": "44fd734089c6c838",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+          "currentNativeSbomSha256": "afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54"
+        }
+      ],
+      "candidateBindings": {
+        "nativeSummarySha256": "90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+        "sourceResultSha256": "7cdbb3e6a941de295d48ef0f2a7cfc8c72b4ec383ca990e6a17de0cf114605bb",
+        "extractionSha256": "764adc980272907e1e4b918164d649cb71448c44a3021ba29d86a93dcf32d1ba",
+        "configurationSha256": "f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357",
+        "approvedBaselineSha256": "3f18263a41b8fda45ff80d84d88a1293c2d243bab7f53da6b4b9af8d6e3520f5",
+        "bindingSha256": "0455f967e75f684f3c513dc044a549c0a2ab975c11e8c328d86d88139a8477a2",
+        "parentManifestSha256": "7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+        "platformManifestSha256": null
+      },
+      "approvedContext": {
+        "schema": 1,
+        "status": "verified",
+        "profile": "bluefin-dx-generic",
+        "sourceRevision": "1d347b7456b0cf64d4372cc0e7a562a9e63eb45b",
+        "buildIdentity": "v1:b30ea5e8bfe8ec02caa2f4118aa91ba47c6c4283c3fe44cf1d73568f6954c76b",
+        "baseImage": "ghcr.io/ublue-os/bluefin-dx@sha256:a41cf1ebc4b6718cab813f221b8394c963ed3f0777b52e19fe6c3784b15c52ed",
+        "trustPolicySha256": "34ed988effc0db09834e820d3c022c22fe3df54247727f7634a09be4270a7c24",
+        "image": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845"
+      },
+      "actualNativeComponentAdvisoryOccurrences": 4,
+      "probeArtifactSha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+      "probeExtractionLayoutSha256": "3cd41c675d772aa22ece1f0ac1d1227f85ea646ae45b35638b635fe926692cb8",
+      "probeSourceProvenanceSha256": "42e0a2cbab515ec7e86d7027460b39c4ec1e63f16cc8f15cb869cc4dce1b7161"
+    },
+    {
+      "id": "go6604-linux-bluefin-generic-3d4693f25f09-e1840732",
+      "candidate": "main-bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "proof": [
+        {
+          "path": "/usr/bin/cosign",
+          "join": "authenticated-native-content-equality-to-diagnostic-proof",
+          "sha256": "a57926e24b07f02b5baf3be81f9a5988e9e45d8a1ca8ca500cdf56d10e69f887",
+          "size": 141178082,
+          "goVersion": "go1.26.4",
+          "mainPackage": "github.com/sigstore/cosign/v3/cmd/cosign",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "cb81ae1aa3a5ef4b7756d98a44577fa147db791d84e854fb080c0ec3d8c867e5",
+          "goModuleInfoSha256": "22eb8914213a086a83b814cd3a357f123cdb0195771037c172747b878dfb85eb",
+          "currentNativeFileId": "44be93e37d63a826",
+          "currentNativeArtifactId": "2f414c0dcf8564b0",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeSummarySha256": "5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9",
+          "currentNativeSbomSha256": "4902fdd4b2afca8374a3197770f25daa11c7626cb5c83c46fb614ad1f5441201"
+        }
+      ],
+      "candidateBindings": {
+        "nativeSummarySha256": "5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9",
+        "sourceResultSha256": "92127eae6a60001c57937bb329061da88bdc6a933a993a6a047c6be7466518ca",
+        "extractionSha256": "dad4c01f31b275477cf5ce896b48ae67b6aa79c9d0152f8bef56b3eb1811c0ec",
+        "configurationSha256": "eb2542e972cdd6c71f3448674c57b0c41252fdc4c986252bc8ff3621e2119cf4",
+        "approvedBaselineSha256": "d2a63abcb8293c942a161915a9f03bfa8e59ca8f6873052af3e35b55b0ce5c2f",
+        "bindingSha256": "eebe5c68f116c22b39c89654f752a9e09b565c7e7c8810569a5f3d338d8140be",
+        "parentManifestSha256": "3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+        "platformManifestSha256": "e626d128a3eae4acd4421de5ffcb19e6d4535798c7b42ee8f7506063bd3572b3"
+      },
+      "approvedContext": {
+        "schema": 1,
+        "status": "verified",
+        "profile": "bluefin-generic",
+        "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+        "buildIdentity": "v1:357fa0799580560ed50f4045d429e0e9d19ad76e8deb9e647e45b0be33885a38",
+        "baseImage": "ghcr.io/ublue-os/bluefin@sha256:23b7bf54349f1a93c2fea4168c7725a632641ee67ae29b0951ef1976c1ba2bc9",
+        "trustPolicySha256": "34ed988effc0db09834e820d3c022c22fe3df54247727f7634a09be4270a7c24",
+        "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844"
+      },
+      "actualNativeComponentAdvisoryOccurrences": 1,
+      "probeArtifactSha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+      "probeExtractionLayoutSha256": "b787531d4f4d361f5d802e7f828479326ab7af2ed4e58f1903d52a68badda47c",
+      "probeSourceProvenanceSha256": "850182b9c57328d8c96f9327611d748d0c2c6850852e0df0104045c8d5521b18"
+    },
+    {
+      "id": "go6604-linux-bluefin-generic-3d4693f25f09-2331f11e",
+      "candidate": "main-bluefin-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "proof": [
+        {
+          "path": "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+          "join": "authenticated-native-content-equality-to-diagnostic-proof",
+          "sha256": "8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c",
+          "size": 43464671,
+          "goVersion": "go1.27.1",
+          "mainPackage": "tailscale.com/cmd/tailscaled",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef",
+          "goModuleInfoSha256": "d3fe1ec25833bf34e69ee3de1c74ccc9c885a06180da37ecb97ff08523ac5663",
+          "currentNativeFileId": "93ff4afdc8dfb218",
+          "currentNativeArtifactId": "d2e29f5444c0b981",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeSummarySha256": "5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9",
+          "currentNativeSbomSha256": "4902fdd4b2afca8374a3197770f25daa11c7626cb5c83c46fb614ad1f5441201"
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+          "join": "authenticated-native-content-equality-to-diagnostic-proof",
+          "sha256": "64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d",
+          "size": 34323303,
+          "goVersion": "go1.27.1",
+          "mainPackage": "tailscale.com/cmd/tailscale",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+          "goModuleInfoSha256": "cbaa58a32abab04d995d12644e71c27391f599c245740aa821c1c03ee3b3caab",
+          "currentNativeFileId": "881f482c93039e79",
+          "currentNativeArtifactId": "4908b8e6e85aac1a",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeSummarySha256": "5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9",
+          "currentNativeSbomSha256": "4902fdd4b2afca8374a3197770f25daa11c7626cb5c83c46fb614ad1f5441201"
+        },
+        {
+          "path": "/usr/bin/tailscale",
+          "join": "authenticated-native-content-equality-to-diagnostic-proof",
+          "sha256": "64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d",
+          "size": 34323303,
+          "goVersion": "go1.27.1",
+          "mainPackage": "tailscale.com/cmd/tailscale",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+          "goModuleInfoSha256": "cbaa58a32abab04d995d12644e71c27391f599c245740aa821c1c03ee3b3caab",
+          "currentNativeFileId": "2fdfafb02dc34aa8",
+          "currentNativeArtifactId": "08847bdf74236cbd",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeSummarySha256": "5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9",
+          "currentNativeSbomSha256": "4902fdd4b2afca8374a3197770f25daa11c7626cb5c83c46fb614ad1f5441201"
+        },
+        {
+          "path": "/usr/bin/tailscaled",
+          "join": "authenticated-native-content-equality-to-diagnostic-proof",
+          "sha256": "8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c",
+          "size": 43464671,
+          "goVersion": "go1.27.1",
+          "mainPackage": "tailscale.com/cmd/tailscaled",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef",
+          "goModuleInfoSha256": "d3fe1ec25833bf34e69ee3de1c74ccc9c885a06180da37ecb97ff08523ac5663",
+          "currentNativeFileId": "012f4cafb160ffc7",
+          "currentNativeArtifactId": "44fd734089c6c838",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeSummarySha256": "5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9",
+          "currentNativeSbomSha256": "4902fdd4b2afca8374a3197770f25daa11c7626cb5c83c46fb614ad1f5441201"
+        }
+      ],
+      "candidateBindings": {
+        "nativeSummarySha256": "5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9",
+        "sourceResultSha256": "92127eae6a60001c57937bb329061da88bdc6a933a993a6a047c6be7466518ca",
+        "extractionSha256": "dad4c01f31b275477cf5ce896b48ae67b6aa79c9d0152f8bef56b3eb1811c0ec",
+        "configurationSha256": "eb2542e972cdd6c71f3448674c57b0c41252fdc4c986252bc8ff3621e2119cf4",
+        "approvedBaselineSha256": "d2a63abcb8293c942a161915a9f03bfa8e59ca8f6873052af3e35b55b0ce5c2f",
+        "bindingSha256": "eebe5c68f116c22b39c89654f752a9e09b565c7e7c8810569a5f3d338d8140be",
+        "parentManifestSha256": "3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+        "platformManifestSha256": "e626d128a3eae4acd4421de5ffcb19e6d4535798c7b42ee8f7506063bd3572b3"
+      },
+      "approvedContext": {
+        "schema": 1,
+        "status": "verified",
+        "profile": "bluefin-generic",
+        "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+        "buildIdentity": "v1:357fa0799580560ed50f4045d429e0e9d19ad76e8deb9e647e45b0be33885a38",
+        "baseImage": "ghcr.io/ublue-os/bluefin@sha256:23b7bf54349f1a93c2fea4168c7725a632641ee67ae29b0951ef1976c1ba2bc9",
+        "trustPolicySha256": "34ed988effc0db09834e820d3c022c22fe3df54247727f7634a09be4270a7c24",
+        "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844"
+      },
+      "actualNativeComponentAdvisoryOccurrences": 4,
+      "probeArtifactSha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+      "probeExtractionLayoutSha256": "b787531d4f4d361f5d802e7f828479326ab7af2ed4e58f1903d52a68badda47c",
+      "probeSourceProvenanceSha256": "850182b9c57328d8c96f9327611d748d0c2c6850852e0df0104045c8d5521b18"
+    },
+    {
+      "id": "go6604-linux-bluefin-next-a36f46afcc2a-e1840732",
+      "candidate": "main-bluefin-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+      "proof": [
+        {
+          "path": "/usr/bin/cosign",
+          "join": "authenticated-native-content-equality-to-diagnostic-proof",
+          "sha256": "a57926e24b07f02b5baf3be81f9a5988e9e45d8a1ca8ca500cdf56d10e69f887",
+          "size": 141178082,
+          "goVersion": "go1.26.4",
+          "mainPackage": "github.com/sigstore/cosign/v3/cmd/cosign",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "cb81ae1aa3a5ef4b7756d98a44577fa147db791d84e854fb080c0ec3d8c867e5",
+          "goModuleInfoSha256": "22eb8914213a086a83b814cd3a357f123cdb0195771037c172747b878dfb85eb",
+          "currentNativeFileId": "44be93e37d63a826",
+          "currentNativeArtifactId": "2f414c0dcf8564b0",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeSummarySha256": "81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f",
+          "currentNativeSbomSha256": "bcf12455b002324b0c5923110de414cde3528d164bbb6b230dc2e8efb69f56b4"
+        }
+      ],
+      "candidateBindings": {
+        "nativeSummarySha256": "81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f",
+        "sourceResultSha256": "64182a6c9df652cdfdf3c07d19b7983a7ac297d43bff97f18cac74cd12d8f95c",
+        "extractionSha256": "526eac11850343447addbc89dbddc401122823d23e3c09504bea5c17a833853b",
+        "configurationSha256": "fce1315ea7763cf210b19f4e7c83334ab5e36be9a490d97e0ccc2b2c69491497",
+        "approvedBaselineSha256": "ff11b3fad4ce4ab39d139022c2d5f30bf721b1454cd1fc65269bde2e087a7a50",
+        "bindingSha256": "24ee45ac5db92e35d0c93f3fc9c64c7b7eb7c9c2ec0a37927305172b2cca21b4",
+        "parentManifestSha256": "a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+        "platformManifestSha256": "0e50f1435759085be0e789c2a880a296fc8dd2d0e363ae4be4c0ac5c3e2a6b60"
+      },
+      "approvedContext": {
+        "schema": 1,
+        "status": "verified",
+        "profile": "bluefin-next",
+        "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+        "buildIdentity": "v1:204a54980664eb886d8b5a949b4a2bcd50c5fd6074f82e5d60ae6362241bb47c",
+        "baseImage": "ghcr.io/ublue-os/bluefin@sha256:23b7bf54349f1a93c2fea4168c7725a632641ee67ae29b0951ef1976c1ba2bc9",
+        "trustPolicySha256": "34ed988effc0db09834e820d3c022c22fe3df54247727f7634a09be4270a7c24",
+        "image": "ghcr.io/closure-labs/finite@sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db"
+      },
+      "actualNativeComponentAdvisoryOccurrences": 1,
+      "probeArtifactSha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+      "probeExtractionLayoutSha256": "b787531d4f4d361f5d802e7f828479326ab7af2ed4e58f1903d52a68badda47c",
+      "probeSourceProvenanceSha256": "850182b9c57328d8c96f9327611d748d0c2c6850852e0df0104045c8d5521b18"
+    },
+    {
+      "id": "go6604-linux-bluefin-next-a36f46afcc2a-2331f11e",
+      "candidate": "main-bluefin-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+      "proof": [
+        {
+          "path": "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+          "join": "authenticated-native-content-equality-to-diagnostic-proof",
+          "sha256": "8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c",
+          "size": 43464671,
+          "goVersion": "go1.27.1",
+          "mainPackage": "tailscale.com/cmd/tailscaled",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef",
+          "goModuleInfoSha256": "d3fe1ec25833bf34e69ee3de1c74ccc9c885a06180da37ecb97ff08523ac5663",
+          "currentNativeFileId": "93ff4afdc8dfb218",
+          "currentNativeArtifactId": "d2e29f5444c0b981",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeSummarySha256": "81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f",
+          "currentNativeSbomSha256": "bcf12455b002324b0c5923110de414cde3528d164bbb6b230dc2e8efb69f56b4"
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+          "join": "authenticated-native-content-equality-to-diagnostic-proof",
+          "sha256": "64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d",
+          "size": 34323303,
+          "goVersion": "go1.27.1",
+          "mainPackage": "tailscale.com/cmd/tailscale",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+          "goModuleInfoSha256": "cbaa58a32abab04d995d12644e71c27391f599c245740aa821c1c03ee3b3caab",
+          "currentNativeFileId": "881f482c93039e79",
+          "currentNativeArtifactId": "4908b8e6e85aac1a",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeSummarySha256": "81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f",
+          "currentNativeSbomSha256": "bcf12455b002324b0c5923110de414cde3528d164bbb6b230dc2e8efb69f56b4"
+        },
+        {
+          "path": "/usr/bin/tailscale",
+          "join": "authenticated-native-content-equality-to-diagnostic-proof",
+          "sha256": "64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d",
+          "size": 34323303,
+          "goVersion": "go1.27.1",
+          "mainPackage": "tailscale.com/cmd/tailscale",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+          "goModuleInfoSha256": "cbaa58a32abab04d995d12644e71c27391f599c245740aa821c1c03ee3b3caab",
+          "currentNativeFileId": "2fdfafb02dc34aa8",
+          "currentNativeArtifactId": "08847bdf74236cbd",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeSummarySha256": "81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f",
+          "currentNativeSbomSha256": "bcf12455b002324b0c5923110de414cde3528d164bbb6b230dc2e8efb69f56b4"
+        },
+        {
+          "path": "/usr/bin/tailscaled",
+          "join": "authenticated-native-content-equality-to-diagnostic-proof",
+          "sha256": "8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c",
+          "size": 43464671,
+          "goVersion": "go1.27.1",
+          "mainPackage": "tailscale.com/cmd/tailscaled",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef",
+          "goModuleInfoSha256": "d3fe1ec25833bf34e69ee3de1c74ccc9c885a06180da37ecb97ff08523ac5663",
+          "currentNativeFileId": "012f4cafb160ffc7",
+          "currentNativeArtifactId": "44fd734089c6c838",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "probeRun": 38341281199,
+          "probeApplicabilitySha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+          "currentNativeSummarySha256": "81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f",
+          "currentNativeSbomSha256": "bcf12455b002324b0c5923110de414cde3528d164bbb6b230dc2e8efb69f56b4"
+        }
+      ],
+      "candidateBindings": {
+        "nativeSummarySha256": "81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f",
+        "sourceResultSha256": "64182a6c9df652cdfdf3c07d19b7983a7ac297d43bff97f18cac74cd12d8f95c",
+        "extractionSha256": "526eac11850343447addbc89dbddc401122823d23e3c09504bea5c17a833853b",
+        "configurationSha256": "fce1315ea7763cf210b19f4e7c83334ab5e36be9a490d97e0ccc2b2c69491497",
+        "approvedBaselineSha256": "ff11b3fad4ce4ab39d139022c2d5f30bf721b1454cd1fc65269bde2e087a7a50",
+        "bindingSha256": "24ee45ac5db92e35d0c93f3fc9c64c7b7eb7c9c2ec0a37927305172b2cca21b4",
+        "parentManifestSha256": "a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+        "platformManifestSha256": "0e50f1435759085be0e789c2a880a296fc8dd2d0e363ae4be4c0ac5c3e2a6b60"
+      },
+      "approvedContext": {
+        "schema": 1,
+        "status": "verified",
+        "profile": "bluefin-next",
+        "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+        "buildIdentity": "v1:204a54980664eb886d8b5a949b4a2bcd50c5fd6074f82e5d60ae6362241bb47c",
+        "baseImage": "ghcr.io/ublue-os/bluefin@sha256:23b7bf54349f1a93c2fea4168c7725a632641ee67ae29b0951ef1976c1ba2bc9",
+        "trustPolicySha256": "34ed988effc0db09834e820d3c022c22fe3df54247727f7634a09be4270a7c24",
+        "image": "ghcr.io/closure-labs/finite@sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db"
+      },
+      "actualNativeComponentAdvisoryOccurrences": 4,
+      "probeArtifactSha256": "f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+      "probeExtractionLayoutSha256": "b787531d4f4d361f5d802e7f828479326ab7af2ed4e58f1903d52a68badda47c",
+      "probeSourceProvenanceSha256": "850182b9c57328d8c96f9327611d748d0c2c6850852e0df0104045c8d5521b18"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-generic-3fd7e10d0e29-15e16f9f",
+      "candidate": "main-bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "proof": [
+        {
+          "path": "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+          "join": "authenticated-native-content-equality-to-diagnostic-proof",
+          "sha256": "cca3debb839dac976bab9c76b47d38754cad417c02a5602b1eadd312900af140",
+          "size": 27559496,
+          "goVersion": "go1.25.12",
+          "mainPackage": "github.com/docker/model-runner/cmd/cli",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "d62cae4605d860b275f7ad91046786cae9e421fb02cf13bbc6af54fa6dc8a962",
+          "goModuleInfoSha256": "02c560dd4da18bc88dbd2e98bae98ebcaf846c15158103073dcf1482d48a6341",
+          "currentNativeFileId": "2867c29092cccdf7",
+          "currentNativeArtifactId": "130f0c4f0076581e",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+          "currentNativeSbomSha256": "d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64"
+        },
+        {
+          "path": "/usr/libexec/docker/cli-plugins/docker-model",
+          "join": "authenticated-native-content-equality-to-diagnostic-proof",
+          "sha256": "cca3debb839dac976bab9c76b47d38754cad417c02a5602b1eadd312900af140",
+          "size": 27559496,
+          "goVersion": "go1.25.12",
+          "mainPackage": "github.com/docker/model-runner/cmd/cli",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "d62cae4605d860b275f7ad91046786cae9e421fb02cf13bbc6af54fa6dc8a962",
+          "goModuleInfoSha256": "02c560dd4da18bc88dbd2e98bae98ebcaf846c15158103073dcf1482d48a6341",
+          "currentNativeFileId": "40cb4da7b8e7525c",
+          "currentNativeArtifactId": "2f76a588decba2e6",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+          "currentNativeSbomSha256": "d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64"
+        }
+      ],
+      "candidateBindings": {
+        "nativeSummarySha256": "21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+        "sourceResultSha256": "b6439aee802b91d107231e19cdd6ddc405d5546204db05d46f14b99ba3086f56",
+        "extractionSha256": "1945c7099ecb4475b5227231861be84ba495311ed1195d7008632697683d2e54",
+        "configurationSha256": "5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78",
+        "approvedBaselineSha256": "30cf33644014ba9c5794639b57494fff067f3429f7771fe6a1e9d12c9d517884",
+        "bindingSha256": "579c2e93bfebcf83bebc46a16235230761f00f3708bcb8aa9070cd1c0baefc14",
+        "parentManifestSha256": "3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+        "platformManifestSha256": "452d00e425c67c7e41b88d63a3dcf5728c2c68621ac75689c617c8a36e7cfe21"
+      },
+      "approvedContext": {
+        "schema": 1,
+        "status": "verified",
+        "profile": "bluefin-dx-generic",
+        "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+        "buildIdentity": "v1:05fb59c6ab874df5cdba42675aeacfb37f7ba34df2053d198be408edb85ed247",
+        "baseImage": "ghcr.io/ublue-os/bluefin-dx@sha256:a41cf1ebc4b6718cab813f221b8394c963ed3f0777b52e19fe6c3784b15c52ed",
+        "trustPolicySha256": "34ed988effc0db09834e820d3c022c22fe3df54247727f7634a09be4270a7c24",
+        "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c"
+      },
+      "actualNativeComponentAdvisoryOccurrences": 2,
+      "probeArtifactSha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+      "probeExtractionLayoutSha256": "3cd41c675d772aa22ece1f0ac1d1227f85ea646ae45b35638b635fe926692cb8",
+      "probeSourceProvenanceSha256": "42e0a2cbab515ec7e86d7027460b39c4ec1e63f16cc8f15cb869cc4dce1b7161"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-generic-3fd7e10d0e29-e1840732",
+      "candidate": "main-bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "proof": [
+        {
+          "path": "/usr/bin/cosign",
+          "join": "authenticated-native-content-equality-to-diagnostic-proof",
+          "sha256": "a57926e24b07f02b5baf3be81f9a5988e9e45d8a1ca8ca500cdf56d10e69f887",
+          "size": 141178082,
+          "goVersion": "go1.26.4",
+          "mainPackage": "github.com/sigstore/cosign/v3/cmd/cosign",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "cb81ae1aa3a5ef4b7756d98a44577fa147db791d84e854fb080c0ec3d8c867e5",
+          "goModuleInfoSha256": "22eb8914213a086a83b814cd3a357f123cdb0195771037c172747b878dfb85eb",
+          "currentNativeFileId": "44be93e37d63a826",
+          "currentNativeArtifactId": "2f414c0dcf8564b0",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+          "currentNativeSbomSha256": "d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64"
+        }
+      ],
+      "candidateBindings": {
+        "nativeSummarySha256": "21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+        "sourceResultSha256": "b6439aee802b91d107231e19cdd6ddc405d5546204db05d46f14b99ba3086f56",
+        "extractionSha256": "1945c7099ecb4475b5227231861be84ba495311ed1195d7008632697683d2e54",
+        "configurationSha256": "5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78",
+        "approvedBaselineSha256": "30cf33644014ba9c5794639b57494fff067f3429f7771fe6a1e9d12c9d517884",
+        "bindingSha256": "579c2e93bfebcf83bebc46a16235230761f00f3708bcb8aa9070cd1c0baefc14",
+        "parentManifestSha256": "3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+        "platformManifestSha256": "452d00e425c67c7e41b88d63a3dcf5728c2c68621ac75689c617c8a36e7cfe21"
+      },
+      "approvedContext": {
+        "schema": 1,
+        "status": "verified",
+        "profile": "bluefin-dx-generic",
+        "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+        "buildIdentity": "v1:05fb59c6ab874df5cdba42675aeacfb37f7ba34df2053d198be408edb85ed247",
+        "baseImage": "ghcr.io/ublue-os/bluefin-dx@sha256:a41cf1ebc4b6718cab813f221b8394c963ed3f0777b52e19fe6c3784b15c52ed",
+        "trustPolicySha256": "34ed988effc0db09834e820d3c022c22fe3df54247727f7634a09be4270a7c24",
+        "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c"
+      },
+      "actualNativeComponentAdvisoryOccurrences": 1,
+      "probeArtifactSha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+      "probeExtractionLayoutSha256": "3cd41c675d772aa22ece1f0ac1d1227f85ea646ae45b35638b635fe926692cb8",
+      "probeSourceProvenanceSha256": "42e0a2cbab515ec7e86d7027460b39c4ec1e63f16cc8f15cb869cc4dce1b7161"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-generic-3fd7e10d0e29-007fffd0",
+      "candidate": "main-bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "proof": [
+        {
+          "path": "/sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file",
+          "join": "authenticated-native-content-equality-to-diagnostic-proof",
+          "sha256": "1c90a477e132d768ebd29338f75e9f3a039d2be45e28b316f4f617488dd718c8",
+          "size": 32652720,
+          "goVersion": "go1.26.8",
+          "mainPackage": "github.com/docker/compose/v5/cmd",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "d21d930208dc6d9c64b11984261dbeddae0691bf64529e2c63d788a32f5ea916",
+          "goModuleInfoSha256": "1eb242105ec7e0eeae5452cb30b5a5613336bdb1f59d6ae70966a53eef12e975",
+          "currentNativeFileId": "8bcaf685468490fd",
+          "currentNativeArtifactId": "47d474a5fb98bb24",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+          "currentNativeSbomSha256": "d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64"
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file",
+          "join": "authenticated-native-content-equality-to-diagnostic-proof",
+          "sha256": "7d9509f9798d32eb120679cfbe7937088a0bfd202524f6c8ad594d4a0d7f1f82",
+          "size": 75846304,
+          "goVersion": "go1.26.8",
+          "mainPackage": "github.com/docker/buildx/cmd/buildx",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "d11608f3c4fc6b8855d9fe0d0ba0b048b45042549b3dd1e449ab4dabc956a61b",
+          "goModuleInfoSha256": "2990479179fb764660a1df4936d2c7f9a5bce5c489ea3d342ef17e7fe564a12d",
+          "currentNativeFileId": "f4d2f43ea91af87b",
+          "currentNativeArtifactId": "0264be8960c34c02",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+          "currentNativeSbomSha256": "d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64"
+        },
+        {
+          "path": "/usr/libexec/docker/cli-plugins/docker-buildx",
+          "join": "authenticated-native-content-equality-to-diagnostic-proof",
+          "sha256": "7d9509f9798d32eb120679cfbe7937088a0bfd202524f6c8ad594d4a0d7f1f82",
+          "size": 75846304,
+          "goVersion": "go1.26.8",
+          "mainPackage": "github.com/docker/buildx/cmd/buildx",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "d11608f3c4fc6b8855d9fe0d0ba0b048b45042549b3dd1e449ab4dabc956a61b",
+          "goModuleInfoSha256": "2990479179fb764660a1df4936d2c7f9a5bce5c489ea3d342ef17e7fe564a12d",
+          "currentNativeFileId": "3a0e7ed944264b97",
+          "currentNativeArtifactId": "caf6564853f34849",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+          "currentNativeSbomSha256": "d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64"
+        },
+        {
+          "path": "/usr/libexec/docker/cli-plugins/docker-compose",
+          "join": "authenticated-native-content-equality-to-diagnostic-proof",
+          "sha256": "1c90a477e132d768ebd29338f75e9f3a039d2be45e28b316f4f617488dd718c8",
+          "size": 32652720,
+          "goVersion": "go1.26.8",
+          "mainPackage": "github.com/docker/compose/v5/cmd",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "d21d930208dc6d9c64b11984261dbeddae0691bf64529e2c63d788a32f5ea916",
+          "goModuleInfoSha256": "1eb242105ec7e0eeae5452cb30b5a5613336bdb1f59d6ae70966a53eef12e975",
+          "currentNativeFileId": "622d8bc905c6d964",
+          "currentNativeArtifactId": "4c95f43c49bd7b39",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+          "currentNativeSbomSha256": "d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64"
+        }
+      ],
+      "candidateBindings": {
+        "nativeSummarySha256": "21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+        "sourceResultSha256": "b6439aee802b91d107231e19cdd6ddc405d5546204db05d46f14b99ba3086f56",
+        "extractionSha256": "1945c7099ecb4475b5227231861be84ba495311ed1195d7008632697683d2e54",
+        "configurationSha256": "5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78",
+        "approvedBaselineSha256": "30cf33644014ba9c5794639b57494fff067f3429f7771fe6a1e9d12c9d517884",
+        "bindingSha256": "579c2e93bfebcf83bebc46a16235230761f00f3708bcb8aa9070cd1c0baefc14",
+        "parentManifestSha256": "3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+        "platformManifestSha256": "452d00e425c67c7e41b88d63a3dcf5728c2c68621ac75689c617c8a36e7cfe21"
+      },
+      "approvedContext": {
+        "schema": 1,
+        "status": "verified",
+        "profile": "bluefin-dx-generic",
+        "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+        "buildIdentity": "v1:05fb59c6ab874df5cdba42675aeacfb37f7ba34df2053d198be408edb85ed247",
+        "baseImage": "ghcr.io/ublue-os/bluefin-dx@sha256:a41cf1ebc4b6718cab813f221b8394c963ed3f0777b52e19fe6c3784b15c52ed",
+        "trustPolicySha256": "34ed988effc0db09834e820d3c022c22fe3df54247727f7634a09be4270a7c24",
+        "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c"
+      },
+      "actualNativeComponentAdvisoryOccurrences": 4,
+      "probeArtifactSha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+      "probeExtractionLayoutSha256": "3cd41c675d772aa22ece1f0ac1d1227f85ea646ae45b35638b635fe926692cb8",
+      "probeSourceProvenanceSha256": "42e0a2cbab515ec7e86d7027460b39c4ec1e63f16cc8f15cb869cc4dce1b7161"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-generic-3fd7e10d0e29-2331f11e",
+      "candidate": "main-bluefin-dx-generic",
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "proof": [
+        {
+          "path": "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+          "join": "authenticated-native-content-equality-to-diagnostic-proof",
+          "sha256": "8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c",
+          "size": 43464671,
+          "goVersion": "go1.27.1",
+          "mainPackage": "tailscale.com/cmd/tailscaled",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef",
+          "goModuleInfoSha256": "d3fe1ec25833bf34e69ee3de1c74ccc9c885a06180da37ecb97ff08523ac5663",
+          "currentNativeFileId": "93ff4afdc8dfb218",
+          "currentNativeArtifactId": "d2e29f5444c0b981",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+          "currentNativeSbomSha256": "d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64"
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+          "join": "authenticated-native-content-equality-to-diagnostic-proof",
+          "sha256": "64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d",
+          "size": 34323303,
+          "goVersion": "go1.27.1",
+          "mainPackage": "tailscale.com/cmd/tailscale",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+          "goModuleInfoSha256": "cbaa58a32abab04d995d12644e71c27391f599c245740aa821c1c03ee3b3caab",
+          "currentNativeFileId": "881f482c93039e79",
+          "currentNativeArtifactId": "4908b8e6e85aac1a",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+          "currentNativeSbomSha256": "d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64"
+        },
+        {
+          "path": "/usr/bin/tailscale",
+          "join": "authenticated-native-content-equality-to-diagnostic-proof",
+          "sha256": "64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d",
+          "size": 34323303,
+          "goVersion": "go1.27.1",
+          "mainPackage": "tailscale.com/cmd/tailscale",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+          "goModuleInfoSha256": "cbaa58a32abab04d995d12644e71c27391f599c245740aa821c1c03ee3b3caab",
+          "currentNativeFileId": "2fdfafb02dc34aa8",
+          "currentNativeArtifactId": "08847bdf74236cbd",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+          "currentNativeSbomSha256": "d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64"
+        },
+        {
+          "path": "/usr/bin/tailscaled",
+          "join": "authenticated-native-content-equality-to-diagnostic-proof",
+          "sha256": "8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c",
+          "size": 43464671,
+          "goVersion": "go1.27.1",
+          "mainPackage": "tailscale.com/cmd/tailscaled",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef",
+          "goModuleInfoSha256": "d3fe1ec25833bf34e69ee3de1c74ccc9c885a06180da37ecb97ff08523ac5663",
+          "currentNativeFileId": "012f4cafb160ffc7",
+          "currentNativeArtifactId": "44fd734089c6c838",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+          "currentNativeSbomSha256": "d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64"
+        }
+      ],
+      "candidateBindings": {
+        "nativeSummarySha256": "21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+        "sourceResultSha256": "b6439aee802b91d107231e19cdd6ddc405d5546204db05d46f14b99ba3086f56",
+        "extractionSha256": "1945c7099ecb4475b5227231861be84ba495311ed1195d7008632697683d2e54",
+        "configurationSha256": "5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78",
+        "approvedBaselineSha256": "30cf33644014ba9c5794639b57494fff067f3429f7771fe6a1e9d12c9d517884",
+        "bindingSha256": "579c2e93bfebcf83bebc46a16235230761f00f3708bcb8aa9070cd1c0baefc14",
+        "parentManifestSha256": "3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+        "platformManifestSha256": "452d00e425c67c7e41b88d63a3dcf5728c2c68621ac75689c617c8a36e7cfe21"
+      },
+      "approvedContext": {
+        "schema": 1,
+        "status": "verified",
+        "profile": "bluefin-dx-generic",
+        "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+        "buildIdentity": "v1:05fb59c6ab874df5cdba42675aeacfb37f7ba34df2053d198be408edb85ed247",
+        "baseImage": "ghcr.io/ublue-os/bluefin-dx@sha256:a41cf1ebc4b6718cab813f221b8394c963ed3f0777b52e19fe6c3784b15c52ed",
+        "trustPolicySha256": "34ed988effc0db09834e820d3c022c22fe3df54247727f7634a09be4270a7c24",
+        "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c"
+      },
+      "actualNativeComponentAdvisoryOccurrences": 4,
+      "probeArtifactSha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+      "probeExtractionLayoutSha256": "3cd41c675d772aa22ece1f0ac1d1227f85ea646ae45b35638b635fe926692cb8",
+      "probeSourceProvenanceSha256": "42e0a2cbab515ec7e86d7027460b39c4ec1e63f16cc8f15cb869cc4dce1b7161"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-next-a851083d1a9e-15e16f9f",
+      "candidate": "main-bluefin-dx-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "proof": [
+        {
+          "path": "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+          "join": "authenticated-native-content-equality-to-diagnostic-proof",
+          "sha256": "cca3debb839dac976bab9c76b47d38754cad417c02a5602b1eadd312900af140",
+          "size": 27559496,
+          "goVersion": "go1.25.12",
+          "mainPackage": "github.com/docker/model-runner/cmd/cli",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "d62cae4605d860b275f7ad91046786cae9e421fb02cf13bbc6af54fa6dc8a962",
+          "goModuleInfoSha256": "02c560dd4da18bc88dbd2e98bae98ebcaf846c15158103073dcf1482d48a6341",
+          "currentNativeFileId": "2867c29092cccdf7",
+          "currentNativeArtifactId": "130f0c4f0076581e",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+          "currentNativeSbomSha256": "46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5"
+        },
+        {
+          "path": "/usr/libexec/docker/cli-plugins/docker-model",
+          "join": "authenticated-native-content-equality-to-diagnostic-proof",
+          "sha256": "cca3debb839dac976bab9c76b47d38754cad417c02a5602b1eadd312900af140",
+          "size": 27559496,
+          "goVersion": "go1.25.12",
+          "mainPackage": "github.com/docker/model-runner/cmd/cli",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "d62cae4605d860b275f7ad91046786cae9e421fb02cf13bbc6af54fa6dc8a962",
+          "goModuleInfoSha256": "02c560dd4da18bc88dbd2e98bae98ebcaf846c15158103073dcf1482d48a6341",
+          "currentNativeFileId": "40cb4da7b8e7525c",
+          "currentNativeArtifactId": "2f76a588decba2e6",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+          "currentNativeSbomSha256": "46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5"
+        }
+      ],
+      "candidateBindings": {
+        "nativeSummarySha256": "fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+        "sourceResultSha256": "5724e3de7bbfd54999a962439452e4d9713f6ce1226c3fdbe126454868ba734b",
+        "extractionSha256": "99db89859b93fef227982046f2e7ce59a1328667e4f444cc58f2a0142cf4f2fe",
+        "configurationSha256": "3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44",
+        "approvedBaselineSha256": "a0e00f8bbf7e63e094d7d0b0072bfdaa5d40129f3f5ed63e1f4db9baf8adf577",
+        "bindingSha256": "602ae24f7a558478314182e9ca84bbf0980aad3b56371b647ab946407b9b66b4",
+        "parentManifestSha256": "a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+        "platformManifestSha256": "29499493e2d9ec4bd259f44529c647f45ea10fa229d0132d279d662934df0d3b"
+      },
+      "approvedContext": {
+        "schema": 1,
+        "status": "verified",
+        "profile": "bluefin-dx-next",
+        "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+        "buildIdentity": "v1:13ab0d947b649d17a43851dbea491a445b2c123fcaba02eb1d21bff47ac94ccc",
+        "baseImage": "ghcr.io/ublue-os/bluefin-dx@sha256:a41cf1ebc4b6718cab813f221b8394c963ed3f0777b52e19fe6c3784b15c52ed",
+        "trustPolicySha256": "34ed988effc0db09834e820d3c022c22fe3df54247727f7634a09be4270a7c24",
+        "image": "ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26"
+      },
+      "actualNativeComponentAdvisoryOccurrences": 2,
+      "probeArtifactSha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+      "probeExtractionLayoutSha256": "3cd41c675d772aa22ece1f0ac1d1227f85ea646ae45b35638b635fe926692cb8",
+      "probeSourceProvenanceSha256": "42e0a2cbab515ec7e86d7027460b39c4ec1e63f16cc8f15cb869cc4dce1b7161"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-next-a851083d1a9e-e1840732",
+      "candidate": "main-bluefin-dx-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "proof": [
+        {
+          "path": "/usr/bin/cosign",
+          "join": "authenticated-native-content-equality-to-diagnostic-proof",
+          "sha256": "a57926e24b07f02b5baf3be81f9a5988e9e45d8a1ca8ca500cdf56d10e69f887",
+          "size": 141178082,
+          "goVersion": "go1.26.4",
+          "mainPackage": "github.com/sigstore/cosign/v3/cmd/cosign",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "cb81ae1aa3a5ef4b7756d98a44577fa147db791d84e854fb080c0ec3d8c867e5",
+          "goModuleInfoSha256": "22eb8914213a086a83b814cd3a357f123cdb0195771037c172747b878dfb85eb",
+          "currentNativeFileId": "44be93e37d63a826",
+          "currentNativeArtifactId": "2f414c0dcf8564b0",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+          "currentNativeSbomSha256": "46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5"
+        }
+      ],
+      "candidateBindings": {
+        "nativeSummarySha256": "fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+        "sourceResultSha256": "5724e3de7bbfd54999a962439452e4d9713f6ce1226c3fdbe126454868ba734b",
+        "extractionSha256": "99db89859b93fef227982046f2e7ce59a1328667e4f444cc58f2a0142cf4f2fe",
+        "configurationSha256": "3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44",
+        "approvedBaselineSha256": "a0e00f8bbf7e63e094d7d0b0072bfdaa5d40129f3f5ed63e1f4db9baf8adf577",
+        "bindingSha256": "602ae24f7a558478314182e9ca84bbf0980aad3b56371b647ab946407b9b66b4",
+        "parentManifestSha256": "a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+        "platformManifestSha256": "29499493e2d9ec4bd259f44529c647f45ea10fa229d0132d279d662934df0d3b"
+      },
+      "approvedContext": {
+        "schema": 1,
+        "status": "verified",
+        "profile": "bluefin-dx-next",
+        "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+        "buildIdentity": "v1:13ab0d947b649d17a43851dbea491a445b2c123fcaba02eb1d21bff47ac94ccc",
+        "baseImage": "ghcr.io/ublue-os/bluefin-dx@sha256:a41cf1ebc4b6718cab813f221b8394c963ed3f0777b52e19fe6c3784b15c52ed",
+        "trustPolicySha256": "34ed988effc0db09834e820d3c022c22fe3df54247727f7634a09be4270a7c24",
+        "image": "ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26"
+      },
+      "actualNativeComponentAdvisoryOccurrences": 1,
+      "probeArtifactSha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+      "probeExtractionLayoutSha256": "3cd41c675d772aa22ece1f0ac1d1227f85ea646ae45b35638b635fe926692cb8",
+      "probeSourceProvenanceSha256": "42e0a2cbab515ec7e86d7027460b39c4ec1e63f16cc8f15cb869cc4dce1b7161"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-next-a851083d1a9e-007fffd0",
+      "candidate": "main-bluefin-dx-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "proof": [
+        {
+          "path": "/sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file",
+          "join": "authenticated-native-content-equality-to-diagnostic-proof",
+          "sha256": "1c90a477e132d768ebd29338f75e9f3a039d2be45e28b316f4f617488dd718c8",
+          "size": 32652720,
+          "goVersion": "go1.26.8",
+          "mainPackage": "github.com/docker/compose/v5/cmd",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "d21d930208dc6d9c64b11984261dbeddae0691bf64529e2c63d788a32f5ea916",
+          "goModuleInfoSha256": "1eb242105ec7e0eeae5452cb30b5a5613336bdb1f59d6ae70966a53eef12e975",
+          "currentNativeFileId": "8bcaf685468490fd",
+          "currentNativeArtifactId": "47d474a5fb98bb24",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+          "currentNativeSbomSha256": "46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5"
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file",
+          "join": "authenticated-native-content-equality-to-diagnostic-proof",
+          "sha256": "7d9509f9798d32eb120679cfbe7937088a0bfd202524f6c8ad594d4a0d7f1f82",
+          "size": 75846304,
+          "goVersion": "go1.26.8",
+          "mainPackage": "github.com/docker/buildx/cmd/buildx",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "d11608f3c4fc6b8855d9fe0d0ba0b048b45042549b3dd1e449ab4dabc956a61b",
+          "goModuleInfoSha256": "2990479179fb764660a1df4936d2c7f9a5bce5c489ea3d342ef17e7fe564a12d",
+          "currentNativeFileId": "f4d2f43ea91af87b",
+          "currentNativeArtifactId": "0264be8960c34c02",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+          "currentNativeSbomSha256": "46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5"
+        },
+        {
+          "path": "/usr/libexec/docker/cli-plugins/docker-buildx",
+          "join": "authenticated-native-content-equality-to-diagnostic-proof",
+          "sha256": "7d9509f9798d32eb120679cfbe7937088a0bfd202524f6c8ad594d4a0d7f1f82",
+          "size": 75846304,
+          "goVersion": "go1.26.8",
+          "mainPackage": "github.com/docker/buildx/cmd/buildx",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "d11608f3c4fc6b8855d9fe0d0ba0b048b45042549b3dd1e449ab4dabc956a61b",
+          "goModuleInfoSha256": "2990479179fb764660a1df4936d2c7f9a5bce5c489ea3d342ef17e7fe564a12d",
+          "currentNativeFileId": "3a0e7ed944264b97",
+          "currentNativeArtifactId": "caf6564853f34849",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+          "currentNativeSbomSha256": "46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5"
+        },
+        {
+          "path": "/usr/libexec/docker/cli-plugins/docker-compose",
+          "join": "authenticated-native-content-equality-to-diagnostic-proof",
+          "sha256": "1c90a477e132d768ebd29338f75e9f3a039d2be45e28b316f4f617488dd718c8",
+          "size": 32652720,
+          "goVersion": "go1.26.8",
+          "mainPackage": "github.com/docker/compose/v5/cmd",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "d21d930208dc6d9c64b11984261dbeddae0691bf64529e2c63d788a32f5ea916",
+          "goModuleInfoSha256": "1eb242105ec7e0eeae5452cb30b5a5613336bdb1f59d6ae70966a53eef12e975",
+          "currentNativeFileId": "622d8bc905c6d964",
+          "currentNativeArtifactId": "4c95f43c49bd7b39",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+          "currentNativeSbomSha256": "46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5"
+        }
+      ],
+      "candidateBindings": {
+        "nativeSummarySha256": "fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+        "sourceResultSha256": "5724e3de7bbfd54999a962439452e4d9713f6ce1226c3fdbe126454868ba734b",
+        "extractionSha256": "99db89859b93fef227982046f2e7ce59a1328667e4f444cc58f2a0142cf4f2fe",
+        "configurationSha256": "3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44",
+        "approvedBaselineSha256": "a0e00f8bbf7e63e094d7d0b0072bfdaa5d40129f3f5ed63e1f4db9baf8adf577",
+        "bindingSha256": "602ae24f7a558478314182e9ca84bbf0980aad3b56371b647ab946407b9b66b4",
+        "parentManifestSha256": "a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+        "platformManifestSha256": "29499493e2d9ec4bd259f44529c647f45ea10fa229d0132d279d662934df0d3b"
+      },
+      "approvedContext": {
+        "schema": 1,
+        "status": "verified",
+        "profile": "bluefin-dx-next",
+        "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+        "buildIdentity": "v1:13ab0d947b649d17a43851dbea491a445b2c123fcaba02eb1d21bff47ac94ccc",
+        "baseImage": "ghcr.io/ublue-os/bluefin-dx@sha256:a41cf1ebc4b6718cab813f221b8394c963ed3f0777b52e19fe6c3784b15c52ed",
+        "trustPolicySha256": "34ed988effc0db09834e820d3c022c22fe3df54247727f7634a09be4270a7c24",
+        "image": "ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26"
+      },
+      "actualNativeComponentAdvisoryOccurrences": 4,
+      "probeArtifactSha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+      "probeExtractionLayoutSha256": "3cd41c675d772aa22ece1f0ac1d1227f85ea646ae45b35638b635fe926692cb8",
+      "probeSourceProvenanceSha256": "42e0a2cbab515ec7e86d7027460b39c4ec1e63f16cc8f15cb869cc4dce1b7161"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-next-a851083d1a9e-2331f11e",
+      "candidate": "main-bluefin-dx-next",
+      "image": "ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "proof": [
+        {
+          "path": "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+          "join": "authenticated-native-content-equality-to-diagnostic-proof",
+          "sha256": "8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c",
+          "size": 43464671,
+          "goVersion": "go1.27.1",
+          "mainPackage": "tailscale.com/cmd/tailscaled",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef",
+          "goModuleInfoSha256": "d3fe1ec25833bf34e69ee3de1c74ccc9c885a06180da37ecb97ff08523ac5663",
+          "currentNativeFileId": "93ff4afdc8dfb218",
+          "currentNativeArtifactId": "d2e29f5444c0b981",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+          "currentNativeSbomSha256": "46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5"
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+          "join": "authenticated-native-content-equality-to-diagnostic-proof",
+          "sha256": "64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d",
+          "size": 34323303,
+          "goVersion": "go1.27.1",
+          "mainPackage": "tailscale.com/cmd/tailscale",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+          "goModuleInfoSha256": "cbaa58a32abab04d995d12644e71c27391f599c245740aa821c1c03ee3b3caab",
+          "currentNativeFileId": "881f482c93039e79",
+          "currentNativeArtifactId": "4908b8e6e85aac1a",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+          "currentNativeSbomSha256": "46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5"
+        },
+        {
+          "path": "/usr/bin/tailscale",
+          "join": "authenticated-native-content-equality-to-diagnostic-proof",
+          "sha256": "64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d",
+          "size": 34323303,
+          "goVersion": "go1.27.1",
+          "mainPackage": "tailscale.com/cmd/tailscale",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+          "goModuleInfoSha256": "cbaa58a32abab04d995d12644e71c27391f599c245740aa821c1c03ee3b3caab",
+          "currentNativeFileId": "2fdfafb02dc34aa8",
+          "currentNativeArtifactId": "08847bdf74236cbd",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+          "currentNativeSbomSha256": "46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5"
+        },
+        {
+          "path": "/usr/bin/tailscaled",
+          "join": "authenticated-native-content-equality-to-diagnostic-proof",
+          "sha256": "8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c",
+          "size": 43464671,
+          "goVersion": "go1.27.1",
+          "mainPackage": "tailscale.com/cmd/tailscaled",
+          "elf": {
+            "class": 64,
+            "endianness": "little",
+            "machine": "EM_X86_64"
+          },
+          "os": "linux",
+          "arch": "amd64",
+          "goBuildInfoSha256": "fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef",
+          "goModuleInfoSha256": "d3fe1ec25833bf34e69ee3de1c74ccc9c885a06180da37ecb97ff08523ac5663",
+          "currentNativeFileId": "012f4cafb160ffc7",
+          "currentNativeArtifactId": "44fd734089c6c838",
+          "probeImage": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "probeRun": 38341284379,
+          "probeApplicabilitySha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+          "currentNativeSummarySha256": "fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+          "currentNativeSbomSha256": "46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5"
+        }
+      ],
+      "candidateBindings": {
+        "nativeSummarySha256": "fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+        "sourceResultSha256": "5724e3de7bbfd54999a962439452e4d9713f6ce1226c3fdbe126454868ba734b",
+        "extractionSha256": "99db89859b93fef227982046f2e7ce59a1328667e4f444cc58f2a0142cf4f2fe",
+        "configurationSha256": "3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44",
+        "approvedBaselineSha256": "a0e00f8bbf7e63e094d7d0b0072bfdaa5d40129f3f5ed63e1f4db9baf8adf577",
+        "bindingSha256": "602ae24f7a558478314182e9ca84bbf0980aad3b56371b647ab946407b9b66b4",
+        "parentManifestSha256": "a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+        "platformManifestSha256": "29499493e2d9ec4bd259f44529c647f45ea10fa229d0132d279d662934df0d3b"
+      },
+      "approvedContext": {
+        "schema": 1,
+        "status": "verified",
+        "profile": "bluefin-dx-next",
+        "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+        "buildIdentity": "v1:13ab0d947b649d17a43851dbea491a445b2c123fcaba02eb1d21bff47ac94ccc",
+        "baseImage": "ghcr.io/ublue-os/bluefin-dx@sha256:a41cf1ebc4b6718cab813f221b8394c963ed3f0777b52e19fe6c3784b15c52ed",
+        "trustPolicySha256": "34ed988effc0db09834e820d3c022c22fe3df54247727f7634a09be4270a7c24",
+        "image": "ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26"
+      },
+      "actualNativeComponentAdvisoryOccurrences": 4,
+      "probeArtifactSha256": "050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+      "probeExtractionLayoutSha256": "3cd41c675d772aa22ece1f0ac1d1227f85ea646ae45b35638b635fe926692cb8",
+      "probeSourceProvenanceSha256": "42e0a2cbab515ec7e86d7027460b39c4ec1e63f16cc8f15cb869cc4dce1b7161"
+    }
+  ],
+  "rejectedUnknowns": [],
+  "excludedWaivers": [
+    "GO-2026-4871/GO-2026-4984: no current blocked matches; no application source absence proof inferred",
+    "GO-2026-6179/GO-2026-6180 embedded x/mod risks",
+    "GO-2026-4867/GO-2026-4868 compiler-produced-code risks",
+    "Any additional aliases or unrelated vulnerabilities",
+    "Next kernel source holds, signing, boot qualification and release gates"
+  ],
+  "validation": {
+    "exactTypedSchemaAndReviewWindow": "passed security-policy.reviewed_rules with existing serious registry",
+    "expiryDays": 14,
+    "maxPolicyDays": 30,
+    "allCurrentAliasesAndLocationsCovered": true,
+    "contentJoins": 48,
+    "contentJoinUnit": "distinct current candidate/path pairs; five per standard candidate and eleven per development candidate"
+  },
+  "releaseEligible": false,
+  "policyChanged": false,
+  "newScanPerformed": false,
+  "newImagePulled": false
+}

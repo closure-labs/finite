@@ -614,5 +614,9 @@
   },
   "releaseEligible": false,
   "vulnerabilityClearance": "not-assessed",
-  "dispositionsGranted": []
+  "dispositionsGranted": [],
+  "currentReview": {
+    "evidence": "current-go-applicability-2026-10-12.json",
+    "status": "18 narrowly scoped GO6604 positive Linux dispositions independently reviewed; otherGo risks remain separate; original document sections retain historical observations"
+  }
 }

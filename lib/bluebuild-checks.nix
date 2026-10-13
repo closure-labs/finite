@@ -76,6 +76,8 @@ in {
     python3 tests/ci/diagnose-built-candidate.py
     python3 tests/ci/rpm-file-evidence.py
     python3 tests/ci/freerdp-reference-evidence.py
+    python3 tests/ci/podman-reference-evidence.py
+    python3 tests/ci/httpd-reference-evidence.py
     python3 tests/ci/nix-checks.py
     python3 tests/ci/toolchain.py
     python3 tests/ci/delivery-policy.py

@@ -670,7 +670,1715 @@
       "reviewedAt": "2026-10-13T00:00:29Z"
     }
   ],
-  "reviewedDispositions": [],
+  "reviewedDispositions": [
+    {
+      "id": "go6604-linux-bluefin-generic-e98ca0ceb484-e1840732",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+      "component": "pkg:golang/stdlib@1.26.4",
+      "platform": "linux/amd64",
+      "locations": [
+        "/usr/bin/cosign"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7; native summary run 38344754471 bluefin-generic-native.json SHA256 868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f; source native run 38341281199; result SHA256 814aab9be9c5872dd844ffcbe4d8205a092c6ca43dec11167c4a49aeaa891805; SBOM SHA256 8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199",
+        "Exact candidate config SHA256 97b4843f19705f7d6d29988bfbe591594388af5a9b7785e4edb08a7b6fb6abef; source 1d347b7456b0cf64d4372cc0e7a562a9e63eb45b; profile bluefin-generic; build identity v1:29a6920037b0251e2c54a53719a00eb9c7085a75e59c8db76839b214703d8e0b",
+        "Independent file platform probe run 38341281199; image ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7; applicability JSON SHA256 f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af; probe SBOM SHA256 8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /usr/bin/cosign; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both a57926e24b07f02b5baf3be81f9a5988e9e45d8a1ca8ca500cdf56d10e69f887; size 141178082; exact compiler go1.26.4; build-info SHA256 cb81ae1aa3a5ef4b7756d98a44577fa147db791d84e854fb080c0ec3d8c867e5"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-generic-e98ca0ceb484-2331f11e",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+      "component": "pkg:golang/stdlib@1.27.1",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+        "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7; native summary run 38344754471 bluefin-generic-native.json SHA256 868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f; source native run 38341281199; result SHA256 814aab9be9c5872dd844ffcbe4d8205a092c6ca43dec11167c4a49aeaa891805; SBOM SHA256 8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199",
+        "Exact candidate config SHA256 97b4843f19705f7d6d29988bfbe591594388af5a9b7785e4edb08a7b6fb6abef; source 1d347b7456b0cf64d4372cc0e7a562a9e63eb45b; profile bluefin-generic; build identity v1:29a6920037b0251e2c54a53719a00eb9c7085a75e59c8db76839b214703d8e0b",
+        "Independent file platform probe run 38341281199; image ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7; applicability JSON SHA256 f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af; probe SBOM SHA256 8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c; size 43464671; exact compiler go1.27.1; build-info SHA256 fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef",
+        "Path /sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d; size 34323303; exact compiler go1.27.1; build-info SHA256 798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+        "Path /usr/bin/tailscale; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d; size 34323303; exact compiler go1.27.1; build-info SHA256 798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+        "Path /usr/bin/tailscaled; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c; size 43464671; exact compiler go1.27.1; build-info SHA256 fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-generic-7848ba4cfbc9-15e16f9f",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "component": "pkg:golang/stdlib@1.25.12",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+        "/usr/libexec/docker/cli-plugins/docker-model"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; native summary run 38344754471 bluefin-dx-generic-native.json SHA256 90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813; source native run 38341284379; result SHA256 7cdbb3e6a941de295d48ef0f2a7cfc8c72b4ec383ca990e6a17de0cf114605bb; SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Exact candidate config SHA256 f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357; source 1d347b7456b0cf64d4372cc0e7a562a9e63eb45b; profile bluefin-dx-generic; build identity v1:b30ea5e8bfe8ec02caa2f4118aa91ba47c6c4283c3fe44cf1d73568f6954c76b",
+        "Independent file platform probe run 38341284379; image ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; applicability JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594; probe SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both cca3debb839dac976bab9c76b47d38754cad417c02a5602b1eadd312900af140; size 27559496; exact compiler go1.25.12; build-info SHA256 d62cae4605d860b275f7ad91046786cae9e421fb02cf13bbc6af54fa6dc8a962",
+        "Path /usr/libexec/docker/cli-plugins/docker-model; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both cca3debb839dac976bab9c76b47d38754cad417c02a5602b1eadd312900af140; size 27559496; exact compiler go1.25.12; build-info SHA256 d62cae4605d860b275f7ad91046786cae9e421fb02cf13bbc6af54fa6dc8a962"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-generic-7848ba4cfbc9-e1840732",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "component": "pkg:golang/stdlib@1.26.4",
+      "platform": "linux/amd64",
+      "locations": [
+        "/usr/bin/cosign"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; native summary run 38344754471 bluefin-dx-generic-native.json SHA256 90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813; source native run 38341284379; result SHA256 7cdbb3e6a941de295d48ef0f2a7cfc8c72b4ec383ca990e6a17de0cf114605bb; SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Exact candidate config SHA256 f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357; source 1d347b7456b0cf64d4372cc0e7a562a9e63eb45b; profile bluefin-dx-generic; build identity v1:b30ea5e8bfe8ec02caa2f4118aa91ba47c6c4283c3fe44cf1d73568f6954c76b",
+        "Independent file platform probe run 38341284379; image ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; applicability JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594; probe SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /usr/bin/cosign; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both a57926e24b07f02b5baf3be81f9a5988e9e45d8a1ca8ca500cdf56d10e69f887; size 141178082; exact compiler go1.26.4; build-info SHA256 cb81ae1aa3a5ef4b7756d98a44577fa147db791d84e854fb080c0ec3d8c867e5"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-generic-7848ba4cfbc9-007fffd0",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "component": "pkg:golang/stdlib@1.26.8",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file",
+        "/sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file",
+        "/usr/libexec/docker/cli-plugins/docker-buildx",
+        "/usr/libexec/docker/cli-plugins/docker-compose"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; native summary run 38344754471 bluefin-dx-generic-native.json SHA256 90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813; source native run 38341284379; result SHA256 7cdbb3e6a941de295d48ef0f2a7cfc8c72b4ec383ca990e6a17de0cf114605bb; SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Exact candidate config SHA256 f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357; source 1d347b7456b0cf64d4372cc0e7a562a9e63eb45b; profile bluefin-dx-generic; build identity v1:b30ea5e8bfe8ec02caa2f4118aa91ba47c6c4283c3fe44cf1d73568f6954c76b",
+        "Independent file platform probe run 38341284379; image ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; applicability JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594; probe SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 1c90a477e132d768ebd29338f75e9f3a039d2be45e28b316f4f617488dd718c8; size 32652720; exact compiler go1.26.8; build-info SHA256 d21d930208dc6d9c64b11984261dbeddae0691bf64529e2c63d788a32f5ea916",
+        "Path /sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 7d9509f9798d32eb120679cfbe7937088a0bfd202524f6c8ad594d4a0d7f1f82; size 75846304; exact compiler go1.26.8; build-info SHA256 d11608f3c4fc6b8855d9fe0d0ba0b048b45042549b3dd1e449ab4dabc956a61b",
+        "Path /usr/libexec/docker/cli-plugins/docker-buildx; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 7d9509f9798d32eb120679cfbe7937088a0bfd202524f6c8ad594d4a0d7f1f82; size 75846304; exact compiler go1.26.8; build-info SHA256 d11608f3c4fc6b8855d9fe0d0ba0b048b45042549b3dd1e449ab4dabc956a61b",
+        "Path /usr/libexec/docker/cli-plugins/docker-compose; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 1c90a477e132d768ebd29338f75e9f3a039d2be45e28b316f4f617488dd718c8; size 32652720; exact compiler go1.26.8; build-info SHA256 d21d930208dc6d9c64b11984261dbeddae0691bf64529e2c63d788a32f5ea916"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-generic-7848ba4cfbc9-2331f11e",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "component": "pkg:golang/stdlib@1.27.1",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+        "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; native summary run 38344754471 bluefin-dx-generic-native.json SHA256 90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813; source native run 38341284379; result SHA256 7cdbb3e6a941de295d48ef0f2a7cfc8c72b4ec383ca990e6a17de0cf114605bb; SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Exact candidate config SHA256 f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357; source 1d347b7456b0cf64d4372cc0e7a562a9e63eb45b; profile bluefin-dx-generic; build identity v1:b30ea5e8bfe8ec02caa2f4118aa91ba47c6c4283c3fe44cf1d73568f6954c76b",
+        "Independent file platform probe run 38341284379; image ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; applicability JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594; probe SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c; size 43464671; exact compiler go1.27.1; build-info SHA256 fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef",
+        "Path /sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d; size 34323303; exact compiler go1.27.1; build-info SHA256 798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+        "Path /usr/bin/tailscale; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d; size 34323303; exact compiler go1.27.1; build-info SHA256 798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+        "Path /usr/bin/tailscaled; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c; size 43464671; exact compiler go1.27.1; build-info SHA256 fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-generic-3d4693f25f09-e1840732",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/stdlib@1.26.4",
+      "platform": "linux/amd64",
+      "locations": [
+        "/usr/bin/cosign"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844; native summary run 38344754471 main-bluefin-generic-native.json SHA256 5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9; source native run 38340112122; result SHA256 92127eae6a60001c57937bb329061da88bdc6a933a993a6a047c6be7466518ca; SBOM SHA256 4902fdd4b2afca8374a3197770f25daa11c7626cb5c83c46fb614ad1f5441201",
+        "Exact candidate config SHA256 eb2542e972cdd6c71f3448674c57b0c41252fdc4c986252bc8ff3621e2119cf4; source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-generic; build identity v1:357fa0799580560ed50f4045d429e0e9d19ad76e8deb9e647e45b0be33885a38",
+        "Independent file platform probe run 38341281199; image ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7; applicability JSON SHA256 f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af; probe SBOM SHA256 8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /usr/bin/cosign; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both a57926e24b07f02b5baf3be81f9a5988e9e45d8a1ca8ca500cdf56d10e69f887; size 141178082; exact compiler go1.26.4; build-info SHA256 cb81ae1aa3a5ef4b7756d98a44577fa147db791d84e854fb080c0ec3d8c867e5"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-generic-3d4693f25f09-2331f11e",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/stdlib@1.27.1",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+        "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844; native summary run 38344754471 main-bluefin-generic-native.json SHA256 5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9; source native run 38340112122; result SHA256 92127eae6a60001c57937bb329061da88bdc6a933a993a6a047c6be7466518ca; SBOM SHA256 4902fdd4b2afca8374a3197770f25daa11c7626cb5c83c46fb614ad1f5441201",
+        "Exact candidate config SHA256 eb2542e972cdd6c71f3448674c57b0c41252fdc4c986252bc8ff3621e2119cf4; source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-generic; build identity v1:357fa0799580560ed50f4045d429e0e9d19ad76e8deb9e647e45b0be33885a38",
+        "Independent file platform probe run 38341281199; image ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7; applicability JSON SHA256 f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af; probe SBOM SHA256 8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c; size 43464671; exact compiler go1.27.1; build-info SHA256 fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef",
+        "Path /sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d; size 34323303; exact compiler go1.27.1; build-info SHA256 798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+        "Path /usr/bin/tailscale; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d; size 34323303; exact compiler go1.27.1; build-info SHA256 798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+        "Path /usr/bin/tailscaled; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c; size 43464671; exact compiler go1.27.1; build-info SHA256 fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-next-a36f46afcc2a-e1840732",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+      "component": "pkg:golang/stdlib@1.26.4",
+      "platform": "linux/amd64",
+      "locations": [
+        "/usr/bin/cosign"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db; native summary run 38344754471 main-bluefin-next-native.json SHA256 81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f; source native run 38340112122; result SHA256 64182a6c9df652cdfdf3c07d19b7983a7ac297d43bff97f18cac74cd12d8f95c; SBOM SHA256 bcf12455b002324b0c5923110de414cde3528d164bbb6b230dc2e8efb69f56b4",
+        "Exact candidate config SHA256 fce1315ea7763cf210b19f4e7c83334ab5e36be9a490d97e0ccc2b2c69491497; source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-next; build identity v1:204a54980664eb886d8b5a949b4a2bcd50c5fd6074f82e5d60ae6362241bb47c",
+        "Independent file platform probe run 38341281199; image ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7; applicability JSON SHA256 f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af; probe SBOM SHA256 8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /usr/bin/cosign; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both a57926e24b07f02b5baf3be81f9a5988e9e45d8a1ca8ca500cdf56d10e69f887; size 141178082; exact compiler go1.26.4; build-info SHA256 cb81ae1aa3a5ef4b7756d98a44577fa147db791d84e854fb080c0ec3d8c867e5"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-next-a36f46afcc2a-2331f11e",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+      "component": "pkg:golang/stdlib@1.27.1",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+        "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db; native summary run 38344754471 main-bluefin-next-native.json SHA256 81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f; source native run 38340112122; result SHA256 64182a6c9df652cdfdf3c07d19b7983a7ac297d43bff97f18cac74cd12d8f95c; SBOM SHA256 bcf12455b002324b0c5923110de414cde3528d164bbb6b230dc2e8efb69f56b4",
+        "Exact candidate config SHA256 fce1315ea7763cf210b19f4e7c83334ab5e36be9a490d97e0ccc2b2c69491497; source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-next; build identity v1:204a54980664eb886d8b5a949b4a2bcd50c5fd6074f82e5d60ae6362241bb47c",
+        "Independent file platform probe run 38341281199; image ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7; applicability JSON SHA256 f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af; probe SBOM SHA256 8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c; size 43464671; exact compiler go1.27.1; build-info SHA256 fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef",
+        "Path /sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d; size 34323303; exact compiler go1.27.1; build-info SHA256 798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+        "Path /usr/bin/tailscale; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d; size 34323303; exact compiler go1.27.1; build-info SHA256 798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+        "Path /usr/bin/tailscaled; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c; size 43464671; exact compiler go1.27.1; build-info SHA256 fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-generic-3fd7e10d0e29-15e16f9f",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/stdlib@1.25.12",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+        "/usr/libexec/docker/cli-plugins/docker-model"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c; native summary run 38344754471 main-bluefin-dx-generic-native.json SHA256 21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf; source native run 38340112122; result SHA256 b6439aee802b91d107231e19cdd6ddc405d5546204db05d46f14b99ba3086f56; SBOM SHA256 d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64",
+        "Exact candidate config SHA256 5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78; source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-dx-generic; build identity v1:05fb59c6ab874df5cdba42675aeacfb37f7ba34df2053d198be408edb85ed247",
+        "Independent file platform probe run 38341284379; image ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; applicability JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594; probe SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both cca3debb839dac976bab9c76b47d38754cad417c02a5602b1eadd312900af140; size 27559496; exact compiler go1.25.12; build-info SHA256 d62cae4605d860b275f7ad91046786cae9e421fb02cf13bbc6af54fa6dc8a962",
+        "Path /usr/libexec/docker/cli-plugins/docker-model; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both cca3debb839dac976bab9c76b47d38754cad417c02a5602b1eadd312900af140; size 27559496; exact compiler go1.25.12; build-info SHA256 d62cae4605d860b275f7ad91046786cae9e421fb02cf13bbc6af54fa6dc8a962"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-generic-3fd7e10d0e29-e1840732",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/stdlib@1.26.4",
+      "platform": "linux/amd64",
+      "locations": [
+        "/usr/bin/cosign"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c; native summary run 38344754471 main-bluefin-dx-generic-native.json SHA256 21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf; source native run 38340112122; result SHA256 b6439aee802b91d107231e19cdd6ddc405d5546204db05d46f14b99ba3086f56; SBOM SHA256 d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64",
+        "Exact candidate config SHA256 5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78; source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-dx-generic; build identity v1:05fb59c6ab874df5cdba42675aeacfb37f7ba34df2053d198be408edb85ed247",
+        "Independent file platform probe run 38341284379; image ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; applicability JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594; probe SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /usr/bin/cosign; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both a57926e24b07f02b5baf3be81f9a5988e9e45d8a1ca8ca500cdf56d10e69f887; size 141178082; exact compiler go1.26.4; build-info SHA256 cb81ae1aa3a5ef4b7756d98a44577fa147db791d84e854fb080c0ec3d8c867e5"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-generic-3fd7e10d0e29-007fffd0",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/stdlib@1.26.8",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file",
+        "/sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file",
+        "/usr/libexec/docker/cli-plugins/docker-buildx",
+        "/usr/libexec/docker/cli-plugins/docker-compose"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c; native summary run 38344754471 main-bluefin-dx-generic-native.json SHA256 21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf; source native run 38340112122; result SHA256 b6439aee802b91d107231e19cdd6ddc405d5546204db05d46f14b99ba3086f56; SBOM SHA256 d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64",
+        "Exact candidate config SHA256 5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78; source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-dx-generic; build identity v1:05fb59c6ab874df5cdba42675aeacfb37f7ba34df2053d198be408edb85ed247",
+        "Independent file platform probe run 38341284379; image ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; applicability JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594; probe SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 1c90a477e132d768ebd29338f75e9f3a039d2be45e28b316f4f617488dd718c8; size 32652720; exact compiler go1.26.8; build-info SHA256 d21d930208dc6d9c64b11984261dbeddae0691bf64529e2c63d788a32f5ea916",
+        "Path /sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 7d9509f9798d32eb120679cfbe7937088a0bfd202524f6c8ad594d4a0d7f1f82; size 75846304; exact compiler go1.26.8; build-info SHA256 d11608f3c4fc6b8855d9fe0d0ba0b048b45042549b3dd1e449ab4dabc956a61b",
+        "Path /usr/libexec/docker/cli-plugins/docker-buildx; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 7d9509f9798d32eb120679cfbe7937088a0bfd202524f6c8ad594d4a0d7f1f82; size 75846304; exact compiler go1.26.8; build-info SHA256 d11608f3c4fc6b8855d9fe0d0ba0b048b45042549b3dd1e449ab4dabc956a61b",
+        "Path /usr/libexec/docker/cli-plugins/docker-compose; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 1c90a477e132d768ebd29338f75e9f3a039d2be45e28b316f4f617488dd718c8; size 32652720; exact compiler go1.26.8; build-info SHA256 d21d930208dc6d9c64b11984261dbeddae0691bf64529e2c63d788a32f5ea916"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-generic-3fd7e10d0e29-2331f11e",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/stdlib@1.27.1",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+        "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c; native summary run 38344754471 main-bluefin-dx-generic-native.json SHA256 21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf; source native run 38340112122; result SHA256 b6439aee802b91d107231e19cdd6ddc405d5546204db05d46f14b99ba3086f56; SBOM SHA256 d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64",
+        "Exact candidate config SHA256 5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78; source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-dx-generic; build identity v1:05fb59c6ab874df5cdba42675aeacfb37f7ba34df2053d198be408edb85ed247",
+        "Independent file platform probe run 38341284379; image ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; applicability JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594; probe SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c; size 43464671; exact compiler go1.27.1; build-info SHA256 fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef",
+        "Path /sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d; size 34323303; exact compiler go1.27.1; build-info SHA256 798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+        "Path /usr/bin/tailscale; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d; size 34323303; exact compiler go1.27.1; build-info SHA256 798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+        "Path /usr/bin/tailscaled; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c; size 43464671; exact compiler go1.27.1; build-info SHA256 fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-next-a851083d1a9e-15e16f9f",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "component": "pkg:golang/stdlib@1.25.12",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file",
+        "/usr/libexec/docker/cli-plugins/docker-model"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26; native summary run 38344754471 main-bluefin-dx-next-native.json SHA256 fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96; source native run 38340112122; result SHA256 5724e3de7bbfd54999a962439452e4d9713f6ce1226c3fdbe126454868ba734b; SBOM SHA256 46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5",
+        "Exact candidate config SHA256 3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44; source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-dx-next; build identity v1:13ab0d947b649d17a43851dbea491a445b2c123fcaba02eb1d21bff47ac94ccc",
+        "Independent file platform probe run 38341284379; image ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; applicability JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594; probe SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /sysroot/ostree/repo/objects/78/ef0e7526a81723b28e409bbb66e14b729c0b4a3a7b2fc675ce82fcce089c7e.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both cca3debb839dac976bab9c76b47d38754cad417c02a5602b1eadd312900af140; size 27559496; exact compiler go1.25.12; build-info SHA256 d62cae4605d860b275f7ad91046786cae9e421fb02cf13bbc6af54fa6dc8a962",
+        "Path /usr/libexec/docker/cli-plugins/docker-model; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both cca3debb839dac976bab9c76b47d38754cad417c02a5602b1eadd312900af140; size 27559496; exact compiler go1.25.12; build-info SHA256 d62cae4605d860b275f7ad91046786cae9e421fb02cf13bbc6af54fa6dc8a962"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-next-a851083d1a9e-e1840732",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "component": "pkg:golang/stdlib@1.26.4",
+      "platform": "linux/amd64",
+      "locations": [
+        "/usr/bin/cosign"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26; native summary run 38344754471 main-bluefin-dx-next-native.json SHA256 fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96; source native run 38340112122; result SHA256 5724e3de7bbfd54999a962439452e4d9713f6ce1226c3fdbe126454868ba734b; SBOM SHA256 46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5",
+        "Exact candidate config SHA256 3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44; source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-dx-next; build identity v1:13ab0d947b649d17a43851dbea491a445b2c123fcaba02eb1d21bff47ac94ccc",
+        "Independent file platform probe run 38341284379; image ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; applicability JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594; probe SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /usr/bin/cosign; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both a57926e24b07f02b5baf3be81f9a5988e9e45d8a1ca8ca500cdf56d10e69f887; size 141178082; exact compiler go1.26.4; build-info SHA256 cb81ae1aa3a5ef4b7756d98a44577fa147db791d84e854fb080c0ec3d8c867e5"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-next-a851083d1a9e-007fffd0",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "component": "pkg:golang/stdlib@1.26.8",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file",
+        "/sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file",
+        "/usr/libexec/docker/cli-plugins/docker-buildx",
+        "/usr/libexec/docker/cli-plugins/docker-compose"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26; native summary run 38344754471 main-bluefin-dx-next-native.json SHA256 fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96; source native run 38340112122; result SHA256 5724e3de7bbfd54999a962439452e4d9713f6ce1226c3fdbe126454868ba734b; SBOM SHA256 46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5",
+        "Exact candidate config SHA256 3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44; source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-dx-next; build identity v1:13ab0d947b649d17a43851dbea491a445b2c123fcaba02eb1d21bff47ac94ccc",
+        "Independent file platform probe run 38341284379; image ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; applicability JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594; probe SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /sysroot/ostree/repo/objects/23/7114453d526ffaec96139e3a33416098a2577d86738c2b9e7b019727360740.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 1c90a477e132d768ebd29338f75e9f3a039d2be45e28b316f4f617488dd718c8; size 32652720; exact compiler go1.26.8; build-info SHA256 d21d930208dc6d9c64b11984261dbeddae0691bf64529e2c63d788a32f5ea916",
+        "Path /sysroot/ostree/repo/objects/fe/7dbee1b931e6e3a054c5df1e7454b93b138dfad0665666061085491c741f9a.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 7d9509f9798d32eb120679cfbe7937088a0bfd202524f6c8ad594d4a0d7f1f82; size 75846304; exact compiler go1.26.8; build-info SHA256 d11608f3c4fc6b8855d9fe0d0ba0b048b45042549b3dd1e449ab4dabc956a61b",
+        "Path /usr/libexec/docker/cli-plugins/docker-buildx; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 7d9509f9798d32eb120679cfbe7937088a0bfd202524f6c8ad594d4a0d7f1f82; size 75846304; exact compiler go1.26.8; build-info SHA256 d11608f3c4fc6b8855d9fe0d0ba0b048b45042549b3dd1e449ab4dabc956a61b",
+        "Path /usr/libexec/docker/cli-plugins/docker-compose; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 1c90a477e132d768ebd29338f75e9f3a039d2be45e28b316f4f617488dd718c8; size 32652720; exact compiler go1.26.8; build-info SHA256 d21d930208dc6d9c64b11984261dbeddae0691bf64529e2c63d788a32f5ea916"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "go6604-linux-bluefin-dx-next-a851083d1a9e-2331f11e",
+      "advisories": [
+        "CVE-2026-56857",
+        "GO-2026-6604"
+      ],
+      "reason": "Official affected imports require Windows junction behavior. Every exact current matched file is positively proven Linux/amd64 ELF with matching embedded Go platform metadata; current native SHA256, size and exact compiler match independently probed bytes at every location. This is nonapplicability, not a code fix or release clearance.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-6604",
+        "https://go.dev/issue/81739",
+        "https://go.dev/cl/847305"
+      ],
+      "reviewedBy": "great_cto security applicability review",
+      "reviewedAt": "2026-10-13T04:10:36+00:00",
+      "digest": "sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "component": "pkg:golang/stdlib@1.27.1",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file",
+        "/sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file",
+        "/usr/bin/tailscale",
+        "/usr/bin/tailscaled"
+      ],
+      "disposition": "nonapplicable",
+      "evidence": [
+        "Current candidate ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26; native summary run 38344754471 main-bluefin-dx-next-native.json SHA256 fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96; source native run 38340112122; result SHA256 5724e3de7bbfd54999a962439452e4d9713f6ce1226c3fdbe126454868ba734b; SBOM SHA256 46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5",
+        "Exact candidate config SHA256 3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44; source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-dx-next; build identity v1:13ab0d947b649d17a43851dbea491a445b2c123fcaba02eb1d21bff47ac94ccc",
+        "Independent file platform probe run 38341284379; image ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; applicability JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594; probe SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Official GO-2026-6604 record SHA256 f7962e774eb9d561c55c7fc47229b1aede51e1b02d2e42d372a6a8532100e0a9 restricts every affected import to Windows; CVE-2026-56857 is its only retained alias; Linux proof is positive, not absent-symbol inference.",
+        "Path /sysroot/ostree/repo/objects/b2/9253166626299767a20bba1ce6cd58dbeb9488f085b23e1e75953f8d648e66.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c; size 43464671; exact compiler go1.27.1; build-info SHA256 fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef",
+        "Path /sysroot/ostree/repo/objects/ce/4ed5858d0d353a3fdae8234877cfbbbbefed5ee2b984d839db0eeec96c51c5.file; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d; size 34323303; exact compiler go1.27.1; build-info SHA256 798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+        "Path /usr/bin/tailscale; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 64aed443d6454865bdcabb40030b052c4b89cf9a4436c499d41afc502c0ec28d; size 34323303; exact compiler go1.27.1; build-info SHA256 798af0710e9eb243a80978dac269c1a501785eb8919e454b24e96bf918807f61",
+        "Path /usr/bin/tailscaled; current native SHA256 and independent Linux ELF/GOOS/GOARCH probe both 8b16e5cb5c480f58ae6325d036e7b7a2362e8df07fb9cfbf31d16e2b6c7df76c; size 43464671; exact compiler go1.27.1; build-info SHA256 fa37ebb02cb83689746b93c0df07a6fde71faa2bad738cacaaf9f078f442c3ef"
+      ],
+      "expiresAt": "2026-10-27T04:10:36+00:00"
+    },
+    {
+      "id": "podman-bluefin-dx-generic-ghsa-4hq8-gpf5-8p68-7848ba4c",
+      "advisories": [
+        "CVE-2026-57231",
+        "GHSA-4hq8-gpf5-8p68"
+      ],
+      "digest": "sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-4hq8-gpf5-8p68",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/specgen/generate/container.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#bluefin-dx-generic-native.json:sha256:90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-bluefin-dx-generic-ghsa-65gg-3w2w-hr4h-7848ba4c",
+      "advisories": [
+        "CVE-2025-6032",
+        "GHSA-65gg-3w2w-hr4h"
+      ],
+      "digest": "sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-65gg-3w2w-hr4h",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/machine/ocipull/ociartifact.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#bluefin-dx-generic-native.json:sha256:90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-bluefin-dx-generic-ghsa-wp3j-xq48-xpjw-7848ba4c",
+      "advisories": [
+        "CVE-2025-9566",
+        "GHSA-wp3j-xq48-xpjw"
+      ],
+      "digest": "sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-wp3j-xq48-xpjw",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/domain/infra/abi/play.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#bluefin-dx-generic-native.json:sha256:90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-bluefin-generic-ghsa-4hq8-gpf5-8p68-e98ca0ce",
+      "advisories": [
+        "CVE-2026-57231",
+        "GHSA-4hq8-gpf5-8p68"
+      ],
+      "digest": "sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-4hq8-gpf5-8p68",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/specgen/generate/container.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#bluefin-generic-native.json:sha256:868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-bluefin-generic-ghsa-65gg-3w2w-hr4h-e98ca0ce",
+      "advisories": [
+        "CVE-2025-6032",
+        "GHSA-65gg-3w2w-hr4h"
+      ],
+      "digest": "sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-65gg-3w2w-hr4h",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/machine/ocipull/ociartifact.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#bluefin-generic-native.json:sha256:868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-bluefin-generic-ghsa-wp3j-xq48-xpjw-e98ca0ce",
+      "advisories": [
+        "CVE-2025-9566",
+        "GHSA-wp3j-xq48-xpjw"
+      ],
+      "digest": "sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-wp3j-xq48-xpjw",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/domain/infra/abi/play.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#bluefin-generic-native.json:sha256:868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-main-bluefin-dx-generic-ghsa-4hq8-gpf5-8p68-3fd7e10d",
+      "advisories": [
+        "CVE-2026-57231",
+        "GHSA-4hq8-gpf5-8p68"
+      ],
+      "digest": "sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-4hq8-gpf5-8p68",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/specgen/generate/container.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-dx-generic-native.json:sha256:21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-main-bluefin-dx-generic-ghsa-65gg-3w2w-hr4h-3fd7e10d",
+      "advisories": [
+        "CVE-2025-6032",
+        "GHSA-65gg-3w2w-hr4h"
+      ],
+      "digest": "sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-65gg-3w2w-hr4h",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/machine/ocipull/ociartifact.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-dx-generic-native.json:sha256:21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-main-bluefin-dx-generic-ghsa-wp3j-xq48-xpjw-3fd7e10d",
+      "advisories": [
+        "CVE-2025-9566",
+        "GHSA-wp3j-xq48-xpjw"
+      ],
+      "digest": "sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-wp3j-xq48-xpjw",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/domain/infra/abi/play.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-dx-generic-native.json:sha256:21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-main-bluefin-dx-next-ghsa-4hq8-gpf5-8p68-a851083d",
+      "advisories": [
+        "CVE-2026-57231",
+        "GHSA-4hq8-gpf5-8p68"
+      ],
+      "digest": "sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-4hq8-gpf5-8p68",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/specgen/generate/container.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-dx-next-native.json:sha256:fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-main-bluefin-dx-next-ghsa-65gg-3w2w-hr4h-a851083d",
+      "advisories": [
+        "CVE-2025-6032",
+        "GHSA-65gg-3w2w-hr4h"
+      ],
+      "digest": "sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-65gg-3w2w-hr4h",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/machine/ocipull/ociartifact.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-dx-next-native.json:sha256:fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-main-bluefin-dx-next-ghsa-wp3j-xq48-xpjw-a851083d",
+      "advisories": [
+        "CVE-2025-9566",
+        "GHSA-wp3j-xq48-xpjw"
+      ],
+      "digest": "sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-wp3j-xq48-xpjw",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/domain/infra/abi/play.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-dx-next-native.json:sha256:fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-main-bluefin-generic-ghsa-4hq8-gpf5-8p68-3d4693f2",
+      "advisories": [
+        "CVE-2026-57231",
+        "GHSA-4hq8-gpf5-8p68"
+      ],
+      "digest": "sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-4hq8-gpf5-8p68",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/specgen/generate/container.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-generic-native.json:sha256:5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-main-bluefin-generic-ghsa-65gg-3w2w-hr4h-3d4693f2",
+      "advisories": [
+        "CVE-2025-6032",
+        "GHSA-65gg-3w2w-hr4h"
+      ],
+      "digest": "sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-65gg-3w2w-hr4h",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/machine/ocipull/ociartifact.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-generic-native.json:sha256:5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-main-bluefin-generic-ghsa-wp3j-xq48-xpjw-3d4693f2",
+      "advisories": [
+        "CVE-2025-9566",
+        "GHSA-wp3j-xq48-xpjw"
+      ],
+      "digest": "sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-wp3j-xq48-xpjw",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/domain/infra/abi/play.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-generic-native.json:sha256:5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-main-bluefin-next-ghsa-4hq8-gpf5-8p68-a36f46af",
+      "advisories": [
+        "CVE-2026-57231",
+        "GHSA-4hq8-gpf5-8p68"
+      ],
+      "digest": "sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-4hq8-gpf5-8p68",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/specgen/generate/container.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-next-native.json:sha256:81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-main-bluefin-next-ghsa-65gg-3w2w-hr4h-a36f46af",
+      "advisories": [
+        "CVE-2025-6032",
+        "GHSA-65gg-3w2w-hr4h"
+      ],
+      "digest": "sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-65gg-3w2w-hr4h",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/machine/ocipull/ociartifact.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-next-native.json:sha256:81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-main-bluefin-next-ghsa-wp3j-xq48-xpjw-a36f46af",
+      "advisories": [
+        "CVE-2025-9566",
+        "GHSA-wp3j-xq48-xpjw"
+      ],
+      "digest": "sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-wp3j-xq48-xpjw",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/domain/infra/abi/play.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-next-native.json:sha256:81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-generic-7848ba4cfb-23c96ee9",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq"
+      ],
+      "reason": "Go publisher specifies an integer-truncated SSH channel write that stalls in an empty-packet loop after a >4GiB application Write. This is accepted as ordinary process/CPU/network denial of service under the approved desktop/development/container policy. The matched code remains affected; no fixed, unreachable, credential-safety, integrity-safety, listener-absence or SELinux mitigation claim is made. The exact reviewed alias scope contains no reviewed serious group or KEV.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5020",
+        "https://go.dev/issue/79567",
+        "https://go.dev/cl/781663",
+        "https://github.com/advisories/GHSA-rm3j-f69w-wqmq"
+      ],
+      "reviewedBy": "great_cto security-officer impact review",
+      "reviewedAt": "2026-10-13T04:33:34+00:00",
+      "digest": "sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "component": "pkg:golang/golang.org/x/crypto@v0.36.0",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+        "/usr/bin/git-lfs"
+      ],
+      "disposition": "routine",
+      "evidence": [
+        "Current native run 38341284379; exact candidate ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; policy reevaluation 38346130574 result SHA256 440d4c9cc08cd64d5caa80952be5698657c58f329e91045bafcd873175d8cd94; source raw scan SHA256 7f2023d2ed029d4e6532ef34650640b53060464d56ea9c017c745da547cc60e8; SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Exact source 1d347b7456b0cf64d4372cc0e7a562a9e63eb45b; profile bluefin-dx-generic; build v1:b30ea5e8bfe8ec02caa2f4118aa91ba47c6c4283c3fe44cf1d73568f6954c76b; config SHA256 f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357; native summary 38344754471 bluefin-dx-generic SHA256 90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+        "Publisher GO-2026-5020 record refreshed 2026-10-13 and CVE-2026-39834 match the SSH Write truncation/empty-packet availability mechanism. Retained GHSA SHA256 33fd0d6749a3b6f102dfb0f69f95998afa467c2f6deae0872c101d03d723f7da. Generic GHSA CVSS integrity-H metadata is retained as a conflict; it is not used to invent a credential/integrity consequence from this mechanism.",
+        "Exposure is accepted across all supported container/development uses. No affected-function absence claim; retained-object paths are covered as affected byte instances, without asserting they are unreachable. Revoke routine disposition if specific serious system/data-loss impact or KEV is established.",
+        "Every-location byte join /sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file SHA256 3fb93b8f144a3939479a9c3cc77c6827ba1ff7a4d748e441798b49fd51b87ee4 size 13620008 compiler go1.26.5-X:nodwarf5 module v0.36.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+        "Every-location byte join /usr/bin/git-lfs SHA256 3fb93b8f144a3939479a9c3cc77c6827ba1ff7a4d748e441798b49fd51b87ee4 size 13620008 compiler go1.26.5-X:nodwarf5 module v0.36.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594"
+      ],
+      "expiresAt": "2026-10-27T04:33:34+00:00"
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-generic-7848ba4cfb-5e6315a8",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq"
+      ],
+      "reason": "Go publisher specifies an integer-truncated SSH channel write that stalls in an empty-packet loop after a >4GiB application Write. This is accepted as ordinary process/CPU/network denial of service under the approved desktop/development/container policy. The matched code remains affected; no fixed, unreachable, credential-safety, integrity-safety, listener-absence or SELinux mitigation claim is made. The exact reviewed alias scope contains no reviewed serious group or KEV.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5020",
+        "https://go.dev/issue/79567",
+        "https://go.dev/cl/781663",
+        "https://github.com/advisories/GHSA-rm3j-f69w-wqmq"
+      ],
+      "reviewedBy": "great_cto security-officer impact review",
+      "reviewedAt": "2026-10-13T04:33:34+00:00",
+      "digest": "sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "disposition": "routine",
+      "evidence": [
+        "Current native run 38341284379; exact candidate ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; policy reevaluation 38346130574 result SHA256 440d4c9cc08cd64d5caa80952be5698657c58f329e91045bafcd873175d8cd94; source raw scan SHA256 7f2023d2ed029d4e6532ef34650640b53060464d56ea9c017c745da547cc60e8; SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Exact source 1d347b7456b0cf64d4372cc0e7a562a9e63eb45b; profile bluefin-dx-generic; build v1:b30ea5e8bfe8ec02caa2f4118aa91ba47c6c4283c3fe44cf1d73568f6954c76b; config SHA256 f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357; native summary 38344754471 bluefin-dx-generic SHA256 90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+        "Publisher GO-2026-5020 record refreshed 2026-10-13 and CVE-2026-39834 match the SSH Write truncation/empty-packet availability mechanism. Retained GHSA SHA256 33fd0d6749a3b6f102dfb0f69f95998afa467c2f6deae0872c101d03d723f7da. Generic GHSA CVSS integrity-H metadata is retained as a conflict; it is not used to invent a credential/integrity consequence from this mechanism.",
+        "Exposure is accepted across all supported container/development uses. No affected-function absence claim; retained-object paths are covered as affected byte instances, without asserting they are unreachable. Revoke routine disposition if specific serious system/data-loss impact or KEV is established.",
+        "Every-location byte join /sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file SHA256 5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34 size 26175536 compiler go1.26.8-X:nodwarf5 module v0.46.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+        "Every-location byte join /usr/bin/skopeo SHA256 5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34 size 26175536 compiler go1.26.8-X:nodwarf5 module v0.46.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594"
+      ],
+      "expiresAt": "2026-10-27T04:33:34+00:00"
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-generic-7848ba4cfb-4856240e",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq"
+      ],
+      "reason": "Go publisher specifies an integer-truncated SSH channel write that stalls in an empty-packet loop after a >4GiB application Write. This is accepted as ordinary process/CPU/network denial of service under the approved desktop/development/container policy. The matched code remains affected; no fixed, unreachable, credential-safety, integrity-safety, listener-absence or SELinux mitigation claim is made. The exact reviewed alias scope contains no reviewed serious group or KEV.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5020",
+        "https://go.dev/issue/79567",
+        "https://go.dev/cl/781663",
+        "https://github.com/advisories/GHSA-rm3j-f69w-wqmq"
+      ],
+      "reviewedBy": "great_cto security-officer impact review",
+      "reviewedAt": "2026-10-13T04:33:34+00:00",
+      "digest": "sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "component": "pkg:golang/golang.org/x/crypto@v0.49.0",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+        "/usr/bin/incus-agent"
+      ],
+      "disposition": "routine",
+      "evidence": [
+        "Current native run 38341284379; exact candidate ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; policy reevaluation 38346130574 result SHA256 440d4c9cc08cd64d5caa80952be5698657c58f329e91045bafcd873175d8cd94; source raw scan SHA256 7f2023d2ed029d4e6532ef34650640b53060464d56ea9c017c745da547cc60e8; SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Exact source 1d347b7456b0cf64d4372cc0e7a562a9e63eb45b; profile bluefin-dx-generic; build v1:b30ea5e8bfe8ec02caa2f4118aa91ba47c6c4283c3fe44cf1d73568f6954c76b; config SHA256 f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357; native summary 38344754471 bluefin-dx-generic SHA256 90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+        "Publisher GO-2026-5020 record refreshed 2026-10-13 and CVE-2026-39834 match the SSH Write truncation/empty-packet availability mechanism. Retained GHSA SHA256 33fd0d6749a3b6f102dfb0f69f95998afa467c2f6deae0872c101d03d723f7da. Generic GHSA CVSS integrity-H metadata is retained as a conflict; it is not used to invent a credential/integrity consequence from this mechanism.",
+        "Exposure is accepted across all supported container/development uses. No affected-function absence claim; retained-object paths are covered as affected byte instances, without asserting they are unreachable. Revoke routine disposition if specific serious system/data-loss impact or KEV is established.",
+        "Every-location byte join /sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file SHA256 e82bfc2d40202f61c8762acf8ef046ceb16c9b1619299531eb33e95bc84152b1 size 19258328 compiler go1.26.1-X:nodwarf5 module v0.49.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+        "Every-location byte join /usr/bin/incus-agent SHA256 e82bfc2d40202f61c8762acf8ef046ceb16c9b1619299531eb33e95bc84152b1 size 19258328 compiler go1.26.1-X:nodwarf5 module v0.49.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594"
+      ],
+      "expiresAt": "2026-10-27T04:33:34+00:00"
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-generic-7848ba4cfb-d712a2b6",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq"
+      ],
+      "reason": "Go publisher specifies an integer-truncated SSH channel write that stalls in an empty-packet loop after a >4GiB application Write. This is accepted as ordinary process/CPU/network denial of service under the approved desktop/development/container policy. The matched code remains affected; no fixed, unreachable, credential-safety, integrity-safety, listener-absence or SELinux mitigation claim is made. The exact reviewed alias scope contains no reviewed serious group or KEV.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5020",
+        "https://go.dev/issue/79567",
+        "https://go.dev/cl/781663",
+        "https://github.com/advisories/GHSA-rm3j-f69w-wqmq"
+      ],
+      "reviewedBy": "great_cto security-officer impact review",
+      "reviewedAt": "2026-10-13T04:33:34+00:00",
+      "digest": "sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "component": "pkg:golang/golang.org/x/crypto@v0.50.0",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+        "/usr/libexec/podman/gvproxy"
+      ],
+      "disposition": "routine",
+      "evidence": [
+        "Current native run 38341284379; exact candidate ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845; policy reevaluation 38346130574 result SHA256 440d4c9cc08cd64d5caa80952be5698657c58f329e91045bafcd873175d8cd94; source raw scan SHA256 7f2023d2ed029d4e6532ef34650640b53060464d56ea9c017c745da547cc60e8; SBOM SHA256 afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+        "Exact source 1d347b7456b0cf64d4372cc0e7a562a9e63eb45b; profile bluefin-dx-generic; build v1:b30ea5e8bfe8ec02caa2f4118aa91ba47c6c4283c3fe44cf1d73568f6954c76b; config SHA256 f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357; native summary 38344754471 bluefin-dx-generic SHA256 90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+        "Publisher GO-2026-5020 record refreshed 2026-10-13 and CVE-2026-39834 match the SSH Write truncation/empty-packet availability mechanism. Retained GHSA SHA256 33fd0d6749a3b6f102dfb0f69f95998afa467c2f6deae0872c101d03d723f7da. Generic GHSA CVSS integrity-H metadata is retained as a conflict; it is not used to invent a credential/integrity consequence from this mechanism.",
+        "Exposure is accepted across all supported container/development uses. No affected-function absence claim; retained-object paths are covered as affected byte instances, without asserting they are unreachable. Revoke routine disposition if specific serious system/data-loss impact or KEV is established.",
+        "Every-location byte join /sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file SHA256 69ed90d7024f00320c1a1b3525a90c0fed28f979a9945ba492427ad0673b07d0 size 13025000 compiler go1.26.2-X:nodwarf5 module v0.50.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+        "Every-location byte join /usr/libexec/podman/gvproxy SHA256 69ed90d7024f00320c1a1b3525a90c0fed28f979a9945ba492427ad0673b07d0 size 13025000 compiler go1.26.2-X:nodwarf5 module v0.50.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594"
+      ],
+      "expiresAt": "2026-10-27T04:33:34+00:00"
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-generic-e98ca0ceb4-5e6315a8",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq"
+      ],
+      "reason": "Go publisher specifies an integer-truncated SSH channel write that stalls in an empty-packet loop after a >4GiB application Write. This is accepted as ordinary process/CPU/network denial of service under the approved desktop/development/container policy. The matched code remains affected; no fixed, unreachable, credential-safety, integrity-safety, listener-absence or SELinux mitigation claim is made. The exact reviewed alias scope contains no reviewed serious group or KEV.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5020",
+        "https://go.dev/issue/79567",
+        "https://go.dev/cl/781663",
+        "https://github.com/advisories/GHSA-rm3j-f69w-wqmq"
+      ],
+      "reviewedBy": "great_cto security-officer impact review",
+      "reviewedAt": "2026-10-13T04:33:34+00:00",
+      "digest": "sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "disposition": "routine",
+      "evidence": [
+        "Current native run 38341281199; exact candidate ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7; policy reevaluation 38346130574 result SHA256 dede7498530f61a6c084a3b97d2c4c06fdb9d3b6e6dfdf679588c187193b2488; source raw scan SHA256 dc2f17b51f30e6aceb672725cecfacdf53090733df29574ba13aea677fdc719c; SBOM SHA256 8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199",
+        "Exact source 1d347b7456b0cf64d4372cc0e7a562a9e63eb45b; profile bluefin-generic; build v1:29a6920037b0251e2c54a53719a00eb9c7085a75e59c8db76839b214703d8e0b; config SHA256 97b4843f19705f7d6d29988bfbe591594388af5a9b7785e4edb08a7b6fb6abef; native summary 38344754471 bluefin-generic SHA256 868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f",
+        "Publisher GO-2026-5020 record refreshed 2026-10-13 and CVE-2026-39834 match the SSH Write truncation/empty-packet availability mechanism. Retained GHSA SHA256 33fd0d6749a3b6f102dfb0f69f95998afa467c2f6deae0872c101d03d723f7da. Generic GHSA CVSS integrity-H metadata is retained as a conflict; it is not used to invent a credential/integrity consequence from this mechanism.",
+        "Exposure is accepted across all supported container/development uses. No affected-function absence claim; retained-object paths are covered as affected byte instances, without asserting they are unreachable. Revoke routine disposition if specific serious system/data-loss impact or KEV is established.",
+        "Every-location byte join /sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file SHA256 5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34 size 26175536 compiler go1.26.8-X:nodwarf5 module v0.46.0; independent probe run 38341281199 JSON SHA256 f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+        "Every-location byte join /usr/bin/skopeo SHA256 5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34 size 26175536 compiler go1.26.8-X:nodwarf5 module v0.46.0; independent probe run 38341281199 JSON SHA256 f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af"
+      ],
+      "expiresAt": "2026-10-27T04:33:34+00:00"
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-generic-3fd7e10d0e-23c96ee9",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq"
+      ],
+      "reason": "Go publisher specifies an integer-truncated SSH channel write that stalls in an empty-packet loop after a >4GiB application Write. This is accepted as ordinary process/CPU/network denial of service under the approved desktop/development/container policy. The matched code remains affected; no fixed, unreachable, credential-safety, integrity-safety, listener-absence or SELinux mitigation claim is made. The exact reviewed alias scope contains no reviewed serious group or KEV.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5020",
+        "https://go.dev/issue/79567",
+        "https://go.dev/cl/781663",
+        "https://github.com/advisories/GHSA-rm3j-f69w-wqmq"
+      ],
+      "reviewedBy": "great_cto security-officer impact review",
+      "reviewedAt": "2026-10-13T04:33:34+00:00",
+      "digest": "sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/crypto@v0.36.0",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+        "/usr/bin/git-lfs"
+      ],
+      "disposition": "routine",
+      "evidence": [
+        "Current native run 38340112122; exact candidate ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c; policy reevaluation 38346130574 result SHA256 cd126c61b033e909d7e31e49a12ea18a1181dc2164eac2fe6921eee1cd2065df; source raw scan SHA256 53d9bba5e04edcfb53294c604a6dbfb0f4ec8fc0f93334575bee101b17971655; SBOM SHA256 d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64",
+        "Exact source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-dx-generic; build v1:05fb59c6ab874df5cdba42675aeacfb37f7ba34df2053d198be408edb85ed247; config SHA256 5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78; native summary 38344754471 main-bluefin-dx-generic SHA256 21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+        "Publisher GO-2026-5020 record refreshed 2026-10-13 and CVE-2026-39834 match the SSH Write truncation/empty-packet availability mechanism. Retained GHSA SHA256 33fd0d6749a3b6f102dfb0f69f95998afa467c2f6deae0872c101d03d723f7da. Generic GHSA CVSS integrity-H metadata is retained as a conflict; it is not used to invent a credential/integrity consequence from this mechanism.",
+        "Exposure is accepted across all supported container/development uses. No affected-function absence claim; retained-object paths are covered as affected byte instances, without asserting they are unreachable. Revoke routine disposition if specific serious system/data-loss impact or KEV is established.",
+        "Every-location byte join /sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file SHA256 3fb93b8f144a3939479a9c3cc77c6827ba1ff7a4d748e441798b49fd51b87ee4 size 13620008 compiler go1.26.5-X:nodwarf5 module v0.36.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+        "Every-location byte join /usr/bin/git-lfs SHA256 3fb93b8f144a3939479a9c3cc77c6827ba1ff7a4d748e441798b49fd51b87ee4 size 13620008 compiler go1.26.5-X:nodwarf5 module v0.36.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594"
+      ],
+      "expiresAt": "2026-10-27T04:33:34+00:00"
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-generic-3fd7e10d0e-5e6315a8",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq"
+      ],
+      "reason": "Go publisher specifies an integer-truncated SSH channel write that stalls in an empty-packet loop after a >4GiB application Write. This is accepted as ordinary process/CPU/network denial of service under the approved desktop/development/container policy. The matched code remains affected; no fixed, unreachable, credential-safety, integrity-safety, listener-absence or SELinux mitigation claim is made. The exact reviewed alias scope contains no reviewed serious group or KEV.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5020",
+        "https://go.dev/issue/79567",
+        "https://go.dev/cl/781663",
+        "https://github.com/advisories/GHSA-rm3j-f69w-wqmq"
+      ],
+      "reviewedBy": "great_cto security-officer impact review",
+      "reviewedAt": "2026-10-13T04:33:34+00:00",
+      "digest": "sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "disposition": "routine",
+      "evidence": [
+        "Current native run 38340112122; exact candidate ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c; policy reevaluation 38346130574 result SHA256 cd126c61b033e909d7e31e49a12ea18a1181dc2164eac2fe6921eee1cd2065df; source raw scan SHA256 53d9bba5e04edcfb53294c604a6dbfb0f4ec8fc0f93334575bee101b17971655; SBOM SHA256 d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64",
+        "Exact source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-dx-generic; build v1:05fb59c6ab874df5cdba42675aeacfb37f7ba34df2053d198be408edb85ed247; config SHA256 5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78; native summary 38344754471 main-bluefin-dx-generic SHA256 21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+        "Publisher GO-2026-5020 record refreshed 2026-10-13 and CVE-2026-39834 match the SSH Write truncation/empty-packet availability mechanism. Retained GHSA SHA256 33fd0d6749a3b6f102dfb0f69f95998afa467c2f6deae0872c101d03d723f7da. Generic GHSA CVSS integrity-H metadata is retained as a conflict; it is not used to invent a credential/integrity consequence from this mechanism.",
+        "Exposure is accepted across all supported container/development uses. No affected-function absence claim; retained-object paths are covered as affected byte instances, without asserting they are unreachable. Revoke routine disposition if specific serious system/data-loss impact or KEV is established.",
+        "Every-location byte join /sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file SHA256 5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34 size 26175536 compiler go1.26.8-X:nodwarf5 module v0.46.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+        "Every-location byte join /usr/bin/skopeo SHA256 5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34 size 26175536 compiler go1.26.8-X:nodwarf5 module v0.46.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594"
+      ],
+      "expiresAt": "2026-10-27T04:33:34+00:00"
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-generic-3fd7e10d0e-4856240e",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq"
+      ],
+      "reason": "Go publisher specifies an integer-truncated SSH channel write that stalls in an empty-packet loop after a >4GiB application Write. This is accepted as ordinary process/CPU/network denial of service under the approved desktop/development/container policy. The matched code remains affected; no fixed, unreachable, credential-safety, integrity-safety, listener-absence or SELinux mitigation claim is made. The exact reviewed alias scope contains no reviewed serious group or KEV.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5020",
+        "https://go.dev/issue/79567",
+        "https://go.dev/cl/781663",
+        "https://github.com/advisories/GHSA-rm3j-f69w-wqmq"
+      ],
+      "reviewedBy": "great_cto security-officer impact review",
+      "reviewedAt": "2026-10-13T04:33:34+00:00",
+      "digest": "sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/crypto@v0.49.0",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+        "/usr/bin/incus-agent"
+      ],
+      "disposition": "routine",
+      "evidence": [
+        "Current native run 38340112122; exact candidate ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c; policy reevaluation 38346130574 result SHA256 cd126c61b033e909d7e31e49a12ea18a1181dc2164eac2fe6921eee1cd2065df; source raw scan SHA256 53d9bba5e04edcfb53294c604a6dbfb0f4ec8fc0f93334575bee101b17971655; SBOM SHA256 d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64",
+        "Exact source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-dx-generic; build v1:05fb59c6ab874df5cdba42675aeacfb37f7ba34df2053d198be408edb85ed247; config SHA256 5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78; native summary 38344754471 main-bluefin-dx-generic SHA256 21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+        "Publisher GO-2026-5020 record refreshed 2026-10-13 and CVE-2026-39834 match the SSH Write truncation/empty-packet availability mechanism. Retained GHSA SHA256 33fd0d6749a3b6f102dfb0f69f95998afa467c2f6deae0872c101d03d723f7da. Generic GHSA CVSS integrity-H metadata is retained as a conflict; it is not used to invent a credential/integrity consequence from this mechanism.",
+        "Exposure is accepted across all supported container/development uses. No affected-function absence claim; retained-object paths are covered as affected byte instances, without asserting they are unreachable. Revoke routine disposition if specific serious system/data-loss impact or KEV is established.",
+        "Every-location byte join /sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file SHA256 e82bfc2d40202f61c8762acf8ef046ceb16c9b1619299531eb33e95bc84152b1 size 19258328 compiler go1.26.1-X:nodwarf5 module v0.49.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+        "Every-location byte join /usr/bin/incus-agent SHA256 e82bfc2d40202f61c8762acf8ef046ceb16c9b1619299531eb33e95bc84152b1 size 19258328 compiler go1.26.1-X:nodwarf5 module v0.49.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594"
+      ],
+      "expiresAt": "2026-10-27T04:33:34+00:00"
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-generic-3fd7e10d0e-d712a2b6",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq"
+      ],
+      "reason": "Go publisher specifies an integer-truncated SSH channel write that stalls in an empty-packet loop after a >4GiB application Write. This is accepted as ordinary process/CPU/network denial of service under the approved desktop/development/container policy. The matched code remains affected; no fixed, unreachable, credential-safety, integrity-safety, listener-absence or SELinux mitigation claim is made. The exact reviewed alias scope contains no reviewed serious group or KEV.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5020",
+        "https://go.dev/issue/79567",
+        "https://go.dev/cl/781663",
+        "https://github.com/advisories/GHSA-rm3j-f69w-wqmq"
+      ],
+      "reviewedBy": "great_cto security-officer impact review",
+      "reviewedAt": "2026-10-13T04:33:34+00:00",
+      "digest": "sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/golang.org/x/crypto@v0.50.0",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+        "/usr/libexec/podman/gvproxy"
+      ],
+      "disposition": "routine",
+      "evidence": [
+        "Current native run 38340112122; exact candidate ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c; policy reevaluation 38346130574 result SHA256 cd126c61b033e909d7e31e49a12ea18a1181dc2164eac2fe6921eee1cd2065df; source raw scan SHA256 53d9bba5e04edcfb53294c604a6dbfb0f4ec8fc0f93334575bee101b17971655; SBOM SHA256 d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64",
+        "Exact source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-dx-generic; build v1:05fb59c6ab874df5cdba42675aeacfb37f7ba34df2053d198be408edb85ed247; config SHA256 5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78; native summary 38344754471 main-bluefin-dx-generic SHA256 21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+        "Publisher GO-2026-5020 record refreshed 2026-10-13 and CVE-2026-39834 match the SSH Write truncation/empty-packet availability mechanism. Retained GHSA SHA256 33fd0d6749a3b6f102dfb0f69f95998afa467c2f6deae0872c101d03d723f7da. Generic GHSA CVSS integrity-H metadata is retained as a conflict; it is not used to invent a credential/integrity consequence from this mechanism.",
+        "Exposure is accepted across all supported container/development uses. No affected-function absence claim; retained-object paths are covered as affected byte instances, without asserting they are unreachable. Revoke routine disposition if specific serious system/data-loss impact or KEV is established.",
+        "Every-location byte join /sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file SHA256 69ed90d7024f00320c1a1b3525a90c0fed28f979a9945ba492427ad0673b07d0 size 13025000 compiler go1.26.2-X:nodwarf5 module v0.50.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+        "Every-location byte join /usr/libexec/podman/gvproxy SHA256 69ed90d7024f00320c1a1b3525a90c0fed28f979a9945ba492427ad0673b07d0 size 13025000 compiler go1.26.2-X:nodwarf5 module v0.50.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594"
+      ],
+      "expiresAt": "2026-10-27T04:33:34+00:00"
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-next-a851083d1a-23c96ee9",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq"
+      ],
+      "reason": "Go publisher specifies an integer-truncated SSH channel write that stalls in an empty-packet loop after a >4GiB application Write. This is accepted as ordinary process/CPU/network denial of service under the approved desktop/development/container policy. The matched code remains affected; no fixed, unreachable, credential-safety, integrity-safety, listener-absence or SELinux mitigation claim is made. The exact reviewed alias scope contains no reviewed serious group or KEV.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5020",
+        "https://go.dev/issue/79567",
+        "https://go.dev/cl/781663",
+        "https://github.com/advisories/GHSA-rm3j-f69w-wqmq"
+      ],
+      "reviewedBy": "great_cto security-officer impact review",
+      "reviewedAt": "2026-10-13T04:33:34+00:00",
+      "digest": "sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "component": "pkg:golang/golang.org/x/crypto@v0.36.0",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file",
+        "/usr/bin/git-lfs"
+      ],
+      "disposition": "routine",
+      "evidence": [
+        "Current native run 38340112122; exact candidate ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26; policy reevaluation 38346130574 result SHA256 4ec5425fcf67492ce00d3fefdddbbf74363aa5e9d01c0c7be4d11af2b500f8bb; source raw scan SHA256 eedf0c80d2370c5421832469412abfae9db32b8017bdf29c10ca3b487a0ca362; SBOM SHA256 46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5",
+        "Exact source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-dx-next; build v1:13ab0d947b649d17a43851dbea491a445b2c123fcaba02eb1d21bff47ac94ccc; config SHA256 3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44; native summary 38344754471 main-bluefin-dx-next SHA256 fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+        "Publisher GO-2026-5020 record refreshed 2026-10-13 and CVE-2026-39834 match the SSH Write truncation/empty-packet availability mechanism. Retained GHSA SHA256 33fd0d6749a3b6f102dfb0f69f95998afa467c2f6deae0872c101d03d723f7da. Generic GHSA CVSS integrity-H metadata is retained as a conflict; it is not used to invent a credential/integrity consequence from this mechanism.",
+        "Exposure is accepted across all supported container/development uses. No affected-function absence claim; retained-object paths are covered as affected byte instances, without asserting they are unreachable. Revoke routine disposition if specific serious system/data-loss impact or KEV is established.",
+        "Every-location byte join /sysroot/ostree/repo/objects/d2/fd2e066acba59e769915511fe7c76fc154fca1ecddb00165525421f61cda95.file SHA256 3fb93b8f144a3939479a9c3cc77c6827ba1ff7a4d748e441798b49fd51b87ee4 size 13620008 compiler go1.26.5-X:nodwarf5 module v0.36.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+        "Every-location byte join /usr/bin/git-lfs SHA256 3fb93b8f144a3939479a9c3cc77c6827ba1ff7a4d748e441798b49fd51b87ee4 size 13620008 compiler go1.26.5-X:nodwarf5 module v0.36.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594"
+      ],
+      "expiresAt": "2026-10-27T04:33:34+00:00"
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-next-a851083d1a-5e6315a8",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq"
+      ],
+      "reason": "Go publisher specifies an integer-truncated SSH channel write that stalls in an empty-packet loop after a >4GiB application Write. This is accepted as ordinary process/CPU/network denial of service under the approved desktop/development/container policy. The matched code remains affected; no fixed, unreachable, credential-safety, integrity-safety, listener-absence or SELinux mitigation claim is made. The exact reviewed alias scope contains no reviewed serious group or KEV.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5020",
+        "https://go.dev/issue/79567",
+        "https://go.dev/cl/781663",
+        "https://github.com/advisories/GHSA-rm3j-f69w-wqmq"
+      ],
+      "reviewedBy": "great_cto security-officer impact review",
+      "reviewedAt": "2026-10-13T04:33:34+00:00",
+      "digest": "sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "disposition": "routine",
+      "evidence": [
+        "Current native run 38340112122; exact candidate ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26; policy reevaluation 38346130574 result SHA256 4ec5425fcf67492ce00d3fefdddbbf74363aa5e9d01c0c7be4d11af2b500f8bb; source raw scan SHA256 eedf0c80d2370c5421832469412abfae9db32b8017bdf29c10ca3b487a0ca362; SBOM SHA256 46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5",
+        "Exact source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-dx-next; build v1:13ab0d947b649d17a43851dbea491a445b2c123fcaba02eb1d21bff47ac94ccc; config SHA256 3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44; native summary 38344754471 main-bluefin-dx-next SHA256 fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+        "Publisher GO-2026-5020 record refreshed 2026-10-13 and CVE-2026-39834 match the SSH Write truncation/empty-packet availability mechanism. Retained GHSA SHA256 33fd0d6749a3b6f102dfb0f69f95998afa467c2f6deae0872c101d03d723f7da. Generic GHSA CVSS integrity-H metadata is retained as a conflict; it is not used to invent a credential/integrity consequence from this mechanism.",
+        "Exposure is accepted across all supported container/development uses. No affected-function absence claim; retained-object paths are covered as affected byte instances, without asserting they are unreachable. Revoke routine disposition if specific serious system/data-loss impact or KEV is established.",
+        "Every-location byte join /sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file SHA256 5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34 size 26175536 compiler go1.26.8-X:nodwarf5 module v0.46.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+        "Every-location byte join /usr/bin/skopeo SHA256 5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34 size 26175536 compiler go1.26.8-X:nodwarf5 module v0.46.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594"
+      ],
+      "expiresAt": "2026-10-27T04:33:34+00:00"
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-next-a851083d1a-4856240e",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq"
+      ],
+      "reason": "Go publisher specifies an integer-truncated SSH channel write that stalls in an empty-packet loop after a >4GiB application Write. This is accepted as ordinary process/CPU/network denial of service under the approved desktop/development/container policy. The matched code remains affected; no fixed, unreachable, credential-safety, integrity-safety, listener-absence or SELinux mitigation claim is made. The exact reviewed alias scope contains no reviewed serious group or KEV.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5020",
+        "https://go.dev/issue/79567",
+        "https://go.dev/cl/781663",
+        "https://github.com/advisories/GHSA-rm3j-f69w-wqmq"
+      ],
+      "reviewedBy": "great_cto security-officer impact review",
+      "reviewedAt": "2026-10-13T04:33:34+00:00",
+      "digest": "sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "component": "pkg:golang/golang.org/x/crypto@v0.49.0",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file",
+        "/usr/bin/incus-agent"
+      ],
+      "disposition": "routine",
+      "evidence": [
+        "Current native run 38340112122; exact candidate ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26; policy reevaluation 38346130574 result SHA256 4ec5425fcf67492ce00d3fefdddbbf74363aa5e9d01c0c7be4d11af2b500f8bb; source raw scan SHA256 eedf0c80d2370c5421832469412abfae9db32b8017bdf29c10ca3b487a0ca362; SBOM SHA256 46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5",
+        "Exact source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-dx-next; build v1:13ab0d947b649d17a43851dbea491a445b2c123fcaba02eb1d21bff47ac94ccc; config SHA256 3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44; native summary 38344754471 main-bluefin-dx-next SHA256 fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+        "Publisher GO-2026-5020 record refreshed 2026-10-13 and CVE-2026-39834 match the SSH Write truncation/empty-packet availability mechanism. Retained GHSA SHA256 33fd0d6749a3b6f102dfb0f69f95998afa467c2f6deae0872c101d03d723f7da. Generic GHSA CVSS integrity-H metadata is retained as a conflict; it is not used to invent a credential/integrity consequence from this mechanism.",
+        "Exposure is accepted across all supported container/development uses. No affected-function absence claim; retained-object paths are covered as affected byte instances, without asserting they are unreachable. Revoke routine disposition if specific serious system/data-loss impact or KEV is established.",
+        "Every-location byte join /sysroot/ostree/repo/objects/33/a281ac9a65553ff6d09b96080febd67c7b5831f13df8b0fd8e26df5b522155.file SHA256 e82bfc2d40202f61c8762acf8ef046ceb16c9b1619299531eb33e95bc84152b1 size 19258328 compiler go1.26.1-X:nodwarf5 module v0.49.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+        "Every-location byte join /usr/bin/incus-agent SHA256 e82bfc2d40202f61c8762acf8ef046ceb16c9b1619299531eb33e95bc84152b1 size 19258328 compiler go1.26.1-X:nodwarf5 module v0.49.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594"
+      ],
+      "expiresAt": "2026-10-27T04:33:34+00:00"
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-dx-next-a851083d1a-d712a2b6",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq"
+      ],
+      "reason": "Go publisher specifies an integer-truncated SSH channel write that stalls in an empty-packet loop after a >4GiB application Write. This is accepted as ordinary process/CPU/network denial of service under the approved desktop/development/container policy. The matched code remains affected; no fixed, unreachable, credential-safety, integrity-safety, listener-absence or SELinux mitigation claim is made. The exact reviewed alias scope contains no reviewed serious group or KEV.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5020",
+        "https://go.dev/issue/79567",
+        "https://go.dev/cl/781663",
+        "https://github.com/advisories/GHSA-rm3j-f69w-wqmq"
+      ],
+      "reviewedBy": "great_cto security-officer impact review",
+      "reviewedAt": "2026-10-13T04:33:34+00:00",
+      "digest": "sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "component": "pkg:golang/golang.org/x/crypto@v0.50.0",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file",
+        "/usr/libexec/podman/gvproxy"
+      ],
+      "disposition": "routine",
+      "evidence": [
+        "Current native run 38340112122; exact candidate ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26; policy reevaluation 38346130574 result SHA256 4ec5425fcf67492ce00d3fefdddbbf74363aa5e9d01c0c7be4d11af2b500f8bb; source raw scan SHA256 eedf0c80d2370c5421832469412abfae9db32b8017bdf29c10ca3b487a0ca362; SBOM SHA256 46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5",
+        "Exact source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-dx-next; build v1:13ab0d947b649d17a43851dbea491a445b2c123fcaba02eb1d21bff47ac94ccc; config SHA256 3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44; native summary 38344754471 main-bluefin-dx-next SHA256 fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+        "Publisher GO-2026-5020 record refreshed 2026-10-13 and CVE-2026-39834 match the SSH Write truncation/empty-packet availability mechanism. Retained GHSA SHA256 33fd0d6749a3b6f102dfb0f69f95998afa467c2f6deae0872c101d03d723f7da. Generic GHSA CVSS integrity-H metadata is retained as a conflict; it is not used to invent a credential/integrity consequence from this mechanism.",
+        "Exposure is accepted across all supported container/development uses. No affected-function absence claim; retained-object paths are covered as affected byte instances, without asserting they are unreachable. Revoke routine disposition if specific serious system/data-loss impact or KEV is established.",
+        "Every-location byte join /sysroot/ostree/repo/objects/f1/c7fe7b7d8235bdab2ea94100006786a399e771929c617d768264318e609fb0.file SHA256 69ed90d7024f00320c1a1b3525a90c0fed28f979a9945ba492427ad0673b07d0 size 13025000 compiler go1.26.2-X:nodwarf5 module v0.50.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594",
+        "Every-location byte join /usr/libexec/podman/gvproxy SHA256 69ed90d7024f00320c1a1b3525a90c0fed28f979a9945ba492427ad0673b07d0 size 13025000 compiler go1.26.2-X:nodwarf5 module v0.50.0; independent probe run 38341284379 JSON SHA256 050420b1b5c5049b49b8393bfe9882e536cf7fbb064eea65c9abe3dd92ec0594"
+      ],
+      "expiresAt": "2026-10-27T04:33:34+00:00"
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-generic-3d4693f25f-5e6315a8",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq"
+      ],
+      "reason": "Go publisher specifies an integer-truncated SSH channel write that stalls in an empty-packet loop after a >4GiB application Write. This is accepted as ordinary process/CPU/network denial of service under the approved desktop/development/container policy. The matched code remains affected; no fixed, unreachable, credential-safety, integrity-safety, listener-absence or SELinux mitigation claim is made. The exact reviewed alias scope contains no reviewed serious group or KEV.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5020",
+        "https://go.dev/issue/79567",
+        "https://go.dev/cl/781663",
+        "https://github.com/advisories/GHSA-rm3j-f69w-wqmq"
+      ],
+      "reviewedBy": "great_cto security-officer impact review",
+      "reviewedAt": "2026-10-13T04:33:34+00:00",
+      "digest": "sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "disposition": "routine",
+      "evidence": [
+        "Current native run 38340112122; exact candidate ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844; policy reevaluation 38346130574 result SHA256 3222b174330e244407d7eeb771a849a968db7b293ce23c419eb2a75b84dc112a; source raw scan SHA256 231611b8f55e1b8a756a9b78ccf88f96eeba9881e3387d3ef2fe93ca420d168f; SBOM SHA256 4902fdd4b2afca8374a3197770f25daa11c7626cb5c83c46fb614ad1f5441201",
+        "Exact source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-generic; build v1:357fa0799580560ed50f4045d429e0e9d19ad76e8deb9e647e45b0be33885a38; config SHA256 eb2542e972cdd6c71f3448674c57b0c41252fdc4c986252bc8ff3621e2119cf4; native summary 38344754471 main-bluefin-generic SHA256 5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9",
+        "Publisher GO-2026-5020 record refreshed 2026-10-13 and CVE-2026-39834 match the SSH Write truncation/empty-packet availability mechanism. Retained GHSA SHA256 33fd0d6749a3b6f102dfb0f69f95998afa467c2f6deae0872c101d03d723f7da. Generic GHSA CVSS integrity-H metadata is retained as a conflict; it is not used to invent a credential/integrity consequence from this mechanism.",
+        "Exposure is accepted across all supported container/development uses. No affected-function absence claim; retained-object paths are covered as affected byte instances, without asserting they are unreachable. Revoke routine disposition if specific serious system/data-loss impact or KEV is established.",
+        "Every-location byte join /sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file SHA256 5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34 size 26175536 compiler go1.26.8-X:nodwarf5 module v0.46.0; independent probe run 38341281199 JSON SHA256 f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+        "Every-location byte join /usr/bin/skopeo SHA256 5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34 size 26175536 compiler go1.26.8-X:nodwarf5 module v0.46.0; independent probe run 38341281199 JSON SHA256 f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af"
+      ],
+      "expiresAt": "2026-10-27T04:33:34+00:00"
+    },
+    {
+      "id": "ssh-largewrite-routine-bluefin-next-a36f46afcc-5e6315a8",
+      "advisories": [
+        "CVE-2026-39834",
+        "GHSA-rm3j-f69w-wqmq"
+      ],
+      "reason": "Go publisher specifies an integer-truncated SSH channel write that stalls in an empty-packet loop after a >4GiB application Write. This is accepted as ordinary process/CPU/network denial of service under the approved desktop/development/container policy. The matched code remains affected; no fixed, unreachable, credential-safety, integrity-safety, listener-absence or SELinux mitigation claim is made. The exact reviewed alias scope contains no reviewed serious group or KEV.",
+      "officialSources": [
+        "https://pkg.go.dev/vuln/GO-2026-5020",
+        "https://go.dev/issue/79567",
+        "https://go.dev/cl/781663",
+        "https://github.com/advisories/GHSA-rm3j-f69w-wqmq"
+      ],
+      "reviewedBy": "great_cto security-officer impact review",
+      "reviewedAt": "2026-10-13T04:33:34+00:00",
+      "digest": "sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+      "component": "pkg:golang/golang.org/x/crypto@v0.46.0",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file",
+        "/usr/bin/skopeo"
+      ],
+      "disposition": "routine",
+      "evidence": [
+        "Current native run 38340112122; exact candidate ghcr.io/closure-labs/finite@sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db; policy reevaluation 38346130574 result SHA256 f0b72c27606d52a6468b841dd73a05b20df54defb77fdb72600c516aa89088e1; source raw scan SHA256 010f4472f5ba934a3bb65f7089cd32816ee000dd7bd100eb6df2a574cb49aca3; SBOM SHA256 bcf12455b002324b0c5923110de414cde3528d164bbb6b230dc2e8efb69f56b4",
+        "Exact source cbaf82645aa1e437fe42157ab5712869f74219ba; profile bluefin-next; build v1:204a54980664eb886d8b5a949b4a2bcd50c5fd6074f82e5d60ae6362241bb47c; config SHA256 fce1315ea7763cf210b19f4e7c83334ab5e36be9a490d97e0ccc2b2c69491497; native summary 38344754471 main-bluefin-next SHA256 81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f",
+        "Publisher GO-2026-5020 record refreshed 2026-10-13 and CVE-2026-39834 match the SSH Write truncation/empty-packet availability mechanism. Retained GHSA SHA256 33fd0d6749a3b6f102dfb0f69f95998afa467c2f6deae0872c101d03d723f7da. Generic GHSA CVSS integrity-H metadata is retained as a conflict; it is not used to invent a credential/integrity consequence from this mechanism.",
+        "Exposure is accepted across all supported container/development uses. No affected-function absence claim; retained-object paths are covered as affected byte instances, without asserting they are unreachable. Revoke routine disposition if specific serious system/data-loss impact or KEV is established.",
+        "Every-location byte join /sysroot/ostree/repo/objects/77/5f2ab30c563cd41792014a36ef00412844d660b0a1f080517ad4ab5b52b9a1.file SHA256 5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34 size 26175536 compiler go1.26.8-X:nodwarf5 module v0.46.0; independent probe run 38341281199 JSON SHA256 f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af",
+        "Every-location byte join /usr/bin/skopeo SHA256 5d976d2f5854ab098bc32bfd9791aae4b22f0c62a5953b007b22e581d0d91a34 size 26175536 compiler go1.26.8-X:nodwarf5 module v0.46.0; independent probe run 38341281199 JSON SHA256 f98f534e76bc6214572f17785cfb0abe20ac1db1f1a358b9bff8e1d7245a48af"
+      ],
+      "expiresAt": "2026-10-27T04:33:34+00:00"
+    }
+  ],
   "releaseBlockers": [
     {
       "id": "next-kernel-october-source-fixes",

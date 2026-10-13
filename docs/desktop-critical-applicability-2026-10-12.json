@@ -1595,5 +1595,12 @@
     "msgpack": "outdated but ordinary advisory under approved model",
     "scope": "Metadata only; root owns payload authentication and focused transactions. No repeated availability poll performed by this reviewer.",
     "curlStablePublisherSource": "Directly verified FEDORA-2026-8efcd7a2a0 stable/gating-passed; exact Koji 3114241/source f526fe6 and matching patch; root payload/transaction pending."
+  },
+  "currentReview": {
+    "evidence": "current-rpm-applicability-2026-10-12.json",
+    "httpd": "Current2.4.69 does not fully byte-match historical2.4.68 reference",
+    "freerdp": "Current3.32.1; no current retained old-object match proof",
+    "nativeMatches": "Reviewed HTTPD/FreeRDP aliases not observed in six new native results; this is not automatically fixed",
+    "dispositionsAdded": 0
   }
 }

@@ -29,6 +29,8 @@ QUALIFICATION_ONLY = {
     'scripts/ci/diagnose-built-candidate.sh', 'scripts/ci/rpm-file-evidence.py',
     'scripts/ci/extraction-layout-smoke.py',
     'scripts/ci/freerdp-reference-evidence.py',
+    'scripts/ci/podman-reference-evidence.py',
+    'scripts/ci/httpd-reference-evidence.py',
 }
 
 

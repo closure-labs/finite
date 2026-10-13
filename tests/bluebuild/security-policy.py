@@ -54,12 +54,17 @@ def finding(severity='High', fixed=True, known=False):
 def scanner_command(image, directory, policy):
     # Exercise scanner failures under an explicit historical fixture policy,
     # independently of the currently reviewed production policy mode.
+    # Keep the policy in a temporary file: reviewed proof rows can exceed the
+    # operating system's per-argument limit even though the policy is valid.
+    fixture = Path(directory).parent / 'scanner-fixture-policy.json'
+    fixture.write_text(json.dumps(policy))
     bootstrap = ('import importlib.util,json,sys; '
+                 'fixture=json.load(open(sys.argv.pop(1))); '
                  'spec=importlib.util.spec_from_file_location("scanner",sys.argv[1]); '
                  'scanner=importlib.util.module_from_spec(spec); spec.loader.exec_module(scanner); '
-                 'scanner.policy_module.load_policy=lambda path:json.loads(' + repr(json.dumps(policy)) + '); '
+                 'scanner.policy_module.load_policy=lambda path:fixture; '
                  'sys.argv=sys.argv[1:]; scanner.main()')
-    return [sys.executable, '-c', bootstrap, str(ROOT / 'scripts/bluebuild/security-scan.py'), image, str(directory)]
+    return [sys.executable, '-c', bootstrap, str(fixture), str(ROOT / 'scripts/bluebuild/security-scan.py'), image, str(directory)]
 
 
 class Policy(unittest.TestCase):

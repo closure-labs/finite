@@ -1,0 +1,2876 @@
+{
+  "schema": 1,
+  "status": "exact-candidate-reference-join-proposals",
+  "reviewedAt": "2026-10-13T04:14:55Z",
+  "reviewedBy": "great_cto security-officer / ownership_followup",
+  "expiresAt": "2026-10-27T04:14:55Z",
+  "compactEvidenceRun": 38344754471,
+  "referenceRun": 38344182246,
+  "referenceReportSha256": "0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+  "referenceSignatureSha256": "b9fba7717e6cf7bcc514835c3b0d3697b36c4fe0e0b3152daef7b6d4ca180468",
+  "referenceArchiveSha256": "c13f548c74c9f80dfe9681824d2e648c832abe7cf19d2d9ab8d93d02b6be16fe",
+  "referenceRpmFileManifestSha256": "4654870677e8c35a522ca4230f0a51074f1648300ac142d120a4db95eaf20b53",
+  "referenceSourceCommit": "4d5daf480eb219a34e6c4cb96818c3d1de6d80a5",
+  "referenceUpstreamCommit": "c593b672bf3db1173aebea565ebf1a724ea196dc",
+  "originalSelector": {
+    "image": "ghcr.io/closure-labs/finite@sha256:66ff1f5c91ae5ddf97ac5c09bd510765888afd30457e535ae5710abb8a37f01e",
+    "sbomSha256": "23419f2a7c9a103f3552a5fae65a2e5a1044af50da96a797e001ed13bd254aa8",
+    "sourceResultSha256": "74cdc87f2204307bd76cdce7d3808ff19d4535ed52956d4df0341c61a0353e17",
+    "extractionSha256": "7dc7ae9dfde6418a1c20ed0db7eaf101fe9a9c1c5ab899f1d54dce40bf05ef47",
+    "configurationDigest": "sha256:2f9bc9b73f954af045b79845fc8cfe8229295713c9e24e884ece7ede5cac3ede",
+    "scannedManifestDigest": "sha256:82f656cc9212c27e7b78615ccad2fabc1b08cc10cf57444017a7da4a49dc0d37"
+  },
+  "originalSelectorSummarySha256": "901cc5af571ed932852c9a7351b6480192e0a83acd017c53f27e3bbf80bcd8e1",
+  "candidates": [
+    {
+      "name": "bluefin-dx-generic",
+      "joinStatus": "all-current-native-paths-match-authenticated-reference",
+      "proposals": [
+        {
+          "id": "podman-bluefin-dx-generic-ghsa-4hq8-gpf5-8p68-7848ba4c",
+          "advisories": [
+            "CVE-2026-57231",
+            "GHSA-4hq8-gpf5-8p68"
+          ],
+          "digest": "sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+          "platform": "linux/amd64",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+            "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+            "/usr/bin/podman",
+            "/usr/libexec/podman/quadlet",
+            "/usr/libexec/podman/rootlessport"
+          ],
+          "disposition": "nonapplicable",
+          "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+          "officialSources": [
+            "https://github.com/containers/podman/security/advisories/GHSA-4hq8-gpf5-8p68",
+            "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+            "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+            "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/specgen/generate/container.go"
+          ],
+          "evidence": [
+            "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+            "https://github.com/closure-labs/finite/actions/runs/38344754471#bluefin-dx-generic-native.json:sha256:90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+            "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+          ],
+          "reviewedBy": "great_cto security-officer / ownership_followup",
+          "reviewedAt": "2026-10-13T04:14:55Z",
+          "expiresAt": "2026-10-27T04:14:55Z"
+        },
+        {
+          "id": "podman-bluefin-dx-generic-ghsa-65gg-3w2w-hr4h-7848ba4c",
+          "advisories": [
+            "CVE-2025-6032",
+            "GHSA-65gg-3w2w-hr4h"
+          ],
+          "digest": "sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+          "platform": "linux/amd64",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+            "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+            "/usr/bin/podman",
+            "/usr/libexec/podman/quadlet",
+            "/usr/libexec/podman/rootlessport"
+          ],
+          "disposition": "nonapplicable",
+          "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+          "officialSources": [
+            "https://github.com/containers/podman/security/advisories/GHSA-65gg-3w2w-hr4h",
+            "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+            "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+            "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/machine/ocipull/ociartifact.go"
+          ],
+          "evidence": [
+            "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+            "https://github.com/closure-labs/finite/actions/runs/38344754471#bluefin-dx-generic-native.json:sha256:90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+            "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+          ],
+          "reviewedBy": "great_cto security-officer / ownership_followup",
+          "reviewedAt": "2026-10-13T04:14:55Z",
+          "expiresAt": "2026-10-27T04:14:55Z"
+        },
+        {
+          "id": "podman-bluefin-dx-generic-ghsa-wp3j-xq48-xpjw-7848ba4c",
+          "advisories": [
+            "CVE-2025-9566",
+            "GHSA-wp3j-xq48-xpjw"
+          ],
+          "digest": "sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+          "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+          "platform": "linux/amd64",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+            "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+            "/usr/bin/podman",
+            "/usr/libexec/podman/quadlet",
+            "/usr/libexec/podman/rootlessport"
+          ],
+          "disposition": "nonapplicable",
+          "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+          "officialSources": [
+            "https://github.com/containers/podman/security/advisories/GHSA-wp3j-xq48-xpjw",
+            "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+            "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+            "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/domain/infra/abi/play.go"
+          ],
+          "evidence": [
+            "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+            "https://github.com/closure-labs/finite/actions/runs/38344754471#bluefin-dx-generic-native.json:sha256:90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+            "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+          ],
+          "reviewedBy": "great_cto security-officer / ownership_followup",
+          "reviewedAt": "2026-10-13T04:14:55Z",
+          "expiresAt": "2026-10-27T04:14:55Z"
+        }
+      ],
+      "limits": [
+        "Uses digest-bound original Syft catalog SHA evidence, not a fresh independent rootfs probe.",
+        "Does not qualify release, refresh scanners, or clear unrelated Podman/embedded-module/compiler findings."
+      ],
+      "image": "ghcr.io/closure-labs/finite@sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "nativeSummarySha256": "90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+      "profile": "bluefin-dx-generic",
+      "sourceRevision": "1d347b7456b0cf64d4372cc0e7a562a9e63eb45b",
+      "buildIdentity": "v1:b30ea5e8bfe8ec02caa2f4118aa91ba47c6c4283c3fe44cf1d73568f6954c76b",
+      "sourceType": "locally-built-unpublished",
+      "candidateRun": 38341284379,
+      "baselineRun": 38330308713,
+      "scannedAt": "2026-10-13T04:03:00.958415691Z",
+      "configurationDigest": "sha256:f3c16a14ec924f43fbe1605812afb667ae9f2e0d3ce08720b51f1feb6c238357",
+      "scannedManifestDigest": "sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "sbomSha256": "afa63e454b8a4830fa50e92723d80642e5b2cd5be555d20cd7efbea827850c54",
+      "sourceResultSha256": "7cdbb3e6a941de295d48ef0f2a7cfc8c72b4ec383ca990e6a17de0cf114605bb",
+      "extractionSha256": "764adc980272907e1e4b918164d649cb71448c44a3021ba29d86a93dcf32d1ba",
+      "approvedBaselineSha256": "3f18263a41b8fda45ff80d84d88a1293c2d243bab7f53da6b4b9af8d6e3520f5",
+      "bindingSha256": "0455f967e75f684f3c513dc044a549c0a2ab975c11e8c328d86d88139a8477a2",
+      "provenanceSha256": "42e0a2cbab515ec7e86d7027460b39c4ec1e63f16cc8f15cb869cc4dce1b7161",
+      "baselineLedgerSha256": "01b651947f67822302df692e0347f10fb34048e52413198fc62d58ccc5e1078a",
+      "baselineImage": "ghcr.io/closure-labs/finite@sha256:615b3c01d3b6cebe3ecd67d1005b1d8fa2918675dff20d28191deea5313279a3",
+      "baseImage": "ghcr.io/ublue-os/bluefin-dx@sha256:a41cf1ebc4b6718cab813f221b8394c963ed3f0777b52e19fe6c3784b15c52ed",
+      "policySha256": "59fd1f0604b819ccabd1dd8e54190b200d3f78173877d192234a6788aecf4dfb",
+      "selectedMainModulePairs": 3,
+      "selectedRawRecords": 18,
+      "joinedLocations": [
+        {
+          "path": "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+          "kind": "ostree-object",
+          "catalogedFileId": "6174488172a0d8fe",
+          "catalogedSha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "catalogedSize": 45362352,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/bin/podman",
+          "signedReferenceSha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "signedReferenceSize": 45362352,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+          "kind": "ostree-object",
+          "catalogedFileId": "de4c09f973f4b5ad",
+          "catalogedSha256": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd",
+          "catalogedSize": 3210992,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/libexec/podman/rootlessport",
+          "signedReferenceSha256": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd",
+          "signedReferenceSize": 3210992,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+          "kind": "ostree-object",
+          "catalogedFileId": "ee11e6537ce0732d",
+          "catalogedSha256": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454",
+          "catalogedSize": 2515640,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/libexec/podman/quadlet",
+          "signedReferenceSha256": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454",
+          "signedReferenceSize": 2515640,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        },
+        {
+          "path": "/usr/bin/podman",
+          "kind": "live-path",
+          "catalogedFileId": "3e7c38694c0bef3c",
+          "catalogedSha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "catalogedSize": 45362352,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/bin/podman",
+          "signedReferenceSha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "signedReferenceSize": 45362352,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [
+            {
+              "rpm": {
+                "id": "27f2eab2ae8e4baa",
+                "name": "podman",
+                "version": "5:5.8.7-1.fc44",
+                "purl": "pkg:rpm/bluefin/podman@5.8.7-1.fc44?arch=x86_64&distro=bluefin-44&epoch=5&upstream=podman-5.8.7-1.fc44.src.rpm",
+                "foundBy": "rpm-db-cataloger",
+                "sourceRpm": "podman-5.8.7-1.fc44.src.rpm",
+                "architecture": "x86_64",
+                "epoch": 5,
+                "release": "1.fc44",
+                "vendor": "Fedora Project",
+                "signatures": [
+                  {
+                    "algo": "RSA",
+                    "hash": "SHA256",
+                    "created": "Thu Sep 17 13:14:41 2026",
+                    "issuer": "dbfcf71c6d9f90a6"
+                  }
+                ]
+              },
+              "declaredFile": {
+                "path": "/usr/bin/podman",
+                "mode": 33261,
+                "size": 45362352,
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454"
+                },
+                "userName": "root",
+                "groupName": "root",
+                "flags": ""
+              },
+              "evidence": "rpm-db-file-list",
+              "actualFileIntegrityVerified": false
+            }
+          ],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        },
+        {
+          "path": "/usr/libexec/podman/quadlet",
+          "kind": "live-path",
+          "catalogedFileId": "722eebec347dccfd",
+          "catalogedSha256": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454",
+          "catalogedSize": 2515640,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/libexec/podman/quadlet",
+          "signedReferenceSha256": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454",
+          "signedReferenceSize": 2515640,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [
+            {
+              "rpm": {
+                "id": "27f2eab2ae8e4baa",
+                "name": "podman",
+                "version": "5:5.8.7-1.fc44",
+                "purl": "pkg:rpm/bluefin/podman@5.8.7-1.fc44?arch=x86_64&distro=bluefin-44&epoch=5&upstream=podman-5.8.7-1.fc44.src.rpm",
+                "foundBy": "rpm-db-cataloger",
+                "sourceRpm": "podman-5.8.7-1.fc44.src.rpm",
+                "architecture": "x86_64",
+                "epoch": 5,
+                "release": "1.fc44",
+                "vendor": "Fedora Project",
+                "signatures": [
+                  {
+                    "algo": "RSA",
+                    "hash": "SHA256",
+                    "created": "Thu Sep 17 13:14:41 2026",
+                    "issuer": "dbfcf71c6d9f90a6"
+                  }
+                ]
+              },
+              "declaredFile": {
+                "path": "/usr/libexec/podman/quadlet",
+                "mode": 33261,
+                "size": 2515640,
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454"
+                },
+                "userName": "root",
+                "groupName": "root",
+                "flags": ""
+              },
+              "evidence": "rpm-db-file-list",
+              "actualFileIntegrityVerified": false
+            }
+          ],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        },
+        {
+          "path": "/usr/libexec/podman/rootlessport",
+          "kind": "live-path",
+          "catalogedFileId": "d9b53bd6ae5a52f9",
+          "catalogedSha256": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd",
+          "catalogedSize": 3210992,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/libexec/podman/rootlessport",
+          "signedReferenceSha256": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd",
+          "signedReferenceSize": 3210992,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [
+            {
+              "rpm": {
+                "id": "27f2eab2ae8e4baa",
+                "name": "podman",
+                "version": "5:5.8.7-1.fc44",
+                "purl": "pkg:rpm/bluefin/podman@5.8.7-1.fc44?arch=x86_64&distro=bluefin-44&epoch=5&upstream=podman-5.8.7-1.fc44.src.rpm",
+                "foundBy": "rpm-db-cataloger",
+                "sourceRpm": "podman-5.8.7-1.fc44.src.rpm",
+                "architecture": "x86_64",
+                "epoch": 5,
+                "release": "1.fc44",
+                "vendor": "Fedora Project",
+                "signatures": [
+                  {
+                    "algo": "RSA",
+                    "hash": "SHA256",
+                    "created": "Thu Sep 17 13:14:41 2026",
+                    "issuer": "dbfcf71c6d9f90a6"
+                  }
+                ]
+              },
+              "declaredFile": {
+                "path": "/usr/libexec/podman/rootlessport",
+                "mode": 33261,
+                "size": 3210992,
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd"
+                },
+                "userName": "root",
+                "groupName": "root",
+                "flags": ""
+              },
+              "evidence": "rpm-db-file-list",
+              "actualFileIntegrityVerified": false
+            }
+          ],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        }
+      ],
+      "nativePolicyStatus": "blocked",
+      "sourceReleaseEligible": false,
+      "originalNativeEvidence": {
+        "image": "ghcr.io/closure-labs/finite@sha256:615b3c01d3b6cebe3ecd67d1005b1d8fa2918675dff20d28191deea5313279a3",
+        "scannedAt": "2026-10-13T01:46:13.782044233Z",
+        "sbomSha256": "9f12a08954ce848f9cd5b488ac9a129b11247154da752559e5c0b6dceeb6a8d5",
+        "configurationDigest": "sha256:ba926333c799eb8b639e1156c7c472b37cfae4463848a154e2b2ed1329f86e93",
+        "scannedManifestDigest": "sha256:5bdd310614e3b44a6499244d154640e95518c6f4a172120674716556de7660a2",
+        "sourceResultSha256": "f44b84692a5c3fc4f8b7096f60d2421db11b1dbc0cb833d499770f0e06b51665",
+        "extractionSha256": "ffb52de9bbbcef6b62da4f0c09e00b334870058e24d511974fb5ed1c344a52f9",
+        "policySha256": "59fd1f0604b819ccabd1dd8e54190b200d3f78173877d192234a6788aecf4dfb",
+        "nativeSummarySha256": "601403205dc3b09d9f9826466264c98aa1a29f16f32501aa7a75f0e97268e738",
+        "sourcePath": "/tmp/finite-main-native-38334371393/bluefin-dx-generic.json"
+      }
+    },
+    {
+      "name": "bluefin-generic",
+      "joinStatus": "all-current-native-paths-match-authenticated-reference",
+      "proposals": [
+        {
+          "id": "podman-bluefin-generic-ghsa-4hq8-gpf5-8p68-e98ca0ce",
+          "advisories": [
+            "CVE-2026-57231",
+            "GHSA-4hq8-gpf5-8p68"
+          ],
+          "digest": "sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+          "platform": "linux/amd64",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+            "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+            "/usr/bin/podman",
+            "/usr/libexec/podman/quadlet",
+            "/usr/libexec/podman/rootlessport"
+          ],
+          "disposition": "nonapplicable",
+          "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+          "officialSources": [
+            "https://github.com/containers/podman/security/advisories/GHSA-4hq8-gpf5-8p68",
+            "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+            "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+            "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/specgen/generate/container.go"
+          ],
+          "evidence": [
+            "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+            "https://github.com/closure-labs/finite/actions/runs/38344754471#bluefin-generic-native.json:sha256:868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f",
+            "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+          ],
+          "reviewedBy": "great_cto security-officer / ownership_followup",
+          "reviewedAt": "2026-10-13T04:14:55Z",
+          "expiresAt": "2026-10-27T04:14:55Z"
+        },
+        {
+          "id": "podman-bluefin-generic-ghsa-65gg-3w2w-hr4h-e98ca0ce",
+          "advisories": [
+            "CVE-2025-6032",
+            "GHSA-65gg-3w2w-hr4h"
+          ],
+          "digest": "sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+          "platform": "linux/amd64",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+            "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+            "/usr/bin/podman",
+            "/usr/libexec/podman/quadlet",
+            "/usr/libexec/podman/rootlessport"
+          ],
+          "disposition": "nonapplicable",
+          "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+          "officialSources": [
+            "https://github.com/containers/podman/security/advisories/GHSA-65gg-3w2w-hr4h",
+            "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+            "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+            "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/machine/ocipull/ociartifact.go"
+          ],
+          "evidence": [
+            "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+            "https://github.com/closure-labs/finite/actions/runs/38344754471#bluefin-generic-native.json:sha256:868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f",
+            "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+          ],
+          "reviewedBy": "great_cto security-officer / ownership_followup",
+          "reviewedAt": "2026-10-13T04:14:55Z",
+          "expiresAt": "2026-10-27T04:14:55Z"
+        },
+        {
+          "id": "podman-bluefin-generic-ghsa-wp3j-xq48-xpjw-e98ca0ce",
+          "advisories": [
+            "CVE-2025-9566",
+            "GHSA-wp3j-xq48-xpjw"
+          ],
+          "digest": "sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+          "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+          "platform": "linux/amd64",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+            "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+            "/usr/bin/podman",
+            "/usr/libexec/podman/quadlet",
+            "/usr/libexec/podman/rootlessport"
+          ],
+          "disposition": "nonapplicable",
+          "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+          "officialSources": [
+            "https://github.com/containers/podman/security/advisories/GHSA-wp3j-xq48-xpjw",
+            "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+            "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+            "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/domain/infra/abi/play.go"
+          ],
+          "evidence": [
+            "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+            "https://github.com/closure-labs/finite/actions/runs/38344754471#bluefin-generic-native.json:sha256:868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f",
+            "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+          ],
+          "reviewedBy": "great_cto security-officer / ownership_followup",
+          "reviewedAt": "2026-10-13T04:14:55Z",
+          "expiresAt": "2026-10-27T04:14:55Z"
+        }
+      ],
+      "limits": [
+        "Uses digest-bound original Syft catalog SHA evidence, not a fresh independent rootfs probe.",
+        "Does not qualify release, refresh scanners, or clear unrelated Podman/embedded-module/compiler findings."
+      ],
+      "image": "ghcr.io/closure-labs/finite@sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+      "nativeSummarySha256": "868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f",
+      "profile": "bluefin-generic",
+      "sourceRevision": "1d347b7456b0cf64d4372cc0e7a562a9e63eb45b",
+      "buildIdentity": "v1:29a6920037b0251e2c54a53719a00eb9c7085a75e59c8db76839b214703d8e0b",
+      "sourceType": "locally-built-unpublished",
+      "candidateRun": 38341281199,
+      "baselineRun": 38330308713,
+      "scannedAt": "2026-10-13T03:56:31.396607974Z",
+      "configurationDigest": "sha256:97b4843f19705f7d6d29988bfbe591594388af5a9b7785e4edb08a7b6fb6abef",
+      "scannedManifestDigest": "sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+      "sbomSha256": "8a325b223470f1031b342362d42099cdfd38d04e90ccfb78bee1697ac4499199",
+      "sourceResultSha256": "814aab9be9c5872dd844ffcbe4d8205a092c6ca43dec11167c4a49aeaa891805",
+      "extractionSha256": "1090f5bcb0b10b19e09f748847587bf9e8da6c1bd304f86c73defaba48b08025",
+      "approvedBaselineSha256": "e2fe93d2a9252be9cd06615ffcf0675c6257c913764522ab574fec732c05396a",
+      "bindingSha256": "6a95e6f351fa48571175409349a8c4ecc4899b93967e5b53808e5b34f8a4fa2b",
+      "provenanceSha256": "850182b9c57328d8c96f9327611d748d0c2c6850852e0df0104045c8d5521b18",
+      "baselineLedgerSha256": "725fee4147486e408eb0282949bfff5e024371d30e733750be001f7498ef6c91",
+      "baselineImage": "ghcr.io/closure-labs/finite@sha256:66ff1f5c91ae5ddf97ac5c09bd510765888afd30457e535ae5710abb8a37f01e",
+      "baseImage": "ghcr.io/ublue-os/bluefin@sha256:23b7bf54349f1a93c2fea4168c7725a632641ee67ae29b0951ef1976c1ba2bc9",
+      "policySha256": "59fd1f0604b819ccabd1dd8e54190b200d3f78173877d192234a6788aecf4dfb",
+      "selectedMainModulePairs": 3,
+      "selectedRawRecords": 18,
+      "joinedLocations": [
+        {
+          "path": "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+          "kind": "ostree-object",
+          "catalogedFileId": "6174488172a0d8fe",
+          "catalogedSha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "catalogedSize": 45362352,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/bin/podman",
+          "signedReferenceSha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "signedReferenceSize": 45362352,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+          "kind": "ostree-object",
+          "catalogedFileId": "de4c09f973f4b5ad",
+          "catalogedSha256": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd",
+          "catalogedSize": 3210992,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/libexec/podman/rootlessport",
+          "signedReferenceSha256": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd",
+          "signedReferenceSize": 3210992,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+          "kind": "ostree-object",
+          "catalogedFileId": "ee11e6537ce0732d",
+          "catalogedSha256": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454",
+          "catalogedSize": 2515640,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/libexec/podman/quadlet",
+          "signedReferenceSha256": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454",
+          "signedReferenceSize": 2515640,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        },
+        {
+          "path": "/usr/bin/podman",
+          "kind": "live-path",
+          "catalogedFileId": "3e7c38694c0bef3c",
+          "catalogedSha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "catalogedSize": 45362352,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/bin/podman",
+          "signedReferenceSha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "signedReferenceSize": 45362352,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [
+            {
+              "rpm": {
+                "id": "27f2eab2ae8e4baa",
+                "name": "podman",
+                "version": "5:5.8.7-1.fc44",
+                "purl": "pkg:rpm/bluefin/podman@5.8.7-1.fc44?arch=x86_64&distro=bluefin-44&epoch=5&upstream=podman-5.8.7-1.fc44.src.rpm",
+                "foundBy": "rpm-db-cataloger",
+                "sourceRpm": "podman-5.8.7-1.fc44.src.rpm",
+                "architecture": "x86_64",
+                "epoch": 5,
+                "release": "1.fc44",
+                "vendor": "Fedora Project",
+                "signatures": [
+                  {
+                    "algo": "RSA",
+                    "hash": "SHA256",
+                    "created": "Thu Sep 17 13:14:41 2026",
+                    "issuer": "dbfcf71c6d9f90a6"
+                  }
+                ]
+              },
+              "declaredFile": {
+                "path": "/usr/bin/podman",
+                "mode": 33261,
+                "size": 45362352,
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454"
+                },
+                "userName": "root",
+                "groupName": "root",
+                "flags": ""
+              },
+              "evidence": "rpm-db-file-list",
+              "actualFileIntegrityVerified": false
+            }
+          ],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        },
+        {
+          "path": "/usr/libexec/podman/quadlet",
+          "kind": "live-path",
+          "catalogedFileId": "722eebec347dccfd",
+          "catalogedSha256": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454",
+          "catalogedSize": 2515640,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/libexec/podman/quadlet",
+          "signedReferenceSha256": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454",
+          "signedReferenceSize": 2515640,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [
+            {
+              "rpm": {
+                "id": "27f2eab2ae8e4baa",
+                "name": "podman",
+                "version": "5:5.8.7-1.fc44",
+                "purl": "pkg:rpm/bluefin/podman@5.8.7-1.fc44?arch=x86_64&distro=bluefin-44&epoch=5&upstream=podman-5.8.7-1.fc44.src.rpm",
+                "foundBy": "rpm-db-cataloger",
+                "sourceRpm": "podman-5.8.7-1.fc44.src.rpm",
+                "architecture": "x86_64",
+                "epoch": 5,
+                "release": "1.fc44",
+                "vendor": "Fedora Project",
+                "signatures": [
+                  {
+                    "algo": "RSA",
+                    "hash": "SHA256",
+                    "created": "Thu Sep 17 13:14:41 2026",
+                    "issuer": "dbfcf71c6d9f90a6"
+                  }
+                ]
+              },
+              "declaredFile": {
+                "path": "/usr/libexec/podman/quadlet",
+                "mode": 33261,
+                "size": 2515640,
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454"
+                },
+                "userName": "root",
+                "groupName": "root",
+                "flags": ""
+              },
+              "evidence": "rpm-db-file-list",
+              "actualFileIntegrityVerified": false
+            }
+          ],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        },
+        {
+          "path": "/usr/libexec/podman/rootlessport",
+          "kind": "live-path",
+          "catalogedFileId": "d9b53bd6ae5a52f9",
+          "catalogedSha256": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd",
+          "catalogedSize": 3210992,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/libexec/podman/rootlessport",
+          "signedReferenceSha256": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd",
+          "signedReferenceSize": 3210992,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [
+            {
+              "rpm": {
+                "id": "27f2eab2ae8e4baa",
+                "name": "podman",
+                "version": "5:5.8.7-1.fc44",
+                "purl": "pkg:rpm/bluefin/podman@5.8.7-1.fc44?arch=x86_64&distro=bluefin-44&epoch=5&upstream=podman-5.8.7-1.fc44.src.rpm",
+                "foundBy": "rpm-db-cataloger",
+                "sourceRpm": "podman-5.8.7-1.fc44.src.rpm",
+                "architecture": "x86_64",
+                "epoch": 5,
+                "release": "1.fc44",
+                "vendor": "Fedora Project",
+                "signatures": [
+                  {
+                    "algo": "RSA",
+                    "hash": "SHA256",
+                    "created": "Thu Sep 17 13:14:41 2026",
+                    "issuer": "dbfcf71c6d9f90a6"
+                  }
+                ]
+              },
+              "declaredFile": {
+                "path": "/usr/libexec/podman/rootlessport",
+                "mode": 33261,
+                "size": 3210992,
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd"
+                },
+                "userName": "root",
+                "groupName": "root",
+                "flags": ""
+              },
+              "evidence": "rpm-db-file-list",
+              "actualFileIntegrityVerified": false
+            }
+          ],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        }
+      ],
+      "nativePolicyStatus": "blocked",
+      "sourceReleaseEligible": false,
+      "originalNativeEvidence": {
+        "image": "ghcr.io/closure-labs/finite@sha256:66ff1f5c91ae5ddf97ac5c09bd510765888afd30457e535ae5710abb8a37f01e",
+        "scannedAt": "2026-10-13T01:43:17.439347221Z",
+        "sbomSha256": "23419f2a7c9a103f3552a5fae65a2e5a1044af50da96a797e001ed13bd254aa8",
+        "configurationDigest": "sha256:2f9bc9b73f954af045b79845fc8cfe8229295713c9e24e884ece7ede5cac3ede",
+        "scannedManifestDigest": "sha256:82f656cc9212c27e7b78615ccad2fabc1b08cc10cf57444017a7da4a49dc0d37",
+        "sourceResultSha256": "74cdc87f2204307bd76cdce7d3808ff19d4535ed52956d4df0341c61a0353e17",
+        "extractionSha256": "7dc7ae9dfde6418a1c20ed0db7eaf101fe9a9c1c5ab899f1d54dce40bf05ef47",
+        "policySha256": "59fd1f0604b819ccabd1dd8e54190b200d3f78173877d192234a6788aecf4dfb",
+        "nativeSummarySha256": "901cc5af571ed932852c9a7351b6480192e0a83acd017c53f27e3bbf80bcd8e1",
+        "sourcePath": "/tmp/finite-main-native-38334371393/bluefin-generic.json"
+      }
+    },
+    {
+      "name": "main-bluefin-dx-generic",
+      "joinStatus": "all-current-native-paths-match-authenticated-reference",
+      "proposals": [
+        {
+          "id": "podman-main-bluefin-dx-generic-ghsa-4hq8-gpf5-8p68-3fd7e10d",
+          "advisories": [
+            "CVE-2026-57231",
+            "GHSA-4hq8-gpf5-8p68"
+          ],
+          "digest": "sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+          "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+          "platform": "linux/amd64",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+            "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+            "/usr/bin/podman",
+            "/usr/libexec/podman/quadlet",
+            "/usr/libexec/podman/rootlessport"
+          ],
+          "disposition": "nonapplicable",
+          "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+          "officialSources": [
+            "https://github.com/containers/podman/security/advisories/GHSA-4hq8-gpf5-8p68",
+            "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+            "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+            "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/specgen/generate/container.go"
+          ],
+          "evidence": [
+            "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+            "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-dx-generic-native.json:sha256:21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+            "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+          ],
+          "reviewedBy": "great_cto security-officer / ownership_followup",
+          "reviewedAt": "2026-10-13T04:14:55Z",
+          "expiresAt": "2026-10-27T04:14:55Z"
+        },
+        {
+          "id": "podman-main-bluefin-dx-generic-ghsa-65gg-3w2w-hr4h-3fd7e10d",
+          "advisories": [
+            "CVE-2025-6032",
+            "GHSA-65gg-3w2w-hr4h"
+          ],
+          "digest": "sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+          "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+          "platform": "linux/amd64",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+            "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+            "/usr/bin/podman",
+            "/usr/libexec/podman/quadlet",
+            "/usr/libexec/podman/rootlessport"
+          ],
+          "disposition": "nonapplicable",
+          "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+          "officialSources": [
+            "https://github.com/containers/podman/security/advisories/GHSA-65gg-3w2w-hr4h",
+            "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+            "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+            "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/machine/ocipull/ociartifact.go"
+          ],
+          "evidence": [
+            "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+            "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-dx-generic-native.json:sha256:21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+            "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+          ],
+          "reviewedBy": "great_cto security-officer / ownership_followup",
+          "reviewedAt": "2026-10-13T04:14:55Z",
+          "expiresAt": "2026-10-27T04:14:55Z"
+        },
+        {
+          "id": "podman-main-bluefin-dx-generic-ghsa-wp3j-xq48-xpjw-3fd7e10d",
+          "advisories": [
+            "CVE-2025-9566",
+            "GHSA-wp3j-xq48-xpjw"
+          ],
+          "digest": "sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+          "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+          "platform": "linux/amd64",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+            "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+            "/usr/bin/podman",
+            "/usr/libexec/podman/quadlet",
+            "/usr/libexec/podman/rootlessport"
+          ],
+          "disposition": "nonapplicable",
+          "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+          "officialSources": [
+            "https://github.com/containers/podman/security/advisories/GHSA-wp3j-xq48-xpjw",
+            "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+            "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+            "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/domain/infra/abi/play.go"
+          ],
+          "evidence": [
+            "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+            "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-dx-generic-native.json:sha256:21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+            "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+          ],
+          "reviewedBy": "great_cto security-officer / ownership_followup",
+          "reviewedAt": "2026-10-13T04:14:55Z",
+          "expiresAt": "2026-10-27T04:14:55Z"
+        }
+      ],
+      "limits": [
+        "Uses digest-bound original Syft catalog SHA evidence, not a fresh independent rootfs probe.",
+        "Does not qualify release, refresh scanners, or clear unrelated Podman/embedded-module/compiler findings."
+      ],
+      "image": "ghcr.io/closure-labs/finite@sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "nativeSummarySha256": "21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+      "profile": "bluefin-dx-generic",
+      "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+      "buildIdentity": "v1:05fb59c6ab874df5cdba42675aeacfb37f7ba34df2053d198be408edb85ed247",
+      "sourceType": "registry-candidate-native-evidence",
+      "candidateRun": 38340112122,
+      "baselineRun": 38330308713,
+      "scannedAt": "2026-10-13T03:50:08.178195521Z",
+      "configurationDigest": "sha256:5525cf83464401fd2d4882dcb19392dcd76c1d23228a88e5fa9fa616a10fdc78",
+      "scannedManifestDigest": "sha256:452d00e425c67c7e41b88d63a3dcf5728c2c68621ac75689c617c8a36e7cfe21",
+      "sbomSha256": "d40e3cd389f6012b31db9c53fdbc279c735a274d7932f0bb1982768982800e64",
+      "sourceResultSha256": "b6439aee802b91d107231e19cdd6ddc405d5546204db05d46f14b99ba3086f56",
+      "extractionSha256": "1945c7099ecb4475b5227231861be84ba495311ed1195d7008632697683d2e54",
+      "approvedBaselineSha256": "30cf33644014ba9c5794639b57494fff067f3429f7771fe6a1e9d12c9d517884",
+      "bindingSha256": "579c2e93bfebcf83bebc46a16235230761f00f3708bcb8aa9070cd1c0baefc14",
+      "provenanceSha256": null,
+      "baselineLedgerSha256": "01b651947f67822302df692e0347f10fb34048e52413198fc62d58ccc5e1078a",
+      "baselineImage": "ghcr.io/closure-labs/finite@sha256:615b3c01d3b6cebe3ecd67d1005b1d8fa2918675dff20d28191deea5313279a3",
+      "baseImage": "ghcr.io/ublue-os/bluefin-dx@sha256:a41cf1ebc4b6718cab813f221b8394c963ed3f0777b52e19fe6c3784b15c52ed",
+      "policySha256": "59fd1f0604b819ccabd1dd8e54190b200d3f78173877d192234a6788aecf4dfb",
+      "selectedMainModulePairs": 3,
+      "selectedRawRecords": 18,
+      "joinedLocations": [
+        {
+          "path": "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+          "kind": "ostree-object",
+          "catalogedFileId": "6174488172a0d8fe",
+          "catalogedSha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "catalogedSize": 45362352,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/bin/podman",
+          "signedReferenceSha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "signedReferenceSize": 45362352,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+          "kind": "ostree-object",
+          "catalogedFileId": "de4c09f973f4b5ad",
+          "catalogedSha256": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd",
+          "catalogedSize": 3210992,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/libexec/podman/rootlessport",
+          "signedReferenceSha256": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd",
+          "signedReferenceSize": 3210992,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+          "kind": "ostree-object",
+          "catalogedFileId": "ee11e6537ce0732d",
+          "catalogedSha256": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454",
+          "catalogedSize": 2515640,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/libexec/podman/quadlet",
+          "signedReferenceSha256": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454",
+          "signedReferenceSize": 2515640,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        },
+        {
+          "path": "/usr/bin/podman",
+          "kind": "live-path",
+          "catalogedFileId": "3e7c38694c0bef3c",
+          "catalogedSha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "catalogedSize": 45362352,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/bin/podman",
+          "signedReferenceSha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "signedReferenceSize": 45362352,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [
+            {
+              "rpm": {
+                "id": "27f2eab2ae8e4baa",
+                "name": "podman",
+                "version": "5:5.8.7-1.fc44",
+                "purl": "pkg:rpm/bluefin/podman@5.8.7-1.fc44?arch=x86_64&distro=bluefin-44&epoch=5&upstream=podman-5.8.7-1.fc44.src.rpm",
+                "foundBy": "rpm-db-cataloger",
+                "sourceRpm": "podman-5.8.7-1.fc44.src.rpm",
+                "architecture": "x86_64",
+                "epoch": 5,
+                "release": "1.fc44",
+                "vendor": "Fedora Project",
+                "signatures": [
+                  {
+                    "algo": "RSA",
+                    "hash": "SHA256",
+                    "created": "Thu Sep 17 13:14:41 2026",
+                    "issuer": "dbfcf71c6d9f90a6"
+                  }
+                ]
+              },
+              "declaredFile": {
+                "path": "/usr/bin/podman",
+                "mode": 33261,
+                "size": 45362352,
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454"
+                },
+                "userName": "root",
+                "groupName": "root",
+                "flags": ""
+              },
+              "evidence": "rpm-db-file-list",
+              "actualFileIntegrityVerified": false
+            }
+          ],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        },
+        {
+          "path": "/usr/libexec/podman/quadlet",
+          "kind": "live-path",
+          "catalogedFileId": "722eebec347dccfd",
+          "catalogedSha256": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454",
+          "catalogedSize": 2515640,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/libexec/podman/quadlet",
+          "signedReferenceSha256": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454",
+          "signedReferenceSize": 2515640,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [
+            {
+              "rpm": {
+                "id": "27f2eab2ae8e4baa",
+                "name": "podman",
+                "version": "5:5.8.7-1.fc44",
+                "purl": "pkg:rpm/bluefin/podman@5.8.7-1.fc44?arch=x86_64&distro=bluefin-44&epoch=5&upstream=podman-5.8.7-1.fc44.src.rpm",
+                "foundBy": "rpm-db-cataloger",
+                "sourceRpm": "podman-5.8.7-1.fc44.src.rpm",
+                "architecture": "x86_64",
+                "epoch": 5,
+                "release": "1.fc44",
+                "vendor": "Fedora Project",
+                "signatures": [
+                  {
+                    "algo": "RSA",
+                    "hash": "SHA256",
+                    "created": "Thu Sep 17 13:14:41 2026",
+                    "issuer": "dbfcf71c6d9f90a6"
+                  }
+                ]
+              },
+              "declaredFile": {
+                "path": "/usr/libexec/podman/quadlet",
+                "mode": 33261,
+                "size": 2515640,
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454"
+                },
+                "userName": "root",
+                "groupName": "root",
+                "flags": ""
+              },
+              "evidence": "rpm-db-file-list",
+              "actualFileIntegrityVerified": false
+            }
+          ],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        },
+        {
+          "path": "/usr/libexec/podman/rootlessport",
+          "kind": "live-path",
+          "catalogedFileId": "d9b53bd6ae5a52f9",
+          "catalogedSha256": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd",
+          "catalogedSize": 3210992,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/libexec/podman/rootlessport",
+          "signedReferenceSha256": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd",
+          "signedReferenceSize": 3210992,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [
+            {
+              "rpm": {
+                "id": "27f2eab2ae8e4baa",
+                "name": "podman",
+                "version": "5:5.8.7-1.fc44",
+                "purl": "pkg:rpm/bluefin/podman@5.8.7-1.fc44?arch=x86_64&distro=bluefin-44&epoch=5&upstream=podman-5.8.7-1.fc44.src.rpm",
+                "foundBy": "rpm-db-cataloger",
+                "sourceRpm": "podman-5.8.7-1.fc44.src.rpm",
+                "architecture": "x86_64",
+                "epoch": 5,
+                "release": "1.fc44",
+                "vendor": "Fedora Project",
+                "signatures": [
+                  {
+                    "algo": "RSA",
+                    "hash": "SHA256",
+                    "created": "Thu Sep 17 13:14:41 2026",
+                    "issuer": "dbfcf71c6d9f90a6"
+                  }
+                ]
+              },
+              "declaredFile": {
+                "path": "/usr/libexec/podman/rootlessport",
+                "mode": 33261,
+                "size": 3210992,
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd"
+                },
+                "userName": "root",
+                "groupName": "root",
+                "flags": ""
+              },
+              "evidence": "rpm-db-file-list",
+              "actualFileIntegrityVerified": false
+            }
+          ],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        }
+      ],
+      "nativePolicyStatus": "blocked",
+      "sourceReleaseEligible": false,
+      "originalNativeEvidence": {
+        "image": "ghcr.io/closure-labs/finite@sha256:615b3c01d3b6cebe3ecd67d1005b1d8fa2918675dff20d28191deea5313279a3",
+        "scannedAt": "2026-10-13T01:46:13.782044233Z",
+        "sbomSha256": "9f12a08954ce848f9cd5b488ac9a129b11247154da752559e5c0b6dceeb6a8d5",
+        "configurationDigest": "sha256:ba926333c799eb8b639e1156c7c472b37cfae4463848a154e2b2ed1329f86e93",
+        "scannedManifestDigest": "sha256:5bdd310614e3b44a6499244d154640e95518c6f4a172120674716556de7660a2",
+        "sourceResultSha256": "f44b84692a5c3fc4f8b7096f60d2421db11b1dbc0cb833d499770f0e06b51665",
+        "extractionSha256": "ffb52de9bbbcef6b62da4f0c09e00b334870058e24d511974fb5ed1c344a52f9",
+        "policySha256": "59fd1f0604b819ccabd1dd8e54190b200d3f78173877d192234a6788aecf4dfb",
+        "nativeSummarySha256": "601403205dc3b09d9f9826466264c98aa1a29f16f32501aa7a75f0e97268e738",
+        "sourcePath": "/tmp/finite-main-native-38334371393/bluefin-dx-generic.json"
+      }
+    },
+    {
+      "name": "main-bluefin-dx-next",
+      "joinStatus": "all-current-native-paths-match-authenticated-reference",
+      "proposals": [
+        {
+          "id": "podman-main-bluefin-dx-next-ghsa-4hq8-gpf5-8p68-a851083d",
+          "advisories": [
+            "CVE-2026-57231",
+            "GHSA-4hq8-gpf5-8p68"
+          ],
+          "digest": "sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+          "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+          "platform": "linux/amd64",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+            "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+            "/usr/bin/podman",
+            "/usr/libexec/podman/quadlet",
+            "/usr/libexec/podman/rootlessport"
+          ],
+          "disposition": "nonapplicable",
+          "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+          "officialSources": [
+            "https://github.com/containers/podman/security/advisories/GHSA-4hq8-gpf5-8p68",
+            "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+            "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+            "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/specgen/generate/container.go"
+          ],
+          "evidence": [
+            "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+            "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-dx-next-native.json:sha256:fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+            "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+          ],
+          "reviewedBy": "great_cto security-officer / ownership_followup",
+          "reviewedAt": "2026-10-13T04:14:55Z",
+          "expiresAt": "2026-10-27T04:14:55Z"
+        },
+        {
+          "id": "podman-main-bluefin-dx-next-ghsa-65gg-3w2w-hr4h-a851083d",
+          "advisories": [
+            "CVE-2025-6032",
+            "GHSA-65gg-3w2w-hr4h"
+          ],
+          "digest": "sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+          "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+          "platform": "linux/amd64",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+            "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+            "/usr/bin/podman",
+            "/usr/libexec/podman/quadlet",
+            "/usr/libexec/podman/rootlessport"
+          ],
+          "disposition": "nonapplicable",
+          "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+          "officialSources": [
+            "https://github.com/containers/podman/security/advisories/GHSA-65gg-3w2w-hr4h",
+            "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+            "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+            "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/machine/ocipull/ociartifact.go"
+          ],
+          "evidence": [
+            "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+            "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-dx-next-native.json:sha256:fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+            "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+          ],
+          "reviewedBy": "great_cto security-officer / ownership_followup",
+          "reviewedAt": "2026-10-13T04:14:55Z",
+          "expiresAt": "2026-10-27T04:14:55Z"
+        },
+        {
+          "id": "podman-main-bluefin-dx-next-ghsa-wp3j-xq48-xpjw-a851083d",
+          "advisories": [
+            "CVE-2025-9566",
+            "GHSA-wp3j-xq48-xpjw"
+          ],
+          "digest": "sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+          "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+          "platform": "linux/amd64",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+            "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+            "/usr/bin/podman",
+            "/usr/libexec/podman/quadlet",
+            "/usr/libexec/podman/rootlessport"
+          ],
+          "disposition": "nonapplicable",
+          "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+          "officialSources": [
+            "https://github.com/containers/podman/security/advisories/GHSA-wp3j-xq48-xpjw",
+            "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+            "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+            "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/domain/infra/abi/play.go"
+          ],
+          "evidence": [
+            "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+            "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-dx-next-native.json:sha256:fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+            "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+          ],
+          "reviewedBy": "great_cto security-officer / ownership_followup",
+          "reviewedAt": "2026-10-13T04:14:55Z",
+          "expiresAt": "2026-10-27T04:14:55Z"
+        }
+      ],
+      "limits": [
+        "Uses digest-bound original Syft catalog SHA evidence, not a fresh independent rootfs probe.",
+        "Does not qualify release, refresh scanners, or clear unrelated Podman/embedded-module/compiler findings."
+      ],
+      "image": "ghcr.io/closure-labs/finite@sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "nativeSummarySha256": "fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+      "profile": "bluefin-dx-next",
+      "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+      "buildIdentity": "v1:13ab0d947b649d17a43851dbea491a445b2c123fcaba02eb1d21bff47ac94ccc",
+      "sourceType": "registry-candidate-native-evidence",
+      "candidateRun": 38340112122,
+      "baselineRun": 38330308713,
+      "scannedAt": "2026-10-13T03:57:57.468597258Z",
+      "configurationDigest": "sha256:3a71cb79e1f02dcd274237c4599ec5d37bf3084f26c4ddd78b765c5d0cc97c44",
+      "scannedManifestDigest": "sha256:29499493e2d9ec4bd259f44529c647f45ea10fa229d0132d279d662934df0d3b",
+      "sbomSha256": "46cedba04a90688fa5e3adca57b638b5265a03c5f87d343a44917f3c0e2b3db5",
+      "sourceResultSha256": "5724e3de7bbfd54999a962439452e4d9713f6ce1226c3fdbe126454868ba734b",
+      "extractionSha256": "99db89859b93fef227982046f2e7ce59a1328667e4f444cc58f2a0142cf4f2fe",
+      "approvedBaselineSha256": "a0e00f8bbf7e63e094d7d0b0072bfdaa5d40129f3f5ed63e1f4db9baf8adf577",
+      "bindingSha256": "602ae24f7a558478314182e9ca84bbf0980aad3b56371b647ab946407b9b66b4",
+      "provenanceSha256": null,
+      "baselineLedgerSha256": "abb97734626faaf79224839fd792b516807975a621c27afa34a7bbf1caca45c3",
+      "baselineImage": "ghcr.io/closure-labs/finite@sha256:1067d5dd8627130eb1b8edcb0ace5b28d650d1709f7b6a4ecf7f992bcd24d882",
+      "baseImage": "ghcr.io/ublue-os/bluefin-dx@sha256:a41cf1ebc4b6718cab813f221b8394c963ed3f0777b52e19fe6c3784b15c52ed",
+      "policySha256": "59fd1f0604b819ccabd1dd8e54190b200d3f78173877d192234a6788aecf4dfb",
+      "selectedMainModulePairs": 3,
+      "selectedRawRecords": 18,
+      "joinedLocations": [
+        {
+          "path": "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+          "kind": "ostree-object",
+          "catalogedFileId": "6174488172a0d8fe",
+          "catalogedSha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "catalogedSize": 45362352,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/bin/podman",
+          "signedReferenceSha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "signedReferenceSize": 45362352,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+          "kind": "ostree-object",
+          "catalogedFileId": "de4c09f973f4b5ad",
+          "catalogedSha256": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd",
+          "catalogedSize": 3210992,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/libexec/podman/rootlessport",
+          "signedReferenceSha256": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd",
+          "signedReferenceSize": 3210992,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+          "kind": "ostree-object",
+          "catalogedFileId": "ee11e6537ce0732d",
+          "catalogedSha256": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454",
+          "catalogedSize": 2515640,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/libexec/podman/quadlet",
+          "signedReferenceSha256": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454",
+          "signedReferenceSize": 2515640,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        },
+        {
+          "path": "/usr/bin/podman",
+          "kind": "live-path",
+          "catalogedFileId": "3e7c38694c0bef3c",
+          "catalogedSha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "catalogedSize": 45362352,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/bin/podman",
+          "signedReferenceSha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "signedReferenceSize": 45362352,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [
+            {
+              "rpm": {
+                "id": "27f2eab2ae8e4baa",
+                "name": "podman",
+                "version": "5:5.8.7-1.fc44",
+                "purl": "pkg:rpm/bluefin/podman@5.8.7-1.fc44?arch=x86_64&distro=bluefin-44&epoch=5&upstream=podman-5.8.7-1.fc44.src.rpm",
+                "foundBy": "rpm-db-cataloger",
+                "sourceRpm": "podman-5.8.7-1.fc44.src.rpm",
+                "architecture": "x86_64",
+                "epoch": 5,
+                "release": "1.fc44",
+                "vendor": "Fedora Project",
+                "signatures": [
+                  {
+                    "algo": "RSA",
+                    "hash": "SHA256",
+                    "created": "Thu Sep 17 13:14:41 2026",
+                    "issuer": "dbfcf71c6d9f90a6"
+                  }
+                ]
+              },
+              "declaredFile": {
+                "path": "/usr/bin/podman",
+                "mode": 33261,
+                "size": 45362352,
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454"
+                },
+                "userName": "root",
+                "groupName": "root",
+                "flags": ""
+              },
+              "evidence": "rpm-db-file-list",
+              "actualFileIntegrityVerified": false
+            }
+          ],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        },
+        {
+          "path": "/usr/libexec/podman/quadlet",
+          "kind": "live-path",
+          "catalogedFileId": "722eebec347dccfd",
+          "catalogedSha256": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454",
+          "catalogedSize": 2515640,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/libexec/podman/quadlet",
+          "signedReferenceSha256": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454",
+          "signedReferenceSize": 2515640,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [
+            {
+              "rpm": {
+                "id": "27f2eab2ae8e4baa",
+                "name": "podman",
+                "version": "5:5.8.7-1.fc44",
+                "purl": "pkg:rpm/bluefin/podman@5.8.7-1.fc44?arch=x86_64&distro=bluefin-44&epoch=5&upstream=podman-5.8.7-1.fc44.src.rpm",
+                "foundBy": "rpm-db-cataloger",
+                "sourceRpm": "podman-5.8.7-1.fc44.src.rpm",
+                "architecture": "x86_64",
+                "epoch": 5,
+                "release": "1.fc44",
+                "vendor": "Fedora Project",
+                "signatures": [
+                  {
+                    "algo": "RSA",
+                    "hash": "SHA256",
+                    "created": "Thu Sep 17 13:14:41 2026",
+                    "issuer": "dbfcf71c6d9f90a6"
+                  }
+                ]
+              },
+              "declaredFile": {
+                "path": "/usr/libexec/podman/quadlet",
+                "mode": 33261,
+                "size": 2515640,
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454"
+                },
+                "userName": "root",
+                "groupName": "root",
+                "flags": ""
+              },
+              "evidence": "rpm-db-file-list",
+              "actualFileIntegrityVerified": false
+            }
+          ],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        },
+        {
+          "path": "/usr/libexec/podman/rootlessport",
+          "kind": "live-path",
+          "catalogedFileId": "d9b53bd6ae5a52f9",
+          "catalogedSha256": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd",
+          "catalogedSize": 3210992,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/libexec/podman/rootlessport",
+          "signedReferenceSha256": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd",
+          "signedReferenceSize": 3210992,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [
+            {
+              "rpm": {
+                "id": "27f2eab2ae8e4baa",
+                "name": "podman",
+                "version": "5:5.8.7-1.fc44",
+                "purl": "pkg:rpm/bluefin/podman@5.8.7-1.fc44?arch=x86_64&distro=bluefin-44&epoch=5&upstream=podman-5.8.7-1.fc44.src.rpm",
+                "foundBy": "rpm-db-cataloger",
+                "sourceRpm": "podman-5.8.7-1.fc44.src.rpm",
+                "architecture": "x86_64",
+                "epoch": 5,
+                "release": "1.fc44",
+                "vendor": "Fedora Project",
+                "signatures": [
+                  {
+                    "algo": "RSA",
+                    "hash": "SHA256",
+                    "created": "Thu Sep 17 13:14:41 2026",
+                    "issuer": "dbfcf71c6d9f90a6"
+                  }
+                ]
+              },
+              "declaredFile": {
+                "path": "/usr/libexec/podman/rootlessport",
+                "mode": 33261,
+                "size": 3210992,
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd"
+                },
+                "userName": "root",
+                "groupName": "root",
+                "flags": ""
+              },
+              "evidence": "rpm-db-file-list",
+              "actualFileIntegrityVerified": false
+            }
+          ],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        }
+      ],
+      "nativePolicyStatus": "blocked",
+      "sourceReleaseEligible": false,
+      "originalNativeEvidence": {
+        "image": "ghcr.io/closure-labs/finite@sha256:1067d5dd8627130eb1b8edcb0ace5b28d650d1709f7b6a4ecf7f992bcd24d882",
+        "scannedAt": "2026-10-13T01:42:49.676813184Z",
+        "sbomSha256": "50509c498d764c6b4ebee65bdebf18922cf0c1568b8d4dbe89fd50a015f06c09",
+        "configurationDigest": "sha256:5851d09a7f3718d08ff71d5fc77912eed851eab4155b98b57a4f7d0464b1f1f1",
+        "scannedManifestDigest": "sha256:cee765cb9a3efdb3231e89bea9ab1b73561a87feb37577d69fd8557f01327837",
+        "sourceResultSha256": "8fbde0f8d0e14be74fae5414e785f942ac8138db6763b19f5da05e52d717757d",
+        "extractionSha256": "508de831949bbcafc2bd14bb472149f513024b736559e00fc6b4a27f4afc3cb3",
+        "policySha256": "59fd1f0604b819ccabd1dd8e54190b200d3f78173877d192234a6788aecf4dfb",
+        "nativeSummarySha256": "b9306bdbbb125b7053293dd551e138078b424c625f4827f4a26cb44b32a9a67e",
+        "sourcePath": "/tmp/finite-main-native-38334371393/bluefin-dx-next.json"
+      }
+    },
+    {
+      "name": "main-bluefin-generic",
+      "joinStatus": "all-current-native-paths-match-authenticated-reference",
+      "proposals": [
+        {
+          "id": "podman-main-bluefin-generic-ghsa-4hq8-gpf5-8p68-3d4693f2",
+          "advisories": [
+            "CVE-2026-57231",
+            "GHSA-4hq8-gpf5-8p68"
+          ],
+          "digest": "sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+          "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+          "platform": "linux/amd64",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+            "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+            "/usr/bin/podman",
+            "/usr/libexec/podman/quadlet",
+            "/usr/libexec/podman/rootlessport"
+          ],
+          "disposition": "nonapplicable",
+          "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+          "officialSources": [
+            "https://github.com/containers/podman/security/advisories/GHSA-4hq8-gpf5-8p68",
+            "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+            "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+            "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/specgen/generate/container.go"
+          ],
+          "evidence": [
+            "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+            "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-generic-native.json:sha256:5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9",
+            "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+          ],
+          "reviewedBy": "great_cto security-officer / ownership_followup",
+          "reviewedAt": "2026-10-13T04:14:55Z",
+          "expiresAt": "2026-10-27T04:14:55Z"
+        },
+        {
+          "id": "podman-main-bluefin-generic-ghsa-65gg-3w2w-hr4h-3d4693f2",
+          "advisories": [
+            "CVE-2025-6032",
+            "GHSA-65gg-3w2w-hr4h"
+          ],
+          "digest": "sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+          "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+          "platform": "linux/amd64",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+            "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+            "/usr/bin/podman",
+            "/usr/libexec/podman/quadlet",
+            "/usr/libexec/podman/rootlessport"
+          ],
+          "disposition": "nonapplicable",
+          "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+          "officialSources": [
+            "https://github.com/containers/podman/security/advisories/GHSA-65gg-3w2w-hr4h",
+            "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+            "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+            "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/machine/ocipull/ociartifact.go"
+          ],
+          "evidence": [
+            "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+            "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-generic-native.json:sha256:5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9",
+            "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+          ],
+          "reviewedBy": "great_cto security-officer / ownership_followup",
+          "reviewedAt": "2026-10-13T04:14:55Z",
+          "expiresAt": "2026-10-27T04:14:55Z"
+        },
+        {
+          "id": "podman-main-bluefin-generic-ghsa-wp3j-xq48-xpjw-3d4693f2",
+          "advisories": [
+            "CVE-2025-9566",
+            "GHSA-wp3j-xq48-xpjw"
+          ],
+          "digest": "sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+          "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+          "platform": "linux/amd64",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+            "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+            "/usr/bin/podman",
+            "/usr/libexec/podman/quadlet",
+            "/usr/libexec/podman/rootlessport"
+          ],
+          "disposition": "nonapplicable",
+          "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+          "officialSources": [
+            "https://github.com/containers/podman/security/advisories/GHSA-wp3j-xq48-xpjw",
+            "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+            "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+            "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/domain/infra/abi/play.go"
+          ],
+          "evidence": [
+            "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+            "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-generic-native.json:sha256:5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9",
+            "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+          ],
+          "reviewedBy": "great_cto security-officer / ownership_followup",
+          "reviewedAt": "2026-10-13T04:14:55Z",
+          "expiresAt": "2026-10-27T04:14:55Z"
+        }
+      ],
+      "limits": [
+        "Uses digest-bound original Syft catalog SHA evidence, not a fresh independent rootfs probe.",
+        "Does not qualify release, refresh scanners, or clear unrelated Podman/embedded-module/compiler findings."
+      ],
+      "image": "ghcr.io/closure-labs/finite@sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "nativeSummarySha256": "5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9",
+      "profile": "bluefin-generic",
+      "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+      "buildIdentity": "v1:357fa0799580560ed50f4045d429e0e9d19ad76e8deb9e647e45b0be33885a38",
+      "sourceType": "registry-candidate-native-evidence",
+      "candidateRun": 38340112122,
+      "baselineRun": 38330308713,
+      "scannedAt": "2026-10-13T03:37:43.934258538Z",
+      "configurationDigest": "sha256:eb2542e972cdd6c71f3448674c57b0c41252fdc4c986252bc8ff3621e2119cf4",
+      "scannedManifestDigest": "sha256:e626d128a3eae4acd4421de5ffcb19e6d4535798c7b42ee8f7506063bd3572b3",
+      "sbomSha256": "4902fdd4b2afca8374a3197770f25daa11c7626cb5c83c46fb614ad1f5441201",
+      "sourceResultSha256": "92127eae6a60001c57937bb329061da88bdc6a933a993a6a047c6be7466518ca",
+      "extractionSha256": "dad4c01f31b275477cf5ce896b48ae67b6aa79c9d0152f8bef56b3eb1811c0ec",
+      "approvedBaselineSha256": "d2a63abcb8293c942a161915a9f03bfa8e59ca8f6873052af3e35b55b0ce5c2f",
+      "bindingSha256": "eebe5c68f116c22b39c89654f752a9e09b565c7e7c8810569a5f3d338d8140be",
+      "provenanceSha256": null,
+      "baselineLedgerSha256": "725fee4147486e408eb0282949bfff5e024371d30e733750be001f7498ef6c91",
+      "baselineImage": "ghcr.io/closure-labs/finite@sha256:66ff1f5c91ae5ddf97ac5c09bd510765888afd30457e535ae5710abb8a37f01e",
+      "baseImage": "ghcr.io/ublue-os/bluefin@sha256:23b7bf54349f1a93c2fea4168c7725a632641ee67ae29b0951ef1976c1ba2bc9",
+      "policySha256": "59fd1f0604b819ccabd1dd8e54190b200d3f78173877d192234a6788aecf4dfb",
+      "selectedMainModulePairs": 3,
+      "selectedRawRecords": 18,
+      "joinedLocations": [
+        {
+          "path": "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+          "kind": "ostree-object",
+          "catalogedFileId": "6174488172a0d8fe",
+          "catalogedSha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "catalogedSize": 45362352,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/bin/podman",
+          "signedReferenceSha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "signedReferenceSize": 45362352,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+          "kind": "ostree-object",
+          "catalogedFileId": "de4c09f973f4b5ad",
+          "catalogedSha256": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd",
+          "catalogedSize": 3210992,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/libexec/podman/rootlessport",
+          "signedReferenceSha256": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd",
+          "signedReferenceSize": 3210992,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+          "kind": "ostree-object",
+          "catalogedFileId": "ee11e6537ce0732d",
+          "catalogedSha256": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454",
+          "catalogedSize": 2515640,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/libexec/podman/quadlet",
+          "signedReferenceSha256": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454",
+          "signedReferenceSize": 2515640,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        },
+        {
+          "path": "/usr/bin/podman",
+          "kind": "live-path",
+          "catalogedFileId": "3e7c38694c0bef3c",
+          "catalogedSha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "catalogedSize": 45362352,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/bin/podman",
+          "signedReferenceSha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "signedReferenceSize": 45362352,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [
+            {
+              "rpm": {
+                "id": "27f2eab2ae8e4baa",
+                "name": "podman",
+                "version": "5:5.8.7-1.fc44",
+                "purl": "pkg:rpm/bluefin/podman@5.8.7-1.fc44?arch=x86_64&distro=bluefin-44&epoch=5&upstream=podman-5.8.7-1.fc44.src.rpm",
+                "foundBy": "rpm-db-cataloger",
+                "sourceRpm": "podman-5.8.7-1.fc44.src.rpm",
+                "architecture": "x86_64",
+                "epoch": 5,
+                "release": "1.fc44",
+                "vendor": "Fedora Project",
+                "signatures": [
+                  {
+                    "algo": "RSA",
+                    "hash": "SHA256",
+                    "created": "Thu Sep 17 13:14:41 2026",
+                    "issuer": "dbfcf71c6d9f90a6"
+                  }
+                ]
+              },
+              "declaredFile": {
+                "path": "/usr/bin/podman",
+                "mode": 33261,
+                "size": 45362352,
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454"
+                },
+                "userName": "root",
+                "groupName": "root",
+                "flags": ""
+              },
+              "evidence": "rpm-db-file-list",
+              "actualFileIntegrityVerified": false
+            }
+          ],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        },
+        {
+          "path": "/usr/libexec/podman/quadlet",
+          "kind": "live-path",
+          "catalogedFileId": "722eebec347dccfd",
+          "catalogedSha256": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454",
+          "catalogedSize": 2515640,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/libexec/podman/quadlet",
+          "signedReferenceSha256": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454",
+          "signedReferenceSize": 2515640,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [
+            {
+              "rpm": {
+                "id": "27f2eab2ae8e4baa",
+                "name": "podman",
+                "version": "5:5.8.7-1.fc44",
+                "purl": "pkg:rpm/bluefin/podman@5.8.7-1.fc44?arch=x86_64&distro=bluefin-44&epoch=5&upstream=podman-5.8.7-1.fc44.src.rpm",
+                "foundBy": "rpm-db-cataloger",
+                "sourceRpm": "podman-5.8.7-1.fc44.src.rpm",
+                "architecture": "x86_64",
+                "epoch": 5,
+                "release": "1.fc44",
+                "vendor": "Fedora Project",
+                "signatures": [
+                  {
+                    "algo": "RSA",
+                    "hash": "SHA256",
+                    "created": "Thu Sep 17 13:14:41 2026",
+                    "issuer": "dbfcf71c6d9f90a6"
+                  }
+                ]
+              },
+              "declaredFile": {
+                "path": "/usr/libexec/podman/quadlet",
+                "mode": 33261,
+                "size": 2515640,
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454"
+                },
+                "userName": "root",
+                "groupName": "root",
+                "flags": ""
+              },
+              "evidence": "rpm-db-file-list",
+              "actualFileIntegrityVerified": false
+            }
+          ],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        },
+        {
+          "path": "/usr/libexec/podman/rootlessport",
+          "kind": "live-path",
+          "catalogedFileId": "d9b53bd6ae5a52f9",
+          "catalogedSha256": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd",
+          "catalogedSize": 3210992,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/libexec/podman/rootlessport",
+          "signedReferenceSha256": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd",
+          "signedReferenceSize": 3210992,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [
+            {
+              "rpm": {
+                "id": "27f2eab2ae8e4baa",
+                "name": "podman",
+                "version": "5:5.8.7-1.fc44",
+                "purl": "pkg:rpm/bluefin/podman@5.8.7-1.fc44?arch=x86_64&distro=bluefin-44&epoch=5&upstream=podman-5.8.7-1.fc44.src.rpm",
+                "foundBy": "rpm-db-cataloger",
+                "sourceRpm": "podman-5.8.7-1.fc44.src.rpm",
+                "architecture": "x86_64",
+                "epoch": 5,
+                "release": "1.fc44",
+                "vendor": "Fedora Project",
+                "signatures": [
+                  {
+                    "algo": "RSA",
+                    "hash": "SHA256",
+                    "created": "Thu Sep 17 13:14:41 2026",
+                    "issuer": "dbfcf71c6d9f90a6"
+                  }
+                ]
+              },
+              "declaredFile": {
+                "path": "/usr/libexec/podman/rootlessport",
+                "mode": 33261,
+                "size": 3210992,
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd"
+                },
+                "userName": "root",
+                "groupName": "root",
+                "flags": ""
+              },
+              "evidence": "rpm-db-file-list",
+              "actualFileIntegrityVerified": false
+            }
+          ],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        }
+      ],
+      "nativePolicyStatus": "blocked",
+      "sourceReleaseEligible": false,
+      "originalNativeEvidence": {
+        "image": "ghcr.io/closure-labs/finite@sha256:66ff1f5c91ae5ddf97ac5c09bd510765888afd30457e535ae5710abb8a37f01e",
+        "scannedAt": "2026-10-13T01:43:17.439347221Z",
+        "sbomSha256": "23419f2a7c9a103f3552a5fae65a2e5a1044af50da96a797e001ed13bd254aa8",
+        "configurationDigest": "sha256:2f9bc9b73f954af045b79845fc8cfe8229295713c9e24e884ece7ede5cac3ede",
+        "scannedManifestDigest": "sha256:82f656cc9212c27e7b78615ccad2fabc1b08cc10cf57444017a7da4a49dc0d37",
+        "sourceResultSha256": "74cdc87f2204307bd76cdce7d3808ff19d4535ed52956d4df0341c61a0353e17",
+        "extractionSha256": "7dc7ae9dfde6418a1c20ed0db7eaf101fe9a9c1c5ab899f1d54dce40bf05ef47",
+        "policySha256": "59fd1f0604b819ccabd1dd8e54190b200d3f78173877d192234a6788aecf4dfb",
+        "nativeSummarySha256": "901cc5af571ed932852c9a7351b6480192e0a83acd017c53f27e3bbf80bcd8e1",
+        "sourcePath": "/tmp/finite-main-native-38334371393/bluefin-generic.json"
+      }
+    },
+    {
+      "name": "main-bluefin-next",
+      "joinStatus": "all-current-native-paths-match-authenticated-reference",
+      "proposals": [
+        {
+          "id": "podman-main-bluefin-next-ghsa-4hq8-gpf5-8p68-a36f46af",
+          "advisories": [
+            "CVE-2026-57231",
+            "GHSA-4hq8-gpf5-8p68"
+          ],
+          "digest": "sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+          "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+          "platform": "linux/amd64",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+            "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+            "/usr/bin/podman",
+            "/usr/libexec/podman/quadlet",
+            "/usr/libexec/podman/rootlessport"
+          ],
+          "disposition": "nonapplicable",
+          "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+          "officialSources": [
+            "https://github.com/containers/podman/security/advisories/GHSA-4hq8-gpf5-8p68",
+            "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+            "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+            "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/specgen/generate/container.go"
+          ],
+          "evidence": [
+            "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+            "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-next-native.json:sha256:81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f",
+            "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+          ],
+          "reviewedBy": "great_cto security-officer / ownership_followup",
+          "reviewedAt": "2026-10-13T04:14:55Z",
+          "expiresAt": "2026-10-27T04:14:55Z"
+        },
+        {
+          "id": "podman-main-bluefin-next-ghsa-65gg-3w2w-hr4h-a36f46af",
+          "advisories": [
+            "CVE-2025-6032",
+            "GHSA-65gg-3w2w-hr4h"
+          ],
+          "digest": "sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+          "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+          "platform": "linux/amd64",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+            "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+            "/usr/bin/podman",
+            "/usr/libexec/podman/quadlet",
+            "/usr/libexec/podman/rootlessport"
+          ],
+          "disposition": "nonapplicable",
+          "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+          "officialSources": [
+            "https://github.com/containers/podman/security/advisories/GHSA-65gg-3w2w-hr4h",
+            "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+            "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+            "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/machine/ocipull/ociartifact.go"
+          ],
+          "evidence": [
+            "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+            "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-next-native.json:sha256:81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f",
+            "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+          ],
+          "reviewedBy": "great_cto security-officer / ownership_followup",
+          "reviewedAt": "2026-10-13T04:14:55Z",
+          "expiresAt": "2026-10-27T04:14:55Z"
+        },
+        {
+          "id": "podman-main-bluefin-next-ghsa-wp3j-xq48-xpjw-a36f46af",
+          "advisories": [
+            "CVE-2025-9566",
+            "GHSA-wp3j-xq48-xpjw"
+          ],
+          "digest": "sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+          "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+          "platform": "linux/amd64",
+          "locations": [
+            "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+            "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+            "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+            "/usr/bin/podman",
+            "/usr/libexec/podman/quadlet",
+            "/usr/libexec/podman/rootlessport"
+          ],
+          "disposition": "nonapplicable",
+          "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+          "officialSources": [
+            "https://github.com/containers/podman/security/advisories/GHSA-wp3j-xq48-xpjw",
+            "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+            "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+            "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/domain/infra/abi/play.go"
+          ],
+          "evidence": [
+            "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+            "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-next-native.json:sha256:81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f",
+            "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+          ],
+          "reviewedBy": "great_cto security-officer / ownership_followup",
+          "reviewedAt": "2026-10-13T04:14:55Z",
+          "expiresAt": "2026-10-27T04:14:55Z"
+        }
+      ],
+      "limits": [
+        "Uses digest-bound original Syft catalog SHA evidence, not a fresh independent rootfs probe.",
+        "Does not qualify release, refresh scanners, or clear unrelated Podman/embedded-module/compiler findings."
+      ],
+      "image": "ghcr.io/closure-labs/finite@sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+      "nativeSummarySha256": "81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f",
+      "profile": "bluefin-next",
+      "sourceRevision": "cbaf82645aa1e437fe42157ab5712869f74219ba",
+      "buildIdentity": "v1:204a54980664eb886d8b5a949b4a2bcd50c5fd6074f82e5d60ae6362241bb47c",
+      "sourceType": "registry-candidate-native-evidence",
+      "candidateRun": 38340112122,
+      "baselineRun": 38330308713,
+      "scannedAt": "2026-10-13T03:39:31.896372308Z",
+      "configurationDigest": "sha256:fce1315ea7763cf210b19f4e7c83334ab5e36be9a490d97e0ccc2b2c69491497",
+      "scannedManifestDigest": "sha256:0e50f1435759085be0e789c2a880a296fc8dd2d0e363ae4be4c0ac5c3e2a6b60",
+      "sbomSha256": "bcf12455b002324b0c5923110de414cde3528d164bbb6b230dc2e8efb69f56b4",
+      "sourceResultSha256": "64182a6c9df652cdfdf3c07d19b7983a7ac297d43bff97f18cac74cd12d8f95c",
+      "extractionSha256": "526eac11850343447addbc89dbddc401122823d23e3c09504bea5c17a833853b",
+      "approvedBaselineSha256": "ff11b3fad4ce4ab39d139022c2d5f30bf721b1454cd1fc65269bde2e087a7a50",
+      "bindingSha256": "24ee45ac5db92e35d0c93f3fc9c64c7b7eb7c9c2ec0a37927305172b2cca21b4",
+      "provenanceSha256": null,
+      "baselineLedgerSha256": "db9e45023c471ca95ae2740b12660b019f5cc314bb259e82a97f55965bc73c48",
+      "baselineImage": "ghcr.io/closure-labs/finite@sha256:a85115bb4155b848867a0518c3c3c3bb59f73586bcfa73108cf0ba21dafbc790",
+      "baseImage": "ghcr.io/ublue-os/bluefin@sha256:23b7bf54349f1a93c2fea4168c7725a632641ee67ae29b0951ef1976c1ba2bc9",
+      "policySha256": "59fd1f0604b819ccabd1dd8e54190b200d3f78173877d192234a6788aecf4dfb",
+      "selectedMainModulePairs": 3,
+      "selectedRawRecords": 18,
+      "joinedLocations": [
+        {
+          "path": "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+          "kind": "ostree-object",
+          "catalogedFileId": "6174488172a0d8fe",
+          "catalogedSha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "catalogedSize": 45362352,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/bin/podman",
+          "signedReferenceSha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "signedReferenceSize": 45362352,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+          "kind": "ostree-object",
+          "catalogedFileId": "de4c09f973f4b5ad",
+          "catalogedSha256": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd",
+          "catalogedSize": 3210992,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/libexec/podman/rootlessport",
+          "signedReferenceSha256": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd",
+          "signedReferenceSize": 3210992,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        },
+        {
+          "path": "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+          "kind": "ostree-object",
+          "catalogedFileId": "ee11e6537ce0732d",
+          "catalogedSha256": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454",
+          "catalogedSize": 2515640,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/libexec/podman/quadlet",
+          "signedReferenceSha256": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454",
+          "signedReferenceSize": 2515640,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        },
+        {
+          "path": "/usr/bin/podman",
+          "kind": "live-path",
+          "catalogedFileId": "3e7c38694c0bef3c",
+          "catalogedSha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "catalogedSize": 45362352,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/bin/podman",
+          "signedReferenceSha256": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454",
+          "signedReferenceSize": 45362352,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [
+            {
+              "rpm": {
+                "id": "27f2eab2ae8e4baa",
+                "name": "podman",
+                "version": "5:5.8.7-1.fc44",
+                "purl": "pkg:rpm/bluefin/podman@5.8.7-1.fc44?arch=x86_64&distro=bluefin-44&epoch=5&upstream=podman-5.8.7-1.fc44.src.rpm",
+                "foundBy": "rpm-db-cataloger",
+                "sourceRpm": "podman-5.8.7-1.fc44.src.rpm",
+                "architecture": "x86_64",
+                "epoch": 5,
+                "release": "1.fc44",
+                "vendor": "Fedora Project",
+                "signatures": [
+                  {
+                    "algo": "RSA",
+                    "hash": "SHA256",
+                    "created": "Thu Sep 17 13:14:41 2026",
+                    "issuer": "dbfcf71c6d9f90a6"
+                  }
+                ]
+              },
+              "declaredFile": {
+                "path": "/usr/bin/podman",
+                "mode": 33261,
+                "size": 45362352,
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "a844579b16612e6d0fd513bac59e27d82bb1220a34820f1e1e1e4c683b2f1454"
+                },
+                "userName": "root",
+                "groupName": "root",
+                "flags": ""
+              },
+              "evidence": "rpm-db-file-list",
+              "actualFileIntegrityVerified": false
+            }
+          ],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        },
+        {
+          "path": "/usr/libexec/podman/quadlet",
+          "kind": "live-path",
+          "catalogedFileId": "722eebec347dccfd",
+          "catalogedSha256": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454",
+          "catalogedSize": 2515640,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/libexec/podman/quadlet",
+          "signedReferenceSha256": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454",
+          "signedReferenceSize": 2515640,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [
+            {
+              "rpm": {
+                "id": "27f2eab2ae8e4baa",
+                "name": "podman",
+                "version": "5:5.8.7-1.fc44",
+                "purl": "pkg:rpm/bluefin/podman@5.8.7-1.fc44?arch=x86_64&distro=bluefin-44&epoch=5&upstream=podman-5.8.7-1.fc44.src.rpm",
+                "foundBy": "rpm-db-cataloger",
+                "sourceRpm": "podman-5.8.7-1.fc44.src.rpm",
+                "architecture": "x86_64",
+                "epoch": 5,
+                "release": "1.fc44",
+                "vendor": "Fedora Project",
+                "signatures": [
+                  {
+                    "algo": "RSA",
+                    "hash": "SHA256",
+                    "created": "Thu Sep 17 13:14:41 2026",
+                    "issuer": "dbfcf71c6d9f90a6"
+                  }
+                ]
+              },
+              "declaredFile": {
+                "path": "/usr/libexec/podman/quadlet",
+                "mode": 33261,
+                "size": 2515640,
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "ff5b902144f321a2e2be8f2b097b8e1cdea1b3494fcf200f31ffbde410d85454"
+                },
+                "userName": "root",
+                "groupName": "root",
+                "flags": ""
+              },
+              "evidence": "rpm-db-file-list",
+              "actualFileIntegrityVerified": false
+            }
+          ],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        },
+        {
+          "path": "/usr/libexec/podman/rootlessport",
+          "kind": "live-path",
+          "catalogedFileId": "d9b53bd6ae5a52f9",
+          "catalogedSha256": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd",
+          "catalogedSize": 3210992,
+          "catalogedMode": 755,
+          "catalogModeEncoding": "octal permission digits",
+          "normalizedPosixMode": 33261,
+          "referencePath": "/usr/libexec/podman/rootlessport",
+          "signedReferenceSha256": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd",
+          "signedReferenceSize": 3210992,
+          "signedReferenceMode": 33261,
+          "matched": true,
+          "nativeRpmOwners": [
+            {
+              "rpm": {
+                "id": "27f2eab2ae8e4baa",
+                "name": "podman",
+                "version": "5:5.8.7-1.fc44",
+                "purl": "pkg:rpm/bluefin/podman@5.8.7-1.fc44?arch=x86_64&distro=bluefin-44&epoch=5&upstream=podman-5.8.7-1.fc44.src.rpm",
+                "foundBy": "rpm-db-cataloger",
+                "sourceRpm": "podman-5.8.7-1.fc44.src.rpm",
+                "architecture": "x86_64",
+                "epoch": 5,
+                "release": "1.fc44",
+                "vendor": "Fedora Project",
+                "signatures": [
+                  {
+                    "algo": "RSA",
+                    "hash": "SHA256",
+                    "created": "Thu Sep 17 13:14:41 2026",
+                    "issuer": "dbfcf71c6d9f90a6"
+                  }
+                ]
+              },
+              "declaredFile": {
+                "path": "/usr/libexec/podman/rootlessport",
+                "mode": 33261,
+                "size": 3210992,
+                "digest": {
+                  "algorithm": "sha256",
+                  "value": "5ae05fbcba9b1da3dcb4389aedb38f4ee6963058c49898daf297bdb3b9aebfbd"
+                },
+                "userName": "root",
+                "groupName": "root",
+                "flags": ""
+              },
+              "evidence": "rpm-db-file-list",
+              "actualFileIntegrityVerified": false
+            }
+          ],
+          "independentCurrentRootfsProbePerformed": false,
+          "retainedObjectReachabilityAssumed": false
+        }
+      ],
+      "nativePolicyStatus": "blocked",
+      "sourceReleaseEligible": false,
+      "originalNativeEvidence": {
+        "image": "ghcr.io/closure-labs/finite@sha256:a85115bb4155b848867a0518c3c3c3bb59f73586bcfa73108cf0ba21dafbc790",
+        "scannedAt": "2026-10-13T01:35:07.15653912Z",
+        "sbomSha256": "cadb111b7b92cce7aa62da534588661b8c3fde4ba2757e317bb822d46fcd8d78",
+        "configurationDigest": "sha256:0e21755218b862591a36a877dcd12de3532bd33a9cc913a6375fbfbb97fd1973",
+        "scannedManifestDigest": "sha256:2da4a45768a00ec3629680f18b74b0d92a418712ecb11d27c591e4a63c5d01cd",
+        "sourceResultSha256": "b05696d92b05d6ef2b19f6b8af30bd18a5d020cc79e456afb2d194231eefc066",
+        "extractionSha256": "a23be0baacc56d712506d8808a499735f323e1e35a3d7b8bb7abdd2e8e48ae99",
+        "policySha256": "59fd1f0604b819ccabd1dd8e54190b200d3f78173877d192234a6788aecf4dfb",
+        "nativeSummarySha256": "0e74e821c06cae6540030130356bfa152b43240fea71ffc3b643bf85a84e104b",
+        "sourcePath": "/tmp/finite-main-native-38334371393/bluefin-next.json"
+      }
+    }
+  ],
+  "proposedDispositions": [
+    {
+      "id": "podman-bluefin-dx-generic-ghsa-4hq8-gpf5-8p68-7848ba4c",
+      "advisories": [
+        "CVE-2026-57231",
+        "GHSA-4hq8-gpf5-8p68"
+      ],
+      "digest": "sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-4hq8-gpf5-8p68",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/specgen/generate/container.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#bluefin-dx-generic-native.json:sha256:90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-bluefin-dx-generic-ghsa-65gg-3w2w-hr4h-7848ba4c",
+      "advisories": [
+        "CVE-2025-6032",
+        "GHSA-65gg-3w2w-hr4h"
+      ],
+      "digest": "sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-65gg-3w2w-hr4h",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/machine/ocipull/ociartifact.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#bluefin-dx-generic-native.json:sha256:90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-bluefin-dx-generic-ghsa-wp3j-xq48-xpjw-7848ba4c",
+      "advisories": [
+        "CVE-2025-9566",
+        "GHSA-wp3j-xq48-xpjw"
+      ],
+      "digest": "sha256:7848ba4cfbc93dc82647fd830a85f8c348a2c7ce03bb8ea9f9206e2729563845",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-wp3j-xq48-xpjw",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/domain/infra/abi/play.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#bluefin-dx-generic-native.json:sha256:90c7c35d1127130ddaa226c1a157e52c74b9078001a87247ae5740d644526813",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-bluefin-generic-ghsa-4hq8-gpf5-8p68-e98ca0ce",
+      "advisories": [
+        "CVE-2026-57231",
+        "GHSA-4hq8-gpf5-8p68"
+      ],
+      "digest": "sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-4hq8-gpf5-8p68",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/specgen/generate/container.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#bluefin-generic-native.json:sha256:868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-bluefin-generic-ghsa-65gg-3w2w-hr4h-e98ca0ce",
+      "advisories": [
+        "CVE-2025-6032",
+        "GHSA-65gg-3w2w-hr4h"
+      ],
+      "digest": "sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-65gg-3w2w-hr4h",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/machine/ocipull/ociartifact.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#bluefin-generic-native.json:sha256:868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-bluefin-generic-ghsa-wp3j-xq48-xpjw-e98ca0ce",
+      "advisories": [
+        "CVE-2025-9566",
+        "GHSA-wp3j-xq48-xpjw"
+      ],
+      "digest": "sha256:e98ca0ceb484e3b60d56fcce00ba3ae6c15ab9aca9f646093efcf4855a5c07a7",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-wp3j-xq48-xpjw",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/domain/infra/abi/play.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#bluefin-generic-native.json:sha256:868779454c83cfefd0bd7721e49d33a10ed7e8cee34682144a9e6e8201ba173f",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-main-bluefin-dx-generic-ghsa-4hq8-gpf5-8p68-3fd7e10d",
+      "advisories": [
+        "CVE-2026-57231",
+        "GHSA-4hq8-gpf5-8p68"
+      ],
+      "digest": "sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-4hq8-gpf5-8p68",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/specgen/generate/container.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-dx-generic-native.json:sha256:21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-main-bluefin-dx-generic-ghsa-65gg-3w2w-hr4h-3fd7e10d",
+      "advisories": [
+        "CVE-2025-6032",
+        "GHSA-65gg-3w2w-hr4h"
+      ],
+      "digest": "sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-65gg-3w2w-hr4h",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/machine/ocipull/ociartifact.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-dx-generic-native.json:sha256:21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-main-bluefin-dx-generic-ghsa-wp3j-xq48-xpjw-3fd7e10d",
+      "advisories": [
+        "CVE-2025-9566",
+        "GHSA-wp3j-xq48-xpjw"
+      ],
+      "digest": "sha256:3fd7e10d0e298316b85633cddfa7fdfb4a55daea20347f49995ade28ec40965c",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-wp3j-xq48-xpjw",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/domain/infra/abi/play.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-dx-generic-native.json:sha256:21c01d1b2c57fab27596f594a0a1a6779d082b6b312b223fbc7d94b383efe2bf",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-main-bluefin-dx-next-ghsa-4hq8-gpf5-8p68-a851083d",
+      "advisories": [
+        "CVE-2026-57231",
+        "GHSA-4hq8-gpf5-8p68"
+      ],
+      "digest": "sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-4hq8-gpf5-8p68",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/specgen/generate/container.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-dx-next-native.json:sha256:fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-main-bluefin-dx-next-ghsa-65gg-3w2w-hr4h-a851083d",
+      "advisories": [
+        "CVE-2025-6032",
+        "GHSA-65gg-3w2w-hr4h"
+      ],
+      "digest": "sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-65gg-3w2w-hr4h",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/machine/ocipull/ociartifact.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-dx-next-native.json:sha256:fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-main-bluefin-dx-next-ghsa-wp3j-xq48-xpjw-a851083d",
+      "advisories": [
+        "CVE-2025-9566",
+        "GHSA-wp3j-xq48-xpjw"
+      ],
+      "digest": "sha256:a851083d1a9ef1e8c380b7fc39dc2febe436e2e3ec18b796a3659e76dd88bd26",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-wp3j-xq48-xpjw",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/domain/infra/abi/play.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-dx-next-native.json:sha256:fa85fb1da98c80bec55b0baab7e289cbb6a078a792325fb5a5e3c6c4f880df96",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-main-bluefin-generic-ghsa-4hq8-gpf5-8p68-3d4693f2",
+      "advisories": [
+        "CVE-2026-57231",
+        "GHSA-4hq8-gpf5-8p68"
+      ],
+      "digest": "sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-4hq8-gpf5-8p68",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/specgen/generate/container.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-generic-native.json:sha256:5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-main-bluefin-generic-ghsa-65gg-3w2w-hr4h-3d4693f2",
+      "advisories": [
+        "CVE-2025-6032",
+        "GHSA-65gg-3w2w-hr4h"
+      ],
+      "digest": "sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-65gg-3w2w-hr4h",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/machine/ocipull/ociartifact.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-generic-native.json:sha256:5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-main-bluefin-generic-ghsa-wp3j-xq48-xpjw-3d4693f2",
+      "advisories": [
+        "CVE-2025-9566",
+        "GHSA-wp3j-xq48-xpjw"
+      ],
+      "digest": "sha256:3d4693f25f095d093bbed17c4b94ed8882a59efc1b9c078ac314ce6bc9a7f844",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-wp3j-xq48-xpjw",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/domain/infra/abi/play.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-generic-native.json:sha256:5a7cebc9f78f08a35e88338a4e9f8cf8cbf4e75ee417ce48ee67a6f328fa96c9",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-main-bluefin-next-ghsa-4hq8-gpf5-8p68-a36f46af",
+      "advisories": [
+        "CVE-2026-57231",
+        "GHSA-4hq8-gpf5-8p68"
+      ],
+      "digest": "sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-4hq8-gpf5-8p68",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/specgen/generate/container.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-next-native.json:sha256:81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-main-bluefin-next-ghsa-65gg-3w2w-hr4h-a36f46af",
+      "advisories": [
+        "CVE-2025-6032",
+        "GHSA-65gg-3w2w-hr4h"
+      ],
+      "digest": "sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-65gg-3w2w-hr4h",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/machine/ocipull/ociartifact.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-next-native.json:sha256:81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    },
+    {
+      "id": "podman-main-bluefin-next-ghsa-wp3j-xq48-xpjw-a36f46af",
+      "advisories": [
+        "CVE-2025-9566",
+        "GHSA-wp3j-xq48-xpjw"
+      ],
+      "digest": "sha256:a36f46afcc2a9b3a1707a10cb8c55fe7c7b3c08163e8745c3388bd26dbd8d6db",
+      "component": "pkg:golang/github.com/containers/podman/v5@v5.0.0-20260916000000-a3f3696233ba%2Bdirty",
+      "platform": "linux/amd64",
+      "locations": [
+        "/sysroot/ostree/repo/objects/25/54e4b926c29889e24a1a8b6a9ed7210b3ed07f6894dceda1fd3cafebec0a12.file",
+        "/sysroot/ostree/repo/objects/ae/63c8b865d537e55874dbb19851e88750d162c7f2f7f171a32d8b6297d5d62a.file",
+        "/sysroot/ostree/repo/objects/b5/fbce5322033e3ef4bd213469a251b67147c591ce89538fa8b8581784a3407c.file",
+        "/usr/bin/podman",
+        "/usr/libexec/podman/quadlet",
+        "/usr/libexec/podman/rootlessport"
+      ],
+      "disposition": "nonapplicable",
+      "reason": "False main-module version match: every current native location has the same SHA256, size and regular-file permissions as authenticated Fedora podman 5:5.8.7-1.fc44 reference payloads. The pinned upstream v5.8.7 source contains this fix; packaging Git emits a v5.0.0 pseudo-version plus dirty suffix. This exact digest/component/advisory/path proof covers no embedded modules, compiler issues or other advisories.",
+      "officialSources": [
+        "https://github.com/containers/podman/security/advisories/GHSA-wp3j-xq48-xpjw",
+        "https://koji.fedoraproject.org/koji/buildinfo?buildID=3103127",
+        "https://src.fedoraproject.org/rpms/podman/raw/4d5daf480eb219a34e6c4cb96818c3d1de6d80a5/f/podman.spec",
+        "https://github.com/containers/podman/blob/c593b672bf3db1173aebea565ebf1a724ea196dc/pkg/domain/infra/abi/play.go"
+      ],
+      "evidence": [
+        "docs/podman-signed-reference-2026-10-12.json#sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b",
+        "https://github.com/closure-labs/finite/actions/runs/38344754471#main-bluefin-next-native.json:sha256:81b96958374e90d5d3d287ba87c6a1f6bb6a88faddb0a274e100b62340e6cc4f",
+        "https://github.com/closure-labs/finite/actions/runs/38344182246#reference-evidence.json:sha256:0b2080f1dec9fd8b674e9896562cace49d3bbf0a38d5ad217daf197ed7caf31b"
+      ],
+      "reviewedBy": "great_cto security-officer / ownership_followup",
+      "reviewedAt": "2026-10-13T04:14:55Z",
+      "expiresAt": "2026-10-27T04:14:55Z"
+    }
+  ],
+  "proposalCount": 18,
+  "dispositionsGranted": [],
+  "policyEdited": false,
+  "newScanPerformed": false,
+  "newImagePullPerformed": false,
+  "fullLocalSbomParsingPerformed": false,
+  "releaseEligible": false,
+  "vulnerabilityClearance": "not-granted",
+  "limits": [
+    "All six candidates were independently checked; no old image proof was automatically transferred to a new digest.",
+    "The join uses authenticated extraction/SBOM-bound actual Syft file SHA evidence and newly authenticated reference bytes; it is not a fresh independent rootfs probe.",
+    "Native summary and policy-result hashes are verified locally; the full SBOM remains on hosted runners and its binding relies on the protected hosted extraction/compaction chain.",
+    "Only the three named Podman main-module version false positives are proposed; embedded dependencies/compiler/other findings and explicit source holds remain unchanged.",
+    "Diagnostic locally-built-unpublished exclusion, release freshness, signing and boot qualification remain enforced.",
+    "Each candidate also retains the same-profile original baseline native report/SBOM/configuration/result/extraction hashes; these historical bindings are not clearance authority for the new image."
+  ]
+}
