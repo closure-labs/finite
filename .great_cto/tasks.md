@@ -424,3 +424,10 @@ hold remain explicit. Release eligibility has not been established.
 - [x] Confirm production retry38486865970/2 passed development-Next qualification but promotion rejected a newer main revision after harness PR159 merged.
 - [x] Preserve exact qualification across proven documentation-only descendant revisions; retain rejection of changed release inputs, incomplete comparisons and channel drift. Add focused regression coverage.
 - [ ] Finish current-main publication38503750779 before merging the promotion fix; its unchanged workflow would otherwise reject another main advance. The prior failed run is retained as evidence, not bypassed.
+
+
+## Determinate workflow resource audit (2026-10-14)
+
+- [x] Audit all host Nix jobs and qualification guests; all host Nix callers already install the pinned Determinate action. Replace hard-coded concurrency with CPU/RAM/cgroup-aware budgets and verify effective settings without revealing configuration secrets.
+- [x] Enable measured parallel evaluation; preserve bounded per-builder CPU use, cache behavior, lightweight maintenance entry points and benchmark cache isolation. Size guest commands from the2-CPU/4-GiB VM rather than host hardware.
+- [ ] Validate the exact change on hosted runners, including actual installer settings and focused contracts. Keep publication gates and merge sequencing intact.

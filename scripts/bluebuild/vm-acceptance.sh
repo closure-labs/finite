@@ -87,6 +87,7 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 ssh-keygen -q -t ed25519 -N '' -f "$state/ssh-key"
 key=$(cat "$state/ssh-key.pub")
+nix_resources=$(base64 -w0 scripts/ci/nix-resources.py)
 diagnostics=$(base64 -w0 scripts/bluebuild/vm-diagnostics.sh)
 user_labels=$(base64 -w0 scripts/bluebuild/check-vm-user-labels.sh)
 home_contexts=$(base64 -w0 files/system/usr/libexec/finite/fix-home-selinux-contexts)
@@ -159,6 +160,7 @@ RequiredBy=sshd.service
 UNIT
 systemctl enable sshd finite-vm-user-labels.service
 mkdir -p /var/lib/finite-vm
+printf '%s' '$nix_resources' | base64 -d >/var/lib/finite-vm/nix-resources.py
 printf '%s' '$diagnostics' | base64 -d >/var/lib/finite-vm/diagnostics.sh
 cat >/etc/systemd/system/finite-vm-diagnostics.service <<'UNIT'
 [Unit]
@@ -358,6 +360,10 @@ jq -n --arg foundation "$(jq -r .foundation /usr/share/finite/profile.json)" \
 export XDG_RUNTIME_DIR="/run/user/$(id -u)"
 export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
 export FINITE_NIX_COMMAND=/nix/var/nix/profiles/default/bin/nix
+# Budget from the guest's CPUs/RAM, not the host runner. Preserve inherited config.
+export NIX_CONFIG="${NIX_CONFIG:-}
+$(python3 /var/lib/finite-vm/nix-resources.py --config)"
+python3 /var/lib/finite-vm/nix-resources.py --verify --nix "$FINITE_NIX_COMMAND"
 echo 'Checking the desktop user and shared Homebrew initialization'
 [[ $(id -u) == 1000 && $(id -g) == 1000 ]]
 sudo systemctl start brew-setup.service

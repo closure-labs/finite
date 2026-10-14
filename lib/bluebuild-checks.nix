@@ -82,6 +82,7 @@ in {
     python3 tests/ci/rclone-compatibility.py
     python3 tests/ci/nix-checks.py
     python3 tests/ci/toolchain.py
+    python3 tests/ci/nix-resources.py
     python3 tests/ci/delivery-policy.py
     python3 tests/ci/image-tools-benchmark.py
     python3 tests/ci/remediation-preflight.py
