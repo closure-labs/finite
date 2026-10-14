@@ -38,5 +38,21 @@ def export_logs(state, secret, destination):
         raise
 
 
+def snapshot_logs(state, secret, destination):
+    """Checkpoint complete redacted bytes atomically; never mutate active raw logs."""
+    if not secret:
+        raise ValueError('Cannot redact an empty VM key')
+    for path in state.rglob('*'):
+        if path.suffix not in ('.log', '.json') or not path.is_file() or path.is_symlink():
+            continue
+        content = path.read_bytes().replace(secret, b'[REDACTED]')
+        target = destination / path.relative_to(state)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        temporary = target.with_suffix(target.suffix + '.tmp')
+        temporary.write_bytes(content)
+        temporary.replace(target)
+
+
 if __name__ == '__main__':
-    export_logs(Path(sys.argv[1]), Path(sys.argv[2]).read_bytes().strip(), Path(sys.argv[3]))
+    operation = snapshot_logs if sys.argv[4:] == ['--snapshot'] else export_logs
+    operation(Path(sys.argv[1]), Path(sys.argv[2]).read_bytes().strip(), Path(sys.argv[3]))

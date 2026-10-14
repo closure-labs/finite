@@ -411,3 +411,9 @@ hold remain explicit. Release eligibility has not been established.
 - [x] Complete fresh standard rollout38467981855 at85a37e0c1b88 with repaired VM rejection matching and diagnostics. Redundant automatic run38467897021 cancelled; all security/signing/boot gates remain enforced.
 
 - [x] Standard rollout38467981855 passed all gates: fresh candidate3b3e867d6869, reviewed Critical desktop policy with zero blockers, protected signing, Secure Boot/encrypted-root/enforcing VM fresh install/signed upgrade/rollback, promotion and CI. Independent VM receipt validation and public finite/latest digest reads passed. Next/development qualification remains independent; Doppler backend pilot awaits owner workspace.
+
+## VM upgrade transfer supervision (2026-10-13)
+
+- [x] Inspect cancelled development-Next qualification115616213450: fresh installation passed; signed upgrade emitted no progress for24m34s before cancellation. Upgrade diagnostics were not retained, so root cause remains unknown.
+- [x] Add a30-minute host/guest upgrade deadline, minute-by-minute resource/I/O probes and sanitized incremental checkpoints that survive interrupted final cleanup. Focused timeout, failure, cancellation and redaction tests pass.
+- [ ] Run the improved upgrade harness against candidate3da12596aef2 and predecessor33e7b69d9c59 alongside original retry115641293003. Diagnostic evidence does not replace production qualification or promote channels.
