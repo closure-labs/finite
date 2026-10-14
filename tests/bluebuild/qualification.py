@@ -514,12 +514,20 @@ class IsoScope(unittest.TestCase):
                 retention.main()
             self.assertEqual(prune.call_count, 4)
 
-    def test_actual_predecessor_guard_excludes_other_channels_and_all_diagnostics(self):
+    def predecessor_guard(self, profile, selector, diagnostic, status=0):
         source = (ROOT / 'scripts/bluebuild/qualify.sh').read_text()
         guard = source.split('  reused=false\n', 1)[1].split('  if [[ $reused != true ]]; then', 1)[0]
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         directory = Path(temporary.name)
+        measure = directory / 'scripts/bluebuild/measure.py'
+        measure.parent.mkdir(parents=True)
+        shutil.copy2(ROOT / 'scripts/bluebuild/measure.py', measure)
+        binary = directory / 'bin'
+        binary.mkdir()
+        nix = binary / 'nix'
+        nix.write_text('#!' + shutil.which('bash') + '\ntouch "${FINITE_REUSE_TEST_MARKER:?}"\nexit "${FINITE_REUSE_TEST_STATUS:-0}"\n')
+        nix.chmod(0o755)
         script = directory / 'guard.sh'
         script.write_text('''#!/usr/bin/env bash
 set -euo pipefail
@@ -529,21 +537,75 @@ iso_dir=unused
 digest=unused
 reused=false
 iso_preservation_enabled=$(python3 "$2" --iso-preservation "$PROFILE")
-nix() { touch "${FINITE_REUSE_TEST_MARKER:?}"; }
-''' + guard)
+probe() {
+''' + guard + '\nprintf "%s\\n" "$reused"\n}\nprobe\n')
+        marker = directory / 'called'
+        env = dict(os.environ, **self.env(selector), FINITE_VALIDATION_ONLY=diagnostic,
+                   PROFILE=profile,
+                   FINITE_REUSE_TEST_MARKER=str(marker), FINITE_REUSE_TEST_STATUS=str(status),
+                   PATH=str(binary) + os.pathsep + os.environ['PATH'])
+        result = subprocess.run(['bash', str(script), profile, str(ROOT / 'scripts/ci/ci-options.py')],
+                                env=env, cwd=directory, capture_output=True, text=True)
+        timings = directory / '.bluebuild' / (profile + '-timings.jsonl')
+        records = [json.loads(line) for line in timings.read_text().splitlines()] if timings.exists() else []
+        return result, marker.exists(), records
+
+    def test_actual_predecessor_guard_excludes_other_channels_and_all_diagnostics(self):
         cases = [('bluefin-next', 'finite-next', 'false', True),
                  ('bluefin-generic', 'finite-next', 'false', False),
                  ('bluefin-dx-generic', 'finite-next', 'false', False),
                  ('bluefin-dx-next', 'finite-next', 'false', False),
                  ('bluefin-next', 'all', 'true', False)]
-        marker = directory / 'called'
         for profile, selector, diagnostic, expected in cases:
-            marker.unlink(missing_ok=True)
-            env = dict(os.environ, **self.env(selector), FINITE_VALIDATION_ONLY=diagnostic, FINITE_REUSE_TEST_MARKER=str(marker))
-            result = subprocess.run(['bash', str(script), profile, str(ROOT / 'scripts/ci/ci-options.py')],
-                                    env=env, capture_output=True, text=True)
+            result, called, records = self.predecessor_guard(profile, selector, diagnostic)
             self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertEqual(marker.exists(), expected, (profile, selector, diagnostic))
+            self.assertEqual(called, expected, (profile, selector, diagnostic))
+            self.assertEqual(bool(records), expected)
+
+    def test_measured_predecessor_reuse_preserves_success_miss_and_rejection(self):
+        for status, expected_exit, reused in [(0, 0, 'true'), (3, 0, 'false'), (2, 2, None)]:
+            with self.subTest(status=status):
+                result, called, records = self.predecessor_guard('bluefin-next', 'finite-next', 'false', status)
+                self.assertTrue(called)
+                self.assertEqual(result.returncode, expected_exit, result.stderr)
+                if reused is not None:
+                    self.assertEqual(result.stdout.strip(), reused)
+                self.assertEqual(len(records), 1)
+                self.assertEqual(records[0]['stage'], 'predecessor-iso-reuse')
+                self.assertEqual(records[0]['status'], status)
+                self.assertGreaterEqual(records[0]['seconds'], 0)
+
+
+class StageTelemetry(unittest.TestCase):
+    def test_outcome_retains_distinct_phase_timings_in_both_artifact_paths(self):
+        workflow = yaml.safe_load((ROOT / '.github/workflows/qualification.yml').read_text())
+        step = next(s for s in workflow['jobs']['phase']['steps'] if s.get('name') == 'Record phase outcome')
+        for job, name in [('phase', 'Save phase evidence'), ('aggregate', 'Save qualification evidence')]:
+            upload = next(s for s in workflow['jobs'][job]['steps'] if s.get('name') == name)
+            self.assertIn('.bluebuild/*-stages.jsonl', upload['with']['path'].splitlines())
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            evidence = directory / '.bluebuild'
+            evidence.mkdir()
+            records = {}
+            for phase, status in [('fresh', 0), ('upgrade', 3)]:
+                record = {'stage': 'iso-generation' if phase == 'fresh' else 'predecessor-iso-reuse',
+                          'seconds': 42, 'status': status}
+                records[phase] = record
+                (evidence / 'bluefin-next-timings.jsonl').write_text(json.dumps(record) + '\n')
+                env = dict(os.environ, PROFILE='bluefin-next', PHASE=phase, OUTCOME='success',
+                           GITHUB_STEP_SUMMARY=str(directory / 'summary'))
+                result = subprocess.run(['bash', '-e', '-c', step['run']], cwd=directory, env=env,
+                                        capture_output=True, text=True)
+                self.assertEqual(result.returncode, 0, result.stderr)
+            for phase, record in records.items():
+                retained = evidence / ('bluefin-next-' + phase + '-stages.jsonl')
+                self.assertEqual(json.loads(retained.read_text()), record)
+            (evidence / 'bluefin-next-timings.jsonl').unlink()
+            env['OUTCOME'] = 'failure'
+            result = subprocess.run(['bash', '-e', '-c', step['run']], cwd=directory, env=env,
+                                    capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
 
 
 class BootBudget(unittest.TestCase):

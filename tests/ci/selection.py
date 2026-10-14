@@ -22,14 +22,15 @@ class Selection(unittest.TestCase):
     def test_documentation_and_mixed_changes(self):
         self.assertEqual(impact.classify(['README.md', 'docs/installation.md']), {'checks': False, 'nix': False, 'profiles': []})
         for path in ['files/system/usr/share/finite/finite-logo.png',
-                     '.github/workflows/image.yml', '.github/actions/setup-nix/action.yml',
+                     '.github/workflows/image.yml',
                      'files/scripts/kernel-module-prune.py', 'new-image-input', 'docs-like/file',
                      'automation/security/vulnerability-policy.json', 'sources/bluefin.pub', 'sources/bluefin-trust.json']:
             with self.subTest(path=path):
                 self.assertEqual(impact.classify(['README.md', path]), {'checks': True, 'nix': False, 'profiles': sorted(impact.PROFILES)})
 
     def test_nix_inputs_use_dependency_comparison(self):
-        for path in ['VERSION', 'flake.lock', 'modules/outputs.nix', 'lib/image-payload.nix',
+        for path in ['VERSION', 'flake.lock', '.github/actions/setup-nix/action.yml',
+                     'modules/outputs.nix', 'lib/image-payload.nix',
                      'templates/home-manager/customize.nix', 'sources/kernel-next.json']:
             self.assertEqual(impact.classify([path]), {'checks': True, 'nix': True, 'profiles': []})
 

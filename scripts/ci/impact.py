@@ -22,6 +22,7 @@ QUALIFICATION_ONLY = {
     'scripts/bluebuild/prune-qualified-isos.py', 'scripts/bluebuild/reuse-predecessor-iso.py',
     'scripts/ci/inventory-evidence.py', 'scripts/ci/reuse-image-inventory.py',
     'scripts/ci/nix-cache.py', 'scripts/ci/cache-publish.py',
+    'scripts/ci/cache-sqlite.py',
     'scripts/ci/ci-options.py', 'sources/secretspec.json',
     'secretspec.toml', 'devenv.nix', 'devenv.yaml', 'devenv-tasks.nix',
     'scripts/ci/prune-ci-caches.py', 'scripts/ci/benchmark-ci-cache.py',
@@ -48,6 +49,7 @@ QUALIFICATION_ONLY = {
     'scripts/bluebuild/check-vm-desktop.py',
     'scripts/bluebuild/vm-acceptance.sh', 'scripts/bluebuild/qualify.sh',
     'scripts/bluebuild/vm-upgrade.py', 'scripts/bluebuild/redact-vm-logs.py',
+    'scripts/bluebuild/unlock-vm.py',
     'scripts/bluebuild/release-evidence.py', '.github/workflows/qualification.yml',
 }
 
@@ -82,6 +84,7 @@ def classify(paths):
         }:
             continue
         if path.startswith(('lib/', 'modules/', 'templates/')) or path in {
+            '.github/actions/setup-nix/action.yml',
             'flake.nix', 'flake.lock', 'VERSION', 'sources/determinate-nix.json', 'sources/kernel-next.json',
             'sources/kernel-policy.json', 'sources/fedora-45.pub',
         }:

@@ -134,7 +134,8 @@ class Toolchain(unittest.TestCase):
         source_cache = next(s for s in action['runs']['steps'] if s.get('id') == 'source-cache')
         self.assertIs(source_cache['with']['nix'], False)
         self.assertNotIn('/nix', source_cache['with']['paths'].splitlines())
-        self.assertIn("env.FINITE_OPTIMIZED_CACHES == 'true'", source_cache['if'])
+        self.assertIn("inputs.cache-mode == 'optimized'", source_cache['if'])
+        self.assertNotIn('FINITE_OPTIMIZED_CACHES', source_cache['if'])
 
     def test_gen_hub_locks_one_revision_per_library(self):
         hubs = []
