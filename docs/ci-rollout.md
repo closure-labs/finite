@@ -7,6 +7,14 @@ protected pull request and merge queue must also pass `CI gate` at their own
 revisions. The initial implementation, hosted fixes and measurements are recorded
 in [CI optimization review](ci-optimization-review.md).
 
+The October 14 protected-main rollout, corrected four-channel qualification,
+distinct-successor ISO roundtrip and scoped Cachix writer/reader pilot are now
+complete. [Measured results and the next plan](ci-rollout-results.md) record the
+receipts and final switches. Automatic small jobs skip Actions caches; next-only
+ISO preservation remains enabled. The automatic writer is disabled after its
+successful pilot because positive net runner-time savings remain unproven.
+The procedures below describe how to run another controlled stage.
+
 ## Initial main rollout
 
 After ship approval, use the merge queue. Configure only the measured small-job
