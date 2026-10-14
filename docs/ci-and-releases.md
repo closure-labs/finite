@@ -304,3 +304,19 @@ Bluefin base updates and candidate builds verify immutable base digests using
 requires review of both files. Explicit legacy Cosign image signatures match
 bootc's container-signature policy. See [security implementation](security-implementation.md)
 for deployment evidence and remaining upstream trust boundaries.
+
+
+## Main advancing during publication
+
+Promotion retains the exact qualified revision and digest. A newer main revision
+is acceptable only when GitHub proves it descends from that revision and the
+complete comparison changes only `README.md`, `CHANGELOG.md`, `.great_cto/tasks.md`
+or files under `docs/`. Renames check both paths; incomplete comparisons, unknown
+file statuses, divergent history and API failures cannot authorize promotion.
+The main reference is checked again after the comparison, and the public channel
+must still match the predecessor recorded before qualification.
+
+Image, signing, policy, workflow and VM harness changes still require qualification
+at the new revision. Sequence those merges after active publication finishes to
+avoid discarding completed work. In particular, a successful diagnostic run does
+not replace the production qualification record.
