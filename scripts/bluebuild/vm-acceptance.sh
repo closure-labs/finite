@@ -75,7 +75,7 @@ cleanup() {
   if [[ -n $pid ]]; then kill "$pid" 2>/dev/null || true; wait "$pid" 2>/dev/null || true; fi
   if [[ -n $log_pid ]]; then kill "$log_pid" 2>/dev/null || true; wait "$log_pid" 2>/dev/null || true; fi
   # Installer/journal diagnostics can include kickstart content on failure.
-  if ! python3 scripts/bluebuild/redact-vm-logs.py "$state" "$secrets/luks-key" "$evidence"; then
+  if ! python3 scripts/bluebuild/redact-vm-logs.py "$state" "$secrets/luks-key" "$evidence" --snapshot; then
     echo 'VM diagnostics could not be sanitized; withholding all VM artifacts.' >&2
     result=1
   fi
@@ -410,7 +410,8 @@ fi
 grep -Eqi 'invalid signature|no matching signatures|none of the signatures|signature verification failed|A signature was required, but no signature exists' "$work/rejection.log"
 GUEST
 echo 'Selecting the signed ongoing update channel'
-ssh "${ssh_args[@]}" sudo bootc switch --enforce-container-sigpolicy "$target"
+python3 scripts/bluebuild/vm-upgrade.py "$state" "$evidence" "$secrets/luks-key" \
+  "$target" ssh "${ssh_args[@]}"
 ssh "${ssh_args[@]}" sudo bootc status --json >"$state/staged.json"
 jq -e '.status.staged != null' "$state/staged.json" >/dev/null
 poweroff_vm

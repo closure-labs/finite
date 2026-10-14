@@ -101,6 +101,7 @@ in {
     python3 tests/bluebuild/initramfs.py
     python3 tests/bluebuild/vm-mok.py
     python3 tests/bluebuild/vm-signature-rejection.py
+    python3 tests/bluebuild/vm-upgrade.py
     python3 tests/bluebuild/installer.py
     python3 tests/bluebuild/provisioning.py
     python3 tests/bluebuild/security-policy.py
