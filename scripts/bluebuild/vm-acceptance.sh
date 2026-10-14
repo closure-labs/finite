@@ -6,6 +6,11 @@ set -euo pipefail
   exit 2
 }
 artifact=$(realpath "${1:?ISO artifact directory required}")
+monotonic_seconds() {
+  local uptime _
+  read -r uptime _ </proc/uptime
+  printf '%s\n' "${uptime%.*}"
+}
 phase_name="${3:-manual}"
 [[ $phase_name =~ ^(manual|fresh|upgrade)$ ]]
 evidence="$PWD/.bluebuild/vm-$phase_name"
@@ -13,13 +18,23 @@ evidence="$PWD/.bluebuild/vm-$phase_name"
 # the runner kills this process before cleanup can sanitize diagnostics.
 state=$(mktemp -d /tmp/finite-vm.XXXXXXXX)
 chmod 0700 "$state"
+record_duration() {
+  python3 - "$state/timings.json" "$1" "$2" <<'TIMING'
+import json, pathlib, sys
+path = pathlib.Path(sys.argv[1])
+value = json.loads(path.read_text()) if path.exists() else {'schema': 1, 'seconds': {}}
+value['seconds'][sys.argv[2]] = int(sys.argv[3])
+path.write_text(json.dumps(value, indent=2) + '\n')
+TIMING
+}
 trap 'rm -rf "$state"' EXIT
 rm -rf "$evidence"
 (cd "$artifact" && sha256sum -c SHA256SUMS)
 hook_sha=$(sha256sum files/installer/install_finite_fstab | cut -d' ' -f1)
-jq -e --slurpfile expected sources/bluebuild-installer.json --arg hash "$hook_sha" '
+jq -e --slurpfile expected sources/bluebuild-installer.json --slurpfile security sources/installer-security.json --arg hash "$hook_sha" '
   .installer.resolvedImage == ($expected[0].image + "@" + $expected[0].digest) and
-  .installer.postInstallHook.sha256 == $hash
+  .installer.postInstallHook.sha256 == $hash and
+  .installer.secureBootCertificateSha256 == $security[0].derSha256
 ' "$artifact/installation.json" >/dev/null || {
   echo 'Rebuild this ISO with the current locked installer before acceptance testing.' >&2
   exit 2
@@ -218,14 +233,15 @@ stream_console() {
 }
 # timeout also bounds Anaconda errors that leave the installer UI waiting.
 printf 'Starting unattended UEFI installation at %s (45-minute limit)\n' "$(date -u +%FT%TZ)"
+install_started=$(monotonic_seconds)
 timeout 45m qemu-system-x86_64 "${qemu_args[@]}" -boot d -cdrom "$state/install.iso" \
   -serial "file:$state/install.log" &
 pid=$!
 stream_console "$state/install.log"
 # Fail promptly if UEFI never reaches the kernel with our unattended arguments.
-boot_deadline=$((SECONDS + 180))
+boot_deadline=$(($(monotonic_seconds) + 180))
 until grep -qF 'inst.ks=cdrom:/ks.cfg' "$state/install.log"; do
-  if ! kill -0 "$pid" 2>/dev/null || ((SECONDS >= boot_deadline)); then
+  if ! kill -0 "$pid" 2>/dev/null || (($(monotonic_seconds) >= boot_deadline)); then
     echo 'Installer kernel did not report its unattended arguments within three minutes.' >&2
     exit 1
   fi
@@ -248,12 +264,15 @@ if ((install_status != 0)); then
   echo "Installer exited with status $install_status; see install.log (124 means timeout)." >&2
   exit "$install_status"
 fi
+record_duration installation "$(($(monotonic_seconds) - install_started))"
 printf 'Installer shut down at %s\n' "$(date -u +%FT%TZ)"
 rm "$state/install.iso"
 ssh_args=(-i "$state/ssh-key" -p 2222 -o BatchMode=yes -o StrictHostKeyChecking=no
   -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 finite-test@127.0.0.1)
 boot_vm() {
-  local phase=$1
+  local phase=$1 started deadline remaining attempt_budget sleep_budget
+  started=$(monotonic_seconds)
+  deadline=$((started + 600))
   local -a provisioning_args=()
   local check_security=false
   if [[ $phase == updated || ($phase == first-boot && $phase_name != upgrade) ]]; then
@@ -270,16 +289,24 @@ boot_vm() {
   python3 scripts/bluebuild/unlock-vm.py "$state/serial.sock" "$secrets/luks-key" \
     "$state/$phase.log" "$state/$phase-unlock.log" &
   log_pid=$!
-  for _ in {1..120}; do
+  while (($(monotonic_seconds) < deadline)); do
     if ! kill -0 "$pid" 2>/dev/null || ! kill -0 "$log_pid" 2>/dev/null; then
       echo "VM or disk unlock helper exited during $phase; see $state/$phase.log" >&2
+      return 1
+    fi
+    if grep -Eq 'Kernel panic - not syncing|dracut-initqueue.*Entering emergency mode|You are in emergency mode' "$state/$phase.log"; then
+      echo "Fatal boot failure during $phase; see $phase.log" >&2
       return 1
     fi
     if grep -qF 'Perform MOK management' "$state/$phase.log"; then
       echo "Unexpected interactive MOK enrollment during $phase; check firmware-certificate.log" >&2
       return 1
     fi
-    if ssh "${ssh_args[@]}" true 2>"$state/$phase-ssh.log"; then
+    remaining=$((deadline - $(monotonic_seconds)))
+    if ((remaining <= 0)); then break; fi
+    attempt_budget=$((remaining < 10 ? remaining : 10))
+    if timeout "${attempt_budget}s" ssh "${ssh_args[@]}" true 2>"$state/$phase-ssh.log"; then
+      record_duration "$phase-ssh-ready" "$(($(monotonic_seconds) - started))"
       test -s "$state/$phase-unlock.log"
       ssh "${ssh_args[@]}" sudo bash -s <scripts/bluebuild/check-vm-encryption.sh \
         >"$state/$phase-encryption.log"
@@ -311,9 +338,13 @@ running=$(uname -r)
 printf 'Running kernel: %s; image kernel: %s\n' "$running" "$expected"
 [[ $running == "$expected" ]]
 KERNEL
+      record_duration "$phase-boot-contracts" "$(($(monotonic_seconds) - started))"
       return
     fi
-    sleep 5
+    remaining=$((deadline - $(monotonic_seconds)))
+    if ((remaining <= 0)); then break; fi
+    sleep_budget=$((remaining < 5 ? remaining : 5))
+    sleep "$sleep_budget"
   done
   if grep -qF 'Permission denied' "$state/$phase-ssh.log"; then
     echo "SSH authentication rejected during $phase; see $phase-ssh.log and serial authentication diagnostics" >&2
@@ -325,7 +356,9 @@ KERNEL
 }
 poweroff_vm() {
   ssh "${ssh_args[@]}" sudo systemctl poweroff || true
-  for _ in {1..60}; do
+  local deadline
+  deadline=$(($(monotonic_seconds) + 120))
+  while (($(monotonic_seconds) < deadline)); do
     if ! kill -0 "$pid" 2>/dev/null; then
       wait "$pid"
       wait "$log_pid" || true
@@ -347,6 +380,7 @@ installed_digest=$(jq -er '.status.booted.image.imageDigest' "$state/first-boot.
 jq -e --arg installed "$installed_digest" --arg index "${source##*@}" \
   '$installed == $index or any(.manifests[]?; .digest == $installed)' \
   "$state/source-manifest.json" >/dev/null
+activation_started=$(monotonic_seconds)
 ssh "${ssh_args[@]}" bash -s -- "$profile" "$phase_name" <<'GUEST'
 set -euo pipefail
 echo 'Checking profile, SELinux and Nix daemon startup'
@@ -376,6 +410,7 @@ echo 'Building and activating the base Home Manager environment'
 /usr/libexec/finite/home-init --profile "$HOME/profile.json"
 printf '\n# VM acceptance customization\n' >>"$HOME/.config/home-manager/customize.nix"
 GUEST
+record_duration home-activation "$(($(monotonic_seconds) - activation_started))"
 if [[ -z $target ]]; then
   poweroff_vm
   jq -n --arg source "$source" --arg profile "$profile" \
@@ -416,10 +451,12 @@ fi
 grep -Eqi 'invalid signature|no matching signatures|none of the signatures|signature verification failed|A signature was required, but no signature exists' "$work/rejection.log"
 GUEST
 echo 'Selecting the signed ongoing update channel'
+upgrade_started=$(monotonic_seconds)
 python3 scripts/bluebuild/vm-upgrade.py "$state" "$evidence" "$secrets/luks-key" \
   "$target" ssh "${ssh_args[@]}"
 ssh "${ssh_args[@]}" sudo bootc status --json >"$state/staged.json"
 jq -e '.status.staged != null' "$state/staged.json" >/dev/null
+record_duration upgrade-staging "$(($(monotonic_seconds) - upgrade_started))"
 poweroff_vm
 boot_vm updated
 ssh "${ssh_args[@]}" sudo bootc status --json >"$state/updated.json"

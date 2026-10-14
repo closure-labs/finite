@@ -17,7 +17,6 @@
       inherit (inputs) den determinate devenv gen home-manager nix-flatpak nixpkgs nixpkgs-weekly;
     };
     treefmt = inputs.treefmt-nix.lib;
-    weeklySecretspec = homeDependencies.weeklyPackages.secretspec;
     inherit (homeDependencies) devenvPackage;
   };
 in {

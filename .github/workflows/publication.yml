@@ -20,6 +20,8 @@ on:
     secrets:
       COSIGN_PRIVATE_KEY:
         required: true
+      COSIGN_PASSWORD:
+        required: false
 permissions:
   contents: read
   packages: write
@@ -104,6 +106,16 @@ jobs:
             3) echo 'Reusable evidence unavailable or expired; scanning the same candidate.' ;;
             *) exit "$status" ;;
           esac
+      - name: Restore scanner database transport cache
+        if: env.FINITE_GRYPE_DB_CACHE == 'true' && steps.reuse.outputs.reused != 'true'
+        uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
+        with:
+          primary-key: grype-db-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-prefixes-first-match: grype-db-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock') }}-
+          nix: false
+          save: true
+          paths: ~/.cache/grype/db
+
       - name: Make room for the immutable image inventory
         if: steps.reuse.outputs.reused != 'true'
         uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
@@ -112,6 +124,9 @@ jobs:
       - name: Scan exact candidate and enforce image security policy
         id: scan
         env:
+          GH_TOKEN: ${{ github.token }}
+          FINITE_REUSE_INVENTORY: ${{ env.FINITE_REUSE_INVENTORY }}
+          FINITE_INVENTORY_ORIGIN_RUN: ${{ inputs.resume_run }}
           REUSED_SECURITY: ${{ steps.reuse.outputs.reused }}
         run: |
           if [[ $REUSED_SECURITY != true ]]; then
@@ -145,19 +160,39 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          sparse-checkout: cosign.pub
+          sparse-checkout: |
+            cosign.pub
+            secretspec.toml
+            flake.lock
+            .github/actions/setup-nix/
+            lib/
+            scripts/ci/nix-resources.py
+            scripts/ci/nix-cache.py
+            scripts/ci/ci-options.py
+            sources/secretspec.json
           sparse-checkout-cone-mode: false
       - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
         with:
           cosign-release: v3.1.3
+      - uses: ./.github/actions/setup-nix
+        with:
+          cache-mode: none
+      - name: Prepare pinned scoped credential resolver
+        # The resolver path is realized from trusted main before keys are supplied.
+        run: | # zizmor: ignore[github-env]
+          resolver=$(nix build --file lib/ci-tools.nix ci-secrets-run --no-link --print-out-paths)
+          [[ $resolver =~ ^/nix/store/[a-z0-9]{32}-finite-ci-secrets-run$ ]]
+          echo "$resolver/bin" >>"$GITHUB_PATH"
       - name: Sign the independently scanned immutable digest
         env:
           CANDIDATE_DIGEST: ${{ needs.security.outputs.digest }}
           COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
           REGISTRY_TOKEN: ${{ github.token }}
           REGISTRY_USER: ${{ github.actor }}
           GH_TOKEN: ${{ github.token }}
         run: |
+          finite-ci-secrets-run image-signing -- bash <<'SIGN_IMAGE'
           set -euo pipefail
           set +x
           [[ -n ${COSIGN_PRIVATE_KEY:-} ]] || { echo 'Image-signing key is unavailable' >&2; exit 1; }
@@ -177,12 +212,38 @@ jobs:
           printf '%s' "$REGISTRY_TOKEN" | docker login --username "$REGISTRY_USER" --password-stdin ghcr.io
           cosign sign --yes --new-bundle-format=false --use-signing-config=false --key env://COSIGN_PRIVATE_KEY "$image"
           cosign verify --new-bundle-format=false --key cosign.pub "$image"
+          SIGN_IMAGE
+
+  preflight:
+    needs: [build, sign]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: read
+      actions: read
+    env:
+      PROFILE: ${{ inputs.profile }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+      - name: Reject obsolete publication before VM work
+        env:
+          GH_TOKEN: ${{ github.token }}
+          IMAGE_ARTIFACT: ${{ needs.build.outputs.evidence }}
+        run: |
+          gh run download "$GITHUB_RUN_ID" --name "$IMAGE_ARTIFACT" --dir .bluebuild
+          nix develop --file lib/ci-tools.nix shell --command python3 scripts/bluebuild/publication-current.py \
+            --record ".bluebuild/$PROFILE-publication.json"
 
   qualification:
-    needs: [build, sign]
+    needs: [build, sign, preflight]
     permissions:
       contents: read
       packages: write
+      actions: read
     uses: ./.github/workflows/qualification.yml
     with:
       profile: ${{ inputs.profile }}
@@ -191,6 +252,7 @@ jobs:
       previous: ${{ needs.build.outputs.previous }}
       identity: ${{ needs.build.outputs.identity }}
       source_revision: ${{ needs.build.outputs.source_revision }}
+      force_qualification: ${{ inputs.force_qualification }}
 
   promote:
     needs: [build, security, sign, qualification]

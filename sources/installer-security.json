@@ -1,0 +1,6 @@
+{
+  "schema": 1,
+  "certificate": "files/installer/secure-boot.pem",
+  "derSha256": "4e5c68474cb133fd8984d9599762cece9100c3e6cd8a9709aeaabd85dd9e70d1",
+  "source": "https://github.com/ublue-os/bazzite/blob/bd3ae008d5213861cb37d849f576c4a1fd3dfd75/secure_boot.der"
+}

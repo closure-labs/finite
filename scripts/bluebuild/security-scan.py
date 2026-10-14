@@ -10,6 +10,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import time
 
 spec = importlib.util.spec_from_file_location('security_policy', Path(__file__).with_name('security-policy.py'))
 policy_module = importlib.util.module_from_spec(spec)
@@ -20,12 +21,42 @@ baseline_module = importlib.util.module_from_spec(baseline_spec)
 baseline_spec.loader.exec_module(baseline_module)
 
 
+inventory_spec = importlib.util.spec_from_file_location('inventory_evidence',
+    Path(__file__).resolve().parents[1] / 'ci/inventory-evidence.py')
+inventory_module = importlib.util.module_from_spec(inventory_spec)
+exec(compile(Path(inventory_spec.origin).read_bytes(), inventory_spec.origin, 'exec'), inventory_module.__dict__)
+PHASES = []
+
+
 def run(args, output=None):
-    if output:
-        with output.open('w') as stream:
-            subprocess.run(args, stdout=stream, check=True, timeout=1800)
+    tool = Path(args[0]).name
+    if tool == 'skopeo':
+        phase = 'image-transfer'
+    elif tool == 'umoci':
+        phase = 'rootfs-extraction'
+    elif tool == 'syft':
+        phase = 'inventory-cataloging'
+    elif tool == 'grype':
+        phase = 'database-update' if args[1:3] == ['db', 'update'] else (
+            'database-coverage' if args[1:3] == ['db', 'search'] else 'vulnerability-scan')
     else:
-        subprocess.run(args, check=True, timeout=1800)
+        phase = Path(args[1]).stem if len(args) > 1 else tool
+    started = time.monotonic()
+    passed = False
+    try:
+        if output:
+            with output.open('w') as stream:
+                subprocess.run(args, stdout=stream, check=True, timeout=1800)
+        else:
+            subprocess.run(args, check=True, timeout=1800)
+        passed = True
+    finally:
+        PHASES.append({'phase': phase, 'seconds': round(time.monotonic() - started, 3), 'success': passed})
+
+
+def write_timings(directory, reused):
+    (directory / 'phase-timings.json').write_text(json.dumps(
+        {'schema': 1, 'inventoryReused': reused, 'phases': PHASES}, indent=2) + '\n')
 
 
 def candidate_identity(inspected, image, profile, identity, source_revision):
@@ -230,12 +261,15 @@ def main():
     parser.add_argument('--identity')
     parser.add_argument('--source-revision')
     parser.add_argument('--upstream-receipt', type=Path)
+    parser.add_argument('--inventory-dir', type=Path, help='Authenticated inventory-only output from reuse-image-inventory.py')
     args = parser.parse_args()
     try:
         directory = output_directory(args.directory)
     except ValueError as error:
         parser.error(str(error))
     directory.mkdir(parents=True, exist_ok=False)
+    PHASES.clear()
+    reused_inventory = False
     try:
         if not policy_module.IMAGE.fullmatch(args.image):
             raise ValueError('Security scan requires an immutable Finite image')
@@ -261,55 +295,72 @@ def main():
                 receipt = (baseline_module.read(args.upstream_receipt)[0] if args.upstream_receipt
                            else baseline_module.authenticate(inspected))
                 baseline = baseline_module.context(inspected, args.image, receipt)
-        # Stereoscope's registry materialization exceeded the hosted memory
-        # cap before cataloging this OS image. Stream layers to disk serially,
-        # preserving the signed manifest, then inventory the local OCI image.
-        with tempfile.TemporaryDirectory(prefix='finite-security-image-') as temporary:
-            temporary = Path(temporary)
-            digest_file = temporary / 'image.digest'
-            run(['skopeo', '--command-timeout', '1800s', 'copy', '--all', '--preserve-digests', '--src-no-creds',
-                 '--image-parallel-copies', '1', '--retry-times', '3', '--digestfile', str(digest_file),
-                 'docker://' + args.image, 'oci:' + str(temporary / 'image') + ':audit'])
-            if digest_file.read_text().strip() != args.image.split('@')[1]:
-                raise ValueError('Local OCI inventory source changed the requested image digest')
-            manifests = prepare_layout(temporary / 'image', args.image, directory)
-            if risk_mode:
-                bound = baseline_module.context(json.loads(manifests['config']), args.image, receipt)
-                if bound != baseline:
-                    raise ValueError('Materialized configuration differs from inspected approved baseline')
-                (directory / 'approved-baseline.json').write_text(json.dumps(bound, indent=2) + '\n')
-                (directory / 'upstream-verification.json').write_text(json.dumps(receipt, indent=2) + '\n')
-            # Extract without executing image code. Stereoscope retains a
-            # cumulative in-memory tree per layer, exceeding 10 GiB for this OS.
-            # Rootless extraction preserves package bytes, not runtime ownership.
-            version = subprocess.check_output(['umoci', '--version'], text=True, timeout=30).strip()
-            rootfs = temporary / 'bundle/rootfs'
-            run(['umoci', 'unpack', '--rootless', '--image', str(temporary / 'image') + ':audit',
-                 str(temporary / 'bundle')])
-            run(['syft', 'dir:' + str(rootfs), '--base-path', str(rootfs),
-                 '--override-default-catalogers', 'image', '-o',
-                 'syft-json=' + str(directory / 'sbom.syft.json'),
-                 '-o', 'spdx-json=' + str(directory / 'sbom.spdx.json')])
-            if risk_mode:
-                run(['python3', str(policy_module.ROOT / 'scripts/ci/rpm-file-evidence.py'),
-                     '--rootfs', str(rootfs), '--sbom', str(directory / 'sbom.syft.json'),
-                     '--image', args.image, '--output', str(directory / 'rpm-file-evidence.json')])
-                # Collect positive file/platform evidence while the authenticated
-                # rootfs already exists. Current catalog paths select probes;
-                # this diagnostic never changes the policy or grants clearance.
-                run(['python3', str(policy_module.ROOT / 'scripts/ci/applicability-evidence.py'),
-                     '--rootfs', str(rootfs), '--manifest-dir', str(directory), '--image', args.image,
-                     '--profile', bound['profile'], '--revision', bound['sourceRevision'],
-                     '--identity', bound['buildIdentity'],
-                     '--sbom', str(directory / 'sbom.syft.json'),
-                     '--output', str(directory / 'applicability-evidence.json')])
-            extraction = {'schema': 1, 'method': 'umoci-rootless', 'toolVersion': version,
-                          'signedDigest': args.image.split('@')[1],
-                          'scannedManifestDigest': policy_module.manifest_binding(args.image, manifests),
-                          'sourcePath': str(rootfs), 'basePath': str(rootfs), 'catalogers': 'image',
-                          'sbomSha256': policy_module.file_sha256(directory / 'sbom.syft.json')}
-            (directory / 'extraction.json').write_text(json.dumps(extraction, indent=2) + '\n')
+        if args.inventory_dir:
+            origin = inventory_module.read(args.inventory_dir / 'inventory-origin.json')
+            if (origin.get('schema') != 1 or origin.get('status') != 'authenticated-inventory-only'
+                    or origin.get('image') != args.image or origin.get('newScanRequired') is not True
+                    or origin.get('validationRevision') != os.environ.get('GITHUB_SHA')):
+                raise ValueError('Inventory was not authenticated for this hosted consumer')
+            identity = inventory_module.verify(args.inventory_dir, args.image, policy_module, risk_mode)
+            inventory_module.copy(args.inventory_dir, directory, identity)
             manifests = policy_module.read_manifests(directory)
+            reused_inventory = True
+        else:
+            # Stereoscope's registry materialization exceeded the hosted memory
+            # cap before cataloging this OS image. Stream layers to disk serially,
+            # preserving the signed manifest, then inventory the local OCI image.
+            with tempfile.TemporaryDirectory(prefix='finite-security-image-') as temporary:
+                temporary = Path(temporary)
+                digest_file = temporary / 'image.digest'
+                run(['skopeo', '--command-timeout', '1800s', 'copy', '--all', '--preserve-digests', '--src-no-creds',
+                     '--image-parallel-copies', '1', '--retry-times', '3', '--digestfile', str(digest_file),
+                     'docker://' + args.image, 'oci:' + str(temporary / 'image') + ':audit'])
+                if digest_file.read_text().strip() != args.image.split('@')[1]:
+                    raise ValueError('Local OCI inventory source changed the requested image digest')
+                manifests = prepare_layout(temporary / 'image', args.image, directory)
+                if risk_mode:
+                    bound = baseline_module.context(json.loads(manifests['config']), args.image, receipt)
+                    if bound != baseline:
+                        raise ValueError('Materialized configuration differs from inspected approved baseline')
+                # Extract without executing image code. Stereoscope retains a
+                # cumulative in-memory tree per layer, exceeding 10 GiB for this OS.
+                # Rootless extraction preserves package bytes, not runtime ownership.
+                version = subprocess.check_output(['umoci', '--version'], text=True, timeout=30).strip()
+                rootfs = temporary / 'bundle/rootfs'
+                run(['umoci', 'unpack', '--rootless', '--image', str(temporary / 'image') + ':audit',
+                     str(temporary / 'bundle')])
+                run(['syft', 'dir:' + str(rootfs), '--base-path', str(rootfs),
+                     '--override-default-catalogers', 'image', '-o',
+                     'syft-json=' + str(directory / 'sbom.syft.json'),
+                     '-o', 'spdx-json=' + str(directory / 'sbom.spdx.json')])
+                if risk_mode:
+                    run(['python3', str(policy_module.ROOT / 'scripts/ci/rpm-file-evidence.py'),
+                         '--rootfs', str(rootfs), '--sbom', str(directory / 'sbom.syft.json'),
+                         '--image', args.image, '--output', str(directory / 'rpm-file-evidence.json')])
+                    # Collect positive file/platform evidence while the authenticated
+                    # rootfs already exists. Current catalog paths select probes;
+                    # this diagnostic never changes the policy or grants clearance.
+                    run(['python3', str(policy_module.ROOT / 'scripts/ci/applicability-evidence.py'),
+                         '--rootfs', str(rootfs), '--manifest-dir', str(directory), '--image', args.image,
+                         '--profile', bound['profile'], '--revision', bound['sourceRevision'],
+                         '--identity', bound['buildIdentity'],
+                         '--sbom', str(directory / 'sbom.syft.json'),
+                         '--output', str(directory / 'applicability-evidence.json')])
+                extraction = {'schema': 1, 'method': 'umoci-rootless', 'toolVersion': version,
+                              'signedDigest': args.image.split('@')[1],
+                              'scannedManifestDigest': policy_module.manifest_binding(args.image, manifests),
+                              'sourcePath': str(rootfs), 'basePath': str(rootfs), 'catalogers': 'image',
+                              'sbomSha256': policy_module.file_sha256(directory / 'sbom.syft.json')}
+                (directory / 'extraction.json').write_text(json.dumps(extraction, indent=2) + '\n')
+                manifests = policy_module.read_manifests(directory)
+                inventory_module.write(directory, args.image,
+                    policy_module.manifest_binding(args.image, manifests), risk_mode)
+        if risk_mode:
+            bound = baseline_module.context(json.loads(manifests['config']), args.image, receipt)
+            if bound != baseline:
+                raise ValueError('Materialized configuration differs from inspected approved baseline')
+            (directory / 'approved-baseline.json').write_text(json.dumps(bound, indent=2) + '\n')
+            (directory / 'upstream-verification.json').write_text(json.dumps(receipt, indent=2) + '\n')
         policy = policy_module.load_policy(policy_module.ROOT / 'automation/security/image-policy.json')
         sbom = json.loads((directory / 'sbom.syft.json').read_text())
         coverage = policy_module.inventory(sbom, args.image, policy, manifests)
@@ -317,6 +368,9 @@ def main():
         # Explicit update failures are fatal; never silently fall back to an old
         # DB. Policy separately validates both build age and provider freshness.
         run(['grype', 'db', 'update'])
+        # Freeze this refreshed database for coverage and findings so both use
+        # the same provider snapshot; update failures above remain fatal.
+        os.environ['GRYPE_DB_AUTO_UPDATE'] = 'false'
         run(['grype', 'db', 'search', '--distro', coverage['effective'], '--ecosystem', 'rpm',
              '--pkg', policy['coverageProbePackage'], '-o', 'json'], directory / 'database-coverage.json')
         run(['grype', 'sbom:' + str(directory / 'sbom.syft.json'),
@@ -325,10 +379,16 @@ def main():
     except (ValueError, KeyError, TypeError, OSError, subprocess.SubprocessError) as error:
         (directory / 'security-result.json').write_text(json.dumps(
             {'schema': 1, 'status': 'scanner-error', 'image': args.image, 'error': str(error)}, indent=2) + '\n')
+        write_timings(directory, reused_inventory)
         print('Image security scan failed: ' + str(error), file=sys.stderr)
         raise SystemExit(2)
-    raise SystemExit(subprocess.call(['python3', str(Path(__file__).with_name('security-policy.py')),
-                                     str(directory), args.image]))
+    started = time.monotonic()
+    status = subprocess.call(['python3', str(Path(__file__).with_name('security-policy.py')),
+                              str(directory), args.image])
+    PHASES.append({'phase': 'policy-evaluation', 'seconds': round(time.monotonic() - started, 3),
+                   'success': status == 0})
+    write_timings(directory, reused_inventory)
+    raise SystemExit(status)
 
 
 if __name__ == '__main__':

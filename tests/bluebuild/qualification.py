@@ -1,0 +1,477 @@
+#!/usr/bin/env python3
+"""Parallel-phase evidence aggregation and authenticated exact reuse fixtures."""
+import copy
+from datetime import datetime, timedelta, timezone
+import hashlib
+import importlib.util
+import io
+import json
+import os
+from pathlib import Path
+import tempfile
+import subprocess
+import unittest
+import warnings
+import zipfile
+import yaml
+from unittest.mock import patch
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def module(name, file):
+    spec = importlib.util.spec_from_file_location(name, ROOT / 'scripts/bluebuild' / file)
+    value = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(value)
+    return value
+
+
+q = module('qualification_test_context', 'qualification-context.py')
+r = module('qualification_test_reuse', 'reuse-qualification.py')
+release = module('qualification_test_release', 'release-evidence.py')
+predecessor = module('qualification_test_predecessor', 'reuse-predecessor-iso.py')
+preflight = module('qualification_test_preflight', 'qualification-preflight.py')
+
+
+class Qualification(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.directory = Path(self.temporary.name)
+        self.profile = 'bluefin-generic'
+        self.manifest = '{"schemaVersion":2,"manifests":[{"digest":"sha256:' + 'b' * 64 + '"}]}'
+        self.candidate = 'ghcr.io/closure-labs/finite@sha256:' + hashlib.sha256(self.manifest.encode()).hexdigest()
+        self.previous = 'sha256:' + 'e' * 64
+        self.source = 'c' * 40
+        self.build = 'v1:' + 'd' * 64
+        self.revision = 'f' * 40
+        self.context = {'schema': 1, 'platform': 'linux/amd64', 'firmware': {'code': 'a' * 64},
+                        'inputs': {'installer': 'b' * 64}, 'packages': 'qemu=1'}
+        self.installer = {'finiteRevision': self.revision, 'resolvedImage': 'locked',
+                          'secureBootCertificateSha256': 'a' * 64}
+        self.observation = q.desktop.guest.observations('Enforcing', '1', '',
+            'system_u:system_r:init_t:s0 1 systemd\nsystem_u:system_r:sshd_t:s0 22 sshd',
+            'tcp LISTEN 0 128 0.0.0.0:22 0.0.0.0:* users:(("sshd",pid=22,fd=3))', self.profile)
+        self.write_phase('fresh')
+
+    def write_phase(self, phase):
+        base = self.directory / ('vm-' + phase)
+        base.mkdir()
+        fresh = phase == 'fresh'
+        boot, manifest = ('first-boot', 'source') if fresh else ('updated', 'target')
+        (base / (manifest + '-manifest.json')).write_text(self.manifest)
+        (base / (boot + '.json')).write_text(json.dumps({'status': {'booted': {'image': {'imageDigest': 'sha256:' + 'b' * 64}}}}))
+        (base / (boot + '-desktop.json')).write_text(json.dumps(self.observation))
+        value = {'source': self.candidate if fresh else 'ghcr.io/closure-labs/finite@' + self.previous,
+                 'profile': self.profile, 'accepted': True, 'secureBoot': True, 'encryptedRoot': True}
+        if not fresh:
+            value['target'] = self.candidate
+        (base / 'acceptance.json').write_text(json.dumps(value))
+        iso = self.directory / ('iso-candidate' if fresh else 'iso-predecessor')
+        iso.mkdir()
+        (iso / ('finite-' + self.profile + '.iso')).write_bytes(b'pristine fixture ISO' if fresh else b'predecessor ISO')
+        (iso / 'installation.json').write_text(json.dumps({'image': value['source'], 'profile': self.profile, 'installer': self.installer,
+            'updateChannel': 'ghcr.io/closure-labs/finite:finite', 'installationTag': 'ghcr.io/closure-labs/finite:i' + '1' * 16}))
+        (self.directory / (phase + '-qualification-context.json')).write_text(json.dumps(self.context))
+        iso_name = 'finite-' + self.profile + '.iso'
+        (iso / 'SHA256SUMS').write_text(q.sha(iso / iso_name) + '  ' + iso_name + '\n'
+            + q.sha(iso / 'installation.json') + '  installation.json\n')
+        q.bind_phase(self.directory, phase)
+
+    def aggregate(self, previous=''):
+        return q.aggregate(self.directory, self.profile, self.candidate, previous, self.source, self.build, self.revision)
+
+    def validate(self, acceptance=None, **overrides):
+        if acceptance:
+            (self.directory / (self.profile + '-acceptance.json')).write_text(json.dumps(acceptance))
+        args = dict(directory=self.directory, profile=self.profile, candidate=self.candidate, previous='',
+                    source=self.source, build_identity=self.build, context=self.context)
+        args.update(overrides)
+        return r.validate(**args)
+
+    def test_diagnostic_receipt_is_marked_and_cannot_be_reused_for_publication_or_iso(self):
+        with patch.dict(os.environ, FINITE_VALIDATION_ONLY='true'):
+            q.bind_phase(self.directory, 'fresh')
+            value = self.aggregate()
+        self.assertTrue(value['validationOnly'])
+        self.assertNotIn('qualifiedIsoOrigin', value)
+        with self.assertRaisesRegex(ValueError, 'diagnostic mode'):
+            self.aggregate()
+        with self.assertRaisesRegex(ValueError, 'Diagnostic qualification'):
+            self.validate()
+        value['qualificationReuse'] = {'run': 123}
+        with self.assertRaisesRegex(ValueError, 'Diagnostic qualification'):
+            r.verify_reused_acceptance(value)
+        with self.assertRaisesRegex(ValueError, 'Diagnostic qualification'):
+            predecessor.compatible(self.directory, self.profile, self.candidate.split('@')[1], self.context['inputs'])
+        with self.assertRaisesRegex(ValueError, 'Diagnostic qualification'):
+            release.validate_evidence({}, value, {}, 'finite', self.revision)
+
+    def test_bootstrap_and_both_phases_aggregate_complete_desktop_evidence(self):
+        bootstrap = self.aggregate()
+        self.assertTrue(bootstrap['bootstrap'])
+        self.assertEqual(bootstrap['qualifiedIso']['sha256'], hashlib.sha256(b'pristine fixture ISO').hexdigest())
+        q.desktop.verify(self.directory, bootstrap)
+        self.write_phase('upgrade')
+        result = self.aggregate(self.previous)
+        self.assertFalse(result['bootstrap'])
+        self.assertEqual(result['previousDigest'], self.previous)
+        receipt = json.loads(q.desktop.verify(self.directory, result).read_text())
+        self.assertEqual(list(receipt['phases']), ['fresh', 'upgrade'])
+
+    def test_upgrade_required_and_failed_or_other_candidate_never_aggregates(self):
+        with self.assertRaises(ValueError):
+            self.aggregate(self.previous)
+        self.write_phase('upgrade')
+        path = self.directory / 'vm-upgrade/acceptance.json'
+        original = json.loads(path.read_text())
+        for key, value in [('accepted', False), ('encryptedRoot', False), ('secureBoot', False),
+                           ('target', 'ghcr.io/closure-labs/finite@sha256:' + '0' * 64), ('profile', 'bluefin-next')]:
+            path.write_text(json.dumps({**original, key: value}))
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                self.aggregate(self.previous)
+
+    def test_different_runner_context_or_iso_metadata_fails(self):
+        self.write_phase('upgrade')
+        path = self.directory / 'vm-upgrade/acceptance.json'
+        original = json.loads(path.read_text())
+        changed = copy.deepcopy(original)
+        changed['qualificationContext']['firmware']['code'] = '0' * 64
+        changed['qualificationContextSha256'] = q.identity(changed['qualificationContext'])
+        path.write_text(json.dumps(changed))
+        with self.assertRaisesRegex(ValueError, 'different firmware'):
+            self.aggregate(self.previous)
+        path.write_text(json.dumps(original))
+        iso_path = self.directory / 'iso-candidate/installation.json'
+        iso_path.write_text(iso_path.read_text() + '\n')
+        with self.assertRaisesRegex(ValueError, 'metadata differs'):
+            self.aggregate(self.previous)
+
+    def test_reuse_exact_and_age_boundary_does_not_refresh_original_timestamp(self):
+        value = self.aggregate()
+        original = value['qualifiedAt']
+        self.assertEqual(self.validate()['qualifiedAt'], original)
+        timestamp = datetime.fromisoformat(original)
+        self.validate(now=timestamp + timedelta(hours=24))
+        with self.assertRaises(r.Unavailable):
+            self.validate(now=timestamp + timedelta(hours=24, seconds=1))
+        with self.assertRaisesRegex(ValueError, 'future'):
+            self.validate(now=timestamp - timedelta(seconds=1))
+
+    def test_context_candidate_predecessor_and_legacy_changes_require_fresh_tests(self):
+        value = self.aggregate()
+        for changes in ({'candidate': 'different'}, {'previous': self.previous}, {'profile': 'bluefin-next'},
+                        {'source': '0' * 40}, {'build_identity': 'v1:' + '0' * 64},
+                        {'context': {**self.context, 'platform': 'linux/arm64'}}):
+            # Keep the evidence filename stable for the profile mismatch fixture.
+            if 'profile' in changes:
+                continue
+            with self.subTest(changes=changes), self.assertRaises(r.Unavailable):
+                self.validate(**changes)
+        for field in ('qualifiedIso', 'qualificationContextSha256', 'qualifiedAt'):
+            legacy = copy.deepcopy(value)
+            legacy.pop(field)
+            with self.subTest(field=field), self.assertRaises(r.Unavailable):
+                self.validate(legacy)
+
+    def test_hash_or_desktop_tampering_never_reuses(self):
+        value = self.aggregate()
+        value['qualificationContextSha256'] = '0' * 64
+        with self.assertRaises(ValueError):
+            self.validate(value)
+        value = self.aggregate()
+        path = self.directory / (self.profile + '-desktop-acceptance.json')
+        path.write_text(path.read_text() + ' ')
+        with self.assertRaisesRegex(ValueError, 'hash mismatch'):
+            self.validate()
+
+    def test_final_reuse_gate_rechecks_queue_age_and_current_tests(self):
+        value = self.aggregate()
+        value['qualificationReuse'] = {'run': 123}
+        stamp = datetime.fromisoformat(value['qualifiedAt'])
+        with patch.object(r.qualification, 'source_inputs', return_value=self.context['inputs']):
+            r.verify_reused_acceptance(value, now=stamp + timedelta(hours=23))
+            with self.assertRaises(r.Unavailable):
+                r.verify_reused_acceptance(value, now=stamp + timedelta(hours=25))
+        with patch.object(r.qualification, 'source_inputs', return_value=self.context['inputs']), \
+                patch.object(r.qualification, 'validate_certificate', side_effect=subprocess.CalledProcessError(1, ['openssl'])):
+            with self.assertRaises(subprocess.CalledProcessError):
+                r.verify_reused_acceptance(value, now=stamp)
+        with patch.object(r.qualification, 'source_inputs', return_value={'installer': 'changed'}):
+            with self.assertRaisesRegex(ValueError, 'current installer/test'):
+                r.verify_reused_acceptance(value, now=stamp)
+
+    def test_predecessor_uses_same_image_and_generation_even_after_qualification_expiry(self):
+        value = self.aggregate()
+        value['qualifiedAt'] = (datetime.now(timezone.utc) - timedelta(days=3)).isoformat()
+        (self.directory / (self.profile + '-acceptance.json')).write_text(json.dumps(value))
+        self.assertEqual(predecessor.compatible(self.directory, self.profile, self.candidate.split('@')[1],
+                         self.context['inputs'])['qualifiedAt'], value['qualifiedAt'])
+        for digest, inputs in [('sha256:' + '0' * 64, self.context['inputs']),
+                              (self.candidate.split('@')[1], {'installer': 'changed'})]:
+            with self.assertRaises(predecessor.reuse.Unavailable):
+                predecessor.compatible(self.directory, self.profile, digest, inputs)
+        value['qualificationContextSha256'] = '0' * 64
+        (self.directory / (self.profile + '-acceptance.json')).write_text(json.dumps(value))
+        with self.assertRaises(ValueError):
+            predecessor.compatible(self.directory, self.profile, self.candidate.split('@')[1], self.context['inputs'])
+
+    def archive(self, extra=None):
+        self.aggregate()
+        stream = io.BytesIO()
+        with warnings.catch_warnings(), zipfile.ZipFile(stream, 'w') as zipped:
+            warnings.simplefilter('ignore', UserWarning)
+            for name in (self.profile + '-acceptance.json', self.profile + '-desktop-acceptance.json'):
+                zipped.writestr(name, (self.directory / name).read_bytes())
+            if extra:
+                zipped.writestr(*extra)
+        data = stream.getvalue()
+        return data, {'digest': 'sha256:' + hashlib.sha256(data).hexdigest(), 'size_in_bytes': len(data)}
+
+    def test_archive_authentication_and_bounded_fixed_names(self):
+        data, artifact = self.archive(('../../outside', 'never extracted'))
+        destination = self.directory / 'extracted'
+        destination.mkdir()
+        r.extract(io.BytesIO(data), artifact, destination, self.profile)
+        self.assertEqual(sorted(path.name for path in destination.iterdir()),
+                         sorted([self.profile + '-acceptance.json', self.profile + '-desktop-acceptance.json']))
+        with self.assertRaisesRegex(ValueError, 'digest mismatch'):
+            r.extract(io.BytesIO(data), {**artifact, 'digest': 'sha256:' + '0' * 64}, destination, self.profile)
+        duplicate, metadata = self.archive((self.profile + '-acceptance.json', '{}'))
+        with self.assertRaisesRegex(ValueError, 'duplicate'):
+            r.extract(io.BytesIO(duplicate), metadata, destination, self.profile)
+
+    def test_predecessor_restore_missing_tag_rebuilds_and_bad_signature_blocks(self):
+        qualification_data, qualification_artifact = self.archive()
+        fixture = Origin()
+        fixture.setUp()
+        fixture.run['head_sha'] = self.revision
+        fixture.job['head_sha'] = self.revision
+        qualification_artifact.update(fixture.artifact)
+        qualification_artifact.update(digest='sha256:' + hashlib.sha256(qualification_data).hexdigest(),
+            size_in_bytes=len(qualification_data), workflow_run={'id': 123, 'head_sha': self.revision})
+        iso_dir = self.directory / 'iso-candidate'
+        (iso_dir / 'signature.json').write_text('[]')
+        stream = io.BytesIO()
+        with zipfile.ZipFile(stream, 'w') as zipped:
+            for name in ('finite-' + self.profile + '.iso', 'installation.json', 'signature.json', 'SHA256SUMS'):
+                zipped.writestr(name, (iso_dir / name).read_bytes())
+        iso_data = stream.getvalue()
+        iso_artifact = {'id': 679, 'name': 'finite-qualified-iso-bluefin-generic-123-1', 'expired': False,
+            'digest': 'sha256:' + hashlib.sha256(iso_data).hexdigest(), 'size_in_bytes': len(iso_data),
+            'workflow_run': {'id': 123, 'head_sha': self.revision}}
+        real_run = subprocess.run
+        calls = []
+        def api(path, paginated=False):
+            if '/jobs?' in path:
+                return [{'jobs': [fixture.job]}]
+            if '/artifacts?' in path:
+                return [{'artifacts': [qualification_artifact, iso_artifact]}]
+            return {'workflow_runs': [fixture.run]}
+        def command(args, **kwargs):
+            calls.append(args)
+            if args[0] == 'gh':
+                kwargs['stdout'].write(qualification_data if '/678/zip' in args[-1] else iso_data)
+            elif args[0] == 'cosign':
+                if bad_signature:
+                    raise subprocess.CalledProcessError(1, args)
+            else:
+                return real_run(args, **kwargs)
+        env = {'GITHUB_ACTIONS': 'true', 'GITHUB_REPOSITORY': r.REPOSITORY, 'GITHUB_REF': 'refs/heads/main'}
+        with patch.dict(os.environ, env), patch.object(predecessor.qualification, 'source_inputs', return_value=self.context['inputs']), \
+                patch.object(predecessor.reuse, 'github', side_effect=api), \
+                patch.object(predecessor.subprocess, 'run', side_effect=command):
+            bad_signature = False
+            with patch.object(predecessor.upstream, 'inspect', return_value=None), self.assertRaises(predecessor.reuse.Unavailable):
+                predecessor.restore(self.profile, self.candidate.split('@')[1], self.directory / 'missing-tag')
+            self.assertFalse((self.directory / 'missing-tag').exists())
+            info = {'Digest': self.candidate.split('@')[1]}
+            with patch.object(predecessor.upstream, 'inspect', return_value=info):
+                bad_signature = True
+                with self.assertRaises(subprocess.CalledProcessError):
+                    predecessor.restore(self.profile, self.candidate.split('@')[1], self.directory / 'bad-signature')
+                self.assertFalse((self.directory / 'bad-signature').exists())
+                bad_signature = False
+                destination = self.directory / 'reused-predecessor'
+                predecessor.restore(self.profile, self.candidate.split('@')[1], destination)
+                self.assertEqual((destination / ('finite-' + self.profile + '.iso')).read_bytes(), b'pristine fixture ISO')
+                self.assertEqual(json.loads((destination / 'installation.json').read_text())['installer']['finiteRevision'], self.revision)
+                self.assertTrue((destination / 'iso-reuse.json').is_file())
+
+    def test_exact_release_iso_archive_is_hash_bound_and_rejects_other_bytes(self):
+        value = self.aggregate()
+        path = self.directory / 'iso-candidate'
+        (path / 'signature.json').write_text('[]')
+        (path / 'SHA256SUMS').write_text('fixture')
+        stream = io.BytesIO()
+        with zipfile.ZipFile(stream, 'w') as zipped:
+            for name in (value['qualifiedIso']['name'], 'installation.json', 'signature.json', 'SHA256SUMS'):
+                zipped.writestr(name, (path / name).read_bytes())
+        data = stream.getvalue()
+        run = {'id': 123, 'head_sha': self.revision}
+        artifact = {'id': 456, 'size_in_bytes': len(data), 'digest': 'sha256:' + hashlib.sha256(data).hexdigest(),
+                    'workflow_run': run}
+        destination = self.directory / 'release'
+        destination.mkdir()
+        def download(command, stdout, **kwargs):
+            stdout.write(data)
+        with patch.object(release.subprocess, 'run', side_effect=download):
+            release.authenticated_iso(artifact, run, value, destination)
+            self.assertEqual((destination / value['qualifiedIso']['name']).read_bytes(), b'pristine fixture ISO')
+            changed = copy.deepcopy(value)
+            changed['qualifiedIso']['sha256'] = '0' * 64
+            another = self.directory / 'invalid-release'; another.mkdir()
+            with self.assertRaisesRegex(ValueError, 'pristine bytes'):
+                release.authenticated_iso(artifact, run, changed, another)
+
+
+class Origin(unittest.TestCase):
+    def setUp(self):
+        self.profile = 'bluefin-generic'
+        self.run = {'id': 123, 'run_attempt': 2, 'status': 'completed', 'conclusion': 'success',
+            'head_branch': 'main', 'head_sha': 'a' * 40, 'event': 'workflow_dispatch',
+            'path': '.github/workflows/build.yml', 'repository': {'full_name': r.REPOSITORY},
+            'head_repository': {'full_name': r.REPOSITORY}}
+        self.job = {'id': 45, 'name': f'Publish ({self.profile}) / qualification / aggregate',
+            'status': 'completed', 'conclusion': 'success', 'run_id': 123, 'run_attempt': 1, 'head_sha': 'a' * 40}
+        self.artifact = {'id': 678, 'name': 'qualification-bluefin-generic-123-1', 'expired': False,
+            'size_in_bytes': 2345, 'digest': 'sha256:' + 'b' * 64, 'workflow_run': {'id': 123, 'head_sha': 'a' * 40}}
+
+    def test_original_available_rerun_artifact_requires_its_exact_successful_attempt(self):
+        self.assertEqual(r.metadata(self.run, [self.job], self.artifact, self.profile), (45, 1))
+        for field, value in [('conclusion', 'failure'), ('run_attempt', 2), ('run_id', 124), ('head_sha', 'c' * 40)]:
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                r.metadata(self.run, [{**self.job, field: value}], self.artifact, self.profile)
+
+    def test_legacy_producer_or_missing_hash_falls_back_to_fresh(self):
+        with self.assertRaises(r.Unavailable):
+            r.metadata(self.run, [], self.artifact, self.profile)
+        with self.assertRaises(r.Unavailable):
+            r.metadata(self.run, [self.job], {**self.artifact, 'digest': None}, self.profile)
+
+    def test_untrusted_run_and_substituted_archive_are_rejected(self):
+        for field, value in [('conclusion', 'cancelled'), ('event', 'pull_request'), ('head_branch', 'feature'),
+                             ('path', '.github/workflows/qualification.yml'), ('repository', {'full_name': 'other/repo'})]:
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                r.metadata({**self.run, field: value}, [self.job], self.artifact, self.profile)
+        for field, value in [('digest', 'invalid'), ('size_in_bytes', r.ARCHIVE_LIMIT + 1),
+                             ('workflow_run', {'id': 124, 'head_sha': 'a' * 40})]:
+            with self.subTest(field=field), self.assertRaises((ValueError, TypeError)):
+                r.metadata(self.run, [self.job], {**self.artifact, field: value}, self.profile)
+
+
+class ExecutionGate(unittest.TestCase):
+    def setUp(self):
+        self.revision = 'a' * 40
+        self.env = {'GITHUB_ACTIONS': 'true', 'GITHUB_REPOSITORY': 'closure-labs/finite',
+            'GITHUB_SHA': self.revision, 'GITHUB_REF': 'refs/heads/ci/qualification-benchmark',
+            'GITHUB_EVENT_NAME': 'workflow_dispatch', 'FINITE_VALIDATION_ONLY': 'true',
+            'GITHUB_WORKFLOW_REF': 'closure-labs/finite/.github/workflows/benchmark-image-tools.yml@refs/heads/ci/qualification-benchmark'}
+
+    def test_only_explicit_manual_branch_benchmark_authorizes_diagnostics(self):
+        with patch.object(preflight.production, 'require_current') as main:
+            result = preflight.require_eligible(self.revision, self.env)
+            self.assertEqual(result, {'validationOnly': True, 'revision': self.revision})
+            main.assert_not_called()
+
+    def test_main_pr_fork_other_workflow_and_wrong_checkout_are_rejected(self):
+        mutations = [('GITHUB_REF', 'refs/heads/main'), ('GITHUB_REF', 'refs/tags/test'),
+            ('GITHUB_EVENT_NAME', 'pull_request'), ('GITHUB_EVENT_NAME', 'push'),
+            ('GITHUB_REPOSITORY', 'other/finite'), ('GITHUB_ACTIONS', 'false'),
+            ('GITHUB_WORKFLOW_REF', 'closure-labs/finite/.github/workflows/build.yml@refs/heads/ci/qualification-benchmark'),
+            ('GITHUB_WORKFLOW_REF', 'closure-labs/finite/.github/workflows/benchmark-image-tools.yml@refs/heads/main'),
+            ('GITHUB_SHA', 'b' * 40), ('FINITE_VALIDATION_ONLY', 'yes')]
+        with patch.object(preflight.production, 'require_current') as main:
+            for key, value in mutations:
+                with self.subTest(key=key, value=value), self.assertRaises(ValueError):
+                    preflight.require_eligible(self.revision, {**self.env, key: value})
+            main.assert_not_called()
+
+    def test_default_main_path_retains_existing_eligibility_rule_and_branch_cannot_opt_out(self):
+        default = {**self.env, 'FINITE_VALIDATION_ONLY': 'false'}
+        with patch.object(preflight.production, 'require_current', return_value=self.revision) as main:
+            with self.assertRaisesRegex(ValueError, 'Production qualification'):
+                preflight.require_eligible(self.revision, default)
+            main.assert_not_called()
+            default['GITHUB_REF'] = 'refs/heads/main'
+            result = preflight.require_eligible(self.revision, default)
+            self.assertFalse(result['validationOnly'])
+            main.assert_called_once_with(self.revision)
+
+    def test_workflow_diagnostic_artifacts_and_cache_gates_are_distinct(self):
+        workflow = yaml.safe_load((ROOT / '.github/workflows/qualification.yml').read_text())
+        call = workflow.get('on', workflow.get(True))['workflow_call']
+        self.assertFalse(call['inputs']['validation_only']['default'])
+        prepare = workflow['jobs']['prepare']
+        self.assertIn('benchmark-image-tools.yml', prepare['if'])
+        reuse = next(step for step in prepare['steps'] if step.get('id') == 'reuse')
+        self.assertIn('!inputs.validation_only', reuse['env']['ENABLED'])
+        phase = workflow['jobs']['phase']
+        preserved = next(step for step in phase['steps'] if step.get('name') == 'Preserve pristine qualified candidate ISO for the pilot')
+        self.assertIn('!inputs.validation_only', preserved['if'])
+        for job, prefix in [('phase', 'qualification-diagnostic-phase'), ('aggregate', 'qualification-diagnostic')]:
+            upload = next(step for step in workflow['jobs'][job]['steps']
+                          if step.get('name') == ('Save phase evidence' if job == 'phase' else 'Save qualification evidence'))
+            self.assertIn(prefix, upload['with']['name'])
+            self.assertIn('inputs.validation_only', upload['with']['name'])
+
+
+class BootBudget(unittest.TestCase):
+    def boot(self, *, fatal=False):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        directory = Path(temporary.name)
+        state = directory / 'state'
+        state.mkdir()
+        (state / 'secrets').mkdir()
+        (state / 'secrets/luks-key').write_text('test secret')
+        (state / 'clock').write_text('0\n0\n591\n596\n600\n')
+        if fatal:
+            (state / 'first-boot.log').write_text('Kernel panic - not syncing: fixture fatal boot\n')
+        source = (ROOT / 'scripts/bluebuild/vm-acceptance.sh').read_text()
+        function = source.split('boot_vm() {', 1)[1].split('\npoweroff_vm() {', 1)[0]
+        script = directory / 'boot.sh'
+        script.write_text('''#!/usr/bin/env bash
+set -u
+state=$1
+secrets=$state/secrets
+phase_name=fresh
+qemu_args=()
+ssh_args=()
+monotonic_seconds() {
+  local value
+  value=$(head -1 "$state/clock")
+  tail -n +2 "$state/clock" >"$state/clock.tmp"
+  mv "$state/clock.tmp" "$state/clock"
+  printf '%s\n' "$value"
+}
+qemu-system-x86_64() { exec sleep 1000; }
+python3() { exec sleep 1000; }
+record_duration() { :; }
+timeout() { printf '%s\n' "$1" >>"$state/attempts"; return 1; }
+ssh() { return 1; }
+sleep() { printf '%s\n' "$1" >>"$state/sleeps"; }
+pid=
+log_pid=
+trap 'kill "$pid" "$log_pid" 2>/dev/null || true; wait "$pid" "$log_pid" 2>/dev/null || true' EXIT
+''' + 'boot_vm() {' + function + '\nboot_vm first-boot\n')
+        result = subprocess.run(['bash', str(script), str(state)], capture_output=True, text=True, timeout=10)
+        return state, result
+
+    def test_attempt_and_sleep_are_capped_to_remaining_readiness_deadline(self):
+        state, result = self.boot()
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual((state / 'attempts').read_text().splitlines(), ['9s'])
+        self.assertEqual((state / 'sleeps').read_text().splitlines(), ['4'])
+        self.assertIn('SSH did not become available', result.stderr)
+
+    def test_unambiguous_kernel_panic_fails_before_ssh_or_sleep(self):
+        state, result = self.boot(fatal=True)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn('Fatal boot failure', result.stderr)
+        self.assertFalse((state / 'attempts').exists())
+        self.assertFalse((state / 'sleeps').exists())
+
+
+if __name__ == '__main__':
+    unittest.main()

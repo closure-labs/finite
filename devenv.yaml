@@ -4,6 +4,7 @@ require_version: true
 secretspec:
   enable: true
   profile: default
+  # Provider alias resolves pass://; no plaintext file-backed credentials.
   provider: local
 
 inputs:

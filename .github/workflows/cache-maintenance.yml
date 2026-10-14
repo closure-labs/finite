@@ -1,0 +1,94 @@
+name: Maintain trusted CI caches
+on:
+  # Only same-repository successful main runs are admitted below. No originating
+  # artifacts or PR checkout are executed; the writer token appears only at push.
+  workflow_run: # zizmor: ignore[dangerous-triggers]
+    workflows: [Build Finite]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: finite-cache-maintenance
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: >-
+      vars.FINITE_CACHIX_WRITER == 'true' && github.event_name == 'workflow_run' &&
+      github.repository == 'closure-labs/finite' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == 'closure-labs/finite' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'schedule' || github.event.workflow_run.event == 'workflow_dispatch')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      CACHE_SOURCE_REVISION: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - uses: ./.github/actions/setup-nix
+        with:
+          cache-profile: sources
+          cache-mode: optimized
+      - name: Realize verified proofs and approved tool roots without credentials
+        # The path is a locally realized, strictly validated trusted-main output.
+        run: | # zizmor: ignore[github-env]
+          resolver=$(nix build --file lib/ci-tools.nix ci-secrets-run --no-link --print-out-paths)
+          [[ $resolver =~ ^/nix/store/[a-z0-9]{32}-finite-ci-secrets-run$ ]]
+          echo "$resolver/bin" >>"$GITHUB_PATH"
+          tools=$(nix build --file lib/ci-tools.nix cache-tools --no-link --print-out-paths)
+          [[ $tools =~ ^/nix/store/[a-z0-9]{32}-finite-ci-cache-tools$ ]]
+          echo "$tools/bin" >>"$GITHUB_PATH"
+          python3 scripts/ci/cache-publish.py prepare cache-roots.json
+      - name: Publish allowlisted roots
+        env:
+          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+        run: finite-ci-secrets-run cache-writer -- python3 scripts/ci/cache-publish.py push cache-roots.json
+      - name: Retain cache size measurements
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cache-roots-${{ github.run_id }}-${{ github.run_attempt }}
+          path: cache-roots.json
+          retention-days: 14
+
+  prune:
+    if: >-
+      github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event.workflow_run.head_repository.full_name == 'closure-labs/finite' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'schedule' || github.event.workflow_run.event == 'workflow_dispatch')))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Retain bounded trusted main cache generations
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/ci/prune-ci-caches.py --apply
+
+  iso-prune:
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && vars.FINITE_QUALIFIED_ISO_PRESERVATION == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Retain two qualified ISO generations per profile
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/bluebuild/prune-qualified-isos.py --apply

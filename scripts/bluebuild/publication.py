@@ -37,7 +37,7 @@ def origin_metadata(run, jobs, artifacts, profile, run_id):
     """Later failure/cancellation cannot erase a fully evidenced trusted build."""
     if (run.get('id') != int(run_id) or run.get('status') != 'completed'
             or run.get('conclusion') not in ('success', 'failure', 'cancelled')
-            or run.get('event') not in ('push', 'workflow_dispatch')
+            or run.get('event') not in ('push', 'schedule', 'workflow_dispatch')
             or run.get('head_branch') != 'main' or run.get('path') != '.github/workflows/build.yml'
             or run.get('repository', {}).get('full_name') != REPOSITORY
             or run.get('head_repository', {}).get('full_name') != REPOSITORY
@@ -333,6 +333,7 @@ def promote(profile, root=upstream.ROOT):
     if acceptance_path.exists():
         acceptance = json.loads(acceptance_path.read_text())
         accepted = all((acceptance.get('accepted') is True,
+                        acceptance.get('validationOnly') is not True,
                         acceptance.get('candidate') == image,
                         acceptance.get('previousDigest') == record['previousDigest'],
                         acceptance.get('profile') == profile,
@@ -343,6 +344,11 @@ def promote(profile, root=upstream.ROOT):
                         acceptance.get('encryptedRoot') is True))
     if not accepted:
         raise ValueError('Candidate lacks matching successful encrypted Secure Boot qualification')
+    if 'qualificationReuse' in acceptance:
+        reuse_spec = importlib.util.spec_from_file_location('qualification_reuse', root / 'scripts/bluebuild/reuse-qualification.py')
+        reuse = importlib.util.module_from_spec(reuse_spec)
+        exec(compile(Path(reuse_spec.origin).read_bytes(), reuse_spec.origin, 'exec'), reuse.__dict__)
+        reuse.verify_reused_acceptance(acceptance, root=root)
     desktop.verify(evidence, acceptance)
     security.verify(evidence / ('security-' + profile), image, root / 'automation/security/image-policy.json')
     subprocess.run(['cosign', 'verify', '--new-bundle-format=false', '--key', str(root / 'cosign.pub'), image],

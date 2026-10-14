@@ -1,3 +1,10 @@
 ARG INSTALLER
 FROM ${INSTALLER}
 COPY install_finite_fstab /build-container-installer/lorax_templates/scripts/post/install_finite_fstab
+COPY secure-boot.pem /build-container-installer/finite-secure-boot.pem
+# Make's existing sb_pubkey.der target now resolves locally. If the bytes are
+# removed, fail rather than following the upstream mutable network URL.
+RUN grep -Fq 'curl --fail -L -o sb_pubkey.der $(SECURE_BOOT_KEY_URL)' /build-container-installer/Makefile \
+    && openssl x509 -in /build-container-installer/finite-secure-boot.pem -outform DER \
+      -out /build-container-installer/sb_pubkey.der \
+    && sed -i 's|curl --fail -L -o sb_pubkey.der $(SECURE_BOOT_KEY_URL)|echo "Pinned Secure Boot certificate missing" >\&2; exit 1|' /build-container-installer/Makefile

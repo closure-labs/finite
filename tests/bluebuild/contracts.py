@@ -88,7 +88,8 @@ class BlueBuildContracts(unittest.TestCase):
         self.assertEqual(action['env']['PUBLISH'], '${{ inputs.publish }}')
         self.assertEqual(action['env']['BB_PASSWORD'], '${{ github.token }}')
         self.assertNotIn('COSIGN_PRIVATE_KEY', action['env'])
-        self.assertEqual(publish['secrets'], {'COSIGN_PRIVATE_KEY': '${{ secrets.COSIGN_PRIVATE_KEY }}'})
+        self.assertEqual(publish['secrets'], {'COSIGN_PRIVATE_KEY': '${{ secrets.COSIGN_PRIVATE_KEY }}',
+                                             'COSIGN_PASSWORD': '${{ secrets.COSIGN_PASSWORD }}'})
         builder = next(s for s in steps if s.get('uses', '').startswith('docker/setup-buildx-action@'))
         self.assertEqual(builder['with']['name'], 'bluebuild')
         self.assertEqual(builder['with']['driver-opts'], 'default-load=true')
@@ -103,11 +104,16 @@ class BlueBuildContracts(unittest.TestCase):
         self.assertEqual(promotion['needs'], ['build', 'security', 'sign', 'qualification'])
         self.assertIn("needs.build.result == 'success'", promotion['if'])
         self.assertIn('!cancelled()', promotion['if'])
-        self.assertEqual(publication['jobs']['qualification']['needs'], ['build', 'sign'])
+        self.assertEqual(publication['jobs']['qualification']['needs'], ['build', 'sign', 'preflight'])
         qualification = read('.github/workflows/qualification.yml')
-        acceptance = next(s for s in qualification['jobs']['qualify']['steps']
+        acceptance = next(s for s in qualification['jobs']['phase']['steps']
                           if s.get('id') == 'acceptance')
         self.assertNotIn('continue-on-error', acceptance)
+        self.assertEqual(qualification['jobs']['phase']['needs'], 'prepare')
+        self.assertFalse(qualification['jobs']['phase']['strategy']['fail-fast'])
+        self.assertEqual(qualification['jobs']['aggregate']['needs'], ['prepare', 'phase'])
+        self.assertIn("needs.phase.result == 'success'", qualification['jobs']['aggregate']['if'])
+        self.assertIn("needs.prepare.outputs.reused == 'true'", qualification['jobs']['aggregate']['if'])
         self.assertEqual(promotion['env']['FINITE_QUALIFICATION_MODE'], 'enforce')
         self.assertEqual(build['env']['FINITE_QUALIFICATION_MODE'], 'enforce')
         gate = workflow['jobs']['gate']

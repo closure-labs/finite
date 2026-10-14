@@ -6,12 +6,10 @@ let
   project = import ./project-policy.nix;
   system = project.platform.system;
   pkgs = import ./mk-pkgs.nix {nixpkgs = lockedInput "nixpkgs";} system;
-  weeklyPkgs = import ./mk-pkgs.nix {nixpkgs = lockedInput "nixpkgs-weekly";} system;
+  secretspec = import ./secretspec.nix {inherit pkgs;};
   repository = import ./ci-applications/repository-operations.nix {
-    inherit pkgs;
+    inherit pkgs secretspec;
     cacheName = project.cache.name;
-    secretspec = weeklyPkgs.secretspec;
-    devenv = throw "The CI tools entry point does not provide the developer environment";
   };
   updates = import ./ci-applications/dependency-operations.nix {inherit pkgs;};
   shells = import ./ci-shells.nix {inherit pkgs;};
@@ -19,6 +17,14 @@ in {
   shell = shells.ci;
   image-tools = shells.imageTools;
   scanner-tools = shells.scannerTools;
+  cache-tools = pkgs.buildEnv {
+    name = "finite-ci-cache-tools";
+    paths = [pkgs.cachix];
+    pathsToLink = ["/bin"];
+  };
+  secretspec-tools = secretspec;
+  ci-secrets-run = repository.ciSecretsRun;
+  ci-secrets-options = repository.ciSecretsOptions;
   release = shells.release;
   ci-github-actions-secrets = repository.githubActionsSecrets;
   ci-repository-security-audit = import ./ci-applications/repository-security-audit.nix {

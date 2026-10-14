@@ -69,6 +69,7 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/actions/setup-nix
       - name: Make room for the image build
+        if: inputs.resume_run == '' && inputs.resume_digest == ''
         uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
         with:
           skip-if-available: "80G"
@@ -123,6 +124,13 @@ jobs:
       - name: Install the verified locked BlueBuild CLI
         if: inputs.resume_run == '' && inputs.resume_digest == ''
         run: bash scripts/bluebuild/install-cli.sh
+      - name: Validate recipes and record generated Containerfile
+        if: inputs.resume_run == '' && inputs.resume_digest == ''
+        run: |
+          mkdir -p .bluebuild
+          bluebuild validate "recipes/$PROFILE.yml"
+          bluebuild generate --registry ghcr.io --registry-namespace closure-labs \
+            -o ".bluebuild/$PROFILE.Containerfile" "recipes/$PROFILE.yml"
       - name: Stage pinned payload
         if: inputs.resume_run == '' && inputs.resume_digest == ''
         run: python3 scripts/bluebuild/measure.py payload-staging bash scripts/bluebuild/stage.sh "$PROFILE"
@@ -152,13 +160,6 @@ jobs:
         run: >-
           python3
           scripts/bluebuild/measure.py image-build bash scripts/bluebuild/build.sh "$PROFILE" "$PUBLISH"
-      - name: Validate recipes and record generated Containerfile
-        if: inputs.resume_run == '' && inputs.resume_digest == ''
-        run: |
-          mkdir -p .bluebuild
-          bluebuild validate "recipes/$PROFILE.yml"
-          bluebuild generate --registry ghcr.io --registry-namespace closure-labs \
-            -o ".bluebuild/$PROFILE.Containerfile" "recipes/$PROFILE.yml"
       - name: Verify assembled image
         if: inputs.resume_run == '' && inputs.resume_digest == ''
         id: inspect

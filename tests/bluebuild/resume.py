@@ -351,6 +351,31 @@ class PromotionState(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Public channel changed'):
             self.check(current={'Digest': self.digest})
 
+    def test_diagnostic_acceptance_cannot_authorize_promotion_even_with_matching_record(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            evidence = root / '.bluebuild'
+            evidence.mkdir()
+            candidate = 'ghcr.io/closure-labs/finite@sha256:' + 'd' * 64
+            record = {**self.record, 'publish': True, 'profile': 'bluefin-generic',
+                      'previousDigest': self.digest, 'recoveryReason': '', 'buildIdentity': 'v1:' + 'f' * 64,
+                      'qualificationMode': 'enforce', 'qualify': True}
+            acceptance = {'accepted': True, 'candidate': candidate, 'previousDigest': self.digest,
+                          'profile': record['profile'], 'revision': self.revision,
+                          'buildIdentity': record['buildIdentity'], 'secureBoot': True, 'encryptedRoot': True,
+                          'validationOnly': True}
+            (evidence / 'bluefin-generic-publication.json').write_text(json.dumps(record))
+            (evidence / 'bluefin-generic-image-ref.txt').write_text(candidate + '\n')
+            (evidence / 'bluefin-generic-acceptance.json').write_text(json.dumps(acceptance))
+            with patch.dict(os.environ, GITHUB_SHA=self.revision, FINITE_QUALIFICATION_MODE='enforce'), \
+                    patch.object(pub.security, 'verify') as security, patch.object(pub.desktop, 'verify') as desktop, \
+                    patch.object(pub.subprocess, 'run') as command:
+                with self.assertRaisesRegex(ValueError, 'lacks matching successful'):
+                    pub.promote('bluefin-generic', root)
+            security.assert_not_called()
+            desktop.assert_not_called()
+            command.assert_not_called()
+
     def test_resumed_candidate_cannot_overwrite_channel_after_fresh_checks(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

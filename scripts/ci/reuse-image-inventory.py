@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+"""Fetch inventory bytes from a successful trusted native security job.
+
+Exit 3 is a cache miss; exit 2 rejects malformed or unauthenticated evidence.
+No vulnerability finding, database, freshness receipt or policy result is reused.
+"""
+import argparse
+from datetime import datetime, timezone
+import importlib.util
+import json
+import os
+from pathlib import Path
+import re
+import resource
+import subprocess
+import sys
+import tempfile
+import zipfile
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def module(name, path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    result = importlib.util.module_from_spec(spec)
+    # Match the CLI import path without adding build-identity input bytecode.
+    exec(compile(path.read_bytes(), str(path), 'exec'), result.__dict__)
+    return result
+
+
+reuse = module('reuse_security', ROOT / 'scripts/ci/reuse-candidate-security.py')
+inventory = module('inventory_evidence', ROOT / 'scripts/ci/inventory-evidence.py')
+publication = reuse.publication
+
+
+def hosted():
+    workflows = {'build.yml': {'workflow_dispatch', 'push'},
+                 'image-security.yml': {'workflow_dispatch', 'schedule'},
+                 'release.yml': {'workflow_dispatch'}}
+    workflow = os.environ.get('GITHUB_WORKFLOW_REF', '')
+    prefix = publication.REPOSITORY + '/.github/workflows/'
+    name = workflow.removeprefix(prefix).removesuffix('@refs/heads/main')
+    if (os.environ.get('GITHUB_ACTIONS') != 'true'
+            or os.environ.get('GITHUB_REPOSITORY') != publication.REPOSITORY
+            or os.environ.get('GITHUB_REF') != 'refs/heads/main'
+            or workflow != prefix + name + '@refs/heads/main' or name not in workflows
+            or os.environ.get('GITHUB_EVENT_NAME') not in workflows[name]
+            or not publication.SHA.fullmatch(os.environ.get('GITHUB_SHA', ''))):
+        raise ValueError('Inventory reuse requires a trusted hosted main image consumer')
+
+
+def retrieve(image, profile, output, origin_run=None):
+    hosted()
+    if not reuse.security.IMAGE.fullmatch(image) or profile not in reuse.security.PROFILES:
+        raise ValueError('Inventory reuse requires an immutable image and supported profile')
+    if origin_run is not None and not re.fullmatch(r'[1-9][0-9]*', origin_run):
+        raise ValueError('Invalid explicit origin run')
+    output = output.absolute()
+    if ('..' in output.parts or output.exists()
+            or any(part.is_symlink() for part in (output, *output.parents))):
+        raise ValueError('Inventory output must be new with no symlinked parents')
+    if origin_run:
+        runs = [publication.github('actions/runs/' + origin_run)]
+    else:
+        # Bounded discovery: never walk all history or download every SBOM.
+        runs = publication.github('actions/workflows/build.yml/runs?branch=main&status=completed&per_page=20')['workflow_runs']
+    for run in runs:
+        run_id = str(run['id'])
+        attempt = run.get('run_attempt')
+        if type(attempt) is not int or attempt < 1:
+            raise ValueError('Invalid inventory producer attempt')
+        artifacts = [item for page in publication.github(f'actions/runs/{run_id}/artifacts?per_page=100', True)
+                     for item in page['artifacts']]
+        images = [item for item in artifacts if item.get('name') == f'image-{profile}-{run_id}-{attempt}']
+        scans = [item for item in artifacts if item.get('name') == f'security-{profile}-{run_id}-{attempt}']
+        if not images or not scans or any(item.get('expired') is True for item in (*images, *scans)):
+            if origin_run:
+                raise inventory.Unavailable('Original inventory artifacts are unavailable')
+            continue
+        if len(images) != 1 or len(scans) != 1:
+            raise ValueError('Ambiguous inventory producer artifacts')
+        # Authenticate this small archive before using its exact image reference
+        # to choose the much larger native evidence archive.
+        image_artifact = images[0]
+        binding = image_artifact.get('workflow_run', {})
+        if (type(image_artifact.get('id')) is not int or image_artifact['id'] < 1
+                or image_artifact.get('expired') is not False
+                or type(image_artifact.get('size_in_bytes')) is not int
+                or not 0 < image_artifact['size_in_bytes'] <= 64 * 1024**2
+                or not isinstance(image_artifact.get('digest'), str)
+                or not publication.DIGEST.fullmatch(image_artifact['digest'])
+                or binding.get('id') != run['id'] or binding.get('head_sha') != run.get('head_sha')):
+            raise ValueError('Inventory image archive lacks immutable run binding')
+        files = publication.origin_files(image_artifact, profile)
+        if files[f'{profile}-image-ref.txt'].decode().strip() != image:
+            if origin_run:
+                raise inventory.Unavailable('Origin contains a different immutable image')
+            continue
+        jobs = [item for page in publication.github(f'actions/runs/{run_id}/attempts/{attempt}/jobs?per_page=100', True)
+                for item in page['jobs']]
+        artifact, _, build_job, security_job = reuse.metadata(run, jobs, artifacts, profile, run_id)
+        record = json.loads(files[f'{profile}-publication.json'])
+        if (record.get('profile') != profile or record.get('sourceRevision', record.get('revision')) != run['head_sha']
+                or record.get('qualificationMode') != 'enforce' or record.get('publish') is not True
+                or 'resumeOrigin' in record):
+            raise ValueError('Inventory producer build context differs from its run')
+        output.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            with tempfile.TemporaryDirectory(prefix='.inventory-reuse-', dir=output.parent) as temporary:
+                staging = Path(temporary) / 'evidence'
+                staging.mkdir()
+                with tempfile.TemporaryFile() as archive:
+                    subprocess.run(['gh', 'api', f'repos/{publication.REPOSITORY}/actions/artifacts/{artifact["id"]}/zip'],
+                                   stdout=archive, check=True, timeout=180,
+                                   preexec_fn=lambda: resource.setrlimit(resource.RLIMIT_FSIZE,
+                                       (reuse.ARCHIVE_LIMIT, reuse.ARCHIVE_LIMIT)))
+                    reuse.extract(archive, artifact, staging)
+                baseline = reuse.read_json(staging / 'approved-baseline.json')
+                result = reuse.read_json(staging / 'security-result.json')
+                if (result.get('status') != 'pass' or result.get('image') != image
+                        or baseline.get('image') != image or baseline.get('profile') != profile
+                        or baseline.get('sourceRevision') != run['head_sha']
+                        or baseline.get('buildIdentity') != record.get('buildIdentity')):
+                    raise ValueError('Native inventory producer does not match its immutable build')
+                policy = reuse.security.load_policy(ROOT / 'automation/security/image-policy.json')
+                identity = inventory.verify(staging, image, reuse.security,
+                                            policy.get('mode') in reuse.security.RISK_MODES)
+                ready = Path(temporary) / 'inventory'
+                ready.mkdir()
+                inventory.copy(staging, ready, identity)
+                origin = {'schema': 1, 'status': 'authenticated-inventory-only', 'image': image,
+                          'profile': profile, 'originRun': run['id'], 'originAttempt': attempt,
+                          'originBuildJob': build_job, 'originSecurityJob': security_job,
+                          'artifactId': artifact['id'], 'artifactSha256': artifact['digest'],
+                          'sourceRevision': run['head_sha'], 'validationRevision': os.environ['GITHUB_SHA'],
+                          'authenticatedAt': datetime.now(timezone.utc).isoformat(),
+                          'newScanRequired': True, 'releaseEligibilityEstablished': False}
+                (ready / 'inventory-origin.json').write_text(json.dumps(origin, indent=2) + '\n')
+                ready.rename(output)
+                return origin
+        except inventory.Unavailable:
+            if origin_run:
+                raise
+            continue
+    raise inventory.Unavailable('No compatible inventory in the bounded recent build history')
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--image', required=True)
+    parser.add_argument('--profile', required=True)
+    parser.add_argument('--origin-run')
+    parser.add_argument('--output', required=True, type=Path)
+    args = parser.parse_args(argv)
+    # Artifact parsing stays bounded independently of the scanner service.
+    resource.setrlimit(resource.RLIMIT_AS, (2 * 1024**3, 2 * 1024**3))
+    try:
+        print(json.dumps(retrieve(args.image, args.profile, args.output, args.origin_run)))
+        return 0
+    except (inventory.Unavailable, reuse.Unavailable) as error:
+        print(str(error), file=sys.stderr)
+        return 3
+    except (ValueError, KeyError, TypeError, AttributeError, OSError, subprocess.SubprocessError, zipfile.BadZipFile) as error:
+        print('Inventory reuse rejected: ' + str(error), file=sys.stderr)
+        return 2
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

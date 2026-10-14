@@ -12,6 +12,29 @@ directory="${2:?evidence directory required}"
   echo 'Security evidence directory already exists; refusing stale results.' >&2
   exit 2
 }
+# The pilot caches inventory bytes only. A cache miss builds a fresh inventory;
+# rejected evidence stops the job. Database refresh and policy always run below.
+if [[ ${FINITE_REUSE_INVENTORY:-false} == true && " $* " != *" --inventory-dir "* ]]; then
+  profile=$(skopeo --command-timeout 90s inspect --no-tags --no-creds \
+    --format '{{ index .Labels "io.finite.profile" }}' "docker://$image")
+  inventory_directory="${directory}.inventory"
+  origin_args=()
+  if [[ -n ${FINITE_INVENTORY_ORIGIN_RUN:-} ]]; then
+    origin_args=(--origin-run "$FINITE_INVENTORY_ORIGIN_RUN")
+  fi
+  reuse_started=$SECONDS
+  set +e
+  python3 scripts/ci/reuse-image-inventory.py --image "$image" --profile "$profile" \
+    --output "$inventory_directory" "${origin_args[@]}"
+  reuse_status=$?
+  set -e
+  echo "Inventory lookup: $((SECONDS - reuse_started)) seconds; exit $reuse_status"
+  case "$reuse_status" in
+    0) set -- "$@" --inventory-dir "$inventory_directory" ;;
+    3) echo 'Inventory cache miss; generating all native evidence.' ;;
+    *) exit "$reuse_status" ;;
+  esac
+fi
 # Reserve 4 GiB of currently available RAM for the runner and other services.
 # Public standard runners can support a 10 GiB cap; smaller hosts remain bounded.
 # The Go limit alone is soft and cannot protect the host.
@@ -46,6 +69,7 @@ sudo systemd-run --unit="$unit" --wait --pipe --service-type=exec \
   --setenv="PATH=$PATH" --setenv="HOME=$HOME" \
   --setenv="GITHUB_SHA=${GITHUB_SHA:-}" --setenv="GITHUB_REPOSITORY=${GITHUB_REPOSITORY:-}" \
   --setenv="GITHUB_ACTIONS=${GITHUB_ACTIONS:-}" \
+  --setenv="GRYPE_DB_CACHE_DIR=${GRYPE_DB_CACHE_DIR:-$HOME/.cache/grype/db}" \
   --setenv="GOMEMLIMIT=${go_limit_mib}MiB" --setenv=SYFT_PARALLELISM=1 --setenv=SYFT_LOG_LEVEL=info \
   "$scanner_python" "$(dirname "${BASH_SOURCE[0]}")/security-scan.py" "$@" 2>&1 | tee -a "$log"
 status=${PIPESTATUS[0]}

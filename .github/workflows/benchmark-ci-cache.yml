@@ -1,0 +1,79 @@
+name: Benchmark CI cache lanes
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        mode: [baseline, optimized, none]
+        tool: [image-tools, scanner-tools, ci-repository-security-audit]
+        repetition: [1, 2, 3]
+    env:
+      BENCHMARK_MODE: ${{ matrix.mode }}
+      BENCHMARK_TOOL: ${{ matrix.tool }}
+      BENCHMARK_REPETITION: ${{ matrix.repetition }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Record setup start
+        run: python3 scripts/ci/benchmark-ci-cache.py mark-start .bluebuild/cache-setup-start.json
+      - uses: ./.github/actions/setup-nix
+        with:
+          cache-mode: ${{ matrix.mode }}
+          cache-profile: sources
+      - name: Measure cold and warm realization
+        run: >-
+          python3 scripts/ci/benchmark-ci-cache.py run
+          "$BENCHMARK_MODE" "$BENCHMARK_TOOL" "$BENCHMARK_REPETITION"
+          .bluebuild/cache-setup-start.json .bluebuild/benchmark.json
+      - name: Retain measurements including failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ci-cache-${{ matrix.mode }}-${{ matrix.tool }}-${{ matrix.repetition }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/benchmark.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+
+  summarize:
+    if: always()
+    needs: benchmark
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Download this attempt's measurements
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPORT_PATTERN: ci-cache-*-${{ github.run_id }}-${{ github.run_attempt }}
+        run: >-
+          gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY"
+          --pattern "$REPORT_PATTERN" --dir .bluebuild/cache-benchmark-reports
+      - name: Summarize matched repetitions
+        run: >-
+          python3 scripts/ci/benchmark-ci-cache.py summarize
+          .bluebuild/cache-benchmark-reports .bluebuild/cache-benchmark-summary.md
+      - name: Retain comparison
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ci-cache-summary-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/cache-benchmark-summary.md
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14

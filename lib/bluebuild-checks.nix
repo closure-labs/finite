@@ -29,6 +29,10 @@
       ../flake.lock
       ../devenv.lock
       ../docs
+      ../secretspec.toml
+      ../devenv.yaml
+      ../devenv.nix
+      ../devenv-tasks.nix
     ];
   };
   check = name: tools: commands:
@@ -67,7 +71,8 @@ in {
     bash tests/nix/nix-selinux.sh
     bash tests/bluebuild/vm-predecessor-home.sh
   '';
-  bluebuild = check "bluebuild-contracts" [pkgs.gawk pkgs.git pkgs.jq pkgs.yq-go (pkgs.python3.withPackages (p: [p.pyyaml]))] ''
+  bluebuild = check "bluebuild-contracts" [pkgs.gawk pkgs.git pkgs.jq pkgs.openssl applications.ciSecretsRun (import ./secretspec.nix {inherit pkgs;}) pkgs.yq-go (pkgs.python3.withPackages (p: [p.pyyaml]))] ''
+    export PYTHONDONTWRITEBYTECODE=1
     python3 tests/automation/bluefin-upstream.py
     python3 tests/ci/selection.py
     python3 tests/ci/release-selection.py
@@ -83,6 +88,11 @@ in {
     python3 tests/ci/nix-checks.py
     python3 tests/ci/toolchain.py
     python3 tests/ci/nix-resources.py
+    python3 tests/ci/nix-cache.py
+    python3 tests/ci/secretspec.py
+    python3 tests/ci/cache-publish.py
+    python3 tests/ci/prune-ci-caches.py
+    python3 tests/ci/ci-cache-benchmark.py
     python3 tests/ci/delivery-policy.py
     python3 tests/ci/image-tools-benchmark.py
     python3 tests/ci/remediation-preflight.py
@@ -104,12 +114,15 @@ in {
     python3 tests/bluebuild/vm-signature-rejection.py
     python3 tests/bluebuild/vm-upgrade.py
     python3 tests/bluebuild/installer.py
+    python3 tests/bluebuild/installer-certificate.py
+    python3 tests/bluebuild/qualification.py
     python3 tests/bluebuild/provisioning.py
     python3 tests/bluebuild/security-policy.py
     python3 tests/bluebuild/security-remediation.py
     python3 tests/bluebuild/tailscale-security.py
     python3 tests/bluebuild/desktop-qualification.py
     python3 tests/bluebuild/reliability.py
+    python3 tests/bluebuild/publication-current.py
     python3 tests/ci/reuse-candidate-security.py
     python3 tests/bluebuild/resume.py
     python3 tests/bluebuild/extraction-layout.py

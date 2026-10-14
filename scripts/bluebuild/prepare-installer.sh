@@ -9,6 +9,16 @@ source=$(jq -er '.image + "@" + .digest' "$lock")
 alias=$(jq -er .cliAlias "$lock")
 version=$(jq -er .version "$lock")
 revision=$(jq -er .revision "$lock")
+output="${ISO_OUTPUT_DIR:-.bluebuild/iso}"
+certificate=files/installer/secure-boot.pem
+certificate_sha=$(jq -er .derSha256 sources/installer-security.json)
+[[ $(jq -er .certificate sources/installer-security.json) == "$certificate" ]]
+[[ $certificate_sha =~ ^[0-9a-f]{64}$ ]]
+# Validate before pulling/building any container. The public certificate is
+# retained in the checkout; neither availability nor trust depends on HTTP.
+actual_certificate_sha=$(openssl x509 -in "$certificate" -outform DER | sha256sum | cut -d' ' -f1)
+[[ $actual_certificate_sha == "$certificate_sha" ]]
+openssl x509 -in "$certificate" -checkend 0 -noout
 [[ $source =~ ^ghcr.io/jasonn3/build-container-installer@sha256:[0-9a-f]{64}$ ]]
 [[ $alias == ghcr.io/jasonn3/build-container-installer:v1.4.0 ]]
 docker pull "$source"
@@ -38,10 +48,13 @@ docker build --pull=false --network=none --file files/installer/Containerfile --
 actual_hook_sha=$(docker run --rm --entrypoint sha256sum "$alias" \
   /build-container-installer/lorax_templates/scripts/post/install_finite_fstab | cut -d' ' -f1)
 [[ $actual_hook_sha == "$hook_sha" ]]
+installed_certificate_sha=$(docker run --rm --entrypoint sha256sum "$alias" \
+  /build-container-installer/sb_pubkey.der | cut -d' ' -f1)
+[[ $installed_certificate_sha == "$certificate_sha" ]]
 image_id=$(docker inspect --format '{{.Id}}' "$alias")
-mkdir -p .bluebuild/iso
+mkdir -p "$output"
 jq --arg resolved "$source" --arg id "$image_id" --arg hook "$hook" \
-  --arg hash "$hook_sha" --arg revision "${GITHUB_SHA:?}" \
+  --arg hash "$hook_sha" --arg revision "${GITHUB_SHA:?}" --arg certificate "$certificate_sha" \
   '. + {resolvedImage: $resolved, localImageId: $id, finiteRevision: $revision,
-    postInstallHook: {path: $hook, sha256: $hash}}' \
-  "$lock" >.bluebuild/iso/installer.json
+    secureBootCertificateSha256: $certificate, postInstallHook: {path: $hook, sha256: $hash}}' \
+  "$lock" >"$output/installer.json"

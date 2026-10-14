@@ -2,12 +2,46 @@ name: Benchmark image tool setup
 
 on:
   workflow_dispatch:
+    inputs:
+      validation:
+        description: Hosted experiment; qualification never promotes an image
+        type: choice
+        default: tool-setup
+        options: [tool-setup, cache-lanes, qualification]
+      profile:
+        description: Signed candidate profile for diagnostic qualification
+        type: choice
+        default: bluefin-dx-generic
+        options: [bluefin-generic, bluefin-next, bluefin-dx-generic, bluefin-dx-next]
+      channel:
+        description: Matching ongoing update channel
+        type: choice
+        default: finite-dev
+        options: [finite, finite-next, finite-dev, finite-dev-next]
+      digest:
+        description: Exact signed candidate sha256 digest
+        type: string
+        default: ""
+      previous:
+        description: Exact signed predecessor digest for upgrade and rollback
+        type: string
+        default: ""
+      identity:
+        description: Candidate io.finite.build-inputs identity
+        type: string
+        default: ""
+      source_revision:
+        description: Candidate source revision (40 hex digits)
+        type: string
+        default: ""
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   benchmark:
+    if: inputs.validation == 'tool-setup'
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     strategy:
@@ -48,3 +82,25 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 14
+
+  cache-lanes:
+    if: inputs.validation == 'cache-lanes'
+    uses: ./.github/workflows/benchmark-ci-cache.yml
+
+  qualification:
+    if: inputs.validation == 'qualification' && github.repository == 'closure-labs/finite' && github.ref != 'refs/heads/main'
+    permissions:
+      contents: read
+      actions: read
+      # ISO construction needs only unique installation tags; no channel promotion.
+      packages: write
+    uses: ./.github/workflows/qualification.yml
+    with:
+      profile: ${{ inputs.profile }}
+      channel: ${{ inputs.channel }}
+      digest: ${{ inputs.digest }}
+      previous: ${{ inputs.previous }}
+      identity: ${{ inputs.identity }}
+      source_revision: ${{ inputs.source_revision }}
+      force_qualification: true
+      validation_only: true

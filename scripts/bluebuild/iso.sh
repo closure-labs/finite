@@ -7,10 +7,11 @@ finite|latest|finite-next|finite-dev|finite-dev-next) ;;
 *) echo 'Unsupported update channel' >&2; exit 2 ;;
 esac
 [[ $digest =~ ^sha256:[0-9a-f]{64}$ ]]
+export ISO_OUTPUT_DIR="${ISO_OUTPUT_DIR:-.bluebuild/iso}"
 repository=ghcr.io/closure-labs/finite
 source="$repository@$digest"
-mkdir -p .bluebuild/iso
-cosign verify --new-bundle-format=false --key cosign.pub "$source" >.bluebuild/iso/signature.json
+mkdir -p "$ISO_OUTPUT_DIR"
+cosign verify --new-bundle-format=false --key cosign.pub "$source" >"$ISO_OUTPUT_DIR"/signature.json
 # Lorax uses finite-x86_64-TAG as the ISO volume ID (at most 32 bytes).
 # Keep 64 random bits plus a prefix; reject any existing tag before copying.
 tag="i$(printf '%s-%s-%s' "${GITHUB_RUN_ID:?}" "${GITHUB_RUN_ATTEMPT:?}" \
@@ -18,29 +19,32 @@ tag="i$(printf '%s-%s-%s' "${GITHUB_RUN_ID:?}" "${GITHUB_RUN_ATTEMPT:?}" \
 volume_id="finite-x86_64-$tag"
 [[ ${#volume_id} -le 32 ]]
 # List must succeed: authentication/transport errors are not proof of absence.
-skopeo list-tags "docker://$repository" >.bluebuild/iso/tags.json
-jq -e --arg tag "$tag" '.Tags | index($tag) == null' .bluebuild/iso/tags.json >/dev/null
+skopeo list-tags "docker://$repository" >"$ISO_OUTPUT_DIR"/tags.json
+jq -e --arg tag "$tag" '.Tags | index($tag) == null' "$ISO_OUTPUT_DIR"/tags.json >/dev/null
 # Inspect the verified digest, not a channel that daily builds may have advanced.
-skopeo inspect "docker://$source" >.bluebuild/iso/source.json
-[[ $(jq -r .Digest .bluebuild/iso/source.json) == "$digest" ]]
-profile=$(jq -er '.Labels["io.finite.profile"]' .bluebuild/iso/source.json)
+skopeo inspect "docker://$source" >"$ISO_OUTPUT_DIR"/source.json
+[[ $(jq -r .Digest "$ISO_OUTPUT_DIR"/source.json) == "$digest" ]]
+profile=$(jq -er '.Labels["io.finite.profile"]' "$ISO_OUTPUT_DIR"/source.json)
 case "$channel:$profile" in
 finite:bluefin-generic|latest:bluefin-generic|finite-next:bluefin-next|finite-dev:bluefin-dx-generic|finite-dev-next:bluefin-dx-next) ;;
 *) echo 'Image profile does not match the requested channel' >&2; exit 1 ;;
 esac
 bash "$(dirname "${BASH_SOURCE[0]}")/prepare-installer.sh"
+iso_started=$SECONDS
 skopeo copy --all --preserve-digests "docker://$source" "docker://$repository:$tag"
 [[ $(skopeo inspect --format '{{.Digest}}' "docker://$repository:$tag") == "$digest" ]]
 cosign verify --new-bundle-format=false --key cosign.pub "$repository:$tag" >/dev/null
 jq -n --arg image "$source" --arg tag "$repository:$tag" \
   --arg channel "$repository:$channel" --arg profile "$profile" \
-  --slurpfile installer .bluebuild/iso/installer.json \
+  --slurpfile installer "$ISO_OUTPUT_DIR"/installer.json \
   '{image: $image, installationTag: $tag, updateChannel: $channel, profile: $profile,
     installer: $installer[0]}' \
-  >.bluebuild/iso/installation.json
+  >"$ISO_OUTPUT_DIR"/installation.json
 # v0.9.37 constructs IMAGE_TAG from a tag; a digest-only reference becomes latest.
-sudo bluebuild generate-iso --run-driver docker --variant kinoite --output-dir .bluebuild/iso \
+sudo bluebuild generate-iso --run-driver docker --variant kinoite --output-dir "$ISO_OUTPUT_DIR" \
   --iso-name "finite-$profile.iso" image "$repository:$tag"
 # Confirm that the install source tag has not changed while the ISO was assembled.
 [[ $(skopeo inspect --format '{{.Digest}}' "docker://$repository:$tag") == "$digest" ]]
-(cd .bluebuild/iso && sha256sum -- *.iso installation.json >SHA256SUMS)
+(cd "$ISO_OUTPUT_DIR" && sha256sum -- *.iso installation.json >SHA256SUMS)
+
+printf "ISO generation completed in %s seconds\n" "$((SECONDS - iso_started))"

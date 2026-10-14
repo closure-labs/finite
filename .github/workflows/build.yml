@@ -32,7 +32,7 @@ on:
         type: boolean
         default: false
       qualify:
-        description: Force Secure Boot qualification for every selected profile
+        description: Bypass exact qualification reuse and force fresh Secure Boot tests
         type: boolean
         default: false
 
@@ -151,6 +151,7 @@ jobs:
     uses: ./.github/workflows/publication.yml
     secrets:
       COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+      COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
     with:
       profile: ${{ matrix.profile }}
       channel: ${{ matrix.channel }}

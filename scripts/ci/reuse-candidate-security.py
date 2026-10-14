@@ -30,7 +30,8 @@ LIMITS = {name: 16 * MIB for name in (
     'image-manifest.json', 'platform-manifest.json', 'image-config.json', 'extraction.json',
     'extraction-manifest.json', 'extraction-layout.json', 'approved-baseline.json',
     'upstream-verification.json', 'database-coverage.json', 'coverage.json', 'security-result.json',
-    'runner-resources.log', 'applicability-evidence.json')}
+    'runner-resources.log', 'applicability-evidence.json', 'inventory-provenance.json',
+    'inventory-origin.json', 'phase-timings.json')}
 LIMITS.update({'sbom.syft.json': 256 * MIB, 'sbom.spdx.json': 256 * MIB,
                'vulnerabilities.json': 128 * MIB, 'rpm-file-evidence.json': 128 * MIB})
 REQUIRED = {'sbom.syft.json', 'vulnerabilities.json', 'database-coverage.json', 'image-manifest.json',

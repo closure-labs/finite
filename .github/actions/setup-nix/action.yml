@@ -2,6 +2,14 @@ name: Set up Nix and Finite cache
 description: Install Nix with GitHub access and accept the repository's centralized cache configuration
 
 inputs:
+  cache-profile:
+    description: Full checks snapshot or source downloads only (auto chooses by job)
+    required: false
+    default: auto
+  cache-mode:
+    description: baseline, optimized, or none; repository pilot variable supplies the default
+    required: false
+    default: ""
   merge-queue-token:
     description: Optional GitHub Actions secret used for trusted update pull requests
     required: false
@@ -38,15 +46,52 @@ runs:
       shell: bash
       run: python3 scripts/ci/nix-resources.py --verify
 
-    # Preserve store sources as well as the fetcher's content and index.
-    # Only full checks save: smaller jobs must not win the immutable cache key,
-    # and image jobs should not upload their much larger payload stores.
-    - name: Restore Nix store and source downloads
+    - name: Apply centralized public cache policy
+      shell: bash
+      run: python3 scripts/ci/nix-cache.py --configure
+
+    - name: Verify public cache policy
+      shell: bash
+      run: python3 scripts/ci/nix-cache.py
+
+    - name: Prepare pinned scoped SecretSpec resolver
+      shell: bash
+      # Only a validated locally realized public tool path enters PATH.
+      run: | # zizmor: ignore[github-env]
+        resolver=$(nix build --file lib/ci-tools.nix ci-secrets-run --no-link --print-out-paths)
+        [[ $resolver =~ ^/nix/store/[a-z0-9]{32}-finite-ci-secrets-run$ ]]
+        echo "$resolver/bin" >>"$GITHUB_PATH"
+
+    - name: Resolve declared CI options with SecretSpec
+      shell: bash
+      env:
+        FINITE_OPTIMIZED_CACHES: ${{ vars.FINITE_OPTIMIZED_CACHES }}
+        FINITE_CACHIX_WRITER: ${{ vars.FINITE_CACHIX_WRITER }}
+        FINITE_REUSE_INVENTORY: ${{ vars.FINITE_REUSE_INVENTORY }}
+        FINITE_GRYPE_DB_CACHE: ${{ vars.FINITE_GRYPE_DB_CACHE }}
+        FINITE_QUALIFICATION_REUSE: ${{ vars.FINITE_QUALIFICATION_REUSE }}
+        FINITE_QUALIFIED_ISO_PRESERVATION: ${{ vars.FINITE_QUALIFIED_ISO_PRESERVATION }}
+      run: >-
+        finite-ci-secrets-run ci-options --
+        python3 scripts/ci/ci-options.py --github-env
+
+    # Benchmark the optimized source-only lane before enabling it repository-wide.
+    - name: Restore Nix checks snapshot
+      id: store-cache
+      if: >-
+        inputs.cache-mode != 'none' &&
+        (inputs.cache-mode == 'baseline' ||
+         (inputs.cache-mode == '' && env.FINITE_OPTIMIZED_CACHES != 'true') ||
+         inputs.cache-profile == 'checks' ||
+         (inputs.cache-profile == 'auto' && github.job == 'checks'))
       uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
       with:
-        primary-key: nix-store-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock', 'devenv.lock', 'templates/home-manager/flake.lock') }}
-        restore-prefixes-first-match: nix-store-v1-${{ runner.os }}-${{ runner.arch }}-
-        save: ${{ github.job == 'checks' }}
+        primary-key: nix-store-v2-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock', 'devenv.lock', 'templates/home-manager/flake.lock') }}-${{ github.sha }}
+        restore-prefixes-first-match: |
+          nix-store-v2-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock', 'devenv.lock', 'templates/home-manager/flake.lock') }}-
+          nix-store-v2-${{ runner.os }}-${{ runner.arch }}-
+          nix-store-v1-${{ runner.os }}-${{ runner.arch }}-
+        save: ${{ github.job == 'checks' && github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
         paths: |
           ~/.cache/nix/tarball-cache-v2
           ~/.cache/nix/gitv3
@@ -54,15 +99,55 @@ runs:
       env:
         SEGMENT_DOWNLOAD_TIMEOUT_MINS: "2"
 
+    - name: Restore Nix source downloads only
+      id: source-cache
+      if: >-
+        inputs.cache-mode != 'none' && inputs.cache-mode != 'baseline' &&
+        (inputs.cache-mode == 'optimized' || env.FINITE_OPTIMIZED_CACHES == 'true') &&
+        inputs.cache-profile != 'checks' &&
+        !(inputs.cache-profile == 'auto' && github.job == 'checks')
+      uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
+      with:
+        primary-key: nix-sources-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock', 'devenv.lock', 'templates/home-manager/flake.lock') }}
+        restore-prefixes-first-match: nix-sources-v1-${{ runner.os }}-${{ runner.arch }}-
+        nix: false
+        save: ${{ github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
+        paths: |
+          ~/.cache/nix/tarball-cache-v2
+          ~/.cache/nix/gitv3
+          ~/.cache/nix/fetcher-cache-v4.sqlite*
+      env:
+        SEGMENT_DOWNLOAD_TIMEOUT_MINS: "2"
+
+    - name: Record cache selection
+      shell: bash
+      env:
+        STORE_KEY: ${{ steps.store-cache.outputs.restored-key }}
+        SOURCE_KEY: ${{ steps.source-cache.outputs.restored-key }}
+      run: |
+        python3 - <<'PY'
+        import json, os
+        from pathlib import Path
+        record = {key: os.environ[key] for key in ('STORE_KEY', 'SOURCE_KEY')}
+        with Path(os.environ['GITHUB_STEP_SUMMARY']).open('a') as output:
+            output.write('Nix cache restore: ' + json.dumps(record) + '\n')
+        PY
+
+    - name: Prepare legacy secret mapper without credentials
+      if: inputs.cachix-auth-token != '' || inputs.merge-queue-token != ''
+      shell: bash
+      run: | # zizmor: ignore[github-env]
+        mapper=$(nix build --file lib/ci-tools.nix ci-github-actions-secrets --no-link --print-out-paths)
+        [[ $mapper =~ ^/nix/store/[a-z0-9]{32}-finite-github-actions-secrets$ ]]
+        echo "$mapper/bin" >>"$GITHUB_PATH"
+
     - name: Map declared GitHub Actions secrets
       if: inputs.cachix-auth-token != '' || inputs.merge-queue-token != ''
       env:
         GITHUB_ACTIONS_CACHIX_AUTH_TOKEN: ${{ inputs.cachix-auth-token }}
         GITHUB_ACTIONS_MERGE_QUEUE_TOKEN: ${{ inputs.merge-queue-token }}
       shell: bash
-      run: >-
-        nix shell --file lib/ci-tools.nix ci-github-actions-secrets
-        -c finite-github-actions-secrets
+      run: finite-github-actions-secrets
 
     - name: Require protected-branch automation credential
       if: inputs.require-merge-queue-token == 'true'

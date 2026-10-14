@@ -20,19 +20,88 @@ on:
       source_revision:
         type: string
         required: true
+      validation_only:
+        type: boolean
+        default: false
+      force_qualification:
+        type: boolean
+        default: false
     outputs:
       evidence:
-        value: ${{ jobs.qualify.outputs.evidence }}
+        value: ${{ jobs.aggregate.outputs.evidence }}
 permissions:
   contents: read
   packages: write
+  actions: read
 jobs:
-  qualify:
-    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
+  prepare:
+    if: >-
+      github.repository == 'closure-labs/finite' &&
+      ((!inputs.validation_only && github.ref == 'refs/heads/main') ||
+       (inputs.validation_only && github.event_name == 'workflow_dispatch' &&
+        startsWith(github.ref, 'refs/heads/') && github.ref != 'refs/heads/main' &&
+        github.workflow_ref == format('{0}/.github/workflows/benchmark-image-tools.yml@{1}', github.repository, github.ref)))
     runs-on: ubuntu-24.04
-    timeout-minutes: 240
+    timeout-minutes: 15
     outputs:
-      evidence: ${{ steps.outcome.outputs.evidence }}
+      reused: ${{ steps.reuse.outputs.reused }}
+    env:
+      PROFILE: ${{ inputs.profile }}
+      CANDIDATE_DIGEST: ${{ inputs.digest }}
+      PREVIOUS_DIGEST: ${{ inputs.previous }}
+      BUILD_IDENTITY: ${{ inputs.identity }}
+      SOURCE_REVISION: ${{ inputs.source_revision }}
+      GH_TOKEN: ${{ github.token }}
+      FINITE_VALIDATION_ONLY: ${{ inputs.validation_only }}
+      QUALIFICATION_PREFIX: ${{ inputs.validation_only && 'qualification-diagnostic' || 'qualification' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Validate manual branch diagnostic boundary
+        if: inputs.validation_only
+        run: python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"
+      - uses: ./.github/actions/setup-nix
+        with:
+          cache-mode: none
+      - name: Validate qualification execution context
+        run: python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"
+      - name: Install context tools for the reuse pilot
+        if: ${{ !inputs.validation_only && env.FINITE_QUALIFICATION_REUSE == 'true' && !inputs.force_qualification }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-x86 qemu-utils ovmf xorriso skopeo mtools openssl python3-virt-firmware
+      - name: Check exact qualification reuse
+        id: reuse
+        env:
+          ENABLED: ${{ !inputs.validation_only && env.FINITE_QUALIFICATION_REUSE == 'true' && !inputs.force_qualification }}
+        run: |
+          echo "reused=false" >>"$GITHUB_OUTPUT"
+          if [[ "$ENABLED" != true ]]; then exit 0; fi
+          python3 scripts/bluebuild/qualification-context.py context
+          status=0
+          python3 scripts/bluebuild/reuse-qualification.py --profile "$PROFILE" --output .bluebuild/reused || status=$?
+          if [[ $status == 3 ]]; then exit 0; fi
+          if [[ $status != 0 ]]; then exit "$status"; fi
+          echo "reused=true" >>"$GITHUB_OUTPUT"
+      - name: Save authenticated reusable qualification
+        if: ${{ !inputs.validation_only && steps.reuse.outputs.reused == 'true' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: qualification-reused-${{ inputs.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/reused/
+          include-hidden-files: true
+          retention-days: 1
+
+  phase:
+    needs: prepare
+    if: needs.prepare.outputs.reused != 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        phase: ${{ fromJSON(inputs.previous != '' && '["fresh","upgrade"]' || '["fresh"]') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
     env:
       PROFILE: ${{ inputs.profile }}
       CHANNEL: ${{ inputs.channel }}
@@ -40,10 +109,21 @@ jobs:
       PREVIOUS_DIGEST: ${{ inputs.previous }}
       BUILD_IDENTITY: ${{ inputs.identity }}
       SOURCE_REVISION: ${{ inputs.source_revision }}
+      GH_TOKEN: ${{ github.token }}
+      FINITE_VALIDATION_ONLY: ${{ inputs.validation_only }}
+      QUALIFICATION_PREFIX: ${{ inputs.validation_only && 'qualification-diagnostic' || 'qualification' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Validate manual branch diagnostic boundary
+        if: inputs.validation_only
+        run: python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"
+      - uses: ./.github/actions/setup-nix
+        with:
+          cache-mode: none
+      - name: Validate qualification execution context
+        run: python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"
       - uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
         with:
           skip-if-available: "80G"
@@ -52,37 +132,118 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y qemu-system-x86 qemu-utils ovmf xorriso skopeo mtools openssl python3-virt-firmware
-      - name: Qualify immutable candidate
+      - name: Qualify immutable candidate phase
         id: acceptance
         env:
           REGISTRY_TOKEN: ${{ github.token }}
           REGISTRY_USER: ${{ github.actor }}
+          PHASE: ${{ matrix.phase }}
         run: |
           printf '%s' "$REGISTRY_TOKEN" | skopeo login --username "$REGISTRY_USER" --password-stdin ghcr.io
           printf '%s' "$REGISTRY_TOKEN" | docker login --username "$REGISTRY_USER" --password-stdin ghcr.io
           bash scripts/bluebuild/install-cli.sh
-          bash scripts/bluebuild/qualify.sh
+          bash scripts/bluebuild/qualify.sh "$PHASE"
+      - name: Record phase outcome
+        if: always()
+        env:
+          OUTCOME: ${{ steps.acceptance.outcome }}
+          PHASE: ${{ matrix.phase }}
+        run: |
+          mkdir -p .bluebuild
+          jq -n --arg outcome "$OUTCOME" --arg phase "$PHASE" '{outcome:$outcome,phase:$phase}' >".bluebuild/$PROFILE-$PHASE-outcome.json"
+          echo "Qualification $PHASE outcome: $OUTCOME" >>"$GITHUB_STEP_SUMMARY"
+      - name: Save phase evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ inputs.validation_only && 'qualification-diagnostic-phase' || 'qualification-phase' }}-${{ inputs.profile }}-${{ matrix.phase }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .bluebuild/*outcome.json
+            .bluebuild/*qualification-context.json
+            .bluebuild/vm*/**/*.json
+            .bluebuild/vm*/**/*.log
+            .bluebuild/iso-*/*.json
+            .bluebuild/iso-*/SHA256SUMS
+          include-hidden-files: true
+          retention-days: 7
+      - name: Preserve pristine qualified candidate ISO for the pilot
+        if: success() && !inputs.validation_only && matrix.phase == 'fresh' && env.FINITE_QUALIFIED_ISO_PRESERVATION == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: finite-qualified-iso-${{ inputs.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .bluebuild/iso-candidate/*.iso
+            .bluebuild/iso-candidate/SHA256SUMS
+            .bluebuild/iso-candidate/installation.json
+            .bluebuild/iso-candidate/signature.json
+          include-hidden-files: true
+          compression-level: 0
+          retention-days: 7
+
+  aggregate:
+    needs: [prepare, phase]
+    if: always() && needs.prepare.result == 'success' && (needs.phase.result == 'success' || needs.prepare.outputs.reused == 'true')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      evidence: ${{ steps.outcome.outputs.evidence }}
+    env:
+      PROFILE: ${{ inputs.profile }}
+      CANDIDATE_DIGEST: ${{ inputs.digest }}
+      PREVIOUS_DIGEST: ${{ inputs.previous }}
+      BUILD_IDENTITY: ${{ inputs.identity }}
+      SOURCE_REVISION: ${{ inputs.source_revision }}
+      GH_TOKEN: ${{ github.token }}
+      FINITE_VALIDATION_ONLY: ${{ inputs.validation_only }}
+      QUALIFICATION_PREFIX: ${{ inputs.validation_only && 'qualification-diagnostic' || 'qualification' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Validate manual branch diagnostic boundary
+        if: inputs.validation_only
+        run: python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"
+      - uses: ./.github/actions/setup-nix
+        with:
+          cache-mode: none
+      - name: Validate qualification execution context
+        run: python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"
+      - name: Collect and require every applicable qualification phase
+        env:
+          REUSED: ${{ needs.prepare.outputs.reused }}
+        run: |
+          python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"
+          if [[ "$REUSED" == true ]]; then
+            gh run download "$GITHUB_RUN_ID" --name "qualification-reused-$PROFILE-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" --dir .bluebuild
+            python3 scripts/bluebuild/reuse-qualification.py --profile "$PROFILE" --verify-reused ".bluebuild/$PROFILE-acceptance.json"
+          else
+            gh run download "$GITHUB_RUN_ID" --name "$QUALIFICATION_PREFIX-phase-$PROFILE-fresh-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" --dir .bluebuild
+            if [[ -n "$PREVIOUS_DIGEST" ]]; then
+              gh run download "$GITHUB_RUN_ID" --name "$QUALIFICATION_PREFIX-phase-$PROFILE-upgrade-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" --dir .bluebuild
+            fi
+            python3 scripts/bluebuild/qualification-context.py aggregate
+          fi
       - name: Record qualification outcome
         id: outcome
         if: always()
         env:
-          OUTCOME: ${{ steps.acceptance.outcome }}
+          OUTCOME: ${{ job.status }}
         run: |
           mkdir -p .bluebuild
-          jq -n --arg outcome "$OUTCOME" '{outcome: $outcome}' >".bluebuild/$PROFILE-qualification-outcome.json"
-          echo "Qualification outcome: $OUTCOME" >>"$GITHUB_STEP_SUMMARY"
-          echo "evidence=qualification-$PROFILE-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >>"$GITHUB_OUTPUT"
+          jq -n --arg outcome "$OUTCOME" '{outcome:$outcome}' >".bluebuild/$PROFILE-qualification-outcome.json"
+          echo "evidence=$QUALIFICATION_PREFIX-$PROFILE-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >>"$GITHUB_OUTPUT"
       - name: Save qualification evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: qualification-${{ inputs.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: ${{ inputs.validation_only && 'qualification-diagnostic' || 'qualification' }}-${{ inputs.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             .bluebuild/*acceptance.json
             .bluebuild/*outcome.json
             .bluebuild/vm*/**/*.json
             .bluebuild/vm*/**/*.log
-            .bluebuild/iso/*.json
-            .bluebuild/iso/SHA256SUMS
+            .bluebuild/iso-*/*.json
+            .bluebuild/iso-*/SHA256SUMS
           include-hidden-files: true
           retention-days: 90
+
