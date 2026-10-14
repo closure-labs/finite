@@ -21,6 +21,13 @@ actual_certificate_sha=$(openssl x509 -in "$certificate" -outform DER | sha256su
 openssl x509 -in "$certificate" -checkend 0 -noout
 [[ $source =~ ^ghcr.io/jasonn3/build-container-installer@sha256:[0-9a-f]{64}$ ]]
 [[ $alias == ghcr.io/jasonn3/build-container-installer:v1.4.0 ]]
+# The pinned installer lacks OpenSSL. Convert on the validated host and copy
+# only public installer inputs into a temporary build context.
+installer_context=$(mktemp -d "${TMPDIR:-/tmp}/finite-installer-context.XXXXXX")
+trap 'rm -rf -- "$installer_context"' EXIT
+cp -a files/installer/. "$installer_context/"
+openssl x509 -in "$certificate" -outform DER -out "$installer_context/secure-boot.der"
+[[ $(sha256sum "$installer_context/secure-boot.der" | cut -d' ' -f1) == "$certificate_sha" ]]
 docker pull "$source"
 docker inspect "$source" | jq -e --arg version "$version" --arg revision "$revision" '
   .[0].Config.Labels |
@@ -43,8 +50,8 @@ docker run --rm --entrypoint /bin/bash "$source" -euo pipefail -c '
 hook=files/installer/install_finite_fstab
 hook_sha=$(sha256sum "$hook" | cut -d' ' -f1)
 printf 'Using installer %s (%s) through local CLI compatibility alias %s\n' "$version" "$source" "$alias"
-docker build --pull=false --network=none --file files/installer/Containerfile --build-arg "INSTALLER=$source" \
-  --label "io.finite.installer-hook-sha256=$hook_sha" --tag "$alias" files/installer
+docker build --pull=false --network=none --file "$installer_context/Containerfile" --build-arg "INSTALLER=$source" \
+  --label "io.finite.installer-hook-sha256=$hook_sha" --tag "$alias" "$installer_context"
 actual_hook_sha=$(docker run --rm --entrypoint sha256sum "$alias" \
   /build-container-installer/lorax_templates/scripts/post/install_finite_fstab | cut -d' ' -f1)
 [[ $actual_hook_sha == "$hook_sha" ]]
