@@ -64,13 +64,8 @@ runs:
 
     - name: Resolve declared CI options with SecretSpec
       shell: bash
-      env:
-        FINITE_OPTIMIZED_CACHES: ${{ vars.FINITE_OPTIMIZED_CACHES }}
-        FINITE_CACHIX_WRITER: ${{ vars.FINITE_CACHIX_WRITER }}
-        FINITE_REUSE_INVENTORY: ${{ vars.FINITE_REUSE_INVENTORY }}
-        FINITE_GRYPE_DB_CACHE: ${{ vars.FINITE_GRYPE_DB_CACHE }}
-        FINITE_QUALIFICATION_REUSE: ${{ vars.FINITE_QUALIFICATION_REUSE }}
-        FINITE_QUALIFIED_ISO_PRESERVATION: ${{ vars.FINITE_QUALIFIED_ISO_PRESERVATION }}
+      # Public options are supplied by workflow env; composite manifests cannot
+      # reference the vars context. SecretSpec validates the inherited values.
       run: >-
         finite-ci-secrets-run ci-options --
         python3 scripts/ci/ci-options.py --github-env

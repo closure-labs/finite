@@ -10,6 +10,8 @@ import tempfile
 import tomllib
 import unittest
 
+import yaml
+
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = tomllib.loads((ROOT / 'secretspec.toml').read_text())
 FLAGS = {'FINITE_OPTIMIZED_CACHES', 'FINITE_CACHIX_WRITER', 'FINITE_REUSE_INVENTORY',
@@ -19,6 +21,18 @@ CLI = os.environ.get('FINITE_TEST_SECRETSPEC') or shutil.which('secretspec')
 
 
 class Manifest(unittest.TestCase):
+    def test_workflows_bootstrap_options_without_unsupported_composite_context(self):
+        action = (ROOT / '.github/actions/setup-nix/action.yml').read_text()
+        self.assertNotRegex(action, r'\bvars\.')
+        for path in (ROOT / '.github/workflows').glob('*.yml'):
+            source = path.read_text()
+            if './.github/actions/setup-nix' not in source:
+                continue
+            with self.subTest(workflow=path.name):
+                values = yaml.safe_load(source).get('env', {})
+                self.assertEqual({key: values.get(key) for key in FLAGS},
+                                 {key: '${{ vars.' + key + ' }}' for key in FLAGS})
+
     def test_default_devenv_profile_contains_no_signing_or_github_credentials(self):
         self.assertEqual(set(MANIFEST['profiles']['default']), FLAGS | {'CACHIX_AUTH_TOKEN'})
         self.assertFalse(MANIFEST['profiles']['default']['CACHIX_AUTH_TOKEN']['required'])

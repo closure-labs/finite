@@ -5,6 +5,15 @@ on:
     - cron: "11 7 * * *"
   workflow_dispatch:
 
+# Bootstrap public options; setup-nix resolves them through SecretSpec.
+env:
+  FINITE_OPTIMIZED_CACHES: ${{ vars.FINITE_OPTIMIZED_CACHES }}
+  FINITE_CACHIX_WRITER: ${{ vars.FINITE_CACHIX_WRITER }}
+  FINITE_REUSE_INVENTORY: ${{ vars.FINITE_REUSE_INVENTORY }}
+  FINITE_GRYPE_DB_CACHE: ${{ vars.FINITE_GRYPE_DB_CACHE }}
+  FINITE_QUALIFICATION_REUSE: ${{ vars.FINITE_QUALIFICATION_REUSE }}
+  FINITE_QUALIFIED_ISO_PRESERVATION: ${{ vars.FINITE_QUALIFIED_ISO_PRESERVATION }}
+
 permissions:
   contents: read
   actions: read
