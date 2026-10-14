@@ -42,6 +42,14 @@ together and evaluate the refreshed locks before merging. The September 28,
 2026 weekly refresh advanced Den beyond the pinned schema API and failed with
 `mkSchemaOption` rejecting `specialArgs`.
 
+Nix concurrency is measured per runner, including CPU affinity and cgroup limits.
+The shared setup verifies the Determinate client and effective build/evaluation
+settings after installation. A standard 4-CPU/16-GiB runner uses four build jobs,
+one core per job and four evaluation threads; smaller or larger runners receive
+a CPU/memory budget. The 2-CPU/4-GiB qualification guest receives one build job,
+two cores per job and one evaluation thread. See the
+[Nix workflow resource audit](nix-workflow-resources.md) for coverage and limits.
+
 The shared Nix setup uses `nix-community/cache-nix-action` to preserve the Nix
 store together with downloaded source trees and the fetcher index, keyed by
 runner platform and lock-file hashes. Only full checks save this cache; image

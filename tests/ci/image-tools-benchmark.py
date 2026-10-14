@@ -61,7 +61,7 @@ class Benchmark(unittest.TestCase):
         self.assertNotIn('cache-nix', json.dumps(job))
         self.assertNotIn('./.github/actions/setup-nix', json.dumps(job))
         setup = yaml.safe_load((ROOT / '.github/actions/setup-nix/action.yml').read_text())
-        install = setup['runs']['steps'][0]
+        install = next(s for s in setup['runs']['steps'] if s.get('uses', '').startswith('DeterminateSystems/determinate-nix-action@'))
         self.assertIn(install['uses'], [s.get('uses') for s in job['steps']])
         self.assertEqual(next(s['with'] for s in job['steps'] if s.get('uses') == install['uses']), install['with'])
         upload = next(s for s in job['steps'] if s.get('uses', '').startswith('actions/upload-artifact@'))
