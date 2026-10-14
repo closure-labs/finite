@@ -74,7 +74,10 @@ class DeliveryPolicy(unittest.TestCase):
         self.assertNotIn('REPOSITORY_AUDIT_TOKEN', text)
         self.assertNotIn('MERGE_QUEUE_TOKEN', text)
         self.assertNotIn('pull_request', text)
-        self.assertIn('nix shell --file lib/ci-tools.nix ci-repository-security-audit', text)
+        self.assertIn('nix shell --file lib/ci-tools.nix ci-secrets-run ci-repository-security-audit', text)
+        self.assertIn('finite-ci-secrets-run repository-read', audit_step['run'])
+        self.assertEqual(token['with']['client-id'], '${{ env.SECAUDIT_CLIENTID }}')
+        self.assertEqual(token['with']['private-key'], '${{ env.SECAUDIT_PEM }}')
         self.assertNotIn('nix run', text)
         self.assertIn('ci-repository-security-audit = import', (ROOT / 'lib/ci-tools.nix').read_text())
 

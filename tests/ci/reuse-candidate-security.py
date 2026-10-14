@@ -308,5 +308,189 @@ class Reuse(unittest.TestCase):
                 api.assert_not_called()
 
 
+inventory_spec = importlib.util.spec_from_file_location('inventory_fixture', ROOT / 'scripts/ci/inventory-evidence.py')
+inventory = importlib.util.module_from_spec(inventory_spec)
+exec(compile(Path(inventory_spec.origin).read_bytes(), inventory_spec.origin, 'exec'), inventory.__dict__)
+fetch_spec = importlib.util.spec_from_file_location('inventory_fetch_fixture', ROOT / 'scripts/ci/reuse-image-inventory.py')
+fetch = importlib.util.module_from_spec(fetch_spec)
+exec(compile(Path(fetch_spec.origin).read_bytes(), fetch_spec.origin, 'exec'), fetch.__dict__)
+GENERATION = {'platform': 'linux/amd64', 'tools': {'syft': 'fixture 1', 'umoci': 'fixture 1'},
+              'catalogers': 'image', 'implementations': {'collector': 'a' * 64}}
+
+
+class Inventory(unittest.TestCase):
+    def bundle(self, directory, risk=True):
+        files = inventory.REQUIRED | ({'rpm-file-evidence.json', 'applicability-evidence.json'} if risk else set())
+        for name in files:
+            (directory / name).write_text('{}')
+        with patch.object(inventory, 'generation', return_value=GENERATION):
+            return inventory.write(directory, IMAGE, DIGEST, risk)
+
+    def verify(self, directory, risk=True):
+        with patch.object(inventory, 'generation', return_value=GENERATION), \
+             patch.object(reuse.security, 'read_manifests', return_value={}), \
+             patch.object(reuse.security, 'manifest_binding', return_value=DIGEST):
+            return inventory.verify(directory, IMAGE, reuse.security, risk)
+
+    def test_generation_changes_when_current_policy_or_collector_changes(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for name in inventory.IMPLEMENTATIONS:
+                path = root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text('fixture')
+            with patch.object(inventory, 'ROOT', root), \
+                 patch.object(inventory.subprocess, 'check_output', return_value='fixture version'):
+                original = inventory.generation()
+                (root / 'automation/security/image-policy.json').write_text('new applicability probes')
+                changed = inventory.generation()
+                self.assertNotEqual(original, changed)
+                (root / 'scripts/ci/applicability-evidence.py').write_text('new collector')
+                self.assertNotEqual(changed, inventory.generation())
+
+    def test_exact_inventory_only_reuse_and_probe_compatibility(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            original = self.bundle(directory)
+            self.assertEqual(self.verify(directory), original)
+            output = directory / 'ready'
+            output.mkdir()
+            inventory.copy(directory, output, original)
+            self.assertEqual({p.name for p in output.iterdir()}, set(original['files']) | {'inventory-provenance.json'})
+            self.assertFalse((output / 'vulnerabilities.json').exists())
+            self.assertFalse((output / 'security-result.json').exists())
+            path = directory / 'inventory-provenance.json'
+            changed = deepcopy(original)
+            changed['generation']['tools']['syft'] = 'fixture 2'
+            path.write_text(json.dumps(changed))
+            with self.assertRaises(inventory.Unavailable): self.verify(directory)
+
+    def test_missing_probe_legacy_or_expired_is_a_safe_miss(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            with self.assertRaises(inventory.Unavailable): self.verify(directory)
+            original = self.bundle(directory, risk=False)
+            with self.assertRaises(inventory.Unavailable): self.verify(directory)
+            original['generatedAt'] = (datetime.now(timezone.utc) - timedelta(days=8)).isoformat()
+            (directory / 'inventory-provenance.json').write_text(json.dumps(original))
+            with self.assertRaises(inventory.Unavailable): self.verify(directory, risk=False)
+
+    def test_tampered_or_unbound_bytes_future_time_symlink_and_manifest_are_fatal(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            original = self.bundle(directory)
+            path = directory / 'inventory-provenance.json'
+            for changed in [dict(original, image=IMAGE.replace('b' * 64, 'c' * 64)),
+                            dict(original, platformDigest='sha256:' + 'c' * 64),
+                            dict(original, generatedAt=(datetime.now(timezone.utc) + timedelta(minutes=1)).isoformat()),
+                            dict(original, generatedAt='2026-01-01T00:00:00'),
+                            dict(original, files={**original['files'], '../escape': 'a' * 64})]:
+                path.write_text(json.dumps(changed))
+                with self.assertRaises(ValueError) as error: self.verify(directory)
+                self.assertNotIsInstance(error.exception, inventory.Unavailable)
+            original['generatedAt'] = (datetime.now(timezone.utc) - timedelta(days=8)).isoformat()
+            path.write_text(json.dumps(original))
+            # A stale timestamp must not conceal corrupted content.
+            (directory / 'sbom.syft.json').write_text('tampered')
+            with self.assertRaisesRegex(ValueError, 'content hash'): self.verify(directory)
+            original = self.bundle(directory)
+            (directory / 'platform-manifest.json').write_text('{}')
+            with self.assertRaisesRegex(ValueError, 'unbound'): self.verify(directory)
+            (directory / 'platform-manifest.json').unlink()
+            sbom = directory / 'sbom.syft.json'
+            sbom.unlink()
+            sbom.symlink_to(directory / 'sbom.spdx.json')
+            with self.assertRaisesRegex(ValueError, 'content hash'): self.verify(directory)
+
+    def test_authenticated_fetch_reuses_inventory_from_expired_results_without_findings(self):
+        for producer_event in ('workflow_dispatch', 'schedule'):
+            fixture = Reuse()
+            fixture.setUp()
+            fixture.run['event'] = producer_event
+            with tempfile.TemporaryDirectory() as temporary:
+                directory = Path(temporary)
+                original, _ = fixture.fixture(directory)
+                original['scannedAt'] = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+                (directory / 'security-result.json').write_text(json.dumps(original))
+                self.bundle(directory)
+                stream = io.BytesIO()
+                with zipfile.ZipFile(stream, 'w', zipfile.ZIP_DEFLATED) as zipped:
+                    for name in sorted(reuse.REQUIRED | set(inventory.FILES) | {'inventory-provenance.json'}):
+                        path = directory / name
+                        if path.exists(): zipped.writestr(name, path.read_bytes())
+                        elif name in reuse.REQUIRED: zipped.writestr(name, b'{}')
+                archive = stream.getvalue()
+                fixture.artifacts[-1].update(size_in_bytes=len(archive), digest='sha256:' + hashlib.sha256(archive).hexdigest())
+                def download(command, **kwargs):
+                    kwargs['stdout'].write(archive)
+                record = {'profile': PROFILE, 'revision': SHA, 'buildIdentity': IDENTITY,
+                          'qualificationMode': 'enforce', 'publish': True}
+                with patch.dict(os.environ, environment(), clear=True), \
+                     patch.object(fetch.publication, 'github', side_effect=[fixture.run, [{'artifacts': fixture.artifacts}], [{'jobs': fixture.jobs}]]), \
+                     patch.object(fetch.publication, 'origin_files', return_value={
+                         PROFILE + '-publication.json': json.dumps(record).encode(), PROFILE + '-image-ref.txt': IMAGE.encode()}), \
+                     patch.object(fetch.subprocess, 'run', side_effect=download), \
+                     patch.object(fetch.inventory, 'generation', return_value=GENERATION), \
+                     patch.object(fetch.reuse.security, 'read_manifests', return_value={}), \
+                     patch.object(fetch.reuse.security, 'manifest_binding', return_value=DIGEST):
+                    result = fetch.retrieve(IMAGE, PROFILE, directory / 'ready', '123')
+                ready = directory / 'ready'
+                self.assertTrue(result['newScanRequired'])
+                self.assertFalse(result['releaseEligibilityEstablished'])
+                self.assertEqual(result['originSecurityJob'], 5)
+                self.assertEqual(result['artifactSha256'], fixture.artifacts[-1]['digest'])
+                self.assertFalse((ready / 'security-result.json').exists())
+                self.assertFalse((ready / 'vulnerabilities.json').exists())
+                self.assertFalse((ready / 'database-coverage.json').exists())
+
+    def test_fetch_rejects_untrusted_consumer_before_api_access(self):
+        for key, value in [('GITHUB_REF', 'refs/heads/branch'), ('GITHUB_REPOSITORY', 'fork/finite'),
+                           ('GITHUB_WORKFLOW_REF', 'closure-labs/finite/.github/workflows/unknown.yml@refs/heads/main')]:
+            with patch.dict(os.environ, {**environment(), key: value}, clear=True), \
+                 patch.object(fetch.publication, 'github') as api, self.assertRaises(ValueError):
+                fetch.retrieve(IMAGE, PROFILE, Path('/tmp/never-created'), '123')
+            api.assert_not_called()
+
+    def test_reused_scan_always_refreshes_db_and_current_policy(self):
+        spec = importlib.util.spec_from_file_location('reused_scanner', ROOT / 'scripts/bluebuild/security-scan.py')
+        scanner = importlib.util.module_from_spec(spec)
+        exec(compile(Path(spec.origin).read_bytes(), spec.origin, 'exec'), scanner.__dict__)
+        for database_fails in (False, True):
+            with tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                source = root / 'inventory'
+                source.mkdir()
+                record = self.bundle(source)
+                (source / 'inventory-origin.json').write_text(json.dumps({
+                    'schema': 1, 'status': 'authenticated-inventory-only', 'image': IMAGE,
+                    'newScanRequired': True, 'validationRevision': SHA}))
+                commands = []
+                def run(command, output=None):
+                    commands.append(command)
+                    if database_fails and command[:3] == ['grype', 'db', 'update']:
+                        raise subprocess.CalledProcessError(1, command)
+                    if output: output.write_text('{}')
+                with patch.dict(os.environ, environment(), clear=True), \
+                     patch.object(sys, 'argv', ['security-scan.py', IMAGE, str(root / 'scan'), '--inventory-dir', str(source)]), \
+                     patch.object(scanner.inventory_module, 'verify', return_value=record), \
+                     patch.object(scanner.policy_module, 'load_policy', return_value={'mode': 'strict', 'coverageProbePackage': 'systemd'}), \
+                     patch.object(scanner.policy_module, 'read_manifests', return_value={}), \
+                     patch.object(scanner.policy_module, 'inventory', return_value={'effective': 'fedora:42'}), \
+                     patch.object(scanner, 'run', side_effect=run), \
+                     patch.object(scanner.subprocess, 'call', return_value=0) as evaluate, self.assertRaises(SystemExit) as status:
+                    scanner.main()
+                self.assertIn(['grype', 'db', 'update'], commands)
+                self.assertFalse(any(command[0] in ('syft', 'skopeo', 'umoci') for command in commands))
+                if database_fails:
+                    self.assertEqual(status.exception.code, 2)
+                    evaluate.assert_not_called()
+                    self.assertEqual(json.loads((root / 'scan/security-result.json').read_text())['status'], 'scanner-error')
+                else:
+                    self.assertEqual(status.exception.code, 0)
+                    self.assertTrue(any(command[0] == 'grype' and command[1].startswith('sbom:') for command in commands))
+                    evaluate.assert_called_once()
+                self.assertTrue(json.loads((root / 'scan/phase-timings.json').read_text())['inventoryReused'])
+
+
 if __name__ == '__main__':
     unittest.main()

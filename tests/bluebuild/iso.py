@@ -49,7 +49,7 @@ elif name=='docker':
  elif args[0]=='run':
   if os.environ.get('BAD_INSTALLER_CLEANUP'): sys.exit(1)
   if 'sha256sum' in args:
-   value=hashlib.sha256(pathlib.Path('files/installer/install_finite_fstab').read_bytes()).hexdigest()
+   value=(json.loads(pathlib.Path('sources/installer-security.json').read_text())['derSha256'] if args[-1].endswith('sb_pubkey.der') else hashlib.sha256(pathlib.Path('files/installer/install_finite_fstab').read_bytes()).hexdigest())
    print(('bad' if os.environ.get('BAD_INSTALLER_HOOK') else value)+'  hook')
 '''
 
@@ -65,6 +65,7 @@ class IsoBoundary(unittest.TestCase):
             tool.write_text(MOCK.replace("#!/usr/bin/env python3", "#!" + sys.executable, 1))
             tool.chmod(0o755)
         (root/'sources').mkdir()
+        (root/'sources/installer-security.json').write_text((SCRIPT.parents[2]/'sources/installer-security.json').read_text())
         (root/'sources/bluebuild-installer.json').write_text((SCRIPT.parents[2]/'sources/bluebuild-installer.json').read_text())
         shutil.copytree(SCRIPT.parents[2]/'files/installer', root/'files/installer')
         env = dict(os.environ, PATH=str(bindir)+':'+os.environ['PATH'], DIGEST=DIGEST,

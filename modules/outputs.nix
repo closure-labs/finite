@@ -10,6 +10,7 @@
 }: let
   system = project.platform.system;
   pkgs = mkPkgs system;
+  finiteSecretspec = import ../lib/secretspec.nix {inherit pkgs;};
   treefmtEval = outputDependencies.treefmt.evalModule pkgs ../treefmt.nix;
   repositoryToolchain =
     (with pkgs; [
@@ -30,7 +31,6 @@
       just
       pipewire
       ripgrep
-      secretspec
       shellcheck
       skopeo
       statix
@@ -40,6 +40,7 @@
       zsh
     ])
     ++ [
+      finiteSecretspec
       (pkgs.python3.withPackages (p: [p.pyyaml]))
       treefmtEval.config.build.wrapper
     ];
@@ -56,7 +57,7 @@
     devenv = outputDependencies.devenvPackage;
     inherit pkgs;
     cacheName = cache.name;
-    secretspec = outputDependencies.weeklySecretspec;
+    secretspec = finiteSecretspec;
   };
   homeApplications = import ../lib/home-profile-applications.nix {
     inherit homeScaffold pkgs;
@@ -197,6 +198,8 @@
     ci-queue-dependabot.package = applications.queueDependabot;
     ci-repository-security-audit.package = applications.repositorySecurityAudit;
     ci-github-actions-secrets.package = applications.githubActionsSecrets;
+    ci-secrets-run.package = applications.ciSecretsRun;
+    ci-secrets-options.package = applications.ciSecretsOptions;
     ci-lock-validate.package = applications.validateLocks;
     ci-cosign.package = pkgs.cosign;
     ci-skopeo.package = pkgs.skopeo;

@@ -32,9 +32,19 @@ on:
         type: boolean
         default: false
       qualify:
-        description: Force Secure Boot qualification for every selected profile
+        description: Bypass exact qualification reuse and force fresh Secure Boot tests
         type: boolean
         default: false
+
+# Bootstrap public options; setup-nix resolves them through SecretSpec.
+env:
+  FINITE_OPTIMIZED_CACHES: ${{ vars.FINITE_OPTIMIZED_CACHES }}
+  FINITE_CACHIX_WRITER: ${{ vars.FINITE_CACHIX_WRITER }}
+  FINITE_REUSE_INVENTORY: ${{ vars.FINITE_REUSE_INVENTORY }}
+  FINITE_GRYPE_DB_CACHE: ${{ vars.FINITE_GRYPE_DB_CACHE }}
+  FINITE_QUALIFICATION_REUSE: ${{ vars.FINITE_QUALIFICATION_REUSE }}
+  FINITE_QUALIFIED_ISO_PRESERVATION: ${{ vars.FINITE_QUALIFIED_ISO_PRESERVATION }}
+  FINITE_QUALIFIED_ISO_CHANNELS: ${{ vars.FINITE_QUALIFIED_ISO_CHANNELS }}
 
 permissions:
   contents: read
@@ -151,6 +161,7 @@ jobs:
     uses: ./.github/workflows/publication.yml
     secrets:
       COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+      COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
     with:
       profile: ${{ matrix.profile }}
       channel: ${{ matrix.channel }}

@@ -15,7 +15,7 @@ permissions:
   contents: read
   actions: read
 concurrency:
-  group: finite-vm-acceptance
+  group: finite-vm-acceptance-${{ inputs.iso_run }}
   cancel-in-progress: false
 jobs:
   vm:

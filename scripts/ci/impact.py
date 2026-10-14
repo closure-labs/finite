@@ -17,6 +17,15 @@ GENERIC = set(PROFILES) - NEXT
 # These files qualify an existing immutable image; they are not filesystem
 # inputs. Keep source/security checks while reusing already validated builds.
 QUALIFICATION_ONLY = {
+    'scripts/bluebuild/publication-current.py',
+    'scripts/bluebuild/qualification-context.py', 'scripts/bluebuild/reuse-qualification.py',
+    'scripts/bluebuild/prune-qualified-isos.py', 'scripts/bluebuild/reuse-predecessor-iso.py',
+    'scripts/ci/inventory-evidence.py', 'scripts/ci/reuse-image-inventory.py',
+    'scripts/ci/nix-cache.py', 'scripts/ci/cache-publish.py',
+    'scripts/ci/ci-options.py', 'sources/secretspec.json',
+    'secretspec.toml', 'devenv.nix', 'devenv.yaml', 'devenv-tasks.nix',
+    'scripts/ci/prune-ci-caches.py', 'scripts/ci/benchmark-ci-cache.py',
+    '.github/workflows/cache-maintenance.yml', '.github/workflows/benchmark-ci-cache.yml',
     'scripts/ci/reuse-candidate-security.py',
     'automation/security/image-policy.json',
     'scripts/ci/approved-baseline.py', 'scripts/ci/security-remediation-diff.py',

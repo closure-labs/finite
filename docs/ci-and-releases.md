@@ -50,15 +50,20 @@ a CPU/memory budget. The 2-CPU/4-GiB qualification guest receives one build job,
 two cores per job and one evaluation thread. See the
 [Nix workflow resource audit](nix-workflow-resources.md) for coverage and limits.
 
-The shared Nix setup uses `nix-community/cache-nix-action` to preserve the Nix
-store together with downloaded source trees and the fetcher index, keyed by
-runner platform and lock-file hashes. Only full checks save this cache; image
-and maintenance jobs restore it. Garbage collection before saving is disabled
-so evaluation sources survive. GitHub permits restores from the same ref and
-base/default branches; a PR cache does not seed a separate merge-queue ref.
-Unchanged inputs can be reused after lock updates. Full Nix/runtime checks still
-evaluate the complete configuration, with a 60-minute limit for cold runs.
-Registry credentials remain outside the cached paths.
+The shared Nix setup applies the centralized public substituters and trust keys
+for both flakes and lightweight CI tools. The checks store and downloaded source
+trees use platform/lock/source-revision keys. Only successful trusted main checks
+save shared store snapshots. Cache maintenance retains two main generations;
+PR and merge-queue jobs remain readers. GitHub restores are scoped to the current
+and base/default branches. Registry credentials remain outside cached paths.
+
+Until `FINITE_OPTIMIZED_CACHES=true` passes the hosted benchmark, smaller jobs
+keep the baseline full-store restore. The pilot restores source downloads only
+and realizes small pinned closures from binary caches. `FINITE_CACHIX_WRITER=true`
+enables a separate successful-main writer with `CACHIX_AUTH_TOKEN`, limited to
+bounded check proofs and image/scanner/audit tool closures. Realization happens
+before exposing that write credential. All cache pilots and benchmark commands
+are documented in [CI optimization review](ci-optimization-review.md).
 
 Nix uses its native 15-second connection timeout, 60-second stalled-download
 timeout and three download attempts. The stall timeout measures inactivity,
@@ -121,10 +126,13 @@ commit that was built.
 
 Every candidate publication requires successful boot qualification of its exact
 digest, including encrypted-root fresh install, upgrade and rollback where a
-predecessor exists. Missing or failed acceptance blocks promotion.
+predecessor exists. Fresh and upgrade scenarios run on separate runners and
+aggregate their bound receipts before promotion. An optional pilot reuses
+identical authenticated qualification for at most 24 hours, preserving its
+original time; new digests require new tests. Missing or failed acceptance blocks
+promotion. The `qualify` dispatch input bypasses reuse.
 See [workstation qualification](workstation-qualification.md) for enforcement,
-signed kernel maintenance and durable release bundles. Build Finite's
-`qualify` dispatch input remains compatible; all publication already qualifies.
+signed kernel maintenance and durable release bundles.
 
 ## Bluefin updates and recovery
 
@@ -222,8 +230,10 @@ part of key rotation.
 2. Pass `CI gate` and merge through the queue. Wait for successful signed main
    builds, exact-digest qualification and promotion for the selected channels.
 3. Follow [Durable releases](workstation-qualification.md#durable-releases):
-   build the matching ISO and run **Prepare qualified release** with successful
-   same-revision build/ISO runs and a new `finite-CHANNEL-VERSION` tag.
+   run **Prepare qualified release** with the successful same-revision build run
+   and a new `finite-CHANNEL-VERSION` tag. When the ISO-preservation pilot is
+   enabled, leave `iso_run` empty to select the original qualified ISO. During
+   the disabled pilot, supply the successful standalone ISO run explicitly.
 4. Review the draft's signed assets, qualification evidence, scan exceptions and
    claimed physical-hardware results before publishing. The qualified-draft
    workflow is the canonical release path; do not publish a separate `vVERSION`
@@ -259,6 +269,63 @@ and Administration: read. The token is revoked when the job finishes.
 Organization-level variables/secrets also work when their repository access
 includes Finite. Missing credentials or inaccessible settings fail visibly.
 Review the retained JSON result and rotate the App private key periodically.
+
+## Hosted diagnostic checks
+
+Before these workflows reach main, the registered **Benchmark image tool setup**
+workflow can run at a review branch with `validation=cache-lanes`. The same entry
+point accepts `validation=qualification` with exact signed candidate/predecessor
+digests, matching profile/channel, build identity and source revision. This
+diagnostic mode runs fresh Secure Boot installation, upgrade/rollback and desktop
+checks using the branch's installer/test code. It never promotes a channel, uses
+distinct diagnostic artifacts, and cannot supply production qualification evidence.
+ISO construction still creates unique installation tags in the existing registry.
+
+## SecretSpec and local tasks
+
+`secretspec.toml` declares credentials, signing keys, six CI pilot switches and the
+`FINITE_QUALIFIED_ISO_CHANNELS` selector. The selector defaults to `finite-next`;
+use comma-separated supported channel names or `all` for a broader rollout.
+Preservation, predecessor ISO reuse, strict release fallback and pruning apply
+only to selected channels while the preservation switch is enabled.
+GitHub Actions supplies backend values through the `github-actions` environment
+provider; local devenv tasks use the encrypted `local = "pass://"` provider.
+The same explicit profile/scope names identify cache writing, image signing,
+release signing, repository reads, audit App credentials and trusted updates.
+GitHub scheduling guards still use repository variables before a job exists;
+runtime switches are resolved and validated by SecretSpec before use.
+
+The pinned SecretSpec 0.19.1 CLI supports standalone profiles and scope filtering.
+Its checksum-pinned release package avoids compiling all of devenv just to resolve
+CI credentials. Tool realization happens before supplying signing/write keys.
+Signing keys reach only signer commands; the audit App key is cleared after token
+generation. Secret values never enter Nix evaluation, cached paths or artifacts.
+The default developer profile contains options and an optional Cachix credential.
+
+Populate a task-specific pass entry interactively, then run its task:
+
+```bash
+secretspec set CACHIX_AUTH_TOKEN --profile local-cache --provider pass
+secretspec set GH_TOKEN --profile repository-read --provider pass
+secretspec set COSIGN_PRIVATE_KEY --profile image-signing --provider pass
+secretspec set MERGE_QUEUE_TOKEN --profile updater --provider pass
+
+devenv tasks run ci:cache:options
+devenv tasks run ci:cache:writer:prepare
+devenv tasks run ci:cache:check
+devenv tasks run repository:audit
+```
+
+Pass entries use `secretspec/finite/PROFILE/KEY`. `FINITE_SECRETS_PROVIDER=pass`
+selects pass explicitly for local scoped wrappers; the default `local` alias
+uses the same backend. Existing global file-provider settings are overridden
+by these explicit task selections. Do not put private values in this manifest.
+`image:verify`, `image:sign` and `release:sign` are explicit developer tasks;
+image tasks require an immutable `IMAGE_REFERENCE`. They do not execute as
+part of ordinary CI checks or developer shell initialization.
+
+Use the [measured rollout sequence](ci-rollout.md) to seed source caches and
+exercise one-channel ISO preservation after the protected main merge.
 
 ## Update reliability and measurement
 

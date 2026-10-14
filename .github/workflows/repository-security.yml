@@ -5,6 +5,16 @@ on:
     - cron: "23 10 * * *"
   workflow_dispatch:
 
+# Bootstrap public options; setup-nix resolves them through SecretSpec.
+env:
+  FINITE_OPTIMIZED_CACHES: ${{ vars.FINITE_OPTIMIZED_CACHES }}
+  FINITE_CACHIX_WRITER: ${{ vars.FINITE_CACHIX_WRITER }}
+  FINITE_REUSE_INVENTORY: ${{ vars.FINITE_REUSE_INVENTORY }}
+  FINITE_GRYPE_DB_CACHE: ${{ vars.FINITE_GRYPE_DB_CACHE }}
+  FINITE_QUALIFICATION_REUSE: ${{ vars.FINITE_QUALIFICATION_REUSE }}
+  FINITE_QUALIFIED_ISO_PRESERVATION: ${{ vars.FINITE_QUALIFIED_ISO_PRESERVATION }}
+  FINITE_QUALIFIED_ISO_CHANNELS: ${{ vars.FINITE_QUALIFIED_ISO_CHANNELS }}
+
 permissions:
   contents: read
 
@@ -35,21 +45,33 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-nix
+      - name: Resolve declared audit App credentials
+        env:
+          SECAUDIT_CLIENTID: ${{ vars.SECAUDIT_CLIENTID }}
+          SECAUDIT_PEM: ${{ secrets.SECAUDIT_PEM }}
+        run: >-
+          finite-ci-secrets-run repository-audit --
+          secretspec export --file secretspec.toml --profile repository-audit --provider github-actions
+          --scope repository-audit --reason 'Finite read-only audit App' --format gha
       - name: Generate repository-scoped audit token
         id: audit-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
-          client-id: ${{ vars.SECAUDIT_CLIENTID }}
-          private-key: ${{ secrets.SECAUDIT_PEM }}
+          client-id: ${{ env.SECAUDIT_CLIENTID }}
+          private-key: ${{ env.SECAUDIT_PEM }}
           owner: ${{ github.repository_owner }}
           repositories: ${{ github.event.repository.name }}
           permission-administration: read
+      - name: Remove audit App credentials from later steps
+        # Fixed empty values clear the resolved key after token generation.
+        run: | # zizmor: ignore[github-env]
+          printf 'SECAUDIT_CLIENTID=\nSECAUDIT_PEM=\n' >>"$GITHUB_ENV"
       - name: Compare live settings with reviewed policy
         env:
           GH_TOKEN: ${{ steps.audit-token.outputs.token }}
         run: |
           set -o pipefail
-          nix shell --file lib/ci-tools.nix ci-repository-security-audit -c finite-repository-security-audit \
+          nix shell --file lib/ci-tools.nix ci-secrets-run ci-repository-security-audit -c finite-ci-secrets-run repository-read -- finite-repository-security-audit \
             --read-only-app --repository "$GITHUB_REPOSITORY" | tee repository-security-audit.json
       - name: Save audit result
         if: always()

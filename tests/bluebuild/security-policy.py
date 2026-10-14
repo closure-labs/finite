@@ -618,8 +618,8 @@ class PublicationBoundary(unittest.TestCase):
         self.assertNotIn('secrets', publication['build'])
         workflow = yaml.safe_load((ROOT / '.github/workflows/publication.yml').read_text())
         caller = yaml.safe_load((ROOT / '.github/workflows/build.yml').read_text())['jobs']['publish']
-        self.assertEqual(workflow[True]['workflow_call']['secrets'], {'COSIGN_PRIVATE_KEY': {'required': True}})
-        self.assertEqual(caller['secrets'], {'COSIGN_PRIVATE_KEY': '${{ secrets.COSIGN_PRIVATE_KEY }}'})
+        self.assertEqual(workflow[True]['workflow_call']['secrets'], {'COSIGN_PRIVATE_KEY': {'required': True}, 'COSIGN_PASSWORD': {'required': False}})
+        self.assertEqual(caller['secrets'], {'COSIGN_PRIVATE_KEY': '${{ secrets.COSIGN_PRIVATE_KEY }}', 'COSIGN_PASSWORD': '${{ secrets.COSIGN_PASSWORD }}'})
         self.assertNotIn('secrets: inherit', (ROOT / '.github/workflows/build.yml').read_text())
         self.assertNotIn('secrets: inherit', (ROOT / '.github/workflows/publication.yml').read_text())
         self.assertEqual(publication['sign']['needs'], 'security')
@@ -627,11 +627,18 @@ class PublicationBoundary(unittest.TestCase):
         self.assertIn('sign', publication['qualification']['needs'])
         signer = publication['sign']
         self.assertIn("github.ref == 'refs/heads/main'", signer['if'])
-        self.assertFalse(any(step.get('uses') == './.github/actions/setup-nix' for step in signer['steps']))
-        self.assertEqual(signer['steps'][0]['with']['sparse-checkout'], 'cosign.pub')
+        setup = next(step for step in signer['steps'] if step.get('uses') == './.github/actions/setup-nix')
+        self.assertEqual(setup['with']['cache-mode'], 'none')
+        self.assertNotIn('env', setup)
+        sparse = set(signer['steps'][0]['with']['sparse-checkout'].splitlines())
+        self.assertIn('cosign.pub', sparse)
+        self.assertIn('secretspec.toml', sparse)
+        self.assertNotIn('files/', sparse)
+        self.assertNotIn('recipes/', sparse)
         sign = next(step for step in signer['steps'] if 'COSIGN_PRIVATE_KEY' in step.get('env', {}))
         self.assertEqual(sign['env']['CANDIDATE_DIGEST'], '${{ needs.security.outputs.digest }}')
         self.assertEqual(sign['env']['COSIGN_PRIVATE_KEY'], '${{ secrets.COSIGN_PRIVATE_KEY }}')
+        self.assertIn('finite-ci-secrets-run image-signing', sign['run'])
         self.assertIn('--new-bundle-format=false --use-signing-config=false', sign['run'])
         self.assertNotIn('--tlog-upload=false', sign['run'])
         self.assertNotIn('--insecure-ignore', sign['run'])
@@ -649,6 +656,7 @@ class PublicationBoundary(unittest.TestCase):
         jobs = yaml.safe_load((ROOT / '.github/workflows/publication.yml').read_text())['jobs']
         step = next(step for step in jobs['sign']['steps'] if 'COSIGN_PRIVATE_KEY' in step.get('env', {}))
         self.assertIn('timeout 30s cosign public-key --key env://COSIGN_PRIVATE_KEY', step['run'])
+        step = dict(step, run=step['run'].split("<<'SIGN_IMAGE'\n", 1)[1].rsplit('SIGN_IMAGE', 1)[0])
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             tools = root / 'bin'

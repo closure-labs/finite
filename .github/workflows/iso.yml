@@ -23,7 +23,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: finite-iso
+  group: finite-iso-${{ inputs.channel }}-${{ inputs.digest }}
   cancel-in-progress: false
 jobs:
   iso:

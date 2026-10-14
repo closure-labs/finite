@@ -5,9 +5,20 @@ on:
     - cron: "41 8 * * *"
   workflow_dispatch:
 
+# Bootstrap public options; setup-nix resolves them through SecretSpec.
+env:
+  FINITE_OPTIMIZED_CACHES: ${{ vars.FINITE_OPTIMIZED_CACHES }}
+  FINITE_CACHIX_WRITER: ${{ vars.FINITE_CACHIX_WRITER }}
+  FINITE_REUSE_INVENTORY: ${{ vars.FINITE_REUSE_INVENTORY }}
+  FINITE_GRYPE_DB_CACHE: ${{ vars.FINITE_GRYPE_DB_CACHE }}
+  FINITE_QUALIFICATION_REUSE: ${{ vars.FINITE_QUALIFICATION_REUSE }}
+  FINITE_QUALIFIED_ISO_PRESERVATION: ${{ vars.FINITE_QUALIFIED_ISO_PRESERVATION }}
+  FINITE_QUALIFIED_ISO_CHANNELS: ${{ vars.FINITE_QUALIFIED_ISO_CHANNELS }}
+
 permissions:
   contents: read
   packages: read
+  actions: read
 
 concurrency:
   group: finite-published-image-security
@@ -24,6 +35,7 @@ jobs:
         channel: [finite, finite-next, finite-dev, finite-dev-next]
     env:
       CHANNEL: ${{ matrix.channel }}
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -33,6 +45,17 @@ jobs:
         uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
         with:
           skip-if-available: "80G"
+      - name: Restore Grype database transport cache (pilot)
+        if: env.FINITE_GRYPE_DB_CACHE == 'true'
+        uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
+        with:
+          primary-key: grype-db-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-prefixes-first-match: grype-db-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock') }}-
+          nix: false
+          paths: ~/.cache/grype/db
+          save: true
+        env:
+          SEGMENT_DOWNLOAD_TIMEOUT_MINS: "2"
       - name: Verify and scan the published digest
         run: nix develop --file lib/ci-tools.nix release --command bash scripts/bluebuild/audit-published.sh
       - name: Retain scan results including failures

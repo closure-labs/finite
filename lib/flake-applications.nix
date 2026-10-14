@@ -5,7 +5,7 @@
   secretspec,
 }: let
   repository = import ./ci-applications/repository-operations.nix {
-    inherit cacheName devenv pkgs secretspec;
+    inherit cacheName pkgs secretspec;
   };
   updates = import ./ci-applications/dependency-operations.nix {inherit pkgs;};
 in

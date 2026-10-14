@@ -54,7 +54,7 @@ class Toolchain(unittest.TestCase):
                         for tool in ['ci-github-actions-secrets', 'ci-queue-dependabot', 'ci-trusted-update',
                                      'ci-source-update', 'ci-lock-validate']:
                             if tool in command:
-                                self.assertIn('nix shell --file lib/ci-tools.nix ' + tool, command)
+                                self.assertTrue(('nix shell --file lib/ci-tools.nix ' + tool) in command or ('nix build --file lib/ci-tools.nix ' + tool) in command)
 
     def test_lightweight_updates_reuse_existing_implementations(self):
         entry = (ROOT / 'lib/ci-tools.nix').read_text()
@@ -126,10 +126,15 @@ class Toolchain(unittest.TestCase):
         })
         self.assertNotEqual(cache['with'].get('nix'), 'false')
         self.assertNotIn('gc-max-store-size', cache['with'])
-        self.assertEqual(cache['with']['save'], "${{ github.job == 'checks' }}")
+        self.assertEqual(cache['with']['save'], "${{ github.job == 'checks' && github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}")
         self.assertIn("hashFiles('flake.lock'", cache['with']['primary-key'])
+        self.assertIn('${{ github.sha }}', cache['with']['primary-key'])
         self.assertTrue(cache['with']['primary-key'].startswith(
-            cache['with']['restore-prefixes-first-match']))
+            cache['with']['restore-prefixes-first-match'].splitlines()[0]))
+        source_cache = next(s for s in action['runs']['steps'] if s.get('id') == 'source-cache')
+        self.assertIs(source_cache['with']['nix'], False)
+        self.assertNotIn('/nix', source_cache['with']['paths'].splitlines())
+        self.assertIn("env.FINITE_OPTIMIZED_CACHES == 'true'", source_cache['if'])
 
     def test_gen_hub_locks_one_revision_per_library(self):
         hubs = []
