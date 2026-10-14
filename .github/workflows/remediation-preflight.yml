@@ -1,45 +1,60 @@
-name: Validate remediation prerequisites
-
+name: Diagnostic VM upgrade supervision
 on:
   workflow_dispatch:
-
 permissions:
   contents: read
-  actions: read
-
+concurrency:
+  group: finite-vm-upgrade-diagnostic
+  cancel-in-progress: false
 jobs:
-  prerequisites:
+  diagnostic:
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/diagnostic/vm-upgrade-progress'
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 120
+    permissions:
+      contents: read
+      packages: write
+    env:
+      CANDIDATE: sha256:3da12596aef2e526b8073ca66a8ca401f8cc43b2f64f384036404201c1588f21
+      PREDECESSOR: sha256:33e7b69d9c597dfbd5f907d63823cb9a6fe96533a3c5393b8a48caa440bba32c
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Query reviewed Fedora repositories
+      - uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
+        with:
+          skip-if-available: "80G"
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+      - name: Install VM tools
         run: |
-          docker run --detach --name finite-fedora-probe \
-            registry.fedoraproject.org/fedora@sha256:1ff9eb02e4e2d7fb1175becac7139b2960c4fdcccedce81c86ec25b98ef3124d \
-            sleep infinity
-          python3 scripts/ci/remediation-preflight.py --container finite-fedora-probe \
-            --policy files/scripts/security-remediation.json --output .bluebuild/preflight/packages.json
-      - name: Reuse native inventory for package ownership
-        if: ${{ !cancelled() }}
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-x86 qemu-utils ovmf xorriso skopeo mtools openssl python3-virt-firmware
+          bash scripts/bluebuild/install-cli.sh
+      - name: Verify signed candidate provenance
+        run: |
+          image="ghcr.io/closure-labs/finite@$CANDIDATE"
+          cosign verify --new-bundle-format=false --key cosign.pub "$image" >/dev/null
+          skopeo inspect "docker://$image" | jq -e '
+            .Labels["io.finite.profile"] == "bluefin-dx-next" and
+            .Labels["org.opencontainers.image.revision"] == "ada75492bef1ba4b57157bae5dfb3295174ee538" and
+            .Labels["io.finite.build-inputs"] == "v1:55335a76e37a2365ef59f20c8944e4a1fdbdf8aac1ee110cb9c5342b9e2505c4"'
+      - name: Build predecessor installer and diagnose signed upgrade
         env:
-          GH_TOKEN: ${{ github.token }}
+          REGISTRY_TOKEN: ${{ github.token }}
+          REGISTRY_USER: ${{ github.actor }}
         run: |
-          gh run download 38288928004 --repo "$GITHUB_REPOSITORY" \
-            --name published-security-finite-38288928004-1 --dir .bluebuild/baseline
-          python3 scripts/ci/security-ownership.py --inventory-dir .bluebuild/baseline \
-            --ledger docs/security-remediation-2026-10-12.json --output .bluebuild/preflight/ownership.json
-      - name: Remove probe container
-        if: always()
-        run: docker rm --force finite-fedora-probe || true
-      - name: Retain prerequisite evidence
+          printf '%s' "$REGISTRY_TOKEN" | skopeo login --username "$REGISTRY_USER" --password-stdin ghcr.io
+          printf '%s' "$REGISTRY_TOKEN" | docker login --username "$REGISTRY_USER" --password-stdin ghcr.io
+          bash scripts/bluebuild/iso.sh finite-dev-next "$PREDECESSOR"
+          FINITE_SECURE_BOOT=true bash scripts/bluebuild/vm-acceptance.sh .bluebuild/iso "ghcr.io/closure-labs/finite@$CANDIDATE" upgrade
+      - name: Retain diagnostic evidence only
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: remediation-preflight-${{ github.run_id }}-${{ github.run_attempt }}
-          path: .bluebuild/preflight/*.json
+          name: diagnostic-vm-upgrade-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .bluebuild/vm-upgrade/**/*.log
+            .bluebuild/vm-upgrade/**/*.json
+            .bluebuild/iso/*.json
           include-hidden-files: true
-          if-no-files-found: error
-          retention-days: 30
+          retention-days: 14
