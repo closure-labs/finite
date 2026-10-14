@@ -250,3 +250,18 @@ published manifest/config and retain remote signature verification.
 No local-inspection shortcut or rechunking change is enabled by this rollout.
 Transfer-byte attribution, cold/warm benchmarks and physical measurements need
 real hosted runs; contract tests cannot establish their performance benefit.
+
+
+## Upgrade transfer diagnostics
+
+The VM's signed `bootc switch` has a 30-minute limit in both the guest and
+host supervisor. Every minute, a bounded SSH probe records guest memory, disk
+space, network counters and bootc process I/O. Probe failure is reported as
+unknown progress, not successful qualification. The supervisor retains the
+actual transfer exit status; timeout and cancellation fail qualification.
+
+Sanitized diagnostic snapshots are saved before the transfer and every minute,
+so abrupt cancellation can retain the last checkpoint even if final VM cleanup
+cannot finish. The disk-unlock key is redacted before any snapshot enters the
+artifact tree. Raw logs and ephemeral credentials remain outside upload paths.
+The timeout does not add a minimum runtime to successful transfers.

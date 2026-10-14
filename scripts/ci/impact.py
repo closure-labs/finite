@@ -38,6 +38,7 @@ QUALIFICATION_ONLY = {
     'scripts/bluebuild/desktop-qualification.py',
     'scripts/bluebuild/check-vm-desktop.py',
     'scripts/bluebuild/vm-acceptance.sh', 'scripts/bluebuild/qualify.sh',
+    'scripts/bluebuild/vm-upgrade.py', 'scripts/bluebuild/redact-vm-logs.py',
     'scripts/bluebuild/release-evidence.py', '.github/workflows/qualification.yml',
 }
 
