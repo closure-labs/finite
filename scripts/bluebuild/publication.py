@@ -246,6 +246,35 @@ def prepare(profile, publish, root=upstream.ROOT, source_revision=None, resume_o
                 print(f'{name}={value}', file=stream)
 
 
+def documentation_only_advance(revision, current):
+    """Allow only a proven descendant whose complete diff is non-runtime docs."""
+    comparison = github(f'compare/{revision}...{current}')
+    if not isinstance(comparison, dict):
+        return False
+    files = comparison.get('files')
+    base = comparison.get('base_commit')
+    merge_base = comparison.get('merge_base_commit')
+    # GitHub returns at most 300 files, even with commit pagination. At the
+    # boundary completeness cannot be proved, so require fresh qualification.
+    if (comparison.get('status') != 'ahead'
+            or not isinstance(base, dict) or base.get('sha') != revision
+            or not isinstance(merge_base, dict) or merge_base.get('sha') != revision
+            or not isinstance(files, list) or len(files) >= 300):
+        return False
+    def allowed(path):
+        if not isinstance(path, str) or any(part in ('', '.', '..') for part in path.split('/')):
+            return False
+        return path in {'README.md', 'CHANGELOG.md', '.great_cto/tasks.md'} or path.startswith('docs/')
+    for entry in files:
+        if not isinstance(entry, dict) or not allowed(entry.get('filename')):
+            return False
+        if entry.get('status') not in {'added', 'removed', 'modified', 'renamed'}:
+            return False
+        if entry.get('status') == 'renamed' and not allowed(entry.get('previous_filename')):
+            return False
+    return True
+
+
 def promotion_state(record):
     """Reject stale qualification before the first public tag mutation."""
     revision = record['revision']
@@ -255,8 +284,16 @@ def promotion_state(record):
     reference = current.get('object', {}) if isinstance(current, dict) else {}
     if (not isinstance(current, dict) or not isinstance(reference, dict)
             or current.get('ref') != 'refs/heads/main'
-            or reference.get('type') != 'commit' or reference.get('sha') != revision):
-        raise ValueError('Main changed after qualification was prepared; requalify at the current revision')
+            or reference.get('type') != 'commit' or not isinstance(reference.get('sha'), str)
+            or not SHA.fullmatch(reference['sha'])):
+        raise ValueError('Main reference is missing or malformed')
+    if reference['sha'] != revision:
+        if not documentation_only_advance(revision, reference['sha']):
+            raise ValueError('Main changed release inputs after qualification was prepared; requalify at the current revision')
+        # Do not approve a comparison against a ref that moved during the API call.
+        if github('git/ref/heads/main') != current:
+            raise ValueError('Main changed while promotion was being checked; retry promotion')
+        print(f'Preserving qualification at {revision}: main {reference["sha"]} changed documentation only')
     published = record['publishedDigest']
     if published != '':
         upstream.digest(published)

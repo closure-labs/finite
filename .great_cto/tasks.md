@@ -417,3 +417,10 @@ hold remain explicit. Release eligibility has not been established.
 - [x] Inspect cancelled development-Next qualification115616213450: fresh installation passed; signed upgrade emitted no progress for24m34s before cancellation. Upgrade diagnostics were not retained, so root cause remains unknown.
 - [x] Add a30-minute host/guest upgrade deadline, minute-by-minute resource/I/O probes and sanitized incremental checkpoints that survive interrupted final cleanup. Focused timeout, failure, cancellation and redaction tests pass.
 - [ ] Run the improved upgrade harness against candidate3da12596aef2 and predecessor33e7b69d9c59 alongside original retry115641293003. Diagnostic evidence does not replace production qualification or promote channels.
+
+
+## Promotion revision race (2026-10-13)
+
+- [x] Confirm production retry38486865970/2 passed development-Next qualification but promotion rejected a newer main revision after harness PR159 merged.
+- [x] Preserve exact qualification across proven documentation-only descendant revisions; retain rejection of changed release inputs, incomplete comparisons and channel drift. Add focused regression coverage.
+- [ ] Finish current-main publication38503750779 before merging the promotion fix; its unchanged workflow would otherwise reject another main advance. The prior failed run is retained as evidence, not bypassed.

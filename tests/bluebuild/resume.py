@@ -292,6 +292,47 @@ class PromotionState(unittest.TestCase):
                 pub.promotion_state(self.record)
         inspect.assert_not_called()
 
+    def comparison(self, paths):
+        return {'status': 'ahead', 'base_commit': {'sha': self.revision},
+                'merge_base_commit': {'sha': self.revision},
+                'files': [{'filename': path, 'status': 'modified'} for path in paths]}
+
+    def test_documentation_advance_preserves_qualification(self):
+        advanced = {'ref': 'refs/heads/main', 'object': {'type': 'commit', 'sha': 'c' * 40}}
+        comparison = self.comparison(['docs/evidence.json', 'CHANGELOG.md', '.great_cto/tasks.md'])
+        with patch.object(pub, 'github', side_effect=[advanced, comparison, advanced]) as api, \
+                patch.object(pub.upstream, 'inspect', return_value={'Digest': self.digest}):
+            pub.promotion_state(self.record)
+        self.assertEqual(api.call_args_list[1].args[0], f'compare/{self.revision}...{"c" * 40}')
+
+    def test_release_inputs_still_require_requalification(self):
+        for path in ('VERSION', 'cosign.pub', 'recipes/bluefin-generic.yml',
+                     'scripts/bluebuild/vm-upgrade.py', 'automation/security/image-policy.json',
+                     '.github/workflows/publication.yml', 'tests/bluebuild/resume.py'):
+            with self.subTest(path=path), patch.object(pub, 'github', return_value=self.comparison([path])):
+                self.assertFalse(pub.documentation_only_advance(self.revision, 'c' * 40))
+
+    def test_unproven_comparisons_fail_closed(self):
+        good = self.comparison(['docs/test.md'])
+        cases = [[], {}, {**good, 'status': 'diverged'}, {**good, 'files': None}, {**good, 'merge_base_commit': None},
+                 {**good, 'merge_base_commit': {'sha': 'd' * 40}},
+                 self.comparison(['docs/file.md'] * 300),
+                 self.comparison(['docs/../VERSION']),
+                 {**good, 'files': [{'filename': 'docs/key.md', 'status': 'renamed',
+                                   'previous_filename': 'cosign.pub'}]}]
+        for comparison in cases:
+            with self.subTest(comparison=comparison), patch.object(pub, 'github', return_value=comparison):
+                self.assertFalse(pub.documentation_only_advance(self.revision, 'c' * 40))
+
+    def test_main_moves_again_during_comparison(self):
+        advanced = {'ref': 'refs/heads/main', 'object': {'type': 'commit', 'sha': 'c' * 40}}
+        moved = {'ref': 'refs/heads/main', 'object': {'type': 'commit', 'sha': 'd' * 40}}
+        with patch.object(pub, 'github', side_effect=[advanced, self.comparison(['README.md']), moved]), \
+                patch.object(pub.upstream, 'inspect') as inspect:
+            with self.assertRaisesRegex(ValueError, 'Main changed while'):
+                pub.promotion_state(self.record)
+        inspect.assert_not_called()
+
     def test_missing_or_malformed_main_reference_fails_closed(self):
         for response in ([], {}, {'ref': 'refs/heads/main', 'object': None},
                          {'ref': 'refs/heads/main', 'object': {'type': 'tag', 'sha': self.revision}},
