@@ -161,6 +161,9 @@ jobs:
         run: |
           mkdir -p .bluebuild
           jq -n --arg outcome "$OUTCOME" --arg phase "$PHASE" '{outcome:$outcome,phase:$phase}' >".bluebuild/$PROFILE-$PHASE-outcome.json"
+          if [[ -f ".bluebuild/$PROFILE-timings.jsonl" ]]; then
+            cp ".bluebuild/$PROFILE-timings.jsonl" ".bluebuild/$PROFILE-$PHASE-stages.jsonl"
+          fi
           echo "Qualification $PHASE outcome: $OUTCOME" >>"$GITHUB_STEP_SUMMARY"
       - name: Save phase evidence
         if: always()
@@ -170,6 +173,7 @@ jobs:
           path: |
             .bluebuild/*outcome.json
             .bluebuild/*qualification-context.json
+            .bluebuild/*-stages.jsonl
             .bluebuild/vm*/**/*.json
             .bluebuild/vm*/**/*.log
             .bluebuild/iso-*/*.json
@@ -253,6 +257,7 @@ jobs:
           path: |
             .bluebuild/*acceptance.json
             .bluebuild/*outcome.json
+            .bluebuild/*-stages.jsonl
             .bluebuild/vm*/**/*.json
             .bluebuild/vm*/**/*.log
             .bluebuild/iso-*/*.json

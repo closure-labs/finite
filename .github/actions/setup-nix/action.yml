@@ -7,7 +7,7 @@ inputs:
     required: false
     default: auto
   cache-mode:
-    description: baseline, optimized, or none; repository pilot variable supplies the default
+    description: baseline, optimized source experiment, or none; pilot defaults small jobs to none and keeps checks snapshots
     required: false
     default: ""
   merge-queue-token:
@@ -54,23 +54,24 @@ runs:
       shell: bash
       run: python3 scripts/ci/nix-cache.py
 
-    - name: Prepare pinned scoped SecretSpec resolver
+    - name: Validate public CI options before cache selection
       shell: bash
-      # Only a validated locally realized public tool path enters PATH.
-      run: | # zizmor: ignore[github-env]
-        resolver=$(nix build --file lib/ci-tools.nix ci-secrets-run --no-link --print-out-paths)
-        [[ $resolver =~ ^/nix/store/[a-z0-9]{32}-finite-ci-secrets-run$ ]]
-        echo "$resolver/bin" >>"$GITHUB_PATH"
+      # This standard-library validation resolves only public bootstrap values.
+      # The canonical SecretSpec export runs after restoration and realization.
+      run: python3 scripts/ci/ci-options.py --github-env
 
-    - name: Resolve declared CI options with SecretSpec
+    - name: Bound SQLite CLI waits for cache restore and post-job save
+      if: >-
+        inputs.cache-mode != 'none' &&
+        (inputs.cache-mode == 'baseline' ||
+         (inputs.cache-mode == '' && env.FINITE_OPTIMIZED_CACHES != 'true') ||
+         inputs.cache-profile == 'checks' ||
+         (inputs.cache-profile == 'auto' && github.job == 'checks'))
       shell: bash
-      # Public options are supplied by workflow env; composite manifests cannot
-      # reference the vars context. SecretSpec validates the inherited values.
-      run: >-
-        finite-ci-secrets-run ci-options --
-        python3 scripts/ci/ci-options.py --github-env
+      run: python3 scripts/ci/cache-sqlite.py
 
-    # Benchmark the optimized source-only lane before enabling it repository-wide.
+    # Small optimized jobs use public substituters without an Actions restore.
+    # Keep source snapshots available for explicit measured experiments.
     - name: Restore Nix checks snapshot
       id: store-cache
       if: >-
@@ -97,8 +98,7 @@ runs:
     - name: Restore Nix source downloads only
       id: source-cache
       if: >-
-        inputs.cache-mode != 'none' && inputs.cache-mode != 'baseline' &&
-        (inputs.cache-mode == 'optimized' || env.FINITE_OPTIMIZED_CACHES == 'true') &&
+        inputs.cache-mode == 'optimized' &&
         inputs.cache-profile != 'checks' &&
         !(inputs.cache-profile == 'auto' && github.job == 'checks')
       uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
@@ -127,6 +127,22 @@ runs:
         with Path(os.environ['GITHUB_STEP_SUMMARY']).open('a') as output:
             output.write('Nix cache restore: ' + json.dumps(record) + '\n')
         PY
+
+    - name: Prepare pinned scoped SecretSpec resolver
+      shell: bash
+      # Only a validated locally realized public tool path enters PATH.
+      run: | # zizmor: ignore[github-env]
+        resolver=$(nix build --file lib/ci-tools.nix ci-secrets-run --no-link --print-out-paths)
+        [[ $resolver =~ ^/nix/store/[a-z0-9]{32}-finite-ci-secrets-run$ ]]
+        echo "$resolver/bin" >>"$GITHUB_PATH"
+
+    - name: Resolve declared CI options with SecretSpec
+      shell: bash
+      # Public options are supplied by workflow env; composite manifests cannot
+      # reference the vars context. SecretSpec validates the inherited values.
+      run: >-
+        finite-ci-secrets-run ci-options --
+        python3 scripts/ci/ci-options.py --github-env
 
     - name: Prepare legacy secret mapper without credentials
       if: inputs.cachix-auth-token != '' || inputs.merge-queue-token != ''

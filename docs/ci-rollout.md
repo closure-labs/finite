@@ -32,6 +32,11 @@ ISO release path. Aggregate Nix checks retain their store snapshot; qualificatio
 jobs keep `cache-mode: none`. Cache housekeeping retains bounded main snapshots
 even when experimental flags are off.
 
+The completed warmed experiments selected no Actions restore for automatic small
+jobs: source snapshots added overhead or tied without reducing resolver time.
+The pilot flag keeps aggregate checks snapshots and public binary-cache reads.
+Explicit `cache-mode: optimized` still enables measured source experiments.
+
 Record the merged source SHA, originating build run and attempt, candidate and
 predecessor digests, source identity, security verdict, both VM receipts and
 successful aggregate. Do not substitute the earlier branch diagnostic receipts.
@@ -40,19 +45,31 @@ identities; let the planned main build produce and qualify the new candidate A.
 Confirm `finite-qualified-iso-bluefin-next-RUN-ATTEMPT` exists with its original
 ISO, `SHA256SUMS`, installation metadata and signature evidence.
 
+The initial main run, [38626712683](https://github.com/closure-labs/finite/actions/runs/38626712683),
+passed all four security/signing gates and seven of eight VM phases. Generic
+rollback stopped at disk unlock because a kernel record split the word
+`passphrase` in its serial prompt. Generic promotion was blocked; `finite-next`
+and both developer channels passed their aggregates and were promoted. The
+originating run failed overall, so even its preserved `finite-next` ISO is not a
+trusted reuse producer. Do not relax that successful-origin requirement.
+
+The follow-up recognizes complete interleaved kernel records without changing
+raw logs, key redaction or one-time submission. It also retains separate fresh
+and upgrade stage timings and measures predecessor ISO retrieval. These changes
+alter the qualification context: seed a new candidate A under the fixed harness,
+require its originating run to succeed, then build distinct B. The hosted B job
+must verify and extract the large preserved archive; do not fetch it locally.
+
 ## Warmed source cache measurement
 
-Wait for a successful main source-lane job to save a
-`nix-sources-v1-Linux-X64-LOCK` cache. An existing main job is preferred. If needed,
-one repository security audit can seed the source lane without building images:
-
-```bash
-gh workflow run repository-security.yml --repo closure-labs/finite --ref main
-```
-
-That audit is read-only and still needs its configured audit App credentials.
-Confirm the exact current-lock main cache using the Actions cache listing, then
-run the benchmark at a fixed main revision:
+This source lane remains an explicit experiment. Prefer an existing
+`nix-sources-v1-Linux-X64-LOCK` cache from a trusted main job that explicitly
+selected `cache-mode: optimized`. The initial rollout's main selection job seeded
+the current lock before the default was refined. Automatic small jobs now skip
+Actions restoration and saving. If a future lock has no source snapshot, one
+initial main benchmark can seed it through its optimized jobs; count misses as
+seeding, then measure after the exact current-lock snapshot exists.
+Confirm that cache using the Actions listing, then run at a fixed main revision:
 
 ```bash
 gh cache list --repo closure-labs/finite --ref refs/heads/main --limit 100
@@ -63,10 +80,14 @@ Require all 27 jobs and the aggregate to pass. All nine optimized measurements
 must restore the source cache; compare matching source, locks, Nix version and
 tool closures. Record runner-image versions, setup plus cold realization, warm
 realization, transfer bytes and complete job time, including source-cache save
-overhead. The resolver currently realizes before the Actions restore, so source
-cache hits cannot eliminate its initial evaluation/download cost. Keep the
-source lane only when complete job benefit exceeds restore/save overhead; the
-no-Actions-cache lane is also a valid small-job result.
+overhead. Restore source downloads before realizing the SecretSpec resolver, so
+hits can also benefit its initial evaluation/download work. The shared setup
+validates public bootstrap inputs first and performs canonical SecretSpec export
+after restoration; credentials remain scoped to later commands. The SQLite CLI
+has a verified 15-second lock wait for both restoration and post-job snapshots;
+permanent schema locks still fail. Keep the
+source lane only when complete job benefit exceeds restore/save overhead. The
+completed three-repetition experiment selected no Actions cache for small jobs.
 
 ## Predecessor ISO reuse on finite-next
 

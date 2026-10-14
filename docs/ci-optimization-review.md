@@ -28,7 +28,7 @@ and correctness checks pass. Their default is disabled.
 
 | Variable | Pilot behavior |
 | --- | --- |
-| `FINITE_OPTIMIZED_CACHES` | Small jobs restore Nix source downloads instead of the full checks store |
+| `FINITE_OPTIMIZED_CACHES` | Small jobs use public binary caches without an Actions restore; aggregate checks retain snapshots |
 | `FINITE_CACHIX_WRITER` | Publish bounded check proofs and pinned tool closures using `CACHIX_AUTH_TOKEN` |
 | `FINITE_REUSE_INVENTORY` | Reuse authenticated immutable inventory, then refresh Grype and policy results |
 | `FINITE_GRYPE_DB_CACHE` | Cache DB transport bytes; mandatory database refresh and freshness checks still run |
@@ -88,15 +88,16 @@ the first tool realization. The tool closures and lockfiles matched across lanes
 Same-run warm realization medians ranged from 0.99 to 1.29 seconds. The baseline
 restored the existing 1.75 GB main store archive. Source caches were unseeded, and
 branch jobs cannot save trusted main snapshots. These results validate avoiding
-the oversized store restore for small jobs; warmed source-cache benefit remains
-unmeasured. Full benchmark job medians were 120/121/133 seconds for baseline
+the oversized store restore for small jobs; the initial run did not measure
+warmed source-cache benefit. Full benchmark job medians were 120/121/133 seconds for baseline
 image/scanner/audit tools and 39/38/39 seconds for the source-only lane, including
 measurement diagnostics and post-job handling. Production jobs need their own
 elapsed comparison. GitHub supplied two Ubuntu runner-image versions despite
 matching source, Nix version and tool closures. Network counters include concurrent
 runner traffic. Successful package transfers used `cache.nixos.org`; Finite Cachix
-writer savings remain untested. Enable `FINITE_OPTIMIZED_CACHES` only with this scope:
-small jobs use the source lane, while aggregate checks retain their store cache.
+writer savings remain untested. The initial `FINITE_OPTIMIZED_CACHES` pilot used
+the source lane for small jobs while aggregate checks retained their store cache;
+the warmed experiments below refine that small-job default.
 The other reuse and writer pilots still require their own rollout evidence.
 
 Hosted startup caught two defects that local lint and mocks missed. The initial
@@ -135,8 +136,92 @@ Fresh ISO generation took roughly 11-13 minutes; guest Home Manager activation
 took roughly 5-6 minutes per phase. Measure predecessor ISO preservation on one
 main channel next, followed by repeated warmed source-cache and scoped Cachix
 writer measurements. Keep fresh security scans and exact-context/freshness gates.
-The pilot switches remain disabled and no channel was promoted by these runs.
+Those diagnostic runs left pilot switches disabled and promoted no channel.
 A newly built image digest still requires its own production qualification.
+
+### Protected main rollout and warmed cache results
+
+[PR 162](https://github.com/closure-labs/finite/pull/162) merged on October 14
+at `cfd7ce2f0e8b` after its PR and protected merge-group `CI gate` passed all four
+image validations. The initial main rollout enabled `FINITE_OPTIMIZED_CACHES`
+and `FINITE_QUALIFIED_ISO_PRESERVATION`, with `FINITE_QUALIFIED_ISO_CHANNELS`
+restricted to `finite-next`. The other reuse and writer switches remained off.
+The existing main selection job seeded the exact source-cache key; no extra
+repository audit was needed. Production candidate and ISO acceptance still
+require their own successful main security, signing and VM gates.
+
+The [initial main publication](https://github.com/closure-labs/finite/actions/runs/38626712683)
+passed all four security/signing gates and seven of eight VM phases. Generic
+rollback timed out because kernel serial output split `passphrase` inside the
+disk-unlock prompt. Its aggregate and promotion were blocked. The other three
+profiles passed aggregation and were promoted. Since the originating run failed,
+the preserved `finite-next` ISO is ineligible for trusted predecessor reuse.
+The parser now removes complete timestamped kernel records only for detection,
+keeps raw logs and redaction, excludes unfinished kernel records, and submits the
+ephemeral key once. Focused tests reproduce the actual failure, fragmented reads,
+quoted prompts and key echoes. Separate phase timing files now survive artifact
+aggregation; predecessor ISO lookup records duration and its original exit status.
+A fresh successful producer under this changed qualification context is required
+before measuring the hosted ISO roundtrip.
+
+The [first warmed main benchmark](https://github.com/closure-labs/finite/actions/runs/38627084876)
+produced 26 of 27 measurements. All nine source-only jobs restored the same
+75.1 MB main source archive. The eight successful baseline jobs restored the
+same 1.75 GB legacy archive; no baseline generation changed within these jobs.
+Source, locks, Nix version and tool closures matched. Two runner-image versions
+were present, so these medians are observations rather than controlled causal
+estimates. Source restoration took a median 2.31 seconds, and the initial trusted
+main seed took 3.84 seconds to save. Setup plus cold realization medians were:
+
+| Tool closure | Store baseline | Warmed source lane | No Actions cache |
+| --- | ---: | ---: | ---: |
+| Image tools | 100.34 s (2 samples) | 33.92 s | 30.53 s |
+| Scanner tools | 93.40 s | 30.04 s | 28.15 s |
+| Repository audit | 92.63 s | 37.43 s | 26.64 s |
+
+All other cells have three samples. Complete job medians, including post-job
+handling, were 123.5/120/120 seconds for baseline image/scanner/audit tools,
+46/40/47 seconds for warmed sources and 41/38/36 seconds without Actions cache.
+The warmed source restore added overhead in this ordering; it did not demonstrate
+a benefit over no Actions cache. The completed queued generic image also skipped
+the 99-second disk cleanup seen in its earlier PR baseline because sufficient
+space remained without the full-store restore. That is an additional observed
+setup saving, separate from image compilation.
+
+The missing baseline image sample failed before restoration: the pinned cache
+action's [checkpoint command](https://github.com/nix-community/cache-nix-action/blob/7df957e333c1e5da7721f60227dbba6d06080569/src/utils/database.ts)
+reported SQLite `database is locked` immediately after resolver realization.
+The benchmark aggregate correctly rejected the missing report. These are useful
+diagnostic measurements, not an all-27 passing result. The follow-up restores
+caches before realizing the resolver, validates public bootstrap values before
+cache selection and keeps canonical SecretSpec export before credential use.
+A verified 15-second SQLite CLI busy timeout covers restoration and post-job
+save, with tests for transient recovery and bounded permanent schema-lock failure.
+The fix leaves upstream WAL busy-result rows unchanged. It required a complete
+rerun before accepting the revised source lane.
+
+The [corrected-order experiment](https://github.com/closure-labs/finite/actions/runs/38630265038)
+passed all 27 measurements and aggregation at `92e66586943d`. All nine baseline
+jobs restored one main v2 archive (1.82 GB), and all nine source jobs restored the
+exact 75.1 MB main source key. Source, locks, Nix version and all three tool output
+paths and closure sizes matched. SQLite timeout verification passed, with no
+restore failures. Two runner-image versions remained a comparison limitation.
+
+| Tool closure | Complete baseline job | Complete source job | Complete no-cache job |
+| --- | ---: | ---: | ---: |
+| Image tools | 115 s | 47 s | 41 s |
+| Scanner tools | 130 s | 46 s | 36 s |
+| Repository audit | 116 s | 37 s | 37 s |
+
+Each cell is the median of three jobs including post-job handling. Setup plus
+cold realization medians were 88.87/106.68/93.17 seconds for baseline
+image/scanner/audit tools, 33.45/33.24/27.79 seconds for sources and
+30.14/26.68/28.64 seconds without Actions cache. Sources restored in a median
+2.04 seconds and did not consistently reduce initial resolver time. The evidence
+therefore selects no Actions restore for automatic small jobs when
+`FINITE_OPTIMIZED_CACHES=true`. Aggregate checks retain store snapshots, and an
+explicit `cache-mode: optimized` preserves source experiments. Both cache and
+no-cache consumers still use the centralized public substituters.
 
 The next rollout review added the channel selector so the pilot can remain
 confined to one channel even during automatic builds and releases. The Cachix

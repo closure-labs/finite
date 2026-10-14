@@ -13,7 +13,7 @@ dispatches. It selects work from the complete Git diff for each event:
 | --- | --- |
 | README, changelog, license or `docs/` only | Text style and local Markdown links |
 | Tests, automation, devenv lock or dependency workflows | Documentation and Nix/runtime checks |
-| Nix modules, Home Manager, flake lock or version | Documentation, Nix/runtime checks and images whose payload derivation changed |
+| Nix modules, Home Manager, flake lock, Nix setup or version | Documentation, Nix/runtime checks and images whose payload derivation changed |
 | One recipe | Checks and that recipe's image |
 | Shared next-kernel recipe or kernel script | Checks and both next-kernel images |
 | Shared system files, signing, build CI or other paths | Checks and all four images |
@@ -27,6 +27,13 @@ image build. The daily schedule refreshes floating DNF and
 BlueBuild module inputs while retaining the approved base digests.
 Missing comparison data selects full validation. Renames include both paths,
 so moving an image input into documentation still triggers image builds.
+
+Use hosted CI for full Nix evaluation, aggregate checks, VM qualification and
+large ISO verification. Local full-check evaluation exhausted memory on the
+15-GiB development workstation during the October 14 rollout. Keep local review
+to small standalone tests and text checks; do not run unbounded or parallel Nix
+verification alongside desktop work. Any specifically requested local heavy
+run needs explicit process memory and CPU limits before it starts.
 
 Maintenance, registry and publication commands use `lib/ci-tools.nix`, which
 reads the existing `flake.lock` directly. Its shells share package definitions
@@ -57,9 +64,12 @@ save shared store snapshots. Cache maintenance retains two main generations;
 PR and merge-queue jobs remain readers. GitHub restores are scoped to the current
 and base/default branches. Registry credentials remain outside cached paths.
 
-Until `FINITE_OPTIMIZED_CACHES=true` passes the hosted benchmark, smaller jobs
-keep the baseline full-store restore. The pilot restores source downloads only
-and realizes small pinned closures from binary caches. `FINITE_CACHIX_WRITER=true`
+With `FINITE_OPTIMIZED_CACHES=true`, small jobs realize pinned closures from
+public binary caches without an Actions restore; aggregate checks keep their
+store snapshot. Warmed source downloads did not improve these small-job timings,
+so `cache-mode: optimized` retains source restoration only for explicit
+experiments. Without the switch, jobs keep the baseline full-store restore.
+`FINITE_CACHIX_WRITER=true`
 enables a separate successful-main writer with `CACHIX_AUTH_TOKEN`, limited to
 bounded check proofs and image/scanner/audit tool closures. Realization happens
 before exposing that write credential. All cache pilots and benchmark commands

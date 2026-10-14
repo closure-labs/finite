@@ -8,6 +8,20 @@ import sys
 import time
 
 PROMPT = re.compile(rb'Please enter passphrase for disk [^\r\n]{1,1024}:')
+KERNEL_RECORD = re.compile(rb'\[[ \t]*[0-9]+\.[0-9]+\][^\r\n]*\r?\n')
+KERNEL_TAIL = re.compile(rb'\[[ \t]*[0-9]+\.[0-9]+\][^\r\n]*\r?$')
+PROMPT_WINDOW = 8192
+
+
+def disk_prompt(buffer):
+    # Kernel printk can interrupt even a word in the cryptsetup prompt. Strip
+    # only complete timestamped records for detection, retaining the raw window
+    # so a record fragmented across socket reads can be recognized next time.
+    detection = KERNEL_RECORD.sub(b'', buffer)
+    # A kernel message can itself quote a prompt. Do not inspect an unfinished
+    # kernel tail, but keep any complete real prompt preceding that record.
+    detection = KERNEL_TAIL.sub(b'', detection)
+    return PROMPT.search(detection) is not None
 
 
 def relay(connection, secret, log, marker, output):
@@ -25,8 +39,8 @@ def relay(connection, secret, log, marker, output):
 
     while chunk := connection.recv(4096):
         pending += chunk
-        prompt_buffer = (prompt_buffer + chunk)[-8192:]
-        if not unlocked and PROMPT.search(prompt_buffer):
+        prompt_buffer = (prompt_buffer + chunk)[-PROMPT_WINDOW:]
+        if not unlocked and disk_prompt(prompt_buffer):
             connection.sendall(secret + b'\r')
             marker.write_text('Unlock submitted over private serial console\n')
             unlocked = True
