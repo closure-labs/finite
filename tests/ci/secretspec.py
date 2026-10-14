@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Exercise SecretSpec profiles with fixture env values and a fake pass backend."""
 import json
+import importlib.util
 import os
 from pathlib import Path
 import shutil
@@ -16,6 +17,11 @@ ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = tomllib.loads((ROOT / 'secretspec.toml').read_text())
 FLAGS = {'FINITE_OPTIMIZED_CACHES', 'FINITE_CACHIX_WRITER', 'FINITE_REUSE_INVENTORY',
          'FINITE_GRYPE_DB_CACHE', 'FINITE_QUALIFICATION_REUSE', 'FINITE_QUALIFIED_ISO_PRESERVATION'}
+SELECTOR = 'FINITE_QUALIFIED_ISO_CHANNELS'
+PUBLIC_OPTIONS = FLAGS | {SELECTOR}
+SPEC = importlib.util.spec_from_file_location('scoped_ci_options', ROOT / 'scripts/ci/ci-options.py')
+OPTIONS = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(OPTIONS)
 DECLARED = {name for profile in MANIFEST['profiles'].values() for name in profile if name != 'defaults'}
 CLI = os.environ.get('FINITE_TEST_SECRETSPEC') or shutil.which('secretspec')
 
@@ -30,17 +36,39 @@ class Manifest(unittest.TestCase):
                 continue
             with self.subTest(workflow=path.name):
                 values = yaml.safe_load(source).get('env', {})
-                self.assertEqual({key: values.get(key) for key in FLAGS},
-                                 {key: '${{ vars.' + key + ' }}' for key in FLAGS})
+                self.assertEqual({key: values.get(key) for key in PUBLIC_OPTIONS},
+                                 {key: '${{ vars.' + key + ' }}' for key in PUBLIC_OPTIONS})
 
     def test_default_devenv_profile_contains_no_signing_or_github_credentials(self):
-        self.assertEqual(set(MANIFEST['profiles']['default']), FLAGS | {'CACHIX_AUTH_TOKEN'})
+        self.assertEqual(set(MANIFEST['profiles']['default']), PUBLIC_OPTIONS | {'CACHIX_AUTH_TOKEN'})
         self.assertFalse(MANIFEST['profiles']['default']['CACHIX_AUTH_TOKEN']['required'])
         self.assertEqual(MANIFEST['providers']['local'], 'pass://')
         self.assertEqual(MANIFEST['providers']['github-actions'], 'env')
         self.assertNotIn('file:', (ROOT / 'secretspec.toml').read_text())
         for name in FLAGS:
             self.assertEqual(MANIFEST['profiles']['default'][name]['default'], 'false')
+        self.assertEqual(MANIFEST['profiles']['default'][SELECTOR]['default'], 'finite-next')
+
+    def test_iso_pilot_requires_enablement_and_the_exact_selected_channel(self):
+        enabled = {'FINITE_QUALIFIED_ISO_PRESERVATION': 'true'}
+        for channel, profile in OPTIONS.CHANNEL_PROFILES.items():
+            with self.subTest(channel=channel):
+                self.assertFalse(OPTIONS.iso_preservation_enabled(channel, {}))
+                self.assertEqual(OPTIONS.iso_preservation_enabled(profile, enabled), channel == 'finite-next')
+        selected = {**enabled, SELECTOR: 'finite-dev-next, finite'}
+        self.assertEqual(OPTIONS.options(selected)[SELECTOR], 'finite,finite-dev-next')
+        self.assertFalse(OPTIONS.iso_preservation_enabled('finite-next', selected))
+        self.assertTrue(OPTIONS.iso_preservation_enabled('bluefin-dx-next', selected))
+        for channel in OPTIONS.CHANNEL_PROFILES:
+            self.assertTrue(OPTIONS.iso_preservation_enabled(channel, {**enabled, SELECTOR: 'all'}))
+
+    def test_invalid_or_ambiguous_iso_scope_fails_before_export(self):
+        for value in ('finite-next,finite-next', 'finite-preview', 'all,finite', ',',
+                      'finite-next\nCOSIGN_PRIVATE_KEY=injected'):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                OPTIONS.options({SELECTOR: value})
+        with self.assertRaises(ValueError):
+            OPTIONS.iso_preservation_enabled('unknown', {})
 
     def test_new_profiles_are_standalone_canonical_and_narrow(self):
         for profile in ('ci-options', 'cache-writer', 'image-signing', 'release-signing',
@@ -105,7 +133,7 @@ class Resolution(unittest.TestCase):
                 'COSIGN_PRIVATE_KEY': 'fixture-only-private-key', 'SECAUDIT_PEM': 'fixture-only-app-key',
                 'CACHIX_AUTH_TOKEN': 'fixture-only-cache-token', 'MERGE_QUEUE_TOKEN': 'fixture-only-updater'})
             self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertEqual(json.loads(result.stdout), {name: 'false' for name in FLAGS})
+            self.assertEqual(json.loads(result.stdout), {**{name: 'false' for name in FLAGS}, SELECTOR: 'finite-next'})
             self.assertNotIn('fixture-only', result.stdout)
 
     def test_signing_and_read_scopes_never_inherit_other_task_credentials(self):
@@ -170,12 +198,19 @@ class Resolution(unittest.TestCase):
                 command=[sys.executable, str(ROOT / 'scripts/ci/ci-options.py'), '--github-env'])
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(json.loads(result.stdout)['FINITE_REUSE_INVENTORY'], 'true')
-            self.assertEqual({line.split('=')[0] for line in github_env.read_text().splitlines()}, FLAGS)
+            self.assertEqual({line.split('=')[0] for line in github_env.read_text().splitlines()}, PUBLIC_OPTIONS)
             self.assertNotIn('add-mask', result.stdout)
             self.assertNotIn('fixture-private', github_env.read_text())
             invalid = self.run_cli(directory, 'ci-options', values={'FINITE_REUSE_INVENTORY': 'true\nCOSIGN_PRIVATE_KEY=bad'},
                                    command=[sys.executable, str(ROOT / 'scripts/ci/ci-options.py')])
             self.assertNotEqual(invalid.returncode, 0)
+            before = github_env.read_text()
+            invalid_scope = self.run_cli(directory, 'ci-options', values={
+                SELECTOR: 'finite-next\nCOSIGN_PRIVATE_KEY=injected', 'GITHUB_ACTIONS': 'true',
+                'GITHUB_ENV': str(github_env)},
+                command=[sys.executable, str(ROOT / 'scripts/ci/ci-options.py'), '--github-env'])
+            self.assertNotEqual(invalid_scope.returncode, 0)
+            self.assertEqual(github_env.read_text(), before)
 
 
 class LocalCache(unittest.TestCase):

@@ -7,6 +7,7 @@ from pathlib import Path
 import re
 import subprocess
 
+ROOT = Path(__file__).resolve().parents[2]
 STORE = re.compile(r'/nix/store/[a-z0-9]{32}-[^/\s]+')
 TOOLS = ('image-tools', 'scanner-tools', 'ci-repository-security-audit', 'ci-secrets-run')
 MIB = 1024 ** 2
@@ -18,10 +19,14 @@ def boundary(env=os.environ):
             or env.get('GITHUB_EVENT_NAME') != 'workflow_run'
             or not re.fullmatch(r'[0-9a-f]{40}', env.get('CACHE_SOURCE_REVISION', ''))):
         raise ValueError('Cache publishing requires a successful trusted main workflow')
+    head = subprocess.check_output(['git', 'rev-parse', '--verify', 'HEAD'],
+                                   cwd=ROOT, text=True, timeout=30).strip()
+    if not re.fullmatch(r'[0-9a-f]{40}', head) or head != env['CACHE_SOURCE_REVISION']:
+        raise ValueError('Cache publishing checkout differs from its successful source revision')
 
 
 def output(command):
-    value = subprocess.check_output(command, text=True, timeout=3600).strip()
+    value = subprocess.check_output(command, cwd=ROOT, text=True, timeout=3600).strip()
     if not STORE.fullmatch(value):
         raise ValueError('Expected exactly one store output')
     return value

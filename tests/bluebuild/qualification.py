@@ -10,6 +10,8 @@ import os
 from pathlib import Path
 import tempfile
 import subprocess
+import shutil
+import sys
 import unittest
 import warnings
 import zipfile
@@ -31,6 +33,7 @@ r = module('qualification_test_reuse', 'reuse-qualification.py')
 release = module('qualification_test_release', 'release-evidence.py')
 predecessor = module('qualification_test_predecessor', 'reuse-predecessor-iso.py')
 preflight = module('qualification_test_preflight', 'qualification-preflight.py')
+retention = module('qualification_test_retention', 'prune-qualified-isos.py')
 
 
 class Qualification(unittest.TestCase):
@@ -106,6 +109,67 @@ class Qualification(unittest.TestCase):
             predecessor.compatible(self.directory, self.profile, self.candidate.split('@')[1], self.context['inputs'])
         with self.assertRaisesRegex(ValueError, 'Diagnostic qualification'):
             release.validate_evidence({}, value, {}, 'finite', self.revision)
+
+    def test_selector_implementation_changes_invalidate_old_qualification_context(self):
+        tree = self.directory / 'input-tree'
+        (tree / 'scripts/ci').mkdir(parents=True)
+        (tree / 'sources').mkdir()
+        (tree / 'sources/installer-security.json').write_text('{}')
+        policy = tree / 'scripts/ci/ci-options.py'
+        policy.write_text("DEFAULT_CHANNEL = 'finite-next'\n")
+        before = q.source_inputs(tree)
+        self.assertIn('scripts/ci/ci-options.py', before)
+        value = self.aggregate()
+        value['qualificationReuse'] = {'run': 123}
+        value['qualificationContext']['inputs'] = before
+        value['qualificationContextSha256'] = q.identity(value['qualificationContext'])
+        policy.write_text("DEFAULT_CHANNEL = 'all'\n")
+        self.assertNotEqual(before, q.source_inputs(tree))
+        with self.assertRaisesRegex(ValueError, 'current installer/test'):
+            r.verify_reused_acceptance(value, root=tree)
+
+    def test_nonselected_release_keeps_legacy_iso_run_and_does_not_claim_exact_bytes(self):
+        acceptance = self.aggregate()
+        acceptance.pop('qualifiedIsoOrigin', None)
+        acceptance['qualificationContext']['inputs'] = q.source_inputs()
+        acceptance['qualificationContextSha256'] = q.identity(acceptance['qualificationContext'])
+        publication = {'profile': self.profile, 'revision': self.revision, 'sourceRevision': self.source,
+                       'buildIdentity': self.build, 'previousDigest': ''}
+        run = {'conclusion': 'success', 'head_branch': 'main', 'head_sha': self.revision,
+               'head_repository': {'full_name': release.REPOSITORY}, 'id': 123,
+               'path': '.github/workflows/build.yml', 'html_url': 'https://github.com/closure-labs/finite/actions/runs/123'}
+        iso_run = {**run, 'id': 789, 'path': '.github/workflows/iso.yml'}
+        artifacts = [{'name': f'qualification-{self.profile}-123-1', 'expired': False},
+                     {'name': f'image-{self.profile}-123-1', 'expired': False}]
+        downloaded = []
+        def artifact(run_id, name, destination):
+            downloaded.append((run_id, name))
+            destination.mkdir(parents=True, exist_ok=True)
+            if name.startswith('qualification-'):
+                (destination / (self.profile+'-acceptance.json')).write_text(json.dumps(acceptance))
+                desktop_path = q.desktop.verify(self.directory, acceptance)
+                shutil.copy2(desktop_path, destination / desktop_path.name)
+            elif name.startswith('image-'):
+                (destination / (self.profile+'-publication.json')).write_text(json.dumps(publication))
+            else:
+                for path in (self.directory / 'iso-candidate').iterdir():
+                    shutil.copy2(path, destination / path.name)
+        original = Path.cwd()
+        output = self.directory / 'output'
+        env = {'GITHUB_SHA': self.revision, 'GITHUB_OUTPUT': str(output),
+               'FINITE_QUALIFIED_ISO_PRESERVATION': 'true', 'FINITE_QUALIFIED_ISO_CHANNELS': 'finite-next'}
+        try:
+            os.chdir(self.directory)
+            with patch.dict(os.environ, env), patch.object(sys, 'argv', ['release-evidence.py', 'finite', '789', '123']), \
+                    patch.object(release, 'github', side_effect=lambda path: iso_run if path.endswith('/789') else run), \
+                    patch.object(release, 'artifact_names', side_effect=lambda run_id: artifacts if run_id=='123' else [{'name':'finite-iso-finite-789-1','expired':False}]), \
+                    patch.object(release, 'artifact', side_effect=artifact), patch.object(release.subprocess, 'run'):
+                release.main()
+        finally:
+            os.chdir(original)
+        provenance = json.loads((self.directory / '.bluebuild/release/provenance.json').read_text())
+        self.assertFalse(provenance['isoMatchesQualification'])
+        self.assertIn(('789', 'finite-iso-finite-789-1'), downloaded)
 
     def test_bootstrap_and_both_phases_aggregate_complete_desktop_evidence(self):
         bootstrap = self.aggregate()
@@ -409,11 +473,77 @@ class ExecutionGate(unittest.TestCase):
         phase = workflow['jobs']['phase']
         preserved = next(step for step in phase['steps'] if step.get('name') == 'Preserve pristine qualified candidate ISO for the pilot')
         self.assertIn('!inputs.validation_only', preserved['if'])
+        self.assertIn("contains(format(',{0},', env.FINITE_QUALIFIED_ISO_CHANNELS), format(',{0},', inputs.channel))", preserved['if'])
         for job, prefix in [('phase', 'qualification-diagnostic-phase'), ('aggregate', 'qualification-diagnostic')]:
             upload = next(step for step in workflow['jobs'][job]['steps']
                           if step.get('name') == ('Save phase evidence' if job == 'phase' else 'Save qualification evidence'))
             self.assertIn(prefix, upload['with']['name'])
             self.assertIn('inputs.validation_only', upload['with']['name'])
+
+
+class IsoScope(unittest.TestCase):
+    def env(self, selector='finite-next', enabled='true'):
+        return {'FINITE_QUALIFIED_ISO_PRESERVATION': enabled, 'FINITE_QUALIFIED_ISO_CHANNELS': selector}
+
+    def test_release_strictness_is_limited_to_selected_channels(self):
+        release.require_iso_fallback('finite', '123', self.env())
+        release.require_iso_fallback('finite-dev', '123', self.env())
+        release.require_iso_fallback('finite-dev-next', '123', self.env())
+        with self.assertRaisesRegex(ValueError, 'exact qualified ISO'):
+            release.require_iso_fallback('finite-next', '123', self.env())
+        release.require_iso_fallback('finite-next', '123', self.env(enabled='false'))
+        with self.assertRaisesRegex(ValueError, 'No preserved qualified ISO'):
+            release.require_iso_fallback('finite', '', self.env())
+
+    def test_retention_prunes_only_selected_profiles_and_false_flag_is_noop(self):
+        with patch.object(sys, 'argv', ['prune-qualified-isos.py', '--apply']), \
+                patch.object(retention.module, 'prune_iso') as prune:
+            with patch.dict(os.environ, self.env()):
+                retention.main()
+            prune.assert_called_once_with('bluefin-next', apply=True)
+            prune.reset_mock()
+            with patch.dict(os.environ, self.env('finite, finite-dev')):
+                retention.main()
+            self.assertEqual(prune.call_args_list, [unittest.mock.call('bluefin-generic', apply=True),
+                                                   unittest.mock.call('bluefin-dx-generic', apply=True)])
+            prune.reset_mock()
+            with patch.dict(os.environ, self.env(enabled='false')):
+                retention.main()
+            prune.assert_not_called()
+            with patch.dict(os.environ, self.env('all')):
+                retention.main()
+            self.assertEqual(prune.call_count, 4)
+
+    def test_actual_predecessor_guard_excludes_other_channels_and_all_diagnostics(self):
+        source = (ROOT / 'scripts/bluebuild/qualify.sh').read_text()
+        guard = source.split('  reused=false\n', 1)[1].split('  if [[ $reused != true ]]; then', 1)[0]
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        directory = Path(temporary.name)
+        script = directory / 'guard.sh'
+        script.write_text('''#!/usr/bin/env bash
+set -euo pipefail
+PROFILE=$1
+current=upgrade
+iso_dir=unused
+digest=unused
+reused=false
+iso_preservation_enabled=$(python3 "$2" --iso-preservation "$PROFILE")
+nix() { touch "${FINITE_REUSE_TEST_MARKER:?}"; }
+''' + guard)
+        cases = [('bluefin-next', 'finite-next', 'false', True),
+                 ('bluefin-generic', 'finite-next', 'false', False),
+                 ('bluefin-dx-generic', 'finite-next', 'false', False),
+                 ('bluefin-dx-next', 'finite-next', 'false', False),
+                 ('bluefin-next', 'all', 'true', False)]
+        marker = directory / 'called'
+        for profile, selector, diagnostic, expected in cases:
+            marker.unlink(missing_ok=True)
+            env = dict(os.environ, **self.env(selector), FINITE_VALIDATION_ONLY=diagnostic, FINITE_REUSE_TEST_MARKER=str(marker))
+            result = subprocess.run(['bash', str(script), profile, str(ROOT / 'scripts/ci/ci-options.py')],
+                                    env=env, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(marker.exists(), expected, (profile, selector, diagnostic))
 
 
 class BootBudget(unittest.TestCase):

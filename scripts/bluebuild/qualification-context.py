@@ -32,7 +32,8 @@ def source_inputs(root=ROOT):
     paths = sorted({*root.joinpath('scripts/bluebuild').glob('*'),
                     *root.joinpath('files/installer').glob('*'),
                     root / 'sources/bluebuild-installer.json', root / 'sources/bluebuild-cli.json', root / 'sources/installer-security.json',
-                    root / 'scripts/ci/nix-resources.py', root / 'scripts/ci/bluefin-upstream.py', root / 'cosign.pub',
+                    root / 'scripts/ci/nix-resources.py', root / 'scripts/ci/bluefin-upstream.py',
+                    root / 'scripts/ci/ci-options.py', root / 'cosign.pub',
                     root / '.github/workflows/qualification.yml',
                     root / '.github/workflows/vm-acceptance.yml'})
     # Include scripts copied into guests and their security contract inputs.

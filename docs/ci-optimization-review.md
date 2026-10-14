@@ -35,6 +35,12 @@ and correctness checks pass. Their default is disabled.
 | `FINITE_QUALIFICATION_REUSE` | Reuse identical successful qualification for at most 24 hours; promotion rechecks age |
 | `FINITE_QUALIFIED_ISO_PRESERVATION` | Preserve pristine qualified ISOs for seven days, retaining two successful generations per profile |
 
+`FINITE_QUALIFIED_ISO_CHANNELS` scopes preservation, predecessor reuse, strict
+release behavior and pruning to selected channels. It defaults to `finite-next`
+and accepts comma-separated supported channels or `all`. The enable switch still
+defaults to false, and channels outside the selection retain their existing ISO
+release path.
+
 Inventory reuse binds the image/platform digest, native file hashes, tool
 versions, policy/probe implementation and current policy. Old or incompatible
 inventories rebuild; corrupt evidence fails visibly. It never reuses a passing
@@ -131,6 +137,12 @@ main channel next, followed by repeated warmed source-cache and scoped Cachix
 writer measurements. Keep fresh security scans and exact-context/freshness gates.
 The pilot switches remain disabled and no channel was promoted by these runs.
 A newly built image digest still requires its own production qualification.
+
+The next rollout review added the channel selector so the pilot can remain
+confined to one channel even during automatic builds and releases. The Cachix
+writer now independently verifies that the checkout HEAD matches the declared
+source before realizing or publishing roots. Follow the [rollout sequence](ci-rollout.md)
+for source cache seeding, exact predecessor reuse and a separate writer pilot.
 
 ## Current work and historical baselines
 

@@ -7,6 +7,7 @@ candidate="ghcr.io/closure-labs/finite@${CANDIDATE_DIGEST:?}"
 [[ ${BUILD_IDENTITY:?} =~ ^v1:[0-9a-f]{64}$ ]]
 [[ ${PROFILE:?} =~ ^bluefin(-dx)?-(generic|next)$ ]]
 [[ ${SOURCE_REVISION:?} =~ ^[0-9a-f]{40}$ ]]
+iso_preservation_enabled=$(python3 scripts/ci/ci-options.py --iso-preservation "$PROFILE")
 mkdir -p .bluebuild
 rm -f ".bluebuild/$PROFILE-acceptance.json"
 python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"
@@ -31,7 +32,7 @@ run_phase() {
   python3 scripts/bluebuild/qualification-context.py context --phase "$current"
   python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"
   reused=false
-  if [[ ${FINITE_VALIDATION_ONLY:-false} != true && $current == upgrade && ${FINITE_QUALIFIED_ISO_PRESERVATION:-false} == true ]]; then
+  if [[ ${FINITE_VALIDATION_ONLY:-false} != true && $current == upgrade && $iso_preservation_enabled == true ]]; then
     status=0
     nix develop --file lib/ci-tools.nix shell --command python3 scripts/bluebuild/reuse-predecessor-iso.py --profile "$PROFILE" --digest "$digest" --output "$iso_dir" || status=$?
     if [[ $status == 0 ]]; then reused=true; fi

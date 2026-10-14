@@ -13,10 +13,15 @@ import shutil
 import subprocess
 import tempfile
 import zipfile
+import sys
+sys.dont_write_bytecode = True
 
 desktop_spec = importlib.util.spec_from_file_location('desktop_qualification', Path(__file__).with_name('desktop-qualification.py'))
 desktop = importlib.util.module_from_spec(desktop_spec)
 desktop_spec.loader.exec_module(desktop)
+options_spec = importlib.util.spec_from_file_location('release_ci_options', Path(__file__).resolve().parents[1] / 'ci/ci-options.py')
+ci_options = importlib.util.module_from_spec(options_spec)
+options_spec.loader.exec_module(ci_options)
 REPOSITORY = 'closure-labs/finite'
 PROFILES = {'finite': 'bluefin-generic', 'finite-next': 'bluefin-next',
             'finite-dev': 'bluefin-dx-generic', 'finite-dev-next': 'bluefin-dx-next'}
@@ -85,6 +90,14 @@ def validate_evidence(installation, acceptance, publication, channel, revision, 
     if exact_iso and installation['installer'] != acceptance.get('qualifiedIso', {}).get('installer'):
         raise ValueError('Release installer differs from qualified pristine ISO')
     return image
+
+
+def require_iso_fallback(channel, iso_run, environ=None):
+    """Selected pilot channels require preserved bytes; others retain legacy ISO input."""
+    if ci_options.iso_preservation_enabled(channel, environ):
+        raise ValueError('ISO preservation pilot requires the exact qualified ISO artifact; qualify again if it expired')
+    if not iso_run:
+        raise ValueError('No preserved qualified ISO; enable preservation for this channel and qualify again, or supply an ISO run')
 
 
 def qualified_iso_artifact(artifacts, profile, run_id, attempt):
@@ -191,10 +204,7 @@ def main():
             authenticated_iso(preserved, origin_run, acceptance, destination)
             iso_run = origin_run
         else:
-            if os.environ.get('FINITE_QUALIFIED_ISO_PRESERVATION') == 'true':
-                raise ValueError('ISO preservation pilot requires the exact qualified ISO artifact; qualify again if it expired')
-            if not args.iso_run:
-                raise ValueError('No preserved qualified ISO; enable the ISO preservation pilot and qualify again, or supply an ISO run')
+            require_iso_fallback(args.channel, args.iso_run)
             iso_run = github('actions/runs/' + args.iso_run)
             validate_run(iso_run, 'iso.yml', revision)
             iso_artifacts = artifact_names(args.iso_run)

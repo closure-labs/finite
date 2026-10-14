@@ -7,7 +7,7 @@ on:
         description: Hosted experiment; qualification never promotes an image
         type: choice
         default: tool-setup
-        options: [tool-setup, cache-lanes, qualification]
+        options: [tool-setup, cache-lanes, qualification, options-smoke]
       profile:
         description: Signed candidate profile for diagnostic qualification
         type: choice
@@ -35,11 +35,67 @@ on:
         type: string
         default: ""
 
+# Bootstrap public options; setup-nix resolves them through SecretSpec.
+env:
+  FINITE_OPTIMIZED_CACHES: ${{ vars.FINITE_OPTIMIZED_CACHES }}
+  FINITE_CACHIX_WRITER: ${{ vars.FINITE_CACHIX_WRITER }}
+  FINITE_REUSE_INVENTORY: ${{ vars.FINITE_REUSE_INVENTORY }}
+  FINITE_GRYPE_DB_CACHE: ${{ vars.FINITE_GRYPE_DB_CACHE }}
+  FINITE_QUALIFICATION_REUSE: ${{ vars.FINITE_QUALIFICATION_REUSE }}
+  FINITE_QUALIFIED_ISO_PRESERVATION: ${{ vars.FINITE_QUALIFIED_ISO_PRESERVATION }}
+  FINITE_QUALIFIED_ISO_CHANNELS: ${{ vars.FINITE_QUALIFIED_ISO_CHANNELS }}
+
 permissions:
   contents: read
   actions: read
 
 jobs:
+  options-smoke:
+    if: inputs.validation == 'options-smoke'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - channel: finite-next
+            selection: finite-next
+            expected: "true"
+          - channel: finite-dev-next
+            selection: finite-next
+            expected: "false"
+          - channel: finite-dev-next
+            selection: all
+            expected: "true"
+          - channel: finite
+            selection: finite-dev-next,finite
+            expected: "true"
+    env:
+      FINITE_QUALIFIED_ISO_PRESERVATION: "true"
+      FINITE_QUALIFIED_ISO_CHANNELS: ${{ matrix.selection }}
+      SMOKE_CHANNEL: ${{ matrix.channel }}
+      EXPECTED: ${{ matrix.expected }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+        with:
+          cache-mode: none
+      - name: Exercise selected-channel workflow condition
+        id: selected
+        if: >-
+          env.FINITE_QUALIFIED_ISO_PRESERVATION == 'true' &&
+          contains(format(',{0},', env.FINITE_QUALIFIED_ISO_CHANNELS), format(',{0},', matrix.channel))
+        run: echo 'enabled=true' >>"$GITHUB_OUTPUT"
+      - name: Require workflow and runtime scope to agree
+        env:
+          OBSERVED: ${{ steps.selected.outputs.enabled || 'false' }}
+        run: |
+          actual=$(python3 scripts/ci/ci-options.py --iso-preservation "$SMOKE_CHANNEL")
+          [[ "$actual" == "$EXPECTED" && "$OBSERVED" == "$EXPECTED" ]]
+          echo "Channel $SMOKE_CHANNEL selected: $actual" >>"$GITHUB_STEP_SUMMARY"
+
   benchmark:
     if: inputs.validation == 'tool-setup'
     runs-on: ubuntu-24.04

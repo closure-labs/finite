@@ -283,7 +283,11 @@ ISO construction still creates unique installation tags in the existing registry
 
 ## SecretSpec and local tasks
 
-`secretspec.toml` declares credentials, signing keys and the six CI pilot switches.
+`secretspec.toml` declares credentials, signing keys, six CI pilot switches and the
+`FINITE_QUALIFIED_ISO_CHANNELS` selector. The selector defaults to `finite-next`;
+use comma-separated supported channel names or `all` for a broader rollout.
+Preservation, predecessor ISO reuse, strict release fallback and pruning apply
+only to selected channels while the preservation switch is enabled.
 GitHub Actions supplies backend values through the `github-actions` environment
 provider; local devenv tasks use the encrypted `local = "pass://"` provider.
 The same explicit profile/scope names identify cache writing, image signing,
@@ -319,6 +323,9 @@ by these explicit task selections. Do not put private values in this manifest.
 `image:verify`, `image:sign` and `release:sign` are explicit developer tasks;
 image tasks require an immutable `IMAGE_REFERENCE`. They do not execute as
 part of ordinary CI checks or developer shell initialization.
+
+Use the [measured rollout sequence](ci-rollout.md) to seed source caches and
+exercise one-channel ISO preservation after the protected main merge.
 
 ## Update reliability and measurement
 

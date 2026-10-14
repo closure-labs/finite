@@ -37,6 +37,7 @@ env:
   FINITE_GRYPE_DB_CACHE: ${{ vars.FINITE_GRYPE_DB_CACHE }}
   FINITE_QUALIFICATION_REUSE: ${{ vars.FINITE_QUALIFICATION_REUSE }}
   FINITE_QUALIFIED_ISO_PRESERVATION: ${{ vars.FINITE_QUALIFIED_ISO_PRESERVATION }}
+  FINITE_QUALIFIED_ISO_CHANNELS: ${{ vars.FINITE_QUALIFIED_ISO_CHANNELS }}
 
 permissions:
   contents: read
@@ -176,7 +177,10 @@ jobs:
           include-hidden-files: true
           retention-days: 7
       - name: Preserve pristine qualified candidate ISO for the pilot
-        if: success() && !inputs.validation_only && matrix.phase == 'fresh' && env.FINITE_QUALIFIED_ISO_PRESERVATION == 'true'
+        if: >-
+          success() && !inputs.validation_only && matrix.phase == 'fresh' &&
+          env.FINITE_QUALIFIED_ISO_PRESERVATION == 'true' &&
+          contains(format(',{0},', env.FINITE_QUALIFIED_ISO_CHANNELS), format(',{0},', inputs.channel))
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: finite-qualified-iso-${{ inputs.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
