@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -31,7 +32,7 @@ class InstallerCertificate(unittest.TestCase):
             (root / 'sources/installer-security.json').write_text(json.dumps(lock))
             (root / 'bin').mkdir()
             docker = root / 'bin/docker'
-            docker.write_text('#!/usr/bin/env bash\ntouch docker-called\nexit 99\n')
+            docker.write_text('#!' + shutil.which('bash') + '\ntouch docker-called\nexit 99\n')
             docker.chmod(0o755)
             result = subprocess.run(['bash', str(ROOT / 'scripts/bluebuild/prepare-installer.sh')],
                 cwd=root, env=dict(os.environ, GITHUB_ACTIONS='true', GITHUB_REPOSITORY='closure-labs/finite',
@@ -56,7 +57,7 @@ class InstallerCertificate(unittest.TestCase):
                 shutil.copy2(ROOT / 'sources' / name, root / 'sources' / name)
             (root / 'bin').mkdir()
             docker = root / 'bin/docker'
-            docker.write_text('#!/usr/bin/env python3\n' + '''
+            docker.write_text('#!' + sys.executable + '\n' + '''
 import hashlib,json,os,sys
 from pathlib import Path
 command=sys.argv[1]
