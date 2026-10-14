@@ -1,5 +1,9 @@
 # CI reliability and optimization review
 
+The [completed October 14 rollout results](ci-rollout-results.md) record protected
+merges, all eight production VM phases, authenticated original-ISO reuse, matched
+Cachix reader evidence, final switches and the prioritized next plan.
+
 ## October 14 implementation and rollout
 
 The latest review sampled 150 runs from October 12-14 and examined step timings
