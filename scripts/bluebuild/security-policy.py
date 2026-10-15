@@ -318,7 +318,7 @@ def baseline_context(context, image):
             or not isinstance(context['baseImage'], str)
             or not re.fullmatch(r'ghcr\.io/ublue-os/bluefin(?:-dx)?@sha256:[0-9a-f]{64}', context['baseImage'])):
         raise ValueError('Upstream risk policy requires authenticated, digest-bound approved baseline context')
-    foundation = 'bluefin-dx' if '-dx-' in context['profile'] else 'bluefin'
+    foundation = {'finite': 'bluefin', 'finite-dev': 'bluefin-dx'}[context['profile']]
     if not context['baseImage'].startswith('ghcr.io/ublue-os/' + foundation + '@'):
         raise ValueError('Approved baseline does not match candidate profile')
     return dict(context)

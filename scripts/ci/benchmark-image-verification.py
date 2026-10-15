@@ -444,7 +444,7 @@ def benchmark(args):
         config = document(config_bytes, config_descriptor['digest'], config_descriptor['size'])
         binding = image_binding(manifest, config, args.profile, args.source, args.identity)
         report['binding'] = dict(binding, nativeDigest=native['digest'])
-        required = max((32 if '-dx-' in args.profile else 20) * 1024**3, 2 * sum(layer['size'] for layer in binding['layers']) + 4 * 1024**3)
+        required = max((32 if args.profile == 'finite-dev' else 20) * 1024**3, 2 * sum(layer['size'] for layer in binding['layers']) + 4 * 1024**3)
         report['diskBeforePull'] = {'freeBytes': shutil.disk_usage(daemon.root).free, 'requiredBytes': required}
         if report['diskBeforePull']['freeBytes'] < required:
             raise ValueError('Insufficient free space for bounded private-store verification')
