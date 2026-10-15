@@ -76,6 +76,8 @@ in {
     python3 tests/automation/bluefin-upstream.py
     python3 tests/ci/selection.py
     python3 tests/ci/release-selection.py
+    python3 tests/ci/release-request.py
+    python3 tests/ci/image-identity.py
     python3 tests/ci/applicability-evidence.py
     python3 tests/ci/native-evidence-summary.py
     python3 tests/ci/diagnose-built-candidate.py
@@ -92,10 +94,13 @@ in {
     python3 tests/ci/cache-sqlite.py
     python3 tests/ci/secretspec.py
     python3 tests/ci/cache-publish.py
+    python3 tests/ci/benchmark-cache-writer.py
     python3 tests/ci/prune-ci-caches.py
     python3 tests/ci/ci-cache-benchmark.py
     python3 tests/ci/delivery-policy.py
     python3 tests/ci/image-tools-benchmark.py
+    python3 tests/ci/image-verification-benchmark.py
+    python3 tests/ci/security-reuse-benchmark.py
     python3 tests/ci/remediation-preflight.py
     python3 tests/ci/security-ownership.py
     python3 tests/ci/security-remediation-diff.py

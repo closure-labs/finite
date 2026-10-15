@@ -1,5 +1,23 @@
 # Security audit implementation
 
+## Current v0.8 continuation
+
+User requested continuation of the measured CI plan through v0.8. Scope remains
+four existing channels, SecretSpec/devenv credentials, jj and hosted heavy work.
+The [v0.8 plan](../docs/v0.8-release-plan.md) supersedes historical release holds
+below; their dated evidence remains preserved. Current owner policy accepts VM
+qualification and reviewed Critical desktop exploitability, with physical tests
+informational. The protected release environment retains its owner review gate.
+
+- Implementation: selective batched cache preparation, identity separation and
+  qualification mode binding, version/changelog and per-channel release checks.
+- Verification: bounded local fixtures plus independent QA/security; hosted
+  source/image checks, one genuine v0.8 main generation and all eight VM phases.
+- Delivery: preserve four original qualified ISOs, prepare four unsigned packets,
+  obtain final ship approval, sign drafts and publish approved channel releases.
+- Defaults: automatic writer, inventory/DB and whole-qualification reuse remain
+  off until their own measured adoption criteria are met.
+
 ## Active release eligibility sequence
 
 - PR147 head68fbf8759df3208dc6879640aa7d211d9162addf PASS all four image builds,

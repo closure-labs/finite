@@ -34,11 +34,17 @@ def source_inputs(root=ROOT):
                     root / 'sources/bluebuild-installer.json', root / 'sources/bluebuild-cli.json', root / 'sources/installer-security.json',
                     root / 'scripts/ci/nix-resources.py', root / 'scripts/ci/bluefin-upstream.py',
                     root / 'scripts/ci/ci-options.py', root / 'cosign.pub',
+                    root / '.github/workflows/iso.yml',
                     root / '.github/workflows/qualification.yml',
                     root / '.github/workflows/vm-acceptance.yml'})
     # Include scripts copied into guests and their security contract inputs.
     paths += sorted(root.joinpath('files/system/usr/libexec/finite').glob('*'))
-    inputs = {str(path.relative_to(root)): sha(path) for path in paths if path.is_file() and path.suffix != '.pyc'}
+    # Preserve content and executable-mode changes now that host-only installer
+    # inputs have their own identity rather than forcing another image build.
+    inputs = {str(path.relative_to(root)): {
+        'sha256': sha(path), 'executable': bool(path.stat().st_mode & 0o111),
+        'symlink': str(path.readlink()) if path.is_symlink() else None
+    } for path in paths if path.is_file() and path.suffix != '.pyc'}
     if 'sources/installer-security.json' not in inputs:
         raise ValueError('Pinned installer certificate context is missing')
     return inputs
@@ -59,7 +65,7 @@ def context(root=ROOT):
         'OVMF_CODE_4M.secboot.fd', 'OVMF_VARS_4M.ms.fd')}
     versions = subprocess.check_output(['dpkg-query', '-W', '-f=${Package}=${Version}\n',
         'qemu-system-x86', 'qemu-utils', 'ovmf', 'xorriso', 'mtools', 'openssl', 'skopeo', 'python3-virt-firmware'], text=True, timeout=30)
-    return {'schema': 1, 'platform': 'linux/amd64', 'runner': 'ubuntu-24.04',
+    return {'schema': 2, 'platform': 'linux/amd64', 'runner': 'ubuntu-24.04',
             'inputs': inputs, 'firmware': firmware, 'packages': versions.strip(),
             'bluebuildVersion': json.loads((root / 'sources/bluebuild-cli.json').read_text())}
 

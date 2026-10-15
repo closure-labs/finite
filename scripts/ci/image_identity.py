@@ -6,6 +6,40 @@ from pathlib import Path
 import subprocess
 
 
+# This is the hashed contract version, not the evidence transport version.
+# A contract change requires new image bytes/evidence; never relabel old images.
+IMAGE_INPUT_SCHEMA = 3
+
+# These reviewed inputs run after an immutable OS image has been assembled.
+# qualification-context.py binds the VM/ISO inputs separately. Keep this list
+# explicit: a newly added BlueBuild helper remains an image input until reviewed.
+QUALIFICATION_ONLY = {
+    'automation/security/image-policy.json', '.github/workflows/publication.yml',
+    '.github/workflows/iso.yml', '.github/workflows/vm-acceptance.yml',
+    '.github/workflows/qualification.yml', 'sources/bluebuild-installer.json',
+    'sources/installer-security.json',
+    'files/installer/Containerfile', 'files/installer/install_finite_fstab',
+    'files/installer/secure-boot.pem',
+    'scripts/bluebuild/security-policy.py', 'scripts/bluebuild/security-scan.py',
+    'scripts/bluebuild/security-run.sh', 'scripts/bluebuild/audit-published.sh',
+    'scripts/bluebuild/check-vm-desktop.py', 'scripts/bluebuild/check-vm-encryption.sh',
+    'scripts/bluebuild/check-vm-mok.sh', 'scripts/bluebuild/check-vm-security.sh',
+    'scripts/bluebuild/check-vm-user-labels.sh', 'scripts/bluebuild/desktop-qualification.py',
+    'scripts/bluebuild/iso.sh', 'scripts/bluebuild/prepare-installer.sh',
+    'scripts/bluebuild/prepare-vm-firmware.sh', 'scripts/bluebuild/prepare-vm-iso.sh',
+    'scripts/bluebuild/prepare-vm-predecessor-home.sh',
+    'scripts/bluebuild/prepare-vm-predecessor-policy.sh',
+    'scripts/bluebuild/prune-qualified-isos.py', 'scripts/bluebuild/qualification-context.py',
+    'scripts/bluebuild/publication-current.py',
+    'scripts/bluebuild/qualification-preflight.py', 'scripts/bluebuild/qualify.sh',
+    'scripts/bluebuild/redact-vm-logs.py', 'scripts/bluebuild/release-evidence.py',
+    'scripts/bluebuild/reuse-predecessor-iso.py', 'scripts/bluebuild/reuse-qualification.py',
+    'scripts/bluebuild/sign-release.sh', 'scripts/bluebuild/unlock-vm.py',
+    'scripts/bluebuild/vm-acceptance.sh', 'scripts/bluebuild/vm-diagnostics.sh',
+    'scripts/bluebuild/vm-upgrade.py', 'scripts/bluebuild/wait-nix.sh',
+}
+
+
 def identity(profile, root, payload=None):
     root = Path(root)
     if payload is None:
@@ -29,11 +63,6 @@ def identity(profile, root, payload=None):
     paths.extend(root / '.github/workflows' / name for name in ('image.yml', 'publication.yml', 'iso.yml', 'vm-acceptance.yml'))
     paths.extend((root / '.github/workflows').glob('*qualification*.yml'))
     entries = []
-    qualification_only = {
-        'automation/security/image-policy.json', '.github/workflows/publication.yml',
-        'scripts/bluebuild/security-policy.py', 'scripts/bluebuild/security-scan.py',
-        'scripts/bluebuild/security-run.sh', 'scripts/bluebuild/audit-published.sh',
-    }
     for path in sorted(set(paths)):
         relative_path = path.relative_to(root)
         relative = relative_path.as_posix()
@@ -43,9 +72,10 @@ def identity(profile, root, payload=None):
         if (relative_path.parts[:2] == ('scripts', 'bluebuild') and
                 path.suffix in ('.pyc', '.pyo')):
             continue
-        # The current security policy is bound separately by policySha256 and
-        # re-evaluated before signing. Changing it does not change image bytes.
-        if relative in qualification_only:
+        # Installer files build a separate Lorax ISO container, never the OS
+        # image: recipes copy files/system and the staged Nix payload instead.
+        # Current security policy remains bound by policySha256 before signing.
+        if relative in QUALIFICATION_ONLY:
             continue
         if not profile.endswith('-next') and relative in ('recipes/shared/next.yml', 'files/scripts/kernel-next.sh'):
             continue
@@ -55,8 +85,8 @@ def identity(profile, root, payload=None):
             continue
         content = str(path.readlink()).encode() if path.is_symlink() else path.read_bytes()
         entries.append([relative, bool(path.lstat().st_mode & 0o111), hashlib.sha256(content).hexdigest()])
-    # Schema 2 changes the hashed input contract; v1 remains the transport
+    # Schema 3 changes the hashed input contract; v1 remains the transport
     # format accepted by existing evidence readers. Old hashes are not migrated:
     # candidates built under the former contract must be rebuilt and qualified.
-    value = {'schema': 2, 'profile': profile, 'payload': payload, 'files': entries}
+    value = {'schema': IMAGE_INPUT_SCHEMA, 'profile': profile, 'payload': payload, 'files': entries}
     return 'v1:' + hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':')).encode()).hexdigest()

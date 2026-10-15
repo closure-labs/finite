@@ -1,5 +1,14 @@
 # Remediation and independent release sequence
 
+## Current v0.8 release
+
+Continue with the [v0.8 execution plan](v0.8-release-plan.md). The all-profile
+[October 14 qualification](https://github.com/closure-labs/finite/actions/runs/38639819537)
+and [measured CI rollout](ci-rollout-results.md) supersede the older standard-only
+continuation below. v0.8 changes the payload/version and identity schema, so it
+requires fresh exact-candidate main qualification before release preparation.
+Historical remediation and advisory records remain dated evidence.
+
 Finite is a Jujutsu repository, using Bluefin/bootc with Nix/Home Manager. All
 four desktop profiles and container tools remain supported. This is the current
 execution order; older audit ledgers remain historical evidence.

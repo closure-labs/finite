@@ -71,9 +71,12 @@ so `cache-mode: optimized` retains source restoration only for explicit
 experiments. Without the switch, jobs keep the baseline full-store restore.
 `FINITE_CACHIX_WRITER=true`
 enables a separate successful-main writer with `CACHIX_AUTH_TOKEN`, limited to
-bounded check proofs and image/scanner/audit tool closures. Realization happens
-before exposing that write credential. All cache pilots and benchmark commands
-are documented in [CI optimization review](ci-optimization-review.md).
+four declared image/scanner/audit/resolver tool closures. Preparation batches
+tool realization and closure validation before exposing that write credential.
+Explicit `cache-publish.py prepare --include-proofs MANIFEST` also seeds bounded
+check proofs. Automatic writing remains disabled pending net savings. The
+[v0.8 plan](v0.8-release-plan.md) and [CI optimization review](ci-optimization-review.md)
+record the experiments and adoption criteria.
 
 Nix uses its native 15-second connection timeout, 60-second stalled-download
 timeout and three download attempts. The stall timeout measures inactivity,

@@ -1,8 +1,8 @@
 # Develop Finite
 
 Use a Finite checkout with Nix and BlueBuild CLI v0.9.37. Keep full image builds,
-ISO generation and VM tests on GitHub-hosted runners; local checks and recipe
-validation are the lightweight development path.
+ISO generation, aggregate Nix evaluation and VM tests on GitHub-hosted runners.
+Use already available tools for small local fixture tests and source review.
 
 ## Choose where to make a change
 
@@ -33,33 +33,25 @@ The four handwritten recipes are the image configuration. Shared `from-file`
 modules keep common packages, assets and services together. Nix produces the
 Home Manager template/catalog and pinned installation payload.
 
-## Run local checks
+## Run checks
 
-Inspect downloads before starting a build, then cap local jobs and cores:
-
-```bash
-nix build --accept-flake-config --dry-run .#ci-checks
-nix build --accept-flake-config --max-jobs 3 --cores 2 --no-link .#ci-checks
-nix fmt
-```
+The hosted Build Finite workflow runs the pinned aggregate Nix checks and formats
+the source. Nix evaluation itself has exhausted workstation memory, including
+before a build started. Do not run aggregate evaluation, `nix develop`, devenv
+aggregate tests or VM/image operations on this workstation. Job/core limits
+alone do not bound evaluator memory.
 
 The checks cover Home Manager configurations, Nix lifecycle, kernel and installer
 contracts, UEFI ISO layout, dependency updates, formatting, workflow linting and
-repository policy. For a focused run:
+repository policy. For a focused local fixture, use an already installed Python
+with the test's dependencies, without realizing another shell:
 
 ```bash
-nix build --accept-flake-config --max-jobs 3 --cores 2 \
-  --no-link .#checks.x86_64-linux.bluebuild --print-build-logs
+PYTHONDONTWRITEBYTECODE=1 python3 tests/ci/release-request.py
 ```
 
-Use the pinned development shell for Python tests and workflow tools:
-
-```bash
-nix develop --accept-flake-config --command python3 tests/ci/selection.py
-nix develop --accept-flake-config --command python3 tests/bluebuild/contracts.py
-```
-
-Validate a recipe and inspect its generated Containerfile:
+On a suitably provisioned development host, validate a recipe and inspect its
+generated Containerfile with an already installed BlueBuild CLI:
 
 ```bash
 bluebuild validate recipes/bluefin-generic.yml

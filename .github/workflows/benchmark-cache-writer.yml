@@ -1,0 +1,82 @@
+name: Benchmark selective cache preparation
+on:
+  workflow_dispatch:
+# Bootstrap public options; setup-nix resolves them through SecretSpec.
+env:
+  FINITE_OPTIMIZED_CACHES: ${{ vars.FINITE_OPTIMIZED_CACHES }}
+  FINITE_CACHIX_WRITER: ${{ vars.FINITE_CACHIX_WRITER }}
+  FINITE_REUSE_INVENTORY: ${{ vars.FINITE_REUSE_INVENTORY }}
+  FINITE_GRYPE_DB_CACHE: ${{ vars.FINITE_GRYPE_DB_CACHE }}
+  FINITE_QUALIFICATION_REUSE: ${{ vars.FINITE_QUALIFICATION_REUSE }}
+  FINITE_QUALIFIED_ISO_PRESERVATION: ${{ vars.FINITE_QUALIFIED_ISO_PRESERVATION }}
+  FINITE_QUALIFIED_ISO_CHANNELS: ${{ vars.FINITE_QUALIFIED_ISO_CHANNELS }}
+permissions:
+  contents: read
+  actions: read
+jobs:
+  writer:
+    name: writer-${{ matrix.mode }}-${{ matrix.repetition }}
+    if: github.repository == 'closure-labs/finite'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        mode: [legacy, candidate]
+        repetition: [1, 2, 3]
+    env:
+      BENCHMARK_MODE: ${{ matrix.mode }}
+      BENCHMARK_REPETITION: ${{ matrix.repetition }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Record setup start
+        run: python3 scripts/ci/benchmark-cache-writer.py mark-start .bluebuild/writer-start.json
+      - uses: ./.github/actions/setup-nix
+        with:
+          cache-mode: none
+      - name: Measure credential-free cold and warm preparation
+        run: >-
+          python3 scripts/ci/benchmark-cache-writer.py run
+          "$BENCHMARK_MODE" "$BENCHMARK_REPETITION"
+          .bluebuild/writer-start.json .bluebuild/benchmark.json
+      - name: Retain measurements including failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cache-writer-${{ matrix.mode }}-${{ matrix.repetition }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/benchmark.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+  summarize:
+    if: always()
+    needs: writer
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Collect this attempt's measurements and completed job receipts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPORT_PATTERN: cache-writer-*-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" --pattern "$REPORT_PATTERN" --dir .bluebuild/writer-reports
+          gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT/jobs?per_page=100" > .bluebuild/writer-jobs.json
+      - name: Require matching tools and summarize complete jobs
+        run: >-
+          python3 scripts/ci/benchmark-cache-writer.py summarize
+          .bluebuild/writer-reports .bluebuild/writer-jobs.json .bluebuild/writer-summary.md
+      - name: Retain measured comparison
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cache-writer-summary-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/writer-summary.md
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14

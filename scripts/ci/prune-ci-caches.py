@@ -18,6 +18,7 @@ PATTERNS = {
     'legacy': re.compile(r'nix-store-v1-' + PLATFORM + r'-[a-f0-9]{64}'),
     'sources': re.compile(r'nix-sources-v1-' + PLATFORM + r'-[a-f0-9]{64}'),
     'grype': re.compile(r'grype-db-v1-' + PLATFORM + r'-[a-f0-9]{64}-[1-9][0-9]*-[1-9][0-9]*'),
+    'grype-benchmark': re.compile(r'grype-security-benchmark-v1-' + PLATFORM + r'-[a-f0-9]{64}-[1-9][0-9]*-[1-9][0-9]*'),
 }
 
 

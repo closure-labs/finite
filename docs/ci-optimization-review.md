@@ -33,7 +33,7 @@ and correctness checks pass. Their default is disabled.
 | Variable | Pilot behavior |
 | --- | --- |
 | `FINITE_OPTIMIZED_CACHES` | Small jobs use public binary caches without an Actions restore; aggregate checks retain snapshots |
-| `FINITE_CACHIX_WRITER` | Publish bounded check proofs and pinned tool closures using `CACHIX_AUTH_TOKEN` |
+| `FINITE_CACHIX_WRITER` | Publish pinned tool closures using scoped `CACHIX_AUTH_TOKEN`; optional explicit proof seeding |
 | `FINITE_REUSE_INVENTORY` | Reuse authenticated immutable inventory, then refresh Grype and policy results |
 | `FINITE_GRYPE_DB_CACHE` | Cache DB transport bytes; mandatory database refresh and freshness checks still run |
 | `FINITE_QUALIFICATION_REUSE` | Reuse identical successful qualification for at most 24 hours; promotion rechecks age |

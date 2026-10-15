@@ -74,8 +74,9 @@ candidates, execution times and runners prevent attributing all phase difference
 to caching. Available stage JSONL survives artifact aggregation; ISO-generation
 duration remains in job logs and VM-stage durations in their existing JSON files.
 
-Preservation and predecessor reuse remain restricted to `finite-next`, with
-seven-day artifacts and two successful generations per selected profile.
+At completion of this pilot, preservation and predecessor reuse were restricted
+to `finite-next`, with seven-day artifacts and two successful generations per
+selected profile.
 Failed-origin and diagnostic receipts cannot become trusted producers.
 
 ## Cachix validation and operating decision
@@ -114,6 +115,10 @@ check-proof benefit. Automatic writing is therefore disabled after the completed
 pilot. Public reads remain enabled and can use the published paths.
 
 ## Final switches and next plan
+
+These values record the initial pilot's completion. The later
+[v0.8 continuation](v0.8-release-plan.md) expands preservation to all four
+channels and tracks implementation of the priorities below.
 
 | Public repository variable | Final value |
 | --- | --- |

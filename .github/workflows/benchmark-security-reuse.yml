@@ -1,0 +1,224 @@
+name: Benchmark native security reuse
+
+on:
+  workflow_dispatch:
+    inputs:
+      image:
+        description: Immutable signed ghcr.io/closure-labs/finite@sha256 image
+        required: true
+        type: string
+      profile:
+        description: Profile from the successful native build
+        required: true
+        type: choice
+        options: [bluefin-generic, bluefin-next, bluefin-dx-generic, bluefin-dx-next]
+      origin_run:
+        description: Successful native main Build Finite run containing this exact image and inventory
+        required: true
+        type: string
+      repetitions:
+        description: One sample per lane is diagnostic; three permits repeated comparisons
+        required: true
+        type: choice
+        default: "1"
+        options: ["1", "3"]
+
+# Public bootstrap only; scoped lane overrides occur after setup normalization.
+env:
+  FINITE_OPTIMIZED_CACHES: ${{ vars.FINITE_OPTIMIZED_CACHES }}
+  FINITE_CACHIX_WRITER: ${{ vars.FINITE_CACHIX_WRITER }}
+  FINITE_REUSE_INVENTORY: ${{ vars.FINITE_REUSE_INVENTORY }}
+  FINITE_GRYPE_DB_CACHE: ${{ vars.FINITE_GRYPE_DB_CACHE }}
+  FINITE_QUALIFICATION_REUSE: ${{ vars.FINITE_QUALIFICATION_REUSE }}
+  FINITE_QUALIFIED_ISO_PRESERVATION: ${{ vars.FINITE_QUALIFIED_ISO_PRESERVATION }}
+  FINITE_QUALIFIED_ISO_CHANNELS: ${{ vars.FINITE_QUALIFIED_ISO_CHANNELS }}
+
+permissions:
+  contents: read
+  actions: read
+  packages: read
+
+concurrency:
+  group: finite-security-reuse-benchmark
+  cancel-in-progress: false
+
+jobs:
+  seed:
+    name: Seed Grype DB transport
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    outputs:
+      cache_key: ${{ steps.seed.outputs.cache_key }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      BENCHMARK_IMAGE: ${{ inputs.image }}
+      BENCHMARK_PROFILE: ${{ inputs.profile }}
+      BENCHMARK_ORIGIN: ${{ inputs.origin_run }}
+      GRYPE_DB_CACHE_DIR: ${{ github.workspace }}/.bluebuild/security-benchmark-db
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+        with:
+          cache-mode: none
+      - name: Realize pinned native scanner tools
+        run: | # zizmor: ignore[github-env]
+          tools=$(nix build --file lib/ci-tools.nix scanner-tools --no-link --print-out-paths)
+          [[ $tools =~ ^/nix/store/[a-z0-9]{32}-finite-ci-scanner-tools$ ]]
+          echo "$tools/bin" >>"$GITHUB_PATH"
+      - name: Authenticate native image and refresh the isolated seed
+        id: seed
+        env:
+          BENCHMARK_DB_KEY: grype-security-benchmark-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock') }}-${{ github.run_id }}-${{ github.run_attempt }}
+        run: >-
+          finite-ci-secrets-run repository-read --
+          python3 scripts/ci/benchmark-security-reuse.py seed
+          --image "$BENCHMARK_IMAGE" --profile "$BENCHMARK_PROFILE" --origin "$BENCHMARK_ORIGIN"
+          --output .bluebuild/security-db-seed/benchmark.json
+      - name: Save this attempt's DB transport only
+        uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
+        with:
+          primary-key: ${{ steps.seed.outputs.cache_key }}
+          nix: false
+          paths: .bluebuild/security-benchmark-db
+          save: true
+        env:
+          SEGMENT_DOWNLOAD_TIMEOUT_MINS: "2"
+      - name: Retain bounded seed receipt
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: security-benchmark-seed-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/security-db-seed/benchmark.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+
+  scan:
+    name: Scan (${{ matrix.lane }}, ${{ matrix.repetition }})
+    needs: seed
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 80
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        lane: [baseline, inventory-only, db-only]
+        repetition: ${{ fromJSON(inputs.repetitions == '3' && '[1,2,3]' || '[1]') }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      BENCHMARK_IMAGE: ${{ inputs.image }}
+      BENCHMARK_PROFILE: ${{ inputs.profile }}
+      BENCHMARK_ORIGIN: ${{ inputs.origin_run }}
+      BENCHMARK_LANE: ${{ matrix.lane }}
+      BENCHMARK_REPETITION: ${{ matrix.repetition }}
+      GRYPE_DB_CACHE_DIR: ${{ github.workspace }}/.bluebuild/security-benchmark-db
+      BENCHMARK_DB_KEY: ${{ needs.seed.outputs.cache_key }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Record setup start
+        run: python3 scripts/ci/benchmark-security-reuse.py mark-start .bluebuild/security-setup-start.json
+      - uses: ./.github/actions/setup-nix
+        with:
+          cache-mode: none
+      - name: Make room for native inventory
+        uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
+        with:
+          skip-if-available: "80G"
+      - name: Realize pinned native scanner tools
+        run: | # zizmor: ignore[github-env]
+          tools=$(nix build --file lib/ci-tools.nix scanner-tools --no-link --print-out-paths)
+          [[ $tools =~ ^/nix/store/[a-z0-9]{32}-finite-ci-scanner-tools$ ]]
+          echo "$tools/bin" >>"$GITHUB_PATH"
+      - name: Read this attempt's authenticated seed receipt
+        run: >-
+          gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY"
+          --name "security-benchmark-seed-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          --dir .bluebuild/security-db-seed
+      - name: Restore only the explicitly seeded DB transport
+        id: database
+        if: matrix.lane == 'db-only'
+        uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
+        with:
+          primary-key: ${{ needs.seed.outputs.cache_key }}
+          nix: false
+          paths: .bluebuild/security-benchmark-db
+          save: false
+        env:
+          SEGMENT_DOWNLOAD_TIMEOUT_MINS: "2"
+      - name: Measure the isolated lane with fresh DB and current policy
+        env:
+          RESTORED_DB_KEY: ${{ steps.database.outputs.restored-key }}
+        run: >-
+          finite-ci-secrets-run repository-read --
+          python3 scripts/ci/benchmark-security-reuse.py scan
+          --image "$BENCHMARK_IMAGE" --profile "$BENCHMARK_PROFILE" --origin "$BENCHMARK_ORIGIN"
+          --lane "$BENCHMARK_LANE" --repetition "$BENCHMARK_REPETITION"
+          --start .bluebuild/security-setup-start.json --seed .bluebuild/security-db-seed/benchmark.json
+          --output .bluebuild/security-benchmark/benchmark.json
+      - name: Retain measurements including failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: security-benchmark-${{ matrix.lane }}-${{ matrix.repetition }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .bluebuild/security-benchmark/benchmark.json
+            .bluebuild/security-benchmark-scan/phase-timings.json
+            .bluebuild/security-benchmark-scan/runner-resources.log
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+
+  summarize:
+    needs: [seed, scan]
+    if: always() && github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPETITIONS: ${{ inputs.repetitions }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Collect small reports and complete-job timestamps
+        run: |
+          gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" \
+            --pattern "security-benchmark-*-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" --dir .bluebuild/security-benchmark-reports
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            --jq '{id,head_sha,run_attempt}' >.bluebuild/security-benchmark-run.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT/jobs?per_page=100" \
+            --jq '{total_count,jobs:[.jobs[] | {id,name,status,conclusion,started_at,completed_at}]}' \
+            >.bluebuild/security-benchmark-jobs.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path('.bluebuild/security-benchmark-run.json')
+          run = json.loads(path.read_text())
+          jobs = json.loads(Path('.bluebuild/security-benchmark-jobs.json').read_text())
+          if jobs['total_count'] > 100:
+              raise ValueError('Benchmark job metadata pagination is incomplete')
+          run.update(jobs)
+          path.write_text(json.dumps(run))
+          PY
+      - name: Require matched independent observations
+        run: >-
+          python3 scripts/ci/benchmark-security-reuse.py summarize
+          --reports .bluebuild/security-benchmark-reports --metadata .bluebuild/security-benchmark-run.json
+          --repetitions "$REPETITIONS" --output .bluebuild/security-benchmark-summary.json
+      - name: Retain the comparison
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: security-benchmark-summary-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .bluebuild/security-benchmark-summary.json
+            .bluebuild/security-benchmark-run.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
