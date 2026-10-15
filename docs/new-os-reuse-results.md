@@ -2,8 +2,8 @@
 
 Measured on October 15, 2026, using only the new upstream-preserving `finite`
 and `finite-dev` images. No old replacement-kernel image or retired Next variant
-was benchmarked in this comparison. All four final experiments passed; reuse
-defaults remain unchanged.
+was benchmarked in this comparison. All four final experiments passed. Production
+switches were unchanged during measurement; subsequent activation is recorded below.
 
 ## Qualified origin
 
@@ -111,15 +111,35 @@ receipt/timing metadata. No local native inventory, image, ISO or DB was downloa
 or processed. Existing v0.8 releases and their original assets were preserved;
 this work does not create or retag a public versioned release.
 
-## Next decisions
+## Production activation
 
-1. Inventory reuse now has matched new-OS timing evidence for both active variants.
-   Use an opt-in rollout with the same signature, exact-origin and fresh security
-   checks before changing defaults.
-2. Measure how often whole-qualification reuse finds an exact eligible hit. Keep
-   its candidate/predecessor/context/source joins and original 24-hour deadline;
-   compare observed hit rate with these per-hit costs before a global rollout.
-3. These experiments do not demonstrate a benefit from Cachix writing or DB
-   transport. Cachix writing remains false; inventory, DB and qualification reuse
-   remain unset/default-off. Require their own complete-cost evidence before
-   changing those defaults. No defaults or repository variables changed here.
+Following the owner's request, the repository Actions variables
+`FINITE_REUSE_INVENTORY` and `FINITE_QUALIFICATION_REUSE` were set to `true` on
+October 15, 2026 at 20:55 UTC. GitHub's variable API and the installed SecretSpec
+resolver confirmed both settings. See the [activation receipt](ci-reuse-activation-2026-10-15.json).
+These settings already apply to new CI runs; merging this record does not apply
+the variable changes again. Source and local SecretSpec defaults remain false,
+and the original benchmark JSON retains its measurement-time settings.
+
+Inventory reuse still authenticates signed exact-origin evidence and runs fresh
+DB updates, vulnerability scans and current policy. Qualification reuse retains
+the exact candidate, predecessor, source, build and context joins and the original
+24-hour deadline. A missing eligible receipt falls back to fresh work; invalid
+evidence fails closed. Only `finite` and `finite-dev` are active.
+
+Automatic Cachix writing remains false. DB transport remains unset/default-off;
+these experiments do not establish savings from either feature.
+
+To roll back either repository override, set its public Actions variable to false:
+
+```bash
+gh variable set FINITE_REUSE_INVENTORY --repo closure-labs/finite --body false
+gh variable set FINITE_QUALIFICATION_REUSE --repo closure-labs/finite --body false
+```
+
+## Next observations
+
+Measure production hit and miss rates alongside complete job and queue costs.
+The per-hit savings above do not predict total daily savings. Preserve the same
+authentication, fresh security and expiry checks during this rollout. Require
+separate complete-cost evidence before enabling Cachix writing or DB transport.

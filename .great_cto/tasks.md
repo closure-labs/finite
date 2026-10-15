@@ -25,8 +25,10 @@ the same read-only profile, with unchanged measured inventory-only reader paths.
 
 Inventory median paired savings were 415s/810s; whole-qualification critical-path
 service savings were 93.1%/93.6% per exact eligible hit. Production hit rate is not
-measured. Reuse defaults remain unchanged, Cachix writing remains false and no
-versioned release was created or retagged. All heavy work stayed hosted.
+measured. Following the owner's request, repository inventory and qualification
+reuse overrides were enabled and verified through SecretSpec on October 15 at
+20:55 UTC. Local/source defaults remain false; Cachix writing and DB transport
+remain off. No versioned release was created or retagged. All heavy work stayed hosted.
 See [upstream foundations](../docs/upstream-kernel-variants.md) and the
 [new OS results and next decisions](../docs/new-os-reuse-results.md).
 
