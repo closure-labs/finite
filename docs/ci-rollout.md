@@ -15,6 +15,11 @@ ISO preservation remains enabled. The automatic writer is disabled after its
 successful pilot because positive net runner-time savings remain unproven.
 The procedures below describe how to run another controlled stage.
 
+The [v0.8 continuation](v0.8-release-plan.md) expands original-ISO preservation
+to all four channels for its genuine release build and defaults writer preparation
+to the four declared tools. Earlier next-only procedures below describe the
+completed initial pilot.
+
 ## Initial main rollout
 
 After ship approval, use the merge queue. Configure only the measured small-job
@@ -139,8 +144,9 @@ read-only reconciliation confirms no pending image profiles; otherwise it also
 builds and publishes the pending profiles. A failed overall originating build
 does not trigger this writer, even when its Nix checks passed.
 
-Require the independent checkout/source SHA check, successful aggregate proofs,
-allowlisted roots, one-MiB proof/two-GiB tool bounds and a successful push. Keys
+Require the independent checkout/source SHA check, strict evaluated tool/output
+associations, allowlisted roots and two-GiB tool bounds. Optional
+`--include-proofs` seeding also validates one-MiB proof bounds. Keys
 are resolved only for the final SecretSpec `cache-writer` command, after secret-free
 realization. Exclude image stores, VM disks, personalized ISO media and keys.
 On three subsequent matched reader runs, require actual substitutions from

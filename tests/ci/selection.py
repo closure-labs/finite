@@ -16,9 +16,21 @@ sys.path.insert(0, str(ROOT / 'scripts/ci'))
 import impact
 import gate
 import payloads
+import image_identity
 
 
 class Selection(unittest.TestCase):
+    def test_reviewed_host_inputs_skip_images_but_unknown_inputs_remain_conservative(self):
+        for path in image_identity.QUALIFICATION_ONLY:
+            with self.subTest(path=path):
+                self.assertEqual(impact.classify([path]), {'checks': True, 'nix': False, 'profiles': []})
+        for path in ('scripts/bluebuild/new-host-helper.py', 'files/installer/new-hook',
+                     '.github/workflows/new-qualification.yml'):
+            self.assertEqual(impact.classify([path])['profiles'], sorted(impact.PROFILES))
+        mixed = impact.classify(['scripts/bluebuild/unlock-vm.py', 'files/system/shipped-file'])
+        self.assertEqual(mixed['profiles'], sorted(impact.PROFILES))
+        self.assertTrue(mixed['checks'])
+
     def test_documentation_and_mixed_changes(self):
         self.assertEqual(impact.classify(['README.md', 'docs/installation.md']), {'checks': False, 'nix': False, 'profiles': []})
         for path in ['files/system/usr/share/finite/finite-logo.png',
@@ -59,7 +71,7 @@ class Selection(unittest.TestCase):
                          {'checks': True, 'nix': False, 'profiles': []})
         self.assertEqual(impact.classify([])['profiles'], sorted(impact.PROFILES))
         for path in ['.github/workflows/iso.yml', '.github/workflows/vm-acceptance.yml']:
-            self.assertEqual(impact.classify([path])['profiles'], sorted(impact.PROFILES))
+            self.assertEqual(impact.classify([path]), {'checks': True, 'nix': False, 'profiles': []})
         for event in ['schedule', 'workflow_dispatch', 'unknown']:
             self.assertIsNone(impact.changed_paths(event, {}))
         self.assertIsNone(impact.changed_paths('push', {'before': '0' * 40, 'after': 'a' * 40}))

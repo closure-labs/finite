@@ -20,13 +20,20 @@ def cache(identifier, kind='checks', platform='Linux-X64', ref='refs/heads/main'
     keys = {'checks': f'nix-store-v2-{platform}-{LOCK}-{identifier:040x}',
             'legacy': f'nix-store-v1-{platform}-{LOCK}',
             'sources': f'nix-sources-v1-{platform}-{LOCK}',
-            'grype': f'grype-db-v1-{platform}-{LOCK}-{identifier}-1'}
+            'grype': f'grype-db-v1-{platform}-{LOCK}-{identifier}-1',
+            'grype-benchmark': f'grype-security-benchmark-v1-{platform}-{LOCK}-{identifier}-1'}
     stamp = created or datetime(2026, 1, identifier, tzinfo=timezone.utc)
     return {'id': identifier, 'key': keys[kind], 'ref': ref,
             'created_at': stamp.isoformat(), 'timestamp': stamp}
 
 
 class Retention(unittest.TestCase):
+    def test_benchmark_databases_have_separate_two_generation_retention(self):
+        entries = [cache(number, 'grype-benchmark') for number in (1, 2, 3, 4)]
+        entries += [cache(5, 'grype'), cache(6, 'grype-benchmark', ref='refs/heads/topic'),
+                    dict(cache(7, 'grype-benchmark'), key=cache(7, 'grype-benchmark')['key'] + '-unrecognized')]
+        self.assertEqual([item['id'] for item in prune.deletions(entries)], [1, 2])
+
     def workflow_event(self):
         return {'action': 'completed', 'repository': {'full_name': prune.REPOSITORY},
                 'workflow_run': {'status': 'completed', 'conclusion': 'failure',

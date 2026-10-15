@@ -12,13 +12,18 @@ Additional hardware is best effort until a release records physical test results
 | 1 | Exact-digest qualification and consistent delivery policy | Failed, missing or mismatched acceptance cannot promote; queue deadlines accommodate validation |
 | 2 | Encrypted-root installation, upgrade and rollback | Hosted Secure Boot/LUKS evidence for each published profile; previous public digest retained on failure |
 | 3 | Desktop hardening and visible app maintenance | Keyboard access is an explicit administrator choice; approved app-input differences are visible without changing user pins |
-| 4 | Qualified daily-driver release | Signed durable assets, retained rollback deployment, and the physical checklist on the actual workstation |
+| 4 | Qualified daily-driver release | Signed durable assets and hosted encrypted-root/Secure Boot fresh-install, upgrade and rollback evidence for each channel; physical observations are informational |
 | 5 | Measured CI optimization | Five equivalent warm runs and one cold run, with queue, evaluation, transfer, build and qualification costs separated |
 
 Each milestone follows the preceding safety work. Local regression tests do not
 establish that hosted qualification or physical hardware works. Record missing
 evidence explicitly and link successful run IDs and image digests before marking
 a milestone complete.
+
+The current owner-approved desktop policy accepts hosted VM evidence for release
+eligibility. The physical checklist records hardware support observations; it
+adds no release prerequisite. The [v0.8 execution plan](v0.8-release-plan.md)
+tracks the next release and the measured optimization experiments.
 
 ## Support and scope
 

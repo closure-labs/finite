@@ -1,0 +1,134 @@
+name: Diagnose immutable image verification
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        type: choice
+        required: true
+        options: [bluefin-generic, bluefin-next, bluefin-dx-generic, bluefin-dx-next]
+      digest:
+        description: Existing signed immutable Finite image digest; no image is built or published
+        type: string
+        required: true
+      source_revision:
+        description: Exact source revision recorded by the existing candidate
+        type: string
+        required: true
+      identity:
+        description: Exact io.finite.build-inputs identity recorded by the candidate
+        type: string
+        required: true
+
+env:
+  FINITE_OPTIMIZED_CACHES: ${{ vars.FINITE_OPTIMIZED_CACHES }}
+  FINITE_CACHIX_WRITER: ${{ vars.FINITE_CACHIX_WRITER }}
+  FINITE_REUSE_INVENTORY: ${{ vars.FINITE_REUSE_INVENTORY }}
+  FINITE_GRYPE_DB_CACHE: ${{ vars.FINITE_GRYPE_DB_CACHE }}
+  FINITE_QUALIFICATION_REUSE: ${{ vars.FINITE_QUALIFICATION_REUSE }}
+  FINITE_QUALIFIED_ISO_PRESERVATION: ${{ vars.FINITE_QUALIFIED_ISO_PRESERVATION }}
+  FINITE_QUALIFIED_ISO_CHANNELS: ${{ vars.FINITE_QUALIFIED_ISO_CHANNELS }}
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: finite-image-verification-diagnostic
+  cancel-in-progress: false
+
+jobs:
+  diagnostic:
+    name: verification-${{ matrix.phase }}-${{ matrix.repetition }}
+    if: github.repository == 'closure-labs/finite'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - {phase: cold, repetition: 1}
+          - {phase: warm, repetition: 1}
+          - {phase: warm, repetition: 2}
+          - {phase: warm, repetition: 3}
+          - {phase: warm, repetition: 4}
+          - {phase: warm, repetition: 5}
+    env:
+      BENCHMARK_PHASE: ${{ matrix.phase }}
+      BENCHMARK_REPETITION: ${{ matrix.repetition }}
+      CANDIDATE_PROFILE: ${{ inputs.profile }}
+      CANDIDATE_DIGEST: ${{ inputs.digest }}
+      CANDIDATE_SOURCE: ${{ inputs.source_revision }}
+      CANDIDATE_IDENTITY: ${{ inputs.identity }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Record setup start
+        run: python3 scripts/ci/benchmark-image-verification.py mark-start .bluebuild/verification-start.json
+      - uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
+        with:
+          skip-if-available: "80G"
+      - uses: ./.github/actions/setup-nix
+        with:
+          cache-mode: none
+      - name: Prepare pinned image tools
+        run: | # zizmor: ignore[github-env]
+          tools=$(nix build --file lib/ci-tools.nix image-tools --no-link --print-out-paths)
+          [[ $tools =~ ^/nix/store/[a-z0-9]{32}-finite-ci-image-tools$ ]]
+          echo "$tools/bin" >>"$GITHUB_PATH"
+      - name: Measure existing immutable registry path
+        run: >-
+          python3 scripts/ci/benchmark-image-verification.py run
+          --phase "$BENCHMARK_PHASE" --repetition "$BENCHMARK_REPETITION"
+          --profile "$CANDIDATE_PROFILE" --digest "$CANDIDATE_DIGEST"
+          --source "$CANDIDATE_SOURCE" --identity "$CANDIDATE_IDENTITY"
+          --start .bluebuild/verification-start.json --output .bluebuild/verification-diagnostic
+      - name: Retain measurements including failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: image-verification-${{ matrix.phase }}-${{ matrix.repetition }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/verification-diagnostic/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+
+  summarize:
+    if: always() && github.repository == 'closure-labs/finite'
+    needs: diagnostic
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Download this attempt's diagnostics
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPORT_PATTERN: image-verification-*-${{ github.run_id }}-${{ github.run_attempt }}
+        run: >-
+          gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY"
+          --pattern "$REPORT_PATTERN" --dir .bluebuild/verification-reports
+      - name: Require complete matched diagnostics
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh api --paginate --slurp
+          "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT/jobs?per_page=100"
+          > .bluebuild/verification-job-metadata.json
+      - name: Summarize whole jobs and measured stages
+        run: >-
+          python3 scripts/ci/benchmark-image-verification.py summarize
+          .bluebuild/verification-reports .bluebuild/verification-summary.md
+          --jobs .bluebuild/verification-job-metadata.json
+      - name: Retain diagnostic comparison
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: image-verification-summary-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/verification-summary.*
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14

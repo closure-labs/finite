@@ -7,6 +7,31 @@ Finite installs the Bluefin GNOME desktop on an x86_64 UEFI system. Choose
 
 ## Get an ISO
 
+Published releases provide durable downloads for each channel. The
+[release list](https://github.com/closure-labs/finite/releases) uses tags such as
+`finite-finite-0.8.0` for standard Finite and `finite-finite-dev-next-0.8.0` for
+development Next. Choose the channel recorded in `installation.json`.
+
+Download the release assets into one directory. Verify the checksum manifest
+with the committed public key before trusting its checksums:
+
+```bash
+cosign verify-blob --key cosign.pub --bundle SHA256SUMS.bundle.json SHA256SUMS
+sha256sum --check SHA256SUMS
+```
+
+When an ISO is split, concatenate its numbered `.part-*` files in filename order
+after verification. For example, for the standard profile:
+
+```bash
+cat finite-bluefin-generic.iso.part-* > finite-bluefin-generic.iso
+jq -r '.qualification.qualifiedIso | .sha256 + "  " + .name' provenance.json |
+  sha256sum --check
+```
+
+The release provenance records the original qualified ISO's SHA-256. Verify the
+reconstructed ISO against that value before writing installation media.
+
 ISOs are generated on demand from a signed image. Repository maintainers can
 start the workflows below; the resulting download appears in the run's
 **Artifacts** section.

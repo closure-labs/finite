@@ -6,6 +6,33 @@ All notable changes to Finite are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-14
+
+### Added
+
+- Authenticated preservation and reuse of the original qualified installation
+  ISO, with bounded retention and exact archive, image and installer bindings.
+- Hosted cache and verification experiments with retained timing evidence.
+- SecretSpec credentials and public CI options, using GitHub in CI and the
+  password-store provider through devenv for local tasks.
+
+### Changed
+
+- Small CI jobs use measured cache defaults while retaining public binary-cache
+  reads. Automatic Cachix publication remains disabled pending net savings.
+- Cachix preparation defaults to declared tools, with optional proof seeding;
+  tool realization and closure validation use strict batched associations.
+- Image and qualification identities distinguish reviewed host-only tests from
+  shipped payloads. Qualification also binds installer executable modes.
+- Release preparation runs independently per channel and rejects tags that do
+  not match the checkout version before downloading or signing assets.
+
+### Fixed
+
+- Bound SQLite checkpoint contention during ephemeral CI cache startup.
+- Recognize a disk-unlock prompt interrupted by kernel serial output without
+  weakening private passphrase handling or VM deadlines.
+
 ## [0.7.0] - 2026-10-13
 
 ### Added
@@ -424,7 +451,8 @@ All notable changes to Finite are documented here. The format follows
 - The required `CI gate` now validates repository policy, selected image and
   installer jobs, merge candidates, and trusted dependency-update automation.
 
-[Unreleased]: https://github.com/closure-labs/finite/compare/finite-finite-0.7.0...HEAD
+[Unreleased]: https://github.com/closure-labs/finite/compare/finite-finite-0.8.0...HEAD
+[0.8.0]: https://github.com/closure-labs/finite/releases/tag/finite-finite-0.8.0
 [0.7.0]: https://github.com/closure-labs/finite/compare/v0.6.0...finite-finite-0.7.0
 [0.6.0]: https://github.com/closure-labs/finite/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/closure-labs/finite/compare/v0.3.0...v0.5.0

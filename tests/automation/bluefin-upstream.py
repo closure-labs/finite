@@ -694,11 +694,12 @@ class DeterministicIdentity(unittest.TestCase):
             return dumps(value, **kwargs)
         with patch.object(identity_module.json, 'dumps', side_effect=observe):
             current = self.identity()
-        self.assertEqual(captured[0]['schema'], 2)
-        previous_contract = {**captured[0], 'schema': 1}
-        prior = 'v1:' + hashlib.sha256(dumps(previous_contract, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+        self.assertEqual(captured[0]['schema'], 3)
         self.assertRegex(current, r'^v1:[a-f0-9]{64}$')
-        self.assertNotEqual(current, prior)
+        for schema in (1, 2):
+            previous_contract = {**captured[0], 'schema': schema}
+            prior = 'v1:' + hashlib.sha256(dumps(previous_contract, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+            self.assertNotEqual(current, prior)
 
 
 if __name__ == '__main__':

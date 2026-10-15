@@ -57,7 +57,7 @@ both, including returning to a previous system deployment.
 - [Configure your environment](docs/configuration.md)
 - [Troubleshoot a problem](docs/troubleshooting.md)
 - [Develop Finite](docs/development.md)
-- [What's new in 0.6.0](CHANGELOG.md#060---2026-09-06)
+- [What's new in 0.8.0](CHANGELOG.md#080---2026-10-14)
 
 BlueBuild recipes define the four images. Nix stages the Home Manager template
 and pinned installation assets. The [documentation index](docs/README.md) links

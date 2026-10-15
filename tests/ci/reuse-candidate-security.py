@@ -451,6 +451,19 @@ class Inventory(unittest.TestCase):
                 fetch.retrieve(IMAGE, PROFILE, Path('/tmp/never-created'), '123')
             api.assert_not_called()
 
+    def test_security_benchmark_inventory_consumer_is_manual_main_only(self):
+        base = {**environment(), 'GITHUB_WORKFLOW_REF':
+                'closure-labs/finite/.github/workflows/benchmark-security-reuse.yml@refs/heads/main'}
+        with patch.dict(os.environ, base, clear=True):
+            fetch.hosted()
+        for key, value in [('GITHUB_EVENT_NAME', 'schedule'), ('GITHUB_EVENT_NAME', 'push'),
+                           ('GITHUB_REF', 'refs/heads/branch'), ('GITHUB_REPOSITORY', 'fork/finite'),
+                           ('GITHUB_WORKFLOW_REF', base['GITHUB_WORKFLOW_REF'].replace('@refs/heads/main', '@refs/heads/branch'))]:
+            with patch.dict(os.environ, {**base, key: value}, clear=True), \
+                 patch.object(fetch.publication, 'github') as api, self.assertRaises(ValueError):
+                fetch.retrieve(IMAGE, PROFILE, Path('/tmp/never-created'), '123')
+            api.assert_not_called()
+
     def test_reused_scan_always_refreshes_db_and_current_policy(self):
         spec = importlib.util.spec_from_file_location('reused_scanner', ROOT / 'scripts/bluebuild/security-scan.py')
         scanner = importlib.util.module_from_spec(spec)
