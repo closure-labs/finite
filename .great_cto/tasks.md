@@ -18,10 +18,13 @@ informational. The protected release environment retains its owner review gate.
 - Defaults: automatic writer, inventory/DB and whole-qualification reuse remain
   off until their own measured adoption criteria are met.
 - Protected implementation merge: PR165, `aeb59d95`; v0.8 main producer
-  38668576342 is active. First hosted pilots rejected Nix metadata coercion,
+  38668576342 passed all four profiles and eight VM phases. Small authenticated
+  receipts and current registry tag bindings passed. Four release preparations
+  capture this frozen source before the follow-up merge. First hosted pilots
+  rejected Nix metadata coercion,
   preloaded Docker state and the DB transport bound; preserve those failed
-  observations in docs/v0.8-hosted-pilot-results.md. Hold their separate fixes
-  off main until all four release workflows capture the qualified revision.
+  observations in docs/v0.8-hosted-pilot-results.md. PR166 corrections merged
+  through the protected queue after all four release source captures.
 
 ## Active release eligibility sequence
 

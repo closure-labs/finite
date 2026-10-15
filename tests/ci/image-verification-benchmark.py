@@ -296,6 +296,7 @@ class ImageVerificationBenchmark(unittest.TestCase):
         self.assertEqual(daemon.config['data-root'], str(daemon.root / 'data'))
         self.assertNotIn('--containerd', command)
         self.assertEqual(daemon.config['containerd'], '/run/containerd/containerd.sock')
+        self.assertNotIn('runtimeReadSeconds', daemon.config)
         self.assertRegex(daemon.config['containerd-namespace'], r'^finite-verification-[0-9a-f]{16}$')
         self.assertRegex(daemon.config['containerd-plugins-namespace'], r'^finite-verification-plugins-[0-9a-f]{16}$')
 
@@ -363,12 +364,30 @@ class ImageVerificationBenchmark(unittest.TestCase):
         self.assertEqual(command.call_count, 4)
         for call in command.call_args_list:
             argv = call.args[1]
+            self.assertEqual(call.kwargs['timeout'], 30)
             self.assertEqual(argv[argv.index('--address') + 1], '/run/containerd/containerd.sock')
             self.assertIn(argv[argv.index('--namespace') + 1], [daemon.config[key] for key in ('containerd-namespace', 'containerd-plugins-namespace')])
             self.assertEqual(argv[-2:], ['list', '--quiet'])
             self.assertFalse(set(argv).intersection({'delete', 'kill', 'prune', 'remove'}))
         with patch.object(daemon.recorder, 'command', return_value=b'remaining-task\n'):
             with self.assertRaisesRegex(ValueError, 'remaining tasks'): daemon._runtime_empty('cleaned-containerd')
+
+    def test_runtime_read_timeout_or_command_failure_is_recorded_and_never_retried(self):
+        daemon = self.private_daemon_fixture()
+        for phase, response, expected_status in (
+                ('timeout-containerd', subprocess.TimeoutExpired(['fixture-ctr'], 30), 124),
+                ('failed-containerd', argparse.Namespace(returncode=7), 7)):
+            with self.subTest(phase=phase):
+                kwargs = {'side_effect': response} if isinstance(response, Exception) else {'return_value': response}
+                with patch.object(MODULE.subprocess, 'run', **kwargs) as command:
+                    with self.assertRaises((ValueError, subprocess.TimeoutExpired)):
+                        daemon._runtime_empty(phase)
+                command.assert_called_once()
+                self.assertEqual(command.call_args.kwargs['timeout'], 30)
+                stage = daemon.recorder.report['stages'][-1]
+                self.assertEqual(stage['stage'], phase + '-runtime-tasks')
+                self.assertEqual(stage['status'], expected_status)
+                self.assertEqual(stage['timeoutSeconds'], 30)
 
     def test_summary_requires_final_namespace_cleanup_evidence(self):
         self.reports()
