@@ -5,7 +5,7 @@ phase="${1:-all}"
 candidate="ghcr.io/closure-labs/finite@${CANDIDATE_DIGEST:?}"
 [[ $CANDIDATE_DIGEST =~ ^sha256:[0-9a-f]{64}$ ]]
 [[ ${BUILD_IDENTITY:?} =~ ^v1:[0-9a-f]{64}$ ]]
-[[ ${PROFILE:?} =~ ^bluefin(-dx)?-(generic|next)$ ]]
+[[ ${PROFILE:?} =~ ^finite(-dev)?$ ]]
 [[ ${SOURCE_REVISION:?} =~ ^[0-9a-f]{40}$ ]]
 iso_preservation_enabled=$(python3 scripts/ci/ci-options.py --iso-preservation "$PROFILE")
 mkdir -p .bluebuild
@@ -40,7 +40,12 @@ run_phase() {
     if [[ $status != 0 && $status != 3 ]]; then return "$status"; fi
   fi
   if [[ $reused != true ]]; then
-    ISO_OUTPUT_DIR="$iso_dir" bash scripts/bluebuild/iso.sh "$CHANNEL" "$digest"
+    if [[ $current == upgrade ]]; then
+      FINITE_PREDECESSOR_DIGEST="$PREVIOUS_DIGEST" ISO_OUTPUT_DIR="$iso_dir" \
+        bash scripts/bluebuild/iso.sh "$CHANNEL" "$digest"
+    else
+      ISO_OUTPUT_DIR="$iso_dir" bash scripts/bluebuild/iso.sh "$CHANNEL" "$digest"
+    fi
   fi
   # VM preparation personalizes a copy in /tmp; retain these pristine bytes.
   FINITE_SECURE_BOOT=true bash scripts/bluebuild/vm-acceptance.sh "$iso_dir" "$target" "$current"

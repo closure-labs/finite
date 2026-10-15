@@ -32,7 +32,7 @@ elif name == 'docker':
         print(json.dumps([{'Config': {'Labels': {
             'org.opencontainers.image.revision': 'local',
             'org.opencontainers.image.base.digest': os.environ['DIGEST'],
-            'io.finite.profile': 'bluefin-dx-generic',
+            'io.finite.profile': 'finite-dev',
             'io.finite.build-inputs': 'v1:' + 'b' * 64,
             'org.opencontainers.image.source': 'https://github.com/closure-labs/finite',
         }}}]))
@@ -53,8 +53,8 @@ class CandidatePull(unittest.TestCase):
             tool.write_text(MOCK.replace('#!/usr/bin/env python3', '#!' + sys.executable, 1))
             tool.chmod(0o755)
         (root / '.bluebuild').mkdir()
-        (root / '.bluebuild/bluefin-dx-generic-publication.json').write_text(json.dumps({
-            'profile': 'bluefin-dx-generic', 'tags': ['finite-dev'],
+        (root / '.bluebuild/finite-dev-publication.json').write_text(json.dumps({
+            'profile': 'finite-dev', 'tags': ['finite-dev'],
             'digest': DIGEST, 'candidate': 'candidate-test',
             'buildIdentity': 'v1:' + 'b' * 64,
         }))
@@ -62,7 +62,7 @@ class CandidatePull(unittest.TestCase):
                    DIGEST=DIGEST, PULL_STATUSES=json.dumps(statuses),
                    SIGNATURE_STATUS=str(signature_status), GITHUB_SHA='local')
         result = subprocess.run(
-            ['bash', str(SCRIPT), 'bluefin-dx-generic', 'finite-dev', 'true'],
+            ['bash', str(SCRIPT), 'finite-dev', 'finite-dev', 'true'],
             cwd=root, env=env, capture_output=True, text=True, timeout=10,
         )
         calls = [json.loads(line) for line in (root / 'calls.jsonl').read_text().splitlines()]
@@ -74,9 +74,9 @@ class CandidatePull(unittest.TestCase):
         self.assertEqual([c for c in calls if c[:2] == ['docker', 'pull']],
                          [['docker', 'pull', IMAGE]])
         self.assertFalse(any(c[0] == 'sleep' for c in calls))
-        self.assertEqual((root / '.bluebuild/bluefin-dx-generic-image-ref.txt').read_text(), IMAGE + '\n')
+        self.assertEqual((root / '.bluebuild/finite-dev-image-ref.txt').read_text(), IMAGE + '\n')
         runtime = next(c for c in calls if c[:2] == ['docker', 'run'])
-        self.assertEqual(runtime[-2:], ['bluefin-dx-generic', 'ghcr.io/closure-labs/finite'])
+        self.assertEqual(runtime[-2:], ['finite-dev', 'ghcr.io/closure-labs/finite'])
 
     def test_timeout_and_transient_failure_retry_the_same_digest(self):
         _, result, calls = self.run_inspection([124, 1, 0])
@@ -100,14 +100,14 @@ class CandidatePull(unittest.TestCase):
                 self.assertEqual(sum(c[0] == 'sleep' for c in calls), 2)
                 self.assertFalse(any(c[0] == 'cosign' or c[:2] in [
                     ['docker', 'inspect'], ['docker', 'run']] for c in calls))
-                self.assertFalse((root / '.bluebuild/bluefin-dx-generic-image-ref.txt').exists())
+                self.assertFalse((root / '.bluebuild/finite-dev-image-ref.txt').exists())
                 self.assertIn('verification cannot continue', result.stderr)
 
     def test_candidate_inspection_does_not_claim_a_signature(self):
         root, result, calls = self.run_inspection([0], signature_status=1)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertFalse(any(c[0] == 'cosign' for c in calls))
-        self.assertFalse((root / '.bluebuild/bluefin-dx-generic-signature.json').exists())
+        self.assertFalse((root / '.bluebuild/finite-dev-signature.json').exists())
 
 
 if __name__ == '__main__':

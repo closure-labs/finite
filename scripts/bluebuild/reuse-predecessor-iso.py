@@ -52,7 +52,7 @@ def restore(profile, digest, output):
     if (os.environ.get('GITHUB_ACTIONS') != 'true' or os.environ.get('GITHUB_REPOSITORY') != reuse.REPOSITORY
             or os.environ.get('GITHUB_REF') != 'refs/heads/main'
             or not re.fullmatch(r'sha256:[0-9a-f]{64}', digest)
-            or not re.fullmatch(r'bluefin(?:-dx)?-generic', profile)):
+            or not re.fullmatch(r'finite(?:-dev)?', profile)):
         raise ValueError('Predecessor reuse requires a hosted main immutable profile/digest')
     if output.exists() or output.is_symlink() or any(path.is_symlink() for path in output.absolute().parents):
         raise ValueError('Predecessor ISO destination must be new with no symlinked parents')

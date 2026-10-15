@@ -142,7 +142,7 @@ class CosignRuntime(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             shutil.copytree(ROOT / 'recipes', root / 'recipes')
-            target = root / 'recipes/bluefin-generic.yml'
+            target = root / 'recipes/finite.yml'
             original = target.read_text()
             expected = mod.recipe_pins(POLICY, ROOT)
             for text in (original.replace(expected, '3.1.3'), original.replace(expected, '3.1.1@' + POLICY['indexDigest']),

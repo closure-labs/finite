@@ -9,9 +9,10 @@ available, but new installations should use one of the two active channels.
 ## Get an ISO
 
 Published releases provide durable downloads for each channel. The
-[release list](https://github.com/closure-labs/finite/releases) uses tags such as
-`finite-finite-0.8.0` for standard Finite and `finite-finite-dev-0.8.0` for
-the developer environment. Choose the channel recorded in `installation.json`.
+[release list](https://github.com/closure-labs/finite/releases) uses
+`finite-VERSION` for standard Finite and `finite-dev-VERSION` for the developer
+environment starting with v0.8.1. Earlier releases retain their original names
+and filenames. Choose the channel recorded in `installation.json`.
 
 Download the release assets into one directory. Verify the checksum manifest
 with the committed public key before trusting its checksums:
@@ -22,10 +23,10 @@ sha256sum --check SHA256SUMS
 ```
 
 When an ISO is split, concatenate its numbered `.part-*` files in filename order
-after verification. For example, for the standard profile:
+after verification. For example, for standard Finite starting with v0.8.1:
 
 ```bash
-cat finite-bluefin-generic.iso.part-* > finite-bluefin-generic.iso
+cat finite.iso.part-* > finite.iso
 jq -r '.qualification.qualifiedIso | .sha256 + "  " + .name' provenance.json |
   sha256sum --check
 ```

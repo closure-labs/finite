@@ -434,7 +434,7 @@ class ScannerOutputPaths(unittest.TestCase):
 
     def invoke_production_relative_output(self, temporary, symlink_sbom=False):
         scanner = self.scanner
-        directory = temporary / '.bluebuild/security-bluefin-generic'
+        directory = temporary / '.bluebuild/security-finite'
         observed = []
         class CollectorReached(RuntimeError):
             pass
@@ -462,7 +462,7 @@ class ScannerOutputPaths(unittest.TestCase):
                 observed.append((sbom, output))
                 raise CollectorReached()
         inspected = json.dumps({'Digest': DIGEST, 'Labels': {}})
-        with chdir(temporary), patch.object(sys, 'argv', ['security-scan.py', IMAGE, '.bluebuild/security-bluefin-generic']), \
+        with chdir(temporary), patch.object(sys, 'argv', ['security-scan.py', IMAGE, '.bluebuild/security-finite']), \
                 patch.object(scanner.policy_module, 'load_policy', return_value={'mode': 'upstream-maintained-risk'}), \
                 patch.object(scanner.baseline_module, 'authenticate', return_value={}), \
                 patch.object(scanner.baseline_module, 'context', return_value={}), \
@@ -720,7 +720,7 @@ class PublicationBoundary(unittest.TestCase):
             root = Path(temporary)
             output = root / '.bluebuild'
             output.mkdir()
-            profile = 'bluefin-generic'
+            profile = 'finite'
             record = {'publish': True, 'profile': profile, 'tags': ['finite', 'latest'],
                       'revision': 'revision', 'publishedDigest': '', 'previousDigest': '',
                       'recoveryReason': '', 'buildIdentity': 'identity', 'qualificationMode': 'enforce'}
@@ -778,7 +778,7 @@ class UpstreamRiskPolicy(unittest.TestCase):
         self.policy, self.sbom, self.scan = evidence()
         self.policy.update(mode='upstream-maintained-risk', seriousAdvisories=[], reviewedDispositions=[])
         self.policy.pop('releaseBlockers', None)
-        self.baseline = {'schema': 1, 'status': 'verified', 'image': IMAGE, 'profile': 'bluefin-generic',
+        self.baseline = {'schema': 1, 'status': 'verified', 'image': IMAGE, 'profile': 'finite',
                          'sourceRevision': '1' * 40, 'buildIdentity': 'v1:' + 'b' * 64,
                          'baseImage': 'ghcr.io/ublue-os/bluefin@sha256:' + 'c' * 64,
                          'trustPolicySha256': 'd' * 64}
@@ -866,7 +866,7 @@ class UpstreamRiskPolicy(unittest.TestCase):
     def test_missing_or_wrong_baseline_does_not_relax_severity_gate(self):
         with self.assertRaisesRegex(ValueError, 'approved baseline context'):
             self.evaluate(False)
-        for field, value in [('image', IMAGE.replace('a' * 64, 'e' * 64)), ('profile', 'bluefin-dx-generic'),
+        for field, value in [('image', IMAGE.replace('a' * 64, 'e' * 64)), ('profile', 'finite-dev'),
                              ('sourceRevision', 'head'), ('buildIdentity', 'b' * 64),
                              ('baseImage', 'ghcr.io/attacker/base@sha256:' + 'c' * 64),
                              ('trustPolicySha256', ''), ('status', 'unverified'), ('schema', True),
@@ -1257,7 +1257,7 @@ class UpstreamRiskPolicy(unittest.TestCase):
                                                      self.manifests, self.baseline)
 
     def kernel_hold(self):
-        hold = {'id': 'fixture-source-security-gap', 'profiles': ['bluefin-dx-generic'],
+        hold = {'id': 'fixture-source-security-gap', 'profiles': ['finite-dev'],
                 'riskClass': 'major-data-loss', 'reason': 'Fixture unresolved XFS corruption risk',
                 'officialSources': ['https://bodhi.fedoraproject.org/updates/FEDORA-2026-012345abcd'],
                 'reviewedBy': 'fixture-reviewer', 'reviewedAt': STAMP,
@@ -1276,7 +1276,7 @@ class UpstreamRiskPolicy(unittest.TestCase):
 
     def test_profile_source_hold_blocks_without_inventing_vulnerability_findings(self):
         hold = self.kernel_hold()
-        for profile in ('bluefin-generic', 'bluefin-dx-generic'):
+        for profile in ('finite', 'finite-dev'):
             with self.subTest(profile=profile):
                 self.profile(profile)
                 result = self.evaluate()
@@ -1290,7 +1290,7 @@ class UpstreamRiskPolicy(unittest.TestCase):
 
     def test_ordinary_and_reviewed_exceptions_cannot_waive_profile_source_hold(self):
         self.kernel_hold()
-        self.profile('bluefin-dx-generic')
+        self.profile('finite-dev')
         self.located()
         self.policy['exceptions'] = [self.ordinary_exception()]
         self.disposition('nonapplicable')
@@ -1301,7 +1301,7 @@ class UpstreamRiskPolicy(unittest.TestCase):
         self.assertEqual(result['advisories'][0]['reason'], 'reviewed-nonapplicable')
 
     def test_malformed_unused_source_holds_fail_closed(self):
-        for key, value in [('profiles', ['unknown']), ('profiles', []), ('profiles', ['bluefin-dx-generic'] * 2),
+        for key, value in [('profiles', ['unknown']), ('profiles', []), ('profiles', ['finite-dev'] * 2),
                            ('riskClass', 'ordinary'), ('unblockEvidence', ''), ('reviewedBy', ''),
                            ('reviewedAt', '2026-10-13T00:00:00Z'), ('officialSources', ['http://example.com']),
                            ('unknown', True)]:
@@ -1318,7 +1318,7 @@ class UpstreamRiskPolicy(unittest.TestCase):
 
     def test_source_hold_does_not_expire_until_reviewed_policy_change(self):
         self.kernel_hold()['reviewedAt'] = '2025-01-01T00:00:00Z'
-        self.profile('bluefin-dx-generic')
+        self.profile('finite-dev')
         self.assertEqual(self.evaluate()['status'], 'blocked')
         self.policy['releaseBlockers'] = []
         self.assertEqual(self.evaluate()['status'], 'pass')
@@ -1423,7 +1423,7 @@ class DesktopCriticalPolicy(unittest.TestCase):
                     self.evaluate()
 
     def test_source_holds_only_block_explicit_critical_advisories(self):
-        self.profile('bluefin-dx-generic')
+        self.profile('finite-dev')
         hold = UpstreamRiskPolicy.kernel_hold(self)
         hold.update(severity='Unknown', advisories=[])
         for severity in ('Unknown', 'High', 'Critical'):
@@ -1508,7 +1508,7 @@ class ReviewedDesktopExploitability(unittest.TestCase):
                 self.assertEqual(result['blockingBasis'], 'reviewed-desktop-exploitability')
 
     def test_old_critical_source_concern_alone_is_only_tracked(self):
-        self.profile('bluefin-dx-generic')
+        self.profile('finite-dev')
         concern = UpstreamRiskPolicy.kernel_hold(self)
         concern.update(severity='Critical', advisories=['CVE-2026-1234'])
         result = self.evaluate()
@@ -1525,7 +1525,7 @@ class ReviewedDesktopExploitability(unittest.TestCase):
         self.assertEqual(result['observations'], [])
 
     def test_confirmed_risk_cannot_follow_different_image_or_profile(self):
-        for key, value in [('digest', DIGEST), ('profile', 'bluefin-dx-generic')]:
+        for key, value in [('digest', DIGEST), ('profile', 'finite-dev')]:
             with self.subTest(key=key):
                 self.confirmed()[key] = value
                 self.assertEqual(self.evaluate()['status'], 'pass')

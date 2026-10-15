@@ -25,7 +25,7 @@ class Resume(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
-        self.profile = 'bluefin-generic'
+        self.profile = 'finite'
         self.digest = 'sha256:' + 'd' * 64
         self.image = pub.upstream.REPOSITORY + '@' + self.digest
         self.identity = 'v1:' + 'e' * 64
@@ -59,8 +59,8 @@ class Resume(unittest.TestCase):
                       'steps': [{'name': step, 'conclusion': 'success'} for step in (
                           'Prepare candidate publication', 'Build with BlueBuild', 'Verify assembled image', 'Save build evidence')]}
                      for i, name in enumerate(('Select checks', 'Documentation checks', 'Nix and runtime contracts',
-                                               'Publish (bluefin-generic) / build / build'))]
-        self.artifact = {'id': 456, 'name': 'image-bluefin-generic-123-1', 'expired': False,
+                                               'Publish (finite) / build / build'))]
+        self.artifact = {'id': 456, 'name': 'image-finite-123-1', 'expired': False,
                          'digest': 'sha256:' + 'f' * 64, 'size_in_bytes': 1234,
                          'workflow_run': {'id': 123, 'head_sha': self.source}}
         self.files = {self.profile + '-publication.json': json.dumps(self.record).encode(),
@@ -137,7 +137,7 @@ class Resume(unittest.TestCase):
                 self.invoke()
         self.jobs = original
         original_artifact = copy.deepcopy(self.artifact)
-        for field, value in (('name', 'image-bluefin-generic-123-2'), ('digest', None),
+        for field, value in (('name', 'image-finite-123-2'), ('digest', None),
                              ('workflow_run', {'id': 123, 'head_sha': self.head})):
             self.artifact = {**original_artifact, field: value}
             with self.subTest(artifact_field=field), self.assertRaises(ValueError):
@@ -181,7 +181,7 @@ class Resume(unittest.TestCase):
     def test_artifact_attempt_digest_expiry_and_run_binding_are_required(self):
         original = copy.deepcopy(self.artifact)
         for key, value in (('expired', True), ('digest', None), ('size_in_bytes', 100000000),
-                           ('name', 'image-bluefin-generic-123-2'),
+                           ('name', 'image-finite-123-2'),
                            ('workflow_run', {'id': 124, 'head_sha': self.source})):
             self.artifact = {**original, key: value}
             with self.subTest(key=key), self.assertRaises(ValueError): self.metadata()
@@ -306,7 +306,7 @@ class PromotionState(unittest.TestCase):
         self.assertEqual(api.call_args_list[1].args[0], f'compare/{self.revision}...{"c" * 40}')
 
     def test_release_inputs_still_require_requalification(self):
-        for path in ('VERSION', 'cosign.pub', 'recipes/bluefin-generic.yml',
+        for path in ('VERSION', 'cosign.pub', 'recipes/finite.yml',
                      'scripts/bluebuild/vm-upgrade.py', 'automation/security/image-policy.json',
                      '.github/workflows/publication.yml', 'tests/bluebuild/resume.py'):
             with self.subTest(path=path), patch.object(pub, 'github', return_value=self.comparison([path])):
@@ -357,21 +357,21 @@ class PromotionState(unittest.TestCase):
             evidence = root / '.bluebuild'
             evidence.mkdir()
             candidate = 'ghcr.io/closure-labs/finite@sha256:' + 'd' * 64
-            record = {**self.record, 'publish': True, 'profile': 'bluefin-generic',
+            record = {**self.record, 'publish': True, 'profile': 'finite',
                       'previousDigest': self.digest, 'recoveryReason': '', 'buildIdentity': 'v1:' + 'f' * 64,
                       'qualificationMode': 'enforce', 'qualify': True}
             acceptance = {'accepted': True, 'candidate': candidate, 'previousDigest': self.digest,
                           'profile': record['profile'], 'revision': self.revision,
                           'buildIdentity': record['buildIdentity'], 'secureBoot': True, 'encryptedRoot': True,
                           'validationOnly': True}
-            (evidence / 'bluefin-generic-publication.json').write_text(json.dumps(record))
-            (evidence / 'bluefin-generic-image-ref.txt').write_text(candidate + '\n')
-            (evidence / 'bluefin-generic-acceptance.json').write_text(json.dumps(acceptance))
+            (evidence / 'finite-publication.json').write_text(json.dumps(record))
+            (evidence / 'finite-image-ref.txt').write_text(candidate + '\n')
+            (evidence / 'finite-acceptance.json').write_text(json.dumps(acceptance))
             with patch.dict(os.environ, GITHUB_SHA=self.revision, FINITE_QUALIFICATION_MODE='enforce'), \
                     patch.object(pub.security, 'verify') as security, patch.object(pub.desktop, 'verify') as desktop, \
                     patch.object(pub.subprocess, 'run') as command:
                 with self.assertRaisesRegex(ValueError, 'lacks matching successful'):
-                    pub.promote('bluefin-generic', root)
+                    pub.promote('finite', root)
             security.assert_not_called()
             desktop.assert_not_called()
             command.assert_not_called()
@@ -383,16 +383,16 @@ class PromotionState(unittest.TestCase):
             evidence.mkdir()
             candidate = 'ghcr.io/closure-labs/finite@sha256:' + 'd' * 64
             source = 'e' * 40
-            record = {**self.record, 'publish': True, 'profile': 'bluefin-generic',
+            record = {**self.record, 'publish': True, 'profile': 'finite',
                       'previousDigest': self.digest, 'recoveryReason': '', 'buildIdentity': 'v1:' + 'f' * 64,
                       'sourceRevision': source, 'qualificationMode': 'enforce', 'qualify': True,
                       'resumeOrigin': {'sourceRevision': source, 'digest': candidate.split('@')[1]}}
             acceptance = {'accepted': True, 'candidate': candidate, 'previousDigest': self.digest,
                           'profile': record['profile'], 'revision': self.revision, 'sourceRevision': source,
                           'buildIdentity': record['buildIdentity'], 'secureBoot': True, 'encryptedRoot': True}
-            (evidence / 'bluefin-generic-publication.json').write_text(json.dumps(record))
-            (evidence / 'bluefin-generic-image-ref.txt').write_text(candidate + '\n')
-            (evidence / 'bluefin-generic-acceptance.json').write_text(json.dumps(acceptance))
+            (evidence / 'finite-publication.json').write_text(json.dumps(record))
+            (evidence / 'finite-image-ref.txt').write_text(candidate + '\n')
+            (evidence / 'finite-acceptance.json').write_text(json.dumps(acceptance))
             with patch.dict(os.environ, GITHUB_SHA=self.revision, FINITE_QUALIFICATION_MODE='enforce'), \
                     patch.object(pub, 'github', return_value=self.main), \
                     patch.object(pub.upstream, 'inspect', return_value={'Digest': 'sha256:' + 'c' * 64}), \
@@ -400,11 +400,11 @@ class PromotionState(unittest.TestCase):
                     patch.object(pub.desktop, 'verify'), \
                     patch.object(pub.subprocess, 'run') as command:
                 with self.assertRaisesRegex(ValueError, 'Public channel changed'):
-                    pub.promote('bluefin-generic', root)
+                    pub.promote('finite', root)
             security.assert_called_once()
             self.assertEqual(command.call_count, 1)
             self.assertEqual(command.call_args.args[0][:2], ['cosign', 'verify'])
-            self.assertFalse((evidence / 'bluefin-generic-promoted.json').exists())
+            self.assertFalse((evidence / 'finite-promoted.json').exists())
 
 
 if __name__ == '__main__':

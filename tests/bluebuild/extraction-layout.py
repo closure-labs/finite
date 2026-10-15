@@ -44,7 +44,7 @@ class ExtractionLayout(unittest.TestCase):
         self.config_raw = json.dumps({'os': 'linux', 'architecture': 'amd64',
             'created': '2026-10-13T00:00:00Z', 'container_config': {'Cmd': ['/bin/never-execute']},
             'config': {'Labels': {'org.opencontainers.image.source': 'https://github.com/closure-labs/finite',
-                'org.opencontainers.image.revision': REVISION, 'io.finite.profile': 'bluefin-generic',
+                'org.opencontainers.image.revision': REVISION, 'io.finite.profile': 'finite',
                 'io.finite.build-inputs': IDENTITY}}, 'rootfs': {'type': 'layers',
                 'diff_ids': ['sha256:' + hashlib.sha256(archive.getvalue()).hexdigest()]}}).encode()
         self.config = self.blob(self.config_raw, scan.DOCKER_CONFIG)
@@ -157,11 +157,11 @@ class ExtractionLayout(unittest.TestCase):
         raw = (self.blobs / self.layer['digest'][7:]).read_bytes()
         (self.blobs / self.layer['digest'][7:]).write_bytes(bytes([raw[0] ^ 1]) + raw[1:])
         with self.assertRaisesRegex(ValueError, 'layer blob digest mismatch'):
-            local.validate_candidate(self.layout, 'bluefin-generic', IDENTITY, REVISION)
+            local.validate_candidate(self.layout, 'finite', IDENTITY, REVISION)
         self.assertFalse((self.evidence / 'extraction-layout.json').exists())
 
     def test_private_hardlinked_pointer_never_modifies_original_builder_graph(self):
-        candidate = local.validate_candidate(self.layout, 'bluefin-generic', IDENTITY, REVISION)
+        candidate = local.validate_candidate(self.layout, 'finite', IDENTITY, REVISION)
         before = {path.relative_to(self.layout).as_posix(): path.read_bytes() for path in self.layout.rglob('*') if path.is_file()}
         pointer = self.root / 'private/image'
         blobs = pointer / 'blobs/sha256'

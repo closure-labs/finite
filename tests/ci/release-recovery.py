@@ -83,7 +83,7 @@ class Recovery(unittest.TestCase):
         with M.zipfile.ZipFile(stream, 'w') as archive:
             for name in ('installation.json', 'signature.json', 'SHA256SUMS', 'provenance.json', 'acceptance.json',
                          'publication.json', 'security-result.json', 'sbom.syft.json', 'vulnerabilities.json',
-                         'bluefin-generic-desktop-acceptance.json', 'finite-bluefin-generic.iso'):
+                         'finite-desktop-acceptance.json', 'finite.iso'):
                 archive.writestr(name, b'fixture')
             if extra is not None: archive.writestr(*extra)
             if duplicate:
@@ -93,31 +93,31 @@ class Recovery(unittest.TestCase):
         stream.seek(0); return stream
 
     def test_archive_requires_flat_regular_unique_complete_bounded_packet(self):
-        M.extract_archive(self.zip(), self.directory / 'valid', 'bluefin-generic')
+        M.extract_archive(self.zip(), self.directory / 'valid', 'finite')
         for number, name in enumerate(('../escape.json', '/absolute.json', 'nested/file.json', 'payload.sh', 'other.iso',
                                        'SHA256SUMS.bundle.json', 'release-recovery.json')):
             with self.subTest(name=name), self.assertRaises(ValueError):
-                M.extract_archive(self.zip((name, b'fixture')), self.directory / str(number), 'bluefin-generic')
-        with self.assertRaises(ValueError): M.extract_archive(self.zip(duplicate=True), self.directory / 'dup', 'bluefin-generic')
+                M.extract_archive(self.zip((name, b'fixture')), self.directory / str(number), 'finite')
+        with self.assertRaises(ValueError): M.extract_archive(self.zip(duplicate=True), self.directory / 'dup', 'finite')
         link = M.zipfile.ZipInfo('link.json'); link.external_attr = (stat.S_IFLNK | 0o777) << 16
-        with self.assertRaises(ValueError): M.extract_archive(self.zip((link, b'target')), self.directory / 'link', 'bluefin-generic')
+        with self.assertRaises(ValueError): M.extract_archive(self.zip((link, b'target')), self.directory / 'link', 'finite')
 
     def test_reupload_requires_recovery_receipt_and_still_rejects_unsigned_signature(self):
-        with self.assertRaises(ValueError): M.extract_archive(self.zip(), self.directory / 'no-receipt', 'bluefin-generic', recovery=True)
-        M.extract_archive(self.zip(('release-recovery.json', b'{}')), self.directory / 'recovery', 'bluefin-generic', recovery=True)
+        with self.assertRaises(ValueError): M.extract_archive(self.zip(), self.directory / 'no-receipt', 'finite', recovery=True)
+        M.extract_archive(self.zip(('release-recovery.json', b'{}')), self.directory / 'recovery', 'finite', recovery=True)
 
     def test_extraction_requires_declared_bytes_plus_free_disk_reserve(self):
         destination = self.directory / 'no-space'
         with patch.object(M.shutil, 'disk_usage', return_value=argparse.Namespace(free=0)), \
                 self.assertRaisesRegex(ValueError, 'Insufficient free disk'):
-            M.extract_archive(self.zip(), destination, 'bluefin-generic')
+            M.extract_archive(self.zip(), destination, 'finite')
         self.assertEqual(list(destination.iterdir()), [])
 
     def test_zip_directory_is_bounded_before_zipfile_allocates_and_zip64_is_supported(self):
         for count, size in ((257, 1), (1, 1024**2 + 1)):
             raw = M.struct.pack('<4s4H2LH', b'PK\x05\x06', 0, 0, count, count, size, 0, 0)
             with patch.object(M.zipfile, 'ZipFile') as parser, self.assertRaises(ValueError):
-                M.extract_archive(io.BytesIO(raw), self.directory / str(count), 'bluefin-generic')
+                M.extract_archive(io.BytesIO(raw), self.directory / str(count), 'finite')
             parser.assert_not_called()
         record = M.struct.pack('<4sQ2H2L4Q', b'PK\x06\x06', 44, 45, 45, 0, 0, 1, 1, 1, 0)
         locator = M.struct.pack('<4sLQL', b'PK\x06\x07', 0, 1, 1)
@@ -129,26 +129,26 @@ class Recovery(unittest.TestCase):
         value = dict(self.artifact, size_in_bytes=len(raw), digest='sha256:' + hashlib.sha256(raw).hexdigest())
         def fetch(command, **kwargs): kwargs['stdout'].write(raw)
         with patch.object(M.subprocess, 'run', side_effect=fetch), patch.object(M, 'extract_archive') as extract:
-            M.download(value, self.directory / 'packet', 'bluefin-generic')
+            M.download(value, self.directory / 'packet', 'finite')
             extract.assert_called_once()
         for change in ({'size_in_bytes': len(raw) + 1}, {'digest': 'sha256:' + '0' * 64}):
             with patch.object(M.subprocess, 'run', side_effect=fetch), patch.object(M, 'extract_archive') as extract, self.assertRaises(ValueError):
-                M.download(dict(value, **change), self.directory / 'packet', 'bluefin-generic')
+                M.download(dict(value, **change), self.directory / 'packet', 'finite')
             extract.assert_not_called()
 
     def packet(self):
         image = 'ghcr.io/closure-labs/finite@sha256:' + 'c' * 64
         installer = {'finiteRevision': self.source}
-        installation = {'image': image, 'profile': 'bluefin-generic', 'updateChannel': 'ghcr.io/closure-labs/finite:finite', 'installer': installer}
+        installation = {'image': image, 'profile': 'finite', 'updateChannel': 'ghcr.io/closure-labs/finite:finite', 'installer': installer}
         self.inputs = {'fixture': {'sha256': 'd' * 64, 'executable': False, 'symlink': None}}
         context = {'schema': 2, 'platform': 'linux/amd64', 'inputs': self.inputs}
-        (self.directory / 'finite-bluefin-generic.iso').write_bytes(b'synthetic fixture, not an image')
+        (self.directory / 'finite.iso').write_bytes(b'synthetic fixture, not an image')
         (self.directory / 'installation.json').write_text(json.dumps(installation))
-        acceptance = {'schema': 2, 'candidate': image, 'profile': 'bluefin-generic', 'revision': self.source,
+        acceptance = {'schema': 2, 'candidate': image, 'profile': 'finite', 'revision': self.source,
             'sourceRevision': self.source, 'buildIdentity': 'v1:' + 'e' * 64, 'previousDigest': 'sha256:' + 'f' * 64,
             'accepted': True, 'secureBoot': True, 'encryptedRoot': True, 'bootstrap': False,
             'qualificationContext': context, 'qualificationContextSha256': M.CONTEXT.identity(context),
-            'qualifiedIso': {'name': 'finite-bluefin-generic.iso', 'sha256': M.sha(self.directory / 'finite-bluefin-generic.iso'),
+            'qualifiedIso': {'name': 'finite.iso', 'sha256': M.sha(self.directory / 'finite.iso'),
                 'installationSha256': M.sha(self.directory / 'installation.json'), 'installer': installer},
             'qualifiedIsoOrigin': {'run': 50, 'attempt': 1, 'revision': self.source}}
         publication = {key: acceptance[key] for key in ('profile', 'revision', 'sourceRevision', 'buildIdentity', 'previousDigest')}
@@ -161,7 +161,7 @@ class Recovery(unittest.TestCase):
                          'providers': {provider: {'captured': self.time} for provider in ('fedora', 'kev')}},
             'policySha256': M.sha(ROOT / 'automation/security/image-policy.json'), 'scanner': 'fixture'}
         for name, value in (('acceptance.json', acceptance), ('publication.json', publication), ('provenance.json', provenance),
-                            ('security-result.json', security), ('bluefin-generic-desktop-acceptance.json', {})):
+                            ('security-result.json', security), ('finite-desktop-acceptance.json', {})):
             (self.directory / name).write_text(json.dumps(value))
         return acceptance
 
@@ -330,7 +330,7 @@ class Recovery(unittest.TestCase):
                 patch.object(M, 'source_file', side_effect=lambda path, revision: (ROOT / path).read_bytes()), \
                 patch.object(M.EVIDENCE.desktop, 'verify'):
             M.signer(args)
-        download.assert_called_once_with(value, self.directory, 'bluefin-generic', recovery=True)
+        download.assert_called_once_with(value, self.directory, 'finite', recovery=True)
         signed = json.loads((self.directory / 'release-recovery-signing.json').read_text())
         self.assertEqual(signed['verifiedUnsignedArtifact']['digest'], value['digest'])
         self.assertEqual(signed['originalRecoveryReceiptSha256'], M.sha(self.directory / 'release-recovery.json'))

@@ -11,7 +11,7 @@ on:
         description: Profile from the successful native build
         required: true
         type: choice
-        options: [bluefin-generic, bluefin-dx-generic]
+        options: [finite, finite-dev]
       origin_run:
         description: Successful native main Build Finite run containing this exact image and inventory
         required: true

@@ -3,7 +3,7 @@
 set -euo pipefail
 profile="${1:?profile required}"
 case "$profile" in
-  bluefin-generic|bluefin-dx-generic) ;;
+  finite|finite-dev) ;;
   *) echo 'Unsupported diagnostic profile' >&2; exit 2 ;;
 esac
 [[ ${GITHUB_ACTIONS:-} == true && ${GITHUB_REPOSITORY:-} == closure-labs/finite &&

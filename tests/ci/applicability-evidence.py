@@ -81,7 +81,7 @@ class Applicability(unittest.TestCase):
         self.evidence = self.root / 'evidence'
         self.evidence.mkdir()
         self.config = {'os': 'linux', 'architecture': 'amd64', 'config': {'Labels': {
-            'io.finite.profile': 'bluefin-generic', 'org.opencontainers.image.revision': REVISION,
+            'io.finite.profile': 'finite', 'org.opencontainers.image.revision': REVISION,
             'io.finite.build-inputs': IDENTITY, 'org.opencontainers.image.source': 'https://github.com/closure-labs/finite'}}}
         self.bind()
         self.ledger = {'schema': 1, 'image': 'ghcr.io/closure-labs/finite@sha256:' + 'c' * 64,
@@ -99,7 +99,7 @@ class Applicability(unittest.TestCase):
         (self.evidence / 'image-manifest.json').write_bytes(raw)
 
     def collect(self):
-        return app.collect(self.rootfs, self.evidence, self.image, 'bluefin-generic', REVISION, IDENTITY, self.ledger)
+        return app.collect(self.rootfs, self.evidence, self.image, 'finite', REVISION, IDENTITY, self.ledger)
 
     def test_actual_bytes_platform_and_build_metadata_are_positive_evidence(self):
         result = app.inspect(self.binary)
@@ -219,7 +219,7 @@ class Applicability(unittest.TestCase):
         ledger.write_text(json.dumps(self.ledger))
         output = self.root / 'output.json'
         arguments = ['--rootfs', str(self.rootfs), '--manifest-dir', str(self.evidence), '--image', self.image,
-                     '--profile', 'bluefin-generic', '--revision', REVISION, '--identity', IDENTITY,
+                     '--profile', 'finite', '--revision', REVISION, '--identity', IDENTITY,
                      '--ledger', str(ledger), '--output', str(output)]
         with patch.dict(os.environ, {}, clear=True), self.assertRaises(SystemExit): app.main(arguments)
         environment = {'GITHUB_ACTIONS': 'true', 'GITHUB_REPOSITORY': 'closure-labs/finite'}

@@ -22,7 +22,7 @@ def load(name, path):
 
 image = load('image_identity', 'scripts/ci/image_identity.py')
 qualification = load('image_qualification_context', 'scripts/bluebuild/qualification-context.py')
-PROFILES = ('bluefin-generic', 'bluefin-dx-generic')
+PROFILES = ('finite', 'finite-dev')
 PAYLOAD = '/nix/store/fixture-image-payload.drv'
 BUILD_FILES = (
     'cosign.pub', 'sources/cosign-runtime.json', 'scripts/ci/cosign-runtime.py',

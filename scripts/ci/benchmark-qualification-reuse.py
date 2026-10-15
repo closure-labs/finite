@@ -24,7 +24,7 @@ REPO = 'closure-labs/finite'
 REPO_ID = 1293375784
 ARCHIVE = 8 * 1024**2
 META = 4 * 1024**2
-PROFILES = ('bluefin-generic', 'bluefin-dx-generic')
+PROFILES = ('finite', 'finite-dev')
 
 
 def module(name, path):

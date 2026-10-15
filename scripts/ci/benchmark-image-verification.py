@@ -33,7 +33,7 @@ import time
 ROOT = Path(__file__).resolve().parents[2]
 REPOSITORY = 'ghcr.io/closure-labs/finite'
 DIGEST = re.compile(r'sha256:[0-9a-f]{64}')
-PROFILES = ('bluefin-generic', 'bluefin-dx-generic')
+PROFILES = ('finite', 'finite-dev')
 MANIFEST_TYPES = {'application/vnd.oci.image.manifest.v1+json', 'application/vnd.docker.distribution.manifest.v2+json'}
 INDEX_TYPES = {'application/vnd.oci.image.index.v1+json', 'application/vnd.docker.distribution.manifest.list.v2+json'}
 CONFIG_TYPES = {'application/vnd.oci.image.config.v1+json', 'application/vnd.docker.container.image.v1+json'}

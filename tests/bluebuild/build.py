@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class BuildInvocation(unittest.TestCase):
-    def invoke(self, publish='false', profile='bluefin-generic', **extra):
+    def invoke(self, publish='false', profile='finite', **extra):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             bindir = root / 'bin'
@@ -53,7 +53,7 @@ sys.exit(int(os.environ.get('BUILD_STATUS' if name == 'bluebuild' else 'LOGOUT_S
         self.assertEqual(len(calls), 1)
         call = calls[0]
         self.assertEqual(call['command'][:2], ['bluebuild', 'build'])
-        self.assertEqual(call['command'][-1], 'recipes/bluefin-generic.yml')
+        self.assertEqual(call['command'][-1], 'recipes/finite.yml')
         self.assertNotIn('--push', call['command'])
         self.assertIsNone(call['push'])
         self.assertIsNone(call['key'])
@@ -165,7 +165,7 @@ class PublicationPreparation(unittest.TestCase):
         before = {path: path.read_bytes() for path in (self.root / 'recipes').glob('*.yml')}
         with patch.object(self.upstream, 'authenticate', side_effect=subprocess.CalledProcessError(1, 'cosign')):
             with self.assertRaises(subprocess.CalledProcessError):
-                self.prepare_from_workflow('bluefin-generic', True)
+                self.prepare_from_workflow('finite', True)
         self.assertEqual(before, {path: path.read_bytes() for path in before})
         self.assertFalse((self.root / '.bluebuild').exists())
 
@@ -190,7 +190,7 @@ class PublicationPreparation(unittest.TestCase):
         with patch.object(self.upstream, 'authenticate'), \
                 patch.object(self.cosign, 'authenticate', side_effect=RuntimeError('publisher rejected')):
             with self.assertRaisesRegex(RuntimeError, 'publisher rejected'):
-                self.prepare_from_workflow('bluefin-generic', True)
+                self.prepare_from_workflow('finite', True)
         self.assertEqual(before, {path: path.read_bytes() for path in before})
         self.assertFalse((self.root / '.bluebuild').exists())
 

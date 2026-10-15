@@ -29,7 +29,7 @@ elif name=='skopeo':
   digest=os.environ['DIGEST']
   if os.environ.get('MOVED_CHANNEL') and args[-1].endswith(':finite'): digest='sha256:'+'b'*64
   if '--format' in args: print(digest)
-  else: print(json.dumps({'Digest':digest,'Labels':{'io.finite.profile':'bluefin-dx-generic' if os.environ.get('MISMATCH_PROFILE') else 'bluefin-generic'}}))
+  else: print(json.dumps({'Digest':digest,'Labels':{'io.finite.profile':'finite-dev' if os.environ.get('MISMATCH_PROFILE') else os.environ['IMAGE_PROFILE']}}))
 elif name=='sudo':
  assert args[0:2]==['bluebuild','generate-iso']
  assert args[args.index('--run-driver')+1]=='docker'
@@ -54,7 +54,7 @@ elif name=='docker':
 '''
 
 class IsoBoundary(unittest.TestCase):
-    def run_iso(self, **extra):
+    def run_iso(self, channel='finite', **extra):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         root = Path(temp.name)
@@ -70,8 +70,10 @@ class IsoBoundary(unittest.TestCase):
         shutil.copytree(SCRIPT.parents[2]/'files/installer', root/'files/installer')
         env = dict(os.environ, PATH=str(bindir)+':'+os.environ['PATH'], DIGEST=DIGEST,
                    GITHUB_ACTIONS='true', GITHUB_REPOSITORY='closure-labs/finite',
-                   GITHUB_RUN_ID='123', GITHUB_RUN_ATTEMPT='2', GITHUB_SHA='d'*40, **extra)
-        result = subprocess.run(['bash',str(SCRIPT),'finite',DIGEST],cwd=root,env=env,capture_output=True,text=True)
+                   GITHUB_RUN_ID='123', GITHUB_RUN_ATTEMPT='2', GITHUB_SHA='d'*40)
+        env.update(IMAGE_PROFILE='finite' if channel == 'latest' else channel)
+        env.update(extra)
+        result = subprocess.run(['bash',str(SCRIPT),channel,DIGEST],cwd=root,env=env,capture_output=True,text=True)
         self.assertTrue((root/'calls.jsonl').exists(), result.stderr)
         calls=[json.loads(l) for l in (root/'calls.jsonl').read_text().splitlines()]
         return root,result,calls
@@ -96,6 +98,29 @@ class IsoBoundary(unittest.TestCase):
         self.assertIn('--preserve-digests',copy)
         self.assertIn('--all',copy)
         self.assertTrue((root/'.bluebuild/iso/SHA256SUMS').is_file())
+
+    def test_both_current_images_have_product_iso_names(self):
+        for channel in ('finite', 'finite-dev', 'latest'):
+            with self.subTest(channel=channel):
+                root, result, _ = self.run_iso(channel)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                name = 'finite' if channel == 'latest' else channel
+                self.assertTrue((root / '.bluebuild/iso' / (name + '.iso')).is_file())
+
+    def test_historical_profile_is_only_an_exact_same_foundation_predecessor(self):
+        for channel, historical in (('finite', 'bluefin-generic'), ('finite-dev', 'bluefin-dx-generic')):
+            with self.subTest(channel=channel):
+                root, result, _ = self.run_iso(channel, IMAGE_PROFILE=historical,
+                    PROFILE=channel, FINITE_PREDECESSOR_DIGEST=DIGEST)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                installation = json.loads((root / '.bluebuild/iso/installation.json').read_text())
+                self.assertEqual(installation['profile'], historical)
+                self.assertTrue((root / '.bluebuild/iso' / (channel + '.iso')).is_file())
+                for values in ({}, {'PROFILE': channel, 'FINITE_PREDECESSOR_DIGEST': 'sha256:' + 'b' * 64},
+                               {'PROFILE': 'finite-dev' if channel == 'finite' else 'finite', 'FINITE_PREDECESSOR_DIGEST': DIGEST}):
+                    _, rejected, calls = self.run_iso(channel, IMAGE_PROFILE=historical, **values)
+                    self.assertNotEqual(rejected.returncode, 0)
+                    self.assertFalse(any(c[0] in ('sudo', 'docker') or c[:2] == ['skopeo', 'copy'] for c in calls))
 
     def test_bad_signature_never_copies_or_builds(self):
         _,result,calls=self.run_iso(BAD_SIGNATURE='1')

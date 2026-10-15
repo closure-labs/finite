@@ -29,7 +29,7 @@ CLI = os.environ.get('FINITE_TEST_SECRETSPEC') or shutil.which('secretspec')
 class Manifest(unittest.TestCase):
     def test_current_workflow_and_catalog_choices_include_only_active_variants(self):
         channels = {'finite', 'finite-dev'}
-        profiles = {'bluefin-generic', 'bluefin-dx-generic'}
+        profiles = {'finite', 'finite-dev'}
         for path in (ROOT / '.github/workflows').glob('*.yml'):
             workflow = yaml.safe_load(path.read_text())
             inputs = (workflow.get(True, {}).get('workflow_dispatch') or {}).get('inputs', {})
@@ -38,7 +38,7 @@ class Manifest(unittest.TestCase):
                 if set(choices) & channels:
                     with self.subTest(workflow=path.name, input=name):
                         self.assertEqual(set(choices) - {'automatic'}, channels)
-                if set(choices) & profiles:
+                if set(choices) & profiles and name != 'target':
                     with self.subTest(workflow=path.name, input=name):
                         self.assertEqual(set(choices), profiles)
         audit = yaml.safe_load((ROOT / '.github/workflows/image-security.yml').read_text())
@@ -111,7 +111,7 @@ class Manifest(unittest.TestCase):
         selected = {**enabled, SELECTOR: 'finite-dev'}
         self.assertEqual(OPTIONS.options(selected)[SELECTOR], 'finite-dev')
         self.assertFalse(OPTIONS.iso_preservation_enabled('finite', selected))
-        self.assertTrue(OPTIONS.iso_preservation_enabled('bluefin-dx-generic', selected))
+        self.assertTrue(OPTIONS.iso_preservation_enabled('finite-dev', selected))
         for channel in OPTIONS.CHANNEL_PROFILES:
             self.assertTrue(OPTIONS.iso_preservation_enabled(channel, {**enabled, SELECTOR: 'all'}))
 

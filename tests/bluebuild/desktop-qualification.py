@@ -21,11 +21,11 @@ class Desktop(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.manifest = '{"schemaVersion":2,"manifests":[{"digest":"sha256:' + 'b' * 64 + '"}]}'
         self.image = 'ghcr.io/closure-labs/finite@sha256:' + hashlib.sha256(self.manifest.encode()).hexdigest()
-        self.acceptance = dict(candidate=self.image, profile='bluefin-generic', sourceRevision='c'*40,
+        self.acceptance = dict(candidate=self.image, profile='finite', sourceRevision='c'*40,
                                buildIdentity='v1:'+'d'*64, previousDigest='')
         self.observation = m.guest.observations('Enforcing', '1', '',
             'system_u:system_r:init_t:s0 1 systemd\nsystem_u:system_r:sshd_t:s0 22 sshd',
-            'tcp LISTEN 0 128 0.0.0.0:22 0.0.0.0:* users:(("sshd",pid=22,fd=3))', 'bluefin-generic')
+            'tcp LISTEN 0 128 0.0.0.0:22 0.0.0.0:* users:(("sshd",pid=22,fd=3))', 'finite')
         self.write_phase('fresh', 'first-boot', 'source')
 
     def write_phase(self, phase, boot, manifest):
@@ -85,7 +85,7 @@ class Desktop(unittest.TestCase):
     def test_permissive_inventory_not_blanket_waiver(self):
         args = ('Enforcing','1','unconfined_service_t',
                 'system_u:system_r:init_t:s0 1 systemd\nsystem_u:system_r:sshd_t:s0 22 sshd',
-                'tcp LISTEN 0 128 *:22 *:* owners', 'bluefin-generic')
+                'tcp LISTEN 0 128 *:22 *:* owners', 'finite')
         observed=m.guest.observations(*args)
         self.assertEqual(observed['selinux']['permissiveDomains'], ['unconfined_service_t'])
         with self.assertRaises(ValueError): m.guest.observations(*(*args[:2], 'sshd_t', *args[3:]))

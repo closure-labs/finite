@@ -2,6 +2,12 @@
 
 The owner selected two active variants: `finite` based on Bluefin, and `finite-dev` based on Bluefin-DX. Both retain the signed, digest-pinned upstream kernel and its modules together. The separate Next kernels and variants are retired; no new Next builds, native scans or VM qualifications are dispatched. Existing published Next releases remain historical artifacts, not maintained update channels.
 
+Active recipe and profile names are `finite` and `finite-dev`; installation assets
+are `finite.iso` and `finite-dev.iso`. Foundation metadata still identifies
+`bluefin` or `bluefin-dx`. Historical images and evidence retain their original
+profile labels. An upgrade qualification may install the exact signed predecessor
+with its historical label, then must observe the new profile after upgrade.
+
 ## Preserve the upstream OS
 
 Finite no longer directly removes ZFS, virtual-camera or other inherited kernel modules, replaces the Bluefin kernel, or prunes its module tree. The upstream kernel and module package inventory and file contents are captured before Finite additions and verified afterward. Only the generated initramfs is rebuilt for Finite's installer and encrypted-root boot requirements; module payload preservation and existing initramfs content checks remain required.

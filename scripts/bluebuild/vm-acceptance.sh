@@ -43,6 +43,11 @@ source=$(jq -er .image "$artifact/installation.json")
 channel=$(jq -er .updateChannel "$artifact/installation.json")
 installation_tag=$(jq -er .installationTag "$artifact/installation.json")
 profile=$(jq -er .profile "$artifact/installation.json")
+qualification_profile=${PROFILE:-$profile}
+case "$phase_name:$qualification_profile:$profile" in
+upgrade:finite:bluefin-generic|upgrade:finite-dev:bluefin-dx-generic) ;;
+*) [[ $qualification_profile == "$profile" ]] ;;
+esac
 target="${2-$channel}"
 if [[ -n $target ]]; then
   if [[ $target == "$channel" ]]; then
@@ -459,6 +464,10 @@ jq -e '.status.staged != null' "$state/staged.json" >/dev/null
 record_duration upgrade-staging "$(($(monotonic_seconds) - upgrade_started))"
 poweroff_vm
 boot_vm updated
+ssh "${ssh_args[@]}" bash -s -- "$qualification_profile" <<'GUEST'
+set -euo pipefail
+[[ $(cat /usr/share/finite/build-profile) == "$1" ]]
+GUEST
 ssh "${ssh_args[@]}" sudo bootc status --json >"$state/updated.json"
 jq -e --arg channel "$target" '.status.booted.image.image.image == $channel' \
   "$state/updated.json" >/dev/null
@@ -483,7 +492,8 @@ jq -e --arg tag "$installation_tag" '.status.booted.image.image.image == $tag' \
 ssh "${ssh_args[@]}" sudo journalctl -b -u finite-nix-seed -u finite-nix-selinux -u nix-daemon \
   >"$state/nix-journal.log"
 poweroff_vm
-jq -n --arg source "$source" --arg channel "$channel" --arg profile "$profile" \
+jq -n --arg source "$source" --arg channel "$channel" --arg profile "$qualification_profile" \
+  --arg sourceProfile "$profile" \
   --arg target "$target" --argjson secure "${FINITE_SECURE_BOOT:-false}" \
-  '{source:$source,target:$target,updateChannel:$channel,profile:$profile,
+  '{source:$source,target:$target,updateChannel:$channel,profile:$profile,sourceProfile:$sourceProfile,
     uefi:true,secureBoot:$secure,encryptedRoot:true,accepted:true}' >"$state/acceptance.json"

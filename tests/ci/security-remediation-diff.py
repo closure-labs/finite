@@ -23,13 +23,13 @@ def finding(component='pkg:rpm/fedora/example@1', advisory='CVE-2026-1', severit
 
 
 def hold():
-    return {'id': 'fixture-source-hold', 'profiles': ['bluefin-generic'],
+    return {'id': 'fixture-source-hold', 'profiles': ['finite'],
             'riskClass': 'local-privilege-escalation', 'reason': 'Unqualified source fix',
             'officialSources': ['https://kernel.org/'], 'reviewedBy': 'Security reviewer',
             'reviewedAt': STAMP, 'unblockEvidence': 'Authenticated compatible fix and boot qualification'}
 
 
-def confirmed_risk(image, profile='bluefin-generic'):
+def confirmed_risk(image, profile='finite'):
     return {'id': 'confirmed-fixture', 'digest': image.split('@')[1], 'profile': profile,
             'platform': 'linux/amd64', 'component': 'pkg:rpm/fedora/example@1', 'severity': 'Critical',
             'impact': 'Host compromise', 'reason': 'Fixture review', 'attackerPath': 'Hostile imported file',
@@ -180,7 +180,7 @@ class Remediation(unittest.TestCase):
         self.policy.update(mode='desktop-critical-only', blockingBasis=basis, confirmedDesktopRisks=[])
         self.result.update(mode='desktop-critical-only', blockingBasis=basis, status='pass', blocked=[],
                            advisories=[finding(severity='Critical')], releaseBlockers=[],
-                           approvedBaseline={'image': NEW, 'profile': 'bluefin-generic'},
+                           approvedBaseline={'image': NEW, 'profile': 'finite'},
                            trackedReleaseConcerns=[{**hold(), 'severity': 'Critical', 'advisories': ['CVE-2026-1234']}])
         result = self.compare()
         self.assertEqual(result['blockingBasis'], basis)
@@ -199,7 +199,7 @@ class Remediation(unittest.TestCase):
             'reason': 'confirmed-desktop-exploitability', 'disposition': 'blocked', 'confirmedRiskReviews': [risk['id']]}]
         self.assertEqual(self.compare()['counts']['blockingRecords'], 1)
         for mutate in [lambda: self.result.update(releaseBlockers=[]),
-                       lambda: self.result['releaseBlockers'][0].update(profile='bluefin-dx-generic'),
+                       lambda: self.result['releaseBlockers'][0].update(profile='finite-dev'),
                        lambda: self.result['releaseBlockers'][0].update(digest=OLD.split('@')[1]),
                        lambda: self.result['releaseBlockers'][0].pop('selinuxEvidence')]:
             self.result['releaseBlockers'] = [deepcopy(risk)]

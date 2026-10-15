@@ -7,8 +7,8 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 EXPECTED = {
-    'bluefin-generic': ('bluefin', 'generic-x86_64', ['finite', 'latest']),
-    'bluefin-dx-generic': ('bluefin-dx', 'generic-x86_64', ['finite-dev']),
+    'finite': ('bluefin', 'generic-x86_64', ['finite', 'latest']),
+    'finite-dev': ('bluefin-dx', 'generic-x86_64', ['finite-dev']),
 }
 
 def read(path):
@@ -31,6 +31,7 @@ class BlueBuildContracts(unittest.TestCase):
             recipe = read('recipes/' + profile + '.yml')
             self.assertEqual(recipe['version'], 1)
             self.assertEqual(recipe['name'], 'finite')
+            self.assertEqual(recipe['labels']['io.finite.profile'], profile)
             self.assertEqual(recipe['blue-build-tag'], json.loads((ROOT / 'sources/bluebuild-cli.json').read_text())['version'])
             self.assertEqual(recipe['base-image'], 'ghcr.io/ublue-os/' + foundation)
             self.assertRegex(recipe['image-version'], r'^stable@sha256:[0-9a-f]{64}$')
@@ -135,7 +136,7 @@ class BlueBuildContracts(unittest.TestCase):
             self.assertIn("github.repository == 'closure-labs/finite'", job['if'])
         pr = next(step for step in update['steps'] if step.get('uses', '').startswith('peter-evans/'))
         self.assertEqual(pr['with']['branch'], 'automation/update-bluefin')
-        self.assertEqual(pr['with']['add-paths'], 'recipes/bluefin-*.yml')
+        self.assertEqual(pr['with']['add-paths'], 'recipes/finite*.yml')
         health = read('.github/workflows/upstream-health.yml')
         self.assertEqual(health['permissions'], {'contents': 'read', 'actions': 'read'})
 

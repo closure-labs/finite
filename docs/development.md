@@ -54,9 +54,9 @@ On a suitably provisioned development host, validate a recipe and inspect its
 generated Containerfile with an already installed BlueBuild CLI:
 
 ```bash
-bluebuild validate recipes/bluefin-generic.yml
+bluebuild validate recipes/finite.yml
 bluebuild generate --registry ghcr.io --registry-namespace closure-labs \
-  recipes/bluefin-generic.yml
+  recipes/finite.yml
 ```
 
 Before an image build, run `bash scripts/bluebuild/stage.sh PROFILE`. This stages

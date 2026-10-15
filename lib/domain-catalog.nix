@@ -7,7 +7,7 @@ let
       template = "home-bluefin";
       profiles = {
         generic-x86_64 = {
-          name = "bluefin-generic";
+          name = "finite";
           order = 40;
         };
       };
@@ -19,7 +19,7 @@ let
       template = "home-bluefin-dx";
       profiles = {
         generic-x86_64 = {
-          name = "bluefin-dx-generic";
+          name = "finite-dev";
           order = 30;
         };
       };

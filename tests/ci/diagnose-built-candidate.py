@@ -11,7 +11,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / 'scripts/ci/diagnose-built-candidate.sh'
-PROFILE = 'bluefin-generic'
+PROFILE = 'finite'
 REVISION = 'a' * 40
 IDENTITY = 'v1:' + 'b' * 64
 BASE_DIGEST = 'sha256:' + 'd' * 64

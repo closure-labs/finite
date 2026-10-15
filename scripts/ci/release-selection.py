@@ -7,7 +7,7 @@ import sys
 
 from impact import PROFILES
 
-ACTIVE_PROFILES = {'bluefin-generic', 'bluefin-dx-generic'}
+ACTIVE_PROFILES = {'finite', 'finite-dev'}
 
 CHANNELS = {channel: profile for profile, channel in PROFILES.items() if profile in ACTIVE_PROFILES}
 

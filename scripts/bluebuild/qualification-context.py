@@ -103,6 +103,9 @@ def aggregate(directory, profile, candidate, previous, source, build_identity, r
                 or value.get('profile') != profile
                 or (phase == 'upgrade' and value.get('target') != candidate)):
             raise ValueError('Required VM phase did not accept the exact candidate/predecessor')
+        historical = {'finite': 'bluefin-generic', 'finite-dev': 'bluefin-dx-generic'}
+        if phase == 'upgrade' and value.get('sourceProfile', profile) not in (profile, historical.get(profile)):
+            raise ValueError('Upgrade source profile belongs to a different foundation')
         current = value.get('qualificationContext')
         if not current or identity(current) != value.get('qualificationContextSha256'):
             raise ValueError('VM phase has no complete qualification context')
