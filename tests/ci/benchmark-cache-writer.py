@@ -160,5 +160,25 @@ class Receipts(unittest.TestCase):
             self.assertEqual(record['error'], 'bad output')
 
 
+    def test_benchmark_retains_sanitized_identity_shape_on_failure(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            start, output = Path(temporary) / 'start.json', Path(temporary) / 'benchmark.json'
+            start.write_text('{}')
+            diagnostics = {'metadataType': 'dict', 'tools': {'image-tools': {
+                'recordType': 'str', 'stringLength': 65, 'stringIsStorePath': True,
+                'problems': ['record-not-object']}}}
+            with patch.dict(os.environ, ENV, clear=True), patch.object(benchmark, 'hosted'), \
+                    patch.object(benchmark.subprocess, 'check_output', return_value='nix fixture'), \
+                    patch.object(benchmark.metrics, 'snapshot', return_value={}), \
+                    patch.object(benchmark.metrics, 'delta', return_value={'seconds': 1}), \
+                    patch.object(benchmark.cache, 'realize_roots', side_effect=benchmark.cache.ToolIdentityError(diagnostics)), \
+                    self.assertRaises(benchmark.cache.ToolIdentityError):
+                benchmark.benchmark('candidate', 1, start, output)
+            record = json.loads(output.read_text())
+            self.assertEqual(record['status'], 'error')
+            self.assertEqual(record['identityDiagnostics'], diagnostics)
+            self.assertEqual(record['passes'], [])
+
+
 if __name__ == '__main__':
     unittest.main()

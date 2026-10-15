@@ -149,6 +149,7 @@ class Reader(unittest.TestCase):
         self.db.mkdir(parents=True)
         (self.db / 'database.sqlite').write_bytes(b'fixture-only')
         save(self.seed, {'schema': 1, 'kind': 'db-seed', 'status': 'success', **INFO, 'binding': BINDING,
+                         'transportLimits': dict(benchmark.TRANSPORT_LIMITS),
                          'cacheKey': KEY, 'database': DB, 'transport': benchmark.transport(self.db)})
 
     def invoke(self, lane, inventory_miss=False, phase_failure=False):
@@ -200,10 +201,122 @@ class Reader(unittest.TestCase):
         (self.db / 'database.sqlite').write_bytes(b'tampered')
         with self.assertRaisesRegex(ValueError, 'transport bytes'): self.invoke('db-only')
 
+    def test_database_seed_cap_must_match_this_consumer(self):
+        self.prepare_db()
+        seed = json.loads(self.seed.read_text())
+        seed['transportLimits']['maxBytes'] = 1024 ** 3
+        save(self.seed, seed)
+        with self.assertRaisesRegex(ValueError, 'exact successful seed'): self.invoke('db-only')
+
     def test_inventory_miss_and_missing_fresh_phases_fail_the_benchmark(self):
         with self.assertRaisesRegex(ValueError, 'wrong lane'): self.invoke('inventory-only', inventory_miss=True)
         with self.assertRaisesRegex(ValueError, 'successful fresh'): self.invoke('baseline', phase_failure=True)
         self.assertEqual(json.loads(self.output.read_text())['status'], 'error')
+
+    def test_failed_seed_does_not_feed_or_block_independent_readers(self):
+        save(self.seed, {'kind': 'db-seed', 'status': 'error', 'error': 'transport bound rejected'})
+        self.env.update(BENCHMARK_DB_KEY='', RESTORED_DB_KEY='')
+        for lane in ('baseline', 'inventory-only'):
+            with self.subTest(lane=lane):
+                self.invoke(lane)
+                record = json.loads(self.output.read_text())
+                self.assertEqual(record['status'], 'success')
+                self.assertEqual(record['binding'], BINDING)
+                self.assertEqual(record['policySha256'], INFO['policySha256'])
+                self.assertEqual({p['phase'] for p in record['phases']}, {
+                    'database-update', 'database-coverage', 'vulnerability-scan', 'policy-evaluation'})
+                self.assertTrue(all(p['success'] for p in record['phases']))
+        with self.assertRaisesRegex(ValueError, 'exact successful seed'):
+            self.invoke('db-only')
+
+
+class TransportDiagnostics(unittest.TestCase):
+    def test_byte_bound_is_checked_before_any_content_hash(self):
+        observed = {'limits': dict(benchmark.TRANSPORT_LIMITS), 'entriesObserved': 2,
+                    'regularFilesObserved': 2, 'bytesObserved': benchmark.MAX_DB_BYTES + 10,
+                    'complete': True, 'files': {'large.sqlite': {'bytes': benchmark.MAX_DB_BYTES + 9},
+                                               'small.json': {'bytes': 1}}}
+        with patch.object(benchmark, 'transport_metadata', return_value=observed), \
+             patch.object(benchmark, 'sha') as hashed, self.assertRaises(benchmark.TransportRejected) as failure:
+            benchmark.transport(Path('/tmp/unused-fixture'))
+        hashed.assert_not_called()
+        self.assertEqual(failure.exception.observation, observed)
+        self.assertIn('byte-limit', str(failure.exception))
+
+    def test_file_count_and_metadata_entry_caps_retain_truthful_lower_bounds(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for index in range(33): (root / str(index)).write_bytes(b'x')
+            with patch.object(benchmark, 'sha') as hashed, self.assertRaises(benchmark.TransportRejected) as failure:
+                benchmark.transport(root)
+            hashed.assert_not_called()
+            observed = failure.exception.observation
+            self.assertEqual((observed['regularFilesObserved'], observed['bytesObserved']), (33, 33))
+            self.assertTrue(observed['complete'])
+            for index in range(33, 257): (root / str(index)).write_bytes(b'x')
+            with patch.object(benchmark, 'sha') as hashed, self.assertRaises(benchmark.TransportRejected) as failure:
+                benchmark.transport(root)
+            hashed.assert_not_called()
+            observed = failure.exception.observation
+            self.assertEqual(observed['entriesObserved'], 256)
+            self.assertFalse(observed['complete'])
+            self.assertEqual(observed['issue'], 'metadata-entry-limit')
+
+    def test_seed_bound_failure_keeps_context_origin_schema_counts_and_exports_no_key(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            directory = root / '.bluebuild/security-benchmark-db'
+            output, github_output = root / 'seed/benchmark.json', root / 'github-output'
+            github_output.write_text('')
+            observed = {'limits': dict(benchmark.TRANSPORT_LIMITS), 'entriesObserved': 1,
+                        'regularFilesObserved': 1, 'bytesObserved': benchmark.MAX_DB_BYTES + 1,
+                        'complete': True, 'files': {'vulnerability.db': {'bytes': benchmark.MAX_DB_BYTES + 1}}}
+            def updated(*_, **__):
+                directory.mkdir(parents=True)
+                return subprocess.CompletedProcess([], 0)
+            with patch.dict(os.environ, {**environment(), 'GRYPE_DB_CACHE_DIR': str(directory),
+                                         'GITHUB_OUTPUT': str(github_output)}, clear=True), \
+                 patch.object(benchmark, 'ROOT', root), patch.object(benchmark, 'context', return_value=INFO), \
+                 patch.object(benchmark, 'authenticate', return_value=BINDING), \
+                 patch.object(benchmark, 'database_status', return_value=DB), \
+                 patch.object(benchmark.subprocess, 'run', side_effect=updated) as update, \
+                 patch.object(benchmark, 'transport_metadata', return_value=observed), \
+                 patch.object(benchmark, 'sha') as hashed, self.assertRaises(benchmark.TransportRejected):
+                benchmark.seed(IMAGE, PROFILE, '50', output)
+            hashed.assert_not_called()
+            self.assertEqual(update.call_args.args[0], ['grype', 'db', 'update'])
+            retained = json.loads(output.read_text())
+            self.assertEqual(retained['status'], 'error')
+            self.assertEqual(retained['binding'], BINDING)
+            self.assertEqual(retained['revision'], REVISION)
+            self.assertEqual(retained['database'], DB)
+            self.assertEqual(retained['transportObservation'], observed)
+            self.assertEqual(retained['transportLimits']['maxBytes'], 2 * 1024 ** 3)
+            self.assertNotIn('transport', retained)
+            self.assertEqual(github_output.read_text(), '')
+            self.assertLess(output.stat().st_size, 8192)
+
+    def test_successful_fixture_transport_binds_exact_caps_and_file_hashes(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / 'fixture.db').write_bytes(b'fixture-only')
+            result = benchmark.transport(root)
+            self.assertEqual(result['limits'], benchmark.TRANSPORT_LIMITS)
+            self.assertEqual(result['bytes'], 12)
+            self.assertEqual(result['files']['fixture.db']['sha256'], benchmark.sha(root / 'fixture.db'))
+
+    def test_changed_file_cannot_be_hashed_past_its_census_size(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / 'fixture.db').write_bytes(b'abc')
+            observed = {'limits': dict(benchmark.TRANSPORT_LIMITS), 'entriesObserved': 1,
+                        'regularFilesObserved': 1, 'bytesObserved': 2, 'complete': True,
+                        'files': {'fixture.db': {'bytes': 2}}}
+            with patch.object(benchmark, 'transport_metadata', return_value=observed), \
+                 self.assertRaises(benchmark.TransportRejected) as failure:
+                benchmark.transport(root)
+            self.assertFalse(failure.exception.observation['complete'])
+            self.assertEqual(failure.exception.observation['issue'], 'file-changed-during-hash')
 
 
 class Summary(unittest.TestCase):
@@ -217,9 +330,11 @@ class Summary(unittest.TestCase):
         jobs = [{'id': 1, 'name': 'Seed Grype DB transport', 'status': 'completed', 'conclusion': 'success',
                  'started_at': STAMP, 'completed_at': '2026-10-14T12:01:00Z'}]
         save(self.reports / 'seed/benchmark.json', {'kind': 'db-seed', 'status': 'success', **INFO,
+                                                'transportLimits': dict(benchmark.TRANSPORT_LIMITS),
                                                 'binding': BINDING, 'updateSeconds': 10})
         for i, lane in enumerate(benchmark.LANES):
             row = {'schema': 1, 'kind': 'reader', 'status': 'success', 'lane': lane, 'repetition': 1, **INFO,
+                   'transportLimits': dict(benchmark.TRANSPORT_LIMITS),
                    'binding': BINDING, 'inventoryGeneration': {'fixture': 'generation'}, 'platformDigest': 'sha256:'+'a'*64,
                    'scanner': '0.120.1', 'database': DB, 'databaseSnapshot': {'status': DB}, 'setupPlusScanSeconds': 20}
             self.rows.append(row)
@@ -243,7 +358,8 @@ class Summary(unittest.TestCase):
 
     def test_changed_source_policy_tools_snapshot_or_attempt_rejects_comparison(self):
         changes = {'revision': 'c'*40, 'policySha256': 'c'*64, 'tools': {'grype': 'changed'},
-                   'database': {**DB, 'schemaVersion': '7'}, 'databaseSnapshot': {'different': True}, 'attempt': '2'}
+                   'database': {**DB, 'schemaVersion': '7'}, 'databaseSnapshot': {'different': True}, 'attempt': '2',
+                   'transportLimits': {**benchmark.TRANSPORT_LIMITS, 'maxBytes': 1024 ** 3}}
         original = copy.deepcopy(self.rows[0])
         for key, value in changes.items():
             save(self.reports / 'baseline/benchmark.json', {**original, key: value})
@@ -272,6 +388,18 @@ class Summary(unittest.TestCase):
             with self.subTest(completed=completed), self.assertRaisesRegex(ValueError, 'bounded measurement'):
                 self.summarize()
 
+    def test_seed_failure_or_partial_lanes_cannot_produce_a_passing_comparison(self):
+        seed_path = self.reports / 'seed/benchmark.json'
+        seed = json.loads(seed_path.read_text())
+        seed['status'] = 'error'
+        save(seed_path, seed)
+        with self.assertRaisesRegex(ValueError, 'every independent lane'):
+            self.summarize()
+        (self.reports / 'db-only/benchmark.json').unlink()
+        with self.assertRaisesRegex(ValueError, 'every independent lane'):
+            self.summarize()
+        self.assertFalse(self.output.exists())
+
 
 class Workflow(unittest.TestCase):
     def test_bounded_main_only_read_scope_and_db_lane_isolation(self):
@@ -299,6 +427,35 @@ class Workflow(unittest.TestCase):
         self.assertNotIn('BENCHMARK_DB_KEY', workflow['jobs']['seed']['env'])
         seed = next(step for step in workflow['jobs']['seed']['steps'] if step.get('id') == 'seed')
         self.assertIn("hashFiles('flake.lock')", seed['env']['BENCHMARK_DB_KEY'])
+
+    def test_seed_failure_runs_independent_lanes_but_db_lane_fails_before_setup(self):
+        workflow = yaml.safe_load((ROOT / '.github/workflows/benchmark-security-reuse.yml').read_text())
+        job = workflow['jobs']['scan']
+        expression = job['if'].replace('&&', ' and ').replace('||', ' or ').replace('!cancelled()', 'not cancelled()')
+        for state, cancelled, expected in [('success', False, True), ('failure', False, True),
+                                           ('cancelled', True, False), ('skipped', False, False)]:
+            with self.subTest(seed=state, cancelled=cancelled):
+                selected = eval(expression, {'__builtins__': {}}, {
+                    'always': lambda: True, 'cancelled': lambda: cancelled,
+                    'needs': SimpleNamespace(seed=SimpleNamespace(result=state)),
+                    'github': SimpleNamespace(repository='closure-labs/finite', ref='refs/heads/main', event_name='workflow_dispatch')})
+                self.assertEqual(bool(selected), expected)
+        self.assertEqual(job['strategy']['max-parallel'], 2)
+        guard = job['steps'][0]
+        self.assertEqual(guard['if'], "matrix.lane == 'db-only' && needs.seed.result != 'success'")
+        self.assertEqual(job['steps'][1]['uses'].split('@')[0], 'actions/checkout')
+        for step in job['steps']:
+            if step.get('name') in ("Read this attempt's authenticated seed receipt", 'Restore only the explicitly seeded DB transport'):
+                self.assertEqual(step['if'], "matrix.lane == 'db-only'")
+        with tempfile.TemporaryDirectory() as temporary:
+            env = {**os.environ, **environment(), 'BENCHMARK_REPETITION': '1'}
+            result = subprocess.run(['bash', '-e', '-c', guard['run']], cwd=temporary,
+                                    env=env, capture_output=True, text=True)
+            self.assertNotEqual(result.returncode, 0)
+            report = json.loads((Path(temporary) / '.bluebuild/security-benchmark/benchmark.json').read_text())
+            self.assertEqual(report['status'], 'error')
+            self.assertFalse(report['scanStarted'])
+            self.assertFalse(report['releaseEligibilityEstablished'])
 
 
 if __name__ == '__main__':

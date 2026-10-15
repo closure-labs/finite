@@ -17,6 +17,11 @@ informational. The protected release environment retains its owner review gate.
   obtain final ship approval, sign drafts and publish approved channel releases.
 - Defaults: automatic writer, inventory/DB and whole-qualification reuse remain
   off until their own measured adoption criteria are met.
+- Protected implementation merge: PR165, `aeb59d95`; v0.8 main producer
+  38668576342 is active. First hosted pilots rejected Nix metadata coercion,
+  preloaded Docker state and the DB transport bound; preserve those failed
+  observations in docs/v0.8-hosted-pilot-results.md. Hold their separate fixes
+  off main until all four release workflows capture the qualified revision.
 
 ## Active release eligibility sequence
 

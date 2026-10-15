@@ -73,25 +73,65 @@ def closure_size(path):
     return closure_sizes([path])[path]
 
 
+class ToolIdentityError(ValueError):
+    """Bounded shape diagnostics contain no arbitrary evaluator values or keys."""
+    def __init__(self, diagnostics):
+        self.diagnostics = diagnostics
+        super().__init__('Invalid or ambiguous tool identity: ' + json.dumps(diagnostics, sort_keys=True))
+
+
+def identity_diagnostics(identities):
+    diagnostics = {'metadataType': type(identities).__name__, 'tools': {}}
+    if not isinstance(identities, dict):
+        return diagnostics
+    diagnostics.update(missingToolCount=len(set(TOOLS) - identities.keys()),
+                       unexpectedToolCount=len(identities.keys() - set(TOOLS)))
+    derivations, outputs = set(), set()
+    for tool in TOOLS:
+        if tool not in identities:
+            continue
+        identity = identities[tool]
+        facts = {'recordType': type(identity).__name__, 'problems': []}
+        diagnostics['tools'][tool] = facts
+        if not isinstance(identity, dict):
+            facts['problems'].append('record-not-object')
+            if isinstance(identity, str):
+                facts['stringLength'] = len(identity)
+                facts['stringIsStorePath'] = bool(STORE.fullmatch(identity))
+            continue
+        facts['missingFieldCount'] = len({'drvPath', 'outputPath'} - identity.keys())
+        facts['unexpectedFieldCount'] = len(identity.keys() - {'drvPath', 'outputPath'})
+        if facts['missingFieldCount'] or facts['unexpectedFieldCount']:
+            facts['problems'].append('unexpected-fields')
+        for field, seen, is_derivation in (('drvPath', derivations, True), ('outputPath', outputs, False)):
+            value = identity.get(field)
+            path_facts = {'type': type(value).__name__}
+            facts[field] = path_facts
+            if isinstance(value, str):
+                valid = bool(STORE.fullmatch(value)) and value.endswith('.drv') == is_derivation
+                path_facts.update(length=len(value), validStorePath=valid, duplicate=value in seen)
+                if valid and value not in seen:
+                    seen.add(value)
+                else:
+                    facts['problems'].append(field + '-invalid-or-duplicate')
+            else:
+                facts['problems'].append(field + '-not-string')
+    return diagnostics
+
+
 def tool_identities():
     names = ' '.join(json.dumps(tool) for tool in TOOLS)
+    # Nix's JSON serializer collapses *any* attrset containing outPath to that
+    # attribute. Use an ordinary metadata key so drvPath survives serialization.
+    # https://github.com/NixOS/nix/blob/2.35.2/src/libexpr/value-to-json.cc#L47-L55
     expression = ('tools: builtins.listToAttrs (builtins.map (name: { inherit name; '
-                  'value = { drvPath = tools.${name}.drvPath; outPath = tools.${name}.outPath; }; '
+                  'value = { drvPath = tools.${name}.drvPath; outputPath = tools.${name}.outPath; }; '
                   '}) [' + names + '])')
     identities = json_output(['nix', 'eval', '--file', 'lib/ci-tools.nix', '--json', '--apply', expression])
-    if not isinstance(identities, dict) or set(identities) != set(TOOLS):
-        raise ValueError('Tool identities differ from the declared allowlist')
-    derivations, outputs = set(), set()
-    for identity in identities.values():
-        if (not isinstance(identity, dict) or set(identity) != {'drvPath', 'outPath'}
-                or not isinstance(identity['drvPath'], str) or not STORE.fullmatch(identity['drvPath'])
-                or not identity['drvPath'].endswith('.drv')
-                or not isinstance(identity['outPath'], str) or not STORE.fullmatch(identity['outPath'])
-                or identity['outPath'].endswith('.drv')
-                or identity['drvPath'] in derivations or identity['outPath'] in outputs):
-            raise ValueError('Invalid or ambiguous tool identity')
-        derivations.add(identity['drvPath'])
-        outputs.add(identity['outPath'])
+    diagnostics = identity_diagnostics(identities)
+    if (not isinstance(identities, dict) or set(identities) != set(TOOLS)
+            or any(facts['problems'] for facts in diagnostics['tools'].values())):
+        raise ToolIdentityError(diagnostics)
     return identities
 
 
@@ -111,9 +151,9 @@ def batched_tools():
     roots = []
     for tool in TOOLS:
         identity = identities[tool]
-        if by_derivation[identity['drvPath']] != {'out': identity['outPath']}:
+        if by_derivation[identity['drvPath']] != {'out': identity['outputPath']}:
             raise ValueError('Build output differs from evaluated tool: ' + tool)
-        roots.append({'kind': 'tool', 'name': tool, 'path': identity['outPath']})
+        roots.append({'kind': 'tool', 'name': tool, 'path': identity['outputPath']})
     return roots
 
 

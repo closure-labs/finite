@@ -66,6 +66,8 @@ def benchmark(mode, repetition, start, output):
     except (OSError, ValueError, subprocess.SubprocessError) as error:
         report['status'] = 'error'
         report['error'] = str(error)
+        if isinstance(error, cache.ToolIdentityError):
+            report['identityDiagnostics'] = error.diagnostics
         raise
     finally:
         output.parent.mkdir(parents=True, exist_ok=True)
