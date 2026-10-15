@@ -50,7 +50,8 @@ ISOLATION_POLICY = {'schema': 1, 'mode': 'private-dockerd', 'storage-driver': 'o
     'max-concurrent-downloads': 3, 'max-download-attempts': 3,
     'containerd': '/run/containerd/containerd.sock',
     'containerd-namespace': 'finite-verification', 'containerd-plugins-namespace': 'finite-verification-plugins',
-    'startupSeconds': 60, 'lifetimeSeconds': 2700, 'runtimeNetwork': 'none', 'daemonLogLimit': DAEMON_LOG_LIMIT}
+    'startupSeconds': 60, 'lifetimeSeconds': 2700, 'runtimeReadSeconds': 30,
+    'runtimeNetwork': 'none', 'daemonLogLimit': DAEMON_LOG_LIMIT}
 
 
 def isolation_config(root, group):
@@ -65,7 +66,7 @@ def isolation_config(root, group):
     Content/lease services remain shared and are not claimed as a cold store.
     """
     config = {key: value for key, value in ISOLATION_POLICY.items() if key not in
-              {'schema', 'mode', 'startupSeconds', 'lifetimeSeconds', 'runtimeNetwork', 'daemonLogLimit'}}
+              {'schema', 'mode', 'startupSeconds', 'lifetimeSeconds', 'runtimeReadSeconds', 'runtimeNetwork', 'daemonLogLimit'}}
     # tempfile names may end in '_' or contain repeated separators, which are
     # invalid containerd namespace identifiers. Bind a stable alphanumeric nonce
     # to the unique owned path instead of interpolating its basename.
@@ -108,7 +109,11 @@ class PrivateDaemon:
             for kind in ('tasks', 'containers'):
                 command = ['/usr/bin/sudo', '--non-interactive', '--', self.ctr,
                     '--address', self.config['containerd'], '--namespace', self.config[key], kind, 'list', '--quiet']
-                if self.recorder.command(phase + '-' + label + '-' + kind, command, metadata=True, timeout=5).strip():
+                # A hosted sample exhausted 5s before daemon startup. Allow
+                # bounded service latency, retaining every failed/slow read;
+                # never retry a timeout, command error or nonempty namespace.
+                if self.recorder.command(phase + '-' + label + '-' + kind, command, metadata=True,
+                        timeout=ISOLATION_POLICY['runtimeReadSeconds']).strip():
                     raise ValueError('Diagnostic containerd namespace has remaining ' + kind)
 
     def _owned_group(self):
@@ -355,7 +360,7 @@ class Recorder:
         finally:
             after = network_bytes()
             self.report['stages'].append({'stage': stage, 'startedAt': started,
-                'seconds': round(time.monotonic() - before, 3), 'status': status,
+                'seconds': round(time.monotonic() - before, 3), 'status': status, 'timeoutSeconds': timeout,
                 'runnerNetworkDelta': {key: max(0, after[key] - value) for key, value in counters.items() if key in after}})
 
 
