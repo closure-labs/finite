@@ -102,26 +102,26 @@ class Publisher(unittest.TestCase):
 
 def fixture_identities():
     return {name: {'drvPath': '/nix/store/' + str(index) * 32 + '-tool.drv',
-                   'outPath': '/nix/store/' + str(index) * 32 + '-tool'}
+                   'outputPath': '/nix/store/' + str(index) * 32 + '-tool'}
             for index, name in enumerate(cache.TOOLS, 1)}
 
 
 class Batching(unittest.TestCase):
     def test_per_attribute_association_does_not_assume_build_order(self):
         identities = fixture_identities()
-        records = [{'drvPath': value['drvPath'], 'outputs': {'out': value['outPath']}}
+        records = [{'drvPath': value['drvPath'], 'outputs': {'out': value['outputPath']}}
                    for value in reversed(list(identities.values()))]
         with patch.object(cache, 'tool_identities', return_value=identities), \
                 patch.object(cache, 'json_output', return_value=records) as command:
             roots = cache.batched_tools()
         self.assertEqual({root['name']: root['path'] for root in roots},
-                         {name: value['outPath'] for name, value in identities.items()})
+                         {name: value['outputPath'] for name, value in identities.items()})
         self.assertEqual(command.call_args.args[0],
                          ['nix', 'build', '--file', 'lib/ci-tools.nix', *cache.TOOLS, '--no-link', '--json'])
 
     def test_wrong_missing_extra_duplicate_and_multi_output_results_fail(self):
         identities = fixture_identities()
-        valid = [{'drvPath': value['drvPath'], 'outputs': {'out': value['outPath']}}
+        valid = [{'drvPath': value['drvPath'], 'outputs': {'out': value['outputPath']}}
                  for value in identities.values()]
         import copy
         variants = [valid[:-1], valid + valid[:1], valid[:3] + valid[:1], {},
@@ -140,7 +140,7 @@ class Batching(unittest.TestCase):
         with patch.object(cache, 'json_output', return_value=valid):
             self.assertEqual(cache.tool_identities(), valid)
         variants = [{}, {**valid, 'unapproved': valid[cache.TOOLS[0]]}]
-        for field, bad in [('drvPath', STORE), ('outPath', STORE + '.drv'), ('outPath', '/tmp/tool')]:
+        for field, bad in [('drvPath', STORE), ('outputPath', STORE + '.drv'), ('outputPath', '/tmp/tool')]:
             value = copy.deepcopy(valid)
             value[cache.TOOLS[0]][field] = bad
             variants.append(value)
@@ -151,8 +151,44 @@ class Batching(unittest.TestCase):
             with self.subTest(value=value), patch.object(cache, 'json_output', return_value=value), self.assertRaises(ValueError):
                 cache.tool_identities()
 
+    def test_nix_serializer_collapsed_string_cannot_lose_derivation_binding(self):
+        # Nix 2.35.2 printValueAsJSON returns attrs.outPath rather than an
+        # object whenever an attrset contains that key. This is the shape
+        # produced by the former { drvPath = ...; outPath = ...; } expression.
+        collapsed = {name: value['outputPath'] for name, value in fixture_identities().items()}
+        with patch.object(cache, 'json_output', return_value=collapsed), \
+                patch.object(cache.subprocess, 'run') as realize, self.assertRaises(cache.ToolIdentityError) as error:
+            cache.tool_identities()
+        realize.assert_not_called()
+        facts = error.exception.diagnostics['tools'][cache.TOOLS[0]]
+        self.assertEqual(facts['recordType'], 'str')
+        self.assertTrue(facts['stringIsStorePath'])
+        self.assertEqual(facts['problems'], ['record-not-object'])
+        self.assertNotIn(collapsed[cache.TOOLS[0]], str(error.exception))
+
+    def test_evaluation_uses_noncoercing_metadata_field(self):
+        with patch.object(cache, 'json_output', return_value=fixture_identities()) as evaluate:
+            cache.tool_identities()
+        expression = evaluate.call_args.args[0][-1]
+        self.assertIn('outputPath = tools.${name}.outPath;', expression)
+        self.assertNotIn(' outPath = ', expression)
+
+    def test_identity_errors_report_bounded_facts_without_unknown_values_or_keys(self):
+        valid = fixture_identities()
+        valid[cache.TOOLS[0]] = {'drvPath': 'SECRET-VALUE' * 10000, 'SECRET-KEY': 'SECRET-VALUE'}
+        with patch.object(cache, 'json_output', return_value=valid), self.assertRaises(cache.ToolIdentityError) as error:
+            cache.tool_identities()
+        message = str(error.exception)
+        self.assertLess(len(message), 4096)
+        self.assertNotIn('SECRET-VALUE', message)
+        self.assertNotIn('SECRET-KEY', message)
+        facts = error.exception.diagnostics['tools'][cache.TOOLS[0]]
+        self.assertEqual(facts['missingFieldCount'], 1)
+        self.assertEqual(facts['unexpectedFieldCount'], 1)
+        self.assertFalse(facts['drvPath']['validStorePath'])
+
     def test_default_realizes_only_tools_with_one_closure_query(self):
-        roots = [{'kind': 'tool', 'name': name, 'path': identity['outPath']}
+        roots = [{'kind': 'tool', 'name': name, 'path': identity['outputPath']}
                  for name, identity in fixture_identities().items()]
         with patch.dict(os.environ, {}, clear=True), patch.object(cache, 'output') as proofs, \
                 patch.object(cache, 'batched_tools', return_value=roots), \
@@ -164,7 +200,7 @@ class Batching(unittest.TestCase):
         self.assertTrue(all(root['kind'] == 'tool' and root['bytes'] == 10 for root in result))
 
     def test_explicit_proofs_share_batched_size_query_and_remain_bounded(self):
-        roots = [{'kind': 'tool', 'name': name, 'path': identity['outPath']}
+        roots = [{'kind': 'tool', 'name': name, 'path': identity['outputPath']}
                  for name, identity in fixture_identities().items()]
         with tempfile.TemporaryDirectory() as temporary:
             proof = Path(temporary) / 'check'

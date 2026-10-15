@@ -21,15 +21,29 @@ PROFILES = ('bluefin-generic', 'bluefin-next', 'bluefin-dx-generic', 'bluefin-dx
 IMAGE = re.compile(r'ghcr\.io/closure-labs/finite@sha256:[0-9a-f]{64}')
 SHA = re.compile(r'[0-9a-f]{40}')
 HEX = re.compile(r'[0-9a-f]{64}')
-MAX_DB_BYTES = 1024 ** 3
+MAX_DB_BYTES = 2 * 1024 ** 3
+MAX_DB_FILES = 32
+MAX_DB_METADATA_ENTRIES = 256
+TRANSPORT_LIMITS = {'maxBytes': MAX_DB_BYTES, 'maxFiles': MAX_DB_FILES,
+                    'maxMetadataEntries': MAX_DB_METADATA_ENTRIES}
 SECRET_NAMES = ('CACHIX_AUTH_TOKEN', 'COSIGN_PRIVATE_KEY', 'COSIGN_PASSWORD',
                 'MERGE_QUEUE_TOKEN', 'SECAUDIT_PEM', 'SECAUDIT_CLIENTID', 'REGISTRY_TOKEN',
                 'GITHUB_ACTIONS_CACHIX_AUTH_TOKEN', 'GITHUB_ACTIONS_MERGE_QUEUE_TOKEN')
 
 
-def sha(path):
+def sha(path, expected_bytes=None):
     with path.open('rb') as stream:
-        return hashlib.file_digest(stream, 'sha256').hexdigest()
+        if expected_bytes is None:
+            return hashlib.file_digest(stream, 'sha256').hexdigest()
+        digest, size = hashlib.sha256(), 0
+        while chunk := stream.read(min(1024 ** 2, expected_bytes - size + 1)):
+            size += len(chunk)
+            if size > expected_bytes:
+                raise ValueError('DB file grew after its bounded metadata census')
+            digest.update(chunk)
+        if size != expected_bytes:
+            raise ValueError('DB file shrank after its bounded metadata census')
+        return digest.hexdigest()
 
 
 def read(path, limit=16 * 1024 ** 2):
@@ -131,19 +145,68 @@ def db_directory():
     return path
 
 
+class TransportRejected(ValueError):
+    def __init__(self, reason, observation):
+        super().__init__('DB transport rejected: ' + reason)
+        self.observation = observation
+
+
+def transport_metadata(path):
+    """Count bytes before hashing; diagnostics remain bounded even on rejection."""
+    observation = {'limits': dict(TRANSPORT_LIMITS), 'entriesObserved': 0,
+                   'regularFilesObserved': 0, 'bytesObserved': 0, 'complete': True, 'files': {}}
+    pending = [path]
+    while pending:
+        directory = pending.pop()
+        if directory.is_symlink():
+            observation.update(complete=False, issue='linked-directory')
+            continue
+        try:
+            with os.scandir(directory) as entries:
+                for entry in entries:
+                    if observation['entriesObserved'] >= MAX_DB_METADATA_ENTRIES:
+                        observation.update(complete=False, issue='metadata-entry-limit')
+                        return observation
+                    observation['entriesObserved'] += 1
+                    name = str(Path(entry.path).relative_to(path))
+                    if len(name) > 512:
+                        observation.update(complete=False, issue='oversized-relative-path')
+                        continue
+                    if entry.is_symlink():
+                        observation['issue'] = 'linked-entry'
+                    elif entry.is_dir(follow_symlinks=False):
+                        pending.append(Path(entry.path))
+                    elif entry.is_file(follow_symlinks=False):
+                        size = entry.stat(follow_symlinks=False).st_size
+                        observation['regularFilesObserved'] += 1
+                        observation['bytesObserved'] += size
+                        observation['files'][name] = {'bytes': size}
+                    else:
+                        observation['issue'] = 'nonregular-entry'
+        except OSError:
+            observation.update(complete=False, issue='metadata-read-error')
+            return observation
+    return observation
+
+
 def transport(path):
-    files, total = {}, 0
-    for entry in sorted(path.rglob('*')):
-        if entry.is_symlink() or not (entry.is_dir() or entry.is_file()):
-            raise ValueError('DB transport contains a linked or nonregular entry')
-        if entry.is_file():
-            total += entry.stat().st_size
-            if total > MAX_DB_BYTES or len(files) >= 32:
-                raise ValueError('DB transport exceeds the one-GiB/32-file pilot bound')
-            files[str(entry.relative_to(path))] = {'bytes': entry.stat().st_size, 'sha256': sha(entry)}
-    if not files or not total:
-        raise ValueError('DB transport cache has no bytes')
-    return {'bytes': total, 'files': files}
+    observation = transport_metadata(path)
+    if observation.get('issue'):
+        raise TransportRejected(observation['issue'], observation)
+    if observation['bytesObserved'] > MAX_DB_BYTES:
+        raise TransportRejected('byte-limit', observation)
+    if observation['regularFilesObserved'] > MAX_DB_FILES:
+        raise TransportRejected('file-limit', observation)
+    if not observation['regularFilesObserved'] or not observation['bytesObserved']:
+        raise TransportRejected('empty-cache', observation)
+    # Never read/hash DB contents until the entire metadata census fits the cap.
+    try:
+        files = {name: {**value, 'sha256': sha(path / name, value['bytes'])}
+                 for name, value in sorted(observation['files'].items())}
+    except (OSError, ValueError) as error:
+        observation.update(complete=False, issue='file-changed-during-hash')
+        raise TransportRejected(observation['issue'], observation) from error
+    return {'bytes': observation['bytesObserved'], 'files': files, 'limits': dict(TRANSPORT_LIMITS)}
 
 
 def database_status():
@@ -157,19 +220,30 @@ def database_status():
 
 
 def seed(image, profile, origin, output):
-    info = context()
-    binding = authenticate(image, profile, origin)
-    directory = db_directory()
-    if directory.exists():
-        raise ValueError('DB seed must start cold on its independent runner')
-    before = time.monotonic()
-    subprocess.run(['grype', 'db', 'update'], check=True, timeout=900)
-    state = database_status()
-    record = {'schema': 1, 'kind': 'db-seed', 'status': 'success', **info, 'binding': binding,
-              'cacheKey': db_key(), 'database': state, 'transport': transport(directory),
-              'updateSeconds': time.monotonic() - before, 'releaseEligibilityEstablished': False}
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(record, indent=2) + '\n')
+    record = {'schema': 1, 'kind': 'db-seed', 'status': 'error',
+              'transportLimits': dict(TRANSPORT_LIMITS), 'releaseEligibilityEstablished': False}
+    try:
+        record.update(context())
+        record['binding'] = authenticate(image, profile, origin)
+        record['cacheKey'] = db_key()
+        directory = db_directory()
+        if directory.exists():
+            raise ValueError('DB seed must start cold on its independent runner')
+        before = time.monotonic()
+        subprocess.run(['grype', 'db', 'update'], check=True, timeout=900)
+        record['database'] = database_status()
+        record['updateSeconds'] = time.monotonic() - before
+        record['transport'] = transport(directory)
+        record['status'] = 'success'
+    except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as error:
+        record['error'] = str(error)
+        if isinstance(error, TransportRejected):
+            record['transportObservation'] = error.observation
+        raise
+    finally:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(record, indent=2) + '\n')
+    # No key is exported on failure, so rejected bytes cannot reach cache save.
     with Path(os.environ['GITHUB_OUTPUT']).open('a') as stream:
         stream.write('cache_key=' + record['cacheKey'] + '\n')
 
@@ -180,6 +254,7 @@ def scan(lane, repetition, image, profile, origin, start, seed_path, output):
     info = context()
     report = {'schema': 1, 'kind': 'reader', 'lane': lane, 'repetition': repetition, **info,
               'startedAt': datetime.now(timezone.utc).isoformat(), 'status': 'error',
+              'transportLimits': dict(TRANSPORT_LIMITS),
               'releaseEligibilityEstablished': False}
     before = time.monotonic()
     setup = before - read(start, 4096)['monotonicSeconds']
@@ -189,6 +264,7 @@ def scan(lane, repetition, image, profile, origin, start, seed_path, output):
         if lane == 'db-only':
             source = read(seed_path)
             if (source.get('status') != 'success' or source.get('kind') != 'db-seed'
+                    or source.get('transportLimits') != TRANSPORT_LIMITS
                     or source.get('cacheKey') != db_key() or os.environ.get('RESTORED_DB_KEY') != db_key()
                     or any(source.get(key) != info[key] for key in ('revision', 'runId', 'attempt', 'lockSha256',
                                                                   'policySha256', 'platform', 'tools', 'nixVersion'))
@@ -239,6 +315,8 @@ def scan(lane, repetition, image, profile, origin, start, seed_path, output):
                       setupSeconds=setup, setupPlusScanSeconds=setup + time.monotonic() - before)
     except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as error:
         report['error'] = str(error)
+        if isinstance(error, TransportRejected):
+            report['transportObservation'] = error.observation
         raise
     finally:
         output.parent.mkdir(parents=True, exist_ok=True)
@@ -278,6 +356,8 @@ def summarize(reports, metadata, repetitions, output):
             or {(r['lane'], r['repetition']) for r in readers} != expected
             or any(r.get('status') != 'success' for r in readers)):
         raise ValueError('Require every independent lane/repetition and its successful DB seed')
+    if any(r.get('transportLimits') != TRANSPORT_LIMITS for r in (*readers, *seeds)):
+        raise ValueError('Reader/seed transport cap differs from the current bounded pilot')
     if any(r.get('revision') != run['head_sha'] or str(r.get('runId')) != str(run['id'])
            or str(r.get('attempt')) != str(run['run_attempt']) for r in (*readers, *seeds)):
         raise ValueError('Reader/seed receipts identify a different run/source/attempt')
