@@ -33,7 +33,7 @@ import time
 ROOT = Path(__file__).resolve().parents[2]
 REPOSITORY = 'ghcr.io/closure-labs/finite'
 DIGEST = re.compile(r'sha256:[0-9a-f]{64}')
-PROFILES = ('bluefin-generic', 'bluefin-next', 'bluefin-dx-generic', 'bluefin-dx-next')
+PROFILES = ('bluefin-generic', 'bluefin-dx-generic')
 MANIFEST_TYPES = {'application/vnd.oci.image.manifest.v1+json', 'application/vnd.docker.distribution.manifest.v2+json'}
 INDEX_TYPES = {'application/vnd.oci.image.index.v1+json', 'application/vnd.docker.distribution.manifest.list.v2+json'}
 CONFIG_TYPES = {'application/vnd.oci.image.config.v1+json', 'application/vnd.docker.container.image.v1+json'}
@@ -456,11 +456,9 @@ def benchmark(args):
         recorder.command('measured-image-pull', pull, timeout=900, env=docker_environment())
         inspected = recorder.command('measured-image-inspect', docker('image', 'inspect', image), metadata=True, env=docker_environment())
         verify_docker(json.loads(inspected), config, binding, args.digest, native['digest'])
-        kernel_path = ROOT / ('sources/kernel-next.json' if args.profile.endswith('-next') else 'files/security/kernel-generic.json')
-        kernel = json.loads(kernel_path.read_text())['release']
         recorder.command('runtime-checks', docker('run', '--rm', '--name', 'finite-verification-runtime', '--network', 'none', '--privileged', '--platform', 'linux/amd64', '--entrypoint', '/bin/bash',
             '--volume', str(ROOT / 'scripts/bluebuild/verify-image.sh') + ':/run/verify-image.sh:ro', image,
-            '/run/verify-image.sh', args.profile, REPOSITORY, kernel), timeout=600, env=docker_environment())
+            '/run/verify-image.sh', args.profile, REPOSITORY), timeout=600, env=docker_environment())
         report['status'] = 'success'
     except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError, KeyboardInterrupt) as error:
         report.update(status='error', error=str(error))

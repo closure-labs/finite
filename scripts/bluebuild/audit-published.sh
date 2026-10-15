@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 case "${CHANNEL:?}" in
-  finite|finite-next|finite-dev|finite-dev-next) ;;
+  finite|finite-dev) ;;
   *) echo 'Unsupported public channel' >&2; exit 2 ;;
 esac
 digest=$(skopeo --command-timeout 90s inspect --no-tags --format '{{.Digest}}' "docker://ghcr.io/closure-labs/finite:$CHANNEL")

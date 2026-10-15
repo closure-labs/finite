@@ -99,7 +99,7 @@ if [[ -r "${dmi_root}/sys_vendor" && -r "${dmi_root}/product_name" ]] &&
 	hardware=dell-xps-9350-intel
 fi
 case "${image_hardware}" in
-	generic-x86_64 | next-x86_64) ;;
+	generic-x86_64) ;;
 	*) echo "Unsupported Finite image hardware: ${image_hardware}" >&2; false ;;
 esac
 if ! roles=$(zenity --list --checklist \

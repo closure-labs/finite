@@ -1,16 +1,17 @@
 # Install and update
 
 Finite installs the Bluefin GNOME desktop on an x86_64 UEFI system. Choose
-`finite` for Bluefin or `finite-dev` for Bluefin DX. Choose
-`finite-next` or `finite-dev-next` when you need the pinned next kernel; the
-[Dell guide](dell-xps-9350.md) covers the XPS 13 9350.
+`finite` for Bluefin or `finite-dev` for Bluefin DX. Both retain the approved
+upstream kernel and modules; the [Dell guide](dell-xps-9350.md) covers the XPS 13
+9350. The former Next variants are retired; historical release assets remain
+available, but new installations should use one of the two active channels.
 
 ## Get an ISO
 
 Published releases provide durable downloads for each channel. The
 [release list](https://github.com/closure-labs/finite/releases) uses tags such as
-`finite-finite-0.8.0` for standard Finite and `finite-finite-dev-next-0.8.0` for
-development Next. Choose the channel recorded in `installation.json`.
+`finite-finite-0.8.0` for standard Finite and `finite-finite-dev-0.8.0` for
+the developer environment. Choose the channel recorded in `installation.json`.
 
 Download the release assets into one directory. Verify the checksum manifest
 with the committed public key before trusting its checksums:
@@ -84,7 +85,9 @@ sudo systemctl reboot
 ```
 
 Review the staged image in `bootc status` before rebooting. Use your selected
-channel in the command; for example, the DX next channel is `finite-dev-next`.
+channel in the command; the DX channel is `finite-dev`. To leave a retired Next
+variant, switch to the corresponding active channel with the same signature
+enforcement and review the staged deployment before rebooting.
 
 ## Update your system
 

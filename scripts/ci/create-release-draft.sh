@@ -7,7 +7,7 @@ unset MERGE_QUEUE_TOKEN COSIGN_PRIVATE_KEY COSIGN_PASSWORD
 version=$(<VERSION)
 [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
 case "${RELEASE_TAG:-}" in
-  finite-finite-"$version"|finite-finite-next-"$version"|finite-finite-dev-"$version"|finite-finite-dev-next-"$version") ;;
+  finite-finite-"$version"|finite-finite-dev-"$version") ;;
   *) exit 2 ;;
 esac
 test -s .bluebuild/release/SHA256SUMS

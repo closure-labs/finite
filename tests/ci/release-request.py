@@ -34,9 +34,9 @@ class RequestTests(unittest.TestCase):
                 self.assertEqual(request.validate(channel, tag, '0.8.0', '38639819537', iso), tag)
 
     def test_mismatched_or_unsafe_requests(self):
-        valid = ['finite-next', 'finite-finite-next-0.8.0', '0.8.0', '38639819537', '']
-        for index, value in ((0, 'latest'), (0, ''), (1, 'v0.8.0'),
-                             (1, 'finite-finite-0.8.0'), (1, 'finite-finite-next-0.7.0'),
+        valid = ['finite-dev', 'finite-finite-dev-0.8.0', '0.8.0', '38639819537', '']
+        for index, value in ((0, 'finite-next'), (0, 'finite-dev-next'), (0, 'latest'), (0, ''), (1, 'v0.8.0'),
+                             (1, 'finite-finite-0.8.0'), (1, 'finite-finite-dev-0.7.0'),
                              (1, '--latest'), (2, '00.8.0'), (2, '0.8.0\n'),
                              (2, '0.8.0-dev'), (3, ''), (3, '0'), (3, '123\n'),
                              (3, '../123'), (3, '1' * 21), (4, '0'), (4, '--help')):

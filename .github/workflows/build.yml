@@ -14,7 +14,7 @@ on:
         description: Select one channel for complete validation/publication, or retain automatic selection
         type: choice
         default: automatic
-        options: [automatic, finite, finite-next, finite-dev, finite-dev-next]
+        options: [automatic, finite, finite-dev]
       resume_run:
         description: Original trusted main build run for an existing candidate (requires target and resume_digest)
         type: string

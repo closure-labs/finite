@@ -58,10 +58,6 @@ class CandidatePull(unittest.TestCase):
             'digest': DIGEST, 'candidate': 'candidate-test',
             'buildIdentity': 'v1:' + 'b' * 64,
         }))
-        (root / 'sources').mkdir()
-        (root / 'sources/kernel-next.json').write_text(json.dumps({'release': 'test'}))
-        (root / 'files/security').mkdir(parents=True)
-        (root / 'files/security/kernel-generic.json').write_text(json.dumps({'release': 'generic-test'}))
         env = dict(os.environ, PATH=str(bindir) + ':' + os.environ['PATH'],
                    DIGEST=DIGEST, PULL_STATUSES=json.dumps(statuses),
                    SIGNATURE_STATUS=str(signature_status), GITHUB_SHA='local')
@@ -80,7 +76,7 @@ class CandidatePull(unittest.TestCase):
         self.assertFalse(any(c[0] == 'sleep' for c in calls))
         self.assertEqual((root / '.bluebuild/bluefin-dx-generic-image-ref.txt').read_text(), IMAGE + '\n')
         runtime = next(c for c in calls if c[:2] == ['docker', 'run'])
-        self.assertEqual(runtime[-1], 'generic-test')
+        self.assertEqual(runtime[-2:], ['bluefin-dx-generic', 'ghcr.io/closure-labs/finite'])
 
     def test_timeout_and_transient_failure_retry_the_same_digest(self):
         _, result, calls = self.run_inspection([124, 1, 0])

@@ -1,0 +1,172 @@
+name: Benchmark whole qualification reuse
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        type: choice
+        required: true
+        options: [bluefin-generic, bluefin-dx-generic]
+      origin_run:
+        description: Successful fresh main producer with matching qualification, at most 24 hours old
+        type: string
+        required: true
+      candidate:
+        description: Exact signed candidate sha256 digest
+        type: string
+        required: true
+      previous:
+        description: Exact predecessor sha256 digest that passed upgrade and rollback
+        type: string
+        required: true
+      identity:
+        description: Exact candidate v1 build identity
+        type: string
+        required: true
+      source_revision:
+        description: Exact immutable candidate source revision
+        type: string
+        required: true
+env:
+  FINITE_OPTIMIZED_CACHES: ${{ vars.FINITE_OPTIMIZED_CACHES }}
+  FINITE_CACHIX_WRITER: ${{ vars.FINITE_CACHIX_WRITER }}
+  FINITE_REUSE_INVENTORY: ${{ vars.FINITE_REUSE_INVENTORY }}
+  FINITE_GRYPE_DB_CACHE: ${{ vars.FINITE_GRYPE_DB_CACHE }}
+  FINITE_QUALIFICATION_REUSE: ${{ vars.FINITE_QUALIFICATION_REUSE }}
+  FINITE_QUALIFIED_ISO_PRESERVATION: ${{ vars.FINITE_QUALIFIED_ISO_PRESERVATION }}
+  FINITE_QUALIFIED_ISO_CHANNELS: ${{ vars.FINITE_QUALIFIED_ISO_CHANNELS }}
+permissions:
+  contents: read
+  actions: read
+  packages: read
+concurrency:
+  group: finite-qualification-reuse-diagnostic
+  cancel-in-progress: false
+jobs:
+  restore:
+    name: restore-${{ matrix.sample }}
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        sample: [1, 2, 3]
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SAMPLE: ${{ matrix.sample }}
+      PROFILE: ${{ inputs.profile }}
+      ORIGIN_RUN: ${{ inputs.origin_run }}
+      CANDIDATE: ${{ inputs.candidate }}
+      PREVIOUS: ${{ inputs.previous }}
+      IDENTITY: ${{ inputs.identity }}
+      SOURCE_REVISION: ${{ inputs.source_revision }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+        with:
+          cache-mode: none
+      - name: Install actual production reuse context tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-x86 qemu-utils ovmf xorriso skopeo mtools openssl python3-virt-firmware
+      - name: Restore and validate exact original qualification
+        run: >-
+          python3 scripts/ci/benchmark-qualification-reuse.py restore
+          --profile "$PROFILE" --origin-run "$ORIGIN_RUN" --repetition "$SAMPLE"
+          --candidate "$CANDIDATE" --previous "$PREVIOUS" --identity "$IDENTITY"
+          --source "$SOURCE_REVISION" --output .bluebuild/reuse-restore
+      - name: Add diagnostic sample receipt to bounded handoff
+        run: cp .bluebuild/reuse-restore/benchmark.json .bluebuild/reuse-restore/receipts/benchmark.json
+      - name: Save diagnostic-only acceptance handoff
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: qualification-benchmark-handoff-${{ inputs.profile }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.sample }}
+          path: .bluebuild/reuse-restore/receipts/*.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+      - name: Preserve restore measurements including failure
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: qualification-benchmark-report-restore-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.sample }}
+          path: .bluebuild/reuse-restore/benchmark.json
+          if-no-files-found: error
+          retention-days: 14
+
+  aggregate:
+    name: aggregate-${{ matrix.sample }}
+    needs: restore
+    if: always() && github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        sample: [1, 2, 3]
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SAMPLE: ${{ matrix.sample }}
+      PROFILE: ${{ inputs.profile }}
+      ORIGIN_RUN: ${{ inputs.origin_run }}
+      CANDIDATE: ${{ inputs.candidate }}
+      PREVIOUS: ${{ inputs.previous }}
+      IDENTITY: ${{ inputs.identity }}
+      SOURCE_REVISION: ${{ inputs.source_revision }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+        with:
+          cache-mode: none
+      - name: Authenticate transport and perform production aggregate revalidation
+        run: >-
+          python3 scripts/ci/benchmark-qualification-reuse.py aggregate
+          --profile "$PROFILE" --origin-run "$ORIGIN_RUN" --repetition "$SAMPLE"
+          --candidate "$CANDIDATE" --previous "$PREVIOUS" --identity "$IDENTITY"
+          --source "$SOURCE_REVISION" --output .bluebuild/reuse-aggregate
+      - name: Preserve aggregate measurements including failure
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: qualification-benchmark-report-aggregate-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.sample }}
+          path: .bluebuild/reuse-aggregate/benchmark.json
+          if-no-files-found: error
+          retention-days: 14
+
+  summarize:
+    needs: [restore, aggregate]
+    if: always() && github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Collect this attempt's small measurement receipts only
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPORT_PATTERN: qualification-benchmark-report-*-${{ github.run_id }}-${{ github.run_attempt }}-*
+        run: >-
+          gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY"
+          --pattern "$REPORT_PATTERN" --dir .bluebuild/reuse-reports
+      - name: Compare complete jobs and critical paths
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python3 scripts/ci/benchmark-qualification-reuse.py summarize
+          .bluebuild/reuse-reports .bluebuild/qualification-reuse-summary.json
+      - name: Save small diagnostic summary including incomplete results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: qualification-reuse-summary-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/qualification-reuse-summary.json
+          if-no-files-found: error
+          retention-days: 14

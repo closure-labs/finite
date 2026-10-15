@@ -12,7 +12,7 @@ import tempfile
 import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
-PROFILES = ('bluefin-generic', 'bluefin-next', 'bluefin-dx-generic', 'bluefin-dx-next')
+PROFILES = ('bluefin-generic', 'bluefin-dx-generic')
 DIGEST = re.compile(r'sha256:[a-f0-9]{64}')
 LIMIT = 2 * 1024 * 1024
 

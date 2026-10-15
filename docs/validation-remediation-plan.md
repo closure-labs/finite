@@ -1,5 +1,7 @@
 # Validation and remediation plan
 
+Historical plan: the later owner-approved [two-variant upstream kernel policy](upstream-kernel-variants.md) supersedes kernel replacement, ZFS removal and Next-variant instructions below. Preserve these observations as historical evidence; do not dispatch retired-variant work.
+
 Current rollout: [standard Finite qualified and promoted](signing-resume-evidence-2026-10-13.json).
 Run38467981855 at85a37e0c1b88 passed source/build, security policy, protected signing,
 Secure Boot/encrypted-root/SELinux-enforcing VM fresh installation, signed upgrade,

@@ -23,8 +23,7 @@ options_spec = importlib.util.spec_from_file_location('release_ci_options', Path
 ci_options = importlib.util.module_from_spec(options_spec)
 options_spec.loader.exec_module(ci_options)
 REPOSITORY = 'closure-labs/finite'
-PROFILES = {'finite': 'bluefin-generic', 'finite-next': 'bluefin-next',
-            'finite-dev': 'bluefin-dx-generic', 'finite-dev-next': 'bluefin-dx-next'}
+PROFILES = {'finite': 'bluefin-generic', 'finite-dev': 'bluefin-dx-generic'}
 
 
 def github(path):
@@ -119,7 +118,7 @@ def authenticated_iso(entry, run, acceptance, destination):
         raise ValueError('Qualified ISO archive lacks immutable trusted producer binding')
     iso = acceptance['qualifiedIso']
     names = {iso['name'], 'installation.json', 'signature.json', 'SHA256SUMS'}
-    if not re.fullmatch(r'finite-bluefin(?:-dx)?-(?:generic|next)\.iso', iso['name']):
+    if not re.fullmatch(r'finite-bluefin(?:-dx)?-generic\.iso', iso['name']):
         raise ValueError('Invalid qualified ISO filename')
     with tempfile.TemporaryFile() as archive:
         subprocess.run(['gh', 'api', f'repos/{REPOSITORY}/actions/artifacts/{entry["id"]}/zip'],

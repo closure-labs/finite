@@ -10,10 +10,6 @@ let
           name = "bluefin-generic";
           order = 40;
         };
-        next-x86_64 = {
-          name = "bluefin-next";
-          order = 10;
-        };
       };
     }
     {
@@ -26,10 +22,6 @@ let
           name = "bluefin-dx-generic";
           order = 30;
         };
-        next-x86_64 = {
-          name = "bluefin-dx-next";
-          order = 20;
-        };
       };
     }
   ];
@@ -40,15 +32,7 @@ let
       order = 10;
       bootc = true;
       homeManager = true;
-      imageHardware = ["generic-x86_64" "next-x86_64"];
-    }
-    {
-      name = "next-x86_64";
-      label = "Next kernel x86-64";
-      order = 20;
-      bootc = true;
-      homeManager = false;
-      imageHardware = [];
+      imageHardware = ["generic-x86_64"];
     }
     {
       name = "dell-xps-9350-intel";
@@ -56,7 +40,7 @@ let
       order = 30;
       bootc = false;
       homeManager = true;
-      imageHardware = ["generic-x86_64" "next-x86_64"];
+      imageHardware = ["generic-x86_64"];
     }
   ];
   roles = [

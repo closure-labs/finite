@@ -5,7 +5,7 @@ on:
       channel:
         type: choice
         required: true
-        options: [finite, finite-next, finite-dev, finite-dev-next]
+        options: [finite, finite-dev]
       prepared_run:
         description: Original release.yml run whose preparation and fresh scan succeeded
         type: string

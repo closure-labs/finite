@@ -15,7 +15,7 @@ on:
         type: choice
         required: true
         default: finite
-        options: [finite, finite-next, finite-dev, finite-dev-next]
+        options: [finite, finite-dev]
       digest:
         description: Verified image digest (sha256 followed by 64 hex digits)
         type: string

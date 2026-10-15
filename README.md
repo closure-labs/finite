@@ -7,9 +7,8 @@ own packages, and keep your configuration across system updates.
 ## Get started
 
 1. **Choose an image.** Start with `finite` for everyday use, or
-   `finite-dev` for Bluefin's developer environment. The `finite-next` and
-   `finite-dev-next` variants provide a pinned newer Fedora kernel for hardware
-   that needs it.
+   `finite-dev` for Bluefin's developer environment. Both preserve the kernel
+   and modules supplied by their approved Bluefin base.
 2. **Install Finite.** Follow the [installation guide](docs/installation.md) to
    get a verified ISO and install it. Every image runs the Bluefin GNOME desktop.
 3. **Set up your apps.** At first login, select your roles and optional packages.
@@ -18,15 +17,16 @@ own packages, and keep your configuration across system updates.
 | Your environment | Update channel |
 | --- | --- |
 | Bluefin | `finite` (also `latest`) |
-| Bluefin with the next kernel | `finite-next` |
 | Bluefin DX | `finite-dev` |
-| Bluefin DX with the next kernel | `finite-dev-next` |
+
+The former `finite-next` and `finite-dev-next` variants are retired. Their
+published releases remain historical downloads; new builds and updates use the
+two channels above.
 
 Images are published at `ghcr.io/closure-labs/finite`. For the Dell XPS 13 9350,
-see the [hardware guide](docs/dell-xps-9350.md). Physical webcams use their
-hardware drivers; optional v4l2loopback virtual-camera support is not included.
-Host ZFS support is not included. Use Btrfs or another supported host filesystem;
-ZFS storage can run in a separate virtual machine.
+see the [hardware guide](docs/dell-xps-9350.md). Camera, virtual-camera and
+filesystem module providers remain as supplied by the approved upstream image.
+Hardware support depends on that base and the installed kernel.
 
 ## Make it yours
 
@@ -59,6 +59,6 @@ both, including returning to a previous system deployment.
 - [Develop Finite](docs/development.md)
 - [What's new in 0.8.0](CHANGELOG.md#080---2026-10-14)
 
-BlueBuild recipes define the four images. Nix stages the Home Manager template
+BlueBuild recipes define the two active images. Nix stages the Home Manager template
 and pinned installation assets. The [documentation index](docs/README.md) links
 to the build, signing, release and hardware references.

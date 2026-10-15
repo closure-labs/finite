@@ -47,7 +47,7 @@ def observations(enforcement, kernel_enforcement, permissive, processes, listene
         # SSH has just succeeded. An empty list is a collection fault, not proof
         # that the guest has no exposed services.
         raise ValueError('Candidate listener inventory is empty or excessive')
-    if profile not in ('bluefin-generic', 'bluefin-next', 'bluefin-dx-generic', 'bluefin-dx-next'):
+    if profile not in ('bluefin-generic', 'bluefin-dx-generic'):
         raise ValueError('Unknown guest profile')
     return {'schema': 1, 'status': 'pass', 'profile': profile,
             'checks': {'selinuxEnforcing': True, 'permissiveDomainsCollected': True,

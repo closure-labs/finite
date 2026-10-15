@@ -22,16 +22,14 @@ def load(name, path):
 
 image = load('image_identity', 'scripts/ci/image_identity.py')
 qualification = load('image_qualification_context', 'scripts/bluebuild/qualification-context.py')
-PROFILES = ('bluefin-generic', 'bluefin-next', 'bluefin-dx-generic', 'bluefin-dx-next')
+PROFILES = ('bluefin-generic', 'bluefin-dx-generic')
 PAYLOAD = '/nix/store/fixture-image-payload.drv'
 BUILD_FILES = (
     'cosign.pub', 'sources/cosign-runtime.json', 'scripts/ci/cosign-runtime.py',
     'scripts/ci/image_identity.py', 'sources/bluebuild-cli.json', 'sources/bluebuild-cli.pub',
     'sources/bluefin-trust.json', 'sources/bluefin.pub',
-    'recipes/shared/base.yml', 'recipes/shared/final.yml', 'recipes/shared/next.yml',
-    'files/scripts/nix-install.sh', 'files/scripts/kernel-next.sh',
-    'files/scripts/kernel-generic-security.py', 'files/security/kernel-generic.json',
-    'files/security/fedora-44.pub', 'files/dnf/terra.repo',
+    'recipes/shared/base.yml', 'recipes/shared/final.yml',
+    'files/scripts/nix-install.sh', 'files/scripts/upstream-kernel.py', 'files/dnf/terra.repo',
     'files/system/usr/libexec/finite/guest-check.py',
     'scripts/bluebuild/build.sh', 'scripts/bluebuild/stage.sh',
     'scripts/bluebuild/install-cli.sh', 'scripts/bluebuild/inspect-built.sh',
@@ -81,10 +79,6 @@ class ImageInputContract(unittest.TestCase):
 
     def test_build_payload_and_trust_changes_invalidate_every_image(self):
         for relative in BUILD_FILES:
-            if relative in ('recipes/shared/next.yml', 'files/scripts/kernel-next.sh',
-                            'files/scripts/kernel-generic-security.py',
-                            'files/security/kernel-generic.json', 'files/security/fedora-44.pub'):
-                continue
             with self.subTest(path=relative):
                 before = self.values()
                 path = self.root / relative
@@ -103,21 +97,6 @@ class ImageInputContract(unittest.TestCase):
                 self.assertNotEqual(before[profile], after[profile])
                 self.assertTrue(all(before[other] == after[other] for other in PROFILES if other != profile))
 
-    def test_kernel_inputs_preserve_generic_and_next_boundaries(self):
-        cases = {
-            'recipes/shared/next.yml': True,
-            'files/scripts/kernel-next.sh': True,
-            'files/scripts/kernel-generic-security.py': False,
-            'files/security/kernel-generic.json': False,
-            'files/security/fedora-44.pub': False,
-        }
-        for relative, next_only in cases.items():
-            with self.subTest(path=relative):
-                before = self.values()
-                path = self.root / relative
-                path.write_text(path.read_text() + 'new kernel input\n')
-                for profile, value in self.values().items():
-                    self.assertEqual(before[profile] != value, profile.endswith('-next') == next_only)
 
     def test_unknown_helpers_and_installer_files_are_conservative_inputs(self):
         for relative in ('scripts/bluebuild/new-build-helper.py',
@@ -168,9 +147,9 @@ class ImageInputContract(unittest.TestCase):
 
         with patch.object(image.json, 'dumps', side_effect=capture):
             current = image.identity(PROFILES[0], self.root, PAYLOAD)
-        self.assertEqual(encoded[0]['schema'], 3)
+        self.assertEqual(encoded[0]['schema'], 4)
         self.assertRegex(current, r'^v1:[0-9a-f]{64}$')
-        for old_schema in (1, 2):
+        for old_schema in (1, 2, 3):
             old_contract = {**encoded[0], 'schema': old_schema}
             old = 'v1:' + hashlib.sha256(dumps(old_contract, sort_keys=True,
                                             separators=(',', ':')).encode()).hexdigest()

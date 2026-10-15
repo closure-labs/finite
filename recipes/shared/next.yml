@@ -1,6 +1,0 @@
-modules:
-  - type: script@v1
-    scripts:
-      - kernel-next.sh
-  # Installing kernel RPMs in a container does not generate the boot initramfs.
-  - type: initramfs@v1

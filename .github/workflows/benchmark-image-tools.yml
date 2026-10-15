@@ -12,12 +12,12 @@ on:
         description: Signed candidate profile for diagnostic qualification
         type: choice
         default: bluefin-dx-generic
-        options: [bluefin-generic, bluefin-next, bluefin-dx-generic, bluefin-dx-next]
+        options: [bluefin-generic, bluefin-dx-generic]
       channel:
         description: Matching ongoing update channel
         type: choice
         default: finite-dev
-        options: [finite, finite-next, finite-dev, finite-dev-next]
+        options: [finite, finite-dev]
       digest:
         description: Exact signed candidate sha256 digest
         type: string
@@ -58,17 +58,17 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - channel: finite-next
-            selection: finite-next
+          - channel: finite
+            selection: finite
             expected: "true"
-          - channel: finite-dev-next
-            selection: finite-next
+          - channel: finite-dev
+            selection: finite
             expected: "false"
-          - channel: finite-dev-next
+          - channel: finite-dev
             selection: all
             expected: "true"
           - channel: finite
-            selection: finite-dev-next,finite
+            selection: finite-dev,finite
             expected: "true"
     env:
       FINITE_QUALIFIED_ISO_PRESERVATION: "true"

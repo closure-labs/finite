@@ -8,7 +8,7 @@ import subprocess
 
 # This is the hashed contract version, not the evidence transport version.
 # A contract change requires new image bytes/evidence; never relabel old images.
-IMAGE_INPUT_SCHEMA = 3
+IMAGE_INPUT_SCHEMA = 4
 
 # These reviewed inputs run after an immutable OS image has been assembled.
 # qualification-context.py binds the VM/ISO inputs separately. Keep this list
@@ -41,9 +41,11 @@ QUALIFICATION_ONLY = {
 
 
 def identity(profile, root, payload=None):
+    if profile not in ('bluefin-generic', 'bluefin-dx-generic'):
+        raise ValueError('Unsupported image profile')
     root = Path(root)
     if payload is None:
-        output = 'image-payload-next' if profile.endswith('-next') else 'image-payload'
+        output = 'image-payload'
         payload = subprocess.check_output(
             ['nix', 'eval', '--accept-flake-config', '--no-update-lock-file',
              '--no-write-lock-file', '--raw', '.#' + output + '.drvPath'],
@@ -77,15 +79,9 @@ def identity(profile, root, payload=None):
         # Current security policy remains bound by policySha256 before signing.
         if relative in QUALIFICATION_ONLY:
             continue
-        if not profile.endswith('-next') and relative in ('recipes/shared/next.yml', 'files/scripts/kernel-next.sh'):
-            continue
-        if profile.endswith('-next') and relative in (
-                'files/scripts/kernel-generic-security.py', 'files/security/kernel-generic.json',
-                'files/security/fedora-44.pub'):
-            continue
         content = str(path.readlink()).encode() if path.is_symlink() else path.read_bytes()
         entries.append([relative, bool(path.lstat().st_mode & 0o111), hashlib.sha256(content).hexdigest()])
-    # Schema 3 changes the hashed input contract; v1 remains the transport
+    # Schema 4 binds the two upstream-kernel variants; v1 remains the transport
     # format accepted by existing evidence readers. Old hashes are not migrated:
     # candidates built under the former contract must be rebuilt and qualified.
     value = {'schema': IMAGE_INPUT_SCHEMA, 'profile': profile, 'payload': payload, 'files': entries}

@@ -17,11 +17,17 @@ labels:
   io.finite.foundation: bluefin
   io.finite.hardware: generic-x86_64
 modules:
+  - type: script@v1
+    snippets:
+      - install -Dm755 "$CONFIG_DIRECTORY/scripts/upstream-kernel.py" /usr/libexec/finite/check-upstream-kernel
+      - python3 /usr/libexec/finite/check-upstream-kernel snapshot
   - from-file: shared/base.yml
   - type: script@v1
     snippets:
-      - python3 "$CONFIG_DIRECTORY/scripts/kernel-generic-security.py" --profile bluefin-generic
       - bash "$CONFIG_DIRECTORY/scripts/profile.sh" bluefin-generic bluefin generic-x86_64 finite
-  # The replacement kernel needs its own encrypted-root boot payload.
+  # Rebuild only the derived boot archive for encrypted-root/FIDO2 support.
   - type: initramfs@v1
+  - type: script@v1
+    snippets:
+      - python3 /usr/libexec/finite/check-upstream-kernel verify
   - from-file: shared/final.yml

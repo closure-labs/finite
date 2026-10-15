@@ -7,7 +7,7 @@ import re
 import subprocess
 import sys
 
-CHANNELS = ('finite', 'finite-next', 'finite-dev', 'finite-dev-next')
+CHANNELS = ('finite', 'finite-dev')
 
 
 def validate(channel, tag, version, build_run, iso_run=''):

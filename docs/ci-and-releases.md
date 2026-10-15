@@ -1,6 +1,6 @@
 # CI and releases
 
-BlueBuild builds the four recipes against approved Bluefin and Bluefin DX
+BlueBuild builds the two active recipes against approved Bluefin and Bluefin DX
 `stable` digests committed as `image-version: stable@sha256:…`. Each profile publishes independently to `ghcr.io/closure-labs/finite`.
 
 ## Build and validate
@@ -15,9 +15,8 @@ dispatches. It selects work from the complete Git diff for each event:
 | Tests, automation, devenv lock or dependency workflows | Documentation and Nix/runtime checks |
 | Nix modules, Home Manager, flake lock, Nix setup or version | Documentation, Nix/runtime checks and images whose payload derivation changed |
 | One recipe | Checks and that recipe's image |
-| Shared next-kernel recipe or kernel script | Checks and both next-kernel images |
-| Shared system files, signing, build CI or other paths | Checks and all four images |
-| Daily schedule or ordinary manual dispatch | All checks and all four images |
+| Shared system files, signing, build CI or other paths | Checks and both active images |
+| Daily schedule or ordinary manual dispatch | All checks and both active images |
 | Manual dispatch with `reconcile=true` | All checks and only channels that differ from approved image-input identities or base digests |
 
 Fast checks finish before image builds start. Documentation-only pull requests
@@ -83,16 +82,14 @@ timeout and three download attempts. The stall timeout measures inactivity,
 not total transfer duration. Verbose Nix output reports fetch and evaluation
 activity during checks; test and evaluation failures remain fatal.
 
-For Nix changes, CI evaluates `image-payload.drvPath` and
-`image-payload-next.drvPath` at the base revision and the actual checked-out
+For Nix changes, CI evaluates `image-payload.drvPath` at the base revision and the actual checked-out
 PR, merge-queue or main revision. These identities include their declared Nix
 dependencies. Matching identities skip the corresponding image rebuilds;
-changed identities select the two generic or two next
-profiles. Evaluation uses the committed lock file and records both identities
+changed identities select both active profiles. Evaluation uses the committed lock file and records both identities
 in the job summary. It evaluates the dependency graph without building payloads.
 
 The Nix comparison adds to images selected by recipe and system-file changes.
-An evaluation failure selects all four images. The daily full build also
+An evaluation failure selects both active images. The daily full build also
 checks floating package and BlueBuild inputs outside Nix's dependency graph.
 
 The required `CI gate` runs for every event. It requires success from selected
@@ -145,7 +142,12 @@ identical authenticated qualification for at most 24 hours, preserving its
 original time; new digests require new tests. Missing or failed acceptance blocks
 promotion. The `qualify` dispatch input bypasses reuse.
 See [workstation qualification](workstation-qualification.md) for enforcement,
-signed kernel maintenance and durable release bundles.
+upstream kernel/module preservation and durable release bundles.
+
+The active channels are `finite` and `finite-dev`; retired Next variants are
+rejected by current selectors. Historical Next releases and dated audit records
+remain available. The kernel-update workflow is retired because kernel and
+module updates now arrive through authenticated upstream image updates.
 
 ## Bluefin updates and recovery
 
@@ -156,8 +158,8 @@ platforms, and compares them with the committed recipe digests. For an OCI index
 it selects the unique Linux amd64 child so unrelated architecture updates do not
 trigger builds. Both lookups must succeed before any recipe is changed.
 
-Changed digests produce one `automation/update-bluefin` PR. Both profiles for each
-changed foundation use the same new digest. Existing change selection builds only
+Changed digests produce one `automation/update-bluefin` PR. The active profile for each
+changed foundation uses the new digest. Existing change selection builds only
 those profiles, and the trusted updater waits for validation before enabling
 protected merge-queue integration. A successful short resolution job records the
 observed digests and check time in its summary and a 14-day evidence artifact,
@@ -300,7 +302,7 @@ ISO construction still creates unique installation tags in the existing registry
 ## SecretSpec and local tasks
 
 `secretspec.toml` declares credentials, signing keys, six CI pilot switches and the
-`FINITE_QUALIFIED_ISO_CHANNELS` selector. The selector defaults to `finite-next`;
+`FINITE_QUALIFIED_ISO_CHANNELS` selector. The selector defaults to `finite`;
 use comma-separated supported channel names or `all` for a broader rollout.
 Preservation, predecessor ISO reuse, strict release fallback and pruning apply
 only to selected channels while the preservation switch is enabled.
@@ -399,7 +401,7 @@ Scanner errors, incomplete inventories and expired evidence block publication.
 Exceptions require a reviewed exact digest, component and advisory, justification,
 reviewer, approval date and expiry within 30 days. They are committed changes,
 never a workflow input. The scheduled **Audit published image security** workflow
-rescans all four public channels daily and can also run manually. It reports
+rescans both active public channels daily and can also run manually. It reports
 new vulnerabilities without automatically replacing or rolling back an image.
 Release preparation runs a fresh enforcing scan of its qualified digest.
 

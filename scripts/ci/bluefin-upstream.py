@@ -23,9 +23,7 @@ ROOT = Path(__file__).resolve().parents[2]
 REPOSITORY = 'ghcr.io/closure-labs/finite'
 PROFILES = {
     'bluefin-generic': ('bluefin', ['finite', 'latest']),
-    'bluefin-next': ('bluefin', ['finite-next']),
     'bluefin-dx-generic': ('bluefin-dx', ['finite-dev']),
-    'bluefin-dx-next': ('bluefin-dx', ['finite-dev-next']),
 }
 DIGEST = re.compile(r'sha256:[0-9a-f]{64}')
 TRANSIENT = re.compile(r'too many requests|429|50[0-9]|timeout|timed out|connection reset|connection refused|temporary failure|no such host|server misbehaving|network is unreachable|unexpected EOF|TLS handshake', re.I)

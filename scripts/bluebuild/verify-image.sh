@@ -3,7 +3,10 @@
 set -euo pipefail
 expected="${1:?expected profile required}"
 repository="${2:-ghcr.io/closure-labs/finite}"
-expected_kernel="${3:-}"
+case "$expected" in
+  bluefin-generic|bluefin-dx-generic) ;;
+  *) echo 'Unsupported image profile' >&2; exit 2 ;;
+esac
 [[ $(cat /usr/share/finite/build-profile) == "$expected" ]]
 jq -e --arg profile "$expected" '
   .schema == 1 and .profile == $profile and
@@ -11,27 +14,14 @@ jq -e --arg profile "$expected" '
 ' /usr/share/finite/profile.json >/dev/null
 rpm -q cloud-init jq nix nix-daemon nix-filesystem nix-system yq zenity \
   fprintd fprintd-pam libfprint pam-u2f pamu2fcfg libfido2 opensc pcsc-lite yubikey-manager
-mapfile -t kernels < <(rpm -q --qf '%{EVR}.%{ARCH}\n' kernel-core)
+mapfile -t kernels < <(rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-core)
 [[ ${#kernels[@]} == 1 ]]
-[[ -n $expected_kernel && ${kernels[0]} == "$expected_kernel" ]]
 [[ ${kernels[0]} == "$(jq -r .kernelRelease /usr/share/finite/profile.json)" ]]
-for package in kmod-v4l2loopback v4l2loopback kmod-zfs zfs python3-pyzfs; do
-  if rpm -q "$package" >/dev/null 2>&1; then
-    echo "Unsupported host kernel/storage package remains installed: $package" >&2
-    exit 1
-  fi
-done
-if modinfo -k "${kernels[0]}" -F filename zfs >/dev/null 2>&1; then
-  echo 'Unsupported ZFS kernel module remains available' >&2
-  exit 1
-fi
+# The receipt was captured from the authenticated Bluefin base before addons.
+# It binds inherited RPM NEVRAs and kernel/module bytes, including ZFS and any
+# upstream camera modules. Trust belongs to that preserved upstream set.
+python3 /usr/libexec/finite/check-upstream-kernel verify
 bash /usr/libexec/finite/check-initramfs "${kernels[0]}"
-if [[ $expected == *-next ]]; then
-  for module in intel_cvs intel_ipu7 intel_ipu7_isys ipu_bridge ov02c10; do
-    [[ $(modinfo -k "${kernels[0]}" -F intree "$module") == Y ]]
-    [[ $(modinfo -k "${kernels[0]}" -F signer "$module") == *Fedora* ]]
-  done
-fi
 test -s /usr/lib/finite/determinate-nix-seed/receipt.json
 test -x /usr/lib/finite/determinate-nix-seed/nix-installer
 test -d /usr/lib/finite/determinate-nix-seed/store

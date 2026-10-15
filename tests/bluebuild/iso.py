@@ -29,7 +29,7 @@ elif name=='skopeo':
   digest=os.environ['DIGEST']
   if os.environ.get('MOVED_CHANNEL') and args[-1].endswith(':finite'): digest='sha256:'+'b'*64
   if '--format' in args: print(digest)
-  else: print(json.dumps({'Digest':digest,'Labels':{'io.finite.profile':'bluefin-next' if os.environ.get('MISMATCH_PROFILE') else 'bluefin-generic'}}))
+  else: print(json.dumps({'Digest':digest,'Labels':{'io.finite.profile':'bluefin-dx-generic' if os.environ.get('MISMATCH_PROFILE') else 'bluefin-generic'}}))
 elif name=='sudo':
  assert args[0:2]==['bluebuild','generate-iso']
  assert args[args.index('--run-driver')+1]=='docker'
@@ -179,7 +179,7 @@ else:
 
     def test_missing_expired_and_ambiguous_evidence_cannot_download(self):
         for artifacts in [[], [self.artifact(1, expired=True)],
-                          [self.artifact(1), self.artifact(2, channel='finite-next')]]:
+                          [self.artifact(1), self.artifact(2, channel='finite-dev')]]:
             with self.subTest(artifacts=artifacts):
                 result, selected = self.download([{'artifacts': artifacts}])
                 self.assertNotEqual(result.returncode, 0)

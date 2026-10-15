@@ -1,7 +1,7 @@
 # Dell XPS 13 9350
 
-Choose `finite-next` for Bluefin or `finite-dev-next` for Bluefin DX on the XPS 13 9350.
-Both provide the pinned Fedora kernel `7.2.0-61.fc45.x86_64`. Follow the
+Choose `finite` for Bluefin or `finite-dev` for Bluefin DX on the XPS 13 9350.
+Both preserve the kernel and modules supplied by the approved upstream Bluefin image. Follow the
 [installation and update guide](installation.md) to select the signed channel
 and retain the previous deployment. Check the running kernel with `uname -r`.
 
@@ -30,8 +30,9 @@ capture on this hardware. WebRTC uses the libcamera source exposed by WirePlumbe
 
 ## IPU7 camera
 
-Fedora 7.2 supplies the CVS bridge, IPU bridge, IPU7, IPU7 ISYS, and OV02C10
-sensor drivers in-tree. Verify the installed provider and camera graph with:
+Camera driver availability follows the selected upstream kernel and modules.
+Verify the CVS bridge, IPU bridge, IPU7, IPU7 ISYS, and OV02C10 providers and
+camera graph on the installed system with:
 
 ```console
 uname -r
@@ -48,6 +49,6 @@ wpctl status
 In Firefox, `media.webrtc.camera.allow-pipewire` must be `true` in
 `about:config`. Home Manager supplies this setting through the Firefox package policy.
 
-Module paths must be below the running release's `kernel/` directory, `intree`
-must be `Y`, and the signer must be the Fedora kernel signing key. See
+Check that module paths belong to the running release and signatures match
+the upstream provider. In-tree camera drivers report `intree` as `Y`. See
 [Secure Boot status](dell-xps-9350-secure-boot.md) for the trust contract.

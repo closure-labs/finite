@@ -11,8 +11,8 @@ ROOT = Path(__file__).resolve().parents[2]
 DIGEST = re.compile(r'sha256:[0-9a-f]{64}')
 REVISION = re.compile(r'[0-9a-f]{40}')
 IDENTITY = re.compile(r'v1:[0-9a-f]{64}')
-PROFILES = {'bluefin-generic': 'bluefin', 'bluefin-next': 'bluefin',
-            'bluefin-dx-generic': 'bluefin-dx', 'bluefin-dx-next': 'bluefin-dx'}
+PROFILES = {'bluefin-generic': 'bluefin',
+            'bluefin-dx-generic': 'bluefin-dx'}
 
 
 def read(path):

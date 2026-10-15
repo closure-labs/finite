@@ -27,7 +27,6 @@ def load(name, path):
 
 
 identity = load('image_identity_test', 'scripts/ci/image_identity.py')
-kernel = load('kernel_update_test', 'scripts/ci/kernel-update.py')
 release = load('release_test', 'scripts/bluebuild/release-evidence.py')
 publication = load('publication_reliability', 'scripts/bluebuild/publication.py')
 unlock = load('unlock_vm_test', 'scripts/bluebuild/unlock-vm.py')
@@ -80,7 +79,7 @@ class ImageIdentity(unittest.TestCase):
         directory.mkdir(parents=True)
         policy = directory / 'image-policy.json'
         policy.write_text('{"mode":"strict"}\n')
-        for profile in ('bluefin-generic', 'bluefin-next'):
+        for profile in ('bluefin-generic', 'bluefin-dx-generic'):
             with self.subTest(profile=profile):
                 before = self.value(profile)
                 policy.write_text('{"mode":"upstream-maintained-risk"}\n')
@@ -103,12 +102,6 @@ class ImageIdentity(unittest.TestCase):
         path.write_text(path.read_text() + '\n')
         self.assertNotEqual(before, self.value())
 
-    def test_next_recipe_script_does_not_change_generic_identity(self):
-        generic, next_image = self.value(), self.value('bluefin-next')
-        path = self.root / 'files/scripts/kernel-next.sh'
-        path.write_text(path.read_text() + '\n')
-        self.assertEqual(generic, self.value())
-        self.assertNotEqual(next_image, self.value('bluefin-next'))
 
     def test_mode_changes_are_image_inputs(self):
         before = self.value()
@@ -117,124 +110,6 @@ class ImageIdentity(unittest.TestCase):
         self.assertNotEqual(before, self.value())
 
 
-class KernelUpdates(unittest.TestCase):
-    def setUp(self):
-        # Keep version scenarios independent of the rolling production lock.
-        temporary = tempfile.TemporaryDirectory()
-        self.addCleanup(temporary.cleanup)
-        self.root = Path(temporary.name)
-        sources = self.root / 'sources'
-        sources.mkdir()
-        key = b'Fixture Fedora signing key\n'
-        (sources / 'fedora-45.pub').write_bytes(key)
-        self.policy = {'schema': 1, 'series': '7.2', 'fedora': 45, 'kojiTag': 'f45',
-                       'architecture': 'x86_64', 'keyId': 'f577861e',
-                       'keySha256': hashlib.sha256(key).hexdigest(), 'maxLagDays': 7}
-        release = '7.2.0-61.fc45.x86_64'
-        self.current = {'schema': 1, 'release': release,
-                        'baseUrl': 'https://kojipkgs.fedoraproject.org/packages/kernel/7.2.0/61.fc45/data/signed/f577861e/x86_64',
-                        'packages': [{'name': name, 'file': name + '-' + release + '.rpm',
-                                      'sha256': 'a' * 64} for name in kernel.PACKAGES],
-                        'requiredModules': ['intel_ipu7']}
-        (sources / 'kernel-policy.json').write_text(json.dumps(self.policy))
-        (sources / 'kernel-next.json').write_text(json.dumps(self.current))
-        self.build = {'version': '7.2.1', 'release': '62.fc45'}
-
-    def test_complete_candidate_uses_signed_source(self):
-        proposed = kernel.candidate(self.policy, self.current, self.build)
-        self.assertIn('/data/signed/f577861e/x86_64', proposed['baseUrl'])
-        self.assertEqual([package['name'] for package in proposed['packages']], kernel.PACKAGES)
-        self.assertEqual(proposed['requiredModules'], self.current['requiredModules'])
-
-    def test_no_change_is_noop(self):
-        self.assertIsNone(kernel.candidate(self.policy, self.current, {'version': '7.2.0', 'release': '61.fc45'}))
-
-    def test_stream_changes_downgrades_and_incomplete_locks_fail(self):
-        for build in ({'version': '7.3.0', 'release': '62.fc45'},
-                      {'version': '7.2.1', 'release': '62.fc46'},
-                      {'version': '7.2.0', 'release': '60.fc45'},
-                      {'version': '../7.2.1', 'release': '62.fc45'}):
-            with self.subTest(build=build), self.assertRaises(ValueError):
-                kernel.candidate(self.policy, self.current, build)
-        self.current['packages'].pop()
-        with self.assertRaises(ValueError):
-            kernel.candidate(self.policy, self.current, self.build)
-
-    def test_authentication_requires_signatures_and_package_identity(self):
-        proposed = kernel.candidate(self.policy, self.current, self.build)
-        def download(_url, path):
-            path.write_bytes(b'RPM fixture')
-        for signature in ('Header SHA256 digest: OK', 'RSA signature: NOKEY'):
-            with patch.object(kernel, 'download', side_effect=download), patch.object(kernel.subprocess, 'run'), \
-                    patch.object(kernel.subprocess, 'check_output', return_value=signature), self.assertRaises(ValueError):
-                kernel.authenticate(copy.deepcopy(proposed), self.policy, self.root)
-        with patch.object(kernel, 'download', side_effect=download), patch.object(kernel.subprocess, 'run'), \
-                patch.object(kernel.subprocess, 'check_output', side_effect=['RSA signature: OK', 'wrong identity']), self.assertRaises(ValueError):
-            kernel.authenticate(copy.deepcopy(proposed), self.policy, self.root)
-
-    def test_successful_authentication_hashes_every_package(self):
-        proposed = kernel.candidate(self.policy, self.current, self.build)
-        responses = []
-        for package in proposed['packages']:
-            responses.extend(['RSA signature: OK', package['name'] + '\t' + proposed['release']])
-        with patch.object(kernel, 'download', side_effect=lambda _url, path: path.write_bytes(b'RPM fixture')), \
-                patch.object(kernel.subprocess, 'run'), patch.object(kernel.subprocess, 'check_output', side_effect=responses):
-            authenticated = kernel.authenticate(proposed, self.policy, self.root)
-        for package in authenticated['packages']:
-            self.assertEqual(package['sha256'], hashlib.sha256(b'RPM fixture').hexdigest())
-
-    def test_failed_download_does_not_write_lock(self):
-        lock = self.root / 'sources/kernel-next.json'
-        before = lock.read_bytes()
-        with patch.object(kernel, 'ROOT', self.root), patch.object(sys, 'argv', ['kernel-update']), \
-                patch.object(kernel, 'latest', return_value=self.build), patch.object(kernel.subprocess, 'run'), \
-                patch.object(kernel, 'download', side_effect=RuntimeError('unavailable')):
-            with self.assertRaises(RuntimeError):
-                kernel.main()
-        self.assertEqual(before, lock.read_bytes())
-
-    def check_freshness(self, build, now):
-        output = io.StringIO()
-        with patch.object(kernel, 'ROOT', self.root), patch.object(sys, 'argv', ['kernel-update', '--check']), \
-                patch.object(kernel, 'latest', return_value=build), patch.object(kernel, 'authenticate') as authenticate, \
-                patch.object(kernel, 'datetime', wraps=datetime) as clock, patch.object(sys, 'stdout', output), \
-                patch.dict(os.environ, {'GITHUB_OUTPUT': str(self.root / 'output'),
-                                        'GITHUB_STEP_SUMMARY': str(self.root / 'summary')}):
-            clock.now.return_value = now
-            try:
-                kernel.main()
-            finally:
-                authenticate.assert_not_called()
-                self.assertEqual(json.loads((self.root / 'sources/kernel-next.json').read_text()), self.current)
-        return json.loads(output.getvalue())
-
-    def test_current_lock_is_fresh_without_timestamp(self):
-        status = self.check_freshness({'version': '7.2.0', 'release': '61.fc45'}, datetime.now(timezone.utc))
-        self.assertFalse(status['changed'])
-
-    def test_recent_update_does_not_fail_freshness(self):
-        now = datetime(2026, 9, 21, tzinfo=timezone.utc)
-        build = {**self.build, 'completion_time': (now - timedelta(days=2)).isoformat()}
-        status = self.check_freshness(build, now)
-        self.assertEqual(status['ageDays'], 2)
-        self.assertTrue(status['changed'])
-
-    def test_freshness_uses_actual_timezone_and_accepts_exact_boundary(self):
-        now = datetime(2026, 9, 21, tzinfo=timezone.utc)
-        build = {**self.build, 'completion_time': '2026-09-13T19:00:00-05:00'}
-        self.assertEqual(self.check_freshness(build, now)['ageDays'], 7)
-
-    def test_overdue_update_reports_versions_and_configured_limit(self):
-        self.policy['maxLagDays'] = 3
-        (self.root / 'sources/kernel-policy.json').write_text(json.dumps(self.policy))
-        now = datetime(2026, 9, 21, tzinfo=timezone.utc)
-        build = {**self.build, 'completion_time': '2026-09-17 00:00:00'}
-        with self.assertRaisesRegex(RuntimeError, r'7\.2\.1-62.*4\.0 days \(limit: 3\).*7\.2\.0-61'):
-            self.check_freshness(build, now)
-        self.assertEqual((self.root / 'output').read_text(), 'changed=true\n')
-        summary = (self.root / 'summary').read_text()
-        self.assertIn('limit: 3 days', summary)
-        self.assertIn('automation/update-kernel pull request', summary)
 
 
 class ReleaseEvidence(unittest.TestCase):
@@ -271,7 +146,7 @@ class ReleaseEvidence(unittest.TestCase):
         prefix = 'image-bluefin-generic-123-'
         artifacts = [{'name': prefix + '1', 'expired': False},
                      {'name': prefix + '2', 'expired': False},
-                     {'name': 'image-bluefin-next-123-3', 'expired': False}]
+                     {'name': 'image-bluefin-dx-generic-123-3', 'expired': False}]
         self.assertEqual(release.latest_artifact(artifacts, prefix), prefix + '2')
         with self.assertRaises(ValueError):
             release.latest_artifact([{'name': prefix + '1', 'expired': True}], prefix)

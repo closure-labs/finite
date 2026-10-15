@@ -16,7 +16,7 @@ RELATED_ADVISORY = re.compile(r'(?:' + ADVISORY.pattern + r'|FEDORA(?:-EPEL)?-[0
                               r'(?:PYSEC|RUSTSEC|OSV)-[0-9]{4}-[0-9]+)')
 RISK_CLASSES = {'desktop-takeover', 'local-privilege-escalation', 'container-escape',
                 'authentication-bypass', 'tls-identity-bypass', 'major-data-loss', 'unresolved-serious'}
-PROFILES = {'bluefin-generic', 'bluefin-next', 'bluefin-dx-generic', 'bluefin-dx-next'}
+PROFILES = {'bluefin-generic', 'bluefin-dx-generic'}
 RISK_MODES = {'upstream-maintained-risk', 'desktop-critical-only'}
 SEVERITIES = {'Unknown', 'Negligible', 'Low', 'Medium', 'High', 'Critical'}
 

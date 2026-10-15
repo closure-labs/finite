@@ -9,7 +9,7 @@ test -x /usr/bin/finite-keyboard-access
 test -x /usr/bin/finite-app-status
 test -s /usr/share/finite/home-manager-template/customize.nix
 test -s /usr/share/finite/home-profile-catalog.json
-mapfile -t kernels < <(rpm -q --qf '%{EVR}.%{ARCH}\n' kernel-core)
+mapfile -t kernels < <(rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-core)
 [[ ${#kernels[@]} == 1 ]]
 bash /usr/libexec/finite/check-initramfs "${kernels[0]}"
 authselect check

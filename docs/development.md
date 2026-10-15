@@ -22,14 +22,14 @@ Do not reset the colocated Git working tree or overwrite unrelated jj changes.
 | Shared image packages and modules | `recipes/shared/` |
 | System configuration and vendor units | `files/system/` |
 | RPM repository definitions | `files/dnf/` |
-| Nix lifecycle and kernel installation | `files/scripts/` |
+| Nix lifecycle and upstream kernel preservation | `files/scripts/` |
 | Home Manager apps, roles and settings | `templates/home-manager/modules/aspects/` |
 | Profile choices and compatibility | `lib/domain-catalog.nix` |
-| Determinate, kernel and installer pins | `sources/` |
+| Determinate, upstream image trust and installer pins | `sources/` |
 | Build, ISO and VM integration | `scripts/bluebuild/` and `.github/workflows/` |
 | CI change selection and required gate | `scripts/ci/` and `tests/ci/` |
 
-The four handwritten recipes are the image configuration. Shared `from-file`
+The two active handwritten recipes are the image configuration. Shared `from-file`
 modules keep common packages, assets and services together. Nix produces the
 Home Manager template/catalog and pinned installation payload.
 
@@ -60,8 +60,9 @@ bluebuild generate --registry ghcr.io --registry-namespace closure-labs \
 ```
 
 Before an image build, run `bash scripts/bluebuild/stage.sh PROFILE`. This stages
-`files/payload` for the selected recipe. The next profiles include the locked
-kernel RPMs. The hosted build workflow performs staging automatically.
+`files/payload` for the selected active recipe. Both variants preserve the
+approved upstream kernel and modules. The hosted build workflow performs staging
+automatically.
 
 ## Work on Home Manager
 
@@ -93,7 +94,7 @@ The Actions log streams the guest console. The installer has a 45-minute limit;
 Nix initialization has a three-minute readiness window after SSH starts.
 Artifacts retain service logs, kernel reports, mount layouts and bootc status.
 
-Run generic and next acceptance tests for image or installer changes. Validate
+Run standard and developer acceptance tests for image or installer changes. Validate
 graphics, PipeWire camera, Espanso, suspend/resume and authentication separately
 on the target workstation, retaining its previous deployment.
 

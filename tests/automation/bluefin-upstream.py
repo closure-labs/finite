@@ -80,11 +80,11 @@ class BluefinTests(unittest.TestCase):
             self.assertFalse(upstream.update(self.root)['changed'])
         self.assertEqual(before, self.snapshot())
 
-    def test_changed_foundation_updates_only_its_two_profiles(self):
+    def test_changed_foundation_updates_only_its_active_profile(self):
         self.observed['ghcr.io/ublue-os/bluefin'] = NEW
         before = self.snapshot()
         result = upstream.update(self.root, self.observed)
-        self.assertEqual(set(result['profiles']), {'bluefin-generic', 'bluefin-next'})
+        self.assertEqual(set(result['profiles']), {'bluefin-generic'})
         for name, content in self.snapshot().items():
             if name.startswith('bluefin-dx'):
                 self.assertEqual(content, before[name])
@@ -119,11 +119,12 @@ class BluefinTests(unittest.TestCase):
         self.assertEqual(verify.call_count, 2)
         self.assertEqual(len(result['verified']), 2)
 
-    def test_disagreeing_foundation_pins_fail(self):
-        path = self.root / 'recipes/bluefin-next.yml'
-        path.write_text(path.read_text().replace(self.approved['bluefin-next']['digest'], NEW))
-        with self.assertRaises(ValueError):
-            upstream.recipes(self.root)
+    def test_retired_profiles_are_rejected_before_reconciliation(self):
+        self.assertEqual(set(upstream.PROFILES), {'bluefin-generic', 'bluefin-dx-generic'})
+        empty = {'checks': False, 'nix': False, 'profiles': []}
+        for profile in ('bluefin-next', 'bluefin-dx-next'):
+            with self.subTest(profile=profile), self.assertRaises(ValueError):
+                upstream.merge_impact(empty, {**empty, 'profiles': [profile]})
 
     def test_single_manifest_is_hashed_then_inspected_by_digest(self):
         raw = b'{"schemaVersion":2,"config":{}}'
@@ -182,11 +183,11 @@ class BluefinTests(unittest.TestCase):
             self.assertEqual(upstream.reconcile(self.root)['profiles'], ['bluefin-generic'])
         def missed_publication(reference, **kwargs):
             image = self.published(reference, **kwargs)
-            if reference.endswith(':finite-dev-next'):
+            if reference.endswith(':finite-dev'):
                 image['Labels']['org.opencontainers.image.base.digest'] = NEW
             return image
         with patch.object(upstream, 'inspect', side_effect=missed_publication):
-            self.assertEqual(upstream.reconcile(self.root)['profiles'], ['bluefin-dx-next'])
+            self.assertEqual(upstream.reconcile(self.root)['profiles'], ['bluefin-dx-generic'])
 
     def test_docs_push_recovers_replaced_pending_publication(self):
         docs = {'checks': False, 'nix': False, 'profiles': []}
@@ -194,18 +195,18 @@ class BluefinTests(unittest.TestCase):
             self.assertEqual(upstream.merge_impact(upstream.reconcile(self.root), docs), docs)
         def unpublished(reference, **kwargs):
             image = self.published(reference, **kwargs)
-            if reference.endswith(':finite-next'):
+            if reference.endswith(':finite-dev'):
                 image['Labels']['io.finite.build-inputs'] = 'v1:' + 'd' * 64
             return image
         with patch.object(upstream, 'inspect', side_effect=unpublished):
             self.assertEqual(upstream.merge_impact(upstream.reconcile(self.root), docs),
-                             {'checks': True, 'nix': False, 'profiles': ['bluefin-next']})
+                             {'checks': True, 'nix': False, 'profiles': ['bluefin-dx-generic']})
 
     def test_reconciliation_preserves_diff_selection_and_payload_comparison(self):
-        pending = {'checks': True, 'nix': False, 'profiles': ['bluefin-next']}
+        pending = {'checks': True, 'nix': False, 'profiles': ['bluefin-dx-generic']}
         impact = {'checks': True, 'nix': True, 'profiles': ['bluefin-generic']}
         self.assertEqual(upstream.merge_impact(pending, impact),
-                         {'checks': True, 'nix': True, 'profiles': ['bluefin-generic', 'bluefin-next']})
+                         {'checks': True, 'nix': True, 'profiles': ['bluefin-dx-generic', 'bluefin-generic']})
         with self.assertRaises(ValueError):
             upstream.merge_impact(pending, {**impact, 'profiles': ['untrusted-profile']})
 
@@ -217,7 +218,7 @@ class BluefinTests(unittest.TestCase):
                 upstream.reconcile(self.root)
 
     def test_recovery_defers_to_active_publication_then_retries(self):
-        plan = {'checks': True, 'nix': False, 'profiles': ['bluefin-next']}
+        plan = {'checks': True, 'nix': False, 'profiles': ['bluefin-dx-generic']}
         with patch.object(upstream, 'reconcile', return_value=plan), patch.object(upstream, 'github', return_value={'workflow_runs': [{'event': 'push'}]}), patch.object(upstream.subprocess, 'run') as run:
             self.assertFalse(upstream.recover(self.root)['dispatched'])
             run.assert_not_called()
@@ -267,7 +268,7 @@ class BluefinTests(unittest.TestCase):
         self.assertEqual(publication.recovery_baseline('bluefin-generic', IMAGE, self.root),
                          (NEW, 'Missing initramfs'))
         self.assertEqual(publication.recovery_baseline('bluefin-generic', NEW, self.root), (NEW, ''))
-        self.assertEqual(publication.recovery_baseline('bluefin-next', IMAGE, self.root), (IMAGE, ''))
+        self.assertEqual(publication.recovery_baseline('bluefin-dx-generic', IMAGE, self.root), (IMAGE, ''))
 
     def test_invalid_recovery_policy_fails_closed(self):
         path, policy = self.recovery_policy()
@@ -289,7 +290,7 @@ class BluefinTests(unittest.TestCase):
     def test_wrong_profile_or_unsigned_recovery_never_mutates_recipe(self):
         self.recovery_policy()
         before = self.snapshot()
-        wrong = {'Digest': NEW, 'Labels': {'io.finite.profile': 'bluefin-next'}}
+        wrong = {'Digest': NEW, 'Labels': {'io.finite.profile': 'bluefin-dx-generic'}}
         with patch.object(publication.upstream, 'inspect', side_effect=[self.published(upstream.REPOSITORY + ':finite'), wrong]), \
                 patch.object(publication.subprocess, 'run'):
             with self.assertRaisesRegex(ValueError, 'different profile'):
@@ -363,7 +364,7 @@ class BluefinTests(unittest.TestCase):
         before = self.snapshot()
         self.prepare(False)
         after = self.snapshot()
-        self.assertEqual(before['bluefin-next.yml'], after['bluefin-next.yml'])
+        self.assertEqual(before['bluefin-dx-generic.yml'], after['bluefin-dx-generic.yml'])
         self.assertEqual(upstream.yaml.safe_load(after['bluefin-generic.yml'])['alt-tags'], ['finite', 'latest'])
         with self.assertRaises(ValueError), patch.object(publication.subprocess, 'run') as run:
             publication.promote('bluefin-generic', self.root)
@@ -428,7 +429,6 @@ class BluefinTests(unittest.TestCase):
         bindir = self.root / 'bin'
         bindir.mkdir()
         shutil.copytree(ROOT / 'sources', self.root / 'sources')
-        shutil.copytree(ROOT / 'files/security', self.root / 'files/security')
         recipe = self.approved['bluefin-generic']
         labels = {'org.opencontainers.image.base.digest': recipe['digest'], 'org.opencontainers.image.revision': 'f' * 40,
                   'io.finite.build-inputs': IDENTITY,
@@ -624,7 +624,7 @@ class DeterministicIdentity(unittest.TestCase):
 
     def test_timestamp_bytecode_presence_and_changed_headers_do_not_change_identity(self):
         source = self.root / 'scripts/bluebuild/publication.py'
-        original = {profile: self.identity(profile) for profile in ('bluefin-generic', 'bluefin-next')}
+        original = {profile: self.identity(profile) for profile in ('bluefin-generic', 'bluefin-dx-generic')}
         first = Path(py_compile.compile(str(source), doraise=True,
                                        invalidation_mode=py_compile.PycInvalidationMode.TIMESTAMP))
         first_bytes = first.read_bytes()
@@ -646,7 +646,7 @@ class DeterministicIdentity(unittest.TestCase):
             self.assertEqual(expected, self.identity(profile))
 
     def test_authored_helper_bytes_still_change_both_profile_identities(self):
-        before = {profile: self.identity(profile) for profile in ('bluefin-generic', 'bluefin-next')}
+        before = {profile: self.identity(profile) for profile in ('bluefin-generic', 'bluefin-dx-generic')}
         source = self.root / 'scripts/bluebuild/build.sh'
         source.write_bytes(source.read_bytes() + b'\n# Authored change\n')
         for profile, expected in before.items():
@@ -674,17 +674,12 @@ class DeterministicIdentity(unittest.TestCase):
             path.write_bytes(b'changed shipped bytes')
             self.assertNotEqual(before, self.identity())
 
-    def test_generic_and_next_kernel_inputs_remain_isolated(self):
-        generic, next_image = self.identity(), self.identity('bluefin-next')
-        path = self.root / 'files/scripts/kernel-next.sh'
-        path.write_bytes(path.read_bytes() + b'\n')
-        self.assertEqual(generic, self.identity())
-        self.assertNotEqual(next_image, self.identity('bluefin-next'))
-        generic, next_image = self.identity(), self.identity('bluefin-next')
-        path = self.root / 'files/scripts/kernel-generic-security.py'
-        path.write_bytes(path.read_bytes() + b'\n')
-        self.assertNotEqual(generic, self.identity())
-        self.assertEqual(next_image, self.identity('bluefin-next'))
+    def test_upstream_kernel_preservation_helper_changes_both_active_identities(self):
+        before = {profile: self.identity(profile) for profile in upstream.PROFILES}
+        path = self.root / 'files/scripts/upstream-kernel.py'
+        path.write_bytes(path.read_bytes() + b'\n# Authored preservation contract change\n')
+        for profile, expected in before.items():
+            self.assertNotEqual(expected, self.identity(profile))
 
     def test_new_input_schema_changes_hash_without_changing_transport_format(self):
         captured = []
@@ -694,9 +689,9 @@ class DeterministicIdentity(unittest.TestCase):
             return dumps(value, **kwargs)
         with patch.object(identity_module.json, 'dumps', side_effect=observe):
             current = self.identity()
-        self.assertEqual(captured[0]['schema'], 3)
+        self.assertEqual(captured[0]['schema'], 4)
         self.assertRegex(current, r'^v1:[a-f0-9]{64}$')
-        for schema in (1, 2):
+        for schema in (1, 2, 3):
             previous_contract = {**captured[0], 'schema': schema}
             prior = 'v1:' + hashlib.sha256(dumps(previous_contract, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
             self.assertNotEqual(current, prior)

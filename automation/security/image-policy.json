@@ -5696,26 +5696,7 @@
       "expiresAt": "2026-10-27T07:39:06.489964+00:00"
     }
   ],
-  "releaseBlockers": [
-    {
-      "id": "next-kernel-october-source-fixes",
-      "profiles": [
-        "bluefin-next",
-        "bluefin-dx-next"
-      ],
-      "riskClass": "major-data-loss",
-      "reason": "Pinned Fedora 45 kernel 7.2.9-300 lacks the reviewed October XFS/AMD fixes. Missing scanner matches do not establish source-fix coverage. The fixed 301 build has not reached an approved stable tag in retained official evidence.",
-      "officialSources": [
-        "https://src.fedoraproject.org/rpms/kernel/c/c2cdc6c5c0c6ccc0128613fc7c9d276ebaf870c7.patch",
-        "https://gitlab.com/cki-project/kernel-ark/-/commit/fa3bfc1343f7f3b1ebd873eee5e3e6618918f434.patch"
-      ],
-      "reviewedBy": "great_cto desktop kernel source review",
-      "reviewedAt": "2026-10-13T00:00:29Z",
-      "unblockEvidence": "Approved same-stream stable kernel containing the reviewed fixes, or separately explicit reviewed testing approval; authenticate exact Fedora payloads and validate transaction, module preservation, initramfs and boot qualification before reviewing removal of this hold.",
-      "severity": "Unknown",
-      "advisories": []
-    }
-  ],
+  "releaseBlockers": [],
   "blockingBasis": "reviewed-desktop-exploitability",
   "confirmedDesktopRisks": []
 }

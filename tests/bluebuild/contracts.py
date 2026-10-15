@@ -8,9 +8,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 EXPECTED = {
     'bluefin-generic': ('bluefin', 'generic-x86_64', ['finite', 'latest']),
-    'bluefin-next': ('bluefin', 'next-x86_64', ['finite-next']),
     'bluefin-dx-generic': ('bluefin-dx', 'generic-x86_64', ['finite-dev']),
-    'bluefin-dx-next': ('bluefin-dx', 'next-x86_64', ['finite-dev-next']),
 }
 
 def read(path):
@@ -42,17 +40,20 @@ class BlueBuildContracts(unittest.TestCase):
             expanded = list(modules(recipe))
             self.assertTrue(all('@v' in m['type'] for m in expanded))
             scripts = [s for m in expanded for s in m.get('scripts', [])]
-            self.assertEqual('kernel-next.sh' in scripts, hardware == 'next-x86_64')
+            self.assertNotIn('kernel-next.sh', scripts)
             for script in scripts:
                 self.assertTrue((ROOT / 'files/scripts' / script).is_file())
             kinds = [m['type'].split('@')[0] for m in expanded]
-            kernel_step = next(i for i, m in enumerate(expanded)
-                               if ('kernel-next.sh' in m.get('scripts', []) if hardware == 'next-x86_64'
-                                   else any('kernel-generic-security.py' in snippet for snippet in m.get('snippets', []))))
+            snapshot_step = next(i for i, m in enumerate(expanded)
+                                 if any('check-upstream-kernel snapshot' in snippet for snippet in m.get('snippets', [])))
+            verify_step = next(i for i, m in enumerate(expanded)
+                               if any('check-upstream-kernel verify' in snippet for snippet in m.get('snippets', [])))
             finalize_step = next(i for i, m in enumerate(expanded)
                                  if 'finalize.sh' in m.get('scripts', []))
             self.assertEqual(kinds.count('initramfs'), 1)
-            self.assertLess(kernel_step, kinds.index('initramfs'))
+            self.assertLess(snapshot_step, kinds.index('dnf'))
+            self.assertLess(kinds.index('initramfs'), verify_step)
+            self.assertLess(verify_step, finalize_step)
             self.assertLess(kinds.index('initramfs'), finalize_step)
             self.assertLess(kinds.index('dnf'), kinds.index('files'))
             self.assertLess(kinds.index('signing'), len(kinds)-1)
@@ -142,10 +143,8 @@ class BlueBuildContracts(unittest.TestCase):
         source = (ROOT / 'lib/image-payload.nix').read_text()
         for legacy in ['eval-profile-graph', 'render-profile-artifacts', 'image-matrix', 'Containerfile']:
             self.assertNotIn(legacy, source)
-        lock = json.loads((ROOT / 'sources/kernel-next.json').read_text())
-        for package in lock['packages']:
-            self.assertRegex(package['sha256'], r'^[0-9a-f]{64}$')
-        self.assertEqual(len(lock['packages']), 5)
+        self.assertNotIn('kernel-next', source)
+        self.assertNotIn('image-payload-next', (ROOT / 'modules/outputs.nix').read_text())
 
 if __name__ == '__main__':
     unittest.main()

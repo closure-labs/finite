@@ -1,5 +1,21 @@
 # Security audit implementation
 
+## Active upstream preservation and reuse measurements
+
+The owner requested independent hosted inventory and whole-qualification reuse
+measurements, then explicitly restored upstream ZFS trust and selected Bluefin's
+kernel/modules as one unit. Active variants are now only finite/Bluefin and
+finite-dev/Bluefin-DX; Next kernels/variants are retired. Do not dispatch tests,
+scans, builds or VM qualifications for retired variants. Keep prior published
+releases and historical evidence intact. Preserve Finite's other additions and
+upstream configuration as far as their integration permits.
+
+The owner requires benchmarks only for the new OS changes. First obtain fresh
+hosted validation of both active variants, then benchmark inventory and whole
+qualification reuse against those exact new candidates and receipts. No old OS
+benchmark, local heavy work or global reuse-default rollout follows.
+See [upstream foundations](../docs/upstream-kernel-variants.md).
+
 ## Completed v0.8 release
 
 User requested continuation of the measured CI plan through v0.8. Scope remains
