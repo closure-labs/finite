@@ -1,0 +1,1081 @@
+{
+  "schema": 1,
+  "date": "2026-10-15",
+  "newOSOnly": true,
+  "activeChannels": [
+    "finite",
+    "finite-dev"
+  ],
+  "retiredVariantJobsDispatched": false,
+  "oldOSBenchmarkDispatched": false,
+  "sourceRevision": "2816fa4d16706a60e6cb91c616493aeeb7432101",
+  "producerRun": 38777997975,
+  "producer": {
+    "verified": true,
+    "newOSOnly": true,
+    "source": "2816fa4d16706a60e6cb91c616493aeeb7432101",
+    "run": 38777997975,
+    "attempt": 1,
+    "channels": {
+      "finite": {
+        "profile": "bluefin-generic",
+        "image": "ghcr.io/closure-labs/finite@sha256:79896b9611019c7257c9bf79cf759601553096b5745228fa15a1245a3b45b6d0",
+        "candidate": "sha256:79896b9611019c7257c9bf79cf759601553096b5745228fa15a1245a3b45b6d0",
+        "previous": "sha256:f004e4140a2d814b89bf424892826671b2324e2ed4679f8b6129e94dc11287bb",
+        "source": "2816fa4d16706a60e6cb91c616493aeeb7432101",
+        "identity": "v1:f9e56fd8521eb6b8f3723d98733856a6d142c92c686cf83ca3dd3e3d0ec75be7",
+        "qualifiedAt": "2026-10-15T18:28:59.885948+00:00",
+        "qualificationContextSha256": "5416b4f99c5cb56a4b952a27227f0e8e85ef58c815f0de20f72295c084781dae",
+        "imageArtifact": 11994948260,
+        "qualificationArtifact": 11998097043,
+        "nativeArtifact": {
+          "id": 11996111150,
+          "digest": "sha256:3a51f97da4d050eb77c09288753ea8d8d9c0d46acba6756842a1ef6d073ae1d0",
+          "size": 33320910,
+          "downloadedLocally": false
+        },
+        "requiredJobs": [
+          {
+            "id": 116573692768,
+            "name": "Publish (bluefin-generic) / build / build",
+            "started_at": "2026-10-15T17:37:46Z",
+            "completed_at": "2026-10-15T17:47:04Z"
+          },
+          {
+            "id": 116578100367,
+            "name": "Publish (bluefin-generic) / security",
+            "started_at": "2026-10-15T17:47:07Z",
+            "completed_at": "2026-10-15T17:54:19Z"
+          },
+          {
+            "id": 116581505717,
+            "name": "Publish (bluefin-generic) / sign",
+            "started_at": "2026-10-15T17:54:25Z",
+            "completed_at": "2026-10-15T17:55:12Z"
+          },
+          {
+            "id": 116581923626,
+            "name": "Publish (bluefin-generic) / preflight",
+            "started_at": "2026-10-15T17:55:15Z",
+            "completed_at": "2026-10-15T17:56:07Z"
+          },
+          {
+            "id": 116582355042,
+            "name": "Publish (bluefin-generic) / qualification / prepare",
+            "started_at": "2026-10-15T17:56:11Z",
+            "completed_at": "2026-10-15T17:57:11Z"
+          },
+          {
+            "id": 116582867249,
+            "name": "Publish (bluefin-generic) / qualification / phase (fresh)",
+            "started_at": "2026-10-15T17:57:15Z",
+            "completed_at": "2026-10-15T18:23:51Z"
+          },
+          {
+            "id": 116582867191,
+            "name": "Publish (bluefin-generic) / qualification / phase (upgrade)",
+            "started_at": "2026-10-15T17:57:15Z",
+            "completed_at": "2026-10-15T18:28:08Z"
+          },
+          {
+            "id": 116597566759,
+            "name": "Publish (bluefin-generic) / qualification / aggregate",
+            "started_at": "2026-10-15T18:28:12Z",
+            "completed_at": "2026-10-15T18:29:03Z"
+          },
+          {
+            "id": 116598038295,
+            "name": "Publish (bluefin-generic) / promote",
+            "started_at": "2026-10-15T18:29:12Z",
+            "completed_at": "2026-10-15T18:30:14Z"
+          }
+        ],
+        "localISOBytesDownloaded": 0
+      },
+      "finite-dev": {
+        "profile": "bluefin-dx-generic",
+        "image": "ghcr.io/closure-labs/finite@sha256:ce93c0e191912f487510febe66b42b1d8bc91c3bda4b6a9e326b4c715abf479e",
+        "candidate": "sha256:ce93c0e191912f487510febe66b42b1d8bc91c3bda4b6a9e326b4c715abf479e",
+        "previous": "sha256:26445435ad2d3dccbead5969f36bd03fba5c4ffa593e03ac0fcac567701467b6",
+        "source": "2816fa4d16706a60e6cb91c616493aeeb7432101",
+        "identity": "v1:34f5da03199de0486ab4198ca33f7b5329e42e516c6959d2aefdb5ff728a85e2",
+        "qualifiedAt": "2026-10-15T18:40:10.216318+00:00",
+        "qualificationContextSha256": "5416b4f99c5cb56a4b952a27227f0e8e85ef58c815f0de20f72295c084781dae",
+        "imageArtifact": 11994998625,
+        "qualificationArtifact": 11997864334,
+        "nativeArtifact": {
+          "id": 11995618736,
+          "digest": "sha256:c8985b21185cf54017fa4f0381c14e2bf8eec572607f450bf3f2a7f83f5d5f66",
+          "size": 43736367,
+          "downloadedLocally": false
+        },
+        "requiredJobs": [
+          {
+            "id": 116573692594,
+            "name": "Publish (bluefin-dx-generic) / build / build",
+            "started_at": "2026-10-15T17:37:46Z",
+            "completed_at": "2026-10-15T17:49:08Z"
+          },
+          {
+            "id": 116579063996,
+            "name": "Publish (bluefin-dx-generic) / security",
+            "started_at": "2026-10-15T17:49:11Z",
+            "completed_at": "2026-10-15T18:04:03Z"
+          },
+          {
+            "id": 116586108574,
+            "name": "Publish (bluefin-dx-generic) / sign",
+            "started_at": "2026-10-15T18:04:07Z",
+            "completed_at": "2026-10-15T18:04:41Z"
+          },
+          {
+            "id": 116586421857,
+            "name": "Publish (bluefin-dx-generic) / preflight",
+            "started_at": "2026-10-15T18:04:44Z",
+            "completed_at": "2026-10-15T18:05:30Z"
+          },
+          {
+            "id": 116586814985,
+            "name": "Publish (bluefin-dx-generic) / qualification / prepare",
+            "started_at": "2026-10-15T18:05:33Z",
+            "completed_at": "2026-10-15T18:06:23Z"
+          },
+          {
+            "id": 116587234965,
+            "name": "Publish (bluefin-dx-generic) / qualification / phase (fresh)",
+            "started_at": "2026-10-15T18:06:26Z",
+            "completed_at": "2026-10-15T18:32:19Z"
+          },
+          {
+            "id": 116587235004,
+            "name": "Publish (bluefin-dx-generic) / qualification / phase (upgrade)",
+            "started_at": "2026-10-15T18:06:26Z",
+            "completed_at": "2026-10-15T18:39:16Z"
+          },
+          {
+            "id": 116602855535,
+            "name": "Publish (bluefin-dx-generic) / qualification / aggregate",
+            "started_at": "2026-10-15T18:39:20Z",
+            "completed_at": "2026-10-15T18:40:14Z"
+          },
+          {
+            "id": 116603315534,
+            "name": "Publish (bluefin-dx-generic) / promote",
+            "started_at": "2026-10-15T18:40:17Z",
+            "completed_at": "2026-10-15T18:41:20Z"
+          }
+        ],
+        "localISOBytesDownloaded": 0
+      }
+    }
+  },
+  "experiments": {
+    "finite": {
+      "inventory": {
+        "run": 38787802299,
+        "url": "https://github.com/closure-labs/finite/actions/runs/38787802299",
+        "executionSource": "2816fa4d16706a60e6cb91c616493aeeb7432101",
+        "status": "verified-observations",
+        "verifiedPerformance": true,
+        "conclusion": "success",
+        "attempt": 1,
+        "downloadedBytes": 46620,
+        "metadataAndArchiveGETs": 4,
+        "summaryArtifact": {
+          "id": 11999787363,
+          "name": "security-benchmark-summary-38787802299-1",
+          "size_in_bytes": 5269,
+          "digest": "sha256:6f412bb9f1ed9427c8ba68cfa6478a3c940b8ae7a63084ffddc128522c30febd"
+        },
+        "performance": {
+          "lanes": [
+            {
+              "lane": "baseline",
+              "wholeJobMedianSeconds": 531.0,
+              "setupPlusScanMedianSeconds": 523.2748087870001,
+              "phaseMedianSeconds": {
+                "applicability-evidence": 3.322,
+                "policy-evaluation": 2.102,
+                "database-update": 82.39,
+                "image-transfer": 69.347,
+                "rootfs-extraction": 129.032,
+                "rpm-file-evidence": 2.419,
+                "vulnerability-scan": 24.226,
+                "inventory-cataloging": 167.782,
+                "database-coverage": 0.816
+              }
+            },
+            {
+              "lane": "inventory-only",
+              "wholeJobMedianSeconds": 146.0,
+              "setupPlusScanMedianSeconds": 135.993673401,
+              "phaseMedianSeconds": {
+                "policy-evaluation": 1.816,
+                "database-update": 67.826,
+                "vulnerability-scan": 20.077,
+                "database-coverage": 0.716
+              }
+            }
+          ],
+          "medianPairedSavedSeconds": 415.0,
+          "medianPairedSavedPercent": 73.9770867430442,
+          "jobs": [
+            {
+              "lane": "baseline",
+              "repetition": 3,
+              "job": 116604230128,
+              "seconds": 531.0,
+              "startedAt": "2026-10-15T18:53:05Z",
+              "completedAt": "2026-10-15T19:01:56Z"
+            },
+            {
+              "lane": "baseline",
+              "repetition": 1,
+              "job": 116604230484,
+              "seconds": 488.0,
+              "startedAt": "2026-10-15T18:42:13Z",
+              "completedAt": "2026-10-15T18:50:21Z"
+            },
+            {
+              "lane": "inventory-only",
+              "repetition": 3,
+              "job": 116604230615,
+              "seconds": 116.0,
+              "startedAt": "2026-10-15T18:54:55Z",
+              "completedAt": "2026-10-15T18:56:51Z"
+            },
+            {
+              "lane": "inventory-only",
+              "repetition": 1,
+              "job": 116604230412,
+              "seconds": 146.0,
+              "startedAt": "2026-10-15T18:42:13Z",
+              "completedAt": "2026-10-15T18:44:39Z"
+            },
+            {
+              "lane": "baseline",
+              "repetition": 2,
+              "job": 116604230294,
+              "seconds": 611.0,
+              "startedAt": "2026-10-15T18:44:42Z",
+              "completedAt": "2026-10-15T18:54:53Z"
+            },
+            {
+              "lane": "inventory-only",
+              "repetition": 2,
+              "job": 116604230435,
+              "seconds": 159.0,
+              "startedAt": "2026-10-15T18:50:24Z",
+              "completedAt": "2026-10-15T18:53:03Z"
+            }
+          ]
+        },
+        "matchedCohort": {
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageVersion": "20261012.334.1"
+          },
+          "tools": {
+            "grype": "grype 0.112.0",
+            "syft": "syft 1.44.0",
+            "umoci": "umoci version 0.6.0\nimage spec: 1.1.1\nruntime spec: 1.2.1\ngo: go1.26.7",
+            "cosign": "{\n  \"gitVersion\": \"v3.1.3\",\n  \"gitCommit\": \"unknown\",\n  \"gitTreeState\": \"clean\",\n  \"buildDate\": \"unknown\",\n  \"goVersion\": \"go1.26.7\",\n  \"compiler\": \"gc\",\n  \"platform\": \"linux/amd64\"\n}",
+            "skopeo": "skopeo version 1.22.2",
+            "python3": "Python 3.13.15"
+          },
+          "nixVersion": "nix (Determinate Nix 3.22.2) 2.35.2",
+          "inventoryGeneration": {
+            "platform": "linux/amd64",
+            "catalogers": "image",
+            "tools": {
+              "syft": "syft 1.44.0",
+              "umoci": "umoci version 0.6.0\nimage spec: 1.1.1\nruntime spec: 1.2.1\ngo: go1.26.7"
+            },
+            "implementations": {
+              "scripts/bluebuild/security-scan.py": "9bb01847fd968318b2a39ec4f28d77f5fd7ecb6ec50f37981659d750a93a2ea1",
+              "scripts/bluebuild/security-policy.py": "f645df613c95944054764ef194e1039aeb03a169c5d058d4c48417e602f23a67",
+              "scripts/ci/inventory-evidence.py": "f09eef8e088ed44942c4bfd363215d2248eb97658fd16e0d0a181054af604647",
+              "scripts/ci/rpm-file-evidence.py": "f031c0acb067aecf2de14e2a55a100374aa1afa375d4d87488537c4735fd731f",
+              "scripts/ci/applicability-evidence.py": "2395d03a04decb41325a28bff4174759e8240250be0865ca7530fab0a2ff233b",
+              "scripts/ci/approved-baseline.py": "0d459c2c1729f421bd16923f347d1063dab6007e7e16a29bde21a8939edc01d0",
+              "automation/security/image-policy.json": "5036f12119717bad679b35763aee720231b17df0aaab461a742a873f4eabe145"
+            }
+          },
+          "platformDigest": "sha256:84f32fcd4f59015c8683958d2cb0e46a5778404b925defb005d1b6a39bd6e73d",
+          "scanner": "0.112.0",
+          "database": {
+            "schemaVersion": "v6.1.10",
+            "built": "2026-10-15T06:30:36Z",
+            "valid": true
+          },
+          "policyResultSha256": "d84737130498cb6cc5864900a74f9eb4d9cc9f8816dc5b2bbafe50614968d610",
+          "lockSha256": "76c349e07671dd808852f7db7aae2899955fec74f6d27e1a285525d9c796aa3a",
+          "policySha256": "5036f12119717bad679b35763aee720231b17df0aaab461a742a873f4eabe145",
+          "databaseProviderSnapshotSha256": "7ceb913eaed751c506a2aeacba9ff76ab1da65212a6b1fcf1712a0a0eb632d66"
+        }
+      },
+      "qualification": {
+        "run": 38793866627,
+        "url": "https://github.com/closure-labs/finite/actions/runs/38793866627",
+        "executionSource": "f5b1408756393f8d649af067e1f10fb9faaca6e4",
+        "status": "verified-observations",
+        "verifiedPerformance": true,
+        "conclusion": "success",
+        "attempt": 1,
+        "downloadedBytes": 42117,
+        "metadataAndArchiveGETs": 4,
+        "summaryArtifact": {
+          "id": 12002330008,
+          "name": "qualification-reuse-summary-38793866627-1",
+          "size_in_bytes": 3753,
+          "digest": "sha256:20aa7fa31e232d2358721f7d23a96a5b7fe4f51607324e40945dfb8ffa7e9b68"
+        },
+        "performance": {
+          "originalSummedRunnerSeconds": 3560.0,
+          "originalCriticalPathServiceSeconds": 1964.0,
+          "medianSummedRunnerSeconds": 135.0,
+          "medianCriticalPathServiceSeconds": 135.0,
+          "samples": [
+            {
+              "repetition": 1,
+              "summedRunnerSeconds": 128.0,
+              "criticalPathServiceSeconds": 128.0,
+              "elapsedIncludingQueueSeconds": 217.0,
+              "jobs": [
+                {
+                  "id": 116625077187,
+                  "name": "restore-1",
+                  "started_at": "2026-10-15T19:26:10Z",
+                  "completed_at": "2026-10-15T19:27:25Z"
+                },
+                {
+                  "id": 116626340741,
+                  "name": "aggregate-1",
+                  "started_at": "2026-10-15T19:28:54Z",
+                  "completed_at": "2026-10-15T19:29:47Z"
+                }
+              ]
+            },
+            {
+              "repetition": 2,
+              "summedRunnerSeconds": 141.0,
+              "criticalPathServiceSeconds": 141.0,
+              "elapsedIncludingQueueSeconds": 230.0,
+              "jobs": [
+                {
+                  "id": 116625077482,
+                  "name": "restore-2",
+                  "started_at": "2026-10-15T19:26:10Z",
+                  "completed_at": "2026-10-15T19:27:26Z"
+                },
+                {
+                  "id": 116626340750,
+                  "name": "aggregate-2",
+                  "started_at": "2026-10-15T19:28:55Z",
+                  "completed_at": "2026-10-15T19:30:00Z"
+                }
+              ]
+            },
+            {
+              "repetition": 3,
+              "summedRunnerSeconds": 135.0,
+              "criticalPathServiceSeconds": 135.0,
+              "elapsedIncludingQueueSeconds": 194.0,
+              "jobs": [
+                {
+                  "id": 116625077580,
+                  "name": "restore-3",
+                  "started_at": "2026-10-15T19:27:28Z",
+                  "completed_at": "2026-10-15T19:28:51Z"
+                },
+                {
+                  "id": 116626340807,
+                  "name": "aggregate-3",
+                  "started_at": "2026-10-15T19:29:50Z",
+                  "completed_at": "2026-10-15T19:30:42Z"
+                }
+              ]
+            }
+          ],
+          "originalElapsedIncludingQueueSeconds": 1972.0,
+          "medianElapsedIncludingQueueSeconds": 217.0,
+          "criticalPathSavedSeconds": 1829.0,
+          "criticalPathSavedPercent": 93.12627291242363,
+          "summedRunnerSavedSeconds": 3425.0
+        }
+      }
+    },
+    "finite-dev": {
+      "inventory": {
+        "run": 38787811046,
+        "url": "https://github.com/closure-labs/finite/actions/runs/38787811046",
+        "executionSource": "2816fa4d16706a60e6cb91c616493aeeb7432101",
+        "status": "verified-observations",
+        "verifiedPerformance": true,
+        "conclusion": "success",
+        "attempt": 1,
+        "downloadedBytes": 46583,
+        "metadataAndArchiveGETs": 4,
+        "summaryArtifact": {
+          "id": 12002166487,
+          "name": "security-benchmark-summary-38787811046-1",
+          "size_in_bytes": 5226,
+          "digest": "sha256:6fb6390e97f76dd72297054a23b08f7406c51a1e433bd9f7baa22829d0ce3971"
+        },
+        "performance": {
+          "lanes": [
+            {
+              "lane": "baseline",
+              "wholeJobMedianSeconds": 979.0,
+              "setupPlusScanMedianSeconds": 969.0426250770001,
+              "phaseMedianSeconds": {
+                "applicability-evidence": 6.078,
+                "policy-evaluation": 2.839,
+                "database-update": 84.974,
+                "image-transfer": 180.689,
+                "rootfs-extraction": 282.515,
+                "rpm-file-evidence": 3.271,
+                "vulnerability-scan": 39.959,
+                "inventory-cataloging": 310.468,
+                "database-coverage": 0.816
+              }
+            },
+            {
+              "lane": "inventory-only",
+              "wholeJobMedianSeconds": 176.0,
+              "setupPlusScanMedianSeconds": 167.422337572,
+              "phaseMedianSeconds": {
+                "policy-evaluation": 2.776,
+                "database-update": 85.156,
+                "vulnerability-scan": 36.109,
+                "database-coverage": 0.766
+              }
+            }
+          ],
+          "medianPairedSavedSeconds": 810.0,
+          "medianPairedSavedPercent": 82.41545893719807,
+          "jobs": [
+            {
+              "lane": "baseline",
+              "repetition": 3,
+              "job": 116613727605,
+              "seconds": 885.0,
+              "startedAt": "2026-10-15T19:21:42Z",
+              "completedAt": "2026-10-15T19:36:27Z"
+            },
+            {
+              "lane": "baseline",
+              "repetition": 1,
+              "job": 116613727202,
+              "seconds": 1035.0,
+              "startedAt": "2026-10-15T19:02:15Z",
+              "completedAt": "2026-10-15T19:19:30Z"
+            },
+            {
+              "lane": "inventory-only",
+              "repetition": 2,
+              "job": 116613727645,
+              "seconds": 169.0,
+              "startedAt": "2026-10-15T19:19:32Z",
+              "completedAt": "2026-10-15T19:22:21Z"
+            },
+            {
+              "lane": "inventory-only",
+              "repetition": 3,
+              "job": 116613727724,
+              "seconds": 176.0,
+              "startedAt": "2026-10-15T19:22:23Z",
+              "completedAt": "2026-10-15T19:25:19Z"
+            },
+            {
+              "lane": "baseline",
+              "repetition": 2,
+              "job": 116613727419,
+              "seconds": 979.0,
+              "startedAt": "2026-10-15T19:05:20Z",
+              "completedAt": "2026-10-15T19:21:39Z"
+            },
+            {
+              "lane": "inventory-only",
+              "repetition": 1,
+              "job": 116613727408,
+              "seconds": 182.0,
+              "startedAt": "2026-10-15T19:02:15Z",
+              "completedAt": "2026-10-15T19:05:17Z"
+            }
+          ]
+        },
+        "matchedCohort": {
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageVersion": "20261012.334.1"
+          },
+          "tools": {
+            "grype": "grype 0.112.0",
+            "syft": "syft 1.44.0",
+            "umoci": "umoci version 0.6.0\nimage spec: 1.1.1\nruntime spec: 1.2.1\ngo: go1.26.7",
+            "cosign": "{\n  \"gitVersion\": \"v3.1.3\",\n  \"gitCommit\": \"unknown\",\n  \"gitTreeState\": \"clean\",\n  \"buildDate\": \"unknown\",\n  \"goVersion\": \"go1.26.7\",\n  \"compiler\": \"gc\",\n  \"platform\": \"linux/amd64\"\n}",
+            "skopeo": "skopeo version 1.22.2",
+            "python3": "Python 3.13.15"
+          },
+          "nixVersion": "nix (Determinate Nix 3.22.2) 2.35.2",
+          "inventoryGeneration": {
+            "platform": "linux/amd64",
+            "catalogers": "image",
+            "tools": {
+              "syft": "syft 1.44.0",
+              "umoci": "umoci version 0.6.0\nimage spec: 1.1.1\nruntime spec: 1.2.1\ngo: go1.26.7"
+            },
+            "implementations": {
+              "scripts/bluebuild/security-scan.py": "9bb01847fd968318b2a39ec4f28d77f5fd7ecb6ec50f37981659d750a93a2ea1",
+              "scripts/bluebuild/security-policy.py": "f645df613c95944054764ef194e1039aeb03a169c5d058d4c48417e602f23a67",
+              "scripts/ci/inventory-evidence.py": "f09eef8e088ed44942c4bfd363215d2248eb97658fd16e0d0a181054af604647",
+              "scripts/ci/rpm-file-evidence.py": "f031c0acb067aecf2de14e2a55a100374aa1afa375d4d87488537c4735fd731f",
+              "scripts/ci/applicability-evidence.py": "2395d03a04decb41325a28bff4174759e8240250be0865ca7530fab0a2ff233b",
+              "scripts/ci/approved-baseline.py": "0d459c2c1729f421bd16923f347d1063dab6007e7e16a29bde21a8939edc01d0",
+              "automation/security/image-policy.json": "5036f12119717bad679b35763aee720231b17df0aaab461a742a873f4eabe145"
+            }
+          },
+          "platformDigest": "sha256:2b144c433eedcb92b622bb29eb1fb7c2430f513a0254f725be07035a7fac40ec",
+          "scanner": "0.112.0",
+          "database": {
+            "schemaVersion": "v6.1.10",
+            "built": "2026-10-15T06:30:36Z",
+            "valid": true
+          },
+          "policyResultSha256": "d5e4cceb8ea0ca3f8cd39b1814f60f0c7ee20973fa22c8c58300d8f328b1280e",
+          "lockSha256": "76c349e07671dd808852f7db7aae2899955fec74f6d27e1a285525d9c796aa3a",
+          "policySha256": "5036f12119717bad679b35763aee720231b17df0aaab461a742a873f4eabe145",
+          "databaseProviderSnapshotSha256": "7ceb913eaed751c506a2aeacba9ff76ab1da65212a6b1fcf1712a0a0eb632d66"
+        }
+      },
+      "qualification": {
+        "run": 38793870423,
+        "url": "https://github.com/closure-labs/finite/actions/runs/38793870423",
+        "executionSource": "f5b1408756393f8d649af067e1f10fb9faaca6e4",
+        "status": "verified-observations",
+        "verifiedPerformance": true,
+        "conclusion": "success",
+        "attempt": 1,
+        "downloadedBytes": 42124,
+        "metadataAndArchiveGETs": 4,
+        "summaryArtifact": {
+          "id": 12002176108,
+          "name": "qualification-reuse-summary-38793870423-1",
+          "size_in_bytes": 3751,
+          "digest": "sha256:5bcf3a515ddb83dfd36fa31a47f72ab1d3f00feb83345c26a09fa6c2ed878d61"
+        },
+        "performance": {
+          "originalSummedRunnerSeconds": 3627.0,
+          "originalCriticalPathServiceSeconds": 2074.0,
+          "medianSummedRunnerSeconds": 133.0,
+          "medianCriticalPathServiceSeconds": 133.0,
+          "samples": [
+            {
+              "repetition": 1,
+              "summedRunnerSeconds": 147.0,
+              "criticalPathServiceSeconds": 147.0,
+              "elapsedIncludingQueueSeconds": 228.0,
+              "jobs": [
+                {
+                  "id": 116627521516,
+                  "name": "restore-1",
+                  "started_at": "2026-10-15T19:31:26Z",
+                  "completed_at": "2026-10-15T19:32:54Z"
+                },
+                {
+                  "id": 116628858127,
+                  "name": "aggregate-1",
+                  "started_at": "2026-10-15T19:34:15Z",
+                  "completed_at": "2026-10-15T19:35:14Z"
+                }
+              ]
+            },
+            {
+              "repetition": 2,
+              "summedRunnerSeconds": 133.0,
+              "criticalPathServiceSeconds": 133.0,
+              "elapsedIncludingQueueSeconds": 219.0,
+              "jobs": [
+                {
+                  "id": 116627521198,
+                  "name": "restore-2",
+                  "started_at": "2026-10-15T19:31:26Z",
+                  "completed_at": "2026-10-15T19:32:49Z"
+                },
+                {
+                  "id": 116628858165,
+                  "name": "aggregate-2",
+                  "started_at": "2026-10-15T19:34:15Z",
+                  "completed_at": "2026-10-15T19:35:05Z"
+                }
+              ]
+            },
+            {
+              "repetition": 3,
+              "summedRunnerSeconds": 131.0,
+              "criticalPathServiceSeconds": 131.0,
+              "elapsedIncludingQueueSeconds": 187.0,
+              "jobs": [
+                {
+                  "id": 116627521691,
+                  "name": "restore-3",
+                  "started_at": "2026-10-15T19:32:51Z",
+                  "completed_at": "2026-10-15T19:34:12Z"
+                },
+                {
+                  "id": 116628858312,
+                  "name": "aggregate-3",
+                  "started_at": "2026-10-15T19:35:08Z",
+                  "completed_at": "2026-10-15T19:35:58Z"
+                }
+              ]
+            }
+          ],
+          "originalElapsedIncludingQueueSeconds": 2081.0,
+          "medianElapsedIncludingQueueSeconds": 219.0,
+          "criticalPathSavedSeconds": 1941.0,
+          "criticalPathSavedPercent": 93.58727097396336,
+          "summedRunnerSavedSeconds": 3494.0
+        }
+      }
+    }
+  },
+  "reuseDefaultsChanged": false,
+  "cachixWriterBenchmarked": false,
+  "databaseTransportBenchmarked": false,
+  "localNativeISOOrDatabaseBytesDownloaded": 0,
+  "qualificationComparison": "One observed fresh new-OS production baseline per profile against three independent eligible restore-plus-aggregate pairs; no production hit-rate claim.",
+  "producerArtifacts": [
+    {
+      "id": 11998097043,
+      "name": "qualification-bluefin-generic-38777997975-1",
+      "size_in_bytes": 573350,
+      "digest": "sha256:d3f762778898ad5fc9fc8bcc1d6b2055dc8a42664a9b6ef4b6719f57c82b153d",
+      "workflow_run": {
+        "id": 38777997975,
+        "repository_id": 1293375784,
+        "head_repository_id": 1293375784,
+        "head_branch": "main",
+        "head_sha": "2816fa4d16706a60e6cb91c616493aeeb7432101"
+      }
+    },
+    {
+      "id": 11997864334,
+      "name": "qualification-bluefin-dx-generic-38777997975-1",
+      "size_in_bytes": 592531,
+      "digest": "sha256:9959fab4efc9f84df2787ac74ae53bd9e7e30bc12f426cd1394e8ec69fef5754",
+      "workflow_run": {
+        "id": 38777997975,
+        "repository_id": 1293375784,
+        "head_repository_id": 1293375784,
+        "head_branch": "main",
+        "head_sha": "2816fa4d16706a60e6cb91c616493aeeb7432101"
+      }
+    },
+    {
+      "id": 11996111150,
+      "name": "security-bluefin-generic-38777997975-1",
+      "size_in_bytes": 33320910,
+      "digest": "sha256:3a51f97da4d050eb77c09288753ea8d8d9c0d46acba6756842a1ef6d073ae1d0",
+      "workflow_run": {
+        "id": 38777997975,
+        "repository_id": 1293375784,
+        "head_repository_id": 1293375784,
+        "head_branch": "main",
+        "head_sha": "2816fa4d16706a60e6cb91c616493aeeb7432101"
+      }
+    },
+    {
+      "id": 11995618736,
+      "name": "security-bluefin-dx-generic-38777997975-1",
+      "size_in_bytes": 43736367,
+      "digest": "sha256:c8985b21185cf54017fa4f0381c14e2bf8eec572607f450bf3f2a7f83f5d5f66",
+      "workflow_run": {
+        "id": 38777997975,
+        "repository_id": 1293375784,
+        "head_repository_id": 1293375784,
+        "head_branch": "main",
+        "head_sha": "2816fa4d16706a60e6cb91c616493aeeb7432101"
+      }
+    },
+    {
+      "id": 11994998625,
+      "name": "image-bluefin-dx-generic-38777997975-1",
+      "size_in_bytes": 44270,
+      "digest": "sha256:c696583bb6e2b67de9b5e29dcd119deef268809175653092b08881242b7582c0",
+      "workflow_run": {
+        "id": 38777997975,
+        "repository_id": 1293375784,
+        "head_repository_id": 1293375784,
+        "head_branch": "main",
+        "head_sha": "2816fa4d16706a60e6cb91c616493aeeb7432101"
+      }
+    },
+    {
+      "id": 11994948260,
+      "name": "image-bluefin-generic-38777997975-1",
+      "size_in_bytes": 38609,
+      "digest": "sha256:6a4ffa45fc150a38a86e74deb1a8ee2aed2d90bd22748604c9e9b1db37a9e0c0",
+      "workflow_run": {
+        "id": 38777997975,
+        "repository_id": 1293375784,
+        "head_repository_id": 1293375784,
+        "head_branch": "main",
+        "head_sha": "2816fa4d16706a60e6cb91c616493aeeb7432101"
+      }
+    }
+  ],
+  "qualificationContext": {
+    "schema": 2,
+    "platform": "linux/amd64",
+    "runner": "ubuntu-24.04",
+    "inputs": {
+      ".github/workflows/iso.yml": {
+        "sha256": "2cdb7a96cc927bdfa10a0eccb56db63ca3b3c542115ee69f2561d53ed8fecaa2",
+        "executable": false,
+        "symlink": null
+      },
+      ".github/workflows/qualification.yml": {
+        "sha256": "b383c9ec5e6b1d827f2aa996aeea9f8fcc747284dfdae9f789f241c7360a1298",
+        "executable": false,
+        "symlink": null
+      },
+      ".github/workflows/vm-acceptance.yml": {
+        "sha256": "705faba8d913a4ca98cda4d21664a5a68132852eeba939cb6ce55aae05c5b26e",
+        "executable": false,
+        "symlink": null
+      },
+      "cosign.pub": {
+        "sha256": "4c3e7170f82faac86eec0b533269bb78ab671e3373a10bd01137f6108f04e978",
+        "executable": false,
+        "symlink": null
+      },
+      "files/installer/Containerfile": {
+        "sha256": "f39c57075b5dde85874f33bab1d2e48901798c55610b2fc457e0cdc9585f1dba",
+        "executable": false,
+        "symlink": null
+      },
+      "files/installer/install_finite_fstab": {
+        "sha256": "bd66b50f7622b4927477c19be5a25d5616d59d9d11339cd21e106318046b7ffe",
+        "executable": false,
+        "symlink": null
+      },
+      "files/installer/secure-boot.pem": {
+        "sha256": "fae407e7d3b55087dc2c56d79904dd7547d96ce76d9ef78940d7eaea7c45968b",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/audit-published.sh": {
+        "sha256": "faf39d702ffa17a123947cf42745fce6d4f4d3a20ba290951abea71ca0b95256",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/build.sh": {
+        "sha256": "e77abcc6d3f5a3e01da433215a9aff86a4e2d5b7f30a2295b1e8e51e25af4a1d",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/check-vm-desktop.py": {
+        "sha256": "29fdae6c75e13560052fa87e1113360689a7f2fc7b1dba794c007bc61ac4ea41",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/check-vm-encryption.sh": {
+        "sha256": "02f341b8829997fa71214c58a37854b201cc08cd3f9e6ba68c17146a338377fc",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/check-vm-mok.sh": {
+        "sha256": "1119d3fcf7683761da65f6a63445ccdcf0ef7c24f9d789697befa99b3219fb4b",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/check-vm-security.sh": {
+        "sha256": "8c46c46e849c9de570998bffdd04fa9df9fef81c9ebd8dd0445a13468d0619c0",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/check-vm-user-labels.sh": {
+        "sha256": "df632dad37bfa706ff48212e7fa97ab8912acddec040675cbf141dcfba99f0b4",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/desktop-qualification.py": {
+        "sha256": "27b01646d1763cf84a4f8b736fab304ba9dd9c8d81a80b5a9827867674948d18",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/inspect-built.sh": {
+        "sha256": "6bc2b0260296971d26557ace65510e515e1a8b7592b52293ab75bb078343b49c",
+        "executable": true,
+        "symlink": null
+      },
+      "scripts/bluebuild/install-cli.sh": {
+        "sha256": "25de8cf3c68c2489f330ae8b1f4e8574f7a36e58bb023946ff4eb400bcbea175",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/iso.sh": {
+        "sha256": "d831b232496b017ec4c8af7e9d396c617cecd8183b722e9c46c69483d093fc80",
+        "executable": true,
+        "symlink": null
+      },
+      "scripts/bluebuild/measure.py": {
+        "sha256": "480a45d9c121b14c1bdcde33fc8a0d8f3869ff3e136d1488184acf6be4a6e37f",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/prepare-installer.sh": {
+        "sha256": "75bdb1675d0d860672915bd9c028e524e13161686405de7f668c8d3bbd3a1c3d",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/prepare-vm-firmware.sh": {
+        "sha256": "394605e9d90e5d1997662fe34d3aa18538f15a6200755d9840b7328bcdef15d9",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/prepare-vm-iso.sh": {
+        "sha256": "5948e58c52bfaa23bc1eb3bb14f3c185a87fd6545b0026f1ad4774a43a9f1c82",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/prepare-vm-predecessor-home.sh": {
+        "sha256": "086fee7786ecdbd3329f343e0e2d955bc3c7f3e4ae2faf9e80f6c1aca849d05e",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/prepare-vm-predecessor-policy.sh": {
+        "sha256": "e0ef3a8828e2af6811288988fa02fe77e09517c688c44789e34c5c2ad3386d72",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/prune-qualified-isos.py": {
+        "sha256": "2d896cf01ddeaec8526578159ca7f2d938190d310b7d38f5a1ef723f832cd77d",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/publication-current.py": {
+        "sha256": "b30f426c7ac1a3744feb4dd1148a0ab1c444d61dc2b4b0c01d084ebe69017a4f",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/publication.py": {
+        "sha256": "d927cd33e500b93cce6a81f159e2967164dd0f27f86a6a40c7483e4e7b6be643",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/qualification-context.py": {
+        "sha256": "79b065f5da026b255b2f342a64ea1aa204e782f21d2fbe039c3683d5122ed829",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/qualification-preflight.py": {
+        "sha256": "58b95b9d2c0ee4beba19697b4fcf7957504b612db6478523eecaf61774b12cda",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/qualify.sh": {
+        "sha256": "b471806d819d84075674f6f6dedf4380102c19ac538c296209c7c0ce30a56e57",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/redact-vm-logs.py": {
+        "sha256": "7229e47ab92205bc03b3c92e397808b8cfb2a4c9a26f4ec67c05470840b401a2",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/release-evidence.py": {
+        "sha256": "446b08983cafa23496903430a6f6f3447ade0a75478791406baafe23f9115b94",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/reuse-predecessor-iso.py": {
+        "sha256": "c9d8098711837bd89311c77b334be6970c0dd4f4c285586249dc66255f802d20",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/reuse-qualification.py": {
+        "sha256": "dfe1e4b62718f166eef08b803ea6e960948fda4d980dddc328085141613b9c51",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/security-policy.py": {
+        "sha256": "f645df613c95944054764ef194e1039aeb03a169c5d058d4c48417e602f23a67",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/security-run.sh": {
+        "sha256": "dc48f2a1205c1ce49087324a780f590b8d71304f5597ec92ea61ab9d976281a0",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/security-scan.py": {
+        "sha256": "9bb01847fd968318b2a39ec4f28d77f5fd7ecb6ec50f37981659d750a93a2ea1",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/sign-release.sh": {
+        "sha256": "cd6655fcfef0dec8f1a1dc5282badaa55f15d8c0e6f754e974fae5e81f3acf56",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/stage.sh": {
+        "sha256": "782f4ba719f8fed0e1a0e9c90f5df509daf2865347721681e1a0f5bd8aadc931",
+        "executable": true,
+        "symlink": null
+      },
+      "scripts/bluebuild/unlock-vm.py": {
+        "sha256": "30fa4a80726cc13d2e3ad159456b70074414b7bd5618301d75cffee73b55557b",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/verify-image.sh": {
+        "sha256": "62ead1d9de7d2e4ee1f1d35d5ad1142ef1000bd2cf08d626445e14cf4defeff1",
+        "executable": true,
+        "symlink": null
+      },
+      "scripts/bluebuild/vm-acceptance.sh": {
+        "sha256": "d5468f8038bf8c2a558348809d52bd66f658158c21e0942bc1f49061eafc4390",
+        "executable": true,
+        "symlink": null
+      },
+      "scripts/bluebuild/vm-diagnostics.sh": {
+        "sha256": "4b3d0adaecbfba3a13545af7787c1801445515d8b87f895c60931e495d96191e",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/vm-upgrade.py": {
+        "sha256": "cf52271fb9bd4cfabe54bf25c881150ffea2bdb604fa9dd1d6342627cbb344e9",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/bluebuild/wait-nix.sh": {
+        "sha256": "51c627a20a2c43a382c75553063f4171a4d8872a12954aa0f55f422a6c3e56b2",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/ci/bluefin-upstream.py": {
+        "sha256": "2f737a9385f9a18d10500c27246ba4afffc852a13a6727f0f2fc7a5d4eacac72",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/ci/ci-options.py": {
+        "sha256": "76215c82603dab8ca3de14af2be807c8f130e27863aa419945143ff929c38035",
+        "executable": false,
+        "symlink": null
+      },
+      "scripts/ci/nix-resources.py": {
+        "sha256": "b0813c68b5b9c32648c53cc442f0fe6dd76acea12ec0faac40d20e7b9c1f2116",
+        "executable": false,
+        "symlink": null
+      },
+      "sources/bluebuild-cli.json": {
+        "sha256": "0f09a9e40f9f928d2de27989db50cc6403344064926c63313801fc8751980b0a",
+        "executable": false,
+        "symlink": null
+      },
+      "sources/bluebuild-installer.json": {
+        "sha256": "b2dfad692fa88e71dbf59fd3ee30b252d49eb3f4c05e167849807d4f1e2bbeca",
+        "executable": false,
+        "symlink": null
+      },
+      "sources/installer-security.json": {
+        "sha256": "c2b7391419c6a513335cce966a06321303da56d1866069cb3af5016d4c4335db",
+        "executable": false,
+        "symlink": null
+      },
+      "files/system/usr/libexec/finite/check-initramfs": {
+        "sha256": "44d6ce674dfa11c3d57eff2bc4b6aab5eadf3e21be5c2921316193b73044f4be",
+        "executable": false,
+        "symlink": null
+      },
+      "files/system/usr/libexec/finite/fix-home-selinux-contexts": {
+        "sha256": "0ec7388e1f415b8e6bf491cbdc25cc7a1dbddb44e3a84d790da919e2e8768ffb",
+        "executable": true,
+        "symlink": null
+      },
+      "files/system/usr/libexec/finite/home-first-login": {
+        "sha256": "3cada8eccf6bb499256462f99653f76e21034d56526a8da2ae719368c6bc7f72",
+        "executable": true,
+        "symlink": null
+      },
+      "files/system/usr/libexec/finite/home-init": {
+        "sha256": "07a541d8c8215860962f3881a39e7cccf1af05b0086ba1cd8cd51c46c58615e1",
+        "executable": true,
+        "symlink": null
+      },
+      "files/system/usr/libexec/finite/install-determinate-nix-selinux-policy": {
+        "sha256": "ba9497fab5455c70e3fa040e28a5770eff8e3cdd7bd5d7ae6ac63fd20b308b0b",
+        "executable": true,
+        "symlink": null
+      },
+      "files/system/usr/libexec/finite/provision-determinate-nix": {
+        "sha256": "aae1597e7e12394683c03e8aa02d1691a64d70e22271748368e702bab2b5790e",
+        "executable": true,
+        "symlink": null
+      },
+      "files/system/usr/libexec/finite/require-determinate-nix-version": {
+        "sha256": "8338238f98a39398356b85250bffbcc3605fc91ab9f2dcc453d8b7b7b8e5ded8",
+        "executable": true,
+        "symlink": null
+      },
+      "files/system/usr/libexec/finite/run-firstboot-rpm-ostree": {
+        "sha256": "ce891c0745e0204fc73201490c53def41e70fb4d0a403ca5310aa0609cf1905d",
+        "executable": true,
+        "symlink": null
+      }
+    },
+    "firmware": {
+      "OVMF_CODE_4M.secboot.fd": "1286f2a3217d09b374d05951355d7a561c8bacecd74845c8a1fbb71a48c0de8d",
+      "OVMF_VARS_4M.ms.fd": "a9b2b13aba3d4629593913471af7545bd8eef1d414f33cab4c86fff7d5bc09b9"
+    },
+    "packages": "mtools=4.0.43-1build1\nopenssl=3.0.13-0ubuntu3.16\novmf=2024.02-2ubuntu0.10\npython3-virt-firmware=24.1.1-2\nqemu-system-x86=1:8.2.2+ds-0ubuntu1.18\nqemu-utils=1:8.2.2+ds-0ubuntu1.18\nskopeo=1.13.3+ds1-2ubuntu0.24.04.3\nxorriso=1:1.5.6-1.1ubuntu3",
+    "bluebuildVersion": {
+      "schema": 1,
+      "version": "v0.9.37",
+      "image": "ghcr.io/blue-build/cli",
+      "digest": "sha256:281d3152c1a4e30e75e777f78b07a8c5c1e5130cb44092f4b4b507402556ec0a"
+    }
+  },
+  "qualificationContextSha256": "5416b4f99c5cb56a4b952a27227f0e8e85ef58c815f0de20f72295c084781dae",
+  "credentialIntegration": {
+    "credentialFixPR": 173,
+    "credentialFixSource": "f5b1408756393f8d649af067e1f10fb9faaca6e4",
+    "credentialFixMainRun": 38792824985,
+    "credentialFixMainConclusion": "success",
+    "inventoryAggregation": "Report collection uses the same read-only SecretSpec profile; measured inventory-only reader paths are unchanged. The DB-only receipt step is skipped in these experiments."
+  },
+  "initialDiagnosticRuns": {
+    "finite": {
+      "run": 38787806638,
+      "executionSource": "2816fa4d16706a60e6cb91c616493aeeb7432101",
+      "status": "superseded-by-wrapper-inclusive-measurement",
+      "newOSProducer": 38777997975
+    },
+    "finite-dev": {
+      "run": 38787815065,
+      "executionSource": "2816fa4d16706a60e6cb91c616493aeeb7432101",
+      "status": "superseded-by-wrapper-inclusive-measurement",
+      "newOSProducer": 38777997975
+    }
+  },
+  "publicCIOptions": {
+    "observedAt": "2026-10-15T19:34:04.412053+00:00",
+    "repositoryVariables": {
+      "FINITE_CACHIX_WRITER": "false",
+      "FINITE_OPTIMIZED_CACHES": "true",
+      "FINITE_QUALIFIED_ISO_CHANNELS": "all",
+      "FINITE_QUALIFIED_ISO_PRESERVATION": "true"
+    },
+    "unsetOptions": [
+      "FINITE_GRYPE_DB_CACHE",
+      "FINITE_QUALIFICATION_REUSE",
+      "FINITE_REUSE_INVENTORY"
+    ],
+    "taskChangedVariables": false
+  }
+}
