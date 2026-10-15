@@ -36,7 +36,7 @@ jobs:
       - name: Set up Nix and SecretSpec
         uses: ./.github/actions/setup-nix
         with:
-          merge-queue-token: ${{ secrets.MERGE_QUEUE_TOKEN }}
+          merge-queue-token: ${{ secrets.MERGE_QUEUE_PAT }}
           require-merge-queue-token: "true"
 
       - name: Verify and enqueue open Dependabot pull requests
