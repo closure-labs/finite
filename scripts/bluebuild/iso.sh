@@ -26,7 +26,15 @@ skopeo inspect "docker://$source" >"$ISO_OUTPUT_DIR"/source.json
 [[ $(jq -r .Digest "$ISO_OUTPUT_DIR"/source.json) == "$digest" ]]
 profile=$(jq -er '.Labels["io.finite.profile"]' "$ISO_OUTPUT_DIR"/source.json)
 case "$channel:$profile" in
-finite:bluefin-generic|latest:bluefin-generic|finite-dev:bluefin-dx-generic) ;;
+finite:finite|latest:finite|finite-dev:finite-dev) ;;
+finite:bluefin-generic|finite-dev:bluefin-dx-generic)
+  # Only the exact published predecessor may retain its historical profile.
+  # Keep that value in installation.json; never relabel its signed image.
+  [[ ${FINITE_PREDECESSOR_DIGEST:-} == "$digest" && ${PROFILE:-} == "$channel" ]] || {
+    echo 'Historical image profiles are permitted only for the exact upgrade predecessor' >&2
+    exit 1
+  }
+  ;;
 *) echo 'Image profile does not match the requested channel' >&2; exit 1 ;;
 esac
 bash "$(dirname "${BASH_SOURCE[0]}")/prepare-installer.sh"
@@ -42,7 +50,7 @@ jq -n --arg image "$source" --arg tag "$repository:$tag" \
   >"$ISO_OUTPUT_DIR"/installation.json
 # v0.9.37 constructs IMAGE_TAG from a tag; a digest-only reference becomes latest.
 sudo bluebuild generate-iso --run-driver docker --variant kinoite --output-dir "$ISO_OUTPUT_DIR" \
-  --iso-name "finite-$profile.iso" image "$repository:$tag"
+  --iso-name "${channel/latest/finite}.iso" image "$repository:$tag"
 # Confirm that the install source tag has not changed while the ISO was assembled.
 [[ $(skopeo inspect --format '{{.Digest}}' "docker://$repository:$tag") == "$digest" ]]
 (cd "$ISO_OUTPUT_DIR" && sha256sum -- *.iso installation.json >SHA256SUMS)

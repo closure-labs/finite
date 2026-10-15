@@ -22,7 +22,7 @@ jobs:
           python3 - <<'PY'
           import hashlib, json, os, re, subprocess
           from pathlib import Path
-          recipe = Path('recipes/bluefin-generic.yml').read_text()
+          recipe = Path('recipes/finite.yml').read_text()
           match = re.findall(r'^image-version: stable@(sha256:[a-f0-9]{64})$', recipe, re.M)
           assert len(match) == 1
           assert re.findall(r'^base-image: (.+)$', recipe, re.M) == ['ghcr.io/ublue-os/bluefin']

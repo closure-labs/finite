@@ -31,6 +31,9 @@ All notable changes to Finite are documented here. The format follows
 
 ### Fixed
 
+- Use `finite` and `finite-dev` consistently for active recipe/profile names,
+  image labels and CI jobs. Installation images are `finite.iso` and
+  `finite-dev.iso`; Bluefin and Bluefin-DX remain the respective foundations.
 - Name new channel releases `finite-0.8.1` and `finite-dev-0.8.1`, removing the
   duplicate `finite-` prefix used in v0.8.0. Historical release names and tags
   remain unchanged.

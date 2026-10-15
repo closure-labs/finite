@@ -51,7 +51,7 @@ class ReleaseSelection(unittest.TestCase):
         selection.validate_resume('push', 'automatic', False, '', '', '', '')
 
     def test_each_channel_selects_only_its_profile_and_requires_checks(self):
-        expected = {'finite': 'bluefin-generic', 'finite-dev': 'bluefin-dx-generic'}
+        expected = {'finite': 'finite', 'finite-dev': 'finite-dev'}
         for channel, profile in expected.items():
             with self.subTest(channel=channel):
                 plan = selection.select('workflow_dispatch', channel, False)

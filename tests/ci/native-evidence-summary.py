@@ -21,7 +21,7 @@ ROOTFS = '/tmp/hosted/rootfs'
 OBJECT = '/sysroot/ostree/repo/objects/ab/example.file'
 
 
-def confirmed_risk(image, profile='bluefin-generic'):
+def confirmed_risk(image, profile='finite'):
     return {'id': 'confirmed-fixture', 'digest': image.split('@')[1], 'profile': profile,
             'platform': 'linux/amd64', 'component': 'pkg:rpm/fedora/example@1', 'severity': 'Critical',
             'impact': 'Host compromise', 'reason': 'Fixture review', 'attackerPath': 'Hostile imported file',
@@ -82,7 +82,7 @@ class NativeSummary(unittest.TestCase):
 
     def critical_result(self):
         self.result.update(mode='desktop-critical-only', trackedReleaseConcerns=[{
-            'id': 'pending-source', 'profiles': ['bluefin-generic'], 'riskClass': 'local-privilege-escalation',
+            'id': 'pending-source', 'profiles': ['finite'], 'riskClass': 'local-privilege-escalation',
             'reason': 'Source fix not classified Critical', 'severity': 'Unknown', 'advisories': [],
             'officialSources': ['https://kernel.org/'], 'reviewedBy': 'Fixture reviewer',
             'reviewedAt': '2026-10-13T11:00:00Z', 'unblockEvidence': 'Source classification and compatible fix'}])
@@ -131,7 +131,7 @@ class NativeSummary(unittest.TestCase):
         self.critical_result()
         basis = 'reviewed-desktop-exploitability'
         self.result.update(blockingBasis=basis, blocked=[], status='pass',
-                           approvedBaseline={'image': IMAGE, 'profile': 'bluefin-generic'})
+                           approvedBaseline={'image': IMAGE, 'profile': 'finite'})
         self.result['trackedReleaseConcerns'][0].update(severity='Critical', advisories=['CVE-2026-1234'])
         result = self.report()
         self.assertEqual(result['blockingBasis'], basis)
@@ -150,7 +150,7 @@ class NativeSummary(unittest.TestCase):
         self.assertEqual(finding['criticalSeverityAdvisories'], [])
         for mutate in [lambda: self.result.update(blockingBasis='other'),
                        lambda: self.result['releaseBlockers'][0].update(digest='sha256:' + 'f' * 64),
-                       lambda: self.result['releaseBlockers'][0].update(profile='bluefin-dx-generic'),
+                       lambda: self.result['releaseBlockers'][0].update(profile='finite-dev'),
                        lambda: self.result['releaseBlockers'][0].pop('affectedCodeEvidence')]:
             self.result.update(blockingBasis=basis, releaseBlockers=[deepcopy(risk)])
             mutate()
@@ -231,7 +231,7 @@ class NativeSummary(unittest.TestCase):
     def test_full_cli_hashes_manifest_sbom_and_result_without_overwriting_output(self):
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
-            config = {'os': 'linux', 'architecture': 'amd64', 'config': {'Labels': {'io.finite.profile': 'bluefin-generic'}}}
+            config = {'os': 'linux', 'architecture': 'amd64', 'config': {'Labels': {'io.finite.profile': 'finite'}}}
             config_raw = json.dumps(config).encode()
             manifest = {'schemaVersion': 2, 'mediaType': 'application/vnd.oci.image.manifest.v1+json',
                 'config': {'digest': 'sha256:' + hashlib.sha256(config_raw).hexdigest(), 'size': len(config_raw)}}

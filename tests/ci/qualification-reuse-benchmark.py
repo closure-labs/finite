@@ -27,7 +27,7 @@ class Benchmark(unittest.TestCase):
         self.directory = Path(self.tmp.name)
         self.old_cwd = Path.cwd(); os.chdir(self.directory); self.addCleanup(os.chdir, self.old_cwd)
         self.source, self.execution = 'a' * 40, 'b' * 40
-        self.args = argparse.Namespace(operation='restore', profile='bluefin-generic', origin_run=10, repetition=1,
+        self.args = argparse.Namespace(operation='restore', profile='finite', origin_run=10, repetition=1,
             source=self.source, identity='v1:' + 'c' * 64, candidate='sha256:' + 'd' * 64,
             previous='sha256:' + 'e' * 64, output=self.directory / 'restore')
         self.now = datetime.now(timezone.utc) - timedelta(seconds=1)
@@ -38,11 +38,11 @@ class Benchmark(unittest.TestCase):
             'encryptedRoot': True, 'bootstrap': False, 'qualifiedAt': self.now.isoformat(),
             'qualificationContext': self.context, 'qualificationContextSha256': M.REUSE.qualification.identity(self.context),
             'qualifiedIsoOrigin': {'run': 10, 'attempt': 1, 'revision': self.source},
-            'qualifiedIso': {'name': 'finite-bluefin-generic.iso', 'sha256': '1' * 64, 'installationSha256': '2' * 64, 'installer': {}}}
+            'qualifiedIso': {'name': 'finite.iso', 'sha256': '1' * 64, 'installationSha256': '2' * 64, 'installer': {}}}
         self.run = {'id': 10, 'run_attempt': 1, 'status': 'completed', 'conclusion': 'success',
             'head_branch': 'main', 'head_sha': self.source, 'path': '.github/workflows/build.yml', 'event': 'push',
             **{key: {'full_name': M.REPO, 'id': M.REPO_ID} for key in ('repository', 'head_repository')}}
-        self.artifact = {'id': 11, 'name': 'qualification-bluefin-generic-10-1', 'size_in_bytes': 100,
+        self.artifact = {'id': 11, 'name': 'qualification-finite-10-1', 'size_in_bytes': 100,
             'digest': 'sha256:' + '3' * 64, 'expired': False,
             'expires_at': (self.now + timedelta(days=1)).strftime('%Y-%m-%dT%H:%M:%SZ'),
             'workflow_run': {'id': 10, 'head_sha': self.source, 'head_branch': 'main',
@@ -62,7 +62,7 @@ class Benchmark(unittest.TestCase):
             'started_at': '2026-10-15T' + start + 'Z', 'completed_at': '2026-10-15T' + end + 'Z'}
 
     def baseline(self):
-        prefix = 'Publish (bluefin-generic) / qualification / '
+        prefix = 'Publish (finite) / qualification / '
         jobs = [self.job(prefix + name, 101 + index, start, end) for index, (name, start, end) in enumerate((
             ('prepare', '14:00:00', '14:01:00'), ('phase (fresh)', '14:01:00', '14:31:00'),
             ('phase (upgrade)', '14:01:00', '14:21:00'), ('aggregate', '14:31:00', '14:32:00')))]

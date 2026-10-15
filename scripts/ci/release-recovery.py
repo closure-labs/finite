@@ -184,14 +184,14 @@ def extract_archive(archive, destination, profile, *, recovery=False):
     destination.mkdir(parents=True, exist_ok=False)
     required = {'installation.json', 'signature.json', 'SHA256SUMS', 'provenance.json', 'acceptance.json',
                 'publication.json', 'security-result.json', 'sbom.syft.json', 'vulnerabilities.json',
-                profile + '-desktop-acceptance.json', 'finite-' + profile + '.iso'}
+                profile + '-desktop-acceptance.json', profile + '.iso'}
     if recovery: required.add('release-recovery.json')
     bound_directory(archive)
     with zipfile.ZipFile(archive) as zipped:
         entries = zipped.infolist(); names = [item.filename for item in entries]
         if (not 0 < len(entries) <= 256 or len(names) != len(set(names)) or not required.issubset(names)
                 or sum(item.file_size for item in entries) > EXPANDED
-                or [name for name in names if name.endswith('.iso')] != ['finite-' + profile + '.iso']):
+                or [name for name in names if name.endswith('.iso')] != [profile + '.iso']):
             raise ValueError('Unexpected, duplicate, missing or oversized release archive contents')
         if shutil.disk_usage(destination).free < sum(item.file_size for item in entries) + 1024**3:
             raise ValueError('Insufficient free disk for declared extraction bytes and 1-GiB reserve')
@@ -308,7 +308,7 @@ def packet(directory, channel, source, original_run, *, inputs=None):
             or acceptance.get('qualifiedIsoOrigin') != {'run': build_number, 'attempt': build['run_attempt'], 'revision': source}):
         raise ValueError('Qualified original build/ISO producer did not succeed at exact source')
     iso = acceptance['qualifiedIso']
-    if (iso.get('name') != 'finite-' + profile + '.iso' or installation['installer'].get('finiteRevision') != source
+    if (iso.get('name') != profile + '.iso' or installation['installer'].get('finiteRevision') != source
             or sha(directory / iso['name']) != iso.get('sha256')
             or sha(directory / 'installation.json') != iso.get('installationSha256')):
         raise ValueError('Recovered pristine ISO or installation bytes differ from qualification')

@@ -28,7 +28,7 @@ class ImageVerificationBenchmark(unittest.TestCase):
         self.identity = 'v1:' + 'b' * 64
         self.config = {'architecture': 'amd64', 'os': 'linux',
             'rootfs': {'type': 'layers', 'diff_ids': ['sha256:' + 'c' * 64]},
-            'config': {'Labels': {'io.finite.profile': 'bluefin-generic', 'io.finite.build-inputs': self.identity,
+            'config': {'Labels': {'io.finite.profile': 'finite', 'io.finite.build-inputs': self.identity,
                 'org.opencontainers.image.revision': self.source,
                 'org.opencontainers.image.source': 'https://github.com/closure-labs/finite',
                 'org.opencontainers.image.base.digest': 'sha256:' + 'd' * 64}}}
@@ -39,7 +39,7 @@ class ImageVerificationBenchmark(unittest.TestCase):
             'layers': [{'mediaType': 'application/vnd.oci.image.layer.v1.tar+gzip', 'digest': 'sha256:' + 'e' * 64, 'size': 123}]}
         self.manifest_bytes = json.dumps(self.manifest).encode()
         self.digest = MODULE.sha(self.manifest_bytes)
-        self.binding = MODULE.image_binding(self.manifest, self.config, 'bluefin-generic', self.source, self.identity)
+        self.binding = MODULE.image_binding(self.manifest, self.config, 'finite', self.source, self.identity)
         self.docker = [{'Id': self.binding['config']['digest'], 'Os': 'linux', 'Architecture': 'amd64',
             'RepoDigests': [MODULE.REPOSITORY + '@' + self.digest],
             'RootFS': {'Type': 'layers', 'Layers': self.binding['diffIds']}, 'Config': self.config['config']}]
@@ -77,7 +77,7 @@ class ImageVerificationBenchmark(unittest.TestCase):
                        lambda value: value['config']['Labels'].update({'org.opencontainers.image.source': 'https://example.com'})]:
             value = copy.deepcopy(self.config); modify(value)
             with self.assertRaises(ValueError):
-                MODULE.image_binding(self.manifest, value, 'bluefin-generic', self.source, self.identity)
+                MODULE.image_binding(self.manifest, value, 'finite', self.source, self.identity)
 
     def test_docker_config_match_alone_cannot_establish_association(self):
         MODULE.verify_docker(self.docker, self.config, self.binding, self.digest, self.digest)
@@ -100,7 +100,7 @@ class ImageVerificationBenchmark(unittest.TestCase):
                        for namespace in ('runtime', 'plugins') for kind in ('tasks', 'containers')]
             if phase == 'warm': stages.append('warm-seed-pull')
             report = {'schema': 1, 'experiment': 'registry-pull-diagnostic', 'status': 'success', 'phase': phase, 'repetition': repetition,
-                'revision': self.source, 'run': 123, 'attempt': 1, 'candidateSource': self.source, 'profile': 'bluefin-generic', 'digest': self.digest,
+                'revision': self.source, 'run': 123, 'attempt': 1, 'candidateSource': self.source, 'profile': 'finite', 'digest': self.digest,
                 'buildIdentity': self.identity, 'platform': 'linux/amd64', 'lockSha256': 'sha256:' + '0' * 64,
                 'runtimeHarnessSha256': 'sha256:' + '1' * 64, 'cosignKeySha256': 'sha256:' + '2' * 64,
                 'bluebuildSourceSha256': 'sha256:' + '3' * 64, 'versions': {'docker': 'test', 'cosign': 'test', 'skopeo': 'test'},
@@ -182,7 +182,7 @@ class ImageVerificationBenchmark(unittest.TestCase):
         start = self.directory / 'start.json'
         start.write_text(json.dumps({'unixSeconds': MODULE.time.time()}))
         args = argparse.Namespace(phase=phase, repetition=1, digest=self.digest, source=self.source,
-            identity=self.identity, profile='bluefin-generic', start=start, output=self.directory / phase)
+            identity=self.identity, profile='finite', start=start, output=self.directory / phase)
         commands = []
         def command(recorder, stage, argv, **kwargs):
             commands.append((stage, argv))

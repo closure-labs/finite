@@ -22,7 +22,7 @@ class BaselineTests(unittest.TestCase):
         self.config = {'os': 'linux', 'architecture': 'amd64', 'config': {'Labels': {
             'org.opencontainers.image.source': 'https://github.com/closure-labs/finite',
             'org.opencontainers.image.revision': '1' * 40,
-            'io.finite.profile': 'bluefin-generic', 'io.finite.build-inputs': 'v1:' + '4' * 64,
+            'io.finite.profile': 'finite', 'io.finite.build-inputs': 'v1:' + '4' * 64,
             'org.opencontainers.image.base.digest': DIGEST,
             'org.opencontainers.image.base.name': BASE + ':stable@' + DIGEST}}}
         self.receipt = {'schema': 1, 'repository': 'closure-labs/finite', 'sourceRevision': '5' * 40,
@@ -37,7 +37,7 @@ class BaselineTests(unittest.TestCase):
         self.assertEqual(result['buildIdentity'], 'v1:' + '4' * 64)
 
     def test_profile_cannot_claim_another_foundation(self):
-        self.config['config']['Labels']['io.finite.profile'] = 'bluefin-dx-generic'
+        self.config['config']['Labels']['io.finite.profile'] = 'finite-dev'
         with self.assertRaises(ValueError): baseline.context(self.config, IMAGE, self.receipt)
 
     def test_retired_profile_labels_cannot_authenticate_as_an_active_variant(self):

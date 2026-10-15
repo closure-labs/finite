@@ -22,8 +22,8 @@ image_identity = identity_module.identity
 ROOT = Path(__file__).resolve().parents[2]
 REPOSITORY = 'ghcr.io/closure-labs/finite'
 PROFILES = {
-    'bluefin-generic': ('bluefin', ['finite', 'latest']),
-    'bluefin-dx-generic': ('bluefin-dx', ['finite-dev']),
+    'finite': ('bluefin', ['finite', 'latest']),
+    'finite-dev': ('bluefin-dx', ['finite-dev']),
 }
 DIGEST = re.compile(r'sha256:[0-9a-f]{64}')
 TRANSIENT = re.compile(r'too many requests|429|50[0-9]|timeout|timed out|connection reset|connection refused|temporary failure|no such host|server misbehaving|network is unreachable|unexpected EOF|TLS handshake', re.I)

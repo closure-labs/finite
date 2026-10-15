@@ -8,7 +8,7 @@ from pathlib import Path
 OPTIONS = ('FINITE_OPTIMIZED_CACHES', 'FINITE_CACHIX_WRITER', 'FINITE_REUSE_INVENTORY',
            'FINITE_GRYPE_DB_CACHE', 'FINITE_QUALIFICATION_REUSE', 'FINITE_QUALIFIED_ISO_PRESERVATION')
 ISO_CHANNELS_OPTION = 'FINITE_QUALIFIED_ISO_CHANNELS'
-CHANNEL_PROFILES = {'finite': 'bluefin-generic', 'finite-dev': 'bluefin-dx-generic'}
+CHANNEL_PROFILES = {'finite': 'finite', 'finite-dev': 'finite-dev'}
 
 
 def iso_channels(value):

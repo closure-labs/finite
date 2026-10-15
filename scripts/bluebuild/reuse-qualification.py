@@ -141,7 +141,7 @@ def validate(directory, profile, candidate, previous, source, build_identity, co
         raise ValueError('Qualification verdict/context binding is incomplete')
     require_age(acceptance, now)
     iso = acceptance['qualifiedIso']
-    if (not re.fullmatch(r'finite-bluefin(?:-dx)?-generic\.iso', iso.get('name', ''))
+    if (not re.fullmatch(r'finite(?:-dev)?\.iso', iso.get('name', ''))
             or any(not re.fullmatch('[0-9a-f]{64}', iso.get(key, '')) for key in ('sha256', 'installationSha256'))
             or not isinstance(iso.get('installer'), dict)):
         raise ValueError('Qualification ISO binding is incomplete')
@@ -154,7 +154,7 @@ def reuse(profile, output):
             or os.environ.get('GITHUB_REF') != 'refs/heads/main'
             or not re.fullmatch('[0-9a-f]{40}', os.environ.get('GITHUB_SHA', ''))):
         raise ValueError('Qualification reuse requires the hosted main workflow')
-    if (not re.fullmatch(r'bluefin(?:-dx)?-generic', profile)
+    if (not re.fullmatch(r'finite(?:-dev)?', profile)
             or not re.fullmatch(r'sha256:[0-9a-f]{64}', os.environ.get('CANDIDATE_DIGEST', ''))
             or (os.environ.get('PREVIOUS_DIGEST') and not re.fullmatch(r'sha256:[0-9a-f]{64}', os.environ['PREVIOUS_DIGEST']))
             or not re.fullmatch('[0-9a-f]{40}', os.environ.get('SOURCE_REVISION', ''))

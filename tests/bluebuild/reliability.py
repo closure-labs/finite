@@ -40,20 +40,20 @@ class ScannerSourceIdentity(unittest.TestCase):
         source = 'b' * 40
         labels = {'org.opencontainers.image.revision': source,
                   'org.opencontainers.image.source': 'https://github.com/closure-labs/finite',
-                  'io.finite.profile': 'bluefin-generic', 'io.finite.build-inputs': 'v1:' + 'c' * 64}
+                  'io.finite.profile': 'finite', 'io.finite.build-inputs': 'v1:' + 'c' * 64}
         metadata = {'Digest': 'sha256:' + 'a' * 64, 'Labels': labels}
         with patch.dict(os.environ, GITHUB_SHA='d' * 40):
-            scan.candidate_identity(metadata, image, 'bluefin-generic', labels['io.finite.build-inputs'], source)
+            scan.candidate_identity(metadata, image, 'finite', labels['io.finite.build-inputs'], source)
             for key in labels:
                 with self.subTest(label=key), self.assertRaises(ValueError):
                     scan.candidate_identity({**metadata, 'Labels': {**labels, key: 'wrong'}},
-                                            image, 'bluefin-generic', labels['io.finite.build-inputs'], source)
+                                            image, 'finite', labels['io.finite.build-inputs'], source)
             for bad in ('invalid', 'd' * 40):
                 with self.subTest(revision=bad), self.assertRaises(ValueError):
-                    scan.candidate_identity(metadata, image, 'bluefin-generic', labels['io.finite.build-inputs'], bad)
+                    scan.candidate_identity(metadata, image, 'finite', labels['io.finite.build-inputs'], bad)
             with self.assertRaises(ValueError):
                 scan.candidate_identity({**metadata, 'Digest': 'sha256:' + 'e' * 64},
-                                        image, 'bluefin-generic', labels['io.finite.build-inputs'], source)
+                                        image, 'finite', labels['io.finite.build-inputs'], source)
 
 
 class ImageIdentity(unittest.TestCase):
@@ -66,7 +66,7 @@ class ImageIdentity(unittest.TestCase):
                             ignore=shutil.ignore_patterns('payload', '__pycache__'))
         shutil.copy2(ROOT / 'cosign.pub', self.root / 'cosign.pub')
 
-    def value(self, profile='bluefin-generic', payload='/nix/store/fixture.drv'):
+    def value(self, profile='finite', payload='/nix/store/fixture.drv'):
         return identity.identity(profile, self.root, payload)
 
     def test_docs_do_not_change_identity(self):
@@ -79,7 +79,7 @@ class ImageIdentity(unittest.TestCase):
         directory.mkdir(parents=True)
         policy = directory / 'image-policy.json'
         policy.write_text('{"mode":"strict"}\n')
-        for profile in ('bluefin-generic', 'bluefin-dx-generic'):
+        for profile in ('finite', 'finite-dev'):
             with self.subTest(profile=profile):
                 before = self.value(profile)
                 policy.write_text('{"mode":"upstream-maintained-risk"}\n')
@@ -115,13 +115,13 @@ class ImageIdentity(unittest.TestCase):
 class ReleaseEvidence(unittest.TestCase):
     def setUp(self):
         self.image = 'ghcr.io/closure-labs/finite@sha256:' + 'a' * 64
-        self.installation = {'image': self.image, 'profile': 'bluefin-generic',
+        self.installation = {'image': self.image, 'profile': 'finite',
                              'updateChannel': 'ghcr.io/closure-labs/finite:finite',
                              'installer': {'finiteRevision': 'd' * 40}}
-        self.acceptance = {'candidate': self.image, 'profile': 'bluefin-generic',
+        self.acceptance = {'candidate': self.image, 'profile': 'finite',
                            'accepted': True, 'secureBoot': True, 'encryptedRoot': True, 'revision': 'd' * 40,
                            'buildIdentity': 'identity', 'previousDigest': 'previous'}
-        self.publication = {'revision': 'd' * 40, 'profile': 'bluefin-generic',
+        self.publication = {'revision': 'd' * 40, 'profile': 'finite',
                             'buildIdentity': 'identity', 'previousDigest': 'previous'}
 
     def test_exact_evidence_is_accepted(self):
@@ -143,10 +143,10 @@ class ReleaseEvidence(unittest.TestCase):
                 release.validate_run({**run, field: 'wrong'}, 'build.yml', 'd' * 40)
 
     def test_reruns_can_reuse_successful_jobs_from_earlier_attempts(self):
-        prefix = 'image-bluefin-generic-123-'
+        prefix = 'image-finite-123-'
         artifacts = [{'name': prefix + '1', 'expired': False},
                      {'name': prefix + '2', 'expired': False},
-                     {'name': 'image-bluefin-dx-generic-123-3', 'expired': False}]
+                     {'name': 'image-finite-dev-123-3', 'expired': False}]
         self.assertEqual(release.latest_artifact(artifacts, prefix), prefix + '2')
         with self.assertRaises(ValueError):
             release.latest_artifact([{'name': prefix + '1', 'expired': True}], prefix)
@@ -173,7 +173,7 @@ class PromotionQualification(unittest.TestCase):
         self.root = Path(temporary.name)
         self.evidence = self.root / '.bluebuild'
         self.evidence.mkdir()
-        self.profile = 'bluefin-generic'
+        self.profile = 'finite'
         self.image = 'ghcr.io/closure-labs/finite@sha256:' + 'a' * 64
         self.record = {'publish': True, 'profile': self.profile, 'tags': ['finite', 'latest'],
                        'revision': 'd' * 40, 'publishedDigest': '', 'previousDigest': '',

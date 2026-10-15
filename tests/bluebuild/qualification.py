@@ -41,7 +41,7 @@ class Qualification(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
         self.directory = Path(self.temporary.name)
-        self.profile = 'bluefin-generic'
+        self.profile = 'finite'
         self.manifest = '{"schemaVersion":2,"manifests":[{"digest":"sha256:' + 'b' * 64 + '"}]}'
         self.candidate = 'ghcr.io/closure-labs/finite@sha256:' + hashlib.sha256(self.manifest.encode()).hexdigest()
         self.previous = 'sha256:' + 'e' * 64
@@ -72,11 +72,11 @@ class Qualification(unittest.TestCase):
         (base / 'acceptance.json').write_text(json.dumps(value))
         iso = self.directory / ('iso-candidate' if fresh else 'iso-predecessor')
         iso.mkdir()
-        (iso / ('finite-' + self.profile + '.iso')).write_bytes(b'pristine fixture ISO' if fresh else b'predecessor ISO')
+        (iso / (self.profile + '.iso')).write_bytes(b'pristine fixture ISO' if fresh else b'predecessor ISO')
         (iso / 'installation.json').write_text(json.dumps({'image': value['source'], 'profile': self.profile, 'installer': self.installer,
             'updateChannel': 'ghcr.io/closure-labs/finite:finite', 'installationTag': 'ghcr.io/closure-labs/finite:i' + '1' * 16}))
         (self.directory / (phase + '-qualification-context.json')).write_text(json.dumps(self.context))
-        iso_name = 'finite-' + self.profile + '.iso'
+        iso_name = self.profile + '.iso'
         (iso / 'SHA256SUMS').write_text(q.sha(iso / iso_name) + '  ' + iso_name + '\n'
             + q.sha(iso / 'installation.json') + '  installation.json\n')
         q.bind_phase(self.directory, phase)
@@ -170,6 +170,21 @@ class Qualification(unittest.TestCase):
         provenance = json.loads((self.directory / '.bluebuild/release/provenance.json').read_text())
         self.assertFalse(provenance['isoMatchesQualification'])
         self.assertIn(('789', 'finite-iso-finite-789-1'), downloaded)
+
+    def test_profile_rename_preserves_exact_predecessor_and_candidate_bindings(self):
+        self.write_phase('upgrade')
+        path = self.directory / 'vm-upgrade/acceptance.json'
+        value = json.loads(path.read_text())
+        value['sourceProfile'] = 'bluefin-generic'
+        path.write_text(json.dumps(value))
+        result = self.aggregate(self.previous)
+        self.assertEqual(result['profile'], 'finite')
+        self.assertEqual(result['previousDigest'], self.previous)
+        self.assertEqual(result['candidate'], self.candidate)
+        value['sourceProfile'] = 'bluefin-dx-generic'
+        path.write_text(json.dumps(value))
+        with self.assertRaisesRegex(ValueError, 'different foundation'):
+            self.aggregate(self.previous)
 
     def test_bootstrap_and_both_phases_aggregate_complete_desktop_evidence(self):
         bootstrap = self.aggregate()
@@ -318,10 +333,10 @@ class Qualification(unittest.TestCase):
         (iso_dir / 'signature.json').write_text('[]')
         stream = io.BytesIO()
         with zipfile.ZipFile(stream, 'w') as zipped:
-            for name in ('finite-' + self.profile + '.iso', 'installation.json', 'signature.json', 'SHA256SUMS'):
+            for name in (self.profile + '.iso', 'installation.json', 'signature.json', 'SHA256SUMS'):
                 zipped.writestr(name, (iso_dir / name).read_bytes())
         iso_data = stream.getvalue()
-        iso_artifact = {'id': 679, 'name': 'finite-qualified-iso-bluefin-generic-123-1', 'expired': False,
+        iso_artifact = {'id': 679, 'name': 'finite-qualified-iso-finite-123-1', 'expired': False,
             'digest': 'sha256:' + hashlib.sha256(iso_data).hexdigest(), 'size_in_bytes': len(iso_data),
             'workflow_run': {'id': 123, 'head_sha': self.revision}}
         real_run = subprocess.run
@@ -358,7 +373,7 @@ class Qualification(unittest.TestCase):
                 bad_signature = False
                 destination = self.directory / 'reused-predecessor'
                 predecessor.restore(self.profile, self.candidate.split('@')[1], destination)
-                self.assertEqual((destination / ('finite-' + self.profile + '.iso')).read_bytes(), b'pristine fixture ISO')
+                self.assertEqual((destination / (self.profile + '.iso')).read_bytes(), b'pristine fixture ISO')
                 self.assertEqual(json.loads((destination / 'installation.json').read_text())['installer']['finiteRevision'], self.revision)
                 self.assertTrue((destination / 'iso-reuse.json').is_file())
 
@@ -391,14 +406,14 @@ class Qualification(unittest.TestCase):
 
 class Origin(unittest.TestCase):
     def setUp(self):
-        self.profile = 'bluefin-generic'
+        self.profile = 'finite'
         self.run = {'id': 123, 'run_attempt': 2, 'status': 'completed', 'conclusion': 'success',
             'head_branch': 'main', 'head_sha': 'a' * 40, 'event': 'workflow_dispatch',
             'path': '.github/workflows/build.yml', 'repository': {'full_name': r.REPOSITORY},
             'head_repository': {'full_name': r.REPOSITORY}}
         self.job = {'id': 45, 'name': f'Publish ({self.profile}) / qualification / aggregate',
             'status': 'completed', 'conclusion': 'success', 'run_id': 123, 'run_attempt': 1, 'head_sha': 'a' * 40}
-        self.artifact = {'id': 678, 'name': 'qualification-bluefin-generic-123-1', 'expired': False,
+        self.artifact = {'id': 678, 'name': 'qualification-finite-123-1', 'expired': False,
             'size_in_bytes': 2345, 'digest': 'sha256:' + 'b' * 64, 'workflow_run': {'id': 123, 'head_sha': 'a' * 40}}
 
     def test_original_available_rerun_artifact_requires_its_exact_successful_attempt(self):
@@ -498,12 +513,12 @@ class IsoScope(unittest.TestCase):
                 patch.object(retention.module, 'prune_iso') as prune:
             with patch.dict(os.environ, self.env()):
                 retention.main()
-            prune.assert_called_once_with('bluefin-generic', apply=True)
+            prune.assert_called_once_with('finite', apply=True)
             prune.reset_mock()
             with patch.dict(os.environ, self.env('finite, finite-dev')):
                 retention.main()
-            self.assertEqual(prune.call_args_list, [unittest.mock.call('bluefin-generic', apply=True),
-                                                   unittest.mock.call('bluefin-dx-generic', apply=True)])
+            self.assertEqual(prune.call_args_list, [unittest.mock.call('finite', apply=True),
+                                                   unittest.mock.call('finite-dev', apply=True)])
             prune.reset_mock()
             with patch.dict(os.environ, self.env(enabled='false')):
                 retention.main()
@@ -549,10 +564,10 @@ probe() {
         return result, marker.exists(), records
 
     def test_actual_predecessor_guard_excludes_other_channels_and_all_diagnostics(self):
-        cases = [('bluefin-generic', 'finite', 'false', True),
-                 ('bluefin-generic', 'finite-dev', 'false', False),
-                 ('bluefin-dx-generic', 'finite', 'false', False),
-                 ('bluefin-generic', 'all', 'true', False)]
+        cases = [('finite', 'finite', 'false', True),
+                 ('finite', 'finite-dev', 'false', False),
+                 ('finite-dev', 'finite', 'false', False),
+                 ('finite', 'all', 'true', False)]
         for profile, selector, diagnostic, expected in cases:
             result, called, records = self.predecessor_guard(profile, selector, diagnostic)
             self.assertEqual(result.returncode, 0, result.stderr)
@@ -562,7 +577,7 @@ probe() {
     def test_measured_predecessor_reuse_preserves_success_miss_and_rejection(self):
         for status, expected_exit, reused in [(0, 0, 'true'), (3, 0, 'false'), (2, 2, None)]:
             with self.subTest(status=status):
-                result, called, records = self.predecessor_guard('bluefin-generic', 'finite', 'false', status)
+                result, called, records = self.predecessor_guard('finite', 'finite', 'false', status)
                 self.assertTrue(called)
                 self.assertEqual(result.returncode, expected_exit, result.stderr)
                 if reused is not None:

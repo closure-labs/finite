@@ -190,7 +190,7 @@ the signature and all checksums before reconstructing the image:
 ```bash
 cosign verify-blob --key cosign.pub --bundle SHA256SUMS.bundle.json SHA256SUMS
 sha256sum --check --strict SHA256SUMS
-cat finite-bluefin-generic.iso.part-* > finite-bluefin-generic.iso
+cat finite.iso.part-* > finite.iso
 ```
 
 Obtain `cosign.pub` through the established Finite trust process, not merely

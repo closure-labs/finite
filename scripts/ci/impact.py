@@ -8,8 +8,8 @@ import subprocess
 from image_identity import QUALIFICATION_ONLY as IMAGE_QUALIFICATION_ONLY
 
 PROFILES = {
-    'bluefin-generic': 'finite',
-    'bluefin-dx-generic': 'finite-dev',
+    'finite': 'finite',
+    'finite-dev': 'finite-dev',
 }
 # These files qualify an existing immutable image; they are not filesystem
 # inputs. Keep source/security checks while reusing already validated builds.

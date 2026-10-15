@@ -20,7 +20,7 @@ spec = importlib.util.spec_from_file_location('benchmark_security', ROOT / 'scri
 benchmark = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(benchmark)
 IMAGE = 'ghcr.io/closure-labs/finite@sha256:' + 'a' * 64
-PROFILE = 'bluefin-generic'
+PROFILE = 'finite'
 REVISION = 'b' * 40
 STAMP = '2026-10-14T12:00:00Z'
 DB = {'valid': True, 'built': STAMP, 'schemaVersion': '6.0.3'}

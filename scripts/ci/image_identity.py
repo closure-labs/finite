@@ -41,7 +41,7 @@ QUALIFICATION_ONLY = {
 
 
 def identity(profile, root, payload=None):
-    if profile not in ('bluefin-generic', 'bluefin-dx-generic'):
+    if profile not in ('finite', 'finite-dev'):
         raise ValueError('Unsupported image profile')
     root = Path(root)
     if payload is None:

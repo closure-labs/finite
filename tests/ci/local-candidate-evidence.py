@@ -16,11 +16,11 @@ mod = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(mod)
 REVISION = 'a' * 40
 IDENTITY = 'v1:' + 'b' * 64
-PROFILE = 'bluefin-generic'
+PROFILE = 'finite'
 OCI_MANIFEST = 'application/vnd.oci.image.manifest.v1+json'
 
 
-def confirmed_risk(image, profile='bluefin-generic'):
+def confirmed_risk(image, profile='finite'):
     return {'id': 'confirmed-fixture', 'digest': image.split('@')[1], 'profile': profile,
             'platform': 'linux/amd64', 'component': 'pkg:rpm/fedora/example@1', 'severity': 'Critical',
             'impact': 'Host compromise', 'reason': 'Fixture review', 'attackerPath': 'Hostile imported file',

@@ -15,7 +15,7 @@ SPEC.loader.exec_module(identity)
 class ActiveVariants(unittest.TestCase):
     def test_only_bluefin_and_dx_recipes_and_workflow_inputs_remain(self):
         self.assertEqual({p.stem for p in (ROOT / 'recipes').glob('*.yml')},
-                         {'bluefin-generic', 'bluefin-dx-generic'})
+                         {'finite', 'finite-dev'})
         for path in (ROOT / '.github/workflows').glob('*.yml'):
             with self.subTest(workflow=path.name):
                 for retired in ('bluefin-next', 'bluefin-dx-next', 'finite-next', 'finite-dev-next'):

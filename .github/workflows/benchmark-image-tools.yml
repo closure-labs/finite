@@ -11,8 +11,8 @@ on:
       profile:
         description: Signed candidate profile for diagnostic qualification
         type: choice
-        default: bluefin-dx-generic
-        options: [bluefin-generic, bluefin-dx-generic]
+        default: finite-dev
+        options: [finite, finite-dev]
       channel:
         description: Matching ongoing update channel
         type: choice

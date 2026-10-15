@@ -84,7 +84,7 @@ class BluefinTests(unittest.TestCase):
         self.observed['ghcr.io/ublue-os/bluefin'] = NEW
         before = self.snapshot()
         result = upstream.update(self.root, self.observed)
-        self.assertEqual(set(result['profiles']), {'bluefin-generic'})
+        self.assertEqual(set(result['profiles']), {'finite'})
         for name, content in self.snapshot().items():
             if name.startswith('bluefin-dx'):
                 self.assertEqual(content, before[name])
@@ -120,7 +120,7 @@ class BluefinTests(unittest.TestCase):
         self.assertEqual(len(result['verified']), 2)
 
     def test_retired_profiles_are_rejected_before_reconciliation(self):
-        self.assertEqual(set(upstream.PROFILES), {'bluefin-generic', 'bluefin-dx-generic'})
+        self.assertEqual(set(upstream.PROFILES), {'finite', 'finite-dev'})
         empty = {'checks': False, 'nix': False, 'profiles': []}
         for profile in ('bluefin-next', 'bluefin-dx-next'):
             with self.subTest(profile=profile), self.assertRaises(ValueError):
@@ -180,14 +180,14 @@ class BluefinTests(unittest.TestCase):
                 image['Digest'] = NEW
             return image
         with patch.object(upstream, 'inspect', side_effect=alias_drift):
-            self.assertEqual(upstream.reconcile(self.root)['profiles'], ['bluefin-generic'])
+            self.assertEqual(upstream.reconcile(self.root)['profiles'], ['finite'])
         def missed_publication(reference, **kwargs):
             image = self.published(reference, **kwargs)
             if reference.endswith(':finite-dev'):
                 image['Labels']['org.opencontainers.image.base.digest'] = NEW
             return image
         with patch.object(upstream, 'inspect', side_effect=missed_publication):
-            self.assertEqual(upstream.reconcile(self.root)['profiles'], ['bluefin-dx-generic'])
+            self.assertEqual(upstream.reconcile(self.root)['profiles'], ['finite-dev'])
 
     def test_docs_push_recovers_replaced_pending_publication(self):
         docs = {'checks': False, 'nix': False, 'profiles': []}
@@ -200,13 +200,13 @@ class BluefinTests(unittest.TestCase):
             return image
         with patch.object(upstream, 'inspect', side_effect=unpublished):
             self.assertEqual(upstream.merge_impact(upstream.reconcile(self.root), docs),
-                             {'checks': True, 'nix': False, 'profiles': ['bluefin-dx-generic']})
+                             {'checks': True, 'nix': False, 'profiles': ['finite-dev']})
 
     def test_reconciliation_preserves_diff_selection_and_payload_comparison(self):
-        pending = {'checks': True, 'nix': False, 'profiles': ['bluefin-dx-generic']}
-        impact = {'checks': True, 'nix': True, 'profiles': ['bluefin-generic']}
+        pending = {'checks': True, 'nix': False, 'profiles': ['finite-dev']}
+        impact = {'checks': True, 'nix': True, 'profiles': ['finite']}
         self.assertEqual(upstream.merge_impact(pending, impact),
-                         {'checks': True, 'nix': True, 'profiles': ['bluefin-dx-generic', 'bluefin-generic']})
+                         {'checks': True, 'nix': True, 'profiles': ['finite', 'finite-dev']})
         with self.assertRaises(ValueError):
             upstream.merge_impact(pending, {**impact, 'profiles': ['untrusted-profile']})
 
@@ -218,7 +218,7 @@ class BluefinTests(unittest.TestCase):
                 upstream.reconcile(self.root)
 
     def test_recovery_defers_to_active_publication_then_retries(self):
-        plan = {'checks': True, 'nix': False, 'profiles': ['bluefin-dx-generic']}
+        plan = {'checks': True, 'nix': False, 'profiles': ['finite-dev']}
         with patch.object(upstream, 'reconcile', return_value=plan), patch.object(upstream, 'github', return_value={'workflow_runs': [{'event': 'push'}]}), patch.object(upstream.subprocess, 'run') as run:
             self.assertFalse(upstream.recover(self.root)['dispatched'])
             run.assert_not_called()
@@ -242,46 +242,46 @@ class BluefinTests(unittest.TestCase):
 
     def prepare(self, publish=True):
         with patch.dict(os.environ, GITHUB_SHA='f' * 40), patch.object(publication.upstream, 'inspect', side_effect=self.published), patch.object(publication.subprocess, 'run'):
-            publication.prepare('bluefin-generic', publish, self.root)
+            publication.prepare('finite', publish, self.root)
 
     def recovery_policy(self):
         path = self.root / 'automation/qualification-recovery.json'
         path.parent.mkdir(exist_ok=True)
-        policy = {'schema': 1, 'profiles': {'bluefin-generic': {
+        policy = {'schema': 1, 'profiles': {'finite': {
             'publishedDigest': IMAGE, 'baselineDigest': NEW, 'reason': 'Missing initramfs'}}}
         path.write_text(json.dumps(policy))
         return path, policy
 
     def prepare_recovery(self):
         self.recovery_policy()
-        baseline = {'Digest': NEW, 'Labels': {'io.finite.profile': 'bluefin-generic'}}
+        baseline = {'Digest': NEW, 'Labels': {'io.finite.profile': 'finite'}}
         with patch.dict(os.environ, GITHUB_SHA='f' * 40), \
                 patch.object(publication.upstream, 'inspect', side_effect=[self.published(upstream.REPOSITORY + ':finite'), baseline]), \
                 patch.object(publication.subprocess, 'run') as run:
-            publication.prepare('bluefin-generic', True, self.root)
+            publication.prepare('finite', True, self.root)
         self.assertEqual([call.args[0][-1] for call in run.call_args_list],
                          [upstream.REPOSITORY + '@' + IMAGE, upstream.REPOSITORY + '@' + NEW])
         return self.root / '.bluebuild'
 
     def test_recovery_only_applies_to_exact_profile_and_broken_digest(self):
         self.recovery_policy()
-        self.assertEqual(publication.recovery_baseline('bluefin-generic', IMAGE, self.root),
+        self.assertEqual(publication.recovery_baseline('finite', IMAGE, self.root),
                          (NEW, 'Missing initramfs'))
-        self.assertEqual(publication.recovery_baseline('bluefin-generic', NEW, self.root), (NEW, ''))
-        self.assertEqual(publication.recovery_baseline('bluefin-dx-generic', IMAGE, self.root), (IMAGE, ''))
+        self.assertEqual(publication.recovery_baseline('finite', NEW, self.root), (NEW, ''))
+        self.assertEqual(publication.recovery_baseline('finite-dev', IMAGE, self.root), (IMAGE, ''))
 
     def test_invalid_recovery_policy_fails_closed(self):
         path, policy = self.recovery_policy()
         for key, value in [('publishedDigest', ''), ('baselineDigest', IMAGE), ('reason', '')]:
             invalid = json.loads(json.dumps(policy))
-            invalid['profiles']['bluefin-generic'][key] = value
+            invalid['profiles']['finite'][key] = value
             path.write_text(json.dumps(invalid))
             with self.assertRaises(ValueError):
-                publication.recovery_baseline('bluefin-generic', IMAGE, self.root)
+                publication.recovery_baseline('finite', IMAGE, self.root)
 
     def test_recovery_forces_qualification_and_records_both_digests(self):
         evidence = self.prepare_recovery()
-        record = json.loads((evidence / 'bluefin-generic-publication.json').read_text())
+        record = json.loads((evidence / 'finite-publication.json').read_text())
         self.assertTrue(record['qualify'])
         self.assertEqual(record['publishedDigest'], IMAGE)
         self.assertEqual(record['previousDigest'], NEW)
@@ -290,66 +290,66 @@ class BluefinTests(unittest.TestCase):
     def test_wrong_profile_or_unsigned_recovery_never_mutates_recipe(self):
         self.recovery_policy()
         before = self.snapshot()
-        wrong = {'Digest': NEW, 'Labels': {'io.finite.profile': 'bluefin-dx-generic'}}
+        wrong = {'Digest': NEW, 'Labels': {'io.finite.profile': 'finite-dev'}}
         with patch.object(publication.upstream, 'inspect', side_effect=[self.published(upstream.REPOSITORY + ':finite'), wrong]), \
                 patch.object(publication.subprocess, 'run'):
             with self.assertRaisesRegex(ValueError, 'different profile'):
-                publication.prepare('bluefin-generic', True, self.root)
+                publication.prepare('finite', True, self.root)
         with patch.object(publication.upstream, 'inspect', return_value=self.published(upstream.REPOSITORY + ':finite')), \
                 patch.object(publication.subprocess, 'run', side_effect=[None, subprocess.CalledProcessError(1, 'cosign')]):
             with self.assertRaises(subprocess.CalledProcessError):
-                publication.prepare('bluefin-generic', True, self.root)
+                publication.prepare('finite', True, self.root)
         self.assertEqual(self.snapshot(), before)
 
     def test_recovery_promotion_requires_exact_acceptance_and_unchanged_channel(self):
         evidence = self.prepare_recovery()
         candidate = upstream.REPOSITORY + '@sha256:' + 'd' * 64
-        (evidence / 'bluefin-generic-image-ref.txt').write_text(candidate)
+        (evidence / 'finite-image-ref.txt').write_text(candidate)
         acceptance = {'accepted': True, 'candidate': candidate, 'previousDigest': NEW,
-                      'profile': 'bluefin-generic', 'revision': 'f' * 40,
+                      'profile': 'finite', 'revision': 'f' * 40,
                       'buildIdentity': IDENTITY, 'secureBoot': True, 'encryptedRoot': True}
-        path = evidence / 'bluefin-generic-acceptance.json'
+        path = evidence / 'finite-acceptance.json'
         with patch.dict(os.environ, GITHUB_SHA='f' * 40), patch.object(publication.subprocess, 'run') as run:
             with self.assertRaisesRegex(ValueError, 'lacks matching successful'):
-                publication.promote('bluefin-generic', self.root)
+                publication.promote('finite', self.root)
             for key, value in [('accepted', False), ('previousDigest', IMAGE), ('secureBoot', False)]:
                 path.write_text(json.dumps({**acceptance, key: value}))
                 with self.assertRaisesRegex(ValueError, 'lacks matching successful'):
-                    publication.promote('bluefin-generic', self.root)
+                    publication.promote('finite', self.root)
             path.write_text(json.dumps(acceptance))
             with patch.object(publication.upstream, 'inspect', return_value={'Digest': NEW}):
                 with self.assertRaisesRegex(ValueError, 'Public channel changed'):
-                    publication.promote('bluefin-generic', self.root)
+                    publication.promote('finite', self.root)
             self.assertFalse(any(call.args[0][0] == 'skopeo' for call in run.call_args_list))
             run.reset_mock()
             with patch.object(publication.upstream, 'inspect', side_effect=[{'Digest': IMAGE},
                     {'Digest': candidate.split('@')[1]}, {'Digest': candidate.split('@')[1]}]):
-                publication.promote('bluefin-generic', self.root)
+                publication.promote('finite', self.root)
             self.assertEqual(run.call_count, 3)
 
     def test_recovery_record_cannot_skip_or_change_reviewed_baseline(self):
         evidence = self.prepare_recovery()
-        path = evidence / 'bluefin-generic-publication.json'
+        path = evidence / 'finite-publication.json'
         original = json.loads(path.read_text())
         with patch.dict(os.environ, GITHUB_SHA='f' * 40), patch.object(publication.subprocess, 'run') as run:
             for key, value in [('qualify', False), ('previousDigest', IMAGE), ('recoveryReason', '')]:
                 path.write_text(json.dumps({**original, key: value}))
                 with self.assertRaisesRegex(ValueError, 'reviewed recovery baseline'):
-                    publication.promote('bluefin-generic', self.root)
+                    publication.promote('finite', self.root)
             run.assert_not_called()
 
     def test_candidate_preparation_never_exposes_channel_tags(self):
         self.prepare()
-        recipe = upstream.yaml.safe_load((self.root / 'recipes/bluefin-generic.yml').read_text())
-        self.assertEqual(recipe['alt-tags'], ['candidate-bluefin-generic'])
-        self.assertEqual(recipe['image-version'], 'stable@' + self.approved['bluefin-generic']['digest'])
-        record = json.loads((self.root / '.bluebuild/bluefin-generic-publication.json').read_text())
+        recipe = upstream.yaml.safe_load((self.root / 'recipes/finite.yml').read_text())
+        self.assertEqual(recipe['alt-tags'], ['candidate-finite'])
+        self.assertEqual(recipe['image-version'], 'stable@' + self.approved['finite']['digest'])
+        record = json.loads((self.root / '.bluebuild/finite-publication.json').read_text())
         self.assertEqual(record['tags'], ['finite', 'latest'])
 
     def test_manual_qualification_overrides_matching_input_identity(self):
         with patch.dict(os.environ, FORCE_QUALIFICATION='true'):
             self.prepare()
-        record = json.loads((self.root / '.bluebuild/bluefin-generic-publication.json').read_text())
+        record = json.loads((self.root / '.bluebuild/finite-publication.json').read_text())
         self.assertTrue(record['qualify'])
 
     def test_untrusted_predecessor_never_mutates_recipe(self):
@@ -357,54 +357,54 @@ class BluefinTests(unittest.TestCase):
         with patch.object(publication.upstream, 'inspect', side_effect=self.published), \
                 patch.object(publication.subprocess, 'run', side_effect=subprocess.CalledProcessError(1, 'cosign')):
             with self.assertRaises(subprocess.CalledProcessError):
-                publication.prepare('bluefin-generic', True, self.root)
+                publication.prepare('finite', True, self.root)
         self.assertEqual(before, self.snapshot())
 
     def test_validation_keeps_recipe_and_cannot_promote(self):
         before = self.snapshot()
         self.prepare(False)
         after = self.snapshot()
-        self.assertEqual(before['bluefin-dx-generic.yml'], after['bluefin-dx-generic.yml'])
-        self.assertEqual(upstream.yaml.safe_load(after['bluefin-generic.yml'])['alt-tags'], ['finite', 'latest'])
+        self.assertEqual(before['finite-dev.yml'], after['finite-dev.yml'])
+        self.assertEqual(upstream.yaml.safe_load(after['finite.yml'])['alt-tags'], ['finite', 'latest'])
         with self.assertRaises(ValueError), patch.object(publication.subprocess, 'run') as run:
-            publication.promote('bluefin-generic', self.root)
+            publication.promote('finite', self.root)
         run.assert_not_called()
 
     def test_unverified_candidate_cannot_promote(self):
         self.prepare()
         with patch.dict(os.environ, GITHUB_SHA='f' * 40), patch.object(publication.subprocess, 'run') as run:
             with self.assertRaises(FileNotFoundError):
-                publication.promote('bluefin-generic', self.root)
+                publication.promote('finite', self.root)
             run.assert_not_called()
 
     def accepted_candidate(self, image):
         acceptance = {'accepted': True, 'candidate': image, 'previousDigest': IMAGE,
-                      'profile': 'bluefin-generic', 'revision': 'f' * 40,
+                      'profile': 'finite', 'revision': 'f' * 40,
                       'buildIdentity': IDENTITY, 'secureBoot': True, 'encryptedRoot': True}
-        (self.root / '.bluebuild/bluefin-generic-acceptance.json').write_text(json.dumps(acceptance))
+        (self.root / '.bluebuild/finite-acceptance.json').write_text(json.dumps(acceptance))
 
     def test_missing_vm_receipt_blocks_before_registry_access(self):
         self.prepare()
         image = upstream.REPOSITORY + '@' + IMAGE
-        (self.root / '.bluebuild/bluefin-generic-image-ref.txt').write_text(image + '\n')
+        (self.root / '.bluebuild/finite-image-ref.txt').write_text(image + '\n')
         self.accepted_candidate(image)
         with patch.dict(os.environ, GITHUB_SHA='f' * 40), \
                 patch.object(publication.desktop, 'verify', self.desktop_verifier), \
                 patch.object(publication.subprocess, 'run') as run, \
                 patch.object(publication.upstream, 'inspect') as inspect:
             with self.assertRaisesRegex(ValueError, 'Missing hash-bound VM security receipt'):
-                publication.promote('bluefin-generic', self.root)
+                publication.promote('finite', self.root)
             run.assert_not_called()
             inspect.assert_not_called()
-        self.assertFalse((self.root / '.bluebuild/bluefin-generic-promoted.json').exists())
+        self.assertFalse((self.root / '.bluebuild/finite-promoted.json').exists())
 
     def test_promotion_uses_verified_digest_for_both_aliases(self):
         self.prepare()
         image = upstream.REPOSITORY + '@' + IMAGE
-        (self.root / '.bluebuild/bluefin-generic-image-ref.txt').write_text(image + '\n')
+        (self.root / '.bluebuild/finite-image-ref.txt').write_text(image + '\n')
         self.accepted_candidate(image)
         with patch.dict(os.environ, GITHUB_SHA='f' * 40), patch.object(publication.subprocess, 'run') as run, patch.object(publication.upstream, 'inspect', return_value={'Digest': IMAGE}):
-            publication.promote('bluefin-generic', self.root)
+            publication.promote('finite', self.root)
             self.desktop.assert_called_once()
             self.assertEqual(self.desktop.call_args.args[0], self.root / '.bluebuild')
             self.assertEqual(self.desktop.call_args.args[1]['candidate'], image)
@@ -413,26 +413,26 @@ class BluefinTests(unittest.TestCase):
             for call in run.call_args_list[1:]:
                 self.assertIn('docker://' + image, call.args[0])
                 self.assertIn('--preserve-digests', call.args[0])
-            self.assertTrue((self.root / '.bluebuild/bluefin-generic-promoted.json').exists())
+            self.assertTrue((self.root / '.bluebuild/finite-promoted.json').exists())
 
     def test_failed_promotion_does_not_report_success(self):
         self.prepare()
-        (self.root / '.bluebuild/bluefin-generic-image-ref.txt').write_text(upstream.REPOSITORY + '@' + IMAGE)
+        (self.root / '.bluebuild/finite-image-ref.txt').write_text(upstream.REPOSITORY + '@' + IMAGE)
         self.accepted_candidate(upstream.REPOSITORY + '@' + IMAGE)
         with patch.dict(os.environ, GITHUB_SHA='f' * 40), patch.object(publication.subprocess, 'run', side_effect=subprocess.CalledProcessError(1, 'skopeo')):
             with self.assertRaises(subprocess.CalledProcessError):
-                publication.promote('bluefin-generic', self.root)
-        self.assertFalse((self.root / '.bluebuild/bluefin-generic-promoted.json').exists())
+                publication.promote('finite', self.root)
+        self.assertFalse((self.root / '.bluebuild/finite-promoted.json').exists())
 
     def test_inspection_failure_never_creates_verified_marker(self):
         self.prepare()
         bindir = self.root / 'bin'
         bindir.mkdir()
         shutil.copytree(ROOT / 'sources', self.root / 'sources')
-        recipe = self.approved['bluefin-generic']
+        recipe = self.approved['finite']
         labels = {'org.opencontainers.image.base.digest': recipe['digest'], 'org.opencontainers.image.revision': 'f' * 40,
                   'io.finite.build-inputs': IDENTITY,
-                  'io.finite.profile': 'bluefin-generic', 'org.opencontainers.image.source': 'https://github.com/closure-labs/finite'}
+                  'io.finite.profile': 'finite', 'org.opencontainers.image.source': 'https://github.com/closure-labs/finite'}
         (self.root / 'image.json').write_text(json.dumps([{'Config': {'Labels': labels}}]))
         for name, script in {
             'skopeo': 'echo \'{"Digest":"' + IMAGE + '"}\'',
@@ -442,8 +442,8 @@ class BluefinTests(unittest.TestCase):
             path.write_text('#!' + shutil.which('bash') + '\n' + script + '\n')
             path.chmod(0o755)
         env = {**os.environ, 'PATH': str(bindir) + ':' + os.environ['PATH'], 'GITHUB_SHA': 'f' * 40}
-        command = ['bash', str(ROOT / 'scripts/bluebuild/inspect-built.sh'), 'bluefin-generic', 'finite', 'true']
-        marker = self.root / '.bluebuild/bluefin-generic-image-ref.txt'
+        command = ['bash', str(ROOT / 'scripts/bluebuild/inspect-built.sh'), 'finite', 'finite', 'true']
+        marker = self.root / '.bluebuild/finite-image-ref.txt'
         for failure in [{'RUNTIME_STATUS': '1'}]:
             result = subprocess.run(command, cwd=self.root, env={**env, **failure}, capture_output=True)
             self.assertNotEqual(result.returncode, 0, result.stderr)
@@ -470,26 +470,26 @@ class BluefinTests(unittest.TestCase):
     def test_enforced_qualification_requires_exact_evidence(self):
         self.prepare()
         evidence = self.root / '.bluebuild'
-        path = evidence / 'bluefin-generic-publication.json'
+        path = evidence / 'finite-publication.json'
         record = json.loads(path.read_text())
         record.update(qualify=True, qualificationMode='enforce')
         path.write_text(json.dumps(record))
         image = upstream.REPOSITORY + '@' + IMAGE
-        (evidence / 'bluefin-generic-image-ref.txt').write_text(image)
+        (evidence / 'finite-image-ref.txt').write_text(image)
         accepted = {'accepted': True, 'candidate': image, 'previousDigest': IMAGE,
-                    'profile': 'bluefin-generic', 'revision': 'f' * 40,
+                    'profile': 'finite', 'revision': 'f' * 40,
                     'buildIdentity': IDENTITY, 'secureBoot': True, 'encryptedRoot': True}
         with patch.dict(os.environ, GITHUB_SHA='f' * 40, FINITE_QUALIFICATION_MODE='enforce'), patch.object(publication.subprocess, 'run') as run:
             with self.assertRaises(ValueError):
-                publication.promote('bluefin-generic', self.root)
+                publication.promote('finite', self.root)
             for field in accepted:
-                (evidence / 'bluefin-generic-acceptance.json').write_text(json.dumps({**accepted, field: None}))
+                (evidence / 'finite-acceptance.json').write_text(json.dumps({**accepted, field: None}))
                 with self.assertRaises(ValueError):
-                    publication.promote('bluefin-generic', self.root)
+                    publication.promote('finite', self.root)
             run.assert_not_called()
-            (evidence / 'bluefin-generic-acceptance.json').write_text(json.dumps(accepted))
+            (evidence / 'finite-acceptance.json').write_text(json.dumps(accepted))
             with patch.object(publication.upstream, 'inspect', return_value={'Digest': IMAGE}):
-                publication.promote('bluefin-generic', self.root)
+                publication.promote('finite', self.root)
             self.desktop.assert_called_once()
             self.assertEqual(self.desktop.call_args.args[0], self.root / '.bluebuild')
             self.assertEqual(self.desktop.call_args.args[1]['candidate'], image)
@@ -501,25 +501,25 @@ class BluefinTests(unittest.TestCase):
                 self.prepare()
         self.prepare()
         evidence = self.root / '.bluebuild'
-        path = evidence / 'bluefin-generic-publication.json'
+        path = evidence / 'finite-publication.json'
         record = json.loads(path.read_text())
         record.update(qualify=True, qualificationMode='shadow')
         path.write_text(json.dumps(record))
-        (evidence / 'bluefin-generic-image-ref.txt').write_text(upstream.REPOSITORY + '@' + IMAGE)
+        (evidence / 'finite-image-ref.txt').write_text(upstream.REPOSITORY + '@' + IMAGE)
         with patch.dict(os.environ, GITHUB_SHA='f' * 40), patch.object(publication.subprocess, 'run') as run:
             with self.assertRaisesRegex(ValueError, 'must be enforced'):
-                publication.promote('bluefin-generic', self.root)
+                publication.promote('finite', self.root)
             run.assert_not_called()
 
     def test_default_policy_rejects_failed_qualification(self):
         with patch.dict(os.environ, FORCE_QUALIFICATION='true'):
             self.prepare()
         evidence = self.root / '.bluebuild'
-        (evidence / 'bluefin-generic-image-ref.txt').write_text(upstream.REPOSITORY + '@' + IMAGE)
-        (evidence / 'bluefin-generic-qualification-outcome.json').write_text('{"outcome":"failure"}')
+        (evidence / 'finite-image-ref.txt').write_text(upstream.REPOSITORY + '@' + IMAGE)
+        (evidence / 'finite-qualification-outcome.json').write_text('{"outcome":"failure"}')
         with patch.dict(os.environ, GITHUB_SHA='f' * 40), patch.object(publication.subprocess, 'run') as run:
             with self.assertRaisesRegex(ValueError, 'lacks matching successful'):
-                publication.promote('bluefin-generic', self.root)
+                publication.promote('finite', self.root)
             run.assert_not_called()
 
 
@@ -619,12 +619,12 @@ class DeterministicIdentity(unittest.TestCase):
                             ignore=shutil.ignore_patterns('payload', '__pycache__', '*.pyc', '*.pyo'))
         shutil.copy2(ROOT / 'cosign.pub', self.root / 'cosign.pub')
 
-    def identity(self, profile='bluefin-generic'):
+    def identity(self, profile='finite'):
         return identity_module.identity(profile, self.root, '/nix/store/fixture.drv')
 
     def test_timestamp_bytecode_presence_and_changed_headers_do_not_change_identity(self):
         source = self.root / 'scripts/bluebuild/publication.py'
-        original = {profile: self.identity(profile) for profile in ('bluefin-generic', 'bluefin-dx-generic')}
+        original = {profile: self.identity(profile) for profile in ('finite', 'finite-dev')}
         first = Path(py_compile.compile(str(source), doraise=True,
                                        invalidation_mode=py_compile.PycInvalidationMode.TIMESTAMP))
         first_bytes = first.read_bytes()
@@ -646,7 +646,7 @@ class DeterministicIdentity(unittest.TestCase):
             self.assertEqual(expected, self.identity(profile))
 
     def test_authored_helper_bytes_still_change_both_profile_identities(self):
-        before = {profile: self.identity(profile) for profile in ('bluefin-generic', 'bluefin-dx-generic')}
+        before = {profile: self.identity(profile) for profile in ('finite', 'finite-dev')}
         source = self.root / 'scripts/bluebuild/build.sh'
         source.write_bytes(source.read_bytes() + b'\n# Authored change\n')
         for profile, expected in before.items():

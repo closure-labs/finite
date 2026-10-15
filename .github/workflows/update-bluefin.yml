@@ -74,7 +74,7 @@ jobs:
           token: ${{ env.MERGE_QUEUE_TOKEN }}
           branch: automation/update-bluefin
           delete-branch: true
-          add-paths: recipes/bluefin-*.yml
+          add-paths: recipes/finite*.yml
           commit-message: "sources: update Bluefin base digests"
           title: "sources: update Bluefin base digests"
           body: |
@@ -91,7 +91,7 @@ jobs:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           EXPECTED_AUTHOR: ${{ vars.AUTOMATION_UPDATE_LOGIN || 'app/github-actions' }}
           EXPECTED_BRANCH: automation/update-bluefin
-          EXPECTED_FILES: recipes/bluefin-generic.yml,recipes/bluefin-dx-generic.yml
+          EXPECTED_FILES: recipes/finite.yml,recipes/finite-dev.yml
           EXPECTED_TITLE: "sources: update Bluefin base digests"
           GH_TOKEN: ${{ env.MERGE_QUEUE_TOKEN }}
           PR_NUMBER: ${{ steps.update.outputs.pull-request-number }}

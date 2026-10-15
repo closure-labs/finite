@@ -50,7 +50,7 @@ class Selection(unittest.TestCase):
     def test_only_active_recipes_are_selected(self):
         for profile in impact.PROFILES:
             self.assertEqual(impact.classify(['recipes/' + profile + '.yml'])['profiles'], [profile])
-        self.assertEqual(set(impact.PROFILES), {'bluefin-generic', 'bluefin-dx-generic'})
+        self.assertEqual(set(impact.PROFILES), {'finite', 'finite-dev'})
         self.assertEqual(impact.classify(['files/scripts/upstream-kernel.py'])['profiles'], sorted(impact.PROFILES))
 
     def test_check_only_inputs_and_full_rebuild_fallback(self):
@@ -127,7 +127,7 @@ class Payloads(unittest.TestCase):
         before = {'generic': 'generic-a'}
         self.assertEqual(payloads.select([], before, before), [])
         self.assertEqual(payloads.select([], before, {'generic': 'generic-b'}), sorted(impact.PROFILES))
-        self.assertEqual(payloads.select(['bluefin-generic'], before, before), ['bluefin-generic'])
+        self.assertEqual(payloads.select(['finite'], before, before), ['finite'])
         for retired in ('bluefin-next', 'bluefin-dx-next'):
             with self.assertRaises(ValueError):
                 payloads.select([retired], before, before)
@@ -139,9 +139,9 @@ class Payloads(unittest.TestCase):
             seen.append(revision)
             return {'generic': 'same'}
         event = {'pull_request': {'base': {'sha': base}, 'head': {'sha': branch}}}
-        selected, evidence = payloads.refine({'nix': True, 'profiles': ['bluefin-generic']}, 'pull_request', event, merge, evaluate)
+        selected, evidence = payloads.refine({'nix': True, 'profiles': ['finite']}, 'pull_request', event, merge, evaluate)
         self.assertEqual(seen, [base, merge])
-        self.assertEqual(selected, ['bluefin-generic'])
+        self.assertEqual(selected, ['finite'])
         self.assertEqual(evidence['head'], merge)
 
     def test_no_evaluation_for_explicit_full_builds(self):
@@ -175,7 +175,7 @@ class Gate(unittest.TestCase):
         }
 
     def test_all_valid_routes(self):
-        for checks, selected in [(False, []), (True, []), (True, ['bluefin-generic']), (True, sorted(impact.PROFILES))]:
+        for checks, selected in [(False, []), (True, []), (True, ['finite']), (True, sorted(impact.PROFILES))]:
             for publish in (False, True):
                 self.assertEqual(gate.failures(self.needs(checks, selected, publish), publish), [])
 
@@ -195,7 +195,7 @@ class Gate(unittest.TestCase):
         self.assertTrue(gate.failures(needs, False))
 
     def test_prerequisite_failure_has_no_cascading_selection_errors(self):
-        needs = self.needs(True, ['bluefin-generic'])
+        needs = self.needs(True, ['finite'])
         needs['docs']['result'] = 'failure'
         needs['checks'] = {'result': 'skipped', 'outputs': {}}
         self.assertEqual(gate.failures(needs, False), ['docs: expected success, got failure'])
@@ -218,10 +218,10 @@ class Gate(unittest.TestCase):
             self.assertGreaterEqual(workflow['jobs']['update']['timeout-minutes'], 210)
 
     def test_missing_matrix_and_omitted_explicit_image_block(self):
-        needs = self.needs(True, ['bluefin-generic'])
+        needs = self.needs(True, ['finite'])
         needs['checks']['outputs'] = {}
         self.assertTrue(gate.failures(needs, False))
-        needs = self.needs(True, ['bluefin-generic'])
+        needs = self.needs(True, ['finite'])
         needs['checks']['outputs'] = {'images': 'false', 'matrix': '{"include":[]}'}
         self.assertTrue(gate.failures(needs, False))
 

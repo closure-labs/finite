@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SPEC = importlib.util.spec_from_file_location('reuse', ROOT / 'scripts/ci/reuse-candidate-security.py')
 reuse = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(reuse)
-PROFILE = 'bluefin-generic'
+PROFILE = 'finite'
 SHA = 'a' * 40
 DIGEST = 'sha256:' + 'b' * 64
 IMAGE = 'ghcr.io/closure-labs/finite@' + DIGEST

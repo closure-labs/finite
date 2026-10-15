@@ -6,7 +6,7 @@ on:
       profile:
         type: choice
         required: true
-        options: [bluefin-generic, bluefin-dx-generic]
+        options: [finite, finite-dev]
       digest:
         description: Existing signed immutable Finite image digest; no image is built or published
         type: string
