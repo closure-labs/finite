@@ -133,6 +133,7 @@ jobs:
             scripts/ci/nix-cache.py
             scripts/ci/ci-options.py
             scripts/ci/release-request.py
+            scripts/ci/create-release-draft.sh
             scripts/bluebuild/sign-release.sh
             sources/secretspec.json
           sparse-checkout-cone-mode: false
@@ -164,11 +165,6 @@ jobs:
       - name: Create draft release with durable evidence
         env:
           RELEASE_TAG: ${{ inputs.tag }}
-        run: |
-          [[ $RELEASE_TAG =~ ^finite-[a-z0-9][a-z0-9.-]*$ ]]
-          # Creating the ref explicitly fails if another writer claimed it; an
-          # existing tag must never silently override --target's source binding.
-          gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" \
-            -f "ref=refs/tags/$RELEASE_TAG" -f "sha=$GITHUB_SHA"
-          gh release create "$RELEASE_TAG" .bluebuild/release/* --draft --verify-tag \
-            --title "$RELEASE_TAG" --notes 'Qualified image, signed checksums, enforced vulnerability policy, SBOM, provenance and acceptance evidence. Review before publishing. Large ISO images are split; concatenate parts in filename order before use.'
+          RELEASE_SOURCE_SHA: ${{ github.sha }}
+          MERGE_QUEUE_TOKEN: ${{ secrets.MERGE_QUEUE_TOKEN }}
+        run: finite-ci-secrets-run release-publishing -- bash scripts/ci/create-release-draft.sh

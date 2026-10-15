@@ -53,6 +53,10 @@ QUALIFICATION_ONLY = {
     'scripts/bluebuild/unlock-vm.py',
     'scripts/bluebuild/release-evidence.py', '.github/workflows/qualification.yml',
     'scripts/ci/release-request.py',
+    # These reviewed helpers only transport/sign already qualified release
+    # packets; they are not image payload or ISO/VM qualification inputs.
+    'scripts/ci/release-recovery.py', 'scripts/ci/create-release-draft.sh',
+    '.github/workflows/release-recovery.yml',
     'scripts/ci/benchmark-cache-writer.py', '.github/workflows/benchmark-cache-writer.yml',
     'scripts/ci/benchmark-image-verification.py', '.github/workflows/benchmark-image-verification.yml',
     'scripts/ci/benchmark-security-reuse.py', '.github/workflows/benchmark-security-reuse.yml',

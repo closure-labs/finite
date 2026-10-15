@@ -77,6 +77,7 @@ in {
     python3 tests/ci/selection.py
     python3 tests/ci/release-selection.py
     python3 tests/ci/release-request.py
+    python3 tests/ci/release-recovery.py
     python3 tests/ci/image-identity.py
     python3 tests/ci/applicability-evidence.py
     python3 tests/ci/native-evidence-summary.py

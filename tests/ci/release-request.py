@@ -59,10 +59,14 @@ class RequestTests(unittest.TestCase):
         checkout = signer['steps'][0]['with']['sparse-checkout']
         self.assertIn('VERSION', checkout)
         self.assertIn('scripts/ci/release-request.py', checkout)
-        create = next(step for step in signer['steps'] if step.get('name') == 'Create draft release with durable evidence')['run']
-        self.assertIn('git/refs', create)
-        self.assertIn('refs/tags/$RELEASE_TAG', create)
-        self.assertIn('--verify-tag', create)
+        create = next(step for step in signer['steps'] if step.get('name') == 'Create draft release with durable evidence')
+        self.assertEqual(create['run'], 'finite-ci-secrets-run release-publishing -- bash scripts/ci/create-release-draft.sh')
+        self.assertEqual(create['env']['RELEASE_SOURCE_SHA'], '${{ github.sha }}')
+        self.assertIn('scripts/ci/create-release-draft.sh', checkout)
+        publisher = (ROOT / 'scripts/ci/create-release-draft.sh').read_text()
+        self.assertIn('git/refs', publisher)
+        self.assertIn('refs/tags/$RELEASE_TAG', publisher)
+        self.assertIn('--verify-tag', publisher)
 
 
 if __name__ == '__main__':

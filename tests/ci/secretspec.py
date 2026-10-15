@@ -71,7 +71,7 @@ class Manifest(unittest.TestCase):
             OPTIONS.iso_preservation_enabled('unknown', {})
 
     def test_new_profiles_are_standalone_canonical_and_narrow(self):
-        for profile in ('ci-options', 'cache-writer', 'image-signing', 'release-signing',
+        for profile in ('ci-options', 'cache-writer', 'image-signing', 'release-signing', 'release-publishing',
                         'repository-audit', 'repository-read', 'updater'):
             values = MANIFEST['profiles'][profile]
             self.assertFalse(values['defaults']['inherit'])
@@ -156,12 +156,20 @@ class Resolution(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(json.loads(result.stdout), {'MERGE_QUEUE_TOKEN': 'fixture-updater', 'GH_TOKEN': 'fixture-updater'})
 
+    def test_release_publishing_derives_cli_token_without_signing_credentials(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            result = self.run_cli(Path(temporary), 'release-publishing', values={
+                'MERGE_QUEUE_TOKEN': 'fixture-publisher', 'GH_TOKEN': 'wrong-parent-token',
+                'COSIGN_PRIVATE_KEY': 'excluded-key'})
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(json.loads(result.stdout), {'MERGE_QUEUE_TOKEN': 'fixture-publisher', 'GH_TOKEN': 'fixture-publisher'})
+
     def test_missing_required_credentials_prevent_child_execution(self):
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
             marker = directory / 'child-ran'
             command = [sys.executable, '-c', 'from pathlib import Path; Path(' + repr(str(marker)) + ').touch()']
-            for profile in ('cache-writer', 'image-signing', 'release-signing', 'repository-read', 'repository-audit', 'updater'):
+            for profile in ('cache-writer', 'image-signing', 'release-signing', 'release-publishing', 'repository-read', 'repository-audit', 'updater'):
                 result = self.run_cli(directory, profile, command=command)
                 self.assertNotEqual(result.returncode, 0, profile)
                 self.assertFalse(marker.exists())
@@ -211,6 +219,30 @@ class Resolution(unittest.TestCase):
                 command=[sys.executable, str(ROOT / 'scripts/ci/ci-options.py'), '--github-env'])
             self.assertNotEqual(invalid_scope.returncode, 0)
             self.assertEqual(github_env.read_text(), before)
+
+
+class PublishingWrapper(unittest.TestCase):
+    def test_actual_resolver_wrapper_removes_provider_variable_before_publisher(self):
+        source = (ROOT / 'lib/ci-applications/repository-operations.nix').read_text()
+        wrapper = source.split('  ciSecretsRun = ', 1)[1].split("    text = ''\n", 1)[1].split("    '';", 1)[0].replace("''${", '${')
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary); tool = directory / 'secretspec'
+            tool.write_text('#!' + sys.executable + '\n'
+                'import os,sys\n'
+                'if sys.argv[1:] == ["--version"]: print("secretspec 0.19.2"); raise SystemExit\n'
+                'args=sys.argv[1:]; assert args[args.index("--profile")+1] == "release-publishing"\n'
+                'assert args[args.index("--scope")+1] == "release-publishing"\n'
+                'os.environ["GH_TOKEN"]=os.environ["MERGE_QUEUE_TOKEN"]\n'
+                'child=args[args.index("--")+1:]; os.execvp(child[0],child)\n')
+            tool.chmod(0o755)
+            env = {**os.environ, 'PATH': str(directory) + os.pathsep + os.environ['PATH'],
+                   'GITHUB_ACTIONS': 'true', 'FINITE_SOURCE_ROOT': str(ROOT),
+                   'MERGE_QUEUE_TOKEN': 'fixture-publisher', 'GH_TOKEN': 'wrong-parent'}
+            result = subprocess.run([shutil.which('bash'), '-euo', 'pipefail', '-c', wrapper, 'fixture-wrapper',
+                'release-publishing', '--', sys.executable, '-c',
+                'import os; assert "MERGE_QUEUE_TOKEN" not in os.environ; assert os.environ["GH_TOKEN"] == "fixture-publisher"'],
+                env=env, text=True, capture_output=True, timeout=10)
+            self.assertEqual(result.returncode, 0, result.stderr)
 
 
 class LocalCache(unittest.TestCase):

@@ -1,0 +1,139 @@
+name: Recover prepared qualified release
+on:
+  workflow_dispatch:
+    inputs:
+      channel:
+        type: choice
+        required: true
+        options: [finite, finite-next, finite-dev, finite-dev-next]
+      prepared_run:
+        description: Original release.yml run whose preparation and fresh scan succeeded
+        type: string
+        required: true
+      tag:
+        description: New canonical per-channel v0.8.0 tag
+        type: string
+        required: true
+
+env:
+  FINITE_OPTIMIZED_CACHES: ${{ vars.FINITE_OPTIMIZED_CACHES }}
+  FINITE_CACHIX_WRITER: ${{ vars.FINITE_CACHIX_WRITER }}
+  FINITE_REUSE_INVENTORY: ${{ vars.FINITE_REUSE_INVENTORY }}
+  FINITE_GRYPE_DB_CACHE: ${{ vars.FINITE_GRYPE_DB_CACHE }}
+  FINITE_QUALIFICATION_REUSE: ${{ vars.FINITE_QUALIFICATION_REUSE }}
+  FINITE_QUALIFIED_ISO_PRESERVATION: ${{ vars.FINITE_QUALIFIED_ISO_PRESERVATION }}
+  FINITE_QUALIFIED_ISO_CHANNELS: ${{ vars.FINITE_QUALIFIED_ISO_CHANNELS }}
+
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: finite-release-${{ inputs.channel }}
+  cancel-in-progress: false
+
+jobs:
+  verify-prepared:
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    outputs:
+      source: ${{ steps.prepare.outputs.source }}
+      artifact_id: ${{ steps.binding.outputs.artifact_id }}
+      artifact_size: ${{ steps.binding.outputs.artifact_size }}
+      artifact_digest: ${{ steps.binding.outputs.artifact_digest }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
+        with:
+          skip-if-available: "80G"
+      - name: Authenticate prepared source and pristine release assets
+        id: prepare
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CHANNEL: ${{ inputs.channel }}
+          PREPARED_RUN: ${{ inputs.prepared_run }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: >-
+          python3 scripts/ci/release-recovery.py prepare --channel "$CHANNEL"
+          --prepared-run "$PREPARED_RUN" --tag "$RELEASE_TAG"
+      - name: Preserve verified unsigned assets
+        id: upload
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: verified-unsigned-release-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/release/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+      - name: Bind exact verified upload identity
+        id: binding
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CHANNEL: ${{ inputs.channel }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          ARTIFACT_ID: ${{ steps.upload.outputs.artifact-id }}
+          ARTIFACT_DIGEST: ${{ steps.upload.outputs.artifact-digest }}
+        run: >-
+          python3 scripts/ci/release-recovery.py bind-upload --channel "$CHANNEL" --tag "$RELEASE_TAG"
+          --artifact-id "$ARTIFACT_ID" --artifact-digest "$ARTIFACT_DIGEST"
+
+  sign-release:
+    needs: verify-prepared
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
+    environment: release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            .github/
+            automation/security/
+            files/installer/
+            files/system/usr/libexec/finite/
+            lib/
+            scripts/bluebuild/
+            scripts/ci/
+            sources/
+            VERSION
+            cosign.pub
+            secretspec.toml
+            flake.lock
+          sparse-checkout-cone-mode: false
+      - uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
+        with:
+          skip-if-available: "80G"
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+      - uses: ./.github/actions/setup-nix
+        with:
+          cache-mode: none
+      - name: Prepare pinned signing credential resolver
+        run: | # zizmor: ignore[github-env]
+          resolver=$(nix build --file lib/ci-tools.nix ci-secrets-run --no-link --print-out-paths)
+          [[ $resolver =~ ^/nix/store/[a-z0-9]{32}-finite-ci-secrets-run$ ]]
+          echo "$resolver/bin" >>"$GITHUB_PATH"
+      - name: Authenticate exact verified upload before isolated signing
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CHANNEL: ${{ inputs.channel }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          ARTIFACT_ID: ${{ needs.verify-prepared.outputs.artifact_id }}
+          ARTIFACT_SIZE: ${{ needs.verify-prepared.outputs.artifact_size }}
+          ARTIFACT_DIGEST: ${{ needs.verify-prepared.outputs.artifact_digest }}
+        run: >-
+          python3 scripts/ci/release-recovery.py verify-signer --channel "$CHANNEL" --tag "$RELEASE_TAG"
+          --artifact-id "$ARTIFACT_ID" --artifact-size "$ARTIFACT_SIZE" --artifact-digest "$ARTIFACT_DIGEST"
+      - name: Sign release manifest in an isolated job
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        run: finite-ci-secrets-run release-signing -- bash scripts/bluebuild/sign-release.sh
+      - name: Create draft release with durable evidence
+        env:
+          MERGE_QUEUE_TOKEN: ${{ secrets.MERGE_QUEUE_TOKEN }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          RELEASE_SOURCE_SHA: ${{ needs.verify-prepared.outputs.source }}
+        run: finite-ci-secrets-run release-publishing -- bash scripts/ci/create-release-draft.sh
