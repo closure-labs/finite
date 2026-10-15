@@ -1,6 +1,6 @@
 # Security audit implementation
 
-## Current v0.8 continuation
+## Completed v0.8 release
 
 User requested continuation of the measured CI plan through v0.8. Scope remains
 four existing channels, SecretSpec/devenv credentials, jj and hosted heavy work.
@@ -8,6 +8,12 @@ The [v0.8 plan](../docs/v0.8-release-plan.md) supersedes historical release hold
 below; their dated evidence remains preserved. Current owner policy accepts VM
 qualification and reviewed Critical desktop exploitability, with physical tests
 informational. The protected release environment retains its owner review gate.
+
+All four v0.8 channels are now published after explicit owner approval, with
+standard Finite latest. All four signatures, signed asset hashes, exact-source
+tags and qualification/recovery receipt joins passed; published asset metadata
+remains unchanged. The credential blocker below is resolved. See the
+[release results](../docs/v0.8-release-results.md) for public links and hashes.
 
 - Implementation: selective batched cache preparation, identity separation and
   qualification mode binding, version/changelog and per-channel release checks.
@@ -26,7 +32,7 @@ informational. The protected release environment retains its owner review gate.
   observations in docs/v0.8-hosted-pilot-results.md. PR166 corrections merged
   through the protected queue after all four release source captures.
 
-## Current frozen-source release recovery
+## Historical frozen-source release recovery (completed)
 
 All four v0.8 preparations passed original-ISO verification and fresh scanning:
 38675610884, 38675636453, 38675653313 and 38675676845. Small authenticated
@@ -44,7 +50,7 @@ and independent security review before hosted recovery, then verify four drafts
 and obtain the final owner publication decision. Do not rebuild images or rerun
 VM qualification solely to recover release transport.
 
-## Current publishing credential blocker
+## Historical publishing credential blocker (resolved)
 
 PR168 recovery merged at `880ff939`; main CI38680295654 passed. All four
 recovery authentication and verified-upload binding jobs passed; standard and
@@ -57,7 +63,7 @@ rebuild, retarget, bypass owner review or claim release publication. After the
 update, use complete fresh recovery attempts and verify all four signed drafts
 before the final publication decision. See the run table in the v0.8 plan.
 
-## Active release eligibility sequence
+## Historical October 12 release eligibility sequence (superseded)
 
 - PR147 head68fbf8759df3208dc6879640aa7d211d9162addf PASS all four image builds,
   runtime inspections, docs, pinned Nix contracts and CI gate38342366434.
