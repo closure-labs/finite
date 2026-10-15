@@ -259,7 +259,10 @@ specific source revisions and image digests for reproducibility.
 
 Nix lock updates, coordinated Home Manager/Nixpkgs release updates and the
 Determinate checksum update use the retained dependency workflows. Their
-protected-branch automation uses `MERGE_QUEUE_TOKEN`.
+protected-branch automation reads the repository-available GitHub secret
+`MERGE_QUEUE_PAT` (including an organization secret granted to this repository).
+Workflows map it to SecretSpec's internal `MERGE_QUEUE_TOKEN` key, so existing
+local pass entries keep their names. Release publishing uses the same mapping.
 
 The checked-in policy at `automation/github/repository-security.json` describes
 the action allowlist, SHA pinning, default read-only token and repository

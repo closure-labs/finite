@@ -133,7 +133,7 @@ jobs:
         run: finite-ci-secrets-run release-signing -- bash scripts/bluebuild/sign-release.sh
       - name: Create draft release with durable evidence
         env:
-          MERGE_QUEUE_TOKEN: ${{ secrets.MERGE_QUEUE_TOKEN }}
+          MERGE_QUEUE_TOKEN: ${{ secrets.MERGE_QUEUE_PAT }}
           RELEASE_TAG: ${{ inputs.tag }}
           RELEASE_SOURCE_SHA: ${{ needs.verify-prepared.outputs.source }}
         run: finite-ci-secrets-run release-publishing -- bash scripts/ci/create-release-draft.sh

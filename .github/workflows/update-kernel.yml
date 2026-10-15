@@ -28,7 +28,7 @@ jobs:
           persist-credentials: false
       - name: Require protected-branch automation credential
         env:
-          MERGE_QUEUE_TOKEN: ${{ secrets.MERGE_QUEUE_TOKEN }}
+          MERGE_QUEUE_TOKEN: ${{ secrets.MERGE_QUEUE_PAT }}
         run: |
           [[ -n "${MERGE_QUEUE_TOKEN:-}" ]] || {
             echo "::error::MERGE_QUEUE_TOKEN is required for protected-branch automation"
@@ -45,7 +45,7 @@ jobs:
         if: steps.update.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
-          token: ${{ secrets.MERGE_QUEUE_TOKEN }}
+          token: ${{ secrets.MERGE_QUEUE_PAT }}
           branch: automation/update-kernel
           delete-branch: true
           add-paths: sources/kernel-next.json

@@ -166,5 +166,5 @@ jobs:
         env:
           RELEASE_TAG: ${{ inputs.tag }}
           RELEASE_SOURCE_SHA: ${{ github.sha }}
-          MERGE_QUEUE_TOKEN: ${{ secrets.MERGE_QUEUE_TOKEN }}
+          MERGE_QUEUE_TOKEN: ${{ secrets.MERGE_QUEUE_PAT }}
         run: finite-ci-secrets-run release-publishing -- bash scripts/ci/create-release-draft.sh

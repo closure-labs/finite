@@ -39,6 +39,41 @@ class Manifest(unittest.TestCase):
                 self.assertEqual({key: values.get(key) for key in PUBLIC_OPTIONS},
                                  {key: '${{ vars.' + key + ' }}' for key in PUBLIC_OPTIONS})
 
+    def test_repository_pat_reaches_only_existing_updater_and_publishing_mappings(self):
+        pat = '${{ secrets.MERGE_QUEUE_PAT }}'
+        for path in (ROOT / '.github/workflows').glob('*.yml'):
+            with self.subTest(workflow=path.name):
+                self.assertNotIn('secrets.MERGE_QUEUE_TOKEN', path.read_text())
+        for name in ('update-home-release', 'update-flake-lock', 'update-determinate-nix',
+                     'update-bluefin', 'queue-dependabot'):
+            data = yaml.safe_load((ROOT / '.github/workflows' / (name + '.yml')).read_text())
+            steps = [step for job in data['jobs'].values() for step in job['steps']]
+            setups = [step for step in steps if step.get('uses') == './.github/actions/setup-nix'
+                      and 'merge-queue-token' in step.get('with', {})]
+            with self.subTest(updater=name):
+                self.assertEqual(len(setups), 1)
+                setup = setups[0]
+                self.assertEqual(setup['with']['merge-queue-token'], pat)
+                self.assertEqual(setup['with']['require-merge-queue-token'], 'true')
+        kernel = yaml.safe_load((ROOT / '.github/workflows/update-kernel.yml').read_text())
+        steps = kernel['jobs']['update']['steps']
+        guard = next(step for step in steps if step.get('name') == 'Require protected-branch automation credential')
+        proposal = next(step for step in steps if step.get('name') == 'Propose reviewed kernel update')
+        self.assertEqual(guard['env']['MERGE_QUEUE_TOKEN'], pat)
+        self.assertEqual(proposal['with']['token'], pat)
+        for name in ('release', 'release-recovery'):
+            data = yaml.safe_load((ROOT / '.github/workflows' / (name + '.yml')).read_text())
+            steps = data['jobs']['sign-release']['steps']
+            publisher = next(step for step in steps if step.get('name') == 'Create draft release with durable evidence')
+            signer = next(step for step in steps if step.get('name') == 'Sign release manifest in an isolated job')
+            with self.subTest(publisher=name):
+                self.assertEqual(publisher['env']['MERGE_QUEUE_TOKEN'], pat)
+                self.assertIn('finite-ci-secrets-run release-publishing --', publisher['run'])
+                self.assertNotIn('MERGE_QUEUE_TOKEN', signer.get('env', {}))
+                self.assertNotIn('MERGE_QUEUE_PAT', signer.get('env', {}))
+                self.assertNotIn('MERGE_QUEUE_PAT', data.get('env', {}))
+                self.assertNotIn('MERGE_QUEUE_TOKEN', data.get('env', {}))
+
     def test_default_devenv_profile_contains_no_signing_or_github_credentials(self):
         self.assertEqual(set(MANIFEST['profiles']['default']), PUBLIC_OPTIONS | {'CACHIX_AUTH_TOKEN'})
         self.assertFalse(MANIFEST['profiles']['default']['CACHIX_AUTH_TOKEN']['required'])
