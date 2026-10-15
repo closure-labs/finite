@@ -44,6 +44,19 @@ and independent security review before hosted recovery, then verify four drafts
 and obtain the final owner publication decision. Do not rebuild images or rerun
 VM qualification solely to recover release transport.
 
+## Current publishing credential blocker
+
+PR168 recovery merged at `880ff939`; main CI38680295654 passed. All four
+recovery authentication and verified-upload binding jobs passed; standard and
+next signing verified, but final tag creation returned HTTP403 `Resource not accessible by personal
+access token`. No v0.8 tag or release was created. Await owner update of the
+publishing credential to repository contents write plus workflows write; values
+must stay out of chat. Original and verified packets remain preserved; the two developer signers were
+stopped before redundant denied publishing attempts. Do not
+rebuild, retarget, bypass owner review or claim release publication. After the
+update, use complete fresh recovery attempts and verify all four signed drafts
+before the final publication decision. See the run table in the v0.8 plan.
+
 ## Active release eligibility sequence
 
 - PR147 head68fbf8759df3208dc6879640aa7d211d9162addf PASS all four image builds,
