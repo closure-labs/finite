@@ -790,6 +790,17 @@ class UpstreamRiskPolicy(unittest.TestCase):
             'org.opencontainers.image.base.digest': self.baseline['baseImage'].split('@')[1]}}}
         self.bind_config()
 
+    def test_canonical_profiles_require_their_actual_upstream_foundation(self):
+        for profile, foundation, other in [('finite', 'bluefin', 'bluefin-dx'),
+                                            ('finite-dev', 'bluefin-dx', 'bluefin')]:
+            context = dict(self.baseline, profile=profile,
+                           baseImage='ghcr.io/ublue-os/' + foundation + '@sha256:' + 'c' * 64)
+            with self.subTest(profile=profile):
+                self.assertEqual(security.baseline_context(context, self.image), context)
+                context['baseImage'] = 'ghcr.io/ublue-os/' + other + '@sha256:' + 'c' * 64
+                with self.assertRaisesRegex(ValueError, 'does not match candidate profile'):
+                    security.baseline_context(context, self.image)
+
     def bind_config(self):
         raw = json.dumps(self.config)
         self.manifest = {'schemaVersion': 2, 'mediaType': 'application/vnd.oci.image.manifest.v1+json',
@@ -1267,7 +1278,7 @@ class UpstreamRiskPolicy(unittest.TestCase):
 
     def profile(self, value):
         self.baseline['profile'] = value
-        foundation = 'bluefin-dx' if '-dx-' in value else 'bluefin'
+        foundation = {'finite': 'bluefin', 'finite-dev': 'bluefin-dx'}[value]
         self.baseline['baseImage'] = 'ghcr.io/ublue-os/' + foundation + '@sha256:' + 'c' * 64
         labels = self.config['config']['Labels']
         labels['io.finite.profile'] = value
