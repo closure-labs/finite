@@ -1,0 +1,18 @@
+{
+  "verifiedAt": "2026-10-15T20:55:49.702383+00:00",
+  "repository": "closure-labs/finite",
+  "changedPublicVariables": {
+    "FINITE_REUSE_INVENTORY": "true",
+    "FINITE_QUALIFICATION_REUSE": "true"
+  },
+  "secretSpecResolvedOptions": {
+    "FINITE_CACHIX_WRITER": "false",
+    "FINITE_GRYPE_DB_CACHE": "false",
+    "FINITE_OPTIMIZED_CACHES": "true",
+    "FINITE_QUALIFICATION_REUSE": "true",
+    "FINITE_QUALIFIED_ISO_CHANNELS": "finite,finite-dev",
+    "FINITE_QUALIFIED_ISO_PRESERVATION": "true",
+    "FINITE_REUSE_INVENTORY": "true"
+  },
+  "localNixOrNativeWork": false
+}

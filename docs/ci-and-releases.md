@@ -314,6 +314,11 @@ trusted updates.
 GitHub scheduling guards still use repository variables before a job exists;
 runtime switches are resolved and validated by SecretSpec before use.
 
+Production repository overrides enabled inventory and whole-qualification reuse
+on October 15, 2026 after the two active variants passed hosted measurements.
+Local/source defaults remain false; automatic Cachix writing and DB transport
+remain off. See the [measurements, activation receipt and rollback commands](new-os-reuse-results.md#production-activation).
+
 The pinned SecretSpec 0.19.1 CLI supports standalone profiles and scope filtering.
 Its checksum-pinned release package avoids compiling all of devenv just to resolve
 CI credentials. Tool realization happens before supplying signing/write keys.
