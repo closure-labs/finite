@@ -15,7 +15,7 @@
       profile="''${1:?usage: finite-ci-secrets-run PROFILE -- COMMAND}"
       shift
       case "$profile" in
-        ci-options|cache-writer|image-signing|release-signing|repository-audit|repository-read|updater) ;;
+        ci-options|cache-writer|image-signing|release-signing|release-publishing|repository-audit|repository-read|updater) ;;
         *) echo "Unsupported Finite SecretSpec profile" >&2; exit 2 ;;
       esac
       [[ "''${1:-}" == -- ]] || { echo "Expected -- before the child command" >&2; exit 2; }
@@ -37,6 +37,11 @@
       # Legacy provider input aliases are not manifest output names, so the
       # CLI scope cannot remove them itself. New profiles use canonical names.
       unset GITHUB_ACTIONS_CACHIX_AUTH_TOKEN GITHUB_ACTIONS_MERGE_QUEUE_TOKEN
+      if [[ "$profile" == release-publishing ]]; then
+        # Resolve the composed CLI token, then discard its provider variable
+        # before the controlled publisher receives the child environment.
+        set -- bash -c 'unset MERGE_QUEUE_TOKEN; exec "$@"' finite-release-publishing "$@"
+      fi
       exec secretspec run \
         --file "''${repo_root}/secretspec.toml" \
         --profile "$profile" --scope "$profile" --provider "$provider" \

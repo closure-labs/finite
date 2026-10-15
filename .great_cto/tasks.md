@@ -26,6 +26,24 @@ informational. The protected release environment retains its owner review gate.
   observations in docs/v0.8-hosted-pilot-results.md. PR166 corrections merged
   through the protected queue after all four release source captures.
 
+## Current frozen-source release recovery
+
+All four v0.8 preparations passed original-ISO verification and fresh scanning:
+38675610884, 38675636453, 38675653313 and 38675676845. Small authenticated
+metadata receipts are retained in the operator audit; no large local downloads.
+Standard signing verified successfully, but draft tag creation returned HTTP403
+because the default workflow token lacked workflow-write permission for the
+frozen source after main advanced. No tag or draft was created. The other three
+redundant signers were cancelled after their preparation jobs succeeded.
+
+Implement a reviewed main-only recovery from these exact unsigned packets,
+unchanged qualification/policy/tool inputs and owner-protected isolated signing.
+SecretSpec separates signing keys from the final exact-source tag/draft publisher.
+Preserve original provenance; add signed recovery receipts. Require protected CI
+and independent security review before hosted recovery, then verify four drafts
+and obtain the final owner publication decision. Do not rebuild images or rerun
+VM qualification solely to recover release transport.
+
 ## Active release eligibility sequence
 
 - PR147 head68fbf8759df3208dc6879640aa7d211d9162addf PASS all four image builds,

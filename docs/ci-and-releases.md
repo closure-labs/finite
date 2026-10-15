@@ -304,7 +304,8 @@ only to selected channels while the preservation switch is enabled.
 GitHub Actions supplies backend values through the `github-actions` environment
 provider; local devenv tasks use the encrypted `local = "pass://"` provider.
 The same explicit profile/scope names identify cache writing, image signing,
-release signing, repository reads, audit App credentials and trusted updates.
+release signing, release publishing, repository reads, audit App credentials and
+trusted updates.
 GitHub scheduling guards still use repository variables before a job exists;
 runtime switches are resolved and validated by SecretSpec before use.
 
@@ -315,6 +316,17 @@ Signing keys reach only signer commands; the audit App key is cleared after toke
 generation. Secret values never enter Nix evaluation, cached paths or artifacts.
 The default developer profile contains options and an optional Cachix credential.
 
+The standalone `release-publishing` scope resolves the trusted repository token
+into `GH_TOKEN` only for the controlled tag/draft child. It needs repository
+contents write and workflows write for a frozen source whose workflow files
+differ from current main. Signing keys and the original token variable are
+absent from that child. Local use resolves the same profile through pass; it
+never resolves during ordinary shell startup. A separate hosted recovery
+workflow can authenticate a completed unsigned packet and preserve its original
+source/provenance after a signer or publisher failure. It retains the protected
+release environment and refuses existing tags or releases. See the
+[v0.8 recovery sequence](v0.8-release-plan.md#frozen-source-draft-recovery).
+
 Populate a task-specific pass entry interactively, then run its task:
 
 ```bash
@@ -322,6 +334,7 @@ secretspec set CACHIX_AUTH_TOKEN --profile local-cache --provider pass
 secretspec set GH_TOKEN --profile repository-read --provider pass
 secretspec set COSIGN_PRIVATE_KEY --profile image-signing --provider pass
 secretspec set MERGE_QUEUE_TOKEN --profile updater --provider pass
+secretspec set MERGE_QUEUE_TOKEN --profile release-publishing --provider pass
 
 devenv tasks run ci:cache:options
 devenv tasks run ci:cache:writer:prepare
