@@ -16,7 +16,7 @@ on:
         type: string
         required: true
       tag:
-        description: New per-channel release tag (finite-CHANNEL-VERSION)
+        description: New per-channel release tag (finite-VERSION or finite-dev-VERSION)
         type: string
         required: true
 # Bootstrap public options; setup-nix resolves them through SecretSpec.
@@ -125,6 +125,7 @@ jobs:
           sparse-checkout: |
             cosign.pub
             VERSION
+            CHANGELOG.md
             secretspec.toml
             flake.lock
             .github/actions/setup-nix/

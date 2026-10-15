@@ -246,7 +246,10 @@ part of key rotation.
    builds, exact-digest qualification and promotion for the selected channels.
 3. Follow [Durable releases](workstation-qualification.md#durable-releases):
    run **Prepare qualified release** with the successful same-revision build run
-   and a new `finite-CHANNEL-VERSION` tag. When the ISO-preservation pilot is
+   and a new `CHANNEL-VERSION` tag, such as `finite-0.8.1` or `finite-dev-0.8.1`.
+   The channel already includes the product name; do not prepend another `finite-`.
+   The draft title uses the tag and its notes use the checkout's versioned changelog
+   entry. When the ISO-preservation pilot is
    enabled, leave `iso_run` empty to select the original qualified ISO. During
    the disabled pilot, supply the successful standalone ISO run explicitly.
 4. Review the draft's signed assets, qualification evidence, scan exceptions and

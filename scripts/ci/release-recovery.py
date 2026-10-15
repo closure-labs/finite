@@ -40,6 +40,7 @@ def module(name, path):
 
 
 EVIDENCE = module('recovery_evidence', ROOT / 'scripts/bluebuild/release-evidence.py')
+REQUEST = module('recovery_request', ROOT / 'scripts/ci/release-request.py')
 CONTEXT = module('recovery_context', ROOT / 'scripts/bluebuild/qualification-context.py')
 POLICY = module('recovery_policy', ROOT / 'scripts/bluebuild/security-policy.py')
 
@@ -313,7 +314,8 @@ def packet(directory, channel, source, original_run, *, inputs=None):
         raise ValueError('Recovered pristine ISO or installation bytes differ from qualification')
     EVIDENCE.desktop.verify(directory, acceptance)
     policy_hashes = {}
-    if source_file('VERSION', source).strip() != b'0.8.0': raise ValueError('Qualified source VERSION is not v0.8.0')
+    if source_file('VERSION', source).strip() != (ROOT / 'VERSION').read_bytes().strip():
+        raise ValueError('Qualified source VERSION differs from current release version')
     for path in POLICY_INPUTS:
         raw = source_file(path, source)
         digest = hashlib.sha256(raw).hexdigest()
@@ -355,8 +357,8 @@ def hosted():
 
 def prepare(args):
     hosted()
-    if (ROOT / 'VERSION').read_text().strip() != '0.8.0' or args.tag != 'finite-' + args.channel + '-0.8.0':
-        raise ValueError('Recovery requires the canonical current v0.8 channel tag')
+    if args.tag != REQUEST.canonical_tag(args.channel, (ROOT / 'VERSION').read_text().strip()):
+        raise ValueError('Recovery requires the canonical current channel tag')
     unused_tag(args.tag)
     now = datetime.now(timezone.utc)
     run = github('actions/runs/' + str(args.prepared_run))
@@ -398,7 +400,7 @@ def signer(args):
             or receipt.get('recoveryAttempt') != int(os.environ['GITHUB_RUN_ATTEMPT'])
             or receipt.get('recoveryExecutionRevision') != os.environ['GITHUB_SHA']
             or receipt.get('channel') != args.channel or receipt.get('tag') != args.tag
-            or args.tag != 'finite-' + args.channel + '-0.8.0'):
+            or args.tag != REQUEST.canonical_tag(args.channel, (ROOT / 'VERSION').read_text().strip())):
         raise ValueError('Signer received another recovery execution/channel/tag')
     fresh(receipt.get('securityScanCompletedAt'), datetime.now(timezone.utc))
     actual = packet(args.output, args.channel, receipt['sourceRevision'], receipt['preparedRun'])

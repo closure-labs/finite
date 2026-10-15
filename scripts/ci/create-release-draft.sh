@@ -7,13 +7,14 @@ unset MERGE_QUEUE_TOKEN COSIGN_PRIVATE_KEY COSIGN_PASSWORD
 version=$(<VERSION)
 [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
 case "${RELEASE_TAG:-}" in
-  finite-finite-"$version"|finite-finite-dev-"$version") ;;
+  finite-"$version"|finite-dev-"$version") ;;
   *) exit 2 ;;
 esac
 test -s .bluebuild/release/SHA256SUMS
 test -s .bluebuild/release/SHA256SUMS.bundle.json
 test -s .bluebuild/release/provenance.json
 python3 -c 'import json,os; p=json.load(open(".bluebuild/release/provenance.json")); assert p["revision"] == os.environ["RELEASE_SOURCE_SHA"]'
+python3 "$(dirname "${BASH_SOURCE[0]}")/release-request.py" --write-notes
 # A draft can exist before its tag. GET releases/tags exposes published releases
 # only. This push-capable token's full bounded list is authoritative for drafts:
 # https://docs.github.com/en/rest/releases/releases#list-releases
@@ -46,4 +47,4 @@ gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" \
 gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG" |
   python3 -c 'import json,os,sys; r=json.load(sys.stdin); assert r["ref"] == "refs/tags/"+os.environ["RELEASE_TAG"] and r["object"]["type"] == "commit" and r["object"]["sha"] == os.environ["RELEASE_SOURCE_SHA"]'
 gh release create "$RELEASE_TAG" .bluebuild/release/* --draft --verify-tag \
-  --title "$RELEASE_TAG" --notes 'Qualified image, signed checksums, enforced vulnerability policy, SBOM, provenance and acceptance evidence. Review before publishing. Large ISO images are split; concatenate parts in filename order before use.'
+  --title "$RELEASE_TAG" --notes-file .bluebuild/release-notes.md

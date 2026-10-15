@@ -11,7 +11,7 @@ on:
         type: string
         required: true
       tag:
-        description: New canonical per-channel v0.8.0 tag
+        description: New canonical channel tag matching VERSION
         type: string
         required: true
 
@@ -99,6 +99,7 @@ jobs:
             scripts/ci/
             sources/
             VERSION
+            CHANGELOG.md
             cosign.pub
             secretspec.toml
             flake.lock

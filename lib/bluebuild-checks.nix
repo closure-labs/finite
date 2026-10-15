@@ -25,6 +25,7 @@
       ../sources
       ../cosign.pub
       ../VERSION
+      ../CHANGELOG.md
       ../flake.nix
       ../flake.lock
       ../devenv.lock
