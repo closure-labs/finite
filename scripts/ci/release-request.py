@@ -10,12 +10,38 @@ import sys
 CHANNELS = ('finite', 'finite-dev')
 
 
-def validate(channel, tag, version, build_run, iso_run=''):
+def canonical_tag(channel, version):
     if channel not in CHANNELS:
         raise ValueError('Unsupported release channel')
     if not re.fullmatch(r'(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)', version):
         raise ValueError('VERSION must be a canonical numeric release version')
-    if tag != f'finite-{channel}-{version}':
+    return f'{channel}-{version}'
+
+
+def release_notes(version, changelog):
+    canonical_tag('finite', version)
+    headings = list(re.finditer(r'^## \[([^\]]+)\][^\n]*$', changelog, re.MULTILINE))
+    matches = [index for index, heading in enumerate(headings) if heading[1] == version]
+    if len(matches) != 1:
+        raise ValueError('CHANGELOG must have exactly one entry for VERSION')
+    index = matches[0]
+    start = headings[index].end()
+    end = headings[index + 1].start() if index + 1 < len(headings) else len(changelog)
+    notes = changelog[start:end].strip()
+    if not notes:
+        raise ValueError('Release changelog entry is empty')
+    # Release bodies live on GitHub; repository-relative links need a pinned source.
+    source = os.environ.get('RELEASE_SOURCE_SHA', '')
+    if not re.fullmatch(r'[0-9a-f]{40}', source):
+        raise ValueError('Release notes require the exact source revision')
+    notes = notes.replace('(docs/', f'(https://github.com/closure-labs/finite/blob/{source}/docs/')
+    return notes + ('\n\nInstallation assets include signed checksums, SBOM, provenance and '
+                    'qualification evidence. Large ISO images are split; concatenate parts '
+                    'in filename order before use. Review all evidence before publishing.\n')
+
+
+def validate(channel, tag, version, build_run, iso_run=''):
+    if tag != canonical_tag(channel, version):
         raise ValueError('Release tag must match the selected channel and checkout VERSION')
     for name, value in (('build_run', build_run), ('iso_run', iso_run)):
         if name == 'iso_run' and value == '':
@@ -36,6 +62,10 @@ def require_new_tag(tag):
 
 
 if __name__ == '__main__':
+    if sys.argv[1:] == ['--write-notes']:
+        Path('.bluebuild/release-notes.md').write_text(release_notes(
+            Path('VERSION').read_text().strip(), Path('CHANGELOG.md').read_text()))
+        sys.exit(0)
     tag = validate(os.environ['CHANNEL'], os.environ['RELEASE_TAG'],
                    Path('VERSION').read_text().strip(), os.environ['BUILD_RUN'],
                    os.environ.get('ISO_RUN', ''))

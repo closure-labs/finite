@@ -6,6 +6,8 @@ All notable changes to Finite are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-10-15
+
 ### Changed
 
 - Retain Bluefin and Bluefin-DX kernels, ZFS and other upstream modules together
@@ -16,6 +18,32 @@ All notable changes to Finite are documented here. The format follows
   historical artifacts.
 - Preserve upstream authselect profiles and enabled features when adding
   supported Finite authentication features.
+- Enable authenticated inventory and whole-qualification reuse in production CI
+  after hosted measurements on the new Bluefin-based images. Inventory reuse
+  saved a median 6m55s for Finite and 13m30s for Finite Dev per eligible hit.
+  Whole-qualification reuse saved 30m29s and 32m21s respectively, reducing its
+  measured critical-path service time by 93.1% and 93.6%.
+- Keep fresh vulnerability database updates, scans and current security policy
+  evaluation when reusing inventory. Qualification reuse requires matching image,
+  predecessor, source and qualification context within its original 24-hour window.
+  Production hit rate remains unmeasured; these are per-hit savings. Automatic
+  Cachix writing and database transport remain disabled pending their own evidence.
+
+### Fixed
+
+- Name new channel releases `finite-0.8.1` and `finite-dev-0.8.1`, removing the
+  duplicate `finite-` prefix used in v0.8.0. Historical release names and tags
+  remain unchanged.
+
+### Migration
+
+- Next variants no longer receive new builds, security scans or qualification.
+  Users of `finite-next` should move to `finite`, and users of `finite-dev-next`
+  should move to `finite-dev`, following the signed-channel rebase instructions
+  in the [v0.8.1 release plan](docs/v0.8.1-release-plan.md). The separate replacement
+  kernel and IPU7 overlay are retired; hardware support follows the upstream
+  Bluefin kernel and modules. Existing published Next releases remain available
+  as historical artifacts.
 
 
 ## [0.8.0] - 2026-10-14
@@ -463,7 +491,8 @@ All notable changes to Finite are documented here. The format follows
 - The required `CI gate` now validates repository policy, selected image and
   installer jobs, merge candidates, and trusted dependency-update automation.
 
-[Unreleased]: https://github.com/closure-labs/finite/compare/finite-finite-0.8.0...HEAD
+[Unreleased]: https://github.com/closure-labs/finite/compare/finite-0.8.1...HEAD
+[0.8.1]: https://github.com/closure-labs/finite/releases/tag/finite-0.8.1
 [0.8.0]: https://github.com/closure-labs/finite/releases/tag/finite-finite-0.8.0
 [0.7.0]: https://github.com/closure-labs/finite/compare/v0.6.0...finite-finite-0.7.0
 [0.6.0]: https://github.com/closure-labs/finite/compare/v0.5.0...v0.6.0

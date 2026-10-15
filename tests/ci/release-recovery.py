@@ -200,22 +200,31 @@ class Recovery(unittest.TestCase):
         with patch.object(M, 'github', return_value=blob): self.assertEqual(M.source_file('VERSION', self.source), raw)
         with patch.object(M, 'github', return_value=dict(blob, sha='0' * 40)), self.assertRaises(ValueError): M.source_file('VERSION', self.source)
         self.packet()
-        with patch.object(M, 'source_file', return_value=b'0.8.0'), patch.object(M, 'github', return_value=dict(self.run, id=50, path='.github/workflows/build.yml', conclusion='success')), \
+        with patch.object(M, 'source_file', return_value=b'0.8.1'), patch.object(M, 'github', return_value=dict(self.run, id=50, path='.github/workflows/build.yml', conclusion='success')), \
                 patch.object(M.EVIDENCE.desktop, 'verify'), self.assertRaisesRegex(ValueError, 'drifted'):
             M.packet(self.directory, 'finite', self.source, 10, inputs=self.inputs)
 
+    def test_previous_version_cannot_be_recovered_as_current_release(self):
+        self.packet()
+        build = dict(self.run, id=50, path='.github/workflows/build.yml', conclusion='success')
+        with patch.object(M, 'github', return_value=build), patch.object(M.EVIDENCE.desktop, 'verify'), \
+                patch.object(M, 'source_file', side_effect=lambda path, revision:
+                    b'0.8.0\n' if path == 'VERSION' else (ROOT / path).read_bytes()), \
+                self.assertRaisesRegex(ValueError, 'VERSION differs'):
+            M.packet(self.directory, 'finite', self.source, 10, inputs=self.inputs)
+
     def test_unused_tag_and_read_endpoint_allowlist_fail_closed(self):
-        with patch.object(M, 'github', return_value=[{'ref': 'refs/tags/finite-finite-0.8.0'}]), self.assertRaises(ValueError):
-            M.unused_tag('finite-finite-0.8.0')
+        with patch.object(M, 'github', return_value=[{'ref': 'refs/tags/finite-0.8.1'}]), self.assertRaises(ValueError):
+            M.unused_tag('finite-0.8.1')
         with patch.object(M.subprocess, 'run') as command:
             for path in ('git/refs', 'actions/artifacts/9/zip', 'contents/../../secret?ref=bad'):
                 with self.subTest(path=path), self.assertRaises(ValueError): M.github(path)
         command.assert_not_called()
 
     def test_existing_draft_without_ref_is_rejected_before_any_creation(self):
-        with patch.object(M, 'github', side_effect=[[], [{'draft': True, 'tag_name': 'finite-finite-0.8.0'}]]) as request:
+        with patch.object(M, 'github', side_effect=[[], [{'draft': True, 'tag_name': 'finite-0.8.1'}]]) as request:
             with self.assertRaisesRegex(ValueError, 'existing draft'):
-                M.unused_tag('finite-finite-0.8.0')
+                M.unused_tag('finite-0.8.1')
         self.assertEqual(request.call_args_list[-1].args[0], 'releases?per_page=100&page=1')
 
     def test_release_listing_denials_nonjson_and_total_metadata_budget_fail_closed(self):
@@ -237,13 +246,13 @@ class Recovery(unittest.TestCase):
     def test_release_absence_requires_complete_bounded_pagination(self):
         full = [{'tag_name': 'unrelated-' + str(number)} for number in range(100)]
         with patch.object(M, 'github', side_effect=[[], full, []]) as request:
-            M.unused_tag('finite-finite-0.8.0')
+            M.unused_tag('finite-0.8.1')
         self.assertEqual(request.call_count, 3)
         with patch.object(M, 'github', side_effect=[[], *([full] * 10)]) as request, self.assertRaisesRegex(ValueError, 'pagination budget'):
-            M.unused_tag('finite-finite-0.8.0')
+            M.unused_tag('finite-0.8.1')
         self.assertEqual(request.call_count, 11)
-        with patch.object(M, 'github', side_effect=[[], full, [{'tag_name': 'finite-finite-0.8.0', 'draft': True}]]), self.assertRaisesRegex(ValueError, 'existing draft'):
-            M.unused_tag('finite-finite-0.8.0')
+        with patch.object(M, 'github', side_effect=[[], full, [{'tag_name': 'finite-0.8.1', 'draft': True}]]), self.assertRaisesRegex(ValueError, 'existing draft'):
+            M.unused_tag('finite-0.8.1')
 
     def test_nonhosted_or_nonmanual_execution_never_contacts_github(self):
         with patch.dict(os.environ, {}, clear=True), patch.object(M, 'github') as github, self.assertRaises(ValueError): M.hosted()
@@ -266,7 +275,7 @@ class Recovery(unittest.TestCase):
             if '/artifacts?' in path: return [{'artifacts': [self.artifact]}]
             if path.startswith('compare/'): return {'status': 'ahead', 'merge_base_commit': {'sha': self.source}}
             raise AssertionError(path)
-        args = argparse.Namespace(channel='finite', tag='finite-finite-0.8.0', prepared_run=10, output=self.directory)
+        args = argparse.Namespace(channel='finite', tag='finite-0.8.1', prepared_run=10, output=self.directory)
         with patch.dict(os.environ, self.environment()), patch.object(M, 'github', side_effect=request), \
                 patch.object(M, 'download') as download, patch.object(M.CONTEXT, 'source_inputs', return_value=self.inputs), \
                 patch.object(M, 'source_file', side_effect=lambda path, revision: (ROOT / path).read_bytes()), \
@@ -288,7 +297,7 @@ class Recovery(unittest.TestCase):
             if path == 'actions/runs/20': return run
             if '/artifacts?' in path: return [{'artifacts': [value]}]
             raise AssertionError(path)
-        args = argparse.Namespace(channel='finite', tag='finite-finite-0.8.0', artifact_id=value['id'],
+        args = argparse.Namespace(channel='finite', tag='finite-0.8.1', artifact_id=value['id'],
             artifact_digest='sha256:' + '0' * 64, artifact_size=value['size_in_bytes'], output=self.directory)
         with patch.dict(os.environ, self.environment()), patch.object(M, 'github', side_effect=request), \
                 patch.object(M, 'download') as download, self.assertRaisesRegex(ValueError, 'reupload differs'):
@@ -297,7 +306,7 @@ class Recovery(unittest.TestCase):
 
     def test_signer_keeps_provenance_bytes_and_signs_both_ends_of_archive_handoff(self):
         self.packet(); receipt = self.verify_packet()
-        receipt.update(schema=1, channel='finite', tag='finite-finite-0.8.0', preparedAttempt=1,
+        receipt.update(schema=1, channel='finite', tag='finite-0.8.1', preparedAttempt=1,
             preparationJob=100, securityScanCompletedAt=self.time,
             originalUnsignedArtifact=self.artifact, recoveryRun=20, recoveryAttempt=1,
             recoveryExecutionRevision=self.execution)
@@ -314,7 +323,7 @@ class Recovery(unittest.TestCase):
             if path.startswith('git/matching-refs/'): return []
             if path.startswith('releases?'): return []
             raise AssertionError(path)
-        args = argparse.Namespace(channel='finite', tag='finite-finite-0.8.0', artifact_id=value['id'],
+        args = argparse.Namespace(channel='finite', tag='finite-0.8.1', artifact_id=value['id'],
             artifact_digest=value['digest'], artifact_size=value['size_in_bytes'], output=self.directory)
         with patch.dict(os.environ, self.environment()), patch.object(M, 'github', side_effect=request), \
                 patch.object(M, 'download') as download, patch.object(M.CONTEXT, 'source_inputs', return_value=self.inputs), \
@@ -335,7 +344,7 @@ class Recovery(unittest.TestCase):
             if '/jobs?' in path: return [{'jobs': [self.prep, self.signer]}]
             if path.startswith('compare/'): return {'status': 'diverged', 'merge_base_commit': {'sha': '0' * 40}}
             raise AssertionError(path)
-        args = argparse.Namespace(channel='finite', tag='finite-finite-0.8.0', prepared_run=10, output=self.directory)
+        args = argparse.Namespace(channel='finite', tag='finite-0.8.1', prepared_run=10, output=self.directory)
         with patch.dict(os.environ, self.environment()), patch.object(M, 'github', side_effect=request), \
                 patch.object(M, 'download') as download, self.assertRaisesRegex(ValueError, 'ancestor'):
             M.prepare(args)
@@ -358,12 +367,14 @@ class Recovery(unittest.TestCase):
         for case, expected_calls, success in (('success', 4, True), ('post-failure', 2, False),
                 ('foreign-ref', 3, False), ('existing-draft', 1, False), ('forbidden', 1, False), ('network', 1, False),
                 ('paged-success', 5, True), ('paged-draft', 2, False), ('pagination-exhausted', 10, False),
-                ('changed-provenance', 0, False), ('wrong-tag', 0, False)):
+                ('changed-provenance', 0, False), ('wrong-tag', 0, False), ('duplicated-prefix', 0, False), ('missing-notes', 0, False), ('dev-success', 4, True)):
             with self.subTest(case=case):
                 root = self.directory / case; root.mkdir(); (root / '.bluebuild/release').mkdir(parents=True)
-                (root / 'VERSION').write_text('0.8.0\n')
+                (root / 'VERSION').write_text('0.8.1\n')
+                (root / 'CHANGELOG.md').write_text('## [0.8.1] - 2026-10-15\n\n### Changed\n\n- New OS and measured reuse.\n')
                 for name in ('SHA256SUMS', 'SHA256SUMS.bundle.json'): (root / '.bluebuild/release' / name).write_text('fixture')
                 (root / '.bluebuild/release/provenance.json').write_text(json.dumps({'revision': self.execution if case == 'changed-provenance' else self.source}))
+                if case == 'missing-notes': (root / 'CHANGELOG.md').write_text('## [Unreleased]\n')
                 binary = root / 'bin'; binary.mkdir(); gh = binary / 'gh'
                 gh.write_text('#!' + sys.executable + '\n'
                     'import json,os,sys\n'
@@ -383,10 +394,13 @@ class Recovery(unittest.TestCase):
                     ' if os.environ["FIXTURE_CASE"] == "post-failure": raise SystemExit(1)\n'
                     'elif args[0] == "api":\n'
                     ' print(json.dumps({"ref":"refs/tags/"+os.environ["RELEASE_TAG"],"object":{"type":"commit","sha":"0"*40 if os.environ["FIXTURE_CASE"] == "foreign-ref" else os.environ["RELEASE_SOURCE_SHA"]}}))\n'
-                    'else: assert args[:2] == ["release","create"] and "--draft" in args and "--verify-tag" in args\n')
+                    'else:\n'
+                    ' assert args[:2] == ["release","create"] and "--draft" in args and "--verify-tag" in args\n'
+                    ' assert args[args.index("--title")+1] == os.environ["RELEASE_TAG"]\n'
+                    ' assert "New OS and measured reuse." in open(args[args.index("--notes-file")+1]).read()\n')
                 gh.chmod(0o755)
                 env = {**os.environ, **self.environment(), 'PATH': str(binary) + os.pathsep + os.environ['PATH'],
-                    'RELEASE_SOURCE_SHA': self.source, 'RELEASE_TAG': 'finite-finite-0.8.0' if case != 'wrong-tag' else 'v0.8.0',
+                    'RELEASE_SOURCE_SHA': self.source, 'RELEASE_TAG': {'wrong-tag': 'v0.8.1', 'duplicated-prefix': 'finite-finite-0.8.1', 'dev-success': 'finite-dev-0.8.1'}.get(case, 'finite-0.8.1'),
                     'FIXTURE_CASE': case, 'FIXTURE_CALLS': str(root / 'calls'),
                     'MERGE_QUEUE_TOKEN': 'excluded-fixture', 'COSIGN_PRIVATE_KEY': 'excluded-fixture'}
                 result = subprocess.run([shutil.which('bash'), str(ROOT / 'scripts/ci/create-release-draft.sh')],
