@@ -157,7 +157,7 @@ class Qualification(unittest.TestCase):
         original = Path.cwd()
         output = self.directory / 'output'
         env = {'GITHUB_SHA': self.revision, 'GITHUB_OUTPUT': str(output),
-               'FINITE_QUALIFIED_ISO_PRESERVATION': 'true', 'FINITE_QUALIFIED_ISO_CHANNELS': 'finite-next'}
+               'FINITE_QUALIFIED_ISO_PRESERVATION': 'true', 'FINITE_QUALIFIED_ISO_CHANNELS': 'finite-dev'}
         try:
             os.chdir(self.directory)
             with patch.dict(os.environ, env), patch.object(sys, 'argv', ['release-evidence.py', 'finite', '789', '123']), \
@@ -482,25 +482,23 @@ class ExecutionGate(unittest.TestCase):
 
 
 class IsoScope(unittest.TestCase):
-    def env(self, selector='finite-next', enabled='true'):
+    def env(self, selector='finite', enabled='true'):
         return {'FINITE_QUALIFIED_ISO_PRESERVATION': enabled, 'FINITE_QUALIFIED_ISO_CHANNELS': selector}
 
     def test_release_strictness_is_limited_to_selected_channels(self):
-        release.require_iso_fallback('finite', '123', self.env())
         release.require_iso_fallback('finite-dev', '123', self.env())
-        release.require_iso_fallback('finite-dev-next', '123', self.env())
         with self.assertRaisesRegex(ValueError, 'exact qualified ISO'):
-            release.require_iso_fallback('finite-next', '123', self.env())
-        release.require_iso_fallback('finite-next', '123', self.env(enabled='false'))
+            release.require_iso_fallback('finite', '123', self.env())
+        release.require_iso_fallback('finite', '123', self.env(enabled='false'))
         with self.assertRaisesRegex(ValueError, 'No preserved qualified ISO'):
-            release.require_iso_fallback('finite', '', self.env())
+            release.require_iso_fallback('finite-dev', '', self.env())
 
     def test_retention_prunes_only_selected_profiles_and_false_flag_is_noop(self):
         with patch.object(sys, 'argv', ['prune-qualified-isos.py', '--apply']), \
                 patch.object(retention.module, 'prune_iso') as prune:
             with patch.dict(os.environ, self.env()):
                 retention.main()
-            prune.assert_called_once_with('bluefin-next', apply=True)
+            prune.assert_called_once_with('bluefin-generic', apply=True)
             prune.reset_mock()
             with patch.dict(os.environ, self.env('finite, finite-dev')):
                 retention.main()
@@ -512,7 +510,7 @@ class IsoScope(unittest.TestCase):
             prune.assert_not_called()
             with patch.dict(os.environ, self.env('all')):
                 retention.main()
-            self.assertEqual(prune.call_count, 4)
+            self.assertEqual(prune.call_count, 2)
 
     def predecessor_guard(self, profile, selector, diagnostic, status=0):
         source = (ROOT / 'scripts/bluebuild/qualify.sh').read_text()
@@ -551,11 +549,10 @@ probe() {
         return result, marker.exists(), records
 
     def test_actual_predecessor_guard_excludes_other_channels_and_all_diagnostics(self):
-        cases = [('bluefin-next', 'finite-next', 'false', True),
-                 ('bluefin-generic', 'finite-next', 'false', False),
-                 ('bluefin-dx-generic', 'finite-next', 'false', False),
-                 ('bluefin-dx-next', 'finite-next', 'false', False),
-                 ('bluefin-next', 'all', 'true', False)]
+        cases = [('bluefin-generic', 'finite', 'false', True),
+                 ('bluefin-generic', 'finite-dev', 'false', False),
+                 ('bluefin-dx-generic', 'finite', 'false', False),
+                 ('bluefin-generic', 'all', 'true', False)]
         for profile, selector, diagnostic, expected in cases:
             result, called, records = self.predecessor_guard(profile, selector, diagnostic)
             self.assertEqual(result.returncode, 0, result.stderr)
@@ -565,7 +562,7 @@ probe() {
     def test_measured_predecessor_reuse_preserves_success_miss_and_rejection(self):
         for status, expected_exit, reused in [(0, 0, 'true'), (3, 0, 'false'), (2, 2, None)]:
             with self.subTest(status=status):
-                result, called, records = self.predecessor_guard('bluefin-next', 'finite-next', 'false', status)
+                result, called, records = self.predecessor_guard('bluefin-generic', 'finite', 'false', status)
                 self.assertTrue(called)
                 self.assertEqual(result.returncode, expected_exit, result.stderr)
                 if reused is not None:

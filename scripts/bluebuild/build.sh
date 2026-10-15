@@ -3,7 +3,7 @@ set -euo pipefail
 profile="${1:?profile required}"
 publish="${2:-false}"
 case "$profile" in
-  bluefin-generic|bluefin-next|bluefin-dx-generic|bluefin-dx-next) ;;
+  bluefin-generic|bluefin-dx-generic) ;;
   *) echo "Unknown image profile: $profile" >&2; exit 1 ;;
 esac
 case "$publish" in

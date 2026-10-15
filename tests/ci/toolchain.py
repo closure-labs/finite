@@ -152,14 +152,14 @@ class Toolchain(unittest.TestCase):
                 self.assertEqual(len(libraries), len(set(libraries)))
         self.assertEqual(*hubs)
 
-    def test_full_checks_and_kernel_freshness_remain_required(self):
+    def test_full_checks_remain_required_and_kernel_follows_bluefin(self):
         workflow = yaml.safe_load((ROOT / '.github/workflows/build.yml').read_text())
         self.assertTrue(any(s.get('run') == 'python3 scripts/ci/nix-checks.py'
                             for s in workflow['jobs']['checks']['steps']))
         self.assertFalse(workflow['jobs']['checks'].get('continue-on-error', False))
-        kernel = yaml.safe_load((ROOT / '.github/workflows/update-kernel.yml').read_text())
-        self.assertTrue(any(s.get('run') == 'python3 scripts/ci/kernel-update.py --check'
-                            for s in kernel['jobs']['freshness']['steps']))
+        self.assertFalse((ROOT / '.github/workflows/update-kernel.yml').exists())
+        self.assertFalse((ROOT / 'sources/kernel-next.json').exists())
+
 
 
 if __name__ == '__main__':

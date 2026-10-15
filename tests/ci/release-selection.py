@@ -27,7 +27,8 @@ class ReleaseSelection(unittest.TestCase):
         arguments = [True, 'workflow_dispatch', 'finite', False, '', '',
                      'closure-labs/finite', 'refs/heads/security/release-eligibility']
         selection.validate_diagnostic(*arguments)
-        for index, value in ((0, 'true'), (1, 'pull_request'), (2, 'automatic'), (3, True),
+        for index, value in ((0, 'true'), (1, 'pull_request'), (2, 'automatic'),
+                             (2, 'finite-next'), (2, 'finite-dev-next'), (3, True),
                              (4, '123'), (5, 'sha256:' + 'a' * 64), (6, 'fork/finite'),
                              (7, 'refs/heads/main'), (7, 'refs/tags/v1')):
             changed = arguments.copy()
@@ -40,7 +41,8 @@ class ReleaseSelection(unittest.TestCase):
         arguments = ['workflow_dispatch', 'finite', False, '123', 'sha256:' + 'a' * 64,
                      'closure-labs/finite', 'refs/heads/main']
         selection.validate_resume(*arguments)
-        for index, value in ((0, 'push'), (1, 'automatic'), (2, True), (3, ''), (3, '../123'),
+        for index, value in ((0, 'push'), (1, 'automatic'), (1, 'finite-next'), (1, 'finite-dev-next'),
+                             (2, True), (3, ''), (3, '../123'),
                              (4, ''), (4, 'latest'), (5, 'other/repo'), (6, 'refs/heads/feature')):
             changed = arguments.copy()
             changed[index] = value
@@ -49,8 +51,7 @@ class ReleaseSelection(unittest.TestCase):
         selection.validate_resume('push', 'automatic', False, '', '', '', '')
 
     def test_each_channel_selects_only_its_profile_and_requires_checks(self):
-        expected = {'finite': 'bluefin-generic', 'finite-next': 'bluefin-next',
-                    'finite-dev': 'bluefin-dx-generic', 'finite-dev-next': 'bluefin-dx-next'}
+        expected = {'finite': 'bluefin-generic', 'finite-dev': 'bluefin-dx-generic'}
         for channel, profile in expected.items():
             with self.subTest(channel=channel):
                 plan = selection.select('workflow_dispatch', channel, False)
@@ -67,7 +68,7 @@ class ReleaseSelection(unittest.TestCase):
             for reconcile in (False, True):
                 with self.subTest(event=event, reconcile=reconcile):
                     self.assertIsNone(selection.select(event, 'automatic', reconcile))
-        for paths in (['README.md'], ['files/scripts/kernel-next.sh'], ['flake.lock'], []):
+        for paths in (['README.md'], ['files/scripts/upstream-kernel.py'], ['flake.lock'], []):
             automatic = impact.classify(paths)
             self.assertEqual(selection.select('push', 'automatic', False) or automatic,
                              impact.classify(paths))
@@ -79,7 +80,7 @@ class ReleaseSelection(unittest.TestCase):
                     selection.select(event, channel, False)
 
     def test_invalid_scope_and_conflicting_reconciliation_fail_closed(self):
-        for target in ('', 'all', 'latest', 'bluefin-generic', '../finite', 'finite\nchecks=false', None, []):
+        for target in ('finite-next', 'finite-dev-next', '', 'all', 'latest', 'bluefin-generic', '../finite', 'finite\nchecks=false', None, []):
             with self.subTest(target=target), self.assertRaises(ValueError):
                 selection.select('workflow_dispatch', target, False)
         for channel in selection.CHANNELS:

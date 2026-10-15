@@ -1,7 +1,7 @@
 # Dell XPS 13 9350 Secure Boot status
 
-The next images use Fedora's signed `7.2.0-61.fc45` kernel and its in-tree IPU7
-camera drivers. Secure Boot uses the Bluefin/Fedora trust model. Check the
+The two active images preserve their approved upstream Bluefin kernel and
+modules. Secure Boot uses the upstream Bluefin/Fedora trust model. Check the
 installed kernel and module signatures on the target hardware.
 
 ## Verify installed modules
@@ -16,8 +16,9 @@ for module in intel_cvs ipu_bridge intel_ipu7 intel_ipu7_isys ov02c10; do
 done
 ```
 
-Every path must start with `/lib/modules/$release/kernel/`, every `intree` value
-must be `Y`, and every signer must identify the Fedora kernel signing key.
+Every module must belong to the running kernel release and retain its upstream
+signature. In-tree camera drivers use `/lib/modules/$release/kernel/` and report
+`intree` as `Y`; inspect additional upstream module providers separately.
 
 ## Verify runtime binding
 
@@ -30,4 +31,4 @@ journalctl -k -b --no-pager | \
 ```
 
 Recheck the release, provider paths, signatures and camera capture after
-changing the pinned kernel source lock.
+updating the approved upstream image.

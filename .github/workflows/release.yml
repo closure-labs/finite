@@ -5,7 +5,7 @@ on:
       channel:
         type: choice
         required: true
-        options: [finite, finite-next, finite-dev, finite-dev-next]
+        options: [finite, finite-dev]
       iso_run:
         description: Optional successful ISO run; defaults to the ISO qualified by build_run
         type: string

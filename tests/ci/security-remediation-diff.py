@@ -23,7 +23,7 @@ def finding(component='pkg:rpm/fedora/example@1', advisory='CVE-2026-1', severit
 
 
 def hold():
-    return {'id': 'next-kernel-source-hold', 'profiles': ['bluefin-next'],
+    return {'id': 'fixture-source-hold', 'profiles': ['bluefin-generic'],
             'riskClass': 'local-privilege-escalation', 'reason': 'Unqualified source fix',
             'officialSources': ['https://kernel.org/'], 'reviewedBy': 'Security reviewer',
             'reviewedAt': STAMP, 'unblockEvidence': 'Authenticated compatible fix and boot qualification'}
@@ -199,7 +199,7 @@ class Remediation(unittest.TestCase):
             'reason': 'confirmed-desktop-exploitability', 'disposition': 'blocked', 'confirmedRiskReviews': [risk['id']]}]
         self.assertEqual(self.compare()['counts']['blockingRecords'], 1)
         for mutate in [lambda: self.result.update(releaseBlockers=[]),
-                       lambda: self.result['releaseBlockers'][0].update(profile='bluefin-next'),
+                       lambda: self.result['releaseBlockers'][0].update(profile='bluefin-dx-generic'),
                        lambda: self.result['releaseBlockers'][0].update(digest=OLD.split('@')[1]),
                        lambda: self.result['releaseBlockers'][0].pop('selinuxEvidence')]:
             self.result['releaseBlockers'] = [deepcopy(risk)]

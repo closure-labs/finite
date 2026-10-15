@@ -1,5 +1,7 @@
 # Generic kernel validation and remediation
 
+Historical plan: the later owner-approved [two-variant upstream kernel policy](upstream-kernel-variants.md) supersedes kernel replacement, ZFS removal and Next-variant instructions below. Preserve these observations as historical evidence; do not dispatch retired-variant work.
+
 The user approved removal of optional generic virtual-camera support so the
 Fedora 44 security kernel can replace the inherited exact-kernel module set.
 This decision applies to `kmod-v4l2loopback` and `v4l2loopback`; it does not

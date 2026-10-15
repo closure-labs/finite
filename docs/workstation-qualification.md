@@ -15,8 +15,8 @@ for diagnosis while public channel tags retain their previous image.
 
 The assembled image must include a nonempty kernel and matching initramfs with
 `/init`, OSTree, LUKS and FIDO2 support. Both build finalization and inspection of
-the final image check this before qualification. Next-kernel recipes explicitly
-regenerate the initramfs after replacing the kernel RPMs.
+the final image check this before qualification. Both active variants preserve
+the kernel and modules from the approved upstream Bluefin image.
 
 The September 22, 2026 `finite-dev-next` incident exposed the former shadow-mode
 gap: the VM qualification failed at MOK management, but publication proceeded with
@@ -27,8 +27,10 @@ the acceptance and promotion records.
 
 `automation/qualification-recovery.json` records an explicit signed predecessor
 for an unbootable public digest. It applies only to the named profile while that
-exact digest remains published, and always forces qualification. The September 22
-next-kernel images use their signed September 18 predecessors; the DX predecessor
+exact digest remains published, and always forces qualification. It currently
+has no active overrides; the retired Next entries remain documented below.
+The September 22
+next-kernel images historically used their signed September 18 predecessors; the DX predecessor
 matches the pinned working workstation deployment. Historical signatures do not
 constitute VM acceptance: the selected predecessor must boot, upgrade to the new
 candidate, and roll back in the current run, alongside a fresh candidate install.
@@ -148,23 +150,13 @@ skip application installation or treat a failed service as successful.
 
 ## Kernel maintenance
 
-`sources/kernel-policy.json` defines the approved Fedora tag, kernel series,
-architecture, signing key identity and seven-day lag threshold. The daily
-kernel workflow proposes reviewed updates to `sources/kernel-next.json`.
-It does not auto-merge or cross kernel/Fedora streams. A stream transition,
-upstream outage, invalid package or unsigned RPM fails visibly rather than
-reporting a successful no-change check.
-
-All five RPMs must download and authenticate before the lock is replaced.
-The image build repeats hash, RPM signature and package identity validation
-using a temporary RPM database containing only the reviewed Fedora key.
-Module checks remain separate: in-tree camera modules must retain their Fedora
-kernel signatures. The checked-in kernel version is unchanged by the migration
-from unsigned Koji artifacts to their signed counterparts.
-
-Retire the next-kernel override when Bluefin's own kernel passes this same boot
-suite and the Dell camera/hardware checks. Review that transition explicitly;
-do not remove the fallback channel during an unrelated dependency update.
+The active `finite` and `finite-dev` variants retain the approved upstream
+Bluefin kernel and module tree. Signed upstream image updates carry kernel and
+module updates together; Finite does not replace them with independently pinned
+RPMs. The former Next variants and their kernel-update workflow are retired.
+Current build and VM checks still enforce a matching bootable initramfs, Secure
+Boot, encrypted root, upgrade and rollback. Historical Next qualification and
+published release records remain evidence of those dated images.
 
 ## Durable releases
 
@@ -211,7 +203,7 @@ Create the durable release before transient ISO artifacts expire.
 For each hardware release candidate record the image digest, profile, machine
 model, BIOS/firmware revision, peripherals, test date and tester. Attach results
 to the draft release. Cover at least one supported Intel laptop, one AMD/Mesa
-desktop, and the Dell XPS 13 9350 next-kernel target where available.
+desktop, and the Dell XPS 13 9350 with its upstream kernel where available.
 
 | Area | Required observations |
 | --- | --- |

@@ -6,6 +6,18 @@ All notable changes to Finite are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Retain Bluefin and Bluefin-DX kernels, ZFS and other upstream modules together
+  instead of replacing kernels or directly removing module packages. Verify
+  inherited kernel/module payloads before and after Finite additions.
+- Reduce active variants to `finite` and `finite-dev`; retire Next kernels,
+  variants and kernel-update automation. Existing published Next releases remain
+  historical artifacts.
+- Preserve upstream authselect profiles and enabled features when adding
+  supported Finite authentication features.
+
+
 ## [0.8.0] - 2026-10-14
 
 ### Added

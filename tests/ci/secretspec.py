@@ -27,6 +27,29 @@ CLI = os.environ.get('FINITE_TEST_SECRETSPEC') or shutil.which('secretspec')
 
 
 class Manifest(unittest.TestCase):
+    def test_current_workflow_and_catalog_choices_include_only_active_variants(self):
+        channels = {'finite', 'finite-dev'}
+        profiles = {'bluefin-generic', 'bluefin-dx-generic'}
+        for path in (ROOT / '.github/workflows').glob('*.yml'):
+            workflow = yaml.safe_load(path.read_text())
+            inputs = (workflow.get(True, {}).get('workflow_dispatch') or {}).get('inputs', {})
+            for name, value in inputs.items():
+                choices = value.get('options', [])
+                if set(choices) & channels:
+                    with self.subTest(workflow=path.name, input=name):
+                        self.assertEqual(set(choices) - {'automatic'}, channels)
+                if set(choices) & profiles:
+                    with self.subTest(workflow=path.name, input=name):
+                        self.assertEqual(set(choices), profiles)
+        audit = yaml.safe_load((ROOT / '.github/workflows/image-security.yml').read_text())
+        self.assertEqual(set(audit['jobs']['audit']['strategy']['matrix']['channel']), channels)
+        catalog = (ROOT / 'lib/domain-catalog.nix').read_text()
+        for retired in ('bluefin-next', 'bluefin-dx-next', 'next-x86_64'):
+            self.assertNotIn(retired, catalog)
+        self.assertEqual(set(OPTIONS.CHANNEL_PROFILES), channels)
+        self.assertEqual(set(OPTIONS.CHANNEL_PROFILES.values()), profiles)
+        self.assertEqual(json.loads((ROOT / 'automation/qualification-recovery.json').read_text())['profiles'], {})
+
     def test_workflows_bootstrap_options_without_unsupported_composite_context(self):
         action = (ROOT / '.github/actions/setup-nix/action.yml').read_text()
         self.assertNotRegex(action, r'\bvars\.')
@@ -55,12 +78,7 @@ class Manifest(unittest.TestCase):
                 setup = setups[0]
                 self.assertEqual(setup['with']['merge-queue-token'], pat)
                 self.assertEqual(setup['with']['require-merge-queue-token'], 'true')
-        kernel = yaml.safe_load((ROOT / '.github/workflows/update-kernel.yml').read_text())
-        steps = kernel['jobs']['update']['steps']
-        guard = next(step for step in steps if step.get('name') == 'Require protected-branch automation credential')
-        proposal = next(step for step in steps if step.get('name') == 'Propose reviewed kernel update')
-        self.assertEqual(guard['env']['MERGE_QUEUE_TOKEN'], pat)
-        self.assertEqual(proposal['with']['token'], pat)
+        self.assertFalse((ROOT / '.github/workflows/update-kernel.yml').exists())
         for name in ('release', 'release-recovery'):
             data = yaml.safe_load((ROOT / '.github/workflows' / (name + '.yml')).read_text())
             steps = data['jobs']['sign-release']['steps']
@@ -82,28 +100,29 @@ class Manifest(unittest.TestCase):
         self.assertNotIn('file:', (ROOT / 'secretspec.toml').read_text())
         for name in FLAGS:
             self.assertEqual(MANIFEST['profiles']['default'][name]['default'], 'false')
-        self.assertEqual(MANIFEST['profiles']['default'][SELECTOR]['default'], 'finite-next')
+        self.assertEqual(MANIFEST['profiles']['default'][SELECTOR]['default'], 'finite')
 
     def test_iso_pilot_requires_enablement_and_the_exact_selected_channel(self):
         enabled = {'FINITE_QUALIFIED_ISO_PRESERVATION': 'true'}
         for channel, profile in OPTIONS.CHANNEL_PROFILES.items():
             with self.subTest(channel=channel):
                 self.assertFalse(OPTIONS.iso_preservation_enabled(channel, {}))
-                self.assertEqual(OPTIONS.iso_preservation_enabled(profile, enabled), channel == 'finite-next')
-        selected = {**enabled, SELECTOR: 'finite-dev-next, finite'}
-        self.assertEqual(OPTIONS.options(selected)[SELECTOR], 'finite,finite-dev-next')
-        self.assertFalse(OPTIONS.iso_preservation_enabled('finite-next', selected))
-        self.assertTrue(OPTIONS.iso_preservation_enabled('bluefin-dx-next', selected))
+                self.assertEqual(OPTIONS.iso_preservation_enabled(profile, enabled), channel == 'finite')
+        selected = {**enabled, SELECTOR: 'finite-dev'}
+        self.assertEqual(OPTIONS.options(selected)[SELECTOR], 'finite-dev')
+        self.assertFalse(OPTIONS.iso_preservation_enabled('finite', selected))
+        self.assertTrue(OPTIONS.iso_preservation_enabled('bluefin-dx-generic', selected))
         for channel in OPTIONS.CHANNEL_PROFILES:
             self.assertTrue(OPTIONS.iso_preservation_enabled(channel, {**enabled, SELECTOR: 'all'}))
 
     def test_invalid_or_ambiguous_iso_scope_fails_before_export(self):
-        for value in ('finite-next,finite-next', 'finite-preview', 'all,finite', ',',
+        for value in ('finite-next', 'finite-dev-next', 'finite,finite', 'finite-preview', 'all,finite', ',',
                       'finite-next\nCOSIGN_PRIVATE_KEY=injected'):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 OPTIONS.options({SELECTOR: value})
-        with self.assertRaises(ValueError):
-            OPTIONS.iso_preservation_enabled('unknown', {})
+        for value in ('unknown', 'finite-next', 'finite-dev-next', 'bluefin-next', 'bluefin-dx-next'):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                OPTIONS.iso_preservation_enabled(value, {})
 
     def test_new_profiles_are_standalone_canonical_and_narrow(self):
         for profile in ('ci-options', 'cache-writer', 'image-signing', 'release-signing', 'release-publishing',
@@ -168,7 +187,7 @@ class Resolution(unittest.TestCase):
                 'COSIGN_PRIVATE_KEY': 'fixture-only-private-key', 'SECAUDIT_PEM': 'fixture-only-app-key',
                 'CACHIX_AUTH_TOKEN': 'fixture-only-cache-token', 'MERGE_QUEUE_TOKEN': 'fixture-only-updater'})
             self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertEqual(json.loads(result.stdout), {**{name: 'false' for name in FLAGS}, SELECTOR: 'finite-next'})
+            self.assertEqual(json.loads(result.stdout), {**{name: 'false' for name in FLAGS}, SELECTOR: 'finite'})
             self.assertNotIn('fixture-only', result.stdout)
 
     def test_signing_and_read_scopes_never_inherit_other_task_credentials(self):

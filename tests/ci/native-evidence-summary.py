@@ -82,7 +82,7 @@ class NativeSummary(unittest.TestCase):
 
     def critical_result(self):
         self.result.update(mode='desktop-critical-only', trackedReleaseConcerns=[{
-            'id': 'pending-source', 'profiles': ['bluefin-next'], 'riskClass': 'local-privilege-escalation',
+            'id': 'pending-source', 'profiles': ['bluefin-generic'], 'riskClass': 'local-privilege-escalation',
             'reason': 'Source fix not classified Critical', 'severity': 'Unknown', 'advisories': [],
             'officialSources': ['https://kernel.org/'], 'reviewedBy': 'Fixture reviewer',
             'reviewedAt': '2026-10-13T11:00:00Z', 'unblockEvidence': 'Source classification and compatible fix'}])
@@ -150,7 +150,7 @@ class NativeSummary(unittest.TestCase):
         self.assertEqual(finding['criticalSeverityAdvisories'], [])
         for mutate in [lambda: self.result.update(blockingBasis='other'),
                        lambda: self.result['releaseBlockers'][0].update(digest='sha256:' + 'f' * 64),
-                       lambda: self.result['releaseBlockers'][0].update(profile='bluefin-next'),
+                       lambda: self.result['releaseBlockers'][0].update(profile='bluefin-dx-generic'),
                        lambda: self.result['releaseBlockers'][0].pop('affectedCodeEvidence')]:
             self.result.update(blockingBasis=basis, releaseBlockers=[deepcopy(risk)])
             mutate()

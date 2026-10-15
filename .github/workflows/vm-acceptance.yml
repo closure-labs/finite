@@ -44,7 +44,7 @@ jobs:
           artifact=$(gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/actions/runs/$ISO_RUN/artifacts?per_page=100" | \
             jq -er --arg run "$ISO_RUN" '
               [.[].artifacts[] | select(.expired == false) | .name as $name | $name |
-                capture("^finite-iso-(?<channel>finite(?:-next|-dev(?:-next)?)?)-" + $run + "-(?<attempt>[0-9]+)$") |
+                capture("^finite-iso-(?<channel>finite(?:-dev)?)-" + $run + "-(?<attempt>[0-9]+)$") |
                 {name: $name, channel: .channel, attempt: (.attempt | tonumber)}] |
               if (map(.channel) | unique | length) == 1 then
                 max_by(.attempt).name

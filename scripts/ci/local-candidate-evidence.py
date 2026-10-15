@@ -24,7 +24,7 @@ SPEC.loader.exec_module(scan_module)
 policy_module = scan_module.policy_module
 LIMIT = policy_module.MANIFEST_LIMIT
 DIGEST = re.compile(r'sha256:[0-9a-f]{64}')
-PROFILES = {'bluefin-generic', 'bluefin-dx-generic', 'bluefin-next', 'bluefin-dx-next'}
+PROFILES = {'bluefin-generic', 'bluefin-dx-generic'}
 CONFIG_TYPES = {'application/vnd.oci.image.config.v1+json', 'application/vnd.docker.container.image.v1+json'}
 LAYER_TYPES = {'application/vnd.oci.image.layer.v1.tar', 'application/vnd.oci.image.layer.v1.tar+gzip',
                'application/vnd.oci.image.layer.v1.tar+zstd', 'application/vnd.docker.image.rootfs.diff.tar',

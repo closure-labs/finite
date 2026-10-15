@@ -7,7 +7,7 @@ import re
 import subprocess
 from urllib.parse import urlencode
 
-from impact import PROFILES, NEXT, revisions
+from impact import PROFILES, revisions
 
 
 def evaluate(revision):
@@ -16,10 +16,10 @@ def evaluate(revision):
     result = subprocess.run([
         'nix', 'eval', '--accept-flake-config', '--no-update-lock-file', '--no-write-lock-file',
         '--json', installable, '--apply',
-        'p: { generic = p.image-payload.drvPath; next = p.image-payload-next.drvPath; }',
+        'p: { generic = p.image-payload.drvPath; }',
     ], check=True, stdout=subprocess.PIPE, text=True, timeout=300)
     identities = json.loads(result.stdout)
-    if set(identities) != {'generic', 'next'} or any(
+    if set(identities) != {'generic'} or any(
         not isinstance(value, str) or not re.fullmatch(r'/nix/store/[a-z0-9]{32}-.+\.drv', value)
         for value in identities.values()
     ):
@@ -29,10 +29,10 @@ def evaluate(revision):
 
 def select(explicit, before, after):
     selected = set(explicit)
+    if not selected <= set(PROFILES):
+        raise ValueError('Unsupported image profile')
     if before['generic'] != after['generic']:
-        selected.update(set(PROFILES) - NEXT)
-    if before['next'] != after['next']:
-        selected.update(NEXT)
+        selected.update(PROFILES)
     return sorted(selected)
 
 

@@ -209,7 +209,6 @@
     };
     default.package = imagePayload.payload;
     image-payload.package = imagePayload.payload;
-    image-payload-next.package = imagePayload.next;
     home-profile-catalog.package = imagePayload.homeCatalog;
     home-manager-template.package = homeScaffold;
     home-profile = {

@@ -9,12 +9,8 @@ from image_identity import QUALIFICATION_ONLY as IMAGE_QUALIFICATION_ONLY
 
 PROFILES = {
     'bluefin-generic': 'finite',
-    'bluefin-next': 'finite-next',
     'bluefin-dx-generic': 'finite-dev',
-    'bluefin-dx-next': 'finite-dev-next',
 }
-NEXT = {'bluefin-next', 'bluefin-dx-next'}
-GENERIC = set(PROFILES) - NEXT
 # These files qualify an existing immutable image; they are not filesystem
 # inputs. Keep source/security checks while reusing already validated builds.
 QUALIFICATION_ONLY = {
@@ -60,6 +56,7 @@ QUALIFICATION_ONLY = {
     'scripts/ci/benchmark-cache-writer.py', '.github/workflows/benchmark-cache-writer.yml',
     'scripts/ci/benchmark-image-verification.py', '.github/workflows/benchmark-image-verification.yml',
     'scripts/ci/benchmark-security-reuse.py', '.github/workflows/benchmark-security-reuse.yml',
+    'scripts/ci/benchmark-qualification-reuse.py', '.github/workflows/benchmark-vm-reuse.yml',
 }
 QUALIFICATION_ONLY |= IMAGE_QUALIFICATION_ONLY
 
@@ -85,8 +82,7 @@ def classify(paths):
             '.github/dependabot.yml', '.github/workflows/update-home-release.yml',
             '.github/workflows/update-flake-lock.yml', '.github/workflows/update-determinate-nix.yml',
             '.github/workflows/queue-dependabot.yml',
-            '.github/workflows/update-kernel.yml', '.github/workflows/release.yml',
-            'scripts/ci/kernel-update.py',
+            '.github/workflows/release.yml',
             '.github/workflows/desktop-security-evidence.yml',
             'scripts/ci/go-binary-evidence.go', 'scripts/ci/go-binary-evidence_test.go',
             'scripts/ci/go-desktop-evidence.py',
@@ -95,17 +91,11 @@ def classify(paths):
             continue
         if path.startswith(('lib/', 'modules/', 'templates/')) or path in {
             '.github/actions/setup-nix/action.yml',
-            'flake.nix', 'flake.lock', 'VERSION', 'sources/determinate-nix.json', 'sources/kernel-next.json',
-            'sources/kernel-policy.json', 'sources/fedora-45.pub',
+            'flake.nix', 'flake.lock', 'VERSION', 'sources/determinate-nix.json',
         }:
             nix = True
         elif path in {f'recipes/{profile}.yml' for profile in PROFILES}:
             profiles.add(Path(path).stem)
-        elif path in {'recipes/shared/next.yml', 'files/scripts/kernel-next.sh'}:
-            profiles.update(NEXT)
-        elif path in {'files/scripts/kernel-generic-security.py',
-                      'files/security/kernel-generic.json', 'files/security/fedora-44.pub'}:
-            profiles.update(GENERIC)
         else:
             profiles.update(PROFILES)
     return {'checks': checks, 'nix': nix, 'profiles': sorted(profiles)}

@@ -4,9 +4,13 @@ profile="${1:?profile required}"
 foundation="${2:?foundation required}"
 hardware="${3:?hardware required}"
 channel="${4:?update channel required}"
+case "$profile:$foundation:$hardware:$channel" in
+bluefin-generic:bluefin:generic-x86_64:finite|bluefin-dx-generic:bluefin-dx:generic-x86_64:finite-dev) ;;
+*) echo 'Unsupported Finite profile/foundation/hardware/channel' >&2; exit 2 ;;
+esac
 install -d /usr/share/finite
 printf '%s\n' "$profile" >/usr/share/finite/build-profile
-kernel_release=$(rpm -q --qf '%{EVR}.%{ARCH}\n' kernel-core)
+kernel_release=$(rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-core)
 jq -n --arg profile "$profile" --arg foundation "$foundation" \
   --arg hardware "$hardware" --arg channel "$channel" --arg kernel "$kernel_release" \
   '{schema: 1, profile: $profile, foundation: $foundation, hardware: $hardware,

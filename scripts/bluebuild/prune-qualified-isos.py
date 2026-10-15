@@ -18,7 +18,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--apply', action='store_true', help='Delete artifacts after trusted-main validation')
     args = parser.parse_args()
-    for profile in ('bluefin-generic', 'bluefin-next', 'bluefin-dx-generic', 'bluefin-dx-next'):
+    for profile in ('bluefin-generic', 'bluefin-dx-generic'):
         if ci_options.iso_preservation_enabled(profile):
             module.prune_iso(profile, apply=args.apply)
 

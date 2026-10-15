@@ -53,7 +53,7 @@ if [[ -n $target ]]; then
   skopeo inspect --raw "docker://$target" >"$state/target-manifest.json"
 fi
 [[ $source =~ ^ghcr.io/closure-labs/finite@sha256:[0-9a-f]{64}$ ]]
-[[ $channel =~ ^ghcr.io/closure-labs/finite:(finite|finite-next|finite-dev|finite-dev-next)$ ]]
+[[ $channel =~ ^ghcr.io/closure-labs/finite:(finite|finite-dev)$ ]]
 cosign verify --new-bundle-format=false --key cosign.pub "$source" >"$state/signature.json"
 skopeo inspect --raw "docker://$source" >"$state/source-manifest.json"
 mapfile -t isos < <(find "$artifact" -maxdepth 1 -name '*.iso' -type f)

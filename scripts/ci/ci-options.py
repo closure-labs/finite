@@ -8,13 +8,12 @@ from pathlib import Path
 OPTIONS = ('FINITE_OPTIMIZED_CACHES', 'FINITE_CACHIX_WRITER', 'FINITE_REUSE_INVENTORY',
            'FINITE_GRYPE_DB_CACHE', 'FINITE_QUALIFICATION_REUSE', 'FINITE_QUALIFIED_ISO_PRESERVATION')
 ISO_CHANNELS_OPTION = 'FINITE_QUALIFIED_ISO_CHANNELS'
-CHANNEL_PROFILES = {'finite': 'bluefin-generic', 'finite-next': 'bluefin-next',
-                    'finite-dev': 'bluefin-dx-generic', 'finite-dev-next': 'bluefin-dx-next'}
+CHANNEL_PROFILES = {'finite': 'bluefin-generic', 'finite-dev': 'bluefin-dx-generic'}
 
 
 def iso_channels(value):
     """Normalize an explicit channel allowlist before exporting it to job env."""
-    value = value or 'finite-next'
+    value = value or 'finite'
     if value == 'all':
         return tuple(sorted(CHANNEL_PROFILES))
     channels = tuple(item.strip() for item in value.split(','))

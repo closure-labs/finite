@@ -32,7 +32,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        channel: [finite, finite-next, finite-dev, finite-dev-next]
+        channel: [finite, finite-dev]
     env:
       CHANNEL: ${{ matrix.channel }}
       GH_TOKEN: ${{ github.token }}

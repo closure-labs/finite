@@ -40,6 +40,12 @@ class BaselineTests(unittest.TestCase):
         self.config['config']['Labels']['io.finite.profile'] = 'bluefin-dx-generic'
         with self.assertRaises(ValueError): baseline.context(self.config, IMAGE, self.receipt)
 
+    def test_retired_profile_labels_cannot_authenticate_as_an_active_variant(self):
+        for profile in ('bluefin-next', 'bluefin-dx-next'):
+            self.config['config']['Labels']['io.finite.profile'] = profile
+            with self.subTest(profile=profile), self.assertRaises(ValueError):
+                baseline.context(self.config, IMAGE, self.receipt)
+
     def test_exact_signature_scope_required(self):
         for field, value in [('image', BASE + '@sha256:' + '6' * 64), ('keySha256', '7' * 64),
                              ('signatureFormat', 'unchecked')]:

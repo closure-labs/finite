@@ -35,10 +35,10 @@ jq -e \
   .roles == ["developer", "support"] and
   .identity == {username: $username, homeDirectory: $home}
 ' "${test_root}/profile.json" >/dev/null
-printf '%s\n' '{"foundation":"bluefin-dx","hardware":"next-x86_64"}' \
-	>"${test_root}/running-next.json"
+printf '%s\n' '{"foundation":"bluefin-dx","hardware":"generic-x86_64"}' \
+	>"${test_root}/running-generic.json"
 FINITE_SKIP_FOUNDATION_CHECK=false \
-	FINITE_RUNNING_PROFILE_PATH="${test_root}/running-next.json" \
+	FINITE_RUNNING_PROFILE_PATH="${test_root}/running-generic.json" \
 	"${profile_command}" \
 	--foundation bluefin-dx --hardware dell-xps-9350-intel \
 	--format yaml >/dev/null
@@ -485,7 +485,7 @@ tail -n 1 "${FINITE_TEST_INIT_LOG}" |
     .roles == ["developer", "it"] and .identity == {}
   ' >/dev/null
 
-printf '%s\n' '{"foundation":"bluefin","hardware":"next-x86_64"}' \
+printf '%s\n' '{"foundation":"bluefin","hardware":"generic-x86_64"}' \
 	>"${test_root}/running.json"
 printf '%s\n' 'Dell Inc.' >"${test_root}/dmi/sys_vendor"
 printf '%s\n' 'XPS 13 9350' >"${test_root}/dmi/product_name"

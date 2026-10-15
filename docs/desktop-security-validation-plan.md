@@ -1,5 +1,7 @@
 # Desktop security validation
 
+Historical plan: the later owner-approved [two-variant upstream kernel policy](upstream-kernel-variants.md) supersedes kernel replacement, ZFS removal and Next-variant instructions below. Preserve these observations as historical evidence; do not dispatch retired-variant work.
+
 The active [release eligibility sequence](release-eligibility-sequence.md) starts
 from externally merged PR145 and records new remediation/proof work. The sections
 below retain the completed desktop-policy validation history.

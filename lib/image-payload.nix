@@ -6,7 +6,6 @@
   version,
 }: let
   determinate = builtins.fromJSON (builtins.readFile ../sources/determinate-nix.json);
-  kernel = builtins.fromJSON (builtins.readFile ../sources/kernel-next.json);
   fetch = asset: pkgs.fetchurl {inherit (asset) url sha256;};
   homeCatalog = pkgs.writeText "home-profile-catalog.json" (builtins.toJSON
     (import ./home-catalog.nix {
@@ -24,18 +23,4 @@
     cp ${fetch determinate.selinuxFileContexts} "$out/nix.fc"
     chmod 0555 "$out/determinate-nix-installer"
   '';
-  next = pkgs.runCommand "finite-next-image-payload-${version}" {} ''
-    mkdir -p "$out/kernel-next"
-    cp -R ${payload}/. "$out/"
-    cp ${../sources/kernel-next.json} "$out/kernel-next/kernel-next.json"
-    cp ${../sources/kernel-policy.json} "$out/kernel-next/kernel-policy.json"
-    cp ${../sources/fedora-45.pub} "$out/kernel-next/kernel-signing.pub"
-    ${lib.concatMapStringsSep "\n" (package: ''
-        cp ${fetch {
-          url = "${kernel.baseUrl}/${package.file}";
-          inherit (package) sha256;
-        }} "$out/kernel-next/${package.file}"
-      '')
-      kernel.packages}
-  '';
-in {inherit payload next homeCatalog;}
+in {inherit payload homeCatalog;}

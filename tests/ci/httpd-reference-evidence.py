@@ -36,7 +36,7 @@ class HttpdReferenceEvidence(unittest.TestCase):
         self.directory = Path(self.temp.name)
         self.mapping_path = self.directory / 'mapping.json'
         self.key = self.directory / 'fedora-44.pub'
-        self.key.write_bytes((ROOT / 'files/security/fedora-44.pub').read_bytes())
+        self.key.write_bytes((ROOT / 'sources/fedora-44.pub').read_bytes())
         self.mapping = json.loads((ROOT / 'docs/httpd-reference-mapping-2026-10-12.json').read_text())
         self.contents = {}
         specs = copy.deepcopy(reference.RPMS)

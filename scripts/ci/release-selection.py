@@ -7,7 +7,9 @@ import sys
 
 from impact import PROFILES
 
-CHANNELS = {channel: profile for profile, channel in PROFILES.items()}
+ACTIVE_PROFILES = {'bluefin-generic', 'bluefin-dx-generic'}
+
+CHANNELS = {channel: profile for profile, channel in PROFILES.items() if profile in ACTIVE_PROFILES}
 
 
 def validate_diagnostic(enabled, event_name, target, reconcile, run, digest, repository, ref):

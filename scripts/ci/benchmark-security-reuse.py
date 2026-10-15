@@ -17,7 +17,8 @@ ROOT = Path(__file__).resolve().parents[2]
 REPOSITORY = 'closure-labs/finite'
 WORKFLOW = REPOSITORY + '/.github/workflows/benchmark-security-reuse.yml@refs/heads/main'
 LANES = ('baseline', 'inventory-only', 'db-only')
-PROFILES = ('bluefin-generic', 'bluefin-next', 'bluefin-dx-generic', 'bluefin-dx-next')
+MODES = ('all-lanes', 'inventory-only')
+PROFILES = ('bluefin-generic', 'bluefin-dx-generic')
 IMAGE = re.compile(r'ghcr\.io/closure-labs/finite@sha256:[0-9a-f]{64}')
 SHA = re.compile(r'[0-9a-f]{40}')
 HEX = re.compile(r'[0-9a-f]{64}')
@@ -248,11 +249,34 @@ def seed(image, profile, origin, output):
         stream.write('cache_key=' + record['cacheKey'] + '\n')
 
 
-def scan(lane, repetition, image, profile, origin, start, seed_path, output):
-    if lane not in LANES or type(repetition) is not int or repetition not in (1, 2, 3):
+def selected_lanes(mode):
+    if mode not in MODES:
+        raise ValueError('Unsupported security benchmark mode')
+    return LANES[:2] if mode == 'inventory-only' else LANES
+
+
+def canonical(value):
+    """Policy result lists are observations/sets, not an execution sequence."""
+    if isinstance(value, dict):
+        return {key: canonical(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return sorted((canonical(item) for item in value), key=lambda item: json.dumps(item, sort_keys=True))
+    return value
+
+
+def policy_equivalence(result):
+    # Preserve every decision, observation, coverage count and baseline field.
+    # Scan time necessarily differs; database/provider snapshots match separately.
+    projection = {key: value for key, value in result.items() if key not in ('scannedAt', 'database')}
+    return hashlib.sha256(json.dumps(canonical(projection), sort_keys=True,
+        separators=(',', ':'), allow_nan=False).encode()).hexdigest()
+
+
+def scan(lane, repetition, image, profile, origin, start, seed_path, output, mode='all-lanes'):
+    if lane not in selected_lanes(mode) or type(repetition) is not int or repetition not in (1, 2, 3):
         raise ValueError('Unsupported security benchmark lane/repetition')
     info = context()
-    report = {'schema': 1, 'kind': 'reader', 'lane': lane, 'repetition': repetition, **info,
+    report = {'schema': 1, 'kind': 'reader', 'mode': mode, 'lane': lane, 'repetition': repetition, **info,
               'startedAt': datetime.now(timezone.utc).isoformat(), 'status': 'error',
               'transportLimits': dict(TRANSPORT_LIMITS),
               'releaseEligibilityEstablished': False}
@@ -262,6 +286,8 @@ def scan(lane, repetition, image, profile, origin, start, seed_path, output):
         report['binding'] = authenticate(image, profile, origin)
         directory = db_directory()
         if lane == 'db-only':
+            if seed_path is None:
+                raise ValueError('DB-only requires its authenticated seed receipt')
             source = read(seed_path)
             if (source.get('status') != 'success' or source.get('kind') != 'db-seed'
                     or source.get('transportLimits') != TRANSPORT_LIMITS
@@ -295,6 +321,11 @@ def scan(lane, repetition, image, profile, origin, start, seed_path, output):
                 or not re.fullmatch(r'sha256:[0-9a-f]{64}', provenance.get('platformDigest', ''))):
             raise ValueError('Fresh scan failed, reused the wrong lane, or changed its image/policy')
         phases = timings['phases']
+        if (not isinstance(phases, list) or not phases or len(phases) > 64
+                or any(not isinstance(p, dict) or not isinstance(p.get('phase'), str)
+                    or type(p.get('seconds')) not in (int, float) or not math.isfinite(p['seconds'])
+                    or not 0 <= p['seconds'] <= 3600 or p.get('success') is not True for p in phases)):
+            raise ValueError('Benchmark phases lack bounded successful durations')
         for phase in ('database-update', 'database-coverage', 'vulnerability-scan', 'policy-evaluation'):
             selected = [p for p in phases if p.get('phase') == phase]
             if len(selected) != 1 or selected[0].get('success') is not True:
@@ -311,6 +342,7 @@ def scan(lane, repetition, image, profile, origin, start, seed_path, output):
         report.update(status='success', inventoryReused=timings['inventoryReused'], phases=phases,
                       inventoryGeneration=provenance['generation'], platformDigest=provenance['platformDigest'],
                       scannedAt=result['scannedAt'], scanner=result['scanner'], database=database,
+                      policyResultSha256=policy_equivalence(result),
                       databaseSnapshot=result['database'], scanSeconds=time.monotonic() - before,
                       setupSeconds=setup, setupPlusScanSeconds=setup + time.monotonic() - before)
     except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as error:
@@ -338,7 +370,8 @@ def whole_job_seconds(job, measured, limit):
     return seconds
 
 
-def summarize(reports, metadata, repetitions, output):
+def summarize(reports, metadata, repetitions, output, mode='all-lanes'):
+    lanes = selected_lanes(mode)
     run = read(metadata)
     if (run['head_sha'] != os.environ['GITHUB_SHA'] or run['id'] != int(os.environ['GITHUB_RUN_ID'])
             or type(run.get('run_attempt')) is not int
@@ -346,16 +379,20 @@ def summarize(reports, metadata, repetitions, output):
         raise ValueError('Job metadata identifies another benchmark source/run/attempt')
     if type(repetitions) is not int or repetitions not in (1, 3):
         raise ValueError('Benchmark repetitions must be a canonical one or three')
+    if mode == 'inventory-only' and repetitions != 3:
+        raise ValueError('Inventory-only requires three matched repetitions')
     records = [read(p) for p in reports.rglob('benchmark.json')]
     readers = [r for r in records if r.get('kind') == 'reader']
     seeds = [r for r in records if r.get('kind') == 'db-seed']
     if any(type(r.get('repetition')) is not int for r in readers):
         raise ValueError('Reader repetition must be a canonical integer')
-    expected = {(lane, rep) for lane in LANES for rep in range(1, repetitions + 1)}
-    if (len(seeds) != 1 or seeds[0].get('status') != 'success' or len(readers) != len(expected)
+    expected = {(lane, rep) for lane in lanes for rep in range(1, repetitions + 1)}
+    seed_valid = (not seeds and len(records) == len(readers)) if mode == 'inventory-only' else (
+        len(seeds) == 1 and seeds[0].get('status') == 'success')
+    if (not seed_valid or len(readers) != len(expected)
             or {(r['lane'], r['repetition']) for r in readers} != expected
-            or any(r.get('status') != 'success' for r in readers)):
-        raise ValueError('Require every independent lane/repetition and its successful DB seed')
+            or any(r.get('status') != 'success' or r.get('mode', 'all-lanes') != mode for r in readers)):
+        raise ValueError('Require every independent lane/repetition and the selected mode seed contract')
     if any(r.get('transportLimits') != TRANSPORT_LIMITS for r in (*readers, *seeds)):
         raise ValueError('Reader/seed transport cap differs from the current bounded pilot')
     if any(r.get('revision') != run['head_sha'] or str(r.get('runId')) != str(run['id'])
@@ -365,13 +402,40 @@ def summarize(reports, metadata, repetitions, output):
                'binding', 'inventoryGeneration', 'platformDigest', 'scanner')
     if any(any(r[key] != readers[0][key] for key in matched) for r in readers):
         raise ValueError('Security readers differ in source, image, policy, inventory generation or tools')
-    if any(seeds[0].get(key) != readers[0][key] for key in ('revision', 'runId', 'attempt', 'lockSha256',
-                                                         'policySha256', 'platform', 'tools', 'nixVersion', 'binding')):
+    if seeds and any(seeds[0].get(key) != readers[0][key] for key in ('revision', 'runId', 'attempt', 'lockSha256',
+                                                                 'policySha256', 'platform', 'tools', 'nixVersion', 'binding')):
         raise ValueError('Seed is not associated with the same image, policy and scanner tools')
     if len({json.dumps(r['database'], sort_keys=True) for r in readers}) != 1:
         raise ValueError('Fresh database built/schema changed between lanes; repeat for matched comparison')
     if len({json.dumps(r['databaseSnapshot'], sort_keys=True) for r in readers}) != 1:
         raise ValueError('Fresh database/provider snapshot changed between lanes')
+    if mode == 'inventory-only':
+        runner = readers[0].get('runner', {})
+        if (runner.get('RUNNER_OS') != 'Linux' or runner.get('RUNNER_ARCH') != 'X64'
+                or not isinstance(runner.get('ImageVersion'), str) or not runner['ImageVersion']
+                or any(r.get('runner') != runner for r in readers)):
+            raise ValueError('Inventory comparison requires one exact hosted runner image cohort')
+        if (any(not HEX.fullmatch(r.get('policyResultSha256', '')) for r in readers)
+                or len({r['policyResultSha256'] for r in readers}) != 1):
+            raise ValueError('Inventory readers produced different policy observations or coverage')
+        for r in readers:
+            if (r.get('inventoryReused') is not (r['lane'] == 'inventory-only')
+                    or r.get('restoredCacheKey') or r.get('restoredTransport')):
+                raise ValueError('Inventory comparison contains a wrong lane or database transport')
+            phases = r.get('phases')
+            if (not isinstance(phases, list) or not phases or len(phases) > 64
+                    or any(not isinstance(p, dict) or not isinstance(p.get('phase'), str)
+                        or type(p.get('seconds')) not in (int, float) or not math.isfinite(p['seconds'])
+                        or not 0 <= p['seconds'] <= 3600 or p.get('success') is not True for p in phases)):
+                raise ValueError('Inventory comparison lacks bounded successful phase evidence')
+            for phase in ('database-update', 'database-coverage', 'vulnerability-scan', 'policy-evaluation'):
+                if len([p for p in phases if p['phase'] == phase]) != 1:
+                    raise ValueError('Inventory comparison lacks a mandatory fresh phase')
+            measured = [r.get(key) for key in ('setupSeconds', 'scanSeconds', 'setupPlusScanSeconds')]
+            if (any(type(value) not in (int, float) or not math.isfinite(value) or value < 0 for value in measured)
+                    or measured[1] <= 0 or abs(measured[0] + measured[1] - measured[2]) > 0.05
+                    or sum(p['seconds'] for p in phases) > measured[1] + 2):
+                raise ValueError('Inventory phase/setup/scan durations are inconsistent')
     rows = []
     for r in readers:
         name = f'Scan ({r["lane"]}, {r["repetition"]})'
@@ -382,23 +446,46 @@ def summarize(reports, metadata, repetitions, output):
         rows.append({**r, 'jobId': job['id'],
                      'wholeJobSeconds': whole_job_seconds(job, r['setupPlusScanSeconds'], 80 * 60)})
     seed_jobs = [j for j in run['jobs'] if j['name'] == 'Seed Grype DB transport']
-    if len(seed_jobs) != 1 or seed_jobs[0].get('status') != 'completed' or seed_jobs[0]['conclusion'] != 'success':
-        raise ValueError('DB seed job did not finish successfully, including cache save')
-    seed_job = seed_jobs[0]
-    seed_cost = whole_job_seconds(seed_job, seeds[0]['updateSeconds'], 25 * 60)
-    summary = {'schema': 1, 'status': 'matched-pilot-observations', 'repetitions': repetitions,
-               'releaseEligibilityEstablished': False, 'readers': rows, 'seed': seeds[0],
+    seed_cost = None
+    if mode == 'inventory-only':
+        if any(j.get('conclusion') != 'skipped' for j in seed_jobs) or len(seed_jobs) > 1:
+            raise ValueError('Inventory-only mode unexpectedly ran a database seed job')
+    else:
+        if len(seed_jobs) != 1 or seed_jobs[0].get('status') != 'completed' or seed_jobs[0]['conclusion'] != 'success':
+            raise ValueError('DB seed job did not finish successfully, including cache save')
+        seed_cost = whole_job_seconds(seed_jobs[0], seeds[0]['updateSeconds'], 25 * 60)
+    summary = {'schema': 1, 'status': 'matched-pilot-observations', 'mode': mode, 'repetitions': repetitions,
+               'releaseEligibilityEstablished': False, 'readers': rows, 'seed': seeds[0] if seeds else None,
                'seedWholeJobSeconds': seed_cost, 'lanes': [],
+               'inventoryPolicyOutputsEquivalent': True if mode == 'inventory-only' else None,
+               'runnerCohortMatched': len({json.dumps(r['runner'], sort_keys=True) for r in readers}) == 1,
                'limits': ['One repetition is diagnostic only; do not adopt defaults from one sample.',
                           'DB-only savings exclude separately reported seed cost; inventory and DB effects are separate.',
                           'Fresh DB update and current policy run in every reader; this benchmark grants no publication clearance.',
-                          'Whole jobs include setup/restore/post-job costs and exclude queue wait; runner image drift remains visible.']}
-    for lane in LANES:
+                          'Whole jobs include setup/restore/post-job costs and exclude queue wait; runner image drift remains visible.',
+                          'Policy output equivalence excludes scan timestamps and separately matched DB snapshots; only list ordering is normalized.',
+                          'Measurements do not enable reuse defaults or establish release eligibility.']}
+    for lane in lanes:
         group = [r for r in rows if r['lane'] == lane]
         summary['lanes'].append({'lane': lane, 'samples': len(group),
             'wholeJobMedianSeconds': statistics.median(r['wholeJobSeconds'] for r in group),
             'setupPlusScanMedianSeconds': statistics.median(r['setupPlusScanSeconds'] for r in group),
-            'runnerImageVersions': sorted({str(r['runner'].get('ImageVersion')) for r in group})})
+            'runnerImageVersions': sorted({str(r['runner'].get('ImageVersion')) for r in group}),
+            'phaseMedianSeconds': {phase: statistics.median(sum(p['seconds'] for p in r.get('phases', [])
+                if p['phase'] == phase) for r in group) for phase in sorted({p['phase'] for r in group
+                    for p in r.get('phases', [])})}})
+    if mode == 'inventory-only':
+        pairs = []
+        for repetition in range(1, repetitions + 1):
+            pair = {r['lane']: r for r in rows if r['repetition'] == repetition}
+            baseline, reused = pair['baseline'], pair['inventory-only']
+            seconds = baseline['wholeJobSeconds'] - reused['wholeJobSeconds']
+            pairs.append({'repetition': repetition, 'baselineJobId': baseline['jobId'], 'inventoryJobId': reused['jobId'],
+                'wholeJobSavedSeconds': seconds, 'wholeJobSavedPercent': 100 * seconds / baseline['wholeJobSeconds'],
+                'setupPlusScanSavedSeconds': baseline['setupPlusScanSeconds'] - reused['setupPlusScanSeconds']})
+        summary['pairedComparisons'] = pairs
+        summary['wholeJobMedianSavedSeconds'] = statistics.median(p['wholeJobSavedSeconds'] for p in pairs)
+        summary['wholeJobMedianSavedPercent'] = statistics.median(p['wholeJobSavedPercent'] for p in pairs)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(summary, indent=2) + '\n')
     print(json.dumps({'status': summary['status'], 'repetitions': repetitions,
@@ -415,14 +502,16 @@ def main():
             command.add_argument('--' + field, required=True)
         command.add_argument('--output', required=True, type=Path)
         if name == 'scan':
+            command.add_argument('--mode', choices=MODES, default='all-lanes')
             command.add_argument('--lane', required=True, choices=LANES)
             command.add_argument('--repetition', type=int, choices=(1, 2, 3), required=True)
             command.add_argument('--start', type=Path, required=True)
-            command.add_argument('--seed', type=Path, required=True)
+            command.add_argument('--seed', type=Path)
     summary = sub.add_parser('summarize')
     summary.add_argument('--reports', type=Path, required=True)
     summary.add_argument('--metadata', type=Path, required=True)
     summary.add_argument('--repetitions', type=int, choices=(1, 3), required=True)
+    summary.add_argument('--mode', choices=MODES, default='all-lanes')
     summary.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
     hosted()
@@ -430,8 +519,8 @@ def main():
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps({'monotonicSeconds': time.monotonic()}) + '\n')
     elif args.operation == 'seed': seed(args.image, args.profile, args.origin, args.output)
-    elif args.operation == 'scan': scan(args.lane, args.repetition, args.image, args.profile, args.origin, args.start, args.seed, args.output)
-    else: summarize(args.reports, args.metadata, args.repetitions, args.output)
+    elif args.operation == 'scan': scan(args.lane, args.repetition, args.image, args.profile, args.origin, args.start, args.seed, args.output, args.mode)
+    else: summarize(args.reports, args.metadata, args.repetitions, args.output, args.mode)
 
 
 if __name__ == '__main__':

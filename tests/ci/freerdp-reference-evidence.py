@@ -26,7 +26,7 @@ class ReferenceEvidence(unittest.TestCase):
         self.directory = Path(self.temp.name)
         self.mapping_path = self.directory / 'mapping.json'
         self.key = self.directory / 'fedora-44.pub'
-        self.key.write_bytes((ROOT / 'files/security/fedora-44.pub').read_bytes())
+        self.key.write_bytes((ROOT / 'sources/fedora-44.pub').read_bytes())
         self.mapping = {'schema': 1, 'kojiBuild': reference.KOJI_BUILD, 'epoch': 2,
             'sourceCommit': reference.SOURCE_COMMIT, 'selectorImage': 'ghcr.io/closure-labs/finite@sha256:' + 'a' * 64,
             'sourceSummarySha256': 'b' * 64, 'sbomSha256': 'c' * 64, 'matches': []}

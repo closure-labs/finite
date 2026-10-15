@@ -1257,7 +1257,7 @@ class UpstreamRiskPolicy(unittest.TestCase):
                                                      self.manifests, self.baseline)
 
     def kernel_hold(self):
-        hold = {'id': 'next-kernel-security-gap', 'profiles': ['bluefin-next', 'bluefin-dx-next'],
+        hold = {'id': 'fixture-source-security-gap', 'profiles': ['bluefin-dx-generic'],
                 'riskClass': 'major-data-loss', 'reason': 'Fixture unresolved XFS corruption risk',
                 'officialSources': ['https://bodhi.fedoraproject.org/updates/FEDORA-2026-012345abcd'],
                 'reviewedBy': 'fixture-reviewer', 'reviewedAt': STAMP,
@@ -1276,7 +1276,7 @@ class UpstreamRiskPolicy(unittest.TestCase):
 
     def test_profile_source_hold_blocks_without_inventing_vulnerability_findings(self):
         hold = self.kernel_hold()
-        for profile in ('bluefin-next', 'bluefin-dx-next', 'bluefin-generic', 'bluefin-dx-generic'):
+        for profile in ('bluefin-generic', 'bluefin-dx-generic'):
             with self.subTest(profile=profile):
                 self.profile(profile)
                 result = self.evaluate()
@@ -1290,7 +1290,7 @@ class UpstreamRiskPolicy(unittest.TestCase):
 
     def test_ordinary_and_reviewed_exceptions_cannot_waive_profile_source_hold(self):
         self.kernel_hold()
-        self.profile('bluefin-next')
+        self.profile('bluefin-dx-generic')
         self.located()
         self.policy['exceptions'] = [self.ordinary_exception()]
         self.disposition('nonapplicable')
@@ -1301,7 +1301,7 @@ class UpstreamRiskPolicy(unittest.TestCase):
         self.assertEqual(result['advisories'][0]['reason'], 'reviewed-nonapplicable')
 
     def test_malformed_unused_source_holds_fail_closed(self):
-        for key, value in [('profiles', ['unknown']), ('profiles', []), ('profiles', ['bluefin-next'] * 2),
+        for key, value in [('profiles', ['unknown']), ('profiles', []), ('profiles', ['bluefin-dx-generic'] * 2),
                            ('riskClass', 'ordinary'), ('unblockEvidence', ''), ('reviewedBy', ''),
                            ('reviewedAt', '2026-10-13T00:00:00Z'), ('officialSources', ['http://example.com']),
                            ('unknown', True)]:
@@ -1318,7 +1318,7 @@ class UpstreamRiskPolicy(unittest.TestCase):
 
     def test_source_hold_does_not_expire_until_reviewed_policy_change(self):
         self.kernel_hold()['reviewedAt'] = '2025-01-01T00:00:00Z'
-        self.profile('bluefin-next')
+        self.profile('bluefin-dx-generic')
         self.assertEqual(self.evaluate()['status'], 'blocked')
         self.policy['releaseBlockers'] = []
         self.assertEqual(self.evaluate()['status'], 'pass')
@@ -1423,7 +1423,7 @@ class DesktopCriticalPolicy(unittest.TestCase):
                     self.evaluate()
 
     def test_source_holds_only_block_explicit_critical_advisories(self):
-        self.profile('bluefin-next')
+        self.profile('bluefin-dx-generic')
         hold = UpstreamRiskPolicy.kernel_hold(self)
         hold.update(severity='Unknown', advisories=[])
         for severity in ('Unknown', 'High', 'Critical'):
@@ -1508,7 +1508,7 @@ class ReviewedDesktopExploitability(unittest.TestCase):
                 self.assertEqual(result['blockingBasis'], 'reviewed-desktop-exploitability')
 
     def test_old_critical_source_concern_alone_is_only_tracked(self):
-        self.profile('bluefin-next')
+        self.profile('bluefin-dx-generic')
         concern = UpstreamRiskPolicy.kernel_hold(self)
         concern.update(severity='Critical', advisories=['CVE-2026-1234'])
         result = self.evaluate()
@@ -1525,7 +1525,7 @@ class ReviewedDesktopExploitability(unittest.TestCase):
         self.assertEqual(result['observations'], [])
 
     def test_confirmed_risk_cannot_follow_different_image_or_profile(self):
-        for key, value in [('digest', DIGEST), ('profile', 'bluefin-next')]:
+        for key, value in [('digest', DIGEST), ('profile', 'bluefin-dx-generic')]:
             with self.subTest(key=key):
                 self.confirmed()[key] = value
                 self.assertEqual(self.evaluate()['status'], 'pass')

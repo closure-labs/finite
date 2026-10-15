@@ -26,7 +26,7 @@ class PodmanReference(unittest.TestCase):
         self.directory = Path(self.temporary.name)
         self.mapping_path = self.directory / 'mapping.json'
         self.key_path = self.directory / 'fedora-44.pub'
-        self.key_path.write_bytes((ROOT / 'files/security/fedora-44.pub').read_bytes())
+        self.key_path.write_bytes((ROOT / 'sources/fedora-44.pub').read_bytes())
         self.mapping = json.loads((ROOT / 'docs/podman-reference-mapping-2026-10-12.json').read_text())
         self.contents = {path: b'\x7fELF' + path.encode() for path in reference.REFERENCE_PATHS}
         self.archive = b'tiny Podman reference RPM fixture'

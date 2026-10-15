@@ -11,11 +11,17 @@ on:
         description: Profile from the successful native build
         required: true
         type: choice
-        options: [bluefin-generic, bluefin-next, bluefin-dx-generic, bluefin-dx-next]
+        options: [bluefin-generic, bluefin-dx-generic]
       origin_run:
         description: Successful native main Build Finite run containing this exact image and inventory
         required: true
         type: string
+      mode:
+        description: Inventory-only runs three baseline/reuse pairs without a DB seed
+        required: true
+        type: choice
+        default: all-lanes
+        options: [all-lanes, inventory-only]
       repetitions:
         description: One sample per lane is diagnostic; three permits repeated comparisons
         required: true
@@ -45,7 +51,7 @@ concurrency:
 jobs:
   seed:
     name: Seed Grype DB transport
-    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    if: inputs.mode != 'inventory-only' && github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     outputs:
@@ -103,7 +109,8 @@ jobs:
     needs: seed
     if: >-
       always() && !cancelled() &&
-      (needs.seed.result == 'success' || needs.seed.result == 'failure') &&
+      ((inputs.mode == 'inventory-only' && needs.seed.result == 'skipped') ||
+       (inputs.mode != 'inventory-only' && (needs.seed.result == 'success' || needs.seed.result == 'failure'))) &&
       github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     timeout-minutes: 80
@@ -111,14 +118,15 @@ jobs:
       fail-fast: false
       max-parallel: 2
       matrix:
-        lane: [baseline, inventory-only, db-only]
-        repetition: ${{ fromJSON(inputs.repetitions == '3' && '[1,2,3]' || '[1]') }}
+        repetition: ${{ fromJSON((inputs.mode == 'inventory-only' || inputs.repetitions == '3') && '[1,2,3]' || '[1]') }}
+        lane: ${{ fromJSON(inputs.mode == 'inventory-only' && '["baseline","inventory-only"]' || '["baseline","inventory-only","db-only"]') }}
     env:
       GH_TOKEN: ${{ github.token }}
       BENCHMARK_IMAGE: ${{ inputs.image }}
       BENCHMARK_PROFILE: ${{ inputs.profile }}
       BENCHMARK_ORIGIN: ${{ inputs.origin_run }}
       BENCHMARK_LANE: ${{ matrix.lane }}
+      BENCHMARK_MODE: ${{ inputs.mode || 'all-lanes' }}
       BENCHMARK_REPETITION: ${{ matrix.repetition }}
       GRYPE_DB_CACHE_DIR: ${{ github.workspace }}/.bluebuild/security-benchmark-db
       BENCHMARK_DB_KEY: ${{ needs.seed.outputs.cache_key }}
@@ -183,7 +191,7 @@ jobs:
           finite-ci-secrets-run repository-read --
           python3 scripts/ci/benchmark-security-reuse.py scan
           --image "$BENCHMARK_IMAGE" --profile "$BENCHMARK_PROFILE" --origin "$BENCHMARK_ORIGIN"
-          --lane "$BENCHMARK_LANE" --repetition "$BENCHMARK_REPETITION"
+          --mode "$BENCHMARK_MODE" --lane "$BENCHMARK_LANE" --repetition "$BENCHMARK_REPETITION"
           --start .bluebuild/security-setup-start.json --seed .bluebuild/security-db-seed/benchmark.json
           --output .bluebuild/security-benchmark/benchmark.json
       - name: Retain measurements including failures
@@ -206,7 +214,8 @@ jobs:
     timeout-minutes: 10
     env:
       GH_TOKEN: ${{ github.token }}
-      REPETITIONS: ${{ inputs.repetitions }}
+      REPETITIONS: ${{ inputs.mode == 'inventory-only' && '3' || inputs.repetitions }}
+      BENCHMARK_MODE: ${{ inputs.mode || 'all-lanes' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -235,7 +244,7 @@ jobs:
         run: >-
           python3 scripts/ci/benchmark-security-reuse.py summarize
           --reports .bluebuild/security-benchmark-reports --metadata .bluebuild/security-benchmark-run.json
-          --repetitions "$REPETITIONS" --output .bluebuild/security-benchmark-summary.json
+          --mode "$BENCHMARK_MODE" --repetitions "$REPETITIONS" --output .bluebuild/security-benchmark-summary.json
       - name: Retain the comparison
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

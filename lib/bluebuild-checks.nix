@@ -12,7 +12,6 @@
       ../automation
       ../recipes
       ../files/scripts
-      ../files/security
       ../files/installer
       ../files/system
       ../files/dnf
@@ -20,6 +19,7 @@
       ../scripts/ci
       ../tests
       ../modules/aspects
+      ../modules/outputs.nix
       ../templates
       ../lib
       ../sources
@@ -75,6 +75,7 @@ in {
     export PYTHONDONTWRITEBYTECODE=1
     python3 tests/automation/bluefin-upstream.py
     python3 tests/ci/selection.py
+    python3 tests/ci/active-variants.py
     python3 tests/ci/release-selection.py
     python3 tests/ci/release-request.py
     python3 tests/ci/release-recovery.py
@@ -102,20 +103,20 @@ in {
     python3 tests/ci/image-tools-benchmark.py
     python3 tests/ci/image-verification-benchmark.py
     python3 tests/ci/security-reuse-benchmark.py
+    python3 tests/ci/qualification-reuse-benchmark.py
     python3 tests/ci/remediation-preflight.py
     python3 tests/ci/security-ownership.py
     python3 tests/ci/security-remediation-diff.py
     python3 tests/ci/go-desktop-evidence.py
     python3 tests/ci/cosign-runtime.py
     python3 tests/ci/approved-baseline.py
-    python3 tests/ci/kernel-update.py
     python3 tests/ci/local-candidate-evidence.py
     python3 tests/bluebuild/contracts.py
     python3 tests/bluebuild/build.py
     python3 tests/bluebuild/inspect-built.py
+    python3 tests/bluebuild/upstream-kernel.py
+    python3 tests/bluebuild/authselect.py
     python3 tests/bluebuild/iso.py
-    python3 tests/bluebuild/kernel.py
-    python3 tests/bluebuild/kernel-generic-security.py
     python3 tests/bluebuild/initramfs.py
     python3 tests/bluebuild/vm-mok.py
     python3 tests/bluebuild/vm-signature-rejection.py
