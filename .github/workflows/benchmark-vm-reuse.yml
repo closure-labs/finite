@@ -53,7 +53,6 @@ jobs:
       matrix:
         sample: [1, 2, 3]
     env:
-      GH_TOKEN: ${{ github.token }}
       SAMPLE: ${{ matrix.sample }}
       PROFILE: ${{ inputs.profile }}
       ORIGIN_RUN: ${{ inputs.origin_run }}
@@ -73,7 +72,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y qemu-system-x86 qemu-utils ovmf xorriso skopeo mtools openssl python3-virt-firmware
       - name: Restore and validate exact original qualification
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: >-
+          finite-ci-secrets-run repository-read --
           python3 scripts/ci/benchmark-qualification-reuse.py restore
           --profile "$PROFILE" --origin-run "$ORIGIN_RUN" --repetition "$SAMPLE"
           --candidate "$CANDIDATE" --previous "$PREVIOUS" --identity "$IDENTITY"
@@ -109,7 +111,6 @@ jobs:
       matrix:
         sample: [1, 2, 3]
     env:
-      GH_TOKEN: ${{ github.token }}
       SAMPLE: ${{ matrix.sample }}
       PROFILE: ${{ inputs.profile }}
       ORIGIN_RUN: ${{ inputs.origin_run }}
@@ -125,7 +126,10 @@ jobs:
         with:
           cache-mode: none
       - name: Authenticate transport and perform production aggregate revalidation
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: >-
+          finite-ci-secrets-run repository-read --
           python3 scripts/ci/benchmark-qualification-reuse.py aggregate
           --profile "$PROFILE" --origin-run "$ORIGIN_RUN" --repetition "$SAMPLE"
           --candidate "$CANDIDATE" --previous "$PREVIOUS" --identity "$IDENTITY"
@@ -148,18 +152,23 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+        with:
+          cache-mode: none
       - name: Collect this attempt's small measurement receipts only
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
           REPORT_PATTERN: qualification-benchmark-report-*-${{ github.run_id }}-${{ github.run_attempt }}-*
         run: >-
+          finite-ci-secrets-run repository-read --
           gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY"
           --pattern "$REPORT_PATTERN" --dir .bluebuild/reuse-reports
       - name: Compare complete jobs and critical paths
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-
+          finite-ci-secrets-run repository-read --
           python3 scripts/ci/benchmark-qualification-reuse.py summarize
           .bluebuild/reuse-reports .bluebuild/qualification-reuse-summary.json
       - name: Save small diagnostic summary including incomplete results
