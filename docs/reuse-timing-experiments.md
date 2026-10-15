@@ -19,3 +19,15 @@ Compare both complete reused jobs, their queue/barrier gaps, total runner time a
 ## Evidence and decisions
 
 Retain small authenticated reports for every attempt, including failures or ineligible context. Measure complete costs before considering defaults. Do not interpret a failed eligibility check as a successful timing sample, or an incomplete cohort as adoption evidence. Native inventories, images, databases and VM/ISO work stay on GitHub-hosted runners; local collection is limited to bounded receipt and timing metadata.
+
+## Completed new OS measurements
+
+Both active variants passed the inventory comparison and the separate actual
+restore-plus-aggregate experiment against freshly qualified main producer
+38777997975. The final qualification measurements include the scoped SecretSpec
+`repository-read` wrapper. Inventory report collection uses the same profile;
+its measured reader paths are unchanged. No old OS or retired variant was
+benchmarked in this comparison, and no production defaults changed.
+
+See the [results and next decisions](new-os-reuse-results.md) and their
+[authenticated timing evidence](new-os-reuse-results-2026-10-15.json).

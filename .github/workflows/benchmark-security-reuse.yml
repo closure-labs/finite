@@ -170,6 +170,7 @@ jobs:
       - name: Read this attempt's authenticated seed receipt
         if: matrix.lane == 'db-only'
         run: >-
+          finite-ci-secrets-run repository-read --
           gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY"
           --name "security-benchmark-seed-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
           --dir .bluebuild/security-db-seed
@@ -213,20 +214,27 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:
-      GH_TOKEN: ${{ github.token }}
       REPETITIONS: ${{ inputs.mode == 'inventory-only' && '3' || inputs.repetitions }}
       BENCHMARK_MODE: ${{ inputs.mode || 'all-lanes' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+        with:
+          cache-mode: none
       - name: Collect small reports and complete-job timestamps
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" \
+          finite-ci-secrets-run repository-read -- \
+            gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" \
             --pattern "security-benchmark-*-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" --dir .bluebuild/security-benchmark-reports
-          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+          finite-ci-secrets-run repository-read -- \
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
             --jq '{id,head_sha,run_attempt}' >.bluebuild/security-benchmark-run.json
-          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT/jobs?per_page=100" \
+          finite-ci-secrets-run repository-read -- \
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT/jobs?per_page=100" \
             --jq '{total_count,jobs:[.jobs[] | {id,name,status,conclusion,started_at,completed_at}]}' \
             >.bluebuild/security-benchmark-jobs.json
           python3 - <<'PY'

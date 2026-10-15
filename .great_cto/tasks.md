@@ -1,6 +1,6 @@
 # Security audit implementation
 
-## Active upstream preservation and reuse measurements
+## Completed upstream preservation and new OS reuse measurements
 
 The owner requested independent hosted inventory and whole-qualification reuse
 measurements, then explicitly restored upstream ZFS trust and selected Bluefin's
@@ -10,11 +10,25 @@ scans, builds or VM qualifications for retired variants. Keep prior published
 releases and historical evidence intact. Preserve Finite's other additions and
 upstream configuration as far as their integration permits.
 
-The owner requires benchmarks only for the new OS changes. First obtain fresh
-hosted validation of both active variants, then benchmark inventory and whole
-qualification reuse against those exact new candidates and receipts. No old OS
-benchmark, local heavy work or global reuse-default rollout follows.
-See [upstream foundations](../docs/upstream-kernel-variants.md).
+PR #172 merged through the protected queue at 2816fa4d. New main producer 38777997975
+passed both upstream-preserving builds, native security, signatures, all four
+fresh-install and upgrade/rollback VM phases, desktop acceptance and promotion.
+Only these two new OS candidates supplied the reuse benchmarks; no old OS or
+retired variant was benchmarked in this comparison.
+
+All four final experiments passed independently authenticated timing checks:
+inventory 38787802299/38787811046 and wrapper-inclusive whole-qualification
+38793866627/38793870423. PR #173 added scoped SecretSpec credential resolution to
+the qualification experiment without changing image or qualification inputs;
+its main 38792824985 passed with no new image/VM work. Inventory aggregation uses
+the same read-only profile, with unchanged measured inventory-only reader paths.
+
+Inventory median paired savings were 415s/810s; whole-qualification critical-path
+service savings were 93.1%/93.6% per exact eligible hit. Production hit rate is not
+measured. Reuse defaults remain unchanged, Cachix writing remains false and no
+versioned release was created or retagged. All heavy work stayed hosted.
+See [upstream foundations](../docs/upstream-kernel-variants.md) and the
+[new OS results and next decisions](../docs/new-os-reuse-results.md).
 
 ## Completed v0.8 release
 
