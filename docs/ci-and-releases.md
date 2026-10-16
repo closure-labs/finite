@@ -240,6 +240,11 @@ part of key rotation.
 
 ## Publish a release
 
+Development may use a prerelease `VERSION`, such as `0.8.2-dev`. Before stable
+release preparation, set the canonical numeric version (for example `0.8.2`) and
+add its dated changelog entry through the protected queue. The stable publisher
+and recovery guards reject prerelease versions.
+
 1. Update `VERSION` and add a dated entry to `CHANGELOG.md` in a PR. The version
    also identifies the staged Home Manager template.
 2. Pass `CI gate` and merge through the queue. Wait for successful signed main

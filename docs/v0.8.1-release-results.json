@@ -1,0 +1,965 @@
+{
+  "schema": 1,
+  "version": "0.8.1",
+  "source": "763e16e1d0a34cc749d542cd60e715edcc4e7d8f",
+  "buildRun": 38822297795,
+  "latestChannel": "finite",
+  "historicalReleasesUnchanged": true,
+  "channels": {
+    "finite": {
+      "verifiedAt": "2026-10-16T00:39:46.454780+00:00",
+      "mode": "published",
+      "channel": "finite",
+      "releaseId": 414406920,
+      "tag": "finite-0.8.1",
+      "source": "763e16e1d0a34cc749d542cd60e715edcc4e7d8f",
+      "image": "ghcr.io/closure-labs/finite@sha256:c9fb4cbc9e73bb8d58822c3a759d4d600882b5a3c71dd0135784b774396514b2",
+      "isoName": "finite.iso",
+      "isoSha256": "261ed32313bff78dc883e4eb40acd8ef4620f9e64033f9a79587fb44c7f87993",
+      "isoParts": [
+        "finite.iso.part-000",
+        "finite.iso.part-001",
+        "finite.iso.part-002"
+      ],
+      "manifestSha256": "edac380ab4d67627dcda53c230e9dcdabc90d434ce92c7a0b5343228ca04af20",
+      "publicKeySha256": "4c3e7170f82faac86eec0b533269bb78ab671e3373a10bd01137f6108f04e978",
+      "assets": [
+        {
+          "id": 645634980,
+          "name": "acceptance.json",
+          "size": 14920,
+          "digest": "sha256:776f5ecacc48272049293bcfe7a52f41010174a7453cfe349cd5e7fdc771a549",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:34:03Z",
+          "updated_at": "2026-10-16T00:34:03Z"
+        },
+        {
+          "id": 645634983,
+          "name": "applicability-evidence.json",
+          "size": 308660,
+          "digest": "sha256:b823c9ec0ee80ac4810d7f9c332ca5a9fa8ed627c35be4ac1b9a929a266a8dfb",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:34:03Z",
+          "updated_at": "2026-10-16T00:34:04Z"
+        },
+        {
+          "id": 645634984,
+          "name": "approved-baseline.json",
+          "size": 539,
+          "digest": "sha256:69e4512addba5f4087227c7bf65c01af6884d8d4545ead086b703a7b9d037347",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:34:03Z",
+          "updated_at": "2026-10-16T00:34:04Z"
+        },
+        {
+          "id": 645635009,
+          "name": "coverage.json",
+          "size": 1012,
+          "digest": "sha256:8235d05594063efff260184a625f55756cbf3b92f82d6b908a7d0a855c8d184c",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:34:04Z",
+          "updated_at": "2026-10-16T00:34:04Z"
+        },
+        {
+          "id": 645635008,
+          "name": "database-coverage.json",
+          "size": 5551,
+          "digest": "sha256:177b0bfcd83f6131c5630af98d5031e04843d08a8ac3f7a9aec5d8aa949b8d4b",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:34:04Z",
+          "updated_at": "2026-10-16T00:34:04Z"
+        },
+        {
+          "id": 645635013,
+          "name": "extraction.json",
+          "size": 582,
+          "digest": "sha256:b1d716ea492dbde038012dd2c9363f0063202613b5fcd577e7c26ef932de72e7",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:34:04Z",
+          "updated_at": "2026-10-16T00:34:04Z"
+        },
+        {
+          "id": 645635016,
+          "name": "finite-desktop-acceptance.json",
+          "size": 68261,
+          "digest": "sha256:1a8fee2b1035a2e699290d3e5d588f4fde3d00586842d015e51dfd1896a957f5",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:34:04Z",
+          "updated_at": "2026-10-16T00:34:04Z"
+        },
+        {
+          "id": 645635017,
+          "name": "finite.Containerfile",
+          "size": 17714,
+          "digest": "sha256:a0aaa3deb73e663c879f6a160e452cfdef1880d62fb70eed75903a1e911b9c5c",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:34:04Z",
+          "updated_at": "2026-10-16T00:34:04Z"
+        },
+        {
+          "id": 645635037,
+          "name": "finite.iso.part-000",
+          "size": 1992294400,
+          "digest": "sha256:a8f29f26d8c4fb6b094351f8bf51f75ad22e3ad158427d889e34cd6232d904ca",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:34:04Z",
+          "updated_at": "2026-10-16T00:35:13Z"
+        },
+        {
+          "id": 645635047,
+          "name": "finite.iso.part-001",
+          "size": 1992294400,
+          "digest": "sha256:091c47b52dea6c58a63a45cb67db19b3168d00c2dcb53c2a8fe2abe176057386",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:34:05Z",
+          "updated_at": "2026-10-16T00:35:12Z"
+        },
+        {
+          "id": 645635053,
+          "name": "finite.iso.part-002",
+          "size": 1234829312,
+          "digest": "sha256:73ea994c9af6082a93ba8ab860cc8c8c9c0531358797af0a2694c97be8639504",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:34:05Z",
+          "updated_at": "2026-10-16T00:34:51Z"
+        },
+        {
+          "id": 645635055,
+          "name": "image-config.json",
+          "size": 122523,
+          "digest": "sha256:792de6fd43a5a999b5017b73c8e62e8729ba3d6b79f879eb0effb8a69d21c161",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:34:05Z",
+          "updated_at": "2026-10-16T00:34:05Z"
+        },
+        {
+          "id": 645635049,
+          "name": "image-manifest.json",
+          "size": 857,
+          "digest": "sha256:c9fb4cbc9e73bb8d58822c3a759d4d600882b5a3c71dd0135784b774396514b2",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:34:05Z",
+          "updated_at": "2026-10-16T00:34:05Z"
+        },
+        {
+          "id": 645635074,
+          "name": "installation.json",
+          "size": 1502,
+          "digest": "sha256:2fbb928edcb603b756d9c66152ec7ee583f2c6474d6cfcc061609cf6bc2d089e",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:34:06Z",
+          "updated_at": "2026-10-16T00:34:06Z"
+        },
+        {
+          "id": 645635073,
+          "name": "inventory-origin.json",
+          "size": 702,
+          "digest": "sha256:e4038117b1219faaef1b147abe035eaeda58c3d9762209fa990abf57ce012eab",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:34:05Z",
+          "updated_at": "2026-10-16T00:34:06Z"
+        },
+        {
+          "id": 645635106,
+          "name": "inventory-provenance.json",
+          "size": 2115,
+          "digest": "sha256:437e0a58171888feb298cad5029b8b4c850202df97aa114aecf9e45813ccb88e",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:34:06Z",
+          "updated_at": "2026-10-16T00:34:06Z"
+        },
+        {
+          "id": 645635108,
+          "name": "phase-timings.json",
+          "size": 444,
+          "digest": "sha256:294dff326d75ed3e29edc331b9414551f73c0b403ab4e59cf1c1207416fc19fc",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:34:06Z",
+          "updated_at": "2026-10-16T00:34:07Z"
+        },
+        {
+          "id": 645635145,
+          "name": "platform-manifest.json",
+          "size": 17995,
+          "digest": "sha256:5ad8bde4aac0b9f96e0b759cb1ba1d2ea059de41c9fb1f43a25acae75400c5f2",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:34:07Z",
+          "updated_at": "2026-10-16T00:34:07Z"
+        },
+        {
+          "id": 645635146,
+          "name": "provenance.json",
+          "size": 17432,
+          "digest": "sha256:964b035e269314ab49ebe34daa235a357bbf24e0aac195754e842942d753d496",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:34:07Z",
+          "updated_at": "2026-10-16T00:34:07Z"
+        },
+        {
+          "id": 645635168,
+          "name": "publication.json",
+          "size": 729,
+          "digest": "sha256:c4a487ee3a5e871cd64a928fffc5ba73cdf0a0802f1929edaf2c28ba3b7f107e",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:34:07Z",
+          "updated_at": "2026-10-16T00:34:08Z"
+        },
+        {
+          "id": 645635171,
+          "name": "rpm-file-evidence.json",
+          "size": 620306,
+          "digest": "sha256:b8291d3c4033904953a7e3d0b6fc3f05afaa07c60182bd4f060feaf69aecbc67",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:34:07Z",
+          "updated_at": "2026-10-16T00:34:08Z"
+        },
+        {
+          "id": 645635200,
+          "name": "sbom.spdx.json",
+          "size": 94127612,
+          "digest": "sha256:73ac26aa9ba71043a7f0e7c2b68dd0d195c4fd41ab47e0d1837b9d7fd12d3d10",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:34:08Z",
+          "updated_at": "2026-10-16T00:34:12Z"
+        },
+        {
+          "id": 645635201,
+          "name": "sbom.syft.json",
+          "size": 110315893,
+          "digest": "sha256:ca7e26efc3fd599c63e2bca796ef32599dead0cdb162649d10090b3225530e7f",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:34:08Z",
+          "updated_at": "2026-10-16T00:34:13Z"
+        },
+        {
+          "id": 645635372,
+          "name": "security-result.json",
+          "size": 2337202,
+          "digest": "sha256:9a6df5455099377829c18dccc528891e3046b95934e81469838a9019556fd3a3",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:34:12Z",
+          "updated_at": "2026-10-16T00:34:13Z"
+        },
+        {
+          "id": 645634982,
+          "name": "SHA256SUMS",
+          "size": 2384,
+          "digest": "sha256:edac380ab4d67627dcda53c230e9dcdabc90d434ce92c7a0b5343228ca04af20",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:34:03Z",
+          "updated_at": "2026-10-16T00:34:04Z"
+        },
+        {
+          "id": 645634987,
+          "name": "SHA256SUMS.bundle.json",
+          "size": 4033,
+          "digest": "sha256:edd73d380b21e336f278bd8ddeca3f8f8c3d2a25982c562cbdb7ad2cfb377443",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:34:03Z",
+          "updated_at": "2026-10-16T00:34:04Z"
+        },
+        {
+          "id": 645635426,
+          "name": "signature.json",
+          "size": 1268,
+          "digest": "sha256:e314239c01a83dedca523fa654328bda6a290426ae7628567e510447c81c0b97",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:34:13Z",
+          "updated_at": "2026-10-16T00:34:13Z"
+        },
+        {
+          "id": 645635440,
+          "name": "upstream-verification.json",
+          "size": 481,
+          "digest": "sha256:f04e8f48a7e2ec524254a2e105a020e37e5fdd95cdd1c3edfc471accd4c80248",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:34:13Z",
+          "updated_at": "2026-10-16T00:34:13Z"
+        },
+        {
+          "id": 645635463,
+          "name": "vulnerabilities.json",
+          "size": 5822328,
+          "digest": "sha256:80fd2fa7eec2b72ca8a1ea66c508494c244d6425633279f3a587bdd4d2417780",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:34:14Z",
+          "updated_at": "2026-10-16T00:34:14Z"
+        }
+      ],
+      "runs": {
+        "38822297795": {
+          "id": 38822297795,
+          "run_attempt": 1,
+          "head_sha": "763e16e1d0a34cc749d542cd60e715edcc4e7d8f",
+          "html_url": "https://github.com/closure-labs/finite/actions/runs/38822297795",
+          "conclusion": "success",
+          "run_started_at": "2026-10-15T23:13:46Z"
+        },
+        "38828897541": {
+          "id": 38828897541,
+          "run_attempt": 1,
+          "head_sha": "763e16e1d0a34cc749d542cd60e715edcc4e7d8f",
+          "html_url": "https://github.com/closure-labs/finite/actions/runs/38828897541",
+          "conclusion": "success",
+          "run_started_at": "2026-10-16T00:20:09Z"
+        }
+      },
+      "downloadedReceiptBytes": 2430014,
+      "downloadedNativeOrIsoAssets": false,
+      "url": "https://github.com/closure-labs/finite/releases/tag/finite-0.8.1",
+      "publishedAt": "2026-10-16T00:39:27Z",
+      "inventoryReuseOrigin": {
+        "schema": 1,
+        "status": "authenticated-inventory-only",
+        "image": "ghcr.io/closure-labs/finite@sha256:c9fb4cbc9e73bb8d58822c3a759d4d600882b5a3c71dd0135784b774396514b2",
+        "profile": "finite",
+        "originRun": 38822297795,
+        "originAttempt": 1,
+        "originBuildJob": 116723364825,
+        "originSecurityJob": 116724855763,
+        "artifactId": 12014212044,
+        "artifactSha256": "sha256:ab365118a77a1ca4c4f9a4763fea31376abf6ebaf08d54c77184682d8b8f0e21",
+        "sourceRevision": "763e16e1d0a34cc749d542cd60e715edcc4e7d8f",
+        "validationRevision": "763e16e1d0a34cc749d542cd60e715edcc4e7d8f",
+        "authenticatedAt": "2026-10-16T00:22:43.252249+00:00",
+        "newScanRequired": true,
+        "releaseEligibilityEstablished": false
+      }
+    },
+    "finite-dev": {
+      "verifiedAt": "2026-10-16T00:39:46.158336+00:00",
+      "mode": "published",
+      "channel": "finite-dev",
+      "releaseId": 414408222,
+      "tag": "finite-dev-0.8.1",
+      "source": "763e16e1d0a34cc749d542cd60e715edcc4e7d8f",
+      "image": "ghcr.io/closure-labs/finite@sha256:686690682cb0e60ac6b2543abd4b6f9b99e7140e5e6a034862df7eb590f1e327",
+      "isoName": "finite-dev.iso",
+      "isoSha256": "22e5910f25f35556c8349cc73bcc8b5f20aa358562e0809471e32982a22d76a8",
+      "isoParts": [
+        "finite-dev.iso.part-000",
+        "finite-dev.iso.part-001",
+        "finite-dev.iso.part-002",
+        "finite-dev.iso.part-003"
+      ],
+      "manifestSha256": "557c7230d4b7e9a756703031ee6281c15af18ae89ed11108bf65fefa8d5ec91f",
+      "publicKeySha256": "4c3e7170f82faac86eec0b533269bb78ab671e3373a10bd01137f6108f04e978",
+      "assets": [
+        {
+          "id": 645639791,
+          "name": "acceptance.json",
+          "size": 14932,
+          "digest": "sha256:315a6802ec1ef47c466b6df9506c4f289a35cb3f5e1be087303d882399951912",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:36:04Z",
+          "updated_at": "2026-10-16T00:36:04Z"
+        },
+        {
+          "id": 645639795,
+          "name": "applicability-evidence.json",
+          "size": 517470,
+          "digest": "sha256:1ab2f9d3a3279bbe703c0416a71967f644a854fa93abf5838fbbdc824c074a70",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:36:04Z",
+          "updated_at": "2026-10-16T00:36:05Z"
+        },
+        {
+          "id": 645639792,
+          "name": "approved-baseline.json",
+          "size": 546,
+          "digest": "sha256:65a11e614aad1f078336f8f9d5945321c2d5c2f81c726c23b0fc6011283fba7b",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:36:04Z",
+          "updated_at": "2026-10-16T00:36:04Z"
+        },
+        {
+          "id": 645639808,
+          "name": "coverage.json",
+          "size": 1018,
+          "digest": "sha256:1ee64737ea37b249915798d27f9603b63f9932a4e7162e31a60c78c03de7e704",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:36:05Z",
+          "updated_at": "2026-10-16T00:36:05Z"
+        },
+        {
+          "id": 645639815,
+          "name": "database-coverage.json",
+          "size": 5551,
+          "digest": "sha256:177b0bfcd83f6131c5630af98d5031e04843d08a8ac3f7a9aec5d8aa949b8d4b",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:36:05Z",
+          "updated_at": "2026-10-16T00:36:05Z"
+        },
+        {
+          "id": 645639819,
+          "name": "extraction.json",
+          "size": 582,
+          "digest": "sha256:02610f3cabe6579edbf8d9b4d5aaf064bc4f628886ef28280116de17bbe8f213",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:36:05Z",
+          "updated_at": "2026-10-16T00:36:05Z"
+        },
+        {
+          "id": 645639821,
+          "name": "finite-dev-desktop-acceptance.json",
+          "size": 70703,
+          "digest": "sha256:9f06e22fcdef7f8cbb66359acc0829ac5b17583b5f4965e28cdce8ba9e4de161",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:36:05Z",
+          "updated_at": "2026-10-16T00:36:05Z"
+        },
+        {
+          "id": 645639824,
+          "name": "finite-dev.Containerfile",
+          "size": 17752,
+          "digest": "sha256:39cff132c378e9265437cfdcd486734afaed33b4f72da583aa54b563a873c0c0",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:36:05Z",
+          "updated_at": "2026-10-16T00:36:05Z"
+        },
+        {
+          "id": 645639830,
+          "name": "finite-dev.iso.part-000",
+          "size": 1992294400,
+          "digest": "sha256:55348020e018bf8ef70bcb19cf83ace0d948b9e499c092fee703066849e7df36",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:36:05Z",
+          "updated_at": "2026-10-16T00:37:45Z"
+        },
+        {
+          "id": 645639836,
+          "name": "finite-dev.iso.part-001",
+          "size": 1992294400,
+          "digest": "sha256:b669c87745c27accd1c65646333b31767d0c8636da528881c22a6dd2e2ff3e63",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:36:05Z",
+          "updated_at": "2026-10-16T00:37:54Z"
+        },
+        {
+          "id": 645639835,
+          "name": "finite-dev.iso.part-002",
+          "size": 1992294400,
+          "digest": "sha256:cb574ae0e054f8d06597f91c00b32b6ae4499b61fbcf16270be65cd554058edd",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:36:05Z",
+          "updated_at": "2026-10-16T00:37:44Z"
+        },
+        {
+          "id": 645639838,
+          "name": "finite-dev.iso.part-003",
+          "size": 1226113024,
+          "digest": "sha256:24cf1521576e7fc117fa4ade0871d7b340e5aba5320b2d712448aadf84a8d5a6",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:36:05Z",
+          "updated_at": "2026-10-16T00:37:13Z"
+        },
+        {
+          "id": 645639850,
+          "name": "image-config.json",
+          "size": 143779,
+          "digest": "sha256:ef9c0ad08e1900c8c382cdb749237312bbc555c34b59476a43a6d38dafc9d13b",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:36:05Z",
+          "updated_at": "2026-10-16T00:36:06Z"
+        },
+        {
+          "id": 645639864,
+          "name": "image-manifest.json",
+          "size": 857,
+          "digest": "sha256:686690682cb0e60ac6b2543abd4b6f9b99e7140e5e6a034862df7eb590f1e327",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:36:06Z",
+          "updated_at": "2026-10-16T00:36:06Z"
+        },
+        {
+          "id": 645639895,
+          "name": "installation.json",
+          "size": 1510,
+          "digest": "sha256:999d093cfa5188d79430deda04dea2242632288a9f3c313336dcd4517d80c35b",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:36:07Z",
+          "updated_at": "2026-10-16T00:36:07Z"
+        },
+        {
+          "id": 645639917,
+          "name": "inventory-origin.json",
+          "size": 706,
+          "digest": "sha256:28c9f09a3326aa6d480b8701120becf8c093dda22ba21978e1e27c2bf9987927",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:36:07Z",
+          "updated_at": "2026-10-16T00:36:07Z"
+        },
+        {
+          "id": 645639948,
+          "name": "inventory-provenance.json",
+          "size": 2115,
+          "digest": "sha256:de574362a88019efcd6d8441623499e0b246720053a92c94ba4f389df9a5ef21",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:36:08Z",
+          "updated_at": "2026-10-16T00:36:08Z"
+        },
+        {
+          "id": 645639970,
+          "name": "phase-timings.json",
+          "size": 444,
+          "digest": "sha256:e3ccf3929d2472747c6263d872058a730c6cba2c8a34d83c03a9ef67555651b1",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:36:08Z",
+          "updated_at": "2026-10-16T00:36:08Z"
+        },
+        {
+          "id": 645639981,
+          "name": "platform-manifest.json",
+          "size": 17999,
+          "digest": "sha256:304d5d27e120e8ff75421ec1ca349fd36d88382e78164e3e24a3d623d40f0ace",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:36:09Z",
+          "updated_at": "2026-10-16T00:36:09Z"
+        },
+        {
+          "id": 645639992,
+          "name": "provenance.json",
+          "size": 17444,
+          "digest": "sha256:4d1972241a0851ced599b5b292f09723a7603210711de6ca5b4d27c41c19f033",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:36:09Z",
+          "updated_at": "2026-10-16T00:36:10Z"
+        },
+        {
+          "id": 645640006,
+          "name": "publication.json",
+          "size": 730,
+          "digest": "sha256:d33d9694486dbce1ce13edeb3027e5b4b2c3204438aee559051d5ebe23f225e8",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:36:10Z",
+          "updated_at": "2026-10-16T00:36:10Z"
+        },
+        {
+          "id": 645640026,
+          "name": "rpm-file-evidence.json",
+          "size": 618738,
+          "digest": "sha256:7fca3c26a845aea602311f634a6127ae025cc7f11f583e13d7d455fd4f3394da",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:36:10Z",
+          "updated_at": "2026-10-16T00:36:11Z"
+        },
+        {
+          "id": 645640041,
+          "name": "sbom.spdx.json",
+          "size": 127756096,
+          "digest": "sha256:7667bb1ec07699be33a9583cddd73d4fc74979a42f32248e1303ec81d821a0a9",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:36:11Z",
+          "updated_at": "2026-10-16T00:36:21Z"
+        },
+        {
+          "id": 645640604,
+          "name": "sbom.syft.json",
+          "size": 147301406,
+          "digest": "sha256:c3b5c9b0fa6e863634218cb44fc30fda8226a30474380451887a852f43e60c27",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:36:21Z",
+          "updated_at": "2026-10-16T00:36:32Z"
+        },
+        {
+          "id": 645641107,
+          "name": "security-result.json",
+          "size": 3698091,
+          "digest": "sha256:fe0bac63e59ba82cf0bdfb8ff7d080bfb05bb23a97abd6cb2790ca7e8fe2ff15",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:36:32Z",
+          "updated_at": "2026-10-16T00:36:33Z"
+        },
+        {
+          "id": 645639796,
+          "name": "SHA256SUMS",
+          "size": 2496,
+          "digest": "sha256:557c7230d4b7e9a756703031ee6281c15af18ae89ed11108bf65fefa8d5ec91f",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:36:04Z",
+          "updated_at": "2026-10-16T00:36:05Z"
+        },
+        {
+          "id": 645639793,
+          "name": "SHA256SUMS.bundle.json",
+          "size": 4177,
+          "digest": "sha256:ef622d5b4bf50ada405f01754f188d4bc23404e287115bc03ee4d065dcd70d6d",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:36:04Z",
+          "updated_at": "2026-10-16T00:36:04Z"
+        },
+        {
+          "id": 645641131,
+          "name": "signature.json",
+          "size": 1268,
+          "digest": "sha256:ec2dbc7bf7e1815ac064beb469f9af7271756c19f7a402b30a1de77415834f93",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:36:33Z",
+          "updated_at": "2026-10-16T00:36:33Z"
+        },
+        {
+          "id": 645641144,
+          "name": "upstream-verification.json",
+          "size": 484,
+          "digest": "sha256:6ecca3ac12402c99ba00b4b0a575c6336eaf87757c473da6b6205e728e13e40a",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:36:34Z",
+          "updated_at": "2026-10-16T00:36:34Z"
+        },
+        {
+          "id": 645641157,
+          "name": "vulnerabilities.json",
+          "size": 9449544,
+          "digest": "sha256:01ac6038c3247377141946091816089bb06b0cf5ee3a11a22cf7098d1e979eaa",
+          "state": "uploaded",
+          "created_at": "2026-10-16T00:36:34Z",
+          "updated_at": "2026-10-16T00:36:35Z"
+        }
+      ],
+      "runs": {
+        "38822297795": {
+          "id": 38822297795,
+          "run_attempt": 1,
+          "head_sha": "763e16e1d0a34cc749d542cd60e715edcc4e7d8f",
+          "html_url": "https://github.com/closure-labs/finite/actions/runs/38822297795",
+          "conclusion": "success",
+          "run_started_at": "2026-10-15T23:13:46Z"
+        },
+        "38828928233": {
+          "id": 38828928233,
+          "run_attempt": 1,
+          "head_sha": "763e16e1d0a34cc749d542cd60e715edcc4e7d8f",
+          "html_url": "https://github.com/closure-labs/finite/actions/runs/38828928233",
+          "conclusion": "success",
+          "run_started_at": "2026-10-16T00:20:28Z"
+        }
+      },
+      "downloadedReceiptBytes": 3793617,
+      "downloadedNativeOrIsoAssets": false,
+      "url": "https://github.com/closure-labs/finite/releases/tag/finite-dev-0.8.1",
+      "publishedAt": "2026-10-16T00:39:15Z",
+      "inventoryReuseOrigin": {
+        "schema": 1,
+        "status": "authenticated-inventory-only",
+        "image": "ghcr.io/closure-labs/finite@sha256:686690682cb0e60ac6b2543abd4b6f9b99e7140e5e6a034862df7eb590f1e327",
+        "profile": "finite-dev",
+        "originRun": 38822297795,
+        "originAttempt": 1,
+        "originBuildJob": 116723364952,
+        "originSecurityJob": 116725436667,
+        "artifactId": 12015191225,
+        "artifactSha256": "sha256:67a84f51f8ad3d8e04e3a29d8867f01b8c605cedd2b6df5e0da002dfdcd8d4a2",
+        "sourceRevision": "763e16e1d0a34cc749d542cd60e715edcc4e7d8f",
+        "validationRevision": "763e16e1d0a34cc749d542cd60e715edcc4e7d8f",
+        "authenticatedAt": "2026-10-16T00:27:12.221222+00:00",
+        "newScanRequired": true,
+        "releaseEligibilityEstablished": false
+      }
+    }
+  },
+  "channelBindings": {
+    "finite": [
+      {
+        "tag": "finite",
+        "image": "ghcr.io/closure-labs/finite@sha256:c9fb4cbc9e73bb8d58822c3a759d4d600882b5a3c71dd0135784b774396514b2",
+        "source": "763e16e1d0a34cc749d542cd60e715edcc4e7d8f",
+        "profile": "finite",
+        "foundation": "bluefin",
+        "title": "Finite",
+        "downloadedLayers": false
+      },
+      {
+        "tag": "latest",
+        "image": "ghcr.io/closure-labs/finite@sha256:c9fb4cbc9e73bb8d58822c3a759d4d600882b5a3c71dd0135784b774396514b2",
+        "source": "763e16e1d0a34cc749d542cd60e715edcc4e7d8f",
+        "profile": "finite",
+        "foundation": "bluefin",
+        "title": "Finite",
+        "downloadedLayers": false
+      }
+    ],
+    "finite-dev": [
+      {
+        "tag": "finite-dev",
+        "image": "ghcr.io/closure-labs/finite@sha256:686690682cb0e60ac6b2543abd4b6f9b99e7140e5e6a034862df7eb590f1e327",
+        "source": "763e16e1d0a34cc749d542cd60e715edcc4e7d8f",
+        "profile": "finite-dev",
+        "foundation": "bluefin-dx",
+        "title": "Finite Dev",
+        "downloadedLayers": false
+      }
+    ]
+  },
+  "producerJobs": [
+    {
+      "id": 116721484476,
+      "name": "Select checks",
+      "conclusion": "success",
+      "started_at": "2026-10-15T23:13:50Z",
+      "completed_at": "2026-10-15T23:15:09Z"
+    },
+    {
+      "id": 116721484877,
+      "name": "Documentation checks",
+      "conclusion": "success",
+      "started_at": "2026-10-15T23:13:50Z",
+      "completed_at": "2026-10-15T23:14:07Z"
+    },
+    {
+      "id": 116721955269,
+      "name": "Nix and runtime contracts",
+      "conclusion": "success",
+      "started_at": "2026-10-15T23:15:12Z",
+      "completed_at": "2026-10-15T23:19:22Z"
+    },
+    {
+      "id": 116723364825,
+      "name": "Publish (finite) / build / build",
+      "conclusion": "success",
+      "started_at": "2026-10-15T23:19:25Z",
+      "completed_at": "2026-10-15T23:23:58Z"
+    },
+    {
+      "id": 116723364952,
+      "name": "Publish (finite-dev) / build / build",
+      "conclusion": "success",
+      "started_at": "2026-10-15T23:19:25Z",
+      "completed_at": "2026-10-15T23:25:43Z"
+    },
+    {
+      "id": 116723365410,
+      "name": "Validate (${{ matrix.profile }})",
+      "conclusion": "skipped",
+      "started_at": "2026-10-15T23:19:22Z",
+      "completed_at": "2026-10-15T23:19:22Z"
+    },
+    {
+      "id": 116724855763,
+      "name": "Publish (finite) / security",
+      "conclusion": "success",
+      "started_at": "2026-10-15T23:24:01Z",
+      "completed_at": "2026-10-15T23:34:32Z"
+    },
+    {
+      "id": 116725436667,
+      "name": "Publish (finite-dev) / security",
+      "conclusion": "success",
+      "started_at": "2026-10-15T23:25:47Z",
+      "completed_at": "2026-10-15T23:43:27Z"
+    },
+    {
+      "id": 116728324951,
+      "name": "Publish (finite) / sign",
+      "conclusion": "success",
+      "started_at": "2026-10-15T23:34:36Z",
+      "completed_at": "2026-10-15T23:35:21Z"
+    },
+    {
+      "id": 116728590678,
+      "name": "Publish (finite) / preflight",
+      "conclusion": "success",
+      "started_at": "2026-10-15T23:35:24Z",
+      "completed_at": "2026-10-15T23:36:15Z"
+    },
+    {
+      "id": 116728881716,
+      "name": "Publish (finite) / qualification / prepare",
+      "conclusion": "success",
+      "started_at": "2026-10-15T23:36:18Z",
+      "completed_at": "2026-10-15T23:37:32Z"
+    },
+    {
+      "id": 116729289706,
+      "name": "Publish (finite) / qualification / phase (upgrade)",
+      "conclusion": "success",
+      "started_at": "2026-10-15T23:37:36Z",
+      "completed_at": "2026-10-16T00:08:45Z"
+    },
+    {
+      "id": 116729289751,
+      "name": "Publish (finite) / qualification / phase (fresh)",
+      "conclusion": "success",
+      "started_at": "2026-10-15T23:37:35Z",
+      "completed_at": "2026-10-16T00:05:47Z"
+    },
+    {
+      "id": 116731149262,
+      "name": "Publish (finite-dev) / sign",
+      "conclusion": "success",
+      "started_at": "2026-10-15T23:43:31Z",
+      "completed_at": "2026-10-15T23:44:16Z"
+    },
+    {
+      "id": 116731407297,
+      "name": "Publish (finite-dev) / preflight",
+      "conclusion": "success",
+      "started_at": "2026-10-15T23:44:18Z",
+      "completed_at": "2026-10-15T23:45:07Z"
+    },
+    {
+      "id": 116731675771,
+      "name": "Publish (finite-dev) / qualification / prepare",
+      "conclusion": "success",
+      "started_at": "2026-10-15T23:45:09Z",
+      "completed_at": "2026-10-15T23:46:58Z"
+    },
+    {
+      "id": 116732271167,
+      "name": "Publish (finite-dev) / qualification / phase (fresh)",
+      "conclusion": "success",
+      "started_at": "2026-10-15T23:47:01Z",
+      "completed_at": "2026-10-16T00:17:33Z"
+    },
+    {
+      "id": 116732271208,
+      "name": "Publish (finite-dev) / qualification / phase (upgrade)",
+      "conclusion": "success",
+      "started_at": "2026-10-15T23:47:01Z",
+      "completed_at": "2026-10-16T00:15:07Z"
+    },
+    {
+      "id": 116739196672,
+      "name": "Publish (finite) / qualification / aggregate",
+      "conclusion": "success",
+      "started_at": "2026-10-16T00:08:49Z",
+      "completed_at": "2026-10-16T00:09:46Z"
+    },
+    {
+      "id": 116739513677,
+      "name": "Publish (finite) / promote",
+      "conclusion": "success",
+      "started_at": "2026-10-16T00:09:48Z",
+      "completed_at": "2026-10-16T00:10:44Z"
+    },
+    {
+      "id": 116741985635,
+      "name": "Publish (finite-dev) / qualification / aggregate",
+      "conclusion": "success",
+      "started_at": "2026-10-16T00:17:36Z",
+      "completed_at": "2026-10-16T00:18:24Z"
+    },
+    {
+      "id": 116742250128,
+      "name": "Publish (finite-dev) / promote",
+      "conclusion": "success",
+      "started_at": "2026-10-16T00:18:27Z",
+      "completed_at": "2026-10-16T00:19:31Z"
+    },
+    {
+      "id": 116742583945,
+      "name": "CI gate",
+      "conclusion": "success",
+      "started_at": "2026-10-16T00:19:34Z",
+      "completed_at": "2026-10-16T00:19:40Z"
+    }
+  ],
+  "productionScanObservations": {
+    "scope": "One producer/release scan-step observation per exact current candidate; independent runner/event conditions, not a controlled benchmark or whole-pipeline saving.",
+    "channels": {
+      "finite": {
+        "source": "763e16e1d0a34cc749d542cd60e715edcc4e7d8f",
+        "image": "ghcr.io/closure-labs/finite@sha256:c9fb4cbc9e73bb8d58822c3a759d4d600882b5a3c71dd0135784b774396514b2",
+        "inventoryReuseAuthenticated": true,
+        "producer": {
+          "run": 38822297795,
+          "job": 116724855763,
+          "url": "https://github.com/closure-labs/finite/actions/runs/38822297795/job/116724855763",
+          "step": "Scan exact candidate and enforce image security policy",
+          "startedAt": "2026-10-15T23:24:30Z",
+          "completedAt": "2026-10-15T23:34:23Z",
+          "seconds": 593
+        },
+        "release": {
+          "run": 38828897541,
+          "job": 116742784376,
+          "url": "https://github.com/closure-labs/finite/actions/runs/38828897541/job/116742784376",
+          "step": "Rescan the qualified immutable image before release",
+          "startedAt": "2026-10-16T00:22:35Z",
+          "completedAt": "2026-10-16T00:24:47Z",
+          "seconds": 132
+        },
+        "observedStepDifferenceSeconds": 461
+      },
+      "finite-dev": {
+        "source": "763e16e1d0a34cc749d542cd60e715edcc4e7d8f",
+        "image": "ghcr.io/closure-labs/finite@sha256:686690682cb0e60ac6b2543abd4b6f9b99e7140e5e6a034862df7eb590f1e327",
+        "inventoryReuseAuthenticated": true,
+        "producer": {
+          "run": 38822297795,
+          "job": 116725436667,
+          "url": "https://github.com/closure-labs/finite/actions/runs/38822297795/job/116725436667",
+          "step": "Scan exact candidate and enforce image security policy",
+          "startedAt": "2026-10-15T23:26:16Z",
+          "completedAt": "2026-10-15T23:43:17Z",
+          "seconds": 1021
+        },
+        "release": {
+          "run": 38828928233,
+          "job": 116742880213,
+          "url": "https://github.com/closure-labs/finite/actions/runs/38828928233/job/116742880213",
+          "step": "Rescan the qualified immutable image before release",
+          "startedAt": "2026-10-16T00:27:00Z",
+          "completedAt": "2026-10-16T00:28:57Z",
+          "seconds": 117
+        },
+        "observedStepDifferenceSeconds": 904
+      }
+    }
+  },
+  "deploymentReviews": {
+    "finite": {
+      "channel": "finite",
+      "run": 38828897541,
+      "source": "763e16e1d0a34cc749d542cd60e715edcc4e7d8f",
+      "ownerAuthorized": true,
+      "environment": {
+        "id": 19957955037,
+        "node_id": "EN_kwDOTRdZKM8AAAAEpZY53Q",
+        "name": "release",
+        "url": "https://api.github.com/repos/closure-labs/finite/environments/release",
+        "html_url": "https://github.com/closure-labs/finite/deployments/activity_log?environments_filter=release"
+      },
+      "preparationJob": 116742784376,
+      "unsignedArtifact": {
+        "id": 12016895878,
+        "name": "unsigned-release-38828897541-1",
+        "size_in_bytes": 5193733395,
+        "digest": "sha256:f8eceef7c4bd89487662cd804e8914b376d4c0b6e54f3def74da7278c18881a1"
+      },
+      "review": {
+        "environment_ids": [
+          19957955037
+        ],
+        "state": "approved",
+        "comment": "Owner requested v0.8.1 deployment after merge. Verified corrected renamed-source main producer 38822297795, exact revision 763e16e1d0a34cc749d542cd60e715edcc4e7d8f, original-qualified-ISO collection and fresh pre-release security scan. Approving normal isolated release signing for finite."
+      }
+    },
+    "finite-dev": {
+      "channel": "finite-dev",
+      "run": 38828928233,
+      "source": "763e16e1d0a34cc749d542cd60e715edcc4e7d8f",
+      "ownerAuthorized": true,
+      "environment": {
+        "id": 19957955037,
+        "node_id": "EN_kwDOTRdZKM8AAAAEpZY53Q",
+        "name": "release",
+        "url": "https://api.github.com/repos/closure-labs/finite/environments/release",
+        "html_url": "https://github.com/closure-labs/finite/deployments/activity_log?environments_filter=release"
+      },
+      "preparationJob": 116742880213,
+      "unsignedArtifact": {
+        "id": 12016088316,
+        "name": "unsigned-release-38828928233-1",
+        "size_in_bytes": 7165135202,
+        "digest": "sha256:e7ff9144ea1419820ff9eb80eae18618dc225f500c1a81fe82b35c891169d6d9"
+      },
+      "review": {
+        "environment_ids": [
+          19957955037
+        ],
+        "state": "approved",
+        "comment": "Owner requested v0.8.1 deployment after merge. Verified corrected renamed-source main producer 38822297795, exact revision 763e16e1d0a34cc749d542cd60e715edcc4e7d8f, original-qualified-ISO collection and fresh pre-release security scan. Approving normal isolated release signing for finite-dev."
+      }
+    }
+  }
+}

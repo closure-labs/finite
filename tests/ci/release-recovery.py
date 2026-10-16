@@ -27,6 +27,16 @@ class Recovery(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(); self.addCleanup(self.tmp.cleanup)
         self.directory = Path(self.tmp.name)
+        # Release fixtures use a stable source version independently of the
+        # checkout's next-cycle prerelease VERSION.
+        self.release_root = self.directory / 'release-source'
+        self.release_root.mkdir()
+        for relative in (*M.POLICY_INPUTS, 'VERSION'):
+            destination = self.release_root / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(b'0.8.1\n' if relative == 'VERSION' else (ROOT / relative).read_bytes())
+        root_patch = patch.object(M, 'ROOT', self.release_root)
+        root_patch.start(); self.addCleanup(root_patch.stop)
         self.source, self.execution = 'a' * 40, 'b' * 40
         self.now = datetime.now(timezone.utc).replace(microsecond=0)
         self.time = self.now.strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -168,7 +178,7 @@ class Recovery(unittest.TestCase):
     def verify_packet(self):
         build = dict(self.run, id=50, path='.github/workflows/build.yml', conclusion='success')
         with patch.object(M, 'github', return_value=build), patch.object(M.EVIDENCE.desktop, 'verify') as desktop, \
-                patch.object(M, 'source_file', side_effect=lambda path, revision: (ROOT / path).read_bytes()):
+                patch.object(M, 'source_file', side_effect=lambda path, revision: (self.release_root / path).read_bytes()):
             result = M.packet(self.directory, 'finite', self.source, 10, inputs=self.inputs)
         desktop.assert_called_once()
         return result
@@ -209,7 +219,7 @@ class Recovery(unittest.TestCase):
         build = dict(self.run, id=50, path='.github/workflows/build.yml', conclusion='success')
         with patch.object(M, 'github', return_value=build), patch.object(M.EVIDENCE.desktop, 'verify'), \
                 patch.object(M, 'source_file', side_effect=lambda path, revision:
-                    b'0.8.0\n' if path == 'VERSION' else (ROOT / path).read_bytes()), \
+                    b'0.8.0\n' if path == 'VERSION' else (self.release_root / path).read_bytes()), \
                 self.assertRaisesRegex(ValueError, 'VERSION differs'):
             M.packet(self.directory, 'finite', self.source, 10, inputs=self.inputs)
 
@@ -278,7 +288,7 @@ class Recovery(unittest.TestCase):
         args = argparse.Namespace(channel='finite', tag='finite-0.8.1', prepared_run=10, output=self.directory)
         with patch.dict(os.environ, self.environment()), patch.object(M, 'github', side_effect=request), \
                 patch.object(M, 'download') as download, patch.object(M.CONTEXT, 'source_inputs', return_value=self.inputs), \
-                patch.object(M, 'source_file', side_effect=lambda path, revision: (ROOT / path).read_bytes()), \
+                patch.object(M, 'source_file', side_effect=lambda path, revision: (self.release_root / path).read_bytes()), \
                 patch.object(M.EVIDENCE.desktop, 'verify'):
             M.prepare(args)
         download.assert_called_once()
@@ -327,7 +337,7 @@ class Recovery(unittest.TestCase):
             artifact_digest=value['digest'], artifact_size=value['size_in_bytes'], output=self.directory)
         with patch.dict(os.environ, self.environment()), patch.object(M, 'github', side_effect=request), \
                 patch.object(M, 'download') as download, patch.object(M.CONTEXT, 'source_inputs', return_value=self.inputs), \
-                patch.object(M, 'source_file', side_effect=lambda path, revision: (ROOT / path).read_bytes()), \
+                patch.object(M, 'source_file', side_effect=lambda path, revision: (self.release_root / path).read_bytes()), \
                 patch.object(M.EVIDENCE.desktop, 'verify'):
             M.signer(args)
         download.assert_called_once_with(value, self.directory, 'finite', recovery=True)
