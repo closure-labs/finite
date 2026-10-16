@@ -83,7 +83,7 @@ jobs:
       - name: Add diagnostic sample receipt to bounded handoff
         run: cp .bluebuild/reuse-restore/benchmark.json .bluebuild/reuse-restore/receipts/benchmark.json
       - name: Save diagnostic-only acceptance handoff
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: qualification-benchmark-handoff-${{ inputs.profile }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.sample }}
           path: .bluebuild/reuse-restore/receipts/*.json
@@ -92,7 +92,7 @@ jobs:
           retention-days: 1
       - name: Preserve restore measurements including failure
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: qualification-benchmark-report-restore-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.sample }}
           path: .bluebuild/reuse-restore/benchmark.json
@@ -136,7 +136,7 @@ jobs:
           --source "$SOURCE_REVISION" --output .bluebuild/reuse-aggregate
       - name: Preserve aggregate measurements including failure
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: qualification-benchmark-report-aggregate-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.sample }}
           path: .bluebuild/reuse-aggregate/benchmark.json
@@ -173,7 +173,7 @@ jobs:
           .bluebuild/reuse-reports .bluebuild/qualification-reuse-summary.json
       - name: Save small diagnostic summary including incomplete results
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: qualification-reuse-summary-${{ github.run_id }}-${{ github.run_attempt }}
           path: .bluebuild/qualification-reuse-summary.json

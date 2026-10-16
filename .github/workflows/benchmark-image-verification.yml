@@ -87,7 +87,7 @@ jobs:
           --start .bluebuild/verification-start.json --output .bluebuild/verification-diagnostic
       - name: Retain measurements including failures
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: image-verification-${{ matrix.phase }}-${{ matrix.repetition }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: .bluebuild/verification-diagnostic/
@@ -125,7 +125,7 @@ jobs:
           --jobs .bluebuild/verification-job-metadata.json
       - name: Retain diagnostic comparison
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: image-verification-summary-${{ github.run_id }}-${{ github.run_attempt }}
           path: .bluebuild/verification-summary.*
