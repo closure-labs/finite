@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+export FINITE_FOUNDATION_SOURCE="${FINITE_FOUNDATION_SOURCE:-/usr/share/finite/foundation}"
+export FINITE_FOUNDATION_METADATA="${FINITE_FOUNDATION_METADATA:-/usr/share/finite/foundation-source.json}"
+export FINITE_FOUNDATION_CATALOG="${FINITE_FOUNDATION_CATALOG:-/usr/share/finite/home-profile-catalog.json}"
+exec /usr/bin/python3 "$FINITE_FOUNDATION_SOURCE/scripts/home.py" migrate "$@"

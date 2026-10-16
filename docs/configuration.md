@@ -1,191 +1,108 @@
 # Configure your environment
 
-Start with `finite-configure`. It opens the role and optional-package selectors,
-shows your current choices, builds the selected environment, and activates it
-after the build succeeds.
+[Foundation](https://github.com/closure-labs/foundation) owns Finite's Home Manager
+configuration, profile catalog and user helpers. Finite installs Nix, validates
+host compatibility and provisions a personal consumer of a reviewed Foundation
+release. Foundation has its own releases and tested dependency lock.
 
-You can combine Developer, Sales, Trainer, Support, Executive and IT roles.
-Optional packages include Hack Nerd Font, Herdr, Jujutsu, OpenCode and uv.
-Every combination includes Finite's base desktop apps and command-line tools.
+## Your personal configuration
 
-## Add packages and personal settings
+`~/.config/home-manager/` contains a small flake importing Foundation, its lock,
+`foundation.json` release provenance, `profile.json`, `customize.nix` and
+`modules/local.nix`. Shared modules stay in the pinned Foundation source.
 
-Edit `~/.config/home-manager/customize.nix`. It is a Home Manager module, so you
-can add Nix packages, Flatpaks and other settings together:
+Use `finite-configure` to choose roles and optional packages. Edit
+`customize.nix` or `modules/local.nix` for personal settings. These Home Manager
+modules receive Foundation's `inputs`, `pkgs` and `finiteHomeAssets`, plus any
+additional inputs explicitly declared in your personal flake.
 
 ```nix
 {pkgs, ...}: {
-  home.packages = with pkgs; [jq];
+  home.packages = [pkgs.jq];
   services.flatpak.packages = ["org.gimp.GIMP"];
 }
 ```
 
-Build your changes, then activate them:
+`nh home build` builds personal changes and `nh home switch` activates them.
+Keep `home.stateVersion` unchanged when updating. Keep your personal modules,
+profile, flake and lock together in your own Git repository.
+
+## Update Foundation
+
+New personal flakes track `github:closure-labs/foundation/latest-release`.
+The branch advances only to published stable releases with passing CI;
+`flake.lock` records the exact source and dependency pins. `nh home switch -u`
+updates all personal flake inputs and activates the result. Use
+`nh home switch -U foundation` to update only Foundation, or `nh home switch`
+to apply changes while keeping the existing lock. The lock is authoritative if
+`foundation.json` still describes an earlier release after an NH update.
+
+Existing fixed-commit consumers can opt in by changing their Foundation URL in
+`flake.nix` to `github:closure-labs/foundation/latest-release` and updating that
+input. Existing configurations are never rewritten at login.
+
+Run `finite-home-update --check` to inspect published releases. Run
+`finite-home-update`, or `ujust update`, to stage, build and apply the latest
+supported published release. Drafts, prereleases and older versions are excluded.
+Foundation's own tested dependency closure advances with its release; personal
+inputs and local modules remain yours.
+
+The updater runs as the desktop user with a 3 GiB memory limit, one build job
+and one core. Larger profiles can explicitly set
+`FOUNDATION_BUILD_MEMORY_MAX=5G finite-home-update`. These limits and backups
+belong to the staged updater; direct NH commands use NH's build and activation
+path. Failed builds leave the installed configuration in place. Successful
+updates keep a `home-manager.previous.*` backup. If activation fails, it restores
+the configuration and attempts to reactivate the previous generation. Homebrew
+and Flatpak side effects cannot all be undone by this rollback.
+
+Background checks can display a clickable release notification; they do not
+activate updates. `finite-app-status --json` reports release availability and
+`finite-app-status --review` opens the review window. An OS update or graphical
+login does not overwrite an existing user's configuration or select another
+Foundation release. Bluefin's root `uupd` timer remains separate from the explicit
+user update step.
+
+## Migrate the former copied template
+
+Run `finite-home-migrate --check` to build a candidate without installation, then
+`finite-home-migrate` to migrate and activate it. Migration adopts Foundation's
+tested dependency pins, which can select older snapshots than personal pins.
+It preserves the account profile, personal modules and additional flake inputs.
+
+Modified upstream files, custom flake output functions, Git checkouts and symlink
+roots require manual review. Migration stops rather than discarding those changes.
+The previous configuration and Home Manager generation remain available for rollback.
+Until migrated, existing configurations remain usable and login leaves them alone.
+
+The migration command is also available from a published Foundation release:
 
 ```bash
-nh home build
-nh home switch
+nix run github:closure-labs/foundation/v0.2.0#home-migrate -- --check
 ```
 
-Lists merge with the Finite defaults. Finite preserves `customize.nix` and
-`modules/local.nix`, along with your `flake.nix` and `flake.lock`, when it
-refreshes the managed configuration.
+## Git-backed Espanso snapshots
 
-Most packages come from the pinned chilled Nixpkgs input. For a package that
-needs the weekly input, use its package set explicitly:
+Keep private repository URLs, commit hashes and content hashes in your personal
+`modules/local.nix`. Home Manager can fetch pinned Git snapshots and link selected
+files into Espanso's configuration directory without custom template inputs.
+See [Foundation's snapshot workflow](https://github.com/closure-labs/foundation/blob/main/docs/ESPANSO.md).
+Workstation-specific Espanso declarations and files are never Foundation defaults.
 
-```nix
-{inputs, pkgs, ...}: {
-  home.packages = [
-    inputs.nixpkgs-weekly.legacyPackages.${pkgs.stdenv.hostPlatform.system}.jq
-  ];
-}
-```
+## Host permissions and provisioning
 
-See [Application sources](application-sources.md) for choosing package providers.
+The Support role includes Espanso's Wayland backend. A host administrator must
+explicitly grant keyboard access with `sudo finite-keyboard-access enable`.
+Inspect it with `finite-keyboard-access status`; revoke it with
+`sudo finite-keyboard-access disable` followed by a reboot. Access applies to
+programs running as active local seat users, rather than only Espanso.
 
-Home Manager installs Flatpaks for the current user and removes unused runtimes
-when its managed installation service runs. Apps installed separately are
-preserved (`services.flatpak.uninstallUnmanaged = false`). To retain unused
-runtimes too, set `services.flatpak.uninstallUnused = false` in `customize.nix`.
+For non-NixOS graphical apps, run the generated `non-nixos-gpu-setup` helper after
+first activation as instructed by Home Manager. Finite's GPU boot integration
+continues restoring the driver links.
 
-## Add custom flake inputs
-
-Your `~/.config/home-manager/flake.nix` is yours to edit. Add dependencies to
-its existing `inputs` attribute, for example:
-
-```nix
-inputs.nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
-```
-
-Then use the input from `customize.nix`:
-
-```nix
-{inputs, pkgs, ...}: {
-  home.packages = [
-    inputs.nixpkgs-unstable.legacyPackages.${pkgs.stdenv.hostPlatform.system}.hello
-  ];
-}
-```
-
-Lock the added input, build, and activate:
-
-```bash
-nix flake lock ~/.config/home-manager
-nh home build
-nh home switch
-```
-
-Finite already uses Den to compose the Home Manager modules and passes all
-flake inputs to them. No additional flake framework is needed. Inputs are
-declared in `flake.nix`; `customize.nix` consumes them. Non-flake sources can
-use `flake = false` and Git sources may use authenticated SSH URLs. Store
-credentials in your SSH agent or credential configuration, outside the flake.
-
-Image upgrades refresh Finite's generated modules and assets while preserving
-your flake entry point, `nixConfig`, customizations and complete dependency lock.
-They do not update your dependency pins. Use
-`nix flake update INPUT_NAME --flake ~/.config/home-manager` for an intentional
-input update, then build before activating. Keep both `flake.nix` and
-`flake.lock`; an incomplete pair
-stops the upgrade with an error. The shipped defaults remain available under
-`/usr/share/finite/home-manager-template/` for comparing future changes.
-
-## Enable GPU access for Nix apps
-
-After the first Home Manager activation, run its GPU setup command:
-
-```bash
-sudo "$(command -v non-nixos-gpu-setup)"
-readlink /run/opengl-driver
-```
-
-The helper connects Nix applications to the graphics drivers and creates a
-persistent tmpfiles rule and Nix garbage-collection root. Run it again when
-Home Manager reports that the driver setup needs an update.
-
-At boot, `finite-nix-gpu.service` recreates `/run/opengl-driver` after
-`nix.mount` and before the display manager starts. This is necessary because
-the regular early tmpfiles pass runs before Finite's persistent Nix store is
-available. The service skips machines that have not run the GPU setup helper.
-
-The supported path covers 64-bit Mesa on Intel, AMD and Nouveau. Systems using
-proprietary NVIDIA or 32-bit graphics need additional integration.
-
-## Enable Espanso keyboard access
-
-The Support role includes Espanso's Wayland backend. Raw keyboard-event access
-requires an explicit host-administrator choice:
-
-```bash
-sudo finite-keyboard-access enable
-finite-keyboard-access status
-```
-
-This permits programs running as an active local seat user to read keyboard
-events. It is an account-wide permission, not an Espanso process sandbox, and
-applies to all active local seats on this host. The default image does not grant
-this permission. To revoke it:
-
-```bash
-sudo finite-keyboard-access disable
-sudo systemctl reboot
-```
-
-Reboot completes revocation of existing device ACLs and open handles. Test
-Espanso after enabling access and check device access after revocation; selecting
-or removing the Support role alone does not change this administrator setting.
-
-## Your configuration files
-
-| Location | Purpose |
-| --- | --- |
-| `~/.config/finite/profile.json` | Selected foundation, hardware, roles, packages and account |
-| `~/.config/home-manager/` | Complete standalone Home Manager configuration and lock |
-| `~/.config/home-manager/customize.nix` | Your additional packages and settings |
-| `/usr/share/finite/profile.json` | Running image's foundation, hardware, channel and kernel |
-
-The image selects the foundation: `bluefin` or `bluefin-dx`. Home Manager selects
-compatible user hardware settings. On an XPS 13 9350, first login detects the
-machine and selects the [Dell display policy](dell-xps-9350.md).
-
-The standalone flake includes its Finite modules, assets, helper scripts and
-pinned dependencies. It exports `homeConfigurations.<username>`, which `nh`
-selects for your account. Update its inputs with
-`nix flake update --flake ~/.config/home-manager`.
-
-## Provision an environment
-
-For scripted setup, provide YAML or JSON to
-`/usr/libexec/finite/home-init --profile PROFILE`. For example:
-
-```json
-{
-  "schema": 2,
-  "foundation": "bluefin-dx",
-  "hardware": "generic-x86_64",
-  "packages": ["jj", "uv"],
-  "roles": ["developer", "support"],
-  "identity": {}
-}
-```
-
-The initializer discovers the current account, validates the selected options
-against the image, and builds a staged configuration. After success, it installs
-the complete configuration and keeps a timestamped copy of the previous one.
-An explicit identity must match the current account.
-
-## Start from a template
-
-Create a standalone configuration in a new directory:
-
-```bash
-nix flake new -t github:closure-labs/finite#home-manager my-home
-```
-
-The `home-bluefin` and `home-bluefin-dx` template names expose the same complete
-template. Its local `profile.json` selects the foundation, hardware, roles,
-packages and account. The image's first-login initializer supplies these values
-when creating a workstation configuration.
-
-For the implementation and catalog layout, see [Development](development.md).
+`/usr/libexec/finite/home-init --profile PROFILE` provisions a new user's
+configuration from the image's pinned Foundation source. The existing YAML/JSON
+profile schema and cloud-init seed interface remain available. The initializer
+validates the invoking account and host compatibility, builds before installing,
+and leaves existing configurations to the explicit migration and update commands.

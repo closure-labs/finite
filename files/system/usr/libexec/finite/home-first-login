@@ -1,45 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-profile="${FINITE_HOME_PROFILE_PATH:-$HOME/.config/finite/profile.json}"
-home_flake="${FINITE_HOME_FLAKE_PATH:-$HOME/.config/home-manager}"
-home_template="${FINITE_HOME_TEMPLATE_PATH:-/usr/share/finite/home-manager-template}"
+profile="${FINITE_HOME_PROFILE_PATH:-${XDG_CONFIG_HOME:-$HOME/.config}/finite/profile.json}"
+home_flake="${FINITE_HOME_FLAKE_PATH:-${XDG_CONFIG_HOME:-$HOME/.config}/home-manager}"
 running="${FINITE_RUNNING_PROFILE_PATH:-/usr/share/finite/profile.json}"
 seed="${FINITE_PROVISIONED_PROFILE_PATH:-/etc/finite/home-profiles/$(id -un).yaml}"
 nix="${FINITE_NIX_COMMAND:-/nix/var/nix/profiles/default/bin/nix}"
 nix_wait_seconds="${FINITE_NIX_WAIT_SECONDS:-120}"
 home_init="${FINITE_HOME_INIT_COMMAND:-/usr/libexec/finite/home-init}"
 
-# Dependency pins are user-owned. Notify about approved updates without changing them.
-app_status="${FINITE_APP_STATUS_COMMAND:-/usr/bin/finite-app-status}"
-if [[ -r "$home_flake/flake.lock" && -x "$app_status" ]]; then
-	FINITE_HOME_FLAKE_PATH="$home_flake" FINITE_HOME_TEMPLATE_PATH="$home_template" \
-		"$app_status" --notify || true
-fi
-
-current=true
-for required in customize.nix flake.nix flake.lock finite-template.json profile.json modules/finite.nix \
-	modules/finite-brew-bootstrap modules/finite-brew-migration-status modules/aspects/base/brew-packages.json; do
-	[[ -e "$home_flake/$required" ]] || current=false
-done
-if [[ "$current" == true ]] &&
-	cmp -s "$home_flake/finite-template.json" "$home_template/finite-template.json" &&
-	jq -e '.schema == 1 and .generator == "finite-home-init"' "$home_flake/finite-template.json" >/dev/null 2>&1 &&
-	jq -e '[.nodes[].locked? | select(. != null) | .type] | all(. != "path")' "$home_flake/flake.lock" >/dev/null 2>&1 &&
-	jq -e '
-    .schema == 2 and
-    (.foundation == "bluefin" or .foundation == "bluefin-dx") and
-    (.hardware == "generic-x86_64" or .hardware == "dell-xps-9350-intel") and
-    (.packages | type == "array") and
-    all(.packages[]; . == "hack-font" or . == "herdr" or . == "jj" or
-      . == "opencode" or . == "uv") and
-    ((.packages | unique | length) == (.packages | length)) and
-    (.roles | type == "array") and
-    all(.roles[]; . == "developer" or . == "sales" or . == "trainer" or
-      . == "support" or . == "executive" or . == "it") and
-    ((.roles | unique | length) == (.roles | length)) and
-    (.identity | type == "object")
-  ' "$home_flake/profile.json" >/dev/null 2>&1; then
+# Existing configurations are user-owned. OS updates never refresh their modules.
+# Legacy configurations remain usable until an explicit finite-home-migrate.
+if [[ -r "$home_flake/flake.nix" && -r "$home_flake/flake.lock" && -r "$home_flake/profile.json" ]]; then
 	exit 0
 fi
 [[ "$nix_wait_seconds" =~ ^[0-9]+$ ]] || {

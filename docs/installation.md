@@ -101,23 +101,16 @@ sudo systemctl reboot
 ```
 
 Your home directory and persistent Nix state carry across image updates.
-Finite refreshes the managed Home Manager template at login while preserving
-your `flake.nix`, `flake.lock`, `customize.nix` and `modules/local.nix`.
-Custom inputs and dependency pins survive image upgrades; see
-[custom flake inputs](configuration.md#add-custom-flake-inputs).
+Finite provisions Home Manager from a pinned [Foundation](https://github.com/closure-labs/foundation)
+release. Existing personal configurations and pins remain independent of OS
+updates. Explicit `ujust update` runs also build and apply supported published
+Foundation releases; background checks only notify.
 
-To refresh the independent package inputs in your Home Manager configuration:
-
-First run `finite-app-status` to compare your inputs with the running image's
-approved template. Review custom pins before updating. See
-[application maintenance](application-sources.md#keep-applications-current) for
-selective updates, rollback, Homebrew and Flatpak maintenance.
-
-```bash
-nix flake update --flake ~/.config/home-manager
-nh home build
-nh home switch
-```
+Use `finite-home-update --check` to inspect releases and `finite-home-update` to
+update the user configuration separately. Existing copied templates first need
+`finite-home-migrate --check`, followed by `finite-home-migrate` after reviewing
+the candidate. See [configuration and migration](configuration.md) for backups,
+rollback and personal settings.
 
 ## Return to a previous system
 

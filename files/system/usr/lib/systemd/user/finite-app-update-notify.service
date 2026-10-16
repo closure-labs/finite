@@ -1,0 +1,12 @@
+[Unit]
+Description=Review available Finite Home Manager application updates
+After=graphical-session.target finite-home-first-login.service
+PartOf=graphical-session.target
+ConditionPathExists=%E/home-manager/flake.lock
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/finite-app-status --notify
+
+[Install]
+WantedBy=graphical-session.target

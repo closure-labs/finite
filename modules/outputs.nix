@@ -1,7 +1,6 @@
 {
   catalog,
   config,
-  homeDependencies,
   lib,
   mkPkgs,
   outputDependencies,
@@ -48,10 +47,12 @@
   inherit (project) cache;
   version = lib.removeSuffix "\n" (builtins.readFile ../VERSION);
   homeScaffold = import ../lib/render-home-scaffold.nix {
-    inherit pkgs version;
+    inherit pkgs;
+    inherit (outputDependencies) foundation;
   };
   imagePayload = import ../lib/image-payload.nix {
     inherit pkgs lib catalog homeScaffold version;
+    inherit (outputDependencies) foundation;
   };
   baseApplications = import ../lib/flake-applications.nix {
     devenv = outputDependencies.devenvPackage;
@@ -60,36 +61,19 @@
     secretspec = finiteSecretspec;
   };
   homeApplications = import ../lib/home-profile-applications.nix {
-    inherit homeScaffold pkgs;
+    inherit pkgs;
+    inherit (outputDependencies) foundation;
     inherit (imagePayload) homeCatalog;
   };
   applications = baseApplications // homeApplications;
-  roleModules = map (name: ../modules/aspects/roles + "/${name}/default.nix") catalog.roleNames;
-  hardwareModules = map (name: ../modules/aspects/hardware + "/${name}/default.nix") catalog.homeHardwareNames;
-  homeFlakeModule = {
-    imports =
-      [
-        outputDependencies.denFlakeModule
-        ../modules/aspects/base/default.nix
-        ../modules/aspects/capabilities/devops/default.nix
-      ]
-      ++ roleModules
-      ++ hardwareModules
-      ++ [
-        (import ../lib/home-manager-flake-module.nix {
-          inherit catalog homeDependencies mkPkgs project;
-          homeInputs = outputDependencies.homeModuleInputs;
-          inherit (outputDependencies) homeManagerLib;
-          inherit (applications) homeBootstrap homeProfile;
-        })
-      ];
+  homeFlakeModule = import ../lib/home-manager-flake-module.nix {
+    inherit (outputDependencies) foundation;
   };
   allRoles = catalog.roleNames;
   mkHomeProof = foundation: hardware: packages: roles: let
     username = "finite-check-${foundation}-${hardware}-${lib.concatStringsSep "-" packages}-${lib.concatStringsSep "-" roles}";
     evaluated = lib.evalModules {
       # Den resolves its generated module imports from these Flake inputs.
-      specialArgs.inputs = outputDependencies.homeModuleInputs;
       modules = [
         homeFlakeModule
         {
@@ -192,7 +176,7 @@
     ci-checks.package = ciChecks;
     ci-fix-nix-hashes.package = applications.fixNixHashes;
     ci-update-locks.package = applications.updateLocks;
-    ci-home-release-update.package = applications.updateHomeRelease;
+    ci-foundation-update.package = applications.updateFoundation;
     ci-source-update.package = applications.sourceUpdate;
     ci-trusted-update.package = applications.trustedUpdate;
     ci-queue-dependabot.package = applications.queueDependabot;
@@ -219,6 +203,8 @@
       package = applications.homeBootstrap;
       appProgram = "${applications.homeBootstrap}/bin/finite-home-bootstrap";
     };
+    home-update.package = homeApplications.homeUpdate;
+    home-migrate.package = homeApplications.homeMigrate;
     home-init = {
       package = applications.homeInit;
       appProgram = "${applications.homeInit}/bin/finite-home-init";
@@ -245,15 +231,15 @@ in {
     flakeModules.home = homeFlakeModule;
     templates = {
       home-manager = {
-        path = ../templates/home-manager;
+        path = outputDependencies.foundation.templates.default.path;
         description = "Canonical self-contained Finite Home Manager configuration";
       };
       home-bluefin = {
-        path = ../templates/home-manager;
+        path = outputDependencies.foundation.templates.default.path;
         description = "Finite Home Manager template; bootstrap sets the Bluefin profile variables";
       };
       home-bluefin-dx = {
-        path = ../templates/home-manager;
+        path = outputDependencies.foundation.templates.default.path;
         description = "Finite Home Manager template; bootstrap sets the Bluefin DX profile variables";
       };
     };

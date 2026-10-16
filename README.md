@@ -41,14 +41,16 @@ For your own packages and settings, edit
 nh home switch
 ```
 
-Your customization file persists when Finite refreshes the managed
-configuration. See [Configure your environment](docs/configuration.md) for
-examples, GPU setup and standalone Home Manager templates.
+[Foundation](https://github.com/closure-labs/foundation) owns the shared Home
+Manager modules. Your personal configuration tracks published stable releases,
+with its exact version recorded in `flake.lock`. See
+[Configure your environment](docs/configuration.md) for examples, GPU setup and
+standalone Home Manager templates.
 
 ## Keep it up to date
 
-System updates arrive as signed images. Nix and Home Manager manage your user
-environment. The [update guide](docs/installation.md#update-your-system) covers
+System updates arrive as signed images. `ujust update` also builds and applies
+published Foundation releases for your user environment. The [update guide](docs/installation.md#update-your-system) covers
 both, including returning to a previous system deployment.
 
 ## Find your way around

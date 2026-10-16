@@ -23,8 +23,8 @@ Do not reset the colocated Git working tree or overwrite unrelated jj changes.
 | System configuration and vendor units | `files/system/` |
 | RPM repository definitions | `files/dnf/` |
 | Nix lifecycle and upstream kernel preservation | `files/scripts/` |
-| Home Manager apps, roles and settings | `templates/home-manager/modules/aspects/` |
-| Profile choices and compatibility | `lib/domain-catalog.nix` |
+| Home Manager apps, roles, settings and dependency pins | [Foundation](https://github.com/closure-labs/foundation) |
+| Home Manager choices / OS compatibility | Foundation catalog / `lib/domain-catalog.nix` |
 | Determinate, upstream image trust and installer pins | `sources/` |
 | Build, ISO and VM integration | `scripts/bluebuild/` and `.github/workflows/` |
 | CI change selection and required gate | `scripts/ci/` and `tests/ci/` |
@@ -66,21 +66,21 @@ automatically.
 
 ## Work on Home Manager
 
-The portable modules and assets live in `templates/home-manager`. To add a role
-or optional package, update `lib/domain-catalog.nix`, implement its aspect, and
-run the checks. The catalog supplies the selectors, profile validation and
-Home Manager configuration proofs.
+The Home Manager implementation lives in `closure-labs/foundation`. Finite
+consumes its constructor, catalog, template and helpers at an immutable released
+commit. Change Home Manager behavior in Foundation and validate its release first;
+then update Finite's Foundation pin and source provenance through a reviewed PR.
+Do not make Foundation follow Finite's Nix dependency pins.
 
-Inspect the runtime catalog with:
+Finite retains image profiles, host compatibility, Nix provisioning and cloud-init
+adapters. Image payloads include an offline-ready consumer flake and the exact
+Foundation source used for first login. Existing configurations remain user-owned;
+Foundation updates run only through explicit user commands.
 
-```bash
-nix build .#home-profile-catalog
-jq . result
-```
-
-The image records its foundation, hardware, channel and kernel in
-`/usr/share/finite/profile.json`. First login combines that identity with the
-user's selected Home Manager environment.
+Run `python3 tests/home/foundation-integration.py` for the small OS adapter fixtures.
+Foundation owns Home Manager module/build/migration tests. Hosted Finite checks
+also validate the image's consumer template and evaluate supported profiles against
+the pinned Foundation API.
 
 ## Validate an ISO
 

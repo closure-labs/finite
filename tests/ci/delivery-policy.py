@@ -44,7 +44,7 @@ class DeliveryPolicy(unittest.TestCase):
         watcher = int(re.search(r'timeout (\d+)m gh run watch', operations)[1])
         self.assertGreaterEqual(queue, critical + 20)
         self.assertGreaterEqual(watcher, critical + 20)
-        for name in ('bluefin', 'flake-lock', 'determinate-nix', 'home-release'):
+        for name in ('bluefin', 'flake-lock', 'determinate-nix', 'foundation'):
             with self.subTest(updater=name):
                 self.assertGreaterEqual(workflow('update-' + name)['jobs']['update']['timeout-minutes'], watcher + 30)
 

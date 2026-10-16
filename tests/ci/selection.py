@@ -209,7 +209,7 @@ class Gate(unittest.TestCase):
         steps = workflow['jobs']['update']['steps']
         resolve = next(step for step in steps if step.get('id') == 'resolve')
         self.assertEqual(resolve['env']['GH_TOKEN'], '${{ github.token }}')
-        for name in ['update-determinate-nix', 'update-flake-lock', 'update-home-release']:
+        for name in ['update-determinate-nix', 'update-flake-lock', 'update-foundation']:
             workflow = yaml.safe_load((ROOT / f'.github/workflows/{name}.yml').read_text())
             self.assertEqual(workflow['permissions'], {'contents': 'read'})
             steps = workflow['jobs']['update']['steps']

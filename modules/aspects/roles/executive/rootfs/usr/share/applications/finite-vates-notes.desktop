@@ -1,8 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=Vates Notes
-Comment=Open Vates Notes in Firefox
-Exec=firefox --new-window https://notes.vates.tech
-Icon=firefox
-Categories=Office;
-Terminal=false

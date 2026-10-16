@@ -27,7 +27,7 @@ The common profile uses Homebrew for these tools on every foundation and role:
 `ugrep`, `uutils-coreutils`, `yq` and `zoxide`.
 
 The provider list is maintained in
-[`brew-packages.json`](../templates/home-manager/modules/aspects/base/brew-packages.json).
+[`brew-packages.json`](https://github.com/closure-labs/foundation/blob/main/modules/aspects/base/brew-packages.json).
 Home Manager generates `~/.config/finite/Brewfile` from it. These tools are no
 longer installed as top-level Nix profile packages. Nix-only applications,
 including `fzf`, `jj`, `uv`, Neovim and Marp, retain their existing providers.
@@ -79,34 +79,26 @@ you deliberately expire them; their store paths are not active duplicates.
 
 ## Keep applications current
 
-Updating the OS does not advance your preserved Home Manager lock. Inspect it
-against the running image's approved template with:
+Foundation releases own the managed Home Manager modules and dependency pins.
+OS updates do not overwrite the installed personal flake. Inspect published
+Foundation release availability with:
 
 ```bash
 finite-app-status
 finite-app-status --json
+finite-home-update --check
 ```
 
-The report separates current, different, missing and custom inputs. A difference
-does not necessarily mean an older version: custom source/ref changes are shown
-separately, and deliberately newer pins can also differ. The command is read-only.
-At graphical login, `--notify` uses local notification state to show a reminder
-once per approved template when managed inputs differ. It never changes pins.
+Run `ujust update` or `finite-home-update` to stage, build and apply a supported
+published release. Background notifications open a read-only review window when
+clicked; they do not activate updates. Drafts, prereleases and older releases
+are excluded. New personal consumers also support `nh home switch -u` through
+Foundation's `latest-release` branch; the lock still pins the exact published
+source. See [configuration and migration](configuration.md).
 
-Review `flake.nix` and preserve a copy of `flake.lock` before updating selected
-inputs. For example, replace `INPUT_NAME` with a managed input you intend to update:
-
-```bash
-nix flake update INPUT_NAME --flake ~/.config/home-manager
-nh home build
-nh home switch
-```
-
-Input updates resolve the configured source today; they do not necessarily select
-the exact pin shipped in the image. Review the resulting lock before activation.
-If building fails, restore your saved lock and keep the working generation. To
-undo an activated Home Manager generation, inspect `home-manager generations`
-and run the previous generation's `activate` script.
+Declare personal Git sources in local modules with explicit commits and content
+hashes. These snapshots are independent of Foundation's flake inputs and advance
+only when their declarations change and Home Manager is applied.
 
 Homebrew and Flatpak have separate update paths:
 
