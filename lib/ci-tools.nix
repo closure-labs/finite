@@ -33,6 +33,7 @@ in {
   };
   ci-source-update = import ./ci-applications/update-determinate-nix.nix {inherit pkgs;};
   ci-lock-validate = import ./ci-applications/validate-locks.nix {inherit pkgs;};
+  ci-foundation-update = import ./ci-applications/update-foundation.nix {inherit pkgs;};
   ci-trusted-update = updates.trustedUpdate;
   ci-queue-dependabot = updates.queueDependabot;
 }

@@ -1,28 +1,19 @@
 {inputs, ...}: let
-  catalog = import ../lib/domain-catalog.nix;
+  catalog = import ../lib/domain-catalog.nix {homeCatalog = inputs.foundation.lib.catalog;};
   project = import ../lib/project-policy.nix;
   system = project.platform.system;
   mkPkgs = import ../lib/mk-pkgs.nix {inherit (inputs) nixpkgs;};
-  homeDependencies = {
-    determinateModule = inputs.determinate.homeManagerModules.default;
-    flatpakModule = inputs.nix-flatpak.homeManagerModules.nix-flatpak;
-    weeklyPackages = inputs.nixpkgs-weekly.legacyPackages.${system};
-    devenvPackage = inputs.devenv.packages.${system}.devenv;
-  };
   outputDependencies = {
+    inherit (inputs) foundation;
     inherit (inputs) self;
     denFlakeModule = inputs.den.flakeModule;
-    homeManagerLib = inputs.home-manager.lib;
-    homeModuleInputs = {
-      inherit (inputs) den determinate devenv gen home-manager nix-flatpak nixpkgs nixpkgs-weekly;
-    };
     treefmt = inputs.treefmt-nix.lib;
-    inherit (homeDependencies) devenvPackage;
+    devenvPackage = inputs.devenv.packages.${system}.devenv;
   };
 in {
-  imports = [outputDependencies.denFlakeModule];
+  imports = [outputDependencies.denFlakeModule inputs.foundation.flakeModules.aspects];
 
   _module.args = {
-    inherit catalog homeDependencies mkPkgs outputDependencies project;
+    inherit catalog mkPkgs outputDependencies project;
   };
 }

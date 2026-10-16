@@ -139,18 +139,26 @@ class Toolchain(unittest.TestCase):
 
     def test_gen_hub_locks_one_revision_per_library(self):
         hubs = []
-        for name in ['flake.lock', 'templates/home-manager/flake.lock']:
+        for name in ['flake.lock']:
             lock = json.loads((ROOT / name).read_text())
             nodes = lock['nodes']
             hub = nodes[nodes[lock['root']]['inputs']['gen']]
             hubs.append(hub['locked'])
             self.assertEqual(hub['inputs']['nixpkgs'], ['nixpkgs'])
-            libraries = [node['locked']['repo'] for node in nodes.values()
-                         if node.get('locked', {}).get('owner') == 'sini']
+            reachable = set()
+            def visit(name):
+                if not isinstance(name, str) or name in reachable:
+                    return
+                reachable.add(name)
+                for child in nodes[name].get('inputs', {}).values():
+                    visit(child)
+            visit(nodes[lock['root']]['inputs']['gen'])
+            libraries = [nodes[name]['locked']['repo'] for name in reachable
+                         if nodes[name].get('locked', {}).get('owner') == 'sini']
             with self.subTest(lock=name):
                 self.assertGreater(len(libraries), 1)
                 self.assertEqual(len(libraries), len(set(libraries)))
-        self.assertEqual(*hubs)
+        self.assertEqual(len(hubs), 1)
 
     def test_full_checks_remain_required_and_kernel_follows_bluefin(self):
         workflow = yaml.safe_load((ROOT / '.github/workflows/build.yml').read_text())

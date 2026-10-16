@@ -1,0 +1,78 @@
+name: Update the reviewed Foundation release
+
+on:
+  schedule:
+    - cron: "47 9 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: update-foundation
+  cancel-in-progress: false
+
+# Bootstrap public options; setup-nix resolves them through SecretSpec.
+env:
+  FINITE_OPTIMIZED_CACHES: ${{ vars.FINITE_OPTIMIZED_CACHES }}
+  FINITE_CACHIX_WRITER: ${{ vars.FINITE_CACHIX_WRITER }}
+  FINITE_REUSE_INVENTORY: ${{ vars.FINITE_REUSE_INVENTORY }}
+  FINITE_GRYPE_DB_CACHE: ${{ vars.FINITE_GRYPE_DB_CACHE }}
+  FINITE_QUALIFICATION_REUSE: ${{ vars.FINITE_QUALIFICATION_REUSE }}
+  FINITE_QUALIFIED_ISO_PRESERVATION: ${{ vars.FINITE_QUALIFIED_ISO_PRESERVATION }}
+  FINITE_QUALIFIED_ISO_CHANNELS: ${{ vars.FINITE_QUALIFIED_ISO_CHANNELS }}
+
+permissions:
+  contents: read
+
+jobs:
+  update:
+    name: Select the newest published Foundation release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 270
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Nix and Cachix
+        uses: ./.github/actions/setup-nix
+        with:
+          merge-queue-token: ${{ secrets.MERGE_QUEUE_PAT }}
+          require-merge-queue-token: "true"
+
+      - name: Resolve the newest published Foundation release
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          nix shell --file lib/ci-tools.nix ci-foundation-update
+          -c finite-update-foundation "${GITHUB_OUTPUT}"
+
+      - name: Validate synchronized locks
+        if: steps.release.outputs.changed == 'true'
+        run: >-
+          nix shell --file lib/ci-tools.nix ci-lock-validate
+          -c finite-ci-validate-locks
+
+      - name: Validate generated text
+        if: steps.release.outputs.changed == 'true'
+        run: nix develop --file lib/ci-tools.nix shell --command bash tests/repository/text-style.sh
+
+      - name: Open or update pull request
+        if: steps.release.outputs.changed == 'true'
+        id: update
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ env.MERGE_QUEUE_TOKEN }}
+          base: main
+          branch: automation/foundation-release
+          delete-branch: true
+          commit-message: "inputs: update Foundation to ${{ steps.release.outputs.release }}"
+          title: "inputs: update Foundation to ${{ steps.release.outputs.release }}"
+          add-paths: |
+            flake.nix
+            flake.lock
+            sources/foundation.json
+          body: |
+            Adopt a published Foundation release at its immutable commit.
+            Foundation owns the tested Home Manager dependency closure.
+            Review this PR and require the normal image and bootstrap validation before merging.

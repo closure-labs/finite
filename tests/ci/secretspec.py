@@ -67,7 +67,7 @@ class Manifest(unittest.TestCase):
         for path in (ROOT / '.github/workflows').glob('*.yml'):
             with self.subTest(workflow=path.name):
                 self.assertNotIn('secrets.MERGE_QUEUE_TOKEN', path.read_text())
-        for name in ('update-home-release', 'update-flake-lock', 'update-determinate-nix',
+        for name in ('update-foundation', 'update-flake-lock', 'update-determinate-nix',
                      'update-bluefin', 'queue-dependabot'):
             data = yaml.safe_load((ROOT / '.github/workflows' / (name + '.yml')).read_text())
             steps = [step for job in data['jobs'].values() for step in job['steps']]

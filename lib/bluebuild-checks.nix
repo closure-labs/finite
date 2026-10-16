@@ -18,9 +18,7 @@
       ../scripts/bluebuild
       ../scripts/ci
       ../tests
-      ../modules/aspects
       ../modules/outputs.nix
-      ../templates
       ../lib
       ../sources
       ../cosign.pub
@@ -57,11 +55,8 @@ in {
       ${applications.homeInit}/bin/finite-home-init \
       ${applications.cloudInit}/bin/finite-cloud-init \
       ${homeScaffold}
-    bash tests/home/dell-panel-policy.sh
     python3 tests/home/maintenance.py
-    bash modules/aspects/capabilities/devops/tests/contracts.sh
-    bash modules/aspects/roles/developer/tests/contracts.sh
-    bash modules/aspects/roles/support/tests/contracts.sh
+    python3 tests/home/foundation-integration.py
   '';
   nix-lifecycle = check "nix-lifecycle" (with pkgs; [diffutils gawk gnugrep jq systemd util-linux]) ''
     bash tests/bluebuild/nix-readiness.sh
@@ -154,12 +149,10 @@ in {
       applications.trustedUpdate
       applications.sourceUpdate
       applications.updateLocks
-      applications.updateHomeRelease
     ]) ''
       bash tests/automation/fix-nix-hashes.sh
       bash tests/automation/trusted-update.sh
-      bash tests/automation/update-home-release.sh
-      bash tests/automation/source-update.sh
+        bash tests/automation/source-update.sh
       bash tests/automation/update-locks.sh
       python3 tests/automation/http-get.py
     '';

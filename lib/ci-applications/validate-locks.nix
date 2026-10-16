@@ -26,10 +26,15 @@ pkgs.writeShellApplication {
       jq -er --arg node "''${node}" '.nodes[$node].original.url' "''${lock}"
     }
 
+    foundation_node="$(jq -er '.nodes.root.inputs.foundation' flake.lock)"
+    jq -e --arg node "$foundation_node" --slurpfile source sources/foundation.json '
+      .nodes[$node].locked |
+      .owner == "closure-labs" and .repo == "foundation" and
+      .rev == $source[0].rev and .narHash == $source[0].narHash
+    ' flake.lock >/dev/null
+
     [[ "$(original_url flake.lock nixpkgs)" == \
       'https://flakehub.com/f/DeterminateSystems/nixpkgs-26.05-chilled/0.1' ]]
-    [[ "$(original_url flake.lock home-manager)" == \
-      'https://flakehub.com/f/nix-community/home-manager/0.2605' ]]
     [[ "$(original_url flake.lock nixpkgs-weekly)" == \
       'https://flakehub.com/f/DeterminateSystems/nixpkgs-weekly/0.1' ]]
     [[ "$(original_url devenv.lock nixpkgs)" == \

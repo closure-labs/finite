@@ -1,161 +1,40 @@
-let
-  foundations = [
-    {
-      name = "bluefin";
-      label = "Bluefin";
-      order = 10;
-      template = "home-bluefin";
-      profiles = {
-        generic-x86_64 = {
-          name = "finite";
-          order = 40;
-        };
+# Foundation owns Home Manager choices; Finite owns their image mapping.
+{homeCatalog}: let
+  foundations = map (entry:
+    entry
+    // {
+      profiles.generic-x86_64 = {
+        name =
+          if entry.name == "bluefin"
+          then "finite"
+          else "finite-dev";
+        order =
+          if entry.name == "bluefin"
+          then 40
+          else 30;
       };
-    }
-    {
-      name = "bluefin-dx";
-      label = "Bluefin DX";
-      order = 20;
-      template = "home-bluefin-dx";
-      profiles = {
-        generic-x86_64 = {
-          name = "finite-dev";
-          order = 30;
-        };
-      };
-    }
-  ];
-  hardware = [
-    {
-      name = "generic-x86_64";
-      label = "Generic x86-64";
-      order = 10;
-      bootc = true;
-      homeManager = true;
-      imageHardware = ["generic-x86_64"];
-    }
-    {
-      name = "dell-xps-9350-intel";
-      label = "Dell XPS 13 9350 (Intel)";
-      order = 30;
-      bootc = false;
-      homeManager = true;
-      imageHardware = ["generic-x86_64"];
-    }
-  ];
-  roles = [
-    {
-      name = "developer";
-      label = "Developer";
-      order = 10;
-      homeCompatible = false;
-    }
-    {
-      name = "sales";
-      label = "Sales";
-      order = 20;
-      homeCompatible = true;
-    }
-    {
-      name = "trainer";
-      label = "Trainer";
-      order = 30;
-      homeCompatible = true;
-    }
-    {
-      name = "support";
-      label = "Support";
-      order = 40;
-      homeCompatible = true;
-    }
-    {
-      name = "executive";
-      label = "Executive";
-      order = 50;
-      homeCompatible = false;
-    }
-    {
-      name = "it";
-      label = "IT";
-      order = 60;
-      homeCompatible = false;
-    }
-  ];
-  packages = [
-    {
-      name = "hack-font";
-      label = "Hack Nerd Font";
-      description = "Hack font patched with Nerd Fonts glyphs";
-      order = 10;
-    }
-    {
-      name = "herdr";
-      label = "Herdr";
-      description = "Terminal process manager";
-      order = 20;
-    }
-    {
-      name = "jj";
-      label = "Jujutsu";
-      description = "Jujutsu version-control system (jj)";
-      order = 30;
-    }
-    {
-      name = "opencode";
-      label = "OpenCode";
-      description = "Open-source coding agent";
-      order = 40;
-    }
-    {
-      name = "uv";
-      label = "uv";
-      description = "Python package and project manager";
-      order = 50;
-    }
-  ];
-  names = entries: map (entry: entry.name) entries;
+    })
+  homeCatalog.foundations;
+  hardware = map (entry: entry // {bootc = entry.name == "generic-x86_64";}) homeCatalog.hardware;
   toAttrs = entries:
-    builtins.listToAttrs (
-      map (entry: {
+    builtins.listToAttrs (map (entry: {
         inherit (entry) name;
         value = entry;
       })
-      entries
-    );
-  homeHardware = builtins.filter (entry: entry.homeManager) hardware;
-  bootcHardware = builtins.filter (entry: entry.bootc) hardware;
-  profileEntries = builtins.sort (left: right: left.order < right.order) (
-    builtins.concatLists (
-      map (
-        foundation:
-          builtins.attrValues (
-            builtins.mapAttrs (
-              hardwareName: profile:
-                profile
-                // {
-                  foundation = foundation.name;
-                  hardware = hardwareName;
-                }
-            )
-            foundation.profiles
-          )
-      )
-      foundations
-    )
-  );
-in {
-  inherit foundations hardware packages roles;
-  foundationsByName = toAttrs foundations;
-  hardwareByName = toAttrs hardware;
-  packagesByName = toAttrs packages;
-  rolesByName = toAttrs roles;
-  profilesByName = toAttrs profileEntries;
-  foundationNames = names foundations;
-  templateNames = map (foundation: foundation.template) foundations;
-  bootcHardwareNames = names bootcHardware;
-  homeHardwareNames = names homeHardware;
-  packageNames = names packages;
-  roleNames = names roles;
-  homeCompatibleRoleNames = names (builtins.filter (role: role.homeCompatible) roles);
-  profileOrder = names profileEntries;
-}
+      entries);
+  profiles = builtins.sort (a: b: a.order < b.order) (map (entry: {
+      inherit (entry.profiles.generic-x86_64) name order;
+      foundation = entry.name;
+      hardware = "generic-x86_64";
+    })
+    foundations);
+in
+  homeCatalog
+  // {
+    inherit foundations hardware;
+    foundationsByName = toAttrs foundations;
+    hardwareByName = toAttrs hardware;
+    profilesByName = toAttrs profiles;
+    bootcHardwareNames = ["generic-x86_64"];
+    profileOrder = map (entry: entry.name) profiles;
+  }

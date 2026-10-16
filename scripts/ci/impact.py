@@ -79,7 +79,7 @@ def classify(paths):
             'devenv.lock', 'scripts/ci/http-get.py',
             '.github/workflows/update-bluefin.yml', '.github/workflows/upstream-health.yml',
             '.github/workflows/repository-security.yml', '.github/workflows/doppler-pilot.yml',
-            '.github/dependabot.yml', '.github/workflows/update-home-release.yml',
+            '.github/dependabot.yml', '.github/workflows/update-foundation.yml',
             '.github/workflows/update-flake-lock.yml', '.github/workflows/update-determinate-nix.yml',
             '.github/workflows/queue-dependabot.yml',
             '.github/workflows/release.yml',

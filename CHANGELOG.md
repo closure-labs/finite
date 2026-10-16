@@ -8,6 +8,17 @@ All notable changes to Finite are documented here. The format follows
 
 Development version: `0.8.2-dev`. The next stable release is 0.8.2.
 
+### Changed
+
+- Consume the Home Manager implementation and catalog from Foundation through
+  an immutable source pin, replacing Finite's copied implementation.
+- Keep personal configurations independent of OS updates. Explicit `ujust update`
+  runs also build and apply published Foundation releases as the desktop user.
+- Track published stable releases in new personal consumers through
+  `latest-release`, supporting `nh home switch -u` while retaining exact lock pins.
+- Provide staged migration, bounded builds, backups, activation rollback and
+  clickable release notifications while preserving personal modules and sources.
+
 ## [0.8.1] - 2026-10-15
 
 ### Changed

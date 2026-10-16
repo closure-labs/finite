@@ -37,6 +37,10 @@ modules:
         destination: /usr/share/finite/home-manager-template
       - source: payload/home-profile-catalog.json
         destination: /usr/share/finite/home-profile-catalog.json
+      - source: payload/foundation
+        destination: /usr/share/finite/foundation
+      - source: payload/foundation-source.json
+        destination: /usr/share/finite/foundation-source.json
       - source: payload/version
         destination: /usr/share/finite/version
   - type: script@v1
@@ -51,3 +55,4 @@ modules:
     user:
       enabled:
         - finite-home-first-login.service
+        - finite-app-update-notify.service

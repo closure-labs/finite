@@ -19,6 +19,8 @@
   };
 
   inputs = {
+    # Foundation owns the Home Manager dependency graph; do not add follows here.
+    foundation.url = "github:closure-labs/foundation/f2b99842cec84c957b76a57dfbccf242d9bf8e14";
     # Update Den and the gen hub together: newer Den APIs may require a newer schema.
     den.url = "github:denful/den/90c303be407632d3983fb619e714c53b2349b8e6";
 
@@ -34,15 +36,6 @@
 
     nixpkgs.url = "https://flakehub.com/f/DeterminateSystems/nixpkgs-26.05-chilled/0.1";
     nixpkgs-weekly.url = "https://flakehub.com/f/DeterminateSystems/nixpkgs-weekly/0.1";
-
-    home-manager = {
-      url = "https://flakehub.com/f/nix-community/home-manager/0.2605";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/3";
-
-    nix-flatpak.url = "github:gmodena/nix-flatpak";
 
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";

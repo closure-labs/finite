@@ -40,13 +40,15 @@ with the flake's CI and release shells without evaluating the Home Manager/Den
 configuration. SecretSpec mapping and trusted PR validation use the same
 lightweight entry point and retain their existing credential and review checks.
 
-Den receives an explicit `gen` hub input, pinned to the revision tested by Den,
-in both the repository and standalone Home Manager flakes. The hub's `follows`
-relationships share one revision per library and avoid recursive standalone
-fetches. Den is also pinned to the compatible revision; update Den and the hub
-together and evaluate the refreshed locks before merging. The September 28,
-2026 weekly refresh advanced Den beyond the pinned schema API and failed with
-`mkSchemaOption` rejecting `specialArgs`.
+Foundation owns the Home Manager modules, catalog and tested dependency lock.
+Finite pins a published Foundation release commit and includes its source and
+an offline-ready personal consumer in the image. The Foundation update workflow
+opens a reviewed PR changing only its pin, lock and source provenance. It never
+merges that PR automatically. Foundation's own CI validates its default profile
+and role/package combinations before release; Finite validates its OS integration.
+
+Finite still pins Den and its gen hub for repository module orchestration. These
+tooling dependencies do not override Foundation's independent Home Manager pins.
 
 Nix concurrency is measured per runner, including CPU affinity and cgroup limits.
 The shared setup verifies the Determinate client and effective build/evaluation

@@ -82,9 +82,9 @@ runs:
          (inputs.cache-profile == 'auto' && github.job == 'checks'))
       uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
       with:
-        primary-key: nix-store-v2-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock', 'devenv.lock', 'templates/home-manager/flake.lock') }}-${{ github.sha }}
+        primary-key: nix-store-v2-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock', 'devenv.lock') }}-${{ github.sha }}
         restore-prefixes-first-match: |
-          nix-store-v2-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock', 'devenv.lock', 'templates/home-manager/flake.lock') }}-
+          nix-store-v2-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock', 'devenv.lock') }}-
           nix-store-v2-${{ runner.os }}-${{ runner.arch }}-
           nix-store-v1-${{ runner.os }}-${{ runner.arch }}-
         save: ${{ github.job == 'checks' && github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
@@ -103,7 +103,7 @@ runs:
         !(inputs.cache-profile == 'auto' && github.job == 'checks')
       uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
       with:
-        primary-key: nix-sources-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock', 'devenv.lock', 'templates/home-manager/flake.lock') }}
+        primary-key: nix-sources-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock', 'devenv.lock') }}
         restore-prefixes-first-match: nix-sources-v1-${{ runner.os }}-${{ runner.arch }}-
         nix: false
         save: ${{ github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
