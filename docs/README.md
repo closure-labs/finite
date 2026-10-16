@@ -19,4 +19,4 @@ your desktop.
 | Review CI reliability and optimization evidence | [CI optimization review](ci-optimization-review.md) |
 | Understand priorities and build sequence | [Daily-driver roadmap](roadmap.md) |
 | See changes by version | [Changelog](../CHANGELOG.md) |
-| Prepare the two-channel 0.8.1 release | [v0.8.1 release plan](v0.8.1-release-plan.md) |
+| Review the two-channel 0.8.1 release | [v0.8.1 release results](v0.8.1-release-results.md) |

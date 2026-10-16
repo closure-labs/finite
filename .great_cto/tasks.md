@@ -1,5 +1,27 @@
 # Security audit implementation
 
+## Completed v0.8.1 release and next development cycle
+
+PRs #176/#177 prepared 0.8.1 and renamed the active profiles to `finite` and
+`finite-dev`. The owner-cancelled producer 38811504667 was not resumed. The first
+renamed producer failed Dev foundation validation; PR #178 replaced the obsolete
+name heuristic with explicit foundation mappings and independent regression cases.
+Corrected source `763e16e1` passed producer 38822297795, both security/signing
+chains, all four VM phases, desktop acceptance and promotion.
+
+Hosted preparations 38828897541/38828928233 preserved the original qualified ISOs
+and passed fresh release scans with authenticated inventory reuse. Protected
+release reviews recorded the owner's deployment authorization. Both signed
+v0.8.1 releases were published on October 16 UTC; standard Finite is latest.
+Draft and published signature/asset/source/qualification joins passed. All new
+assets and 12 historical releases with 200 assets remained unchanged. See the
+[release results and public verification record](../docs/v0.8.1-release-results.md).
+
+The follow-up development change uses `VERSION=0.8.2-dev`, an Unreleased entry
+and stable release fixtures isolated from that development version. Stable
+publication guards stay numeric-only. Heavy builds, scans, ISO work and VMs
+remained hosted; no retired Next variant or old OS benchmark was run.
+
 ## Completed upstream preservation and new OS reuse measurements
 
 The owner requested independent hosted inventory and whole-qualification reuse

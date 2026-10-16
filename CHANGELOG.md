@@ -6,6 +6,8 @@ All notable changes to Finite are documented here. The format follows
 
 ## [Unreleased]
 
+Development version: `0.8.2-dev`. The next stable release is 0.8.2.
+
 ## [0.8.1] - 2026-10-15
 
 ### Changed
