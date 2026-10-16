@@ -115,7 +115,7 @@ jobs:
         run: python3 scripts/ci/nix-resources.py
       # Each matrix job gets a separate runner. Deliberately avoid setup-nix's
       # Actions cache so the first pass is cold and the second reuses only itself.
-      - uses: DeterminateSystems/determinate-nix-action@527f17dd63d2d60d3e5552934bc84b9a33a14d11 # v3.22.2
+      - uses: DeterminateSystems/determinate-nix-action@d0c908e6cbe9f89f36ed8205a3ab6f092636916a # v3.23.1
         with:
           extra-conf: |
             max-jobs = ${{ steps.resources.outputs.max-jobs }}
@@ -131,7 +131,7 @@ jobs:
         run: python3 scripts/ci/benchmark-image-tools.py "$BENCHMARK_MODE" ".bluebuild/benchmark-$BENCHMARK_MODE.json"
       - name: Retain measurements including failures
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: image-tools-${{ matrix.mode }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: .bluebuild/benchmark-${{ matrix.mode }}.json
