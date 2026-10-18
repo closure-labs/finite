@@ -96,7 +96,7 @@ jobs:
           echo "reused=true" >>"$GITHUB_OUTPUT"
       - name: Save authenticated reusable qualification
         if: ${{ !inputs.validation_only && steps.reuse.outputs.reused == 'true' }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: qualification-reused-${{ inputs.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: .bluebuild/reused/
@@ -167,7 +167,7 @@ jobs:
           echo "Qualification $PHASE outcome: $OUTCOME" >>"$GITHUB_STEP_SUMMARY"
       - name: Save phase evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ inputs.validation_only && 'qualification-diagnostic-phase' || 'qualification-phase' }}-${{ inputs.profile }}-${{ matrix.phase }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
@@ -185,7 +185,7 @@ jobs:
           success() && !inputs.validation_only && matrix.phase == 'fresh' &&
           env.FINITE_QUALIFIED_ISO_PRESERVATION == 'true' &&
           contains(format(',{0},', env.FINITE_QUALIFIED_ISO_CHANNELS), format(',{0},', inputs.channel))
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: finite-qualified-iso-${{ inputs.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
@@ -251,7 +251,7 @@ jobs:
           echo "evidence=$QUALIFICATION_PREFIX-$PROFILE-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >>"$GITHUB_OUTPUT"
       - name: Save qualification evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ inputs.validation_only && 'qualification-diagnostic' || 'qualification' }}-${{ inputs.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |

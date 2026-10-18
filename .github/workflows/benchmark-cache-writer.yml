@@ -44,7 +44,7 @@ jobs:
           .bluebuild/writer-start.json .bluebuild/benchmark.json
       - name: Retain measurements including failures
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: cache-writer-${{ matrix.mode }}-${{ matrix.repetition }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: .bluebuild/benchmark.json
@@ -73,7 +73,7 @@ jobs:
           .bluebuild/writer-reports .bluebuild/writer-jobs.json .bluebuild/writer-summary.md
       - name: Retain measured comparison
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: cache-writer-summary-${{ github.run_id }}-${{ github.run_attempt }}
           path: .bluebuild/writer-summary.md

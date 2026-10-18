@@ -96,7 +96,7 @@ jobs:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: "2"
       - name: Retain bounded seed receipt including rejection metadata
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: security-benchmark-seed-${{ github.run_id }}-${{ github.run_attempt }}
           path: .bluebuild/security-db-seed/benchmark.json
@@ -197,7 +197,7 @@ jobs:
           --output .bluebuild/security-benchmark/benchmark.json
       - name: Retain measurements including failures
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: security-benchmark-${{ matrix.lane }}-${{ matrix.repetition }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
@@ -255,7 +255,7 @@ jobs:
           --mode "$BENCHMARK_MODE" --repetitions "$REPETITIONS" --output .bluebuild/security-benchmark-summary.json
       - name: Retain the comparison
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: security-benchmark-summary-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
