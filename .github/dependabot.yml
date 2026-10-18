@@ -1,7 +1,10 @@
 version: 2
 updates:
   - package-ecosystem: github-actions
-    directory: /
+    # Root discovery covers workflows; local composite actions need their own directory.
+    directories:
+      - /
+      - /.github/actions/setup-nix
     schedule:
       interval: weekly
     cooldown:
