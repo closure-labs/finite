@@ -193,3 +193,23 @@ legacy cases in five suites while preserving their enforcement assertions.
 All 1,072 CI/BlueBuild tests pass under each policy mode, for 2,144 executions.
 Hosted validation of the corrected head is tracked in
 [PR 191](https://github.com/closure-labs/finite/pull/191).
+
+## Approved-baseline reconciliation
+
+After policy activation, [reconciliation 39334107834](https://github.com/closure-labs/finite/actions/runs/39334107834)
+confirmed that both profiles were covered, then stopped with
+`Previously known CVSS evidence disappeared`. The coordinator read the original
+legacy `security-result.json` from the approved packet. That summary omits CVSS
+values present in the raw Grype bytes used to construct the approved findings.
+The admission guard correctly rejected the apparent evidence loss.
+
+The coordinator now reconstructs the historical snapshot from those native
+bytes at their recorded scan time before comparing findings. This selects
+build or rescan work; publication separately requires current native health
+and live human authority. Historical packets retain their original timestamps.
+
+The same review found that the coordinator compared admission's `decision`
+object with a plain hash. It now checks `decision.proposalHash` before claiming
+work and again before dispatch. Tests use the real response shape and cover
+legacy CVSS recovery, genuine evidence loss, malformed timestamps, wrong
+decision identities and authority changes during dispatch.
