@@ -34,7 +34,7 @@ publication = reuse.publication
 
 
 def hosted():
-    workflows = {'build.yml': {'workflow_dispatch', 'push'},
+    workflows = {'build.yml': {'workflow_dispatch', 'push', 'schedule'},
                  'image-security.yml': {'workflow_dispatch', 'schedule'},
                  'benchmark-security-reuse.yml': {'workflow_dispatch'},
                  'release.yml': {'workflow_dispatch'}}

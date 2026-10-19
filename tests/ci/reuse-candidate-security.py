@@ -403,7 +403,9 @@ class Inventory(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'content hash'): self.verify(directory)
 
     def test_authenticated_fetch_reuses_inventory_from_expired_results_without_findings(self):
-        for producer_event in ('workflow_dispatch', 'schedule'):
+        events = ((producer, consumer) for producer in ('workflow_dispatch', 'schedule')
+                  for consumer in ('workflow_dispatch', 'push', 'schedule'))
+        for producer_event, consumer_event in events:
             fixture = Reuse()
             fixture.setUp()
             fixture.run['event'] = producer_event
@@ -425,7 +427,7 @@ class Inventory(unittest.TestCase):
                     kwargs['stdout'].write(archive)
                 record = {'profile': PROFILE, 'revision': SHA, 'buildIdentity': IDENTITY,
                           'qualificationMode': 'enforce', 'publish': True}
-                with patch.dict(os.environ, environment(), clear=True), \
+                with patch.dict(os.environ, {**environment(), 'GITHUB_EVENT_NAME': consumer_event}, clear=True), \
                      patch.object(fetch.publication, 'github', side_effect=[fixture.run, [{'artifacts': fixture.artifacts}], [{'jobs': fixture.jobs}]]), \
                      patch.object(fetch.publication, 'origin_files', return_value={
                          PROFILE + '-publication.json': json.dumps(record).encode(), PROFILE + '-image-ref.txt': IMAGE.encode()}), \
@@ -445,6 +447,9 @@ class Inventory(unittest.TestCase):
 
     def test_fetch_rejects_untrusted_consumer_before_api_access(self):
         for key, value in [('GITHUB_REF', 'refs/heads/branch'), ('GITHUB_REPOSITORY', 'fork/finite'),
+                           ('GITHUB_ACTIONS', 'false'), ('GITHUB_SHA', 'not-a-commit'),
+                           ('GITHUB_EVENT_NAME', 'pull_request'), ('GITHUB_EVENT_NAME', 'merge_group'),
+                           ('GITHUB_WORKFLOW_REF', 'closure-labs/finite/.github/workflows/build.yml@refs/heads/branch'),
                            ('GITHUB_WORKFLOW_REF', 'closure-labs/finite/.github/workflows/unknown.yml@refs/heads/main')]:
             with patch.dict(os.environ, {**environment(), key: value}, clear=True), \
                  patch.object(fetch.publication, 'github') as api, self.assertRaises(ValueError):
