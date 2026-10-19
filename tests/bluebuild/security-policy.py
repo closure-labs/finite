@@ -30,7 +30,7 @@ DATABASE_COVERAGE = [{'vulnerability': {'provider': 'fedora'},
 
 
 def evidence():
-    policy = security.load_policy(ROOT / 'automation/security/image-policy.json')
+    policy = security.load_policy(ROOT / 'tests/fixtures/legacy-image-security-policy.json')
     # Historical gate fixtures remain independent of the live reviewed mode.
     policy.pop('blockingBasis', None)
     policy.pop('confirmedDesktopRisks', None)

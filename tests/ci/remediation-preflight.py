@@ -96,7 +96,7 @@ class Preflight(unittest.TestCase):
             self.assertEqual(result['scannerResolution'], 'unknown')
 
     def test_ordinary_unavailable_fix_does_not_block_reviewed_risk_readiness(self):
-        risk = mod.security.load_policy(ROOT / 'automation/security/image-policy.json')
+        risk = mod.security.load_policy(ROOT / 'tests/fixtures/legacy-image-security-policy.json')
         risk.update(mode='upstream-maintained-risk', blockKnownExploited=True)
         risk.pop('blockingBasis', None)
         risk.pop('confirmedDesktopRisks', None)
@@ -124,7 +124,7 @@ class Preflight(unittest.TestCase):
         self.assertEqual(serious['status'], 'blocked')
 
     def test_critical_only_missing_prerequisites_are_advisory_not_clearance(self):
-        risk = mod.security.load_policy(ROOT / 'automation/security/image-policy.json')
+        risk = mod.security.load_policy(ROOT / 'tests/fixtures/legacy-image-security-policy.json')
         risk.update(mode='desktop-critical-only', blockedFixableSeverities=['Critical'], blockKnownExploited=False)
         prerequisites = mod.load_prerequisites(ROOT / 'scripts/ci/remediation-prerequisites.json')
         policy = {'fedora': 44, 'sourceImage': 'fixture', 'packages': {}}

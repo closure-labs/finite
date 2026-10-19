@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "mode": "desktop-critical-only",
+  "maxDatabaseAgeHours": 48,
+  "maxEvidenceAgeHours": 24,
+  "distributionAliases": {"fedora": "fedora", "bluefin": "fedora"},
+  "requiredReleasePackage": "fedora-release-common",
+  "minimumRpmPackages": 100,
+  "requiredProviders": ["fedora", "kev"],
+  "coverageProbePackage": "openssl",
+  "maxExceptionDays": 30,
+  "blockedFixableSeverities": ["Critical"],
+  "blockKnownExploited": false,
+  "exceptions": [],
+  "reviewedDispositions": [],
+  "releaseBlockers": [],
+  "seriousAdvisories": [
+    {
+      "id": "fixture-anyio",
+      "advisories": ["GHSA-82r6-8w77-94w6"],
+      "riskClass": "tls-identity-bypass",
+      "reason": "Historical metadata preflight fixture",
+      "officialSources": ["https://github.com/advisories/GHSA-82r6-8w77-94w6"],
+      "reviewedBy": "fixture-reviewer",
+      "reviewedAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "fixture-rclone",
+      "advisories": ["GHSA-p569-5gjg-9cmj", "GHSA-xwwr-4h3p-r22c"],
+      "riskClass": "authentication-bypass",
+      "reason": "Historical metadata preflight fixture",
+      "officialSources": ["https://github.com/advisories/GHSA-p569-5gjg-9cmj"],
+      "reviewedBy": "fixture-reviewer",
+      "reviewedAt": "2026-01-01T00:00:00Z"
+    }
+  ]
+}

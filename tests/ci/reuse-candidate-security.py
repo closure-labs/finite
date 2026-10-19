@@ -152,7 +152,7 @@ class Reuse(unittest.TestCase):
         (directory / 'security-result.json').write_text(json.dumps(original))
         (directory / 'approved-baseline.json').write_text(json.dumps(baseline))
         policy = directory / 'policy.json'
-        policy.write_bytes((ROOT / 'automation/security/image-policy.json').read_bytes())
+        policy.write_bytes((ROOT / 'tests/fixtures/legacy-image-security-policy.json').read_bytes())
         return original, policy
 
     def test_current_policy_reverification_preserves_scan_time(self):
@@ -293,6 +293,12 @@ class Reuse(unittest.TestCase):
                 calls.append(command)
                 if command[0] == 'gh': kwargs['stdout'].write(archive)
             output = root / 'verified'
+            verified = deepcopy(original)
+            # The origin stays historical; current verification follows the
+            # actual checked mode and must provide live admission after cutover.
+            if reuse.security.load_policy(ROOT / 'automation/security/image-policy.json')['mode'] == 'maintainer-decision':
+                verified.update(status='complete', mode='maintainer-decision', scannerHealth='healthy',
+                                admission={'status': 'covered'})
             with patch.dict(os.environ, environment(), clear=True), \
                  patch.object(reuse.publication, 'github', side_effect=[self.run, [{'jobs': self.jobs}], [{'artifacts': self.artifacts}]]), \
                  patch.object(reuse.subprocess, 'check_output', return_value=SHA), patch.object(reuse.subprocess, 'run', side_effect=run), \
@@ -303,7 +309,7 @@ class Reuse(unittest.TestCase):
                  patch.object(reuse.publication, 'validate_candidate') as candidate, \
                  patch.object(reuse.publication, 'origin_files', return_value={
                      PROFILE + '-publication.json': b'{}', PROFILE + '-image-ref.txt': IMAGE.encode()}), \
-                 patch.object(reuse.security, 'verify', return_value=deepcopy(original)) as native:
+                 patch.object(reuse.security, 'verify', return_value=verified) as native:
                 provenance = reuse.reuse('123', PROFILE, DIGEST, output)
             self.assertIn(['git', 'merge-base', '--is-ancestor', SHA, SHA], calls)
             publisher.assert_called_once_with(reuse.ROOT)
