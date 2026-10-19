@@ -292,7 +292,10 @@ def main(argv=None):
             'approvedBaselineEvidenceSha256': context_hash,
             'runId': os.environ.get('GITHUB_RUN_ID'), 'runAttempt': os.environ.get('GITHUB_RUN_ATTEMPT')})
         result = scan_candidate(layout, directory, candidate, approved_baseline=context)
-        if result.get('status') not in ('pass', 'blocked') or result.get('image') != image:
+        maintainer = policy.get('mode') == 'maintainer-decision'
+        completed = (result.get('status') == 'complete' and result.get('scannerHealth') == 'healthy'
+                     and result.get('mode') == 'maintainer-decision') if maintainer else result.get('status') in ('pass', 'blocked')
+        if not completed or result.get('image') != image:
             raise ValueError('Native policy returned inconsistent candidate evidence')
         if ((risk_mode and ('advisories' not in result or result.get('mode') != policy.get('mode') or
                            result.get('approvedBaseline') != context)) or
@@ -326,10 +329,15 @@ def main(argv=None):
             if not reviewed_basis and (any(entry['severity'] != 'Critical' for entry in holds) or any(
                     entry['severity'] == 'Critical' for entry in tracked)):
                 raise ValueError('Source concern disposition contradicts Critical-only policy')
+        if maintainer and (any(result.get(key) for key in ('blocked', 'exceptionsApplied', 'advisories', 'releaseBlockers'))
+                           or not isinstance(result.get('observations'), list)):
+            raise ValueError('Maintainer diagnostic must retain raw observations without automatic dispositions')
         if (result['status'] == 'blocked') != bool(result['blocked'] or holds):
             raise ValueError('Native policy status contradicts blocking findings or source release blockers')
         result.update({'sourceType': 'locally-built-unpublished', 'signatureVerified': False, 'releaseEligible': False})
-        code = 0 if result['status'] == 'pass' else 1
+        if maintainer:
+            result['admissionStatus'] = 'not-evaluated'
+        code = 0 if result['status'] in ('pass', 'complete') else 1
         write_json(directory / 'security-result.json', result)
         summary = {key: result[key] for key in ('schema', 'status', 'image', 'scannedAt', 'scanner', 'policySha256',
                                                 'sourceType', 'signatureVerified', 'releaseEligible')}
@@ -339,6 +347,8 @@ def main(argv=None):
                         'releaseBlockers': holds, 'trackedReleaseConcerns': tracked, 'releaseBlockerRecords': len(holds),
                         'observationRecords': len(result.get('observations', [])),
                         'coverage': result['coverage'], 'matches': result['matches']})
+        if maintainer:
+            summary.update(mode='maintainer-decision', scannerHealth='healthy', admissionStatus='not-evaluated')
         write_json(directory / 'security-summary.json', summary)
         print(json.dumps(summary))
         return code

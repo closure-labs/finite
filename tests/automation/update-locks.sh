@@ -11,6 +11,11 @@ printf '{}\n' >"$test_root/devenv.lock"
 
 nix() { printf '{"nodes": {}}\n' >flake.lock; }
 devenv() {
+	if [[ "${GITHUB_ACTIONS:-false}" == true ]]; then
+		[[ "$*" == '--secretspec-provider github-actions --secretspec-profile ci-options update' ]] || return 1
+	else
+		[[ "$*" == update ]] || return 1
+	fi
 	if [[ "$MOCK_INVALID" == true ]]; then
 		printf 'broken' >devenv.lock
 	else
@@ -32,6 +37,10 @@ for newline in false true; do
 	grep -qFx "digest=$first_digest" "$test_root/output"
 	jq -e 'type == "object"' "$test_root/devenv.lock" >/dev/null
 done
+export GITHUB_ACTIONS=true
+: >"$test_root/output"
+finite-update-locks "$test_root/output"
+grep -qFx 'changed=false' "$test_root/output"
 export MOCK_INVALID=true
 : >"$test_root/output"
 if finite-update-locks "$test_root/output"; then exit 1; fi

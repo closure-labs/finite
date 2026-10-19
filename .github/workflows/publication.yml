@@ -69,7 +69,12 @@ jobs:
       BUILD_IDENTITY: ${{ needs.build.outputs.identity }}
       SOURCE_REVISION: ${{ needs.build.outputs.source_revision }}
       RESUME_RUN: ${{ inputs.resume_run }}
+      FINITE_REVIEW_BOT_LOGIN: ${{ vars.FINITE_REVIEW_BOT_LOGIN }}
     steps:
+      - name: Monitor hosted runner (Community)
+        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2
+        with:
+          egress-policy: audit
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -96,7 +101,7 @@ jobs:
           # Expand these variables inside the Nix-provided child shell.
           # shellcheck disable=SC2016
           nix develop --file lib/ci-tools.nix release --command bash -c '
-            sudo --preserve-env=GH_TOKEN,GITHUB_ACTOR,GITHUB_ACTIONS,GITHUB_REPOSITORY,GITHUB_REF,GITHUB_EVENT_NAME,GITHUB_WORKFLOW_REF,GITHUB_SHA \
+            sudo --preserve-env=GH_TOKEN,GITHUB_ACTOR,GITHUB_ACTIONS,GITHUB_REPOSITORY,GITHUB_REF,GITHUB_EVENT_NAME,GITHUB_WORKFLOW_REF,GITHUB_SHA,FINITE_REVIEW_BOT_LOGIN \
               systemd-run --quiet --wait --pipe --service-type=exec \
               --unit="finite-security-reuse-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" \
               --property=MemoryMax=2G --property=MemorySwapMax=0 --property=RuntimeMaxSec=300 \
@@ -104,7 +109,7 @@ jobs:
               --uid="$(id -u)" --gid="$(id -g)" --working-directory="$PWD" \
               --setenv="PATH=$PATH" --setenv=GH_TOKEN --setenv=GITHUB_ACTOR --setenv=GITHUB_ACTIONS \
               --setenv=GITHUB_REPOSITORY --setenv=GITHUB_REF --setenv=GITHUB_EVENT_NAME \
-              --setenv=GITHUB_WORKFLOW_REF --setenv=GITHUB_SHA \
+              --setenv=GITHUB_WORKFLOW_REF --setenv=GITHUB_SHA --setenv=FINITE_REVIEW_BOT_LOGIN \
               python3 scripts/ci/reuse-candidate-security.py \
               --origin-run "$RESUME_RUN" --profile "$PROFILE" --digest "$CANDIDATE_DIGEST" \
               --output ".bluebuild/security-$PROFILE"
@@ -157,8 +162,22 @@ jobs:
           include-hidden-files: true
           retention-days: 90
 
-  sign:
+  attest:
     needs: security
+    uses: ./.github/workflows/attest-image.yml
+    permissions:
+      contents: read
+      actions: read
+      packages: write
+      id-token: write
+      attestations: write
+    with:
+      profile: ${{ inputs.profile }}
+      digest: ${{ needs.security.outputs.digest }}
+      evidence: ${{ needs.security.outputs.evidence }}
+
+  sign:
+    needs: [security, attest]
     if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
     environment: image-signing
     runs-on: ubuntu-24.04
@@ -166,7 +185,12 @@ jobs:
     permissions:
       contents: read
       packages: write
+      actions: read
     steps:
+      - name: Monitor hosted runner (Community)
+        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2
+        with:
+          egress-policy: audit
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -179,7 +203,11 @@ jobs:
             scripts/ci/nix-resources.py
             scripts/ci/nix-cache.py
             scripts/ci/ci-options.py
-            sources/secretspec.json
+            sources/
+            automation/security/
+            automation/decisions/
+            scripts/bluebuild/security-policy.py
+            scripts/ci/
           sparse-checkout-cone-mode: false
       - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
         with:
@@ -187,6 +215,16 @@ jobs:
       - uses: ./.github/actions/setup-nix
         with:
           cache-mode: none
+      - name: Authenticate native evidence and human admission before signing credentials
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SECURITY_ARTIFACT: ${{ needs.security.outputs.evidence }}
+          CANDIDATE_DIGEST: ${{ needs.security.outputs.digest }}
+          FINITE_REVIEW_BOT_LOGIN: ${{ vars.FINITE_REVIEW_BOT_LOGIN }}
+        run: |
+          gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$SECURITY_ARTIFACT" --dir .bluebuild/signing-security
+          python3 scripts/ci/verify-security-admission.py --directory .bluebuild/signing-security \
+            --image "ghcr.io/closure-labs/finite@$CANDIDATE_DIGEST"
       - name: Prepare pinned scoped credential resolver
         # The resolver path is realized from trusted main before keys are supplied.
         run: | # zizmor: ignore[github-env]
@@ -235,6 +273,10 @@ jobs:
     env:
       PROFILE: ${{ inputs.profile }}
     steps:
+      - name: Monitor hosted runner (Community)
+        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2
+        with:
+          egress-policy: audit
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -275,7 +317,12 @@ jobs:
     env:
       PROFILE: ${{ inputs.profile }}
       FINITE_QUALIFICATION_MODE: enforce
+      FINITE_REVIEW_BOT_LOGIN: ${{ vars.FINITE_REVIEW_BOT_LOGIN }}
     steps:
+      - name: Monitor hosted runner (Community)
+        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2
+        with:
+          egress-policy: audit
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false

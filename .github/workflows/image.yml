@@ -63,6 +63,10 @@ jobs:
       FINITE_QUALIFICATION_MODE: enforce
       FORCE_QUALIFICATION: ${{ inputs.force_qualification }}
     steps:
+      - name: Monitor hosted runner (Community)
+        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2
+        with:
+          egress-policy: audit
       - name: Validate diagnostic boundary
         if: inputs.diagnostic_security
         env:

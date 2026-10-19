@@ -125,7 +125,7 @@ class Manifest(unittest.TestCase):
                 OPTIONS.iso_preservation_enabled(value, {})
 
     def test_new_profiles_are_standalone_canonical_and_narrow(self):
-        for profile in ('ci-options', 'cache-writer', 'image-signing', 'release-signing', 'release-publishing',
+        for profile in ('ci-options', 'cache-writer', 'image-signing', 'release-signing', 'release-publishing', 'release-set-publishing',
                         'repository-audit', 'repository-read', 'updater'):
             values = MANIFEST['profiles'][profile]
             self.assertFalse(values['defaults']['inherit'])
@@ -218,12 +218,22 @@ class Resolution(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(json.loads(result.stdout), {'MERGE_QUEUE_TOKEN': 'fixture-publisher', 'GH_TOKEN': 'fixture-publisher'})
 
+    def test_release_set_publisher_preserves_distinct_authority_and_workflow_tokens_only(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            result = self.run_cli(Path(temporary), 'release-set-publishing', values={
+                'GH_TOKEN': 'fixture-read-only-app', 'RELEASE_PUBLISH_TOKEN': 'fixture-release-workflows-pat',
+                'MERGE_QUEUE_TOKEN': 'excluded-updater', 'COSIGN_PRIVATE_KEY': 'excluded-signing',
+                'CACHIX_AUTH_TOKEN': 'excluded-cache', 'FINITE_REVIEW_PRIVATE_KEY': 'excluded-app-key'})
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(json.loads(result.stdout), {'GH_TOKEN': 'fixture-read-only-app',
+                                                       'RELEASE_PUBLISH_TOKEN': 'fixture-release-workflows-pat'})
+
     def test_missing_required_credentials_prevent_child_execution(self):
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
             marker = directory / 'child-ran'
             command = [sys.executable, '-c', 'from pathlib import Path; Path(' + repr(str(marker)) + ').touch()']
-            for profile in ('cache-writer', 'image-signing', 'release-signing', 'release-publishing', 'repository-read', 'repository-audit', 'updater'):
+            for profile in ('cache-writer', 'image-signing', 'release-signing', 'release-publishing', 'release-set-publishing', 'repository-read', 'repository-audit', 'updater'):
                 result = self.run_cli(directory, profile, command=command)
                 self.assertNotEqual(result.returncode, 0, profile)
                 self.assertFalse(marker.exists())

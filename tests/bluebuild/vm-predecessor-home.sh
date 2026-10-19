@@ -5,6 +5,7 @@ temporary=$(mktemp -d)
 trap 'rm -rf -- "$temporary"' EXIT
 export XDG_CONFIG_HOME="$temporary/config"
 export FINITE_BREW_COMMAND="$temporary/brew"
+export FINITE_FOUNDATION_METADATA="$temporary/foundation-source.json"
 export TEST_BREW_LOG="$temporary/brew.log"
 {
   printf '#!%s\nset -euo pipefail\n' "$BASH"
@@ -32,5 +33,19 @@ if bash "$script" >/dev/null 2>&1; then
   echo 'Predecessor setup overwrote existing customization' >&2
   exit 1
 fi
+cmp "$temporary/original" "$XDG_CONFIG_HOME/home-manager/customize.nix"
+
+# Foundation's initializer rejects even an otherwise empty existing directory.
+# The same predecessor preparation must leave a new configuration root available.
+export XDG_CONFIG_HOME="$temporary/foundation-config"
+printf '{}\n' >"$FINITE_FOUNDATION_METADATA"
+bash "$script"
+test ! -e "$XDG_CONFIG_HOME/home-manager"
+test "$(tail -n 2 "$TEST_BREW_LOG")" = $'tap valkyrie00/bbrew\ntrust valkyrie00/bbrew'
+
+# Preparation must still preserve an already present Foundation customization.
+mkdir -p "$XDG_CONFIG_HOME/home-manager"
+cp "$temporary/original" "$XDG_CONFIG_HOME/home-manager/customize.nix"
+bash "$script"
 cmp "$temporary/original" "$XDG_CONFIG_HOME/home-manager/customize.nix"
 printf 'Historical Home Manager fixture contracts passed\n'

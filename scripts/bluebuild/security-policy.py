@@ -5,8 +5,11 @@ from datetime import datetime, timedelta, timezone
 import hashlib
 import importlib.util
 import json
+import math
+import os
 from pathlib import Path, PurePosixPath
 import re
+import sys
 from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -17,7 +20,11 @@ RELATED_ADVISORY = re.compile(r'(?:' + ADVISORY.pattern + r'|FEDORA(?:-EPEL)?-[0
 RISK_CLASSES = {'desktop-takeover', 'local-privilege-escalation', 'container-escape',
                 'authentication-bypass', 'tls-identity-bypass', 'major-data-loss', 'unresolved-serious'}
 PROFILES = {'finite', 'finite-dev'}
-RISK_MODES = {'upstream-maintained-risk', 'desktop-critical-only'}
+RISK_MODES = {'upstream-maintained-risk', 'desktop-critical-only', 'maintainer-decision'}
+DECISION_MODE = 'maintainer-decision'
+DECISION_FIELDS = {'schema', 'mode', 'maxDatabaseAgeHours', 'maxEvidenceAgeHours',
+                   'distributionAliases', 'requiredReleasePackage', 'minimumRpmPackages',
+                   'requiredProviders', 'coverageProbePackage'}
 SEVERITIES = {'Unknown', 'Negligible', 'Low', 'Medium', 'High', 'Critical'}
 
 
@@ -229,7 +236,22 @@ def validate_policy(policy, now=None):
     mode = policy.get('mode', 'fixable-severity')
     if not isinstance(mode, str) or mode not in {'fixable-severity', *RISK_MODES}:
         raise ValueError('Unsupported image security policy mode')
-    if mode in RISK_MODES:
+    if mode == DECISION_MODE:
+        if set(policy) != DECISION_FIELDS:
+            raise ValueError('Maintainer decision policy requires only exact technical health fields')
+        if any(type(policy[field]) is not int or policy[field] < 1 for field in
+               ('maxDatabaseAgeHours', 'maxEvidenceAgeHours', 'minimumRpmPackages')):
+            raise ValueError('Maintainer decision policy requires positive technical health limits')
+        aliases = policy['distributionAliases']
+        providers = policy['requiredProviders']
+        if (not isinstance(aliases, dict) or not aliases or
+                any(not nonempty(key) or value != 'fedora' for key, value in aliases.items())
+                or not isinstance(providers, list) or not providers or
+                any(not nonempty(value) for value in providers) or len(providers) != len(set(providers))
+                or not {'fedora', 'kev'} <= set(providers)
+                or not nonempty(policy['requiredReleasePackage']) or not nonempty(policy['coverageProbePackage'])):
+            raise ValueError('Maintainer decision policy requires explicit distro, package and provider coverage')
+    elif mode in RISK_MODES:
         expected = {'schema', 'mode', 'maxDatabaseAgeHours', 'maxEvidenceAgeHours', 'maxExceptionDays',
                     'distributionAliases', 'requiredReleasePackage', 'minimumRpmPackages', 'requiredProviders',
                     'blockedFixableSeverities', 'blockKnownExploited', 'exceptions', 'coverageProbePackage',
@@ -513,10 +535,11 @@ def evaluate(sbom, scan, image, policy, now=None, database_coverage=None, manife
              approved_baseline=None):
     now = now or datetime.now(timezone.utc)
     mode = validate_policy(policy, now)
+    maintainer = mode == DECISION_MODE
     baseline = baseline_binding(approved_baseline, image, manifests) if mode in RISK_MODES else None
-    serious, dispositions = reviewed_rules(policy, now) if baseline else ({}, [])
+    serious, dispositions = reviewed_rules(policy, now) if baseline and not maintainer else ({}, [])
     holds = [entry for entry in release_blockers(policy, now)
-             if baseline['profile'] in entry['profiles']] if baseline else []
+             if baseline['profile'] in entry['profiles']] if baseline and not maintainer else []
     reviewed_basis = policy.get('blockingBasis') == 'reviewed-desktop-exploitability'
     tracked_holds = []
     if reviewed_basis:
@@ -555,7 +578,7 @@ def evaluate(sbom, scan, image, policy, now=None, database_coverage=None, manife
                 package['package'] == {'name': policy['coverageProbePackage'], 'ecosystem': 'rpm'}
                 for package in entry['packages']) for entry in database_coverage):
         raise ValueError('Database has no proven Fedora RPM advisory coverage for this version')
-    exceptions = exception_keys(policy, image, now)
+    exceptions = exception_keys(policy, image, now) if not maintainer else set()
     blocked, waived, advisories, observations = [], [], [], []
     matches = scan['matches']
     if not isinstance(matches, list):
@@ -583,7 +606,7 @@ def evaluate(sbom, scan, image, policy, now=None, database_coverage=None, manife
                 or vulnerability['severity'] not in SEVERITIES or not nonempty(vulnerability.get('id'))):
             raise ValueError('Invalid scanner vulnerability severity or advisory')
         fixable = fix_state == 'fixed' and bool(fix_versions)
-        known_blocked = known and policy['blockKnownExploited']
+        known_blocked = known and (policy['blockKnownExploited'] if not maintainer else False)
         # Artifact ID remains usable for embedded components lacking a PURL;
         # it is scoped to this exact digest, never to a package-name wildcard.
         component = artifact.get('purl') or artifact['id']
@@ -594,6 +617,27 @@ def evaluate(sbom, scan, image, policy, now=None, database_coverage=None, manife
                    'severity': vulnerability['severity'], 'knownExploited': bool(known),
                    'fixVersions': fix_versions, 'fixState': fix_state, 'aliases': alias_ids,
                    'locations': locations, 'locationCoverage': 'complete' if location_complete else 'unknown'}
+        if maintainer:
+            ranking = ('Unknown', 'Negligible', 'Low', 'Medium', 'High', 'Critical')
+            finding['admissionSeverity'] = max(
+                (entry['severity'] for entry in [vulnerability, *related] if 'severity' in entry), key=ranking.index)
+            scores = []
+            for entry in [vulnerability, *related]:
+                records = entry.get('cvss')
+                if records is None:
+                    continue
+                if not isinstance(records, list):
+                    raise ValueError('Invalid native CVSS records')
+                for record in records:
+                    metrics = record.get('metrics') if isinstance(record, dict) else None
+                    score = metrics.get('baseScore') if isinstance(metrics, dict) else None
+                    if (isinstance(score, bool) or not isinstance(score, (int, float))
+                            or not math.isfinite(score) or not 0 <= score <= 10):
+                        raise ValueError('Invalid native CVSS base score')
+                    scores.append(score)
+            finding['cvss'] = max(scores, default=None)
+            observations.append(finding)
+            continue
         if baseline:
             rules = {serious[alias]['id']: serious[alias] for alias in alias_ids if alias in serious}
             critical_aliases = sorted({v['id'] for v in [vulnerability, *related]
@@ -658,12 +702,28 @@ def evaluate(sbom, scan, image, policy, now=None, database_coverage=None, manife
             'releaseBlockers': holds,
             'blocked': blocked, 'exceptionsApplied': waived, 'advisories': advisories,
             'observations': observations}
+    if maintainer:
+        result.update(status='complete', scannerHealth='healthy')
     if mode == 'desktop-critical-only':
         result['trackedReleaseConcerns'] = tracked_holds
     if reviewed_basis:
         validate_confirmed_findings(blocked, holds)
         result['blockingBasis'] = policy['blockingBasis']
     return result
+
+
+def maintainer_admission(result):
+    """Only a trusted consumer outside the scanner may resolve live human authority."""
+    scripts = str(ROOT / 'scripts/ci')
+    sys.path.insert(0, scripts)
+    try:
+        spec = importlib.util.spec_from_file_location('image_security_admission', ROOT / 'scripts/ci/security_admission.py')
+        admission = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(admission)
+    finally:
+        sys.path.remove(scripts)
+    return admission.verify(result, result['approvedBaseline']['profile'],
+                            os.environ.get('GITHUB_REPOSITORY', ''), os.environ.get('FINITE_REVIEW_BOT_LOGIN'))
 
 
 def verify(directory, image, policy_path=ROOT / 'automation/security/image-policy.json',
@@ -689,7 +749,12 @@ def verify(directory, image, policy_path=ROOT / 'automation/security/image-polic
     result = evaluate(sbom, scan, image, policy,
                       database_coverage=json.loads((directory / 'database-coverage.json').read_text()),
                       manifests=manifests, approved_baseline=approved_baseline)
-    if result['status'] != 'pass':
+    if policy.get('mode') == DECISION_MODE:
+        result['policySha256'] = hashlib.sha256(policy_path.read_bytes()).hexdigest()
+        result['admission'] = maintainer_admission(result)
+        if result['admission'].get('status') != 'covered':
+            raise ValueError('Candidate requires an authenticated maintainer security decision')
+    elif result['status'] != 'pass':
         raise ValueError('Candidate violates image vulnerability policy')
     return result
 
@@ -713,7 +778,7 @@ def main():
                           json.loads((args.directory / 'database-coverage.json').read_text()),
                           manifests=manifests, approved_baseline=baseline)
         result['policySha256'] = hashlib.sha256(args.policy.read_bytes()).hexdigest()
-        code = 0 if result['status'] == 'pass' else 1
+        code = 0 if result['status'] in ('pass', 'complete') else 1
     except (ValueError, KeyError, TypeError, OSError) as error:
         result = {'schema': 1, 'status': 'scanner-error', 'image': args.image, 'error': str(error)}
         code = 2

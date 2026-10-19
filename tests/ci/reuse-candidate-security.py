@@ -110,6 +110,23 @@ class Reuse(unittest.TestCase):
             reuse.extract(archive, artifact, Path(temporary))
             self.assertEqual({p.name for p in Path(temporary).iterdir()}, reuse.REQUIRED)
 
+    def test_optional_reuse_metadata_extracts_without_becoming_authority(self):
+        for name in ('original-security-result.json', 'reuse-provenance.json'):
+            archive, artifact = self.archive(extra=name)
+            with tempfile.TemporaryDirectory() as temporary:
+                reuse.extract(archive, artifact, Path(temporary))
+                self.assertEqual((Path(temporary) / name).read_bytes(), b'target')
+            archive, artifact = self.archive(extra=name)
+            with tempfile.TemporaryDirectory() as temporary, patch.dict(reuse.LIMITS, {name: 1}), self.assertRaises(ValueError):
+                reuse.extract(archive, artifact, Path(temporary))
+            archive, _ = self.archive(extra=name)
+            with zipfile.ZipFile(archive, 'a') as zipped:
+                zipped.writestr(name, b'duplicate metadata')
+            raw = archive.getvalue()
+            artifact = {'size_in_bytes': len(raw), 'digest': 'sha256:' + hashlib.sha256(raw).hexdigest()}
+            with tempfile.TemporaryDirectory() as temporary, self.assertRaises(ValueError):
+                reuse.extract(archive, artifact, Path(temporary))
+
     def test_paths_symlinks_duplicates_missing_and_digest_tampering_rejected(self):
         link = zipfile.ZipInfo('runner-resources.log')
         link.create_system = 3
@@ -148,6 +165,60 @@ class Reuse(unittest.TestCase):
             self.assertEqual(result['scannedAt'], previous['scannedAt'])
             self.assertEqual(result['policySha256'], hashlib.sha256(policy.read_bytes()).hexdigest())
             self.assertEqual(json.loads((directory / 'security-result.json').read_text()), original)
+
+    def decision_fixture(self, directory):
+        original, policy = self.fixture(directory)
+        config = json.loads(policy.read_text())
+        config = {key: value for key, value in config.items() if key in reuse.security.DECISION_FIELDS}
+        config['mode'] = 'maintainer-decision'
+        policy.write_text(json.dumps(config))
+        original.update(status='complete', scannerHealth='healthy', mode='maintainer-decision')
+        (directory / 'security-result.json').write_text(json.dumps(original))
+        return original, policy
+
+    def test_complete_native_reuse_requires_fresh_live_covered_admission(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            original, policy = self.decision_fixture(directory)
+            admitted = {**original, 'admission': {'status': 'covered', 'reviewer': 'maintainer'}}
+            with patch.object(reuse.security, 'verify', return_value=admitted) as verify:
+                previous, current = reuse.revalidate(directory, IMAGE, PROFILE, SHA, IDENTITY, policy)
+            verify.assert_called_once_with(directory, IMAGE, policy)
+            self.assertEqual(previous['status'], 'complete')
+            self.assertEqual(current['admission']['status'], 'covered')
+            self.assertEqual(current['scannedAt'], original['scannedAt'])
+            # A previously cached approval never replaces the live verification.
+            (directory / 'security-result.json').write_text(json.dumps(admitted))
+            with patch.object(reuse.security, 'verify', side_effect=ValueError('Current human authority was dismissed')), self.assertRaises(ValueError):
+                reuse.revalidate(directory, IMAGE, PROFILE, SHA, IDENTITY, policy)
+
+    def test_complete_reuse_rejects_every_noncovered_or_unhealthy_result(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            original, policy = self.decision_fixture(directory)
+            results = [{**original, 'admission': {'status': status}} for status in ('review-required', 'revoked', 'rejected')]
+            results += [original, {**original, 'scannerHealth': 'unknown', 'admission': {'status': 'covered'}},
+                        {**original, 'status': 'pass', 'admission': {'status': 'covered'}}]
+            for result in results:
+                with self.subTest(result=result), patch.object(reuse.security, 'verify', return_value=result), self.assertRaises(ValueError):
+                    reuse.revalidate(directory, IMAGE, PROFILE, SHA, IDENTITY, policy)
+            original['scannerHealth'] = 'unknown'
+            (directory / 'security-result.json').write_text(json.dumps(original))
+            with patch.object(reuse.security, 'verify') as verify, self.assertRaises(ValueError):
+                reuse.revalidate(directory, IMAGE, PROFILE, SHA, IDENTITY, policy)
+            verify.assert_not_called()
+
+    def test_legacy_passing_native_bytes_can_be_rechecked_under_new_human_mode(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            original, policy = self.decision_fixture(directory)
+            original.update(status='pass')
+            original.pop('scannerHealth')
+            (directory / 'security-result.json').write_text(json.dumps(original))
+            current = {**original, 'status': 'complete', 'scannerHealth': 'healthy', 'admission': {'status': 'covered'}}
+            with patch.object(reuse.security, 'verify', return_value=current):
+                _, result = reuse.revalidate(directory, IMAGE, PROFILE, SHA, IDENTITY, policy)
+            self.assertEqual(result['status'], 'complete')
 
     def test_stale_failed_current_policy_or_mismatched_native_context_never_reuses(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -319,6 +390,42 @@ GENERATION = {'platform': 'linux/amd64', 'tools': {'syft': 'fixture 1', 'umoci':
 
 
 class Inventory(unittest.TestCase):
+    def test_metadata_retries_transient_http_and_preserves_pagination(self):
+        failed = subprocess.CalledProcessError(1, ['gh'], stderr='gh: Server Error (HTTP 502)')
+        success = subprocess.CompletedProcess(['gh'], 0, stdout='[{"jobs": []}]')
+        with patch.object(fetch.subprocess, 'run', side_effect=[failed, success]) as run, \
+             patch.object(fetch.time, 'sleep') as sleep:
+            self.assertEqual(fetch.github('actions/runs/123/jobs', True), [{'jobs': []}])
+        self.assertEqual(run.call_count, 2)
+        self.assertIn('--paginate', run.call_args.args[0])
+        self.assertEqual(run.call_args.kwargs['timeout'], 35)
+        sleep.assert_called_once_with(2)
+
+    def test_metadata_retry_budget_is_bounded(self):
+        for failure in [subprocess.TimeoutExpired(['gh'], 35),
+                        subprocess.CalledProcessError(1, ['gh'], stderr='HTTP 429')]:
+            with self.subTest(failure=type(failure).__name__), \
+                 patch.object(fetch.subprocess, 'run', side_effect=failure) as run, \
+                 patch.object(fetch.time, 'sleep') as sleep, \
+                 self.assertRaises(type(failure)):
+                fetch.github('actions/runs/123')
+            self.assertEqual(run.call_count, 3)
+            self.assertEqual([call.args[0] for call in sleep.call_args_list], [2, 4])
+
+    def test_metadata_does_not_retry_auth_missing_or_malformed_responses(self):
+        for status in (400, 401, 403, 404):
+            failure = subprocess.CalledProcessError(1, ['gh'], stderr=f'HTTP {status}')
+            with patch.object(fetch.subprocess, 'run', side_effect=failure) as run, \
+                 patch.object(fetch.time, 'sleep') as sleep, self.assertRaises(subprocess.CalledProcessError):
+                fetch.github('actions/runs/123')
+            self.assertEqual(run.call_count, 1)
+            sleep.assert_not_called()
+        with patch.object(fetch.subprocess, 'run', return_value=subprocess.CompletedProcess(['gh'], 0, stdout='invalid')) as run, \
+             patch.object(fetch.time, 'sleep') as sleep, self.assertRaises(ValueError):
+            fetch.github('actions/runs/123')
+        self.assertEqual(run.call_count, 1)
+        sleep.assert_not_called()
+
     def bundle(self, directory, risk=True):
         files = inventory.REQUIRED | ({'rpm-file-evidence.json', 'applicability-evidence.json'} if risk else set())
         for name in files:
@@ -403,7 +510,10 @@ class Inventory(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'content hash'): self.verify(directory)
 
     def test_authenticated_fetch_reuses_inventory_from_expired_results_without_findings(self):
-        for producer_event in ('workflow_dispatch', 'schedule'):
+        events = ((decision_mode, producer, consumer) for decision_mode in (False, True)
+                  for producer in ('workflow_dispatch', 'schedule')
+                  for consumer in ('workflow_dispatch', 'push', 'schedule'))
+        for decision_mode, producer_event, consumer_event in events:
             fixture = Reuse()
             fixture.setUp()
             fixture.run['event'] = producer_event
@@ -411,6 +521,8 @@ class Inventory(unittest.TestCase):
                 directory = Path(temporary)
                 original, _ = fixture.fixture(directory)
                 original['scannedAt'] = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+                if decision_mode:
+                    original.update(status='complete', scannerHealth='healthy', mode='maintainer-decision')
                 (directory / 'security-result.json').write_text(json.dumps(original))
                 self.bundle(directory)
                 stream = io.BytesIO()
@@ -425,11 +537,12 @@ class Inventory(unittest.TestCase):
                     kwargs['stdout'].write(archive)
                 record = {'profile': PROFILE, 'revision': SHA, 'buildIdentity': IDENTITY,
                           'qualificationMode': 'enforce', 'publish': True}
-                with patch.dict(os.environ, environment(), clear=True), \
-                     patch.object(fetch.publication, 'github', side_effect=[fixture.run, [{'artifacts': fixture.artifacts}], [{'jobs': fixture.jobs}]]), \
+                with patch.dict(os.environ, {**environment(), 'GITHUB_EVENT_NAME': consumer_event}, clear=True), \
+                     patch.object(fetch, 'github', side_effect=[fixture.run, [{'artifacts': fixture.artifacts}], [{'jobs': fixture.jobs}]]), \
                      patch.object(fetch.publication, 'origin_files', return_value={
                          PROFILE + '-publication.json': json.dumps(record).encode(), PROFILE + '-image-ref.txt': IMAGE.encode()}), \
                      patch.object(fetch.subprocess, 'run', side_effect=download), \
+                     patch.object(fetch.reuse.security, 'load_policy', return_value={'mode': 'maintainer-decision' if decision_mode else 'desktop-critical-only'}), \
                      patch.object(fetch.inventory, 'generation', return_value=GENERATION), \
                      patch.object(fetch.reuse.security, 'read_manifests', return_value={}), \
                      patch.object(fetch.reuse.security, 'manifest_binding', return_value=DIGEST):
@@ -443,11 +556,64 @@ class Inventory(unittest.TestCase):
                 self.assertFalse((ready / 'vulnerabilities.json').exists())
                 self.assertFalse((ready / 'database-coverage.json').exists())
 
+    def test_complete_inventory_health_requires_current_mode_and_healthy_completion(self):
+        healthy = {'status': 'complete', 'mode': 'maintainer-decision', 'scannerHealth': 'healthy',
+                   'admission': {'status': 'review-required'}}
+        self.assertTrue(fetch.native_inventory_health(healthy, {'mode': 'maintainer-decision'}))
+        self.assertFalse(fetch.native_inventory_health(healthy, {'mode': 'desktop-critical-only'}))
+        for change in ({'status': 'scanner-error'}, {'status': 'blocked'}, {'scannerHealth': 'unknown'}, {'mode': 'desktop-critical-only'}):
+            self.assertFalse(fetch.native_inventory_health({**healthy, **change}, {'mode': 'maintainer-decision'}))
+
+    def test_resumed_inventory_is_safe_miss_without_original_chain_and_keeps_source(self):
+        fixture = Reuse()
+        fixture.setUp()
+        revision = 'e' * 40
+        fixture.run['head_sha'] = revision
+        for artifact in fixture.artifacts:
+            artifact['workflow_run']['head_sha'] = revision
+        record = {'profile': PROFILE, 'revision': revision, 'sourceRevision': SHA, 'buildIdentity': IDENTITY,
+                  'qualificationMode': 'enforce', 'publish': True,
+                  'resumeOrigin': {'runId': 99, 'runAttempt': 1, 'sourceRevision': SHA, 'digest': DIGEST}}
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / 'ready'
+            with patch.dict(os.environ, environment(), clear=True), \
+                    patch.object(fetch, 'github', side_effect=[fixture.run, [{'artifacts': fixture.artifacts}]]), \
+                    patch.object(fetch.publication, 'origin_files', return_value={
+                        PROFILE + '-publication.json': json.dumps(record).encode(), PROFILE + '-image-ref.txt': IMAGE.encode()}), \
+                    patch.object(fetch.reuse, 'metadata') as original_metadata, self.assertRaises(fetch.inventory.Unavailable):
+                fetch.retrieve(IMAGE, PROFILE, output, '123')
+            original_metadata.assert_not_called()
+            self.assertFalse(output.exists())
+            self.assertEqual(record['sourceRevision'], SHA)
+
+    def test_inventory_source_cannot_be_forged_into_a_resumed_identity(self):
+        run = {'head_sha': 'e' * 40}
+        record = {'profile': PROFILE, 'revision': run['head_sha'], 'sourceRevision': SHA,
+                  'qualificationMode': 'enforce', 'publish': True,
+                  'resumeOrigin': {'runId': 99, 'runAttempt': 1, 'sourceRevision': SHA, 'digest': DIGEST}}
+        for field, value in (('sourceRevision', 'f' * 40), ('digest', 'sha256:' + 'f' * 64)):
+            forged = deepcopy(record)
+            forged['resumeOrigin'][field] = value
+            try:
+                fetch.inventory_source(forged, run, PROFILE, IMAGE)
+            except fetch.inventory.Unavailable:
+                self.fail('Inconsistent resume identity must remain fatal, not a cache miss')
+            except ValueError:
+                pass
+            else:
+                self.fail('Forged resumed source was accepted')
+        original = {key: value for key, value in record.items() if key != 'resumeOrigin'}
+        with self.assertRaises(ValueError):
+            fetch.inventory_source(original, run, PROFILE, IMAGE)
+
     def test_fetch_rejects_untrusted_consumer_before_api_access(self):
         for key, value in [('GITHUB_REF', 'refs/heads/branch'), ('GITHUB_REPOSITORY', 'fork/finite'),
+                           ('GITHUB_ACTIONS', 'false'), ('GITHUB_SHA', 'not-a-commit'),
+                           ('GITHUB_EVENT_NAME', 'pull_request'), ('GITHUB_EVENT_NAME', 'merge_group'),
+                           ('GITHUB_WORKFLOW_REF', 'closure-labs/finite/.github/workflows/build.yml@refs/heads/branch'),
                            ('GITHUB_WORKFLOW_REF', 'closure-labs/finite/.github/workflows/unknown.yml@refs/heads/main')]:
             with patch.dict(os.environ, {**environment(), key: value}, clear=True), \
-                 patch.object(fetch.publication, 'github') as api, self.assertRaises(ValueError):
+                 patch.object(fetch, 'github') as api, self.assertRaises(ValueError):
                 fetch.retrieve(IMAGE, PROFILE, Path('/tmp/never-created'), '123')
             api.assert_not_called()
 
@@ -460,7 +626,7 @@ class Inventory(unittest.TestCase):
                            ('GITHUB_REF', 'refs/heads/branch'), ('GITHUB_REPOSITORY', 'fork/finite'),
                            ('GITHUB_WORKFLOW_REF', base['GITHUB_WORKFLOW_REF'].replace('@refs/heads/main', '@refs/heads/branch'))]:
             with patch.dict(os.environ, {**base, key: value}, clear=True), \
-                 patch.object(fetch.publication, 'github') as api, self.assertRaises(ValueError):
+                 patch.object(fetch, 'github') as api, self.assertRaises(ValueError):
                 fetch.retrieve(IMAGE, PROFILE, Path('/tmp/never-created'), '123')
             api.assert_not_called()
 

@@ -16,6 +16,16 @@ SPEC.loader.exec_module(benchmark)
 
 
 class Benchmark(unittest.TestCase):
+    def test_diagnostic_benchmarks_are_on_demand(self):
+        workflows = sorted((ROOT / '.github/workflows').glob('benchmark-*.yml'))
+        self.assertTrue(workflows)
+        for path in workflows:
+            with self.subTest(workflow=path.name):
+                workflow = yaml.safe_load(path.read_text())
+                events = set(workflow.get('on', workflow.get(True)))
+                self.assertIn('workflow_dispatch', events)
+                self.assertLessEqual(events, {'workflow_dispatch', 'workflow_call'})
+
     def test_baseline_runs_seven_unchanged_shell_commands(self):
         with patch.object(benchmark.subprocess, 'run') as run:
             result, output = benchmark.measure('baseline', 'cold')

@@ -30,7 +30,8 @@ LIMITS = {name: 16 * MIB for name in (
     'image-manifest.json', 'platform-manifest.json', 'image-config.json', 'extraction.json',
     'extraction-manifest.json', 'extraction-layout.json', 'approved-baseline.json',
     'upstream-verification.json', 'database-coverage.json', 'coverage.json', 'security-result.json',
-    'runner-resources.log', 'applicability-evidence.json', 'inventory-provenance.json',
+    'runner-resources.log', 'original-security-result.json', 'reuse-provenance.json',
+    'applicability-evidence.json', 'inventory-provenance.json',
     'inventory-origin.json', 'phase-timings.json')}
 LIMITS.update({'sbom.syft.json': 256 * MIB, 'sbom.spdx.json': 256 * MIB,
                'vulnerabilities.json': 128 * MIB, 'rpm-file-evidence.json': 128 * MIB})
@@ -141,19 +142,26 @@ def require_fresh(original, policy, now=None):
 
 
 def revalidate(directory, image, profile, source, identity, policy_path):
+    policy = security.load_policy(policy_path)
+    decision_mode = policy.get('mode') == 'maintainer-decision'
     original = read_json(directory / 'security-result.json')
+    original_healthy = original.get('status') == 'pass' or (
+        decision_mode and original.get('status') == 'complete' and original.get('scannerHealth') == 'healthy')
     if (original.get('schema') != 1 or type(original['schema']) is not int
-            or original.get('status') != 'pass' or original.get('image') != image):
-        raise ValueError('Original native result is not a passing exact candidate scan')
+            or not original_healthy or original.get('image') != image):
+        raise ValueError('Original native result is not a technically healthy exact candidate scan')
     baseline = read_json(directory / 'approved-baseline.json')
     if (baseline.get('image') != image or baseline.get('profile') != profile
             or baseline.get('sourceRevision') != source or baseline.get('buildIdentity') != identity):
         raise ValueError('Original native baseline differs from candidate profile/source/current identity')
-    require_fresh(original, security.load_policy(policy_path))
+    require_fresh(original, policy)
     # This authenticates current publisher context, raw manifests and SBOM hash,
     # rechecks DB/scan freshness and reevaluates ALL findings under current policy.
     result = security.verify(directory, image, policy_path)
-    if (result.get('status') != 'pass' or result.get('image') != image
+    admitted = (result.get('status') == 'complete' and result.get('scannerHealth') == 'healthy'
+                and isinstance(result.get('admission'), dict)
+                and result['admission'].get('status') == 'covered') if decision_mode else result.get('status') == 'pass'
+    if (not admitted or result.get('image') != image
             or result.get('scannedAt') != original.get('scannedAt')):
         raise ValueError('Current native verification did not pass for this immutable candidate')
     result['policySha256'] = security.file_sha256(policy_path)

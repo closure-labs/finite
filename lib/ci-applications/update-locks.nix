@@ -20,7 +20,13 @@ pkgs.writeShellApplication {
     output_file="''${1:-}"
     before="$({ sha256sum flake.lock; [[ ! -f devenv.lock ]] || sha256sum devenv.lock; } | sha256sum | cut -d' ' -f1)"
     nix --accept-flake-config flake update
-    devenv update
+    if [[ "''${GITHUB_ACTIONS:-false}" == true ]]; then
+      # Lock updates need public inputs only; never initialize the local pass
+      # provider or resolve developer/signing credentials on a hosted runner.
+      devenv --secretspec-provider github-actions --secretspec-profile ci-options update
+    else
+      devenv update
+    fi
     for lock in flake.lock devenv.lock; do
       jq -e 'type == "object"' "$lock" >/dev/null
       if [[ "$(tail -c 1 "$lock" | od -An -tx1 | tr -d '[:space:]')" != 0a ]]; then

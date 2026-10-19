@@ -1,0 +1,267 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Finite authenticated human decision proposal envelope",
+  "description": "The controller validates packet provenance and kind-specific payloads separately. Hash the entire envelope; never add approval metadata after review.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "kind",
+    "payload"
+  ],
+  "properties": {
+    "schema": {
+      "const": 1
+    },
+    "kind": {
+      "enum": [
+        "security-findings",
+        "security-revocation",
+        "release-set"
+      ]
+    },
+    "payload": {
+      "type": "object"
+    }
+  },
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "key",
+        "profile",
+        "component",
+        "advisory",
+        "exposure",
+        "severity",
+        "cvss",
+        "knownExploited",
+        "versions",
+        "aliases",
+        "fixVersions"
+      ],
+      "properties": {
+        "key": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "profile": {
+          "enum": [
+            "finite",
+            "finite-dev"
+          ]
+        },
+        "component": {
+          "type": "string",
+          "pattern": "^(pkg:|artifact:sha256:)"
+        },
+        "advisory": {
+          "type": "string",
+          "minLength": 1
+        },
+        "exposure": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^/"
+          }
+        },
+        "severity": {
+          "enum": [
+            "Unknown",
+            "Negligible",
+            "Low",
+            "Medium",
+            "High",
+            "Critical"
+          ]
+        },
+        "cvss": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 10
+        },
+        "knownExploited": {
+          "type": "boolean"
+        },
+        "versions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "aliases": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "fixVersions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securityPayload": {
+      "type": "object",
+      "required": [
+        "profiles",
+        "findings",
+        "packet",
+        "disposition",
+        "supersedes",
+        "rationale"
+      ],
+      "properties": {
+        "profiles": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "finite",
+              "finite-dev"
+            ]
+          }
+        },
+        "packet": {
+          "type": "object",
+          "required": [
+            "reference",
+            "sha256",
+            "producer"
+          ],
+          "properties": {
+            "reference": {
+              "type": "string",
+              "pattern": "^ghcr\\.io/closure-labs/finite-decisions@sha256:[0-9a-f]{64}$"
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "producer": {
+              "type": "object",
+              "required": [
+                "repository",
+                "workflow",
+                "runId",
+                "runAttempt",
+                "headSha",
+                "artifacts"
+              ],
+              "properties": {
+                "workflow": {
+                  "enum": [
+                    "build.yml",
+                    "image-security.yml"
+                  ]
+                },
+                "runId": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "runAttempt": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "headSha": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{40}$"
+                },
+                "repository": {
+                  "const": "closure-labs/finite"
+                },
+                "artifacts": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "name",
+                      "digest"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      "name": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "digest": {
+                        "type": "string",
+                        "pattern": "^(sha256:)?[0-9a-f]{64}$"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "disposition": {
+          "enum": [
+            "accepted",
+            "rejected",
+            "revoked"
+          ]
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/finding"
+          }
+        },
+        "supersedes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "security-findings"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/securityPayload"
+          }
+        }
+      }
+    }
+  ]
+}

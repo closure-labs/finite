@@ -86,10 +86,13 @@ layout=Path(sys.argv[position+1]);output=Path(sys.argv[position+2]);output.mkdir
 image='ghcr.io/closure-labs/finite@'+json.loads((layout/'index.json').read_text())['manifests'][0]['digest']
 spec=spec_from_file_location('fixture_native',sys.argv[position]);native=module_from_spec(spec);spec.loader.exec_module(native)
 native.validate_candidate(layout,sys.argv[sys.argv.index('--profile')+1],sys.argv[sys.argv.index('--identity')+1],os.environ['GITHUB_SHA'])
-status=os.environ['TEST_NATIVE_STATUS'];code={'pass':0,'blocked':1,'scanner-error':2,'missing':0,'wrong-image':0}[status]
+status=os.environ['TEST_NATIVE_STATUS'];code={'pass':0,'blocked':1,'scanner-error':2,'missing':0,'wrong-image':0,'complete':0,'complete-unhealthy':0,'complete-legacy':0}[status]
 if status!='missing':
-    result={'schema':1,'status':'pass' if status=='wrong-image' else status,'image':image if status!='wrong-image' else 'wrong',
+    result={'schema':1,'status':'pass' if status=='wrong-image' else 'complete' if status.startswith('complete') else status,'image':image if status!='wrong-image' else 'wrong',
         'sourceType':'locally-built-unpublished','releaseEligible':False,'signatureVerified':False}
+    if status.startswith('complete'):
+        result.update(mode='upstream-maintained-risk' if status=='complete-legacy' else 'maintainer-decision',
+                      scannerHealth='unhealthy' if status=='complete-unhealthy' else 'healthy')
     (output/'security-result.json').write_text(json.dumps(result))
 sys.exit(code)
 ''')
@@ -182,6 +185,18 @@ sys.exit(code)
                 self.assertEqual(result.returncode, code, result.stderr)
                 self.assertEqual(self.result()['status'], 'blocked' if status == 'blocked' else 'scanner-error')
                 self.assertEqual(list((self.root / 'runner').iterdir()), [])
+
+    def test_healthy_maintainer_completion_remains_unsigned_nonrelease_diagnostic(self):
+        for status, expected in (('complete', 0), ('complete-unhealthy', 2), ('complete-legacy', 2)):
+            with self.subTest(status=status):
+                self.setUp()
+                self.environment['TEST_NATIVE_STATUS'] = status
+                result = self.run_wrapper()
+                self.assertEqual(result.returncode, expected, result.stderr)
+                retained = self.result()
+                self.assertFalse(retained['releaseEligible'])
+                self.assertFalse(retained['signatureVerified'])
+                self.assertEqual(retained['status'], 'complete' if expected == 0 else 'scanner-error')
 
     def test_changed_docker_image_and_stale_output_are_rejected(self):
         self.inspected[0]['Config']['Labels']['io.finite.profile'] = 'bluefin-next'

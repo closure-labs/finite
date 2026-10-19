@@ -5,7 +5,7 @@
     (with pkgs; [bash coreutils cosign file git gh jq ripgrep skopeo])
     ++ [(pkgs.python3.withPackages (packages: [packages.pyyaml]))];
   scannerPackages =
-    (with pkgs; [bash coreutils cosign gh jq skopeo syft grype umoci])
+    (with pkgs; [bash coreutils cosign gh jq oras skopeo syft grype umoci])
     ++ [(pkgs.python3.withPackages (packages: [packages.pyyaml]))];
 in {
   ci = pkgs.mkShell {packages = ciPackages;};

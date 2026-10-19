@@ -74,6 +74,21 @@ in {
     python3 tests/ci/active-variants.py
     python3 tests/ci/release-selection.py
     python3 tests/ci/release-request.py
+    python3 tests/ci/security-decisions.py
+    python3 tests/ci/decision-authority.py
+    python3 tests/ci/decision-revocation.py
+    python3 tests/ci/decision-check.py
+    python3 tests/ci/decision-controller.py
+    python3 tests/ci/decision-packets.py
+    python3 tests/ci/decision-health.py
+    python3 tests/ci/legacy-release-boundary.py
+    python3 tests/ci/security-admission.py
+    python3 tests/ci/security-integrations.py
+    python3 tests/ci/release-set.py
+    python3 tests/ci/prepare-release-set.py
+    python3 tests/ci/reconcile-decisions.py
+    python3 tests/ci/verify-attestation-subject.py
+    python3 tests/ci/execute-release-set.py
     python3 tests/ci/release-recovery.py
     python3 tests/ci/image-identity.py
     python3 tests/ci/applicability-evidence.py

@@ -144,6 +144,7 @@ class Reader(unittest.TestCase):
         self.start = self.root / 'start.json'
         self.output = self.root / 'benchmark.json'
         save(self.start, {'monotonicSeconds': 0})
+        save(self.root / 'automation/security/image-policy.json', {'schema': 1, 'mode': 'desktop-critical-only'})
         self.env = {**environment(), 'GRYPE_DB_CACHE_DIR': str(self.db), 'RESTORED_DB_KEY': KEY}
 
     def prepare_db(self):
@@ -153,7 +154,7 @@ class Reader(unittest.TestCase):
                          'transportLimits': dict(benchmark.TRANSPORT_LIMITS),
                          'cacheKey': KEY, 'database': DB, 'transport': benchmark.transport(self.db)})
 
-    def invoke(self, lane, inventory_miss=False, phase_failure=False, mode='all-lanes'):
+    def invoke(self, lane, inventory_miss=False, phase_failure=False, mode='all-lanes', scan_result=None):
         def scan(command, **kwargs):
             self.child = kwargs['env']
             self.assertEqual(command[:2], ['bash', 'scripts/bluebuild/security-run.sh'])
@@ -161,9 +162,11 @@ class Reader(unittest.TestCase):
             phases = [{'phase': p, 'seconds': 1, 'success': not phase_failure}
                       for p in ('database-update', 'database-coverage', 'vulnerability-scan', 'policy-evaluation')]
             save(evidence / 'phase-timings.json', {'inventoryReused': lane == 'inventory-only' and not inventory_miss, 'phases': phases})
-            save(evidence / 'security-result.json', {'status': 'pass', 'image': IMAGE,
+            result = {'status': 'pass', 'image': IMAGE,
                 'policySha256': INFO['policySha256'], 'scanner': '0.120.1', 'scannedAt': STAMP,
-                'database': {'status': DB, 'providers': {'fedora': {'captured': STAMP}}}})
+                'database': {'status': DB, 'providers': {'fedora': {'captured': STAMP}}}}
+            result.update(scan_result or {})
+            save(evidence / 'security-result.json', result)
             save(evidence / 'inventory-provenance.json', {'image': IMAGE, 'generation': {'fixture': 'generation'},
                                                         'platformDigest': 'sha256:' + 'a' * 64})
             save(evidence / 'inventory-origin.json', {'originRun': 50, 'image': IMAGE})
@@ -187,6 +190,23 @@ class Reader(unittest.TestCase):
                 self.assertEqual(self.child['FINITE_GRYPE_DB_CACHE'], str(lane == 'db-only').lower())
                 self.assertFalse(report['releaseEligibilityEstablished'])
                 self.assertEqual(report['database'], DB)
+
+    def test_complete_healthy_benchmark_is_diagnostic_even_without_human_acceptance(self):
+        save(self.root / 'automation/security/image-policy.json', {'schema': 1, 'mode': 'maintainer-decision'})
+        self.invoke('baseline', scan_result={'status': 'complete', 'mode': 'maintainer-decision',
+                                            'scannerHealth': 'healthy', 'admission': {'status': 'review-required'}})
+        report = json.loads(self.output.read_text())
+        self.assertEqual(report['status'], 'success')
+        self.assertEqual(report['scannerStatus'], 'complete')
+        self.assertFalse(report['humanAdmissionEvaluated'])
+        self.assertFalse(report['releaseEligibilityEstablished'])
+
+    def test_new_mode_rejects_pass_laundering_missing_health_and_wrong_scanner_mode(self):
+        save(self.root / 'automation/security/image-policy.json', {'schema': 1, 'mode': 'maintainer-decision'})
+        healthy = {'status': 'complete', 'mode': 'maintainer-decision', 'scannerHealth': 'healthy'}
+        for change in ({'status': 'pass'}, {'status': 'scanner-error'}, {'scannerHealth': 'unknown'}, {'mode': 'desktop-critical-only'}):
+            with self.subTest(change=change), self.assertRaisesRegex(ValueError, 'Fresh scan failed'):
+                self.invoke('baseline', scan_result={**healthy, **change})
 
     def test_baseline_and_inventory_cannot_receive_a_database(self):
         self.prepare_db()

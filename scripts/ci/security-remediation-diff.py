@@ -13,7 +13,7 @@ SPEC = importlib.util.spec_from_file_location('security_policy', ROOT / 'scripts
 security = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(security)
 SEVERITIES = ['Unknown', 'Negligible', 'Low', 'Medium', 'High', 'Critical']
-DISPOSITIONS = ('blocked', 'exception', 'advisory')
+DISPOSITIONS = ('blocked', 'exception', 'advisory', 'observed')
 
 
 def read(path):
@@ -61,13 +61,22 @@ def previous_dispositions(ledger, previous):
             dispositions = [entry['disposition']]
         if dispositions is not None:
             if (not isinstance(dispositions, list) or not dispositions or
-                    any(value not in DISPOSITIONS for value in dispositions)):
+                    any(value not in DISPOSITIONS for value in dispositions)
+                    or ('observed' in dispositions and not (ledger.get('status') == 'complete'
+                        and ledger.get('mode') == 'maintainer-decision' and ledger.get('scannerHealth') == 'healthy'))):
                 raise ValueError('Invalid baseline finding dispositions')
             result[(entry['component'], entry['advisory'])].update(dispositions)
     for key, values in result.items():
         if not values:
-            values.add('blocked' if ledger['status'] == 'blocked' else 'unknown')
+            values.add('blocked' if ledger['status'] == 'blocked' else 'observed' if ledger['status'] == 'complete' else 'unknown')
     return {key: sorted(values) for key, values in result.items()}
+
+
+
+def completed_native(result):
+    if result.get('mode') == 'maintainer-decision':
+        return result.get('status') == 'complete' and result.get('scannerHealth') == 'healthy'
+    return result.get('status') in ('pass', 'blocked')
 
 
 def compare(ledger, result, image, policy, policy_sha256, now=None):
@@ -77,7 +86,7 @@ def compare(ledger, result, image, policy, policy_sha256, now=None):
         raise ValueError('Comparison requires a different, explicitly expected immutable image')
     if (type(ledger.get('schema')) is not int or type(result.get('schema')) is not int or
             ledger.get('schema') != 1 or result.get('schema') != 1 or
-            ledger.get('status') not in ('pass', 'blocked') or result.get('status') not in ('pass', 'blocked')):
+            not completed_native(ledger) or not completed_native(result)):
         raise ValueError('Comparison requires completed native policy results')
     if result['policySha256'] != policy_sha256:
         raise ValueError('Result was not evaluated against the current reviewed policy')
@@ -136,22 +145,27 @@ def compare(ledger, result, image, policy, policy_sha256, now=None):
             raise ValueError('Source concern disposition contradicts Critical-only policy')
     if (result['status'] == 'blocked') != bool(blocked or holds):
         raise ValueError('Result status contradicts its blocking findings or source release blockers')
-    current = findings([*result['blocked'], *result['exceptionsApplied'], *advisory_entries])
+    maintainer = policy.get('mode') == 'maintainer-decision'
+    if maintainer and (result['status'] != 'complete' or any(result.get(key) for key in ('blocked', 'exceptionsApplied', 'advisories', 'releaseBlockers'))):
+        raise ValueError('Maintainer comparison requires raw observations without automatic dispositions')
+    current = findings(result.get('observations')) if maintainer else findings([*result['blocked'], *result['exceptionsApplied'], *advisory_entries])
     previous_groups = previous_dispositions(ledger, previous)
     explicit_previous = {(entry['component'], entry['advisory']) for entry in ledger['findings']
                          if 'dispositions' in entry or 'disposition' in entry}
     for key, entry in current.items():
-        entry['dispositions'] = [name for name, group in [('blocked', blocked), ('exception', waived),
+        entry['dispositions'] = ['observed'] if maintainer else [name for name, group in [('blocked', blocked), ('exception', waived),
                                                          ('advisory', advisories)]
                                  if key in group]
     persistent = sorted(previous.keys() & current.keys())
     return {'schema': 1, 'status': 'comparison-complete', 'baselineImage': ledger['image'],
+            **({'scannerHealth': 'healthy', 'admissionStatus': 'not-evaluated', 'releaseEligible': False} if maintainer else {}),
             'image': image, 'scannedAt': result['scannedAt'], 'scanStatus': result['status'],
             'baselinePolicySha256': ledger['policySha256'], 'policySha256': policy_sha256,
             'policyChanged': ledger['policySha256'] != policy_sha256,
             'blockingBasis': result.get('blockingBasis'),
                 'releaseBlockers': holds, 'trackedReleaseConcerns': tracked,
-            'scope': 'Exact component/advisory pairs observed in blocking findings, reviewed exceptions, and advisories. Policy disposition changes do not resolve findings.',
+            'scope': ('Exact component/advisory observations. Human admission is not evaluated.' if maintainer else
+                      'Exact component/advisory pairs observed in blocking findings, reviewed exceptions, and advisories. Policy disposition changes do not resolve findings.'),
             'counts': {'blockingRecords': sum(entry['occurrences'] for entry in blocked.values()),
                        'exceptionRecords': sum(entry['occurrences'] for entry in waived.values()),
                        'advisoryRecords': sum(entry['occurrences'] for entry in advisories.values()),

@@ -61,9 +61,11 @@ def rpm_identity(artifact):
 
 
 def report(sbom, result, extraction, image, sbom_hash):
+    maintainer = result.get('mode') == 'maintainer-decision'
+    completed = (result.get('status') == 'complete' and result.get('scannerHealth') == 'healthy') if maintainer else result.get('status') in ('pass', 'blocked')
     if (not security.IMAGE.fullmatch(image) or result.get('image') != image
             or type(result.get('schema')) is not int or result['schema'] != 1
-            or result.get('status') not in ('pass', 'blocked') or not isinstance(result.get('blocked'), list)
+            or not completed or not isinstance(result.get('blocked'), list)
             or len(result['blocked']) > 16384 or not isinstance(result.get('releaseBlockers', []), list)):
         raise ValueError('Summary requires a completed exact immutable native result')
     if (type(extraction.get('schema')) is not int or extraction['schema'] != 1
@@ -108,8 +110,13 @@ def report(sbom, result, extraction, image, sbom_hash):
             raise ValueError('Source concern disposition contradicts Critical-only policy')
     elif not isinstance(tracked, list):
         raise ValueError('Invalid tracked source concerns')
-    blocked = result['blocked']
-    if (result['status'] == 'blocked') != bool(blocked or result.get('releaseBlockers')):
+    if maintainer and (any(result.get(key) for key in ('blocked', 'exceptionsApplied', 'advisories', 'releaseBlockers'))
+                       or not isinstance(result.get('observations'), list) or len(result['observations']) > 16384):
+        raise ValueError('Maintainer summary requires raw observations without automatic dispositions')
+    blocked = [{**finding, 'reason': 'human-admission-not-evaluated',
+                'severity': finding.get('admissionSeverity', finding.get('severity'))}
+               for finding in result['observations']] if maintainer else result['blocked']
+    if not maintainer and (result['status'] == 'blocked') != bool(blocked or result.get('releaseBlockers')):
         raise ValueError('Native result status contradicts findings/source holds')
     wanted, wanted_paths, grouped = set(), set(), {}
     for finding in blocked:
@@ -235,7 +242,9 @@ def report(sbom, result, extraction, image, sbom_hash):
         findings.append(entry)
     return {'schema': 1, 'status': 'triage-only', 'image': image, 'nativePolicyStatus': result['status'],
             'scannedAt': result['scannedAt'], 'policySha256': result['policySha256'], 'sbomSha256': sbom_hash,
-            'blockingRecords': len(blocked), 'blockingPairs': len(findings), 'releaseBlockers': result.get('releaseBlockers', []),
+            'blockingRecords': 0 if maintainer else len(blocked), 'blockingPairs': 0 if maintainer else len(findings),
+            **({'scannerHealth': 'healthy', 'admissionStatus': 'not-evaluated',
+                'observationRecords': len(blocked), 'observationPairs': len(findings)} if maintainer else {}), 'releaseBlockers': result.get('releaseBlockers', []),
             'blockingBasis': basis, 'trackedReleaseConcerns': tracked, 'policyMode': result.get('mode', 'fixable-severity'),
             'findings': findings, 'focusedRpmPackages': list(package_files.values()),
             'releaseEligible': False, 'dispositionsGranted': [], 'newScanPerformed': False,

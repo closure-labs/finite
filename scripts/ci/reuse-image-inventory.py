@@ -15,6 +15,7 @@ import resource
 import subprocess
 import sys
 import tempfile
+import time
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -33,8 +34,38 @@ inventory = module('inventory_evidence', ROOT / 'scripts/ci/inventory-evidence.p
 publication = reuse.publication
 
 
+def github(path, paginated=False):
+    """Retry bounded metadata GETs; authentication and invalid evidence stay fatal."""
+    command = ['gh', 'api']
+    if paginated:
+        command.extend(['--paginate', '--slurp'])
+    command.append('repos/' + publication.REPOSITORY + '/' + path)
+    for attempt in range(3):
+        try:
+            result = subprocess.run(command, capture_output=True, text=True, timeout=35, check=True)
+        except subprocess.CalledProcessError as error:
+            # gh reports HTTP status in stderr; do not retry authorization,
+            # missing artifacts, malformed JSON or failed evidence checks.
+            status = re.search(r'HTTP ([0-9]{3})\b', error.stderr or '')
+            if not status or int(status[1]) not in (408, 429, 500, 502, 503, 504):
+                print('GitHub inventory metadata request failed: ' +
+                      (status[0] if status else f'gh exit {error.returncode}'), file=sys.stderr)
+                raise
+            if attempt == 2:
+                print('GitHub inventory metadata retry budget exhausted: ' + status[0], file=sys.stderr)
+                raise
+        except subprocess.TimeoutExpired:
+            if attempt == 2:
+                raise
+        else:
+            return json.loads(result.stdout)
+        delay = 2 ** (attempt + 1)
+        print(f'GitHub inventory metadata transport failed; retry {attempt + 1}/2 in {delay}s', file=sys.stderr)
+        time.sleep(delay)
+
+
 def hosted():
-    workflows = {'build.yml': {'workflow_dispatch', 'push'},
+    workflows = {'build.yml': {'workflow_dispatch', 'push', 'schedule'},
                  'image-security.yml': {'workflow_dispatch', 'schedule'},
                  'benchmark-security-reuse.yml': {'workflow_dispatch'},
                  'release.yml': {'workflow_dispatch'}}
@@ -50,6 +81,37 @@ def hosted():
         raise ValueError('Inventory reuse requires a trusted hosted main image consumer')
 
 
+def native_inventory_health(result, policy):
+    """Recognize healthy inventory producers without accepting their findings."""
+    return result.get('status') == 'pass' or (
+        policy.get('mode') == 'maintainer-decision' and result.get('mode') == 'maintainer-decision'
+        and result.get('status') == 'complete' and result.get('scannerHealth') == 'healthy')
+
+
+def inventory_source(record, run, profile, image):
+    """Original build provenance only; a resumed transport is a safe cache miss."""
+    if (not isinstance(record, dict) or record.get('profile') != profile
+            or record.get('revision') != run.get('head_sha')
+            or record.get('qualificationMode') != 'enforce' or record.get('publish') is not True):
+        raise ValueError('Inventory producer build context differs from its run')
+    source = record.get('sourceRevision', record.get('revision'))
+    if not isinstance(source, str) or not publication.SHA.fullmatch(source):
+        raise ValueError('Inventory source revision is malformed')
+    if 'resumeOrigin' in record:
+        origin = record['resumeOrigin']
+        if (not isinstance(origin, dict) or origin.get('sourceRevision') != source
+                or origin.get('digest') != image.split('@')[1]
+                or type(origin.get('runId')) is not int or origin['runId'] < 1
+                or type(origin.get('runAttempt')) is not int or origin['runAttempt'] < 1):
+            raise ValueError('Inventory resume context has inconsistent original source/image identity')
+        # origin_metadata intentionally authenticates original build steps;
+        # resumed runs skip those steps. Do not infer that proof from JSON.
+        raise inventory.Unavailable('Resumed transport has no independently authenticated original inventory chain; regenerate inventory')
+    if source != run['head_sha']:
+        raise ValueError('Original inventory source revision differs from its build run')
+    return source
+
+
 def retrieve(image, profile, output, origin_run=None):
     hosted()
     if not reuse.security.IMAGE.fullmatch(image) or profile not in reuse.security.PROFILES:
@@ -61,16 +123,16 @@ def retrieve(image, profile, output, origin_run=None):
             or any(part.is_symlink() for part in (output, *output.parents))):
         raise ValueError('Inventory output must be new with no symlinked parents')
     if origin_run:
-        runs = [publication.github('actions/runs/' + origin_run)]
+        runs = [github('actions/runs/' + origin_run)]
     else:
         # Bounded discovery: never walk all history or download every SBOM.
-        runs = publication.github('actions/workflows/build.yml/runs?branch=main&status=completed&per_page=20')['workflow_runs']
+        runs = github('actions/workflows/build.yml/runs?branch=main&status=completed&per_page=20')['workflow_runs']
     for run in runs:
         run_id = str(run['id'])
         attempt = run.get('run_attempt')
         if type(attempt) is not int or attempt < 1:
             raise ValueError('Invalid inventory producer attempt')
-        artifacts = [item for page in publication.github(f'actions/runs/{run_id}/artifacts?per_page=100', True)
+        artifacts = [item for page in github(f'actions/runs/{run_id}/artifacts?per_page=100', True)
                      for item in page['artifacts']]
         images = [item for item in artifacts if item.get('name') == f'image-{profile}-{run_id}-{attempt}']
         scans = [item for item in artifacts if item.get('name') == f'security-{profile}-{run_id}-{attempt}']
@@ -97,14 +159,16 @@ def retrieve(image, profile, output, origin_run=None):
             if origin_run:
                 raise inventory.Unavailable('Origin contains a different immutable image')
             continue
-        jobs = [item for page in publication.github(f'actions/runs/{run_id}/attempts/{attempt}/jobs?per_page=100', True)
+        record = json.loads(files[f'{profile}-publication.json'])
+        try:
+            source_revision = inventory_source(record, run, profile, image)
+        except inventory.Unavailable:
+            if origin_run:
+                raise
+            continue
+        jobs = [item for page in github(f'actions/runs/{run_id}/attempts/{attempt}/jobs?per_page=100', True)
                 for item in page['jobs']]
         artifact, _, build_job, security_job = reuse.metadata(run, jobs, artifacts, profile, run_id)
-        record = json.loads(files[f'{profile}-publication.json'])
-        if (record.get('profile') != profile or record.get('sourceRevision', record.get('revision')) != run['head_sha']
-                or record.get('qualificationMode') != 'enforce' or record.get('publish') is not True
-                or 'resumeOrigin' in record):
-            raise ValueError('Inventory producer build context differs from its run')
         output.parent.mkdir(parents=True, exist_ok=True)
         try:
             with tempfile.TemporaryDirectory(prefix='.inventory-reuse-', dir=output.parent) as temporary:
@@ -118,12 +182,12 @@ def retrieve(image, profile, output, origin_run=None):
                     reuse.extract(archive, artifact, staging)
                 baseline = reuse.read_json(staging / 'approved-baseline.json')
                 result = reuse.read_json(staging / 'security-result.json')
-                if (result.get('status') != 'pass' or result.get('image') != image
+                policy = reuse.security.load_policy(ROOT / 'automation/security/image-policy.json')
+                if (not native_inventory_health(result, policy) or result.get('image') != image
                         or baseline.get('image') != image or baseline.get('profile') != profile
-                        or baseline.get('sourceRevision') != run['head_sha']
+                        or baseline.get('sourceRevision') != source_revision
                         or baseline.get('buildIdentity') != record.get('buildIdentity')):
                     raise ValueError('Native inventory producer does not match its immutable build')
-                policy = reuse.security.load_policy(ROOT / 'automation/security/image-policy.json')
                 identity = inventory.verify(staging, image, reuse.security,
                                             policy.get('mode') in reuse.security.RISK_MODES)
                 ready = Path(temporary) / 'inventory'
