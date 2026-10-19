@@ -1,5 +1,9 @@
 # Desktop security validation
 
+> Historical record: October 12–13 security validation plan. For current operations, use
+> [CI and releases](ci-and-releases.md) and [security review](security-review.md).
+> See [reports](reports.md) for dated evidence and related work.
+
 Historical plan: the later owner-approved [two-variant upstream kernel policy](upstream-kernel-variants.md) supersedes kernel replacement, ZFS removal and Next-variant instructions below. Preserve these observations as historical evidence; do not dispatch retired-variant work.
 
 The active [release eligibility sequence](release-eligibility-sequence.md) starts

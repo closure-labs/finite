@@ -1,5 +1,9 @@
 # Workstation qualification and release evidence
 
+Start with [CI and releases](ci-and-releases.md) for the operating sequence and
+[security review](security-review.md) for findings decisions. This reference
+describes exact-image boot coverage, retained receipts and recovery.
+
 ## Rollout policy
 
 Candidate build, boot qualification and channel promotion are separate jobs.
@@ -18,48 +22,13 @@ The assembled image must include a nonempty kernel and matching initramfs with
 the final image check this before qualification. Both active variants preserve
 the kernel and modules from the approved upstream Bluefin image.
 
-The September 22, 2026 `finite-dev-next` incident exposed the former shadow-mode
-gap: the VM qualification failed at MOK management, but publication proceeded with
-`accepted: false`. The image also lacked its replacement kernel's initramfs,
-causing encrypted workstations to panic before LUKS unlock. A green historical
-workflow alone is therefore insufficient evidence of a successful boot; inspect
-the acceptance and promotion records.
+`automation/qualification-recovery.json` can bind an explicit signed predecessor
+to an unbootable public digest. Recovery qualifies that predecessor's upgrade
+and rollback against the exact replacement candidate, alongside a fresh install.
+Promotion verifies the recorded public digest and recovery selection again.
 
-`automation/qualification-recovery.json` records an explicit signed predecessor
-for an unbootable public digest. It applies only to the named profile while that
-exact digest remains published, and always forces qualification. It currently
-has no active overrides; the retired Next entries remain documented below.
-The September 22
-next-kernel images historically used their signed September 18 predecessors; the DX predecessor
-matches the pinned working workstation deployment. Historical signatures do not
-constitute VM acceptance: the selected predecessor must boot, upgrade to the new
-candidate, and roll back in the current run, alongside a fresh candidate install.
-
-Publication evidence records `publishedDigest` for the image being replaced and
-`previousDigest` for the predecessor actually tested, plus `recoveryReason`.
-Promotion rejects a changed public digest, altered recovery selection, or missing
-matching Secure Boot acceptance. Once a replacement is promoted, the old entry
-no longer applies and normal predecessor selection resumes.
-
-Historical predecessor VMs prepare Nix and home SELinux policy once, before the
-old image's Nix initialization service. Preparing it at SSH startup was too late:
-the old parent substitution made `semanage` reject the nested Nix equivalence,
-preventing Nix from starting. Both native policy setup and the historical fixture
-now correct home substitutions after policy installation and before adding the
-Nix equivalence. Preparation errors remain fatal and retain their original cause.
-
-The predecessor fixture does not repeat this repair after upgrade or rollback.
-Its test user also explicitly trusts the approved `valkyrie00/bbrew` tap and sets
-the fifteen-minute activation timeout in preserved `customize.nix`; the historical
-scaffolds predate those defaults. Fresh candidate VMs receive none of these
-compatibility settings and must pass using the image's own setup. Kernel,
-initramfs, Secure Boot, signature, upgrade and rollback checks remain unchanged.
-
-The first combined recovery run after these fixes were initially introduced
-passed all four fresh-install tests, including both next images on kernel
-`7.2.7-300.fc45.x86_64`. Historical predecessor preparation then failed at the
-ordering, tap-trust and activation-timeout issues above. No promotion occurred;
-fresh VM success alone is not complete upgrade/rollback acceptance.
+Earlier recovery incidents and fixture changes are retained in
+[qualification recovery history](bluebuild/qualification-recovery-history.md).
 
 ## What is qualified
 
@@ -160,6 +129,10 @@ published release records remain evidence of those dated images.
 
 ## Durable releases
 
+The [release-set coordinator](release-set-controller.md) prepares both profiles
+for one exact-product decision. The existing per-channel path below remains
+available during the [release transition](ci-maintainer-decisions.md#bootstrap-and-cutover).
+
 Run **Prepare qualified release** on main with an ISO run, a Build Finite run,
 the matching channel, and a new `finite-...` release tag. Both source runs must
 be successful main-branch runs at the release workflow's source revision. The
@@ -180,9 +153,9 @@ published evidence for the lifetime of the release. The bundle contains:
 The provenance is Finite release evidence, not a claim of independently
 verified SLSA build provenance. The SBOM describes the image, not every package
 users may subsequently install through Home Manager or other package managers.
-Scanner outages are recorded separately from findings. Findings are advisory;
-document accepted exceptions with an owner, rationale and review date in the
-release notes before publishing.
+Scanner health and human findings admission are separate requirements. Retain
+the authenticated decision and its rationale with the release evidence; see
+[security review](security-review.md) for approval and activation status.
 
 ISOs above the release asset size budget are split into numbered parts. Verify
 the signature and all checksums before reconstructing the image:

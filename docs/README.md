@@ -1,22 +1,39 @@
 # Finite guides
 
-Start with [Install and update](installation.md), then use
-[Configure your environment](configuration.md) to choose apps and personalize
-your desktop.
+Install your desktop, choose your apps, and keep your environment up to date.
+Start with [Install and update](installation.md), then
+[Configure your environment](configuration.md).
 
-| I want to… | Read this |
+## Use Finite
+
+| I want to… | Guide |
 | --- | --- |
-| Install Finite or update the system | [Install and update](installation.md) |
-| Choose roles, add packages or change settings | [Configure your environment](configuration.md) |
-| Understand Nix, Flatpak and Homebrew packages | [Application sources](application-sources.md) |
+| Install, update or roll back | [Install and update](installation.md) |
+| Choose apps, roles and personal settings | [Configure your environment](configuration.md) |
+| Understand Nix, Flatpak and Homebrew | [Application sources](application-sources.md) |
 | Diagnose a problem | [Troubleshooting](troubleshooting.md) |
-| Set up an XPS 13 9350 | [Dell hardware guide](dell-xps-9350.md) |
-| Check the Dell kernel and module signatures | [Secure Boot checks](dell-xps-9350-secure-boot.md) |
-| Work on recipes or Home Manager modules | [Development](development.md) |
-| Build, sign and release images | [CI and releases](ci-and-releases.md) |
-| Qualify workstations and retain release evidence | [Workstation qualification](workstation-qualification.md) |
-| Review desktop vulnerability decisions | [Desktop risk policy](desktop-risk-policy.md) |
-| Review CI reliability and optimization evidence | [CI optimization review](ci-optimization-review.md) |
-| Understand priorities and build sequence | [Daily-driver roadmap](roadmap.md) |
+| Set up a Dell XPS 13 9350 | [Hardware guide](dell-xps-9350.md) |
 | See changes by version | [Changelog](../CHANGELOG.md) |
-| Review the two-channel 0.8.1 release | [v0.8.1 release results](v0.8.1-release-results.md) |
+
+## Develop and maintain
+
+| I want to… | Guide |
+| --- | --- |
+| Change recipes, modules or automation | [Develop Finite](development.md) |
+| Understand builds, signing and publication | [CI and releases](ci-and-releases.md) |
+| Review findings and approve a decision | [Security review](security-review.md) |
+| Configure CL Decider and reviewer access | [Maintainer decision App](maintainer-decision-app.md) |
+| Qualify an image and retain release evidence | [Workstation qualification](workstation-qualification.md) |
+| Understand current priorities | [Roadmap](roadmap.md) |
+
+## Technical references and reports
+
+Use the [security decision contracts](automation/security-decisions.md),
+[release coordinator](release-set-controller.md) and
+[SBOM reference format](automation/sbom-reference-v1.md) when working on
+publication controls. Hardware details include
+[Secure Boot verification](dell-xps-9350-secure-boot.md) and
+[upstream kernel preservation](upstream-kernel-variants.md).
+
+The [reports index](reports.md) collects release receipts, measurements, incident
+reviews and historical plans, with dates and scope for each.

@@ -1,5 +1,9 @@
 # Measured CI rollout
 
+> Historical record: October 14 CI rollout plan. For current operations, use
+> [CI and releases](ci-and-releases.md) and [security review](security-review.md).
+> See [reports](reports.md) for dated evidence and related work.
+
 The review branch has passed the 27-run cache experiment and all four diagnostic
 Secure Boot qualifications. These receipts validate the installer and test code;
 they cannot authorize production promotion or populate production reuse. The

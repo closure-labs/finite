@@ -1,3 +1,7 @@
+> Historical record: October 12–13 desktop risk analysis and earlier policy modes. For current operations, use
+> [CI and releases](ci-and-releases.md) and [security review](security-review.md).
+> See [reports](reports.md) for dated evidence and related work.
+
 > Superseding clarification: Critical scanner matches alone are nonblocking
 > advisories. Release blocking requires a reviewed, exact-candidate desktop
 > exploitability record including SELinux analysis. Historical counts below

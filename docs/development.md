@@ -98,19 +98,10 @@ Run standard and developer acceptance tests for image or installer changes. Vali
 graphics, PipeWire camera, Espanso, suspend/resume and authentication separately
 on the target workstation, retaining its previous deployment.
 
-## Verified BlueBuild baseline
+## Go deeper
 
-| Check | Evidence |
-| --- | --- |
-| Four signed sandbox images and final-image assertions | [Build 34007974907](https://github.com/closure-labs/finbox/actions/runs/34007974907) |
-| Four images built with read-only publication permissions | [Validation 33999999603](https://github.com/closure-labs/finbox/actions/runs/33999999603) |
-| Generic ISO and complete UEFI acceptance | [ISO](https://github.com/closure-labs/finbox/actions/runs/34005801360), [VM](https://github.com/closure-labs/finbox/actions/runs/34006462352) |
-| Next-kernel ISO and complete UEFI acceptance | [ISO](https://github.com/closure-labs/finbox/actions/runs/34006463272), [VM](https://github.com/closure-labs/finbox/actions/runs/34007158009) |
-
-Both VM runs passed first boot, Nix/SELinux, Home Manager, signature rejection,
-updating, persistence and rollback. The hosted AMD processors report the
-inherited `mcelog` diagnostic service as unsupported. Physical hardware checks
-form a separate acceptance step.
-
-The upstream reference revisions used for this implementation are recorded in
-[reference-revisions.json](bluebuild/reference-revisions.json).
+Use [CI and releases](ci-and-releases.md) for change selection, signing and
+publication, [security review](security-review.md) for human findings decisions,
+and [workstation qualification](workstation-qualification.md) for exact-image
+acceptance and release evidence. The [reports index](reports.md) retains dated
+measurements and the early BlueBuild integration baseline.

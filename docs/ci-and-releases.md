@@ -3,6 +3,10 @@
 BlueBuild builds the two active recipes against approved Bluefin and Bluefin DX
 `stable` digests committed as `image-version: stable@sha256:…`. Each profile publishes independently to `ghcr.io/closure-labs/finite`.
 
+For human findings decisions, start with [security review](security-review.md).
+[Implementation status](ci-maintainer-decisions.md#bootstrap-and-cutover) tracks
+the one-time policy activation and release transition.
+
 ## Build and validate
 
 [Build Finite](https://github.com/closure-labs/finite/actions/workflows/build.yml)
@@ -146,10 +150,9 @@ promotion. The `qualify` dispatch input bypasses reuse.
 See [workstation qualification](workstation-qualification.md) for enforcement,
 upstream kernel/module preservation and durable release bundles.
 
-The active channels are `finite` and `finite-dev`; retired Next variants are
-rejected by current selectors. Historical Next releases and dated audit records
-remain available. The kernel-update workflow is retired because kernel and
-module updates now arrive through authenticated upstream image updates.
+The active channels are `finite` and `finite-dev`. Kernel and module updates
+arrive together through authenticated upstream image updates. See the
+[upstream preservation contract](upstream-kernel-variants.md) for details.
 
 ## Bluefin updates and recovery
 
@@ -167,7 +170,7 @@ protected merge-queue integration. A successful short resolution job records the
 observed digests and check time in its summary and a 14-day evidence artifact,
 independently of the longer PR validation job.
 
-A separate job reconciles all five public tags against the approved digests on
+A separate job reconciles all three public channel tags against the approved digests on
 main, even if upstream resolution or PR validation fails. Missing tags, a wrong
 base or profile, stale or missing image-input identity, and divergent
 `finite`/`latest` aliases require recovery.
@@ -194,13 +197,13 @@ alerts during a platform-wide Actions outage. The daily full build remains at
 To inspect state locally without publishing or dispatching workflows:
 
 ```bash
-nix develop --accept-flake-config --command python3 scripts/ci/bluefin-upstream.py reconcile
+nix develop --file lib/ci-tools.nix shell --command python3 scripts/ci/bluefin-upstream.py reconcile
 ```
 
 To recover approved channels manually:
 
 ```bash
-nix develop --accept-flake-config --command gh workflow run build.yml --ref main -f reconcile=true
+gh workflow run build.yml --ref main -f reconcile=true
 ```
 
 ## Image signing
@@ -284,7 +287,7 @@ JSON output. Audit the live repository from a checkout with GitHub CLI
 access:
 
 ```bash
-nix run --accept-flake-config .#repository-security-audit
+nix shell --file lib/ci-tools.nix ci-repository-security-audit --command finite-repository-security-audit
 ```
 
 The daily/manual **Audit repository security policy** workflow runs this same
@@ -300,8 +303,12 @@ Review the retained JSON result and rotate the App private key periodically.
 
 ## Hosted diagnostic checks
 
-Before these workflows reach main, the registered **Benchmark image tool setup**
-workflow can run at a review branch with `validation=cache-lanes`. The same entry
+All six benchmark workflows run on demand. Use them for a specific diagnostic
+or a measured comparison, with the tested inputs and results recorded. Daily
+production builds and published-image audits provide the regular coverage.
+
+The **Benchmark image tool setup** workflow can run at a review branch with
+`validation=cache-lanes`. The same entry
 point accepts `validation=qualification` with exact signed candidate/predecessor
 digests, matching profile/channel, build identity and source revision. This
 diagnostic mode runs fresh Secure Boot installation, upgrade/rollback and desktop
@@ -370,8 +377,9 @@ by these explicit task selections. Do not put private values in this manifest.
 image tasks require an immutable `IMAGE_REFERENCE`. They do not execute as
 part of ordinary CI checks or developer shell initialization.
 
-Use the [measured rollout sequence](ci-rollout.md) to seed source caches and
-exercise one-channel ISO preservation after the protected main merge.
+The [October 15 reuse results](new-os-reuse-results.md#production-activation)
+record active reuse settings and rollback commands. Earlier cache experiments
+are indexed under [reports](reports.md#releases-and-measurements).
 
 ## Update reliability and measurement
 
@@ -405,26 +413,29 @@ baseline, confirmed causes, current bottlenecks and ranked follow-up work.
 
 ## Image vulnerability gate
 
-`automation/security/image-policy.json` blocks fixable High/Critical advisories
-and known-exploited vulnerabilities. Native Syft inventory must identify the
-exact image digest and a substantial RPM inventory. Bluefin-to-Fedora matching
-requires the inventoried `fedora-release-common` major version as proof.
-Grype database and Fedora/KEV feeds must be at most 48 hours old; promotion
-requires evidence at most 24 hours old and evaluates the current policy again.
-Scanner errors, incomplete inventories and expired evidence block publication.
+Native Syft inventory and Grype results bind each scan to an immutable image
+and profile. The checked policy requires a substantial RPM inventory, verified
+Fedora release identity, current Fedora/KEV coverage and a healthy scanner.
+Databases and feeds must be at most 48 hours old; publication evidence must be
+at most 24 hours old. Signing and promotion verify current evidence again.
 
-Exceptions require a reviewed exact digest, component and advisory, justification,
-reviewer, approval date and expiry within 30 days. They are committed changes,
-never a workflow input. The scheduled **Audit published image security** workflow
-rescans both active public channels daily and can also run manually. It reports
-new vulnerabilities without automatically replacing or rolling back an image.
-Release preparation runs a fresh enforcing scan of its qualified digest.
+In `maintainer-decision` mode, publication also requires authenticated human
+acceptance of the findings. New or worsened risk opens a decision PR for a
+Super Admin; covered findings continue unattended. The
+[security review guide](security-review.md) explains approval, and the
+[rollout status](ci-maintainer-decisions.md#bootstrap-and-cutover) identifies the
+activation boundary. Technical verification failures stop publication.
+
+**Audit published image security** rescans both active channels daily and can
+run manually. CL Decider monitors audit health and maintains a recovery issue.
+Release preparation also collects fresh scan evidence for its exact digest.
 
 Bluefin base updates and candidate builds verify immutable base digests using
 `sources/bluefin.pub` and its reviewed fingerprint policy. Publisher key rotation
-requires review of both files. Explicit legacy Cosign image signatures match
-bootc's container-signature policy. See [security implementation](security-implementation.md)
-for deployment evidence and remaining upstream trust boundaries.
+requires review of both files. Cosign signatures bind the exact image used by
+bootc's container-signature policy. Full SPDX inventories are retained as OCI
+referrers, with their hash and size bound in the signed
+[SBOM reference](automation/sbom-reference-v1.md).
 
 
 ## Main advancing during publication

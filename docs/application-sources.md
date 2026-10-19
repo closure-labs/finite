@@ -15,7 +15,7 @@ applications use Nix or Flatpak.
 
 For Nix applications, Finite prefers the pinned chilled Nixpkgs set. Selected
 applications use the weekly set where that provides the required package or version. See
-[Configure your environment](configuration.md#add-packages-and-personal-settings)
+[Configure your environment](configuration.md#your-personal-configuration)
 for examples.
 
 ## Shared CLI tools use Homebrew

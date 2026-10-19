@@ -1,9 +1,10 @@
 # Maintainer decision App
 
-CL Decider is the GitHub App owned by closure-labs for human decision proposals,
-authority checks and approved-build resumes. It has no paid service or trial and
-is separate from StepSecurity. FlakeHub, cl-sec-audit and StepSecurity Actions
-Security do not provide this decision authority. Keep cl-sec-audit read-only.
+CL Decider creates human decision PRs, verifies Super Admin authority and resumes
+approved builds. closure-labs owns the App; it runs through GitHub Actions.
+Start with [security review](security-review.md) to approve a proposal.
+
+## Register or configure the App
 
 For another installation, GitHub requires an interactive owner registration before its manifest conversion
 API can create an App; a normal authenticated REST request cannot register one
@@ -25,6 +26,7 @@ permits live verification of the private `closure-labs/super-admins` team. Actio
 resuming retained candidates. Checks write provides the required check's distinct
 App identity. Contents/PR write creates bot-authored proposals; Issues write maintains
 the single health issue. No Workflows write, secrets access, or signing key access.
+Keep cl-sec-audit read-only; its repository settings audit uses a separate App.
 
 CL Decider is now installed (App ID `5384448`, bot `cl-decider[bot]`). Its
 organization values are `DECIDER_CLIENT` (client ID, variable or secret) and
@@ -71,10 +73,13 @@ not GitHub Actions. Keep existing enforcement and the release environment's huma
 reviewer until this check is healthy and the initial human baseline is merged.
 Never change a policy file or repository variable to simulate that approval.
 
-StepSecurity Community settings: use Harden Runner on GitHub-hosted runners with
-`egress-policy: audit`. Do not enable Enterprise GitHub Checks, workflow run
-policies, Actions governance, private/self-hosted coverage, or a trial. Its optional
-Community remediation PRs are separate suggestions, reviewed like other code.
+## StepSecurity Community settings
+
+Use Harden Runner on GitHub-hosted runners with `egress-policy: audit`.
+Community remediation PRs are optional suggestions reviewed through the normal
+PR process. Keep the dashboard on Community: GitHub Checks, workflow run policies
+and Actions governance belong to the paid offering. CL Decider supplies the
+required human decision check.
 
 Audit mode does not impose a repository egress allowlist. StepSecurity's global
 blocklist still blocks known malicious destinations even in audit mode; this is

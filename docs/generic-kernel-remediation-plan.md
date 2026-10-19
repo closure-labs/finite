@@ -1,5 +1,9 @@
 # Generic kernel validation and remediation
 
+> Historical record: earlier kernel replacement plan. For current operations, use
+> [CI and releases](ci-and-releases.md) and [security review](security-review.md).
+> See [reports](reports.md) for dated evidence and related work.
+
 Historical plan: the later owner-approved [two-variant upstream kernel policy](upstream-kernel-variants.md) supersedes kernel replacement, ZFS removal and Next-variant instructions below. Preserve these observations as historical evidence; do not dispatch retired-variant work.
 
 The user approved removal of optional generic virtual-camera support so the

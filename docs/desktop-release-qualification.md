@@ -1,5 +1,9 @@
 # Desktop release qualification
 
+> Historical record: October 13 release qualification and Critical-only policy decisions. For current operations, use
+> [CI and releases](ci-and-releases.md) and [security review](security-review.md).
+> See [reports](reports.md) for dated evidence and related work.
+
 Finite uses Bluefin/bootc with Nix/Home Manager and SELinux. Qualification is
 per channel and per immutable image; standard generic can qualify independently
 of development and Next. Source checks, vulnerability clearance, automated boot

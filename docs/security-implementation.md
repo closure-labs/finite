@@ -1,5 +1,9 @@
 # Security audit implementation
 
+> Historical record: October 12 security implementation. For current operations, use
+> [CI and releases](ci-and-releases.md) and [security review](security-review.md).
+> See [reports](reports.md) for dated evidence and related work.
+
 This implements the treatments in the
 [12 October assessment](security-audit-2026-10-12.md). Finite remains a
 Bluefin/bootc desktop with Nix and Home Manager, developed in Jujutsu.
