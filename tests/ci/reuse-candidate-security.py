@@ -319,6 +319,42 @@ GENERATION = {'platform': 'linux/amd64', 'tools': {'syft': 'fixture 1', 'umoci':
 
 
 class Inventory(unittest.TestCase):
+    def test_metadata_retries_transient_http_and_preserves_pagination(self):
+        failed = subprocess.CalledProcessError(1, ['gh'], stderr='gh: Server Error (HTTP 502)')
+        success = subprocess.CompletedProcess(['gh'], 0, stdout='[{"jobs": []}]')
+        with patch.object(fetch.subprocess, 'run', side_effect=[failed, success]) as run, \
+             patch.object(fetch.time, 'sleep') as sleep:
+            self.assertEqual(fetch.github('actions/runs/123/jobs', True), [{'jobs': []}])
+        self.assertEqual(run.call_count, 2)
+        self.assertIn('--paginate', run.call_args.args[0])
+        self.assertEqual(run.call_args.kwargs['timeout'], 35)
+        sleep.assert_called_once_with(2)
+
+    def test_metadata_retry_budget_is_bounded(self):
+        for failure in [subprocess.TimeoutExpired(['gh'], 35),
+                        subprocess.CalledProcessError(1, ['gh'], stderr='HTTP 429')]:
+            with self.subTest(failure=type(failure).__name__), \
+                 patch.object(fetch.subprocess, 'run', side_effect=failure) as run, \
+                 patch.object(fetch.time, 'sleep') as sleep, \
+                 self.assertRaises(type(failure)):
+                fetch.github('actions/runs/123')
+            self.assertEqual(run.call_count, 3)
+            self.assertEqual([call.args[0] for call in sleep.call_args_list], [2, 4])
+
+    def test_metadata_does_not_retry_auth_missing_or_malformed_responses(self):
+        for status in (400, 401, 403, 404):
+            failure = subprocess.CalledProcessError(1, ['gh'], stderr=f'HTTP {status}')
+            with patch.object(fetch.subprocess, 'run', side_effect=failure) as run, \
+                 patch.object(fetch.time, 'sleep') as sleep, self.assertRaises(subprocess.CalledProcessError):
+                fetch.github('actions/runs/123')
+            self.assertEqual(run.call_count, 1)
+            sleep.assert_not_called()
+        with patch.object(fetch.subprocess, 'run', return_value=subprocess.CompletedProcess(['gh'], 0, stdout='invalid')) as run, \
+             patch.object(fetch.time, 'sleep') as sleep, self.assertRaises(ValueError):
+            fetch.github('actions/runs/123')
+        self.assertEqual(run.call_count, 1)
+        sleep.assert_not_called()
+
     def bundle(self, directory, risk=True):
         files = inventory.REQUIRED | ({'rpm-file-evidence.json', 'applicability-evidence.json'} if risk else set())
         for name in files:
@@ -428,7 +464,7 @@ class Inventory(unittest.TestCase):
                 record = {'profile': PROFILE, 'revision': SHA, 'buildIdentity': IDENTITY,
                           'qualificationMode': 'enforce', 'publish': True}
                 with patch.dict(os.environ, {**environment(), 'GITHUB_EVENT_NAME': consumer_event}, clear=True), \
-                     patch.object(fetch.publication, 'github', side_effect=[fixture.run, [{'artifacts': fixture.artifacts}], [{'jobs': fixture.jobs}]]), \
+                     patch.object(fetch, 'github', side_effect=[fixture.run, [{'artifacts': fixture.artifacts}], [{'jobs': fixture.jobs}]]), \
                      patch.object(fetch.publication, 'origin_files', return_value={
                          PROFILE + '-publication.json': json.dumps(record).encode(), PROFILE + '-image-ref.txt': IMAGE.encode()}), \
                      patch.object(fetch.subprocess, 'run', side_effect=download), \
@@ -452,7 +488,7 @@ class Inventory(unittest.TestCase):
                            ('GITHUB_WORKFLOW_REF', 'closure-labs/finite/.github/workflows/build.yml@refs/heads/branch'),
                            ('GITHUB_WORKFLOW_REF', 'closure-labs/finite/.github/workflows/unknown.yml@refs/heads/main')]:
             with patch.dict(os.environ, {**environment(), key: value}, clear=True), \
-                 patch.object(fetch.publication, 'github') as api, self.assertRaises(ValueError):
+                 patch.object(fetch, 'github') as api, self.assertRaises(ValueError):
                 fetch.retrieve(IMAGE, PROFILE, Path('/tmp/never-created'), '123')
             api.assert_not_called()
 
@@ -465,7 +501,7 @@ class Inventory(unittest.TestCase):
                            ('GITHUB_REF', 'refs/heads/branch'), ('GITHUB_REPOSITORY', 'fork/finite'),
                            ('GITHUB_WORKFLOW_REF', base['GITHUB_WORKFLOW_REF'].replace('@refs/heads/main', '@refs/heads/branch'))]:
             with patch.dict(os.environ, {**base, key: value}, clear=True), \
-                 patch.object(fetch.publication, 'github') as api, self.assertRaises(ValueError):
+                 patch.object(fetch, 'github') as api, self.assertRaises(ValueError):
                 fetch.retrieve(IMAGE, PROFILE, Path('/tmp/never-created'), '123')
             api.assert_not_called()
 

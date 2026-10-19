@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Exercise bounded VM transfer, failure propagation and durable redaction."""
 import importlib.util
+import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -14,6 +16,34 @@ spec.loader.exec_module(upgrade)
 
 
 class Upgrade(unittest.TestCase):
+    def test_post_upgrade_persistence_receipt_identifies_failures(self):
+        source = (ROOT / 'scripts/bluebuild/vm-acceptance.sh').read_text()
+        probe = source.split("<<'HOME_PERSISTENCE'\n", 1)[1].split('\nHOME_PERSISTENCE', 1)[0]
+        with tempfile.TemporaryDirectory() as temporary:
+            home = Path(temporary)
+            sentinel = home / 'nix-marker'
+            customization = home / '.config/home-manager/customize.nix'
+            customization.parent.mkdir(parents=True)
+            probe = probe.replace("Path('/var/home/nix/finite-acceptance')", f'Path({str(sentinel)!r})')
+            for mode in ('pass', 'missing-nix', 'changed-nix', 'missing-customization', 'changed-customization'):
+                with self.subTest(mode=mode):
+                    sentinel.write_text('persistent-nix-state\n')
+                    customization.write_text('# VM acceptance customization\n')
+                    if mode == 'missing-nix': sentinel.unlink()
+                    if mode == 'changed-nix': sentinel.write_text('fixture-sensitive-data')
+                    if mode == 'missing-customization': customization.unlink()
+                    if mode == 'changed-customization': customization.write_text('fixture-sensitive-data')
+                    result = subprocess.run([sys.executable, '-c', probe], text=True, capture_output=True,
+                                            env={**os.environ, 'HOME': str(home)}, check=False)
+                    receipt = json.loads(result.stdout)
+                    self.assertEqual(result.returncode, int(mode != 'pass'))
+                    self.assertEqual(receipt['status'], 'pass' if mode == 'pass' else 'fail')
+                    self.assertEqual(receipt['checks']['nixState'], mode not in ('missing-nix', 'changed-nix'))
+                    self.assertEqual(receipt['checks']['homeCustomization'], mode not in ('missing-customization', 'changed-customization'))
+                    self.assertNotIn('fixture-sensitive-data', result.stdout + result.stderr)
+                    if mode != 'pass':
+                        self.assertIn('Post-upgrade persistence check failed:', result.stderr)
+
     def exercise(self, mode):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

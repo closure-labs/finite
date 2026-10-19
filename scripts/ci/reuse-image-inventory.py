@@ -15,6 +15,7 @@ import resource
 import subprocess
 import sys
 import tempfile
+import time
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -31,6 +32,36 @@ def module(name, path):
 reuse = module('reuse_security', ROOT / 'scripts/ci/reuse-candidate-security.py')
 inventory = module('inventory_evidence', ROOT / 'scripts/ci/inventory-evidence.py')
 publication = reuse.publication
+
+
+def github(path, paginated=False):
+    """Retry bounded metadata GETs; authentication and invalid evidence stay fatal."""
+    command = ['gh', 'api']
+    if paginated:
+        command.extend(['--paginate', '--slurp'])
+    command.append('repos/' + publication.REPOSITORY + '/' + path)
+    for attempt in range(3):
+        try:
+            result = subprocess.run(command, capture_output=True, text=True, timeout=35, check=True)
+        except subprocess.CalledProcessError as error:
+            # gh reports HTTP status in stderr; do not retry authorization,
+            # missing artifacts, malformed JSON or failed evidence checks.
+            status = re.search(r'HTTP ([0-9]{3})\b', error.stderr or '')
+            if not status or int(status[1]) not in (408, 429, 500, 502, 503, 504):
+                print('GitHub inventory metadata request failed: ' +
+                      (status[0] if status else f'gh exit {error.returncode}'), file=sys.stderr)
+                raise
+            if attempt == 2:
+                print('GitHub inventory metadata retry budget exhausted: ' + status[0], file=sys.stderr)
+                raise
+        except subprocess.TimeoutExpired:
+            if attempt == 2:
+                raise
+        else:
+            return json.loads(result.stdout)
+        delay = 2 ** (attempt + 1)
+        print(f'GitHub inventory metadata transport failed; retry {attempt + 1}/2 in {delay}s', file=sys.stderr)
+        time.sleep(delay)
 
 
 def hosted():
@@ -61,16 +92,16 @@ def retrieve(image, profile, output, origin_run=None):
             or any(part.is_symlink() for part in (output, *output.parents))):
         raise ValueError('Inventory output must be new with no symlinked parents')
     if origin_run:
-        runs = [publication.github('actions/runs/' + origin_run)]
+        runs = [github('actions/runs/' + origin_run)]
     else:
         # Bounded discovery: never walk all history or download every SBOM.
-        runs = publication.github('actions/workflows/build.yml/runs?branch=main&status=completed&per_page=20')['workflow_runs']
+        runs = github('actions/workflows/build.yml/runs?branch=main&status=completed&per_page=20')['workflow_runs']
     for run in runs:
         run_id = str(run['id'])
         attempt = run.get('run_attempt')
         if type(attempt) is not int or attempt < 1:
             raise ValueError('Invalid inventory producer attempt')
-        artifacts = [item for page in publication.github(f'actions/runs/{run_id}/artifacts?per_page=100', True)
+        artifacts = [item for page in github(f'actions/runs/{run_id}/artifacts?per_page=100', True)
                      for item in page['artifacts']]
         images = [item for item in artifacts if item.get('name') == f'image-{profile}-{run_id}-{attempt}']
         scans = [item for item in artifacts if item.get('name') == f'security-{profile}-{run_id}-{attempt}']
@@ -97,7 +128,7 @@ def retrieve(image, profile, output, origin_run=None):
             if origin_run:
                 raise inventory.Unavailable('Origin contains a different immutable image')
             continue
-        jobs = [item for page in publication.github(f'actions/runs/{run_id}/attempts/{attempt}/jobs?per_page=100', True)
+        jobs = [item for page in github(f'actions/runs/{run_id}/attempts/{attempt}/jobs?per_page=100', True)
                 for item in page['jobs']]
         artifact, _, build_job, security_job = reuse.metadata(run, jobs, artifacts, profile, run_id)
         record = json.loads(files[f'{profile}-publication.json'])

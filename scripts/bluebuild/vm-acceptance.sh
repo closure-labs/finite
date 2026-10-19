@@ -475,13 +475,38 @@ updated_digest=$(jq -er '.status.booted.image.imageDigest' "$state/updated.json"
 jq -e --arg installed "$updated_digest" --arg index "${target##*@}" \
   '$installed == $index or any(.manifests[]?; .digest == $installed)' \
   "$state/target-manifest.json" >/dev/null
-ssh "${ssh_args[@]}" bash -s <<'GUEST'
-set -euo pipefail
-[[ $(cat /var/home/nix/finite-acceptance) == persistent-nix-state ]]
-grep -q 'VM acceptance customization' "$HOME/.config/home-manager/customize.nix"
-/nix/var/nix/profiles/default/bin/nix store ping --store daemon
-sudo bootc rollback
-GUEST
+ssh "${ssh_args[@]}" python3 - >"$state/updated-home.json" <<'HOME_PERSISTENCE'
+import json
+from pathlib import Path
+import sys
+
+checks = {}
+errors = []
+for name, path, expected, exact in (
+    ('nixState', Path('/var/home/nix/finite-acceptance'), 'persistent-nix-state', True),
+    ('homeCustomization', Path.home() / '.config/home-manager/customize.nix', 'VM acceptance customization', False),
+):
+    try:
+        content = path.read_text()
+        matched = content.rstrip('\n') == expected if exact else expected in content
+        checks[name] = matched
+        if not matched:
+            errors.append(f'{name}: persisted marker changed at {path}')
+    except OSError as error:
+        checks[name] = False
+        errors.append(f'{name}: cannot read {path}: {error.strerror}')
+print(json.dumps({'schema': 1, 'status': 'pass' if all(checks.values()) else 'fail', 'checks': checks, 'errors': errors}))
+for error in errors:
+    print('Post-upgrade persistence check failed: ' + error, file=sys.stderr)
+raise SystemExit(bool(errors))
+HOME_PERSISTENCE
+ssh "${ssh_args[@]}" /nix/var/nix/profiles/default/bin/nix store ping --store daemon \
+  >"$state/updated-nix-persistence.log" 2>&1 || {
+  cat "$state/updated-nix-persistence.log" >&2
+  echo 'Post-upgrade Nix daemon persistence check failed' >&2
+  exit 1
+}
+ssh "${ssh_args[@]}" sudo bootc rollback
 poweroff_vm
 boot_vm rollback
 ssh "${ssh_args[@]}" sudo bootc status --json >"$state/rollback.json"
