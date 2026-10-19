@@ -4,6 +4,7 @@ Local proposal JSON supplies candidates only. The active decision must pass live
 GitHub authority checks; superseded ancestors require immutable merge provenance.
 """
 import importlib.util
+import hashlib
 from pathlib import Path
 import re
 
@@ -131,6 +132,52 @@ def _historical_provenance(proposal, number, repository, bot_login, github=None)
             'reviewedHead': head, 'mergeCommit': merge}
 
 
+
+def live_ledger(records, repository, github=None):
+    """Authenticate a complete current-main inventory, never a checkout's subset."""
+    api = github or authority.github_api
+    ref = api(f'repos/{repository}/git/ref/heads/main')
+    head = ref.get('object', {}).get('sha') if isinstance(ref, dict) else None
+    if not isinstance(head, str) or not SHA.fullmatch(head):
+        raise TechnicalError('Current main ledger lacks immutable revision')
+    tree = api(f'repos/{repository}/git/trees/{head}?recursive=1')
+    if (not isinstance(tree, dict) or tree.get('truncated') is not False
+            or not isinstance(tree.get('tree'), list) or len(tree['tree']) > 100000):
+        raise TechnicalError('Current main ledger requires a complete bounded Git tree')
+    prefix = 'automation/decisions/security'
+    inventory = {}
+    seen = set()
+    for entry in tree['tree']:
+        if not isinstance(entry, dict) or not isinstance(entry.get('path'), str):
+            raise TechnicalError('Malformed current main Git tree entry')
+        path = entry['path']
+        if path in seen:
+            raise TechnicalError('Duplicate current main Git tree path')
+        seen.add(path)
+        if path in ('automation', 'automation/decisions', prefix):
+            if entry.get('type') != 'tree' or entry.get('mode') != '040000':
+                raise TechnicalError('Security ledger parent must be a regular Git tree')
+        elif path.startswith(prefix + '/'):
+            name = path[len(prefix) + 1:]
+            if (not re.fullmatch(r'[0-9a-f]{64}\.json', name)
+                    or entry.get('type') != 'blob' or entry.get('mode') != '100644'
+                    or not isinstance(entry.get('sha'), str) or not SHA.fullmatch(entry['sha'])
+                    or type(entry.get('size')) is not int or not 0 < entry['size'] <= 8 * 1024 * 1024):
+                raise TechnicalError('Current main ledger contains a noncanonical or nonregular security record')
+            inventory[name[:-5]] = entry
+    if len(inventory) > 10000 or set(inventory) != set(records):
+        raise TechnicalError('Local security ledger differs from complete current main inventory')
+    for identity, entry in inventory.items():
+        record = records[identity]
+        if entry['sha'] != record['blobSha']:
+            # Formatting-only changes are harmless; canonical content still must
+            # equal the filename and the independently validated local proposal.
+            document = authority.document_at(api, repository, entry['path'], head)
+            if canonical_hash(document) != identity:
+                raise TechnicalError('Current main security record differs from canonical local identity')
+    return inventory
+
+
 def verify(scan_result, profile, repository, bot_login,
            records_path=ROOT / 'automation/decisions/security', github=None):
     """Return covered/review-required/rejected/revoked and fresh authority receipts.
@@ -160,9 +207,13 @@ def verify(scan_result, profile, repository, bot_login,
         identity = canonical_hash(proposal)
         if candidate.name != identity + '.json' or identity in records:
             raise TechnicalError('Security ledger filename does not match canonical proposal')
-        records[identity] = {'proposal': proposal, 'payload': payload}
+        raw = candidate.read_bytes()
+        blob_sha = hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest()
+        records[identity] = {'proposal': proposal, 'payload': payload, 'blobSha': blob_sha}
+    live_ledger(records, repository, github)
     relevant = {key for key, value in records.items() if profile in value['payload']['profiles']}
     if not relevant:
+        live_ledger(records, repository, github)
         return {**initial, 'authority': None, 'decision': None}
     superseded = {parent for identity in relevant for parent in records[identity]['payload']['supersedes']
                   if parent in relevant}
@@ -212,6 +263,7 @@ def verify(scan_result, profile, repository, bot_login,
                       revoked=disposition == 'revoked')
     if disposition == 'rejected':
         result['status'] = 'rejected'
+    live_ledger(records, repository, github)
     return {**result, 'authority': receipts[identity],
             'authorityChain': [receipts[key] for key in sorted(receipts)],
             'decision': {'proposalHash': identity, 'disposition': disposition,

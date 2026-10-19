@@ -69,7 +69,11 @@ class Integrations(unittest.TestCase):
             self.assertRegex(step['uses'], r'@[0-9a-f]{40}$')
             self.assertIn('digest', str(step['with'].get('subject-digest', '')))
             self.assertTrue(step['with'].get('push-to-registry'))
-        self.assertTrue(any('spdx' in str(s.get('with', {})).lower() for s in steps))
+        references = [s for s in steps if s['with'].get('predicate-type') ==
+                      'https://github.com/closure-labs/finite/blob/main/docs/automation/sbom-reference-v1.md']
+        self.assertEqual(len(references), 1)
+        self.assertEqual(references[0]['with']['predicate-path'], '.bluebuild/sbom-attestation/sbom-reference.json')
+        self.assertTrue(any('--publish-reference' in s.get('run', '') for s in job['steps']))
         self.assertNotIn('COSIGN_PRIVATE_KEY', (WORKFLOWS / 'attest-image.yml').read_text())
         publication = document('publication')
         self.assertIn('attest', publication['jobs']['sign']['needs'])
@@ -83,7 +87,8 @@ class Integrations(unittest.TestCase):
         self.assertEqual(token['repositories'], '${{ github.event.repository.name }}')
         self.assertEqual({k: v for k, v in token.items() if k.startswith('permission-')},
                          {'permission-administration': 'read', 'permission-actions': 'read',
-                          'permission-contents': 'write', 'permission-pull-requests': 'write'})
+                          'permission-contents': 'write', 'permission-pull-requests': 'write',
+                          'permission-members': 'read'})
         self.assertTrue(any('--profile review-app' in s.get('run', '') and '--scope review-app' in s['run']
                             for s in steps[:token_index]))
         self.assertIn('FINITE_REVIEW_PRIVATE_KEY=\\n', steps[token_index + 1]['run'])
@@ -118,17 +123,30 @@ class Integrations(unittest.TestCase):
         for name in ('prepare', 'sign'):
             self.assertNotIn('MERGE_QUEUE_PAT', str(jobs[name]))
 
-    def test_app_manifest_has_no_secret_signing_workflow_or_org_access(self):
+    def test_app_manifest_limits_organization_access_to_members_read(self):
         manifest = json.loads((ROOT / 'automation/github/apps/maintainer-decisions.json').read_text())
         self.assertFalse(manifest['hook_attributes']['active'])
         self.assertEqual(manifest['default_events'], [])
         self.assertEqual(manifest['default_permissions'], {
             'administration': 'read', 'actions': 'write', 'checks': 'write',
-            'contents': 'write', 'issues': 'write', 'pull_requests': 'write'})
+            'contents': 'write', 'issues': 'write', 'pull_requests': 'write', 'members': 'read'})
         docs = (ROOT / 'docs/maintainer-decision-app.md').read_text()
         self.assertIn('select **only finite**', docs)
         self.assertIn('No Workflows write', docs)
         self.assertIn('Keep cl-sec-audit read-only', docs)
+
+    def test_all_decision_and_release_tokens_can_verify_the_pinned_team(self):
+        for name in ('decision-authority', 'decision-proposals', 'release-set', 'publish-release-set'):
+            for job in document(name)['jobs'].values():
+                for step in job.get('steps', []):
+                    if uses(step, 'actions/create-github-app-token'):
+                        self.assertEqual(step['with']['permission-members'], 'read', name)
+                        self.assertEqual(step['with']['repositories'], '${{ github.event.repository.name }}')
+        rules = json.loads((ROOT / 'automation/github/repository-security.json').read_text())
+        for name in ('release', 'package-cleanup'):
+            reviewers = next(rule['reviewers'] for rule in rules['environments'][name]['protection_rules']
+                             if rule['type'] == 'required_reviewers')
+            self.assertEqual(reviewers, [{'type': 'Team', 'id': 20196962}])
 
 
 if __name__ == '__main__':

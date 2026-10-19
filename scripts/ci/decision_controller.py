@@ -100,6 +100,32 @@ def artifact_clock(artifact, window):
     return produced
 
 
+def native_observation_policy(policy, path):
+    """Use cutover-identical observations without enabling admission or legacy AI waivers.
+
+    Only native-health settings survive the projection. Legacy risk decisions may
+    be stale or malformed and cannot classify, suppress or approve fresh findings.
+    """
+    source = load_json(path)
+    legacy_fields = {'maxExceptionDays', 'blockedFixableSeverities', 'blockKnownExploited',
+                     'exceptions', 'seriousAdvisories', 'reviewedDispositions', 'releaseBlockers',
+                     'blockingBasis', 'confirmedDesktopRisks'}
+    if (not isinstance(source, dict) or type(source.get('schema')) is not int or source['schema'] != 1
+            or not isinstance(source.get('mode', 'fixable-severity'), str)
+            or source.get('mode', 'fixable-severity') not in {'fixable-severity', *policy.RISK_MODES}
+            or set(source) - (policy.DECISION_FIELDS | legacy_fields)):
+        raise ValueError('Decision observations require a supported checked native-health policy')
+    if source.get('mode') == policy.DECISION_MODE and set(source) != policy.DECISION_FIELDS:
+        raise ValueError('Active maintainer policy must contain only native-health fields')
+    required = policy.DECISION_FIELDS - {'mode'}
+    if not required <= set(source):
+        raise ValueError('Decision observations require every explicit native-health field')
+    config = {key: source[key] for key in required}
+    config['mode'] = policy.DECISION_MODE
+    policy.validate_policy(config)
+    return config
+
+
 def native_result(directory, produced_at=None, not_before=None, profile=None):
     """Reevaluate original native bytes; a stored status is never a health receipt."""
     policy = module('controller_security_policy', ROOT / 'scripts/bluebuild/security-policy.py')
@@ -107,7 +133,7 @@ def native_result(directory, produced_at=None, not_before=None, profile=None):
     if original.get('status') not in ('pass', 'blocked', 'complete') or (original.get('status') == 'complete' and original.get('scannerHealth') != 'healthy'):
         raise ValueError('Producer did not complete a technically healthy native scan')
     image = original['image']
-    config = policy.load_policy(ROOT / 'automation/security/image-policy.json')
+    config = native_observation_policy(policy, ROOT / 'automation/security/image-policy.json')
     manifests = policy.read_manifests(directory)
     baseline = policy.production_baseline(directory, image, config, manifests, policy.read_baseline(directory))
     if profile is not None and (not isinstance(baseline, dict) or baseline.get('profile') != profile):
@@ -439,7 +465,7 @@ def safe_markdown(value):
 
 def summary(proposal):
     payload = proposal['payload']
-    lines = ['Human maintainer decision required. Approve this exact PR head to authorize the proposed scope.',
+    lines = ['Super Admin team decision required. Approve this exact PR head to authorize the proposed scope.',
              '', 'Proposal SHA256: `' + canonical_hash(proposal) + '`', '']
     if proposal['kind'] == 'release-set':
         lines += ['Official version: ' + payload['version'], '',
@@ -448,20 +474,40 @@ def summary(proposal):
             entry = payload['channels'][profile]
             lines.append(f'| {profile} | `{entry["imageDigest"]}` | `{entry["isoSha256"]}` |')
     else:
+        priorities = {'Critical': 0, 'High': 1, 'Unknown': 2, 'Medium': 3, 'Low': 4, 'Negligible': 5}
         lines += ['Proposed disposition: **' + payload['disposition'] + '**', '', safe_markdown(payload['rationale'][:4000]), '',
                   f'Total normalized findings: {len(payload["findings"])}. All severities require review.', '',
-                  '| Profile | Vulnerability | Severity | Component |', '| --- | --- | --- | --- |']
-        for finding in payload['findings'][:150]:
+                  '| Profile | Findings by severity |', '| --- | --- |']
+        for profile in PROFILES:
+            counts = {}
+            for finding in payload['findings']:
+                if finding['profile'] == profile:
+                    counts[finding['severity']] = counts.get(finding['severity'], 0) + 1
+            description = ', '.join(f'{severity}: {counts[severity]}' for severity in sorted(counts, key=priorities.get))
+            lines.append('| ' + profile + ' | ' + (description or '0') + ' |')
+        lines += ['', '| Profile | Vulnerability | Severity | CVSS | Known exploited | Component |',
+                  '| --- | --- | --- | --- | --- | --- |']
+        prioritized = sorted(payload['findings'], key=lambda f: (
+            not f['knownExploited'], priorities[f['severity']], f['profile'], f['advisory'], f['component']))
+        displayed = 0
+        for finding in prioritized[:150]:
             advisory = finding['advisory']
             link = f'[{advisory}](https://nvd.nist.gov/vuln/detail/{advisory})' if re.fullmatch(r'CVE-[0-9]{4}-[0-9]+', advisory) else safe_markdown(advisory)
+            if re.fullmatch(r'GHSA-[a-z0-9-]+', advisory):
+                link = f'[{advisory}](https://github.com/advisories/{advisory})'
             component = safe_markdown(finding['component'][:240])
-            row = f'| {safe_markdown(finding["profile"])} | {link} | {safe_markdown(finding["severity"])} | {component} |'
+            score = str(finding['cvss']) if finding['cvss'] is not None else 'Unknown'
+            exploited = 'Yes' if finding['knownExploited'] else 'No'
+            row = f'| {safe_markdown(finding["profile"])} | {link} | {safe_markdown(finding["severity"])} | {score} | {exploited} | {component} |'
             if sum(len(line) + 1 for line in lines) + len(row) > 50000:
                 break
             lines.append(row)
-        lines += ['', 'Full hash-bound scan packet: `' + payload['packet']['reference'] + '`']
+            displayed += 1
+        lines += ['', f'Showing {displayed} of {len(payload["findings"])} findings, prioritizing known exploitation, Critical and High severity.',
+                  'The Files changed tab and immutable scan packet contain the complete findings.',
+                  '', 'Full hash-bound scan packet: `' + payload['packet']['reference'] + '`']
     lines += ['', 'Approval is persistent until changed or revoked. Scanner errors and missing coverage cannot be accepted.',
-              'A new PR head invalidates previous approval. Bots and AI review labels cannot approve this decision.']
+              'A new PR head invalidates previous approval. Only current closure-labs/super-admins members with maintain/admin access count; bots and AI review labels cannot approve this decision.']
     return '\n'.join(lines)
 
 
@@ -513,6 +559,105 @@ def proposal_branch(proposal, path, branch):
                  {'message': 'review: maintainer decision ' + canonical_hash(proposal)[:12], 'tree': tree['sha'], 'parents': [main]})
     api(f'repos/{REPOSITORY}/git/refs', 'POST', {'ref': 'refs/heads/' + branch, 'sha': commit['sha']})
 
+
+def cutover_scope(config, head, main):
+    """A recovered cutover branch may change only the fixed regular policy file."""
+    path = 'automation/security/image-policy.json'
+    if not isinstance(head, str) or not re.fullmatch(r'[0-9a-f]{40}', head):
+        raise ValueError('Cutover branch lacks immutable head identity')
+    comparison = api(f'repos/{REPOSITORY}/compare/{main}...{head}')
+    files = comparison.get('files') if isinstance(comparison, dict) else None
+    total = comparison.get('total_commits') if isinstance(comparison, dict) else None
+    if (not isinstance(files, list) or len(files) != 1 or not isinstance(files[0], dict) or files[0].get('filename') != path
+            or files[0].get('status') != 'modified' or files[0].get('previous_filename')
+            or type(total) is not int or not 1 <= total <= 100
+            or not isinstance(comparison.get('commits'), list) or len(comparison['commits']) != total):
+        raise ValueError('Cutover branch must contain only the fixed policy change with complete comparison evidence')
+    tree = api(f'repos/{REPOSITORY}/git/trees/{head}?recursive=1')
+    if not isinstance(tree, dict) or tree.get('truncated') is not False or not isinstance(tree.get('tree'), list):
+        raise ValueError('Cutover branch requires a complete Git tree')
+    matching = [entry for entry in tree['tree'] if isinstance(entry, dict) and entry.get('path') == path]
+    if len(matching) != 1 or matching[0].get('type') != 'blob' or matching[0].get('mode') != '100644':
+        raise ValueError('Cutover policy must be one regular nonexecutable Git file')
+    if canonical_hash(authority.document_at(api, REPOSITORY, path, head)) != canonical_hash(config):
+        raise ValueError('Cutover branch policy differs from exact generated native-health configuration')
+
+
+def propose_cutover(run_id, directory):
+    """Create only a human-reviewable policy activation PR after both images are covered."""
+    trusted_context()
+    require_live_authority_rule()
+    bot = os.environ.get('FINITE_REVIEW_BOT_LOGIN')
+    authority.validate_context(REPOSITORY, bot)
+    if type(run_id) is not int or run_id < 1:
+        raise ValueError('Cutover requires a positive trusted producer run')
+    path = 'automation/security/image-policy.json'
+    source = load_json(ROOT / path)
+    policy = module('cutover_native_policy', ROOT / 'scripts/bluebuild/security-policy.py')
+    config = native_observation_policy(policy, ROOT / path)
+    if source.get('mode') == policy.DECISION_MODE:
+        return {'status': 'already-active', 'policyChanged': False}
+    collect(run_id, Path(directory))
+    def require_covered():
+        admissions = current_admission(directory)
+        if set(admissions) != set(PROFILES) or any(admissions[p].get('status') != 'covered' for p in PROFILES):
+            raise ValueError('Cutover requires current healthy scans and live human-covered admission for both profiles')
+    require_covered()
+    main = api(f'repos/{REPOSITORY}/git/ref/heads/main')['object']['sha']
+    if canonical_hash(authority.document_at(api, REPOSITORY, path, main)) != canonical_hash(source):
+        raise ValueError('Current main policy changed; reassess cutover from a fresh trusted checkout')
+    branch = 'automation/maintainer-policy-cutover-' + canonical_hash(config)
+    pulls = collection(f'repos/{REPOSITORY}/pulls?state=all&head=closure-labs:{branch}')
+    from release_set import GitHubClient
+    existing = GitHubClient(REPOSITORY).api('git/ref/heads/' + branch, missing=True)
+    head = existing.get('object', {}).get('sha') if existing is not None else None
+    if existing is not None:
+        cutover_scope(config, head, main)
+    if pulls:
+        if len(pulls) != 1:
+            raise ValueError('Cutover branch has ambiguous pull request provenance')
+        pull = api(f'repos/{REPOSITORY}/pulls/{pulls[0]["number"]}')
+        files = collection(f'repos/{REPOSITORY}/pulls/{pull["number"]}/files')
+        if (pull.get('state') != 'open' or pull.get('user', {}).get('type') != 'Bot'
+                or pull['user'].get('login') != bot or pull.get('base', {}).get('ref') != 'main'
+                or pull.get('base', {}).get('repo', {}).get('full_name') != REPOSITORY
+                or pull.get('head', {}).get('repo', {}).get('full_name') != REPOSITORY
+                or pull.get('head', {}).get('sha') != head or existing is None
+                or pull.get('changed_files') != 1 or len(files) != 1 or not isinstance(files[0], dict) or files[0].get('filename') != path
+                or files[0].get('status') != 'modified' or files[0].get('previous_filename')):
+            raise ValueError('Existing cutover PR differs from the exact bot-authored single-policy proposal')
+        require_covered()
+    else:
+        # Inventory and live human authority may change while inspecting branch/PR
+        # state. Recheck immediately before the first repository mutation.
+        require_covered()
+        if existing is None:
+            base = api(f'repos/{REPOSITORY}/git/commits/{main}')
+            tree = api(f'repos/{REPOSITORY}/git/trees', 'POST', {'base_tree': base['tree']['sha'],
+                       'tree': [{'path': path, 'mode': '100644', 'type': 'blob',
+                                 'content': json.dumps(config, indent=2) + '\n'}]})
+            commit = api(f'repos/{REPOSITORY}/git/commits', 'POST',
+                         {'message': 'security: propose human decision policy activation', 'tree': tree['sha'], 'parents': [main]})
+            head = commit['sha']
+            api(f'repos/{REPOSITORY}/git/refs', 'POST', {'ref': 'refs/heads/' + branch, 'sha': head})
+        pull = api(f'repos/{REPOSITORY}/pulls', 'POST', {
+            'title': 'Activate maintainer security decisions', 'head': branch, 'base': 'main', 'draft': True,
+            'body': 'Both profiles have authenticated, current native scans covered by existing human decisions. '
+                    'Producer: https://github.com/' + REPOSITORY + '/actions/runs/' + str(run_id) + '\n\n'
+                    'This PR changes only the image policy to native-health fields and maintainer-decision mode. '
+                    'A current human member of closure-labs/super-admins with maintain/admin access must approve this exact PR head. '
+                    'This proposal grants no approval and does not remove release environment reviewers.'})
+        if (pull.get('user', {}).get('type') != 'Bot' or pull['user'].get('login') != bot
+                or pull.get('head', {}).get('sha') != head
+                or pull.get('head', {}).get('repo', {}).get('full_name') != REPOSITORY
+                or pull.get('base', {}).get('ref') != 'main'
+                or pull.get('base', {}).get('repo', {}).get('full_name') != REPOSITORY):
+            raise ValueError('Cutover proposal was not authored by the configured App at the expected repository head')
+    if pull.get('draft'):
+        subprocess.run(['gh', 'pr', 'ready', str(pull['number']), '--repo', REPOSITORY], check=True, timeout=60)
+    subprocess.run(['gh', 'pr', 'merge', str(pull['number']), '--auto', '--merge', '--match-head-commit', head, '--repo', REPOSITORY], check=True, timeout=60)
+    return {'status': 'pending-review', 'pullRequest': pull['html_url'], 'policyChanged': False,
+            'authorizesPublication': False, 'profiles': list(PROFILES)}
 
 def propose(proposal, packet_directory=None):
     trusted_context()

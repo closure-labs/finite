@@ -10,6 +10,11 @@ on:
     - cron: '37 * * * *'
   workflow_dispatch:
     inputs:
+      operation:
+        description: Reconcile decisions or propose the narrow human-reviewed policy activation
+        type: choice
+        options: [reconcile, propose-cutover]
+        default: reconcile
       producer_run:
         description: Trusted main producer run to propose; empty runs health and reconciliation
         type: string
@@ -87,6 +92,7 @@ jobs:
           permission-actions: write
           permission-issues: write
           permission-administration: read
+          permission-members: read
       - name: Clear App private credentials
         run: | # zizmor: ignore[github-env]
           printf 'FINITE_REVIEW_CLIENT_ID=\nFINITE_REVIEW_PRIVATE_KEY=\n' >>"$GITHUB_ENV"
@@ -97,12 +103,20 @@ jobs:
           FINITE_REVIEW_BOT_LOGIN: ${{ vars.FINITE_REVIEW_BOT_LOGIN }}
           FINITE_REVIEW_APP_ID: ${{ vars.FINITE_REVIEW_APP_ID }}
           PRODUCER_RUN: ${{ github.event.workflow_run.id || inputs.producer_run }}
+          DECISION_OPERATION: ${{ inputs.operation || 'reconcile' }}
           PROPOSAL_DISPOSITION: ${{ inputs.disposition || 'accepted' }}
           DECISION_RATIONALE: ${{ inputs.rationale || '' }}
           DECISION_HASH: ${{ inputs.decision_hash || '' }}
         run: |
           nix develop --file lib/ci-tools.nix release --command bash <<'CONTROLLER'
           set -euo pipefail
+          if [[ $DECISION_OPERATION == propose-cutover ]]; then
+            [[ $GITHUB_EVENT_NAME == workflow_dispatch && $PRODUCER_RUN =~ ^[1-9][0-9]*$ ]]
+            [[ $PROPOSAL_DISPOSITION == accepted && -z $DECISION_RATIONALE && -z $DECISION_HASH ]]
+            python3 scripts/ci/decision-controller.py propose-cutover --run "$PRODUCER_RUN" --packet-directory .bluebuild/cutover-native
+            exit 0
+          fi
+          [[ $DECISION_OPERATION == reconcile ]]
           trap 'oras logout ghcr.io >/dev/null 2>&1 || true' EXIT
           printf '%s' "$REGISTRY_TOKEN" | oras login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
           if [[ $PROPOSAL_DISPOSITION == revoked ]]; then

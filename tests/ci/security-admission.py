@@ -30,6 +30,9 @@ class AdmissionTests(unittest.TestCase):
         self.records = Path(self.tmp.name)
         self.allowed = set()
         self.calls = []
+        self.remote = patch.object(module.authority, 'github_api', self.github)
+        self.remote.start()
+        self.addCleanup(self.remote.stop)
         self.find = patch.object(module.authority, 'find_origin_pr', self.origin)
         self.auth = patch.object(module.authority, 'verify_proposal', self.authorize)
         self.history = patch.object(module, '_historical_provenance', self.historical)
@@ -39,6 +42,22 @@ class AdmissionTests(unittest.TestCase):
         self.auth.start()
         self.addCleanup(self.find.stop)
         self.addCleanup(self.auth.stop)
+
+    def tree(self):
+        entries = []
+        for path in self.records.glob('*.json'):
+            raw = path.read_bytes()
+            entries.append({'path': 'automation/decisions/security/' + path.name,
+                            'type': 'blob', 'mode': '100644', 'size': len(raw),
+                            'sha': hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest()})
+        return {'truncated': False, 'tree': entries}
+
+    def github(self, endpoint):
+        if endpoint.endswith('/git/ref/heads/main'):
+            return {'object': {'sha': 'd' * 40}}
+        if endpoint.endswith('?recursive=1'):
+            return self.tree()
+        self.fail('Unexpected live inventory API: ' + endpoint)
 
     def origin(self, proposal, repository, expected_bot, github=None):
         self.calls.append(('origin', canonical_hash(proposal)))
@@ -81,6 +100,88 @@ class AdmissionTests(unittest.TestCase):
 
     def verify(self, current=None, profile='finite'):
         return module.verify(current or scan(), profile, 'closure-labs/finite', 'finite-review[bot]', self.records)
+
+    def test_new_live_revocation_and_deleted_record_reject_stale_checkout(self):
+        accepted = self.write(self.proposal())
+        tree = self.tree()
+        revocation = self.proposal('revoked', [accepted])
+        raw = json.dumps(revocation).encode()
+        tree['tree'].append({'path': 'automation/decisions/security/' + canonical_hash(revocation) + '.json',
+                             'type': 'blob', 'mode': '100644', 'size': len(raw),
+                             'sha': hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest()})
+        with patch.object(self, 'tree', return_value=tree):
+            with self.assertRaisesRegex(TechnicalError, 'complete current main inventory'):
+                self.verify()
+        self.assertEqual(self.calls, [])
+        with patch.object(self, 'tree', return_value={'truncated': False, 'tree': []}):
+            with self.assertRaisesRegex(TechnicalError, 'complete current main inventory'):
+                self.verify()
+
+    def test_empty_local_ledger_cannot_omit_live_decision(self):
+        self.write(self.proposal())
+        tree = self.tree()
+        for path in self.records.glob('*.json'):
+            path.unlink()
+        with patch.object(self, 'tree', return_value=tree):
+            with self.assertRaisesRegex(TechnicalError, 'complete current main inventory'):
+                self.verify()
+        self.assertEqual(self.calls, [])
+
+    def test_ledger_change_during_review_validation_cannot_return_covered(self):
+        accepted = self.write(self.proposal())
+        original = self.tree()
+        changed = copy.deepcopy(original)
+        entry = copy.deepcopy(changed['tree'][0])
+        entry['path'] = 'automation/decisions/security/' + 'f' * 64 + '.json'
+        changed['tree'].append(entry)
+        with patch.object(self, 'tree', side_effect=[original, changed]):
+            with self.assertRaisesRegex(TechnicalError, 'complete current main inventory'):
+                self.verify()
+        self.assertIn(('verify', accepted), self.calls)
+
+    def test_docs_only_main_advance_preserves_covered_ledger(self):
+        self.write(self.proposal())
+        heads = iter(['d' * 40, 'e' * 40])
+        def github(endpoint):
+            if endpoint.endswith('/git/ref/heads/main'):
+                return {'object': {'sha': next(heads)}}
+            return self.tree()
+        self.assertEqual(module.verify(scan(), 'finite', 'closure-labs/finite', 'finite-review[bot]', self.records, github)['status'], 'covered')
+
+    def test_live_inventory_api_errors_truncation_and_malformed_entries_fail_closed(self):
+        self.write(self.proposal())
+        original = self.tree()
+        cases = []
+        for field, value in [('mode', '120000'), ('mode', '100755'), ('type', 'tree'), ('sha', 'mutable'),
+                             ('size', 8 * 1024 * 1024 + 1), ('path', 'automation/decisions/security/nested/' + 'f'*64 + '.json'),
+                             ('path', 'automation/decisions/security/not-canonical.json')]:
+            tree = copy.deepcopy(original)
+            tree['tree'][0][field] = value
+            cases.append(tree)
+        cases += [{'truncated': True, 'tree': original['tree']},
+                  {'tree': original['tree']}, {'truncated': False, 'tree': None},
+                  {'truncated': False, 'tree': original['tree'] * 2},
+                  {'truncated': False, 'tree': original['tree'] + [{'path': 'automation/decisions/security', 'type': 'blob', 'mode': '120000'}]}]
+        for tree in cases:
+            with self.subTest(tree=tree), patch.object(self, 'tree', return_value=tree):
+                with self.assertRaises(TechnicalError):
+                    self.verify()
+        with patch.object(module.authority, 'github_api', side_effect=module.authority.AuthorityError('API unavailable')):
+            with self.assertRaises(module.authority.AuthorityError):
+                self.verify()
+        self.assertEqual(self.calls, [])
+
+    def test_remote_content_change_cannot_hide_under_same_canonical_filename(self):
+        self.write(self.proposal())
+        tree = self.tree()
+        tree['tree'][0]['sha'] = 'e' * 40
+        with patch.object(self, 'tree', return_value=tree), patch.object(module.authority, 'document_at', return_value=self.proposal('rejected')):
+            with self.assertRaisesRegex(TechnicalError, 'canonical local identity'):
+                self.verify()
+        self.assertEqual(self.calls, [])
+        # Harmless JSON formatting can change the Git blob without changing the decision.
+        with patch.object(self, 'tree', return_value=tree), patch.object(module.authority, 'document_at', return_value=self.proposal()):
+            self.assertEqual(self.verify()['status'], 'covered')
 
     def test_initial_decision_required_even_for_empty_scan(self):
         result = self.verify({'status': 'pass', 'observations': []})

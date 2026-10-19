@@ -15,12 +15,13 @@ https://github.com/organizations/closure-labs/settings/apps/new and these settin
 - Webhook: inactive; no webhook receiver or hosted service is needed.
 - Repository permissions: Administration **read**, Actions **write**, Checks
   **write**, Contents **write**, Issues **write**, Pull requests **write**.
-- Organization permissions: none. Subscribe to no webhook events.
+- Organization permissions: Members **read**. Subscribe to no webhook events.
 - Installation: **Only on this account**, select **only finite**.
 
 The reviewed machine-readable manifest is
 `automation/github/apps/maintainer-decisions.json`. Administration read permits
-checking each reviewer's current effective repository role. Actions write permits
+checking each reviewer's current effective repository role. Organization Members read
+permits live verification of the private `closure-labs/super-admins` team. Actions write permits
 resuming retained candidates. Checks write provides the required check's distinct
 App identity. Contents/PR write creates bot-authored proposals; Issues write maintains
 the single health issue. No Workflows write, secrets access, or signing key access.
@@ -43,7 +44,25 @@ gh variable set FINITE_REVIEW_BOT_LOGIN --repo closure-labs/finite --body 'app-s
 Do not paste the private key into chat or commit it. SecretSpec's standalone
 `review-app` scope resolves the key only for token generation. Tokens must be
 short-lived and restricted to this one repository. The App does not approve PRs.
-A current human maintainer/admin approves the bot-authored PR's exact head.
+Only a current human member of `closure-labs/super-admins` (team ID `20196962`)
+with maintain/admin repository access can authorize the exact bot PR head.
+Other repository or organization administrators cannot substitute for membership.
+Membership removal invalidates approval at the next publication boundary.
+
+The pinned team identity is trusted code, not a PR field or environment switch.
+A recreated or renamed team, hidden membership, incomplete API response or API
+failure stops authorization. Existing release and package-cleanup environment
+reviewers are restricted to the Super Admins team; release's repeated review is
+removed only after the separately reviewed decision-policy cutover.
+
+To update an existing installation, open
+https://github.com/organizations/closure-labs/settings/apps/cl-decider/permissions,
+set Organization permissions **Members: Read-only**, save, and approve the
+installation's updated permission request. This is a free GitHub permission.
+Every authority token explicitly requests Members read while selecting only this
+repository. Image signers, promotion and resumed security verification use a
+separate read-only App token; registry access retains the workflow token. Raw
+scanner jobs receive no App private key or organization-membership token.
 
 Before cutover, verify the App's check on an ordinary PR, a proposed decision,
 a changes-requested review, a new head push, and the merge queue. Bind the required

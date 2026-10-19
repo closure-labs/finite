@@ -58,6 +58,7 @@ jobs:
           permission-checks: write
           permission-actions: read
           permission-administration: read
+          permission-members: read
       - name: Clear App private credentials
         run: | # zizmor: ignore[github-env]
           printf 'FINITE_REVIEW_CLIENT_ID=\nFINITE_REVIEW_PRIVATE_KEY=\n' >>"$GITHUB_ENV"

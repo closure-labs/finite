@@ -40,6 +40,15 @@ class Selection(unittest.TestCase):
             with self.subTest(path=path):
                 self.assertEqual(impact.classify(['README.md', path]), {'checks': True, 'nix': False, 'profiles': sorted(impact.PROFILES)})
 
+    def test_decision_controls_keep_contracts_without_rebuilding_os_images(self):
+        paths = ['.github/workflows/decision-proposals.yml', 'scripts/ci/decision-controller.py',
+                 'scripts/ci/decision_controller.py', 'scripts/ci/security_admission.py']
+        self.assertEqual(impact.classify(paths), {'checks': True, 'nix': False, 'profiles': []})
+        for payload in ('files/system/shipped-file', 'recipes/finite.yml', 'scripts/ci/new-controller.py'):
+            with self.subTest(payload=payload):
+                expected = ['finite'] if payload.startswith('recipes/') else sorted(impact.PROFILES)
+                self.assertEqual(impact.classify([*paths, payload])['profiles'], expected)
+
     def test_nix_inputs_use_dependency_comparison(self):
         for path in ['VERSION', 'flake.lock', '.github/actions/setup-nix/action.yml',
                      'modules/outputs.nix', 'lib/image-payload.nix',

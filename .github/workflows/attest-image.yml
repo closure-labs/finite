@@ -8,11 +8,22 @@ on:
       digest:
         type: string
         required: true
+      resume_run:
+        type: string
+        default: ""
       evidence:
         type: string
         required: true
 permissions:
   contents: read
+env:
+  FINITE_OPTIMIZED_CACHES: ${{ vars.FINITE_OPTIMIZED_CACHES }}
+  FINITE_CACHIX_WRITER: ${{ vars.FINITE_CACHIX_WRITER }}
+  FINITE_REUSE_INVENTORY: ${{ vars.FINITE_REUSE_INVENTORY }}
+  FINITE_GRYPE_DB_CACHE: ${{ vars.FINITE_GRYPE_DB_CACHE }}
+  FINITE_QUALIFICATION_REUSE: ${{ vars.FINITE_QUALIFICATION_REUSE }}
+  FINITE_QUALIFIED_ISO_PRESERVATION: ${{ vars.FINITE_QUALIFIED_ISO_PRESERVATION }}
+  FINITE_QUALIFIED_ISO_CHANNELS: ${{ vars.FINITE_QUALIFIED_ISO_CHANNELS }}
 jobs:
   attest:
     if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
@@ -46,34 +57,75 @@ jobs:
             scripts/ci/inventory-evidence.py
             scripts/bluebuild/security-policy.py
             automation/security/image-policy.json
+            .github/actions/setup-nix/
+            flake.lock
+            secretspec.toml
+            lib/
+            sources/
+            scripts/ci/
           sparse-checkout-cone-mode: false
+      - uses: ./.github/actions/setup-nix
       - name: Download same-run native SBOM
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: ${{ inputs.evidence }}
           path: evidence
       - name: Bind native SPDX bytes to the immutable image subject
+        id: verified
         env:
           PROFILE: ${{ inputs.profile }}
           DIGEST: ${{ inputs.digest }}
-        run: python3 scripts/ci/verify-attestation-subject.py --directory evidence --profile "$PROFILE" --digest "$DIGEST"
+          RESUME_RUN: ${{ inputs.resume_run }}
+        run: |
+          mkdir -p .bluebuild
+          python3 scripts/ci/verify-attestation-subject.py --directory evidence --profile "$PROFILE" --digest "$DIGEST" \
+            --current-revision "$GITHUB_SHA" --resume-run "$RESUME_RUN" > .bluebuild/attestation-subject.json
+          python3 - <<'PY_OUTPUT'
+          import json, os
+          from pathlib import Path
+          receipt = json.loads(Path('.bluebuild/attestation-subject.json').read_text())
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              print('source_revision=' + receipt['sourceRevision'], file=output)
+              print('generate_provenance=' + str(receipt['generateProvenance']).lower(), file=output)
+          PY_OUTPUT
+      - name: Verify original build provenance for reused immutable image
+        if: steps.verified.outputs.generate_provenance != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DIGEST: ${{ inputs.digest }}
+          ORIGINAL_REVISION: ${{ steps.verified.outputs.source_revision }}
+        run: |
+          nix develop --file lib/ci-tools.nix shell --command gh attestation verify "oci://ghcr.io/closure-labs/finite@$DIGEST" \
+            --repo closure-labs/finite \
+            --signer-workflow closure-labs/finite/.github/workflows/attest-image.yml \
+            --source-digest "$ORIGINAL_REVISION" --source-ref refs/heads/main \
+            --deny-self-hosted-runners --predicate-type https://slsa.dev/provenance/v1
       - name: Authenticate registry for attestations
         env:
           REGISTRY_TOKEN: ${{ github.token }}
           REGISTRY_USER: ${{ github.actor }}
         run: printf '%s' "$REGISTRY_TOKEN" | docker login --username "$REGISTRY_USER" --password-stdin ghcr.io
+      - name: Publish authenticated full SPDX as an immutable OCI referrer
+        env:
+          PROFILE: ${{ inputs.profile }}
+          DIGEST: ${{ inputs.digest }}
+        run: |
+          nix shell --file lib/ci-tools.nix oras --command python3 scripts/ci/verify-attestation-subject.py \
+            --directory evidence --profile "$PROFILE" --digest "$DIGEST" --publish-reference .bluebuild/sbom-attestation
       - name: Attest build provenance
+        if: steps.verified.outputs.generate_provenance == 'true'
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
         with:
           subject-name: ghcr.io/closure-labs/finite
           subject-digest: ${{ inputs.digest }}
           push-to-registry: true
-      - name: Attest native SPDX SBOM
+      - name: Attest full SPDX OCI reference
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
         with:
           subject-name: ghcr.io/closure-labs/finite
           subject-digest: ${{ inputs.digest }}
-          sbom-path: evidence/sbom.spdx.json
+          predicate-type: https://github.com/closure-labs/finite/blob/main/docs/automation/sbom-reference-v1.md
+          predicate-path: .bluebuild/sbom-attestation/sbom-reference.json
           push-to-registry: true
       - name: Clear registry credentials
         if: always()

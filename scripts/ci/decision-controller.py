@@ -14,7 +14,7 @@ from security_decisions import canonical_hash, load_json
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command', choices=('collect', 'propose', 'revoke'))
+    parser.add_argument('command', choices=('collect', 'propose', 'revoke', 'propose-cutover'))
     parser.add_argument('--run', type=int)
     parser.add_argument('--kind', choices=('security-findings', 'security-revocation', 'release-set'))
     parser.add_argument('--packet-directory', type=Path, default=Path('.bluebuild/decision-packet'))
@@ -24,6 +24,12 @@ def main():
     parser.add_argument('--proposal', type=Path)
     args = parser.parse_args()
     controller.trusted_context()
+    if args.command == 'propose-cutover':
+        if (args.run is None or args.kind is not None or args.proposal is not None
+                or args.decision_hash is not None or args.rationale is not None or args.disposition != 'accepted'):
+            raise ValueError('Cutover accepts only a producer run and local native-evidence directory')
+        print(json.dumps(controller.propose_cutover(args.run, args.packet_directory)))
+        return
     if args.command == 'revoke':
         import decision_revocation
         proposal = decision_revocation.create(args.decision_hash, args.rationale, controller.REPOSITORY,

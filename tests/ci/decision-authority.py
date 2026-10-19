@@ -28,8 +28,11 @@ class GitHub:
                    'base': {'ref': 'main', 'repo': {'full_name': REPO}},
                    'merged': True, 'state': 'closed', 'merge_commit_sha': MERGE, 'changed_files': 1}
         self.reviews = [{'id': 10, 'state': 'APPROVED', 'commit_id': HEAD,
-                         'user': {'login': 'maintainer', 'type': 'User'}}]
+                         'user': {'id': 1, 'login': 'maintainer', 'type': 'User'}}]
         self.roles = {'maintainer': 'maintain'}
+        self.team = {'id': 20196962, 'slug': 'super-admins', 'organization': {'login': 'closure-labs'}}
+        self.members = [{'id': 1, 'login': 'maintainer', 'type': 'User'}, {'id': 2, 'login': 'other', 'type': 'User'}]
+        self.memberships = {}
         self.files = [{'filename': mod.proposal_path(PROPOSAL), 'status': 'added'}]
         self.blobs = {}
         self.compare = 'ahead'
@@ -40,6 +43,13 @@ class GitHub:
         self.calls.append(endpoint)
         if self.fail and self.fail in endpoint:
             raise mod.AuthorityError('API unavailable')
+        if endpoint == 'orgs/closure-labs/teams/super-admins':
+            return copy.deepcopy(self.team)
+        if '/teams/super-admins/members?' in endpoint:
+            return copy.deepcopy(self.members)
+        if '/teams/super-admins/memberships/' in endpoint:
+            login = endpoint.rsplit('/', 1)[-1]
+            return copy.deepcopy(self.memberships.get(login.lower(), {'state': 'active', 'role': 'member'}))
         if endpoint == f'repos/{REPO}/pulls/7':
             return copy.deepcopy(self.pr)
         if '/pulls/7/reviews?' in endpoint:
@@ -48,7 +58,7 @@ class GitHub:
             return copy.deepcopy(self.files)
         if '/collaborators/' in endpoint:
             login = endpoint.split('/collaborators/')[1].split('/')[0]
-            return {'permission': 'write', 'role_name': self.roles.get(login, 'read')}
+            return {'permission': 'write', 'role_name': self.roles.get(login.lower(), 'read')}
         if '/contents/' in endpoint:
             revision = endpoint.split('?ref=')[1]
             data = json.dumps(self.blobs.get(revision, self.proposal)).encode()
@@ -79,6 +89,145 @@ class Authority(unittest.TestCase):
         api.reviews[0]['submitted_at'] = '2000-01-01T00:00:00Z'
         self.assertEqual(verify(api)['status'], 'authorized')
 
+    def test_repository_admin_outside_super_admins_cannot_approve(self):
+        api = GitHub()
+        api.roles['maintainer'] = 'admin'
+        api.members = [member for member in api.members if member['login'] != 'maintainer']
+        with self.assertRaises(mod.HumanDecisionRequired):
+            verify(api)
+        self.assertFalse(any('/memberships/maintainer' in call for call in api.calls))
+
+    def test_active_team_member_or_maintainer_with_repo_permission_can_approve(self):
+        for role in ('member', 'maintainer'):
+            api = GitHub()
+            api.memberships['maintainer'] = {'state': 'active', 'role': role}
+            with self.subTest(role=role):
+                result = verify(api)
+                self.assertEqual(result['approverTeam']['id'], 20196962)
+                self.assertEqual(result['permissionPolicy'], 'current-super-admins-and-maintain-or-admin')
+
+    def test_removed_or_pending_team_membership_withdraws_existing_approval(self):
+        api = GitHub()
+        self.assertEqual(verify(api)['status'], 'authorized')
+        api.memberships['maintainer'] = {'state': 'pending', 'role': 'member'}
+        with self.assertRaises(mod.HumanDecisionRequired):
+            verify(api)
+        api.members = []
+        with self.assertRaises(mod.HumanDecisionRequired):
+            verify(api)
+
+    def test_team_identity_visibility_and_membership_errors_fail_closed(self):
+        mutations = [('team', None), ('team', {'id': 999, 'slug': 'super-admins', 'organization': {'login': 'closure-labs'}}),
+                     ('team', {'id': 20196962, 'slug': 'renamed', 'organization': {'login': 'closure-labs'}}),
+                     ('team', {'id': 20196962, 'slug': 'super-admins', 'organization': None}),
+                     ('members', {'hidden': True}), ('members', [{'id': 1, 'login': 'maintainer', 'type': 'Bot'}]),
+                     ('members', [{'id': True, 'login': 'maintainer', 'type': 'User'}]),
+                     ('members', [{'id': 1, 'login': 'maintainer', 'type': 'User'}] * 2)]
+        for field, value in mutations:
+            api = GitHub()
+            setattr(api, field, value)
+            with self.subTest(field=field, value=value), self.assertRaises(mod.AuthorityError):
+                verify(api)
+        for membership in (None, {}, {'state': 'unknown', 'role': 'member'}, {'state': 'active', 'role': 'admin'}):
+            api = GitHub()
+            api.memberships['maintainer'] = membership
+            with self.subTest(membership=membership), self.assertRaises(mod.AuthorityError):
+                verify(api)
+        for endpoint in ('orgs/closure-labs/teams/super-admins', '/members?', '/memberships/'):
+            api = GitHub()
+            api.fail = endpoint
+            with self.subTest(endpoint=endpoint), self.assertRaises(mod.AuthorityError):
+                verify(api)
+
+    def test_only_current_eligible_team_changes_request_blocks_approval(self):
+        api = GitHub()
+        api.roles['outside'] = 'admin'
+        api.reviews.append({'id': 11, 'state': 'CHANGES_REQUESTED', 'commit_id': HEAD,
+                            'user': {'id': 3, 'login': 'outside', 'type': 'User'}})
+        self.assertEqual(verify(api)['status'], 'authorized')
+        api.members.append({'id': 3, 'login': 'outside', 'type': 'User'})
+        with self.assertRaises(mod.HumanDecisionRequired):
+            verify(api)
+        api.memberships['outside'] = {'state': 'pending', 'role': 'member'}
+        self.assertEqual(verify(api)['status'], 'authorized')
+
+    def test_membership_change_during_authorization_fails_closed(self):
+        for phase in ('inventory', 'final-selected-membership'):
+            api = GitHub()
+            team_reads = 0
+            membership_reads = 0
+            def changing(endpoint):
+                nonlocal team_reads, membership_reads
+                if '/members?' in endpoint:
+                    team_reads += 1
+                    if phase == 'inventory' and team_reads == 2:
+                        api.members = []
+                if '/memberships/maintainer' in endpoint:
+                    membership_reads += 1
+                    if phase == 'final-selected-membership' and membership_reads == 3:
+                        api.memberships['maintainer'] = {'state': 'pending', 'role': 'member'}
+                return api(endpoint)
+            with self.subTest(phase=phase), self.assertRaises(mod.AuthorityError):
+                verify(changing)
+
+    def test_complete_bounded_team_pagination_is_required(self):
+        api = GitHub()
+        first = [{'id': index + 10, 'login': 'member' + str(index), 'type': 'User'} for index in range(100)]
+        def paged(endpoint):
+            if '/members?' in endpoint:
+                if endpoint.endswith('&page=1'):
+                    return first
+                if endpoint.endswith('&page=2'):
+                    return api.members
+                self.fail('Unexpected pagination')
+            return api(endpoint)
+        self.assertEqual(verify(paged)['status'], 'authorized')
+        def unbounded(endpoint):
+            return first if '/members?' in endpoint else api(endpoint)
+        with self.assertRaisesRegex(mod.AuthorityError, 'bounded pagination'):
+            verify(unbounded)
+
+    def test_human_reviewer_requires_exact_positive_immutable_member_id(self):
+        for value in (None, True, 0, -1, '1', 999):
+            api = GitHub()
+            if value is None:
+                api.reviews[0]['user'].pop('id')
+            else:
+                api.reviews[0]['user']['id'] = value
+            with self.subTest(value=value), self.assertRaises(mod.AuthorityError):
+                verify(api)
+        # A newly created account reusing the former approver's login must not
+        # inherit that deleted account's historical review.
+        api = GitHub()
+        api.members[0]['id'] = 500
+        with self.assertRaisesRegex(mod.AuthorityError, 'differs from current'):
+            verify(api)
+        for value in (None, True, 0, -1, '1'):
+            user = {'type': 'User', 'login': 'maintainer', 'id': value}
+            with self.subTest(direct=value), self.assertRaises(mod.AuthorityError):
+                mod.eligible(GitHub(), REPO, user)
+
+    def test_case_only_login_change_cannot_resurrect_dismissed_review(self):
+        api = GitHub()
+        api.reviews.append({'id': 11, 'state': 'DISMISSED', 'commit_id': HEAD,
+                            'user': {'id': 1, 'type': 'User', 'login': 'Maintainer'}})
+        with self.assertRaises(mod.HumanDecisionRequired):
+            verify(api)
+        # The same immutable user's later approval clears their earlier rejection,
+        # even when GitHub returns different username capitalization.
+        api.reviews[0]['state'] = 'CHANGES_REQUESTED'
+        api.reviews[1]['state'] = 'APPROVED'
+        self.assertEqual(verify(api)['reviewId'], 11)
+
+    def test_new_login_for_same_immutable_user_does_not_resurrect_old_review(self):
+        api = GitHub()
+        api.members[0]['login'] = 'renamed'
+        api.roles['renamed'] = 'maintain'
+        api.reviews.append({'id': 11, 'state': 'DISMISSED', 'commit_id': HEAD,
+                            'user': {'id': 1, 'type': 'User', 'login': 'renamed'}})
+        with self.assertRaises(mod.HumanDecisionRequired):
+            verify(api)
+
     def test_current_permission_required(self):
         api = GitHub()
         api.roles['maintainer'] = 'write'
@@ -99,7 +248,7 @@ class Authority(unittest.TestCase):
             api = GitHub()
             api.roles[user] = 'maintain'
             api.reviews.append({'id': 11, 'state': 'CHANGES_REQUESTED', 'commit_id': HEAD,
-                                'user': {'type': 'User', 'login': user}})
+                                'user': {'id': 1 if user == 'maintainer' else 2, 'type': 'User', 'login': user}})
             with self.assertRaises(mod.AuthorityError):
                 verify(api)
 
