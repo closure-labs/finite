@@ -1,5 +1,9 @@
 # Remediation and independent release sequence
 
+> Historical record: earlier four-profile release implementation. For current operations, use
+> [CI and releases](ci-and-releases.md) and [security review](security-review.md).
+> See [reports](reports.md) for dated evidence and related work.
+
 ## Current v0.8 release
 
 Continue with the [v0.8 execution plan](v0.8-release-plan.md). The all-profile

@@ -1,5 +1,9 @@
 # Doppler OIDC canary pilot
 
+> Historical record: October 13 optional OIDC canary experiment. For current operations, use
+> [CI and releases](ci-and-releases.md) and [security review](security-review.md).
+> See [reports](reports.md) for dated evidence and related work.
+
 This manual pilot is independent of release qualification and retrieves no
 production credentials. It executes inline workflow code without checking out
 or executing repository scripts. The fetch action is pinned to reviewed v2.0.0

@@ -81,13 +81,18 @@ outcome is recorded and resumed without pretending both succeeded.
 
 ## Bootstrap and cutover
 
-The implementation is additive until the [review App](maintainer-decision-app.md)
-is installed and its authority check is validated. CL Decider is installed with
-organization credentials; the baseline and enforced cutover still require validation.
-Current `image-policy.json` intentionally retains its existing mode
-and existing release environment review remains enforced for the Super Admins team.
-Package-cleanup approval also uses that team. There is no environment
-variable that bypasses the new admission logic.
+CL Decider is installed, its App-bound required check is live, and Super Admins
+membership verification has passed against the private team. The initial
+both-profile baseline was approved and merged in
+[PR 188](https://github.com/closure-labs/finite/pull/188).
+[PR 191](https://github.com/closure-labs/finite/pull/191) tracks the separately
+reviewed activation of `maintainer-decision` mode. Its CI correction gives
+historical policy tests an explicit legacy fixture; the complete 1,072-test
+CI/BlueBuild matrix passes in both legacy and maintainer modes.
+
+The release environment reviewer remains restricted to Super Admins during the
+release transition. Package-cleanup review also uses that team. The sequence
+below records the activation and verification boundaries.
 
 Initial baseline proposals use the same native severity and CVSS calculations as
 the eventual maintainer mode. Legacy AI dispositions cannot suppress those

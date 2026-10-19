@@ -18,6 +18,14 @@ resources, malformed JSON and invalid evidence still stop immediately. An
 exhausted transport budget remains a failure; it never grants security clearance
 or silently accepts unauthenticated inventory.
 
+### Recovery verification
+
+Issue [189](https://github.com/closure-labs/finite/issues/189) reported this failed
+audit through CL Decider's health monitor. After the bounded transport retries
+merged, [audit 39321217380](https://github.com/closure-labs/finite/actions/runs/39321217380)
+passed for both profiles. The monitor then reported healthy and automatically
+closed the follow-up [issue 190](https://github.com/closure-labs/finite/issues/190).
+
 ## Weekly lock refresh
 
 The [scheduled updater](https://github.com/closure-labs/finite/actions/runs/39286660442)
@@ -132,6 +140,15 @@ resuming an earlier digest, even from the same SHA, verifies existing provenance
 against the original source digest, main ref, reusable signer and hosted runner.
 A candidate without valid original provenance requires a fresh build.
 
+### Hosted attestation verification
+
+[Resumed run 39317485903](https://github.com/closure-labs/finite/actions/runs/39317485903)
+passed native evidence verification, the full SBOM reference attestation and
+image signing for finite-dev. Independent attestation verification confirmed the
+127,756,096-byte SPDX document retained its original hash. The run was cancelled
+during qualification to sequence policy activation; this receipt establishes
+the repaired attestation/signing stages.
+
 ## CodeQL finding review
 
 All six open CodeQL alerts from the main scan at
@@ -165,3 +182,14 @@ persistence markers. Shell syntax and ShellCheck pass for the modified shell
 sources. Tests use installed tools; no full local Nix evaluation or image build
 was performed. Both corrected hosted diagnostics pass fresh installation,
 upgrade, persistence and rollback checks.
+
+## Activation policy test fixtures
+
+The [activation PR CI](https://github.com/closure-labs/finite/actions/runs/39322560450)
+failed because historical tests read the production policy and assumed legacy
+mode. Switching production to `maintainer-decision` exposed those implicit
+fixture dependencies. An explicit historical policy fixture now isolates the
+legacy cases in five suites while preserving their enforcement assertions.
+All 1,072 CI/BlueBuild tests pass under each policy mode, for 2,144 executions.
+Hosted validation of the corrected head is tracked in
+[PR 191](https://github.com/closure-labs/finite/pull/191).

@@ -1,3 +1,7 @@
+> Historical record: October 12–13 vulnerability remediation. For current operations, use
+> [CI and releases](ci-and-releases.md) and [security review](security-review.md).
+> See [reports](reports.md) for dated evidence and related work.
+
 > Superseding decision: scanner advisory pairs are review work, not release
 > blockers. Only exact-candidate, evidence-backed Critical desktop risks block.
 > The investigations below remain tracked and can proceed independently of

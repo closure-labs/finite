@@ -1,9 +1,9 @@
 # Configure your environment
 
-[Foundation](https://github.com/closure-labs/foundation) owns Finite's Home Manager
-configuration, profile catalog and user helpers. Finite installs Nix, validates
-host compatibility and provisions a personal consumer of a reviewed Foundation
-release. Foundation has its own releases and tested dependency lock.
+Choose roles and optional packages with `finite-configure`, then add your own
+apps and settings in `~/.config/home-manager/`. Your configuration uses a pinned
+[Foundation](https://github.com/closure-labs/foundation) release and stays with
+you across system updates.
 
 ## Your personal configuration
 
@@ -26,6 +26,20 @@ additional inputs explicitly declared in your personal flake.
 `nh home build` builds personal changes and `nh home switch` activates them.
 Keep `home.stateVersion` unchanged when updating. Keep your personal modules,
 profile, flake and lock together in your own Git repository.
+
+## Add custom flake inputs
+
+Declare additional sources in `~/.config/home-manager/flake.nix` and use them
+through `inputs` in your personal modules. Update the lock, build, then activate:
+
+```bash
+nix flake lock ~/.config/home-manager
+nh home build
+nh home switch
+```
+
+Keep `flake.nix`, `flake.lock` and your personal modules together in version
+control so they can be restored as one configuration.
 
 ## Update Foundation
 
@@ -97,9 +111,13 @@ Inspect it with `finite-keyboard-access status`; revoke it with
 `sudo finite-keyboard-access disable` followed by a reboot. Access applies to
 programs running as active local seat users, rather than only Espanso.
 
+## Enable GPU access for Nix apps
+
 For non-NixOS graphical apps, run the generated `non-nixos-gpu-setup` helper after
 first activation as instructed by Home Manager. Finite's GPU boot integration
 continues restoring the driver links.
+
+## Provision a user
 
 `/usr/libexec/finite/home-init --profile PROFILE` provisions a new user's
 configuration from the image's pinned Foundation source. The existing YAML/JSON

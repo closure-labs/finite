@@ -10,16 +10,11 @@ the passphrase or security-key prompt, select the previous working Finite
 deployment in the boot menu. Retain that deployment until the replacement has
 booted successfully.
 
-On the affected workstation, inspect `/boot/loader/entries/*.conf`. Each Finite
-entry should reference both its kernel (`linux`) and initramfs (`initrd`). The
-September 22, 2026 next-kernel image lacked
-`/usr/lib/modules/7.2.6-300.fc45.x86_64/initramfs.img`, producing an entry with no
-`initrd` line. Without that early userspace, encrypted root cannot be unlocked.
-Changing YubiKey enrollment does not repair the missing boot payload.
-
-The image build now regenerates the replacement kernel's initramfs and verifies
-its OSTree, LUKS and FIDO2 support. See
-[qualification policy](workstation-qualification.md) for the associated CI fix.
+Inspect `/boot/loader/entries/*.conf`: each deployment should reference both
+its kernel (`linux`) and initramfs (`initrd`). Retain the image digest and boot
+logs when reporting the failure. Current builds check matching boot payloads;
+the [recovery history](bluebuild/qualification-recovery-history.md) records the
+earlier missing-initramfs incident and associated fixes.
 
 ## Check the running system
 
@@ -164,16 +159,11 @@ next phase restores the correct policy and selects the signed update channel.
 
 ## A repository check fails
 
-Run the suite with build logs and bounded local resources:
-
-```bash
-nix build --accept-flake-config --max-jobs 3 --cores 2 \
-  --no-link .#ci-checks --print-build-logs
-```
-
-For a focused check, use an exported name such as
-`.#checks.x86_64-linux.workflows`, `.#checks.x86_64-linux.nix-lifecycle` or
-`.#checks.x86_64-linux.bluebuild`. Run `nix fmt` to apply formatting.
+Open the failed job in [Finite Actions](https://github.com/closure-labs/finite/actions)
+and retain its source revision and first failing check. Run full Nix/runtime,
+image and VM checks on hosted runners. Use an available Python or shell tool
+for a small local fixture; see [Develop Finite](development.md#run-checks) for
+examples and the workstation resource constraints.
 
 ## An image or ISO build fails
 

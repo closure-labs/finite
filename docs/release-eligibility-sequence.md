@@ -1,5 +1,9 @@
 # Release eligibility sequence
 
+> Historical record: earlier four-profile release sequence. For current operations, use
+> [CI and releases](ci-and-releases.md) and [security review](security-review.md).
+> See [reports](reports.md) for dated evidence and related work.
+
 Current execution order: [remediation and independent release sequence](release-implementation-sequence.md).
 
 Finite is a Jujutsu (JJ) repository using Bluefin/bootc with Nix/Home Manager;

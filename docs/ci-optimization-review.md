@@ -1,5 +1,9 @@
 # CI reliability and optimization review
 
+> Historical record: October 12–14 CI measurements. For current operations, use
+> [CI and releases](ci-and-releases.md) and [security review](security-review.md).
+> See [reports](reports.md) for dated evidence and related work.
+
 The [completed October 14 rollout results](ci-rollout-results.md) record protected
 merges, all eight production VM phases, authenticated original-ISO reuse, matched
 Cachix reader evidence, final switches and the prioritized next plan.
