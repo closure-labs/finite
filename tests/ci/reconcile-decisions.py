@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Reconciliation reauthenticates humans and recovers ambiguous dispatches."""
 from copy import deepcopy
+from datetime import datetime, timezone
 import importlib.util
 import json
 import os
@@ -68,10 +69,12 @@ class Reconciliation(unittest.TestCase):
         self.ambiguous_dispatch = False
         self.verify_results = None
         self.verifications = 0
+        self.native_scan = {'status': 'complete', 'scannerHealth': 'healthy', 'image': IMAGE}
         self.patches = [patch.object(reconcile.controller, 'ROOT', self.root),
                         patch.object(reconcile.controller, 'api', side_effect=self.api),
                         patch.object(reconcile.controller, 'collection', side_effect=self.collection),
                         patch.object(reconcile.decision_packets, 'fetch', side_effect=self.fetch),
+                        patch.object(reconcile.controller, 'native_result', side_effect=lambda *a, **k: deepcopy(self.native_scan)),
                         patch.object(reconcile, 'GitHubClient', return_value=self.journal),
                         patch.object(reconcile, 'verify', side_effect=self.verify),
                         patch.dict(os.environ, {'GITHUB_ACTIONS': 'true', 'GITHUB_REPOSITORY': 'closure-labs/finite',
@@ -84,13 +87,14 @@ class Reconciliation(unittest.TestCase):
     def fetch(self, reference, directory, digest):
         location = directory / 'finite'
         location.mkdir(parents=True)
+        (location / 'vulnerabilities.json').write_text(json.dumps({'descriptor': {'timestamp': '2026-01-01T00:00:00Z'}}))
         (location / 'security-result.json').write_text(json.dumps({'status': 'complete', 'scannerHealth': 'healthy', 'image': IMAGE}))
 
     def verify(self, *args, **kwargs):
         self.verifications += 1
         if self.verify_results:
             return self.verify_results.pop(0)
-        return {'status': 'covered', 'decision': self.identity}
+        return {'status': 'covered', 'decision': {'proposalHash': self.identity, 'disposition': 'accepted'}}
 
     def collection(self, path, key):
         if path.endswith('/artifacts'): return deepcopy(self.artifacts)
@@ -125,6 +129,79 @@ class Reconciliation(unittest.TestCase):
         self.assertEqual(self.dispatched[0]['inputs']['resume_digest'], IMAGE.split('@')[1])
         self.assertRegex(self.dispatched[0]['inputs']['decision_request'], r'^[0-9a-f]{64}$')
         self.assertEqual(self.journal.state['status'], 'dispatched')
+
+    def test_legacy_packet_reconstructs_cvss_and_uses_real_admission_identity(self):
+        from security_decisions import evaluate, normalize_findings, TechnicalError
+        finding = {'component': 'pkg:rpm/fedora/openssl@3.0?arch=x86_64',
+                   'advisory': 'CVE-2026-12345', 'aliases': [], 'severity': 'High',
+                   'cvss': 8.1, 'knownExploited': False, 'locations': ['/usr/bin/openssl'],
+                   'locationCoverage': 'complete', 'fixVersions': []}
+        self.native_scan['observations'] = [finding]
+        accepted = normalize_findings(self.native_scan, 'finite')
+        legacy = deepcopy(self.native_scan)
+        del legacy['observations'][0]['cvss']
+        with self.assertRaisesRegex(TechnicalError, 'CVSS evidence disappeared'):
+            evaluate(legacy, 'finite', accepted)
+
+        def admission(scan, profile, *args):
+            result = evaluate(scan, profile, accepted)
+            return {**result, 'decision': {'proposalHash': self.identity, 'disposition': 'accepted'}}
+        with patch.object(reconcile, 'verify', side_effect=admission):
+            self.assertEqual(self.execute()[0]['status'], 'dispatched')
+        snapshot = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        reconcile.controller.native_result.assert_called_once()
+        call = reconcile.controller.native_result.call_args
+        self.assertEqual(call.args[1:], (snapshot, snapshot))
+        self.assertEqual(call.kwargs, {'profile': 'finite'})
+        self.assertEqual(len(self.dispatched), 1)
+
+    def test_native_evidence_failure_stops_before_authority_or_dispatch(self):
+        reconcile.controller.native_result.side_effect = ValueError('Invalid native evidence')
+        with self.assertRaisesRegex(ValueError, 'Invalid native evidence'):
+            self.execute()
+        self.assertEqual(self.verifications, 0)
+        self.assertEqual(self.journal.calls, 0)
+        self.assertEqual(self.dispatched, [])
+
+    def test_wrong_decision_identity_never_dispatches(self):
+        self.verify_results = [{'status': 'covered', 'decision': {'proposalHash': 'f' * 64}}]
+        with self.assertRaisesRegex(ValueError, 'differs from authenticated'):
+            self.execute()
+        self.assertEqual(self.journal.calls, 0)
+        self.assertEqual(self.dispatched, [])
+
+    def test_changed_decision_identity_after_claim_never_dispatches(self):
+        self.verify_results = [self.verify(), {'status': 'covered', 'decision': {'proposalHash': 'f' * 64}}]
+        with self.assertRaisesRegex(ValueError, 'authority changed'):
+            self.execute()
+        self.assertEqual(self.dispatched, [])
+
+    def test_genuinely_missing_native_cvss_remains_a_technical_failure(self):
+        from security_decisions import evaluate, normalize_findings, TechnicalError
+        finding = {'component': 'pkg:rpm/fedora/openssl@3.0?arch=x86_64',
+                   'advisory': 'CVE-2026-12345', 'aliases': [], 'severity': 'High',
+                   'cvss': 8.1, 'knownExploited': False, 'locations': ['/usr/bin/openssl'],
+                   'locationCoverage': 'complete', 'fixVersions': []}
+        self.native_scan['observations'] = [finding]
+        accepted = normalize_findings(self.native_scan, 'finite')
+        del finding['cvss']
+        with patch.object(reconcile, 'verify', side_effect=lambda scan, profile, *a: evaluate(scan, profile, accepted)):
+            with self.assertRaisesRegex(TechnicalError, 'CVSS evidence disappeared'):
+                self.execute()
+        self.assertEqual(self.journal.calls, 0)
+        self.assertEqual(self.dispatched, [])
+
+    def test_future_or_unzoned_snapshot_never_dispatches(self):
+        original = self.fetch
+        for timestamp in ('2999-01-01T00:00:00Z', '2026-01-01T00:00:00', None):
+            def fetch(reference, directory, digest):
+                original(reference, directory, digest)
+                (directory / 'finite/vulnerabilities.json').write_text(json.dumps({'descriptor': {'timestamp': timestamp}}))
+            with self.subTest(timestamp=timestamp), patch.object(reconcile.decision_packets, 'fetch', side_effect=fetch):
+                with self.assertRaisesRegex(ValueError, 'scan time'):
+                    self.execute()
+            self.assertEqual(self.journal.calls, 0)
+            self.assertEqual(self.dispatched, [])
 
     def test_shadow_bootstrap_never_dispatches_before_explicit_policy_cutover(self):
         (self.root / 'automation/security/image-policy.json').write_text(json.dumps({'mode': 'desktop-critical-only'}))
@@ -216,7 +293,7 @@ class Reconciliation(unittest.TestCase):
         self.assertEqual(len(self.dispatched), 1)
 
     def test_revocation_between_claim_and_dispatch_stops_publication(self):
-        self.verify_results = [{'status': 'covered', 'decision': self.identity}, {'status': 'revoked', 'decision': self.identity}]
+        self.verify_results = [{'status': 'covered', 'decision': {'proposalHash': self.identity, 'disposition': 'accepted'}}, {'status': 'revoked', 'decision': {'proposalHash': self.identity, 'disposition': 'accepted'}}]
         with self.assertRaisesRegex(ValueError, 'authority changed'): self.execute()
         self.assertEqual(self.dispatched, [])
 
@@ -226,7 +303,7 @@ class Reconciliation(unittest.TestCase):
         self.assertEqual(self.dispatched, [])
 
     def test_review_required_never_dispatches_or_writes_journal(self):
-        self.verify_results = [{'status': 'review-required', 'decision': self.identity}]
+        self.verify_results = [{'status': 'review-required', 'decision': {'proposalHash': self.identity, 'disposition': 'accepted'}}]
         self.assertEqual(self.execute()[0]['status'], 'review-required')
         self.assertEqual(self.journal.calls, 0)
         self.assertEqual(self.dispatched, [])

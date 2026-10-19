@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Resume eligible retained candidates after a merged human decision, without waiting runners."""
 import json
+from datetime import datetime, timezone
 import os
 from pathlib import Path
 import re
@@ -105,12 +106,25 @@ def reconcile(now=time.time):
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary) / 'packet'
             decision_packets.fetch(packet['reference'], directory, packet['sha256'])
-            scan = load_json(directory / profile / 'security-result.json')
+            # Packets retain the original native bytes, including summaries
+            # written before maintainer mode. Reconstruct the accepted snapshot
+            # so its CVSS ceilings and related severities are preserved. This
+            # historical clock selects build/rescan work only: publication
+            # independently enforces fresh native evidence and live authority.
+            native = directory / profile
+            scanned = load_json(native / 'vulnerabilities.json')['descriptor']['timestamp']
+            if not isinstance(scanned, str):
+                raise ValueError('Decision snapshot requires a native scan timestamp')
+            snapshot_time = datetime.fromisoformat(scanned.replace('Z', '+00:00'))
+            if snapshot_time.tzinfo is None or snapshot_time > datetime.now(timezone.utc):
+                raise ValueError('Decision snapshot requires an authenticated historical scan time')
+            scan = controller.native_result(native, snapshot_time, snapshot_time, profile=profile)
             admission = verify(scan, profile, controller.REPOSITORY, bot)
         if admission['status'] != 'covered':
             actions.append({'profile': profile, 'status': admission['status']})
             continue
-        if admission.get('decision') != identity:
+        if (not isinstance(admission.get('decision'), dict)
+                or admission['decision'].get('proposalHash') != identity):
             raise ValueError('Reconciliation decision differs from authenticated active decision')
         request_id = canonical_hash({'decision': identity, 'profile': profile, 'image': scan['image']})
         state, version = journal.read_journal(request_id)
@@ -158,7 +172,8 @@ def reconcile(now=time.time):
         # run marker before retrying an expired claim.
         version = journal.write_journal(request_id, claim, version)
         admission = verify(scan, profile, controller.REPOSITORY, bot)
-        if admission['status'] != 'covered' or admission.get('decision') != identity:
+        if (admission['status'] != 'covered' or not isinstance(admission.get('decision'), dict)
+                or admission['decision'].get('proposalHash') != identity):
             raise ValueError('Decision authority changed before build dispatch')
         revision = os.environ.get('GITHUB_SHA', '')
         current = controller.api(f'repos/{controller.REPOSITORY}/git/ref/heads/main')

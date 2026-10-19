@@ -52,6 +52,13 @@ Optional `original-security-result.json` and `reuse-provenance.json` files remai
 
 An uncovered reused scan cannot become a new decision packet by assigning it the later transport run's timestamps. The controller requests one full, two-profile build without resume inputs to produce a fresh native snapshot. A failed fresh full build stops on its technical error; it does not trigger a consolidation loop. A covered single-profile resumed scan needs no additional build or review request.
 
+The resume coordinator reconstructs the approved historical snapshot from its
+native Grype evidence at the recorded scan time, including CVSS omitted by older
+summary formats. This only selects build or rescan work. The publisher requires
+fresh native health and live authority independently. The coordinator checks
+admission's `decision.proposalHash` against the active leaf before claiming work
+and again before dispatch.
+
 ## Proposing rejection or revocation
 
 Dispatch **Reconcile maintainer decisions** on main. Select `rejected`, provide
