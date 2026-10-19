@@ -29,7 +29,7 @@ class PublicationAuthority(unittest.TestCase):
                 (root / 'scripts/bluebuild/security-policy.py').symlink_to(ROOT / 'scripts/bluebuild/security-policy.py')
                 target = root / 'automation/security/image-policy.json'
                 target.parent.mkdir(parents=True)
-                original = json.loads((ROOT / 'automation/security/image-policy.json').read_text())
+                original = json.loads((ROOT / 'tests/fixtures/legacy-image-security-policy.json').read_text())
                 for decision in (False, True):
                     policy = deepcopy(original)
                     if decision:

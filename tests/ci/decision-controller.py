@@ -472,9 +472,11 @@ class PolicyCutover(unittest.TestCase):
         self.stack = contextlib.ExitStack()
         self.addCleanup(self.stack.close)
         self.stack.enter_context(mock.patch.dict('os.environ', FINITE_REVIEW_BOT_LOGIN=self.BOT))
-        self.source = mod.load_json(ROOT / self.PATH)
         policy = mod.module('fixture_cutover_policy', ROOT / 'scripts/bluebuild/security-policy.py')
         self.config = mod.native_observation_policy(policy, ROOT / self.PATH)
+        # Exercise the historical bootstrap even after production activates it.
+        # The active-mode no-op has its own explicit fixture below.
+        self.source = policy.load_policy(ROOT / 'tests/fixtures/legacy-image-security-policy.json')
         self.trust = self.stack.enter_context(mock.patch.object(mod, 'trusted_context'))
         self.binding = self.stack.enter_context(mock.patch.object(mod, 'require_live_authority_rule'))
         self.stack.enter_context(mock.patch.object(mod.authority, 'validate_context'))
