@@ -412,9 +412,31 @@ if [[ $2 == upgrade ]]; then
   bash /var/lib/finite-vm/prepare-predecessor-home
 fi
 echo 'Building and activating the base Home Manager environment'
-/usr/libexec/finite/home-init --profile "$HOME/profile.json"
-printf '\n# VM acceptance customization\n' >>"$HOME/.config/home-manager/customize.nix"
+/usr/libexec/finite/home-init --profile "$HOME/profile.json" </dev/null
 GUEST
+# Initializers and their children must not consume commands from bash -s stdin.
+# Establish the fixture over a separate SSH request, then prove it exists before
+# changing deployments so an uncreated marker cannot masquerade as data loss.
+ssh "${ssh_args[@]}" python3 - >"$state/initialized-home.json" <<'HOME_INITIALIZED'
+import hashlib
+import json
+from pathlib import Path
+
+configuration = Path.home() / '.config/home-manager'
+customization = configuration / 'customize.nix'
+for name in ('flake.nix', 'flake.lock', 'profile.json', 'customize.nix'):
+    if not (configuration / name).is_file():
+        raise ValueError('Home initialization did not produce the required configuration file: ' + name)
+if Path('/var/home/nix/finite-acceptance').read_text().rstrip('\n') != 'persistent-nix-state':
+    raise ValueError('Nix persistence fixture was not initialized')
+with customization.open('a') as output:
+    output.write('\n# VM acceptance customization\n')
+content = customization.read_bytes()
+if b'VM acceptance customization' not in content:
+    raise ValueError('Home customization fixture was not initialized')
+print(json.dumps({'schema': 1, 'status': 'pass', 'checks': {'nixState': True, 'homeCustomization': True},
+                  'customizationSha256': hashlib.sha256(content).hexdigest()}))
+HOME_INITIALIZED
 record_duration home-activation "$(($(monotonic_seconds) - activation_started))"
 if [[ -z $target ]]; then
   poweroff_vm
