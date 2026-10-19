@@ -17,6 +17,7 @@ in {
   shell = shells.ci;
   image-tools = shells.imageTools;
   scanner-tools = shells.scannerTools;
+  oras = pkgs.oras;
   cache-tools = pkgs.buildEnv {
     name = "finite-ci-cache-tools";
     paths = [pkgs.cachix];

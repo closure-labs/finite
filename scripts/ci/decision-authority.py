@@ -15,6 +15,9 @@ from security_decisions import TechnicalError, canonical_hash, load_json
 
 SHA = re.compile(r'[0-9a-f]{40}')
 REPOSITORY = re.compile(r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+')
+APPROVER_ORG = 'closure-labs'
+APPROVER_TEAM = 'super-admins'
+APPROVER_TEAM_ID = 20196962
 KINDS = {'security-findings': 'security', 'security-revocation': 'security', 'release-set': 'releases'}
 
 
@@ -107,45 +110,88 @@ def document_at(api, repository, path, revision):
         raise AuthorityError('Invalid proposal blob') from error
 
 
-def eligible(api, repository, user):
+def approver_members(api):
+    """A complete visible, pinned team inventory; 404/API errors never mean empty."""
+    endpoint = f'orgs/{APPROVER_ORG}/teams/{APPROVER_TEAM}'
+    team = api(endpoint)
+    if (not isinstance(team, dict) or type(team.get('id')) is not int
+            or team['id'] != APPROVER_TEAM_ID or team.get('slug') != APPROVER_TEAM
+            or not isinstance(team.get('organization'), dict) or team['organization'].get('login') != APPROVER_ORG):
+        raise AuthorityError('Cannot authenticate the pinned Super Admins approval team')
+    users = collection(api, endpoint + '/members?role=all')
+    members, ids = {}, set()
+    for user in users:
+        if (not isinstance(user, dict) or user.get('type') != 'User'
+                or not isinstance(user.get('login'), str) or not re.fullmatch(r'[A-Za-z0-9-]+', user['login'])
+                or type(user.get('id')) is not int or user['id'] < 1
+                or user['login'].lower() in members or user['id'] in ids):
+            raise AuthorityError('Invalid complete Super Admins membership inventory')
+        members[user['login'].lower()] = user['id']
+        ids.add(user['id'])
+    return members
+
+
+def eligible(api, repository, user, members=None):
     if not isinstance(user, dict) or user.get('type') != 'User' or not isinstance(user.get('login'), str):
         return False
     login = user['login']
-    if not re.fullmatch(r'[A-Za-z0-9-]+', login):
-        raise AuthorityError('Invalid human reviewer identity')
+    if (not re.fullmatch(r'[A-Za-z0-9-]+', login)
+            or type(user.get('id')) is not int or user['id'] < 1):
+        raise AuthorityError('Invalid immutable human reviewer identity')
+    members = approver_members(api) if members is None else members
+    if login.lower() not in members:
+        return False
+    if user['id'] != members[login.lower()]:
+        raise AuthorityError('Reviewer identity differs from current Super Admins member')
+    membership = api(f'orgs/{APPROVER_ORG}/teams/{APPROVER_TEAM}/memberships/{login}')
+    if (not isinstance(membership, dict) or membership.get('state') not in ('active', 'pending')
+            or membership.get('role') not in ('member', 'maintainer')):
+        raise AuthorityError('Invalid current Super Admins membership')
+    if membership['state'] != 'active':
+        return False
     permission = api(f'repos/{repository}/collaborators/{login}/permission')
     if not isinstance(permission, dict):
         raise AuthorityError('Invalid current reviewer permission')
-    # GitHub may expose maintain through role_name while permission is write.
+    # Team membership narrows authority; it never grants repository privileges.
     return permission.get('role_name', permission.get('permission')) in ('maintain', 'admin')
 
 
 def approval(api, repository, number, head):
+    members = approver_members(api)
     reviews = collection(api, f'repos/{repository}/pulls/{number}/reviews')
     latest = {}
     for review in reviews:
-        if (not isinstance(review, dict) or not isinstance(review.get('id'), int)
+        if (not isinstance(review, dict) or type(review.get('id')) is not int or review['id'] < 1
                 or not isinstance(review.get('user'), dict)):
             raise AuthorityError('Invalid authenticated PR review record')
         if review.get('state') not in ('APPROVED', 'CHANGES_REQUESTED', 'DISMISSED'):
             continue
         user = review['user']
-        login = user.get('login')
-        if not isinstance(login, str):
-            raise AuthorityError('Review lacks authenticated reviewer login')
-        if login not in latest or latest[login]['id'] < review['id']:
-            latest[login] = review
+        if user.get('type') == 'Bot':
+            continue
+        login, user_id = user.get('login'), user.get('id')
+        if (user.get('type') != 'User' or not isinstance(login, str)
+                or not re.fullmatch(r'[A-Za-z0-9-]+', login)
+                or type(user_id) is not int or user_id < 1):
+            raise AuthorityError('Review lacks immutable authenticated human identity')
+        if user_id not in latest or latest[user_id]['id'] < review['id']:
+            latest[user_id] = review
     accepted = []
     for review in latest.values():
-        if not eligible(api, repository, review['user']):
+        if not eligible(api, repository, review['user'], members):
             continue
         if review['state'] == 'CHANGES_REQUESTED':
-            raise HumanDecisionRequired('Eligible maintainer has an unresolved changes-requested review')
+            raise HumanDecisionRequired('Eligible Super Admin has an unresolved changes-requested review')
         if review['state'] == 'APPROVED' and review.get('commit_id') == head:
             accepted.append(review)
     if not accepted:
-        raise HumanDecisionRequired('An eligible human must approve the exact current proposal PR head')
-    return sorted(accepted, key=lambda value: value['id'])[-1]
+        raise HumanDecisionRequired('An active Super Admin with maintain/admin access must approve the exact current proposal PR head')
+    selected = sorted(accepted, key=lambda value: value['id'])[-1]
+    if approver_members(api) != members:
+        raise AuthorityError('Super Admins membership changed during authorization')
+    if not eligible(api, repository, selected['user'], members):
+        raise HumanDecisionRequired('Selected Super Admin approval is no longer eligible')
+    return selected
 
 
 def verify_proposal(proposal, pr, repository, expected_bot, require_merged=True, github=None,
@@ -153,7 +199,7 @@ def verify_proposal(proposal, pr, repository, expected_bot, require_merged=True,
     """Return API-derived authority; callers separately validate scan/release payload semantics.
 
     No self-reported PR ID, approver, hash or signature inside a proposal grants authority.
-    Current maintain/admin access is required at every invocation; there is no TTL.
+    Current active Super Admins membership and maintain/admin access are required; there is no TTL.
     """
     validate_context(repository, expected_bot)
     path = proposal_path(proposal)
@@ -208,11 +254,14 @@ def verify_proposal(proposal, pr, repository, expected_bot, require_merged=True,
             or latest.get('merged') != pull.get('merged') or latest.get('state') != pull.get('state')
             or latest.get('merge_commit_sha') != merge):
         raise AuthorityError('Proposal PR changed during authorization')
+    if not eligible(api, repository, review['user']):
+        raise HumanDecisionRequired('Super Admin approval was withdrawn during authorization')
     return {'schema': 1, 'status': 'authorized', 'repository': repository,
             'proposalHash': digest, 'path': path, 'pullRequest': number,
             'reviewId': review['id'], 'reviewer': review['user']['login'],
             'reviewedHead': head, 'mergeCommit': merge if pull.get('merged') else None,
-            'permissionPolicy': 'current-maintain-or-admin'}
+            'permissionPolicy': 'current-super-admins-and-maintain-or-admin',
+            'approverTeam': {'organization': APPROVER_ORG, 'slug': APPROVER_TEAM, 'id': APPROVER_TEAM_ID}}
 
 
 def find_origin_pr(proposal, repository, expected_bot, github=None):

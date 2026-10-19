@@ -353,6 +353,22 @@ class Reuse(unittest.TestCase):
                 self.assertTrue(observed)
                 self.assertTrue(all(not path.exists() and not path.parent.exists() for path in observed))
 
+    def test_explicit_registry_token_never_uses_authority_token(self):
+        env = {**environment(), 'GH_TOKEN': 'authority-app-token', 'REGISTRY_TOKEN': 'registry-workflow-token'}
+        def inspect(image):
+            auth = json.loads(Path(os.environ['REGISTRY_AUTH_FILE']).read_text())
+            credential = base64.b64decode(auth['auths']['ghcr.io']['auth']).decode()
+            self.assertEqual(credential, 'fixture-user:registry-workflow-token')
+            self.assertEqual(os.environ['GH_TOKEN'], 'authority-app-token')
+            return {'Digest': DIGEST}
+        with patch.dict(os.environ, env, clear=True), patch.object(reuse.publication.upstream, 'inspect', side_effect=inspect):
+            self.assertEqual(reuse.inspect_candidate(IMAGE), {'Digest': DIGEST})
+        # An explicitly empty registry credential must not fall back to authority.
+        with patch.dict(os.environ, {**env, 'REGISTRY_TOKEN': ''}, clear=True), patch.object(reuse.publication.upstream, 'inspect') as remote:
+            with self.assertRaises(ValueError):
+                reuse.inspect_candidate(IMAGE)
+            remote.assert_not_called()
+
     def test_registry_auth_missing_actor_or_token_fails_before_inspection(self):
         for key in ('GITHUB_ACTOR', 'GH_TOKEN'):
             env = environment()
@@ -363,8 +379,8 @@ class Reuse(unittest.TestCase):
 
     def test_bounded_reuse_unit_receives_actor_without_credential_command_arguments(self):
         workflow = (ROOT / '.github/workflows/publication.yml').read_text()
-        self.assertIn('--preserve-env=GH_TOKEN,GITHUB_ACTOR,GITHUB_ACTIONS', workflow)
-        self.assertIn('--setenv=GH_TOKEN --setenv=GITHUB_ACTOR', workflow)
+        self.assertIn('--preserve-env=GH_TOKEN,REGISTRY_TOKEN,GITHUB_ACTOR,GITHUB_ACTIONS', workflow)
+        self.assertIn('--setenv=GH_TOKEN --setenv=REGISTRY_TOKEN --setenv=GITHUB_ACTOR', workflow)
         self.assertNotIn('--setenv="GH_TOKEN=', workflow)
         self.assertIn('--uid="$(id -u)" --gid="$(id -g)"', workflow)
         self.assertIn('--property=MemoryMax=2G --property=MemorySwapMax=0', workflow)

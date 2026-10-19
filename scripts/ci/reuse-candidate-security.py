@@ -170,7 +170,7 @@ def revalidate(directory, image, profile, source, identity, policy_path):
 
 def inspect_candidate(image):
     """Give only the registry read an explicit, private, short-lived auth file."""
-    actor, token = os.environ.get('GITHUB_ACTOR', ''), os.environ.get('GH_TOKEN', '')
+    actor, token = os.environ.get('GITHUB_ACTOR', ''), os.environ.get('REGISTRY_TOKEN', os.environ.get('GH_TOKEN', ''))
     if (not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]*(?:\[bot\])?', actor)
             or not token or len(token) > 65536 or any(character.isspace() for character in token)):
         raise ValueError('Candidate registry inspection requires the workflow actor and token')

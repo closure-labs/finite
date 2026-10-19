@@ -6,6 +6,17 @@ inventory reuse, and the daily full rebuild. Floating DNF/BlueBuild inputs are n
 completely represented by the Nix graph, so a passing source-input comparison is
 not a reason to remove daily builds.
 
+Changes limited to the reviewed proposal workflow, decision controller entrypoint
+and module, or admission module retain source and Nix/runtime contract checks
+without rebuilding OS images. Mixed payload changes and unknown helpers remain
+conservative; scheduled and manual full builds still select both profiles.
+
+Full native SPDX SBOMs are retained as immutable OCI referrers. A signed
+[SBOM-reference predicate](automation/sbom-reference-v1.md) binds each full
+document's hash and size to the exact image; this avoids GitHub's 16 MiB inline
+SBOM limit without dropping packages or file evidence. Build provenance remains
+independently attested.
+
 CodeQL scans Python and Actions. Nix and shell retain their existing dedicated
 checks. StepSecurity Harden Runner runs in Community audit mode on GitHub-hosted
 build, scan, attestation and signing jobs. Neither integration decides whether a
@@ -29,12 +40,12 @@ normalized CVE/component/exposure records, risk ceilings, and an immutable GHCR
 packet. Review summaries link vulnerabilities; the full packet contains native
 reports and authenticated producer identities and hashes.
 
-A current human with effective maintain/admin access must approve the exact PR
-head. The App-origin `Maintainer decision authority` check verifies current role,
-review state, immutable proposal content and merge provenance. It also protects
+Only a current human member of `closure-labs/super-admins` (team ID `20196962`)
+with effective maintain/admin access may approve the exact PR head. The App-origin `Maintainer decision authority` check verifies current role,
+review state, live pinned-team membership, immutable proposal content and merge provenance. It also protects
 changes to the verifier and privileged workflow controls. Labels, PR comments,
 self-reported approvers, AI `reviewedBy` fields, publisher provenance and merged
-JSON alone cannot grant authority. A push, dismissed review or unresolved eligible
+JSON alone cannot grant authority. Loss of team membership, a push, dismissed review or unresolved eligible
 changes-requested review prevents admission. Merge queue content must match the
 approved governed content even though its synthetic SHA differs.
 
@@ -74,11 +85,18 @@ The implementation is additive until the [review App](maintainer-decision-app.md
 is installed and its authority check is validated. CL Decider is installed with
 organization credentials; the baseline and enforced cutover still require validation.
 Current `image-policy.json` intentionally retains its existing mode
-and existing release environment review remains enforced. There is no environment
+and existing release environment review remains enforced for the Super Admins team.
+Package-cleanup approval also uses that team. There is no environment
 variable that bypasses the new admission logic.
 
+Initial baseline proposals use the same native severity and CVSS calculations as
+the eventual maintainer mode. Legacy AI dispositions cannot suppress those
+observations, and preparing a proposal does not change publication enforcement
+or grant human approval.
+
 1. Install the repository-scoped App and configure its public IDs/bot login and
-   SecretSpec private key. Keep the existing audit App read-only.
+   SecretSpec private key. Grant Organization Members read and approve the
+   installation update; verify the pinned Super Admins team. Keep the existing audit App read-only.
 2. Exercise authority checks on ordinary PRs, exact-head reviews, stale/dismissed
    reviews, forged proposals and merge queue commits. Add the required check with
    this App's integration ID to live main protection and both checked ruleset

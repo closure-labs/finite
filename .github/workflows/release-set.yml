@@ -81,6 +81,7 @@ jobs:
           owner: ${{ github.repository_owner }}
           repositories: ${{ github.event.repository.name }}
           permission-administration: read
+          permission-members: read
           permission-actions: read
           permission-contents: write
           permission-pull-requests: write

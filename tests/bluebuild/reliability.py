@@ -269,6 +269,8 @@ class EncryptedVmConsole(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.marker = Path(temporary.name) / 'unlock.log'
+        # Public synthetic sentinel: never a credential. Raw fixture writes below
+        # exercise redaction and exclusion before any diagnostics are exported.
         self.secret = b'a1' * 32
 
     def run_console(self, chunks):

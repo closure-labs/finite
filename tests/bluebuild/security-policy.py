@@ -618,8 +618,12 @@ class PublicationBoundary(unittest.TestCase):
         self.assertNotIn('secrets', publication['build'])
         workflow = yaml.safe_load((ROOT / '.github/workflows/publication.yml').read_text())
         caller = yaml.safe_load((ROOT / '.github/workflows/build.yml').read_text())['jobs']['publish']
-        self.assertEqual(workflow[True]['workflow_call']['secrets'], {'COSIGN_PRIVATE_KEY': {'required': True}, 'COSIGN_PASSWORD': {'required': False}})
-        self.assertEqual(caller['secrets'], {'COSIGN_PRIVATE_KEY': '${{ secrets.COSIGN_PRIVATE_KEY }}', 'COSIGN_PASSWORD': '${{ secrets.COSIGN_PASSWORD }}'})
+        self.assertEqual(workflow[True]['workflow_call']['secrets'], {
+            'COSIGN_PRIVATE_KEY': {'required': True}, 'COSIGN_PASSWORD': {'required': False},
+            'DECIDER_KEY': {'required': False}, 'DECIDER_CLIENT': {'required': False}})
+        self.assertEqual(caller['secrets'], {
+            'COSIGN_PRIVATE_KEY': '${{ secrets.COSIGN_PRIVATE_KEY }}', 'COSIGN_PASSWORD': '${{ secrets.COSIGN_PASSWORD }}',
+            'DECIDER_KEY': '${{ secrets.DECIDER_KEY }}', 'DECIDER_CLIENT': '${{ secrets.DECIDER_CLIENT }}'})
         self.assertNotIn('secrets: inherit', (ROOT / '.github/workflows/build.yml').read_text())
         self.assertNotIn('secrets: inherit', (ROOT / '.github/workflows/publication.yml').read_text())
         self.assertEqual(publication['sign']['needs'], ['security', 'attest'])

@@ -18,6 +18,10 @@ on:
         type: string
         default: ""
     secrets:
+      DECIDER_KEY:
+        required: false
+      DECIDER_CLIENT:
+        required: false
       COSIGN_PRIVATE_KEY:
         required: true
       COSIGN_PASSWORD:
@@ -80,6 +84,45 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
       - uses: ./.github/actions/setup-nix
+      - name: Read checked publication admission policy
+        id: admission-policy
+        run: |
+          python3 - <<'PY_POLICY'
+          import os
+          from pathlib import Path
+          import runpy
+          policy = runpy.run_path('scripts/bluebuild/security-policy.py')['load_policy'](
+              Path('automation/security/image-policy.json'))
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              print('maintainer=' + str(policy['mode'] == 'maintainer-decision').lower(), file=output)
+          PY_POLICY
+      - name: Resolve declared read-only authority App credentials
+        if: inputs.resume_run != '' && steps.admission-policy.outputs.maintainer == 'true'
+        env:
+          FINITE_REVIEW_CLIENT_ID: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
+          FINITE_REVIEW_PRIVATE_KEY: ${{ secrets.DECIDER_KEY }}
+        run: >-
+          finite-ci-secrets-run review-app --
+          secretspec export --file secretspec.toml --profile review-app --provider github-actions
+          --scope review-app --reason 'Finite publication human authority verification' --format gha
+      - name: Generate short-lived read-only authority token
+        id: review-token
+        if: inputs.resume_run != '' && steps.admission-policy.outputs.maintainer == 'true'
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ env.FINITE_REVIEW_CLIENT_ID }}
+          private-key: ${{ env.FINITE_REVIEW_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: read
+          permission-actions: read
+          permission-pull-requests: read
+          permission-administration: read
+          permission-members: read
+      - name: Clear App private credentials
+        if: always() && inputs.resume_run != '' && steps.admission-policy.outputs.maintainer == 'true'
+        run: | # zizmor: ignore[github-env]
+          printf 'FINITE_REVIEW_CLIENT_ID=\nFINITE_REVIEW_PRIVATE_KEY=\n' >>"$GITHUB_ENV"
       - name: Reuse authenticated publisher evidence from this build
         env:
           GH_TOKEN: ${{ github.token }}
@@ -94,20 +137,21 @@ jobs:
         id: reuse
         if: inputs.resume_run != ''
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.review-token.outputs.token || github.token }}
+          REGISTRY_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           set +e
           # Expand these variables inside the Nix-provided child shell.
           # shellcheck disable=SC2016
           nix develop --file lib/ci-tools.nix release --command bash -c '
-            sudo --preserve-env=GH_TOKEN,GITHUB_ACTOR,GITHUB_ACTIONS,GITHUB_REPOSITORY,GITHUB_REF,GITHUB_EVENT_NAME,GITHUB_WORKFLOW_REF,GITHUB_SHA,FINITE_REVIEW_BOT_LOGIN \
+            sudo --preserve-env=GH_TOKEN,REGISTRY_TOKEN,GITHUB_ACTOR,GITHUB_ACTIONS,GITHUB_REPOSITORY,GITHUB_REF,GITHUB_EVENT_NAME,GITHUB_WORKFLOW_REF,GITHUB_SHA,FINITE_REVIEW_BOT_LOGIN \
               systemd-run --quiet --wait --pipe --service-type=exec \
               --unit="finite-security-reuse-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" \
               --property=MemoryMax=2G --property=MemorySwapMax=0 --property=RuntimeMaxSec=300 \
               --property=NoNewPrivileges=yes --property=CapabilityBoundingSet= \
               --uid="$(id -u)" --gid="$(id -g)" --working-directory="$PWD" \
-              --setenv="PATH=$PATH" --setenv=GH_TOKEN --setenv=GITHUB_ACTOR --setenv=GITHUB_ACTIONS \
+              --setenv="PATH=$PATH" --setenv=GH_TOKEN --setenv=REGISTRY_TOKEN --setenv=GITHUB_ACTOR --setenv=GITHUB_ACTIONS \
               --setenv=GITHUB_REPOSITORY --setenv=GITHUB_REF --setenv=GITHUB_EVENT_NAME \
               --setenv=GITHUB_WORKFLOW_REF --setenv=GITHUB_SHA --setenv=FINITE_REVIEW_BOT_LOGIN \
               python3 scripts/ci/reuse-candidate-security.py \
@@ -175,6 +219,7 @@ jobs:
       profile: ${{ inputs.profile }}
       digest: ${{ needs.security.outputs.digest }}
       evidence: ${{ needs.security.outputs.evidence }}
+      resume_run: ${{ inputs.resume_run }}
 
   sign:
     needs: [security, attest]
@@ -215,9 +260,48 @@ jobs:
       - uses: ./.github/actions/setup-nix
         with:
           cache-mode: none
+      - name: Read checked publication admission policy
+        id: admission-policy
+        run: |
+          python3 - <<'PY_POLICY'
+          import os
+          from pathlib import Path
+          import runpy
+          policy = runpy.run_path('scripts/bluebuild/security-policy.py')['load_policy'](
+              Path('automation/security/image-policy.json'))
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              print('maintainer=' + str(policy['mode'] == 'maintainer-decision').lower(), file=output)
+          PY_POLICY
+      - name: Resolve declared read-only authority App credentials
+        if: steps.admission-policy.outputs.maintainer == 'true'
+        env:
+          FINITE_REVIEW_CLIENT_ID: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
+          FINITE_REVIEW_PRIVATE_KEY: ${{ secrets.DECIDER_KEY }}
+        run: >-
+          finite-ci-secrets-run review-app --
+          secretspec export --file secretspec.toml --profile review-app --provider github-actions
+          --scope review-app --reason 'Finite publication human authority verification' --format gha
+      - name: Generate short-lived read-only authority token
+        id: review-token
+        if: steps.admission-policy.outputs.maintainer == 'true'
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ env.FINITE_REVIEW_CLIENT_ID }}
+          private-key: ${{ env.FINITE_REVIEW_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: read
+          permission-actions: read
+          permission-pull-requests: read
+          permission-administration: read
+          permission-members: read
+      - name: Clear App private credentials
+        if: always() && steps.admission-policy.outputs.maintainer == 'true'
+        run: | # zizmor: ignore[github-env]
+          printf 'FINITE_REVIEW_CLIENT_ID=\nFINITE_REVIEW_PRIVATE_KEY=\n' >>"$GITHUB_ENV"
       - name: Authenticate native evidence and human admission before signing credentials
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.review-token.outputs.token || github.token }}
           SECURITY_ARTIFACT: ${{ needs.security.outputs.evidence }}
           CANDIDATE_DIGEST: ${{ needs.security.outputs.digest }}
           FINITE_REVIEW_BOT_LOGIN: ${{ vars.FINITE_REVIEW_BOT_LOGIN }}
@@ -327,6 +411,45 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-nix
+      - name: Read checked publication admission policy
+        id: admission-policy
+        run: |
+          python3 - <<'PY_POLICY'
+          import os
+          from pathlib import Path
+          import runpy
+          policy = runpy.run_path('scripts/bluebuild/security-policy.py')['load_policy'](
+              Path('automation/security/image-policy.json'))
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              print('maintainer=' + str(policy['mode'] == 'maintainer-decision').lower(), file=output)
+          PY_POLICY
+      - name: Resolve declared read-only authority App credentials
+        if: steps.admission-policy.outputs.maintainer == 'true'
+        env:
+          FINITE_REVIEW_CLIENT_ID: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
+          FINITE_REVIEW_PRIVATE_KEY: ${{ secrets.DECIDER_KEY }}
+        run: >-
+          finite-ci-secrets-run review-app --
+          secretspec export --file secretspec.toml --profile review-app --provider github-actions
+          --scope review-app --reason 'Finite publication human authority verification' --format gha
+      - name: Generate short-lived read-only authority token
+        id: review-token
+        if: steps.admission-policy.outputs.maintainer == 'true'
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ env.FINITE_REVIEW_CLIENT_ID }}
+          private-key: ${{ env.FINITE_REVIEW_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: read
+          permission-actions: read
+          permission-pull-requests: read
+          permission-administration: read
+          permission-members: read
+      - name: Clear App private credentials
+        if: always() && steps.admission-policy.outputs.maintainer == 'true'
+        run: | # zizmor: ignore[github-env]
+          printf 'FINITE_REVIEW_CLIENT_ID=\nFINITE_REVIEW_PRIVATE_KEY=\n' >>"$GITHUB_ENV"
       - name: Download candidate and qualification evidence
         env:
           GH_TOKEN: ${{ github.token }}
@@ -339,7 +462,7 @@ jobs:
           gh run download "$GITHUB_RUN_ID" --name "$SECURITY_ARTIFACT" --dir ".bluebuild/security-$PROFILE"
       - name: Promote verified digest to public channels
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.review-token.outputs.token || github.token }}
           REGISTRY_TOKEN: ${{ github.token }}
           REGISTRY_USER: ${{ github.actor }}
         run: |

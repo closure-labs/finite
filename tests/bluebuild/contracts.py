@@ -91,7 +91,9 @@ class BlueBuildContracts(unittest.TestCase):
         self.assertEqual(action['env']['BB_PASSWORD'], '${{ github.token }}')
         self.assertNotIn('COSIGN_PRIVATE_KEY', action['env'])
         self.assertEqual(publish['secrets'], {'COSIGN_PRIVATE_KEY': '${{ secrets.COSIGN_PRIVATE_KEY }}',
-                                             'COSIGN_PASSWORD': '${{ secrets.COSIGN_PASSWORD }}'})
+                                             'COSIGN_PASSWORD': '${{ secrets.COSIGN_PASSWORD }}',
+                                             'DECIDER_KEY': '${{ secrets.DECIDER_KEY }}',
+                                             'DECIDER_CLIENT': '${{ secrets.DECIDER_CLIENT }}'})
         builder = next(s for s in steps if s.get('uses', '').startswith('docker/setup-buildx-action@'))
         self.assertEqual(builder['with']['name'], 'bluebuild')
         self.assertEqual(builder['with']['driver-opts'], 'default-load=true')

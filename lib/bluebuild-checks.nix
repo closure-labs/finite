@@ -84,6 +84,7 @@ in {
     python3 tests/ci/legacy-release-boundary.py
     python3 tests/ci/security-admission.py
     python3 tests/ci/security-integrations.py
+    python3 tests/ci/publication-authority.py
     python3 tests/ci/release-set.py
     python3 tests/ci/prepare-release-set.py
     python3 tests/ci/reconcile-decisions.py

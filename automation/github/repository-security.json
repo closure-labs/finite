@@ -46,8 +46,8 @@
           "prevent_self_review": false,
           "reviewers": [
             {
-              "type": "User",
-              "id": 52590374
+              "type": "Team",
+              "id": 20196962
             }
           ]
         },
@@ -75,8 +75,8 @@
           "prevent_self_review": false,
           "reviewers": [
             {
-              "type": "User",
-              "id": 52590374
+              "type": "Team",
+              "id": 20196962
             }
           ]
         },

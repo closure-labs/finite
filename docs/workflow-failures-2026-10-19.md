@@ -52,9 +52,8 @@ do not prove that upgrade/rollback qualification succeeds.
 The persistence check now emits a bounded JSON receipt with separate Nix-state
 and Home Manager customization outcomes, plus named errors without file
 contents. Nix daemon persistence has its own retained log and named failure.
-The original marker checks and required rollback remain enforced. A new hosted
-diagnostic run is required to identify and remediate the remaining VM failure;
-the added diagnostics are not a claim that its underlying cause is fixed.
+The original marker checks and required rollback remain enforced. These
+diagnostics identified the fixture defect described below.
 
 ### Named preservation result and fixture correction
 
@@ -78,9 +77,13 @@ Inherited stdin is the leading explanation, rather than proven OS data loss.
 `home-init` now receives `/dev/null` as stdin. A separate SSH request then
 requires the generated configuration files, appends the acceptance marker, and
 writes a successful initialization receipt before any upgrade starts. The
-post-upgrade checks and required rollback remain enforced. A hosted rerun must
-confirm the correction; if the marker disappears again, the two receipts will
-distinguish a failed setup from an actual persistence failure.
+post-upgrade checks and required rollback remain enforced. The corrected
+[finite run](https://github.com/closure-labs/finite/actions/runs/39298020638) and
+[finite-dev run](https://github.com/closure-labs/finite/actions/runs/39298023824)
+both pass fresh installation and upgrade. Their initialization and post-upgrade
+receipts confirm both persistence markers, and rollback boots the predecessor
+without a staged or queued update. This supports the inherited-stdin fixture
+explanation rather than customization loss during upgrade.
 
 ## CodeQL workflow bootstrap
 
@@ -99,6 +102,60 @@ allowed pins; wildcard/extra-action negative checks remain intact. Both CodeQL
 languages and the corrected PR's hosted Nix/runtime checks pass; full image
 validation is a separate check.
 
+## Full native SBOM exceeds the inline attestation limit
+
+The [first full build after the decision-controller merge](https://github.com/closure-labs/finite/actions/runs/39303992535)
+completed both native security scans successfully. Both following SBOM attestation
+jobs failed with `SBOM file exceeds maximum allowed size: 16777216 bytes`.
+The CI gate correctly stopped publication when the required attestation failed.
+This was an attestation transport limit, not a vulnerability rejection or scanner
+failure.
+
+The authenticated native SPDX documents are already compact: finite contains
+4,945 packages in 94,127,612 bytes, and finite-dev contains 7,492 packages in
+127,756,096 bytes. Whitespace removal saves only one byte per file. Dropping
+packages or file evidence to meet GitHub's 16 MiB inline limit would weaken the
+SBOM and does not address the underlying mismatch.
+
+The remediation retains GitHub's build-provenance attestation and stores each
+unchanged, full native SPDX document as an OCI artifact referring to the exact
+image digest. A small, versioned signed SBOM-reference predicate binds the image,
+profile, platform, full document SHA256/size and immutable OCI manifest digest.
+The helper checks the registry manifest subject and native document layer before
+signing that reference. Native inventory hashes and scanner coverage remain
+unchanged. Consumers resolve and verify the referenced full SPDX document; this
+is explicitly an external SBOM binding, not an inline SPDX attestation.
+
+Resumed candidates also retain their original build provenance. Only a fresh
+current-run build at the verified source revision creates a new build claim;
+resuming an earlier digest, even from the same SHA, verifies existing provenance
+against the original source digest, main ref, reusable signer and hosted runner.
+A candidate without valid original provenance requires a fresh build.
+
+## CodeQL finding review
+
+All six open CodeQL alerts from the main scan at
+`de2a04bc47be8280fc40f62cd8ec75dda3bb9a54` concern intentional fixture writes
+in `EncryptedVmConsole` in tests/bluebuild/reliability.py. Its key is the public,
+fixed sentinel `b'a1' * 32`, created in a temporary directory and never loaded
+from credentials or used to protect real data. Each alert was considered
+individually and dismissed as **used in tests**:
+
+| Alert | Fixture purpose | Protection asserted |
+| --- | --- | --- |
+| [2](https://github.com/closure-labs/finite/security/code-scanning/2) | Seed logs and nested diagnostics with the sentinel | Every retained file is redacted; unrelated JSON is preserved |
+| [3](https://github.com/closure-labs/finite/security/code-scanning/3) | Seed raw diagnostics before simulated redactor failures | Neither an exception nor an incomplete redaction creates an export directory |
+| [4](https://github.com/closure-labs/finite/security/code-scanning/4) | Seed raw diagnostics before a successful export | Only sanitized diagnostics are exported |
+| [5](https://github.com/closure-labs/finite/security/code-scanning/5) | Seed a synthetic SSH key file | The key file is excluded from exported diagnostics |
+| [6](https://github.com/closure-labs/finite/security/code-scanning/6) | Seed a synthetic installer configuration | The installer configuration is excluded from exported diagnostics |
+| [7](https://github.com/closure-labs/finite/security/code-scanning/7) | Seed a synthetic disk image | The disk image is excluded from exported diagnostics |
+
+These dismissals do not suppress the CodeQL rule or alter production handling.
+The production exporter redacts permitted diagnostics, rechecks for the key
+before creating an export directory, and excludes key, installer and disk files.
+The deliberately unredacted fixture inputs preserve regression coverage of
+these boundaries.
+
 ## Validation
 
 Focused fixtures cover transport recovery and retry exhaustion, permanent API
@@ -106,4 +163,5 @@ failures, malformed responses, authenticated inventory handling, hosted/local
 updater arguments, manual-only benchmark triggers, and missing/changed VM
 persistence markers. Shell syntax and ShellCheck pass for the modified shell
 sources. Tests use installed tools; no full local Nix evaluation or image build
-was performed. Hosted reruns remain necessary after these changes are pushed.
+was performed. Both corrected hosted diagnostics pass fresh installation,
+upgrade, persistence and rollback checks.

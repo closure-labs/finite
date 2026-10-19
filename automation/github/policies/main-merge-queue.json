@@ -40,6 +40,10 @@
           {
             "context": "CI gate",
             "integration_id": 15368
+          },
+          {
+            "context": "Maintainer decision authority",
+            "integration_id": 5384448
           }
         ],
         "strict_required_status_checks_policy": false

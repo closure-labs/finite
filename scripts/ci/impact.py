@@ -27,6 +27,13 @@ QUALIFICATION_ONLY = {
     'scripts/ci/reuse-candidate-security.py',
     'automation/security/image-policy.json',
     'scripts/ci/approved-baseline.py', 'scripts/ci/security-remediation-diff.py',
+    # Reviewed decision controls run after image assembly. Keep their source
+    # contracts while avoiding OS rebuilds for controller-only changes.
+    '.github/workflows/decision-proposals.yml', '.github/workflows/decision-authority.yml',
+    '.github/workflows/release-set.yml', '.github/workflows/publish-release-set.yml',
+    '.github/workflows/attest-image.yml', 'scripts/ci/verify-attestation-subject.py',
+    'scripts/ci/decision-authority.py', 'scripts/ci/decision-controller.py',
+    'scripts/ci/decision_controller.py', 'scripts/ci/security_admission.py',
     'scripts/ci/bluefin-upstream.py', 'scripts/ci/impact.py', 'scripts/ci/image_identity.py',
     'scripts/bluebuild/security-policy.py', 'scripts/bluebuild/security-scan.py',
     'scripts/bluebuild/security-run.sh', 'scripts/bluebuild/audit-published.sh',

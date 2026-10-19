@@ -178,6 +178,8 @@ jobs:
       matrix: ${{ fromJSON(needs.checks.outputs.matrix || '{"include":[]}') }}
     uses: ./.github/workflows/publication.yml
     secrets:
+      DECIDER_KEY: ${{ secrets.DECIDER_KEY }}
+      DECIDER_CLIENT: ${{ secrets.DECIDER_CLIENT }}
       COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
       COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
     with:
