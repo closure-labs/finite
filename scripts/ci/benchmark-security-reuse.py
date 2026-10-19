@@ -272,6 +272,14 @@ def policy_equivalence(result):
         separators=(',', ':'), allow_nan=False).encode()).hexdigest()
 
 
+def native_scan_health(result, policy):
+    """Benchmark technical scanner completion; never infer human admission."""
+    if policy.get('mode') == 'maintainer-decision':
+        return (result.get('status') == 'complete' and result.get('mode') == 'maintainer-decision'
+                and result.get('scannerHealth') == 'healthy')
+    return result.get('status') == 'pass'
+
+
 def scan(lane, repetition, image, profile, origin, start, seed_path, output, mode='all-lanes'):
     if lane not in selected_lanes(mode) or type(repetition) is not int or repetition not in (1, 2, 3):
         raise ValueError('Unsupported security benchmark lane/repetition')
@@ -314,7 +322,8 @@ def scan(lane, repetition, image, profile, origin, start, seed_path, output, mod
         timings = read(evidence / 'phase-timings.json')
         result = read(evidence / 'security-result.json')
         provenance = read(evidence / 'inventory-provenance.json')
-        if (status != 0 or result.get('status') != 'pass' or result.get('image') != image
+        policy = read(ROOT / 'automation/security/image-policy.json')
+        if (status != 0 or not native_scan_health(result, policy) or result.get('image') != image
                 or result.get('policySha256') != info['policySha256']
                 or timings.get('inventoryReused') is not (lane == 'inventory-only')
                 or provenance.get('image') != image
@@ -339,7 +348,8 @@ def scan(lane, repetition, image, profile, origin, start, seed_path, output, mod
         if (described.get('valid') is not True or described.get('built') != database['built']
                 or not re.search(r'\b(?:v)?' + re.escape(result['scanner']) + r'(?![0-9A-Za-z.-])', info['tools']['grype'])):
             raise ValueError('Fresh findings differ from the final DB or pinned Grype version')
-        report.update(status='success', inventoryReused=timings['inventoryReused'], phases=phases,
+        report.update(status='success', scannerStatus=result['status'], humanAdmissionEvaluated=False,
+                      inventoryReused=timings['inventoryReused'], phases=phases,
                       inventoryGeneration=provenance['generation'], platformDigest=provenance['platformDigest'],
                       scannedAt=result['scannedAt'], scanner=result['scanner'], database=database,
                       policyResultSha256=policy_equivalence(result),

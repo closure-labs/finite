@@ -167,6 +167,8 @@ try:
         raise ValueError('Invalid bounded native diagnostic result')
     result=json.loads(path.read_text())
     expected={'pass':0,'blocked':1,'scanner-error':2}.get(result.get('status'))
+    if result.get('status')=='complete':
+        expected=0 if result.get('mode')=='maintainer-decision' and result.get('scannerHealth')=='healthy' else None
     if (expected is None or result.get('image')!=image or result.get('releaseEligible') is not False
         or result.get('signatureVerified') is not False or result.get('sourceType')!='locally-built-unpublished'
         or service_status!=expected):

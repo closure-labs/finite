@@ -1,0 +1,80 @@
+name: Attest immutable image evidence
+on:
+  workflow_call:
+    inputs:
+      profile:
+        type: string
+        required: true
+      digest:
+        type: string
+        required: true
+      evidence:
+        type: string
+        required: true
+permissions:
+  contents: read
+jobs:
+  attest:
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+      packages: write
+      id-token: write
+      attestations: write
+    steps:
+      - name: Monitor hosted runner (Community)
+        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2
+        with:
+          egress-policy: audit
+      - name: Validate immutable subject and producer artifact
+        env:
+          PROFILE: ${{ inputs.profile }}
+          DIGEST: ${{ inputs.digest }}
+          EVIDENCE: ${{ inputs.evidence }}
+        run: |
+          [[ $PROFILE == finite || $PROFILE == finite-dev ]]
+          [[ $DIGEST =~ ^sha256:[0-9a-f]{64}$ ]]
+          [[ $EVIDENCE == "security-$PROFILE-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" ]]
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            scripts/ci/verify-attestation-subject.py
+            scripts/ci/inventory-evidence.py
+            scripts/bluebuild/security-policy.py
+            automation/security/image-policy.json
+          sparse-checkout-cone-mode: false
+      - name: Download same-run native SBOM
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: ${{ inputs.evidence }}
+          path: evidence
+      - name: Bind native SPDX bytes to the immutable image subject
+        env:
+          PROFILE: ${{ inputs.profile }}
+          DIGEST: ${{ inputs.digest }}
+        run: python3 scripts/ci/verify-attestation-subject.py --directory evidence --profile "$PROFILE" --digest "$DIGEST"
+      - name: Authenticate registry for attestations
+        env:
+          REGISTRY_TOKEN: ${{ github.token }}
+          REGISTRY_USER: ${{ github.actor }}
+        run: printf '%s' "$REGISTRY_TOKEN" | docker login --username "$REGISTRY_USER" --password-stdin ghcr.io
+      - name: Attest build provenance
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-name: ghcr.io/closure-labs/finite
+          subject-digest: ${{ inputs.digest }}
+          push-to-registry: true
+      - name: Attest native SPDX SBOM
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-name: ghcr.io/closure-labs/finite
+          subject-digest: ${{ inputs.digest }}
+          sbom-path: evidence/sbom.spdx.json
+          push-to-registry: true
+      - name: Clear registry credentials
+        if: always()
+        run: docker logout ghcr.io

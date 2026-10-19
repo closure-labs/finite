@@ -28,7 +28,7 @@ permissions:
   contents: read
   actions: read
 concurrency:
-  group: finite-release-${{ inputs.channel }}
+  group: finite-official-release
   cancel-in-progress: false
 
 jobs:
@@ -42,9 +42,17 @@ jobs:
       artifact_size: ${{ steps.binding.outputs.artifact_size }}
       artifact_digest: ${{ steps.binding.outputs.artifact_digest }}
     steps:
+      - name: Monitor hosted runner (Community)
+        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2
+        with:
+          egress-policy: audit
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Enforce legacy release boundary
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/ci/legacy-release-boundary.py
       - uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
         with:
           skip-if-available: "80G"
@@ -86,6 +94,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
+      - name: Monitor hosted runner (Community)
+        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2
+        with:
+          egress-policy: audit
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -104,6 +116,10 @@ jobs:
             secretspec.toml
             flake.lock
           sparse-checkout-cone-mode: false
+      - name: Enforce legacy release boundary
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/ci/legacy-release-boundary.py
       - uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
         with:
           skip-if-available: "80G"
@@ -127,11 +143,19 @@ jobs:
         run: >-
           python3 scripts/ci/release-recovery.py verify-signer --channel "$CHANNEL" --tag "$RELEASE_TAG"
           --artifact-id "$ARTIFACT_ID" --artifact-size "$ARTIFACT_SIZE" --artifact-digest "$ARTIFACT_DIGEST"
+      - name: Recheck current main policy before signing credentials
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/ci/legacy-release-boundary.py
       - name: Sign release manifest in an isolated job
         env:
           COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
         run: finite-ci-secrets-run release-signing -- bash scripts/bluebuild/sign-release.sh
+      - name: Recheck current main policy before publication credentials
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/ci/legacy-release-boundary.py
       - name: Create draft release with durable evidence
         env:
           MERGE_QUEUE_TOKEN: ${{ secrets.MERGE_QUEUE_PAT }}

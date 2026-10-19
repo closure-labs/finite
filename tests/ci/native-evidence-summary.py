@@ -62,6 +62,27 @@ class NativeSummary(unittest.TestCase):
     def report(self):
         return native.report(self.sbom, self.result, self.extraction, IMAGE, 'e' * 64)
 
+    def test_maintainer_summary_retains_raw_findings_as_triage_without_human_admission(self):
+        observed = self.result['blocked']
+        for finding in observed:
+            finding.pop('reason')
+            finding['admissionSeverity'] = 'Critical'
+        self.result.update(mode='maintainer-decision', status='complete', scannerHealth='healthy',
+                           blocked=[], exceptionsApplied=[], advisories=[], observations=observed)
+        output = self.report()
+        self.assertEqual(output['nativePolicyStatus'], 'complete')
+        self.assertEqual(output['admissionStatus'], 'not-evaluated')
+        self.assertEqual(output['observationPairs'], 1)
+        self.assertEqual(output['blockingPairs'], 0)
+        self.assertFalse(output['releaseEligible'])
+        self.assertFalse(output['findings'][0]['dispositionGranted'])
+        self.assertEqual(output['findings'][0]['reasons'], ['human-admission-not-evaluated'])
+        for field, value in (('scannerHealth', None), ('mode', 'desktop-critical-only'), ('status', 'pass')):
+            invalid = deepcopy(self.result)
+            invalid[field] = value
+            with self.assertRaises(ValueError):
+                native.report(self.sbom, invalid, self.extraction, IMAGE, 'e' * 64)
+
     def test_exact_current_aliases_paths_metadata_and_owner_are_retained(self):
         result = self.report()
         self.assertEqual(result['blockingPairs'], 1)

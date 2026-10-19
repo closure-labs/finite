@@ -81,6 +81,37 @@ def hosted():
         raise ValueError('Inventory reuse requires a trusted hosted main image consumer')
 
 
+def native_inventory_health(result, policy):
+    """Recognize healthy inventory producers without accepting their findings."""
+    return result.get('status') == 'pass' or (
+        policy.get('mode') == 'maintainer-decision' and result.get('mode') == 'maintainer-decision'
+        and result.get('status') == 'complete' and result.get('scannerHealth') == 'healthy')
+
+
+def inventory_source(record, run, profile, image):
+    """Original build provenance only; a resumed transport is a safe cache miss."""
+    if (not isinstance(record, dict) or record.get('profile') != profile
+            or record.get('revision') != run.get('head_sha')
+            or record.get('qualificationMode') != 'enforce' or record.get('publish') is not True):
+        raise ValueError('Inventory producer build context differs from its run')
+    source = record.get('sourceRevision', record.get('revision'))
+    if not isinstance(source, str) or not publication.SHA.fullmatch(source):
+        raise ValueError('Inventory source revision is malformed')
+    if 'resumeOrigin' in record:
+        origin = record['resumeOrigin']
+        if (not isinstance(origin, dict) or origin.get('sourceRevision') != source
+                or origin.get('digest') != image.split('@')[1]
+                or type(origin.get('runId')) is not int or origin['runId'] < 1
+                or type(origin.get('runAttempt')) is not int or origin['runAttempt'] < 1):
+            raise ValueError('Inventory resume context has inconsistent original source/image identity')
+        # origin_metadata intentionally authenticates original build steps;
+        # resumed runs skip those steps. Do not infer that proof from JSON.
+        raise inventory.Unavailable('Resumed transport has no independently authenticated original inventory chain; regenerate inventory')
+    if source != run['head_sha']:
+        raise ValueError('Original inventory source revision differs from its build run')
+    return source
+
+
 def retrieve(image, profile, output, origin_run=None):
     hosted()
     if not reuse.security.IMAGE.fullmatch(image) or profile not in reuse.security.PROFILES:
@@ -128,14 +159,16 @@ def retrieve(image, profile, output, origin_run=None):
             if origin_run:
                 raise inventory.Unavailable('Origin contains a different immutable image')
             continue
+        record = json.loads(files[f'{profile}-publication.json'])
+        try:
+            source_revision = inventory_source(record, run, profile, image)
+        except inventory.Unavailable:
+            if origin_run:
+                raise
+            continue
         jobs = [item for page in github(f'actions/runs/{run_id}/attempts/{attempt}/jobs?per_page=100', True)
                 for item in page['jobs']]
         artifact, _, build_job, security_job = reuse.metadata(run, jobs, artifacts, profile, run_id)
-        record = json.loads(files[f'{profile}-publication.json'])
-        if (record.get('profile') != profile or record.get('sourceRevision', record.get('revision')) != run['head_sha']
-                or record.get('qualificationMode') != 'enforce' or record.get('publish') is not True
-                or 'resumeOrigin' in record):
-            raise ValueError('Inventory producer build context differs from its run')
         output.parent.mkdir(parents=True, exist_ok=True)
         try:
             with tempfile.TemporaryDirectory(prefix='.inventory-reuse-', dir=output.parent) as temporary:
@@ -149,12 +182,12 @@ def retrieve(image, profile, output, origin_run=None):
                     reuse.extract(archive, artifact, staging)
                 baseline = reuse.read_json(staging / 'approved-baseline.json')
                 result = reuse.read_json(staging / 'security-result.json')
-                if (result.get('status') != 'pass' or result.get('image') != image
+                policy = reuse.security.load_policy(ROOT / 'automation/security/image-policy.json')
+                if (not native_inventory_health(result, policy) or result.get('image') != image
                         or baseline.get('image') != image or baseline.get('profile') != profile
-                        or baseline.get('sourceRevision') != run['head_sha']
+                        or baseline.get('sourceRevision') != source_revision
                         or baseline.get('buildIdentity') != record.get('buildIdentity')):
                     raise ValueError('Native inventory producer does not match its immutable build')
-                policy = reuse.security.load_policy(ROOT / 'automation/security/image-policy.json')
                 identity = inventory.verify(staging, image, reuse.security,
                                             policy.get('mode') in reuse.security.RISK_MODES)
                 ready = Path(temporary) / 'inventory'

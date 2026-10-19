@@ -1,0 +1,19 @@
+{
+  "name": "Finite Maintainer Decisions",
+  "url": "https://github.com/closure-labs/finite",
+  "description": "Repository-scoped human security decisions and release approval. No external service or subscription.",
+  "public": false,
+  "hook_attributes": {
+    "url": "https://github.com/closure-labs/finite",
+    "active": false
+  },
+  "default_permissions": {
+    "administration": "read",
+    "actions": "write",
+    "checks": "write",
+    "contents": "write",
+    "issues": "write",
+    "pull_requests": "write"
+  },
+  "default_events": []
+}

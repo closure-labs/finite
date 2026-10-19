@@ -1,0 +1,77 @@
+name: Verify maintainer decision authority
+
+on:
+  workflow_run: # zizmor: ignore[dangerous-triggers] Metadata only; trusted main is checked out.
+    workflows: [Collect maintainer decision events]
+    types: [completed]
+
+env:
+  FINITE_OPTIMIZED_CACHES: ${{ vars.FINITE_OPTIMIZED_CACHES }}
+  FINITE_CACHIX_WRITER: ${{ vars.FINITE_CACHIX_WRITER }}
+  FINITE_REUSE_INVENTORY: ${{ vars.FINITE_REUSE_INVENTORY }}
+  FINITE_GRYPE_DB_CACHE: ${{ vars.FINITE_GRYPE_DB_CACHE }}
+  FINITE_QUALIFICATION_REUSE: ${{ vars.FINITE_QUALIFICATION_REUSE }}
+  FINITE_QUALIFIED_ISO_PRESERVATION: ${{ vars.FINITE_QUALIFIED_ISO_PRESERVATION }}
+  FINITE_QUALIFIED_ISO_CHANNELS: ${{ vars.FINITE_QUALIFIED_ISO_CHANNELS }}
+permissions:
+  contents: read
+  actions: read
+  packages: read
+
+concurrency:
+  group: finite-maintainer-authority-${{ github.event.workflow_run.id }}
+  cancel-in-progress: false
+
+jobs:
+  authority:
+    if: github.repository == 'closure-labs/finite' && github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Monitor hosted runner
+        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+      - name: Resolve declared review App credentials
+        env:
+          FINITE_REVIEW_CLIENT_ID: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
+          FINITE_REVIEW_PRIVATE_KEY: ${{ secrets.DECIDER_KEY }}
+        run: >-
+          finite-ci-secrets-run review-app --
+          secretspec export --file secretspec.toml --profile review-app --provider github-actions
+          --scope review-app --reason 'Finite human decision authority App' --format gha
+      - name: Generate short-lived repository-scoped review token
+        id: review-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ env.FINITE_REVIEW_CLIENT_ID }}
+          private-key: ${{ env.FINITE_REVIEW_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: read
+          permission-pull-requests: read
+          permission-checks: write
+          permission-actions: read
+          permission-administration: read
+      - name: Clear App private credentials
+        run: | # zizmor: ignore[github-env]
+          printf 'FINITE_REVIEW_CLIENT_ID=\nFINITE_REVIEW_PRIVATE_KEY=\n' >>"$GITHUB_ENV"
+      - name: Authenticate review and publish App-origin authority check
+        env:
+          GH_TOKEN: ${{ steps.review-token.outputs.token }}
+          REGISTRY_TOKEN: ${{ github.token }}
+          FINITE_REVIEW_BOT_LOGIN: ${{ vars.FINITE_REVIEW_BOT_LOGIN }}
+          FINITE_REVIEW_APP_ID: ${{ vars.FINITE_REVIEW_APP_ID }}
+          COLLECTOR_RUN: ${{ github.event.workflow_run.id }}
+        run: |
+          nix develop --file lib/ci-tools.nix release --command bash <<'AUTHORITY'
+          set -euo pipefail
+          trap 'oras logout ghcr.io >/dev/null 2>&1 || true' EXIT
+          printf '%s' "$REGISTRY_TOKEN" | oras login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          python3 scripts/ci/decision-check.py --collector-run "$COLLECTOR_RUN"
+          AUTHORITY

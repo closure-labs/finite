@@ -92,8 +92,10 @@ try:
     if path.stat().st_size > 16 * 1024 * 1024:
         raise ValueError('Security result exceeds the evidence size limit')
     result = json.loads(path.read_text())
-    if status == 0 and (result.get('status') != 'pass' or result.get('image') != sys.argv[2]):
-        raise ValueError('Scanner service exited without a matching passing security result')
+    complete = (result.get('status') == 'complete' and result.get('mode') == 'maintainer-decision'
+                and result.get('scannerHealth') == 'healthy')
+    if status == 0 and ((result.get('status') != 'pass' and not complete) or result.get('image') != sys.argv[2]):
+        raise ValueError('Scanner service exited without a matching passing or healthy complete security result')
     if status != 0 and result.get('status') not in ('blocked', 'scanner-error'):
         raise ValueError('Failed scanner service returned inconsistent evidence')
 except (OSError, ValueError, AttributeError) as failure:

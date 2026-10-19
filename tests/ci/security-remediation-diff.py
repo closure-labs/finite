@@ -64,6 +64,27 @@ class Remediation(unittest.TestCase):
     def compare(self):
         return remediation.compare(self.ledger, self.result, NEW, self.policy, self.policy_hash, NOW)
 
+    def test_maintainer_comparison_retains_every_observation_without_disposition_or_clearance(self):
+        self.policy['mode'] = 'maintainer-decision'
+        observed = self.result['blocked']
+        self.result.update(status='complete', mode='maintainer-decision', scannerHealth='healthy',
+                           blocked=[], exceptionsApplied=[], advisories=[], observations=observed,
+                           releaseBlockers=[])
+        result = self.compare()
+        self.assertEqual(result['scanStatus'], 'complete')
+        self.assertEqual(result['admissionStatus'], 'not-evaluated')
+        self.assertFalse(result['releaseEligible'])
+        self.assertEqual(result['counts']['blockingRecords'], 0)
+        self.assertEqual(result['counts']['observedPairs'], 2)
+        self.assertEqual(result['persistent'][0]['dispositions'], ['observed'])
+        self.assertEqual(result['new'][0]['dispositions'], ['observed'])
+        for mutate in (lambda r: r.pop('scannerHealth'), lambda r: r.update(mode='desktop-critical-only'),
+                       lambda r: r.update(status='pass')):
+            changed = deepcopy(self.result)
+            mutate(changed)
+            with self.assertRaises(ValueError):
+                remediation.compare(self.ledger, changed, NEW, self.policy, self.policy_hash, NOW)
+
     def test_deduplicates_and_reports_changes_without_resolving(self):
         self.result['blocked'].append(finding())
         self.ledger['findings'][0]['occurrences'] = 4

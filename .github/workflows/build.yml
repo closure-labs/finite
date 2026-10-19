@@ -1,4 +1,5 @@
 name: Build Finite
+run-name: Build Finite${{ inputs.decision_request && format(' [decision:{0}]', inputs.decision_request) || '' }}
 
 on:
   pull_request:
@@ -35,6 +36,10 @@ on:
         description: Bypass exact qualification reuse and force fresh Secure Boot tests
         type: boolean
         default: false
+      decision_request:
+        description: Internal immutable maintainer-decision dispatch identity
+        type: string
+        default: ""
 
 # Bootstrap public options; setup-nix resolves them through SecretSpec.
 env:
@@ -67,6 +72,17 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+      - name: Validate decision reconciliation request
+        env:
+          DECISION_REQUEST: ${{ inputs.decision_request || '' }}
+        run: |
+          if [[ -n $DECISION_REQUEST ]]; then
+            [[ $DECISION_REQUEST =~ ^[0-9a-f]{64}$ && $GITHUB_EVENT_NAME == workflow_dispatch &&
+               $GITHUB_REPOSITORY == closure-labs/finite && $GITHUB_REF == refs/heads/main ]] || {
+              echo 'Invalid decision reconciliation request' >&2
+              exit 2
+            }
+          fi
       - name: Validate manual channel selection
         id: target
         env:
@@ -154,6 +170,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
+      attestations: write
       actions: read
     strategy:
       fail-fast: false

@@ -1,0 +1,106 @@
+name: Prepare two-image release approval
+on:
+  workflow_dispatch:
+    inputs:
+      build_run:
+        description: Successful main build at this revision with preserved qualified ISOs for both images
+        type: string
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: finite-release-set-preparation
+  cancel-in-progress: false
+env:
+  FINITE_OPTIMIZED_CACHES: ${{ vars.FINITE_OPTIMIZED_CACHES }}
+  FINITE_CACHIX_WRITER: ${{ vars.FINITE_CACHIX_WRITER }}
+  FINITE_REUSE_INVENTORY: ${{ vars.FINITE_REUSE_INVENTORY }}
+  FINITE_GRYPE_DB_CACHE: ${{ vars.FINITE_GRYPE_DB_CACHE }}
+  FINITE_QUALIFICATION_REUSE: ${{ vars.FINITE_QUALIFICATION_REUSE }}
+  FINITE_QUALIFIED_ISO_PRESERVATION: ${{ vars.FINITE_QUALIFIED_ISO_PRESERVATION }}
+  FINITE_QUALIFIED_ISO_CHANNELS: ${{ vars.FINITE_QUALIFIED_ISO_CHANNELS }}
+jobs:
+  prepare:
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    permissions:
+      contents: read
+      actions: read
+      packages: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Monitor hosted runner
+        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
+        with:
+          skip-if-available: "80G"
+      - uses: ./.github/actions/setup-nix
+      - name: Collect both qualified images and fresh scan evidence
+        id: packet
+        env:
+          BUILD_RUN: ${{ inputs.build_run }}
+        run: |
+          nix develop --file lib/ci-tools.nix release --command python3 scripts/ci/prepare-release-set.py \
+            --build-run "$BUILD_RUN" --output-directory .bluebuild/release-set-packet
+      - name: Retain packet including incomplete preparation evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-set-packet-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/release-set-packet/
+          include-hidden-files: true
+          retention-days: 90
+          compression-level: 0
+      - name: Show release review summary
+        run: cat .bluebuild/release-set-packet/summary.md >> "$GITHUB_STEP_SUMMARY"
+      # Installation and cutover are separate operator steps. Until configured,
+      # this workflow prepares reviewable evidence and grants no release authority.
+      - name: Resolve declared review App credentials
+        if: vars.FINITE_REVIEW_APP_ID != ''
+        env:
+          FINITE_REVIEW_CLIENT_ID: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
+          FINITE_REVIEW_PRIVATE_KEY: ${{ secrets.DECIDER_KEY }}
+        run: >-
+          finite-ci-secrets-run review-app --
+          secretspec export --file secretspec.toml --profile review-app --provider github-actions
+          --scope review-app --reason 'Finite release proposal App' --format gha
+      - name: Resolve scoped decision App identity
+        if: vars.FINITE_REVIEW_APP_ID != ''
+        id: decision-app
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ env.FINITE_REVIEW_CLIENT_ID }}
+          private-key: ${{ env.FINITE_REVIEW_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-administration: read
+          permission-actions: read
+          permission-contents: write
+          permission-pull-requests: write
+      - name: Remove review App credentials from later steps
+        if: vars.FINITE_REVIEW_APP_ID != ''
+        run: | # zizmor: ignore[github-env]
+          printf 'FINITE_REVIEW_CLIENT_ID=\nFINITE_REVIEW_PRIVATE_KEY=\n' >>"$GITHUB_ENV"
+      - name: Propose the single official release approval
+        if: vars.FINITE_REVIEW_APP_ID != ''
+        env:
+          GH_TOKEN: ${{ steps.decision-app.outputs.token }}
+          REGISTRY_TOKEN: ${{ github.token }}
+          FINITE_REVIEW_BOT_LOGIN: ${{ vars.FINITE_REVIEW_BOT_LOGIN }}
+          FINITE_REVIEW_APP_ID: ${{ vars.FINITE_REVIEW_APP_ID }}
+        run: |
+          nix develop --file lib/ci-tools.nix release --command bash <<'PROPOSE'
+          set -euo pipefail
+          printf '%s' "$REGISTRY_TOKEN" | oras login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          trap 'oras logout ghcr.io >/dev/null 2>&1 || true' EXIT
+          python3 scripts/ci/decision-controller.py propose --kind release-set \
+            --packet-directory .bluebuild/release-set-packet \
+            --proposal .bluebuild/release-set-packet/release-set-proposal.json
+          PROPOSE

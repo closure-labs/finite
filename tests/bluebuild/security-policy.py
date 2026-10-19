@@ -622,7 +622,7 @@ class PublicationBoundary(unittest.TestCase):
         self.assertEqual(caller['secrets'], {'COSIGN_PRIVATE_KEY': '${{ secrets.COSIGN_PRIVATE_KEY }}', 'COSIGN_PASSWORD': '${{ secrets.COSIGN_PASSWORD }}'})
         self.assertNotIn('secrets: inherit', (ROOT / '.github/workflows/build.yml').read_text())
         self.assertNotIn('secrets: inherit', (ROOT / '.github/workflows/publication.yml').read_text())
-        self.assertEqual(publication['sign']['needs'], 'security')
+        self.assertEqual(publication['sign']['needs'], ['security', 'attest'])
         self.assertEqual(publication['sign']['environment'], 'image-signing')
         self.assertIn('sign', publication['qualification']['needs'])
         signer = publication['sign']
@@ -630,7 +630,8 @@ class PublicationBoundary(unittest.TestCase):
         setup = next(step for step in signer['steps'] if step.get('uses') == './.github/actions/setup-nix')
         self.assertEqual(setup['with']['cache-mode'], 'none')
         self.assertNotIn('env', setup)
-        sparse = set(signer['steps'][0]['with']['sparse-checkout'].splitlines())
+        checkout = next(step for step in signer['steps'] if step.get('uses', '').startswith('actions/checkout@'))
+        sparse = set(checkout['with']['sparse-checkout'].splitlines())
         self.assertIn('cosign.pub', sparse)
         self.assertIn('secretspec.toml', sparse)
         self.assertNotIn('files/', sparse)
@@ -1616,6 +1617,168 @@ class ReviewedDesktopExploitability(unittest.TestCase):
         self.scan['descriptor']['db']['status']['valid'] = False
         with self.assertRaises(ValueError):
             self.evaluate()
+
+
+class MaintainerDecisionPolicy(unittest.TestCase):
+    bind_config = UpstreamRiskPolicy.bind_config
+    bind_manifest = UpstreamRiskPolicy.bind_manifest
+    evaluate = UpstreamRiskPolicy.evaluate
+    located = UpstreamRiskPolicy.located
+    write_metadata = UpstreamRiskPolicy.write_metadata
+    publisher_receipt = UpstreamRiskPolicy.publisher_receipt
+
+    def setUp(self):
+        UpstreamRiskPolicy.setUp(self)
+        self.policy = {key: value for key, value in self.policy.items() if key in security.DECISION_FIELDS}
+        self.policy['mode'] = security.DECISION_MODE
+
+    def bundle(self, directory, fresh_now=False):
+        receipt = self.publisher_receipt()
+        self.write_metadata(directory)
+        scan = json.loads(json.dumps(self.scan))
+        if fresh_now:
+            stamp = datetime.now(timezone.utc).isoformat()
+            scan['descriptor']['timestamp'] = stamp
+            scan['descriptor']['db']['status']['built'] = stamp
+            for provider in scan['descriptor']['db']['providers'].values():
+                provider['captured'] = stamp
+        for name, value in [('sbom.syft.json', self.sbom), ('vulnerabilities.json', scan),
+                            ('database-coverage.json', DATABASE_COVERAGE), ('upstream-verification.json', receipt),
+                            ('policy.json', self.policy)]:
+            (directory / name).write_text(json.dumps(value))
+        return directory / 'policy.json'
+
+    def test_complete_scan_is_never_a_risk_pass_even_with_zero_matches(self):
+        result = self.evaluate()
+        self.assertEqual(result['status'], 'complete')
+        self.assertEqual(result['scannerHealth'], 'healthy')
+        self.assertEqual(result['observations'], [])
+        self.assertEqual(result['approvedBaseline'], self.baseline)
+        self.assertNotIn('admission', result)
+
+    def test_all_severities_and_exploited_suppressed_matches_remain_observations(self):
+        self.scan['matches'] = []
+        for severity in security.SEVERITIES:
+            match = finding(severity, fixed=True, known=True)
+            match['artifact']['locations'] = [{'path': '/usr/bin/example'}]
+            self.scan['matches'].append(match)
+        self.scan['ignoredMatches'] = [self.scan['matches'].pop()]
+        result = self.evaluate()
+        self.assertEqual(result['status'], 'complete')
+        self.assertEqual(len(result['observations']), len(security.SEVERITIES))
+        self.assertEqual(result['blocked'], [])
+        self.assertEqual(result['exceptionsApplied'], [])
+        self.assertTrue(all(finding['knownExploited'] for finding in result['observations']))
+        self.assertTrue(all('disposition' not in finding for finding in result['observations']))
+
+    def test_alias_risk_preserves_maximum_severity_and_cvss(self):
+        match = self.located('Low')
+        match['vulnerability']['cvss'] = [{'metrics': {'baseScore': 3.1}}]
+        match['relatedVulnerabilities'] = [{'id': 'GO-2026-6604', 'severity': 'Critical',
+                                            'cvss': [{'metrics': {'baseScore': 9.8}}]}]
+        observation = self.evaluate()['observations'][0]
+        self.assertEqual(observation['severity'], 'Low')
+        self.assertEqual(observation['admissionSeverity'], 'Critical')
+        self.assertEqual(observation['cvss'], 9.8)
+
+    def test_missing_cvss_is_explicit_and_malformed_cvss_is_technical_failure(self):
+        match = self.located('Unknown')
+        self.assertIsNone(self.evaluate()['observations'][0]['cvss'])
+        for value in ('9.0', True, -1, 11, float('nan')):
+            with self.subTest(value=value):
+                match['vulnerability']['cvss'] = [{'metrics': {'baseScore': value}}]
+                with self.assertRaisesRegex(ValueError, 'CVSS'): self.evaluate()
+
+    def test_health_failures_and_missing_baseline_cannot_be_accepted(self):
+        with self.assertRaises(ValueError): self.evaluate(False)
+        for mutate in (
+                lambda: self.scan['descriptor']['db']['status'].update(valid=False),
+                lambda: self.scan['descriptor'].update(timestamp='2020-01-01T00:00:00Z'),
+                lambda: self.scan['descriptor']['db']['providers'].pop('kev'),
+                lambda: self.scan['distro'].update(version='43'),
+                lambda: self.sbom.update(artifacts=[])):
+            self.setUp()
+            mutate()
+            with self.assertRaises((ValueError, KeyError)): self.evaluate()
+        self.setUp()
+        with self.assertRaises(ValueError):
+            security.evaluate(self.sbom, self.scan, self.image, self.policy, NOW,
+                              database_coverage=[], manifests=self.manifests, approved_baseline=self.baseline)
+
+    def test_policy_disallows_legacy_risk_dispositions_and_invalid_health_limits(self):
+        for key in ('exceptions', 'reviewedDispositions', 'seriousAdvisories', 'releaseBlockers', 'maxExceptionDays',
+                    'blockedFixableSeverities', 'blockKnownExploited', 'confirmedDesktopRisks', 'blockingBasis'):
+            with self.subTest(field=key), self.assertRaises(ValueError):
+                security.validate_policy({**self.policy, key: []})
+        for key, value in (('maxDatabaseAgeHours', True), ('maxEvidenceAgeHours', 0), ('minimumRpmPackages', -1),
+                           ('requiredProviders', ['fedora']), ('distributionAliases', {})):
+            with self.subTest(field=key), self.assertRaises(ValueError):
+                security.validate_policy({**self.policy, key: value})
+
+    def test_production_verify_still_requires_authenticated_publisher_receipt(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            policy = self.bundle(directory)
+            (directory / 'upstream-verification.json').unlink()
+            with patch.object(security, 'maintainer_admission') as admission, self.assertRaises(ValueError):
+                security.verify(directory, self.image, policy)
+            admission.assert_not_called()
+
+    def test_verify_rechecks_live_admission_and_only_covered_allows_publication(self):
+        self.located('Critical', True)
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            policy = self.bundle(directory)
+            for status in ('covered', 'review-required', 'rejected', 'revoked'):
+                with self.subTest(status=status), patch.object(security, 'datetime', wraps=datetime) as clock, \
+                     patch.object(security, 'maintainer_admission', return_value={'status': status}) as admission:
+                    clock.now.return_value = NOW
+                    if status == 'covered':
+                        result = security.verify(directory, self.image, policy)
+                        self.assertEqual(result['status'], 'complete')
+                        self.assertEqual(result['admission']['status'], 'covered')
+                    else:
+                        with self.assertRaisesRegex(ValueError, 'maintainer security decision'):
+                            security.verify(directory, self.image, policy)
+                    self.assertEqual(admission.call_count, 1)
+                    self.assertEqual(admission.call_args.args[0]['scannerHealth'], 'healthy')
+
+    def test_empty_scan_with_missing_app_configuration_does_not_grant_publication(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            policy = self.bundle(directory)
+            with patch.object(security, 'datetime', wraps=datetime) as clock, \
+                 patch.dict(os.environ, {'GITHUB_REPOSITORY': 'closure-labs/finite', 'FINITE_REVIEW_BOT_LOGIN': ''}), \
+                 self.assertRaises(ValueError):
+                clock.now.return_value = NOW
+                security.verify(directory, self.image, policy)
+
+    def test_raw_cli_reports_complete_without_resolving_human_authority(self):
+        self.located('Critical', True)
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            policy = self.bundle(directory, fresh_now=True)
+            result = subprocess.run([sys.executable, str(ROOT / 'scripts/bluebuild/security-policy.py'),
+                                     str(directory), self.image, '--policy', str(policy)], text=True, capture_output=True,
+                                    env={**os.environ, 'GH_TOKEN': '', 'FINITE_REVIEW_BOT_LOGIN': ''})
+            self.assertEqual(result.returncode, 0, result.stderr)
+            record = json.loads((directory / 'security-result.json').read_text())
+            self.assertEqual(record['status'], 'complete')
+            self.assertEqual(record['scannerHealth'], 'healthy')
+            self.assertNotIn('admission', record)
+
+    def test_bounded_wrapper_accepts_only_healthy_complete_exact_image_results(self):
+        wrapper = (ROOT / 'scripts/bluebuild/security-run.sh').read_text()
+        probe = wrapper.split("<<'PYRESULT'\n", 1)[1].split('\nPYRESULT', 1)[0]
+        for changes, expected in (({}, 0), ({'scannerHealth': 'failed'}, 2), ({'scannerHealth': None}, 2),
+                                  ({'mode': 'other'}, 2), ({'image': IMAGE}, 2)):
+            with self.subTest(changes=changes), tempfile.TemporaryDirectory() as temporary:
+                path = Path(temporary) / 'security-result.json'
+                path.write_text(json.dumps({'status': 'complete', 'mode': security.DECISION_MODE,
+                                            'scannerHealth': 'healthy', 'image': self.image, **changes}))
+                result = subprocess.run([sys.executable, '-', str(path), self.image, '0'], input=probe,
+                                        text=True, capture_output=True, check=True)
+                self.assertEqual(int(result.stdout), expected)
 
 
 if __name__ == '__main__':

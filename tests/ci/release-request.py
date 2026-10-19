@@ -69,7 +69,10 @@ class RequestTests(unittest.TestCase):
 
     def test_workflow_validates_before_cost_or_signing(self):
         workflow = yaml.safe_load((ROOT / '.github/workflows/release.yml').read_text())
-        self.assertEqual(workflow['concurrency']['group'], 'finite-release-${{ inputs.channel }}')
+        self.assertEqual(workflow['concurrency']['group'], 'finite-official-release')
+        for name in ('release-recovery', 'publish-release-set'):
+            sibling = yaml.safe_load((ROOT / '.github/workflows' / (name + '.yml')).read_text())
+            self.assertEqual(sibling['concurrency']['group'], workflow['concurrency']['group'])
         for name in ('release', 'sign-release'):
             steps = workflow['jobs'][name]['steps']
             validate = next(i for i, step in enumerate(steps) if step.get('name') == 'Validate release request')
@@ -78,7 +81,7 @@ class RequestTests(unittest.TestCase):
             self.assertNotIn('secrets.', str(steps[validate]))
         signer = workflow['jobs']['sign-release']
         self.assertEqual(signer['environment'], 'release')
-        checkout = signer['steps'][0]['with']['sparse-checkout']
+        checkout = next(step for step in signer['steps'] if step.get('uses', '').startswith('actions/checkout@'))['with']['sparse-checkout']
         self.assertIn('VERSION', checkout)
         self.assertIn('CHANGELOG.md', checkout)
         self.assertIn('scripts/ci/release-request.py', checkout)

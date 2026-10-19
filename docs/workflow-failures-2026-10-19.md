@@ -56,6 +56,49 @@ The original marker checks and required rollback remain enforced. A new hosted
 diagnostic run is required to identify and remediate the remaining VM failure;
 the added diagnostics are not a claim that its underlying cause is fixed.
 
+### Named preservation result and fixture correction
+
+The [corrected finite diagnostic](https://github.com/closure-labs/finite/actions/runs/39293376758)
+passed fresh qualification. Its upgrade receipt and the
+[finite-dev upgrade receipt](https://github.com/closure-labs/finite/actions/runs/39293381163)
+both report `nixState: true` and `homeCustomization: false`: the generated
+customization file is readable, but the acceptance marker is absent. The
+finite-dev fresh phase was still running when its upgrade receipt arrived.
+This establishes the failed contract; it does not establish that an OS update
+deleted an existing marker.
+
+The fixture appended that marker after `home-init` inside the same SSH
+`bash -s` script. Foundation and its child processes inherit that script's
+standard input. A local regression demonstrates a child consuming the trailing
+marker command while the parent shell exits successfully. The historical
+predecessor fixture already contained the same marker, masking this gap; the
+Foundation fixture correctly avoids precreating its configuration directory.
+Inherited stdin is the leading explanation, rather than proven OS data loss.
+
+`home-init` now receives `/dev/null` as stdin. A separate SSH request then
+requires the generated configuration files, appends the acceptance marker, and
+writes a successful initialization receipt before any upgrade starts. The
+post-upgrade checks and required rollback remain enforced. A hosted rerun must
+confirm the correction; if the marker disappears again, the two receipts will
+distinguish a failed setup from an actual persistence failure.
+
+## CodeQL workflow bootstrap
+
+The [initial CodeQL run](https://github.com/closure-labs/finite/actions/runs/39289903156)
+failed at startup without creating jobs. Its generated template referenced action
+version tags, while this repository requires full commit pins. The companion
+[CI run](https://github.com/closure-labs/finite/actions/runs/39289901233)
+also rejected those unpinned references. The corrected workflow pins checkout,
+CodeQL and Community Harden Runner, and the checked/live action allowlists match.
+Python and Actions run without a project compilation step. The detached Go helper
+has no Go module/autobuild target and retains its existing dedicated tests.
+
+A subsequent CI run caught the repository-security fixture still describing the
+old action allowlist. Both positive and drift fixtures now include the explicitly
+allowed pins; wildcard/extra-action negative checks remain intact. Both CodeQL
+languages and the corrected PR's hosted Nix/runtime checks pass; full image
+validation is a separate check.
+
 ## Validation
 
 Focused fixtures cover transport recovery and retry exhaustion, permanent API

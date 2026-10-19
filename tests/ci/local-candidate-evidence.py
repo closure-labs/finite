@@ -230,6 +230,34 @@ class LocalCandidate(unittest.TestCase):
         scan.assert_not_called()
         self.assertIn('approved baseline', json.loads((output / 'security-result.json').read_text())['error'])
 
+    def test_maintainer_native_health_is_diagnostic_only_and_never_calls_approval_api(self):
+        self.policy['mode'] = 'maintainer-decision'
+        context = self.context()
+        path = self.root / 'approved.json'
+        mod.write_json(path, context)
+        observation = {'component': 'pkg:rpm/fedora/example@1', 'advisory': 'CVE-2026-1',
+                       'severity': 'High', 'knownExploited': False, 'fixVersions': []}
+        for index, (status, health, expected) in enumerate((('complete', 'healthy', 0),
+                                                          ('complete', None, 2), ('pass', 'healthy', 2))):
+            result = self.result(status)
+            result.update(mode='maintainer-decision', scannerHealth=health,
+                          approvedBaseline=context, observations=[observation])
+            output = self.root / ('maintainer-' + str(index))
+            with patch.dict(mod.os.environ, self.environment(), clear=True), \
+                    patch.object(mod, 'scan_candidate', return_value=result), \
+                    patch.object(mod.policy_module, 'maintainer_admission', side_effect=AssertionError('Diagnostics cannot resolve human authority')):
+                self.assertEqual(mod.main([str(self.layout), str(output), '--profile', PROFILE, '--identity', IDENTITY,
+                                           '--approved-baseline', str(path)]), expected)
+            retained = json.loads((output / 'security-result.json').read_text())
+            self.assertFalse(retained['releaseEligible'])
+            self.assertFalse(retained['signatureVerified'])
+            if expected == 0:
+                self.assertEqual(retained['observations'], [observation])
+                self.assertEqual(retained['admissionStatus'], 'not-evaluated')
+                summary = json.loads((output / 'security-summary.json').read_text())
+                self.assertEqual(summary['observationRecords'], 1)
+                self.assertEqual(summary['advisoryRecords'], 0)
+
     def test_supplied_context_is_exactly_bound_and_advisories_remain_visible(self):
         self.policy['mode'] = 'upstream-maintained-risk'
         context = self.context()
