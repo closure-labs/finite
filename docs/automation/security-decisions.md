@@ -71,6 +71,18 @@ Upload evidence as an OCI artifact in `ghcr.io/closure-labs/finite-decisions` an
 
 PR and merge-group required checks must execute trusted default-branch verification code and compare the proposal content of the synthetic queued tree with the exact approved PR head. Rebasing the queue may change commit IDs but must not change the canonical proposal hash. Prevent unreviewed changes to governed policy and decision-controller files through a separate required authority check. No approval receipt commit is needed.
 
+## Builds without image work
+
+A trusted main build may pass its checks while change selection skips both
+image matrices. When no security archives exist, the collector authenticates
+the exact run, attempt and commit in the complete GitHub job inventory. Both
+image matrix placeholders must be skipped, and selection, documentation and
+the CI gate must succeed. The collector reports `no-image-work` and exits
+successfully so decision reconciliation and health checks continue. This grants
+no publication authority. Failed or ambiguous jobs, actual image jobs, partial
+or wrong-attempt scans, and missing published-image audit scans still fail or
+follow the existing single-profile consolidation path.
+
 ## Reused native evidence
 
 Optional `original-security-result.json` and `reuse-provenance.json` files remain bounded transport metadata. Their contents never establish human approval. Current valid native evidence may continue unattended when live human admission covers its findings.

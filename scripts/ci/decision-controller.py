@@ -9,7 +9,7 @@ import subprocess
 
 import decision_controller as controller
 import decision_packets
-from security_decisions import canonical_hash, load_json
+from security_decisions import load_json
 
 
 def main():
@@ -42,6 +42,10 @@ def main():
             raise ValueError('An explicit rejection rationale is required')
         try:
             origin, findings = controller.collect(args.run, args.packet_directory)
+        except controller.NoImageWork as skipped:
+            print(json.dumps({'schema': 1, 'status': 'no-image-work', 'sourceRun': skipped.origin['runId'],
+                              'proposalRequired': False, 'authorizesPublication': False}))
+            return
         except controller.ConsolidationRequired as required:
             print(json.dumps(controller.request_consolidation(required.origin)))
             return
