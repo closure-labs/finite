@@ -10,6 +10,11 @@ Development version: `0.8.2-dev`. The next stable release is 0.8.2.
 
 ### Changed
 
+- Preserve saved Home Manager selections on first-login failure, gate unsupported
+  schemas before initialization, and derive classified role choices from the
+  Foundation catalog. Keep schema-2 seed generation and existing applications.
+- Preserve Foundation role classification through the typed Home Manager catalog,
+  including compatibility with older unclassified catalogs.
 - Consume the Home Manager implementation and catalog from Foundation through
   an immutable source pin, replacing Finite's copied implementation.
 - Keep personal configurations independent of OS updates. Explicit `ujust update`

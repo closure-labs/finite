@@ -9,6 +9,24 @@
     name = "finite-cloud-init";
     runtimeInputs = with pkgs; [coreutils jq xorriso yq-go];
     text = ''
+      # This writer emits schema 2. A future descriptor cannot silently change it.
+      jq -e '
+        def valid_capabilities:
+          .schema == 1 and
+          all(.initializeSchemas, .normalizeSchemas, .catalogSchemas;
+            type == "array" and length > 0 and
+            all(.[]; type == "number" and . > 0 and floor == .) and
+            (unique | length) == length) and
+          (.writeSchema as $schema | (.initializeSchemas | index($schema)) != null and
+            (.normalizeSchemas | index($schema)) != null);
+        . as $catalog |
+        if has("profileCapabilities") then
+          (.profileCapabilities | valid_capabilities) and .profileCapabilities.writeSchema == 2 and
+          (.profileCapabilities.catalogSchemas | index($catalog.schema) != null) and
+          (.profileCapabilities.initializeSchemas | index(2) != null) and
+          (.profileCapabilities.normalizeSchemas | index(2) != null)
+        else true end
+      ' ${catalog} >/dev/null || { echo "Catalog does not support the schema-2 seed writer" >&2; exit 2; }
       foundation="" hardware="" packages="" roles="" username="" output=""
       while (( $# > 0 )); do
         case "$1" in
