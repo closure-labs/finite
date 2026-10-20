@@ -1,0 +1,13 @@
+[Unit]
+Description=Coalesce Wi-Fi power-policy events and reconcile the final state
+
+[Timer]
+# Starting an already active timer coalesces event bursts. Reconcile again
+# after the helper exits so a change during a slow iw command is not lost.
+OnActiveSec=3s
+OnUnitInactiveSec=30s
+AccuracySec=1s
+Unit=wifi-ac-power.service
+
+[Install]
+WantedBy=timers.target

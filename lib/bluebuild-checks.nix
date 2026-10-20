@@ -58,11 +58,12 @@ in {
     python3 tests/home/maintenance.py
     python3 tests/home/foundation-integration.py
   '';
-  nix-lifecycle = check "nix-lifecycle" (with pkgs; [diffutils gawk gnugrep jq systemd util-linux]) ''
+  nix-lifecycle = check "nix-lifecycle" (with pkgs; [diffutils gawk gnugrep jq python3 systemd util-linux]) ''
     bash tests/bluebuild/nix-readiness.sh
     bash tests/nix/determinate-version.sh
     bash tests/nix/nix-lifecycle.sh
     bash tests/nix/nix-systemd.sh
+    python3 tests/bluebuild/wifi-power.py
     bash tests/nix/home-selinux-contexts.sh
     bash tests/nix/nix-selinux.sh
     bash tests/bluebuild/vm-predecessor-home.sh

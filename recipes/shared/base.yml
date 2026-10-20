@@ -51,6 +51,7 @@ modules:
     system:
       enabled:
         - pcscd.socket
+        - wifi-ac-power.timer
         - finite-firstboot-rpm-ostree.service
     user:
       enabled:

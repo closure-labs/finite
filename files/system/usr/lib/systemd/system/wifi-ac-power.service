@@ -1,0 +1,16 @@
+[Unit]
+Description=Set Wi-Fi power saving according to AC or battery power
+After=NetworkManager.service tuned.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/finite/wifi-ac-power
+TimeoutStartSec=15
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+CapabilityBoundingSet=CAP_NET_ADMIN
+
+[Install]
+WantedBy=multi-user.target
