@@ -227,7 +227,7 @@ class AdmissionTests(unittest.TestCase):
         with self.assertRaises(module.authority.AuthorityError):
             self.verify()
 
-    def test_retired_provenance_requires_bot_merge_and_immutable_main_but_no_current_role(self):
+    def test_retired_provenance_accepts_human_or_app_merge_without_current_role(self):
         proposal = self.proposal()
         path = module.authority.proposal_path(proposal)
         head, merge, current = 'a' * 40, 'b' * 40, 'c' * 40
@@ -255,7 +255,10 @@ class AdmissionTests(unittest.TestCase):
             receipt = module._historical_provenance(proposal, 42, 'closure-labs/finite', 'finite-review[bot]', github)
             self.assertEqual(receipt['status'], 'superseded-provenance')
             self.assertNotIn('reviewer', receipt)
-            pull['user']['login'] = 'attacker[bot]'
+            pull['user'] = {'id': 3, 'type': 'User', 'login': 'former-maintainer'}
+            receipt = module._historical_provenance(proposal, 42, 'closure-labs/finite', 'finite-review[bot]', github)
+            self.assertEqual(receipt['status'], 'superseded-provenance')
+            pull['user'] = {'type': 'Bot', 'login': 'attacker[bot]'}
             with self.assertRaises(TechnicalError):
                 module._historical_provenance(proposal, 42, 'closure-labs/finite', 'finite-review[bot]', github)
         finally:

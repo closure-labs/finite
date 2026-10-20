@@ -26,15 +26,40 @@ A proposal has exactly `schema`, `kind` and `payload`. Hash the entire document 
 
 Security payloads contain both profiles' normalized findings, a content-addressed evidence packet reference and producer identity, disposition (`accepted`, `rejected`, or `revoked`), and rationale. Release-set payload semantics are independently validated by release preparation. Evidence provenance and applicability are validated by the controller before it asks for approval; authority verification validates the review boundary, not scanner correctness.
 
-`decision-authority.py` requires a configured trusted GitHub App bot login. It verifies same-repository main-targeting PR identity; the exact proposal at the current reviewed PR head; allowed changed paths; an active `closure-labs/super-admins` member's human approval on that exact head; current maintain/admin reviewer permission and pinned team membership; absence of later unresolved eligible changes requests; and, for runtime authorization, merged state, identical proposal in the merge commit, merge ancestry of current main and unchanged proposal on current main. It derives the origin PR from file commit history when no PR is supplied. Renames, deletions, missing pagination, API failure and changed PR state fail closed.
+`decision-authority.py` requires a configured trusted GitHub App bot login. The configured App, active `closure-labs/maintainers` members and active `closure-labs/super-admins` members may submit same-repository main-targeting proposals. Human submitters require current write, maintain or admin repository access and pinned team identities (Maintainers `20196828`, Super Admins `20196962`). It verifies PR identity; the exact proposal at the current reviewed PR head; allowed changed paths; an active `closure-labs/super-admins` member's human approval on that exact head; current maintain/admin reviewer permission and pinned team membership; absence of later unresolved eligible changes requests; and, for runtime authorization, merged state, identical proposal in the merge commit, merge ancestry of current main and unchanged proposal on current main. It derives the origin PR from file commit history when no PR is supplied. Renames, deletions, missing pagination, API failure and changed PR state fail closed. Governed code and workflow PRs use the same submitter and Super Admin approval restrictions; ordinary PRs keep their existing checks.
 
 ```console
 python3 scripts/ci/decision-authority.py --proposal proposal.json --repository closure-labs/finite --bot-login 'cl-decider[bot]' --output authority.json
 ```
 
-`--pr` supplies a PR number for a premerge check or explicit lookup. `--allow-open` is for PR/merge-queue validation only and must never authorize publication. Additional report files must be explicitly allowed with `--allow-path`; code changes are not implicitly allowed in a bot proposal. Exit code `0` means authenticated authority, `2` means no usable authority.
+`--pr` supplies a PR number for a premerge check or explicit lookup. `--allow-open` is for PR/merge-queue validation only and must never authorize publication. Additional report files must be explicitly allowed with `--allow-path`; code changes are not implicitly allowed in a decision proposal. Exit code `0` means authenticated authority, `2` means no usable authority.
 
 Before selecting an active decision and again before returning admission, the controller authenticates the complete current-main security ledger through an untruncated Git tree. The canonical record set must match the local checkout, including an empty ledger. New revocations, supersessions, deletions, malformed paths or API errors fail closed until the checkout is refreshed. Main advances that leave the ledger unchanged remain valid.
+
+Super Admins may approve their own PRs. GitHub prohibits an author from
+submitting an Approve review on their own PR, so use **Files changed → Review
+changes → Comment** with exactly:
+
+```text
+/decider approve <full 40-character current PR head SHA>
+```
+
+Decider accepts this explicit Comment review only from a currently eligible
+Super Admin and only when both the command and GitHub's review `commit_id`
+match the current PR head. Maintainers outside Super Admins cannot approve,
+including their own submissions. Plain PR comments, quoted commands, bots and
+stale heads grant no authority. Normal Approve reviews from Super Admins remain
+supported. The existing review-event collector rechecks the PR and merge queue.
+
+To withdraw an explicit approval, submit a later Comment review containing
+`/decider withdraw <full current PR head SHA>`. A later dismissal or eligible
+changes-requested review also removes or blocks approval. Editing the command
+away removes that approval on the next live authority check. Pushing a new head
+requires a new approval. Super Admin membership and repository maintain/admin
+access remain required at every publication boundary. Repository rules that
+separately require native GitHub Approve reviews cannot be satisfied by a
+Comment review; this change uses the required Decider authority check and does
+not alter live repository rules.
 
 Authority has no automatic expiry. Dismissing the qualifying review, a later unresolved changes-requested review, or removal from Super Admins or loss of maintain/admin permission invalidates it on the next check. The controller must additionally apply merged explicit revocations and prevent older decisions from overriding them. Every publication boundary rechecks authority; a cached or signed historical receipt cannot replace current API checks.
 
@@ -65,7 +90,7 @@ Dispatch **Reconcile maintainer decisions** on main. Select `rejected`, provide
 a fresh complete `producer_run` and a rationale to propose rejection even when
 an existing acceptance or pending acceptance proposal covers that scan. This
 changes the proposed disposition only; an active Super Admin with maintain/admin access still reviews
-and merges the exact bot-authored head.
+and merges the exact approved proposal head.
 
 Select `revoked`, leave `producer_run` empty, and provide the current accepted
 `decision_hash` plus a rationale to withdraw an existing acceptance without

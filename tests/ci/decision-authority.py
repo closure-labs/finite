@@ -29,7 +29,8 @@ class GitHub:
                    'merged': True, 'state': 'closed', 'merge_commit_sha': MERGE, 'changed_files': 1}
         self.reviews = [{'id': 10, 'state': 'APPROVED', 'commit_id': HEAD,
                          'user': {'id': 1, 'login': 'maintainer', 'type': 'User'}}]
-        self.roles = {'maintainer': 'maintain'}
+        self.roles = {'maintainer': 'maintain', 'submitter': 'write'}
+        self.submitters = [{'id': 3, 'login': 'submitter', 'type': 'User'}]
         self.team = {'id': 20196962, 'slug': 'super-admins', 'organization': {'login': 'closure-labs'}}
         self.members = [{'id': 1, 'login': 'maintainer', 'type': 'User'}, {'id': 2, 'login': 'other', 'type': 'User'}]
         self.memberships = {}
@@ -43,6 +44,13 @@ class GitHub:
         self.calls.append(endpoint)
         if self.fail and self.fail in endpoint:
             raise mod.AuthorityError('API unavailable')
+        if endpoint == 'orgs/closure-labs/teams/maintainers':
+            return {'id': 20196828, 'slug': 'maintainers', 'organization': {'login': 'closure-labs'}}
+        if '/teams/maintainers/members?' in endpoint:
+            return copy.deepcopy(self.submitters)
+        if '/teams/maintainers/memberships/' in endpoint:
+            login = endpoint.rsplit('/', 1)[-1]
+            return copy.deepcopy(self.memberships.get(login.lower(), {'state': 'active', 'role': 'member'}))
         if endpoint == 'orgs/closure-labs/teams/super-admins':
             return copy.deepcopy(self.team)
         if '/teams/super-admins/members?' in endpoint:
@@ -77,6 +85,105 @@ def verify(api, **kwargs):
 
 
 class Authority(unittest.TestCase):
+    def test_origin_lookup_accepts_human_pr_and_rejects_unknown_bot(self):
+        api = GitHub()
+        original = api.__call__
+        def github(endpoint):
+            if '/commits?path=' in endpoint:
+                return [{'sha': MERGE}]
+            if '/commits/' in endpoint and '/pulls?' in endpoint:
+                return [{**api.pr, 'merged_at': '2026-10-20T00:00:00Z'}]
+            return original(endpoint)
+        api.pr['user'] = {'id': 3, 'login': 'submitter', 'type': 'User'}
+        self.assertEqual(mod.find_origin_pr(PROPOSAL, REPO, BOT, github), 7)
+        api.pr['user'] = {'type': 'Bot', 'login': 'other[bot]'}
+        with self.assertRaises(mod.AuthorityError):
+            mod.find_origin_pr(PROPOSAL, REPO, BOT, github)
+
+    def test_submitter_revocation_during_authorization_fails_closed(self):
+        api = GitHub()
+        api.pr['user'] = {'id': 3, 'login': 'submitter', 'type': 'User'}
+        def github(endpoint):
+            result = api(endpoint)
+            if '/pulls/7/reviews?' in endpoint:
+                api.submitters.clear()
+            return result
+        with self.assertRaises(mod.AuthorityError):
+            mod.verify_proposal(PROPOSAL, 7, REPO, BOT, github=github)
+
+    def test_team_members_can_submit_and_only_super_admins_can_approve(self):
+        for user in ({'id': 1, 'login': 'maintainer', 'type': 'User'},
+                     {'id': 3, 'login': 'submitter', 'type': 'User'}):
+            api = GitHub()
+            api.pr['user'] = user
+            self.assertEqual(verify(api)['status'], 'authorized')
+        api.reviews = [{'id': 12, 'state': 'APPROVED', 'commit_id': HEAD,
+                        'user': api.pr['user']}]
+        with self.assertRaises(mod.HumanDecisionRequired):
+            verify(api)
+
+    def test_submitter_requires_live_pinned_membership_identity_and_permission(self):
+        user = {'id': 3, 'login': 'submitter', 'type': 'User'}
+        for mutate in (lambda a: a.pr['user'].update(id=999),
+                       lambda a: a.submitters.clear(),
+                       lambda a: a.memberships.update(submitter={'state': 'pending', 'role': 'member'}),
+                       lambda a: a.roles.update(submitter='read')):
+            api = GitHub()
+            api.pr['user'] = copy.deepcopy(user)
+            mutate(api)
+            with self.subTest(mutate=mutate), self.assertRaises(mod.AuthorityError):
+                verify(api)
+        api = GitHub()
+        api.pr['user'] = user
+        api.fail = '/teams/maintainers'
+        with self.assertRaises(mod.AuthorityError):
+            verify(api)
+
+    def test_super_admin_can_explicitly_approve_own_exact_head(self):
+        api = GitHub()
+        api.pr['user'] = copy.deepcopy(api.reviews[0]['user'])
+        api.reviews[0].update(state='COMMENTED', body='/decider approve ' + HEAD)
+        receipt = verify(api)
+        self.assertEqual(receipt['status'], 'authorized')
+        self.assertEqual(receipt['approvalMethod'], 'comment-review')
+
+    def test_comment_approval_requires_explicit_current_head_and_super_admin(self):
+        for body, commit in (('approve', HEAD), ('/decider approve ' + MERGE, HEAD),
+                             ('/decider approve ' + HEAD, MERGE),
+                             ('quoted: /decider approve ' + HEAD, HEAD)):
+            api = GitHub()
+            api.reviews[0].update(state='COMMENTED', body=body, commit_id=commit)
+            with self.subTest(body=body, commit=commit), self.assertRaises(mod.HumanDecisionRequired):
+                verify(api)
+        api = GitHub()
+        api.reviews[0].update(state='COMMENTED', body='/decider approve ' + HEAD,
+                              user={'id': 3, 'login': 'submitter', 'type': 'User'})
+        with self.assertRaises(mod.HumanDecisionRequired):
+            verify(api)
+
+    def test_edited_comment_and_other_super_admin_rejection_remove_authority(self):
+        api = GitHub()
+        api.reviews[0].update(state='COMMENTED', body='/decider approve ' + HEAD)
+        self.assertEqual(verify(api)['status'], 'authorized')
+        api.reviews[0]['body'] = 'withdrawn'
+        with self.assertRaises(mod.HumanDecisionRequired):
+            verify(api)
+        api.reviews[0]['body'] = '/decider approve ' + HEAD
+        api.roles['other'] = 'maintain'
+        api.reviews.append({'id': 11, 'state': 'CHANGES_REQUESTED', 'commit_id': HEAD,
+                            'user': {'id': 2, 'type': 'User', 'login': 'other'}})
+        with self.assertRaises(mod.HumanDecisionRequired):
+            verify(api)
+
+    def test_comment_withdrawal_dismissal_and_changes_requested_revoke_approval(self):
+        for state, body in (('COMMENTED', '/decider withdraw ' + HEAD),
+                            ('DISMISSED', '/decider approve ' + HEAD), ('CHANGES_REQUESTED', '')):
+            api = GitHub()
+            api.reviews[0].update(state='COMMENTED', body='/decider approve ' + HEAD)
+            api.reviews.append({**api.reviews[0], 'id': 11, 'state': state, 'body': body})
+            with self.subTest(state=state), self.assertRaises(mod.HumanDecisionRequired):
+                verify(api)
+
     def test_exact_human_maintainer_approval(self):
         result = verify(GitHub())
         self.assertEqual(result['status'], 'authorized')

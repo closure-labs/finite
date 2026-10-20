@@ -9,7 +9,7 @@ import re
 import subprocess
 import sys
 
-from security_decisions import canonical_hash, load_json
+from security_decisions import canonical_hash
 
 SPEC = importlib.util.spec_from_file_location('decision_authority', Path(__file__).with_name('decision-authority.py'))
 authority = importlib.util.module_from_spec(SPEC)
@@ -110,8 +110,8 @@ def check_pr(repository, number, expected_bot, target_sha=None, github=None):
     sensitive = sorted(path for path in paths if governed(path))
     proposals = sorted(path for path in paths if PROPOSAL.fullmatch(path))
     if sensitive:
-        # Governance changes can be authored by humans. Their review is still
-        # exact-head/current-maintainer; bot authorship applies only to proposals.
+        if not authority.submitter(api, repository, pull.get('user'), expected_bot):
+            raise authority.AuthorityError('Governed PR submitter must be the configured App, a Maintainer or a Super Admin')
         authority.approval(api, repository, number, head)
         for path in proposals:
             proposal = authority.document_at(api, repository, path, head)
@@ -131,8 +131,11 @@ def check_pr(repository, number, expected_bot, target_sha=None, github=None):
             if canonical_hash(authority.document_at(api, repository, path, target_sha)) != canonical_hash(authority.document_at(api, repository, path, head)):
                 raise authority.AuthorityError('Merge-group proposal differs from exact approved PR head')
     latest = api(endpoint)
-    if latest.get('head', {}).get('sha') != head or latest.get('state') != 'open':
+    if (latest.get('head', {}).get('sha') != head or latest.get('state') != 'open'
+            or latest.get('user') != pull.get('user')):
         raise authority.AuthorityError('PR changed while authority was being evaluated')
+    if sensitive and not authority.submitter(api, repository, latest.get('user'), expected_bot):
+        raise authority.AuthorityError('Governed PR submitter authority changed during authorization')
     return {'pullRequest': number, 'head': head, 'target': target_sha,
             'governedPaths': sensitive, 'status': 'authorized' if sensitive else 'not-required'}
 
