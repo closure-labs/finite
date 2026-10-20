@@ -1,0 +1,47 @@
+#!/usr/bin/python3
+"""Disable Wi-Fi power saving on external power; enable it on battery."""
+from pathlib import Path
+import subprocess
+import sys
+
+
+def read(path):
+    try:
+        return path.read_text().strip()
+    except OSError:
+        return ""
+
+
+def desired_mode(supplies):
+    for supply in supplies.iterdir():
+        if read(supply / "type") == "Battery" or read(supply / "scope") == "Device":
+            continue
+        if read(supply / "online") == "1" and read(supply / "status") != "Discharging":
+            return "off"
+    return "on"
+
+
+def main():
+    mode = desired_mode(Path("/sys/class/power_supply"))
+    failed = False
+    for interface in Path("/sys/class/net").iterdir():
+        if not (interface / "wireless").exists():
+            continue
+        command = ["/usr/bin/iw", "dev", interface.name]
+        current = subprocess.run(command + ["get", "power_save"], capture_output=True, text=True, timeout=5)
+        if current.returncode:
+            continue  # A disconnected, disabled, or removed adapter may be unavailable.
+        if "--dry-run" in sys.argv:
+            print(f"{interface.name}: {current.stdout.strip()}; desired: {mode}")
+        elif current.stdout.strip() != f"Power save: {mode}":
+            result = subprocess.run(command + ["set", "power_save", mode], capture_output=True, text=True, timeout=5)
+            if result.returncode:
+                print(f"{interface.name}: {result.stderr.strip()}", file=sys.stderr)
+                failed = True
+            else:
+                print(f"{interface.name}: power saving {mode}")
+    return int(failed)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

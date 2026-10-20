@@ -57,6 +57,21 @@ install -m 0755 "$(type -P rm)" "${test_root}/usr/bin/rm"
 install -m 0755 "${true_command}" "${test_root}/usr/bin/systemd-tmpfiles"
 install -m 0755 "${true_command}" "${test_root}/usr/bin/bash"
 
+# Store-backed Home Manager units must be readable before user-manager startup.
+for unit in user@.service display-manager.service; do
+  install -d "${test_root}/usr/lib/systemd/system/${unit}.d"
+  cp "${unit_source}/${unit}.d/50-finite-nix.conf" \
+    "${test_root}/usr/lib/systemd/system/${unit}.d/"
+  printf '[Service]\nType=oneshot\nExecStart=/usr/bin/true\n' > \
+    "${test_root}/usr/lib/systemd/system/${unit}"
+  grep -qFx 'Requires=nix.mount' "${unit_source}/${unit}.d/50-finite-nix.conf"
+  grep -qFx 'After=nix.mount' "${unit_source}/${unit}.d/50-finite-nix.conf"
+done
+install -m 0755 "${true_command}" "${test_root}/usr/bin/true"
+install -d "${test_root}/usr/lib/systemd/system/multi-user.target.wants"
+ln -s ../user@.service "${test_root}/usr/lib/systemd/system/multi-user.target.wants/user@1000.service"
+ln -s ../display-manager.service "${test_root}/usr/lib/systemd/system/multi-user.target.wants/display-manager.service"
+
 # Include the historical VM prerequisite in the boot transaction so placing it
 # after the Nix service it prepares cannot silently introduce an ordering cycle.
 awk '
@@ -148,6 +163,8 @@ if [[ -d /run/systemd ]]; then
     --generators=no \
     verify \
     multi-user.target \
+    user@1000.service \
+    display-manager.service \
     finite-nix-selinux.service \
     finite-vm-predecessor-policy.service \
     finite-nix-seed.service \

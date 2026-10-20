@@ -1,0 +1,1 @@
+ACTION=="add|change", SUBSYSTEM=="power_supply", RUN+="/usr/bin/systemctl --no-block start wifi-ac-power.timer"

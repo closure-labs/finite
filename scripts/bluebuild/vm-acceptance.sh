@@ -322,6 +322,8 @@ boot_vm() {
           >"$state/$phase-security.log"
         ssh "${ssh_args[@]}" sudo python3 - <scripts/bluebuild/check-vm-desktop.py \
           >"$state/$phase-desktop.json"
+        ssh "${ssh_args[@]}" sudo bash -s -- /usr/lib/tmpfiles.d/finite-gdm.conf \
+          <scripts/bluebuild/check-vm-gdm-labels.sh >"$state/$phase-gdm-labels.log"
       fi
       ssh "${ssh_args[@]}" sudo journalctl --no-pager -b -u systemd-remount-fs \
         >"$state/$phase-remount.log"
