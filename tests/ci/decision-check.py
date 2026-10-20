@@ -62,12 +62,24 @@ class Checks(unittest.TestCase):
         with self.assertRaises(mod.authority.AuthorityError):
             mod.check_pr(REPO, 7, BOT, github=api)
 
-    def test_human_governance_author_allowed_but_human_proposal_author_rejected(self):
+    def test_team_author_can_submit_governance_and_proposals(self):
         api = GitHub()
-        api.pr['user'] = {'type': 'User', 'login': 'maintainer'}
+        api.pr['user'] = {'id': 1, 'type': 'User', 'login': 'maintainer'}
+        self.assertEqual(mod.check_pr(REPO, 7, BOT, github=api)['status'], 'authorized')
+        api.files = [{'filename': 'scripts/bluebuild/security-policy.py', 'status': 'modified'}]
+        self.assertEqual(mod.check_pr(REPO, 7, BOT, github=api)['status'], 'authorized')
+
+    def test_outside_author_cannot_submit_governed_changes(self):
+        api = GitHub()
+        api.pr['user'] = {'id': 99, 'type': 'User', 'login': 'outsider'}
+        api.files = [{'filename': 'scripts/ci/decision-authority.py', 'status': 'modified'}]
         with self.assertRaises(mod.authority.AuthorityError):
             mod.check_pr(REPO, 7, BOT, github=api)
-        api.files = [{'filename': 'scripts/bluebuild/security-policy.py', 'status': 'modified'}]
+
+    def test_self_approval_comment_review_passes_governed_check(self):
+        api = GitHub()
+        api.pr['user'] = api.reviews[0]['user'].copy()
+        api.reviews[0].update(state='COMMENTED', body='/decider approve ' + HEAD)
         self.assertEqual(mod.check_pr(REPO, 7, BOT, github=api)['status'], 'authorized')
 
     def test_exact_canonical_bot_proposal(self):

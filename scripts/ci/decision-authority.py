@@ -18,6 +18,8 @@ REPOSITORY = re.compile(r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+')
 APPROVER_ORG = 'closure-labs'
 APPROVER_TEAM = 'super-admins'
 APPROVER_TEAM_ID = 20196962
+SUBMITTER_TEAM = 'maintainers'
+SUBMITTER_TEAM_ID = 20196828
 KINDS = {'security-findings': 'security', 'security-revocation': 'security', 'release-set': 'releases'}
 
 
@@ -110,14 +112,14 @@ def document_at(api, repository, path, revision):
         raise AuthorityError('Invalid proposal blob') from error
 
 
-def approver_members(api):
+def team_members(api, slug, team_id):
     """A complete visible, pinned team inventory; 404/API errors never mean empty."""
-    endpoint = f'orgs/{APPROVER_ORG}/teams/{APPROVER_TEAM}'
+    endpoint = f'orgs/{APPROVER_ORG}/teams/{slug}'
     team = api(endpoint)
     if (not isinstance(team, dict) or type(team.get('id')) is not int
-            or team['id'] != APPROVER_TEAM_ID or team.get('slug') != APPROVER_TEAM
+            or team['id'] != team_id or team.get('slug') != slug
             or not isinstance(team.get('organization'), dict) or team['organization'].get('login') != APPROVER_ORG):
-        raise AuthorityError('Cannot authenticate the pinned Super Admins approval team')
+        raise AuthorityError('Cannot authenticate pinned team: ' + slug)
     users = collection(api, endpoint + '/members?role=all')
     members, ids = {}, set()
     for user in users:
@@ -125,10 +127,46 @@ def approver_members(api):
                 or not isinstance(user.get('login'), str) or not re.fullmatch(r'[A-Za-z0-9-]+', user['login'])
                 or type(user.get('id')) is not int or user['id'] < 1
                 or user['login'].lower() in members or user['id'] in ids):
-            raise AuthorityError('Invalid complete Super Admins membership inventory')
+            raise AuthorityError('Invalid complete membership inventory: ' + slug)
         members[user['login'].lower()] = user['id']
         ids.add(user['id'])
     return members
+
+
+def approver_members(api):
+    return team_members(api, APPROVER_TEAM, APPROVER_TEAM_ID)
+
+
+def submitter(api, repository, user, expected_bot):
+    """Authenticate the App or a current member of either pinned submitting team."""
+    if isinstance(user, dict) and user.get('type') == 'Bot':
+        return user.get('login') == expected_bot
+    if (not isinstance(user, dict) or user.get('type') != 'User'
+            or not isinstance(user.get('login'), str) or not re.fullmatch(r'[A-Za-z0-9-]+', user['login'])
+            or type(user.get('id')) is not int or user['id'] < 1):
+        return False
+    login = user['login']
+    for slug, team_id in ((APPROVER_TEAM, APPROVER_TEAM_ID), (SUBMITTER_TEAM, SUBMITTER_TEAM_ID)):
+        members = team_members(api, slug, team_id)
+        if login.lower() not in members:
+            continue
+        if members[login.lower()] != user['id']:
+            raise AuthorityError('Submitter identity differs from current team member')
+        membership = api(f'orgs/{APPROVER_ORG}/teams/{slug}/memberships/{login}')
+        if (not isinstance(membership, dict) or membership.get('state') not in ('active', 'pending')
+                or membership.get('role') not in ('member', 'maintainer')):
+            raise AuthorityError('Invalid current submitter membership')
+        if membership['state'] != 'active':
+            continue
+        permission = api(f'repos/{repository}/collaborators/{login}/permission')
+        if not isinstance(permission, dict):
+            raise AuthorityError('Invalid current submitter permission')
+        if permission.get('role_name', permission.get('permission')) not in ('write', 'maintain', 'admin'):
+            return False
+        if team_members(api, slug, team_id) != members:
+            raise AuthorityError('Submitter membership changed during authorization')
+        return True
+    return False
 
 
 def eligible(api, repository, user, members=None):
@@ -164,6 +202,21 @@ def approval(api, repository, number, head):
         if (not isinstance(review, dict) or type(review.get('id')) is not int or review['id'] < 1
                 or not isinstance(review.get('user'), dict)):
             raise AuthorityError('Invalid authenticated PR review record')
+        if review.get('state') == 'COMMENTED':
+            # GitHub disallows APPROVE reviews on one's own PR. A human may
+            # instead submit an explicit Comment review bound to this exact head.
+            body = review.get('body') or ''
+            if not isinstance(body, str):
+                raise AuthorityError('Invalid authenticated review body')
+            command = body.strip()
+            if review.get('commit_id') != head:
+                continue
+            if command == '/decider approve ' + head:
+                review = {**review, 'state': 'APPROVED', 'approvalMethod': 'comment-review'}
+            elif command == '/decider withdraw ' + head:
+                review = {**review, 'state': 'DISMISSED', 'approvalMethod': 'comment-review'}
+            else:
+                continue
         if review.get('state') not in ('APPROVED', 'CHANGES_REQUESTED', 'DISMISSED'):
             continue
         user = review['user']
@@ -214,11 +267,11 @@ def verify_proposal(proposal, pr, repository, expected_bot, require_merged=True,
         raise AuthorityError('Invalid PR response')
     head = pull.get('head', {}).get('sha', '')
     author = pull.get('user', {})
-    if (pull.get('number') != number or author.get('type') != 'Bot' or author.get('login') != expected_bot
+    if (pull.get('number') != number or not submitter(api, repository, author, expected_bot)
             or pull.get('base', {}).get('repo', {}).get('full_name') != repository
             or pull.get('head', {}).get('repo', {}).get('full_name') != repository
             or pull.get('base', {}).get('ref') != 'main' or not SHA.fullmatch(head)):
-        raise AuthorityError('Proposal must be authored by the configured bot in this repository targeting main')
+        raise AuthorityError('Proposal must be authored by the configured App, a Maintainer or a Super Admin in this repository targeting main')
     if not pull.get('merged') and (require_merged or pull.get('state') != 'open'):
         raise AuthorityError('Proposal is not in the required merged/open state')
     files = collection(api, endpoint + '/files')
@@ -254,11 +307,14 @@ def verify_proposal(proposal, pr, repository, expected_bot, require_merged=True,
             or latest.get('merged') != pull.get('merged') or latest.get('state') != pull.get('state')
             or latest.get('merge_commit_sha') != merge):
         raise AuthorityError('Proposal PR changed during authorization')
+    if latest.get('user') != author or not submitter(api, repository, author, expected_bot):
+        raise AuthorityError('Proposal submitter authority changed during authorization')
     if not eligible(api, repository, review['user']):
         raise HumanDecisionRequired('Super Admin approval was withdrawn during authorization')
     return {'schema': 1, 'status': 'authorized', 'repository': repository,
             'proposalHash': digest, 'path': path, 'pullRequest': number,
             'reviewId': review['id'], 'reviewer': review['user']['login'],
+            'approvalMethod': review.get('approvalMethod', 'review'),
             'reviewedHead': head, 'mergeCommit': merge if pull.get('merged') else None,
             'permissionPolicy': 'current-super-admins-and-maintain-or-admin',
             'approverTeam': {'organization': APPROVER_ORG, 'slug': APPROVER_TEAM, 'id': APPROVER_TEAM_ID}}
@@ -274,11 +330,12 @@ def find_origin_pr(proposal, repository, expected_bot, github=None):
         raise AuthorityError('Cannot establish proposal file history on main')
     pulls = collection(api, f'repos/{repository}/commits/{commits[0]["sha"]}/pulls')
     candidates = [p for p in pulls if isinstance(p, dict) and p.get('merged_at')
-                  and p.get('user', {}).get('login') == expected_bot
+                  and (p.get('user', {}).get('type') == 'User'
+                       or (p.get('user', {}).get('type') == 'Bot' and p['user'].get('login') == expected_bot))
                   and p.get('base', {}).get('repo', {}).get('full_name') == repository
                   and p.get('base', {}).get('ref') == 'main']
     if len(candidates) != 1:
-        raise AuthorityError('Proposal history has ambiguous or missing merged bot PR provenance')
+        raise AuthorityError('Proposal history has ambiguous or missing merged proposal PR provenance')
     return candidates[0]['number']
 
 

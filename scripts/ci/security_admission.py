@@ -100,14 +100,15 @@ def _historical_provenance(proposal, number, repository, bot_login, github=None)
         raise TechnicalError('Invalid historical decision PR')
     head, merge = pull.get('head', {}).get('sha', ''), pull.get('merge_commit_sha', '')
     if (pull.get('number') != number or pull.get('merged') is not True
-            or pull.get('state') != 'closed' or pull.get('user', {}).get('type') != 'Bot'
-            or pull.get('user', {}).get('login') != bot_login
+            or pull.get('state') != 'closed'
+            or not (pull.get('user', {}).get('type') == 'User'
+                    or (pull.get('user', {}).get('type') == 'Bot' and pull['user'].get('login') == bot_login))
             or pull.get('base', {}).get('repo', {}).get('full_name') != repository
             or pull.get('head', {}).get('repo', {}).get('full_name') != repository
             or pull.get('base', {}).get('ref') != 'main'
             or not isinstance(head, str) or not SHA.fullmatch(head)
             or not isinstance(merge, str) or not SHA.fullmatch(merge)):
-        raise TechnicalError('Historical decision lacks same-repository merged bot provenance')
+        raise TechnicalError('Historical decision lacks same-repository merged proposal provenance')
     files = authority.collection(api, endpoint + '/files')
     if (not files or len(files) != pull.get('changed_files')
             or any(not isinstance(item, dict) or item.get('filename') != path
@@ -122,7 +123,7 @@ def _historical_provenance(proposal, number, repository, bot_login, github=None)
         raise TechnicalError('Historical merge is not on current main')
     for revision in (head, merge, current):
         if canonical_hash(authority.document_at(api, repository, path, revision)) != identity:
-            raise TechnicalError('Historical decision differs from immutable bot merge')
+            raise TechnicalError('Historical decision differs from immutable proposal merge')
     latest = api(endpoint)
     if (latest.get('head', {}).get('sha') != head or latest.get('merged') is not True
             or latest.get('merge_commit_sha') != merge):
