@@ -209,7 +209,8 @@ class GitHubClient:
         self.environment = {**os.environ, **({'GH_TOKEN': token} if token else {})}
 
     def api(self, endpoint, method='GET', data=None, missing=False):
-        command = ['gh', 'api', 'repos/' + self.repository + '/' + endpoint, '--method', method]
+        path = 'repos/' + self.repository + ('/' + endpoint if endpoint else '')
+        command = ['gh', 'api', path, '--method', method]
         if data is not None:
             command += ['--input', '-']
         result = subprocess.run(command, input=json.dumps(data) if data is not None else None,
