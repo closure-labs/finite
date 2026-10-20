@@ -61,6 +61,11 @@
           type = lib.types.ints.unsigned;
           description = "Canonical role ordering key.";
         };
+        classification = lib.mkOption {
+          type = lib.types.nullOr (lib.types.enum (catalog.classificationNames or []));
+          default = null;
+          description = "Professional or Personal classification when declared by Foundation.";
+        };
         aspect = lib.mkOption {
           type = lib.types.raw;
           description = "Den role aspect used by standalone homes.";
@@ -108,6 +113,18 @@ in {
         type = lib.types.attrsOf roleType;
         default = {};
         description = "Typed composable Home Manager role catalog.";
+      };
+      classifications = lib.mkOption {
+        type = lib.types.attrsOf (lib.types.submodule {
+          options = {
+            name = lib.mkOption {type = lib.types.str;};
+            label = lib.mkOption {type = lib.types.str;};
+            order = lib.mkOption {type = lib.types.ints.unsigned;};
+            roles = lib.mkOption {type = lib.types.listOf (lib.types.enum catalog.roleNames);};
+          };
+        });
+        default = {};
+        description = "Foundation classifications with membership derived from role metadata.";
       };
       packages = lib.mkOption {
         type = lib.types.attrsOf packageType;

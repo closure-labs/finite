@@ -79,6 +79,13 @@ you deliberately expire them; their store paths are not active duplicates.
 
 ## Keep applications current
 
+First-login uses the image's Foundation catalog for role labels and ordering.
+When available, its Professional classification is shown beside each work role.
+Saved selections take precedence over provisioning seeds; invalid or unsupported
+profiles produce an error instead of a replacement selection. Existing complete
+personal consumers are left to their own update workflow. Seed and fresh-login
+writers continue to emit schema 2.
+
 Foundation releases own the managed Home Manager modules and dependency pins.
 OS updates do not overwrite the installed personal flake. Inspect published
 Foundation release availability with:
