@@ -119,6 +119,26 @@ class ReleaseSetTests(unittest.TestCase):
             self.assertEqual(json.loads(run.call_args.kwargs['input'])['ref'], 'refs/tags/finite-1.2.3')
             self.assertEqual(run.call_args.kwargs['env']['GH_TOKEN'], 'fixture-publish')
 
+    def test_new_journal_uses_canonical_repository_endpoint(self):
+        client = release_set.GitHubClient('closure-labs/finite', 'automation/decision-journal')
+        responses = [
+            types.SimpleNamespace(returncode=1, stdout='', stderr='gh: Not Found (HTTP 404)'),
+            types.SimpleNamespace(returncode=0, stdout='{"default_branch":"main"}', stderr=''),
+            types.SimpleNamespace(returncode=0, stdout=json.dumps({'object': {'sha': 'a' * 40}}), stderr=''),
+            types.SimpleNamespace(returncode=0, stdout='{}', stderr=''),
+        ]
+        with patch.object(release_set.subprocess, 'run', side_effect=responses) as run:
+            client.ensure_journal_branch()
+        calls = run.call_args_list
+        self.assertEqual([call.args[0][2] for call in calls], [
+            'repos/closure-labs/finite/git/ref/heads/automation/decision-journal',
+            'repos/closure-labs/finite',
+            'repos/closure-labs/finite/git/ref/heads/main',
+            'repos/closure-labs/finite/git/refs',
+        ])
+        self.assertEqual(json.loads(calls[-1].kwargs['input']), {
+            'ref': 'refs/heads/automation/decision-journal', 'sha': 'a' * 40})
+
     def test_unsigned_publication_and_invalid_signed_evidence_fail_before_any_write(self):
         with self.assertRaisesRegex(ValueError, 'verified signed evidence'):
             execute(self.doc, self.remote, self.roots, payload_digest(self.doc), 'run-1')
