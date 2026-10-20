@@ -1,5 +1,4 @@
 """Protected default-branch decision proposals; no scan result grants human approval."""
-import base64
 import importlib.util
 import html
 from datetime import datetime, timezone
@@ -155,6 +154,31 @@ class ConsolidationRequired(ValueError):
         self.origin = origin
 
 
+class NoImageWork(ValueError):
+    def __init__(self, origin):
+        super().__init__('Trusted build intentionally skipped image production')
+        self.origin = origin
+
+
+def skipped_image_work(origin):
+    """Prove this exact build attempt selected no images; absent archives alone cannot."""
+    jobs = collection(f'repos/{REPOSITORY}/actions/runs/{origin["runId"]}/attempts/{origin["runAttempt"]}/jobs', 'jobs')
+    by_name = {}
+    for job in jobs:
+        if (not isinstance(job, dict) or not isinstance(job.get('name'), str)
+                or job['name'] in by_name or job.get('run_id') != origin['runId']
+                or job.get('run_attempt') != origin['runAttempt'] or job.get('head_sha') != origin['headSha']
+                or job.get('status') != 'completed' or job.get('conclusion') not in ('success', 'skipped')):
+            raise ValueError('Cannot authenticate successful no-image build job inventory')
+        by_name[job['name']] = job
+    skipped = {'Validate (${{ matrix.profile }})', 'Publish (${{ matrix.profile }})'}
+    if any(name.startswith(('Publish (', 'Validate (')) and name not in skipped for name in by_name):
+        return False
+    return (all(by_name.get(name, {}).get('conclusion') == 'skipped' for name in skipped)
+            and all(by_name.get(name, {}).get('conclusion') == 'success'
+                    for name in ('Select checks', 'Documentation checks', 'CI gate')))
+
+
 def artifacts_for(origin, artifacts, profiles=PROFILES):
     """Require both profile archives from the exact trusted run and attempt."""
     result = {}
@@ -198,6 +222,11 @@ def collect(run_id, directory):
     """Authenticate both same-attempt artifact bytes before proposing a decision."""
     origin = producer(run_id, {'build.yml', 'image-security.yml'})
     artifacts = collection(f'repos/{REPOSITORY}/actions/runs/{run_id}/artifacts', 'artifacts')
+    if (origin['workflow'] == 'build.yml'
+            and not any(isinstance(a, dict) and isinstance(a.get('name'), str)
+                        and a['name'].startswith('security-') for a in artifacts)
+            and skipped_image_work(origin)):
+        raise NoImageWork(origin)
     expected = {profile: f'security-{profile}-{run_id}-{origin["runAttempt"]}' for profile in PROFILES}
     present = [profile for profile, name in expected.items()
                if sum(isinstance(a, dict) and a.get('name') == name for a in artifacts) == 1]

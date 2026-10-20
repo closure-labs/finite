@@ -243,6 +243,86 @@ class Controller(unittest.TestCase):
             self.assertEqual(len(native.call_args.args), 1)
             api.assert_not_called()
 
+    def no_image_jobs(self):
+        return [{'name': name, 'run_id': 7, 'run_attempt': 2, 'head_sha': HEAD,
+                 'status': 'completed', 'conclusion': conclusion} for name, conclusion in (
+            ('Select checks', 'success'), ('Documentation checks', 'success'),
+            ('Nix and runtime contracts', 'success'), ('CI gate', 'success'),
+            ('Validate (${{ matrix.profile }})', 'skipped'),
+            ('Publish (${{ matrix.profile }})', 'skipped'))]
+
+    def test_collect_skips_only_authenticated_no_image_build(self):
+        with mock.patch.object(mod, 'producer', return_value=ORIGIN), \
+                mock.patch.object(mod, 'collection', side_effect=[[], self.no_image_jobs()]) as inventory, \
+                mock.patch.object(mod, 'extract_artifact') as extract, \
+                self.assertRaises(mod.NoImageWork):
+            mod.collect(7, Path('/unused'))
+        self.assertIn('/attempts/2/jobs', inventory.call_args.args[0])
+        extract.assert_not_called()
+
+    def test_no_image_detection_rejects_incomplete_failed_or_mismatched_jobs(self):
+        mutations = (
+            lambda jobs: jobs.clear(),
+            lambda jobs: jobs.pop(),
+            lambda jobs: jobs[0].update(run_id=8),
+            lambda jobs: jobs[0].update(run_attempt=1),
+            lambda jobs: jobs[0].update(head_sha='b' * 40),
+            lambda jobs: jobs[0].update(status='in_progress'),
+            lambda jobs: jobs[3].update(conclusion='failure'),
+            lambda jobs: jobs[-1].update(conclusion='success'),
+            lambda jobs: jobs.append(copy.deepcopy(jobs[0])),
+            lambda jobs: jobs.append({**jobs[0], 'name': 'Publish (finite) / security'}),
+        )
+        for mutation in mutations:
+            jobs = self.no_image_jobs()
+            mutation(jobs)
+            with self.subTest(mutation=mutation), mock.patch.object(mod, 'producer', return_value=ORIGIN), \
+                    mock.patch.object(mod, 'collection', side_effect=[[], jobs]):
+                try:
+                    mod.collect(7, Path('/unused'))
+                except mod.NoImageWork:
+                    self.fail('Incomplete or image-producing build was incorrectly ignored')
+                except ValueError:
+                    pass
+                else:
+                    self.fail('Missing native scans must fail closed')
+
+    def test_no_image_detection_never_hides_wrong_attempt_or_partial_scan_archives(self):
+        for values in ([{**artifacts()[0], 'name': 'security-finite-7-1'}], artifacts()[:1]):
+            with self.subTest(values=values), mock.patch.object(mod, 'producer', return_value=ORIGIN), \
+                    mock.patch.object(mod, 'collection', return_value=values), \
+                    mock.patch.object(mod, 'skipped_image_work') as skipped, self.assertRaises(ValueError):
+                mod.collect(7, Path('/unused'))
+            skipped.assert_not_called()
+        published = {**ORIGIN, 'workflow': 'image-security.yml'}
+        with mock.patch.object(mod, 'producer', return_value=published), \
+                mock.patch.object(mod, 'collection', return_value=[]), \
+                mock.patch.object(mod, 'skipped_image_work') as skipped, self.assertRaises(ValueError):
+            mod.collect(7, Path('/unused'))
+        skipped.assert_not_called()
+
+    def test_no_image_cli_returns_success_without_proposal_or_dispatch(self):
+        spec = importlib.util.spec_from_file_location('controller_cli_no_image', ROOT / 'scripts/ci/decision-controller.py')
+        cli = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cli)
+        with mock.patch.object(sys, 'argv', ['decision-controller.py', 'collect', '--run', '7']), \
+                mock.patch.object(mod, 'trusted_context'), \
+                mock.patch.object(mod, 'collect', side_effect=mod.NoImageWork(ORIGIN)), \
+                mock.patch.object(mod, 'current_admission') as admission, \
+                mock.patch.object(mod, 'request_consolidation') as dispatch, \
+                mock.patch.object(mod, 'propose') as propose, \
+                contextlib.redirect_stdout(io.StringIO()) as output:
+            cli.main()
+        result = json.loads(output.getvalue())
+        self.assertEqual(result['status'], 'no-image-work')
+        self.assertFalse(result['authorizesPublication'])
+        self.assertFalse(result['proposalRequired'])
+        admission.assert_not_called()
+        dispatch.assert_not_called()
+        propose.assert_not_called()
+        workflow = (ROOT / '.github/workflows/decision-proposals.yml').read_text()
+        self.assertLess(workflow.index('decision-controller.py collect'), workflow.index('reconcile-decisions.py'))
+
     def test_collect_does_not_mistake_full_build_missing_scan_for_valid_partial_packet(self):
         with mock.patch.object(mod, 'producer', return_value=ORIGIN), \
                 mock.patch.object(mod, 'collection', return_value=artifacts()[:1]), self.assertRaises(mod.ConsolidationRequired):
