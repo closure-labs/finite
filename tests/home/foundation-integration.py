@@ -241,6 +241,52 @@ if command == "zenity" and "--list" in sys.argv:
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(json.loads(self.selections(events)[0][-1])["schema"], 2)
 
+    def current_catalog(self):
+        reader = {**CAPABILITIES, "initializeSchemas": [1, 2, 3], "normalizeSchemas": [2, 3]}
+        value = json.loads(self.catalog.read_text())
+        value.update(profileSchema=3, profileCapabilities={**reader, "writeSchema": 3})
+        value["classifications"]["personal"] = {"label": "Personal"}
+        value["roles"]["family"] = {"label": "Family", "order": 70, "classification": "personal"}
+        self.catalog.write_text(json.dumps(value))
+        return reader
+
+    def test_current_catalog_selects_schema_three_with_a_capable_reader(self):
+        reader = self.current_catalog()
+        for write_schema in (2, 3):
+            with self.subTest(helper_write_schema=write_schema):
+                result, events = self.run_login(LOGIN_CAPABILITIES=json.dumps({**reader, "writeSchema": write_schema}),
+                                                LOGIN_ROLES="developer,family")
+                self.assertEqual(result.returncode, 0, result.stderr)
+                generated = json.loads(self.selections(events)[0][-1])
+                self.assertEqual(generated, {"schema": 3, "foundation": "bluefin", "hardware": "generic-x86_64",
+                                            "roles": ["developer", "family"], "packages": [], "capabilities": [], "identity": {}})
+                dialog = next(event for event in events if "--list" in event)
+                self.assertIn("Personal", dialog)
+
+    def test_current_writer_rejects_an_incapable_helper_before_selection(self):
+        self.current_catalog()
+        result, events = self.run_login()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(self.selections(events), [])
+        self.assertFalse(any("--list" in event for event in events))
+
+    def test_declared_profile_schema_must_match_selected_writer(self):
+        reader = self.current_catalog()
+        value = json.loads(self.catalog.read_text())
+        value["profileSchema"] = 2
+        self.catalog.write_text(json.dumps(value))
+        result, events = self.run_login(LOGIN_CAPABILITIES=json.dumps(reader))
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse(any("--list" in event for event in events))
+
+    def test_current_catalog_does_not_override_saved_profile_precedence(self):
+        self.current_catalog()
+        self.saved.write_text('{"schema":2,"roles":["it"]}')
+        result, events = self.run_login()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.selections(events)[0][2], str(self.saved))
+        self.assertFalse(any("--list" in event for event in events))
+
     def test_fresh_catalog_mismatch_prevents_selector_and_writer(self):
         baseline = json.loads(self.catalog.read_text())
         for change in ({"writeSchema": 3}, {"catalogSchemas": [4]}, {"initializeSchemas": [True]},

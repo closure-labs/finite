@@ -4,6 +4,7 @@ profile_command="${1:?profile command is required}"
 init_command="${2:?home init command is required}"
 cloud_init_command="${3:?cloud-init command is required}"
 template="${4:?consumer template is required}"
+writer_schema=$(jq -er '.profileCapabilities.writeSchema // 2' "${FINITE_HOME_CATALOG_PATH:?catalog required}")
 for required in flake.nix flake.lock foundation.json profile.json customize.nix modules/local.nix; do
   test -f "$template/$required"
 done
@@ -27,9 +28,11 @@ seed_test=$(mktemp -d)
 trap 'rm -rf -- "$seed_test"' EXIT
 "$cloud_init_command" --foundation bluefin --hardware generic-x86_64 \
   --roles it,developer --packages uv,jj --user finite-test --output "$seed_test/seed"
-yq -o=json '.' "$seed_test/seed/profile.yaml" | jq -e '
-  .schema == 2 and .roles == ["developer", "it"] and .packages == ["jj", "uv"] and
+yq -o=json '.' "$seed_test/seed/profile.yaml" | jq -e --argjson schema "$writer_schema" '
+  .schema == $schema and .roles == ["developer", "it"] and .packages == ["jj", "uv"] and
   .identity == {username: "finite-test", homeDirectory: "/var/home/finite-test"}
 ' >/dev/null
 test -s "$seed_test/seed/seed.iso"
+export FINITE_TEST_CLOUD_INIT_COMMAND="$cloud_init_command"
+python3 tests/home/seed-generation.py
 python3 tests/home/foundation-integration.py

@@ -16,6 +16,10 @@ protected signing requirements as stable releases.
 
 ### Changed
 
+- Negotiate fresh-login and seed profile formats from the bundled Foundation
+  catalog. Schema-3 sources enable Personal roles, optional capabilities and
+  independent host selections; seeds share Foundation's pure validator and keep
+  the requested target identity. Existing saved profiles and source pins remain.
 - Reject root before `ujust update` starts maintenance, and stop before Foundation
   when an upstream OS, Flatpak or Brew update command fails. Retain Bluefin's
   Just recipe, intentional skips and Foundation's staged update/recovery.

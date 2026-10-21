@@ -5,7 +5,8 @@
 }: let
   catalog = homeCatalog;
   applications = foundation.lib.mkApplications {inherit pkgs;};
-  cloudInit = pkgs.writeShellApplication {
+  writeSchema = (foundation.lib.profileCapabilities or {writeSchema = 2;}).writeSchema;
+  legacyCloudInit = pkgs.writeShellApplication {
     name = "finite-cloud-init";
     runtimeInputs = with pkgs; [coreutils jq xorriso yq-go];
     text = ''
@@ -36,6 +37,8 @@
           --roles) roles="''${2:?--roles requires a value}"; shift 2 ;;
           --user) username="''${2:?--user requires a value}"; shift 2 ;;
           --output) output="''${2:?--output requires a value}"; shift 2 ;;
+          --capabilities|--system|--form-factor|--cpu|--gpus|--model|--camera|--no-camera|--fingerprint|--no-fingerprint)
+            echo 'Schema-3 selection options require a schema-3 Foundation source' >&2; exit 2 ;;
           *) echo "usage: finite-cloud-init --foundation FOUNDATION --hardware HARDWARE --packages PACKAGE,... --roles ROLE,... --user USER --output DIR" >&2; exit 2 ;;
         esac
       done
@@ -78,6 +81,12 @@
       echo "Seed generated; cloud-init is disabled by default on Finite. This ISO is inert unless an administrator explicitly enables full provisioning. Prefer importing profile.yaml with finite-home-init --profile." >&2
     '';
   };
+  cloudInit =
+    if writeSchema == 2
+    then legacyCloudInit
+    else if writeSchema == 3
+    then import ./cloud-init-v3.nix {inherit pkgs foundation homeCatalog;}
+    else throw "Unsupported Finite seed writer schema";
 in {
   inherit cloudInit;
   inherit (applications) homeBootstrap homeInit homeProfile homeUpdate homeMigrate;

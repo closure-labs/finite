@@ -49,6 +49,8 @@ done
 [[ -r "$running" ]] || { echo "Finite profile metadata is unavailable: $running" >&2; false; }
 
 # Older helpers do not expose this query. They can initialize only schema 1/2.
+# Variables inside this literal filter belong to jq, not Bash.
+# shellcheck disable=SC2016
 capability_filter='def valid_capabilities:
     .schema == 1 and
     all(.initializeSchemas, .normalizeSchemas, .catalogSchemas;
@@ -99,11 +101,15 @@ case "${image_hardware}" in
 	*) echo "Unsupported Finite image hardware: ${image_hardware}" >&2; false ;;
 esac
 
-# Only the fresh-login path needs the image's catalog and its schema-2 writer.
+# Only fresh selection negotiates a writer; saved profiles retain their schema.
 jq -e --argjson helper "$capabilities" --arg foundation "$foundation" --arg hardware "$hardware" "$capability_filter"'
   . as $catalog |
+  (.profileCapabilities.writeSchema // 2) as $writer |
+  ($writer == 2 or $writer == 3) and
+  (if has("profileSchema") then .profileSchema == $writer else true end) and
   ($helper.catalogSchemas | index($catalog.schema) != null) and
-  ($helper.initializeSchemas | index(2) != null) and
+  ($helper.initializeSchemas | index($writer) != null) and
+  ($helper.normalizeSchemas | index($writer) != null) and
   (.foundations[$foundation].hardware | index($hardware) != null) and
   (.roles | type == "object") and
   all(.roles | to_entries[];
@@ -112,12 +118,13 @@ jq -e --argjson helper "$capabilities" --arg foundation "$foundation" --arg hard
     (.value.classification == null or
       (.value.classification as $id | $catalog.classifications[$id].label | type == "string"))) and
   (if has("profileCapabilities") then
-    (.profileCapabilities | valid_capabilities) and .profileCapabilities.writeSchema == 2 and
+    (.profileCapabilities | valid_capabilities) and
     (.profileCapabilities.catalogSchemas | index($catalog.schema) != null) and
-    (.profileCapabilities.normalizeSchemas | index(2) != null) and
-    (.profileCapabilities.initializeSchemas | index(2) != null)
+    (.profileCapabilities.normalizeSchemas | index($writer) != null) and
+    (.profileCapabilities.initializeSchemas | index($writer) != null)
    else true end)
 ' "$catalog" >/dev/null || { echo "Incompatible Home Manager profile catalog or helper" >&2; false; }
+writer_schema=$(jq -er '.profileCapabilities.writeSchema // 2' "$catalog")
 role_rows=()
 mapfile -d '' -t role_rows < <(jq -j '
   . as $catalog | .roles | to_entries | sort_by(.value.order, .key)[] |
@@ -136,10 +143,12 @@ fi
 generated=$(mktemp)
 trap 'rm -f -- "$generated"' EXIT
 jq -n \
+	--argjson schema "$writer_schema" \
 	--arg foundation "$foundation" \
 	--arg hardware "$hardware" \
 	--arg roles "$roles" \
-	'{schema: 2, foundation: $foundation, hardware: $hardware, packages: [],
-    roles: (if $roles == "" then [] else ($roles | split(",")) end), identity: {}}' \
+	'{schema: $schema, foundation: $foundation, hardware: $hardware, packages: [],
+    roles: (if $roles == "" then [] else ($roles | split(",")) end), identity: {}} |
+    if $schema == 3 then . + {capabilities: []} else . end' \
 	>"$generated"
 initialize_profile "$generated"
