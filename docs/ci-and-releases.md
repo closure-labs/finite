@@ -245,27 +245,44 @@ part of key rotation.
 
 ## Publish a release
 
-Development may use a prerelease `VERSION`, such as `0.8.2-dev`. Before stable
-release preparation, set the canonical numeric version (for example `0.8.2`) and
-add its dated changelog entry through the protected queue. The stable publisher
-and recovery guards reject prerelease versions.
+Stable `VERSION` values use numeric `MAJOR.MINOR.PATCH`. Development prereleases
+use `MAJOR.MINOR.PATCH-dev`, such as `0.8.2-dev`. Both use the paired preparation
+and publication workflows. The retired per-channel workflows remain stable-only.
+Before preparing a stable version, update `VERSION` and add its dated changelog
+entry through the protected queue.
 
 1. Update `VERSION` and add a dated entry to `CHANGELOG.md` in a PR. The version
    also identifies the staged Home Manager template.
 2. Pass `CI gate` and merge through the queue. Wait for successful signed main
    builds, exact-digest qualification and promotion for the selected channels.
-3. Follow [Durable releases](workstation-qualification.md#durable-releases):
-   run **Prepare qualified release** with the successful same-revision build run
-   and a new `CHANNEL-VERSION` tag, such as `finite-0.8.1` or `finite-dev-0.8.1`.
-   The channel already includes the product name; do not prepend another `finite-`.
-   The draft title uses the tag and its notes use the checkout's versioned changelog
-   entry. When the ISO-preservation pilot is
-   enabled, leave `iso_run` empty to select the original qualified ISO. During
-   the disabled pilot, supply the successful standalone ISO run explicitly.
-4. Review the draft's signed assets, qualification evidence, scan exceptions and
-   claimed physical-hardware results before publishing. The qualified-draft
-   workflow is the canonical release path; do not publish a separate `vVERSION`
-   release before installer qualification.
+3. Delivery reconciliation runs **Prepare two-image release approval** after both
+   images qualify at the same revision with preserved ISOs. It creates one
+   immutable proposal for tags such as `finite-0.8.2` and `finite-dev-0.8.2`, or
+   `finite-0.8.2-dev` and `finite-dev-0.8.2-dev` for the prerelease. Manual
+   preparation accepts the successful same-revision build run.
+4. Review both products, qualification evidence, scan decisions and claimed
+   physical-hardware results in the proposal. Its human approval and the protected
+   signing environment remain required. Merging the decision starts paired
+   publication; see [Durable releases](workstation-qualification.md#durable-releases).
+   Do not publish a separate `vVERSION` release before installer qualification.
+
+After a stable pair publishes successfully, **Delivery and decision pipeline
+health** opens a PR for the next patch's development version, for example
+`0.8.1` → `0.8.2-dev`. It checks that both stable pages are published, include
+signed-checksum assets, and resolve to the same source commit. A partial stable
+release cannot start the cycle. The PR changes only `VERSION` and `CHANGELOG.md`,
+adding the development notice and an initial versioned entry. It must pass the
+normal queue. Once merged, both images build
+and qualify before a separate paired prerelease proposal is prepared for review.
+
+Prereleases set GitHub's `prerelease` flag and explicitly disable `make_latest`
+through the [GitHub release API](https://docs.github.com/en/rest/releases/releases#create-a-release).
+They retain the stable publisher's live human authority, security admission,
+signatures, immutable assets and recovery journal. Publishing a prerelease does
+not bump the version again. Each development version identifies one immutable
+pair; subsequent development commits do not replace its tags or assets. The
+hourly observer and manual health dispatch reconcile missed completion events.
+The existing published `0.8.1` pair permits the initial `0.8.2-dev` preparation.
 
 The channel tags continue to receive daily builds. Release records identify
 specific source revisions and image digests for reproducibility.
@@ -485,12 +502,13 @@ each channel, reports failing jobs, and flags promotions at least 36 hours old.
 This bounded workflow history is an operational observation, not proof of the
 current registry contents or an authorization receipt.
 
-For a new numeric `VERSION` such as `0.8.2`, trusted main builds select both
+For a new stable `VERSION` such as `0.8.2`, trusted main builds select both
 images and force fresh qualification. After both profiles succeed and preserve
 their qualified ISOs at that revision, delivery reconciliation dispatches
 **Prepare two-image release approval**. Preparation checks readiness before
-installing tools or downloading products. Development versions such as
-`0.8.2-dev` skip with an explanation. Existing paired releases, open bot release
+installing tools or downloading products. A development version such as
+`0.8.2-dev` follows the same path only after its preceding stable pair succeeds.
+Unsupported version formats skip with an explanation. Existing paired releases, open bot release
 proposals and recorded release decisions prevent repeated preparation. Drafts,
 partial releases and existing tags require recovery of the approved products.
 The same version cannot silently replace tags or assets.

@@ -5,7 +5,6 @@ Remote state is reconciled on every retry; the journal is evidence, not authorit
 """
 import base64
 import hashlib
-import importlib.util
 import json
 import os
 from pathlib import Path
@@ -14,6 +13,7 @@ import subprocess
 import time
 
 from github_api import get_json
+from release_versions import canonical_tag, prerelease
 
 CHANNELS = ('finite', 'finite-dev')
 HEX = re.compile(r'[0-9a-f]{64}')
@@ -35,9 +35,6 @@ def sha256(path):
 def validate_payload(payload):
     if set(payload) != {'version', 'sourceRevision', 'channels'}:
         raise ValueError('Unexpected release payload fields')
-    spec = importlib.util.spec_from_file_location('release_request', Path(__file__).with_name('release-request.py'))
-    request = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(request)
     if not REVISION.fullmatch(payload['sourceRevision']):
         raise ValueError('Release requires exact source revision')
     if set(payload['channels']) != set(CHANNELS):
@@ -46,7 +43,7 @@ def validate_payload(payload):
         entry = payload['channels'][channel]
         if set(entry) != {'tag', 'imageDigest', 'isoSha256', 'assets'}:
             raise ValueError('Unexpected channel payload fields')
-        if entry['tag'] != request.canonical_tag(channel, payload['version']):
+        if entry['tag'] != canonical_tag(channel, payload['version']):
             raise ValueError('Release tag differs from canonical version')
         if not re.fullmatch(r'sha256:[0-9a-f]{64}', entry['imageDigest']):
             raise ValueError('Invalid image digest')
@@ -154,10 +151,12 @@ def execute(document, client, asset_roots, approved_digest, owner, now=time.time
                 raise ValueError('Existing tag points at a different revision: ' + entry['tag'])
             release = client.get_release(entry['tag'])
             if release is None:
-                client.create_draft(entry['tag'], revision, identity)
+                client.create_draft(entry['tag'], revision, identity, prerelease=prerelease(document['payload']['version']))
                 release = client.get_release(entry['tag'])
             if release is None or release['payloadDigest'] != identity:
                 raise ValueError('Release belongs to another payload: ' + entry['tag'])
+            if release.get('prerelease') is not prerelease(document['payload']['version']):
+                raise ValueError('Remote release type differs from the approved version')
             expected = expected_assets[channel]
             remote = client.assets(release['id'])
             if set(remote) - set(expected):
@@ -184,12 +183,15 @@ def execute(document, client, asset_roots, approved_digest, owner, now=time.time
             entry = document['payload']['channels'][channel]
             release = client.get_release(entry['tag'])
             if (client.tag_target(entry['tag']) != document['payload']['sourceRevision']
-                    or release['payloadDigest'] != identity or client.assets(release['id']) != expected_assets[channel]):
+                    or release['payloadDigest'] != identity or client.assets(release['id']) != expected_assets[channel]
+                    or release.get('prerelease') is not prerelease(document['payload']['version'])):
                 raise ValueError('Release changed since staging')
             if release['draft']:
-                client.publish(release['id'])
-                if client.get_release(entry['tag'])['draft']:
-                    raise ValueError('Publication did not complete')
+                client.publish(release['id'], prerelease=prerelease(document['payload']['version']))
+                published = client.get_release(entry['tag'])
+                if (published is None or published['draft']
+                        or published.get('prerelease') is not prerelease(document['payload']['version'])):
+                    raise ValueError('Publication did not complete with the approved release type')
             journal['channels'][channel]['state'] = 'published'
             checkpoint('publishing')
         checkpoint('complete')
@@ -292,15 +294,19 @@ class GitHubClient:
             if found:
                 item = found[0]
                 match = re.search(r'<!-- finite-release-set:([0-9a-f]{64}) -->', item.get('body') or '')
-                return {'id': item['id'], 'draft': item['draft'],
+                return {'id': item['id'], 'draft': item['draft'], 'prerelease': item['prerelease'],
                         'payloadDigest': match[1] if match else None}
             if len(releases) < 100:
                 return None
         raise ValueError('Release lookup exceeded bound')
 
-    def create_draft(self, tag, revision, identity):
-        self.api('releases', 'POST', {'tag_name': tag, 'target_commitish': revision,
-                 'name': tag, 'draft': True, 'body': '<!-- finite-release-set:' + identity + ' -->'})
+    def create_draft(self, tag, revision, identity, *, prerelease=False):
+        data = {'tag_name': tag, 'target_commitish': revision,
+                 'name': tag, 'draft': True, 'prerelease': prerelease,
+                 'body': '<!-- finite-release-set:' + identity + ' -->'}
+        if prerelease:
+            data['make_latest'] = 'false'
+        self.api('releases', 'POST', data)
 
     def assets(self, release_id):
         assets = {}
@@ -320,5 +326,8 @@ class GitHubClient:
         subprocess.run(['gh', 'release', 'upload', release['tag_name'], str(path),
                         '--repo', self.repository], check=True, timeout=300, env=self.environment)
 
-    def publish(self, release_id):
-        self.api('releases/' + str(release_id), 'PATCH', {'draft': False})
+    def publish(self, release_id, *, prerelease=False):
+        data = {'draft': False, 'prerelease': prerelease}
+        if prerelease:
+            data['make_latest'] = 'false'
+        self.api('releases/' + str(release_id), 'PATCH', data)

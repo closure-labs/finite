@@ -6,22 +6,52 @@ from pathlib import Path
 
 from github_api import get_json
 from security_decisions import canonical_hash, load_json
+from release_versions import prerelease, previous_stable, release_version, stable_version
 
 REPOSITORY = 'closure-labs/finite'
 PREFIX = 'repos/' + REPOSITORY
 CHANNELS = ('finite', 'finite-dev')
-VERSION = re.compile(r'(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)')
 
 
-def stable_version(value):
-    return isinstance(value, str) and VERSION.fullmatch(value) is not None
+def published_stable_pair(version, api=get_json):
+    """Discover a completed stable pair; this never authorizes product publication."""
+    if not stable_version(version):
+        return False
+    revisions = []
+    for channel in CHANNELS:
+        tag = channel + '-' + version
+        release = api(PREFIX + '/releases/tags/' + tag, missing=True)
+        if (release is None or release.get('draft') is not False or release.get('prerelease') is not False
+                or release.get('tag_name') != tag or not release.get('published_at')):
+            return False
+        names = {asset['name'] for asset in release.get('assets', [])}
+        if not {'SHA256SUMS', 'SHA256SUMS.bundle.json'} <= names:
+            return False
+        reference = api(PREFIX + '/git/ref/tags/' + tag, missing=True)
+        if reference is None:
+            return False
+        obj = reference['object']
+        for _ in range(5):
+            if obj.get('type') == 'commit':
+                break
+            if obj.get('type') != 'tag' or not re.fullmatch('[0-9a-f]{40}', obj.get('sha', '')):
+                raise ValueError('Stable release tag has invalid identity')
+            obj = api(PREFIX + '/git/tags/' + obj['sha'])['object']
+        if obj.get('type') != 'commit' or not re.fullmatch('[0-9a-f]{40}', obj.get('sha', '')):
+            raise ValueError('Stable release tag does not resolve to a commit')
+        revisions.append(obj['sha'])
+    if len(set(revisions)) != 1:
+        raise ValueError('Stable releases identify different source revisions')
+    return True
 
 
 def release_status(version, api=get_json, bot=None):
-    if not stable_version(version):
-        return {'state': 'development', 'reason': 'Development VERSION; choose a numeric MAJOR.MINOR.PATCH to release.'}
+    if not release_version(version):
+        return {'state': 'development', 'reason': 'Unsupported VERSION; expected numeric MAJOR.MINOR.PATCH or MAJOR.MINOR.PATCH-dev.'}
     releases = [api(PREFIX + '/releases/tags/' + channel + '-' + version, missing=True) for channel in CHANNELS]
     if all(release is not None and release.get('draft') is False for release in releases):
+        if any(release.get('prerelease', False) != prerelease(version) for release in releases):
+            return {'state': 'recovery', 'reason': 'Published release type differs from VERSION; reconcile the original products.'}
         return {'state': 'published', 'reason': 'Both release pages already exist; existing products are immutable.'}
     if any(release is not None for release in releases):
         return {'state': 'recovery', 'reason': 'Existing draft or partial paired release; use approved publication recovery.'}
@@ -65,7 +95,9 @@ def release_status(version, api=get_json, bot=None):
                 if proposal.get('kind') == 'release-set' and proposal.get('payload', {}).get('version') == version:
                     return {'state': 'review', 'reason': f'Paired release proposal #{number} awaits review or execution.',
                             'pullRequest': number, 'sourceRevision': proposal['payload']['sourceRevision']}
-    return {'state': 'unprepared', 'reason': 'Numeric version has no published products or pending paired proposal.'}
+    if prerelease(version) and not published_stable_pair(previous_stable(version), api):
+        return {'state': 'waiting-stable', 'reason': 'Development prerelease waits for the preceding successful stable paired release.'}
+    return {'state': 'unprepared', 'reason': 'Version has no published products or pending paired proposal.'}
 
 
 def eligible_build(run, jobs, artifacts, revision):

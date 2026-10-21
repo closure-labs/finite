@@ -8,6 +8,12 @@ The version-1 envelope has `schema`, `payload`, and `evidence`. The immutable
 payload contains `version`, `sourceRevision`, and `channels`, with exactly
 `finite` and `finite-dev`. Each channel contains canonical `tag`, `imageDigest`
 (`sha256:…`), `isoSha256`, and `assets` (safe basename to SHA-256 hex mapping).
+The version is either numeric `MAJOR.MINOR.PATCH` or its development prerelease
+`MAJOR.MINOR.PATCH-dev`. Prerelease identity is derived from this reviewed version,
+not a publication input. Both GitHub pages must retain that prerelease flag and
+cannot become latest. See [the release lifecycle](ci-and-releases.md#publish-a-release)
+for the stable-pair prerequisite and reviewed next-development PR.
+
 Only immutable product assets belong in this mapping. Large qualified ISOs are
 deterministically split into 1900 MiB parts before approval; `isoSha256` retains
 the original whole-ISO identity while `assets` binds the actual upload parts. Changing any core asset,
