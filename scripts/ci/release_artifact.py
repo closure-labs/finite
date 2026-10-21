@@ -1,4 +1,5 @@
 """Authenticate release packet bytes against their original Actions ZIP."""
+from contextlib import contextmanager
 import hashlib
 from pathlib import Path
 import re
@@ -59,11 +60,36 @@ def download_archive(archive, artifact, repository):
         time.sleep(delay)
 
 
-def verify_archive(directory, artifact, repository='closure-labs/finite', expected_files=None):
+@contextmanager
+def archive_reader(artifact, repository, cached_archive):
+    if cached_archive is None:
+        with tempfile.TemporaryFile() as archive:
+            download_archive(archive, artifact, repository)
+            yield archive
+        return
+    path = Path(cached_archive)
+    if any(parent.is_symlink() for parent in (path, *path.parents)):
+        raise ValueError('Links in staged archive path')
+    if path.exists():
+        if not path.is_file():
+            raise ValueError('Staged archive is not a regular file')
+        with path.open('rb') as archive:
+            yield archive
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with path.open('x+b') as archive:
+            download_archive(archive, artifact, repository)
+            yield archive
+    except BaseException:
+        path.unlink(missing_ok=True)
+        raise
+
+
+def verify_archive(directory, artifact, repository='closure-labs/finite', expected_files=None, *, cached_archive=None):
     """Stream hashes; never extract or execute artifact product content."""
     directory = Path(directory)
-    with tempfile.TemporaryFile() as archive:
-        download_archive(archive, artifact, repository)
+    with archive_reader(artifact, repository, cached_archive) as archive:
         archive.seek(0, 2)
         if archive.tell() != artifact['size_in_bytes']:
             raise ValueError('Original product archive size mismatch')

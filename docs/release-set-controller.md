@@ -91,6 +91,24 @@ resolves exactly one initial packet reference from its originating bot PR body,
 fetches by OCI digest, checks the successful trusted release-set producer, and
 checks every approved product hash. The PR body is a discovery aid, never authority.
 It rescans both images and rechecks current human findings admission.
+Large transfers finish before the final authority token is issued. The publisher
+first checks live release approval, then stages the OCI products and original
+Actions ZIP using the job's read-only artifact credential. This keeps archive
+retries from consuming the one-hour App installation token used for team and
+security-decision authentication. A fresh repository-scoped App token is issued
+after staging and its private key is cleared before scans run.
+
+The scan phase fetches the immutable OCI manifest again, rehashes every staged
+member, reauthenticates the original artifact producer and ZIP size/digest, and
+compares every archived member with the approved products. Staged bytes are
+never trusted merely because a prior step succeeded. Missing or changed bytes
+fail rather than being silently redownloaded during authority processing. The
+temporary ZIP is deleted before scans and excluded from retained evidence.
+Signing and publishing jobs also renew authority credentials after their large
+execution-packet downloads and tool realization, before checking admission or
+exposing signing/publishing credentials. All live human approval and signature
+checks remain enforced.
+
 Inventory reuse authenticates this publishing workflow on trusted hosted main
 for its push and manual dispatch events, as well as the manual preparation
 workflow. It reuses inventory bytes only; vulnerability findings, database

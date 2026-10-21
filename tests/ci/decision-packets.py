@@ -143,6 +143,32 @@ class Packets(unittest.TestCase):
             with self.assertRaises(FileExistsError):
                 mod.fetch(registry.reference, Path(directory))
 
+    def test_staged_packet_revalidates_manifest_and_all_local_bytes_without_blob_transfer(self):
+        registry = Registry()
+        with tempfile.TemporaryDirectory() as directory, mock.patch.object(mod, 'command', side_effect=registry.command) as command:
+            output = Path(directory) / 'packet'
+            mod.fetch(registry.reference, output)
+            command.reset_mock()
+            self.assertEqual(mod.fetch(registry.reference, output, existing=True), registry.packet)
+            self.assertEqual([call.args[0][1:3] for call in command.call_args_list], [['manifest', 'fetch']])
+            (output / 'finite/security-result.json').write_bytes(b'forged')
+            with self.assertRaisesRegex(ValueError, 'integrity'):
+                mod.fetch(registry.reference, output, existing=True)
+
+    def test_staged_packet_rejects_added_files_and_symlinked_directories(self):
+        for alteration in ('extra', 'link'):
+            registry = Registry()
+            with self.subTest(alteration=alteration), tempfile.TemporaryDirectory() as directory, \
+                    mock.patch.object(mod, 'command', side_effect=registry.command):
+                output = Path(directory) / 'packet'
+                mod.fetch(registry.reference, output)
+                if alteration == 'extra':
+                    (output / 'unbound.json').write_text('{}')
+                else:
+                    (output / 'alias').symlink_to(output / 'finite', target_is_directory=True)
+                with self.assertRaises(ValueError):
+                    mod.fetch(registry.reference, output, existing=True)
+
 
 if __name__ == '__main__':
     unittest.main()

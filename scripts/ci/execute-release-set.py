@@ -5,6 +5,7 @@ No code from an OCI packet is executed. Each phase uses trusted checkout code.
 Signing is a separate phase so workflows can verify authority before exposing keys.
 """
 import argparse
+from contextlib import contextmanager
 import hashlib
 import importlib.util
 import json
@@ -54,7 +55,7 @@ def approved(proposal_hash, github=None):
     return proposal, receipt, references[0]
 
 
-def check_product(packet, proposal, manifest, github=None):
+def check_product(packet, proposal, manifest, github=None, *, cached_archive=None):
     document = load_json(packet / 'release-set.json')
     if document.get('payload') != proposal['payload']:
         raise ValueError('Packet product bytes differ from approved release payload')
@@ -82,7 +83,7 @@ def check_product(packet, proposal, manifest, github=None):
     binding = [{key: artifact[key] for key in ('id', 'name', 'digest')}]
     if producer.get('artifacts') != binding:
         raise ValueError('Initial product packet does not bind the actual uploaded artifact')
-    release_artifact.verify_archive(packet, artifact, controller.REPOSITORY, manifest['files'])
+    release_artifact.verify_archive(packet, artifact, controller.REPOSITORY, manifest['files'], cached_archive=cached_archive)
     for channel in CHANNELS:
         directory = packet / ('release-' + channel)
         for name, digest in document['payload']['channels'][channel]['assets'].items():
@@ -305,14 +306,57 @@ def proposal_from_push(github=None, event=None):
     return match[1]
 
 
+@contextmanager
+def artifact_reader_credentials():
+    token = os.environ.get('ARTIFACT_READ_TOKEN')
+    if not token:
+        raise ValueError('Staging requires the hosted read-only artifact token')
+    previous = os.environ.get('GH_TOKEN')
+    try:
+        os.environ['GH_TOKEN'] = token
+        yield
+    finally:
+        if previous is None:
+            os.environ.pop('GH_TOKEN', None)
+        else:
+            os.environ['GH_TOKEN'] = previous
+
+
+def materialize_products(output, proposal, reference, *, staged=False, retain_archive=False):
+    if staged:
+        if output.is_symlink() or not output.is_dir():
+            raise ValueError('Staged execution directory is missing or unsafe')
+    else:
+        output.mkdir(parents=True, exist_ok=False)
+    print('Release phase: authenticate ' + ('staged' if staged else 'downloaded') + ' OCI product packet', flush=True)
+    manifest = decision_packets.fetch(reference, output / 'packet', existing=staged)
+    recovered = manifest.get('producer', {}).get('workflow') == 'publish-release-set.yml'
+    cached = output / 'transport' / 'original.zip' if staged or retain_archive else None
+    if recovered:
+        document = check_signed_packet(output / 'packet', proposal, manifest)
+    else:
+        if staged and (cached.is_symlink() or not cached.is_file()):
+            raise ValueError('Staged original archive is missing or unsafe')
+        print('Release phase: authenticate original Actions archive and every product member', flush=True)
+        try:
+            document = check_product(output / 'packet', proposal, manifest, cached_archive=cached)
+        finally:
+            if staged:
+                cached.unlink(missing_ok=True)
+    return document, recovered
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('phase', choices=('prepare', 'download', 'check', 'sign', 'persist-signed', 'publish'))
+    parser.add_argument('phase', choices=('stage', 'prepare', 'download', 'check', 'sign', 'persist-signed', 'publish'))
     parser.add_argument('--proposal-hash', default='')
     parser.add_argument('--packet-ref', default='')
     parser.add_argument('--unsigned', action='store_true')
+    parser.add_argument('--staged', action='store_true')
     parser.add_argument('--directory', type=Path, default=ROOT / '.bluebuild/release-execution')
     args = parser.parse_args()
+    if args.staged and args.phase != 'prepare':
+        parser.error('--staged is only valid for prepare')
     controller.trusted_context()
     if not args.proposal_hash:
         args.proposal_hash = proposal_from_push()
@@ -330,13 +374,17 @@ def main():
     if args.phase == 'download':
         download_execution(output, signed=not args.unsigned)
         return
-    if args.phase == 'prepare':
-        output.mkdir(parents=True, exist_ok=False)
-        manifest = decision_packets.fetch(args.packet_ref or initial, output / 'packet')
-        recovered = manifest.get('producer', {}).get('workflow') == 'publish-release-set.yml'
-        document = (check_signed_packet(output / 'packet', proposal, manifest) if recovered
-                    else check_product(output / 'packet', proposal, manifest))
+    if args.phase == 'stage':
+        # Human approval is checked above using the short-lived App token.
+        # Large immutable reads use the job token, whose lifetime covers the job.
+        with artifact_reader_credentials():
+            document, _ = materialize_products(output, proposal, args.packet_ref or initial, retain_archive=True)
+        (output / 'release-set.json').write_text(json.dumps(document, sort_keys=True, indent=2) + '\n')
+        print('Release phase: product staging complete; obtain fresh authority credentials before scanning', flush=True)
+    elif args.phase == 'prepare':
+        document, recovered = materialize_products(output, proposal, args.packet_ref or initial, staged=args.staged)
         for channel in CHANNELS:
+            print('Release phase: fresh security scan and current admission for ' + channel, flush=True)
             image = 'ghcr.io/closure-labs/finite@' + document['payload']['channels'][channel]['imageDigest']
             subprocess.run(['bash', str(ROOT / 'scripts/bluebuild/security-run.sh'), image,
                             str(output / ('security-' + channel))], check=True, timeout=3600)
