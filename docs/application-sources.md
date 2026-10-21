@@ -86,6 +86,12 @@ profiles produce an error instead of a replacement selection. Existing complete
 personal consumers are left to their own update workflow. Seed and fresh-login
 writers continue to emit schema 2.
 
+The reader dispatcher also preserves supplied schema-3 selections when the
+executing Foundation helper advertises initialization support. An older helper
+rejects that selection without falling back to a seed or opening the fresh
+selector. Fresh-login and cloud-init generators remain schema 2; the installed
+Foundation pin determines which newer formats can actually be read.
+
 Foundation releases own the managed Home Manager modules and dependency pins.
 OS updates do not overwrite the installed personal flake. Inspect published
 Foundation release availability with:
