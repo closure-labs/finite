@@ -1,6 +1,7 @@
 """Finite owns OS adapters; Foundation owns the Home Manager implementation."""
 import os
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -256,6 +257,174 @@ if command == "zenity" and "--list" in sys.argv:
         result, events = self.run_login(LOGIN_DIALOG_STATUS="1")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(self.selections(events), [])
+
+
+class UpdateSequence(unittest.TestCase):
+    """Run real Just; substitute only host paths and external update commands."""
+
+    def setUp(self):
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        self.root = Path(self.directory.name)
+        self.bin = self.root / "bin"
+        self.bin.mkdir()
+        self.temporary = self.root / "temporary"
+        self.temporary.mkdir()
+        self.runtime = self.root / "runtime"
+        self.runtime.mkdir(mode=0o700)
+        self.log = self.root / "events.jsonl"
+        self.upstream = self.root / "update.just"
+        self.wrapper = self.root / "custom.just"
+        self.hook = ROOT / "files/system/usr/libexec/finite/lib/update-shell-env"
+        self.policy = self.root / "rpm-ostreed.conf"
+        self.policy.write_text("LockLayering=false\n")
+        config = self.root / "config/home-manager"
+        config.mkdir(parents=True)
+        self.lock = config / "flake.lock"
+        self.lock.write_text(json.dumps({"root": "root", "nodes": {"root": {"inputs": {"foundation": "foundation"}}}}))
+        for name in ("systemctl", "rpm-ostree", "sudo", "flatpak", "brew", "finite-home-update"):
+            command = self.bin / name
+            command.write_text(f"#!{sys.executable}\n" + '''import json, os, sys
+from pathlib import Path
+name, args = Path(sys.argv[0]).name, sys.argv[1:]
+with Path(os.environ["UPDATE_LOG"]).open("a") as stream:
+    stream.write(json.dumps([name, *args]) + "\\n")
+if name == "systemctl":
+    sys.exit(0 if args[0] == "cat" or os.environ.get("UPDATE_BUSY") == "true" else 1)
+if name == "flatpak" and args == ["remotes"]:
+    for scope in os.environ.get("UPDATE_REMOTES", "system,user").split(","):
+        if scope: print("flathub " + scope)
+    sys.exit(int(os.environ.get("UPDATE_REMOTES_STATUS", "0")))
+stage = ("os" if name in ("rpm-ostree", "sudo") else
+         "user-flatpak" if name == "flatpak" and "--user" in args else
+         "system-flatpak" if name == "flatpak" else
+         "foundation" if name == "finite-home-update" else name)
+if os.environ.get("UPDATE_FAIL") == stage:
+    print("injected " + stage + " failure", file=sys.stderr)
+    sys.exit(17)
+''')
+            command.chmod(0o755)
+        self.env = {key: value for key, value in os.environ.items()
+                    if key not in ("BASH_ENV", "SHELLOPTS", "BASHOPTS")}
+        self.env.update(PATH=str(self.bin) + os.pathsep + os.environ["PATH"], UPDATE_LOG=str(self.log),
+                        XDG_CONFIG_HOME=str(self.root / "config"), TMPDIR=str(self.temporary),
+                        XDG_RUNTIME_DIR=str(self.runtime))
+        self.install_upstream((ROOT / "tests/home/fixtures/bluefin-update.just").read_text())
+        self.install_wrapper()
+
+    def install_upstream(self, contents):
+        self.upstream.write_text(contents.replace("/usr/bin/bash", shutil.which("bash"))
+                                 .replace("/etc/rpm-ostreed.conf", str(self.policy))
+                                 .replace("/var/home/linuxbrew/.linuxbrew/bin/brew", str(self.bin / "brew")))
+
+    def install_wrapper(self, *, uid="1000", hook=None):
+        # EUID is readonly in Bash. Only this test copy substitutes its value;
+        # the installed recipe has no test switch or root-check bypass.
+        contents = (ROOT / "files/system/usr/share/ublue-os/just/60-custom.just").read_text()
+        self.wrapper.write_text(contents.replace("#!/usr/bin/env bash", "#!" + shutil.which("bash"))
+                                .replace('"$EUID"', '"' + uid + '"')
+                                .replace("/usr/libexec/finite/lib/update-shell-env", str(hook or self.hook))
+                                .replace("/usr/share/ublue-os/just/update.just", str(self.upstream)))
+
+    def invoke(self, **changes):
+        self.log.unlink(missing_ok=True)
+        result = subprocess.run(["just", "--justfile", str(self.wrapper), "update"],
+                                env={**self.env, **changes}, text=True, capture_output=True)
+        events = [json.loads(line) for line in self.log.read_text().splitlines()] if self.log.exists() else []
+        self.assertEqual(list(self.temporary.iterdir()), [], "Update guard leaked temporary state")
+        actions = []
+        for name, *args in events:
+            if name in ("rpm-ostree", "sudo"):
+                actions.append("os")
+            elif name == "flatpak" and args[0] == "update":
+                actions.append("user-flatpak" if "--user" in args else "system-flatpak")
+            elif name in ("brew", "finite-home-update"):
+                actions.append("foundation" if name == "finite-home-update" else name)
+        return result, events, actions
+
+    def test_order_on_both_os_update_paths(self):
+        for policy, os_command in (("LockLayering=false", "rpm-ostree"), ("LockLayering=true", "sudo")):
+            with self.subTest(policy=policy):
+                self.policy.write_text(policy + "\n")
+                result, events, actions = self.invoke()
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(actions, ["os", "system-flatpak", "user-flatpak", "brew", "foundation"])
+                self.assertTrue(any(event[0] == os_command for event in events))
+
+    def test_each_failed_update_blocks_all_later_stages(self):
+        stages = ["os", "system-flatpak", "user-flatpak", "brew", "foundation"]
+        for policy in ("LockLayering=false", "LockLayering=true"):
+            self.policy.write_text(policy + "\n")
+            for index, stage in enumerate(stages):
+                with self.subTest(policy=policy, stage=stage):
+                    result, _, actions = self.invoke(UPDATE_FAIL=stage)
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertEqual(actions, stages[:index + 1])
+                    self.assertIn("injected " + stage + " failure", result.stderr)
+
+    def test_intentional_brew_and_flatpak_skips_reach_foundation(self):
+        (self.bin / "brew").unlink()
+        result, _, actions = self.invoke(UPDATE_REMOTES="")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(actions, ["os", "foundation"])
+
+    def test_upstream_conditional_pipeline_semantics_are_preserved(self):
+        # Upstream tests grep's result, not the producer's status. Enabling
+        # pipefail here would silently skip both updates despite valid rows.
+        result, _, actions = self.invoke(UPDATE_REMOTES_STATUS="19")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(actions, ["os", "system-flatpak", "user-flatpak", "brew", "foundation"])
+
+    def test_busy_automatic_updater_blocks_foundation(self):
+        result, _, actions = self.invoke(UPDATE_BUSY="true")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(actions, [])
+
+    def test_root_is_rejected_before_any_delegation(self):
+        self.install_wrapper(uid="0")
+        result, events, actions = self.invoke()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(events, [])
+        self.assertEqual(actions, [])
+        self.assertIn("desktop user", result.stderr)
+
+    def test_missing_hook_is_rejected_before_any_delegation(self):
+        self.install_wrapper(hook=self.root / "missing-hook")
+        result, events, _ = self.invoke()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(events, [])
+        self.assertIn("Missing Finite update shell hook", result.stderr)
+
+    def test_upstream_without_bash_hook_never_reaches_foundation(self):
+        self.upstream.write_text(f"update:\n    #!{sys.executable}\n    print('upstream completed')\n")
+        result, _, actions = self.invoke()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(actions, [])
+        self.assertIn("did not run", result.stderr)
+
+    def test_nested_bash_tool_receives_no_hook_or_strict_options(self):
+        nested = self.bin / "nested-tool"
+        report = self.root / "nested-report"
+        nested.write_text(f"#!{shutil.which('bash')}\n" +
+                          'printf "%s\\n" "$-" "${BASH_ENV-unset}" "${FINITE_UPDATE_SHELL_MARKER-unset}" "$SHELLOPTS" > "$UPDATE_REPORT"\n' +
+                          'false\nprintf "continued\\n" >> "$UPDATE_REPORT"\n')
+        nested.chmod(0o755)
+        self.upstream.write_text(self.upstream.read_text().replace("    # rpm-ostree used", "    nested-tool\n    # rpm-ostree used"))
+        result, _, actions = self.invoke(UPDATE_REPORT=str(report))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        flags, startup, marker, shell_options, continued = report.read_text().splitlines()
+        self.assertNotIn("e", flags)
+        self.assertNotIn("u", flags)
+        self.assertNotIn("pipefail", shell_options.split(":"))
+        self.assertEqual((startup, marker, continued), ("unset", "unset", "continued"))
+        self.assertEqual(actions[-1], "foundation")
+
+    def test_legacy_consumer_skips_only_foundation(self):
+        self.lock.write_text(json.dumps({"root": "root", "nodes": {"root": {"inputs": {}}}}))
+        result, _, actions = self.invoke()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(actions, ["os", "system-flatpak", "user-flatpak", "brew"])
+        self.assertIn("finite-home-migrate", result.stdout)
 
 
 if __name__ == "__main__":

@@ -130,6 +130,21 @@ run. Check `systemctl status brew-update.timer brew-upgrade.timer` and
 `journalctl -u brew-upgrade.service`. Bluefin's `ujust update` also includes
 Flatpak/Homebrew update paths. Inspect `systemctl status uupd.timer` and the
 actual service logs on your image before relying on inherited automation.
+Finite's update adapter rejects root before starting maintenance and retains
+Bluefin's installed Just recipe. A scoped Bash startup hook enables `errexit`
+for its actual update commands, so a failed OS, Flatpak or Brew update stops
+before Foundation. Intentional remote/ownership skips retain upstream behavior.
+The hook clears itself before nested tools run. It does not alter upstream
+conditional probe semantics; a discovery failure can still appear as a skip.
+The current single-Bash-script recipe is qualified by real-Just fixtures and
+must be rechecked when the image changes its updater.
+
+After upstream succeeds and the Bash hook is verified, `finite-home-update`
+runs for a Foundation consumer. This uses Foundation's existing staging,
+resource limits, backup and recovery. It uses plain `nix build`, without
+nix-output-monitor. Direct NH usage remains available with `--no-nom`; replacing
+the staged updater with `nh home switch -u` would also change personal inputs
+and omit the transaction's recovery behavior.
 Finite's Home Manager Flatpak auto-update remains disabled; verify system and
 user Flatpak installations separately. The workstation owner is responsible
 for reviewing and applying app updates.
