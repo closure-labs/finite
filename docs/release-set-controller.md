@@ -123,6 +123,12 @@ An initial packet must also bind the actual uploaded
 `release-set-packet-RUN-ATTEMPT` artifact. Proposal creation and initial execution
 stream the original Actions ZIP, authenticate its exact size and SHA-256, reject
 unsafe or duplicate members, and compare every file hash with the OCI packet.
+The immutable archive GET allows three attempts of at most 30 minutes each for
+transport timeouts, connection interruptions and transient HTTP failures, with
+2- and 4-second backoff. Every retry discards partial bytes and obtains a fresh
+download response. Authorization errors, missing artifacts and all size, digest
+or member validation failures stop immediately. Repository and registry writes
+do not use this retry path.
 A successful workflow ID plus self-reported packet metadata is insufficient.
 If the original artifact expired, use the previously persisted signed recovery
 packet, whose complete product bytes and reports are checked against the Cosign
