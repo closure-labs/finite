@@ -18,6 +18,8 @@ def failures(needs, publish):
     for name in ('checks', 'nix'):
         if outputs.get(name) not in ('true', 'false'):
             errors.append(f'Missing or invalid selection: {name}')
+    if outputs.get('vm') == 'true' and outputs.get('checks') != 'true':
+        errors.append('Premerge VM validation requires source checks')
     checks = outputs.get('checks') == 'true'
     images = False
     if checks and needs['checks']['result'] != 'success':
@@ -32,6 +34,10 @@ def failures(needs, publish):
             selected = [row['profile'] for row in rows]
             if len(selected) != len(set(selected)) or any(row != {'profile': row['profile'], 'channel': PROFILES[row['profile']]} for row in rows):
                 raise ValueError('Invalid image matrix')
+            if outputs.get('vm', 'false') not in ('true', 'false'):
+                raise ValueError('Invalid premerge VM selection')
+            if outputs.get('vm') == 'true' and set(selected) != set(PROFILES):
+                raise ValueError('Premerge VM validation requires both candidate profiles')
             if not set(explicit) <= set(selected):
                 raise ValueError('An explicit image input was skipped')
             images = bool(selected)

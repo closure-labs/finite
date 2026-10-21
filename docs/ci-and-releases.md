@@ -452,3 +452,64 @@ Image, signing, policy, workflow and VM harness changes still require qualificat
 at the new revision. Sequence those merges after active publication finishes to
 avoid discarding completed work. In particular, a successful diagnostic run does
 not replace the production qualification record.
+
+## Delivery resilience and release readiness
+
+Changes to boot configuration, systemd units, SELinux, the installer and the VM
+harness select premerge VM validation for both images. The required CI gate
+checks that both profiles ran. Each image job exports its assembled candidate as
+an OCI archive and supplies that archive to the pinned installer. It boots the
+candidate with Secure Boot, encrypted storage and enforcing SELinux, then checks
+Nix startup and Home Manager initialization. This fresh-install validation fits
+inside the existing 120-minute image-job budget; production upgrade and rollback
+qualification still run before promotion.
+
+Premerge runners have no signing keys or registry write token. Their installer
+uses a disposable unsigned local reference, and their receipts identify
+`local-image` with `validationOnly: true`. Production qualification requires its
+existing signed GHCR digest and trusted main context. Local receipts cannot
+supply publication or release evidence. Raw VM disks and credentials stay in
+private temporary directories; retained logs pass through the existing redactor.
+
+The GDM SELinux fixture accepts an absent state directory or a DynamicUser
+symlink. It creates its mount target inside a private overlay of `/var/lib`,
+removes only the overlay copy of a symlink, and binds disposable fixture data.
+Native policy data remains visible. It checks recursive relabeling, preserved
+ownership and modes, migration, and repeatability without changing real GDM
+state. Unexpected file types fail with a named diagnostic.
+
+**Delivery and decision pipeline health** runs hourly and after build and release
+workflows. It independently reports audit/decision health even if reconciliation
+fails. Its summary links the latest recorded qualification and promotion for
+each channel, reports failing jobs, and flags promotions at least 36 hours old.
+This bounded workflow history is an operational observation, not proof of the
+current registry contents or an authorization receipt.
+
+For a new numeric `VERSION` such as `0.8.2`, trusted main builds select both
+images and force fresh qualification. After both profiles succeed and preserve
+their qualified ISOs at that revision, delivery reconciliation dispatches
+**Prepare two-image release approval**. Preparation checks readiness before
+installing tools or downloading products. Development versions such as
+`0.8.2-dev` skip with an explanation. Existing paired releases, open bot release
+proposals and recorded release decisions prevent repeated preparation. Drafts,
+partial releases and existing tags require recovery of the approved products.
+The same version cannot silently replace tags or assets.
+
+Human review of the paired proposal and the protected release signing environment
+remain required. Merging the proposal starts **Publish approved two-image
+release**. Its existing journal, immutable packet, fresh admission checks and
+partial-publication recovery remain in force. The per-channel release and
+recovery workflows are labelled **Retired**; use the paired workflows instead.
+Manual paired preparation accepts a successful same-revision build run. Manual
+publication/recovery accepts the approved proposal hash and, when needed, its
+immutable signed recovery packet.
+
+GitHub authority, controller, release-journal and health metadata reads allow
+three attempts with 30-second attempt limits and a 100-second total budget.
+Timeouts, connection failures, HTTP 408/429 and transient server failures retry.
+HTTP 403 retries only with explicit rate-limit evidence; ordinary permission
+failures, invalid JSON and oversized responses stop immediately. Retry-After
+and rate-limit reset delays must fit the remaining budget. Diagnostics include
+the endpoint path, HTTP status, request ID and attempt, without response bodies
+or credentials. Mutations are never blindly retried; subsequent reconciliation
+checks remote state before another operation.

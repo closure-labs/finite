@@ -134,5 +134,4 @@ jobs:
             fi
           fi
           python3 scripts/ci/reconcile-decisions.py
-          python3 scripts/ci/decision-health.py
           CONTROLLER

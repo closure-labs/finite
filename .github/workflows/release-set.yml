@@ -12,6 +12,7 @@ concurrency:
   group: finite-release-set-preparation
   cancel-in-progress: false
 env:
+  FINITE_REVIEW_BOT_LOGIN: ${{ vars.FINITE_REVIEW_BOT_LOGIN }}
   FINITE_OPTIMIZED_CACHES: ${{ vars.FINITE_OPTIMIZED_CACHES }}
   FINITE_CACHIX_WRITER: ${{ vars.FINITE_CACHIX_WRITER }}
   FINITE_REUSE_INVENTORY: ${{ vars.FINITE_REUSE_INVENTORY }}
@@ -38,11 +39,19 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Check version and paired release readiness
+        id: readiness
+        env:
+          BUILD_RUN: ${{ inputs.build_run }}
+        run: python3 scripts/ci/release-readiness.py --build-run "$BUILD_RUN"
       - uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
+        if: steps.readiness.outputs.ready == 'true'
         with:
           skip-if-available: "80G"
       - uses: ./.github/actions/setup-nix
+        if: steps.readiness.outputs.ready == 'true'
       - name: Collect both qualified images and fresh scan evidence
+        if: steps.readiness.outputs.ready == 'true'
         id: packet
         env:
           BUILD_RUN: ${{ inputs.build_run }}
@@ -50,7 +59,7 @@ jobs:
           nix develop --file lib/ci-tools.nix release --command python3 scripts/ci/prepare-release-set.py \
             --build-run "$BUILD_RUN" --output-directory .bluebuild/release-set-packet
       - name: Retain packet including incomplete preparation evidence
-        if: always()
+        if: steps.readiness.outputs.ready == 'true' && (always())
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-set-packet-${{ github.run_id }}-${{ github.run_attempt }}
@@ -59,11 +68,12 @@ jobs:
           retention-days: 90
           compression-level: 0
       - name: Show release review summary
+        if: steps.readiness.outputs.ready == 'true'
         run: cat .bluebuild/release-set-packet/summary.md >> "$GITHUB_STEP_SUMMARY"
       # Installation and cutover are separate operator steps. Until configured,
       # this workflow prepares reviewable evidence and grants no release authority.
       - name: Resolve declared review App credentials
-        if: vars.FINITE_REVIEW_APP_ID != ''
+        if: steps.readiness.outputs.ready == 'true' && (vars.FINITE_REVIEW_APP_ID != '')
         env:
           FINITE_REVIEW_CLIENT_ID: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
           FINITE_REVIEW_PRIVATE_KEY: ${{ secrets.DECIDER_KEY }}
@@ -72,7 +82,7 @@ jobs:
           secretspec export --file secretspec.toml --profile review-app --provider github-actions
           --scope review-app --reason 'Finite release proposal App' --format gha
       - name: Resolve scoped decision App identity
-        if: vars.FINITE_REVIEW_APP_ID != ''
+        if: steps.readiness.outputs.ready == 'true' && (vars.FINITE_REVIEW_APP_ID != '')
         id: decision-app
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
@@ -86,11 +96,11 @@ jobs:
           permission-contents: write
           permission-pull-requests: write
       - name: Remove review App credentials from later steps
-        if: vars.FINITE_REVIEW_APP_ID != ''
+        if: steps.readiness.outputs.ready == 'true' && (vars.FINITE_REVIEW_APP_ID != '')
         run: | # zizmor: ignore[github-env]
           printf 'FINITE_REVIEW_CLIENT_ID=\nFINITE_REVIEW_PRIVATE_KEY=\n' >>"$GITHUB_ENV"
       - name: Propose the single official release approval
-        if: vars.FINITE_REVIEW_APP_ID != ''
+        if: steps.readiness.outputs.ready == 'true' && (vars.FINITE_REVIEW_APP_ID != '')
         env:
           GH_TOKEN: ${{ steps.decision-app.outputs.token }}
           REGISTRY_TOKEN: ${{ github.token }}

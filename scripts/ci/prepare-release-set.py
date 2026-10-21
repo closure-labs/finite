@@ -167,6 +167,10 @@ def main():
         raise ValueError('Missing trusted checkout revision')
     if Path.cwd().resolve() != ROOT:
         raise ValueError('Release preparation must run from the trusted checkout')
+    # Reject development versions before downloading either multi-gigabyte ISO.
+    from release_readiness import stable_version
+    if not stable_version((ROOT / 'VERSION').read_text().strip()):
+        raise ValueError('Release preparation requires numeric MAJOR.MINOR.PATCH VERSION')
     helper = helper_module()
     run = helper.github('actions/runs/' + args.build_run)
     authenticate_build(run, revision)

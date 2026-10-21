@@ -15,6 +15,8 @@ import tempfile
 import zipfile
 import sys
 sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "ci"))
+from github_api import get_json
 
 desktop_spec = importlib.util.spec_from_file_location('desktop_qualification', Path(__file__).with_name('desktop-qualification.py'))
 desktop = importlib.util.module_from_spec(desktop_spec)
@@ -27,7 +29,7 @@ PROFILES = {'finite': 'finite', 'finite-dev': 'finite-dev'}
 
 
 def github(path):
-    return json.loads(subprocess.check_output(['gh', 'api', 'repos/' + REPOSITORY + '/' + path], text=True, timeout=90))
+    return get_json('repos/' + REPOSITORY + '/' + path)
 
 
 def validate_run(run, workflow, revision):

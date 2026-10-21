@@ -4,9 +4,13 @@ import argparse
 from datetime import datetime, timedelta, timezone
 import json
 import os
+from pathlib import Path
 import re
 import subprocess
 import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from github_api import GitHubReadError, get_json
 
 REPOSITORY = 'closure-labs/finite'
 TITLE = 'Maintainer decision pipeline health'
@@ -19,6 +23,11 @@ class HealthError(ValueError):
 
 
 def github(endpoint, method='GET', payload=None):
+    if method == 'GET':
+        try:
+            return get_json(endpoint)
+        except GitHubReadError as error:
+            raise HealthError(str(error)) from error
     command = ['gh', 'api', '--method', method, endpoint]
     if payload is not None:
         command.extend(['--input', '-'])

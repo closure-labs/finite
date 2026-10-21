@@ -1,0 +1,77 @@
+name: Delivery and decision pipeline health
+on:
+  schedule:
+    - cron: '47 * * * *'
+  workflow_run: # zizmor: ignore[dangerous-triggers] Trusted main code reads metadata only.
+    workflows: [Build Finite, Prepare two-image release approval, Publish approved two-image release]
+    types: [completed]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: finite-delivery-health
+  cancel-in-progress: false
+env:
+  FINITE_REVIEW_BOT_LOGIN: ${{ vars.FINITE_REVIEW_BOT_LOGIN }}
+  FINITE_OPTIMIZED_CACHES: ${{ vars.FINITE_OPTIMIZED_CACHES }}
+  FINITE_CACHIX_WRITER: ${{ vars.FINITE_CACHIX_WRITER }}
+  FINITE_REUSE_INVENTORY: ${{ vars.FINITE_REUSE_INVENTORY }}
+  FINITE_GRYPE_DB_CACHE: ${{ vars.FINITE_GRYPE_DB_CACHE }}
+  FINITE_QUALIFICATION_REUSE: ${{ vars.FINITE_QUALIFICATION_REUSE }}
+  FINITE_QUALIFIED_ISO_PRESERVATION: ${{ vars.FINITE_QUALIFIED_ISO_PRESERVATION }}
+  FINITE_QUALIFIED_ISO_CHANNELS: ${{ vars.FINITE_QUALIFIED_ISO_CHANNELS }}
+jobs:
+  health:
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && vars.FINITE_REVIEW_APP_ID != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Monitor hosted runner (Community)
+        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+      - name: Resolve declared review App credentials
+        env:
+          FINITE_REVIEW_CLIENT_ID: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
+          FINITE_REVIEW_PRIVATE_KEY: ${{ secrets.DECIDER_KEY }}
+        run: >-
+          finite-ci-secrets-run review-app --
+          secretspec export --file secretspec.toml --profile review-app --provider github-actions
+          --scope review-app --reason 'Finite human decision authority App' --format gha
+      - name: Generate short-lived repository-scoped review token
+        id: review-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ env.FINITE_REVIEW_CLIENT_ID }}
+          private-key: ${{ env.FINITE_REVIEW_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: read
+          permission-pull-requests: read
+          permission-actions: write
+          permission-issues: write
+      - name: Clear App private credentials
+        run: | # zizmor: ignore[github-env]
+          printf 'FINITE_REVIEW_CLIENT_ID=\nFINITE_REVIEW_PRIVATE_KEY=\n' >>"$GITHUB_ENV"
+      - name: Report delivery and reconcile release preparation
+        env:
+          GH_TOKEN: ${{ steps.review-token.outputs.token }}
+        run: python3 scripts/ci/delivery-health.py
+      - name: Report audit and human decision health independently
+        if: always() && steps.review-token.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ steps.review-token.outputs.token }}
+        run: python3 scripts/ci/decision-health.py
+      - name: Retain delivery health
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: delivery-health-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/delivery-health.json
+          retention-days: 30

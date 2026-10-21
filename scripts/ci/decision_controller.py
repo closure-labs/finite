@@ -10,6 +10,7 @@ import re
 import subprocess
 import tempfile
 
+from github_api import GitHubReadError, get_json
 import decision_packets
 from security_decisions import canonical_hash, load_json, normalize_findings, compare_findings, validate_normalized
 
@@ -32,6 +33,11 @@ authority = module('controller_authority', ROOT / 'scripts/ci/decision-authority
 
 
 def api(path, method='GET', payload=None):
+    if method == 'GET':
+        try:
+            return get_json(path)
+        except GitHubReadError as error:
+            raise ValueError(str(error)) from error
     args = ['gh', 'api', '--method', method, path]
     if payload is not None:
         args += ['--input', '-']

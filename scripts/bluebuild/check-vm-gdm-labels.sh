@@ -22,13 +22,28 @@ else
 	repository=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
 	rule="$repository/files/system/usr/lib/tmpfiles.d/finite-gdm.conf"
 fi
-[[ -d /var/lib/gdm && ! -L /var/lib/gdm ]] || {
-	printf '%s\n' 'Expected a real /var/lib/gdm directory as the mount target.' >&2
-	exit 1
+# GDM creates its state lazily. A headless first boot may have no directory.
+# Observe the host, but create the mount target only in a private overlay.
+gdm_state() {
+	if [[ -L /var/lib/gdm ]]; then
+		printf 'symlink:%s\n' "$(/usr/bin/readlink /var/lib/gdm)"
+	elif [[ -e /var/lib/gdm ]]; then
+		/usr/bin/stat -c '%F:%d:%i' /var/lib/gdm
+	else
+		printf '%s\n' absent
+	fi
 }
+real_gdm_state=$(gdm_state)
+printf 'Host GDM state: %s\n' "$real_gdm_state"
+if [[ $real_gdm_state != absent && $real_gdm_state != directory:* && $real_gdm_state != symlink:* ]]; then
+	printf '%s\n' 'Unexpected GDM state path; refusing the fixture.' >&2
+	/usr/bin/systemctl --no-pager status display-manager.service >&2 || true
+	exit 1
+fi
 fixture=$(/usr/bin/mktemp -d /tmp/finite-gdm-selinux.XXXXXXXX)
 trap '/usr/bin/rm -rf -- "$fixture"' EXIT
 /usr/bin/mkdir "$fixture/tree"
+/usr/bin/mkdir "$fixture/upper" "$fixture/work"
 /usr/bin/cp -- "$rule" "$fixture/rule.conf"
 # Invoke exactly the reviewed rule, excluding comments and blank lines.
 [[ $(/usr/bin/sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' "$fixture/rule.conf") == 'Z /var/lib/gdm - - - - -' ]] || {
@@ -36,20 +51,41 @@ trap '/usr/bin/rm -rf -- "$fixture"' EXIT
 	exit 1
 }
 parent_namespace=$(/usr/bin/readlink /proc/self/ns/mnt)
-real_gdm_inode=$(/usr/bin/stat -c '%d:%i' /var/lib/gdm)
+real_var_lib_inode=$(/usr/bin/stat -c '%d:%i' /var/lib)
 # No user/PID namespace or chroot: use the actual enforcing policy and native tools.
-# All /var/lib/gdm writes below resolve to the fixture in this private namespace.
+# Overlay copy-up preserves access to native policy data under /var/lib while
+# keeping target creation and every other write out of the host's /var/lib.
+# Exercise all supported initial layouts on every candidate. Each layout gets
+# a new namespace/overlay; none of these changes reaches the original tree.
+for scenario in observed absent directory symlink; do
+printf 'Testing GDM fixture layout: %s\n' "$scenario"
 /usr/bin/unshare --mount --propagation private /usr/bin/bash -s -- \
-	"$fixture" "$parent_namespace" "$real_gdm_inode" <<'ISOLATED'
+	"$fixture" "$parent_namespace" "$scenario" <<'ISOLATED'
 set -euo pipefail
 export PATH=/usr/sbin:/usr/bin:/sbin:/bin
 fixture=$1
 [[ $(/usr/bin/readlink /proc/self/ns/mnt) != "$2" ]]
 [[ $(/usr/sbin/getenforce) == Enforcing ]]
+/usr/bin/mount -t overlay overlay -o "lowerdir=/var/lib,upperdir=$fixture/upper,workdir=$fixture/work" /var/lib
+if [[ $3 != observed ]]; then
+	/usr/bin/rm -rf -- /var/lib/gdm
+	case "$3" in
+	absent) ;;
+	directory) /usr/bin/mkdir /var/lib/gdm ;;
+	symlink)
+		/usr/bin/mkdir -p "$fixture/untouched"
+		printf '%s\n' untouched >"$fixture/untouched/sentinel"
+		/usr/bin/ln -s "$fixture/untouched" /var/lib/gdm
+		;;
+	esac
+fi
+# DynamicUser StateDirectory may expose GDM through a private-state symlink.
+# Unlink only the overlay copy; never follow it into another host directory.
+if [[ -L /var/lib/gdm ]]; then /usr/bin/rm -- /var/lib/gdm; fi
+/usr/bin/mkdir -p /var/lib/gdm
 /usr/bin/mount --bind "$fixture/tree" /var/lib/gdm
 [[ $(/usr/bin/findmnt -n --mountpoint /var/lib/gdm -o TARGET) == /var/lib/gdm ]]
 [[ $(/usr/bin/stat -c '%d:%i' /var/lib/gdm) == "$(/usr/bin/stat -c '%d:%i' "$fixture/tree")" ]]
-[[ $(/usr/bin/stat -c '%d:%i' /var/lib/gdm) != "$3" ]]
 cd /var/lib/gdm
 /usr/bin/mkdir -p seat0/config/zsh seat0/state .config/zsh .local/state
 printf '%s\n' 'existing seat configuration' > seat0/config/zsh/.zshenv
@@ -102,6 +138,16 @@ done < <(/usr/bin/find seat0/config seat0/state -print0)
 /usr/bin/cmp "$fixture/modes-before" "$fixture/modes-after"
 labels
 printf '%s\n' 'PASS: copy after prelabeling and numeric ownership reassignment retain correct labels/modes.'
+if [[ $3 == symlink ]]; then
+	[[ $(/usr/bin/cat "$fixture/untouched/sentinel") == untouched ]]
+fi
 ISOLATED
-[[ $(/usr/bin/stat -c '%d:%i' /var/lib/gdm) == "$real_gdm_inode" ]]
+# Release overlay copy-up/whiteout state before the next independent layout.
+/usr/bin/rm -rf -- "$fixture/upper" "$fixture/work"
+/usr/bin/mkdir "$fixture/upper" "$fixture/work"
+done
+[[ $(/usr/bin/stat -c '%d:%i' /var/lib) == "$real_var_lib_inode" ]]
+if [[ $(gdm_state) != "$real_gdm_state" ]]; then
+	printf '%s\n' 'Host GDM state changed concurrently outside the private fixture namespace.'
+fi
 printf '%s\n' 'PASS: isolated GDM SELinux migration fixture; production mount unchanged.'

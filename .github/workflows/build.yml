@@ -63,10 +63,14 @@ jobs:
     name: Select checks
     runs-on: ubuntu-24.04
     timeout-minutes: 35
+    permissions:
+      contents: read
     outputs:
-      checks: ${{ steps.target.outputs.checks || steps.reconcile.outputs.checks || steps.impact.outputs.checks }}
-      nix: ${{ steps.target.outputs.nix || steps.reconcile.outputs.nix || steps.impact.outputs.nix }}
-      profiles: ${{ steps.target.outputs.profiles || steps.reconcile.outputs.profiles || steps.impact.outputs.profiles }}
+      vm: ${{ steps.vm.outputs.vm }}
+      release: ${{ steps.release.outputs.ready }}
+      checks: ${{ steps.release.outputs.checks || steps.target.outputs.checks || steps.reconcile.outputs.checks || steps.impact.outputs.checks }}
+      nix: ${{ steps.release.outputs.nix || steps.target.outputs.nix || steps.reconcile.outputs.nix || steps.impact.outputs.nix }}
+      profiles: ${{ steps.release.outputs.profiles || steps.target.outputs.profiles || steps.reconcile.outputs.profiles || steps.impact.outputs.profiles }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -92,6 +96,9 @@ jobs:
           RESUME_DIGEST: ${{ inputs.resume_digest || '' }}
           DIAGNOSTIC_SECURITY: ${{ inputs.diagnostic_security || false }}
         run: python3 scripts/ci/release-selection.py
+      - name: Select targeted premerge VM validation
+        id: vm
+        run: python3 scripts/ci/vm-selection.py
       - id: impact
         if: ${{ !inputs.reconcile && steps.target.outputs.selected != 'true' }}
         run: python3 scripts/ci/impact.py
@@ -104,6 +111,13 @@ jobs:
         env:
           IMPACT: ${{ toJSON(steps.impact.outputs) }}
         run: nix develop --file lib/ci-tools.nix shell --command python3 scripts/ci/bluefin-upstream.py reconcile
+
+      - name: Select both images for an unpublished release version
+        id: release
+        if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && inputs.target != 'finite' && inputs.target != 'finite-dev'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/ci/release-readiness.py --build-selection
 
   docs:
     name: Documentation checks
@@ -144,6 +158,7 @@ jobs:
         id: selection
         env:
           IMPACT: ${{ toJSON(needs.impact.outputs) }}
+          VM_VALIDATION: ${{ needs.impact.outputs.vm }}
         run: nix develop --file lib/ci-tools.nix shell --command python3 scripts/ci/payloads.py
 
   images:
@@ -161,6 +176,7 @@ jobs:
       profile: ${{ matrix.profile }}
       channel: ${{ matrix.channel }}
       publish: false
+      vm_validation: ${{ needs.impact.outputs.vm == 'true' }}
       diagnostic_security: ${{ inputs.diagnostic_security || false }}
 
   publish:
@@ -185,7 +201,7 @@ jobs:
     with:
       profile: ${{ matrix.profile }}
       channel: ${{ matrix.channel }}
-      force_qualification: ${{ inputs.qualify || false }}
+      force_qualification: ${{ inputs.qualify || needs.impact.outputs.release == 'true' }}
       resume_run: ${{ inputs.resume_run || '' }}
       resume_digest: ${{ inputs.resume_digest || '' }}
 

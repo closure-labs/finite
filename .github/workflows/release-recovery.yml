@@ -1,4 +1,4 @@
-name: Recover prepared qualified release
+name: Retired — per-channel recovery (use Publish approved two-image release)
 on:
   workflow_dispatch:
     inputs:

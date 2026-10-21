@@ -14,6 +14,10 @@ PROFILES = {
 # These files qualify an existing immutable image; they are not filesystem
 # inputs. Keep source/security checks while reusing already validated builds.
 QUALIFICATION_ONLY = {
+    "scripts/ci/github_api.py", "scripts/ci/release_readiness.py",
+    "scripts/ci/release-readiness.py", "scripts/ci/delivery-health.py",
+    ".github/workflows/delivery-health.yml",
+    "scripts/ci/vm-selection.py", "scripts/ci/local_vm.py",
     'scripts/bluebuild/publication-current.py',
     'scripts/bluebuild/qualification-context.py', 'scripts/bluebuild/reuse-qualification.py',
     'scripts/bluebuild/prune-qualified-isos.py', 'scripts/bluebuild/reuse-predecessor-iso.py',
