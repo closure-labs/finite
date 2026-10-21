@@ -91,6 +91,10 @@ resolves exactly one initial packet reference from its originating bot PR body,
 fetches by OCI digest, checks the successful trusted release-set producer, and
 checks every approved product hash. The PR body is a discovery aid, never authority.
 It rescans both images and rechecks current human findings admission.
+Inventory reuse authenticates this publishing workflow on trusted hosted main
+for its push and manual dispatch events, as well as the manual preparation
+workflow. It reuses inventory bytes only; vulnerability findings, database
+freshness and current security admission are evaluated again for both images.
 
 An isolated signer job retains the existing `release` environment reviewer during
 migration. It checks current authority before exposing scoped signing keys, signs
