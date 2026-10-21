@@ -6,6 +6,7 @@ import resource
 import stat
 import subprocess
 import tempfile
+import time
 import zipfile
 
 import decision_packets
@@ -29,14 +30,40 @@ def bound_artifact(repository, run_id, attempt, revision, collection):
     return artifact
 
 
+def download_archive(archive, artifact, repository):
+    """Retry immutable GET transport failures; each attempt starts with no bytes."""
+    command = ['gh', 'api', f'repos/{repository}/actions/artifacts/{artifact["id"]}/zip']
+    for attempt in range(3):
+        archive.seek(0)
+        archive.truncate()
+        print(f'Downloading original product archive: attempt {attempt + 1}/3 (30-minute limit)', flush=True)
+        try:
+            subprocess.run(command, stdout=archive, stderr=subprocess.PIPE, text=True,
+                           check=True, timeout=1800,
+                           preexec_fn=lambda: resource.setrlimit(resource.RLIMIT_FSIZE,
+                               (artifact['size_in_bytes'], artifact['size_in_bytes'])))
+            return
+        except subprocess.CalledProcessError as error:
+            status = re.search(r'HTTP ([0-9]{3})\b', error.stderr or '')
+            transient = (int(status[1]) in (408, 429, 500, 502, 503, 504) if status else
+                         bool(re.search(r'(?:connection timed out|connection reset by peer|TLS handshake timeout|unexpected EOF)',
+                                        error.stderr or '', re.I)))
+            if not transient or attempt == 2:
+                raise
+        except subprocess.TimeoutExpired:
+            if attempt == 2:
+                raise
+        delay = 2 ** (attempt + 1)
+        print(f'Original product archive transport failed after {archive.tell()} bytes; '
+              f'retry {attempt + 1}/2 in {delay}s', flush=True)
+        time.sleep(delay)
+
+
 def verify_archive(directory, artifact, repository='closure-labs/finite', expected_files=None):
     """Stream hashes; never extract or execute artifact product content."""
     directory = Path(directory)
     with tempfile.TemporaryFile() as archive:
-        subprocess.run(['gh', 'api', f'repos/{repository}/actions/artifacts/{artifact["id"]}/zip'],
-                       stdout=archive, check=True, timeout=1800,
-                       preexec_fn=lambda: resource.setrlimit(resource.RLIMIT_FSIZE,
-                           (artifact['size_in_bytes'], artifact['size_in_bytes'])))
+        download_archive(archive, artifact, repository)
         archive.seek(0, 2)
         if archive.tell() != artifact['size_in_bytes']:
             raise ValueError('Original product archive size mismatch')

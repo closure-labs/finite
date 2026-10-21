@@ -6,6 +6,7 @@ import io
 import json
 import os
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -18,6 +19,95 @@ spec = importlib.util.spec_from_file_location('execute_release_set', ROOT / 'scr
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 from release_set import prepare
+
+
+class ArchiveDownloadTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        (self.root / 'product.iso').write_bytes(b'qualified product')
+        archive = io.BytesIO()
+        with zipfile.ZipFile(archive, 'w') as zipped:
+            zipped.writestr('product.iso', b'qualified product')
+        self.raw = archive.getvalue()
+        self.artifact = {'id': 10, 'size_in_bytes': len(self.raw),
+                         'digest': 'sha256:' + hashlib.sha256(self.raw).hexdigest()}
+
+    def test_partial_transport_failures_restart_clean_and_still_authenticate_bytes(self):
+        errors = [subprocess.TimeoutExpired(['gh', 'api'], 1800),
+                  subprocess.CalledProcessError(1, ['gh', 'api'], stderr='read tcp: read: connection timed out'),
+                  subprocess.CalledProcessError(1, ['gh', 'api'], stderr='HTTP 503')]
+        for error in errors:
+            attempts = []
+            def download(command, **kwargs):
+                output = kwargs['stdout']
+                output.seek(0, 2)
+                self.assertEqual(output.tell(), 0, 'Partial bytes must be discarded before each request')
+                attempts.append(command)
+                if len(attempts) == 1:
+                    output.write(b'partial bytes that must not survive the retry')
+                    raise error
+                output.write(self.raw)
+            with self.subTest(error=str(error)), patch.object(module.release_artifact.subprocess, 'run', side_effect=download), \
+                    patch.object(module.release_artifact.time, 'sleep') as sleep:
+                files = module.release_artifact.verify_archive(self.root, self.artifact)
+                self.assertEqual(files['product.iso']['sha256'], hashlib.sha256(b'qualified product').hexdigest())
+                self.assertEqual(len(attempts), 2)
+                self.assertEqual(attempts[0], attempts[1])
+                self.assertEqual(attempts[0][:2], ['gh', 'api'])
+                sleep.assert_called_once_with(2)
+
+    def test_persistent_transport_failure_exhausts_three_attempts(self):
+        error = subprocess.CalledProcessError(1, ['gh', 'api'], stderr='read tcp: read: connection timed out')
+        with patch.object(module.release_artifact.subprocess, 'run', side_effect=error) as run, \
+                patch.object(module.release_artifact.time, 'sleep') as sleep:
+            with self.assertRaises(subprocess.CalledProcessError):
+                module.release_artifact.verify_archive(self.root, self.artifact)
+            self.assertEqual(run.call_count, 3)
+            self.assertEqual([call.args[0] for call in sleep.call_args_list], [2, 4])
+
+    def test_authorization_missing_artifact_and_other_command_errors_never_retry(self):
+        for stderr in ('HTTP 401', 'HTTP 403: connection timed out', 'HTTP 404', 'authentication required'):
+            error = subprocess.CalledProcessError(1, ['gh', 'api'], stderr=stderr)
+            with self.subTest(stderr=stderr), patch.object(module.release_artifact.subprocess, 'run', side_effect=error) as run, \
+                    patch.object(module.release_artifact.time, 'sleep') as sleep:
+                with self.assertRaises(subprocess.CalledProcessError):
+                    module.release_artifact.verify_archive(self.root, self.artifact)
+                self.assertEqual(run.call_count, 1)
+                sleep.assert_not_called()
+
+    def test_size_digest_and_product_mismatches_never_retry(self):
+        for mismatch in ('size', 'digest', 'product'):
+            artifact = self.artifact.copy()
+            (self.root / 'product.iso').write_bytes(b'forged' if mismatch == 'product' else b'qualified product')
+            if mismatch == 'size':
+                artifact['size_in_bytes'] += 1
+            if mismatch == 'digest':
+                artifact['digest'] = 'sha256:' + '0' * 64
+            def download(command, **kwargs):
+                kwargs['stdout'].write(self.raw)
+            with self.subTest(mismatch=mismatch), patch.object(module.release_artifact.subprocess, 'run', side_effect=download) as run, \
+                    patch.object(module.release_artifact.time, 'sleep') as sleep:
+                with self.assertRaises(ValueError):
+                    module.release_artifact.verify_archive(self.root, artifact)
+                self.assertEqual(run.call_count, 1)
+                sleep.assert_not_called()
+
+    def test_retried_download_still_rejects_changed_archive_without_a_third_request(self):
+        attempts = []
+        def download(command, **kwargs):
+            attempts.append(command)
+            if len(attempts) == 1:
+                kwargs['stdout'].write(b'partial')
+                raise subprocess.CalledProcessError(1, command, stderr='HTTP 502')
+            kwargs['stdout'].write(b'X' + self.raw[1:])
+        with patch.object(module.release_artifact.subprocess, 'run', side_effect=download), \
+                patch.object(module.release_artifact.time, 'sleep') as sleep:
+            with self.assertRaisesRegex(ValueError, 'digest mismatch'):
+                module.release_artifact.verify_archive(self.root, self.artifact)
+            self.assertEqual(len(attempts), 2)
+            sleep.assert_called_once_with(2)
 
 
 class ExecutionTests(unittest.TestCase):
