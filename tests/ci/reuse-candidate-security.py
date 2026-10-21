@@ -532,10 +532,11 @@ class Inventory(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'content hash'): self.verify(directory)
 
     def test_authenticated_fetch_reuses_inventory_from_expired_results_without_findings(self):
-        events = ((decision_mode, producer, consumer) for decision_mode in (False, True)
+        events = ((decision_mode, producer, workflow, consumer) for decision_mode in (False, True)
                   for producer in ('workflow_dispatch', 'schedule')
-                  for consumer in ('workflow_dispatch', 'push', 'schedule'))
-        for decision_mode, producer_event, consumer_event in events:
+                  for workflow, consumer in [('build.yml', event) for event in ('workflow_dispatch', 'push', 'schedule')]
+                  + [('release-set.yml', 'workflow_dispatch')])
+        for decision_mode, producer_event, workflow, consumer_event in events:
             fixture = Reuse()
             fixture.setUp()
             fixture.run['event'] = producer_event
@@ -559,7 +560,8 @@ class Inventory(unittest.TestCase):
                     kwargs['stdout'].write(archive)
                 record = {'profile': PROFILE, 'revision': SHA, 'buildIdentity': IDENTITY,
                           'qualificationMode': 'enforce', 'publish': True}
-                with patch.dict(os.environ, {**environment(), 'GITHUB_EVENT_NAME': consumer_event}, clear=True), \
+                with patch.dict(os.environ, {**environment(), 'GITHUB_EVENT_NAME': consumer_event,
+                     'GITHUB_WORKFLOW_REF': 'closure-labs/finite/.github/workflows/' + workflow + '@refs/heads/main'}, clear=True), \
                      patch.object(fetch, 'github', side_effect=[fixture.run, [{'artifacts': fixture.artifacts}], [{'jobs': fixture.jobs}]]), \
                      patch.object(fetch.publication, 'origin_files', return_value={
                          PROFILE + '-publication.json': json.dumps(record).encode(), PROFILE + '-image-ref.txt': IMAGE.encode()}), \
@@ -646,6 +648,21 @@ class Inventory(unittest.TestCase):
             fetch.hosted()
         for key, value in [('GITHUB_EVENT_NAME', 'schedule'), ('GITHUB_EVENT_NAME', 'push'),
                            ('GITHUB_REF', 'refs/heads/branch'), ('GITHUB_REPOSITORY', 'fork/finite'),
+                           ('GITHUB_WORKFLOW_REF', base['GITHUB_WORKFLOW_REF'].replace('@refs/heads/main', '@refs/heads/branch'))]:
+            with patch.dict(os.environ, {**base, key: value}, clear=True), \
+                 patch.object(fetch, 'github') as api, self.assertRaises(ValueError):
+                fetch.retrieve(IMAGE, PROFILE, Path('/tmp/never-created'), '123')
+            api.assert_not_called()
+
+    def test_paired_release_inventory_consumer_is_manual_main_only(self):
+        base = {**environment(), 'GITHUB_WORKFLOW_REF':
+                'closure-labs/finite/.github/workflows/release-set.yml@refs/heads/main'}
+        with patch.dict(os.environ, base, clear=True):
+            fetch.hosted()
+        for key, value in [('GITHUB_EVENT_NAME', 'schedule'), ('GITHUB_EVENT_NAME', 'push'),
+                           ('GITHUB_EVENT_NAME', 'pull_request'), ('GITHUB_EVENT_NAME', 'workflow_run'),
+                           ('GITHUB_REF', 'refs/heads/branch'), ('GITHUB_REPOSITORY', 'fork/finite'),
+                           ('GITHUB_ACTIONS', 'false'), ('GITHUB_SHA', 'not-a-commit'),
                            ('GITHUB_WORKFLOW_REF', base['GITHUB_WORKFLOW_REF'].replace('@refs/heads/main', '@refs/heads/branch'))]:
             with patch.dict(os.environ, {**base, key: value}, clear=True), \
                  patch.object(fetch, 'github') as api, self.assertRaises(ValueError):

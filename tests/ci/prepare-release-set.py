@@ -131,7 +131,8 @@ class PrepareTests(unittest.TestCase):
         os.chdir(self.output)
         cases = [(0, 'complete', 'healthy', True), (2, 'blocked', None, False),
                  (0, 'complete', None, False), (1, 'blocked', None, True),
-                 (0, 'covered', None, False)]
+                 (0, 'covered', None, False), (2, 'missing', None, False),
+                 (0, 'missing', None, False), (2, 'malformed', None, False)]
         for index, (code, status, health, allowed) in enumerate(cases):
             with self.subTest(code=code, status=status, health=health):
                 packet = self.output / ('packet-' + str(index))
@@ -148,7 +149,9 @@ class PrepareTests(unittest.TestCase):
                     scan = {'status': status, 'image': argv[2], 'observations': []}
                     if health is not None:
                         scan['scannerHealth'] = health
-                    (scan_directory / 'security-result.json').write_text(json.dumps(scan))
+                    if status != 'missing':
+                        (scan_directory / 'security-result.json').write_text(
+                            '{' if status == 'malformed' else json.dumps(scan))
                     return types.SimpleNamespace(returncode=code)
                 with patch.object(module, 'ROOT', self.output), patch.object(module, 'helper_module', return_value=helper), \
                         patch.object(module, 'assemble', return_value=document) as assemble, \
@@ -161,7 +164,9 @@ class PrepareTests(unittest.TestCase):
                         assemble.assert_called_once()
                         self.assertTrue((packet / 'security-finite-dev/security-result.json').is_file())
                     else:
-                        with self.assertRaises(ValueError):
+                        message = ('finite did not produce a readable result' if status in ('missing', 'malformed')
+                                   else 'Release security scan failed technically')
+                        with self.assertRaisesRegex(ValueError, message):
                             module.main()
                         assemble.assert_not_called()
 

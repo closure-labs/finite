@@ -201,7 +201,11 @@ def main():
                                 check=False, timeout=3600)
         # A completed native scan with risk findings may await human review.
         # Scanner errors and incomplete coverage remain technical failures.
-        scan = load_json(output / ('security-' + channel) / 'security-result.json')
+        try:
+            scan = load_json(output / ('security-' + channel) / 'security-result.json')
+        except (OSError, ValueError) as error:
+            raise ValueError(f'Release security scan for {channel} did not produce a readable result '
+                             f'(exit {result.returncode}); inspect the preceding scanner output') from error
         validate_scan_execution(scan, result.returncode, channel, provenance['image'])
     document = assemble(output, (ROOT / 'VERSION').read_text().strip(), revision)
     print(payload_digest(document))

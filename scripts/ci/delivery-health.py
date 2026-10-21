@@ -80,6 +80,10 @@ def dispatch(report, revision, api=get_json):
         raise ValueError('Preparation run inventory is incomplete')
     if any(run.get('head_sha') == revision and run.get('status') != 'completed' for run in runs):
         return 'Preparation is already queued or running.'
+    if any(run.get('head_sha') == revision and run.get('status') == 'completed'
+           and run.get('conclusion') != 'success' for run in runs):
+        raise ValueError('Paired preparation already failed or was cancelled at this revision; '
+                         'inspect release-set.yml and explicitly rerun preparation after resolving the failure.')
     # Dispatch once. On an ambiguous write failure, the next health run first
     # reconciles remote runs/proposals; the HTTP request itself is never retried.
     result = subprocess.run(['gh', 'api', '--method', 'POST', PREFIX + '/actions/workflows/release-set.yml/dispatches',
@@ -108,11 +112,17 @@ def main():
         raise ValueError('Delivery health requires trusted hosted main')
     revision = os.environ['GITHUB_SHA']
     report = inspect(revision, root_version(), os.environ.get('FINITE_REVIEW_BOT_LOGIN'))
+    try:
+        preparation = dispatch(report, revision)
+    except ValueError as error:
+        report['healthy'] = False
+        report['problems'].append(str(error))
+        preparation = 'Preparation reconciliation requires attention.'
     Path('.bluebuild').mkdir(exist_ok=True)
     Path('.bluebuild/delivery-health.json').write_text(json.dumps(report, indent=2) + '\n')
     with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as output:
         output.write(summary(report))
-        output.write('\n' + dispatch(report, revision) + '\n')
+        output.write('\n' + preparation + '\n')
     return 0 if report['healthy'] else 1
 
 
