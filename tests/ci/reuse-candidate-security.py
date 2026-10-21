@@ -535,7 +535,8 @@ class Inventory(unittest.TestCase):
         events = ((decision_mode, producer, workflow, consumer) for decision_mode in (False, True)
                   for producer in ('workflow_dispatch', 'schedule')
                   for workflow, consumer in [('build.yml', event) for event in ('workflow_dispatch', 'push', 'schedule')]
-                  + [('release-set.yml', 'workflow_dispatch')])
+                  + [('release-set.yml', 'workflow_dispatch')]
+                  + [('publish-release-set.yml', event) for event in ('push', 'workflow_dispatch')])
         for decision_mode, producer_event, workflow, consumer_event in events:
             fixture = Reuse()
             fixture.setUp()
@@ -661,6 +662,22 @@ class Inventory(unittest.TestCase):
             fetch.hosted()
         for key, value in [('GITHUB_EVENT_NAME', 'schedule'), ('GITHUB_EVENT_NAME', 'push'),
                            ('GITHUB_EVENT_NAME', 'pull_request'), ('GITHUB_EVENT_NAME', 'workflow_run'),
+                           ('GITHUB_REF', 'refs/heads/branch'), ('GITHUB_REPOSITORY', 'fork/finite'),
+                           ('GITHUB_ACTIONS', 'false'), ('GITHUB_SHA', 'not-a-commit'),
+                           ('GITHUB_WORKFLOW_REF', base['GITHUB_WORKFLOW_REF'].replace('@refs/heads/main', '@refs/heads/branch'))]:
+            with patch.dict(os.environ, {**base, key: value}, clear=True), \
+                 patch.object(fetch, 'github') as api, self.assertRaises(ValueError):
+                fetch.retrieve(IMAGE, PROFILE, Path('/tmp/never-created'), '123')
+            api.assert_not_called()
+
+    def test_paired_publication_inventory_consumer_is_push_or_manual_main_only(self):
+        base = {**environment(), 'GITHUB_WORKFLOW_REF':
+                'closure-labs/finite/.github/workflows/publish-release-set.yml@refs/heads/main'}
+        for event in ('push', 'workflow_dispatch'):
+            with patch.dict(os.environ, {**base, 'GITHUB_EVENT_NAME': event}, clear=True):
+                fetch.hosted()
+        for key, value in [('GITHUB_EVENT_NAME', 'schedule'), ('GITHUB_EVENT_NAME', 'pull_request'),
+                           ('GITHUB_EVENT_NAME', 'merge_group'), ('GITHUB_EVENT_NAME', 'workflow_run'),
                            ('GITHUB_REF', 'refs/heads/branch'), ('GITHUB_REPOSITORY', 'fork/finite'),
                            ('GITHUB_ACTIONS', 'false'), ('GITHUB_SHA', 'not-a-commit'),
                            ('GITHUB_WORKFLOW_REF', base['GITHUB_WORKFLOW_REF'].replace('@refs/heads/main', '@refs/heads/branch'))]:
