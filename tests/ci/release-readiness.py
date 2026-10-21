@@ -32,6 +32,8 @@ class Readiness(unittest.TestCase):
         if '/releases/tags/' in endpoint: return self.releases.get(endpoint.rsplit('/', 1)[-1])
         if '/git/ref/tags/' in endpoint: return self.tags.get(endpoint.rsplit('/', 1)[-1])
         if '/pulls?' in endpoint: return copy.deepcopy(self.proposals)
+        if endpoint.endswith('/pulls/5'):
+            return {**copy.deepcopy(self.proposals[0]), 'changed_files': 1, 'state': 'open', 'base': {'ref': 'main'}}
         if '/pulls/5/files?' in endpoint:
             return [{'filename': 'automation/decisions/releases/' + 'b' * 64 + '.json'}]
         if '/contents/' in endpoint:
@@ -109,11 +111,21 @@ class Readiness(unittest.TestCase):
 
     def test_pending_bot_proposal_prevents_repeated_preparation(self):
         pull = {'number': 5, 'title': 'Review release-set abc', 'user': {'type': 'Bot', 'login': BOT},
-                'head': {'sha': SHA}, 'changed_files': 1}
+                'head': {'sha': SHA}}
         self.proposals = [pull]
         self.assertEqual(self.status()['pullRequest'], 5)
         self.proposals = [{**pull, 'user': {'type': 'User', 'login': 'someone'}}]
         self.assertEqual(self.status()['state'], 'unprepared')
+
+    def test_proposal_head_change_and_incomplete_live_inventory_fail_closed(self):
+        self.proposals = [{'number': 5, 'title': 'Review release-set abc',
+                           'user': {'type': 'Bot', 'login': BOT}, 'head': {'sha': SHA}}]
+        for changed in ({'head': {'sha': 'c' * 40}}, {'changed_files': 2}, {'changed_files': None}):
+            def api(endpoint, **kwargs):
+                value = self.api(endpoint, **kwargs)
+                return {**value, **changed} if endpoint.endswith('/pulls/5') else value
+            with self.subTest(changed=changed), self.assertRaises(ValueError):
+                ready.release_status(self.version, api, BOT)
 
     def test_eligible_build_requires_same_revision_both_phases_and_preserved_bytes(self):
         run = {'id': 5, 'run_attempt': 2, 'path': '.github/workflows/build.yml', 'head_sha': SHA,

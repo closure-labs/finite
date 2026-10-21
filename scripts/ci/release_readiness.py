@@ -77,8 +77,17 @@ def release_status(version, api=get_json, bot=None):
             number, head = pull.get('number'), pull.get('head', {}).get('sha', '')
             if type(number) is not int or not re.fullmatch('[0-9a-f]{40}', head):
                 raise ValueError('Invalid release proposal provenance')
+            # The list-pulls response has no changed_files count. Authenticate
+            # the live PR before checking completeness of its file inventory.
+            live = api(PREFIX + f'/pulls/{number}')
+            if live.get('state') != 'open' or live.get('base', {}).get('ref') != 'main':
+                continue
+            if (live.get('head', {}).get('sha') != head or live.get('user', {}).get('login') != bot
+                    or live.get('user', {}).get('type') != 'Bot'):
+                raise ValueError('Release proposal changed during discovery')
             files = api(PREFIX + f'/pulls/{number}/files?per_page=100')
-            if not isinstance(files, list) or len(files) != pull.get('changed_files') or len(files) >= 100:
+            if (not isinstance(files, list) or type(live.get('changed_files')) is not int
+                    or len(files) != live['changed_files'] or len(files) >= 100):
                 raise ValueError('Incomplete release proposal files')
             for entry in files:
                 path = entry.get('filename', '')
