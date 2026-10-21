@@ -1,4 +1,4 @@
-name: Prepare qualified release
+name: Retired — per-channel release (use Prepare two-image release approval)
 on:
   workflow_dispatch:
     inputs:

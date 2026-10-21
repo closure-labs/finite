@@ -14,6 +14,7 @@ IMAGE_INPUT_SCHEMA = 4
 # qualification-context.py binds the VM/ISO inputs separately. Keep this list
 # explicit: a newly added BlueBuild helper remains an image input until reviewed.
 QUALIFICATION_ONLY = {
+    "scripts/bluebuild/check-vm-gdm-labels.sh", "scripts/bluebuild/local-vm.sh",
     'automation/security/image-policy.json', 'automation/security/decision-proposal.schema.json', '.github/workflows/publication.yml',
     '.github/workflows/iso.yml', '.github/workflows/vm-acceptance.yml',
     '.github/workflows/qualification.yml', 'sources/bluebuild-installer.json',

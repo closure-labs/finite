@@ -11,6 +11,9 @@ on:
       publish:
         type: boolean
         default: false
+      vm_validation:
+        type: boolean
+        default: false
       force_qualification:
         type: boolean
         default: false
@@ -180,6 +183,14 @@ jobs:
         env:
           PUBLISH: ${{ inputs.publish }}
         run: bash scripts/bluebuild/inspect-built.sh "$PROFILE" "$CHANNEL" "$PUBLISH"
+      - name: Install targeted VM validation tools
+        if: inputs.vm_validation && !inputs.publish
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-x86 qemu-utils ovmf xorriso skopeo mtools openssl python3-virt-firmware
+      - name: Boot the exact local candidate without publication credentials
+        if: inputs.vm_validation && !inputs.publish
+        run: bash scripts/bluebuild/local-vm.sh "$PROFILE"
       - name: Save build evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

@@ -25,7 +25,7 @@ def parse_policy(raw):
         raise ValueError('Unsupported release policy schema')
     mode = policy.get('mode', 'fixable-severity')
     if mode == 'maintainer-decision':
-        raise ValueError('Per-channel release and recovery are disabled; use the approved two-profile release-set workflow')
+        raise ValueError('Per-channel release and recovery are retired; use Prepare two-image release approval, then Publish approved two-image release')
     if mode not in LEGACY_MODES:
         raise ValueError('Unknown release policy mode cannot authorize a legacy release')
     return mode

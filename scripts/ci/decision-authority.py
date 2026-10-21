@@ -11,6 +11,7 @@ import subprocess
 import sys
 from urllib.parse import quote
 
+from github_api import GitHubReadError, get_json
 from security_decisions import TechnicalError, canonical_hash, load_json
 
 SHA = re.compile(r'[0-9a-f]{40}')
@@ -40,15 +41,10 @@ def proposal_path(proposal):
 
 
 def github_api(endpoint):
-    # Endpoint is constructed from validated repository, PR numbers and hashes.
-    result = subprocess.run(['gh', 'api', '--method', 'GET', endpoint], capture_output=True,
-                            text=True, timeout=60, check=False)
-    if result.returncode:
-        raise AuthorityError('GitHub authority API failed: ' + endpoint.split('?')[0])
     try:
-        return json.loads(result.stdout)
-    except ValueError as error:
-        raise AuthorityError('Invalid GitHub API response') from error
+        return get_json(endpoint)
+    except GitHubReadError as error:
+        raise AuthorityError(str(error)) from error
 
 
 def collection(api, endpoint):

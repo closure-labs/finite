@@ -13,7 +13,10 @@ monotonic_seconds() {
 }
 phase_name="${3:-manual}"
 [[ $phase_name =~ ^(manual|fresh|upgrade)$ ]]
+local_validation=${FINITE_LOCAL_VM_VALIDATION:-false}
+[[ $local_validation == true || $local_validation == false ]]
 evidence="$PWD/.bluebuild/vm-$phase_name"
+if [[ $local_validation == true ]]; then evidence="$PWD/.bluebuild/vm-local"; fi
 # Raw logs, disk images, and credentials never enter an upload path, even if
 # the runner kills this process before cleanup can sanitize diagnostics.
 state=$(mktemp -d /tmp/finite-vm.XXXXXXXX)
@@ -57,10 +60,24 @@ if [[ -n $target ]]; then
   cosign verify --new-bundle-format=false --key cosign.pub "$target" >"$state/target-signature.json"
   skopeo inspect --raw "docker://$target" >"$state/target-manifest.json"
 fi
+if [[ $local_validation == true ]]; then
+  [[ -z $target && $phase_name == fresh ]]
+  python3 - "$artifact/installation.json" <<'LOCAL_CONTEXT'
+import json
+from pathlib import Path
+import sys
+sys.path.insert(0, 'scripts/ci')
+from local_vm import validate_context
+validate_context(json.loads(Path(sys.argv[1]).read_text()))
+LOCAL_CONTEXT
+  cp "$artifact/source-manifest.json" "$state/source-manifest.json"
+  [[ "sha256:$(sha256sum "$state/source-manifest.json" | cut -d' ' -f1)" == "${source##*@}" ]]
+else
 [[ $source =~ ^ghcr.io/closure-labs/finite@sha256:[0-9a-f]{64}$ ]]
 [[ $channel =~ ^ghcr.io/closure-labs/finite:(finite|finite-dev)$ ]]
 cosign verify --new-bundle-format=false --key cosign.pub "$source" >"$state/signature.json"
 skopeo inspect --raw "docker://$source" >"$state/source-manifest.json"
+fi
 mapfile -t isos < <(find "$artifact" -maxdepth 1 -name '*.iso' -type f)
 [[ ${#isos[@]} == 1 ]]
 firmware=/usr/share/OVMF/OVMF_CODE_4M.fd
@@ -323,7 +340,10 @@ boot_vm() {
         ssh "${ssh_args[@]}" sudo python3 - <scripts/bluebuild/check-vm-desktop.py \
           >"$state/$phase-desktop.json"
         ssh "${ssh_args[@]}" sudo bash -s -- /usr/lib/tmpfiles.d/finite-gdm.conf \
-          <scripts/bluebuild/check-vm-gdm-labels.sh >"$state/$phase-gdm-labels.log"
+          <scripts/bluebuild/check-vm-gdm-labels.sh >"$state/$phase-gdm-labels.log" 2>&1 || {
+            cat "$state/$phase-gdm-labels.log" >&2
+            return 1
+          }
       fi
       ssh "${ssh_args[@]}" sudo journalctl --no-pager -b -u systemd-remount-fs \
         >"$state/$phase-remount.log"
@@ -444,7 +464,8 @@ if [[ -z $target ]]; then
   poweroff_vm
   jq -n --arg source "$source" --arg profile "$profile" \
     --argjson secure "${FINITE_SECURE_BOOT:-false}" \
-    '{source:$source,profile:$profile,secureBoot:$secure,encryptedRoot:true,accepted:true}' >"$state/acceptance.json"
+    --argjson validation "$local_validation" \
+    '{source:$source,profile:$profile,secureBoot:$secure,encryptedRoot:true,accepted:true,validationOnly:$validation}' >"$state/acceptance.json"
   exit 0
 fi
 # Use a deliberately wrong public key, then restore policy even if the test fails.

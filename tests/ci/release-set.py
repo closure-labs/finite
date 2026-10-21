@@ -108,12 +108,13 @@ class ReleaseSetTests(unittest.TestCase):
                        derived_assets=self.derived, evidence_validator=lambda *args: None)
 
     def test_github_gets_have_no_body_and_mutations_keep_structured_json(self):
-        result = types.SimpleNamespace(returncode=0, stdout='{}', stderr='')
+        result = types.SimpleNamespace(returncode=0, stdout='HTTP/2.0 200 OK\n\n{}', stderr='')
         with patch.object(release_set.subprocess, 'run', return_value=result) as run:
             client = release_set.GitHubClient('closure-labs/finite', token='fixture-publish')
             client.api('git/ref/heads/main')
             self.assertNotIn('--input', run.call_args.args[0])
-            self.assertIsNone(run.call_args.kwargs['input'])
+            self.assertIsNone(run.call_args.kwargs.get('input'))
+            result.stdout = '{}'
             client.api('git/refs', 'POST', {'ref': 'refs/tags/finite-1.2.3', 'sha': 'a' * 40})
             self.assertIn('--input', run.call_args.args[0])
             self.assertEqual(json.loads(run.call_args.kwargs['input'])['ref'], 'refs/tags/finite-1.2.3')
@@ -122,15 +123,15 @@ class ReleaseSetTests(unittest.TestCase):
     def test_new_journal_uses_canonical_repository_endpoint(self):
         client = release_set.GitHubClient('closure-labs/finite', 'automation/decision-journal')
         responses = [
-            types.SimpleNamespace(returncode=1, stdout='', stderr='gh: Not Found (HTTP 404)'),
-            types.SimpleNamespace(returncode=0, stdout='{"default_branch":"main"}', stderr=''),
-            types.SimpleNamespace(returncode=0, stdout=json.dumps({'object': {'sha': 'a' * 40}}), stderr=''),
+            types.SimpleNamespace(returncode=1, stdout='HTTP/2.0 404 Not Found\n\n{}', stderr='gh: Not Found (HTTP 404)'),
+            types.SimpleNamespace(returncode=0, stdout='HTTP/2.0 200 OK\n\n{"default_branch":"main"}', stderr=''),
+            types.SimpleNamespace(returncode=0, stdout='HTTP/2.0 200 OK\n\n'+json.dumps({'object': {'sha': 'a' * 40}}), stderr=''),
             types.SimpleNamespace(returncode=0, stdout='{}', stderr=''),
         ]
         with patch.object(release_set.subprocess, 'run', side_effect=responses) as run:
             client.ensure_journal_branch()
         calls = run.call_args_list
-        self.assertEqual([call.args[0][2] for call in calls], [
+        self.assertEqual([next(arg for arg in call.args[0] if arg.startswith('repos/')) for call in calls], [
             'repos/closure-labs/finite/git/ref/heads/automation/decision-journal',
             'repos/closure-labs/finite',
             'repos/closure-labs/finite/git/ref/heads/main',

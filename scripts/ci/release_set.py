@@ -13,6 +13,8 @@ import re
 import subprocess
 import time
 
+from github_api import get_json
+
 CHANNELS = ('finite', 'finite-dev')
 HEX = re.compile(r'[0-9a-f]{64}')
 REVISION = re.compile(r'[0-9a-f]{40}')
@@ -210,6 +212,8 @@ class GitHubClient:
 
     def api(self, endpoint, method='GET', data=None, missing=False):
         path = 'repos/' + self.repository + ('/' + endpoint if endpoint else '')
+        if method == 'GET':
+            return get_json(path, environment=self.environment, missing=missing)
         command = ['gh', 'api', path, '--method', method]
         if data is not None:
             command += ['--input', '-']

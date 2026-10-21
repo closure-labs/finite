@@ -55,7 +55,10 @@ def refine(plan, event_name, event, head, evaluator=evaluate):
 def main():
     evidence = None
     try:
-        plan = {name: json.loads(value) for name, value in json.loads(os.environ['IMPACT']).items()}
+        values = json.loads(os.environ['IMPACT'])
+        plan = {name: json.loads(values[name]) for name in ('nix', 'profiles')}
+        if os.environ.get('VM_VALIDATION') == 'true':
+            plan['profiles'] = sorted(PROFILES)
         if not isinstance(plan['nix'], bool) or not isinstance(plan['profiles'], list) or not set(plan['profiles']) <= set(PROFILES):
             raise ValueError('Invalid initial selection')
         selected, evidence = refine(
