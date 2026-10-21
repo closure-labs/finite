@@ -83,14 +83,36 @@ First-login uses the image's Foundation catalog for role labels and ordering.
 When available, its Professional classification is shown beside each work role.
 Saved selections take precedence over provisioning seeds; invalid or unsupported
 profiles produce an error instead of a replacement selection. Existing complete
-personal consumers are left to their own update workflow. Seed and fresh-login
-writers continue to emit schema 2.
+personal consumers are left to their own update workflow. Fresh-login and seed
+writers select schema 2 or 3 from the bundled Foundation catalog. The initializer
+must support the selected format before the fresh-selection dialog opens.
 
 The reader dispatcher also preserves supplied schema-3 selections when the
 executing Foundation helper advertises initialization support. An older helper
 rejects that selection without falling back to a seed or opening the fresh
-selector. Fresh-login and cloud-init generators remain schema 2; the installed
-Foundation pin determines which newer formats can actually be read.
+selector. Saved/provisioned profiles retain their format. The current Foundation
+pin still writes schema 2; schema-3 adoption is prepared separately and tested
+with a temporary immutable source override.
+
+With a schema-3 Foundation source, seeds support Professional/Personal roles,
+optional capabilities and independent host declarations, for example:
+
+```bash
+finite-cloud-init --foundation bluefin --user family-member \
+  --roles family,media --form-factor laptop --cpu amd --gpus amd-integrated \
+  --output ./family-seed
+```
+
+`--hardware` remains a convenience adapter. Schema 3 also accepts `--system`,
+`--form-factor`, `--cpu`, `--gpus`, `--model`, `--camera`/`--no-camera`,
+`--fingerprint`/`--no-fingerprint` and `--capabilities`. The schema-2 writer
+rejects these new flags explicitly. Seed identity belongs to `--user`, not the
+machine generating it. Foundation's bundled pure validator canonicalizes the
+profile before any output directory is created. Existing outputs are preserved;
+failed publication removes only the directory created by that invocation.
+Cloud-init remains disabled by default; the generated ISO is inert until an
+administrator explicitly enables provisioning. Its profile YAML can also be
+imported with `finite-home-init --profile` as the matching target account.
 
 Foundation releases own the managed Home Manager modules and dependency pins.
 OS updates do not overwrite the installed personal flake. Inspect published
