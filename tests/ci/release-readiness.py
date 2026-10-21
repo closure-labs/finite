@@ -32,6 +32,8 @@ class Readiness(unittest.TestCase):
         if '/releases/tags/' in endpoint: return self.releases.get(endpoint.rsplit('/', 1)[-1])
         if '/git/ref/tags/' in endpoint: return self.tags.get(endpoint.rsplit('/', 1)[-1])
         if '/pulls?' in endpoint: return copy.deepcopy(self.proposals)
+        if endpoint.endswith('/pulls/5'):
+            return {**copy.deepcopy(self.proposals[0]), 'changed_files': 1, 'state': 'open', 'base': {'ref': 'main'}}
         if '/pulls/5/files?' in endpoint:
             return [{'filename': 'automation/decisions/releases/' + 'b' * 64 + '.json'}]
         if '/contents/' in endpoint:
@@ -43,8 +45,57 @@ class Readiness(unittest.TestCase):
         return ready.release_status(self.version, self.api, BOT)
 
     def test_development_version_skips_without_any_network(self):
-        for version in ('0.8.2-dev', '01.2.3', '1.2', '1.2.3-rc1'):
+        for version in ('01.2.3', '1.2', '1.2.3-rc1', '1.2.3-dev.1', '1.2.3-dev\n'):
             self.assertEqual(ready.release_status(version, lambda *_: self.fail('Unexpected network'))['state'], 'development')
+
+    def stable_pair(self, version='1.2.2'):
+        for channel in ready.CHANNELS:
+            tag = channel + '-' + version
+            self.releases[tag] = {'tag_name': tag, 'draft': False, 'prerelease': False,
+                                  'published_at': '2026-10-21T00:00:00Z',
+                                  'assets': [{'name': 'SHA256SUMS'}, {'name': 'SHA256SUMS.bundle.json'}]}
+            self.tags[tag] = {'object': {'type': 'commit', 'sha': SHA}}
+
+    def test_prerelease_waits_for_complete_stable_pair_at_one_revision(self):
+        self.version = '1.2.3-dev'
+        self.assertEqual(self.status()['state'], 'waiting-stable')
+        self.stable_pair()
+        self.releases['finite-dev-1.2.2']['draft'] = True
+        self.assertEqual(self.status()['state'], 'waiting-stable')
+        self.releases['finite-dev-1.2.2']['draft'] = False
+        self.releases['finite-dev-1.2.2']['prerelease'] = True
+        self.assertEqual(self.status()['state'], 'waiting-stable')
+        self.releases['finite-dev-1.2.2']['prerelease'] = False
+        self.assertEqual(self.status()['state'], 'unprepared')
+        self.tags['finite-dev-1.2.2']['object']['sha'] = 'b' * 40
+        with self.assertRaisesRegex(ValueError, 'different source'):
+            self.status()
+
+    def test_prerelease_is_one_immutable_pair_and_existing_flags_must_match(self):
+        self.version = '1.2.3-dev'
+        for channel in ready.CHANNELS:
+            self.releases[channel + '-' + self.version] = {'draft': False, 'prerelease': True}
+        self.assertEqual(self.status()['state'], 'published')
+        self.releases['finite-1.2.3-dev']['prerelease'] = False
+        self.assertEqual(self.status()['state'], 'recovery')
+
+    def test_stable_pair_requires_assets_and_resolves_bounded_annotated_tags(self):
+        self.stable_pair()
+        self.releases['finite-1.2.2']['assets'] = []
+        self.assertFalse(ready.published_stable_pair('1.2.2', self.api))
+        self.stable_pair()
+        self.tags['finite-1.2.2']['object'] = {'type': 'tag', 'sha': 'b' * 40}
+        def annotated(endpoint, **kwargs):
+            if '/git/tags/' in endpoint:
+                return {'object': {'type': 'commit', 'sha': SHA}}
+            return self.api(endpoint, **kwargs)
+        self.assertTrue(ready.published_stable_pair('1.2.2', annotated))
+        def loop(endpoint, **kwargs):
+            if '/git/tags/' in endpoint:
+                return {'object': {'type': 'tag', 'sha': 'b' * 40}}
+            return self.api(endpoint, **kwargs)
+        with self.assertRaisesRegex(ValueError, 'does not resolve'):
+            ready.published_stable_pair('1.2.2', loop)
 
     def test_both_published_versions_skip_and_partial_requires_recovery(self):
         self.assertEqual(self.status()['state'], 'unprepared')
@@ -60,11 +111,21 @@ class Readiness(unittest.TestCase):
 
     def test_pending_bot_proposal_prevents_repeated_preparation(self):
         pull = {'number': 5, 'title': 'Review release-set abc', 'user': {'type': 'Bot', 'login': BOT},
-                'head': {'sha': SHA}, 'changed_files': 1}
+                'head': {'sha': SHA}}
         self.proposals = [pull]
         self.assertEqual(self.status()['pullRequest'], 5)
         self.proposals = [{**pull, 'user': {'type': 'User', 'login': 'someone'}}]
         self.assertEqual(self.status()['state'], 'unprepared')
+
+    def test_proposal_head_change_and_incomplete_live_inventory_fail_closed(self):
+        self.proposals = [{'number': 5, 'title': 'Review release-set abc',
+                           'user': {'type': 'Bot', 'login': BOT}, 'head': {'sha': SHA}}]
+        for changed in ({'head': {'sha': 'c' * 40}}, {'changed_files': 2}, {'changed_files': None}):
+            def api(endpoint, **kwargs):
+                value = self.api(endpoint, **kwargs)
+                return {**value, **changed} if endpoint.endswith('/pulls/5') else value
+            with self.subTest(changed=changed), self.assertRaises(ValueError):
+                ready.release_status(self.version, api, BOT)
 
     def test_eligible_build_requires_same_revision_both_phases_and_preserved_bytes(self):
         run = {'id': 5, 'run_attempt': 2, 'path': '.github/workflows/build.yml', 'head_sha': SHA,

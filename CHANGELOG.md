@@ -8,6 +8,12 @@ All notable changes to Finite are documented here. The format follows
 
 Development version: `0.8.2-dev`. The next stable release is 0.8.2.
 
+## [0.8.2-dev] - 2026-10-21
+
+This is a development prerelease of both active images. It follows the
+published `0.8.1` pair and retains the same qualification, security review and
+protected signing requirements as stable releases.
+
 ### Changed
 
 - Consume the Home Manager implementation and catalog from Foundation through
@@ -18,6 +24,26 @@ Development version: `0.8.2-dev`. The next stable release is 0.8.2.
   `latest-release`, supporting `nh home switch -u` while retaining exact lock pins.
 - Provide staged migration, bounded builds, backups, activation rollback and
   clickable release notifications while preserving personal modules and sources.
+- Require authenticated human security decisions and coordinate both image
+  releases through one immutable, resumable release proposal.
+- Prepare a paired development prerelease after each successful stable paired
+  release, beginning with a reviewed PR for the next patch's `-dev` version.
+  Prereleases do not become GitHub's latest release.
+- Run targeted premerge encrypted Secure Boot VM validation for boot, installer,
+  SELinux and qualification-harness changes. Report delivery and decision health
+  independently and retry bounded transient GitHub metadata failures.
+
+### Fixed
+
+- Wait for the Nix daemon before starting display-manager and user sessions.
+- Reconcile Wi-Fi power policy on power-source and NetworkManager events,
+  coalescing updates through one systemd service.
+- Relabel existing GDM state recursively while preserving ownership and modes.
+  Qualify absent, directory and DynamicUser symlink layouts in isolated fixtures.
+- Resolve abbreviated local Docker image IDs before premerge VM validation.
+- Reconcile complete native security snapshots and skip decision collection for
+  builds without image work. Initialize journals through the canonical repository
+  API endpoint.
 
 ## [0.8.1] - 2026-10-15
 

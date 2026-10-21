@@ -52,8 +52,9 @@ class Remote:
     def get_release(self, tag):
         return copy.deepcopy(self.releases.get(tag))
 
-    def create_draft(self, tag, revision, identity):
-        self.releases[tag] = {'id': tag, 'payloadDigest': identity, 'draft': True, 'assets': {}}
+    def create_draft(self, tag, revision, identity, *, prerelease=False):
+        self.releases[tag] = {'id': tag, 'payloadDigest': identity, 'draft': True,
+                              'prerelease': prerelease, 'assets': {}}
         self.events.append(('draft', tag))
 
     def assets(self, release_id):
@@ -66,12 +67,13 @@ class Remote:
         self.releases[release_id]['assets'][path.name] = hashlib.sha256(path.read_bytes()).hexdigest()
         self.events.append(('upload', release_id))
 
-    def publish(self, release_id):
+    def publish(self, release_id, *, prerelease=False):
         if self.fail_publish == release_id:
             self.fail_publish = None
             raise RuntimeError('publish failed')
         assert len(self.releases) == 2
         assert all(v['assets'] for v in self.releases.values())
+        assert self.releases[release_id]['prerelease'] == prerelease
         self.releases[release_id]['draft'] = False
         self.events.append(('publish', release_id))
 
@@ -172,6 +174,40 @@ class ReleaseSetTests(unittest.TestCase):
         original = list(self.remote.events)
         self.run_release()
         self.assertEqual(self.remote.events, original)
+
+    def test_prerelease_pair_preserves_flags_and_same_version_is_immutable(self):
+        self.doc['payload']['version'] = '1.2.3-dev'
+        for channel, entry in self.doc['payload']['channels'].items():
+            entry['tag'] = channel + '-1.2.3-dev'
+        self.assertEqual(self.run_release()['state'], 'complete')
+        self.assertTrue(all(item['prerelease'] for item in self.remote.releases.values()))
+        self.assertTrue(all(not item['draft'] for item in self.remote.releases.values()))
+        before = copy.deepcopy(self.remote.releases)
+        self.run_release()
+        self.assertEqual(self.remote.releases, before)
+        self.doc['payload']['sourceRevision'] = 'b' * 40
+        for receipt in self.doc['evidence'].values():
+            receipt['sourceRevision'] = 'b' * 40
+        with self.assertRaisesRegex(ValueError, 'reserved'):
+            self.run_release()
+
+    def test_prerelease_type_tampering_blocks_existing_products(self):
+        self.run_release()
+        self.remote.releases['finite-1.2.3']['prerelease'] = True
+        with self.assertRaisesRegex(ValueError, 'release type'):
+            self.run_release()
+
+    def test_github_prereleases_never_change_latest_and_stable_defaults_remain(self):
+        client = release_set.GitHubClient('closure-labs/finite')
+        with patch.object(client, 'api') as api:
+            client.create_draft('finite-1.2.3-dev', 'a' * 40, 'b' * 64, prerelease=True)
+            data = api.call_args.args[2]
+            self.assertIs(data['prerelease'], True)
+            self.assertEqual(data['make_latest'], 'false')
+            client.publish(5, prerelease=True)
+            self.assertEqual(api.call_args.args[2], {'draft': False, 'prerelease': True, 'make_latest': 'false'})
+            client.publish(6)
+            self.assertNotIn('make_latest', api.call_args.args[2])
 
     def test_evidence_refresh_does_not_change_approval_identity(self):
         other = copy.deepcopy(self.doc)

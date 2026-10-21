@@ -15,6 +15,8 @@ import subprocess
 
 from release_set import CHANNELS, payload_digest, prepare, sha256
 from security_decisions import load_json, normalize_findings
+from release_versions import prerelease, previous_stable, release_version
+from release_readiness import published_stable_pair
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -114,7 +116,8 @@ def validate_scan_execution(scan, exit_code, profile, image):
 def assemble(output, version, revision):
     payload = {'version': version, 'sourceRevision': revision, 'channels': {}}
     evidence = {}
-    summary = ['# Official release review', '', f'Version: {version}', f'Source: `{revision}`', '',
+    summary = ['# Paired prerelease review' if prerelease(version) else '# Official release review',
+               '', f'Version: {version}', f'Source: `{revision}`', '',
                'Both images passed existing qualification and have fresh scan evidence.',
                'This proposal authorizes one release bundle; vulnerability acceptance is checked separately.', '']
     all_findings = []
@@ -167,10 +170,12 @@ def main():
         raise ValueError('Missing trusted checkout revision')
     if Path.cwd().resolve() != ROOT:
         raise ValueError('Release preparation must run from the trusted checkout')
-    # Reject development versions before downloading either multi-gigabyte ISO.
-    from release_readiness import stable_version
-    if not stable_version((ROOT / 'VERSION').read_text().strip()):
-        raise ValueError('Release preparation requires numeric MAJOR.MINOR.PATCH VERSION')
+    # Reject unsupported versions before downloading either multi-gigabyte ISO.
+    version = (ROOT / 'VERSION').read_text().strip()
+    if not release_version(version):
+        raise ValueError('Release preparation requires numeric MAJOR.MINOR.PATCH or MAJOR.MINOR.PATCH-dev VERSION')
+    if prerelease(version) and not published_stable_pair(previous_stable(version)):
+        raise ValueError('Development prerelease requires the preceding successful stable pair')
     helper = helper_module()
     run = helper.github('actions/runs/' + args.build_run)
     authenticate_build(run, revision)

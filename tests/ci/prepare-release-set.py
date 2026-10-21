@@ -52,6 +52,26 @@ class PrepareTests(unittest.TestCase):
         self.assertEqual(proposal, {'schema': 1, 'kind': 'release-set', 'payload': document['payload']})
         self.assertIn('Both images', (self.output / 'summary.md').read_text())
 
+    def test_development_packet_binds_both_prerelease_tags_and_labels_review(self):
+        document = module.assemble(self.output, '1.2.3-dev', self.revision)
+        self.assertEqual(document['payload']['version'], '1.2.3-dev')
+        self.assertEqual([entry['tag'] for entry in document['payload']['channels'].values()],
+                         ['finite-1.2.3-dev', 'finite-dev-1.2.3-dev'])
+        self.assertIn('# Paired prerelease review', (self.output / 'summary.md').read_text())
+
+    def test_missing_stable_pair_blocks_prerelease_before_product_downloads(self):
+        (self.output / 'VERSION').write_text('1.2.3-dev\n')
+        with patch.object(module, 'ROOT', self.output), patch.object(Path, 'cwd', return_value=self.output), \
+                patch.dict(os.environ, {'GITHUB_REPOSITORY': 'closure-labs/finite',
+                                        'GITHUB_REF': 'refs/heads/main', 'GITHUB_SHA': self.revision}), \
+                patch.object(sys, 'argv', ['prepare-release-set.py', '--build-run', '5',
+                                          '--output-directory', str(self.output / 'packet')]), \
+                patch.object(module, 'published_stable_pair', return_value=False), \
+                patch.object(module, 'helper_module') as helper:
+            with self.assertRaisesRegex(ValueError, 'preceding successful stable pair'):
+                module.main()
+            helper.assert_not_called()
+
     def test_refreshed_scan_and_derived_files_do_not_change_identity(self):
         original = module.assemble(self.output, '1.2.3', self.revision)
         (self.output / 'release-finite' / 'SHA256SUMS').write_text('new derived checksums')

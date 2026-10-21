@@ -73,6 +73,7 @@ in {
     python3 tests/automation/bluefin-upstream.py
     python3 tests/ci/github-api.py
     python3 tests/ci/release-readiness.py
+    python3 tests/ci/release-cycle.py
     python3 tests/ci/premerge-vm.py
     python3 tests/ci/selection.py
     python3 tests/ci/active-variants.py

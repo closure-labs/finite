@@ -75,3 +75,76 @@ jobs:
           name: delivery-health-${{ github.run_id }}-${{ github.run_attempt }}
           path: .bluebuild/delivery-health.json
           retention-days: 30
+  next-development:
+    if: >-
+      github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' &&
+      vars.FINITE_REVIEW_APP_ID != '' &&
+      (github.event_name != 'workflow_run' ||
+       (github.event.workflow_run.name == 'Publish approved two-image release' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        github.event.workflow_run.head_repository.full_name == 'closure-labs/finite'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Monitor hosted runner (Community)
+        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Stage the next development cycle after both stable releases
+        id: cycle
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/ci/release-cycle.py
+      - uses: ./.github/actions/setup-nix
+        if: steps.cycle.outputs.changed == 'true'
+      - name: Resolve declared review App credentials
+        if: steps.cycle.outputs.changed == 'true'
+        env:
+          FINITE_REVIEW_CLIENT_ID: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
+          FINITE_REVIEW_PRIVATE_KEY: ${{ secrets.DECIDER_KEY }}
+        run: >-
+          finite-ci-secrets-run review-app --
+          secretspec export --file secretspec.toml --profile review-app --provider github-actions
+          --scope review-app --reason 'Finite post-release development PR' --format gha
+      - name: Generate a token for the development PR only
+        if: steps.cycle.outputs.changed == 'true'
+        id: review-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ env.FINITE_REVIEW_CLIENT_ID }}
+          private-key: ${{ env.FINITE_REVIEW_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: write
+      - name: Clear App private credentials
+        if: steps.cycle.outputs.changed == 'true'
+        run: | # zizmor: ignore[github-env]
+          printf 'FINITE_REVIEW_CLIENT_ID=\nFINITE_REVIEW_PRIVATE_KEY=\n' >>"$GITHUB_ENV"
+      - name: Propose the next development version
+        if: steps.cycle.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ steps.review-token.outputs.token }}
+          base: main
+          branch: automation/next-development-${{ steps.cycle.outputs.stable }}
+          delete-branch: true
+          commit-message: 'release: start ${{ steps.cycle.outputs.development }} after the stable pair'
+          title: 'Start ${{ steps.cycle.outputs.development }} after stable ${{ steps.cycle.outputs.stable }}'
+          add-paths: |
+            VERSION
+            CHANGELOG.md
+          body: |
+            Both stable products are published at the same source revision:
+            - https://github.com/closure-labs/finite/releases/tag/finite-${{ steps.cycle.outputs.stable }}
+            - https://github.com/closure-labs/finite/releases/tag/finite-dev-${{ steps.cycle.outputs.stable }}
+
+            Start the next patch development cycle. Review and merge this PR through
+            the normal queue. Successful qualification of both images then prepares
+            one paired prerelease proposal; its human approval and protected signing
+            gate remain required. Prereleases never become GitHub's latest release.
