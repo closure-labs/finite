@@ -167,6 +167,32 @@ if command == "zenity" and "--list" in sys.argv:
                 self.assertEqual(bool(self.selections(events)), success)
                 self.assertFalse(any("--list" in event for event in events))
 
+    def test_schema_three_saved_and_seeded_profiles_follow_actual_helper_capabilities(self):
+        reader = {**CAPABILITIES, "initializeSchemas": [1, 2, 3], "normalizeSchemas": [2, 3]}
+        value = {"schema": 3, "roles": ["family", "creative"], "packages": [],
+                 "capabilities": ["recording"], "custom": {"retain": True}}
+        for path in (self.saved, self.seed):
+            self.saved.unlink(missing_ok=True)
+            self.seed.unlink(missing_ok=True)
+            path.write_text(json.dumps(value))
+            with self.subTest(path=path):
+                result, events = self.run_login(LOGIN_CAPABILITIES=json.dumps(reader))
+                self.assertEqual(result.returncode, 0, result.stderr)
+                selected = self.selections(events)
+                self.assertEqual(len(selected), 1)
+                self.assertEqual(selected[0][2], str(path))
+                self.assertEqual(json.loads(selected[0][-1]), value)
+                self.assertFalse(any("--list" in event for event in events))
+
+    def test_schema_three_is_not_regenerated_when_an_old_helper_cannot_read_it(self):
+        value = {"schema": 3, "roles": ["family"], "capabilities": ["notes"], "custom": "retain"}
+        self.saved.write_text(json.dumps(value))
+        self.seed.write_text("schema: 2\nroles: [developer]\n")
+        result, events = self.run_login()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(self.selections(events), [])
+        self.assertFalse(any("--list" in event for event in events))
+
     def test_explicit_malformed_helper_capabilities_fail(self):
         self.saved.write_text('{"schema":2}')
         for value in ("not JSON", "{}", "null", json.dumps({**CAPABILITIES, "initializeSchemas": []})):
