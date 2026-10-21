@@ -513,6 +513,14 @@ proposals and recorded release decisions prevent repeated preparation. Drafts,
 partial releases and existing tags require recovery of the approved products.
 The same version cannot silently replace tags or assets.
 
+A failed or cancelled paired preparation stops automatic dispatches for that
+source revision. Delivery health records the failure instead of repeatedly
+downloading both ISOs. Inspect the failed preparation, correct its cause, and
+explicitly dispatch **Prepare two-image release approval** with the successful
+same-revision build run. A new main revision can prepare automatically again.
+Paired preparation can reuse authenticated inventory bytes from trusted main
+builds; vulnerability databases, findings and policy results are scanned anew.
+
 Human review of the paired proposal and the protected release signing environment
 remain required. Merging the proposal starts **Publish approved two-image
 release**. Its existing journal, immutable packet, fresh admission checks and

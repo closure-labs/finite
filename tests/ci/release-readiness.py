@@ -5,8 +5,10 @@ import copy
 from datetime import datetime, timedelta, timezone
 import importlib.util
 import json
+import os
 from pathlib import Path
 import sys
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -167,6 +169,17 @@ class Readiness(unittest.TestCase):
             self.assertEqual(report['channels'][channel]['promoted']['runId'], 7)
         self.assertIn('/actions/runs/7', delivery.summary(report))
 
+    def test_failed_preparation_requires_explicit_retry_without_dispatching_again(self):
+        report = {'release': {'state': 'unprepared'}, 'buildRun': 7}
+        for conclusion in ('failure', 'timed_out', 'cancelled', 'action_required'):
+            def api(endpoint):
+                return ({'object': {'sha': SHA}} if endpoint.endswith('/git/ref/heads/main') else
+                        {'workflow_runs': [{'head_sha': SHA, 'status': 'completed', 'conclusion': conclusion}]})
+            with self.subTest(conclusion=conclusion), patch.object(delivery.subprocess, 'run') as run:
+                with self.assertRaisesRegex(ValueError, 'explicitly rerun'):
+                    delivery.dispatch(report, SHA, api)
+                run.assert_not_called()
+
     def test_dispatch_reconciles_running_work_before_one_mutation(self):
         report = {'release': {'state': 'unprepared'}, 'buildRun': 5}
         def api(endpoint):
@@ -182,6 +195,40 @@ class Readiness(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'next reconciliation'):
                 delivery.dispatch(report, SHA, empty)
             self.assertEqual(run.call_count, 1)
+
+    def test_another_revision_failure_does_not_block_one_new_dispatch(self):
+        report = {'release': {'state': 'unprepared'}, 'buildRun': 7}
+        def api(endpoint):
+            return ({'object': {'sha': SHA}} if endpoint.endswith('/git/ref/heads/main') else
+                    {'workflow_runs': [{'head_sha': 'b' * 40, 'status': 'completed', 'conclusion': 'failure'}]})
+        with patch.object(delivery.subprocess, 'run') as run:
+            run.return_value.returncode = 0
+            self.assertIn('Dispatched', delivery.dispatch(report, SHA, api))
+            self.assertEqual(run.call_count, 1)
+            self.assertEqual(json.loads(run.call_args.kwargs['input']),
+                             {'ref': 'main', 'inputs': {'build_run': '7'}})
+
+    def test_reconciliation_failure_is_retained_as_unhealthy_evidence(self):
+        report = {'healthy': True, 'problems': [], 'channels': {},
+                  'release': {'state': 'unprepared', 'reason': 'Ready to prepare'}}
+        previous = Path.cwd()
+        with tempfile.TemporaryDirectory() as temporary:
+            try:
+                os.chdir(temporary)
+                summary = Path(temporary) / 'summary.md'
+                with patch.dict(os.environ, {'GITHUB_ACTIONS': 'true', 'GITHUB_REPOSITORY': ready.REPOSITORY,
+                                            'GITHUB_REF': 'refs/heads/main', 'GITHUB_SHA': SHA,
+                                            'GITHUB_STEP_SUMMARY': str(summary)}), \
+                        patch.object(delivery, 'root_version', return_value=self.version), \
+                        patch.object(delivery, 'inspect', return_value=report), \
+                        patch.object(delivery, 'dispatch', side_effect=ValueError('Previous preparation failed')):
+                    self.assertEqual(delivery.main(), 1)
+                retained = json.loads(Path('.bluebuild/delivery-health.json').read_text())
+                self.assertFalse(retained['healthy'])
+                self.assertEqual(retained['problems'], ['Previous preparation failed'])
+                self.assertIn('Previous preparation failed', summary.read_text())
+            finally:
+                os.chdir(previous)
 
 
 if __name__ == '__main__':

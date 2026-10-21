@@ -68,7 +68,8 @@ def hosted():
     workflows = {'build.yml': {'workflow_dispatch', 'push', 'schedule'},
                  'image-security.yml': {'workflow_dispatch', 'schedule'},
                  'benchmark-security-reuse.yml': {'workflow_dispatch'},
-                 'release.yml': {'workflow_dispatch'}}
+                 'release.yml': {'workflow_dispatch'},
+                 'release-set.yml': {'workflow_dispatch'}}
     workflow = os.environ.get('GITHUB_WORKFLOW_REF', '')
     prefix = publication.REPOSITORY + '/.github/workflows/'
     name = workflow.removeprefix(prefix).removesuffix('@refs/heads/main')
