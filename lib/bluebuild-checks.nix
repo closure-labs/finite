@@ -48,8 +48,9 @@
       touch "$out"
     '';
 in {
-  home = check "home-contracts" (with pkgs; [gawk getent gnugrep jq python3 ripgrep yq-go]) ''
+  home = check "home-contracts" (with pkgs; [gawk getent gnugrep jq just python3 ripgrep shellcheck yq-go]) ''
     export FINITE_HOME_CATALOG_PATH=${homeCatalog}
+    shellcheck -s bash files/system/usr/libexec/finite/lib/update-shell-env
     bash tests/home/contracts.sh \
       ${applications.homeProfile}/bin/finite-home-profile \
       ${applications.homeInit}/bin/finite-home-init \
