@@ -17,7 +17,10 @@ args = sys.argv[1:]
 if name == 'sudo':
     os.execvp(args[0], args)
 if name == 'docker':
-    if args[0] == 'tag':
+    if args[0] == 'inspect':
+        assert args == ['inspect', '--format', '{{.Id}}', 'a' * 12]
+        print('sha256:' + 'a' * 64)
+    elif args[0] == 'tag':
         assert args[1] == 'sha256:' + 'a' * 64
     elif args[0] == 'run' and '--entrypoint' in args:
         print('44')
@@ -63,7 +66,7 @@ cp "$1/installation.json" result.json
             (root / 'sources').mkdir()
             (root / 'sources/bluebuild-installer.json').write_text('{"cliAlias":"installer-fixture"}')
             (root / '.bluebuild').mkdir()
-            (root / '.bluebuild/finite-image-ref.txt').write_text('sha256:' + 'a' * 64)
+            (root / '.bluebuild/finite-image-ref.txt').write_text('a' * 12)
             env = {**os.environ, 'PATH': str(root / 'bin') + ':' + os.environ['PATH'],
                    'GITHUB_ACTIONS': 'true', 'GITHUB_REPOSITORY': 'closure-labs/finite',
                    'GITHUB_EVENT_NAME': 'pull_request', 'GITHUB_REF': 'refs/pull/5/merge',

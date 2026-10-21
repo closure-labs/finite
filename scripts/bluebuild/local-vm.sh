@@ -9,8 +9,14 @@ profile=${1:?profile required}
 [[ ${GITHUB_SHA:-} =~ ^[0-9a-f]{40}$ ]]
 work=$(mktemp -d /tmp/finite-local-vm.XXXXXXXX)
 trap 'rm -rf -- "$work"' EXIT
-image=$(cat ".bluebuild/$profile-image-ref.txt")
-[[ $image =~ ^sha256:[0-9a-f]{64}$ ]]
+# inspect-built.sh records Docker's display ID, which is commonly abbreviated.
+# Resolve it through the local daemon before enforcing an immutable full ID.
+reference=$(cat ".bluebuild/$profile-image-ref.txt")
+image=$(docker inspect --format '{{.Id}}' "$reference")
+[[ $image =~ ^sha256:[0-9a-f]{64}$ ]] || {
+  echo 'Local VM validation could not resolve the assembled image to a full Docker ID.' >&2
+  exit 1
+}
 tag="v${GITHUB_RUN_ID:?}-${GITHUB_RUN_ATTEMPT:?}"
 [[ $tag =~ ^v[0-9]+-[0-9]+$ ]]
 local_ref="localhost/finite-validation:$tag"
