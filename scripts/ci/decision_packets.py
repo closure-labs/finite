@@ -102,7 +102,7 @@ def push(directory, producer):
         path.unlink(missing_ok=True)
 
 
-def fetch(reference, output, expected=None):
+def fetch(reference, output, expected=None, *, existing=False):
     """Inspect the manifest before fetching fixed regular members, never oras pull."""
     if not isinstance(reference, str) or not REFERENCE.fullmatch(reference):
         raise ValueError('Packet requires a digest in the dedicated evidence repository')
@@ -130,11 +130,24 @@ def fetch(reference, output, expected=None):
     if total > MAX_BYTES or 'decision-packet.json' not in members or members['decision-packet.json']['size'] > 2 * 1024**2:
         raise ValueError('Packet exceeds bounds or lacks manifest')
     output = Path(output)
-    output.mkdir(parents=True, exist_ok=False)
+    if existing:
+        if output.is_symlink() or not output.is_dir():
+            raise ValueError('Staged packet is not a regular directory')
+        local = set()
+        for path in output.rglob('*'):
+            if path.is_symlink() or not (path.is_dir() or path.is_file()):
+                raise ValueError('Unsafe staged packet member')
+            if path.is_file():
+                local.add(safe_name(path.relative_to(output).as_posix()))
+        if local != set(members):
+            raise ValueError('Staged packet member inventory differs from OCI manifest')
+    else:
+        output.mkdir(parents=True, exist_ok=False)
     for name in ['decision-packet.json', *sorted(set(members) - {'decision-packet.json'})]:
         path = output / name
         path.parent.mkdir(parents=True, exist_ok=True)
-        command(['oras', 'blob', 'fetch', REGISTRY + '@sha256:' + members[name]['sha256'], '--output', str(path)], max_file_bytes=members[name]['size'])
+        if not existing:
+            command(['oras', 'blob', 'fetch', REGISTRY + '@sha256:' + members[name]['sha256'], '--output', str(path)], max_file_bytes=members[name]['size'])
         if path.is_symlink() or not path.is_file() or path.stat().st_size != members[name]['size'] or file_hash(path) != members[name]['sha256']:
             raise ValueError('Packet member integrity failure')
         if name == 'decision-packet.json':

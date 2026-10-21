@@ -109,6 +109,26 @@ class ArchiveDownloadTests(unittest.TestCase):
             self.assertEqual(len(attempts), 2)
             sleep.assert_called_once_with(2)
 
+    def test_staged_archive_reuses_transport_but_rechecks_size_digest_and_product_bytes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cached = Path(directory) / 'original.zip'
+            def download(command, **kwargs):
+                kwargs['stdout'].write(self.raw)
+            with patch.object(module.release_artifact.subprocess, 'run', side_effect=download) as run:
+                module.release_artifact.verify_archive(self.root, self.artifact, cached_archive=cached)
+                module.release_artifact.verify_archive(self.root, self.artifact, cached_archive=cached)
+                self.assertEqual(run.call_count, 1)
+                (self.root / 'product.iso').write_bytes(b'forged product')
+                with self.assertRaisesRegex(ValueError, 'authenticated original Actions archive'):
+                    module.release_artifact.verify_archive(self.root, self.artifact, cached_archive=cached)
+                cached.write_bytes(b'X' + self.raw[1:])
+                with self.assertRaisesRegex(ValueError, 'digest mismatch'):
+                    module.release_artifact.verify_archive(self.root, self.artifact, cached_archive=cached)
+                cached.write_bytes(self.raw + b'extra')
+                with self.assertRaisesRegex(ValueError, 'size mismatch'):
+                    module.release_artifact.verify_archive(self.root, self.artifact, cached_archive=cached)
+                self.assertEqual(run.call_count, 1, 'Invalid staged bytes must fail rather than be replaced')
+
 
 class ExecutionTests(unittest.TestCase):
     def setUp(self):
@@ -149,6 +169,97 @@ class ExecutionTests(unittest.TestCase):
         self.run['head_repository']['full_name'] = 'attacker/repo'
         with self.assertRaises(ValueError):
             module.check_product(self.root, self.proposal, self.manifest, github=lambda _: self.run)
+
+    def test_transport_outliving_app_token_uses_job_reads_then_fresh_live_authority(self):
+        files = {path.relative_to(self.root).as_posix(): path.read_bytes()
+                 for path in self.root.rglob('*') if path.is_file()}
+        self.manifest['files'] = {name: {'size': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()}
+                                  for name, raw in files.items()}
+        blobs = files.copy()
+        # Bind the producer's actual uploaded ZIP before producing the OCI manifest.
+        archive = io.BytesIO()
+        with zipfile.ZipFile(archive, 'w') as zipped:
+            for name, raw in files.items():
+                zipped.writestr(name, raw)
+        raw_zip = archive.getvalue()
+        self.artifact.update(size_in_bytes=len(raw_zip), digest='sha256:' + hashlib.sha256(raw_zip).hexdigest())
+        self.manifest['producer']['artifacts'] = [{k: self.artifact[k] for k in ('id', 'name', 'digest')}]
+        blobs['decision-packet.json'] = json.dumps({'schema': 1, **self.manifest}).encode()
+        layers = [{'annotations': {'org.opencontainers.image.title': name}, 'size': len(raw),
+                   'digest': 'sha256:' + hashlib.sha256(raw).hexdigest()} for name, raw in blobs.items()]
+        raw_manifest = json.dumps({'schemaVersion': 2, 'artifactType': module.decision_packets.TYPE, 'layers': layers}).encode()
+        reference = module.decision_packets.REGISTRY + '@sha256:' + hashlib.sha256(raw_manifest).hexdigest()
+        by_digest = {hashlib.sha256(raw).hexdigest(): raw for raw in blobs.values()}
+        identity = module.canonical_hash(self.proposal)
+        self.archive_check.stop()
+        try:
+            for revoked in (False, True):
+                with self.subTest(revoked=revoked):
+                    output = self.root / ('execution-revoked' if revoked else 'execution-good')
+                    elapsed, scans, downloads, blob_reads = [0], [], [], []
+                    def authority(_):
+                        token = os.environ['GH_TOKEN']
+                        if token == 'old-app' and elapsed[0] >= 3600:
+                            raise ValueError('HTTP 401: expired App token')
+                        if token == 'fresh-app' and revoked:
+                            raise ValueError('Maintainer dismissed approval')
+                        self.assertIn(token, ('old-app', 'fresh-app'))
+                        return self.proposal, {'tokenGeneration': token}, reference
+                    def registry(command, **kwargs):
+                        if command[1:3] == ['manifest', 'fetch']:
+                            return raw_manifest
+                        blob_reads.append(command)
+                        Path(command[-1]).write_bytes(by_digest[command[3].split(':')[-1]])
+                        return b''
+                    def github(_):
+                        self.assertIn(os.environ['GH_TOKEN'], ('job-reader', 'fresh-app'))
+                        return self.run
+                    def run(command, **kwargs):
+                        if command[:2] == ['gh', 'api']:
+                            self.assertEqual(os.environ['GH_TOKEN'], 'job-reader')
+                            downloads.append(command)
+                            kwargs['stdout'].write(raw_zip)
+                            elapsed[0] = 3700
+                        else:
+                            self.assertEqual(command[0], 'bash')
+                            self.assertEqual(os.environ['GH_TOKEN'], 'fresh-app')
+                            self.assertNotIn('ARTIFACT_READ_TOKEN', os.environ)
+                            scans.append(command)
+                    with patch.object(module.controller, 'trusted_context'), patch.object(module, 'approved', side_effect=authority), \
+                            patch.object(module.controller, 'api', side_effect=github), \
+                            patch.object(module.decision_packets, 'command', side_effect=registry), \
+                            patch.object(module.subprocess, 'run', side_effect=run), \
+                            patch.object(module, 'verify_scans', return_value={'finite': {}, 'finite-dev': {}}), \
+                            patch.object(module, 'stage_signing') as signing:
+                        with patch.dict(os.environ, GH_TOKEN='old-app', ARTIFACT_READ_TOKEN='job-reader'), \
+                                patch.object(sys, 'argv', ['execute', 'stage', '--proposal-hash', identity, '--directory', str(output)]):
+                            module.main()
+                            self.assertEqual(os.environ['GH_TOKEN'], 'old-app')
+                        transferred = len(blob_reads)
+                        with patch.dict(os.environ, GH_TOKEN='fresh-app'), \
+                                patch.object(sys, 'argv', ['execute', 'prepare', '--staged', '--proposal-hash', identity,
+                                                          '--directory', str(output)]):
+                            if revoked:
+                                with self.assertRaisesRegex(ValueError, 'dismissed'):
+                                    module.main()
+                                signing.assert_not_called()
+                            else:
+                                module.main()
+                                signing.assert_called_once()
+                                self.assertFalse((output / 'transport/original.zip').exists())
+                        self.assertEqual(len(downloads), 1)
+                        self.assertEqual(len(blob_reads), transferred)
+                        self.assertEqual(len(scans), 0 if revoked else 2)
+        finally:
+            self.archive_check.start()
+
+    def test_artifact_reader_token_is_restored_on_staging_failure(self):
+        with patch.dict(os.environ, GH_TOKEN='app', ARTIFACT_READ_TOKEN='job'):
+            with self.assertRaisesRegex(RuntimeError, 'transport failed'):
+                with module.artifact_reader_credentials():
+                    self.assertEqual(os.environ['GH_TOKEN'], 'job')
+                    raise RuntimeError('transport failed')
+            self.assertEqual(os.environ['GH_TOKEN'], 'app')
         self.run['head_repository']['full_name'] = 'closure-labs/finite'
         (self.root / 'release-finite/image.iso').write_bytes(b'changed')
         with self.assertRaisesRegex(ValueError, 'asset mismatch'):

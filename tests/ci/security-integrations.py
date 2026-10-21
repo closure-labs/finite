@@ -135,6 +135,25 @@ class Integrations(unittest.TestCase):
         self.assertIn('No Workflows write', docs)
         self.assertIn('Keep cl-sec-audit read-only', docs)
 
+    def test_long_release_transfers_precede_fresh_authority_credentials(self):
+        jobs = document('publish-release-set')['jobs']
+        for name in ('prepare', 'sign', 'publish'):
+            steps = jobs[name]['steps']
+            transfer = next(i for i, step in enumerate(steps) if
+                            ('execute-release-set.py stage' if name == 'prepare' else 'execute-release-set.py download')
+                            in step.get('run', ''))
+            fresh = next(i for i, step in enumerate(steps) if step.get('id') == 'authority-token')
+            self.assertLess(transfer, fresh, name)
+            self.assertIn('FINITE_REVIEW_PRIVATE_KEY=\\n', steps[fresh + 1]['run'])
+            authority_steps = [step for step in steps[fresh + 1:] if step.get('env', {}).get('GH_TOKEN') ==
+                               '${{ steps.authority-token.outputs.token }}']
+            self.assertTrue(authority_steps, name)
+        stage = next(step for step in jobs['prepare']['steps'] if 'execute-release-set.py stage' in step.get('run', ''))
+        self.assertEqual(stage['env']['ARTIFACT_READ_TOKEN'], '${{ github.token }}')
+        rescan = next(step for step in jobs['prepare']['steps'] if step.get('id') == 'prepare')
+        self.assertIn('prepare --staged', rescan['run'])
+        self.assertNotIn('ARTIFACT_READ_TOKEN', rescan['env'])
+
     def test_all_decision_and_release_tokens_can_verify_the_pinned_team(self):
         for name in ('decision-authority', 'decision-proposals', 'release-set', 'publish-release-set'):
             for job in document(name)['jobs'].values():
