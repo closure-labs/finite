@@ -36,7 +36,13 @@ exit 3
         executable('sleep', 'touch "$LOGIN_ROOT/slept" "$LOGIN_ROOT/ready"\n')
         executable('zenity', 'touch "$LOGIN_ROOT/diagnostic"\n')
         nix = executable('nix', 'exit 0\n')
-        home_init = executable('home-init', 'touch "$LOGIN_ROOT/initialized"\n')
+        home_init = executable('home-init', """
+if [[ ${1:-} == --capabilities ]]; then
+  printf '%s\n' '{"schema":1,"initializeSchemas":[1,2,3],"normalizeSchemas":[2,3],"writeSchema":3,"catalogSchemas":[3]}'
+  exit 0
+fi
+touch "$LOGIN_ROOT/initialized"
+""")
         (self.root / 'seed.yaml').write_text('schema: 2\n')
         (self.root / 'running.json').write_text('{}\n')
         self.env = {**os.environ, 'PATH': str(binaries) + ':' + os.environ['PATH'],
@@ -52,7 +58,8 @@ exit 3
                               env=self.env, capture_output=True, text=True, timeout=10)
 
     def test_both_active_initializes(self):
-        self.assertEqual(self.run_login().returncode, 0)
+        result = self.run_login()
+        self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue((self.root / 'initialized').exists())
         self.assertFalse((self.root / 'slept').exists())
 
@@ -69,7 +76,8 @@ exit 3
 
     def test_delayed_readiness_waits_for_both(self):
         self.env.update(ACTIVE='determinate-nixd.socket', FINITE_NIX_WAIT_SECONDS='5')
-        self.assertEqual(self.run_login().returncode, 0)
+        result = self.run_login()
+        self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue((self.root / 'slept').exists())
         self.assertTrue((self.root / 'initialized').exists())
 
@@ -79,7 +87,8 @@ exit 3
         for name in ('flake.nix', 'flake.lock', 'profile.json'):
             (config / name).write_text('{}')
         self.env.update(ACTIVE='neither', FINITE_NIX_WAIT_SECONDS='invalid')
-        self.assertEqual(self.run_login().returncode, 0)
+        result = self.run_login()
+        self.assertEqual(result.returncode, 0, result.stderr)
         self.assertFalse((self.root / 'systemctl.log').exists())
         self.assertFalse((self.root / 'initialized').exists())
 

@@ -8,12 +8,6 @@ All notable changes to Finite are documented here. The format follows
 
 Development version: `0.8.2-dev`. The next stable release is 0.8.2.
 
-## [0.8.2-dev] - 2026-10-21
-
-This is a development prerelease of both active images. It follows the
-published `0.8.1` pair and retains the same qualification, security review and
-protected signing requirements as stable releases.
-
 ### Changed
 
 - Pin the default Foundation source to published v0.3.0, including its matching
@@ -31,6 +25,15 @@ protected signing requirements as stable releases.
   Foundation catalog. Keep schema-2 seed generation and existing applications.
 - Preserve Foundation role classification through the typed Home Manager catalog,
   including compatibility with older unclassified catalogs.
+
+## [0.8.2-dev] - 2026-10-21
+
+This is a development prerelease of both active images. It follows the
+published `0.8.1` pair and retains the same qualification, security review and
+protected signing requirements as stable releases.
+
+### Changed
+
 - Consume the Home Manager implementation and catalog from Foundation through
   an immutable source pin, replacing Finite's copied implementation.
 - Keep personal configurations independent of OS updates. Explicit `ujust update`
