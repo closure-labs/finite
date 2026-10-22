@@ -6,7 +6,10 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import tempfile
 import time
+
+DERIVATION = re.compile(r'/nix/store/[a-z0-9]{32}-finite-ci-checks\.drv')
 
 
 def transient(output):
@@ -28,12 +31,16 @@ def transient(output):
     return not re.search(permanent, output, re.I) and bool(re.search(transport, output, re.I))
 
 
-def build(command, attempts=3, delay=30):
+def build(command, attempts=3, delay=30, *, stdout=None):
     for attempt in range(1, attempts + 1):
         tail = deque(maxlen=500)
-        with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        if stdout is not None:
+            stdout.seek(0)
+            stdout.truncate()
+        with subprocess.Popen(command, stdout=stdout if stdout is not None else subprocess.PIPE,
+                              stderr=subprocess.PIPE if stdout is not None else subprocess.STDOUT,
                               text=True, errors='replace') as process:
-            for line in process.stdout:
+            for line in process.stderr if stdout is not None else process.stdout:
                 print(line, end='', flush=True)
                 tail.append(line)
             status = process.wait()
@@ -47,7 +54,9 @@ def build(command, attempts=3, delay=30):
     return 1
 
 
-def check_command(env=os.environ):
+def check_command(derivation, env=os.environ):
+    if not DERIVATION.fullmatch(derivation):
+        raise ValueError('Checks require one evaluated aggregate derivation')
     command = ['nix', 'build', '--accept-flake-config', '--verbose', '--print-build-logs']
     if env.get('GITHUB_ACTIONS') == 'true':
         temporary = Path(env.get('RUNNER_TEMP', ''))
@@ -58,8 +67,43 @@ def check_command(env=os.environ):
         command += ['--out-link', str(temporary / 'finite-checks-cache-root')]
     else:
         command += ['--no-link']
-    return command + ['.#ci-checks']
+    return command + [derivation + '^*']
+
+
+def run_checks(env=os.environ):
+    # Release the Flake/Home Manager evaluator before builders start. Only the
+    # exact evaluated aggregate is built, with its successful GC root retained.
+    phases = {}
+    try:
+        started = time.monotonic()
+        with tempfile.TemporaryFile(mode='w+', encoding='utf-8') as output:
+            status = build(['nix', 'eval', '--accept-flake-config', '--no-update-lock-file',
+                            '--no-write-lock-file', '--raw', '.#ci-checks.drvPath'], stdout=output)
+            phases['Evaluate aggregate'] = time.monotonic() - started
+            if status:
+                return status
+            output.seek(0)
+            value = output.read(4097)
+            if len(value) > 4096:
+                raise ValueError('Oversized aggregate evaluation result')
+            derivation = value.strip()
+        command = check_command(derivation, env)
+        started = time.monotonic()
+        status = build(command)
+        phases['Build aggregate'] = time.monotonic() - started
+        return status
+    finally:
+        summary = env.get('GITHUB_STEP_SUMMARY')
+        if summary:
+            with open(summary, 'a') as output:
+                output.write('\n### Nix check phases\n\n| Phase | Seconds including retries |\n| --- | ---: |\n')
+                for phase, elapsed in phases.items():
+                    output.write(f'| {phase} | {elapsed:.2f} |\n')
 
 
 if __name__ == '__main__':
-    sys.exit(build(check_command()))
+    try:
+        sys.exit(run_checks())
+    except ValueError as error:
+        print(f'::error::{error}', file=sys.stderr)
+        sys.exit(2)

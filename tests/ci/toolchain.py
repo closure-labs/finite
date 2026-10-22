@@ -14,6 +14,22 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class Toolchain(unittest.TestCase):
+    def test_cachix_actions_and_runners_are_retired(self):
+        def inspect(value):
+            if isinstance(value, dict):
+                if 'uses' in value:
+                    self.assertFalse(value['uses'].lower().startswith('cachix/'), value['uses'])
+                if 'runs-on' in value:
+                    self.assertNotIn('cachix', json.dumps(value['runs-on']).lower())
+                for item in value.values():
+                    inspect(item)
+            elif isinstance(value, list):
+                for item in value:
+                    inspect(item)
+        for path in sorted((ROOT / '.github').rglob('*.yml')):
+            with self.subTest(path=path.relative_to(ROOT)):
+                inspect(yaml.safe_load(path.read_text()))
+
     def test_scanner_profile_is_optional_and_requires_actual_native_tools(self):
         workflow = yaml.safe_load((ROOT / '.github/workflows/image.yml').read_text())
         step = next(s for s in workflow['jobs']['build']['steps']

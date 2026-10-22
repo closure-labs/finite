@@ -27,7 +27,7 @@ QUALIFICATION_ONLY = {
     'scripts/bluebuild/qualification-context.py', 'scripts/bluebuild/reuse-qualification.py',
     'scripts/bluebuild/prune-qualified-isos.py', 'scripts/bluebuild/reuse-predecessor-iso.py',
     'scripts/ci/inventory-evidence.py', 'scripts/ci/reuse-image-inventory.py',
-    'scripts/ci/nix-cache.py', 'scripts/ci/cache-publish.py',
+    'scripts/ci/nix-cache.py', 'scripts/ci/cache-publish.py', 'scripts/ci/devenv_cache.py',
     'scripts/ci/cache-sqlite.py',
     'scripts/ci/ci-options.py', 'sources/secretspec.json',
     'secretspec.toml', 'devenv.nix', 'devenv.yaml', 'devenv-tasks.nix',

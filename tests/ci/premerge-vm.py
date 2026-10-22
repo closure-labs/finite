@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """Premerge VM selection and local receipts cannot replace production evidence."""
 import importlib.util
+import copy
 import json
+import os
 from pathlib import Path
+import subprocess
 import sys
+import tempfile
 import unittest
 import yaml
 
@@ -21,6 +25,80 @@ def workflow(name):
 
 
 class Premerge(unittest.TestCase):
+    def lock(self):
+        return {'version': 7, 'root': 'root', 'nodes': {
+            'root': {'inputs': {'nixpkgs': 'nixpkgs'}},
+            'nixpkgs': {'original': {'type': 'github', 'owner': 'NixOS', 'repo': 'nixpkgs', 'ref': 'stable'},
+                        'locked': {'type': 'github', 'owner': 'NixOS', 'repo': 'nixpkgs',
+                                   'rev': 'a' * 40, 'narHash': 'sha256-fixture'},
+                        'inputs': {'self': ['nixpkgs']}}}}
+
+    def test_only_original_reference_metadata_is_ignored(self):
+        before = self.lock()
+        after = copy.deepcopy(before)
+        del after['nodes']['nixpkgs']['original']['ref']
+        self.assertEqual(selection.resolved_lock(before), selection.resolved_lock(after))
+        self.assertFalse(selection.required(['flake.lock'], lock_metadata_only=True))
+        self.assertTrue(selection.required(['flake.lock', 'files/installer/install_finite_fstab'], lock_metadata_only=True))
+        for field, value in [('rev', 'b' * 40), ('narHash', 'sha256-changed'), ('repo', 'other')]:
+            changed = copy.deepcopy(after)
+            changed['nodes']['nixpkgs']['locked'][field] = value
+            self.assertNotEqual(selection.resolved_lock(before), selection.resolved_lock(changed))
+        self.assertNotEqual(selection.resolved_lock(before),
+                            selection.resolved_lock({**after, 'extra': 'future-significant-field'}))
+        renamed = copy.deepcopy(after)
+        renamed['nodes']['new-root'] = renamed['nodes'].pop('root')
+        renamed['root'] = 'new-root'
+        self.assertNotEqual(selection.resolved_lock(before), selection.resolved_lock(renamed))
+        changed = copy.deepcopy(after)
+        changed['nodes']['nixpkgs']['inputs']['self'] = ['root']
+        self.assertNotEqual(selection.resolved_lock(before), selection.resolved_lock(changed))
+        for broken in ({}, {**before, 'version': 8}, {**before, 'version': True},
+                       {**before, 'nodes': {'root': {}, 'unresolved': {}}}):
+            with self.assertRaises(ValueError):
+                selection.resolved_lock(broken)
+
+    def test_lock_comparison_uses_actual_checkout_and_fails_conservatively(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            def git(*args):
+                return subprocess.check_output(['git', *args], cwd=directory, stderr=subprocess.DEVNULL, text=True).strip()
+            git('init')
+            git('config', 'user.name', 'CI fixture')
+            git('config', 'user.email', 'ci@example.invalid')
+            def commit(value):
+                (directory / 'flake.lock').write_text(value if isinstance(value, str) else json.dumps(value))
+                git('add', 'flake.lock')
+                git('commit', '-m', 'fixture')
+                return git('rev-parse', 'HEAD')
+            before = self.lock()
+            base = commit(before)
+            after = copy.deepcopy(before)
+            del after['nodes']['nixpkgs']['original']['ref']
+            proposal = commit(after)
+            event = {'pull_request': {'base': {'sha': base}, 'head': {'sha': proposal}}}
+            (directory / 'event').write_text(json.dumps(event))
+            def run(head, event_name='pull_request', metadata=event):
+                (directory / 'event').write_text(json.dumps(metadata))
+                output = directory / 'output'
+                output.write_text('')
+                env = {**os.environ, 'GITHUB_EVENT_NAME': event_name, 'GITHUB_SHA': head,
+                       'GITHUB_EVENT_PATH': str(directory / 'event'), 'GITHUB_OUTPUT': str(output),
+                       'GITHUB_STEP_SUMMARY': str(directory / 'summary')}
+                subprocess.run([sys.executable, str(ROOT / 'scripts/ci/vm-selection.py')],
+                               cwd=directory, env=env, check=True, capture_output=True)
+                return output.read_text().strip()
+            self.assertEqual(run(proposal), 'vm=false')
+            self.assertEqual(run(proposal, 'merge_group', {'merge_group': {'base_sha': base, 'head_sha': proposal}}), 'vm=false')
+            # The assembled checkout can contain a newer resolved input than
+            # the proposal head. Never compare only the proposal metadata.
+            after['nodes']['nixpkgs']['locked']['rev'] = 'b' * 40
+            assembled = commit(after)
+            self.assertEqual(run(assembled), 'vm=true')
+            for broken in ('broken', '{"version":7,"version":7}', '{}'):
+                self.assertEqual(run(commit(broken)), 'vm=true')
+            self.assertEqual(run('0' * 40), 'vm=true')
+
     def test_boot_installer_selinux_and_harness_changes_require_vm(self):
         for path in ('files/system/usr/lib/systemd/system/example.service', 'files/installer/install_finite_fstab',
                      'files/system/usr/lib/tmpfiles.d/finite-gdm.conf', 'scripts/bluebuild/check-vm-gdm-labels.sh',

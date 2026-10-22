@@ -114,6 +114,21 @@ The Nix comparison adds to images selected by recipe and system-file changes.
 An evaluation failure selects both active images. The daily full build also
 checks floating package and BlueBuild inputs outside Nix's dependency graph.
 
+Premerge VM selection compares changed lockfiles at the base and actual assembled
+checkout. A change confined to original input-reference metadata does not force
+VM validation when every resolved revision, hash and graph edge is identical.
+Payload dependency comparison and the full check aggregate still run. Resolved
+dependency changes, boot/installer changes and unavailable or malformed lock
+comparisons retain VM validation for both profiles. Unknown lock versions also
+retain validation.
+
+Hosted checks evaluate the aggregate derivation in one process, then build that
+exact derivation in a separate process. This releases the Home Manager evaluation
+heap before builders start. Each phase retries only recognized transport failures;
+build retries reuse the evaluated derivation. The successful aggregate remains
+rooted for post-job cache collection. Job summaries report evaluation and build
+time separately, including retries; no lock updates are allowed during evaluation.
+
 The required `CI gate` runs for every event. It requires success from selected
 jobs and verifies that other jobs were explicitly skipped. Failures,
 cancellations and missing selection outputs block merging. Merge-queue checks
@@ -418,6 +433,11 @@ secret `CACHIX_AUTH_TOKEN` only to that upload step as `FINITE_CACHIX_TOKEN`;
 the temporary environment selects SecretSpec’s `env` provider and that custom
 secret name. It has no signing manifest or developer tasks. Public cache readers
 continue to use the Nix setup action without a write token or devenv bootstrap.
+Workflows use no Cachix actions or Cachix-hosted runner labels; devenv owns
+uploads. The GitHub Nix store snapshot action remains separate from Cachix.
+GitHub's secret API returns metadata rather than token values, so a local shell
+cannot retrieve the repository secret. Store the local token in the keyring;
+Actions supplies the repository secret only to the trusted upload step.
 The uploader verifies every remote closure hash after devenv exits, including
 when devenv reports an uploader warning without failing its command.
 
