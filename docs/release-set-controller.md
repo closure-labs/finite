@@ -201,3 +201,22 @@ documents, scan output and authority receipts. Core products occur only under
 `signed/`; the original packet's product paths are removed after authentication
 and signing preparation. Authenticated older full execution ZIPs remain readable.
 Preparation/publication jobs allow 240 minutes and signing allows 180 minutes.
+
+### Publisher health correlation
+
+Before preparation transfers, the publisher uploads a small native
+`release-execution-identity-RUN-ATTEMPT` artifact containing proposal hash,
+payload digest, version, repository, workflow, run, attempt and workflow revision.
+It is discovery metadata and never approval authority. Delivery health checks
+its exact native artifact binding, archive digest and bounded JSON (64 KiB)
+before correlating it with the canonical merged decision.
+
+Health reports `not_started`, `queued`, `running`, `waiting_approval`, `failed`,
+`partial`, `published` or `unknown`, with the native run link and failing or
+blocked phase when available. A successful build or recorded decision does not
+prove publication. Public products are checked independently; failed, partial,
+missing and uncorrelated publication states are unhealthy. A verified native
+`release` environment wait is an informational blocker. Legacy runs without
+identity metadata remain unknown and require native-run inspection. Health reads
+metadata only; it does not approve, clean assets, dispatch preparation or restart
+publication. Explicit recovery continues to use the original approved bytes.

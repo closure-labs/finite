@@ -72,6 +72,7 @@ in {
     export PYTHONDONTWRITEBYTECODE=1
     python3 tests/automation/bluefin-upstream.py
     python3 tests/ci/github-api.py
+    python3 tests/ci/publisher-health.py
     python3 tests/ci/release-readiness.py
     python3 tests/ci/release-cycle.py
     python3 tests/ci/premerge-vm.py

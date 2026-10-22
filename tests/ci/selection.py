@@ -44,7 +44,7 @@ class Selection(unittest.TestCase):
         paths = ['.github/workflows/decision-proposals.yml', 'scripts/ci/decision-controller.py',
                  'scripts/ci/decision_controller.py', 'scripts/ci/security_admission.py',
                  'scripts/ci/release_artifact.py', 'scripts/ci/decision_packets.py',
-                 'scripts/ci/archive_read.py']
+                 'scripts/ci/archive_read.py', 'scripts/ci/publisher_health.py', 'scripts/ci/reconcile-delivery.py']
         self.assertEqual(impact.classify(paths), {'checks': True, 'nix': False, 'profiles': []})
         for payload in ('files/system/shipped-file', 'recipes/finite.yml', 'scripts/ci/new-controller.py'):
             with self.subTest(payload=payload):

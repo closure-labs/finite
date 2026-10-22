@@ -321,7 +321,7 @@ def materialize_products(output, proposal, reference, *, staged=False, retain_ar
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('phase', choices=('stage', 'prepare', 'download', 'check', 'sign', 'persist-signed', 'stage-publication', 'commit-publication', 'publish'))
+    parser.add_argument('phase', choices=('identity', 'stage', 'prepare', 'download', 'check', 'sign', 'persist-signed', 'stage-publication', 'commit-publication', 'publish'))
     parser.add_argument('--proposal-hash', default='')
     parser.add_argument('--packet-ref', default='')
     parser.add_argument('--unsigned', action='store_true')
@@ -344,6 +344,18 @@ def main():
         sign(output, document)
         return
     proposal, receipt, initial = approved(args.proposal_hash)
+    if args.phase == 'identity':
+        # Discovery only. Consumers still authenticate native artifact binding;
+        # neither this metadata nor the monitor grants release authority.
+        identity = {'schema': 1, 'proposalHash': args.proposal_hash,
+                    'payloadDigest': canonical_hash(proposal['payload']), 'version': proposal['payload']['version'],
+                    'repository': controller.REPOSITORY, 'workflow': 'publish-release-set.yml',
+                    'runId': int(os.environ['GITHUB_RUN_ID']), 'runAttempt': int(os.environ['GITHUB_RUN_ATTEMPT']),
+                    'headSha': os.environ['GITHUB_SHA']}
+        path = ROOT / '.bluebuild/release-execution-identity.json'
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(identity, sort_keys=True) + '\n')
+        return
     if args.phase == 'download':
         with artifact_reader_credentials():
             download_execution(output, signed=not args.unsigned)

@@ -77,6 +77,18 @@ jobs:
       - name: Clear App key before evidence processing
         run: | # zizmor: ignore[github-env]
           printf 'FINITE_REVIEW_CLIENT_ID=\nFINITE_REVIEW_PRIVATE_KEY=\n' >>"$GITHUB_ENV"
+      - name: Record publisher correlation before expensive preparation
+        env:
+          GH_TOKEN: ${{ steps.initial-authority-token.outputs.token }}
+          PROPOSAL_HASH: ${{ inputs.proposal_hash }}
+        run: nix develop --file lib/ci-tools.nix release --command python3 scripts/ci/execute-release-set.py identity --proposal-hash "$PROPOSAL_HASH"
+      - name: Retain native publisher identity
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-execution-identity-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/release-execution-identity.json
+          if-no-files-found: error
+          retention-days: 90
       - name: Stage approved product bytes before renewing authority
         id: stage
         env:

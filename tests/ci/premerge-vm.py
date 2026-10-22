@@ -73,7 +73,12 @@ class Premerge(unittest.TestCase):
         readiness = next(i for i, step in enumerate(prep) if step.get('id') == 'readiness')
         self.assertTrue(all('steps.readiness.outputs.ready' in step.get('if', '') for step in prep[readiness + 1:]))
         self.assertIn('environment: release', (ROOT / '.github/workflows/publish-release-set.yml').read_text())
-        health = workflow('delivery-health')['jobs']['health']['steps']
+        jobs = workflow('delivery-health')['jobs']
+        health = jobs['reconcile']['steps']
+        observer = next(step for step in jobs['health']['steps'] if step.get('id') == 'review-token')['with']
+        self.assertEqual(observer['permission-actions'], 'read')
+        self.assertNotIn('permission-issues', observer)
+        self.assertTrue(any('reconcile-delivery.py' in step.get('run', '') for step in health))
         monitor = next(step for step in health if step.get('name', '').startswith('Report audit'))
         self.assertIn('always()', monitor['if'])
         dispatch_token = next(step for step in health if step.get('id') == 'review-token')['with']
