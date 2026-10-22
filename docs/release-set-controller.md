@@ -169,6 +169,13 @@ it enters the isolated child process. The review App gains no Workflows permissi
 
 ### Upload and publication recovery
 
+Metadata reads request origin revalidation with `Cache-Control: no-cache`.
+After creating or discovering a release, the adapter rereads its exact release
+ID, because the release inventory can lag creation. It checks that the ID still
+belongs to the expected tag. Missing draft visibility is reported separately
+from a conflicting payload marker; inspect the publishing credentials before
+retrying, rather than changing ownership markers or recreating assets.
+
 The maintained publisher runs `stage-publication`, renews the read-only review
 App token and clears its private key, then runs `commit-publication`. Staging
 reserves the version, reconciles source tags and owned drafts, verifies signed
