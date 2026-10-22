@@ -9,7 +9,6 @@ let
   secretspec = import ./secretspec.nix {inherit pkgs;};
   repository = import ./ci-applications/repository-operations.nix {
     inherit pkgs secretspec;
-    cacheName = project.cache.name;
   };
   updates = import ./ci-applications/dependency-operations.nix {inherit pkgs;};
   shells = import ./ci-shells.nix {inherit pkgs;};
@@ -18,11 +17,6 @@ in {
   image-tools = shells.imageTools;
   scanner-tools = shells.scannerTools;
   oras = pkgs.oras;
-  cache-tools = pkgs.buildEnv {
-    name = "finite-ci-cache-tools";
-    paths = [pkgs.cachix];
-    pathsToLink = ["/bin"];
-  };
   secretspec-tools = secretspec;
   ci-secrets-run = repository.ciSecretsRun;
   ci-secrets-options = repository.ciSecretsOptions;

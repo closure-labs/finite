@@ -4,8 +4,8 @@ require_version: true
 secretspec:
   enable: true
   profile: default
-  # Provider alias resolves pass://; no plaintext file-backed credentials.
-  provider: local
+  provider: keyring
+  cachix_auth_token: true
 
 inputs:
   nixpkgs:

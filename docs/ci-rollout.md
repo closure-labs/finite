@@ -151,8 +151,11 @@ does not trigger this writer, even when its Nix checks passed.
 Require the independent checkout/source SHA check, strict evaluated tool/output
 associations, allowlisted roots and two-GiB tool bounds. Optional
 `--include-proofs` seeding also validates one-MiB proof bounds. Keys
-are resolved only for the final SecretSpec `cache-writer` command, after secret-free
-realization. Exclude image stores, VM disks, personalized ISO media and keys.
+are resolved only by devenv’s built-in SecretSpec integration for the final
+upload, after credential-free realization. The hosted upload step supplies
+`FINITE_CACHIX_TOKEN` to the `env` provider; local proof uploads use the system
+keyring. A minimal temporary environment exposes only validated store roots to
+devenv’s uploader. Complete remote closure hashes must match before success. Exclude image stores, VM disks, personalized ISO media and keys.
 On three subsequent matched reader runs, require actual substitutions from
 `https://finite-os.cachix.org` and end-to-end measurements. Cache configuration
 or a successful metadata query alone does not prove reader savings.

@@ -123,6 +123,7 @@ in {
     python3 tests/ci/nix-cache.py
     python3 tests/ci/cache-sqlite.py
     python3 tests/ci/secretspec.py
+    python3 tests/ci/devenv-cache.py
     python3 tests/ci/cache-publish.py
     python3 tests/ci/benchmark-cache-writer.py
     python3 tests/ci/prune-ci-caches.py

@@ -47,17 +47,14 @@ jobs:
       - name: Realize approved tool roots without credentials
         # The path is a locally realized, strictly validated trusted-main output.
         run: | # zizmor: ignore[github-env]
-          resolver=$(nix build --file lib/ci-tools.nix ci-secrets-run --no-link --print-out-paths)
-          [[ $resolver =~ ^/nix/store/[a-z0-9]{32}-finite-ci-secrets-run$ ]]
-          echo "$resolver/bin" >>"$GITHUB_PATH"
-          tools=$(nix build --file lib/ci-tools.nix cache-tools --no-link --print-out-paths)
-          [[ $tools =~ ^/nix/store/[a-z0-9]{32}-finite-ci-cache-tools$ ]]
-          echo "$tools/bin" >>"$GITHUB_PATH"
+          devenv=$(nix build --accept-flake-config .#devenv --no-link --print-out-paths)
+          [[ $devenv =~ ^/nix/store/[a-z0-9]{32}-devenv[^/[:space:]]*$ ]]
+          echo "$devenv/bin" >>"$GITHUB_PATH"
           python3 scripts/ci/cache-publish.py prepare cache-roots.json
       - name: Publish allowlisted roots
         env:
-          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
-        run: finite-ci-secrets-run cache-writer -- python3 scripts/ci/cache-publish.py push cache-roots.json
+          FINITE_CACHIX_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+        run: python3 scripts/ci/cache-publish.py push cache-roots.json
       - name: Retain cache size measurements
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
