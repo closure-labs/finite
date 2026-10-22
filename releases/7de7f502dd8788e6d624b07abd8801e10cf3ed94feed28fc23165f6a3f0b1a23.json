@@ -1,1 +1,1 @@
-{"channels":{},"leaseUntil":1792690318.5303788,"owner":"39804082329-3","payloadDigest":"7de7f502dd8788e6d624b07abd8801e10cf3ed94feed28fc23165f6a3f0b1a23","schema":1,"state":"staging"}
+{"channels":{"finite":{"releaseId":420528520,"state":"staged"}},"leaseUntil":1792690323.35695,"owner":"39804082329-3","payloadDigest":"7de7f502dd8788e6d624b07abd8801e10cf3ed94feed28fc23165f6a3f0b1a23","schema":1,"state":"staging"}
