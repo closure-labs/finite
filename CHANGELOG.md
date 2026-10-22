@@ -10,6 +10,8 @@ Development version: `0.8.3-dev`. The next stable release is 0.8.3.
 
 ### Fixed
 
+- Correlate publication retries with authenticated identities from reused native
+  preparation, reporting the current attempt's status and failing phase.
 - Recover decision provenance from a bounded native PR inventory when transient
   commit-association API failures exhaust retries, preserving fresh authority checks.
 - Revalidate release metadata and reconcile drafts by their confirmed IDs so
