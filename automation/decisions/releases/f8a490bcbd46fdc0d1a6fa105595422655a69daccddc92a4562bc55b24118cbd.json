@@ -1,0 +1,33 @@
+{
+  "kind": "release-set",
+  "payload": {
+    "channels": {
+      "finite": {
+        "assets": {
+          "finite.Containerfile": "95aa9ec0939d9bf6743aa402daa2032a317b4d9c1cf41458328f0f72b147e8bc",
+          "finite.iso.part-000": "f7d50fe91893108a551169a5db428c9c4dc439fa636b149e5376aa5e48cfe949",
+          "finite.iso.part-001": "d5870e941e71aaacf726ea3e9978caa11d8eabaed221727f2b5477be004fd7dc",
+          "finite.iso.part-002": "3d3706ef108463343e6169eb9cea9aac7ca7003ad2f610574514d4b069a9228a"
+        },
+        "imageDigest": "sha256:728b6560823f1a769c6d9630d064bb15581448d827c8a567e06db7b0fd8adbe4",
+        "isoSha256": "2de5a4c8609dbb0487f2820e2cbcf08dbe9c189a68bb5a7cba1b270b8590e1da",
+        "tag": "finite-0.8.3-dev"
+      },
+      "finite-dev": {
+        "assets": {
+          "finite-dev.Containerfile": "7b475452cc00a69caab94176bb6aa5412c5973bd414907264c4b614128574830",
+          "finite-dev.iso.part-000": "e8af2ce3e610e1344454402ab2bdfb40d26980f167d0a1f6169af07c4bef0aee",
+          "finite-dev.iso.part-001": "15d81cb4c67bbc3c9607ce2d5ef81f780da2d90007e3211cbefbc75ccc6dc8b6",
+          "finite-dev.iso.part-002": "a07104464577f8df6ca6d72716e37979b5e93eb6016c7f9dfbb8e0cda4b6745d",
+          "finite-dev.iso.part-003": "e389c558126cf76435e886fb3bc99b90eb16bb5f836ed5f0724e0a56c7efe5d4"
+        },
+        "imageDigest": "sha256:b47cb271daee543ad5b99d75d79b0f05cd4a34154b5aeb6a75fcb1a018cfd346",
+        "isoSha256": "4ee4d49210db14795448b8fbcba2d2c07cf7846ad4ac9805436229b09de7c0a7",
+        "tag": "finite-dev-0.8.3-dev"
+      }
+    },
+    "sourceRevision": "6f72a2580120b7b0982f827e37cb688dc2448144",
+    "version": "0.8.3-dev"
+  },
+  "schema": 1
+}
