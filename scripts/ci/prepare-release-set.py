@@ -15,8 +15,8 @@ import subprocess
 
 from release_set import CHANNELS, payload_digest, prepare, sha256
 from security_decisions import load_json, normalize_findings
-from release_versions import prerelease, previous_stable, release_version
-from release_readiness import published_stable_pair
+from release_versions import prerelease, release_version
+from release_readiness import prerelease_base
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -174,8 +174,8 @@ def main():
     version = (ROOT / 'VERSION').read_text().strip()
     if not release_version(version):
         raise ValueError('Release preparation requires numeric MAJOR.MINOR.PATCH or MAJOR.MINOR.PATCH-dev VERSION')
-    if prerelease(version) and not published_stable_pair(previous_stable(version)):
-        raise ValueError('Development prerelease requires the preceding successful stable pair')
+    if prerelease(version) and not prerelease_base(version):
+        raise ValueError('Development prerelease requires the latest earlier stable pair')
     helper = helper_module()
     run = helper.github('actions/runs/' + args.build_run)
     authenticate_build(run, revision)

@@ -6,7 +6,13 @@ All notable changes to Finite are documented here. The format follows
 
 ## [Unreleased]
 
-Development version: `0.8.2-dev`. The next stable release is 0.8.2.
+Development version: `0.8.3-dev`. The next stable release is 0.8.3.
+
+## [0.8.3-dev] - 2026-10-21
+
+Prepare a new development pair after the published `0.8.1` stable pair. The
+unpublished `0.8.2-dev` payload, version reservation and recovery history remain
+bound to their original products.
 
 ### Changed
 
@@ -25,6 +31,17 @@ Development version: `0.8.2-dev`. The next stable release is 0.8.2.
   Foundation catalog. Keep schema-2 seed generation and existing applications.
 - Preserve Foundation role classification through the typed Home Manager catalog,
   including compatibility with older unclassified catalogs.
+- Permit a new development version to follow the latest earlier stable pair
+  without reusing an already reserved development version. An incomplete newer
+  stable pair still blocks preparation.
+
+### Fixed
+
+- Require both Nix daemon sockets before first-login initialization.
+- Recover interrupted asset uploads through remote reconciliation, stage both
+  release inventories before publication and refresh approval at commit time.
+- Bound archive transport retries, retain product bytes once per execution
+  handoff and report the publisher's actual state in delivery health.
 
 ## [0.8.2-dev] - 2026-10-21
 
