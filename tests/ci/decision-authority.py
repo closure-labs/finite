@@ -84,6 +84,98 @@ def verify(api, **kwargs):
     return mod.verify_proposal(PROPOSAL, 7, REPO, BOT, github=api, **kwargs)
 
 
+class OriginFallback(unittest.TestCase):
+    def fixture(self, *, commit=HEAD, transient=True):
+        api = GitHub()
+        pull = {**copy.deepcopy(api.pr), 'merged_at': '2026-10-20T00:00:00Z'}
+        inventory = [pull]
+        calls = []
+        def github(endpoint):
+            calls.append(endpoint)
+            if '/commits?path=' in endpoint:
+                return [{'sha': commit}]
+            if '/commits/' in endpoint and '/pulls?' in endpoint:
+                try:
+                    raise mod.GitHubReadError('association read exhausted', transient=transient)
+                except mod.GitHubReadError as error:
+                    raise mod.AuthorityError(str(error)) from error
+            if endpoint.startswith(f'repos/{REPO}/pulls?'):
+                return copy.deepcopy(inventory)
+            return api(endpoint)
+        return api, inventory, calls, github
+
+    def test_transient_association_failure_recovers_exact_head_or_merge(self):
+        for commit in (HEAD, MERGE):
+            with self.subTest(commit=commit):
+                api, _, calls, github = self.fixture(commit=commit)
+                number = mod.find_origin_pr(PROPOSAL, REPO, BOT, github)
+                self.assertEqual(number, 7)
+                self.assertIn(f'repos/{REPO}/pulls/7', calls)
+                self.assertEqual(mod.verify_proposal(PROPOSAL, number, REPO, BOT, github=github)['status'], 'authorized')
+
+    def test_terminal_association_failure_never_uses_inventory(self):
+        _, _, calls, github = self.fixture(transient=False)
+        with self.assertRaises(mod.AuthorityError):
+            mod.find_origin_pr(PROPOSAL, REPO, BOT, github)
+        self.assertFalse(any(endpoint.startswith(f'repos/{REPO}/pulls?') for endpoint in calls))
+
+    def test_successful_empty_association_never_uses_inventory(self):
+        _, _, calls, original = self.fixture()
+        def github(endpoint):
+            if '/commits/' in endpoint and '/pulls?' in endpoint:
+                return []
+            return original(endpoint)
+        with self.assertRaises(mod.AuthorityError):
+            mod.find_origin_pr(PROPOSAL, REPO, BOT, github)
+        self.assertFalse(any(endpoint.startswith(f'repos/{REPO}/pulls?') for endpoint in calls))
+
+    def test_ambiguous_or_unrelated_candidates_fail_closed(self):
+        for variant in ('duplicate', 'unrelated', 'unmerged', 'foreign', 'wrong-base', 'unknown-bot'):
+            with self.subTest(variant=variant):
+                _, inventory, _, github = self.fixture()
+                if variant == 'duplicate':
+                    inventory.append({**copy.deepcopy(inventory[0]), 'number': 8})
+                elif variant == 'unrelated':
+                    inventory[0]['head']['sha'] = 'd' * 40
+                elif variant == 'unmerged':
+                    inventory[0]['merged_at'] = None
+                elif variant == 'foreign':
+                    inventory[0]['head']['repo']['full_name'] = 'other/repo'
+                elif variant == 'wrong-base':
+                    inventory[0]['base']['ref'] = 'other'
+                else:
+                    inventory[0]['user']['login'] = 'other[bot]'
+                with self.assertRaises(mod.AuthorityError):
+                    mod.find_origin_pr(PROPOSAL, REPO, BOT, github)
+
+    def test_incomplete_inventory_is_not_provenance(self):
+        _, inventory, calls, github = self.fixture()
+        inventory[:] = inventory * 100
+        with self.assertRaisesRegex(mod.AuthorityError, 'bounded pagination'):
+            mod.find_origin_pr(PROPOSAL, REPO, BOT, github)
+        self.assertEqual(sum(endpoint.startswith(f'repos/{REPO}/pulls?') for endpoint in calls), 10)
+
+    def test_changed_native_candidate_is_rejected(self):
+        api, _, _, github = self.fixture()
+        api.pr['head']['sha'] = 'd' * 40
+        with self.assertRaises(mod.AuthorityError):
+            mod.find_origin_pr(PROPOSAL, REPO, BOT, github)
+
+    def test_fallback_does_not_replace_fresh_approval(self):
+        api, _, _, github = self.fixture()
+        number = mod.find_origin_pr(PROPOSAL, REPO, BOT, github)
+        api.reviews.clear()
+        with self.assertRaises(mod.HumanDecisionRequired):
+            mod.verify_proposal(PROPOSAL, number, REPO, BOT, github=github)
+
+    def test_fallback_does_not_authorize_changed_reviewed_bytes(self):
+        api, _, _, github = self.fixture()
+        number = mod.find_origin_pr(PROPOSAL, REPO, BOT, github)
+        api.blobs[HEAD] = {**PROPOSAL, 'payload': {'disposition': 'rejected'}}
+        with self.assertRaisesRegex(mod.AuthorityError, 'exact reviewed PR head'):
+            mod.verify_proposal(PROPOSAL, number, REPO, BOT, github=github)
+
+
 class Authority(unittest.TestCase):
     def test_origin_lookup_accepts_human_pr_and_rejects_unknown_bot(self):
         api = GitHub()
