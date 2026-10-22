@@ -6,7 +6,7 @@ from pathlib import Path
 
 from github_api import get_json
 from security_decisions import canonical_hash, load_json
-from release_versions import prerelease, previous_stable, release_version, stable_version
+from release_versions import prerelease, release_version, stable_version
 
 REPOSITORY = 'closure-labs/finite'
 PREFIX = 'repos/' + REPOSITORY
@@ -43,6 +43,54 @@ def published_stable_pair(version, api=get_json):
     if len(set(revisions)) != 1:
         raise ValueError('Stable releases identify different source revisions')
     return True
+
+
+def prerelease_base(version, api=get_json):
+    """Require the latest earlier stable patch, including incomplete claims.
+
+    A reserved development version can be skipped without publishing a stable
+    version of those bytes. Never skip an incomplete newer stable pair instead.
+    """
+    if not prerelease(version):
+        raise ValueError('Expected a development prerelease')
+    major, minor, patch = map(int, version[:-4].split('.'))
+    candidates = set()
+
+    def consider(tag):
+        for channel in CHANNELS:
+            prefix = channel + '-'
+            if not tag.startswith(prefix) or not stable_version(tag[len(prefix):]):
+                continue
+            candidate = tuple(map(int, tag[len(prefix):].split('.')))
+            if candidate[:2] == (major, minor) and candidate[2] < patch:
+                candidates.add(candidate)
+
+    # Read tokens may not see drafts. The publisher reserves canonical tags
+    # before creating drafts, so include tag-only and hidden-draft claims too.
+    for channel in CHANNELS:
+        refs = api(PREFIX + f'/git/matching-refs/tags/{channel}-{major}.{minor}.')
+        if (not isinstance(refs, list) or len(refs) > 1000
+                or any(not isinstance(ref, dict) or not isinstance(ref.get('ref'), str)
+                       or not ref['ref'].startswith('refs/tags/') for ref in refs)):
+            raise ValueError('Invalid bounded stable tag inventory')
+        for ref in refs:
+            consider(ref['ref'][len('refs/tags/'):])
+    for page in range(1, 11):
+        releases = api(PREFIX + f'/releases?per_page=100&page={page}')
+        if (not isinstance(releases, list) or len(releases) > 100
+                or any(not isinstance(item, dict) or not isinstance(item.get('tag_name'), str)
+                       for item in releases)):
+            raise ValueError('Invalid stable release inventory')
+        for item in releases:
+            consider(item['tag_name'])
+        if len(releases) < 100:
+            break
+    else:
+        raise ValueError('Stable release inventory exceeds bounded pagination')
+    if not candidates:
+        return None
+    baseline = '.'.join(map(str, max(candidates)))
+    return baseline if published_stable_pair(baseline, api) else None
 
 
 def release_status(version, api=get_json, bot=None):
@@ -104,8 +152,8 @@ def release_status(version, api=get_json, bot=None):
                 if proposal.get('kind') == 'release-set' and proposal.get('payload', {}).get('version') == version:
                     return {'state': 'review', 'reason': f'Paired release proposal #{number} awaits review or execution.',
                             'pullRequest': number, 'sourceRevision': proposal['payload']['sourceRevision']}
-    if prerelease(version) and not published_stable_pair(previous_stable(version), api):
-        return {'state': 'waiting-stable', 'reason': 'Development prerelease waits for the preceding successful stable paired release.'}
+    if prerelease(version) and not prerelease_base(version, api):
+        return {'state': 'waiting-stable', 'reason': 'Development prerelease waits for the latest earlier stable paired release.'}
     return {'state': 'unprepared', 'reason': 'Version has no published products or pending paired proposal.'}
 
 

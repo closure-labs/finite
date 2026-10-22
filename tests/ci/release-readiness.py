@@ -32,6 +32,10 @@ class Readiness(unittest.TestCase):
 
     def api(self, endpoint, missing=False):
         if '/releases/tags/' in endpoint: return self.releases.get(endpoint.rsplit('/', 1)[-1])
+        if '/releases?' in endpoint: return list(self.releases.values())
+        if '/git/matching-refs/tags/' in endpoint:
+            prefix = endpoint.rsplit('/', 1)[-1]
+            return [{'ref': 'refs/tags/' + tag} for tag in self.tags if tag.startswith(prefix)]
         if '/git/ref/tags/' in endpoint: return self.tags.get(endpoint.rsplit('/', 1)[-1])
         if '/pulls?' in endpoint: return copy.deepcopy(self.proposals)
         if endpoint.endswith('/pulls/5'):
@@ -72,6 +76,57 @@ class Readiness(unittest.TestCase):
         self.tags['finite-dev-1.2.2']['object']['sha'] = 'b' * 40
         with self.assertRaisesRegex(ValueError, 'different source'):
             self.status()
+
+    def test_skipped_development_version_uses_last_stable_and_preserves_reservations(self):
+        self.version = '1.2.4-dev'
+        self.stable_pair()
+        self.releases['finite-1.2.3-dev'] = {'tag_name': 'finite-1.2.3-dev', 'draft': True}
+        self.tags['finite-1.2.3-dev'] = {'object': {'type': 'commit', 'sha': SHA}}
+        before = copy.deepcopy((self.releases, self.tags))
+        self.assertEqual(ready.prerelease_base(self.version, self.api), '1.2.2')
+        self.assertEqual(self.status()['state'], 'unprepared')
+        self.assertEqual((self.releases, self.tags), before)
+
+    def test_latest_stable_claim_cannot_fall_back_to_an_older_complete_pair(self):
+        self.version = '1.2.11-dev'
+        self.stable_pair('1.2.9')
+        self.stable_pair('1.2.10')
+        self.assertEqual(ready.prerelease_base(self.version, self.api), '1.2.10')
+        del self.releases['finite-dev-1.2.10']
+        self.assertEqual(self.status()['state'], 'waiting-stable')
+        self.stable_pair('1.2.10')
+        self.releases['finite-dev-1.2.10']['draft'] = True
+        self.assertEqual(self.status()['state'], 'waiting-stable')
+        # A read-only token can miss a draft but still sees its reserved tag.
+        del self.releases['finite-1.2.10'], self.releases['finite-dev-1.2.10']
+        self.assertEqual(self.status()['state'], 'waiting-stable')
+
+    def test_stable_discovery_is_bounded_and_filters_other_cycles(self):
+        self.stable_pair('1.1.9')
+        self.stable_pair('1.2.4')
+        self.stable_pair('2.2.1')
+        self.assertIsNone(ready.prerelease_base('1.2.4-dev', self.api))
+        self.stable_pair('1.2.2')
+        entries = list(self.releases.values())
+        calls = []
+        def paged(endpoint, **kwargs):
+            if '/releases?' in endpoint:
+                calls.append(endpoint)
+                return [{'tag_name': 'irrelevant'}] * 100 if endpoint.endswith('page=1') else entries
+            return self.api(endpoint, **kwargs)
+        self.assertEqual(ready.prerelease_base('1.2.4-dev', paged), '1.2.2')
+        self.assertEqual(len(calls), 2)
+        with self.assertRaisesRegex(ValueError, 'bounded pagination'):
+            ready.prerelease_base('1.2.4-dev', lambda endpoint:
+                [] if '/git/' in endpoint else [{'tag_name': 'irrelevant'}] * 100)
+        for invalid in ({}, [{}], [{'tag_name': 1}]):
+            with self.subTest(invalid=invalid), self.assertRaisesRegex(ValueError, 'Invalid stable release inventory'):
+                ready.prerelease_base('1.2.4-dev', lambda endpoint: [] if '/git/' in endpoint else invalid)
+        for invalid in ({}, [{}], [{'ref': 'refs/heads/main'}], [{'ref': 'refs/tags/demo'}] * 1001):
+            with self.subTest(invalid=str(invalid)[:60]), self.assertRaisesRegex(ValueError, 'stable tag inventory'):
+                ready.prerelease_base('1.2.4-dev', lambda _: invalid)
+        with self.assertRaisesRegex(RuntimeError, 'authorization'):
+            ready.prerelease_base('1.2.4-dev', lambda _: (_ for _ in ()).throw(RuntimeError('authorization')))
 
     def test_prerelease_is_one_immutable_pair_and_existing_flags_must_match(self):
         self.version = '1.2.3-dev'

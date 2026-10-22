@@ -66,10 +66,11 @@ class PrepareTests(unittest.TestCase):
                                         'GITHUB_REF': 'refs/heads/main', 'GITHUB_SHA': self.revision}), \
                 patch.object(sys, 'argv', ['prepare-release-set.py', '--build-run', '5',
                                           '--output-directory', str(self.output / 'packet')]), \
-                patch.object(module, 'published_stable_pair', return_value=False), \
+                patch.object(module, 'prerelease_base', return_value=None) as baseline, \
                 patch.object(module, 'helper_module') as helper:
-            with self.assertRaisesRegex(ValueError, 'preceding successful stable pair'):
+            with self.assertRaisesRegex(ValueError, 'latest earlier stable pair'):
                 module.main()
+            baseline.assert_called_once_with('1.2.3-dev')
             helper.assert_not_called()
 
     def test_refreshed_scan_and_derived_files_do_not_change_identity(self):

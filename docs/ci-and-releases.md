@@ -283,6 +283,13 @@ not bump the version again. Each development version identifies one immutable
 pair; subsequent development commits do not replace its tags or assets. The
 hourly observer and manual health dispatch reconcile missed completion events.
 The existing published `0.8.1` pair permits the initial `0.8.2-dev` preparation.
+A manually reviewed version bump may skip a reserved development version, such
+as `0.8.2-dev` → `0.8.3-dev`. Preparation requires the latest earlier stable patch
+in the same major/minor series to have a complete published pair. It discovers
+at most 1,000 release records and fails closed on incomplete inventories. A
+newer partial, reserved-tag or visible draft stable pair blocks preparation instead of falling back
+to an older pair. A skipped prerelease never supplies the stable baseline, and
+its payload, tags, assets and version reservation retain their original identity.
 
 The channel tags continue to receive daily builds. Release records identify
 specific source revisions and image digests for reproducibility.
@@ -514,7 +521,7 @@ images and force fresh qualification. After both profiles succeed and preserve
 their qualified ISOs at that revision, delivery reconciliation dispatches
 **Prepare two-image release approval**. Preparation checks readiness before
 installing tools or downloading products. A development version such as
-`0.8.2-dev` follows the same path only after its preceding stable pair succeeds.
+`0.8.2-dev` follows the same path only after its latest earlier stable pair succeeds.
 Unsupported version formats skip with an explanation. Existing paired releases, open bot release
 proposals and recorded release decisions prevent repeated preparation. Drafts,
 partial releases and existing tags require recovery of the approved products.
