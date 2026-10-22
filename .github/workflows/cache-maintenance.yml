@@ -47,9 +47,11 @@ jobs:
       - name: Realize approved tool roots without credentials
         # The path is a locally realized, strictly validated trusted-main output.
         run: | # zizmor: ignore[github-env]
-          devenv=$(nix build --accept-flake-config .#devenv --no-link --print-out-paths)
-          [[ $devenv =~ ^/nix/store/[a-z0-9]{32}-devenv[^/[:space:]]*$ ]]
-          echo "$devenv/bin" >>"$GITHUB_PATH"
+          if ! command -v devenv >/dev/null; then
+            devenv=$(nix build --accept-flake-config .#devenv --no-write-lock-file --no-link --print-out-paths)
+            [[ $devenv =~ ^/nix/store/[a-z0-9]{32}-devenv[^/[:space:]]*$ ]]
+            echo "$devenv/bin" >>"$GITHUB_PATH"
+          fi
           python3 scripts/ci/cache-publish.py prepare cache-roots.json
       - name: Publish allowlisted roots
         env:

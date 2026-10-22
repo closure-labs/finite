@@ -1,5 +1,4 @@
 {
-  devenv ? null,
   pkgs,
   secretspec,
 }: rec {
@@ -260,7 +259,7 @@
   mkLocalCache = ciApplication:
     pkgs.writeShellApplication {
       name = "finite-local-cache";
-      runtimeInputs = [devenv pkgs.python3 pkgs.coreutils];
+      runtimeInputs = [pkgs.python3 pkgs.coreutils];
       text = ''
         repo_root="''${FINITE_SOURCE_ROOT:-$PWD}"
         [[ -f "''${repo_root}/flake.nix" ]] || {
@@ -289,6 +288,12 @@
             echo "Invalid validated proof store path" >&2; exit 2;
           }
         done
+        if ! command -v devenv >/dev/null; then
+          devenv=$(nix build --accept-flake-config "path:''${repo_root}#devenv" \
+            --no-write-lock-file --no-link --print-out-paths)
+          [[ $devenv =~ ^/nix/store/[a-z0-9]{32}-devenv[^/[:space:]]*$ ]]
+          export PATH="$devenv/bin:$PATH"
+        fi
         # devenv owns keyring resolution and its Cachix daemon; check commands
         # never receive the token. The helper accepts bounded proof roots only.
         python3 "''${repo_root}/scripts/ci/devenv_cache.py" "$proof_file"

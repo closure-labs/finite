@@ -225,7 +225,6 @@
       },
       "original": {
         "owner": "cachix",
-        "ref": "v2.2.2",
         "repo": "devenv",
         "type": "github"
       }

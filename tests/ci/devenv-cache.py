@@ -46,7 +46,6 @@ class NativeCache(unittest.TestCase):
         with patch.dict(os.environ, {'FINITE_CACHIX_TOKEN': 'fixture-secret', 'CACHIX_AUTH_TOKEN': 'legacy',
                                     'COSIGN_PRIVATE_KEY': 'signing', 'SECRETSPEC_PROVIDER': 'file:/tmp/wrong',
                                     'SECRETSPEC_PROFILE': 'image-signing'}, clear=True), \
-                patch.object(cache.subprocess, 'check_output', return_value='devenv 2.2.2'), \
                 patch.object(cache, 'metadata', return_value={STORE: HASH}) as metadata, \
                 patch.object(cache, 'run_devenv', side_effect=build):
             cache.publish([STORE], provider='env')
@@ -60,7 +59,6 @@ class NativeCache(unittest.TestCase):
             self.assertIn('cachix_auth_token: true', configuration)
             self.assertFalse(set(cache.CREDENTIALS) & kwargs['env'].keys())
         with patch.dict(os.environ, {}, clear=True), \
-                patch.object(cache.subprocess, 'check_output', return_value='devenv 2.2.2'), \
                 patch.object(cache, 'metadata', return_value={STORE: HASH}), \
                 patch.object(cache, 'run_devenv', side_effect=build):
             cache.publish([STORE])
@@ -77,7 +75,6 @@ class NativeCache(unittest.TestCase):
             def build(command, **kwargs):
                 self.assertEqual((Path(kwargs['cwd']) / 'devenv.yaml').read_text(), configuration)
             with patch.dict(os.environ, {}, clear=True), patch.object(cache, 'ROOT', directory), \
-                    patch.object(cache.subprocess, 'check_output', return_value='devenv 2.2.2'), \
                     patch.object(cache, 'metadata', return_value={STORE: HASH}), \
                     patch.object(cache, 'run_devenv', side_effect=build):
                 cache.publish([STORE])
@@ -99,7 +96,6 @@ class NativeCache(unittest.TestCase):
             captures.append(Path(kwargs['cwd']))
             raise subprocess.CalledProcessError(1, command)
         with patch.dict(os.environ, {}, clear=True), \
-                patch.object(cache.subprocess, 'check_output', return_value='devenv 2.2.2'), \
                 patch.object(cache, 'metadata', return_value={STORE: HASH}) as metadata, \
                 patch.object(cache, 'run_devenv', side_effect=fail), self.assertRaises(subprocess.CalledProcessError):
             cache.publish([STORE])
@@ -109,7 +105,6 @@ class NativeCache(unittest.TestCase):
     def test_zero_exit_with_missing_or_wrong_remote_closure_fails(self):
         for observed in ({}, {STORE: 'different-hash'}, {STORE: HASH, STORE + '-extra': HASH}):
             with self.subTest(observed=observed), patch.dict(os.environ, {}, clear=True), \
-                    patch.object(cache.subprocess, 'check_output', return_value='devenv 2.2.2'), \
                     patch.object(cache, 'metadata', side_effect=[{STORE: HASH}, observed]), \
                     patch.object(cache, 'run_devenv'), self.assertRaisesRegex(ValueError, 'complete matching closure'):
                 cache.publish([STORE])
@@ -117,7 +112,6 @@ class NativeCache(unittest.TestCase):
     def test_remote_transport_failure_is_bounded(self):
         failure = subprocess.CalledProcessError(1, ['nix', 'path-info'])
         with patch.dict(os.environ, {}, clear=True), \
-                patch.object(cache.subprocess, 'check_output', return_value='devenv 2.2.2'), \
                 patch.object(cache, 'metadata', side_effect=[{STORE: HASH}, failure, failure, failure]) as metadata, \
                 patch.object(cache, 'run_devenv'), patch.object(cache.time, 'sleep') as sleep, \
                 self.assertRaises(subprocess.CalledProcessError):
@@ -125,12 +119,13 @@ class NativeCache(unittest.TestCase):
         self.assertEqual(metadata.call_count, 4)
         self.assertEqual([call.args[0] for call in sleep.call_args_list], [2, 4])
 
-    def test_wrong_cli_is_rejected_before_credentials_or_builds(self):
+    def test_available_cli_is_used_without_an_exact_version_probe(self):
         with patch.dict(os.environ, {}, clear=True), \
-                patch.object(cache.subprocess, 'check_output', return_value='devenv 2.4.0'), \
-                patch.object(cache, 'run_devenv') as build, self.assertRaisesRegex(ValueError, 'repository-pinned'):
+                patch.object(cache.subprocess, 'check_output', side_effect=AssertionError('No CLI version probe')), \
+                patch.object(cache, 'metadata', return_value={STORE: HASH}), \
+                patch.object(cache, 'run_devenv') as build:
             cache.publish([STORE])
-        build.assert_not_called()
+        self.assertEqual(build.call_args.args[0][0], 'devenv')
 
     def test_timeout_terminates_owned_devenv_process_group(self):
         with patch.object(cache.subprocess, 'Popen') as spawn, patch.object(cache.os, 'killpg') as kill:

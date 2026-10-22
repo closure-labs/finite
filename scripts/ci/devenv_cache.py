@@ -76,12 +76,6 @@ def publish(paths, *, provider='local'):
         env['FINITE_CACHIX_TOKEN'] = os.environ['FINITE_CACHIX_TOKEN']
     elif any(os.environ.get(key) for key in CREDENTIALS):
         raise ValueError('Local cache publication resolves its configured backend, not inherited credentials')
-    lock = json.loads((ROOT / 'flake.lock').read_text())
-    node = lock['nodes'][lock['nodes'][lock['root']]['inputs']['devenv']]
-    version = node['original']['ref'].removeprefix('v')
-    actual = subprocess.check_output(['devenv', '--version'], env=clean_env(), text=True, timeout=30)
-    if not re.match(r'devenv ' + re.escape(version) + r'(?:\s|\+|$)', actual):
-        raise ValueError('Use the repository-pinned devenv CLI for Cachix publication')
     expected = metadata(paths)
     with tempfile.TemporaryDirectory(prefix='finite-devenv-cache-') as temporary:
         directory = Path(temporary)
@@ -114,7 +108,7 @@ def publish(paths, *, provider='local'):
                                              + '\n'.join(definitions) + '\n}\n')
         run_devenv(['devenv', '--no-tui', '--no-eval-cache', 'build', *attributes],
                    cwd=directory, env=env)
-    # devenv 2.2 warns on some daemon failures and can still exit zero. Confirm
+    # Some uploader failures are warnings and can still yield exit zero. Confirm
     # the complete closure, with anonymous reads, before reporting success.
     for attempt in range(3):
         try:

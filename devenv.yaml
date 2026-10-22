@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://devenv.sh/devenv.schema.json
-require_version: true
+require_version: false
 
 secretspec:
   enable: true
@@ -11,4 +11,4 @@ inputs:
   nixpkgs:
     url: https://flakehub.com/f/DeterminateSystems/nixpkgs-weekly/0
   devenv:
-    url: github:cachix/devenv/v2.2.2
+    url: github:cachix/devenv

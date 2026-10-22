@@ -383,8 +383,8 @@ Its checksum-pinned release package avoids compiling all of devenv just to resol
 CI credentials. Tool realization happens before supplying signing/write keys.
 Signing keys reach only signer commands; the audit App key is cleared after token
 generation. Secret values never enter Nix evaluation, cached paths or artifacts.
-The default developer profile contains public options only. The pinned devenv
-2.2.2 CLI resolves Cachix internally for private pulls and explicit uploads;
+The default developer profile contains public options only. The available devenv
+CLI resolves Cachix internally for private pulls and explicit uploads;
 `CACHIX_AUTH_TOKEN` has no declaration in `secretspec.toml` and is never exported
 into the developer shell. No separate Cachix client installation is required.
 The recommended setup in `devenv.yaml` is:
@@ -397,11 +397,11 @@ secretspec:
   cachix_auth_token: true
 ```
 
-Run the pinned `devenv shell` interactively once to enter the Cachix token and
+Run `devenv shell` interactively once to enter the Cachix token and
 save it in the system keyring:
 
 ```bash
-nix run --accept-flake-config .#devenv -- shell
+devenv shell
 ```
 
 Noninteractive commands, including direnv and
@@ -420,6 +420,15 @@ secret name. It has no signing manifest or developer tasks. Public cache readers
 continue to use the Nix setup action without a write token or devenv bootstrap.
 The uploader verifies every remote closure hash after devenv exits, including
 when devenv reports an uploader warning without failing its command.
+
+Cachix uses an installed devenv CLI when available; runners without it realize
+`.#devenv`. The input follows upstream without a fixed release tag, and the CLI
+need not match the module lock's version. The existing weekly **Update Nix flake
+inputs** workflow refreshes both `flake.lock` and `devenv.lock` and opens a PR.
+Runners adopt those updates after merge; Dependabot is not needed for this path.
+The lock updater disables SecretSpec in an isolated temporary configuration and
+clears write credentials while refreshing public inputs. The developer
+configuration keeps its keyring requirement.
 
 The standalone `release-publishing` scope resolves the trusted repository token
 into `GH_TOKEN` only for the controlled tag/draft child. It needs repository
