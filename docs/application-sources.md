@@ -90,9 +90,11 @@ must support the selected format before the fresh-selection dialog opens.
 The reader dispatcher also preserves supplied schema-3 selections when the
 executing Foundation helper advertises initialization support. An older helper
 rejects that selection without falling back to a seed or opening the fresh
-selector. Saved/provisioned profiles retain their format. The current Foundation
-pin still writes schema 2; schema-3 adoption is prepared separately and tested
-with a temporary immutable source override.
+selector. Saved/provisioned profiles retain their format. Finite pins published
+[Foundation v0.3.0](https://github.com/closure-labs/foundation/releases/tag/v0.3.0)
+at `fdeb2ab7d88cb0ff69d25ed1a02589bc28ca7006`. Its default writer uses schema 3;
+integration checks use this pin directly. Existing personal consumers retain
+their independently locked sources until explicitly updated.
 
 With a schema-3 Foundation source, seeds support Professional/Personal roles,
 optional capabilities and independent host declarations, for example:
