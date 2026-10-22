@@ -348,7 +348,7 @@ def materialize_products(output, proposal, reference, *, staged=False, retain_ar
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('phase', choices=('stage', 'prepare', 'download', 'check', 'sign', 'persist-signed', 'publish'))
+    parser.add_argument('phase', choices=('stage', 'prepare', 'download', 'check', 'sign', 'persist-signed', 'stage-publication', 'commit-publication', 'publish'))
     parser.add_argument('--proposal-hash', default='')
     parser.add_argument('--packet-ref', default='')
     parser.add_argument('--unsigned', action='store_true')
@@ -419,7 +419,7 @@ def main():
                 if os.environ.get('GITHUB_STEP_SUMMARY'):
                     with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
                         summary.write('Signed exact-byte recovery packet: `' + reference['reference'] + '`\n')
-        if args.phase == 'publish':
+        if args.phase in ('stage-publication', 'commit-publication', 'publish'):
             roots, derived = signed_inventory(output, document)
             client = GitHubClient(controller.REPOSITORY, token=os.environ['RELEASE_PUBLISH_TOKEN'])
             def publication_guard(channel, directory, core, evidence):
@@ -432,7 +432,7 @@ def main():
                 validate_signed(channel, directory, core, evidence, document)
             result = execute(document, client, roots, payload_digest(document),
                              owner=os.environ['GITHUB_RUN_ID'] + '-' + os.environ['GITHUB_RUN_ATTEMPT'],
-                             derived_assets=derived, evidence_validator=publication_guard)
+                             derived_assets=derived, evidence_validator=publication_guard, phase=args.phase)
             print(json.dumps(result, sort_keys=True))
     (output / 'release-authority.json').write_text(json.dumps(receipt, sort_keys=True, indent=2) + '\n')
 

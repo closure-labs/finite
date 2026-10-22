@@ -20,6 +20,6 @@ in {
     pathsToLink = ["/bin"];
   };
   release = pkgs.mkShell {
-    packages = scannerPackages;
+    packages = scannerPackages ++ [pkgs.curl];
   };
 }

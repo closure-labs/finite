@@ -342,11 +342,43 @@ jobs:
       - name: Clear fresh App key before authority checks
         run: | # zizmor: ignore[github-env]
           printf 'FINITE_REVIEW_CLIENT_ID=\nFINITE_REVIEW_PRIVATE_KEY=\n' >>"$GITHUB_ENV"
-      - name: Revalidate authority and publish both signed releases
+      - name: Revalidate authority and stage both signed releases
         env:
           GH_TOKEN: ${{ steps.authority-token.outputs.token }}
           RELEASE_PUBLISH_TOKEN: ${{ secrets.MERGE_QUEUE_PAT }}
           PROPOSAL_HASH: ${{ needs.prepare.outputs.proposal_hash }}
         run: >-
           finite-ci-secrets-run release-set-publishing --
-          python3 scripts/ci/execute-release-set.py publish --proposal-hash "$PROPOSAL_HASH"
+          python3 scripts/ci/execute-release-set.py stage-publication --proposal-hash "$PROPOSAL_HASH"
+      - name: Resolve fresh review App credentials after asset staging
+        env:
+          FINITE_REVIEW_CLIENT_ID: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
+          FINITE_REVIEW_PRIVATE_KEY: ${{ secrets.DECIDER_KEY }}
+        run: >-
+          finite-ci-secrets-run review-app --
+          secretspec export --file secretspec.toml --profile review-app --provider github-actions
+          --scope review-app --reason 'Finite release authority verification' --format gha
+      - name: Create fresh repository-scoped authority token
+        id: commit-authority-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ env.FINITE_REVIEW_CLIENT_ID }}
+          private-key: ${{ env.FINITE_REVIEW_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-administration: read
+          permission-members: read
+          permission-actions: read
+          permission-contents: read
+          permission-pull-requests: read
+      - name: Clear fresh App key before authority checks
+        run: | # zizmor: ignore[github-env]
+          printf 'FINITE_REVIEW_CLIENT_ID=\nFINITE_REVIEW_PRIVATE_KEY=\n' >>"$GITHUB_ENV"
+      - name: Revalidate current authority and commit both publications
+        env:
+          GH_TOKEN: ${{ steps.commit-authority-token.outputs.token }}
+          RELEASE_PUBLISH_TOKEN: ${{ secrets.MERGE_QUEUE_PAT }}
+          PROPOSAL_HASH: ${{ needs.prepare.outputs.proposal_hash }}
+        run: >-
+          finite-ci-secrets-run release-set-publishing --
+          python3 scripts/ci/execute-release-set.py commit-publication --proposal-hash "$PROPOSAL_HASH"
