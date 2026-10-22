@@ -43,8 +43,9 @@ class Reads(unittest.TestCase):
     def test_permission_and_authentication_fail_once(self):
         for status in (401, 403, 404, 422):
             with self.subTest(status=status), patch.object(api.subprocess, 'run', return_value=reply(status)) as run:
-                with self.assertRaisesRegex(api.GitHubReadError, f'HTTP {status}.*not retrying'):
+                with self.assertRaisesRegex(api.GitHubReadError, f'HTTP {status}.*not retrying') as caught:
                     api.get_json(ENDPOINT)
+                self.assertFalse(caught.exception.transient)
                 self.assertEqual(run.call_count, 1)
 
     def test_rate_limit_retry_after_and_primary_reset(self):
@@ -62,8 +63,9 @@ class Reads(unittest.TestCase):
             sleep.assert_not_called()
 
     def test_exhaustion_is_not_authorization(self):
-        with self.assertRaisesRegex(api.GitHubReadError, 'attempt=3/3.*exhausted'):
+        with self.assertRaisesRegex(api.GitHubReadError, 'attempt=3/3.*exhausted') as caught:
             self.call([reply(503)] * 3)
+        self.assertTrue(caught.exception.transient)
 
     def test_missing_is_only_an_explicit_http_404(self):
         with patch.object(api.subprocess, 'run', return_value=reply(404)):
@@ -74,8 +76,9 @@ class Reads(unittest.TestCase):
     def test_malformed_or_oversized_success_is_never_retried(self):
         for output in ('HTTP/2.0 200 OK\n\ninvalid', '{}', 'HTTP/2.0 200 OK\n\n' + 'x' * (8 * 1024 * 1024)):
             with patch.object(api.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, output, '')) as run:
-                with self.assertRaises(api.GitHubReadError): api.get_json(ENDPOINT)
+                with self.assertRaises(api.GitHubReadError) as caught: api.get_json(ENDPOINT)
                 self.assertEqual(run.call_count, 1)
+                self.assertFalse(caught.exception.transient)
 
 
 if __name__ == '__main__':

@@ -324,7 +324,22 @@ def find_origin_pr(proposal, repository, expected_bot, github=None):
     commits = api(f'repos/{repository}/commits?path={quote(path, safe="/")}&sha=main&per_page=1')
     if not isinstance(commits, list) or len(commits) != 1 or not SHA.fullmatch(commits[0].get('sha', '')):
         raise AuthorityError('Cannot establish proposal file history on main')
-    pulls = collection(api, f'repos/{repository}/commits/{commits[0]["sha"]}/pulls')
+    commit = commits[0]['sha']
+    fallback = False
+    try:
+        pulls = collection(api, f'repos/{repository}/commits/{commit}/pulls')
+    except AuthorityError as error:
+        # A separate authoritative API can discover the same exact association.
+        # Authentication, malformed responses and semantic failures never fall back.
+        if not isinstance(error.__cause__, GitHubReadError) or not error.__cause__.transient:
+            raise
+        fallback = True
+        print('Commit association reads exhausted; checking bounded native PR inventory', file=sys.stderr)
+        pulls = collection(api, f'repos/{repository}/pulls?state=closed&base=main&sort=created&direction=desc')
+        pulls = [p for p in pulls if isinstance(p, dict)
+                 and isinstance(p.get('head'), dict) and isinstance(p['head'].get('repo'), dict)
+                 and p['head']['repo'].get('full_name') == repository
+                 and commit in (p['head'].get('sha'), p.get('merge_commit_sha'))]
     candidates = [p for p in pulls if isinstance(p, dict) and p.get('merged_at')
                   and (p.get('user', {}).get('type') == 'User'
                        or (p.get('user', {}).get('type') == 'Bot' and p['user'].get('login') == expected_bot))
@@ -332,7 +347,24 @@ def find_origin_pr(proposal, repository, expected_bot, github=None):
                   and p.get('base', {}).get('ref') == 'main']
     if len(candidates) != 1:
         raise AuthorityError('Proposal history has ambiguous or missing merged proposal PR provenance')
-    return candidates[0]['number']
+    candidate = candidates[0]
+    number = candidate.get('number')
+    if type(number) is not int or number <= 0:
+        raise AuthorityError('Proposal provenance lacks a valid native PR number')
+    if fallback:
+        current = api(f'repos/{repository}/pulls/{number}')
+        if (not isinstance(current, dict) or current.get('number') != number
+                or current.get('merged') is not True or current.get('state') != 'closed'
+                or current.get('head', {}).get('sha') != candidate['head'].get('sha')
+                or current.get('head', {}).get('repo', {}).get('full_name') != repository
+                or current.get('merge_commit_sha') != candidate.get('merge_commit_sha')
+                or current.get('base', {}).get('ref') != 'main'
+                or current.get('base', {}).get('repo', {}).get('full_name') != repository
+                or current.get('user') != candidate.get('user')):
+            raise AuthorityError('Native PR provenance changed during fallback discovery')
+    # Discovery never authorizes a decision. Callers still verify the exact
+    # reviewed and merged document, main ancestry, and current human authority.
+    return number
 
 
 def main():

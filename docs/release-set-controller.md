@@ -91,6 +91,13 @@ resolves exactly one initial packet reference from its originating bot PR body,
 fetches by OCI digest, checks the successful trusted release-set producer, and
 checks every approved product hash. The PR body is a discovery aid, never authority.
 It rescans both images and rechecks current human findings admission.
+If transient commit-to-PR association reads exhaust retries, provenance discovery
+can read the complete bounded closed-PR inventory instead. The proposal's latest
+commit on main must equal exactly one eligible merged PR's head or merge commit,
+and that PR is read again to detect changes. Missing or ambiguous matches,
+incomplete inventories, authentication failures and malformed responses stop
+execution. This discovery fallback does not grant approval: the reviewed and
+merged proposal bytes, ancestry and current human authority are still checked.
 Large transfers finish before the final authority token is issued. The publisher
 first checks live release approval, then stages the OCI products and original
 Actions ZIP using the job's read-only artifact credential. This keeps archive

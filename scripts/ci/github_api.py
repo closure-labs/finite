@@ -10,7 +10,9 @@ import time
 
 
 class GitHubReadError(RuntimeError):
-    pass
+    def __init__(self, message, *, transient=False):
+        super().__init__(message)
+        self.transient = transient
 
 
 def delay_seconds(headers, fallback):
@@ -87,7 +89,8 @@ def get_json(endpoint, *, environment=None, missing=False):
         message = f'GitHub GET {label}: {reason}; request={request_id}; attempt={attempt}/3'
         delay = delay_seconds(headers, 2 ** attempt)
         if not retry or attempt == 3 or time.monotonic() + delay + 30 > deadline:
-            raise GitHubReadError(message + ('; retry budget exhausted' if retry else '; not retrying'))
+            raise GitHubReadError(message + ('; retry budget exhausted' if retry else '; not retrying'),
+                                  transient=retry)
         print(message + f'; retrying in {delay:g}s', file=sys.stderr)
         time.sleep(delay)
     raise AssertionError('Unreachable retry state')
