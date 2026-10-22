@@ -1,18 +1,11 @@
 """Authenticate release packet bytes against their original Actions ZIP."""
-from contextlib import contextmanager
 import hashlib
 from pathlib import Path
 import re
-import resource
-import stat
-import subprocess
-import tempfile
-import time
 import zipfile
 
 import decision_packets
-
-MAXIMUM = 64 * 1024**3
+from archive_read import MAXIMUM, archive_reader, chunks, members
 
 
 def bound_artifact(repository, run_id, attempt, revision, collection):
@@ -31,92 +24,18 @@ def bound_artifact(repository, run_id, attempt, revision, collection):
     return artifact
 
 
-def download_archive(archive, artifact, repository):
-    """Retry immutable GET transport failures; each attempt starts with no bytes."""
-    command = ['gh', 'api', f'repos/{repository}/actions/artifacts/{artifact["id"]}/zip']
-    for attempt in range(3):
-        archive.seek(0)
-        archive.truncate()
-        print(f'Downloading original product archive: attempt {attempt + 1}/3 (30-minute limit)', flush=True)
-        try:
-            subprocess.run(command, stdout=archive, stderr=subprocess.PIPE, text=True,
-                           check=True, timeout=1800,
-                           preexec_fn=lambda: resource.setrlimit(resource.RLIMIT_FSIZE,
-                               (artifact['size_in_bytes'], artifact['size_in_bytes'])))
-            return
-        except subprocess.CalledProcessError as error:
-            status = re.search(r'HTTP ([0-9]{3})\b', error.stderr or '')
-            transient = (int(status[1]) in (408, 429, 500, 502, 503, 504) if status else
-                         bool(re.search(r'(?:connection timed out|connection reset by peer|TLS handshake timeout|unexpected EOF)',
-                                        error.stderr or '', re.I)))
-            if not transient or attempt == 2:
-                raise
-        except subprocess.TimeoutExpired:
-            if attempt == 2:
-                raise
-        delay = 2 ** (attempt + 1)
-        print(f'Original product archive transport failed after {archive.tell()} bytes; '
-              f'retry {attempt + 1}/2 in {delay}s', flush=True)
-        time.sleep(delay)
-
-
-@contextmanager
-def archive_reader(artifact, repository, cached_archive):
-    if cached_archive is None:
-        with tempfile.TemporaryFile() as archive:
-            download_archive(archive, artifact, repository)
-            yield archive
-        return
-    path = Path(cached_archive)
-    if any(parent.is_symlink() for parent in (path, *path.parents)):
-        raise ValueError('Links in staged archive path')
-    if path.exists():
-        if not path.is_file():
-            raise ValueError('Staged archive is not a regular file')
-        with path.open('rb') as archive:
-            yield archive
-        return
-    path.parent.mkdir(parents=True, exist_ok=True)
-    try:
-        with path.open('x+b') as archive:
-            download_archive(archive, artifact, repository)
-            yield archive
-    except BaseException:
-        path.unlink(missing_ok=True)
-        raise
-
-
 def verify_archive(directory, artifact, repository='closure-labs/finite', expected_files=None, *, cached_archive=None):
     """Stream hashes; never extract or execute artifact product content."""
     directory = Path(directory)
     with archive_reader(artifact, repository, cached_archive) as archive:
-        archive.seek(0, 2)
-        if archive.tell() != artifact['size_in_bytes']:
-            raise ValueError('Original product archive size mismatch')
-        archive.seek(0)
-        if 'sha256:' + hashlib.file_digest(archive, 'sha256').hexdigest() != artifact['digest']:
-            raise ValueError('Original product archive digest mismatch')
-        archive.seek(0)
-        files, total = {}, 0
+        files = {}
         with zipfile.ZipFile(archive) as zipped:
-            for entry in zipped.infolist():
-                if entry.is_dir():
-                    continue
-                name = decision_packets.safe_name(entry.filename)
-                total += entry.file_size
-                if (name in files or len(files) >= decision_packets.MAX_FILES or total > MAXIMUM
-                        or entry.file_size <= 0 or entry.flag_bits & 1
-                        or stat.S_IFMT(entry.external_attr >> 16) not in (0, stat.S_IFREG)):
-                    raise ValueError('Unsafe original product archive')
-                with zipped.open(entry) as source:
-                    remaining, digest = entry.file_size, hashlib.sha256()
-                    while chunk := source.read(min(1024 * 1024, remaining + 1)):
-                        remaining -= len(chunk)
-                        if remaining < 0:
-                            raise ValueError('Product archive expansion exceeded declaration')
-                        digest.update(chunk)
-                    if remaining:
-                        raise ValueError('Product archive ended early')
+            for name, entry in members(zipped, max_files=decision_packets.MAX_FILES):
+                if entry.file_size <= 0:
+                    raise ValueError('Empty original product archive member')
+                digest = hashlib.sha256()
+                for chunk in chunks(zipped, entry):
+                    digest.update(chunk)
                 files[name] = {'sha256': digest.hexdigest(), 'size': entry.file_size}
         local = {}
         for path in directory.rglob('*'):

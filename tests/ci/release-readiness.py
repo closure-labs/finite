@@ -208,7 +208,7 @@ class Readiness(unittest.TestCase):
             self.assertEqual(json.loads(run.call_args.kwargs['input']),
                              {'ref': 'main', 'inputs': {'build_run': '7'}})
 
-    def test_reconciliation_failure_is_retained_as_unhealthy_evidence(self):
+    def test_monitor_is_read_only_and_retains_health_evidence(self):
         report = {'healthy': True, 'problems': [], 'channels': {},
                   'release': {'state': 'unprepared', 'reason': 'Ready to prepare'}}
         previous = Path.cwd()
@@ -221,12 +221,13 @@ class Readiness(unittest.TestCase):
                                             'GITHUB_STEP_SUMMARY': str(summary)}), \
                         patch.object(delivery, 'root_version', return_value=self.version), \
                         patch.object(delivery, 'inspect', return_value=report), \
-                        patch.object(delivery, 'dispatch', side_effect=ValueError('Previous preparation failed')):
-                    self.assertEqual(delivery.main(), 1)
+                        patch.object(delivery, 'dispatch', side_effect=AssertionError('Monitor must remain read-only')) as dispatch:
+                    self.assertEqual(delivery.main(), 0)
+                    dispatch.assert_not_called()
                 retained = json.loads(Path('.bluebuild/delivery-health.json').read_text())
-                self.assertFalse(retained['healthy'])
-                self.assertEqual(retained['problems'], ['Previous preparation failed'])
-                self.assertIn('Previous preparation failed', summary.read_text())
+                self.assertTrue(retained['healthy'])
+                self.assertEqual(retained['problems'], [])
+                self.assertIn('Ready to prepare', summary.read_text())
             finally:
                 os.chdir(previous)
 

@@ -11,6 +11,7 @@ from pathlib import Path
 import re
 import subprocess
 import time
+from urllib.parse import quote
 
 from github_api import get_json
 from release_versions import canonical_tag, prerelease
@@ -88,13 +89,16 @@ def validate_evidence(document):
 
 
 def execute(document, client, asset_roots, approved_digest, owner, now=time.time,
-            derived_assets=None, evidence_validator=None):
+            derived_assets=None, evidence_validator=None, phase='publish'):
     """Reconcile remote tags/assets, stage both drafts, then publish both.
 
     client journal reads return (document-or-None, CAS-version). journal writes
     must reject stale versions. All methods must fail on ambiguous API errors.
     Partial publication is durable and retried without overwriting remote assets.
     """
+    if phase not in ('publish', 'stage-publication', 'commit-publication'):
+        raise ValueError('Invalid publication phase')
+    staging = phase != 'commit-publication'
     identity = payload_digest(document)
     if approved_digest != identity:
         raise ValueError('Approval does not cover this immutable release payload')
@@ -137,20 +141,20 @@ def execute(document, client, asset_roots, approved_digest, owner, now=time.time
         journal.update(owner=owner, leaseUntil=now() + 900, state=state)
         version = client.write_journal(identity, journal, version)
 
-    checkpoint('staging')
+    checkpoint('staging' if staging else 'publishing')
     try:
         for channel in CHANNELS:
-            checkpoint('staging')
+            checkpoint('staging' if staging else 'publishing')
             entry = document['payload']['channels'][channel]
             revision = document['payload']['sourceRevision']
             target = client.tag_target(entry['tag'])
-            if target is None:
+            if target is None and staging:
                 client.create_tag(entry['tag'], revision)
                 target = client.tag_target(entry['tag'])
             if target != revision:
                 raise ValueError('Existing tag points at a different revision: ' + entry['tag'])
             release = client.get_release(entry['tag'])
-            if release is None:
+            if release is None and staging:
                 client.create_draft(entry['tag'], revision, identity, prerelease=prerelease(document['payload']['version']))
                 release = client.get_release(entry['tag'])
             if release is None or release['payloadDigest'] != identity:
@@ -158,24 +162,18 @@ def execute(document, client, asset_roots, approved_digest, owner, now=time.time
             if release.get('prerelease') is not prerelease(document['payload']['version']):
                 raise ValueError('Remote release type differs from the approved version')
             expected = expected_assets[channel]
-            remote = client.assets(release['id'])
-            if set(remote) - set(expected):
-                raise ValueError('Unexpected remote release assets')
-            for name, digest in expected.items():
-                checkpoint('staging')
-                if name in remote:
-                    if remote[name] != digest:
-                        raise ValueError('Remote asset hash mismatch: ' + name)
-                elif release['draft']:
-                    client.upload(release['id'], Path(asset_roots[channel]) / name)
-                else:
-                    raise ValueError('Published release is incomplete; refusing mutation')
-            if client.assets(release['id']) != expected_assets[channel]:
-                raise ValueError('Uploaded asset set does not match approved payload')
+            if staging:
+                for name, digest in expected.items():
+                    stage_asset(client, entry['tag'], revision, identity, name, digest,
+                                Path(asset_roots[channel]) / name, expected, checkpoint)
+            verify_assets(client.assets(release['id']), expected)
             journal['channels'][channel] = {'releaseId': release['id'],
                                             'state': 'staged' if release['draft'] else 'published'}
-            checkpoint('staging')
-        # Both images and their assets have been qualified and staged before here.
+            checkpoint('staging' if staging else 'publishing')
+        checkpoint('staged' if staging else 'publishing')
+        if phase == 'stage-publication':
+            return journal
+        # Both complete inventories were checked before any public boundary.
         for channel in CHANNELS:
             checkpoint('publishing')
             evidence_validator(channel, Path(asset_roots[channel]),
@@ -183,9 +181,10 @@ def execute(document, client, asset_roots, approved_digest, owner, now=time.time
             entry = document['payload']['channels'][channel]
             release = client.get_release(entry['tag'])
             if (client.tag_target(entry['tag']) != document['payload']['sourceRevision']
-                    or release['payloadDigest'] != identity or client.assets(release['id']) != expected_assets[channel]
+                    or release is None or release['payloadDigest'] != identity
                     or release.get('prerelease') is not prerelease(document['payload']['version'])):
                 raise ValueError('Release changed since staging')
+            verify_assets(client.assets(release['id']), expected_assets[channel])
             if release['draft']:
                 client.publish(release['id'], prerelease=prerelease(document['payload']['version']))
                 published = client.get_release(entry['tag'])
@@ -202,6 +201,66 @@ def execute(document, client, asset_roots, approved_digest, owner, now=time.time
         journal['leaseUntil'] = 0
         client.write_journal(identity, journal, version)
     return journal
+
+
+def verify_assets(assets, expected):
+    if set(assets) - set(expected):
+        raise ValueError('Unexpected remote release assets; inspect the draft without overwriting assets')
+    for name, asset in assets.items():
+        if asset['state'] != 'uploaded' or asset['digest'] != expected[name]:
+            raise ValueError('Remote asset hash mismatch or incomplete upload: ' + name + '; inspect the owned draft')
+    if set(assets) != set(expected):
+        raise ValueError('Release asset inventory is incomplete; run stage-publication')
+
+
+def stage_asset(client, tag, revision, identity, name, digest, path, expected, checkpoint):
+    """Three single writes, each preceded by reconciliation under the CAS lease.
+
+    subprocess.run waits for (and kills on timeout) the uploader before we read
+    state again. Manual concurrent asset editing is unsupported under this lease.
+    """
+    writes, reconciliations, last_error = 0, 0, None
+    while reconciliations < 12:
+        reconciliations += 1
+        checkpoint('staging')
+        release = client.get_release(tag)
+        if (release is None or release['payloadDigest'] != identity
+                or client.tag_target(tag) != revision):
+            raise ValueError('Release ownership or source tag changed: ' + tag)
+        assets = client.assets(release['id'])
+        if set(assets) - set(expected):
+            raise ValueError('Unexpected remote release assets; preserve and inspect the draft')
+        for other, item in assets.items():
+            if other != name and not (item['state'] == 'starter' and item['size'] == 0 and item['digest'] is None):
+                if item['state'] != 'uploaded' or item['digest'] != expected[other]:
+                    raise ValueError('Remote asset hash mismatch: ' + other)
+        asset = assets.get(name)
+        if asset is not None:
+            if asset['state'] == 'uploaded' and asset['digest'] == digest:
+                return
+            placeholder = asset['state'] == 'starter' and asset['size'] == 0 and asset['digest'] is None
+            if not release['draft'] or not placeholder:
+                raise ValueError('Remote asset hash mismatch or unsafe failed upload: ' + name + '; preserve and inspect asset ' + str(asset['id']))
+            # Re-read both the draft and the individual asset immediately before
+            # deletion. A changed object is reconciled, never deleted as stale.
+            current_release = client.get_release(tag)
+            current_asset = client.get_asset(asset['id'])
+            if (current_release != release or current_asset != asset
+                    or client.tag_target(tag) != revision):
+                continue
+            client.delete_asset(asset['id'])
+            continue
+        if not release['draft']:
+            raise ValueError('Published release is incomplete; refusing mutation')
+        if writes == 3:
+            raise RuntimeError('Upload failed after three reconciled attempts: ' + name) from last_error
+        writes += 1
+        try:
+            client.upload(release['id'], path)
+        except (RuntimeError, subprocess.SubprocessError) as error:
+            last_error = error
+        # Even a successful response is followed by a complete remote read.
+    raise ValueError('Release asset kept changing; inspect draft before retry: ' + name)
 
 
 class GitHubClient:
@@ -313,18 +372,47 @@ class GitHubClient:
         for page in range(1, 101):
             batch = self.api(f'releases/{release_id}/assets?per_page=100&page={page}')
             for asset in batch:
-                digest = asset.get('digest') or ''
-                if not re.fullmatch(r'sha256:[0-9a-f]{64}', digest) or asset['name'] in assets:
-                    raise ValueError('Remote asset lacks unique authenticated SHA-256')
-                assets[asset['name']] = digest[7:]
+                record = self.asset_record(asset)
+                if record['name'] in assets:
+                    raise ValueError('Duplicate remote asset name')
+                assets[record['name']] = record
             if len(batch) < 100:
                 return assets
         raise ValueError('Asset lookup exceeded bound')
 
+    @staticmethod
+    def asset_record(asset):
+        digest = asset.get('digest')
+        if (type(asset.get('id')) is not int or asset['id'] <= 0
+                or not isinstance(asset.get('name'), str)
+                or type(asset.get('size')) is not int or asset['size'] < 0
+                or asset.get('state') not in ('starter', 'uploaded')
+                or (digest is not None and not re.fullmatch(r'sha256:[0-9a-f]{64}', digest))):
+            raise ValueError('Remote asset lacks valid identity, state, size or digest')
+        return {key: asset[key] for key in ('id', 'name', 'state', 'size')} | {
+            'digest': digest[7:] if digest else None}
+
+    def get_asset(self, asset_id):
+        item = self.api('releases/assets/' + str(asset_id), missing=True)
+        return self.asset_record(item) if item is not None else None
+
+    def delete_asset(self, asset_id):
+        self.api('releases/assets/' + str(asset_id), 'DELETE')
+
     def upload(self, release_id, path):
-        release = self.api('releases/' + str(release_id))
-        subprocess.run(['gh', 'release', 'upload', release['tag_name'], str(path),
-                        '--repo', self.repository], check=True, timeout=300, env=self.environment)
+        # curl streams the file with retries explicitly disabled. Keep the token
+        # out of argv and let the executor reconcile every ambiguous POST.
+        token = self.environment.get('GH_TOKEN')
+        if not token or any(char in token for char in '\r\n'):
+            raise ValueError('Release upload requires a valid scoped token')
+        url = (f'https://uploads.github.com/repos/{self.repository}/releases/{release_id}/assets'
+               + '?name=' + quote(path.name, safe=''))
+        config = 'header = ' + json.dumps('Authorization: Bearer ' + token) + '\n'
+        subprocess.run(['curl', '--disable', '--config', '-', '--fail', '--silent', '--show-error',
+                        '--retry', '0', '--max-time', '300', '--request', 'POST',
+                        '--header', 'Content-Type: application/octet-stream',
+                        '--upload-file', str(path), '--output', os.devnull, url],
+                       input=config, text=True, check=True, timeout=300, env=self.environment)
 
     def publish(self, release_id, *, prerelease=False):
         data = {'draft': False, 'prerelease': prerelease}

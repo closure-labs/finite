@@ -496,11 +496,18 @@ ownership and modes, migration, and repeatability without changing real GDM
 state. Unexpected file types fail with a named diagnostic.
 
 **Delivery and decision pipeline health** runs hourly and after build and release
-workflows. It independently reports audit/decision health even if reconciliation
-fails. Its summary links the latest recorded qualification and promotion for
+workflows. Its publisher monitor is read-only. Separate reconciliation jobs
+retain automatic preparation and audit/decision issue reporting, even when
+publisher health fails. Its summary links the latest recorded qualification and promotion for
 each channel, reports failing jobs, and flags promotions at least 36 hours old.
-This bounded workflow history is an operational observation, not proof of the
-current registry contents or an authorization receipt.
+Publisher identity artifacts bind each execution to its merged proposal, payload,
+version and native run attempt before preparation transfers. Health verifies the
+native artifact binding, SHA-256 and bounded JSON before reporting queued,
+running, environment approval wait, failed, partial or published states. Missing
+or uncorrelated legacy metadata reports unknown with inspection guidance. Failed,
+partial and missing publishers make health fail even when builds succeeded;
+native environment approval waits are informational blockers. These observations
+never authorize approval or publication. See [publication recovery](release-set-controller.md#upload-and-publication-recovery).
 
 For a new stable `VERSION` such as `0.8.2`, trusted main builds select both
 images and force fresh qualification. After both profiles succeed and preserve
