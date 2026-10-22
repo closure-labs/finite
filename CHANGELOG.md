@@ -8,6 +8,11 @@ All notable changes to Finite are documented here. The format follows
 
 Development version: `0.8.3-dev`. The next stable release is 0.8.3.
 
+### Fixed
+
+- Revalidate release metadata and reconcile drafts by their confirmed IDs so
+  cached inventories cannot be mistaken for conflicting release payloads.
+
 ## [0.8.3-dev] - 2026-10-21
 
 Prepare a new development pair after the published `0.8.1` stable pair. The

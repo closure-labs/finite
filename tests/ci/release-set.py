@@ -136,6 +136,63 @@ class ReleaseSetTests(unittest.TestCase):
             self.assertEqual(json.loads(run.call_args.kwargs['input'])['ref'], 'refs/tags/finite-1.2.3')
             self.assertEqual(run.call_args.kwargs['env']['GH_TOKEN'], 'fixture-publish')
 
+    def test_created_draft_and_published_state_do_not_depend_on_cached_inventory(self):
+        tag, identity = 'finite-1.2.3-dev', 'b' * 64
+        current, cached, writes = {}, {}, []
+
+        def request(command, **kwargs):
+            endpoint = next(arg for arg in command if arg.startswith('repos/'))
+            method = command[command.index('--method') + 1]
+            if method == 'POST':
+                data = json.loads(kwargs['input'])
+                current.update(id=7, tag_name=data['tag_name'], draft=data['draft'],
+                               prerelease=data['prerelease'], body=data['body'])
+                writes.append(method)
+                return types.SimpleNamespace(returncode=0, stdout=json.dumps(current), stderr='')
+            if method == 'PATCH':
+                current.update(json.loads(kwargs['input']))
+                writes.append(method)
+                return types.SimpleNamespace(returncode=0, stdout=json.dumps(current), stderr='')
+            # A collection can lag creation even when the new resource is readable
+            # by ID. Individual GETs can also retain the pre-publication draft.
+            if '/releases?' in endpoint:
+                body = []
+            elif endpoint.endswith('/releases/7'):
+                if 'Cache-Control: no-cache' in command:
+                    cached[endpoint] = copy.deepcopy(current)
+                body = cached.setdefault(endpoint, copy.deepcopy(current))
+            else:
+                self.fail('Unexpected endpoint: ' + endpoint)
+            return types.SimpleNamespace(returncode=0, stderr='', stdout=
+                'HTTP/2.0 200 OK\nCache-Control: private, max-age=60\n\n' + json.dumps(body))
+
+        client = release_set.GitHubClient('closure-labs/finite')
+        with patch.object(release_set.subprocess, 'run', side_effect=request):
+            self.assertIsNone(client.get_release(tag))
+            client.create_draft(tag, 'a' * 40, identity, prerelease=True)
+            self.assertEqual(client.get_release(tag), {
+                'id': 7, 'draft': True, 'prerelease': True, 'payloadDigest': identity})
+            client.publish(7, prerelease=True)
+            self.assertFalse(client.get_release(tag)['draft'])
+        self.assertEqual(writes, ['POST', 'PATCH'])
+
+    def test_missing_release_lookup_is_not_reported_as_foreign_ownership(self):
+        self.remote.get_release = lambda tag: None
+        with self.assertRaisesRegex(ValueError, 'Release lookup returned no result'):
+            self.run_release(phase='stage-publication')
+        self.assertFalse(any(event[0] in ('upload', 'delete', 'publish') for event in self.remote.events))
+
+    def test_known_release_id_cannot_be_reassigned_to_another_tag(self):
+        client = release_set.GitHubClient('closure-labs/finite')
+        record = {'id': 7, 'tag_name': 'finite-1.2.3-dev', 'draft': True,
+                  'prerelease': True, 'body': '<!-- finite-release-set:' + 'b' * 64 + ' -->'}
+        with patch.object(client, 'api', return_value=record):
+            client.create_draft('finite-1.2.3-dev', 'a' * 40, 'b' * 64, prerelease=True)
+        for field, value in [('id', 8), ('tag_name', 'foreign-release')]:
+            with self.subTest(field=field), patch.object(client, 'api', return_value={**record, field: value}):
+                with self.assertRaisesRegex(ValueError, 'Release identity changed'):
+                    client.get_release('finite-1.2.3-dev')
+
     def test_new_journal_uses_canonical_repository_endpoint(self):
         client = release_set.GitHubClient('closure-labs/finite', 'automation/decision-journal')
         responses = [
@@ -214,6 +271,8 @@ class ReleaseSetTests(unittest.TestCase):
     def test_github_prereleases_never_change_latest_and_stable_defaults_remain(self):
         client = release_set.GitHubClient('closure-labs/finite')
         with patch.object(client, 'api') as api:
+            api.return_value = {'id': 5, 'tag_name': 'finite-1.2.3-dev', 'draft': True,
+                                'prerelease': True, 'body': '<!-- finite-release-set:' + 'b' * 64 + ' -->'}
             client.create_draft('finite-1.2.3-dev', 'a' * 40, 'b' * 64, prerelease=True)
             data = api.call_args.args[2]
             self.assertIs(data['prerelease'], True)

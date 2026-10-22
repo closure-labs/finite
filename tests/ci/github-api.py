@@ -37,6 +37,7 @@ class Reads(unittest.TestCase):
         self.assertNotIn('secret fixture', self.output.getvalue())
         for call in self.run.call_args_list:
             self.assertEqual(call.args[0][2:4], ['--method', 'GET'])
+            self.assertIn('Cache-Control: no-cache', call.args[0])
             self.assertLessEqual(call.kwargs['timeout'], 30)
 
     def test_permission_and_authentication_fail_once(self):

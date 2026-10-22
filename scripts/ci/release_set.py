@@ -157,7 +157,10 @@ def execute(document, client, asset_roots, approved_digest, owner, now=time.time
             if release is None and staging:
                 client.create_draft(entry['tag'], revision, identity, prerelease=prerelease(document['payload']['version']))
                 release = client.get_release(entry['tag'])
-            if release is None or release['payloadDigest'] != identity:
+            if release is None:
+                raise ValueError('Release lookup returned no result: ' + entry['tag']
+                                 + '; inspect draft visibility and publishing credentials before retrying')
+            if release['payloadDigest'] != identity:
                 raise ValueError('Release belongs to another payload: ' + entry['tag'])
             if release.get('prerelease') is not prerelease(document['payload']['version']):
                 raise ValueError('Remote release type differs from the approved version')
@@ -270,6 +273,7 @@ class GitHubClient:
             raise ValueError('Invalid repository')
         self.repository, self.branch = repository, journal_branch
         self.environment = {**os.environ, **({'GH_TOKEN': token} if token else {})}
+        self.release_ids = {}
 
     def api(self, endpoint, method='GET', data=None, missing=False):
         path = 'repos/' + self.repository + ('/' + endpoint if endpoint else '')
@@ -344,6 +348,14 @@ class GitHubClient:
         self.api('git/refs', 'POST', {'ref': 'refs/tags/' + tag, 'sha': revision})
 
     def get_release(self, tag):
+        if tag in self.release_ids:
+            release_id = self.release_ids[tag]
+            item = self.api('releases/' + str(release_id), missing=True)
+            if item is None:
+                return None
+            if item.get('id') != release_id:
+                raise ValueError('Release identity changed: ' + tag)
+            return self.release_record(item, tag)
         # Draft lookup via releases/tags is inconsistent before publication.
         for page in range(1, 101):
             releases = self.api('releases?per_page=100&page=' + str(page))
@@ -351,13 +363,21 @@ class GitHubClient:
             if len(found) > 1:
                 raise ValueError('Duplicate release tag')
             if found:
-                item = found[0]
-                match = re.search(r'<!-- finite-release-set:([0-9a-f]{64}) -->', item.get('body') or '')
-                return {'id': item['id'], 'draft': item['draft'], 'prerelease': item['prerelease'],
-                        'payloadDigest': match[1] if match else None}
+                self.release_record(found[0], tag)
+                return self.get_release(tag)
             if len(releases) < 100:
                 return None
         raise ValueError('Release lookup exceeded bound')
+
+    def release_record(self, item, tag):
+        if (not isinstance(item, dict) or item.get('tag_name') != tag
+                or type(item.get('id')) is not int or item['id'] <= 0
+                or type(item.get('draft')) is not bool or type(item.get('prerelease')) is not bool):
+            raise ValueError('Release identity changed or response is malformed: ' + tag)
+        self.release_ids[tag] = item['id']
+        match = re.search(r'<!-- finite-release-set:([0-9a-f]{64}) -->', item.get('body') or '')
+        return {'id': item['id'], 'draft': item['draft'], 'prerelease': item['prerelease'],
+                'payloadDigest': match[1] if match else None}
 
     def create_draft(self, tag, revision, identity, *, prerelease=False):
         data = {'tag_name': tag, 'target_commitish': revision,
@@ -365,7 +385,9 @@ class GitHubClient:
                  'body': '<!-- finite-release-set:' + identity + ' -->'}
         if prerelease:
             data['make_latest'] = 'false'
-        self.api('releases', 'POST', data)
+        # The collection can lag creation. Keep the confirmed ID and reread
+        # that resource before using it; do not trust a cached inventory.
+        self.release_record(self.api('releases', 'POST', data), tag)
 
     def assets(self, release_id):
         assets = {}

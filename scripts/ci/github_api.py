@@ -55,7 +55,10 @@ def get_json(endpoint, *, environment=None, missing=False):
     for attempt in range(1, 4):
         status, headers, body = None, {}, ''
         try:
-            result = subprocess.run(['gh', 'api', '--method', 'GET', '--include', endpoint],
+            # Authority, leases and release state must be revalidated at the
+            # origin, including immediately after a successful write.
+            result = subprocess.run(['gh', 'api', '--method', 'GET', '--include',
+                                     '-H', 'Cache-Control: no-cache', endpoint],
                                     capture_output=True, text=True, check=False,
                                     timeout=30, env=environment)
             output = result.stdout.replace('\r\n', '\n')
