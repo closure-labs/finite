@@ -16,6 +16,9 @@ protected signing requirements as stable releases.
 
 ### Changed
 
+- Pin the default Foundation source to published v0.3.0, including its matching
+  dependency graph and source metadata. New profiles use schema 3; existing
+  personal consumers retain their own source locks and update workflow.
 - Negotiate fresh-login and seed profile formats from the bundled Foundation
   catalog. Schema-3 sources enable Personal roles, optional capabilities and
   independent host selections; seeds share Foundation's pure validator and keep
