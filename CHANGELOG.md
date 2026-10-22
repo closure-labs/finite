@@ -8,6 +8,13 @@ All notable changes to Finite are documented here. The format follows
 
 Development version: `0.8.3-dev`. The next stable release is 0.8.3.
 
+### Changed
+
+- Keep ISO payloads out of protected signing handoffs, authenticating native
+  preparation and fetching original approved products once for publication.
+- Bound checks snapshots by dependency generation, scope contract source inputs,
+  filter health to main delivery events and install only missing documentation tools.
+
 ### Fixed
 
 - Correlate publication retries with authenticated identities from reused native

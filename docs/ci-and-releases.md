@@ -64,10 +64,25 @@ two cores per job and one evaluation thread. See the
 
 The shared Nix setup applies the centralized public substituters and trust keys
 for both flakes and lightweight CI tools. The checks store and downloaded source
-trees use platform/lock/source-revision keys. Only successful trusted main checks
-save shared store snapshots. Cache maintenance retains two main generations;
+trees use platform/dependency-generation keys. Checks generations bind both lockfiles,
+the tool-shell definition and SecretSpec source identity, so ordinary source commits
+do not repack the store. Nix still evaluates every current check derivation.
+Successful check aggregates retain a temporary GC root through post-job save.
+Before a new snapshot is saved, garbage collection targets a 1 GiB store; rooted
+paths can prevent reaching that target. Explicit baseline benchmarks retain the
+old source-revision key and uncapped store for a faithful comparison.
+Only successful trusted main checks save shared store snapshots.
+Cache maintenance retains two main generations;
 PR and merge-queue jobs remain readers. GitHub restores are scoped to the current
-and base/default branches. Registry credentials remain outside cached paths.
+and base/default branches. The two v2 fallback snapshots remain until two distinct
+bounded generations exist, then maintenance can retire them. Registry credentials
+remain outside cached paths.
+
+Contract checks declare separate source inputs for home integration, Nix lifecycle,
+firmware/ISO editors, dependency updates, workflow lint and repository policy.
+The full `.#ci-checks` aggregate remains required. Changes outside a group's
+inputs can reuse its existing Nix result; changed tests or their dependencies
+change the derivation normally. Documentation jobs install only missing tools.
 
 With `FINITE_OPTIMIZED_CACHES=true`, small jobs realize pinned closures from
 public binary caches without an Actions restore; aggregate checks keep their
@@ -502,7 +517,7 @@ Native policy data remains visible. It checks recursive relabeling, preserved
 ownership and modes, migration, and repeatability without changing real GDM
 state. Unexpected file types fail with a named diagnostic.
 
-**Delivery and decision pipeline health** runs hourly and after build and release
+**Delivery and decision pipeline health** runs hourly and after trusted main build and release
 workflows. Its publisher monitor is read-only. Separate reconciliation jobs
 retain automatic preparation and audit/decision issue reporting, even when
 publisher health fails. Its summary links the latest recorded qualification and promotion for
@@ -553,3 +568,7 @@ and rate-limit reset delays must fit the remaining budget. Diagnostics include
 the endpoint path, HTTP status, request ID and attempt, without response bodies
 or credentials. Mutations are never blindly retried; subsequent reconciliation
 checks remote state before another operation.
+
+Health completion triggers exclude PR and merge-queue validation runs. Same-repository
+main push, scheduled and manual delivery completions remain observed even when
+they fail. Hourly and explicit health dispatches retain missed-event recovery.

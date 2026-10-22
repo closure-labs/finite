@@ -82,8 +82,12 @@ runs:
          (inputs.cache-profile == 'auto' && github.job == 'checks'))
       uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
       with:
-        primary-key: nix-store-v2-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock', 'devenv.lock') }}-${{ github.sha }}
+        # Tool generations change with dependencies, rather than every source commit.
+        # Nix still checks each derivation's complete input identity on every run.
+        primary-key: ${{ inputs.cache-mode == 'baseline' && format('nix-store-v2-{0}-{1}-{2}-{3}', runner.os, runner.arch, hashFiles('flake.lock', 'devenv.lock'), github.sha) || format('nix-checks-v3-{0}-{1}-{2}', runner.os, runner.arch, hashFiles('flake.lock', 'devenv.lock', 'lib/ci-shells.nix', 'sources/secretspec.json')) }}
+        gc-max-store-size-linux: ${{ inputs.cache-mode != 'baseline' && '1G' || '' }}
         restore-prefixes-first-match: |
+          ${{ inputs.cache-mode != 'baseline' && format('nix-checks-v3-{0}-{1}-', runner.os, runner.arch) || '' }}
           nix-store-v2-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock', 'devenv.lock') }}-
           nix-store-v2-${{ runner.os }}-${{ runner.arch }}-
           nix-store-v1-${{ runner.os }}-${{ runner.arch }}-

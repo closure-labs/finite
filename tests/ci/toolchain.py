@@ -125,12 +125,14 @@ class Toolchain(unittest.TestCase):
             '~/.cache/nix/fetcher-cache-v4.sqlite*',
         })
         self.assertNotEqual(cache['with'].get('nix'), 'false')
-        self.assertNotIn('gc-max-store-size', cache['with'])
+        self.assertIn('gc-max-store-size-linux', cache['with'])
         self.assertEqual(cache['with']['save'], "${{ github.job == 'checks' && github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}")
         self.assertIn("hashFiles('flake.lock'", cache['with']['primary-key'])
-        self.assertIn('${{ github.sha }}', cache['with']['primary-key'])
-        self.assertTrue(cache['with']['primary-key'].startswith(
-            cache['with']['restore-prefixes-first-match'].splitlines()[0]))
+        self.assertIn('nix-checks-v3-', cache['with']['primary-key'])
+        self.assertIn("inputs.cache-mode == 'baseline'", cache['with']['primary-key'])
+        self.assertNotIn('github.sha', cache['with']['primary-key'].split("|| format('nix-checks-v3-")[1])
+        self.assertIn("format('nix-checks-v3-", cache['with']['restore-prefixes-first-match'])
+        self.assertIn("inputs.cache-mode != 'baseline'", cache['with']['restore-prefixes-first-match'])
         source_cache = next(s for s in action['runs']['steps'] if s.get('id') == 'source-cache')
         self.assertIs(source_cache['with']['nix'], False)
         self.assertNotIn('/nix', source_cache['with']['paths'].splitlines())

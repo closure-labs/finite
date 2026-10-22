@@ -14,6 +14,7 @@ PROFILES = {
 # These files qualify an existing immutable image; they are not filesystem
 # inputs. Keep source/security checks while reusing already validated builds.
 QUALIFICATION_ONLY = {
+    "scripts/ci/release_handoff.py", "scripts/ci/nix-checks.py", "lib/check-sources.nix",
     "scripts/ci/github_api.py", "scripts/ci/release_readiness.py",
     "scripts/ci/release-readiness.py", "scripts/ci/delivery-health.py",
     'scripts/ci/release_versions.py', 'scripts/ci/release-cycle.py',

@@ -518,6 +518,11 @@ class ExecutionTests(unittest.TestCase):
                 patch.object(module, 'signed_inventory') as signatures:
             self.assertEqual(module.check_signed_packet(self.root, self.proposal, manifest, github=lambda _: run), self.document)
             signatures.assert_called_once()
+            self.assertEqual(module.check_signed_packet(self.root, self.proposal, manifest,
+                             github=lambda _: {**run, 'event': 'push'}), self.document)
+            with self.assertRaisesRegex(ValueError, 'trusted publisher'):
+                module.check_signed_packet(self.root, self.proposal, manifest,
+                                           github=lambda _: {**run, 'event': 'pull_request'})
             with patch.object(module.controller, 'collection', return_value=[]):
                 with self.assertRaisesRegex(ValueError, 'isolated signing'):
                     module.check_signed_packet(self.root, self.proposal, manifest, github=lambda _: run)

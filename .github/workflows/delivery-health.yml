@@ -5,6 +5,7 @@ on:
   workflow_run: # zizmor: ignore[dangerous-triggers] Trusted main code reads metadata only.
     workflows: [Build Finite, Prepare two-image release approval, Publish approved two-image release]
     types: [completed]
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
@@ -23,7 +24,15 @@ env:
   FINITE_QUALIFIED_ISO_CHANNELS: ${{ vars.FINITE_QUALIFIED_ISO_CHANNELS }}
 jobs:
   health:
-    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && vars.FINITE_REVIEW_APP_ID != ''
+    if: >-
+      github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' &&
+      vars.FINITE_REVIEW_APP_ID != '' &&
+      (github.event_name != 'workflow_run' ||
+       (github.event.workflow_run.head_repository.full_name == 'closure-labs/finite' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        (github.event.workflow_run.event == 'push' ||
+         github.event.workflow_run.event == 'schedule' ||
+         github.event.workflow_run.event == 'workflow_dispatch')))
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -70,7 +79,15 @@ jobs:
           path: .bluebuild/delivery-health.json
           retention-days: 30
   reconcile:
-    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && vars.FINITE_REVIEW_APP_ID != ''
+    if: >-
+      github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' &&
+      vars.FINITE_REVIEW_APP_ID != '' &&
+      (github.event_name != 'workflow_run' ||
+       (github.event.workflow_run.head_repository.full_name == 'closure-labs/finite' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        (github.event.workflow_run.event == 'push' ||
+         github.event.workflow_run.event == 'schedule' ||
+         github.event.workflow_run.event == 'workflow_dispatch')))
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:

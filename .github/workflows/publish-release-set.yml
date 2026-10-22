@@ -142,16 +142,34 @@ jobs:
           trap 'oras logout ghcr.io >/dev/null 2>&1 || true' EXIT
           python3 scripts/ci/execute-release-set.py prepare --staged --proposal-hash "$PROPOSAL_HASH" --packet-ref "$PACKET_REF"
           PREPARE
-      - name: Retain execution evidence
-        if: always()
+      - name: Create a bounded signing request without product bytes
+        env:
+          GH_TOKEN: ${{ steps.authority-token.outputs.token }}
+          PROPOSAL_HASH: ${{ steps.prepare.outputs.proposal_hash }}
+        run: >-
+          nix develop --file lib/ci-tools.nix release --command python3 scripts/ci/execute-release-set.py
+          signing-request --proposal-hash "$PROPOSAL_HASH"
+      - name: Retain authenticated signing evidence
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: release-execution-${{ github.run_id }}-${{ github.run_attempt }}
-          path: |
-            .bluebuild/release-execution/
-            !.bluebuild/release-execution/transport/**
-          compression-level: 0
+          name: release-signing-request-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/release-signing-request/
+          compression-level: 6
+          if-no-files-found: error
           retention-days: 90
+      - name: Retain preparation failure diagnostics without product payloads
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-preparation-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .bluebuild/release-execution/release-set.json
+            .bluebuild/release-execution/release-authority.json
+            .bluebuild/release-execution/security-*/
+            .bluebuild/release-execution/packet/decision-packet.json
+          if-no-files-found: warn
+          retention-days: 90
+
   sign:
     needs: prepare
     if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
@@ -206,7 +224,7 @@ jobs:
           GH_TOKEN: ${{ steps.initial-authority-token.outputs.token }}
           ARTIFACT_READ_TOKEN: ${{ github.token }}
           PROPOSAL_HASH: ${{ needs.prepare.outputs.proposal_hash }}
-        run: nix develop --file lib/ci-tools.nix release --command python3 scripts/ci/execute-release-set.py download --unsigned --proposal-hash "$PROPOSAL_HASH"
+        run: nix develop --file lib/ci-tools.nix release --command python3 scripts/ci/execute-release-set.py download --unsigned --metadata-only --proposal-hash "$PROPOSAL_HASH"
       - name: Realize pinned signing tools before exposing credentials
         run: | # zizmor: ignore[github-env]
           resolver=$(nix build --file lib/ci-tools.nix ci-secrets-run --no-link --print-out-paths)
@@ -243,7 +261,7 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.authority-token.outputs.token }}
           PROPOSAL_HASH: ${{ needs.prepare.outputs.proposal_hash }}
-        run: nix develop --file lib/ci-tools.nix release --command python3 scripts/ci/execute-release-set.py check --proposal-hash "$PROPOSAL_HASH"
+        run: nix develop --file lib/ci-tools.nix release --command python3 scripts/ci/execute-release-set.py check --metadata-only --proposal-hash "$PROPOSAL_HASH"
       - name: Sign both approved asset manifests with scoped credentials
         if: needs.prepare.outputs.recovered_signed != 'true'
         env:
@@ -251,13 +269,13 @@ jobs:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
           PROPOSAL_HASH: ${{ needs.prepare.outputs.proposal_hash }}
         run: >-
-          finite-ci-secrets-run release-signing -- python3 scripts/ci/execute-release-set.py sign --proposal-hash "$PROPOSAL_HASH"
+          finite-ci-secrets-run release-signing -- python3 scripts/ci/execute-release-set.py sign --metadata-only --proposal-hash "$PROPOSAL_HASH"
       - name: Retain signed execution packet for safe exact-byte retries
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: signed-release-execution-${{ github.run_id }}-${{ github.run_attempt }}
           path: .bluebuild/release-execution/
-          compression-level: 0
+          compression-level: 6
           retention-days: 90
       - name: Persist signed bytes as an immutable recovery packet
         env:
@@ -269,7 +287,7 @@ jobs:
           set -euo pipefail
           printf '%s' "$REGISTRY_TOKEN" | oras login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
           trap 'oras logout ghcr.io >/dev/null 2>&1 || true' EXIT
-          python3 scripts/ci/execute-release-set.py persist-signed --proposal-hash "$PROPOSAL_HASH"
+          python3 scripts/ci/execute-release-set.py persist-signed --metadata-only --proposal-hash "$PROPOSAL_HASH"
           PERSIST
   publish:
     needs: [prepare, sign]
@@ -322,8 +340,15 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.initial-authority-token.outputs.token }}
           ARTIFACT_READ_TOKEN: ${{ github.token }}
+          REGISTRY_TOKEN: ${{ github.token }}
           PROPOSAL_HASH: ${{ needs.prepare.outputs.proposal_hash }}
-        run: nix develop --file lib/ci-tools.nix release --command python3 scripts/ci/execute-release-set.py download --proposal-hash "$PROPOSAL_HASH"
+        run: |
+          nix develop --file lib/ci-tools.nix release --command bash <<'DOWNLOAD'
+          set -euo pipefail
+          printf '%s' "$REGISTRY_TOKEN" | oras login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          trap 'oras logout ghcr.io >/dev/null 2>&1 || true' EXIT
+          python3 scripts/ci/execute-release-set.py download --metadata-only --proposal-hash "$PROPOSAL_HASH"
+          DOWNLOAD
       - name: Realize publishing tools before exposing the release PAT
         run: | # zizmor: ignore[github-env]
           resolver=$(nix build --file lib/ci-tools.nix ci-secrets-run --no-link --print-out-paths)

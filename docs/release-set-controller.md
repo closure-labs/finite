@@ -111,9 +111,9 @@ compares every archived member with the approved products. Staged bytes are
 never trusted merely because a prior step succeeded. Missing or changed bytes
 fail rather than being silently redownloaded during authority processing. The
 temporary ZIP is deleted before scans and excluded from retained evidence.
-Signing and publishing jobs also renew authority credentials after their large
-execution-packet downloads and tool realization, before checking admission or
-exposing signing/publishing credentials. All live human approval and signature
+Signing and publishing jobs also renew authority credentials after evidence or
+product transfers and tool realization, before checking admission or exposing
+signing/publishing credentials. All live human approval and signature
 checks remain enforced.
 
 Inventory reuse authenticates this publishing workflow on trusted hosted main
@@ -130,8 +130,10 @@ then publishes. Its repository-writing token is separate from the read-only
 App token used for reviewer verification. All normal and legacy recovery release
 workflows share `finite-official-release` concurrency.
 
-The signer saves an immutable OCI packet of the exact signed products and
-reports; its digest reference appears in the run summary. To recover a partially
+The signer saves an immutable OCI envelope of the exact signed manifests and
+reports plus the original immutable product reference; its digest appears in
+the run summary. The product bytes remain in the original approved OCI packet.
+Both immutable references must remain available for durable recovery. To recover a partially
 published release in a new dispatch, provide that reference as `packet_ref`.
 Recovery checks the trusted signing job, signatures and equality with the approved
 core, rescans both images, and retains the original signed bytes. It does not
@@ -160,8 +162,9 @@ or member validation failures stop immediately. Repository and registry writes
 do not use this retry path.
 A successful workflow ID plus self-reported packet metadata is insufficient.
 If the original artifact expired, use the previously persisted signed recovery
-packet, whose complete product bytes and reports are checked against the Cosign
-public key before fresh admission. Splitting drops the redundant full ISO from
+packet. Legacy packets contain complete product bytes; new envelopes refer to
+the original immutable OCI products. Both paths verify complete product hashes
+and signed reports against the Cosign public key before fresh admission. Splitting drops the redundant full ISO from
 persisted products after verifying its original qualified hash; signed staging
 uses hardlinks for verified core files to avoid duplicate large allocations.
 
@@ -210,10 +213,32 @@ and attempt authentication remains explicit in each caller. Long reads use the
 read-only job token and restore the previous token on all exit paths; subsequent
 workflow authority checks mint fresh App credentials.
 
-Prepared execution handoffs retain packet manifests, producer bindings, release
-documents, scan output and authority receipts. Core products occur only under
-`signed/`; the original packet's product paths are removed after authentication
-and signing preparation. Authenticated older full execution ZIPs remain readable.
+Preparation keeps its full product tree locally and emits a separate
+`release-signing-request-RUN-ATTEMPT` artifact containing only release documents,
+scan output, derived signing evidence and a preparation identity. Compressed and
+expanded evidence are bounded to 2 GiB and regular safe members. JSON evidence
+uses compression level 6; the bound accommodates the existing 94/128 MB SPDX
+reports and native scanner inventories while excluding ISO payloads. Consumers
+verify the native artifact's repository/run/attempt/revision and ZIP digest, then
+require exactly one completed successful native preparation job from trusted
+main. Missing or changed producer metadata fails closed.
+
+The protected signer receives no ISO parts. It reauthenticates current release
+approval and security admission, signs the approved core hashes together with
+the actual derived evidence hashes, and checks exact checksum coverage. Signed
+Actions handoffs and OCI recovery envelopes contain metadata only. The publisher
+verifies this small signed envelope before fetching the original approved OCI
+products once, then hashes every core file and verifies both complete signatures
+before staging. The original immutable product reference must equal the one in
+the approved release PR; a substituted product, payload, producer or signature
+stops execution. Same-run retries authenticate the actual producing attempt,
+including successful preparation/signing reused from an earlier attempt.
+
+Older authenticated full execution ZIPs and full signed OCI recovery packets
+remain readable through the compatibility path. New metadata recovery envelopes
+use the same protected signer proof, original approved products and fresh scans;
+they preserve existing signatures. Long recovery transfers stage before fresh
+App authority checks, with cached bytes reauthenticated on the scan phase.
 Preparation/publication jobs allow 240 minutes and signing allows 180 minutes.
 
 ### Publisher health correlation

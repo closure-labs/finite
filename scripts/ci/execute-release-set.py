@@ -18,6 +18,7 @@ import tempfile
 import decision_controller as controller
 import decision_packets
 import release_artifact
+import release_handoff
 import archive_read
 from release_set import CHANNELS, GitHubClient, execute, payload_digest, sha256, validate_evidence
 from security_decisions import canonical_hash, load_json
@@ -91,7 +92,7 @@ def check_product(packet, proposal, manifest, github=None, *, cached_archive=Non
 
 
 
-def check_signed_packet(packet, proposal, manifest, github=None):
+def check_signed_packet(packet, proposal, manifest, github=None, *, original_reference=None, cached_products=None):
     document = load_json(packet / 'release-set.json')
     if document.get('payload') != proposal['payload']:
         raise ValueError('Recovery packet differs from approved products')
@@ -108,14 +109,20 @@ def check_signed_packet(packet, proposal, manifest, github=None):
             or run.get('head_sha') != producer.get('headSha') or run.get('id') != run_id
             or run.get('run_attempt') != attempt or run.get('path') != '.github/workflows/publish-release-set.yml'
             or run.get('head_repository', {}).get('full_name') != controller.REPOSITORY
-            or run.get('head_branch') != 'main' or run.get('event') != 'workflow_dispatch'
+            or run.get('head_branch') != 'main' or run.get('event') not in ('push', 'workflow_dispatch')
             or run.get('status') != 'completed'):
         raise ValueError('Recovery packet lacks a completed trusted publisher producer')
     jobs = controller.collection(f'repos/{controller.REPOSITORY}/actions/runs/{run_id}/attempts/{attempt}/jobs', 'jobs')
     signers = [job for job in jobs if job.get('name') == 'sign' and job.get('conclusion') == 'success']
     if len(signers) != 1:
         raise ValueError('Recovery packet producer did not complete isolated signing')
-    signed_inventory(packet, document)
+    if (packet / 'handoff.json').exists():
+        if original_reference is None:
+            raise ValueError('Metadata recovery requires the approved original product reference')
+        release_handoff.hydrate(packet, proposal, original_reference, api=api,
+                                collection=controller.collection, verify_signed=signed_inventory, cached_packet=cached_products)
+    else:
+        signed_inventory(packet, document)
     return document
 
 
@@ -134,8 +141,8 @@ def verify_scans(output, document):
     return receipts
 
 
-def validate_signed(channel, directory, core, derived, document):
-    for name, digest in {**core, **derived}.items():
+def validate_signed(channel, directory, core, derived, document, *, metadata_only=False):
+    for name, digest in (derived if metadata_only else {**core, **derived}).items():
         path = directory / name
         if path.is_symlink() or not path.is_file() or sha256(path) != digest:
             raise ValueError('Signed release bytes changed')
@@ -158,7 +165,7 @@ def validate_signed(channel, directory, core, derived, document):
         raise ValueError('Signed checksums do not cover the exact approved products and evidence')
 
 
-def signed_inventory(output, document):
+def signed_inventory(output, document, *, metadata_only=False):
     roots, derived = {}, {}
     for channel in CHANNELS:
         roots[channel] = output / 'signed' / channel
@@ -169,7 +176,7 @@ def signed_inventory(output, document):
                 raise ValueError('Signed release assets must be regular files')
             if path.name not in core:
                 derived[channel][path.name] = sha256(path)
-        validate_signed(channel, roots[channel], core, derived[channel], document)
+        validate_signed(channel, roots[channel], core, derived[channel], document, metadata_only=metadata_only)
     return roots, derived
 
 
@@ -195,7 +202,7 @@ def compact_handoff(output, document):
         shutil.rmtree(recovered)
 
 
-def sign(output, document):
+def sign(output, document, *, metadata_only=False):
     if not os.environ.get('COSIGN_PRIVATE_KEY'):
         raise ValueError('Scoped signing credentials are unavailable')
     for channel in CHANNELS:
@@ -206,17 +213,22 @@ def sign(output, document):
                 raise ValueError('Unexpected signing asset')
             if path.name not in ('SHA256SUMS', 'SHA256SUMS.bundle.json'):
                 entries[path.name] = sha256(path)
-        if any(entries.get(name) != digest for name, digest in document['payload']['channels'][channel]['assets'].items()):
+        core = document['payload']['channels'][channel]['assets']
+        if metadata_only:
+            if set(entries) & set(core):
+                raise ValueError('Metadata signer must not receive product bytes')
+            entries.update(core)
+        elif any(entries.get(name) != digest for name, digest in core.items()):
             raise ValueError('Signing assets differ from approved products')
         (directory / 'SHA256SUMS').write_text(''.join(digest + '  ' + name + '\n' for name, digest in sorted(entries.items())))
         subprocess.run(['cosign', 'sign-blob', '--yes', '--key', 'env://COSIGN_PRIVATE_KEY',
                         '--bundle', str(directory / 'SHA256SUMS.bundle.json'), str(directory / 'SHA256SUMS')],
                        check=True, timeout=150)
-    signed_inventory(output, document)
+    signed_inventory(output, document, metadata_only=metadata_only)
 
 
 
-def download_execution(output, signed=True, github=None):
+def download_execution(output, signed=True, github=None, *, metadata_only=False):
     """Resolve the exact successful producing attempt instead of assuming retry attempt."""
     api = github or controller.api
     run_id, attempt = int(os.environ['GITHUB_RUN_ID']), int(os.environ['GITHUB_RUN_ATTEMPT'])
@@ -226,6 +238,8 @@ def download_execution(output, signed=True, github=None):
             or run.get('head_repository', {}).get('full_name') != controller.REPOSITORY):
         raise ValueError('Execution artifact is not from this trusted workflow run')
     prefix = ('signed-' if signed else '') + f'release-execution-{run_id}-'
+    if metadata_only and not signed:
+        prefix = f'release-signing-request-{run_id}-'
     artifacts = controller.collection(f'repos/{controller.REPOSITORY}/actions/runs/{run_id}/artifacts', 'artifacts')
     candidates = []
     for artifact in artifacts:
@@ -249,8 +263,19 @@ def download_execution(output, signed=True, github=None):
     if len(choices) != 1:
         raise ValueError('Ambiguous execution artifact attempt')
     artifact = choices[0]
+    if metadata_only:
+        if artifact['size_in_bytes'] > release_handoff.MAX_BYTES:
+            raise ValueError('Signing artifact exceeds 2 GiB')
+        identity = {**release_handoff.producer(), 'runAttempt': latest}
+        release_handoff.native_preparation(identity, api, controller.collection,
+                                           job_name='sign' if signed else 'prepare')
     with archive_read.archive_reader(artifact, controller.REPOSITORY) as archive:
-        archive_read.extract(archive, output)
+        archive_read.extract(archive, output, max_bytes=release_handoff.MAX_BYTES if metadata_only else archive_read.MAXIMUM)
+    if metadata_only:
+        release_handoff.inventory(output)
+        handoff = load_json(output / 'handoff.json')
+        if not signed and handoff.get('preparation') != identity:
+            raise ValueError('Signing request differs from its native producing attempt')
     return artifact
 
 
@@ -295,7 +320,7 @@ def artifact_reader_credentials():
             os.environ['GH_TOKEN'] = previous
 
 
-def materialize_products(output, proposal, reference, *, staged=False, retain_archive=False):
+def materialize_products(output, proposal, reference, *, staged=False, retain_archive=False, original_reference=None):
     if staged:
         if output.is_symlink() or not output.is_dir():
             raise ValueError('Staged execution directory is missing or unsafe')
@@ -306,7 +331,15 @@ def materialize_products(output, proposal, reference, *, staged=False, retain_ar
     recovered = manifest.get('producer', {}).get('workflow') == 'publish-release-set.yml'
     cached = output / 'transport' / 'original.zip' if staged or retain_archive else None
     if recovered:
-        document = check_signed_packet(output / 'packet', proposal, manifest)
+        cache = output / 'transport/products' if staged or retain_archive else None
+        document = check_signed_packet(output / 'packet', proposal, manifest,
+                                       original_reference=original_reference, cached_products=cache)
+        if retain_archive and (output / 'packet/handoff.json').exists():
+            # Keep the staged OCI envelope byte-for-byte unchanged. Product
+            # links are recreated from the authenticated transport cache later.
+            for channel in CHANNELS:
+                for name in proposal['payload']['channels'][channel]['assets']:
+                    (output / 'packet/signed' / channel / name).unlink()
     else:
         if staged and (cached.is_symlink() or not cached.is_file()):
             raise ValueError('Staged original archive is missing or unsafe')
@@ -321,15 +354,19 @@ def materialize_products(output, proposal, reference, *, staged=False, retain_ar
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('phase', choices=('identity', 'stage', 'prepare', 'download', 'check', 'sign', 'persist-signed', 'stage-publication', 'commit-publication', 'publish'))
+    parser.add_argument('phase', choices=('identity', 'stage', 'prepare', 'signing-request', 'download', 'check', 'sign', 'persist-signed', 'stage-publication', 'commit-publication', 'publish'))
     parser.add_argument('--proposal-hash', default='')
     parser.add_argument('--packet-ref', default='')
     parser.add_argument('--unsigned', action='store_true')
+    parser.add_argument('--metadata-only', action='store_true')
+    parser.add_argument('--request-directory', type=Path, default=ROOT / '.bluebuild/release-signing-request')
     parser.add_argument('--staged', action='store_true')
     parser.add_argument('--directory', type=Path, default=ROOT / '.bluebuild/release-execution')
     args = parser.parse_args()
     if args.staged and args.phase != 'prepare':
         parser.error('--staged is only valid for prepare')
+    if args.metadata_only and args.phase not in ('download', 'check', 'sign', 'persist-signed'):
+        parser.error('--metadata-only is only valid for metadata handoff phases')
     controller.trusted_context()
     if not args.proposal_hash:
         args.proposal_hash = proposal_from_push()
@@ -341,7 +378,9 @@ def main():
         proposal = load_json(ROOT / 'automation/decisions/releases' / (args.proposal_hash + '.json'))
         if canonical_hash(proposal) != args.proposal_hash or proposal['payload'] != document['payload']:
             raise ValueError('Signing product differs from reviewed payload')
-        sign(output, document)
+        if args.metadata_only:
+            release_handoff.validate(output, proposal, load_json(output / 'handoff.json')['productReference'])
+        sign(output, document, metadata_only=args.metadata_only)
         return
     proposal, receipt, initial = approved(args.proposal_hash)
     if args.phase == 'identity':
@@ -358,21 +397,27 @@ def main():
         return
     if args.phase == 'download':
         with artifact_reader_credentials():
-            download_execution(output, signed=not args.unsigned)
+            download_execution(output, signed=not args.unsigned, metadata_only=args.metadata_only)
+            if args.metadata_only:
+                record = release_handoff.validate(output, proposal, initial)
+                release_handoff.native_preparation(record['preparation'], controller.api, controller.collection)
+                if not args.unsigned:
+                    release_handoff.hydrate(output, proposal, initial, api=controller.api,
+                                            collection=controller.collection, verify_signed=signed_inventory)
         return
     if args.phase == 'stage':
         # Human approval is checked above using the short-lived App token.
         # Large immutable reads use the job token, whose lifetime covers the job.
         with artifact_reader_credentials():
-            document, _ = materialize_products(output, proposal, args.packet_ref or initial, retain_archive=True)
+            document, _ = materialize_products(output, proposal, args.packet_ref or initial, retain_archive=True, original_reference=initial)
         (output / 'release-set.json').write_text(json.dumps(document, sort_keys=True, indent=2) + '\n')
         print('Release phase: product staging complete; obtain fresh authority credentials before scanning', flush=True)
     elif args.phase == 'prepare':
         if args.staged:
-            document, recovered = materialize_products(output, proposal, args.packet_ref or initial, staged=True)
+            document, recovered = materialize_products(output, proposal, args.packet_ref or initial, staged=True, original_reference=initial)
         else:
             with artifact_reader_credentials():
-                document, recovered = materialize_products(output, proposal, args.packet_ref or initial)
+                document, recovered = materialize_products(output, proposal, args.packet_ref or initial, original_reference=initial)
         for channel in CHANNELS:
             print('Release phase: fresh security scan and current admission for ' + channel, flush=True)
             image = 'ghcr.io/closure-labs/finite@' + document['payload']['channels'][channel]['imageDigest']
@@ -395,12 +440,19 @@ def main():
             raise ValueError('Execution payload differs from current human authority')
         validate_evidence(document)
         verify_scans(output, document)
+        if args.phase == 'signing-request':
+            release_handoff.create(output, args.request_directory, proposal, initial)
+        if args.metadata_only:
+            record = release_handoff.validate(output, proposal, initial)
+            release_handoff.native_preparation(record['preparation'], controller.api, controller.collection)
         if args.phase == 'persist-signed':
-            signed_inventory(output, document)
+            signed_inventory(output, document, metadata_only=args.metadata_only)
             with tempfile.TemporaryDirectory(dir=output.parent) as temporary:
                 packet = Path(temporary)
                 shutil.copyfile(output / 'release-set.json', packet / 'release-set.json')
                 shutil.copytree(output / 'signed', packet / 'signed', copy_function=os.link)
+                if args.metadata_only:
+                    shutil.copyfile(output / 'handoff.json', packet / 'handoff.json')
                 producer = {'repository': controller.REPOSITORY, 'workflow': 'publish-release-set.yml',
                             'runId': int(os.environ['GITHUB_RUN_ID']),
                             'runAttempt': int(os.environ['GITHUB_RUN_ATTEMPT']),

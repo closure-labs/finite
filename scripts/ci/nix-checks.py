@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Retry Nix transport failures without repeating failed tests or evaluations."""
 from collections import deque
+import os
+from pathlib import Path
 import re
 import subprocess
 import sys
@@ -45,6 +47,19 @@ def build(command, attempts=3, delay=30):
     return 1
 
 
+def check_command(env=os.environ):
+    command = ['nix', 'build', '--accept-flake-config', '--verbose', '--print-build-logs']
+    if env.get('GITHUB_ACTIONS') == 'true':
+        temporary = Path(env.get('RUNNER_TEMP', ''))
+        if not temporary.is_absolute():
+            raise ValueError('Hosted checks require an absolute runner temporary directory')
+        # Keep the successful aggregate and its proof outputs alive during the
+        # bounded cache's post-job GC. No image, VM or signing material is rooted.
+        command += ['--out-link', str(temporary / 'finite-checks-cache-root')]
+    else:
+        command += ['--no-link']
+    return command + ['.#ci-checks']
+
+
 if __name__ == '__main__':
-    sys.exit(build(['nix', 'build', '--accept-flake-config', '--no-link',
-                    '--verbose', '--print-build-logs', '.#ci-checks']))
+    sys.exit(build(check_command()))

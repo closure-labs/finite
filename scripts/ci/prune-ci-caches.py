@@ -14,6 +14,7 @@ TRUSTED_EVENTS = {'push', 'schedule', 'workflow_dispatch'}
 MAX_EVENT_BYTES = 1024 * 1024
 PLATFORM = r'(?P<platform>(?:Linux|Windows|macOS)-(?:X64|ARM64))'
 PATTERNS = {
+    'bounded-checks': re.compile(r'nix-checks-v3-' + PLATFORM + r'-[a-f0-9]{64}'),
     'checks': re.compile(r'nix-store-v2-' + PLATFORM + r'-[a-f0-9]{64}-[a-f0-9]{40}'),
     'legacy': re.compile(r'nix-store-v1-' + PLATFORM + r'-[a-f0-9]{64}'),
     'sources': re.compile(r'nix-sources-v1-' + PLATFORM + r'-[a-f0-9]{64}'),
@@ -70,10 +71,13 @@ def deletions(caches):
     selected = []
     for (kind, platform), entries in groups.items():
         entries.sort(key=lambda item: (item['timestamp'], item['id']), reverse=True)
-        if kind == 'legacy':
+        if kind == 'checks' and len({item['key'] for item in groups.get(('bounded-checks', platform), [])}) >= 2:
+            selected.extend(entries)
+        elif kind == 'legacy':
             # Multiple archive versions of one revision do not establish two
             # source-sensitive generations for a safe legacy fallback removal.
-            if len({item['key'] for item in groups.get(('checks', platform), [])}) >= 2:
+            if (len({item['key'] for item in groups.get(('checks', platform), [])}) >= 2
+                    or len({item['key'] for item in groups.get(('bounded-checks', platform), [])}) >= 2):
                 selected.extend(entries)
         else:
             selected.extend(entries[1 if kind == 'sources' else 2:])
