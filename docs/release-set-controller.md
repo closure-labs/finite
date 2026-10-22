@@ -220,3 +220,14 @@ missing and uncorrelated publication states are unhealthy. A verified native
 identity metadata remain unknown and require native-run inspection. Health reads
 metadata only; it does not approve, clean assets, dispatch preparation or restart
 publication. Explicit recovery continues to use the original approved bytes.
+
+### First-login readiness rollout
+
+The OS change requires independent successful `is-active` checks for
+`nix-daemon.socket` and `determinate-nixd.socket`. An existing Home Manager
+configuration still exits immediately; a new configuration keeps the bounded
+wait and user-journal failure diagnostic. Deliver this separately from the
+controller changes and qualify the new image through both normal fresh-install
+and upgrade VM jobs before merging. Do not rebuild, cancel, redispatch or approve
+the existing `0.8.2-dev` execution to roll out controller changes; it remains
+bound to its original revision and approved product bytes.

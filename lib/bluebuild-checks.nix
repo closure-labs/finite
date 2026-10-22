@@ -57,6 +57,7 @@ in {
       ${homeScaffold}
     python3 tests/home/maintenance.py
     python3 tests/home/foundation-integration.py
+    python3 tests/home/first-login.py
   '';
   nix-lifecycle = check "nix-lifecycle" (with pkgs; [diffutils gawk gnugrep jq python3 systemd util-linux]) ''
     bash tests/bluebuild/nix-readiness.sh
