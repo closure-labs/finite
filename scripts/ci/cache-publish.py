@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Prepare selected allowlisted closures before exposing a write token."""
 import argparse
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -8,11 +9,13 @@ import re
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[2]
+SPEC = importlib.util.spec_from_file_location('devenv_cache', ROOT / 'scripts/ci/devenv_cache.py')
+native = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(native)
 STORE = re.compile(r'/nix/store/[a-z0-9]{32}-[^/\s]+')
 TOOLS = ('image-tools', 'scanner-tools', 'ci-repository-security-audit', 'ci-secrets-run')
 MIB = 1024 ** 2
-CREDENTIALS = ('CACHIX_AUTH_TOKEN', 'COSIGN_PRIVATE_KEY', 'MERGE_QUEUE_TOKEN',
-               'GH_TOKEN', 'GITHUB_TOKEN', 'BB_PASSWORD')
+CREDENTIALS = native.CREDENTIALS
 
 
 def preparation_env():
@@ -213,7 +216,7 @@ def prepare(destination, include_proofs=False):
 
 def push(manifest):
     boundary()
-    if not os.environ.get('CACHIX_AUTH_TOKEN'):
+    if not os.environ.get('FINITE_CACHIX_TOKEN'):
         raise ValueError('Cachix writer credential is unavailable')
     if manifest.is_symlink() or manifest.stat().st_size > MIB:
         raise ValueError('Invalid cache manifest')
@@ -226,10 +229,7 @@ def push(manifest):
     sizes = closure_sizes([root['path'] for root in roots])
     if any(sizes[root['path']] != root['bytes'] for root in roots):
         raise ValueError('Cache closure size changed after preparation')
-    push_env = preparation_env()
-    push_env['CACHIX_AUTH_TOKEN'] = os.environ['CACHIX_AUTH_TOKEN']
-    subprocess.run(['cachix', 'push', '--omit-deriver', 'finite-os', *sorted(sizes)],
-                   env=push_env, check=True, timeout=1800)
+    native.publish(sorted(sizes), provider='env')
 
 
 def main():

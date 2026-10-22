@@ -30,7 +30,7 @@
     gen.inputs.nixpkgs.follows = "nixpkgs";
     gen.inputs.import-tree.follows = "import-tree";
 
-    devenv.url = "github:cachix/devenv/v2.2.2";
+    devenv.url = "github:cachix/devenv";
 
     import-tree.url = "github:vic/import-tree";
 

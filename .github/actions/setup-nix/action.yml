@@ -18,10 +18,6 @@ inputs:
     description: Fail setup when protected-branch automation has no dedicated credential
     required: false
     default: "false"
-  cachix-auth-token:
-    description: Optional token used only by explicit guarded Cachix pushes
-    required: false
-    default: ""
 runs:
   using: composite
   steps:
@@ -149,7 +145,7 @@ runs:
         python3 scripts/ci/ci-options.py --github-env
 
     - name: Prepare legacy secret mapper without credentials
-      if: inputs.cachix-auth-token != '' || inputs.merge-queue-token != ''
+      if: inputs.merge-queue-token != ''
       shell: bash
       run: | # zizmor: ignore[github-env]
         mapper=$(nix build --file lib/ci-tools.nix ci-github-actions-secrets --no-link --print-out-paths)
@@ -157,9 +153,8 @@ runs:
         echo "$mapper/bin" >>"$GITHUB_PATH"
 
     - name: Map declared GitHub Actions secrets
-      if: inputs.cachix-auth-token != '' || inputs.merge-queue-token != ''
+      if: inputs.merge-queue-token != ''
       env:
-        GITHUB_ACTIONS_CACHIX_AUTH_TOKEN: ${{ inputs.cachix-auth-token }}
         GITHUB_ACTIONS_MERGE_QUEUE_TOKEN: ${{ inputs.merge-queue-token }}
       shell: bash
       run: finite-github-actions-secrets

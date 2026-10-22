@@ -6,7 +6,7 @@ in {
   imports = [./devenv-tasks.nix];
 
   # Explicit task profiles/scopes override user-global SecretSpec selections.
-  # The default developer profile contains options and optional Cachix only.
+  # Cachix resolves its built-in secret separately through the system keyring.
   env.FINITE_SECRETS_PROVIDER = lib.mkDefault "local";
 
   cachix.pull = ["cachix" cacheName];

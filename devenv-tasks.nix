@@ -1,7 +1,7 @@
 {pkgs, ...}: let
   # Realization happens before resolving task credentials. SecretSpec scopes
   # then remove inherited manifest-declared values from the launched child.
-  cleanEnvironment = "env -u CACHIX_AUTH_TOKEN -u COSIGN_PRIVATE_KEY -u COSIGN_PASSWORD -u GH_TOKEN -u MERGE_QUEUE_TOKEN -u REGISTRY_TOKEN -u SECAUDIT_PEM -u SECAUDIT_CLIENTID";
+  cleanEnvironment = "env -u CACHIX_AUTH_TOKEN -u FINITE_CACHIX_TOKEN -u COSIGN_PRIVATE_KEY -u COSIGN_PASSWORD -u GH_TOKEN -u MERGE_QUEUE_TOKEN -u REGISTRY_TOKEN -u SECAUDIT_PEM -u SECAUDIT_CLIENTID";
   scopedTools = tools: profile: command: ''
     ${cleanEnvironment} FINITE_SOURCE_ROOT="$DEVENV_ROOT" \
       nix shell --accept-flake-config --file "$DEVENV_ROOT/lib/ci-tools.nix" \
@@ -43,7 +43,7 @@ in {
         "''${FINITE_CACHE_BENCHMARK_SUMMARY:-$DEVENV_ROOT/.bluebuild/cache-benchmark-summary.md}"
     '';
     "ci:cache:writer:prepare".exec = ''
-      ${cleanEnvironment} FINITE_CACHE_PUSH=false ${runLeaf "ci-check" "finite-ci-check" "--no-write-lock-file"}
+      ${cleanEnvironment} ${runLeaf "ci-check" "finite-ci-check" "--no-write-lock-file"}
     '';
     "ci:cache:check".exec = ''
       ${cleanEnvironment} FINITE_SOURCE_ROOT="$DEVENV_ROOT" \

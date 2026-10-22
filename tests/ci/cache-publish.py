@@ -50,7 +50,7 @@ class Publisher(unittest.TestCase):
 
     def test_mismatched_checkout_stops_push_before_reading_manifest_or_uploading(self):
         self.git.return_value = 'c' * 40
-        with patch.dict(os.environ, dict(ENV, CACHIX_AUTH_TOKEN='fixture-token'), clear=True), \
+        with patch.dict(os.environ, dict(ENV, FINITE_CACHIX_TOKEN='fixture-token'), clear=True), \
                 patch.object(Path, 'read_text') as read, \
                 patch.object(cache, 'closure_size') as measure, \
                 patch.object(cache.subprocess, 'run') as upload, \
@@ -67,7 +67,7 @@ class Publisher(unittest.TestCase):
         self.git.assert_called_once_with(command, cwd=cache.ROOT, env=cache.preparation_env(), text=True, timeout=3600)
 
     def test_realization_refuses_a_writer_credential(self):
-        with patch.dict(os.environ, dict(ENV, CACHIX_AUTH_TOKEN='secret'), clear=True), self.assertRaises(ValueError):
+        with patch.dict(os.environ, dict(ENV, FINITE_CACHIX_TOKEN='secret'), clear=True), self.assertRaises(ValueError):
             cache.prepare(Path('/tmp/unused-cache-manifest'))
 
     def test_push_checks_roots_again_before_external_write(self):
@@ -76,12 +76,10 @@ class Publisher(unittest.TestCase):
             record = {'schema': 1, 'revision': 'a' * 40, 'cache': 'finite-os',
                       'roots': [{'kind': 'proof', 'name': 'check', 'path': STORE, 'bytes': 10}]}
             manifest.write_text(json.dumps(record))
-            with patch.dict(os.environ, dict(ENV, CACHIX_AUTH_TOKEN='secret'), clear=True), \
-                    patch.object(cache, 'closure_sizes', return_value={STORE: 10}), patch.object(cache.subprocess, 'run') as run:
+            with patch.dict(os.environ, dict(ENV, FINITE_CACHIX_TOKEN='secret'), clear=True), \
+                    patch.object(cache, 'closure_sizes', return_value={STORE: 10}), patch.object(cache.native, 'publish') as run:
                 cache.push(manifest)
-                self.assertEqual(run.call_args.args[0], ['cachix', 'push', '--omit-deriver', 'finite-os', STORE])
-                self.assertEqual(run.call_args.kwargs['env']['CACHIX_AUTH_TOKEN'], 'secret')
-                self.assertNotIn('COSIGN_PRIVATE_KEY', run.call_args.kwargs['env'])
+                run.assert_called_once_with([STORE], provider='env')
                 record['roots'][0]['path'] = '/tmp/credential'
                 manifest.write_text(json.dumps(record))
                 with self.assertRaises(ValueError):
@@ -93,8 +91,8 @@ class Publisher(unittest.TestCase):
             manifest = Path(temporary) / 'roots.json'
             manifest.write_text(json.dumps({'schema': 1, 'revision': 'a' * 40, 'cache': 'finite-os',
                 'roots': [{'kind': 'tool', 'name': 'scanner-tools', 'path': STORE, 'bytes': 10}]}))
-            with patch.dict(os.environ, dict(ENV, CACHIX_AUTH_TOKEN='secret'), clear=True), \
-                    patch.object(cache, 'closure_sizes', return_value={STORE: 11}), patch.object(cache.subprocess, 'run') as run:
+            with patch.dict(os.environ, dict(ENV, FINITE_CACHIX_TOKEN='secret'), clear=True), \
+                    patch.object(cache, 'closure_sizes', return_value={STORE: 11}), patch.object(cache.native, 'publish') as run:
                 with self.assertRaises(ValueError):
                     cache.push(manifest)
                 run.assert_not_called()

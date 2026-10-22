@@ -90,7 +90,8 @@ store snapshot. Warmed source downloads did not improve these small-job timings,
 so `cache-mode: optimized` retains source restoration only for explicit
 experiments. Without the switch, jobs keep the baseline full-store restore.
 `FINITE_CACHIX_WRITER=true`
-enables a separate successful-main writer with `CACHIX_AUTH_TOKEN`, limited to
+enables a separate successful-main writer using devenv’s built-in SecretSpec
+Cachix authentication, limited to
 four declared image/scanner/audit/resolver tool closures. Preparation batches
 tool realization and closure validation before exposing that write credential.
 Explicit `cache-publish.py prepare --include-proofs MANIFEST` also seeds bounded
@@ -363,8 +364,10 @@ use comma-separated supported channel names or `all` for a broader rollout.
 Preservation, predecessor ISO reuse, strict release fallback and pruning apply
 only to selected channels while the preservation switch is enabled.
 GitHub Actions supplies backend values through the `github-actions` environment
-provider; local devenv tasks use the encrypted `local = "pass://"` provider.
-The same explicit profile/scope names identify cache writing, image signing,
+provider; signing and authority tasks use the encrypted `local = "pass://"`
+provider locally. Cachix uses devenv’s built-in SecretSpec requirement with
+the system keyring, independently of those task profiles.
+The same explicit profile/scope names identify image signing,
 release signing, release publishing, repository reads, audit App credentials and
 trusted updates.
 GitHub scheduling guards still use repository variables before a job exists;
@@ -380,7 +383,52 @@ Its checksum-pinned release package avoids compiling all of devenv just to resol
 CI credentials. Tool realization happens before supplying signing/write keys.
 Signing keys reach only signer commands; the audit App key is cleared after token
 generation. Secret values never enter Nix evaluation, cached paths or artifacts.
-The default developer profile contains options and an optional Cachix credential.
+The default developer profile contains public options only. The available devenv
+CLI resolves Cachix internally for private pulls and explicit uploads;
+`CACHIX_AUTH_TOKEN` has no declaration in `secretspec.toml` and is never exported
+into the developer shell. No separate Cachix client installation is required.
+The recommended setup in `devenv.yaml` is:
+
+```yaml
+secretspec:
+  enable: true
+  profile: default
+  provider: keyring
+  cachix_auth_token: true
+```
+
+Run `devenv shell` interactively once to enter the Cachix token and
+save it in the system keyring:
+
+```bash
+devenv shell
+```
+
+Noninteractive commands, including direnv and
+cache tasks, cannot prompt. Existing pass entries are not migrated or deleted;
+enter the token in the new keyring prompt before using those commands. For a
+backend policy requiring a different secret name, replace `true` with that name.
+See the [devenv Cachix setup](https://devenv.sh/binary-caching/).
+
+`ci:cache:check` realizes and validates bounded check proofs without credentials,
+then starts a separate minimal devenv environment containing only those roots.
+Devenv manages the uploader and token. The trusted main writer uses the same
+mechanism for its allowlisted tools. GitHub supplies the existing repository
+secret `CACHIX_AUTH_TOKEN` only to that upload step as `FINITE_CACHIX_TOKEN`;
+the temporary environment selects SecretSpec’s `env` provider and that custom
+secret name. It has no signing manifest or developer tasks. Public cache readers
+continue to use the Nix setup action without a write token or devenv bootstrap.
+The uploader verifies every remote closure hash after devenv exits, including
+when devenv reports an uploader warning without failing its command.
+
+Cachix uses an installed devenv CLI when available; runners without it realize
+`.#devenv`. The input follows upstream without a fixed release tag, and the CLI
+need not match the module lock's version. The existing weekly **Update Nix flake
+inputs** workflow refreshes both `flake.lock` and `devenv.lock` and opens a PR.
+Runners adopt those updates after merge; Dependabot is not needed for this path.
+The lock updater disables SecretSpec in an isolated temporary configuration and
+clears write credentials while refreshing public inputs. The developer
+configuration keeps its keyring requirement.
 
 The standalone `release-publishing` scope resolves the trusted repository token
 into `GH_TOKEN` only for the controlled tag/draft child. It needs repository
@@ -396,7 +444,6 @@ release environment and refuses existing tags or releases. See the
 Populate a task-specific pass entry interactively, then run its task:
 
 ```bash
-secretspec set CACHIX_AUTH_TOKEN --profile local-cache --provider pass
 secretspec set GH_TOKEN --profile repository-read --provider pass
 secretspec set COSIGN_PRIVATE_KEY --profile image-signing --provider pass
 secretspec set MERGE_QUEUE_TOKEN --profile updater --provider pass

@@ -62,6 +62,22 @@ class Manifest(unittest.TestCase):
                 self.assertEqual({key: values.get(key) for key in PUBLIC_OPTIONS},
                                  {key: '${{ vars.' + key + ' }}' for key in PUBLIC_OPTIONS})
 
+    def test_cache_writer_uses_native_devenv_without_exposing_tokens_to_readers(self):
+        action = yaml.safe_load((ROOT / '.github/actions/setup-nix/action.yml').read_text())
+        self.assertNotIn('cachix-auth-token', action['inputs'])
+        workflow = yaml.safe_load((ROOT / '.github/workflows/cache-maintenance.yml').read_text())
+        job = workflow['jobs']['publish']
+        self.assertIn("vars.FINITE_CACHIX_WRITER == 'true'", job['if'])
+        self.assertIn("github.event.workflow_run.conclusion == 'success'", job['if'])
+        self.assertIn("github.event.workflow_run.head_branch == 'main'", job['if'])
+        steps = job['steps']
+        upload = next(step for step in steps if step.get('name') == 'Publish allowlisted roots')
+        self.assertEqual(upload['env'], {'FINITE_CACHIX_TOKEN': '${{ secrets.CACHIX_AUTH_TOKEN }}'})
+        self.assertEqual(upload['run'], 'python3 scripts/ci/cache-publish.py push cache-roots.json')
+        self.assertTrue(any('.#devenv ' in step.get('run', '') for step in steps))
+        self.assertFalse(any('cache-tools' in step.get('run', '') for step in steps))
+        self.assertFalse(any('secrets.CACHIX_AUTH_TOKEN' in json.dumps(step) for step in steps if step is not upload))
+
     def test_repository_pat_reaches_only_existing_updater_and_publishing_mappings(self):
         pat = '${{ secrets.MERGE_QUEUE_PAT }}'
         for path in (ROOT / '.github/workflows').glob('*.yml'):
@@ -93,8 +109,13 @@ class Manifest(unittest.TestCase):
                 self.assertNotIn('MERGE_QUEUE_TOKEN', data.get('env', {}))
 
     def test_default_devenv_profile_contains_no_signing_or_github_credentials(self):
-        self.assertEqual(set(MANIFEST['profiles']['default']), PUBLIC_OPTIONS | {'CACHIX_AUTH_TOKEN'})
-        self.assertFalse(MANIFEST['profiles']['default']['CACHIX_AUTH_TOKEN']['required'])
+        self.assertEqual(set(MANIFEST['profiles']['default']), PUBLIC_OPTIONS)
+        configuration = yaml.safe_load((ROOT / 'devenv.yaml').read_text())
+        self.assertFalse(configuration['require_version'])
+        self.assertEqual(configuration['inputs']['devenv']['url'], 'github:cachix/devenv')
+        self.assertEqual(configuration['secretspec'], {
+            'enable': True, 'profile': 'default', 'provider': 'keyring', 'cachix_auth_token': True})
+        self.assertNotIn('CACHIX_AUTH_TOKEN', DECLARED)
         self.assertEqual(MANIFEST['providers']['local'], 'pass://')
         self.assertEqual(MANIFEST['providers']['github-actions'], 'env')
         self.assertNotIn('file:', (ROOT / 'secretspec.toml').read_text())
@@ -125,13 +146,12 @@ class Manifest(unittest.TestCase):
                 OPTIONS.iso_preservation_enabled(value, {})
 
     def test_new_profiles_are_standalone_canonical_and_narrow(self):
-        for profile in ('ci-options', 'cache-writer', 'image-signing', 'release-signing', 'release-publishing', 'release-set-publishing',
+        for profile in ('ci-options', 'image-signing', 'release-signing', 'release-publishing', 'release-set-publishing',
                         'repository-audit', 'repository-read', 'updater'):
             values = MANIFEST['profiles'][profile]
             self.assertFalse(values['defaults']['inherit'])
             self.assertEqual(set(values) - {'defaults'}, set(MANIFEST['scopes'][profile]['secrets']))
             self.assertTrue(all('ref' not in value for key, value in values.items() if key != 'defaults'))
-        self.assertTrue(MANIFEST['profiles']['cache-writer']['CACHIX_AUTH_TOKEN']['required'])
         self.assertTrue(MANIFEST['profiles']['image-signing']['COSIGN_PRIVATE_KEY']['required'])
         self.assertTrue(MANIFEST['profiles']['release-signing']['COSIGN_PRIVATE_KEY']['required'])
         self.assertTrue(MANIFEST['profiles']['repository-read']['GH_TOKEN']['required'])
@@ -150,8 +170,8 @@ class Manifest(unittest.TestCase):
 
     def test_tasks_keep_realization_secret_free_and_signing_explicit(self):
         tasks = (ROOT / 'devenv-tasks.nix').read_text()
-        self.assertIn('env -u CACHIX_AUTH_TOKEN -u COSIGN_PRIVATE_KEY', tasks)
-        self.assertIn('FINITE_CACHE_PUSH=false', tasks)
+        self.assertIn('env -u CACHIX_AUTH_TOKEN -u FINITE_CACHIX_TOKEN -u COSIGN_PRIVATE_KEY', tasks)
+        self.assertIn('ci:cache:writer:prepare', tasks)
         self.assertIn('#local-cache', tasks)
         self.assertIn('"ci:cache:benchmark"', tasks)
         self.assertIn('IMAGE_REFERENCE:?set IMAGE_REFERENCE to the immutable image to sign', tasks)
@@ -180,6 +200,21 @@ class Resolution(unittest.TestCase):
         return subprocess.run([CLI, 'run', '--file', str(ROOT / 'secretspec.toml'), '--profile', profile,
                                '--scope', profile, '--provider', provider, '--reason', 'Finite fixture test',
                                '--', *command], env=env, text=True, capture_output=True, timeout=30)
+
+    def test_scoped_wrapper_discards_undeclared_cachix_backend_variables(self):
+        wrapper = shutil.which('finite-ci-secrets-run')
+        if not wrapper:
+            self.skipTest('The pinned contract check supplies the scoped wrapper')
+        with tempfile.TemporaryDirectory() as temporary:
+            env = {key: value for key, value in os.environ.items()
+                   if key not in DECLARED and not key.startswith('SECRETSPEC_')}
+            env.update(FINITE_SOURCE_ROOT=str(ROOT), GITHUB_ACTIONS='true',
+                       CACHIX_AUTH_TOKEN='fixture-legacy', FINITE_CACHIX_TOKEN='fixture-backend',
+                       HOME=temporary, XDG_CONFIG_HOME=temporary + '/config')
+            result = subprocess.run([wrapper, 'ci-options', '--', sys.executable, '-c',
+                'import os; assert "CACHIX_AUTH_TOKEN" not in os.environ; assert "FINITE_CACHIX_TOKEN" not in os.environ'],
+                env=env, text=True, capture_output=True, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_options_default_false_without_credentials_and_strip_inherited_keys(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -233,7 +268,7 @@ class Resolution(unittest.TestCase):
             directory = Path(temporary)
             marker = directory / 'child-ran'
             command = [sys.executable, '-c', 'from pathlib import Path; Path(' + repr(str(marker)) + ').touch()']
-            for profile in ('cache-writer', 'image-signing', 'release-signing', 'release-publishing', 'release-set-publishing', 'repository-read', 'repository-audit', 'updater'):
+            for profile in ('image-signing', 'release-signing', 'release-publishing', 'release-set-publishing', 'repository-read', 'repository-audit', 'updater'):
                 result = self.run_cli(directory, profile, command=command)
                 self.assertNotEqual(result.returncode, 0, profile)
                 self.assertFalse(marker.exists())
@@ -248,17 +283,17 @@ class Resolution(unittest.TestCase):
             script.write_text('#!' + sys.executable + '\n'
                 'import json,os,sys\n'
                 'with open(os.environ["FIXTURE_PASS_LOG"],"a") as log: log.write(json.dumps(sys.argv[1:])+"\\n")\n'
-                'if sys.argv[1:] == ["show", "secretspec/finite/cache-writer/CACHIX_AUTH_TOKEN"]:\n'
-                ' print("fixture-pass-cache"); raise SystemExit(0)\n'
+                'if sys.argv[1:] == ["show", "secretspec/finite/repository-read/GH_TOKEN"]:\n'
+                ' print("fixture-pass-read"); raise SystemExit(0)\n'
                 'raise SystemExit(1)\n')
             script.chmod(0o755)
             values = {'PATH': str(mock) + os.pathsep + os.environ['PATH'], 'FIXTURE_PASS_LOG': str(log)}
             for provider in ('local', 'pass'):
-                result = self.run_cli(directory, 'cache-writer', values=values, provider=provider)
+                result = self.run_cli(directory, 'repository-read', values=values, provider=provider)
                 self.assertEqual(result.returncode, 0, result.stderr)
-                self.assertEqual(json.loads(result.stdout), {'CACHIX_AUTH_TOKEN': 'fixture-pass-cache'})
+                self.assertEqual(json.loads(result.stdout), {'GH_TOKEN': 'fixture-pass-read'})
             requests = [json.loads(line) for line in log.read_text().splitlines()]
-            self.assertEqual(requests, [['show', 'secretspec/finite/cache-writer/CACHIX_AUTH_TOKEN']] * 2)
+            self.assertEqual(requests, [['show', 'secretspec/finite/repository-read/GH_TOKEN']] * 2)
 
     def test_options_only_github_export_does_not_mask_or_persist_secrets(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -329,19 +364,20 @@ class LocalCache(unittest.TestCase):
         proof = str(Path(sys.executable).parents[1])
         if not proof.startswith('/nix/store/'):
             self.skipTest('The Nix contract check supplies an existing fixture store root')
-        for outcome in ('success', 'check-failure', 'bad-path', 'empty', 'upload-failure'):
+        for outcome in ('success', 'check-failure', 'bad-path', 'empty', 'upload-failure', 'bootstrap'):
             with self.subTest(outcome=outcome), tempfile.TemporaryDirectory() as temporary:
                 directory = Path(temporary)
                 tools = directory / 'tools'
                 (tools / 'bin').mkdir(parents=True)
                 (directory / 'flake.nix').write_text('{}')
+                for name in ('mktemp', 'rm'):
+                    (tools / 'bin' / name).symlink_to(shutil.which(name))
                 log = directory / 'calls.jsonl'
                 check = tools / 'bin/finite-ci-check'
                 check.write_text('#!' + sys.executable + '\n'
                     'import json,os,pathlib,sys\n'
                     'keys=(' + ','.join(repr(key) for key in ('CACHIX_AUTH_TOKEN','COSIGN_PRIVATE_KEY','GH_TOKEN','SECAUDIT_PEM')) + ')\n'
                     'assert not any(key in os.environ for key in keys)\n'
-                    'assert os.environ["FINITE_CACHE_PUSH"] == "false"\n'
                     'path=pathlib.Path(os.environ["FINITE_CHECK_PROOFS_FILE"])\n'
                     'assert path.stat().st_mode & 0o777 == 0o600\n'
                     'with open(os.environ["FIXTURE_LOG"],"a") as log: log.write(json.dumps({"stage":"check","proofFile":str(path)})+"\\n")\n'
@@ -349,20 +385,31 @@ class LocalCache(unittest.TestCase):
                     'if mode == "check-failure": raise SystemExit(7)\n'
                     'if mode != "empty": path.write_text(("/tmp/not-a-proof" if mode=="bad-path" else os.environ["FIXTURE_PROOF"])+"\\n")\n')
                 check.chmod(0o755)
-                spec = tools / 'bin/secretspec'
+                if outcome != 'bootstrap':
+                    cli = tools / 'bin/devenv'
+                    cli.write_text('#!' + sys.executable + '\nraise SystemExit(0)\n')
+                    cli.chmod(0o755)
+                nix = tools / 'bin/nix'
+                nix.write_text('#!' + sys.executable + '\n'
+                    'import json,os,sys\n'
+                    'assert os.environ["FIXTURE_OUTCOME"] == "bootstrap", "Installed CLI must be preferred"\n'
+                    'assert "CACHIX_AUTH_TOKEN" not in os.environ and "FINITE_CACHIX_TOKEN" not in os.environ\n'
+                    'assert sys.argv[1:] == ["build","--accept-flake-config","path:"+os.environ["FINITE_SOURCE_ROOT"]+"#devenv","--no-write-lock-file","--no-link","--print-out-paths"]\n'
+                    'with open(os.environ["FIXTURE_LOG"],"a") as log: log.write(json.dumps({"stage":"bootstrap"})+"\\n")\n'
+                    'print("/nix/store/"+"a"*32+"-devenv-available")\n')
+                nix.chmod(0o755)
+                spec = tools / 'bin/python3'
                 spec.write_text('#!' + sys.executable + '\n'
                     'import json,os,sys\n'
                     'args=sys.argv[1:]\n'
-                    'assert args[0]=="run" and args[args.index("--profile")+1]=="local-cache"\n'
-                    'assert args[args.index("--scope")+1]=="cachix"\n'
+                    'assert args[0] == os.environ["FINITE_SOURCE_ROOT"]+"/scripts/ci/devenv_cache.py"\n'
+                    'assert len(args) == 2 and open(args[1]).read().strip() == os.environ["FIXTURE_PROOF"]\n'
                     'assert "CACHIX_AUTH_TOKEN" not in os.environ\n'
-                    'assert args[args.index("--")+1:] == ["cachix","push","--omit-deriver","finite-os",os.environ["FIXTURE_PROOF"]]\n'
                     'with open(os.environ["FIXTURE_LOG"],"a") as log: log.write(json.dumps({"stage":"upload"})+"\\n")\n'
                     'raise SystemExit(8 if os.environ["FIXTURE_OUTCOME"]=="upload-failure" else 0)\n')
                 spec.chmod(0o755)
-                wrapper = self.wrapper().replace('${ciApplication}', str(tools)).replace(
-                    '${pkgs.lib.escapeShellArg cacheName}', "'finite-os'").replace("''${", '${')
-                env = {**os.environ, 'PATH': str(tools / 'bin') + os.pathsep + os.environ['PATH'],
+                wrapper = self.wrapper().replace('${ciApplication}', str(tools)).replace("''${", '${')
+                env = {**os.environ, 'PATH': str(tools / 'bin'),
                        'FINITE_SOURCE_ROOT': str(directory), 'TMPDIR': str(directory),
                        'FIXTURE_LOG': str(log), 'FIXTURE_OUTCOME': outcome, 'FIXTURE_PROOF': proof,
                        'CACHIX_AUTH_TOKEN': 'inherited-fixture', 'COSIGN_PRIVATE_KEY': 'inherited-fixture',
@@ -373,9 +420,9 @@ class LocalCache(unittest.TestCase):
                 calls = [json.loads(line) for line in log.read_text().splitlines()]
                 self.assertEqual(calls[0]['stage'], 'check')
                 self.assertFalse(Path(calls[0]['proofFile']).exists())
-                if outcome in ('success', 'upload-failure'):
-                    self.assertEqual([call['stage'] for call in calls], ['check', 'upload'])
-                    self.assertEqual(result.returncode, 0 if outcome == 'success' else 8, result.stderr)
+                if outcome in ('success', 'upload-failure', 'bootstrap'):
+                    self.assertEqual([call['stage'] for call in calls], ['check', 'bootstrap', 'upload'] if outcome == 'bootstrap' else ['check', 'upload'])
+                    self.assertEqual(result.returncode, 8 if outcome == 'upload-failure' else 0, result.stderr)
                 else:
                     self.assertEqual(len(calls), 1)
                     self.assertNotEqual(result.returncode, 0)

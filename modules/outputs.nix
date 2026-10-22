@@ -15,7 +15,6 @@
     (with pkgs; [
       actionlint
       bash
-      cachix
       coreutils
       diffutils
       file
@@ -57,7 +56,6 @@
   baseApplications = import ../lib/flake-applications.nix {
     devenv = outputDependencies.devenvPackage;
     inherit pkgs;
-    cacheName = cache.name;
     secretspec = finiteSecretspec;
   };
   homeApplications = import ../lib/home-profile-applications.nix {

@@ -1,5 +1,4 @@
 {
-  cacheName,
   pkgs,
   secretspec,
 }: rec {
@@ -15,7 +14,7 @@
       profile="''${1:?usage: finite-ci-secrets-run PROFILE -- COMMAND}"
       shift
       case "$profile" in
-        ci-options|cache-writer|image-signing|release-signing|release-publishing|release-set-publishing|repository-audit|repository-read|review-app|updater) ;;
+        ci-options|image-signing|release-signing|release-publishing|release-set-publishing|repository-audit|repository-read|review-app|updater) ;;
         *) echo "Unsupported Finite SecretSpec profile" >&2; exit 2 ;;
       esac
       [[ "''${1:-}" == -- ]] || { echo "Expected -- before the child command" >&2; exit 2; }
@@ -36,7 +35,7 @@
       esac
       # Legacy provider input aliases are not manifest output names, so the
       # CLI scope cannot remove them itself. New profiles use canonical names.
-      unset GITHUB_ACTIONS_CACHIX_AUTH_TOKEN GITHUB_ACTIONS_MERGE_QUEUE_TOKEN
+      unset CACHIX_AUTH_TOKEN FINITE_CACHIX_TOKEN GITHUB_ACTIONS_CACHIX_AUTH_TOKEN GITHUB_ACTIONS_MERGE_QUEUE_TOKEN
       if [[ "$profile" == release-publishing ]]; then
         # Resolve the composed CLI token, then discard its provider variable
         # before the controlled publisher receives the child environment.
@@ -171,7 +170,7 @@
       name = "finite-ci-check";
       # Nix comes from the host's Determinate installation; do not shadow it
       # with the upstream Nixpkgs client inside this application wrapper.
-      runtimeInputs = with pkgs; [cachix coreutils jq];
+      runtimeInputs = with pkgs; [coreutils jq];
       text = ''
         repo_root="''${FINITE_SOURCE_ROOT:-$PWD}"
         [[ -f "''${repo_root}/flake.nix" ]] || {
@@ -255,20 +254,12 @@
           }
           printf '%s\n' "''${check_paths[@]}" >"$FINITE_CHECK_PROOFS_FILE"
         fi
-
-        if [[ "''${FINITE_CACHE_PUSH:-true}" == true && -n "''${CACHIX_AUTH_TOKEN:-}" ]]; then
-          for path in "''${check_paths[@]}"; do
-            cachix push --omit-deriver ${pkgs.lib.escapeShellArg cacheName} "''${path}"
-          done
-        elif [[ "''${FINITE_CACHE_PUSH:-true}" == true ]]; then
-          echo "CACHIX_AUTH_TOKEN is unavailable; proof outputs were not pushed" >&2
-        fi
       '';
     };
   mkLocalCache = ciApplication:
     pkgs.writeShellApplication {
       name = "finite-local-cache";
-      runtimeInputs = [secretspec pkgs.cachix pkgs.coreutils];
+      runtimeInputs = [pkgs.python3 pkgs.coreutils];
       text = ''
         repo_root="''${FINITE_SOURCE_ROOT:-$PWD}"
         [[ -f "''${repo_root}/flake.nix" ]] || {
@@ -277,10 +268,10 @@
         }
         cd "''${repo_root}"
         # Realization and checks cannot receive an inherited credential or
-        # resolve pass. Only the final allowlisted upload resolves Cachix.
+        # resolve task secrets. Only the final allowlisted upload resolves Cachix.
         unset CACHIX_AUTH_TOKEN COSIGN_PRIVATE_KEY COSIGN_PASSWORD GH_TOKEN GITHUB_TOKEN
         unset MERGE_QUEUE_TOKEN REGISTRY_TOKEN SECAUDIT_PEM SECAUDIT_CLIENTID
-        unset GITHUB_ACTIONS_CACHIX_AUTH_TOKEN GITHUB_ACTIONS_MERGE_QUEUE_TOKEN
+        unset FINITE_CACHIX_TOKEN GITHUB_ACTIONS_CACHIX_AUTH_TOKEN GITHUB_ACTIONS_MERGE_QUEUE_TOKEN
         umask 077
         proof_file=$(mktemp "''${TMPDIR:-/tmp}/finite-check-proofs.XXXXXX")
         # shellcheck disable=SC2329 # Invoked by EXIT, including signal exits.
@@ -288,7 +279,7 @@
         trap cleanup EXIT
         trap 'exit 130' INT
         trap 'exit 143' TERM
-        FINITE_CACHE_PUSH=false FINITE_CHECK_PROOFS_FILE="$proof_file" \
+        FINITE_CHECK_PROOFS_FILE="$proof_file" \
           ${ciApplication}/bin/finite-ci-check "$@"
         mapfile -t proof_paths <"$proof_file"
         [[ ''${#proof_paths[@]} -gt 0 ]] || { echo "No validated check proofs to publish" >&2; exit 2; }
@@ -297,18 +288,15 @@
             echo "Invalid validated proof store path" >&2; exit 2;
           }
         done
-        provider="''${FINITE_SECRETS_PROVIDER:-local}"
-        case "$provider" in
-          local|pass) ;;
-          *) echo "Local proof publishing requires the local/pass provider" >&2; exit 2 ;;
-        esac
-        secretspec run \
-          --file "''${repo_root}/secretspec.toml" \
-          --provider "$provider" \
-          --profile local-cache \
-          --reason "Finite validated local proof upload" \
-          --scope cachix \
-          -- cachix push --omit-deriver ${pkgs.lib.escapeShellArg cacheName} "''${proof_paths[@]}"
+        if ! command -v devenv >/dev/null; then
+          devenv=$(nix build --accept-flake-config "path:''${repo_root}#devenv" \
+            --no-write-lock-file --no-link --print-out-paths)
+          [[ $devenv =~ ^/nix/store/[a-z0-9]{32}-devenv[^/[:space:]]*$ ]]
+          export PATH="$devenv/bin:$PATH"
+        fi
+        # devenv owns keyring resolution and its Cachix daemon; check commands
+        # never receive the token. The helper accepts bounded proof roots only.
+        python3 "''${repo_root}/scripts/ci/devenv_cache.py" "$proof_file"
       '';
     };
 }
