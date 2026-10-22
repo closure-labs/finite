@@ -44,6 +44,13 @@ Your choices are in `~/.config/finite/profile.json`; personal settings are in
 `~/.config/home-manager/customize.nix`. The initializer keeps timestamped
 `home-manager.previous.*` directories when replacing a configuration.
 
+First-login preserves a saved profile or seed that fails validation and reports
+the error in the journal; it does not open a replacement-profile dialog. Repair
+that input before retrying. An incomplete `~/.config/home-manager` directory also
+requires repair so its personal files are not replaced automatically. Helpers
+with capability support expose a read-only `finite-home-init --capabilities`
+query. Historical helpers accept only profile schemas 1 and 2.
+
 ## Nix does not start
 
 Inspect persistent-state initialization, its mount, and the daemon sockets:

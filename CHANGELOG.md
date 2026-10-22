@@ -8,6 +8,24 @@ All notable changes to Finite are documented here. The format follows
 
 Development version: `0.8.2-dev`. The next stable release is 0.8.2.
 
+### Changed
+
+- Pin the default Foundation source to published v0.3.0, including its matching
+  dependency graph and source metadata. New profiles use schema 3; existing
+  personal consumers retain their own source locks and update workflow.
+- Negotiate fresh-login and seed profile formats from the bundled Foundation
+  catalog. Schema-3 sources enable Personal roles, optional capabilities and
+  independent host selections; seeds share Foundation's pure validator and keep
+  the requested target identity. Existing saved profiles and source pins remain.
+- Reject root before `ujust update` starts maintenance, and stop before Foundation
+  when an upstream OS, Flatpak or Brew update command fails. Retain Bluefin's
+  Just recipe, intentional skips and Foundation's staged update/recovery.
+- Preserve saved Home Manager selections on first-login failure, gate unsupported
+  schemas before initialization, and derive classified role choices from the
+  Foundation catalog. Keep schema-2 seed generation and existing applications.
+- Preserve Foundation role classification through the typed Home Manager catalog,
+  including compatibility with older unclassified catalogs.
+
 ## [0.8.2-dev] - 2026-10-21
 
 This is a development prerelease of both active images. It follows the

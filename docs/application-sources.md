@@ -79,6 +79,43 @@ you deliberately expire them; their store paths are not active duplicates.
 
 ## Keep applications current
 
+First-login uses the image's Foundation catalog for role labels and ordering.
+When available, its Professional classification is shown beside each work role.
+Saved selections take precedence over provisioning seeds; invalid or unsupported
+profiles produce an error instead of a replacement selection. Existing complete
+personal consumers are left to their own update workflow. Fresh-login and seed
+writers select schema 2 or 3 from the bundled Foundation catalog. The initializer
+must support the selected format before the fresh-selection dialog opens.
+
+The reader dispatcher also preserves supplied schema-3 selections when the
+executing Foundation helper advertises initialization support. An older helper
+rejects that selection without falling back to a seed or opening the fresh
+selector. Saved/provisioned profiles retain their format. Finite pins published
+[Foundation v0.3.0](https://github.com/closure-labs/foundation/releases/tag/v0.3.0)
+at `fdeb2ab7d88cb0ff69d25ed1a02589bc28ca7006`. Its default writer uses schema 3;
+integration checks use this pin directly. Existing personal consumers retain
+their independently locked sources until explicitly updated.
+
+With a schema-3 Foundation source, seeds support Professional/Personal roles,
+optional capabilities and independent host declarations, for example:
+
+```bash
+finite-cloud-init --foundation bluefin --user family-member \
+  --roles family,media --form-factor laptop --cpu amd --gpus amd-integrated \
+  --output ./family-seed
+```
+
+`--hardware` remains a convenience adapter. Schema 3 also accepts `--system`,
+`--form-factor`, `--cpu`, `--gpus`, `--model`, `--camera`/`--no-camera`,
+`--fingerprint`/`--no-fingerprint` and `--capabilities`. The schema-2 writer
+rejects these new flags explicitly. Seed identity belongs to `--user`, not the
+machine generating it. Foundation's bundled pure validator canonicalizes the
+profile before any output directory is created. Existing outputs are preserved;
+failed publication removes only the directory created by that invocation.
+Cloud-init remains disabled by default; the generated ISO is inert until an
+administrator explicitly enables provisioning. Its profile YAML can also be
+imported with `finite-home-init --profile` as the matching target account.
+
 Foundation releases own the managed Home Manager modules and dependency pins.
 OS updates do not overwrite the installed personal flake. Inspect published
 Foundation release availability with:
@@ -117,6 +154,21 @@ run. Check `systemctl status brew-update.timer brew-upgrade.timer` and
 `journalctl -u brew-upgrade.service`. Bluefin's `ujust update` also includes
 Flatpak/Homebrew update paths. Inspect `systemctl status uupd.timer` and the
 actual service logs on your image before relying on inherited automation.
+Finite's update adapter rejects root before starting maintenance and retains
+Bluefin's installed Just recipe. A scoped Bash startup hook enables `errexit`
+for its actual update commands, so a failed OS, Flatpak or Brew update stops
+before Foundation. Intentional remote/ownership skips retain upstream behavior.
+The hook clears itself before nested tools run. It does not alter upstream
+conditional probe semantics; a discovery failure can still appear as a skip.
+The current single-Bash-script recipe is qualified by real-Just fixtures and
+must be rechecked when the image changes its updater.
+
+After upstream succeeds and the Bash hook is verified, `finite-home-update`
+runs for a Foundation consumer. This uses Foundation's existing staging,
+resource limits, backup and recovery. It uses plain `nix build`, without
+nix-output-monitor. Direct NH usage remains available with `--no-nom`; replacing
+the staged updater with `nh home switch -u` would also change personal inputs
+and omit the transaction's recovery behavior.
 Finite's Home Manager Flatpak auto-update remains disabled; verify system and
 user Flatpak installations separately. The workstation owner is responsible
 for reviewing and applying app updates.

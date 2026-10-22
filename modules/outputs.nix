@@ -123,12 +123,14 @@
       map (activation: activation.drvPath) (foundationHardwareProofs ++ roleProofs ++ [allRolesProof allPackagesProof])
     )
     true;
-  homeCheck = assert homeProofsEvaluated;
+  homeCheck = assert import ../tests/home/catalog-projection.nix {inherit lib catalog;};
+  assert homeProofsEvaluated;
     pkgs.runCommand "finite-home-configurations-proof" {} ''
       touch "$out"
     '';
   repositoryChecks = import ../lib/bluebuild-checks.nix {
     inherit applications homeScaffold lib pkgs;
+    inherit (outputDependencies) foundation;
     inherit (imagePayload) homeCatalog;
   };
   formattingSource = lib.cleanSourceWith {

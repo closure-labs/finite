@@ -1,0 +1,8 @@
+# shellcheck shell=bash
+# Sourced by noninteractive Bash for the delegated Bluefin update recipe only.
+# Stop failed update commands without exporting shell options into nested tools.
+# Keep upstream's conditional pipeline/optional-variable behavior unchanged.
+unset BASH_ENV
+set -e
+printf 'ready\n' > "${FINITE_UPDATE_SHELL_MARKER:?Missing Finite update marker}"
+unset FINITE_UPDATE_SHELL_MARKER

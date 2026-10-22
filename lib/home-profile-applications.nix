@@ -5,10 +5,29 @@
 }: let
   catalog = homeCatalog;
   applications = foundation.lib.mkApplications {inherit pkgs;};
-  cloudInit = pkgs.writeShellApplication {
+  writeSchema = (foundation.lib.profileCapabilities or {writeSchema = 2;}).writeSchema;
+  legacyCloudInit = pkgs.writeShellApplication {
     name = "finite-cloud-init";
     runtimeInputs = with pkgs; [coreutils jq xorriso yq-go];
     text = ''
+      # This writer emits schema 2. A future descriptor cannot silently change it.
+      jq -e '
+        def valid_capabilities:
+          .schema == 1 and
+          all(.initializeSchemas, .normalizeSchemas, .catalogSchemas;
+            type == "array" and length > 0 and
+            all(.[]; type == "number" and . > 0 and floor == .) and
+            (unique | length) == length) and
+          (.writeSchema as $schema | (.initializeSchemas | index($schema)) != null and
+            (.normalizeSchemas | index($schema)) != null);
+        . as $catalog |
+        if has("profileCapabilities") then
+          (.profileCapabilities | valid_capabilities) and .profileCapabilities.writeSchema == 2 and
+          (.profileCapabilities.catalogSchemas | index($catalog.schema) != null) and
+          (.profileCapabilities.initializeSchemas | index(2) != null) and
+          (.profileCapabilities.normalizeSchemas | index(2) != null)
+        else true end
+      ' ${catalog} >/dev/null || { echo "Catalog does not support the schema-2 seed writer" >&2; exit 2; }
       foundation="" hardware="" packages="" roles="" username="" output=""
       while (( $# > 0 )); do
         case "$1" in
@@ -18,6 +37,8 @@
           --roles) roles="''${2:?--roles requires a value}"; shift 2 ;;
           --user) username="''${2:?--user requires a value}"; shift 2 ;;
           --output) output="''${2:?--output requires a value}"; shift 2 ;;
+          --capabilities|--system|--form-factor|--cpu|--gpus|--model|--camera|--no-camera|--fingerprint|--no-fingerprint)
+            echo 'Schema-3 selection options require a schema-3 Foundation source' >&2; exit 2 ;;
           *) echo "usage: finite-cloud-init --foundation FOUNDATION --hardware HARDWARE --packages PACKAGE,... --roles ROLE,... --user USER --output DIR" >&2; exit 2 ;;
         esac
       done
@@ -60,6 +81,12 @@
       echo "Seed generated; cloud-init is disabled by default on Finite. This ISO is inert unless an administrator explicitly enables full provisioning. Prefer importing profile.yaml with finite-home-init --profile." >&2
     '';
   };
+  cloudInit =
+    if writeSchema == 2
+    then legacyCloudInit
+    else if writeSchema == 3
+    then import ./cloud-init-v3.nix {inherit pkgs foundation homeCatalog;}
+    else throw "Unsupported Finite seed writer schema";
 in {
   inherit cloudInit;
   inherit (applications) homeBootstrap homeInit homeProfile homeUpdate homeMigrate;
