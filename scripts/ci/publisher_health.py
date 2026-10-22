@@ -1,4 +1,5 @@
 """Read-only publisher correlation. Identity metadata conveys no approval authority."""
+from datetime import datetime
 import json
 import re
 import subprocess
@@ -11,6 +12,49 @@ from release_versions import prerelease
 from security_decisions import canonical_hash
 
 IDENTITY_LIMIT = 64 * 1024
+
+
+def correlation_identity(artifacts, run, api):
+    prefix = f'release-execution-identity-{run["id"]}-'
+    current = [item for item in artifacts if item.get('name') == prefix + str(run['run_attempt'])]
+    if current:
+        if len(current) != 1:
+            raise ValueError('Ambiguous current publisher identity')
+        return current[0], run
+    earlier = []
+    for item in artifacts:
+        match = re.fullmatch(re.escape(prefix) + r'([1-9][0-9]*)', item.get('name', ''))
+        if match and int(match[1]) < run['run_attempt']:
+            earlier.append((int(match[1]), item))
+    if not earlier:
+        raise ValueError('Missing identity; inspect this legacy or starting publisher run')
+    attempt = max(value[0] for value in earlier)
+    matches = [item for number, item in earlier if number == attempt]
+    if len(matches) != 1:
+        raise ValueError('Ambiguous earlier publisher identity')
+    producer = api(PREFIX + f'/actions/runs/{run["id"]}/attempts/{attempt}')
+    expected = {'id': run['id'], 'run_attempt': attempt, 'head_sha': run['head_sha'],
+                'head_branch': 'main', 'path': run['path'], 'event': run['event'], 'status': 'completed'}
+    if (not isinstance(producer, dict) or any(producer.get(k) != v for k, v in expected.items())
+            or producer.get('head_repository', {}).get('full_name') != REPOSITORY):
+        raise ValueError('Earlier identity differs from its native producing attempt')
+    preparations = []
+    for number in (run['run_attempt'], attempt):
+        jobs = api(PREFIX + f'/actions/runs/{run["id"]}/attempts/{number}/jobs?per_page=100')
+        if jobs['total_count'] > 100:
+            raise ValueError('Publisher job inventory is incomplete')
+        prepared = [job for job in jobs['jobs'] if job.get('name') == 'prepare']
+        if (len(prepared) != 1 or prepared[0].get('status') != 'completed'
+                or prepared[0].get('conclusion') != 'success'):
+            raise ValueError('Earlier identity requires reused successful native preparation')
+        times = tuple(prepared[0].get(field) for field in ('started_at', 'completed_at'))
+        if (any(not isinstance(value, str) or not value.endswith('Z') for value in times)
+                or datetime.fromisoformat(times[0]) >= datetime.fromisoformat(times[1])):
+            raise ValueError('Native preparation timestamps are missing or invalid')
+        preparations.append(times)
+    if preparations[0] != preparations[1]:
+        raise ValueError('Current attempt did not reuse the identity-producing preparation')
+    return matches[0], producer
 
 
 def read_identity(artifact, run):
@@ -88,17 +132,13 @@ def inspect_publisher(proposal, api, identity_reader=read_identity):
         artifacts = api(PREFIX + f'/actions/runs/{run["id"]}/artifacts?per_page=100')
         if artifacts['total_count'] > 100:
             raise ValueError('Publisher artifact inventory is incomplete')
-        name = f'release-execution-identity-{run["id"]}-{run["run_attempt"]}'
-        matches = [item for item in artifacts['artifacts'] if item.get('name') == name]
         link = f'https://github.com/{REPOSITORY}/actions/runs/{run["id"]}/attempts/{run["run_attempt"]}'
-        if len(matches) != 1:
-            unknown.append({'runUrl': link, 'reason': 'Missing or ambiguous identity; inspect this legacy or starting publisher run.'})
-            continue
         try:
-            identity = identity_reader(matches[0], run)
+            artifact, producer = correlation_identity(artifacts['artifacts'], run, api)
+            identity = identity_reader(artifact, producer)
             if (not isinstance(identity, dict) or any(identity.get(k) != v for k, v in {
                     'schema': 1, 'repository': REPOSITORY, 'workflow': 'publish-release-set.yml',
-                    'runId': run['id'], 'runAttempt': run['run_attempt'], 'headSha': run['head_sha']}.items())):
+                    'runId': run['id'], 'runAttempt': producer['run_attempt'], 'headSha': run['head_sha']}.items())):
                 raise ValueError('Publisher identity differs from its native run')
             if identity.get('proposalHash') != proposal_hash:
                 continue
@@ -107,13 +147,13 @@ def inspect_publisher(proposal, api, identity_reader=read_identity):
         except (ValueError, RuntimeError, subprocess.SubprocessError, zipfile.BadZipFile) as error:
             unknown.append({'runUrl': link, 'reason': str(error) + '; inspect identity and native producer.'})
             continue
-        candidates.append((run, link))
+        candidates.append((run, link, producer['run_attempt']))
     public = publication_state(proposal, api)
     if not candidates:
         if unknown:
             return {'state': 'unknown', **unknown[0], 'uncorrelatedRuns': unknown}
         return {'state': 'not_started', 'reason': 'No correlated publisher run; inspect the merged release decision.'}
-    run, link = max(candidates, key=lambda value: (value[0]['id'], value[0]['run_attempt']))
+    run, link, identity_attempt = max(candidates, key=lambda value: (value[0]['id'], value[0]['run_attempt']))
     jobs = api(PREFIX + f'/actions/runs/{run["id"]}/attempts/{run["run_attempt"]}/jobs?per_page=100')
     if jobs['total_count'] > 100:
         raise ValueError('Publisher job inventory is incomplete')
@@ -145,4 +185,4 @@ def inspect_publisher(proposal, api, identity_reader=read_identity):
     else:
         state, reason = 'unknown', 'Unrecognized publisher status; inspect the native run.'
     return {'state': state, 'reason': reason, 'runUrl': link, 'phase': phase,
-            'proposalHash': proposal_hash, 'uncorrelatedRuns': unknown}
+            'proposalHash': proposal_hash, 'identityRunAttempt': identity_attempt, 'uncorrelatedRuns': unknown}

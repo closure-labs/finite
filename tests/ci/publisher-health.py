@@ -41,6 +41,8 @@ class PublisherHealth(unittest.TestCase):
         self.runs = [self.run]
         self.public = []
         self.requests = []
+        self.producer = None
+        self.producer_jobs = []
         self.zip_identity()
 
     def zip_identity(self, content=None):
@@ -54,6 +56,9 @@ class PublisherHealth(unittest.TestCase):
         self.requests.append(endpoint)
         if '/workflows/publish-release-set.yml/' in endpoint: return {'workflow_runs': self.runs}
         if '/artifacts?' in endpoint: return {'total_count': len(self.artifacts), 'artifacts': self.artifacts}
+        if endpoint.endswith('/attempts/2') and self.producer is not None: return self.producer
+        if '/attempts/2/jobs?' in endpoint and self.producer is not None:
+            return {'total_count': len(self.producer_jobs), 'jobs': self.producer_jobs}
         if '/jobs?' in endpoint: return {'total_count': len(self.jobs), 'jobs': self.jobs}
         if endpoint.endswith('/pending_deployments'): return [{'environment': {'name': 'release'}}]
         if '/releases/tags/' in endpoint:
@@ -115,6 +120,52 @@ class PublisherHealth(unittest.TestCase):
         for status, expected in [('queued', 'queued'), ('in_progress', 'running')]:
             self.run.update(status=status, conclusion=None)
             self.assertEqual(self.inspect()['state'], expected)
+
+    def reused_preparation(self):
+        self.producer = dict(self.run)
+        self.run = {**self.run, 'run_attempt': 3, 'status': 'in_progress', 'conclusion': None}
+        self.runs = [self.run]
+        prepare = {'name': 'prepare', 'conclusion': 'success', 'status': 'completed',
+                   'started_at': '2026-10-22T15:29:34Z', 'completed_at': '2026-10-22T15:44:43Z'}
+        self.producer_jobs = [dict(prepare)]
+        self.jobs = [dict(prepare), {'name': 'publish', 'conclusion': None}]
+
+    def test_publication_retry_authenticates_reused_identity_and_current_state(self):
+        self.reused_preparation()
+        result = self.inspect()
+        self.assertEqual(result['state'], 'running')
+        self.assertIn('/attempts/3', result['runUrl'])
+        self.assertEqual(result['identityRunAttempt'], 2)
+        self.run.update(status='completed', conclusion='success')
+        self.public = list(health.CHANNELS)
+        self.assertEqual(self.inspect()['state'], 'published')
+
+    def test_reused_identity_preserves_current_failure_phase(self):
+        self.reused_preparation()
+        self.run.update(status='completed', conclusion='failure')
+        self.jobs[1].update(conclusion='failure', steps=[{'name': 'commit-publication', 'conclusion': 'failure'}])
+        result = self.inspect()
+        self.assertEqual(result['state'], 'failed')
+        self.assertEqual(result['phase'], 'publish / commit-publication')
+
+    def test_prior_identity_requires_native_reuse_and_producer_binding(self):
+        for kind in ('new-preparation', 'failed-producer', 'missing-times', 'foreign-head', 'wrong-attempt', 'forged-digest', 'duplicate'):
+            self.setUp()
+            self.reused_preparation()
+            if kind == 'new-preparation': self.jobs[0]['started_at'] = '2026-10-22T16:00:00Z'
+            if kind == 'failed-producer': self.producer_jobs[0]['conclusion'] = 'failure'
+            if kind == 'missing-times': self.jobs[0].pop('completed_at')
+            if kind == 'foreign-head': self.producer['head_sha'] = 'd' * 40
+            if kind == 'wrong-attempt': self.producer['run_attempt'] = 1
+            if kind == 'forged-digest': self.artifact['digest'] = 'sha256:' + 'd' * 64
+            if kind == 'duplicate': self.artifacts.append(dict(self.artifact, id=11))
+            with self.subTest(kind=kind): self.assertEqual(self.inspect()['state'], 'unknown')
+
+    def test_invalid_current_identity_never_falls_back_to_older_identity(self):
+        self.reused_preparation()
+        self.artifact = dict(self.artifact, id=11, name='release-execution-identity-99-3')
+        self.artifacts.append(self.artifact)
+        self.assertEqual(self.inspect()['state'], 'unknown')
 
     def test_healthy_builds_do_not_hide_failed_publisher_and_wait_is_informational(self):
         with tempfile.TemporaryDirectory() as temporary:

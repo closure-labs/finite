@@ -224,6 +224,13 @@ payload digest, version, repository, workflow, run, attempt and workflow revisio
 It is discovery metadata and never approval authority. Delivery health checks
 its exact native artifact binding, archive digest and bounded JSON (64 KiB)
 before correlating it with the canonical merged decision.
+For publication-only retries, health may use the latest earlier identity only
+after authenticating its native producing attempt and proving that both attempts
+share the same successful preparation start and completion times. It still
+checks the original archive digest, JSON bounds, revision and decision identity,
+and reports the current attempt's status and phase. A malformed current identity
+cannot fall back to an earlier one. Changed preparation or missing native proof
+remains unknown.
 
 Health reports `not_started`, `queued`, `running`, `waiting_approval`, `failed`,
 `partial`, `published` or `unknown`, with the native run link and failing or
