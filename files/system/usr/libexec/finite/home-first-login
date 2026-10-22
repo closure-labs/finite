@@ -31,7 +31,8 @@ trap show_error ERR
 
 nix_deadline=$((SECONDS + nix_wait_seconds))
 until [[ -x "$nix" ]] &&
-	systemctl is-active --quiet nix-daemon.socket determinate-nixd.socket; do
+	systemctl is-active --quiet nix-daemon.socket &&
+	systemctl is-active --quiet determinate-nixd.socket; do
 	if ((SECONDS >= nix_deadline)); then
 		echo "Finite Nix did not become ready within ${nix_wait_seconds}s: $nix" >&2
 		false
