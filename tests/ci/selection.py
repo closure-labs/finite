@@ -43,7 +43,8 @@ class Selection(unittest.TestCase):
     def test_decision_controls_keep_contracts_without_rebuilding_os_images(self):
         paths = ['.github/workflows/decision-proposals.yml', 'scripts/ci/decision-controller.py',
                  'scripts/ci/decision_controller.py', 'scripts/ci/security_admission.py',
-                 'scripts/ci/release_artifact.py', 'scripts/ci/decision_packets.py']
+                 'scripts/ci/release_artifact.py', 'scripts/ci/decision_packets.py',
+                 'scripts/ci/archive_read.py']
         self.assertEqual(impact.classify(paths), {'checks': True, 'nix': False, 'profiles': []})
         for payload in ('files/system/shipped-file', 'recipes/finite.yml', 'scripts/ci/new-controller.py'):
             with self.subTest(payload=payload):

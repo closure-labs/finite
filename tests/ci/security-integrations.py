@@ -154,6 +154,22 @@ class Integrations(unittest.TestCase):
         self.assertIn('prepare --staged', rescan['run'])
         self.assertNotIn('ARTIFACT_READ_TOKEN', rescan['env'])
 
+    def test_publication_stages_then_renews_before_commit_and_downloads_use_job_token(self):
+        jobs = document('publish-release-set')['jobs']
+        self.assertEqual([jobs[name]['timeout-minutes'] for name in ('prepare', 'sign', 'publish')], [240, 180, 240])
+        for name in ('sign', 'publish'):
+            transfer = next(step for step in jobs[name]['steps'] if 'execute-release-set.py download' in step.get('run', ''))
+            self.assertEqual(transfer['env']['ARTIFACT_READ_TOKEN'], '${{ github.token }}')
+        steps = jobs['publish']['steps']
+        stage = next(i for i, step in enumerate(steps) if 'execute-release-set.py stage-publication' in step.get('run', ''))
+        fresh = next(i for i, step in enumerate(steps) if step.get('id') == 'commit-authority-token')
+        commit = next(i for i, step in enumerate(steps) if 'execute-release-set.py commit-publication' in step.get('run', ''))
+        self.assertLess(stage, fresh)
+        self.assertLess(fresh, commit)
+        self.assertIn('FINITE_REVIEW_PRIVATE_KEY=\\n', steps[fresh + 1]['run'])
+        self.assertEqual(steps[commit]['env']['GH_TOKEN'], '${{ steps.commit-authority-token.outputs.token }}')
+        self.assertTrue(all(value == 'read' for key, value in steps[fresh]['with'].items() if key.startswith('permission-')))
+
     def test_all_decision_and_release_tokens_can_verify_the_pinned_team(self):
         for name in ('decision-authority', 'decision-proposals', 'release-set', 'publish-release-set'):
             for job in document(name)['jobs'].values():

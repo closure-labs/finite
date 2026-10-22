@@ -187,3 +187,17 @@ asset, draft and source tag. Manual concurrent asset editing is unsupported.
 Nonempty, conflicting, unexpected or published assets remain untouched and require
 inspection. Partial publication resumes the remaining channel without changing
 matching published products. Journals remain evidence, never approval authority.
+
+Original-product and execution ZIPs share `archive_read.py`: three immutable GET
+attempts, each limited to 30 minutes, within one 90-minute transport deadline,
+with 2- and 4-second backoff. Partial bytes are truncated before retry. HTTP
+401/403/404, integrity errors and unsafe members are terminal. Native producer
+and attempt authentication remains explicit in each caller. Long reads use the
+read-only job token and restore the previous token on all exit paths; subsequent
+workflow authority checks mint fresh App credentials.
+
+Prepared execution handoffs retain packet manifests, producer bindings, release
+documents, scan output and authority receipts. Core products occur only under
+`signed/`; the original packet's product paths are removed after authentication
+and signing preparation. Authenticated older full execution ZIPs remain readable.
+Preparation/publication jobs allow 240 minutes and signing allows 180 minutes.

@@ -34,7 +34,7 @@ jobs:
       proposal_hash: ${{ steps.prepare.outputs.proposal_hash }}
     if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
-    timeout-minutes: 180
+    timeout-minutes: 240
     permissions:
       contents: read
       actions: read
@@ -146,7 +146,7 @@ jobs:
     runs-on: ubuntu-24.04
     # Retain the existing human release environment during migration.
     environment: release
-    timeout-minutes: 60
+    timeout-minutes: 180
     permissions:
       contents: read
       actions: read
@@ -192,6 +192,7 @@ jobs:
       - name: Download authenticated exact producing attempt
         env:
           GH_TOKEN: ${{ steps.initial-authority-token.outputs.token }}
+          ARTIFACT_READ_TOKEN: ${{ github.token }}
           PROPOSAL_HASH: ${{ needs.prepare.outputs.proposal_hash }}
         run: nix develop --file lib/ci-tools.nix release --command python3 scripts/ci/execute-release-set.py download --unsigned --proposal-hash "$PROPOSAL_HASH"
       - name: Realize pinned signing tools before exposing credentials
@@ -262,7 +263,7 @@ jobs:
     needs: [prepare, sign]
     if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 240
     permissions:
       contents: read
       actions: read
@@ -308,6 +309,7 @@ jobs:
       - name: Download authenticated signed producing attempt
         env:
           GH_TOKEN: ${{ steps.initial-authority-token.outputs.token }}
+          ARTIFACT_READ_TOKEN: ${{ github.token }}
           PROPOSAL_HASH: ${{ needs.prepare.outputs.proposal_hash }}
         run: nix develop --file lib/ci-tools.nix release --command python3 scripts/ci/execute-release-set.py download --proposal-hash "$PROPOSAL_HASH"
       - name: Realize publishing tools before exposing the release PAT

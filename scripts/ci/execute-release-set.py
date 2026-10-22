@@ -6,22 +6,19 @@ Signing is a separate phase so workflows can verify authority before exposing ke
 """
 import argparse
 from contextlib import contextmanager
-import hashlib
 import importlib.util
 import json
 import os
 from pathlib import Path
 import re
-import resource
 import shutil
-import stat
-import zipfile
 import subprocess
 import tempfile
 
 import decision_controller as controller
 import decision_packets
 import release_artifact
+import archive_read
 from release_set import CHANNELS, GitHubClient, execute, payload_digest, sha256, validate_evidence
 from security_decisions import canonical_hash, load_json
 
@@ -188,6 +185,16 @@ def stage_signing(output, document, receipts):
         (destination / 'security-admission.json').write_text(json.dumps(receipts[channel], sort_keys=True, indent=2) + '\n')
 
 
+def compact_handoff(output, document):
+    """Keep packet authentication evidence; carry product bytes only in signed/."""
+    for channel in CHANNELS:
+        for name in document['payload']['channels'][channel]['assets']:
+            (output / 'packet' / ('release-' + channel) / name).unlink(missing_ok=True)
+    recovered = output / 'packet/signed'
+    if recovered.exists():
+        shutil.rmtree(recovered)
+
+
 def sign(output, document):
     if not os.environ.get('COSIGN_PRIVATE_KEY'):
         raise ValueError('Scoped signing credentials are unavailable')
@@ -242,42 +249,8 @@ def download_execution(output, signed=True, github=None):
     if len(choices) != 1:
         raise ValueError('Ambiguous execution artifact attempt')
     artifact = choices[0]
-    with tempfile.TemporaryFile() as archive:
-        subprocess.run(['gh', 'api', f'repos/{controller.REPOSITORY}/actions/artifacts/{artifact["id"]}/zip'],
-                       stdout=archive, check=True, timeout=1800,
-                       preexec_fn=lambda: resource.setrlimit(resource.RLIMIT_FSIZE,
-                           (artifact['size_in_bytes'], artifact['size_in_bytes'])))
-        archive.seek(0, 2)
-        if archive.tell() != artifact['size_in_bytes']:
-            raise ValueError('Execution artifact size mismatch')
-        archive.seek(0)
-        if 'sha256:' + hashlib.file_digest(archive, 'sha256').hexdigest() != artifact['digest']:
-            raise ValueError('Execution artifact digest mismatch')
-        archive.seek(0)
-        output.mkdir(parents=True, exist_ok=False)
-        with zipfile.ZipFile(archive) as zipped:
-            names, total = set(), 0
-            for entry in zipped.infolist():
-                if entry.is_dir():
-                    continue
-                name = decision_packets.safe_name(entry.filename)
-                total += entry.file_size
-                if (name in names or len(names) >= 1024 or total > 64 * 1024**3
-                        or stat.S_IFMT(entry.external_attr >> 16) not in (0, stat.S_IFREG)
-                        or entry.flag_bits & 1):
-                    raise ValueError('Unsafe execution ZIP member')
-                names.add(name)
-                path = output / name
-                path.parent.mkdir(parents=True, exist_ok=True)
-                remaining = entry.file_size
-                with zipped.open(entry) as source, path.open('xb') as destination:
-                    while chunk := source.read(min(1024 * 1024, remaining + 1)):
-                        remaining -= len(chunk)
-                        if remaining < 0:
-                            raise ValueError('Execution ZIP exceeds declared expansion')
-                        destination.write(chunk)
-                if remaining:
-                    raise ValueError('Execution ZIP ended early')
+    with archive_read.archive_reader(artifact, controller.REPOSITORY) as archive:
+        archive_read.extract(archive, output)
     return artifact
 
 
@@ -372,7 +345,8 @@ def main():
         return
     proposal, receipt, initial = approved(args.proposal_hash)
     if args.phase == 'download':
-        download_execution(output, signed=not args.unsigned)
+        with artifact_reader_credentials():
+            download_execution(output, signed=not args.unsigned)
         return
     if args.phase == 'stage':
         # Human approval is checked above using the short-lived App token.
@@ -382,7 +356,11 @@ def main():
         (output / 'release-set.json').write_text(json.dumps(document, sort_keys=True, indent=2) + '\n')
         print('Release phase: product staging complete; obtain fresh authority credentials before scanning', flush=True)
     elif args.phase == 'prepare':
-        document, recovered = materialize_products(output, proposal, args.packet_ref or initial, staged=args.staged)
+        if args.staged:
+            document, recovered = materialize_products(output, proposal, args.packet_ref or initial, staged=True)
+        else:
+            with artifact_reader_credentials():
+                document, recovered = materialize_products(output, proposal, args.packet_ref or initial)
         for channel in CHANNELS:
             print('Release phase: fresh security scan and current admission for ' + channel, flush=True)
             image = 'ghcr.io/closure-labs/finite@' + document['payload']['channels'][channel]['imageDigest']
@@ -394,6 +372,7 @@ def main():
             shutil.copytree(output / 'packet/signed', output / 'signed', copy_function=os.link)
         else:
             stage_signing(output, document, receipts)
+        compact_handoff(output, document)
         if os.environ.get('GITHUB_OUTPUT'):
             with open(os.environ['GITHUB_OUTPUT'], 'a') as stream:
                 stream.write('recovered_signed=' + str(recovered).lower() + '\n')
