@@ -58,14 +58,28 @@ class Remote:
         self.events.append(('draft', tag))
 
     def assets(self, release_id):
-        return dict(self.releases[release_id]['assets'])
+        return copy.deepcopy(self.releases[release_id]['assets'])
 
     def upload(self, release_id, path):
         if self.fail_upload:
             self.fail_upload = False
             raise RuntimeError('network upload failed')
-        self.releases[release_id]['assets'][path.name] = hashlib.sha256(path.read_bytes()).hexdigest()
+        self.releases[release_id]['assets'][path.name] = self.record(path.name, hashlib.sha256(path.read_bytes()).hexdigest(), path.stat().st_size)
         self.events.append(('upload', release_id))
+
+    def record(self, name, digest=None, size=0, state='uploaded'):
+        return {'id': name, 'name': name, 'digest': digest, 'size': size, 'state': state}
+
+    def get_asset(self, asset_id):
+        return next(copy.deepcopy(assets['assets'][asset_id]) for assets in self.releases.values()
+                    if asset_id in assets['assets'])
+
+    def delete_asset(self, asset_id):
+        for release in self.releases.values():
+            if asset_id in release['assets']:
+                del release['assets'][asset_id]
+                self.events.append(('delete', asset_id))
+                return
 
     def publish(self, release_id, *, prerelease=False):
         if self.fail_publish == release_id:
@@ -105,9 +119,9 @@ class ReleaseSetTests(unittest.TestCase):
                 (self.roots[channel] / name).write_bytes(content)
                 self.derived[channel][name] = hashlib.sha256(content).hexdigest()
 
-    def run_release(self, owner='run-1'):
+    def run_release(self, owner='run-1', phase='publish'):
         return execute(self.doc, self.remote, self.roots, payload_digest(self.doc), owner, now=lambda: 100,
-                       derived_assets=self.derived, evidence_validator=lambda *args: None)
+                       derived_assets=self.derived, evidence_validator=lambda *args: None, phase=phase)
 
     def test_github_gets_have_no_body_and_mutations_keep_structured_json(self):
         result = types.SimpleNamespace(returncode=0, stdout='HTTP/2.0 200 OK\n\n{}', stderr='')
@@ -218,9 +232,6 @@ class ReleaseSetTests(unittest.TestCase):
 
     def test_partial_upload_resumes_without_duplicate_or_clobber(self):
         self.remote.fail_upload = True
-        with self.assertRaises(RuntimeError):
-            self.run_release()
-        self.assertEqual(self.remote.journal['state'], 'interrupted')
         self.assertEqual(self.run_release()['state'], 'complete')
 
     def test_one_published_release_resumes_second(self):
@@ -247,7 +258,7 @@ class ReleaseSetTests(unittest.TestCase):
 
     def test_changed_remote_asset_is_never_overwritten(self):
         self.run_release()
-        self.remote.releases['finite-1.2.3']['assets']['image.iso'] = 'b' * 64
+        self.remote.releases['finite-1.2.3']['assets']['image.iso']['digest'] = 'b' * 64
         with self.assertRaisesRegex(ValueError, 'hash mismatch'):
             self.run_release()
 
@@ -285,6 +296,109 @@ class ReleaseSetTests(unittest.TestCase):
         self.doc['evidence']['finite']['isoSha256'] = 'b' * 64
         with self.assertRaisesRegex(ValueError, 'version already reserved'):
             self.run_release()
+
+    def test_stage_never_publishes_and_commit_never_transfers(self):
+        self.assertEqual(self.run_release(phase='stage-publication')['state'], 'staged')
+        self.assertTrue(all(r['draft'] for r in self.remote.releases.values()))
+        self.remote.upload = self.remote.delete_asset = lambda *a: self.fail('Commit mutated assets')
+        self.assertEqual(self.run_release(phase='commit-publication')['state'], 'complete')
+
+    def test_commit_missing_inventory_cannot_create_or_upload(self):
+        self.remote.create_draft = self.remote.create_tag = self.remote.upload = lambda *a, **kw: self.fail('Commit staged')
+        with self.assertRaisesRegex(ValueError, 'different revision'):
+            self.run_release(phase='commit-publication')
+
+    def test_placeholder_and_lost_successful_response_reconcile(self):
+        for lost_response in (False, True):
+            with self.subTest(lost_response=lost_response):
+                self.remote = Remote()
+                upload = self.remote.upload
+                calls = []
+                def ambiguous(release_id, path):
+                    calls.append(path.name)
+                    if len(calls) == 1:
+                        if lost_response:
+                            upload(release_id, path)
+                        else:
+                            self.remote.releases[release_id]['assets'][path.name] = self.remote.record(path.name, state='starter')
+                        raise RuntimeError('HTTP 502')
+                    upload(release_id, path)
+                self.remote.upload = ambiguous
+                self.assertEqual(self.run_release()['state'], 'complete')
+                self.assertEqual(sum(event[0] == 'delete' for event in self.remote.events), 0 if lost_response else 1)
+                self.assertEqual(calls.count('image.iso'), 2 if lost_response else 3)
+
+    def test_changed_placeholder_is_reconciled_without_deletion(self):
+        self.run_release(phase='stage-publication')
+        assets = self.remote.releases['finite-1.2.3']['assets']
+        original = assets['image.iso']
+        assets['image.iso'] = self.remote.record('image.iso', state='starter')
+        def changed(asset_id):
+            assets['image.iso'] = original
+            return original
+        self.remote.get_asset = changed
+        self.run_release()
+        self.assertFalse(any(event[0] == 'delete' for event in self.remote.events))
+
+    def test_draft_published_before_cleanup_is_preserved(self):
+        self.run_release(phase='stage-publication')
+        release = self.remote.releases['finite-1.2.3']
+        release['assets']['image.iso'] = self.remote.record('image.iso', state='starter')
+        get_release = self.remote.get_release
+        reads = []
+        def changed(tag):
+            if tag == 'finite-1.2.3':
+                reads.append(tag)
+                if len(reads) == 3:
+                    release['draft'] = False
+            return get_release(tag)
+        self.remote.get_release = changed
+        with self.assertRaisesRegex(ValueError, 'unsafe failed upload'):
+            self.run_release()
+        self.assertFalse(any(event[0] == 'delete' for event in self.remote.events))
+        self.assertEqual(release['assets']['image.iso']['state'], 'starter')
+
+    def test_unsafe_placeholders_are_preserved(self):
+        for condition in ('published', 'nonempty', 'foreign', 'unexpected', 'conflicting'):
+            with self.subTest(condition=condition):
+                self.remote = Remote()
+                self.run_release(phase='stage-publication')
+                release = self.remote.releases['finite-1.2.3']
+                name = 'foreign.iso' if condition == 'unexpected' else 'image.iso'
+                record = self.remote.record(name, state='starter')
+                release['assets'][name] = record
+                if condition == 'published': release['draft'] = False
+                if condition == 'nonempty': record['size'] = 1
+                if condition == 'foreign': release['payloadDigest'] = 'b' * 64
+                if condition == 'conflicting': record['digest'] = 'b' * 64
+                before = copy.deepcopy(release)
+                with self.assertRaises(ValueError): self.run_release()
+                self.assertEqual(release, before)
+                self.assertFalse(any(event[0] == 'delete' for event in self.remote.events))
+
+    def test_three_failed_writes_are_bounded(self):
+        calls = []
+        def fail(*args):
+            calls.append(args)
+            raise RuntimeError('HTTP 502')
+        self.remote.upload = fail
+        with self.assertRaisesRegex(RuntimeError, 'three reconciled attempts'):
+            self.run_release()
+        self.assertEqual(len(calls), 3)
+        self.assertEqual(self.remote.journal['leaseUntil'], 0)
+
+    def test_adapter_retains_placeholder_metadata_and_upload_disables_retries(self):
+        client = release_set.GitHubClient('closure-labs/finite', token='scoped-token')
+        record = {'id': 42, 'name': 'image.iso', 'state': 'starter', 'size': 0, 'digest': None}
+        with patch.object(client, 'api', return_value=[record]):
+            self.assertEqual(client.assets(1), {'image.iso': record})
+        with patch.object(release_set.subprocess, 'run') as run:
+            client.upload(1, self.roots['finite'] / 'image.iso')
+            args = run.call_args.args[0]
+            self.assertEqual(args[args.index('--retry') + 1], '0')
+            self.assertIn('--upload-file', args)
+            self.assertEqual(run.call_args.kwargs['timeout'], 300)
+            self.assertNotIn('scoped-token', ' '.join(args))
 
     def test_asset_path_traversal_and_missing_channel_rejected(self):
         self.doc['payload']['channels']['finite']['assets'] = {'../bad': 'b' * 64}

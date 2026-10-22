@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Report delivery blockers and dispatch preparation; never sign or publish."""
+"""Read-only delivery blockers and authenticated publisher state."""
 from datetime import datetime, timedelta, timezone
 import json
 import os
@@ -8,6 +8,8 @@ import re
 import subprocess
 import sys
 
+from publisher_health import inspect_publisher
+from security_decisions import canonical_hash, load_json
 from github_api import get_json
 from release_readiness import CHANNELS, PREFIX, eligible_build, release_status, root_version
 
@@ -61,12 +63,33 @@ def inspect(revision, version, bot, api=get_json, now=None):
             if now - timestamp >= timedelta(hours=36):
                 problems.append(channel + ': latest recorded promotion is at least 36 hours old.')
     release = release_status(version, api, bot)
-    if release['state'] == 'unprepared' and selected is None:
-        release['reason'] = 'Waiting for both successful same-revision qualifications and preserved ISOs.'
-        problems.append('Release ' + version + ': ' + release['reason'])
-    if release['state'] == 'recovery':
+    decisions = Path(__file__).resolve().parents[2] / 'automation/decisions/releases'
+    proposals = []
+    for path in decisions.glob('*.json'):
+        proposal = load_json(path)
+        if proposal.get('kind') == 'release-set' and proposal.get('payload', {}).get('version') == version:
+            if path.stem != canonical_hash(proposal):
+                raise ValueError('Merged release decision identity mismatch')
+            proposals.append(proposal)
+    if len(proposals) > 1:
+        raise ValueError('Multiple release decisions claim this version; inspect reservations')
+    blockers = []
+    if proposals:
+        release = inspect_publisher(proposals[0], api)
+        if release['state'] in ('failed', 'partial', 'not_started', 'unknown'):
+            problems.append('Release ' + version + ': ' + release['reason'])
+        if release['state'] == 'waiting_approval':
+            blockers.append(release['reason'])
+    elif release['state'] == 'published':
+        release = {'state': 'unknown', 'reason': 'Public release lacks a merged decision for publisher correlation; inspect manually.'}
         problems.append(release['reason'])
-    return {'schema': 1, 'healthy': not problems, 'problems': problems, 'channels': channels,
+    if not proposals:
+        if release['state'] == 'unprepared' and selected is None:
+            release['reason'] = 'Waiting for both successful same-revision qualifications and preserved ISOs.'
+            problems.append('Release ' + version + ': ' + release['reason'])
+        if release['state'] == 'recovery':
+            problems.append(release['reason'])
+    return {'schema': 1, 'healthy': not problems, 'blockers': blockers, 'problems': problems, 'channels': channels,
             'version': version, 'release': release, 'buildRun': selected}
 
 
@@ -101,7 +124,13 @@ def summary(report):
                 if receipt else 'Unavailable in recent runs')
     for channel, state in report['channels'].items():
         lines.append(f'| {channel} | {link(state["qualified"])} | {link(state["promoted"])} |')
-    lines += ['', 'Release readiness: ' + report['release']['reason'], '']
+    release = report['release']
+    lines += ['', 'Release publication: ' + release['state'] + ' — ' + release['reason'], '']
+    if release.get('runUrl'):
+        lines.append('[Publisher run](' + release['runUrl'] + ')')
+    if release.get('phase'):
+        lines.append('Failing or blocked phase: ' + release['phase'])
+    lines.extend('- Informational blocker: ' + blocker for blocker in report.get('blockers', []))
     lines.extend('- ' + problem for problem in report['problems'])
     return '\n'.join(lines) + '\n'
 
@@ -112,17 +141,10 @@ def main():
         raise ValueError('Delivery health requires trusted hosted main')
     revision = os.environ['GITHUB_SHA']
     report = inspect(revision, root_version(), os.environ.get('FINITE_REVIEW_BOT_LOGIN'))
-    try:
-        preparation = dispatch(report, revision)
-    except ValueError as error:
-        report['healthy'] = False
-        report['problems'].append(str(error))
-        preparation = 'Preparation reconciliation requires attention.'
     Path('.bluebuild').mkdir(exist_ok=True)
     Path('.bluebuild/delivery-health.json').write_text(json.dumps(report, indent=2) + '\n')
     with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as output:
         output.write(summary(report))
-        output.write('\n' + preparation + '\n')
     return 0 if report['healthy'] else 1
 
 

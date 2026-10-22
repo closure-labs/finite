@@ -49,8 +49,8 @@ class ArchiveDownloadTests(unittest.TestCase):
                     output.write(b'partial bytes that must not survive the retry')
                     raise error
                 output.write(self.raw)
-            with self.subTest(error=str(error)), patch.object(module.release_artifact.subprocess, 'run', side_effect=download), \
-                    patch.object(module.release_artifact.time, 'sleep') as sleep:
+            with self.subTest(error=str(error)), patch.object(module.archive_read.subprocess, 'run', side_effect=download), \
+                    patch.object(module.archive_read.time, 'sleep') as sleep:
                 files = module.release_artifact.verify_archive(self.root, self.artifact)
                 self.assertEqual(files['product.iso']['sha256'], hashlib.sha256(b'qualified product').hexdigest())
                 self.assertEqual(len(attempts), 2)
@@ -60,8 +60,8 @@ class ArchiveDownloadTests(unittest.TestCase):
 
     def test_persistent_transport_failure_exhausts_three_attempts(self):
         error = subprocess.CalledProcessError(1, ['gh', 'api'], stderr='read tcp: read: connection timed out')
-        with patch.object(module.release_artifact.subprocess, 'run', side_effect=error) as run, \
-                patch.object(module.release_artifact.time, 'sleep') as sleep:
+        with patch.object(module.archive_read.subprocess, 'run', side_effect=error) as run, \
+                patch.object(module.archive_read.time, 'sleep') as sleep:
             with self.assertRaises(subprocess.CalledProcessError):
                 module.release_artifact.verify_archive(self.root, self.artifact)
             self.assertEqual(run.call_count, 3)
@@ -70,8 +70,8 @@ class ArchiveDownloadTests(unittest.TestCase):
     def test_authorization_missing_artifact_and_other_command_errors_never_retry(self):
         for stderr in ('HTTP 401', 'HTTP 403: connection timed out', 'HTTP 404', 'authentication required'):
             error = subprocess.CalledProcessError(1, ['gh', 'api'], stderr=stderr)
-            with self.subTest(stderr=stderr), patch.object(module.release_artifact.subprocess, 'run', side_effect=error) as run, \
-                    patch.object(module.release_artifact.time, 'sleep') as sleep:
+            with self.subTest(stderr=stderr), patch.object(module.archive_read.subprocess, 'run', side_effect=error) as run, \
+                    patch.object(module.archive_read.time, 'sleep') as sleep:
                 with self.assertRaises(subprocess.CalledProcessError):
                     module.release_artifact.verify_archive(self.root, self.artifact)
                 self.assertEqual(run.call_count, 1)
@@ -87,8 +87,8 @@ class ArchiveDownloadTests(unittest.TestCase):
                 artifact['digest'] = 'sha256:' + '0' * 64
             def download(command, **kwargs):
                 kwargs['stdout'].write(self.raw)
-            with self.subTest(mismatch=mismatch), patch.object(module.release_artifact.subprocess, 'run', side_effect=download) as run, \
-                    patch.object(module.release_artifact.time, 'sleep') as sleep:
+            with self.subTest(mismatch=mismatch), patch.object(module.archive_read.subprocess, 'run', side_effect=download) as run, \
+                    patch.object(module.archive_read.time, 'sleep') as sleep:
                 with self.assertRaises(ValueError):
                     module.release_artifact.verify_archive(self.root, artifact)
                 self.assertEqual(run.call_count, 1)
@@ -102,8 +102,8 @@ class ArchiveDownloadTests(unittest.TestCase):
                 kwargs['stdout'].write(b'partial')
                 raise subprocess.CalledProcessError(1, command, stderr='HTTP 502')
             kwargs['stdout'].write(b'X' + self.raw[1:])
-        with patch.object(module.release_artifact.subprocess, 'run', side_effect=download), \
-                patch.object(module.release_artifact.time, 'sleep') as sleep:
+        with patch.object(module.archive_read.subprocess, 'run', side_effect=download), \
+                patch.object(module.archive_read.time, 'sleep') as sleep:
             with self.assertRaisesRegex(ValueError, 'digest mismatch'):
                 module.release_artifact.verify_archive(self.root, self.artifact)
             self.assertEqual(len(attempts), 2)
@@ -114,7 +114,7 @@ class ArchiveDownloadTests(unittest.TestCase):
             cached = Path(directory) / 'original.zip'
             def download(command, **kwargs):
                 kwargs['stdout'].write(self.raw)
-            with patch.object(module.release_artifact.subprocess, 'run', side_effect=download) as run:
+            with patch.object(module.archive_read.subprocess, 'run', side_effect=download) as run:
                 module.release_artifact.verify_archive(self.root, self.artifact, cached_archive=cached)
                 module.release_artifact.verify_archive(self.root, self.artifact, cached_archive=cached)
                 self.assertEqual(run.call_count, 1)
@@ -128,6 +128,28 @@ class ArchiveDownloadTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'size mismatch'):
                     module.release_artifact.verify_archive(self.root, self.artifact, cached_archive=cached)
                 self.assertEqual(run.call_count, 1, 'Invalid staged bytes must fail rather than be replaced')
+
+    def test_total_deadline_prevents_another_attempt(self):
+        with patch.object(module.archive_read.time, 'monotonic', side_effect=[0, 0, 5399]), \
+                patch.object(module.archive_read.time, 'sleep') as sleep, \
+                patch.object(module.archive_read.subprocess, 'run', side_effect=subprocess.TimeoutExpired('gh', 1800)) as run:
+            with self.assertRaisesRegex(TimeoutError, '90-minute deadline'):
+                module.release_artifact.verify_archive(self.root, self.artifact)
+            self.assertEqual(run.call_count, 1)
+            sleep.assert_not_called()
+
+    def test_final_attempt_uses_remaining_deadline(self):
+        calls = []
+        def download(command, **kwargs):
+            calls.append(kwargs['timeout'])
+            if len(calls) < 3:
+                raise subprocess.TimeoutExpired(command, kwargs['timeout'])
+            kwargs['stdout'].write(self.raw)
+        with patch.object(module.archive_read.time, 'monotonic', side_effect=[0, 0, 1800, 1802, 3602, 3606, 5399]), \
+                patch.object(module.archive_read.time, 'sleep'), \
+                patch.object(module.archive_read.subprocess, 'run', side_effect=download):
+            module.release_artifact.verify_archive(self.root, self.artifact)
+        self.assertEqual(calls, [1800, 1800, 1794])
 
 
 class ExecutionTests(unittest.TestCase):
@@ -285,7 +307,7 @@ class ExecutionTests(unittest.TestCase):
         def download(*args, **kwargs):
             kwargs['stdout'].write(raw)
         try:
-            with patch.object(module.release_artifact.subprocess, 'run', side_effect=download):
+            with patch.object(module.archive_read.subprocess, 'run', side_effect=download):
                 with self.assertRaisesRegex(ValueError, 'authenticated original Actions archive'):
                     module.check_product(self.root, self.proposal, self.manifest, github=lambda _: self.run)
         finally:
@@ -385,6 +407,109 @@ class ExecutionTests(unittest.TestCase):
                         selected = module.download_execution(destination, github=lambda _: run)
                         self.assertEqual(selected['name'], 'signed-release-execution-5-1')
                         self.assertEqual((destination / 'signed/finite/image.iso').read_bytes(), b'product')
+
+    def test_staging_credentials_may_expire_and_commit_requires_fresh_authority(self):
+        remote_spec = importlib.util.spec_from_file_location('release_fixture', ROOT / 'tests/ci/release-set.py')
+        fixture = importlib.util.module_from_spec(remote_spec)
+        remote_spec.loader.exec_module(fixture)
+        remote = fixture.Remote()
+        derived = {}
+        roots = {}
+        for channel in module.CHANNELS:
+            roots[channel] = self.root / ('release-' + channel)
+            derived[channel] = {}
+            for name in ('SHA256SUMS', 'SHA256SUMS.bundle.json'):
+                (roots[channel] / name).write_text(name)
+                derived[channel][name] = module.sha256(roots[channel] / name)
+        expired = [False]
+        revoked = [False]
+        upload = remote.upload
+        def slow_upload(*args):
+            upload(*args)
+            expired[0] = True
+        remote.upload = slow_upload
+        def authority(_):
+            if os.environ['GH_TOKEN'] == 'old-app' and expired[0]:
+                raise ValueError('expired staging credentials')
+            if revoked[0]:
+                raise ValueError('approval revoked')
+            return self.proposal, {}, 'initial-packet'
+        identity = module.canonical_hash(self.proposal)
+        def run(phase, token):
+            with patch.dict(os.environ, GH_TOKEN=token, RELEASE_PUBLISH_TOKEN='publish-token',
+                            GITHUB_RUN_ID='5', GITHUB_RUN_ATTEMPT='1'), \
+                    patch.object(sys, 'argv', ['execute', phase, '--proposal-hash', identity, '--directory', str(self.root)]):
+                module.main()
+        with patch.object(module.controller, 'trusted_context'), \
+                patch.object(module, 'approved', side_effect=authority), \
+                patch.object(module, 'verify_scans'), patch.object(module, 'validate_signed'), \
+                patch.object(module, 'signed_inventory', return_value=(roots, derived)), \
+                patch.object(module, 'GitHubClient', return_value=remote):
+            run('stage-publication', 'old-app')
+            self.assertEqual(remote.journal['state'], 'staged')
+            self.assertFalse(any(e[0] == 'publish' for e in remote.events))
+            writes = list(remote.events)
+            with self.assertRaisesRegex(ValueError, 'expired'):
+                run('commit-publication', 'old-app')
+            revoked[0] = True
+            with self.assertRaisesRegex(ValueError, 'revoked'):
+                run('commit-publication', 'fresh-app')
+            self.assertEqual(remote.events, writes)
+            revoked[0] = False
+            run('commit-publication', 'fresh-app')
+            self.assertEqual(remote.journal['state'], 'complete')
+            self.assertEqual(sum(e[0] == 'upload' for e in remote.events), 6)
+
+    def test_compact_handoff_keeps_evidence_and_one_copy_of_each_product(self):
+        output = self.root / 'execution'
+        output.mkdir()
+        import shutil
+        shutil.copytree(self.root / 'release-finite', output / 'packet/release-finite')
+        shutil.copytree(self.root / 'release-finite-dev', output / 'packet/release-finite-dev')
+        (output / 'packet/decision-packet.json').write_text('producer binding')
+        for channel in module.CHANNELS:
+            scan = output / ('security-' + channel)
+            scan.mkdir()
+            for name in ('security-result.json', 'sbom.spdx.json'):
+                (scan / name).write_text('{}')
+        module.stage_signing(output, self.document, {c: {} for c in module.CHANNELS})
+        module.compact_handoff(output, self.document)
+        self.assertEqual(len(list(output.rglob('image.iso'))), 2)
+        self.assertTrue((output / 'packet/decision-packet.json').exists())
+        for channel in module.CHANNELS:
+            self.assertTrue((output / 'signed' / channel / 'release-set.json').is_file())
+            self.assertTrue((output / ('security-' + channel) / 'security-result.json').is_file())
+        # Older full execution trees remain consumable through signed_inventory.
+        with patch.object(module, 'validate_signed') as verify:
+            module.signed_inventory(output, self.document)
+            self.assertEqual(verify.call_count, 2)
+
+    def test_execution_archive_retries_partial_timeout_with_same_binding(self):
+        archive = io.BytesIO()
+        with zipfile.ZipFile(archive, 'w') as zipped:
+            zipped.writestr('signed/finite/image.iso', b'product')
+            zipped.writestr('packet/release-finite/image.iso', b'product')
+        raw = archive.getvalue()
+        artifact = {'id': 12, 'name': 'signed-release-execution-5-1', 'expired': False,
+                    'workflow_run': {'id': 5, 'head_sha': 'a' * 40}, 'size_in_bytes': len(raw),
+                    'digest': 'sha256:' + hashlib.sha256(raw).hexdigest()}
+        calls = []
+        def download(command, **kwargs):
+            self.assertEqual(kwargs['stdout'].tell(), 0)
+            calls.append(command)
+            if len(calls) == 1:
+                kwargs['stdout'].write(b'partial')
+                raise subprocess.TimeoutExpired(command, 1800)
+            kwargs['stdout'].write(raw)
+        with patch.dict(os.environ, GITHUB_RUN_ID='5', GITHUB_RUN_ATTEMPT='2', GITHUB_SHA='a' * 40), \
+                patch.object(module.controller, 'collection', return_value=[artifact]), \
+                patch.object(module.archive_read.time, 'sleep'), \
+                patch.object(module.subprocess, 'run', side_effect=download):
+            output = self.root / 'retried'
+            module.download_execution(output, github=lambda _: {**self.run, 'path': '.github/workflows/publish-release-set.yml'})
+        self.assertEqual(len(calls), 2)
+        self.assertEqual((output / 'signed/finite/image.iso').read_bytes(), b'product')
+        self.assertTrue((output / 'packet/release-finite/image.iso').exists())
 
     def test_recovery_packet_requires_completed_signer_and_crypto_validation(self):
         manifest = {'producer': {**self.manifest['producer'], 'workflow': 'publish-release-set.yml'}}

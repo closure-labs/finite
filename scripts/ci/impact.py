@@ -18,6 +18,7 @@ QUALIFICATION_ONLY = {
     "scripts/ci/release-readiness.py", "scripts/ci/delivery-health.py",
     'scripts/ci/release_versions.py', 'scripts/ci/release-cycle.py',
     'scripts/ci/release_set.py', 'scripts/ci/release_artifact.py',
+    'scripts/ci/archive_read.py', 'scripts/ci/publisher_health.py', 'scripts/ci/reconcile-delivery.py',
     'scripts/ci/prepare-release-set.py', 'scripts/ci/execute-release-set.py',
     ".github/workflows/delivery-health.yml",
     "scripts/ci/vm-selection.py", "scripts/ci/local_vm.py",

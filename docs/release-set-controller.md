@@ -166,3 +166,57 @@ App token for live human authority checks. The scoped publisher inherits neither
 signing keys, the App private key nor cache/updater credentials. Neither the
 scanner nor signer receives this PAT, and publishing tools are realized before
 it enters the isolated child process. The review App gains no Workflows permission.
+
+### Upload and publication recovery
+
+The maintained publisher runs `stage-publication`, renews the read-only review
+App token and clears its private key, then runs `commit-publication`. Staging
+reserves the version, reconciles source tags and owned drafts, verifies signed
+products, uploads both inventories and checkpoints `staged`; it cannot publish.
+Commit reacquires the CAS lease and checks current human approval, admission,
+tags and complete asset hashes before publishing, with fresh authority checks at
+each channel boundary. Commit cannot create tags, drafts, upload or delete assets.
+The combined `publish` command remains a compatibility entry point.
+
+Uploads use single streaming POSTs with a 300-second limit. After each ambiguous
+response, remote state is reconciled before another write (at most three POSTs).
+A completed matching upload succeeds even if its response was lost. Under the
+exclusive release lease, the controller may delete only an expected empty
+`starter` asset in the matching unpublished draft, after rereading the individual
+asset, draft and source tag. Manual concurrent asset editing is unsupported.
+Nonempty, conflicting, unexpected or published assets remain untouched and require
+inspection. Partial publication resumes the remaining channel without changing
+matching published products. Journals remain evidence, never approval authority.
+
+Original-product and execution ZIPs share `archive_read.py`: three immutable GET
+attempts, each limited to 30 minutes, within one 90-minute transport deadline,
+with 2- and 4-second backoff. Partial bytes are truncated before retry. HTTP
+401/403/404, integrity errors and unsafe members are terminal. Native producer
+and attempt authentication remains explicit in each caller. Long reads use the
+read-only job token and restore the previous token on all exit paths; subsequent
+workflow authority checks mint fresh App credentials.
+
+Prepared execution handoffs retain packet manifests, producer bindings, release
+documents, scan output and authority receipts. Core products occur only under
+`signed/`; the original packet's product paths are removed after authentication
+and signing preparation. Authenticated older full execution ZIPs remain readable.
+Preparation/publication jobs allow 240 minutes and signing allows 180 minutes.
+
+### Publisher health correlation
+
+Before preparation transfers, the publisher uploads a small native
+`release-execution-identity-RUN-ATTEMPT` artifact containing proposal hash,
+payload digest, version, repository, workflow, run, attempt and workflow revision.
+It is discovery metadata and never approval authority. Delivery health checks
+its exact native artifact binding, archive digest and bounded JSON (64 KiB)
+before correlating it with the canonical merged decision.
+
+Health reports `not_started`, `queued`, `running`, `waiting_approval`, `failed`,
+`partial`, `published` or `unknown`, with the native run link and failing or
+blocked phase when available. A successful build or recorded decision does not
+prove publication. Public products are checked independently; failed, partial,
+missing and uncorrelated publication states are unhealthy. A verified native
+`release` environment wait is an informational blocker. Legacy runs without
+identity metadata remain unknown and require native-run inspection. Health reads
+metadata only; it does not approve, clean assets, dispatch preparation or restart
+publication. Explicit recovery continues to use the original approved bytes.
