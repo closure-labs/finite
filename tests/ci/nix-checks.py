@@ -16,6 +16,15 @@ spec.loader.exec_module(checks)
 
 
 class RetryChecks(unittest.TestCase):
+    def test_hosted_checks_root_successful_proofs_before_bounded_cache_gc(self):
+        command = checks.check_command({'GITHUB_ACTIONS': 'true', 'RUNNER_TEMP': '/tmp/runner'})
+        self.assertEqual(command[command.index('--out-link') + 1], '/tmp/runner/finite-checks-cache-root')
+        self.assertEqual(command[-1], '.#ci-checks')
+        self.assertNotIn('--no-link', command)
+        self.assertIn('--no-link', checks.check_command({}))
+        with self.assertRaises(ValueError):
+            checks.check_command({'GITHUB_ACTIONS': 'true', 'RUNNER_TEMP': 'relative'})
+
     def test_only_transport_errors_are_retriable(self):
         for error in ('unable to download archive: HTTP error 504',
                       'HTTP error 429', 'connection reset by peer',

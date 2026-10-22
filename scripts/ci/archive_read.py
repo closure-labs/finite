@@ -88,7 +88,7 @@ def authenticate(archive, artifact):
     archive.seek(0)
 
 
-def members(zipped, max_files=1024):
+def members(zipped, max_files=1024, max_bytes=MAXIMUM):
     names, total = set(), 0
     for entry in zipped.infolist():
         name = decision_packets.safe_name(entry.filename.rstrip('/') if entry.is_dir() else entry.filename)
@@ -98,7 +98,7 @@ def members(zipped, max_files=1024):
                 raise ValueError('Unsafe archive directory')
             continue
         total += entry.file_size
-        if (name in names or len(names) >= max_files or total > MAXIMUM
+        if (name in names or len(names) >= max_files or total > max_bytes
                 or mode not in (0, stat.S_IFREG) or entry.flag_bits & 1):
             raise ValueError('Unsafe Actions ZIP member')
         names.add(name)
@@ -117,10 +117,10 @@ def chunks(zipped, entry):
             raise ValueError('Archive ended early')
 
 
-def extract(archive, output):
+def extract(archive, output, *, max_bytes=MAXIMUM):
     output.mkdir(parents=True, exist_ok=False)
     with zipfile.ZipFile(archive) as zipped:
-        for name, entry in members(zipped):
+        for name, entry in members(zipped, max_bytes=max_bytes):
             path = output / name
             path.parent.mkdir(parents=True, exist_ok=True)
             with path.open('xb') as destination:

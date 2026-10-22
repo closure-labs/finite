@@ -6,6 +6,7 @@
   lib,
   pkgs,
 }: let
+  sources = import ./check-sources.nix {inherit lib;};
   source = lib.fileset.toSource {
     root = ../.;
     fileset = lib.fileset.unions [
@@ -36,13 +37,15 @@
       ../devenv-tasks.nix
     ];
   };
-  check = name: tools: commands:
+  check = name: tools: commands: let
+    inputs = sources.${name} or source;
+  in
     pkgs.runCommand "finite-${name}" {
       nativeBuildInputs = [pkgs.bash pkgs.coreutils] ++ tools;
     } ''
       export HOME="$TMPDIR/home"
       mkdir -p "$HOME" source
-      cp -R ${source}/. source/
+      cp -R ${inputs}/. source/
       chmod -R u+w source
       cd source
       export FINITE_HERMETIC_CHECK=true FINITE_SOURCE_ROOT="$PWD"
@@ -100,6 +103,8 @@ in {
     python3 tests/ci/prepare-release-set.py
     python3 tests/ci/reconcile-decisions.py
     python3 tests/ci/verify-attestation-subject.py
+    python3 tests/ci/release-handoff.py
+    python3 tests/ci/ci-savings.py
     python3 tests/ci/execute-release-set.py
     python3 tests/ci/release-recovery.py
     python3 tests/ci/image-identity.py

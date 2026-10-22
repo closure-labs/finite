@@ -129,8 +129,13 @@ jobs:
           persist-credentials: false
       - name: Install documentation check tools
         run: |
-          sudo apt-get update
-          sudo apt-get install --no-install-recommends -y ripgrep file
+          missing=()
+          command -v rg >/dev/null || missing+=(ripgrep)
+          command -v file >/dev/null || missing+=(file)
+          if (( ${#missing[@]} )); then
+            sudo apt-get update
+            sudo apt-get install --no-install-recommends -y "${missing[@]}"
+          fi
       - run: |
           bash tests/repository/text-style.sh
           bash tests/repository/markdown-links.sh
