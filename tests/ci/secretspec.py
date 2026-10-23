@@ -353,7 +353,7 @@ class LocalCache(unittest.TestCase):
 
     def test_check_proof_handoff_is_written_after_successful_size_checks(self):
         source = (ROOT / 'lib/ci-applications/repository-operations.nix').read_text()
-        checks = source.split('  mkCheck = checks:', 1)[1].split('  mkLocalCache', 1)[0]
+        checks = source.split('  ciCheck =', 1)[1].split('  mkLocalCache', 1)[0]
         self.assertLess(checks.index('closure_size > max_closure_size'), checks.index('printf \'%s\\n\''))
         self.assertIn('! -L "$FINITE_CHECK_PROOFS_FILE"', checks)
         self.assertIn('-O "$FINITE_CHECK_PROOFS_FILE"', checks)

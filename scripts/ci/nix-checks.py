@@ -19,7 +19,8 @@ def transient(output):
         r'builder (?:for .*? failed|failed) with exit code|'
         r'hash mismatch|syntax error|undefined variable|attribute .* missing|'
         r'HTTP (?:error |response:? )?(?:400|401|403|404)\b|'
-        r'Permission denied|unauthorized|forbidden'
+        r'Permission denied|unauthorized|forbidden|'
+        r'\b(?:SIGKILL|SIGTERM|SIGINT|Killed|Out of memory|oom-killed)\b|terminated by signal'
     )
     transport = (
         r'HTTP (?:error |response:? )?(?:408|429|500|502|503|504)\b|'
@@ -46,7 +47,7 @@ def build(command, attempts=3, delay=30, *, stdout=None):
             status = process.wait()
         if not status:
             return 0
-        if status < 0 or attempt == attempts or not transient(''.join(tail)):
+        if status != 1 or attempt == attempts or not transient(''.join(tail)):
             return status if status > 0 else 128 - status
         print(f'::warning::Nix download failed (attempt {attempt}/{attempts}); '
               f'retrying in {attempt * delay}s.', flush=True)

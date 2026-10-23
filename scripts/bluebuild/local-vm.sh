@@ -3,6 +3,8 @@
 set -euo pipefail
 profile=${1:?profile required}
 [[ $profile =~ ^finite(-dev)?$ ]]
+export PROFILE="$profile"
+unset CANDIDATE_DIGEST
 [[ ${GITHUB_ACTIONS:-} == true && ${GITHUB_REPOSITORY:-} == closure-labs/finite ]]
 [[ ${GITHUB_EVENT_NAME:-} == pull_request || ${GITHUB_EVENT_NAME:-} == merge_group ]]
 [[ ${GITHUB_REF:-} != refs/heads/main ]]
@@ -22,18 +24,21 @@ tag="v${GITHUB_RUN_ID:?}-${GITHUB_RUN_ATTEMPT:?}"
 local_ref="localhost/finite-validation:$tag"
 docker tag "$image" "$local_ref"
 # OCI format makes the manifest embedded by the installer stable across copies.
-skopeo copy --format oci "docker-daemon:$local_ref" "oci-archive:$work/candidate.tar:$tag"
+python3 scripts/bluebuild/measure.py local-vm-oci-export \
+  skopeo copy --format oci "docker-daemon:$local_ref" "oci-archive:$work/candidate.tar:$tag"
 skopeo inspect --raw "oci-archive:$work/candidate.tar:$tag" >"$work/source-manifest.json"
 digest="sha256:$(sha256sum "$work/source-manifest.json" | cut -d' ' -f1)"
+export CANDIDATE_DIGEST="$digest"
 version=$(docker run --rm --entrypoint /bin/sh "$image" -c '. /usr/lib/os-release; printf "%s" "$VERSION_ID"')
 [[ $version =~ ^[0-9]{1,3}$ ]]
 export ISO_OUTPUT_DIR="$work/iso"
-bash scripts/bluebuild/prepare-installer.sh
+python3 scripts/bluebuild/measure.py local-vm-installer-prepare \
+  bash scripts/bluebuild/prepare-installer.sh
 installer=$(jq -er .cliAlias sources/bluebuild-installer.json)
 # This is the pinned installer's native local-archive mode, also used by the
 # locked BlueBuild CLI. Only the disposable install reference is unsigned.
 # Secure Boot and enforcing SELinux remain exercised by vm-acceptance.sh.
-sudo docker run --rm --privileged \
+python3 scripts/bluebuild/measure.py local-vm-iso-build sudo docker run --rm --privileged \
   -v "$work:/img_src:ro" -v "$ISO_OUTPUT_DIR:/build-container-installer/build" \
   "$installer" "IMAGE_SRC=oci-archive:/img_src/candidate.tar:$tag" \
   IMAGE_REPO=localhost IMAGE_NAME=finite-validation "IMAGE_TAG=$tag" IMAGE_SIGNED=false \
@@ -47,4 +52,5 @@ jq -n --arg image "local-image@$digest" --arg tag "$local_ref" \
 cp "$work/source-manifest.json" "$ISO_OUTPUT_DIR/source-manifest.json"
 (cd "$ISO_OUTPUT_DIR" && sha256sum -- *.iso installation.json source-manifest.json >SHA256SUMS)
 FINITE_LOCAL_VM_VALIDATION=true FINITE_SECURE_BOOT=true \
-  bash scripts/bluebuild/vm-acceptance.sh "$ISO_OUTPUT_DIR" '' fresh
+  python3 scripts/bluebuild/measure.py local-vm-acceptance \
+    bash scripts/bluebuild/vm-acceptance.sh "$ISO_OUTPUT_DIR" '' fresh

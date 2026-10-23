@@ -5,6 +5,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -186,6 +187,81 @@ class Toolchain(unittest.TestCase):
         self.assertFalse((ROOT / '.github/workflows/update-kernel.yml').exists())
         self.assertFalse((ROOT / 'sources/kernel-next.json').exists())
 
+
+
+
+class CheckLauncher(unittest.TestCase):
+    def invoke(self, mode):
+        source = (ROOT / 'lib/ci-applications/repository-operations.nix').read_text()
+        wrapper = source.split('  ciCheck =', 1)[1].split("    text = ''\n", 1)[1].split("    '';", 1)[0]
+        wrapper = wrapper.replace("''${", '${')
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'flake.nix').write_text('{}')
+            tools = root / 'tools'
+            tools.mkdir()
+            log = root / 'calls'
+            proof_file = root / 'proofs'
+            proof_file.touch(mode=0o600)
+            fixture = '#!' + sys.executable + '\n' + r'''
+import json, os, pathlib, sys
+mode = os.environ['FIXTURE_MODE']
+args = sys.argv[1:]
+with open(os.environ['FIXTURE_LOG'], 'a') as output:
+    output.write(json.dumps([pathlib.Path(sys.argv[0]).name, *args]) + '\n')
+proof = sys.executable
+if pathlib.Path(sys.argv[0]).name == 'readlink':
+    print('/missing-proof' if mode == 'missing-proof' else proof)
+elif 'eval' in args:
+    names = ['first', 'second']
+    if mode == 'empty-inventory': names = []
+    if mode == 'duplicate-inventory': names = ['first', 'first']
+    if mode == 'unsafe-inventory': names = ['../outside']
+    drv = '/nix/store/' + 'a' * 32 + '-finite-ci-checks.drv'
+    if mode == 'invalid-derivation': drv += '\n/nix/store/other.drv'
+    print(json.dumps({'derivation': drv, 'names': names}))
+elif 'build' in args:
+    if mode == 'failed-build': sys.exit(1)
+    print('/nix/store/' + 'b' * 32 + '-finite-ci-checks')
+elif 'flake' in args:
+    if mode == 'invalid-standard-output': sys.exit(1)
+elif 'path-info' in args:
+    print(json.dumps({proof: {'closureSize': 2**21 if mode == 'large-proof' else 1}}))
+else:
+    sys.exit(99)
+'''
+            for name in ('nix', 'readlink'):
+                script = tools / name
+                script.write_text(fixture)
+                script.chmod(0o755)
+            result = subprocess.run([shutil.which('bash'), '-euo', 'pipefail', '-c', wrapper],
+                env={**os.environ, 'PATH': str(tools) + os.pathsep + os.environ['PATH'],
+                     'FINITE_SOURCE_ROOT': directory, 'FINITE_CHECK_PROOFS_FILE': str(proof_file),
+                     'GITHUB_ACTIONS': 'false', 'FIXTURE_MODE': mode, 'FIXTURE_LOG': str(log)},
+                text=True, capture_output=True)
+            calls = [json.loads(line) for line in log.read_text().splitlines()]
+            return result, calls, proof_file.read_text()
+
+    def test_inventory_and_derivation_share_one_evaluation_and_all_proofs_are_checked(self):
+        result, calls, proofs = self.invoke('success')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        evaluations = [call for call in calls if 'eval' in call]
+        self.assertEqual(len(evaluations), 1)
+        self.assertIn('checks.checkNames', evaluations[0][-1])
+        self.assertEqual([call[1] for call in calls if call[0] == 'readlink'], ['-f', '-f'])
+        self.assertEqual(len(proofs.splitlines()), 2)
+        self.assertTrue(any('flake' in call and '--no-build' in call for call in calls))
+        self.assertTrue(any('path-info' in call and '--closure-size' in call for call in calls))
+
+    def test_invalid_inventory_and_failed_proofs_never_publish_a_handoff(self):
+        for mode in ('empty-inventory', 'duplicate-inventory', 'unsafe-inventory', 'invalid-derivation',
+                     'failed-build', 'missing-proof', 'large-proof', 'invalid-standard-output'):
+            with self.subTest(mode=mode):
+                result, calls, proofs = self.invoke(mode)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(proofs, '')
+                if mode.endswith('inventory') or mode == 'invalid-derivation':
+                    self.assertFalse(any('build' in call for call in calls))
 
 
 if __name__ == '__main__':

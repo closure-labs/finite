@@ -20,12 +20,17 @@
       nix shell --accept-flake-config "path:$DEVENV_ROOT#${package}" \
         -c ${command} ${arguments}
   '';
+  runTools = package: command: arguments: ''
+    ${cleanEnvironment} FINITE_SOURCE_ROOT="$DEVENV_ROOT" \
+      nix shell --accept-flake-config --file "$DEVENV_ROOT/lib/ci-tools.nix" ${package} \
+        -c ${command} ${arguments}
+  '';
 in {
   packages = (with pkgs; [actionlint git jq pass python3 shellcheck zizmor]) ++ [(import ./lib/secretspec.nix {inherit pkgs;})];
 
   tasks = {
     "ci:check:flake" = {
-      exec = runLeaf "ci-check" "finite-ci-check" "--no-write-lock-file";
+      exec = runTools "ci-check" "finite-ci-check" "--no-write-lock-file";
       execIfModified = ["."];
     };
     "ci:check".after = ["ci:check:flake"];
@@ -43,7 +48,7 @@ in {
         "''${FINITE_CACHE_BENCHMARK_SUMMARY:-$DEVENV_ROOT/.bluebuild/cache-benchmark-summary.md}"
     '';
     "ci:cache:writer:prepare".exec = ''
-      ${cleanEnvironment} ${runLeaf "ci-check" "finite-ci-check" "--no-write-lock-file"}
+      ${runTools "ci-check" "finite-ci-check" "--no-write-lock-file"}
     '';
     "ci:cache:check".exec = ''
       ${cleanEnvironment} FINITE_SOURCE_ROOT="$DEVENV_ROOT" \
@@ -73,7 +78,7 @@ in {
     '';
 
     "automation:update-locks".exec = runLeaf "ci-update-locks" "finite-update-locks" "";
-    "automation:validate-locks".exec = runLeaf "ci-lock-validate" "finite-ci-validate-locks" "";
+    "automation:validate-locks".exec = runTools "ci-lock-validate" "finite-ci-validate-locks" "";
     "automation:fix-hashes".exec = scopedLeaf "ci-fix-nix-hashes" "updater" "finite-fix-nix-hashes" "";
     "automation:trusted-update".exec = scopedLeaf "ci-trusted-update" "updater" "finite-trusted-update" "";
     "automation:queue".exec = scopedLeaf "ci-queue-dependabot" "updater" "finite-queue-dependabot" "";

@@ -106,16 +106,16 @@ class ReleaseSelection(unittest.TestCase):
         for channel in selection.CHANNELS:
             for publish in (False, True):
                 needs = self.needs(channel, publish)
-                self.assertEqual(gate.failures(needs, publish), [])
+                self.assertEqual(gate.failures(needs, publish, 'workflow_dispatch'), [])
                 for job in ('docs', 'checks', 'publish' if publish else 'images'):
                     for status in ('failure', 'cancelled', 'skipped'):
                         bad = copy.deepcopy(needs)
                         bad[job]['result'] = status
                         with self.subTest(channel=channel, publish=publish, job=job, status=status):
-                            self.assertTrue(gate.failures(bad, publish))
+                            self.assertTrue(gate.failures(bad, publish, 'workflow_dispatch'))
                 missing = copy.deepcopy(needs)
                 missing['checks']['outputs'] = {'images': 'false', 'matrix': '{"include":[]}'}
-                self.assertTrue(gate.failures(missing, publish))
+                self.assertTrue(gate.failures(missing, publish, 'workflow_dispatch'))
 
     def invoke(self, **environment):
         with tempfile.TemporaryDirectory() as directory:

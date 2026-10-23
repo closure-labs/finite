@@ -6,8 +6,12 @@ import os
 from impact import PROFILES
 
 
-def failures(needs, publish):
+def failures(needs, publish, event):
     errors = []
+    if event not in ('pull_request', 'merge_group', 'push', 'schedule', 'workflow_dispatch'):
+        return [f'Unsupported validation event: {event!r}']
+    if publish and event in ('pull_request', 'merge_group'):
+        return ['Premerge validation cannot authorize publication']
     for job in ('impact', 'docs'):
         if needs[job]['result'] != 'success':
             errors.append(f'{job}: expected success, got {needs[job]["result"]}')
@@ -49,7 +53,10 @@ def failures(needs, publish):
         errors.append(f'Missing or invalid image selection: {error}')
     expected = {
         'checks': checks,
-        'images': images and not publish,
+        # The protected merge queue owns premerge OS assembly/installation.
+        # PR updates still validate the complete Nix/runtime aggregate and
+        # selection; they do not duplicate the queue's disposable image jobs.
+        'images': images and not publish and event != 'pull_request',
         'publish': images and publish,
     }
     for job, required in expected.items():
@@ -61,7 +68,8 @@ def failures(needs, publish):
 
 
 if __name__ == '__main__':
-    errors = failures(json.loads(os.environ['NEEDS']), os.environ['TRUSTED_PUBLICATION'] == 'true')
+    errors = failures(json.loads(os.environ['NEEDS']), os.environ['TRUSTED_PUBLICATION'] == 'true',
+                      os.environ.get('GITHUB_EVENT_NAME', ''))
     for error in errors:
         print(f'::error::{error}')
     raise SystemExit(bool(errors))

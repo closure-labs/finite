@@ -21,6 +21,7 @@ in {
   secretspec-tools = secretspec;
   ci-secrets-run = repository.ciSecretsRun;
   ci-secrets-options = repository.ciSecretsOptions;
+  ci-check = repository.ciCheck;
   release = shells.release;
   ci-github-actions-secrets = repository.githubActionsSecrets;
   ci-repository-security-audit = import ./ci-applications/repository-security-audit.nix {

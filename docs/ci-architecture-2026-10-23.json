@@ -1,0 +1,265 @@
+{
+  "schema": 1,
+  "kind": "finite-workflow-architecture-audit",
+  "authorizesPublication": false,
+  "observedAt": "2026-10-23T07:15:53.929448+00:00",
+  "proposalBaseRevision": "04cb70543c44aeb16da662c4bbb3dfe26775ac8c",
+  "status": "proposal-pending-hosted-validation",
+  "sampleCounts": {
+    "pull-request": 2,
+    "merge-queue": 2
+  },
+  "measurements": [
+    {
+      "repository": "closure-labs/finite",
+      "runId": 39900947347,
+      "runAttempt": 1,
+      "sourceRevision": "09721bdc55b7c734f13ede71f3876f84eece5c6e",
+      "profile": "finite",
+      "candidateIdentity": "local-image@sha256:e3c7a7a9169916f6a183ffee66b645c4158454d6f67dd943da0f46042ecfc175",
+      "jobId": 120244000085,
+      "url": "https://github.com/closure-labs/finite/actions/runs/39900947347/job/120244000085",
+      "category": "pull-request",
+      "artifact": {
+        "id": 12480237295,
+        "sha256": "sha256:b3b2e290247fd162bf75c35453f2d15079aec42589052ba2a1d0c236ec12d1b8"
+      },
+      "runner": {
+        "RUNNER_OS": "Linux",
+        "RUNNER_ARCH": "X64",
+        "ImageOS": "ubuntu24",
+        "ImageVersion": "20261012.334.1"
+      },
+      "toolCohort": {
+        "pythonExecutable": "/nix/store/d7p0bc9x4g4glf0qskh5kxwxwx54slvg-python3-3.13.15-env/bin/python3.13",
+        "nixExecutable": "/nix/store/6qdgsgwzwsv20jsw2yywqrc01sgzc80g-determinate-nix-3.23.1/bin/nix",
+        "vmManifest": null,
+        "firmwareDirectory": null
+      },
+      "lockSha256": {
+        "flake.lock": "10a52ce46683acefbf6fd3dffc84de0bce66e67e9362d7553586e317aab8289a",
+        "devenv.lock": "a86b17ce420d5a3cd8f307d3cb3973ec2670c084ef88b49a2b49b3451a92a71a"
+      },
+      "jobSeconds": 1970.0,
+      "vmStepSeconds": 1440.0,
+      "vmStageSeconds": {
+        "installation": 253,
+        "first-boot-ssh-ready": 31,
+        "first-boot-boot-contracts": 45,
+        "home-activation": 306
+      },
+      "unattributedVmSeconds": 805.0
+    },
+    {
+      "repository": "closure-labs/finite",
+      "runId": 39900947347,
+      "runAttempt": 1,
+      "sourceRevision": "09721bdc55b7c734f13ede71f3876f84eece5c6e",
+      "profile": "finite-dev",
+      "candidateIdentity": "local-image@sha256:38bb40ba9241375b0813be476c557923485d98e832b7d32b5489a176933a4e6d",
+      "jobId": 120243999964,
+      "url": "https://github.com/closure-labs/finite/actions/runs/39900947347/job/120243999964",
+      "category": "pull-request",
+      "artifact": {
+        "id": 12480478501,
+        "sha256": "sha256:82a9b736cd83e581cb6520dcdb19f5e2b8ba34e0c2153f92af96e3f047dfb882"
+      },
+      "runner": {
+        "RUNNER_OS": "Linux",
+        "RUNNER_ARCH": "X64",
+        "ImageOS": "ubuntu24",
+        "ImageVersion": "20261012.334.1"
+      },
+      "toolCohort": {
+        "pythonExecutable": "/nix/store/d7p0bc9x4g4glf0qskh5kxwxwx54slvg-python3-3.13.15-env/bin/python3.13",
+        "nixExecutable": "/nix/store/6qdgsgwzwsv20jsw2yywqrc01sgzc80g-determinate-nix-3.23.1/bin/nix",
+        "vmManifest": null,
+        "firmwareDirectory": null
+      },
+      "lockSha256": {
+        "flake.lock": "10a52ce46683acefbf6fd3dffc84de0bce66e67e9362d7553586e317aab8289a",
+        "devenv.lock": "a86b17ce420d5a3cd8f307d3cb3973ec2670c084ef88b49a2b49b3451a92a71a"
+      },
+      "jobSeconds": 2841.0,
+      "vmStepSeconds": 2088.0,
+      "vmStageSeconds": {
+        "installation": 447,
+        "first-boot-ssh-ready": 52,
+        "first-boot-boot-contracts": 61,
+        "home-activation": 358
+      },
+      "unattributedVmSeconds": 1170.0
+    },
+    {
+      "repository": "closure-labs/finite",
+      "runId": 39905914342,
+      "runAttempt": 1,
+      "sourceRevision": "04cb70543c44aeb16da662c4bbb3dfe26775ac8c",
+      "profile": "finite",
+      "candidateIdentity": "local-image@sha256:23b5283a5a437b954dc2f8ec9eaa4ab4933b679660f9c498b42ff5cce8c22712",
+      "jobId": 120259627955,
+      "url": "https://github.com/closure-labs/finite/actions/runs/39905914342/job/120259627955",
+      "category": "merge-queue",
+      "artifact": {
+        "id": 12482486703,
+        "sha256": "sha256:d53d3a3a3c1f31100d7766dbccb4e886d1f450361aa6cfe9d20faa2632e7efbb"
+      },
+      "runner": {
+        "RUNNER_OS": "Linux",
+        "RUNNER_ARCH": "X64",
+        "ImageOS": "ubuntu24",
+        "ImageVersion": "20261012.334.1"
+      },
+      "toolCohort": {
+        "pythonExecutable": "/nix/store/d7p0bc9x4g4glf0qskh5kxwxwx54slvg-python3-3.13.15-env/bin/python3.13",
+        "nixExecutable": "/nix/store/6qdgsgwzwsv20jsw2yywqrc01sgzc80g-determinate-nix-3.23.1/bin/nix",
+        "vmManifest": null,
+        "firmwareDirectory": null
+      },
+      "lockSha256": {
+        "flake.lock": "10a52ce46683acefbf6fd3dffc84de0bce66e67e9362d7553586e317aab8289a",
+        "devenv.lock": "a86b17ce420d5a3cd8f307d3cb3973ec2670c084ef88b49a2b49b3451a92a71a"
+      },
+      "jobSeconds": 2187.0,
+      "vmStepSeconds": 1615.0,
+      "vmStageSeconds": {
+        "installation": 288,
+        "first-boot-ssh-ready": 38,
+        "first-boot-boot-contracts": 49,
+        "home-activation": 318
+      },
+      "unattributedVmSeconds": 922.0
+    },
+    {
+      "repository": "closure-labs/finite",
+      "runId": 39905914342,
+      "runAttempt": 1,
+      "sourceRevision": "04cb70543c44aeb16da662c4bbb3dfe26775ac8c",
+      "profile": "finite-dev",
+      "candidateIdentity": "local-image@sha256:54458105464f42303af9858642d2739e23bda3bea29dc7445319aeddd02d1584",
+      "jobId": 120259627931,
+      "url": "https://github.com/closure-labs/finite/actions/runs/39905914342/job/120259627931",
+      "category": "merge-queue",
+      "artifact": {
+        "id": 12482945928,
+        "sha256": "sha256:586a50182d21beef595baecadd4970df79b56c22198c462f112098b8dac4747f"
+      },
+      "runner": {
+        "RUNNER_OS": "Linux",
+        "RUNNER_ARCH": "X64",
+        "ImageOS": "ubuntu24",
+        "ImageVersion": "20261012.334.1"
+      },
+      "toolCohort": {
+        "pythonExecutable": "/nix/store/d7p0bc9x4g4glf0qskh5kxwxwx54slvg-python3-3.13.15-env/bin/python3.13",
+        "nixExecutable": "/nix/store/6qdgsgwzwsv20jsw2yywqrc01sgzc80g-determinate-nix-3.23.1/bin/nix",
+        "vmManifest": null,
+        "firmwareDirectory": null
+      },
+      "lockSha256": {
+        "flake.lock": "10a52ce46683acefbf6fd3dffc84de0bce66e67e9362d7553586e317aab8289a",
+        "devenv.lock": "a86b17ce420d5a3cd8f307d3cb3973ec2670c084ef88b49a2b49b3451a92a71a"
+      },
+      "jobSeconds": 2626.0,
+      "vmStepSeconds": 1896.0,
+      "vmStageSeconds": {
+        "installation": 385,
+        "first-boot-ssh-ready": 38,
+        "first-boot-boot-contracts": 51,
+        "home-activation": 320
+      },
+      "unattributedVmSeconds": 1102.0
+    }
+  ],
+  "limitations": [
+    "One job per profile/event; no percentile or median claim.",
+    "Runner occupancy is not billed cost or predicted wall-time savings.",
+    "Residual VM time includes export, installer preparation, ISO creation and cleanup; historical receipts do not separate them.",
+    "Seven-day observation and matched OCI benchmark remain incomplete."
+  ],
+  "ruleset": {
+    "id": 20912451,
+    "name": "Main merge queue",
+    "target": "branch",
+    "source_type": "Repository",
+    "source": "closure-labs/finite",
+    "enforcement": "active",
+    "conditions": {
+      "ref_name": {
+        "exclude": [],
+        "include": [
+          "~DEFAULT_BRANCH"
+        ]
+      }
+    },
+    "rules": [
+      {
+        "type": "deletion"
+      },
+      {
+        "type": "non_fast_forward"
+      },
+      {
+        "type": "pull_request",
+        "parameters": {
+          "required_approving_review_count": 0,
+          "dismiss_stale_reviews_on_push": false,
+          "required_reviewers": [],
+          "require_code_owner_review": false,
+          "dismissal_restriction": {
+            "enabled": false,
+            "allowed_actors": []
+          },
+          "require_last_push_approval": false,
+          "required_review_thread_resolution": true,
+          "require_extra_approval_for_unattributed_changes": true,
+          "allowed_merge_methods": [
+            "merge"
+          ]
+        }
+      },
+      {
+        "type": "required_status_checks",
+        "parameters": {
+          "strict_required_status_checks_policy": false,
+          "do_not_enforce_on_create": false,
+          "required_status_checks": [
+            {
+              "context": "CI gate",
+              "integration_id": 15368
+            },
+            {
+              "context": "Maintainer decision authority",
+              "integration_id": 5384448
+            }
+          ]
+        }
+      },
+      {
+        "type": "merge_queue",
+        "parameters": {
+          "merge_method": "MERGE",
+          "max_entries_to_build": 1,
+          "min_entries_to_merge": 1,
+          "max_entries_to_merge": 1,
+          "min_entries_to_merge_wait_minutes": 0,
+          "grouping_strategy": "ALLGREEN",
+          "check_response_timeout_minutes": 240
+        }
+      }
+    ],
+    "node_id": "RRS_lACqUmVwb3NpdG9yec5NF1kozgE_GUM",
+    "created_at": "2026-08-16T11:30:39.592-05:00",
+    "updated_at": "2026-10-19T15:14:27.228-05:00",
+    "bypass_actors": [],
+    "current_user_can_bypass": "never",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/closure-labs/finite/rulesets/20912451"
+      },
+      "html": {
+        "href": "https://github.com/closure-labs/finite/rules/20912451"
+      }
+    }
+  }
+}

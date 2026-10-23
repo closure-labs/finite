@@ -189,7 +189,7 @@ class Gate(unittest.TestCase):
     def test_all_valid_routes(self):
         for checks, selected in [(False, []), (True, []), (True, ['finite']), (True, sorted(impact.PROFILES))]:
             for publish in (False, True):
-                self.assertEqual(gate.failures(self.needs(checks, selected, publish), publish), [])
+                self.assertEqual(gate.failures(self.needs(checks, selected, publish), publish, 'push' if publish else 'merge_group'), [])
 
     def test_failed_cancelled_or_unexpectedly_skipped_jobs_block(self):
         for publish in (False, True):
@@ -198,22 +198,48 @@ class Gate(unittest.TestCase):
                 for result in ('failure', 'cancelled', 'skipped'):
                     needs = copy.deepcopy(good)
                     needs[job]['result'] = result
-                    self.assertTrue(gate.failures(needs, publish), (job, result))
+                    self.assertTrue(gate.failures(needs, publish, 'push' if publish else 'merge_group'), (job, result))
         needs = self.needs(False, [])
         needs['impact']['outputs'] = {}
-        self.assertTrue(gate.failures(needs, False))
+        self.assertTrue(gate.failures(needs, False, 'merge_group'))
         needs = self.needs(False, [])
         needs['publish']['result'] = 'success'
-        self.assertTrue(gate.failures(needs, False))
+        self.assertTrue(gate.failures(needs, False, 'merge_group'))
 
     def test_prerequisite_failure_has_no_cascading_selection_errors(self):
         needs = self.needs(True, ['finite'])
         needs['docs']['result'] = 'failure'
         needs['checks'] = {'result': 'skipped', 'outputs': {}}
-        self.assertEqual(gate.failures(needs, False), ['docs: expected success, got failure'])
+        self.assertEqual(gate.failures(needs, False, 'merge_group'), ['docs: expected success, got failure'])
         needs['docs']['result'] = 'success'
         needs['checks']['result'] = 'failure'
-        self.assertEqual(gate.failures(needs, False), ['checks: expected success, got failure'])
+        self.assertEqual(gate.failures(needs, False, 'merge_group'), ['checks: expected success, got failure'])
+
+    def test_pr_runs_source_checks_and_queue_requires_the_complete_os_jobs(self):
+        for checks, selected in [(False, []), (True, []), (True, ['finite']), (True, sorted(impact.PROFILES))]:
+            needs = self.needs(checks, selected)
+            needs['images']['result'] = 'skipped'
+            self.assertEqual(gate.failures(needs, False, 'pull_request'), [])
+            if selected:
+                self.assertTrue(gate.failures(needs, False, 'merge_group'))
+                for status in ('failure', 'cancelled', 'skipped'):
+                    failed = copy.deepcopy(needs)
+                    failed['checks']['result'] = status
+                    self.assertTrue(gate.failures(failed, False, 'pull_request'))
+                malformed = copy.deepcopy(needs)
+                malformed['checks']['outputs'] = {}
+                self.assertTrue(gate.failures(malformed, False, 'pull_request'))
+        needs = self.needs(True, sorted(impact.PROFILES))
+        needs['images']['result'] = 'skipped'
+        needs['impact']['outputs']['vm'] = 'true'
+        needs['checks']['outputs']['matrix'] = json.dumps({'include': [{'profile': 'finite', 'channel': 'finite'}]})
+        self.assertTrue(gate.failures(needs, False, 'pull_request'))
+
+    def test_unknown_events_and_premerge_publication_fail_closed(self):
+        for event in ('', 'pull_request_target', 'workflow_run', 'unknown'):
+            self.assertTrue(gate.failures(self.needs(False, []), False, event))
+        for event in ('pull_request', 'merge_group'):
+            self.assertTrue(gate.failures(self.needs(True, sorted(impact.PROFILES), True), True, event))
 
     def test_updater_authentication_and_preflight(self):
         import yaml
@@ -232,10 +258,10 @@ class Gate(unittest.TestCase):
     def test_missing_matrix_and_omitted_explicit_image_block(self):
         needs = self.needs(True, ['finite'])
         needs['checks']['outputs'] = {}
-        self.assertTrue(gate.failures(needs, False))
+        self.assertTrue(gate.failures(needs, False, 'merge_group'))
         needs = self.needs(True, ['finite'])
         needs['checks']['outputs'] = {'images': 'false', 'matrix': '{"include":[]}'}
-        self.assertTrue(gate.failures(needs, False))
+        self.assertTrue(gate.failures(needs, False, 'merge_group'))
 
 
 class DopplerPilot(unittest.TestCase):

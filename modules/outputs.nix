@@ -160,15 +160,18 @@
           touch "$out"
         '';
     };
-  ciChecks = pkgs.runCommand "finite-ci-checks" {} ''
-    mkdir "$out"
-    ${lib.concatStringsSep "\n" (
-      lib.mapAttrsToList (name: check: ''
-        ln -s ${check} "$out/${name}"
-      '')
-      checks
-    )}
-  '';
+  ciChecks =
+    pkgs.runCommand "finite-ci-checks" {
+      passthru.checkNames = builtins.attrNames checks;
+    } ''
+      mkdir "$out"
+      ${lib.concatStringsSep "\n" (
+        lib.mapAttrsToList (name: check: ''
+          ln -s ${check} "$out/${name}"
+        '')
+        checks
+      )}
+    '';
   ciCheck = applications.mkCheck checks;
   localCache = applications.mkLocalCache ciCheck;
   exportTable = {

@@ -186,7 +186,9 @@ jobs:
   images:
     name: Validate (${{ matrix.profile }})
     needs: [impact, docs, checks]
-    if: ${{ needs.checks.outputs.images == 'true' && !(github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')) }}
+    # The protected merge queue runs the complete premerge OS checks once.
+    # Ordinary PR updates retain the full Nix/runtime aggregate above.
+    if: ${{ github.event_name != 'pull_request' && needs.checks.outputs.images == 'true' && !(github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')) }}
     permissions:
       contents: read
       pull-requests: read
