@@ -1,0 +1,3584 @@
+{
+  "schema": 1,
+  "kind": "finite-ci-rollout-follow-through",
+  "authorizesPublication": false,
+  "repository": "closure-labs/finite",
+  "observedAt": "2026-10-23T18:57:06.819809+00:00",
+  "sourceRevision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+  "queue": [
+    {
+      "repository": "closure-labs/finite",
+      "runId": 39990091392,
+      "runAttempt": 1,
+      "sourceRevision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+      "profile": "finite",
+      "candidate": "local-image@sha256:82204ca9ebeed8dfb2b02110259a8a4a370e5a220773c087f2d647a25c6a1cab",
+      "buildIdentity": "v1:70000039e79162ae365e855128e453665849025191e2aad0fa46640e87f20a0d",
+      "nativeJob": {
+        "id": 120542294630,
+        "name": "Validate (finite) / build",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39990091392,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T16:56:41Z",
+        "started_at": "2026-10-23T16:56:44Z",
+        "completed_at": "2026-10-23T17:30:32Z",
+        "runner_name": "GitHub Actions 1000016176",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runnerSeconds": 2028.0,
+        "queueSeconds": 3.0,
+        "phaseTimings": {
+          "Set up job": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Pre Monitor hosted runner (Community)": {
+            "seconds": 3.0,
+            "conclusion": "success"
+          },
+          "Monitor hosted runner (Community)": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Recheck governed validation tree before image setup": {
+            "seconds": 4.0,
+            "conclusion": "success"
+          },
+          "Run ./.github/actions/setup-nix": {
+            "seconds": 25.0,
+            "conclusion": "success"
+          },
+          "Make room for the image build": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Prepare pinned image tools once": {
+            "seconds": 3.0,
+            "conclusion": "success"
+          },
+          "Authenticate pinned upstream publishers": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Authenticate the locked runtime Cosign publisher": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Prepare candidate publication": {
+            "seconds": 11.0,
+            "conclusion": "success"
+          },
+          "Install the verified locked BlueBuild CLI": {
+            "seconds": 5.0,
+            "conclusion": "success"
+          },
+          "Validate recipes and record generated Containerfile": {
+            "seconds": 6.0,
+            "conclusion": "success"
+          },
+          "Stage pinned payload": {
+            "seconds": 10.0,
+            "conclusion": "success"
+          },
+          "Set up the BlueBuild builder": {
+            "seconds": 6.0,
+            "conclusion": "success"
+          },
+          "Build with BlueBuild": {
+            "seconds": 387.0,
+            "conclusion": "success"
+          },
+          "Verify assembled image": {
+            "seconds": 14.0,
+            "conclusion": "success"
+          },
+          "Install targeted VM validation tools": {
+            "seconds": 7.0,
+            "conclusion": "success"
+          },
+          "Boot the exact local candidate without publication credentials": {
+            "seconds": 1491.0,
+            "conclusion": "success"
+          },
+          "Save build evidence": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Set up the BlueBuild builder": {
+            "seconds": 41.0,
+            "conclusion": "success"
+          },
+          "Post Run ./.github/actions/setup-nix": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Post Monitor hosted runner (Community)": {
+            "seconds": 3.0,
+            "conclusion": "success"
+          },
+          "Complete job": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          }
+        }
+      },
+      "evidenceArtifact": {
+        "id": 12520030764,
+        "sha256": "084beebcc1d58fddfed6eca70eb607bc5ee765339cada6c009cdad23b7ab7e30",
+        "sizeInBytes": 126074,
+        "containsIso": false
+      },
+      "acceptance": {
+        "source": "local-image@sha256:82204ca9ebeed8dfb2b02110259a8a4a370e5a220773c087f2d647a25c6a1cab",
+        "profile": "finite",
+        "secureBoot": true,
+        "encryptedRoot": true,
+        "accepted": true,
+        "validationOnly": true
+      },
+      "stages": [
+        {
+          "schema": 1,
+          "kind": "finite-stage-timing",
+          "authorizesPublication": false,
+          "repository": "closure-labs/finite",
+          "runId": "39990091392",
+          "runAttempt": "1",
+          "revision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "profile": "finite",
+          "sourceRevision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "candidateDigest": null,
+          "buildIdentity": "v1:70000039e79162ae365e855128e453665849025191e2aad0fa46640e87f20a0d",
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261012.334.1"
+          },
+          "lockSha256": {
+            "flake.lock": "a1a2f898f434d48b27ad644f3148e528ef833795a6617b195e29cb36081a70cc",
+            "devenv.lock": "a86b17ce420d5a3cd8f307d3cb3973ec2670c084ef88b49a2b49b3451a92a71a"
+          },
+          "toolCohort": {
+            "pythonExecutable": "/nix/store/d7p0bc9x4g4glf0qskh5kxwxwx54slvg-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/69vhmfdm78jb9c3yj0wykr2y8fnabysr-determinate-nix-3.23.2/bin/nix",
+            "vmManifest": null,
+            "firmwareDirectory": null
+          },
+          "stage": "payload-staging",
+          "startedAt": "2026-10-23T16:57:49.999912+00:00",
+          "seconds": 9.049,
+          "status": 0,
+          "runnerNetworkDelta": {
+            "rx_bytes": 85982729,
+            "tx_bytes": 354518
+          }
+        },
+        {
+          "schema": 1,
+          "kind": "finite-stage-timing",
+          "authorizesPublication": false,
+          "repository": "closure-labs/finite",
+          "runId": "39990091392",
+          "runAttempt": "1",
+          "revision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "profile": "finite",
+          "sourceRevision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "candidateDigest": null,
+          "buildIdentity": "v1:70000039e79162ae365e855128e453665849025191e2aad0fa46640e87f20a0d",
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261012.334.1"
+          },
+          "lockSha256": {
+            "flake.lock": "a1a2f898f434d48b27ad644f3148e528ef833795a6617b195e29cb36081a70cc",
+            "devenv.lock": "a86b17ce420d5a3cd8f307d3cb3973ec2670c084ef88b49a2b49b3451a92a71a"
+          },
+          "toolCohort": {
+            "pythonExecutable": "/nix/store/d7p0bc9x4g4glf0qskh5kxwxwx54slvg-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/69vhmfdm78jb9c3yj0wykr2y8fnabysr-determinate-nix-3.23.2/bin/nix",
+            "vmManifest": null,
+            "firmwareDirectory": null
+          },
+          "stage": "image-build",
+          "startedAt": "2026-10-23T16:58:05.520165+00:00",
+          "seconds": 387.093,
+          "status": 0,
+          "runnerNetworkDelta": {
+            "rx_bytes": 3881697466,
+            "tx_bytes": 15050107
+          }
+        },
+        {
+          "schema": 1,
+          "kind": "finite-stage-timing",
+          "authorizesPublication": false,
+          "repository": "closure-labs/finite",
+          "runId": "39990091392",
+          "runAttempt": "1",
+          "revision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "profile": "finite",
+          "sourceRevision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "candidateDigest": null,
+          "buildIdentity": "v1:70000039e79162ae365e855128e453665849025191e2aad0fa46640e87f20a0d",
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261012.334.1"
+          },
+          "lockSha256": {
+            "flake.lock": "a1a2f898f434d48b27ad644f3148e528ef833795a6617b195e29cb36081a70cc",
+            "devenv.lock": "a86b17ce420d5a3cd8f307d3cb3973ec2670c084ef88b49a2b49b3451a92a71a"
+          },
+          "toolCohort": {
+            "pythonExecutable": "/nix/store/d7p0bc9x4g4glf0qskh5kxwxwx54slvg-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/69vhmfdm78jb9c3yj0wykr2y8fnabysr-determinate-nix-3.23.2/bin/nix",
+            "vmManifest": null,
+            "firmwareDirectory": null
+          },
+          "stage": "runtime-checks",
+          "startedAt": "2026-10-23T17:04:32.716502+00:00",
+          "seconds": 13.579,
+          "status": 0,
+          "runnerNetworkDelta": {
+            "rx_bytes": 50029,
+            "tx_bytes": 495265
+          }
+        },
+        {
+          "schema": 1,
+          "kind": "finite-stage-timing",
+          "authorizesPublication": false,
+          "repository": "closure-labs/finite",
+          "runId": "39990091392",
+          "runAttempt": "1",
+          "revision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "profile": "finite",
+          "sourceRevision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "candidateDigest": null,
+          "buildIdentity": "v1:70000039e79162ae365e855128e453665849025191e2aad0fa46640e87f20a0d",
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261012.334.1"
+          },
+          "lockSha256": {
+            "flake.lock": "a1a2f898f434d48b27ad644f3148e528ef833795a6617b195e29cb36081a70cc",
+            "devenv.lock": "a86b17ce420d5a3cd8f307d3cb3973ec2670c084ef88b49a2b49b3451a92a71a"
+          },
+          "toolCohort": {
+            "pythonExecutable": "/nix/store/d7p0bc9x4g4glf0qskh5kxwxwx54slvg-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/69vhmfdm78jb9c3yj0wykr2y8fnabysr-determinate-nix-3.23.2/bin/nix",
+            "vmManifest": "/nix/store/abnq92gki83dbzv2i202mqhgyfaniz98-finite-ci-vm-tools/share/finite-vm/toolchain.json",
+            "firmwareDirectory": "/nix/store/abnq92gki83dbzv2i202mqhgyfaniz98-finite-ci-vm-tools/share/finite-vm/firmware"
+          },
+          "stage": "local-vm-oci-export",
+          "startedAt": "2026-10-23T17:04:53.843764+00:00",
+          "seconds": 195.91,
+          "status": 0,
+          "runnerNetworkDelta": {
+            "rx_bytes": 207551,
+            "tx_bytes": 335920
+          }
+        },
+        {
+          "schema": 1,
+          "kind": "finite-stage-timing",
+          "authorizesPublication": false,
+          "repository": "closure-labs/finite",
+          "runId": "39990091392",
+          "runAttempt": "1",
+          "revision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "profile": "finite",
+          "sourceRevision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "candidateDigest": "sha256:82204ca9ebeed8dfb2b02110259a8a4a370e5a220773c087f2d647a25c6a1cab",
+          "buildIdentity": "v1:70000039e79162ae365e855128e453665849025191e2aad0fa46640e87f20a0d",
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261012.334.1"
+          },
+          "lockSha256": {
+            "flake.lock": "a1a2f898f434d48b27ad644f3148e528ef833795a6617b195e29cb36081a70cc",
+            "devenv.lock": "a86b17ce420d5a3cd8f307d3cb3973ec2670c084ef88b49a2b49b3451a92a71a"
+          },
+          "toolCohort": {
+            "pythonExecutable": "/nix/store/d7p0bc9x4g4glf0qskh5kxwxwx54slvg-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/69vhmfdm78jb9c3yj0wykr2y8fnabysr-determinate-nix-3.23.2/bin/nix",
+            "vmManifest": "/nix/store/abnq92gki83dbzv2i202mqhgyfaniz98-finite-ci-vm-tools/share/finite-vm/toolchain.json",
+            "firmwareDirectory": "/nix/store/abnq92gki83dbzv2i202mqhgyfaniz98-finite-ci-vm-tools/share/finite-vm/firmware"
+          },
+          "stage": "local-vm-installer-prepare",
+          "startedAt": "2026-10-23T17:08:31.587880+00:00",
+          "seconds": 17.015,
+          "status": 0,
+          "runnerNetworkDelta": {
+            "rx_bytes": 420905754,
+            "tx_bytes": 1705838
+          }
+        },
+        {
+          "schema": 1,
+          "kind": "finite-stage-timing",
+          "authorizesPublication": false,
+          "repository": "closure-labs/finite",
+          "runId": "39990091392",
+          "runAttempt": "1",
+          "revision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "profile": "finite",
+          "sourceRevision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "candidateDigest": "sha256:82204ca9ebeed8dfb2b02110259a8a4a370e5a220773c087f2d647a25c6a1cab",
+          "buildIdentity": "v1:70000039e79162ae365e855128e453665849025191e2aad0fa46640e87f20a0d",
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261012.334.1"
+          },
+          "lockSha256": {
+            "flake.lock": "a1a2f898f434d48b27ad644f3148e528ef833795a6617b195e29cb36081a70cc",
+            "devenv.lock": "a86b17ce420d5a3cd8f307d3cb3973ec2670c084ef88b49a2b49b3451a92a71a"
+          },
+          "toolCohort": {
+            "pythonExecutable": "/nix/store/d7p0bc9x4g4glf0qskh5kxwxwx54slvg-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/69vhmfdm78jb9c3yj0wykr2y8fnabysr-determinate-nix-3.23.2/bin/nix",
+            "vmManifest": "/nix/store/abnq92gki83dbzv2i202mqhgyfaniz98-finite-ci-vm-tools/share/finite-vm/toolchain.json",
+            "firmwareDirectory": "/nix/store/abnq92gki83dbzv2i202mqhgyfaniz98-finite-ci-vm-tools/share/finite-vm/firmware"
+          },
+          "stage": "local-vm-iso-build",
+          "startedAt": "2026-10-23T17:08:48.635911+00:00",
+          "seconds": 571.576,
+          "status": 0,
+          "runnerNetworkDelta": {
+            "rx_bytes": 1240684389,
+            "tx_bytes": 5301769
+          }
+        },
+        {
+          "schema": 1,
+          "kind": "finite-stage-timing",
+          "authorizesPublication": false,
+          "repository": "closure-labs/finite",
+          "runId": "39990091392",
+          "runAttempt": "1",
+          "revision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "profile": "finite",
+          "sourceRevision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "candidateDigest": "sha256:82204ca9ebeed8dfb2b02110259a8a4a370e5a220773c087f2d647a25c6a1cab",
+          "buildIdentity": "v1:70000039e79162ae365e855128e453665849025191e2aad0fa46640e87f20a0d",
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261012.334.1"
+          },
+          "lockSha256": {
+            "flake.lock": "a1a2f898f434d48b27ad644f3148e528ef833795a6617b195e29cb36081a70cc",
+            "devenv.lock": "a86b17ce420d5a3cd8f307d3cb3973ec2670c084ef88b49a2b49b3451a92a71a"
+          },
+          "toolCohort": {
+            "pythonExecutable": "/nix/store/d7p0bc9x4g4glf0qskh5kxwxwx54slvg-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/69vhmfdm78jb9c3yj0wykr2y8fnabysr-determinate-nix-3.23.2/bin/nix",
+            "vmManifest": "/nix/store/abnq92gki83dbzv2i202mqhgyfaniz98-finite-ci-vm-tools/share/finite-vm/toolchain.json",
+            "firmwareDirectory": "/nix/store/abnq92gki83dbzv2i202mqhgyfaniz98-finite-ci-vm-tools/share/finite-vm/firmware"
+          },
+          "stage": "local-vm-acceptance",
+          "startedAt": "2026-10-23T17:18:30.158524+00:00",
+          "seconds": 674.236,
+          "status": 0,
+          "runnerNetworkDelta": {
+            "rx_bytes": 6012955181,
+            "tx_bytes": 15877764
+          }
+        }
+      ],
+      "guestTimings": {
+        "schema": 1,
+        "seconds": {
+          "installation": 267,
+          "first-boot-ssh-ready": 31,
+          "first-boot-boot-contracts": 39,
+          "home-activation": 326
+        }
+      }
+    },
+    {
+      "repository": "closure-labs/finite",
+      "runId": 39990091392,
+      "runAttempt": 1,
+      "sourceRevision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+      "profile": "finite-dev",
+      "candidate": "local-image@sha256:67217801c16bf5d53d78c74ca690b7d26412cebc2f001b44118d1352a26a4dfa",
+      "buildIdentity": "v1:bb6e1bf3aaaec7a4b55acd6a6d307b8fe4870b08f1a1b13e3dbfdfc159f9c814",
+      "nativeJob": {
+        "id": 120542294756,
+        "name": "Validate (finite-dev) / build",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39990091392,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T16:56:41Z",
+        "started_at": "2026-10-23T16:56:44Z",
+        "completed_at": "2026-10-23T17:45:54Z",
+        "runner_name": "GitHub Actions 1000016177",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runnerSeconds": 2950.0,
+        "queueSeconds": 3.0,
+        "phaseTimings": {
+          "Set up job": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Pre Monitor hosted runner (Community)": {
+            "seconds": 4.0,
+            "conclusion": "success"
+          },
+          "Monitor hosted runner (Community)": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Recheck governed validation tree before image setup": {
+            "seconds": 3.0,
+            "conclusion": "success"
+          },
+          "Run ./.github/actions/setup-nix": {
+            "seconds": 26.0,
+            "conclusion": "success"
+          },
+          "Make room for the image build": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Prepare pinned image tools once": {
+            "seconds": 5.0,
+            "conclusion": "success"
+          },
+          "Authenticate pinned upstream publishers": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Authenticate the locked runtime Cosign publisher": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Prepare candidate publication": {
+            "seconds": 10.0,
+            "conclusion": "success"
+          },
+          "Install the verified locked BlueBuild CLI": {
+            "seconds": 3.0,
+            "conclusion": "success"
+          },
+          "Validate recipes and record generated Containerfile": {
+            "seconds": 6.0,
+            "conclusion": "success"
+          },
+          "Stage pinned payload": {
+            "seconds": 5.0,
+            "conclusion": "success"
+          },
+          "Set up the BlueBuild builder": {
+            "seconds": 5.0,
+            "conclusion": "success"
+          },
+          "Build with BlueBuild": {
+            "seconds": 616.0,
+            "conclusion": "success"
+          },
+          "Verify assembled image": {
+            "seconds": 19.0,
+            "conclusion": "success"
+          },
+          "Install targeted VM validation tools": {
+            "seconds": 7.0,
+            "conclusion": "success"
+          },
+          "Boot the exact local candidate without publication credentials": {
+            "seconds": 2177.0,
+            "conclusion": "success"
+          },
+          "Save build evidence": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Post Set up the BlueBuild builder": {
+            "seconds": 46.0,
+            "conclusion": "success"
+          },
+          "Post Run ./.github/actions/setup-nix": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Monitor hosted runner (Community)": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Complete job": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          }
+        }
+      },
+      "evidenceArtifact": {
+        "id": 12520876162,
+        "sha256": "9211866a65a540716866f567a0c8283ee1fc12b9ddee4cc6eb74e744a482b51e",
+        "sizeInBytes": 134462,
+        "containsIso": false
+      },
+      "acceptance": {
+        "source": "local-image@sha256:67217801c16bf5d53d78c74ca690b7d26412cebc2f001b44118d1352a26a4dfa",
+        "profile": "finite-dev",
+        "secureBoot": true,
+        "encryptedRoot": true,
+        "accepted": true,
+        "validationOnly": true
+      },
+      "stages": [
+        {
+          "schema": 1,
+          "kind": "finite-stage-timing",
+          "authorizesPublication": false,
+          "repository": "closure-labs/finite",
+          "runId": "39990091392",
+          "runAttempt": "1",
+          "revision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "profile": "finite-dev",
+          "sourceRevision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "candidateDigest": null,
+          "buildIdentity": "v1:bb6e1bf3aaaec7a4b55acd6a6d307b8fe4870b08f1a1b13e3dbfdfc159f9c814",
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261012.334.1"
+          },
+          "lockSha256": {
+            "flake.lock": "a1a2f898f434d48b27ad644f3148e528ef833795a6617b195e29cb36081a70cc",
+            "devenv.lock": "a86b17ce420d5a3cd8f307d3cb3973ec2670c084ef88b49a2b49b3451a92a71a"
+          },
+          "toolCohort": {
+            "pythonExecutable": "/nix/store/d7p0bc9x4g4glf0qskh5kxwxwx54slvg-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/69vhmfdm78jb9c3yj0wykr2y8fnabysr-determinate-nix-3.23.2/bin/nix",
+            "vmManifest": null,
+            "firmwareDirectory": null
+          },
+          "stage": "payload-staging",
+          "startedAt": "2026-10-23T16:57:50.893488+00:00",
+          "seconds": 4.204,
+          "status": 0,
+          "runnerNetworkDelta": {
+            "rx_bytes": 86116770,
+            "tx_bytes": 377268
+          }
+        },
+        {
+          "schema": 1,
+          "kind": "finite-stage-timing",
+          "authorizesPublication": false,
+          "repository": "closure-labs/finite",
+          "runId": "39990091392",
+          "runAttempt": "1",
+          "revision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "profile": "finite-dev",
+          "sourceRevision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "candidateDigest": null,
+          "buildIdentity": "v1:bb6e1bf3aaaec7a4b55acd6a6d307b8fe4870b08f1a1b13e3dbfdfc159f9c814",
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261012.334.1"
+          },
+          "lockSha256": {
+            "flake.lock": "a1a2f898f434d48b27ad644f3148e528ef833795a6617b195e29cb36081a70cc",
+            "devenv.lock": "a86b17ce420d5a3cd8f307d3cb3973ec2670c084ef88b49a2b49b3451a92a71a"
+          },
+          "toolCohort": {
+            "pythonExecutable": "/nix/store/d7p0bc9x4g4glf0qskh5kxwxwx54slvg-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/69vhmfdm78jb9c3yj0wykr2y8fnabysr-determinate-nix-3.23.2/bin/nix",
+            "vmManifest": null,
+            "firmwareDirectory": null
+          },
+          "stage": "image-build",
+          "startedAt": "2026-10-23T16:58:00.970821+00:00",
+          "seconds": 615.79,
+          "status": 0,
+          "runnerNetworkDelta": {
+            "rx_bytes": 5804865972,
+            "tx_bytes": 20431306
+          }
+        },
+        {
+          "schema": 1,
+          "kind": "finite-stage-timing",
+          "authorizesPublication": false,
+          "repository": "closure-labs/finite",
+          "runId": "39990091392",
+          "runAttempt": "1",
+          "revision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "profile": "finite-dev",
+          "sourceRevision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "candidateDigest": null,
+          "buildIdentity": "v1:bb6e1bf3aaaec7a4b55acd6a6d307b8fe4870b08f1a1b13e3dbfdfc159f9c814",
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261012.334.1"
+          },
+          "lockSha256": {
+            "flake.lock": "a1a2f898f434d48b27ad644f3148e528ef833795a6617b195e29cb36081a70cc",
+            "devenv.lock": "a86b17ce420d5a3cd8f307d3cb3973ec2670c084ef88b49a2b49b3451a92a71a"
+          },
+          "toolCohort": {
+            "pythonExecutable": "/nix/store/d7p0bc9x4g4glf0qskh5kxwxwx54slvg-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/69vhmfdm78jb9c3yj0wykr2y8fnabysr-determinate-nix-3.23.2/bin/nix",
+            "vmManifest": null,
+            "firmwareDirectory": null
+          },
+          "stage": "runtime-checks",
+          "startedAt": "2026-10-23T17:08:16.986785+00:00",
+          "seconds": 18.461,
+          "status": 0,
+          "runnerNetworkDelta": {
+            "rx_bytes": 52857,
+            "tx_bytes": 576170
+          }
+        },
+        {
+          "schema": 1,
+          "kind": "finite-stage-timing",
+          "authorizesPublication": false,
+          "repository": "closure-labs/finite",
+          "runId": "39990091392",
+          "runAttempt": "1",
+          "revision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "profile": "finite-dev",
+          "sourceRevision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "candidateDigest": null,
+          "buildIdentity": "v1:bb6e1bf3aaaec7a4b55acd6a6d307b8fe4870b08f1a1b13e3dbfdfc159f9c814",
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261012.334.1"
+          },
+          "lockSha256": {
+            "flake.lock": "a1a2f898f434d48b27ad644f3148e528ef833795a6617b195e29cb36081a70cc",
+            "devenv.lock": "a86b17ce420d5a3cd8f307d3cb3973ec2670c084ef88b49a2b49b3451a92a71a"
+          },
+          "toolCohort": {
+            "pythonExecutable": "/nix/store/d7p0bc9x4g4glf0qskh5kxwxwx54slvg-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/69vhmfdm78jb9c3yj0wykr2y8fnabysr-determinate-nix-3.23.2/bin/nix",
+            "vmManifest": "/nix/store/abnq92gki83dbzv2i202mqhgyfaniz98-finite-ci-vm-tools/share/finite-vm/toolchain.json",
+            "firmwareDirectory": "/nix/store/abnq92gki83dbzv2i202mqhgyfaniz98-finite-ci-vm-tools/share/finite-vm/firmware"
+          },
+          "stage": "local-vm-oci-export",
+          "startedAt": "2026-10-23T17:08:42.491993+00:00",
+          "seconds": 312.185,
+          "status": 0,
+          "runnerNetworkDelta": {
+            "rx_bytes": 304279,
+            "tx_bytes": 432943
+          }
+        },
+        {
+          "schema": 1,
+          "kind": "finite-stage-timing",
+          "authorizesPublication": false,
+          "repository": "closure-labs/finite",
+          "runId": "39990091392",
+          "runAttempt": "1",
+          "revision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "profile": "finite-dev",
+          "sourceRevision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "candidateDigest": "sha256:67217801c16bf5d53d78c74ca690b7d26412cebc2f001b44118d1352a26a4dfa",
+          "buildIdentity": "v1:bb6e1bf3aaaec7a4b55acd6a6d307b8fe4870b08f1a1b13e3dbfdfc159f9c814",
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261012.334.1"
+          },
+          "lockSha256": {
+            "flake.lock": "a1a2f898f434d48b27ad644f3148e528ef833795a6617b195e29cb36081a70cc",
+            "devenv.lock": "a86b17ce420d5a3cd8f307d3cb3973ec2670c084ef88b49a2b49b3451a92a71a"
+          },
+          "toolCohort": {
+            "pythonExecutable": "/nix/store/d7p0bc9x4g4glf0qskh5kxwxwx54slvg-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/69vhmfdm78jb9c3yj0wykr2y8fnabysr-determinate-nix-3.23.2/bin/nix",
+            "vmManifest": "/nix/store/abnq92gki83dbzv2i202mqhgyfaniz98-finite-ci-vm-tools/share/finite-vm/toolchain.json",
+            "firmwareDirectory": "/nix/store/abnq92gki83dbzv2i202mqhgyfaniz98-finite-ci-vm-tools/share/finite-vm/firmware"
+          },
+          "stage": "local-vm-installer-prepare",
+          "startedAt": "2026-10-23T17:14:11.821513+00:00",
+          "seconds": 22.19,
+          "status": 0,
+          "runnerNetworkDelta": {
+            "rx_bytes": 420015877,
+            "tx_bytes": 1257579
+          }
+        },
+        {
+          "schema": 1,
+          "kind": "finite-stage-timing",
+          "authorizesPublication": false,
+          "repository": "closure-labs/finite",
+          "runId": "39990091392",
+          "runAttempt": "1",
+          "revision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "profile": "finite-dev",
+          "sourceRevision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "candidateDigest": "sha256:67217801c16bf5d53d78c74ca690b7d26412cebc2f001b44118d1352a26a4dfa",
+          "buildIdentity": "v1:bb6e1bf3aaaec7a4b55acd6a6d307b8fe4870b08f1a1b13e3dbfdfc159f9c814",
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261012.334.1"
+          },
+          "lockSha256": {
+            "flake.lock": "a1a2f898f434d48b27ad644f3148e528ef833795a6617b195e29cb36081a70cc",
+            "devenv.lock": "a86b17ce420d5a3cd8f307d3cb3973ec2670c084ef88b49a2b49b3451a92a71a"
+          },
+          "toolCohort": {
+            "pythonExecutable": "/nix/store/d7p0bc9x4g4glf0qskh5kxwxwx54slvg-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/69vhmfdm78jb9c3yj0wykr2y8fnabysr-determinate-nix-3.23.2/bin/nix",
+            "vmManifest": "/nix/store/abnq92gki83dbzv2i202mqhgyfaniz98-finite-ci-vm-tools/share/finite-vm/toolchain.json",
+            "firmwareDirectory": "/nix/store/abnq92gki83dbzv2i202mqhgyfaniz98-finite-ci-vm-tools/share/finite-vm/firmware"
+          },
+          "stage": "local-vm-iso-build",
+          "startedAt": "2026-10-23T17:14:34.059597+00:00",
+          "seconds": 807.634,
+          "status": 0,
+          "runnerNetworkDelta": {
+            "rx_bytes": 1236592192,
+            "tx_bytes": 4608619
+          }
+        },
+        {
+          "schema": 1,
+          "kind": "finite-stage-timing",
+          "authorizesPublication": false,
+          "repository": "closure-labs/finite",
+          "runId": "39990091392",
+          "runAttempt": "1",
+          "revision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "profile": "finite-dev",
+          "sourceRevision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "candidateDigest": "sha256:67217801c16bf5d53d78c74ca690b7d26412cebc2f001b44118d1352a26a4dfa",
+          "buildIdentity": "v1:bb6e1bf3aaaec7a4b55acd6a6d307b8fe4870b08f1a1b13e3dbfdfc159f9c814",
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261012.334.1"
+          },
+          "lockSha256": {
+            "flake.lock": "a1a2f898f434d48b27ad644f3148e528ef833795a6617b195e29cb36081a70cc",
+            "devenv.lock": "a86b17ce420d5a3cd8f307d3cb3973ec2670c084ef88b49a2b49b3451a92a71a"
+          },
+          "toolCohort": {
+            "pythonExecutable": "/nix/store/d7p0bc9x4g4glf0qskh5kxwxwx54slvg-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/69vhmfdm78jb9c3yj0wykr2y8fnabysr-determinate-nix-3.23.2/bin/nix",
+            "vmManifest": "/nix/store/abnq92gki83dbzv2i202mqhgyfaniz98-finite-ci-vm-tools/share/finite-vm/toolchain.json",
+            "firmwareDirectory": "/nix/store/abnq92gki83dbzv2i202mqhgyfaniz98-finite-ci-vm-tools/share/finite-vm/firmware"
+          },
+          "stage": "local-vm-acceptance",
+          "startedAt": "2026-10-23T17:28:28.278597+00:00",
+          "seconds": 991.153,
+          "status": 0,
+          "runnerNetworkDelta": {
+            "rx_bytes": 6006731724,
+            "tx_bytes": 16223528
+          }
+        }
+      ],
+      "guestTimings": {
+        "schema": 1,
+        "seconds": {
+          "installation": 463,
+          "first-boot-ssh-ready": 57,
+          "first-boot-boot-contracts": 66,
+          "home-activation": 402
+        }
+      }
+    }
+  ],
+  "publication": [
+    {
+      "repository": "closure-labs/finite",
+      "runId": 39997829647,
+      "runAttempt": 1,
+      "sourceRevision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+      "profile": "finite",
+      "candidate": "ghcr.io/closure-labs/finite@sha256:25c966392a1f75cc445616acf8093b4aa5e72d3bb7eb9d6450ef6d64d5bc8f59",
+      "previousDigest": "sha256:0f9eb0fb9e6ad0e5de6bb78e045a197c195093ab5d7cbc7a55c5afade5991a46",
+      "buildIdentity": "v1:70000039e79162ae365e855128e453665849025191e2aad0fa46640e87f20a0d",
+      "qualifiedAt": "2026-10-23T18:44:53.441514+00:00",
+      "qualificationContextSha256": "463cacd6dd412889744d820dc804ca80c671ebe20698ec5607a93c379726088f",
+      "promotionArtifact": {
+        "id": 12523698923,
+        "name": "promotion-finite-39997829647-1",
+        "digest": "sha256:a19314fec065a3d308f6a654b14c61632833301416be51e41db1bd478c501ca0",
+        "size_in_bytes": 49618,
+        "workflow_run": {
+          "id": 39997829647,
+          "repository_id": 1293375784,
+          "head_repository_id": 1293375784,
+          "head_branch": "main",
+          "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4"
+        }
+      },
+      "qualifiedIso": {
+        "name": "finite.iso",
+        "sha256": "bf3aef5f2784d6a2aefb0cfdf619250f3a8f8c69b5741d57664588bc6dc47ba7",
+        "installationSha256": "9cacfc53b9f7173c31a98a8c4233a33d881341c8056a1f199b7d4789e68e3120"
+      },
+      "accepted": true,
+      "qualificationArtifact": {
+        "id": 12524421518,
+        "name": "qualification-finite-39997829647-1",
+        "digest": "sha256:24fe3469dd0685f4c9fbfc6adf90abcb005f5c1d6ba5040b0359c9353056200d",
+        "size_in_bytes": 601652,
+        "workflow_run": {
+          "id": 39997829647,
+          "repository_id": 1293375784,
+          "head_repository_id": 1293375784,
+          "head_branch": "main",
+          "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4"
+        }
+      },
+      "guestTimings": {
+        "fresh": {
+          "schema": 1,
+          "seconds": {
+            "installation": 298,
+            "first-boot-ssh-ready": 39,
+            "first-boot-boot-contracts": 48,
+            "home-activation": 359
+          }
+        },
+        "upgrade": {
+          "schema": 1,
+          "seconds": {
+            "installation": 333,
+            "first-boot-ssh-ready": 57,
+            "first-boot-boot-contracts": 62,
+            "home-activation": 348,
+            "upgrade-staging": 69,
+            "updated-ssh-ready": 66,
+            "updated-boot-contracts": 72,
+            "rollback-ssh-ready": 41,
+            "rollback-boot-contracts": 44
+          }
+        }
+      },
+      "homeChecks": {
+        "vm-fresh/initialized-home.json": {
+          "schema": 1,
+          "status": "pass",
+          "checks": {
+            "nixState": true,
+            "homeCustomization": true
+          },
+          "customizationSha256": "08c3ce32ea49e4dbed38ad51074ed364f1d3b8232fa49e02c99a2d0946ffd902"
+        },
+        "vm-upgrade/initialized-home.json": {
+          "schema": 1,
+          "status": "pass",
+          "checks": {
+            "nixState": true,
+            "homeCustomization": true
+          },
+          "customizationSha256": "08c3ce32ea49e4dbed38ad51074ed364f1d3b8232fa49e02c99a2d0946ffd902"
+        },
+        "vm-upgrade/updated-home.json": {
+          "schema": 1,
+          "status": "pass",
+          "checks": {
+            "nixState": true,
+            "homeCustomization": true
+          },
+          "errors": []
+        }
+      },
+      "securityChecks": {
+        "vm-fresh/first-boot-security.log": "Candidate SELinux enforcing; Nix policy active; NoCloud media rejected",
+        "vm-upgrade/updated-security.log": "Candidate SELinux enforcing; Nix policy active; NoCloud media rejected",
+        "vm-upgrade/first-boot-nix.log": "All Nix initialization units and daemon sockets are active",
+        "vm-upgrade/updated-nix.log": "All Nix initialization units and daemon sockets are active",
+        "vm-upgrade/rollback-nix.log": "All Nix initialization units and daemon sockets are active"
+      },
+      "predecessorIsoReuse": [
+        {
+          "schema": 1,
+          "kind": "finite-stage-timing",
+          "authorizesPublication": false,
+          "repository": "closure-labs/finite",
+          "runId": "39997829647",
+          "runAttempt": "1",
+          "revision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "profile": "finite",
+          "sourceRevision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "candidateDigest": "sha256:25c966392a1f75cc445616acf8093b4aa5e72d3bb7eb9d6450ef6d64d5bc8f59",
+          "buildIdentity": "v1:70000039e79162ae365e855128e453665849025191e2aad0fa46640e87f20a0d",
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261012.334.1"
+          },
+          "lockSha256": {
+            "flake.lock": "a1a2f898f434d48b27ad644f3148e528ef833795a6617b195e29cb36081a70cc",
+            "devenv.lock": "a86b17ce420d5a3cd8f307d3cb3973ec2670c084ef88b49a2b49b3451a92a71a"
+          },
+          "toolCohort": {
+            "pythonExecutable": "/nix/store/d7p0bc9x4g4glf0qskh5kxwxwx54slvg-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/69vhmfdm78jb9c3yj0wykr2y8fnabysr-determinate-nix-3.23.2/bin/nix",
+            "vmManifest": "/nix/store/abnq92gki83dbzv2i202mqhgyfaniz98-finite-ci-vm-tools/share/finite-vm/toolchain.json",
+            "firmwareDirectory": "/nix/store/abnq92gki83dbzv2i202mqhgyfaniz98-finite-ci-vm-tools/share/finite-vm/firmware"
+          },
+          "stage": "predecessor-iso-reuse",
+          "startedAt": "2026-10-23T18:14:38.622342+00:00",
+          "seconds": 23.712,
+          "status": 3,
+          "runnerNetworkDelta": {
+            "rx_bytes": 4724666,
+            "tx_bytes": 221674
+          }
+        }
+      ]
+    },
+    {
+      "repository": "closure-labs/finite",
+      "runId": 39997829647,
+      "runAttempt": 1,
+      "sourceRevision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+      "profile": "finite-dev",
+      "candidate": "ghcr.io/closure-labs/finite@sha256:65eecdec3f908c891b1610b5c4f922869448c16ec7ac1ac205642a20fa42ac7e",
+      "previousDigest": "sha256:e8b35af24e32c7f1a511b2d410cecb72453ebc95da7c14109a0d31d3db1e9c24",
+      "buildIdentity": "v1:bb6e1bf3aaaec7a4b55acd6a6d307b8fe4870b08f1a1b13e3dbfdfc159f9c814",
+      "qualifiedAt": "2026-10-23T18:53:55.260473+00:00",
+      "qualificationContextSha256": "463cacd6dd412889744d820dc804ca80c671ebe20698ec5607a93c379726088f",
+      "promotionArtifact": {
+        "id": 12525145907,
+        "name": "promotion-finite-dev-39997829647-1",
+        "digest": "sha256:3be5214eccc012806096674c4ef0d1e1ddb8394ad7919ccb2fddefc9c480328d",
+        "size_in_bytes": 55732,
+        "workflow_run": {
+          "id": 39997829647,
+          "repository_id": 1293375784,
+          "head_repository_id": 1293375784,
+          "head_branch": "main",
+          "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4"
+        }
+      },
+      "qualifiedIso": {
+        "name": "finite-dev.iso",
+        "sha256": "467431a645d59d4df8a1c082efc7903a097f2d50373201a97e5fc3830351523d",
+        "installationSha256": "7dedc5206237694b3856e03382279d5230c73112b4c19dbb71954345ab7bcaa9"
+      },
+      "accepted": true,
+      "qualificationArtifact": {
+        "id": 12524587244,
+        "name": "qualification-finite-dev-39997829647-1",
+        "digest": "sha256:95a7b0ebbe03d4c45f033e6e1f70832775ed85dff9b7fd7741c528fb0b7f2c88",
+        "size_in_bytes": 622172,
+        "workflow_run": {
+          "id": 39997829647,
+          "repository_id": 1293375784,
+          "head_repository_id": 1293375784,
+          "head_branch": "main",
+          "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4"
+        }
+      },
+      "guestTimings": {
+        "fresh": {
+          "schema": 1,
+          "seconds": {
+            "installation": 386,
+            "first-boot-ssh-ready": 38,
+            "first-boot-boot-contracts": 46,
+            "home-activation": 586
+          }
+        },
+        "upgrade": {
+          "schema": 1,
+          "seconds": {
+            "installation": 427,
+            "first-boot-ssh-ready": 61,
+            "first-boot-boot-contracts": 65,
+            "home-activation": 339,
+            "upgrade-staging": 90,
+            "updated-ssh-ready": 68,
+            "updated-boot-contracts": 74,
+            "rollback-ssh-ready": 40,
+            "rollback-boot-contracts": 44
+          }
+        }
+      },
+      "homeChecks": {
+        "vm-fresh/initialized-home.json": {
+          "schema": 1,
+          "status": "pass",
+          "checks": {
+            "nixState": true,
+            "homeCustomization": true
+          },
+          "customizationSha256": "08c3ce32ea49e4dbed38ad51074ed364f1d3b8232fa49e02c99a2d0946ffd902"
+        },
+        "vm-upgrade/initialized-home.json": {
+          "schema": 1,
+          "status": "pass",
+          "checks": {
+            "nixState": true,
+            "homeCustomization": true
+          },
+          "customizationSha256": "08c3ce32ea49e4dbed38ad51074ed364f1d3b8232fa49e02c99a2d0946ffd902"
+        },
+        "vm-upgrade/updated-home.json": {
+          "schema": 1,
+          "status": "pass",
+          "checks": {
+            "nixState": true,
+            "homeCustomization": true
+          },
+          "errors": []
+        }
+      },
+      "securityChecks": {
+        "vm-fresh/first-boot-security.log": "Candidate SELinux enforcing; Nix policy active; NoCloud media rejected",
+        "vm-upgrade/updated-security.log": "Candidate SELinux enforcing; Nix policy active; NoCloud media rejected",
+        "vm-upgrade/first-boot-nix.log": "All Nix initialization units and daemon sockets are active",
+        "vm-upgrade/updated-nix.log": "All Nix initialization units and daemon sockets are active",
+        "vm-upgrade/rollback-nix.log": "All Nix initialization units and daemon sockets are active"
+      },
+      "predecessorIsoReuse": [
+        {
+          "schema": 1,
+          "kind": "finite-stage-timing",
+          "authorizesPublication": false,
+          "repository": "closure-labs/finite",
+          "runId": "39997829647",
+          "runAttempt": "1",
+          "revision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "profile": "finite-dev",
+          "sourceRevision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "candidateDigest": "sha256:65eecdec3f908c891b1610b5c4f922869448c16ec7ac1ac205642a20fa42ac7e",
+          "buildIdentity": "v1:bb6e1bf3aaaec7a4b55acd6a6d307b8fe4870b08f1a1b13e3dbfdfc159f9c814",
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261012.334.1"
+          },
+          "lockSha256": {
+            "flake.lock": "a1a2f898f434d48b27ad644f3148e528ef833795a6617b195e29cb36081a70cc",
+            "devenv.lock": "a86b17ce420d5a3cd8f307d3cb3973ec2670c084ef88b49a2b49b3451a92a71a"
+          },
+          "toolCohort": {
+            "pythonExecutable": "/nix/store/d7p0bc9x4g4glf0qskh5kxwxwx54slvg-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/69vhmfdm78jb9c3yj0wykr2y8fnabysr-determinate-nix-3.23.2/bin/nix",
+            "vmManifest": "/nix/store/abnq92gki83dbzv2i202mqhgyfaniz98-finite-ci-vm-tools/share/finite-vm/toolchain.json",
+            "firmwareDirectory": "/nix/store/abnq92gki83dbzv2i202mqhgyfaniz98-finite-ci-vm-tools/share/finite-vm/firmware"
+          },
+          "stage": "predecessor-iso-reuse",
+          "startedAt": "2026-10-23T18:21:04.609731+00:00",
+          "seconds": 29.857,
+          "status": 3,
+          "runnerNetworkDelta": {
+            "rx_bytes": 5940574,
+            "tx_bytes": 236600
+          }
+        }
+      ]
+    }
+  ],
+  "nativeMainRun": {
+    "id": 39997829647,
+    "run_attempt": 1,
+    "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-10-23T17:46:29Z",
+    "updated_at": "2026-10-23T18:55:59Z",
+    "html_url": "https://github.com/closure-labs/finite/actions/runs/39997829647"
+  },
+  "queueCost": {
+    "scope": "Build Finite workflow only; excludes CodeQL and independent authority workflows",
+    "jobs": [
+      {
+        "id": 120539323393,
+        "name": "Select checks",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39990091392,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T16:50:24Z",
+        "started_at": "2026-10-23T16:50:26Z",
+        "completed_at": "2026-10-23T16:50:39Z",
+        "runner_name": "GitHub Actions 1000016171",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runnerSeconds": 13.0,
+        "queueSeconds": 2.0,
+        "phaseTimings": {
+          "Set up job": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Reject stale governed validation trees": {
+            "seconds": 6.0,
+            "conclusion": "success"
+          },
+          "Validate decision reconciliation request": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Validate manual channel selection": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Select targeted premerge VM validation": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Run python3 scripts/ci/impact.py": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Complete job": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          }
+        }
+      },
+      {
+        "id": 120539323739,
+        "name": "Documentation checks",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39990091392,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T16:50:24Z",
+        "started_at": "2026-10-23T16:50:26Z",
+        "completed_at": "2026-10-23T16:50:43Z",
+        "runner_name": "GitHub Actions 1000016172",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runnerSeconds": 17.0,
+        "queueSeconds": 2.0,
+        "phaseTimings": {
+          "Set up job": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Install documentation check tools": {
+            "seconds": 8.0,
+            "conclusion": "success"
+          },
+          "Run bash tests/repository/text-style.sh": {
+            "seconds": 4.0,
+            "conclusion": "success"
+          },
+          "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Complete job": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          }
+        }
+      },
+      {
+        "id": 120539325359,
+        "name": "VM tool provisioning trial",
+        "status": "completed",
+        "conclusion": "skipped",
+        "run_id": 39990091392,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T16:50:24Z",
+        "started_at": "2026-10-23T16:50:24Z",
+        "completed_at": "2026-10-23T16:50:24Z",
+        "runner_name": null,
+        "labels": [],
+        "runnerSeconds": 0,
+        "queueSeconds": null,
+        "phaseTimings": {}
+      },
+      {
+        "id": 120539475503,
+        "name": "Nix and runtime contracts",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39990091392,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T16:50:43Z",
+        "started_at": "2026-10-23T16:50:46Z",
+        "completed_at": "2026-10-23T16:56:41Z",
+        "runner_name": "GitHub Actions 1000016174",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runnerSeconds": 355.0,
+        "queueSeconds": 3.0,
+        "phaseTimings": {
+          "Set up job": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 3.0,
+            "conclusion": "success"
+          },
+          "Run ./.github/actions/setup-nix": {
+            "seconds": 35.0,
+            "conclusion": "success"
+          },
+          "Build checks, retrying transient fetch failures": {
+            "seconds": 306.0,
+            "conclusion": "success"
+          },
+          "Select images from payload dependencies": {
+            "seconds": 4.0,
+            "conclusion": "success"
+          },
+          "Post Run ./.github/actions/setup-nix": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Complete job": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          }
+        }
+      },
+      {
+        "id": 120542294630,
+        "name": "Validate (finite) / build",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39990091392,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T16:56:41Z",
+        "started_at": "2026-10-23T16:56:44Z",
+        "completed_at": "2026-10-23T17:30:32Z",
+        "runner_name": "GitHub Actions 1000016176",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runnerSeconds": 2028.0,
+        "queueSeconds": 3.0,
+        "phaseTimings": {
+          "Set up job": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Pre Monitor hosted runner (Community)": {
+            "seconds": 3.0,
+            "conclusion": "success"
+          },
+          "Monitor hosted runner (Community)": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Recheck governed validation tree before image setup": {
+            "seconds": 4.0,
+            "conclusion": "success"
+          },
+          "Run ./.github/actions/setup-nix": {
+            "seconds": 25.0,
+            "conclusion": "success"
+          },
+          "Make room for the image build": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Prepare pinned image tools once": {
+            "seconds": 3.0,
+            "conclusion": "success"
+          },
+          "Authenticate pinned upstream publishers": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Authenticate the locked runtime Cosign publisher": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Prepare candidate publication": {
+            "seconds": 11.0,
+            "conclusion": "success"
+          },
+          "Install the verified locked BlueBuild CLI": {
+            "seconds": 5.0,
+            "conclusion": "success"
+          },
+          "Validate recipes and record generated Containerfile": {
+            "seconds": 6.0,
+            "conclusion": "success"
+          },
+          "Stage pinned payload": {
+            "seconds": 10.0,
+            "conclusion": "success"
+          },
+          "Set up the BlueBuild builder": {
+            "seconds": 6.0,
+            "conclusion": "success"
+          },
+          "Build with BlueBuild": {
+            "seconds": 387.0,
+            "conclusion": "success"
+          },
+          "Verify assembled image": {
+            "seconds": 14.0,
+            "conclusion": "success"
+          },
+          "Install targeted VM validation tools": {
+            "seconds": 7.0,
+            "conclusion": "success"
+          },
+          "Boot the exact local candidate without publication credentials": {
+            "seconds": 1491.0,
+            "conclusion": "success"
+          },
+          "Save build evidence": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Set up the BlueBuild builder": {
+            "seconds": 41.0,
+            "conclusion": "success"
+          },
+          "Post Run ./.github/actions/setup-nix": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Post Monitor hosted runner (Community)": {
+            "seconds": 3.0,
+            "conclusion": "success"
+          },
+          "Complete job": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          }
+        }
+      },
+      {
+        "id": 120542294756,
+        "name": "Validate (finite-dev) / build",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39990091392,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T16:56:41Z",
+        "started_at": "2026-10-23T16:56:44Z",
+        "completed_at": "2026-10-23T17:45:54Z",
+        "runner_name": "GitHub Actions 1000016177",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runnerSeconds": 2950.0,
+        "queueSeconds": 3.0,
+        "phaseTimings": {
+          "Set up job": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Pre Monitor hosted runner (Community)": {
+            "seconds": 4.0,
+            "conclusion": "success"
+          },
+          "Monitor hosted runner (Community)": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Recheck governed validation tree before image setup": {
+            "seconds": 3.0,
+            "conclusion": "success"
+          },
+          "Run ./.github/actions/setup-nix": {
+            "seconds": 26.0,
+            "conclusion": "success"
+          },
+          "Make room for the image build": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Prepare pinned image tools once": {
+            "seconds": 5.0,
+            "conclusion": "success"
+          },
+          "Authenticate pinned upstream publishers": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Authenticate the locked runtime Cosign publisher": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Prepare candidate publication": {
+            "seconds": 10.0,
+            "conclusion": "success"
+          },
+          "Install the verified locked BlueBuild CLI": {
+            "seconds": 3.0,
+            "conclusion": "success"
+          },
+          "Validate recipes and record generated Containerfile": {
+            "seconds": 6.0,
+            "conclusion": "success"
+          },
+          "Stage pinned payload": {
+            "seconds": 5.0,
+            "conclusion": "success"
+          },
+          "Set up the BlueBuild builder": {
+            "seconds": 5.0,
+            "conclusion": "success"
+          },
+          "Build with BlueBuild": {
+            "seconds": 616.0,
+            "conclusion": "success"
+          },
+          "Verify assembled image": {
+            "seconds": 19.0,
+            "conclusion": "success"
+          },
+          "Install targeted VM validation tools": {
+            "seconds": 7.0,
+            "conclusion": "success"
+          },
+          "Boot the exact local candidate without publication credentials": {
+            "seconds": 2177.0,
+            "conclusion": "success"
+          },
+          "Save build evidence": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Post Set up the BlueBuild builder": {
+            "seconds": 46.0,
+            "conclusion": "success"
+          },
+          "Post Run ./.github/actions/setup-nix": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Monitor hosted runner (Community)": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Complete job": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          }
+        }
+      },
+      {
+        "id": 120542297309,
+        "name": "Publish (${{ matrix.profile }})",
+        "status": "completed",
+        "conclusion": "skipped",
+        "run_id": 39990091392,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T16:56:42Z",
+        "started_at": "2026-10-23T16:56:42Z",
+        "completed_at": "2026-10-23T16:56:41Z",
+        "runner_name": null,
+        "labels": [],
+        "runnerSeconds": 0,
+        "queueSeconds": null,
+        "phaseTimings": {}
+      },
+      {
+        "id": 120565583902,
+        "name": "CI gate",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39990091392,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T17:45:54Z",
+        "started_at": "2026-10-23T17:45:57Z",
+        "completed_at": "2026-10-23T17:46:02Z",
+        "runner_name": "GitHub Actions 1000016201",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runnerSeconds": 5.0,
+        "queueSeconds": 3.0,
+        "phaseTimings": {
+          "Set up job": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Run python3 scripts/ci/gate.py": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Complete job": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          }
+        }
+      }
+    ],
+    "runnerSeconds": 5368.0,
+    "queueSeconds": 16.0,
+    "elapsedSeconds": 3338.0
+  },
+  "mainCost": {
+    "jobs": [
+      {
+        "id": 120565867829,
+        "name": "Select checks",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39997829647,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T17:46:30Z",
+        "started_at": "2026-10-23T17:46:33Z",
+        "completed_at": "2026-10-23T17:47:33Z",
+        "runner_name": "GitHub Actions 1000016205",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runnerSeconds": 60.0,
+        "queueSeconds": 3.0,
+        "phaseTimings": {
+          "Set up job": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Validate decision reconciliation request": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Validate manual channel selection": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Select targeted premerge VM validation": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Run python3 scripts/ci/impact.py": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Run ./.github/actions/setup-nix": {
+            "seconds": 25.0,
+            "conclusion": "success"
+          },
+          "Run nix develop --file lib/ci-tools.nix shell --command python3 scripts/ci/bluefin-upstream.py reconcile": {
+            "seconds": 26.0,
+            "conclusion": "success"
+          },
+          "Select both images for an unpublished release version": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Run ./.github/actions/setup-nix": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Complete job": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          }
+        }
+      },
+      {
+        "id": 120565867878,
+        "name": "Documentation checks",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39997829647,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T17:46:30Z",
+        "started_at": "2026-10-23T17:46:33Z",
+        "completed_at": "2026-10-23T17:46:53Z",
+        "runner_name": "GitHub Actions 1000016204",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runnerSeconds": 20.0,
+        "queueSeconds": 3.0,
+        "phaseTimings": {
+          "Set up job": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Install documentation check tools": {
+            "seconds": 11.0,
+            "conclusion": "success"
+          },
+          "Run bash tests/repository/text-style.sh": {
+            "seconds": 4.0,
+            "conclusion": "success"
+          },
+          "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Complete job": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          }
+        }
+      },
+      {
+        "id": 120565869384,
+        "name": "VM tool provisioning trial",
+        "status": "completed",
+        "conclusion": "skipped",
+        "run_id": 39997829647,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T17:46:31Z",
+        "started_at": "2026-10-23T17:46:31Z",
+        "completed_at": "2026-10-23T17:46:30Z",
+        "runner_name": null,
+        "labels": [],
+        "runnerSeconds": 0,
+        "queueSeconds": null,
+        "phaseTimings": {}
+      },
+      {
+        "id": 120566351221,
+        "name": "Nix and runtime contracts",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39997829647,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T17:47:33Z",
+        "started_at": "2026-10-23T17:47:36Z",
+        "completed_at": "2026-10-23T17:52:32Z",
+        "runner_name": "GitHub Actions 1000016206",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runnerSeconds": 296.0,
+        "queueSeconds": 3.0,
+        "phaseTimings": {
+          "Set up job": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Run ./.github/actions/setup-nix": {
+            "seconds": 31.0,
+            "conclusion": "success"
+          },
+          "Build checks, retrying transient fetch failures": {
+            "seconds": 253.0,
+            "conclusion": "success"
+          },
+          "Select images from payload dependencies": {
+            "seconds": 4.0,
+            "conclusion": "success"
+          },
+          "Post Run ./.github/actions/setup-nix": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Complete job": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          }
+        }
+      },
+      {
+        "id": 120568706056,
+        "name": "Publish (finite) / build / build",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39997829647,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T17:52:32Z",
+        "started_at": "2026-10-23T17:52:35Z",
+        "completed_at": "2026-10-23T17:57:26Z",
+        "runner_name": "GitHub Actions 1000016210",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runnerSeconds": 291.0,
+        "queueSeconds": 3.0,
+        "phaseTimings": {
+          "Set up job": {
+            "seconds": 3.0,
+            "conclusion": "success"
+          },
+          "Pre Monitor hosted runner (Community)": {
+            "seconds": 4.0,
+            "conclusion": "success"
+          },
+          "Monitor hosted runner (Community)": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Run ./.github/actions/setup-nix": {
+            "seconds": 23.0,
+            "conclusion": "success"
+          },
+          "Make room for the image build": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Prepare pinned image tools once": {
+            "seconds": 4.0,
+            "conclusion": "success"
+          },
+          "Authenticate pinned upstream publishers": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Authenticate the locked runtime Cosign publisher": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Prepare candidate publication": {
+            "seconds": 12.0,
+            "conclusion": "success"
+          },
+          "Install the verified locked BlueBuild CLI": {
+            "seconds": 5.0,
+            "conclusion": "success"
+          },
+          "Validate recipes and record generated Containerfile": {
+            "seconds": 6.0,
+            "conclusion": "success"
+          },
+          "Stage pinned payload": {
+            "seconds": 3.0,
+            "conclusion": "success"
+          },
+          "Set up the BlueBuild builder": {
+            "seconds": 7.0,
+            "conclusion": "success"
+          },
+          "Build with BlueBuild": {
+            "seconds": 15.0,
+            "conclusion": "success"
+          },
+          "Verify assembled image": {
+            "seconds": 199.0,
+            "conclusion": "success"
+          },
+          "Save build evidence": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Set up the BlueBuild builder": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Post Run ./.github/actions/setup-nix": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Monitor hosted runner (Community)": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Complete job": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          }
+        }
+      },
+      {
+        "id": 120568706079,
+        "name": "Publish (finite-dev) / build / build",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39997829647,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T17:52:32Z",
+        "started_at": "2026-10-23T17:52:35Z",
+        "completed_at": "2026-10-23T17:59:16Z",
+        "runner_name": "GitHub Actions 1000016209",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runnerSeconds": 401.0,
+        "queueSeconds": 3.0,
+        "phaseTimings": {
+          "Set up job": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Pre Monitor hosted runner (Community)": {
+            "seconds": 4.0,
+            "conclusion": "success"
+          },
+          "Monitor hosted runner (Community)": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Run ./.github/actions/setup-nix": {
+            "seconds": 25.0,
+            "conclusion": "success"
+          },
+          "Make room for the image build": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Prepare pinned image tools once": {
+            "seconds": 5.0,
+            "conclusion": "success"
+          },
+          "Authenticate pinned upstream publishers": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Authenticate the locked runtime Cosign publisher": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Prepare candidate publication": {
+            "seconds": 12.0,
+            "conclusion": "success"
+          },
+          "Install the verified locked BlueBuild CLI": {
+            "seconds": 3.0,
+            "conclusion": "success"
+          },
+          "Validate recipes and record generated Containerfile": {
+            "seconds": 5.0,
+            "conclusion": "success"
+          },
+          "Stage pinned payload": {
+            "seconds": 5.0,
+            "conclusion": "success"
+          },
+          "Set up the BlueBuild builder": {
+            "seconds": 5.0,
+            "conclusion": "success"
+          },
+          "Build with BlueBuild": {
+            "seconds": 22.0,
+            "conclusion": "success"
+          },
+          "Verify assembled image": {
+            "seconds": 297.0,
+            "conclusion": "success"
+          },
+          "Save build evidence": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Post Set up the BlueBuild builder": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Run ./.github/actions/setup-nix": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Monitor hosted runner (Community)": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Complete job": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          }
+        }
+      },
+      {
+        "id": 120568707638,
+        "name": "Validate (${{ matrix.profile }})",
+        "status": "completed",
+        "conclusion": "skipped",
+        "run_id": 39997829647,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T17:52:32Z",
+        "started_at": "2026-10-23T17:52:32Z",
+        "completed_at": "2026-10-23T17:52:32Z",
+        "runner_name": null,
+        "labels": [],
+        "runnerSeconds": 0,
+        "queueSeconds": null,
+        "phaseTimings": {}
+      },
+      {
+        "id": 120571007630,
+        "name": "Publish (finite) / security",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39997829647,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T17:57:27Z",
+        "started_at": "2026-10-23T17:57:30Z",
+        "completed_at": "2026-10-23T18:08:21Z",
+        "runner_name": "GitHub Actions 1000016211",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runnerSeconds": 651.0,
+        "queueSeconds": 3.0,
+        "phaseTimings": {
+          "Set up job": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Pre Monitor hosted runner (Community)": {
+            "seconds": 4.0,
+            "conclusion": "success"
+          },
+          "Monitor hosted runner (Community)": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Run ./.github/actions/setup-nix": {
+            "seconds": 25.0,
+            "conclusion": "success"
+          },
+          "Read checked publication admission policy": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Reuse authenticated publisher evidence from this build": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Make room for the immutable image inventory": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Scan exact candidate and enforce image security policy": {
+            "seconds": 606.0,
+            "conclusion": "success"
+          },
+          "Retain scanner evidence including failures": {
+            "seconds": 4.0,
+            "conclusion": "success"
+          },
+          "Post Run ./.github/actions/setup-nix": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Post Monitor hosted runner (Community)": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Complete job": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          }
+        }
+      },
+      {
+        "id": 120571858904,
+        "name": "Publish (finite-dev) / security",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39997829647,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T17:59:16Z",
+        "started_at": "2026-10-23T17:59:19Z",
+        "completed_at": "2026-10-23T18:14:59Z",
+        "runner_name": "GitHub Actions 1000016213",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runnerSeconds": 940.0,
+        "queueSeconds": 3.0,
+        "phaseTimings": {
+          "Set up job": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Pre Monitor hosted runner (Community)": {
+            "seconds": 5.0,
+            "conclusion": "success"
+          },
+          "Monitor hosted runner (Community)": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Run ./.github/actions/setup-nix": {
+            "seconds": 23.0,
+            "conclusion": "success"
+          },
+          "Read checked publication admission policy": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Reuse authenticated publisher evidence from this build": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Make room for the immutable image inventory": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Scan exact candidate and enforce image security policy": {
+            "seconds": 900.0,
+            "conclusion": "success"
+          },
+          "Retain scanner evidence including failures": {
+            "seconds": 5.0,
+            "conclusion": "success"
+          },
+          "Post Run ./.github/actions/setup-nix": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Monitor hosted runner (Community)": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Complete job": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          }
+        }
+      },
+      {
+        "id": 120576176121,
+        "name": "Publish (finite) / attest / attest",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39997829647,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T18:08:21Z",
+        "started_at": "2026-10-23T18:08:24Z",
+        "completed_at": "2026-10-23T18:09:55Z",
+        "runner_name": "GitHub Actions 1000016214",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runnerSeconds": 91.0,
+        "queueSeconds": 3.0,
+        "phaseTimings": {
+          "Set up job": {
+            "seconds": 3.0,
+            "conclusion": "success"
+          },
+          "Pre Monitor hosted runner (Community)": {
+            "seconds": 4.0,
+            "conclusion": "success"
+          },
+          "Monitor hosted runner (Community)": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Validate immutable subject and producer artifact": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Run ./.github/actions/setup-nix": {
+            "seconds": 35.0,
+            "conclusion": "success"
+          },
+          "Download same-run native SBOM": {
+            "seconds": 4.0,
+            "conclusion": "success"
+          },
+          "Bind native SPDX bytes to the immutable image subject": {
+            "seconds": 4.0,
+            "conclusion": "success"
+          },
+          "Authenticate registry for attestations": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Publish authenticated full SPDX as an immutable OCI referrer": {
+            "seconds": 13.0,
+            "conclusion": "success"
+          },
+          "Attest build provenance": {
+            "seconds": 11.0,
+            "conclusion": "success"
+          },
+          "Attest full SPDX OCI reference": {
+            "seconds": 10.0,
+            "conclusion": "success"
+          },
+          "Clear registry credentials": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Post Run ./.github/actions/setup-nix": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Post Monitor hosted runner (Community)": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Complete job": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          }
+        }
+      },
+      {
+        "id": 120576910299,
+        "name": "Publish (finite) / sign",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39997829647,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T18:09:55Z",
+        "started_at": "2026-10-23T18:10:00Z",
+        "completed_at": "2026-10-23T18:11:27Z",
+        "runner_name": "GitHub Actions 1000016215",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runnerSeconds": 87.0,
+        "queueSeconds": 5.0,
+        "phaseTimings": {
+          "Set up job": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Pre Monitor hosted runner (Community)": {
+            "seconds": 4.0,
+            "conclusion": "success"
+          },
+          "Monitor hosted runner (Community)": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Run sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Run ./.github/actions/setup-nix": {
+            "seconds": 23.0,
+            "conclusion": "success"
+          },
+          "Read checked publication admission policy": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Resolve declared read-only authority App credentials": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Generate short-lived read-only authority token": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Clear App private credentials": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Authenticate native evidence and human admission before signing credentials": {
+            "seconds": 34.0,
+            "conclusion": "success"
+          },
+          "Prepare pinned scoped credential resolver": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Sign the independently scanned immutable digest": {
+            "seconds": 12.0,
+            "conclusion": "success"
+          },
+          "Post Generate short-lived read-only authority token": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Post Run ./.github/actions/setup-nix": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Post Monitor hosted runner (Community)": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Complete job": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          }
+        }
+      },
+      {
+        "id": 120577643024,
+        "name": "Publish (finite) / preflight",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39997829647,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T18:11:27Z",
+        "started_at": "2026-10-23T18:11:30Z",
+        "completed_at": "2026-10-23T18:12:16Z",
+        "runner_name": "GitHub Actions 1000016216",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runnerSeconds": 46.0,
+        "queueSeconds": 3.0,
+        "phaseTimings": {
+          "Set up job": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Pre Monitor hosted runner (Community)": {
+            "seconds": 3.0,
+            "conclusion": "success"
+          },
+          "Monitor hosted runner (Community)": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Run ./.github/actions/setup-nix": {
+            "seconds": 22.0,
+            "conclusion": "success"
+          },
+          "Reject obsolete publication before VM work": {
+            "seconds": 14.0,
+            "conclusion": "success"
+          },
+          "Post Run ./.github/actions/setup-nix": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Post Monitor hosted runner (Community)": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Complete job": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          }
+        }
+      },
+      {
+        "id": 120578025517,
+        "name": "Publish (finite) / qualification / prepare",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39997829647,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T18:12:16Z",
+        "started_at": "2026-10-23T18:12:19Z",
+        "completed_at": "2026-10-23T18:13:42Z",
+        "runner_name": "GitHub Actions 1000016217",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runnerSeconds": 83.0,
+        "queueSeconds": 3.0,
+        "phaseTimings": {
+          "Set up job": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Run ./.github/actions/setup-nix": {
+            "seconds": 25.0,
+            "conclusion": "success"
+          },
+          "Validate qualification execution context": {
+            "seconds": 15.0,
+            "conclusion": "success"
+          },
+          "Install context tools for the reuse pilot": {
+            "seconds": 7.0,
+            "conclusion": "success"
+          },
+          "Check exact qualification reuse": {
+            "seconds": 28.0,
+            "conclusion": "success"
+          },
+          "Post Run ./.github/actions/setup-nix": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Complete job": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          }
+        }
+      },
+      {
+        "id": 120578696587,
+        "name": "Publish (finite) / qualification / phase (fresh)",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39997829647,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T18:13:43Z",
+        "started_at": "2026-10-23T18:13:46Z",
+        "completed_at": "2026-10-23T18:43:07Z",
+        "runner_name": "GitHub Actions 1000016218",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runnerSeconds": 1761.0,
+        "queueSeconds": 3.0,
+        "phaseTimings": {
+          "Set up job": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Run ./.github/actions/setup-nix": {
+            "seconds": 24.0,
+            "conclusion": "success"
+          },
+          "Validate qualification execution context": {
+            "seconds": 14.0,
+            "conclusion": "success"
+          },
+          "Run hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Run sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Install qualification tools": {
+            "seconds": 5.0,
+            "conclusion": "success"
+          },
+          "Qualify immutable candidate phase": {
+            "seconds": 1671.0,
+            "conclusion": "success"
+          },
+          "Record phase outcome": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Save phase evidence": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Preserve pristine qualified candidate ISO for the pilot": {
+            "seconds": 36.0,
+            "conclusion": "success"
+          },
+          "Post Run ./.github/actions/setup-nix": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Complete job": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          }
+        }
+      },
+      {
+        "id": 120578696690,
+        "name": "Publish (finite) / qualification / phase (upgrade)",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39997829647,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T18:13:43Z",
+        "started_at": "2026-10-23T18:13:46Z",
+        "completed_at": "2026-10-23T18:44:06Z",
+        "runner_name": "GitHub Actions 1000016219",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runnerSeconds": 1820.0,
+        "queueSeconds": 3.0,
+        "phaseTimings": {
+          "Set up job": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Run ./.github/actions/setup-nix": {
+            "seconds": 21.0,
+            "conclusion": "success"
+          },
+          "Validate qualification execution context": {
+            "seconds": 13.0,
+            "conclusion": "success"
+          },
+          "Run hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Run sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Install qualification tools": {
+            "seconds": 5.0,
+            "conclusion": "success"
+          },
+          "Qualify immutable candidate phase": {
+            "seconds": 1773.0,
+            "conclusion": "success"
+          },
+          "Record phase outcome": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Save phase evidence": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Run ./.github/actions/setup-nix": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Complete job": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          }
+        }
+      },
+      {
+        "id": 120579298829,
+        "name": "Publish (finite-dev) / attest / attest",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39997829647,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T18:14:59Z",
+        "started_at": "2026-10-23T18:15:02Z",
+        "completed_at": "2026-10-23T18:16:23Z",
+        "runner_name": "GitHub Actions 1000016220",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runnerSeconds": 81.0,
+        "queueSeconds": 3.0,
+        "phaseTimings": {
+          "Set up job": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Pre Monitor hosted runner (Community)": {
+            "seconds": 4.0,
+            "conclusion": "success"
+          },
+          "Monitor hosted runner (Community)": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Validate immutable subject and producer artifact": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Run ./.github/actions/setup-nix": {
+            "seconds": 32.0,
+            "conclusion": "success"
+          },
+          "Download same-run native SBOM": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Bind native SPDX bytes to the immutable image subject": {
+            "seconds": 5.0,
+            "conclusion": "success"
+          },
+          "Authenticate registry for attestations": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Publish authenticated full SPDX as an immutable OCI referrer": {
+            "seconds": 12.0,
+            "conclusion": "success"
+          },
+          "Attest build provenance": {
+            "seconds": 11.0,
+            "conclusion": "success"
+          },
+          "Attest full SPDX OCI reference": {
+            "seconds": 7.0,
+            "conclusion": "success"
+          },
+          "Clear registry credentials": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Post Run ./.github/actions/setup-nix": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Post Monitor hosted runner (Community)": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Complete job": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          }
+        }
+      },
+      {
+        "id": 120579956425,
+        "name": "Publish (finite-dev) / sign",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39997829647,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T18:16:23Z",
+        "started_at": "2026-10-23T18:16:28Z",
+        "completed_at": "2026-10-23T18:18:01Z",
+        "runner_name": "GitHub Actions 1000016221",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runnerSeconds": 93.0,
+        "queueSeconds": 5.0,
+        "phaseTimings": {
+          "Set up job": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Pre Monitor hosted runner (Community)": {
+            "seconds": 4.0,
+            "conclusion": "success"
+          },
+          "Monitor hosted runner (Community)": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Run sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6": {
+            "seconds": 3.0,
+            "conclusion": "success"
+          },
+          "Run ./.github/actions/setup-nix": {
+            "seconds": 24.0,
+            "conclusion": "success"
+          },
+          "Read checked publication admission policy": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Resolve declared read-only authority App credentials": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Generate short-lived read-only authority token": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Clear App private credentials": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Authenticate native evidence and human admission before signing credentials": {
+            "seconds": 43.0,
+            "conclusion": "success"
+          },
+          "Prepare pinned scoped credential resolver": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Sign the independently scanned immutable digest": {
+            "seconds": 7.0,
+            "conclusion": "success"
+          },
+          "Post Generate short-lived read-only authority token": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Post Run ./.github/actions/setup-nix": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Post Monitor hosted runner (Community)": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Complete job": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          }
+        }
+      },
+      {
+        "id": 120580728713,
+        "name": "Publish (finite-dev) / preflight",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39997829647,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T18:18:01Z",
+        "started_at": "2026-10-23T18:18:04Z",
+        "completed_at": "2026-10-23T18:18:52Z",
+        "runner_name": "GitHub Actions 1000016222",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runnerSeconds": 48.0,
+        "queueSeconds": 3.0,
+        "phaseTimings": {
+          "Set up job": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Pre Monitor hosted runner (Community)": {
+            "seconds": 4.0,
+            "conclusion": "success"
+          },
+          "Monitor hosted runner (Community)": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Run ./.github/actions/setup-nix": {
+            "seconds": 23.0,
+            "conclusion": "success"
+          },
+          "Reject obsolete publication before VM work": {
+            "seconds": 15.0,
+            "conclusion": "success"
+          },
+          "Post Run ./.github/actions/setup-nix": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Post Monitor hosted runner (Community)": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Complete job": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          }
+        }
+      },
+      {
+        "id": 120581127178,
+        "name": "Publish (finite-dev) / qualification / prepare",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39997829647,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T18:18:52Z",
+        "started_at": "2026-10-23T18:18:55Z",
+        "completed_at": "2026-10-23T18:20:00Z",
+        "runner_name": "GitHub Actions 1000016223",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runnerSeconds": 65.0,
+        "queueSeconds": 3.0,
+        "phaseTimings": {
+          "Set up job": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Run ./.github/actions/setup-nix": {
+            "seconds": 22.0,
+            "conclusion": "success"
+          },
+          "Validate qualification execution context": {
+            "seconds": 11.0,
+            "conclusion": "success"
+          },
+          "Install context tools for the reuse pilot": {
+            "seconds": 4.0,
+            "conclusion": "success"
+          },
+          "Check exact qualification reuse": {
+            "seconds": 22.0,
+            "conclusion": "success"
+          },
+          "Post Run ./.github/actions/setup-nix": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Complete job": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          }
+        }
+      },
+      {
+        "id": 120581652870,
+        "name": "Publish (finite-dev) / qualification / phase (fresh)",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39997829647,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T18:20:00Z",
+        "started_at": "2026-10-23T18:20:03Z",
+        "completed_at": "2026-10-23T18:52:49Z",
+        "runner_name": "GitHub Actions 1000016224",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runnerSeconds": 1966.0,
+        "queueSeconds": 3.0,
+        "phaseTimings": {
+          "Set up job": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Run ./.github/actions/setup-nix": {
+            "seconds": 24.0,
+            "conclusion": "success"
+          },
+          "Validate qualification execution context": {
+            "seconds": 14.0,
+            "conclusion": "success"
+          },
+          "Run hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Run sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Install qualification tools": {
+            "seconds": 6.0,
+            "conclusion": "success"
+          },
+          "Qualify immutable candidate phase": {
+            "seconds": 1850.0,
+            "conclusion": "success"
+          },
+          "Record phase outcome": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Save phase evidence": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Preserve pristine qualified candidate ISO for the pilot": {
+            "seconds": 59.0,
+            "conclusion": "success"
+          },
+          "Post Run ./.github/actions/setup-nix": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Complete job": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          }
+        }
+      },
+      {
+        "id": 120581652958,
+        "name": "Publish (finite-dev) / qualification / phase (upgrade)",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39997829647,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T18:20:00Z",
+        "started_at": "2026-10-23T18:20:04Z",
+        "completed_at": "2026-10-23T18:53:02Z",
+        "runner_name": "GitHub Actions 1000016225",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runnerSeconds": 1978.0,
+        "queueSeconds": 4.0,
+        "phaseTimings": {
+          "Set up job": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Run ./.github/actions/setup-nix": {
+            "seconds": 24.0,
+            "conclusion": "success"
+          },
+          "Validate qualification execution context": {
+            "seconds": 14.0,
+            "conclusion": "success"
+          },
+          "Run hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Run sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Install qualification tools": {
+            "seconds": 5.0,
+            "conclusion": "success"
+          },
+          "Qualify immutable candidate phase": {
+            "seconds": 1925.0,
+            "conclusion": "success"
+          },
+          "Record phase outcome": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Save phase evidence": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Run ./.github/actions/setup-nix": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Complete job": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          }
+        }
+      },
+      {
+        "id": 120593008054,
+        "name": "Publish (finite) / qualification / aggregate",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39997829647,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T18:44:07Z",
+        "started_at": "2026-10-23T18:44:09Z",
+        "completed_at": "2026-10-23T18:44:58Z",
+        "runner_name": "GitHub Actions 1000016266",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runnerSeconds": 49.0,
+        "queueSeconds": 2.0,
+        "phaseTimings": {
+          "Set up job": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Run ./.github/actions/setup-nix": {
+            "seconds": 23.0,
+            "conclusion": "success"
+          },
+          "Validate qualification execution context": {
+            "seconds": 14.0,
+            "conclusion": "success"
+          },
+          "Collect and require every applicable qualification phase": {
+            "seconds": 3.0,
+            "conclusion": "success"
+          },
+          "Record qualification outcome": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Save qualification evidence": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Run ./.github/actions/setup-nix": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Complete job": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          }
+        }
+      },
+      {
+        "id": 120593408760,
+        "name": "Publish (finite) / promote",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39997829647,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T18:44:58Z",
+        "started_at": "2026-10-23T18:45:01Z",
+        "completed_at": "2026-10-23T18:46:52Z",
+        "runner_name": "GitHub Actions 1000016268",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runnerSeconds": 111.0,
+        "queueSeconds": 3.0,
+        "phaseTimings": {
+          "Set up job": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Pre Monitor hosted runner (Community)": {
+            "seconds": 4.0,
+            "conclusion": "success"
+          },
+          "Monitor hosted runner (Community)": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Run ./.github/actions/setup-nix": {
+            "seconds": 25.0,
+            "conclusion": "success"
+          },
+          "Read checked publication admission policy": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Resolve declared read-only authority App credentials": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Generate short-lived read-only authority token": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Clear App private credentials": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Download candidate and qualification evidence": {
+            "seconds": 5.0,
+            "conclusion": "success"
+          },
+          "Promote verified digest to public channels": {
+            "seconds": 63.0,
+            "conclusion": "success"
+          },
+          "Save promotion evidence": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Generate short-lived read-only authority token": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Run ./.github/actions/setup-nix": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Monitor hosted runner (Community)": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Complete job": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          }
+        }
+      },
+      {
+        "id": 120597167480,
+        "name": "Publish (finite-dev) / qualification / aggregate",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39997829647,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T18:53:02Z",
+        "started_at": "2026-10-23T18:53:05Z",
+        "completed_at": "2026-10-23T18:54:00Z",
+        "runner_name": "GitHub Actions 1000016276",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runnerSeconds": 55.0,
+        "queueSeconds": 3.0,
+        "phaseTimings": {
+          "Set up job": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 3.0,
+            "conclusion": "success"
+          },
+          "Run ./.github/actions/setup-nix": {
+            "seconds": 28.0,
+            "conclusion": "success"
+          },
+          "Validate qualification execution context": {
+            "seconds": 12.0,
+            "conclusion": "success"
+          },
+          "Collect and require every applicable qualification phase": {
+            "seconds": 4.0,
+            "conclusion": "success"
+          },
+          "Record qualification outcome": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Save qualification evidence": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Post Run ./.github/actions/setup-nix": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Complete job": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          }
+        }
+      },
+      {
+        "id": 120597618168,
+        "name": "Publish (finite-dev) / promote",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39997829647,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T18:54:01Z",
+        "started_at": "2026-10-23T18:54:03Z",
+        "completed_at": "2026-10-23T18:55:47Z",
+        "runner_name": "GitHub Actions 1000016277",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runnerSeconds": 104.0,
+        "queueSeconds": 2.0,
+        "phaseTimings": {
+          "Set up job": {
+            "seconds": 3.0,
+            "conclusion": "success"
+          },
+          "Pre Monitor hosted runner (Community)": {
+            "seconds": 3.0,
+            "conclusion": "success"
+          },
+          "Monitor hosted runner (Community)": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 2.0,
+            "conclusion": "success"
+          },
+          "Run ./.github/actions/setup-nix": {
+            "seconds": 22.0,
+            "conclusion": "success"
+          },
+          "Read checked publication admission policy": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Resolve declared read-only authority App credentials": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Generate short-lived read-only authority token": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Clear App private credentials": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Download candidate and qualification evidence": {
+            "seconds": 9.0,
+            "conclusion": "success"
+          },
+          "Promote verified digest to public channels": {
+            "seconds": 55.0,
+            "conclusion": "success"
+          },
+          "Save promotion evidence": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Generate short-lived read-only authority token": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Run ./.github/actions/setup-nix": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Post Monitor hosted runner (Community)": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Complete job": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          }
+        }
+      },
+      {
+        "id": 120598442133,
+        "name": "CI gate",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 39997829647,
+        "run_attempt": 1,
+        "head_sha": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+        "created_at": "2026-10-23T18:55:47Z",
+        "started_at": "2026-10-23T18:55:50Z",
+        "completed_at": "2026-10-23T18:55:58Z",
+        "runner_name": "GitHub Actions 1000016278",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runnerSeconds": 8.0,
+        "queueSeconds": 3.0,
+        "phaseTimings": {
+          "Set up job": {
+            "seconds": 1.0,
+            "conclusion": "success"
+          },
+          "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 3.0,
+            "conclusion": "success"
+          },
+          "Run python3 scripts/ci/gate.py": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          },
+          "Complete job": {
+            "seconds": 0.0,
+            "conclusion": "success"
+          }
+        }
+      }
+    ],
+    "runnerSeconds": 11105.0,
+    "queueSeconds": 75.0,
+    "complete": true,
+    "elapsedSeconds": 4169.0
+  },
+  "limitations": [
+    "One queue and one main workflow; no matched baseline or savings estimate.",
+    "Runner occupancy is not billed cost. Parallel phases are summed, not mistaken for wall time.",
+    "Independent CodeQL, authority, health and release workflows are outside these two workflow totals.",
+    "Predecessor ISO context misses reconstructed both profiles; compatible post-rollout restore remains unobserved.",
+    "A native GitHub artifact archive SHA-256 was checked before reading each reported acceptance archive.",
+    "Seven-day observation ends 2026-10-30T05:01:17Z; retained OCI export alternative remains unadopted."
+  ],
+  "hostedHealth": {
+    "repository": "closure-labs/finite",
+    "runId": 40007361246,
+    "runAttempt": 1,
+    "sourceRevision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+    "jobId": 120598562707,
+    "artifact": {
+      "id": 12523629620,
+      "sizeInBytes": 713,
+      "sha256": "335515775a9e5bc66a3bc2e5d5ab0207ded22fcee559e5479f8411bda5cebb86"
+    },
+    "report": {
+      "schema": 1,
+      "healthy": true,
+      "blockers": [],
+      "problems": [],
+      "channels": {
+        "finite": {
+          "qualified": {
+            "runId": 39997829647,
+            "revision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+            "completedAt": "2026-10-23T18:55:59Z"
+          },
+          "promoted": {
+            "runId": 39997829647,
+            "revision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+            "completedAt": "2026-10-23T18:55:59Z"
+          }
+        },
+        "finite-dev": {
+          "qualified": {
+            "runId": 39997829647,
+            "revision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+            "completedAt": "2026-10-23T18:55:59Z"
+          },
+          "promoted": {
+            "runId": 39997829647,
+            "revision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+            "completedAt": "2026-10-23T18:55:59Z"
+          }
+        }
+      },
+      "version": "0.8.3-dev",
+      "release": {
+        "state": "published",
+        "reason": "Both matching release inventories are public.",
+        "runUrl": "https://github.com/closure-labs/finite/actions/runs/39804082329/attempts/3",
+        "phase": null,
+        "proposalHash": "f8a490bcbd46fdc0d1a6fa105595422655a69daccddc92a4562bc55b24118cbd",
+        "identityRunAttempt": 2,
+        "uncorrelatedRuns": [
+          {
+            "runUrl": "https://github.com/closure-labs/finite/actions/runs/39695284971/attempts/1",
+            "reason": "Missing identity; inspect this legacy or starting publisher run; inspect identity and native producer."
+          },
+          {
+            "runUrl": "https://github.com/closure-labs/finite/actions/runs/39681408362/attempts/1",
+            "reason": "Missing identity; inspect this legacy or starting publisher run; inspect identity and native producer."
+          },
+          {
+            "runUrl": "https://github.com/closure-labs/finite/actions/runs/39680352658/attempts/1",
+            "reason": "Missing identity; inspect this legacy or starting publisher run; inspect identity and native producer."
+          }
+        ]
+      },
+      "buildRun": 39997829647,
+      "activeBuilds": []
+    }
+  },
+  "liveHealthDuringPromotion": {
+    "schema": 1,
+    "kind": "finite-read-only-health-observation",
+    "authorizesPublication": false,
+    "repository": "closure-labs/finite",
+    "sourceRevision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+    "observedAt": "2026-10-23T18:54:54.990362+00:00",
+    "execution": "local inspect() against live native API; no workflow dispatch or reconciliation",
+    "credentialPermissions": {
+      "contents": "read",
+      "pull_requests": "read",
+      "actions": "read"
+    },
+    "report": {
+      "schema": 1,
+      "healthy": false,
+      "blockers": [],
+      "problems": [
+        "Latest main build failed: Publish (finite) / build / build: Prepare candidate publication, Publish (finite-dev) / qualification / phase (upgrade): Qualify immutable candidate phase, CI gate: Run python3 scripts/ci/gate.py"
+      ],
+      "channels": {
+        "finite": {
+          "qualified": {
+            "runId": 39960735979,
+            "revision": "23c06c71c671106ae8ac7ea5112224c5c5d400be",
+            "completedAt": "2026-10-23T14:33:05Z"
+          },
+          "promoted": {
+            "runId": 39960735979,
+            "revision": "23c06c71c671106ae8ac7ea5112224c5c5d400be",
+            "completedAt": "2026-10-23T14:33:05Z"
+          }
+        },
+        "finite-dev": {
+          "qualified": {
+            "runId": 39960735979,
+            "revision": "23c06c71c671106ae8ac7ea5112224c5c5d400be",
+            "completedAt": "2026-10-23T14:33:05Z"
+          },
+          "promoted": {
+            "runId": 39960735979,
+            "revision": "23c06c71c671106ae8ac7ea5112224c5c5d400be",
+            "completedAt": "2026-10-23T14:33:05Z"
+          }
+        }
+      },
+      "version": "0.8.3-dev",
+      "release": {
+        "state": "published",
+        "reason": "Both matching release inventories are public.",
+        "runUrl": "https://github.com/closure-labs/finite/actions/runs/39804082329/attempts/3",
+        "phase": null,
+        "proposalHash": "f8a490bcbd46fdc0d1a6fa105595422655a69daccddc92a4562bc55b24118cbd",
+        "identityRunAttempt": 2,
+        "uncorrelatedRuns": [
+          {
+            "runUrl": "https://github.com/closure-labs/finite/actions/runs/39695284971/attempts/1",
+            "reason": "Missing identity; inspect this legacy or starting publisher run; inspect identity and native producer."
+          },
+          {
+            "runUrl": "https://github.com/closure-labs/finite/actions/runs/39681408362/attempts/1",
+            "reason": "Missing identity; inspect this legacy or starting publisher run; inspect identity and native producer."
+          },
+          {
+            "runUrl": "https://github.com/closure-labs/finite/actions/runs/39680352658/attempts/1",
+            "reason": "Missing identity; inspect this legacy or starting publisher run; inspect identity and native producer."
+          }
+        ]
+      },
+      "buildRun": null,
+      "activeBuilds": [
+        {
+          "runId": 39997829647,
+          "runAttempt": 1,
+          "revision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "status": "in_progress",
+          "failedPhases": [],
+          "runningPhases": [
+            "Publish (finite-dev) / promote"
+          ]
+        }
+      ]
+    }
+  },
+  "verification": {
+    "sourceAggregate": {
+      "runId": 39997829647,
+      "runAttempt": 1,
+      "jobId": 120566351221,
+      "sourceRevision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+      "result": "success",
+      "checks": [
+        "flake-input-boundary",
+        "payload-entry"
+      ]
+    },
+    "documentation": "bash tests/repository/text-style.sh",
+    "scope": "Evidence-only follow-up; executable code and locks unchanged."
+  }
+}
