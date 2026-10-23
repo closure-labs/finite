@@ -59,6 +59,17 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
 
 jobs:
+  vm-tools-benchmark:
+    name: VM tool provisioning trial
+    if: >-
+      github.event_name == 'pull_request' && github.repository == 'closure-labs/finite' &&
+      github.head_ref == 'perf/nix-vm-tools' &&
+      github.event.pull_request.head.repo.full_name == 'closure-labs/finite'
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/benchmark-vm-tools.yml
+
   impact:
     name: Select checks
     runs-on: ubuntu-24.04

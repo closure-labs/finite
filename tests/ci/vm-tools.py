@@ -143,6 +143,10 @@ class Measurements(unittest.TestCase):
 
     def test_complete_material_improvement_is_eligible(self):
         self.assertTrue(self.summarize()['faster'])
+        def reusable(reports, jobs):
+            for job in jobs:
+                job['name'] = 'VM tool provisioning trial / ' + job['name']
+        self.assertTrue(self.summarize(reusable)['faster'])
 
     def test_slow_or_marginal_nix_stays_draft(self):
         def slow(reports, jobs):

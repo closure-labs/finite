@@ -87,8 +87,9 @@ records the actual executable paths and hashes, package versions and firmware
 hashes; legacy apt contexts remain readable and different contexts cannot reuse
 qualification. Changing this tooling requires fresh VM evidence.
 
-**Benchmark VM tool provisioning** runs automatically for changes to its pilot
-inputs, including draft PRs. It compares the original apt command, apt without
+**Benchmark VM tool provisioning** is reusable and can run manually. Build Finite
+also invokes it for the dedicated `perf/nix-vm-tools` draft branch; ordinary PRs
+do not run this experiment. It compares the original apt command, apt without
 recommended packages and Nix, with three cold/warm repetitions per lane. All
 lanes start after the same Determinate and image-tool setup without an Actions
 store restore. Reports bind the exact checkout, proposal, locks, native run and

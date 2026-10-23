@@ -82,7 +82,8 @@ def summarize(directory, jobs_file, output):
         old = identities.setdefault(key[0], passes[0]['identity'])
         if old != passes[0]['identity']:
             raise ValueError('Tool or firmware identities differ within a lane')
-        matching = [job for job in jobs if job.get('name') == f'vm-tools-{key[0]}-{key[1]}']
+        name = f'vm-tools-{key[0]}-{key[1]}'
+        matching = [job for job in jobs if job.get('name') in (name, 'VM tool provisioning trial / ' + name)]
         if len(matching) != 1:
             raise ValueError('Missing or ambiguous native job')
         job = matching[0]

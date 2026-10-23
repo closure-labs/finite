@@ -1,15 +1,6 @@
 name: Benchmark VM tool provisioning
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
-    paths:
-      - .github/workflows/benchmark-vm-tools.yml
-      - .github/actions/setup-vm-tools/**
-      - scripts/ci/vm_tools.py
-      - scripts/ci/benchmark-vm-tools.py
-      - lib/vm-tools.nix
-      - lib/ci-tools.nix
-      - flake.lock
+  workflow_call:
   workflow_dispatch:
 permissions:
   contents: read
@@ -31,7 +22,8 @@ jobs:
     if: >-
       github.repository == 'closure-labs/finite' &&
       (github.event_name == 'workflow_dispatch' ||
-       github.event.pull_request.head.repo.full_name == 'closure-labs/finite')
+       (github.event_name == 'pull_request' && github.head_ref == 'perf/nix-vm-tools' &&
+        github.event.pull_request.head.repo.full_name == 'closure-labs/finite'))
     runs-on: ubuntu-24.04
     timeout-minutes: 70
     strategy:
@@ -82,7 +74,7 @@ jobs:
           retention-days: 14
   summarize:
     needs: benchmark
-    if: always() && github.repository == 'closure-labs/finite'
+    if: always() && github.repository == 'closure-labs/finite' && needs.benchmark.result != 'skipped'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
