@@ -6069,5 +6069,1887 @@
     "head": "a8f11dbdff0748c2e218d0c1075c0b4eab7592f0",
     "draft": true,
     "author": "cl-decider[bot]"
+  },
+  "continuation": {
+    "observedAt": "2026-10-23T06:27:46.175271+00:00",
+    "collectorRevision": "09721bdc55b7c734f13ede71f3876f84eece5c6e",
+    "authorizesPublication": false,
+    "productionVmTools": {
+      "schema": 1,
+      "kind": "finite-vm-tools-production-rollout",
+      "repository": "closure-labs/finite",
+      "observedAt": "2026-10-23T05:04:46.192279+00:00",
+      "sourceRevision": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+      "runId": 39900028671,
+      "runAttempt": 1,
+      "jobId": 120249676294,
+      "profile": "finite",
+      "runUrl": "https://github.com/closure-labs/finite/actions/runs/39900028671",
+      "jobUrl": "https://github.com/closure-labs/finite/actions/runs/39900028671/job/120249676294",
+      "rolloutAt": "2026-10-23T05:01:17Z",
+      "candidateDigest": "sha256:1c5a6d2969165273a856c0505ea1abcd2abd69fbf1fefce95139662dde40bb75",
+      "buildIdentity": "v1:f112dc5360901c29f3ce3c9cac5bae9993c700e777386f77f0a140d83dc27d6c",
+      "runnerToolCohort": {
+        "runnerImage": "20261012.334.1",
+        "provider": "nix",
+        "manifest": "/nix/store/abnq92gki83dbzv2i202mqhgyfaniz98-finite-ci-vm-tools/share/finite-vm/toolchain.json",
+        "qemu": "10.2.4",
+        "skopeo": "1.22.2",
+        "xorriso": "1.5.6",
+        "openssl": "3.6.4"
+      },
+      "retainedLogSha256": "b62fd6d65a209b0cf06e3873f072a1e7aaefb39e9befe92603ddbd19d515c2c5",
+      "qualificationRunStatus": "in_progress",
+      "observationVariable": {
+        "name": "FINITE_CI_AUDIT_ROLLOUT",
+        "value": "2026-10-23T05:01:17Z"
+      },
+      "authorizesPublication": false
+    },
+    "foundationReleasePreparation": {
+      "number": 12,
+      "url": "https://github.com/closure-labs/foundation/pull/12",
+      "head": "f9d56cd9633e8d60adbbc1ea6df8a863b6f371e9",
+      "draft": false,
+      "author": "cl-decider[bot]"
+    },
+    "foundationHostedValidation": {
+      "id": 39902662603,
+      "run_attempt": 1,
+      "head_sha": "f9d56cd9633e8d60adbbc1ea6df8a863b6f371e9",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/closure-labs/foundation/actions/runs/39902662603"
+    },
+    "foundationCandidateArchive": {
+      "schema": 1,
+      "kind": "foundation-release-candidate-archive",
+      "repository": "closure-labs/foundation",
+      "sourceRevision": "f9d56cd9633e8d60adbbc1ea6df8a863b6f371e9",
+      "version": "0.3.1",
+      "archiveSha256": "a7e7cd400f5401f89c734f81de0abbd2b8f6e815b55c86d11d64b24c1c55f2d6",
+      "archiveBytes": 190443,
+      "helperSha256": "6160cbd95e69be0dd4ca0791d29f20530e94b2a7fab95bcd0b51455e4498296c",
+      "dependenciesEqualPublishedVersion": "0.3.0",
+      "authorizesPublication": false,
+      "compression": "gzip 1.14 / -n, matching release workflow"
+    },
+    "hardenedHelperOriginalFailure": {
+      "schema": 1,
+      "kind": "finite-original-download-classification",
+      "repository": "closure-labs/finite",
+      "runId": 39891524132,
+      "runAttempt": 1,
+      "jobId": 120216173497,
+      "sourceRevision": "059e77b178d31b74d66471f11775b6f82bd3518c",
+      "candidateDigest": "sha256:190c26d14e736fe0bdef4546fd94a132e0186acf53bbf2095dee4fe68d1e9760",
+      "helperRevision": "f9d56cd9633e8d60adbbc1ea6df8a863b6f371e9",
+      "helperSha256": "6160cbd95e69be0dd4ca0791d29f20530e94b2a7fab95bcd0b51455e4498296c",
+      "capturedLogSha256": "40807d1f703b60d18aca48a58bb416c4dc843278ac7ea0763098bb77e9b6976c",
+      "retryable": true,
+      "authorizesPublication": false
+    },
+    "hardenedHelperFixture": {
+      "schema": 1,
+      "kind": "nix-interrupted-download-fixture",
+      "repository": "closure-labs/foundation",
+      "sourceRevision": "4f14057d7bdf6d81ffee970ec619dadbd087e1ae",
+      "workingHelperSha256": "6160cbd95e69be0dd4ca0791d29f20530e94b2a7fab95bcd0b51455e4498296c",
+      "runner": {
+        "system": "Linux",
+        "machine": "x86_64"
+      },
+      "authorizesPublication": false,
+      "nixVersion": "nix (Determinate Nix 3.23.3) 2.35.3",
+      "command": [
+        "nix",
+        "--extra-experimental-features",
+        "nix-command",
+        "store",
+        "prefetch-file",
+        "--store",
+        "local?root=/tmp/foundation-download-p1vmab2a",
+        "--json",
+        "loopback fixture URL"
+      ],
+      "bodySha256": "f33bf62ebaecc96a93172d4e70a4866e26b0c5ce2f2d45c4f270961f606505ad",
+      "bodyBytes": 2900000,
+      "requests": [
+        {
+          "range": null,
+          "path": "/fixture",
+          "status": 200,
+          "bytesSent": 1450000
+        },
+        {
+          "range": "bytes=1450000-",
+          "path": "/fixture",
+          "status": 416
+        },
+        {
+          "range": null,
+          "path": "/fixture",
+          "status": 200,
+          "bytesSent": 2900000
+        }
+      ],
+      "trials": [
+        {
+          "attempt": 1,
+          "seconds": 0.09411424100107979,
+          "status": 1,
+          "stdout": "",
+          "stderr": "warning: unable to download 'http://127.0.0.1:45983/fixture': HTTP error 200 (curl error: Transferred a partial file); retrying from offset 1450000 in 57 ms (attempt 1/5)\nerror: unable to download 'http://127.0.0.1:45983/fixture': HTTP error 416\n"
+        },
+        {
+          "attempt": 2,
+          "seconds": 0.039012604000163265,
+          "status": 0,
+          "stdout": "{\"hash\":\"sha256-8zv2LrrsyWqTFy1OcKSGbiawxc4vLUXE8nCWH2BlBa0=\",\"storePath\":\"/nix/store/zzhh073agjbk5lsb8h3lcqzplry5wmyv-fixture\"}\n",
+          "stderr": ""
+        }
+      ],
+      "recovery": {
+        "seconds": 2.1160800569996354,
+        "result": {
+          "hash": "sha256-8zv2LrrsyWqTFy1OcKSGbiawxc4vLUXE8nCWH2BlBa0=",
+          "storePath": "/nix/store/zzhh073agjbk5lsb8h3lcqzplry5wmyv-fixture"
+        },
+        "requests": [
+          {
+            "range": null,
+            "path": "/fixture",
+            "status": 200,
+            "bytesSent": 1450000
+          },
+          {
+            "range": "bytes=1450000-",
+            "path": "/fixture",
+            "status": 416
+          },
+          {
+            "range": null,
+            "path": "/fixture",
+            "status": 200,
+            "bytesSent": 2900000
+          }
+        ]
+      },
+      "verifiedHelperRevision": "f9d56cd9633e8d60adbbc1ea6df8a863b6f371e9",
+      "verification": "Working helper SHA-256 matches the helper in the immutable candidate archive."
+    },
+    "health": {
+      "schema": 1,
+      "kind": "finite-audit-health-observation",
+      "repository": "closure-labs/finite",
+      "observedAt": "2026-10-23T05:47:21.890129+00:00",
+      "sourceRevision": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+      "collectorRevision": "09721bdc55b7c734f13ede71f3876f84eece5c6e",
+      "runnerToolCohort": "workstation / read-only installation token / native GitHub API",
+      "authorizesPublication": false,
+      "health": {
+        "schema": 1,
+        "healthy": true,
+        "blockers": [],
+        "problems": [],
+        "channels": {
+          "finite": {
+            "qualified": {
+              "runId": 39900028671,
+              "revision": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+              "completedAt": "2026-10-23T05:45:24Z"
+            },
+            "promoted": {
+              "runId": 39900028671,
+              "revision": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+              "completedAt": "2026-10-23T05:45:24Z"
+            }
+          },
+          "finite-dev": {
+            "qualified": {
+              "runId": 39900028671,
+              "revision": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+              "completedAt": "2026-10-23T05:45:24Z"
+            },
+            "promoted": {
+              "runId": 39900028671,
+              "revision": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+              "completedAt": "2026-10-23T05:45:24Z"
+            }
+          }
+        },
+        "version": "0.8.3-dev",
+        "release": {
+          "state": "published",
+          "reason": "Both matching release inventories are public.",
+          "runUrl": "https://github.com/closure-labs/finite/actions/runs/39804082329/attempts/3",
+          "phase": null,
+          "proposalHash": "f8a490bcbd46fdc0d1a6fa105595422655a69daccddc92a4562bc55b24118cbd",
+          "identityRunAttempt": 2,
+          "uncorrelatedRuns": [
+            {
+              "runUrl": "https://github.com/closure-labs/finite/actions/runs/39695284971/attempts/1",
+              "reason": "Missing identity; inspect this legacy or starting publisher run; inspect identity and native producer."
+            },
+            {
+              "runUrl": "https://github.com/closure-labs/finite/actions/runs/39681408362/attempts/1",
+              "reason": "Missing identity; inspect this legacy or starting publisher run; inspect identity and native producer."
+            },
+            {
+              "runUrl": "https://github.com/closure-labs/finite/actions/runs/39680352658/attempts/1",
+              "reason": "Missing identity; inspect this legacy or starting publisher run; inspect identity and native producer."
+            }
+          ]
+        },
+        "buildRun": 39900028671
+      }
+    },
+    "dispatch1056Final": {
+      "runId": 39895945016,
+      "runAttempt": 1,
+      "sourceRevision": "059e77b178d31b74d66471f11775b6f82bd3518c",
+      "profile": "finite-dev",
+      "conclusion": "failure",
+      "failedJobId": 120242388752,
+      "phase": "qualification / aggregate",
+      "reason": "Main changed release inputs; stop obsolete qualification work",
+      "fresh": "success",
+      "upgrade": "success",
+      "promotion": "skipped"
+    },
+    "developerProductionVmTools": {
+      "schema": 1,
+      "kind": "finite-vm-tools-production-rollout",
+      "repository": "closure-labs/finite",
+      "observedAt": "2026-10-23T05:13:12.193784+00:00",
+      "sourceRevision": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+      "runId": 39900028671,
+      "runAttempt": 1,
+      "jobId": 120252764021,
+      "profile": "finite-dev",
+      "runUrl": "https://github.com/closure-labs/finite/actions/runs/39900028671",
+      "jobUrl": "https://github.com/closure-labs/finite/actions/runs/39900028671/job/120252764021",
+      "rolloutAt": "2026-10-23T05:01:17Z",
+      "candidateDigest": "sha256:00d985793a8e34bda2a1129a3a3dec54a07c1585704e6ad065fde1abcf7c9b71",
+      "buildIdentity": "v1:c5a661622fbacdf96897665ee7eeba09a0875b72e58e4599f83cc5efd00bf84c",
+      "runnerToolCohort": {
+        "runnerImage": "20261012.334.1",
+        "provider": "nix",
+        "manifest": "/nix/store/abnq92gki83dbzv2i202mqhgyfaniz98-finite-ci-vm-tools/share/finite-vm/toolchain.json",
+        "qemu": "10.2.4",
+        "skopeo": "1.22.2",
+        "xorriso": "1.5.6",
+        "openssl": "3.6.4"
+      },
+      "retainedLogSha256": "1c2b944b20f47aac35d669acf4191a37f4de85f51aabe5e30f16b7439d5e6318",
+      "qualificationRunStatus": "in_progress",
+      "observationVariable": {
+        "name": "FINITE_CI_AUDIT_ROLLOUT",
+        "value": "2026-10-23T05:01:17Z"
+      },
+      "authorizesPublication": false,
+      "toolRealizedAt": "2026-10-23T05:11:51Z"
+    },
+    "finitePrValidation": {
+      "observedAt": "2026-10-23T05:17:10.709463+00:00",
+      "runId": 39900947347,
+      "runAttempt": 1,
+      "headRevision": "09721bdc55b7c734f13ede71f3876f84eece5c6e",
+      "standard": {
+        "schema": 1,
+        "kind": "finite-pr-validation-audit",
+        "repository": "closure-labs/finite",
+        "runId": 39900947347,
+        "runAttempt": 1,
+        "headRevision": "09721bdc55b7c734f13ede71f3876f84eece5c6e",
+        "jobId": 120244000085,
+        "profile": "finite",
+        "artifact": {
+          "id": 12480237295,
+          "node_id": "MDg6QXJ0aWZhY3QxMjQ4MDIzNzI5NQ==",
+          "name": "image-finite-39900947347-1",
+          "size_in_bytes": 125594,
+          "url": "https://api.github.com/repos/closure-labs/finite/actions/artifacts/12480237295",
+          "archive_download_url": "https://api.github.com/repos/closure-labs/finite/actions/artifacts/12480237295/zip",
+          "expired": false,
+          "digest": "sha256:b3b2e290247fd162bf75c35453f2d15079aec42589052ba2a1d0c236ec12d1b8",
+          "created_at": "2026-10-23T05:12:14Z",
+          "updated_at": "2026-10-23T05:12:14Z",
+          "expires_at": "2026-11-06T05:12:13Z",
+          "workflow_run": {
+            "id": 39900947347,
+            "repository_id": 1293375784,
+            "head_repository_id": 1293375784,
+            "head_branch": "audit/ci-reliability-and-cost",
+            "head_sha": "09721bdc55b7c734f13ede71f3876f84eece5c6e"
+          }
+        },
+        "acceptance": {
+          "vm-local/acceptance.json": {
+            "source": "local-image@sha256:e3c7a7a9169916f6a183ffee66b645c4158454d6f67dd943da0f46042ecfc175",
+            "profile": "finite",
+            "secureBoot": true,
+            "encryptedRoot": true,
+            "accepted": true,
+            "validationOnly": true
+          },
+          "vm-local/initialized-home.json": {
+            "schema": 1,
+            "status": "pass",
+            "checks": {
+              "nixState": true,
+              "homeCustomization": true
+            },
+            "customizationSha256": "08c3ce32ea49e4dbed38ad51074ed364f1d3b8232fa49e02c99a2d0946ffd902"
+          }
+        },
+        "authorizesPublication": false
+      },
+      "developer": {
+        "schema": 1,
+        "kind": "finite-pr-validation-audit",
+        "repository": "closure-labs/finite",
+        "runId": 39900947347,
+        "runAttempt": 1,
+        "headRevision": "09721bdc55b7c734f13ede71f3876f84eece5c6e",
+        "jobId": 120243999964,
+        "profile": "finite-dev",
+        "artifact": {
+          "id": 12480478501,
+          "node_id": "MDg6QXJ0aWZhY3QxMjQ4MDQ3ODUwMQ==",
+          "name": "image-finite-dev-39900947347-1",
+          "size_in_bytes": 134123,
+          "url": "https://api.github.com/repos/closure-labs/finite/actions/artifacts/12480478501",
+          "archive_download_url": "https://api.github.com/repos/closure-labs/finite/actions/artifacts/12480478501/zip",
+          "expired": false,
+          "digest": "sha256:82a9b736cd83e581cb6520dcdb19f5e2b8ba34e0c2153f92af96e3f047dfb882",
+          "created_at": "2026-10-23T05:26:40Z",
+          "updated_at": "2026-10-23T05:26:40Z",
+          "expires_at": "2026-11-06T05:26:39Z",
+          "workflow_run": {
+            "id": 39900947347,
+            "repository_id": 1293375784,
+            "head_repository_id": 1293375784,
+            "head_branch": "audit/ci-reliability-and-cost",
+            "head_sha": "09721bdc55b7c734f13ede71f3876f84eece5c6e"
+          }
+        },
+        "acceptance": {
+          "vm-local/acceptance.json": {
+            "source": "local-image@sha256:38bb40ba9241375b0813be476c557923485d98e832b7d32b5489a176933a4e6d",
+            "profile": "finite-dev",
+            "secureBoot": true,
+            "encryptedRoot": true,
+            "accepted": true,
+            "validationOnly": true
+          },
+          "vm-local/initialized-home.json": {
+            "schema": 1,
+            "status": "pass",
+            "checks": {
+              "nixState": true,
+              "homeCustomization": true
+            },
+            "customizationSha256": "08c3ce32ea49e4dbed38ad51074ed364f1d3b8232fa49e02c99a2d0946ffd902"
+          }
+        },
+        "authorizesPublication": false
+      },
+      "authorizesPublication": false
+    },
+    "productionCompletion": {
+      "run": {
+        "id": 39900028671,
+        "run_attempt": 1,
+        "head_sha": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+        "event": "push",
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/closure-labs/finite/actions/runs/39900028671"
+      },
+      "jobs": [
+        {
+          "id": 120242636047,
+          "name": "Select checks",
+          "run_attempt": 1,
+          "head_sha": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+          "conclusion": "success"
+        },
+        {
+          "id": 120242636529,
+          "name": "Documentation checks",
+          "run_attempt": 1,
+          "head_sha": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+          "conclusion": "success"
+        },
+        {
+          "id": 120242637365,
+          "name": "VM tool provisioning trial",
+          "run_attempt": 1,
+          "head_sha": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+          "conclusion": "skipped"
+        },
+        {
+          "id": 120242975503,
+          "name": "Nix and runtime contracts",
+          "run_attempt": 1,
+          "head_sha": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+          "conclusion": "success"
+        },
+        {
+          "id": 120244696814,
+          "name": "Publish (finite-dev) / build / build",
+          "run_attempt": 1,
+          "head_sha": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+          "conclusion": "success"
+        },
+        {
+          "id": 120244696978,
+          "name": "Publish (finite) / build / build",
+          "run_attempt": 1,
+          "head_sha": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+          "conclusion": "success"
+        },
+        {
+          "id": 120244698012,
+          "name": "Validate (${{ matrix.profile }})",
+          "run_attempt": 1,
+          "head_sha": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+          "conclusion": "skipped"
+        },
+        {
+          "id": 120246495510,
+          "name": "Publish (finite) / security",
+          "run_attempt": 1,
+          "head_sha": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+          "conclusion": "success"
+        },
+        {
+          "id": 120246540143,
+          "name": "Publish (finite-dev) / security",
+          "run_attempt": 1,
+          "head_sha": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+          "conclusion": "success"
+        },
+        {
+          "id": 120248803766,
+          "name": "Publish (finite) / attest / attest",
+          "run_attempt": 1,
+          "head_sha": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+          "conclusion": "success"
+        },
+        {
+          "id": 120249115129,
+          "name": "Publish (finite) / sign",
+          "run_attempt": 1,
+          "head_sha": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+          "conclusion": "success"
+        },
+        {
+          "id": 120249447071,
+          "name": "Publish (finite) / preflight",
+          "run_attempt": 1,
+          "head_sha": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+          "conclusion": "success"
+        },
+        {
+          "id": 120249676294,
+          "name": "Publish (finite) / qualification / prepare",
+          "run_attempt": 1,
+          "head_sha": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+          "conclusion": "success"
+        },
+        {
+          "id": 120250030961,
+          "name": "Publish (finite) / qualification / phase (upgrade)",
+          "run_attempt": 1,
+          "head_sha": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+          "conclusion": "success"
+        },
+        {
+          "id": 120250031114,
+          "name": "Publish (finite) / qualification / phase (fresh)",
+          "run_attempt": 1,
+          "head_sha": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+          "conclusion": "success"
+        },
+        {
+          "id": 120251652590,
+          "name": "Publish (finite-dev) / attest / attest",
+          "run_attempt": 1,
+          "head_sha": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+          "conclusion": "success"
+        },
+        {
+          "id": 120252129734,
+          "name": "Publish (finite-dev) / sign",
+          "run_attempt": 1,
+          "head_sha": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+          "conclusion": "success"
+        },
+        {
+          "id": 120252528913,
+          "name": "Publish (finite-dev) / preflight",
+          "run_attempt": 1,
+          "head_sha": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+          "conclusion": "success"
+        },
+        {
+          "id": 120252764021,
+          "name": "Publish (finite-dev) / qualification / prepare",
+          "run_attempt": 1,
+          "head_sha": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+          "conclusion": "success"
+        },
+        {
+          "id": 120253048038,
+          "name": "Publish (finite-dev) / qualification / phase (fresh)",
+          "run_attempt": 1,
+          "head_sha": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+          "conclusion": "success"
+        },
+        {
+          "id": 120253048101,
+          "name": "Publish (finite-dev) / qualification / phase (upgrade)",
+          "run_attempt": 1,
+          "head_sha": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+          "conclusion": "success"
+        },
+        {
+          "id": 120258938660,
+          "name": "Publish (finite) / qualification / aggregate",
+          "run_attempt": 1,
+          "head_sha": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+          "conclusion": "success"
+        },
+        {
+          "id": 120259197416,
+          "name": "Publish (finite) / promote",
+          "run_attempt": 1,
+          "head_sha": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+          "conclusion": "success"
+        },
+        {
+          "id": 120262024724,
+          "name": "Publish (finite-dev) / qualification / aggregate",
+          "run_attempt": 1,
+          "head_sha": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+          "conclusion": "success"
+        },
+        {
+          "id": 120262242979,
+          "name": "Publish (finite-dev) / promote",
+          "run_attempt": 1,
+          "head_sha": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+          "conclusion": "success"
+        },
+        {
+          "id": 120262730612,
+          "name": "CI gate",
+          "run_attempt": 1,
+          "head_sha": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+          "conclusion": "success"
+        }
+      ],
+      "qualification": {
+        "finite": {
+          "schema": 1,
+          "kind": "finite-production-qualification-audit",
+          "repository": "closure-labs/finite",
+          "runId": 39900028671,
+          "runAttempt": 1,
+          "profile": "finite",
+          "sourceRevision": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+          "artifact": {
+            "id": 12480439484,
+            "node_id": "MDg6QXJ0aWZhY3QxMjQ4MDQzOTQ4NA==",
+            "name": "qualification-finite-39900028671-1",
+            "size_in_bytes": 597754,
+            "url": "https://api.github.com/repos/closure-labs/finite/actions/artifacts/12480439484",
+            "archive_download_url": "https://api.github.com/repos/closure-labs/finite/actions/artifacts/12480439484/zip",
+            "expired": false,
+            "digest": "sha256:f52235072502ea2fe3ba42b2fcc98642bbc145b140e66a484b0620f70a580bb6",
+            "created_at": "2026-10-23T05:33:02Z",
+            "updated_at": "2026-10-23T05:33:02Z",
+            "expires_at": "2027-01-21T04:23:07Z",
+            "workflow_run": {
+              "id": 39900028671,
+              "repository_id": 1293375784,
+              "head_repository_id": 1293375784,
+              "head_branch": "main",
+              "head_sha": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07"
+            }
+          },
+          "acceptance": {
+            "schema": 2,
+            "candidate": "ghcr.io/closure-labs/finite@sha256:1c5a6d2969165273a856c0505ea1abcd2abd69fbf1fefce95139662dde40bb75",
+            "previousDigest": "sha256:44afeff1c077bc5a7b2f176398c44ea0c6b7946c5c5029dcdc910240d528857f",
+            "profile": "finite",
+            "revision": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+            "sourceRevision": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+            "buildIdentity": "v1:f112dc5360901c29f3ce3c9cac5bae9993c700e777386f77f0a140d83dc27d6c",
+            "secureBoot": true,
+            "encryptedRoot": true,
+            "accepted": true,
+            "bootstrap": false,
+            "qualifiedAt": "2026-10-23T05:33:00.902034+00:00",
+            "qualificationContext": {
+              "schema": 2,
+              "platform": "linux/amd64",
+              "runner": "ubuntu-24.04",
+              "inputs": {
+                ".github/actions/setup-vm-tools/action.yml": {
+                  "sha256": "81591b5c1f412aef315e8adb267bdba2c10fc9c4a853b32bff3c437d37ec028f",
+                  "executable": false,
+                  "symlink": null
+                },
+                ".github/workflows/iso.yml": {
+                  "sha256": "b9ea81f56dddb0df48d387865cfd932937a8999b04e4d8083ca69fa0c0d49636",
+                  "executable": false,
+                  "symlink": null
+                },
+                ".github/workflows/qualification.yml": {
+                  "sha256": "0e63acdb742e849169af86dc9e2605fb3e5f1418fbc199c5e2540b16e3e9228f",
+                  "executable": false,
+                  "symlink": null
+                },
+                ".github/workflows/vm-acceptance.yml": {
+                  "sha256": "77a860bcd94c5c759a4c1e54d1be0c0ad4bd6c3124a93fecc3d52fd5f6463f02",
+                  "executable": false,
+                  "symlink": null
+                },
+                "cosign.pub": {
+                  "sha256": "4c3e7170f82faac86eec0b533269bb78ab671e3373a10bd01137f6108f04e978",
+                  "executable": false,
+                  "symlink": null
+                },
+                "files/installer/Containerfile": {
+                  "sha256": "f39c57075b5dde85874f33bab1d2e48901798c55610b2fc457e0cdc9585f1dba",
+                  "executable": false,
+                  "symlink": null
+                },
+                "files/installer/install_finite_fstab": {
+                  "sha256": "bd66b50f7622b4927477c19be5a25d5616d59d9d11339cd21e106318046b7ffe",
+                  "executable": false,
+                  "symlink": null
+                },
+                "files/installer/secure-boot.pem": {
+                  "sha256": "fae407e7d3b55087dc2c56d79904dd7547d96ce76d9ef78940d7eaea7c45968b",
+                  "executable": false,
+                  "symlink": null
+                },
+                "lib/vm-tools.nix": {
+                  "sha256": "9c956e9c294d7e9ea401d2c793493a98f4589b75a7b8d2e808807ebac721cb75",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/audit-published.sh": {
+                  "sha256": "faf39d702ffa17a123947cf42745fce6d4f4d3a20ba290951abea71ca0b95256",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/build.sh": {
+                  "sha256": "2f916a4f6d13cdc253f9b146f8e2b1d6bd59510800e38c4e7dae79d6bd1e188c",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/check-vm-desktop.py": {
+                  "sha256": "d004aaad0f0bc963c01770031d284e50845e8b4c428f2ab04490d012755b4517",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/check-vm-encryption.sh": {
+                  "sha256": "02f341b8829997fa71214c58a37854b201cc08cd3f9e6ba68c17146a338377fc",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/check-vm-gdm-labels.sh": {
+                  "sha256": "550b5f4da6facef99ded2bab9c2b6d7ddc292dffdace83c200eac23ad24bfa79",
+                  "executable": true,
+                  "symlink": null
+                },
+                "scripts/bluebuild/check-vm-mok.sh": {
+                  "sha256": "1119d3fcf7683761da65f6a63445ccdcf0ef7c24f9d789697befa99b3219fb4b",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/check-vm-security.sh": {
+                  "sha256": "8c46c46e849c9de570998bffdd04fa9df9fef81c9ebd8dd0445a13468d0619c0",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/check-vm-user-labels.sh": {
+                  "sha256": "df632dad37bfa706ff48212e7fa97ab8912acddec040675cbf141dcfba99f0b4",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/desktop-qualification.py": {
+                  "sha256": "27b01646d1763cf84a4f8b736fab304ba9dd9c8d81a80b5a9827867674948d18",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/inspect-built.sh": {
+                  "sha256": "bd6294bc403b00299c0082deda2cfa30d30d749395386a4f1cdd6676502ac7ee",
+                  "executable": true,
+                  "symlink": null
+                },
+                "scripts/bluebuild/install-cli.sh": {
+                  "sha256": "25de8cf3c68c2489f330ae8b1f4e8574f7a36e58bb023946ff4eb400bcbea175",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/iso.sh": {
+                  "sha256": "7dacd2c20e877764ac32543be4f04d5dcfd64acb0a6256b174828d9af933907b",
+                  "executable": true,
+                  "symlink": null
+                },
+                "scripts/bluebuild/local-vm.sh": {
+                  "sha256": "2624751fba47605cec8bedafda300fea113d909a432dc42de412928086c24240",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/measure.py": {
+                  "sha256": "480a45d9c121b14c1bdcde33fc8a0d8f3869ff3e136d1488184acf6be4a6e37f",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/prepare-installer.sh": {
+                  "sha256": "75bdb1675d0d860672915bd9c028e524e13161686405de7f668c8d3bbd3a1c3d",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/prepare-vm-firmware.sh": {
+                  "sha256": "394605e9d90e5d1997662fe34d3aa18538f15a6200755d9840b7328bcdef15d9",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/prepare-vm-iso.sh": {
+                  "sha256": "5948e58c52bfaa23bc1eb3bb14f3c185a87fd6545b0026f1ad4774a43a9f1c82",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/prepare-vm-predecessor-home.sh": {
+                  "sha256": "e5fb3e10813bbd55528023b3d4dc564935c38c47afec127562d202ab531d58da",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/prepare-vm-predecessor-policy.sh": {
+                  "sha256": "e0ef3a8828e2af6811288988fa02fe77e09517c688c44789e34c5c2ad3386d72",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/prune-qualified-isos.py": {
+                  "sha256": "d48cd1226f73061f1bb51da304a034a14d7457b7d9b051f1ee9be009ecf150e9",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/publication-current.py": {
+                  "sha256": "b30f426c7ac1a3744feb4dd1148a0ab1c444d61dc2b4b0c01d084ebe69017a4f",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/publication.py": {
+                  "sha256": "d927cd33e500b93cce6a81f159e2967164dd0f27f86a6a40c7483e4e7b6be643",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/qualification-context.py": {
+                  "sha256": "78dc0ff03b878fa3b306915c1b3a4005da5346ecaa166e734b1d2834f5beb503",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/qualification-preflight.py": {
+                  "sha256": "58b95b9d2c0ee4beba19697b4fcf7957504b612db6478523eecaf61774b12cda",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/qualify.sh": {
+                  "sha256": "f5a319874799d96350caf4565f04d711f58c8b3b99cd206862a1db3a22af40e1",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/redact-vm-logs.py": {
+                  "sha256": "7229e47ab92205bc03b3c92e397808b8cfb2a4c9a26f4ec67c05470840b401a2",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/release-evidence.py": {
+                  "sha256": "c0ab919481aa51d6fef9c5b0e6d38124fec763de7d420140b3f758429644b9a5",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/reuse-predecessor-iso.py": {
+                  "sha256": "5fd4e483b0c3ce0b15ec7ab1de161e9116abda6d1194484649dacef3261b6a46",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/reuse-qualification.py": {
+                  "sha256": "8a0487a36325fcbc4672db323df41d5d1cdd894f1448b3bee616e64acc6efb37",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/security-policy.py": {
+                  "sha256": "9e952a19bebe7f635dda7412217ba04557e08a665fbdd1cbed6ff62d5a6b1faa",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/security-run.sh": {
+                  "sha256": "06685e418de2f71966396b84765fdca84036e4142242718521d1601f78a32e41",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/security-scan.py": {
+                  "sha256": "9bb01847fd968318b2a39ec4f28d77f5fd7ecb6ec50f37981659d750a93a2ea1",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/sign-release.sh": {
+                  "sha256": "cd6655fcfef0dec8f1a1dc5282badaa55f15d8c0e6f754e974fae5e81f3acf56",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/stage.sh": {
+                  "sha256": "d1a67d007289fe43482a46b3153a00e03399d00c68d3fc5fbbb85d53a67ad5d5",
+                  "executable": true,
+                  "symlink": null
+                },
+                "scripts/bluebuild/unlock-vm.py": {
+                  "sha256": "30fa4a80726cc13d2e3ad159456b70074414b7bd5618301d75cffee73b55557b",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/verify-image.sh": {
+                  "sha256": "50eec3340e2af9cd218ac3e3eed3a90af55b0e43d4e46bfb5241396e914fa5a5",
+                  "executable": true,
+                  "symlink": null
+                },
+                "scripts/bluebuild/vm-acceptance.sh": {
+                  "sha256": "0af9ae258c86a953057e30c758e0f5362a3d5a7e3560960b0b7ab6859e88f217",
+                  "executable": true,
+                  "symlink": null
+                },
+                "scripts/bluebuild/vm-diagnostics.sh": {
+                  "sha256": "4b3d0adaecbfba3a13545af7787c1801445515d8b87f895c60931e495d96191e",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/vm-upgrade.py": {
+                  "sha256": "cf52271fb9bd4cfabe54bf25c881150ffea2bdb604fa9dd1d6342627cbb344e9",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/wait-nix.sh": {
+                  "sha256": "51c627a20a2c43a382c75553063f4171a4d8872a12954aa0f55f422a6c3e56b2",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/ci/bluefin-upstream.py": {
+                  "sha256": "28c3c645d090a406cbbe809a0787d9c66b69a0d8a0b891dbd021af981df72f38",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/ci/ci-options.py": {
+                  "sha256": "852af96d1228835d25eb2e3332a249fede6ba992d3830da0746a1e3a063aabc7",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/ci/nix-resources.py": {
+                  "sha256": "b0813c68b5b9c32648c53cc442f0fe6dd76acea12ec0faac40d20e7b9c1f2116",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/ci/vm_tools.py": {
+                  "sha256": "d6823d521807b56e1d7baa7ea4f45b1fcf5de7f306b957e69564da2358e4c800",
+                  "executable": false,
+                  "symlink": null
+                },
+                "sources/bluebuild-cli.json": {
+                  "sha256": "0f09a9e40f9f928d2de27989db50cc6403344064926c63313801fc8751980b0a",
+                  "executable": false,
+                  "symlink": null
+                },
+                "sources/bluebuild-installer.json": {
+                  "sha256": "b2dfad692fa88e71dbf59fd3ee30b252d49eb3f4c05e167849807d4f1e2bbeca",
+                  "executable": false,
+                  "symlink": null
+                },
+                "sources/installer-security.json": {
+                  "sha256": "c2b7391419c6a513335cce966a06321303da56d1866069cb3af5016d4c4335db",
+                  "executable": false,
+                  "symlink": null
+                },
+                "files/system/usr/libexec/finite/check-initramfs": {
+                  "sha256": "44d6ce674dfa11c3d57eff2bc4b6aab5eadf3e21be5c2921316193b73044f4be",
+                  "executable": false,
+                  "symlink": null
+                },
+                "files/system/usr/libexec/finite/fix-home-selinux-contexts": {
+                  "sha256": "0ec7388e1f415b8e6bf491cbdc25cc7a1dbddb44e3a84d790da919e2e8768ffb",
+                  "executable": true,
+                  "symlink": null
+                },
+                "files/system/usr/libexec/finite/home-first-login": {
+                  "sha256": "14ad0d7432fac744caed8d4e8007cd17f7dcaec44d74c0d533f7e0a5403efb39",
+                  "executable": true,
+                  "symlink": null
+                },
+                "files/system/usr/libexec/finite/home-init": {
+                  "sha256": "3bbc22d1919c902f3aad71006e7dfdeb5450d47a81c1139287ede993b11aea3c",
+                  "executable": true,
+                  "symlink": null
+                },
+                "files/system/usr/libexec/finite/install-determinate-nix-selinux-policy": {
+                  "sha256": "ba9497fab5455c70e3fa040e28a5770eff8e3cdd7bd5d7ae6ac63fd20b308b0b",
+                  "executable": true,
+                  "symlink": null
+                },
+                "files/system/usr/libexec/finite/provision-determinate-nix": {
+                  "sha256": "aae1597e7e12394683c03e8aa02d1691a64d70e22271748368e702bab2b5790e",
+                  "executable": true,
+                  "symlink": null
+                },
+                "files/system/usr/libexec/finite/require-determinate-nix-version": {
+                  "sha256": "8338238f98a39398356b85250bffbcc3605fc91ab9f2dcc453d8b7b7b8e5ded8",
+                  "executable": true,
+                  "symlink": null
+                },
+                "files/system/usr/libexec/finite/run-firstboot-rpm-ostree": {
+                  "sha256": "ce891c0745e0204fc73201490c53def41e70fb4d0a403ca5310aa0609cf1905d",
+                  "executable": true,
+                  "symlink": null
+                },
+                "files/system/usr/libexec/finite/wifi-ac-power": {
+                  "sha256": "5eb1191a34193236d0e44f453f6ccecfa0338887a60ee00711a970bf7cb7df5c",
+                  "executable": true,
+                  "symlink": null
+                }
+              },
+              "firmware": {
+                "OVMF_CODE_4M.secboot.fd": "8f65267595ea75cc951deca1e86782e912962696fccfa6ec6e587f31783b72fa",
+                "OVMF_VARS_4M.ms.fd": "42aa368b4b74d0978a8529d1165a6301cc2ba7276b21d3804732721689052865"
+              },
+              "packages": "{\"executables\": {\"mcopy\": {\"path\": \"/nix/store/kz9cki868np6f7ld3vcfl4lhncn7vj1k-mtools-4.0.49/bin/mcopy\", \"sha256\": \"35812f4f32d437082e1488a1e08e619b4942a0ffd951330f40b102675064700e\", \"version\": \"4.0.49\"}, \"openssl\": {\"path\": \"/nix/store/rnbz3h9499a0bq33kkbars2mczqbfm4p-openssl-3.6.4-bin/bin/openssl\", \"sha256\": \"7c3d2fa1e38245c44a7f542aea2107eb69fca838fcd03fe3c726bc0df45e0382\", \"version\": \"3.6.4\"}, \"python3\": {\"path\": \"/nix/store/d7p0bc9x4g4glf0qskh5kxwxwx54slvg-python3-3.13.15-env/bin/python3\", \"sha256\": \"293ad1da9a2053a656cd3e9abfedc31667c82fa092deb993dba86abb064fd18f\", \"version\": \"3.13.15-env\"}, \"qemu-img\": {\"path\": \"/nix/store/ds64hbnir4f0jj8yf9rm1531gdn7ldq5-qemu-host-cpu-only-for-vm-tests-10.2.4/bin/qemu-img\", \"sha256\": \"e02994524bf0ac6503a7e0cd6a31a880543b076399ae3e2332f4563c5c28feeb\", \"version\": \"10.2.4\"}, \"qemu-system-x86_64\": {\"path\": \"/nix/store/ds64hbnir4f0jj8yf9rm1531gdn7ldq5-qemu-host-cpu-only-for-vm-tests-10.2.4/bin/qemu-system-x86_64\", \"sha256\": \"b812c14b19f8e95565ed11332f21031daf904aab3a3f1e76cda74fd11f73d067\", \"version\": \"10.2.4\"}, \"skopeo\": {\"path\": \"/nix/store/mmciykr3sslxyd6kxx2pv8bxbqnkwl1k-skopeo-1.22.2/bin/skopeo\", \"sha256\": \"a87ccc7815a00d95f36cdd1a500a2a209f1f6b2014b4606f5169c940d0c27190\", \"version\": \"1.22.2\"}, \"ssh\": {\"path\": \"/nix/store/5lxyvxz845rzklwn556f6cizv2sg0rrg-openssh-10.5p1/bin/ssh\", \"sha256\": \"b1ac763d96a5093fd74dec99cbe595f2f7b1fd94ea9634add0d08ebf2ebe4a36\", \"version\": \"10.5p1\"}, \"ssh-keygen\": {\"path\": \"/nix/store/5lxyvxz845rzklwn556f6cizv2sg0rrg-openssh-10.5p1/bin/ssh-keygen\", \"sha256\": \"732f7077ada861a530767b24ded4d5d49c1d3dd204fdb3be92d1d272755e96b4\", \"version\": \"10.5p1\"}, \"virt-fw-vars\": {\"path\": \"/nix/store/n08b1mjaids155d81jgcgsmxvr4wlg92-python3.13-virt-firmware-25.12/bin/virt-fw-vars\", \"sha256\": \"60246074e0d80f93084fdb913de427c0a9f69f5d5277c9fdac6c6498bb5dc8d2\", \"version\": \"25.12\"}, \"xorriso\": {\"path\": \"/nix/store/aqhfsslh06n7a3r8j5dns1kibdp8l62y-libisoburn-1.5.6/bin/xorriso\", \"sha256\": \"acc889b7e9ff62ea68b843bfe07b164bc5ebbdac6ab66a6a9e42862735e153f6\", \"version\": \"1.5.6\"}}, \"firmware\": {\"code\": \"/nix/store/zx5a7xbds3fsa194bf6608izi27flx9m-OVMF-202602-fd/FV/OVMF_CODE.fd\", \"secureBoot\": true, \"variables\": \"/nix/store/zx5a7xbds3fsa194bf6608izi27flx9m-OVMF-202602-fd/FV/OVMF_VARS.ms.fd\"}, \"provider\": \"nix\", \"schema\": 1}",
+              "bluebuildVersion": {
+                "schema": 1,
+                "version": "v0.9.37",
+                "image": "ghcr.io/blue-build/cli",
+                "digest": "sha256:281d3152c1a4e30e75e777f78b07a8c5c1e5130cb44092f4b4b507402556ec0a"
+              }
+            },
+            "qualificationContextSha256": "0f179db2d125e853014e0d0dd5436cbda392fb09346c8b3a1941a57dd4c21f5f",
+            "qualifiedIso": {
+              "name": "finite.iso",
+              "sha256": "57b2b34d77e2fc8339f4dbf50f7f4f69f347cb239006a2a28c1238674a33d262",
+              "installationSha256": "1244645bcd1435cb549fd9b46394f8c3eea12567f634f2d099596aaff3576105",
+              "installer": {
+                "version": "v1.5.0",
+                "image": "ghcr.io/jasonn3/build-container-installer",
+                "digest": "sha256:354e6d7fd4cb1850fb5adcfc3535f2c271dcecbc127730a058c0cbedbd9d3f51",
+                "revision": "bed71f841c250650a70f1ed8315ba92da1591ba6",
+                "cliAlias": "ghcr.io/jasonn3/build-container-installer:v1.4.0",
+                "reason": "CLI v0.9.37 hardcodes v1.4.0. v1.5.0 uses Fedora 44 Lorax, which retains load_policy for Anaconda shutdown. The alias exists only on the ephemeral ISO runner.",
+                "loraxFix": "https://github.com/weldr/lorax/commit/e5097230917fad0ce372b54ebefb2f0e2e2396f3",
+                "rootFstabFix": "https://github.com/bootc-dev/bootc/issues/971",
+                "resolvedImage": "ghcr.io/jasonn3/build-container-installer@sha256:354e6d7fd4cb1850fb5adcfc3535f2c271dcecbc127730a058c0cbedbd9d3f51",
+                "localImageId": "sha256:87063523071aa6dbff0b38bc006f7c7caed7439103dc148426653c5c25fd1194",
+                "finiteRevision": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+                "secureBootCertificateSha256": "4e5c68474cb133fd8984d9599762cece9100c3e6cd8a9709aeaabd85dd9e70d1",
+                "postInstallHook": {
+                  "path": "files/installer/install_finite_fstab",
+                  "sha256": "bd66b50f7622b4927477c19be5a25d5616d59d9d11339cd21e106318046b7ffe"
+                }
+              }
+            },
+            "qualifiedIsoOrigin": {
+              "run": 39900028671,
+              "attempt": 1,
+              "revision": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07"
+            },
+            "vmSecurityEvidence": {
+              "path": "finite-desktop-acceptance.json",
+              "sha256": "42abf366b2bdcde9f673701cc2f4282e8f4c4311823f0c30c82f87583ab72ddf"
+            }
+          },
+          "authorizesPublication": false
+        },
+        "finite-dev": {
+          "schema": 1,
+          "kind": "finite-production-qualification-audit",
+          "repository": "closure-labs/finite",
+          "runId": 39900028671,
+          "runAttempt": 1,
+          "profile": "finite-dev",
+          "sourceRevision": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+          "artifact": {
+            "id": 12481576119,
+            "node_id": "MDg6QXJ0aWZhY3QxMjQ4MTU3NjExOQ==",
+            "name": "qualification-finite-dev-39900028671-1",
+            "size_in_bytes": 617725,
+            "url": "https://api.github.com/repos/closure-labs/finite/actions/artifacts/12481576119",
+            "archive_download_url": "https://api.github.com/repos/closure-labs/finite/actions/artifacts/12481576119/zip",
+            "expired": false,
+            "digest": "sha256:19f557a4077e3d06b60129abaec6167e2ddfbc0916d0f04c2b4c618606d48c82",
+            "created_at": "2026-10-23T05:43:33Z",
+            "updated_at": "2026-10-23T05:43:33Z",
+            "expires_at": "2027-01-21T04:23:07Z",
+            "workflow_run": {
+              "id": 39900028671,
+              "repository_id": 1293375784,
+              "head_repository_id": 1293375784,
+              "head_branch": "main",
+              "head_sha": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07"
+            }
+          },
+          "acceptance": {
+            "schema": 2,
+            "candidate": "ghcr.io/closure-labs/finite@sha256:00d985793a8e34bda2a1129a3a3dec54a07c1585704e6ad065fde1abcf7c9b71",
+            "previousDigest": "sha256:2a19db8b0cc026430e261613d713c4e965a1ddc8059b2afa9e5ff28f82f901af",
+            "profile": "finite-dev",
+            "revision": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+            "sourceRevision": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+            "buildIdentity": "v1:c5a661622fbacdf96897665ee7eeba09a0875b72e58e4599f83cc5efd00bf84c",
+            "secureBoot": true,
+            "encryptedRoot": true,
+            "accepted": true,
+            "bootstrap": false,
+            "qualifiedAt": "2026-10-23T05:43:32.434355+00:00",
+            "qualificationContext": {
+              "schema": 2,
+              "platform": "linux/amd64",
+              "runner": "ubuntu-24.04",
+              "inputs": {
+                ".github/actions/setup-vm-tools/action.yml": {
+                  "sha256": "81591b5c1f412aef315e8adb267bdba2c10fc9c4a853b32bff3c437d37ec028f",
+                  "executable": false,
+                  "symlink": null
+                },
+                ".github/workflows/iso.yml": {
+                  "sha256": "b9ea81f56dddb0df48d387865cfd932937a8999b04e4d8083ca69fa0c0d49636",
+                  "executable": false,
+                  "symlink": null
+                },
+                ".github/workflows/qualification.yml": {
+                  "sha256": "0e63acdb742e849169af86dc9e2605fb3e5f1418fbc199c5e2540b16e3e9228f",
+                  "executable": false,
+                  "symlink": null
+                },
+                ".github/workflows/vm-acceptance.yml": {
+                  "sha256": "77a860bcd94c5c759a4c1e54d1be0c0ad4bd6c3124a93fecc3d52fd5f6463f02",
+                  "executable": false,
+                  "symlink": null
+                },
+                "cosign.pub": {
+                  "sha256": "4c3e7170f82faac86eec0b533269bb78ab671e3373a10bd01137f6108f04e978",
+                  "executable": false,
+                  "symlink": null
+                },
+                "files/installer/Containerfile": {
+                  "sha256": "f39c57075b5dde85874f33bab1d2e48901798c55610b2fc457e0cdc9585f1dba",
+                  "executable": false,
+                  "symlink": null
+                },
+                "files/installer/install_finite_fstab": {
+                  "sha256": "bd66b50f7622b4927477c19be5a25d5616d59d9d11339cd21e106318046b7ffe",
+                  "executable": false,
+                  "symlink": null
+                },
+                "files/installer/secure-boot.pem": {
+                  "sha256": "fae407e7d3b55087dc2c56d79904dd7547d96ce76d9ef78940d7eaea7c45968b",
+                  "executable": false,
+                  "symlink": null
+                },
+                "lib/vm-tools.nix": {
+                  "sha256": "9c956e9c294d7e9ea401d2c793493a98f4589b75a7b8d2e808807ebac721cb75",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/audit-published.sh": {
+                  "sha256": "faf39d702ffa17a123947cf42745fce6d4f4d3a20ba290951abea71ca0b95256",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/build.sh": {
+                  "sha256": "2f916a4f6d13cdc253f9b146f8e2b1d6bd59510800e38c4e7dae79d6bd1e188c",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/check-vm-desktop.py": {
+                  "sha256": "d004aaad0f0bc963c01770031d284e50845e8b4c428f2ab04490d012755b4517",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/check-vm-encryption.sh": {
+                  "sha256": "02f341b8829997fa71214c58a37854b201cc08cd3f9e6ba68c17146a338377fc",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/check-vm-gdm-labels.sh": {
+                  "sha256": "550b5f4da6facef99ded2bab9c2b6d7ddc292dffdace83c200eac23ad24bfa79",
+                  "executable": true,
+                  "symlink": null
+                },
+                "scripts/bluebuild/check-vm-mok.sh": {
+                  "sha256": "1119d3fcf7683761da65f6a63445ccdcf0ef7c24f9d789697befa99b3219fb4b",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/check-vm-security.sh": {
+                  "sha256": "8c46c46e849c9de570998bffdd04fa9df9fef81c9ebd8dd0445a13468d0619c0",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/check-vm-user-labels.sh": {
+                  "sha256": "df632dad37bfa706ff48212e7fa97ab8912acddec040675cbf141dcfba99f0b4",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/desktop-qualification.py": {
+                  "sha256": "27b01646d1763cf84a4f8b736fab304ba9dd9c8d81a80b5a9827867674948d18",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/inspect-built.sh": {
+                  "sha256": "bd6294bc403b00299c0082deda2cfa30d30d749395386a4f1cdd6676502ac7ee",
+                  "executable": true,
+                  "symlink": null
+                },
+                "scripts/bluebuild/install-cli.sh": {
+                  "sha256": "25de8cf3c68c2489f330ae8b1f4e8574f7a36e58bb023946ff4eb400bcbea175",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/iso.sh": {
+                  "sha256": "7dacd2c20e877764ac32543be4f04d5dcfd64acb0a6256b174828d9af933907b",
+                  "executable": true,
+                  "symlink": null
+                },
+                "scripts/bluebuild/local-vm.sh": {
+                  "sha256": "2624751fba47605cec8bedafda300fea113d909a432dc42de412928086c24240",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/measure.py": {
+                  "sha256": "480a45d9c121b14c1bdcde33fc8a0d8f3869ff3e136d1488184acf6be4a6e37f",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/prepare-installer.sh": {
+                  "sha256": "75bdb1675d0d860672915bd9c028e524e13161686405de7f668c8d3bbd3a1c3d",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/prepare-vm-firmware.sh": {
+                  "sha256": "394605e9d90e5d1997662fe34d3aa18538f15a6200755d9840b7328bcdef15d9",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/prepare-vm-iso.sh": {
+                  "sha256": "5948e58c52bfaa23bc1eb3bb14f3c185a87fd6545b0026f1ad4774a43a9f1c82",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/prepare-vm-predecessor-home.sh": {
+                  "sha256": "e5fb3e10813bbd55528023b3d4dc564935c38c47afec127562d202ab531d58da",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/prepare-vm-predecessor-policy.sh": {
+                  "sha256": "e0ef3a8828e2af6811288988fa02fe77e09517c688c44789e34c5c2ad3386d72",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/prune-qualified-isos.py": {
+                  "sha256": "d48cd1226f73061f1bb51da304a034a14d7457b7d9b051f1ee9be009ecf150e9",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/publication-current.py": {
+                  "sha256": "b30f426c7ac1a3744feb4dd1148a0ab1c444d61dc2b4b0c01d084ebe69017a4f",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/publication.py": {
+                  "sha256": "d927cd33e500b93cce6a81f159e2967164dd0f27f86a6a40c7483e4e7b6be643",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/qualification-context.py": {
+                  "sha256": "78dc0ff03b878fa3b306915c1b3a4005da5346ecaa166e734b1d2834f5beb503",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/qualification-preflight.py": {
+                  "sha256": "58b95b9d2c0ee4beba19697b4fcf7957504b612db6478523eecaf61774b12cda",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/qualify.sh": {
+                  "sha256": "f5a319874799d96350caf4565f04d711f58c8b3b99cd206862a1db3a22af40e1",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/redact-vm-logs.py": {
+                  "sha256": "7229e47ab92205bc03b3c92e397808b8cfb2a4c9a26f4ec67c05470840b401a2",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/release-evidence.py": {
+                  "sha256": "c0ab919481aa51d6fef9c5b0e6d38124fec763de7d420140b3f758429644b9a5",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/reuse-predecessor-iso.py": {
+                  "sha256": "5fd4e483b0c3ce0b15ec7ab1de161e9116abda6d1194484649dacef3261b6a46",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/reuse-qualification.py": {
+                  "sha256": "8a0487a36325fcbc4672db323df41d5d1cdd894f1448b3bee616e64acc6efb37",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/security-policy.py": {
+                  "sha256": "9e952a19bebe7f635dda7412217ba04557e08a665fbdd1cbed6ff62d5a6b1faa",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/security-run.sh": {
+                  "sha256": "06685e418de2f71966396b84765fdca84036e4142242718521d1601f78a32e41",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/security-scan.py": {
+                  "sha256": "9bb01847fd968318b2a39ec4f28d77f5fd7ecb6ec50f37981659d750a93a2ea1",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/sign-release.sh": {
+                  "sha256": "cd6655fcfef0dec8f1a1dc5282badaa55f15d8c0e6f754e974fae5e81f3acf56",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/stage.sh": {
+                  "sha256": "d1a67d007289fe43482a46b3153a00e03399d00c68d3fc5fbbb85d53a67ad5d5",
+                  "executable": true,
+                  "symlink": null
+                },
+                "scripts/bluebuild/unlock-vm.py": {
+                  "sha256": "30fa4a80726cc13d2e3ad159456b70074414b7bd5618301d75cffee73b55557b",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/verify-image.sh": {
+                  "sha256": "50eec3340e2af9cd218ac3e3eed3a90af55b0e43d4e46bfb5241396e914fa5a5",
+                  "executable": true,
+                  "symlink": null
+                },
+                "scripts/bluebuild/vm-acceptance.sh": {
+                  "sha256": "0af9ae258c86a953057e30c758e0f5362a3d5a7e3560960b0b7ab6859e88f217",
+                  "executable": true,
+                  "symlink": null
+                },
+                "scripts/bluebuild/vm-diagnostics.sh": {
+                  "sha256": "4b3d0adaecbfba3a13545af7787c1801445515d8b87f895c60931e495d96191e",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/vm-upgrade.py": {
+                  "sha256": "cf52271fb9bd4cfabe54bf25c881150ffea2bdb604fa9dd1d6342627cbb344e9",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/bluebuild/wait-nix.sh": {
+                  "sha256": "51c627a20a2c43a382c75553063f4171a4d8872a12954aa0f55f422a6c3e56b2",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/ci/bluefin-upstream.py": {
+                  "sha256": "28c3c645d090a406cbbe809a0787d9c66b69a0d8a0b891dbd021af981df72f38",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/ci/ci-options.py": {
+                  "sha256": "852af96d1228835d25eb2e3332a249fede6ba992d3830da0746a1e3a063aabc7",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/ci/nix-resources.py": {
+                  "sha256": "b0813c68b5b9c32648c53cc442f0fe6dd76acea12ec0faac40d20e7b9c1f2116",
+                  "executable": false,
+                  "symlink": null
+                },
+                "scripts/ci/vm_tools.py": {
+                  "sha256": "d6823d521807b56e1d7baa7ea4f45b1fcf5de7f306b957e69564da2358e4c800",
+                  "executable": false,
+                  "symlink": null
+                },
+                "sources/bluebuild-cli.json": {
+                  "sha256": "0f09a9e40f9f928d2de27989db50cc6403344064926c63313801fc8751980b0a",
+                  "executable": false,
+                  "symlink": null
+                },
+                "sources/bluebuild-installer.json": {
+                  "sha256": "b2dfad692fa88e71dbf59fd3ee30b252d49eb3f4c05e167849807d4f1e2bbeca",
+                  "executable": false,
+                  "symlink": null
+                },
+                "sources/installer-security.json": {
+                  "sha256": "c2b7391419c6a513335cce966a06321303da56d1866069cb3af5016d4c4335db",
+                  "executable": false,
+                  "symlink": null
+                },
+                "files/system/usr/libexec/finite/check-initramfs": {
+                  "sha256": "44d6ce674dfa11c3d57eff2bc4b6aab5eadf3e21be5c2921316193b73044f4be",
+                  "executable": false,
+                  "symlink": null
+                },
+                "files/system/usr/libexec/finite/fix-home-selinux-contexts": {
+                  "sha256": "0ec7388e1f415b8e6bf491cbdc25cc7a1dbddb44e3a84d790da919e2e8768ffb",
+                  "executable": true,
+                  "symlink": null
+                },
+                "files/system/usr/libexec/finite/home-first-login": {
+                  "sha256": "14ad0d7432fac744caed8d4e8007cd17f7dcaec44d74c0d533f7e0a5403efb39",
+                  "executable": true,
+                  "symlink": null
+                },
+                "files/system/usr/libexec/finite/home-init": {
+                  "sha256": "3bbc22d1919c902f3aad71006e7dfdeb5450d47a81c1139287ede993b11aea3c",
+                  "executable": true,
+                  "symlink": null
+                },
+                "files/system/usr/libexec/finite/install-determinate-nix-selinux-policy": {
+                  "sha256": "ba9497fab5455c70e3fa040e28a5770eff8e3cdd7bd5d7ae6ac63fd20b308b0b",
+                  "executable": true,
+                  "symlink": null
+                },
+                "files/system/usr/libexec/finite/provision-determinate-nix": {
+                  "sha256": "aae1597e7e12394683c03e8aa02d1691a64d70e22271748368e702bab2b5790e",
+                  "executable": true,
+                  "symlink": null
+                },
+                "files/system/usr/libexec/finite/require-determinate-nix-version": {
+                  "sha256": "8338238f98a39398356b85250bffbcc3605fc91ab9f2dcc453d8b7b7b8e5ded8",
+                  "executable": true,
+                  "symlink": null
+                },
+                "files/system/usr/libexec/finite/run-firstboot-rpm-ostree": {
+                  "sha256": "ce891c0745e0204fc73201490c53def41e70fb4d0a403ca5310aa0609cf1905d",
+                  "executable": true,
+                  "symlink": null
+                },
+                "files/system/usr/libexec/finite/wifi-ac-power": {
+                  "sha256": "5eb1191a34193236d0e44f453f6ccecfa0338887a60ee00711a970bf7cb7df5c",
+                  "executable": true,
+                  "symlink": null
+                }
+              },
+              "firmware": {
+                "OVMF_CODE_4M.secboot.fd": "8f65267595ea75cc951deca1e86782e912962696fccfa6ec6e587f31783b72fa",
+                "OVMF_VARS_4M.ms.fd": "42aa368b4b74d0978a8529d1165a6301cc2ba7276b21d3804732721689052865"
+              },
+              "packages": "{\"executables\": {\"mcopy\": {\"path\": \"/nix/store/kz9cki868np6f7ld3vcfl4lhncn7vj1k-mtools-4.0.49/bin/mcopy\", \"sha256\": \"35812f4f32d437082e1488a1e08e619b4942a0ffd951330f40b102675064700e\", \"version\": \"4.0.49\"}, \"openssl\": {\"path\": \"/nix/store/rnbz3h9499a0bq33kkbars2mczqbfm4p-openssl-3.6.4-bin/bin/openssl\", \"sha256\": \"7c3d2fa1e38245c44a7f542aea2107eb69fca838fcd03fe3c726bc0df45e0382\", \"version\": \"3.6.4\"}, \"python3\": {\"path\": \"/nix/store/d7p0bc9x4g4glf0qskh5kxwxwx54slvg-python3-3.13.15-env/bin/python3\", \"sha256\": \"293ad1da9a2053a656cd3e9abfedc31667c82fa092deb993dba86abb064fd18f\", \"version\": \"3.13.15-env\"}, \"qemu-img\": {\"path\": \"/nix/store/ds64hbnir4f0jj8yf9rm1531gdn7ldq5-qemu-host-cpu-only-for-vm-tests-10.2.4/bin/qemu-img\", \"sha256\": \"e02994524bf0ac6503a7e0cd6a31a880543b076399ae3e2332f4563c5c28feeb\", \"version\": \"10.2.4\"}, \"qemu-system-x86_64\": {\"path\": \"/nix/store/ds64hbnir4f0jj8yf9rm1531gdn7ldq5-qemu-host-cpu-only-for-vm-tests-10.2.4/bin/qemu-system-x86_64\", \"sha256\": \"b812c14b19f8e95565ed11332f21031daf904aab3a3f1e76cda74fd11f73d067\", \"version\": \"10.2.4\"}, \"skopeo\": {\"path\": \"/nix/store/mmciykr3sslxyd6kxx2pv8bxbqnkwl1k-skopeo-1.22.2/bin/skopeo\", \"sha256\": \"a87ccc7815a00d95f36cdd1a500a2a209f1f6b2014b4606f5169c940d0c27190\", \"version\": \"1.22.2\"}, \"ssh\": {\"path\": \"/nix/store/5lxyvxz845rzklwn556f6cizv2sg0rrg-openssh-10.5p1/bin/ssh\", \"sha256\": \"b1ac763d96a5093fd74dec99cbe595f2f7b1fd94ea9634add0d08ebf2ebe4a36\", \"version\": \"10.5p1\"}, \"ssh-keygen\": {\"path\": \"/nix/store/5lxyvxz845rzklwn556f6cizv2sg0rrg-openssh-10.5p1/bin/ssh-keygen\", \"sha256\": \"732f7077ada861a530767b24ded4d5d49c1d3dd204fdb3be92d1d272755e96b4\", \"version\": \"10.5p1\"}, \"virt-fw-vars\": {\"path\": \"/nix/store/n08b1mjaids155d81jgcgsmxvr4wlg92-python3.13-virt-firmware-25.12/bin/virt-fw-vars\", \"sha256\": \"60246074e0d80f93084fdb913de427c0a9f69f5d5277c9fdac6c6498bb5dc8d2\", \"version\": \"25.12\"}, \"xorriso\": {\"path\": \"/nix/store/aqhfsslh06n7a3r8j5dns1kibdp8l62y-libisoburn-1.5.6/bin/xorriso\", \"sha256\": \"acc889b7e9ff62ea68b843bfe07b164bc5ebbdac6ab66a6a9e42862735e153f6\", \"version\": \"1.5.6\"}}, \"firmware\": {\"code\": \"/nix/store/zx5a7xbds3fsa194bf6608izi27flx9m-OVMF-202602-fd/FV/OVMF_CODE.fd\", \"secureBoot\": true, \"variables\": \"/nix/store/zx5a7xbds3fsa194bf6608izi27flx9m-OVMF-202602-fd/FV/OVMF_VARS.ms.fd\"}, \"provider\": \"nix\", \"schema\": 1}",
+              "bluebuildVersion": {
+                "schema": 1,
+                "version": "v0.9.37",
+                "image": "ghcr.io/blue-build/cli",
+                "digest": "sha256:281d3152c1a4e30e75e777f78b07a8c5c1e5130cb44092f4b4b507402556ec0a"
+              }
+            },
+            "qualificationContextSha256": "0f179db2d125e853014e0d0dd5436cbda392fb09346c8b3a1941a57dd4c21f5f",
+            "qualifiedIso": {
+              "name": "finite-dev.iso",
+              "sha256": "2bd4b8d440ba449a37297210082c26dc963cee7057a3366029231ad327e49dc5",
+              "installationSha256": "4116a6ffdfd36037275d7cabb3c936f554efe6b82309dcbd8976c8eb1fab9bce",
+              "installer": {
+                "version": "v1.5.0",
+                "image": "ghcr.io/jasonn3/build-container-installer",
+                "digest": "sha256:354e6d7fd4cb1850fb5adcfc3535f2c271dcecbc127730a058c0cbedbd9d3f51",
+                "revision": "bed71f841c250650a70f1ed8315ba92da1591ba6",
+                "cliAlias": "ghcr.io/jasonn3/build-container-installer:v1.4.0",
+                "reason": "CLI v0.9.37 hardcodes v1.4.0. v1.5.0 uses Fedora 44 Lorax, which retains load_policy for Anaconda shutdown. The alias exists only on the ephemeral ISO runner.",
+                "loraxFix": "https://github.com/weldr/lorax/commit/e5097230917fad0ce372b54ebefb2f0e2e2396f3",
+                "rootFstabFix": "https://github.com/bootc-dev/bootc/issues/971",
+                "resolvedImage": "ghcr.io/jasonn3/build-container-installer@sha256:354e6d7fd4cb1850fb5adcfc3535f2c271dcecbc127730a058c0cbedbd9d3f51",
+                "localImageId": "sha256:acb3b6b2ae00ecfbbd892e9b0df45a9a77d8088d678fa8d2dbde7e668304d31a",
+                "finiteRevision": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+                "secureBootCertificateSha256": "4e5c68474cb133fd8984d9599762cece9100c3e6cd8a9709aeaabd85dd9e70d1",
+                "postInstallHook": {
+                  "path": "files/installer/install_finite_fstab",
+                  "sha256": "bd66b50f7622b4927477c19be5a25d5616d59d9d11339cd21e106318046b7ffe"
+                }
+              }
+            },
+            "qualifiedIsoOrigin": {
+              "run": 39900028671,
+              "attempt": 1,
+              "revision": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07"
+            },
+            "vmSecurityEvidence": {
+              "path": "finite-dev-desktop-acceptance.json",
+              "sha256": "013c3b13e0cc70210e5c169354c97af790f42194bbfbdd7ac2f8b310d6a291b2"
+            }
+          },
+          "authorizesPublication": false
+        }
+      },
+      "authorizesPublication": false
+    },
+    "healthObservations": [
+      {
+        "schema": 1,
+        "kind": "finite-audit-health-observation",
+        "repository": "closure-labs/finite",
+        "observedAt": "2026-10-23T04:57:58.129962+00:00",
+        "sourceRevision": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+        "collectorRevision": "09721bdc55b7c734f13ede71f3876f84eece5c6e",
+        "runnerToolCohort": "workstation / read-only installation token / native GitHub API",
+        "authorizesPublication": false,
+        "health": {
+          "schema": 1,
+          "healthy": false,
+          "blockers": [],
+          "problems": [
+            "Latest main build failed: Publish (finite-dev) / qualification / aggregate, CI gate"
+          ],
+          "channels": {
+            "finite": {
+              "qualified": {
+                "runId": 39875925941,
+                "revision": "dd086db15223d67ebd75795ccf37410649cd8d61",
+                "completedAt": "2026-10-23T01:23:23Z"
+              },
+              "promoted": {
+                "runId": 39875925941,
+                "revision": "dd086db15223d67ebd75795ccf37410649cd8d61",
+                "completedAt": "2026-10-23T01:23:23Z"
+              }
+            },
+            "finite-dev": {
+              "qualified": {
+                "runId": 39883409522,
+                "revision": "059e77b178d31b74d66471f11775b6f82bd3518c",
+                "completedAt": "2026-10-23T02:44:01Z"
+              },
+              "promoted": {
+                "runId": 39883409522,
+                "revision": "059e77b178d31b74d66471f11775b6f82bd3518c",
+                "completedAt": "2026-10-23T02:44:01Z"
+              }
+            }
+          },
+          "version": "0.8.3-dev",
+          "release": {
+            "state": "published",
+            "reason": "Both matching release inventories are public.",
+            "runUrl": "https://github.com/closure-labs/finite/actions/runs/39804082329/attempts/3",
+            "phase": null,
+            "proposalHash": "f8a490bcbd46fdc0d1a6fa105595422655a69daccddc92a4562bc55b24118cbd",
+            "identityRunAttempt": 2,
+            "uncorrelatedRuns": [
+              {
+                "runUrl": "https://github.com/closure-labs/finite/actions/runs/39695284971/attempts/1",
+                "reason": "Missing identity; inspect this legacy or starting publisher run; inspect identity and native producer."
+              },
+              {
+                "runUrl": "https://github.com/closure-labs/finite/actions/runs/39681408362/attempts/1",
+                "reason": "Missing identity; inspect this legacy or starting publisher run; inspect identity and native producer."
+              },
+              {
+                "runUrl": "https://github.com/closure-labs/finite/actions/runs/39680352658/attempts/1",
+                "reason": "Missing identity; inspect this legacy or starting publisher run; inspect identity and native producer."
+              }
+            ]
+          },
+          "buildRun": null
+        }
+      },
+      {
+        "schema": 1,
+        "kind": "finite-audit-health-observation",
+        "repository": "closure-labs/finite",
+        "observedAt": "2026-10-23T05:47:21.890129+00:00",
+        "sourceRevision": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+        "collectorRevision": "09721bdc55b7c734f13ede71f3876f84eece5c6e",
+        "runnerToolCohort": "workstation / read-only installation token / native GitHub API",
+        "authorizesPublication": false,
+        "health": {
+          "schema": 1,
+          "healthy": true,
+          "blockers": [],
+          "problems": [],
+          "channels": {
+            "finite": {
+              "qualified": {
+                "runId": 39900028671,
+                "revision": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+                "completedAt": "2026-10-23T05:45:24Z"
+              },
+              "promoted": {
+                "runId": 39900028671,
+                "revision": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+                "completedAt": "2026-10-23T05:45:24Z"
+              }
+            },
+            "finite-dev": {
+              "qualified": {
+                "runId": 39900028671,
+                "revision": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+                "completedAt": "2026-10-23T05:45:24Z"
+              },
+              "promoted": {
+                "runId": 39900028671,
+                "revision": "5b302cc0d165a6421cec9b1dbc4cb11caddbbd07",
+                "completedAt": "2026-10-23T05:45:24Z"
+              }
+            }
+          },
+          "version": "0.8.3-dev",
+          "release": {
+            "state": "published",
+            "reason": "Both matching release inventories are public.",
+            "runUrl": "https://github.com/closure-labs/finite/actions/runs/39804082329/attempts/3",
+            "phase": null,
+            "proposalHash": "f8a490bcbd46fdc0d1a6fa105595422655a69daccddc92a4562bc55b24118cbd",
+            "identityRunAttempt": 2,
+            "uncorrelatedRuns": [
+              {
+                "runUrl": "https://github.com/closure-labs/finite/actions/runs/39695284971/attempts/1",
+                "reason": "Missing identity; inspect this legacy or starting publisher run; inspect identity and native producer."
+              },
+              {
+                "runUrl": "https://github.com/closure-labs/finite/actions/runs/39681408362/attempts/1",
+                "reason": "Missing identity; inspect this legacy or starting publisher run; inspect identity and native producer."
+              },
+              {
+                "runUrl": "https://github.com/closure-labs/finite/actions/runs/39680352658/attempts/1",
+                "reason": "Missing identity; inspect this legacy or starting publisher run; inspect identity and native producer."
+              }
+            ]
+          },
+          "buildRun": 39900028671
+        }
+      }
+    ],
+    "unpublishedFoundation031": {
+      "tag": {
+        "schema": 1,
+        "kind": "foundation-release-tag",
+        "repository": "closure-labs/foundation",
+        "observedAt": "2026-10-23T05:40:21.741063+00:00",
+        "sourceRevision": "563f970af88fdd737b5cde5af0a64ac1d7329a98",
+        "tag": "v0.3.1",
+        "tagObject": "fd93ef38e148c56283f259b71f7a2352212f2fbc",
+        "reviewedPullRequest": 12,
+        "mainCiRun": 39906295348,
+        "mainCiUrl": "https://github.com/closure-labs/foundation/actions/runs/39906295348",
+        "tagger": {
+          "name": "cl-decider[bot]",
+          "email": "344936881+cl-decider[bot]@users.noreply.github.com",
+          "date": "2026-10-23T05:40:19Z"
+        },
+        "authorizesFinitePublication": false
+      },
+      "verifiedDraftAssets": {
+        "schema": 1,
+        "kind": "foundation-release-publication-audit",
+        "repository": "closure-labs/foundation",
+        "observedAt": "2026-10-23T05:53:49.198126+00:00",
+        "version": "0.3.1",
+        "sourceRevision": "563f970af88fdd737b5cde5af0a64ac1d7329a98",
+        "tag": "v0.3.1",
+        "tagObject": "fd93ef38e148c56283f259b71f7a2352212f2fbc",
+        "releaseId": 421492266,
+        "releaseUrl": "https://github.com/closure-labs/foundation/releases/tag/untagged-79fcd60fb93274489661",
+        "releaseValidation": {
+          "runId": 39907050977,
+          "runAttempt": 1,
+          "url": "https://github.com/closure-labs/foundation/actions/runs/39907050977",
+          "jobs": [
+            {
+              "id": 120261299528,
+              "name": "Validate release tag",
+              "conclusion": "success"
+            },
+            {
+              "id": 120261331573,
+              "name": "Release validation / Fixtures and workflows",
+              "conclusion": "success"
+            },
+            {
+              "id": 120261654296,
+              "name": "Release validation / Nix build and profile evaluation",
+              "conclusion": "success"
+            },
+            {
+              "id": 120263775857,
+              "name": "Release validation / CI gate",
+              "conclusion": "success"
+            },
+            {
+              "id": 120263805039,
+              "name": "Create draft release",
+              "conclusion": "success"
+            }
+          ]
+        },
+        "mainValidationRun": 39906295348,
+        "reviewedPullRequest": 12,
+        "assets": {
+          "foundation-v0.3.1.tar.gz": {
+            "id": 668119329,
+            "sha256": "86e432c3151665913934e348804fd20334fd92a31c7d618eea8c90f12b7ad52a",
+            "bytes": 190443
+          },
+          "SHA256SUMS": {
+            "id": 668119328,
+            "sha256": "1a2401f1c8f967c71802bf17841c837bd63c90419b870f71237ff31fa2f97d24",
+            "bytes": 91
+          }
+        },
+        "exactTaggedTarVerified": true,
+        "compressedReproductionMatches": true,
+        "notesMatchChangelog": true,
+        "downloadDirectory": "/tmp/finite-audit-evidence/foundation-031-main/verified-assets-24s6o58g",
+        "draft": true,
+        "publishedAt": null,
+        "authorizesFinitePublication": false
+      },
+      "publicationBlock": {
+        "schema": 1,
+        "repository": "closure-labs/foundation",
+        "tag": "v0.3.1",
+        "sourceRevision": "563f970af88fdd737b5cde5af0a64ac1d7329a98",
+        "blocked": true,
+        "reason": "Confirmed terminal wrapper exit 137 can be retried after a transient download diagnostic. Preserve the shared tag; supersede with reviewed 0.3.2 preparation.",
+        "evidence": "/tmp/finite-audit-evidence/foundation-031-main/wrapper-exit-regression.json"
+      },
+      "regression": {
+        "schema": 1,
+        "kind": "foundation-terminal-wrapper-exit-regression",
+        "repository": "closure-labs/foundation",
+        "sourceRevision": "563f970af88fdd737b5cde5af0a64ac1d7329a98",
+        "firstExitCode": 137,
+        "attempts": 2,
+        "result": "/nix/store/activation",
+        "expectedAttempts": 1,
+        "authorizesPublication": false
+      },
+      "draftMarkedDoNotPublish": true,
+      "tagAndAssetsPreserved": true
+    },
+    "foundation032": {
+      "pullRequest": {
+        "number": 13,
+        "url": "https://github.com/closure-labs/foundation/pull/13",
+        "head": "aa506df0e8e77e675782da97afd8487e54a527ae",
+        "draft": false,
+        "state": "closed",
+        "merged": true
+      },
+      "localPythonTests": 158,
+      "localPinnedCi": "success",
+      "localFullNix": "success",
+      "temporaryFiniteHomeContracts": "success",
+      "fixture": {
+        "schema": 1,
+        "kind": "nix-interrupted-download-fixture",
+        "repository": "closure-labs/foundation",
+        "sourceRevision": "563f970af88fdd737b5cde5af0a64ac1d7329a98",
+        "workingHelperSha256": "338c65372dbdabbf6cbdf65427c51a771d6a9203eb330353e8149595ecbe1877",
+        "runner": {
+          "system": "Linux",
+          "machine": "x86_64"
+        },
+        "authorizesPublication": false,
+        "nixVersion": "nix (Determinate Nix 3.23.3) 2.35.3",
+        "command": [
+          "nix",
+          "--extra-experimental-features",
+          "nix-command",
+          "store",
+          "prefetch-file",
+          "--store",
+          "local?root=/tmp/foundation-download-ynex77_j",
+          "--json",
+          "loopback fixture URL"
+        ],
+        "bodySha256": "f33bf62ebaecc96a93172d4e70a4866e26b0c5ce2f2d45c4f270961f606505ad",
+        "bodyBytes": 2900000,
+        "requests": [
+          {
+            "range": null,
+            "path": "/fixture",
+            "status": 200,
+            "bytesSent": 1450000
+          },
+          {
+            "range": "bytes=1450000-",
+            "path": "/fixture",
+            "status": 416
+          },
+          {
+            "range": null,
+            "path": "/fixture",
+            "status": 200,
+            "bytesSent": 2900000
+          }
+        ],
+        "trials": [
+          {
+            "attempt": 1,
+            "seconds": 0.16271774200140499,
+            "status": 1,
+            "stdout": "",
+            "stderr": "warning: unable to download 'http://127.0.0.1:35165/fixture': HTTP error 200 (curl error: Transferred a partial file); retrying from offset 1450000 in 76 ms (attempt 1/5)\nerror: unable to download 'http://127.0.0.1:35165/fixture': HTTP error 416\n"
+          },
+          {
+            "attempt": 2,
+            "seconds": 0.03737867599920719,
+            "status": 0,
+            "stdout": "{\"hash\":\"sha256-8zv2LrrsyWqTFy1OcKSGbiawxc4vLUXE8nCWH2BlBa0=\",\"storePath\":\"/nix/store/zzhh073agjbk5lsb8h3lcqzplry5wmyv-fixture\"}\n",
+            "stderr": ""
+          }
+        ],
+        "recovery": {
+          "seconds": 2.1166791430005105,
+          "result": {
+            "hash": "sha256-8zv2LrrsyWqTFy1OcKSGbiawxc4vLUXE8nCWH2BlBa0=",
+            "storePath": "/nix/store/zzhh073agjbk5lsb8h3lcqzplry5wmyv-fixture"
+          },
+          "requests": [
+            {
+              "range": null,
+              "path": "/fixture",
+              "status": 200,
+              "bytesSent": 1450000
+            },
+            {
+              "range": "bytes=1450000-",
+              "path": "/fixture",
+              "status": 416
+            },
+            {
+              "range": null,
+              "path": "/fixture",
+              "status": 200,
+              "bytesSent": 2900000
+            }
+          ]
+        },
+        "verifiedHelperRevision": "aa506df0e8e77e675782da97afd8487e54a527ae",
+        "verification": "Working helper matches the exact immutable PR source."
+      },
+      "hostedRunId": 39908302728,
+      "hostedStatus": "success",
+      "authorizesFinitePublication": false,
+      "hostedRun": {
+        "id": 39908302728,
+        "run_attempt": 1,
+        "head_sha": "aa506df0e8e77e675782da97afd8487e54a527ae",
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/closure-labs/foundation/actions/runs/39908302728"
+      },
+      "merged": true,
+      "mergedAt": "2026-10-23T05:59:30Z",
+      "sourceRevision": "235c34d7e507f00c2df6b0102bcdb54a4c04c5e2",
+      "mainCiRunId": 39908826603,
+      "mainCiStatus": "success",
+      "mainCiRun": {
+        "id": 39908826603,
+        "head_sha": "235c34d7e507f00c2df6b0102bcdb54a4c04c5e2",
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/closure-labs/foundation/actions/runs/39908826603"
+      },
+      "publication": {
+        "schema": 1,
+        "kind": "foundation-release-publication-audit",
+        "repository": "closure-labs/foundation",
+        "observedAt": "2026-10-23T06:22:32.328093+00:00",
+        "version": "0.3.2",
+        "sourceRevision": "235c34d7e507f00c2df6b0102bcdb54a4c04c5e2",
+        "tag": "v0.3.2",
+        "tagObject": "44077eb7f749804045473e08833ce4c5ab7d4c23",
+        "releaseId": 421509377,
+        "releaseUrl": "https://github.com/closure-labs/foundation/releases/tag/v0.3.2",
+        "releaseValidation": {
+          "runId": 39909823731,
+          "runAttempt": 1,
+          "url": "https://github.com/closure-labs/foundation/actions/runs/39909823731",
+          "jobs": [
+            {
+              "id": 120269974315,
+              "name": "Validate release tag",
+              "conclusion": "success"
+            },
+            {
+              "id": 120270008111,
+              "name": "Release validation / Fixtures and workflows",
+              "conclusion": "success"
+            },
+            {
+              "id": 120270377475,
+              "name": "Release validation / Nix build and profile evaluation",
+              "conclusion": "success"
+            },
+            {
+              "id": 120272655882,
+              "name": "Release validation / CI gate",
+              "conclusion": "success"
+            },
+            {
+              "id": 120272681722,
+              "name": "Create draft release",
+              "conclusion": "success"
+            }
+          ]
+        },
+        "mainValidationRun": 39908826603,
+        "reviewedPullRequest": 13,
+        "assets": {
+          "foundation-v0.3.2.tar.gz": {
+            "id": 668177161,
+            "sha256": "f9dd5eb3339a3d481d3595b026c58b433a73e8dd22195e8cc7e36bf33233a385",
+            "bytes": 191389
+          },
+          "SHA256SUMS": {
+            "id": 668177171,
+            "sha256": "139d879c162fd4fbf29b42e87b2200227e340d84a89ea330f8b10fb11408f49b",
+            "bytes": 91
+          }
+        },
+        "exactTaggedTarVerified": true,
+        "compressedReproductionMatches": true,
+        "notesMatchChangelog": true,
+        "draft": false,
+        "publishedAt": "2026-10-23T06:22:31Z",
+        "authorizesFinitePublication": false,
+        "publisher": "cl-decider[bot]"
+      },
+      "releaseCiStatus": "success",
+      "stableChannelRevision": "235c34d7e507f00c2df6b0102bcdb54a4c04c5e2",
+      "stableChannelRuns": [
+        39911093232,
+        39911093500
+      ]
+    },
+    "controllerMerge": {
+      "pullRequest": 230,
+      "sourceRevision": "04cb70543c44aeb16da662c4bbb3dfe26775ac8c",
+      "mergedAt": "2026-10-23T06:18:55Z",
+      "queueRunId": 39905914342,
+      "queueRunAttempt": 1,
+      "queueConclusion": "success"
+    },
+    "proposedFiniteFoundationPin": {
+      "compatibility": 1,
+      "narHash": "sha256-eNG+WrEWY4Py5S6BD5OVNEyIvEbC/iQieeuqEJ6TMJY=",
+      "rev": "235c34d7e507f00c2df6b0102bcdb54a4c04c5e2",
+      "schema": 1,
+      "version": "0.3.2",
+      "qualificationStatus": "pending"
+    }
   }
 }
