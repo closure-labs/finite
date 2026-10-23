@@ -3580,5 +3580,1426 @@
     },
     "documentation": "bash tests/repository/text-style.sh",
     "scope": "Evidence-only follow-up; executable code and locks unchanged."
+  },
+  "timingInterpretation": {
+    "home-activation": "Combined startup checks, Homebrew setup, predecessor preparation, home-init, and persistence/customization fixture creation; historical seconds are unchanged.",
+    "optionalTransferRollout": "#238 queue and first main passed; main selected no images, so production timeout execution remains unobserved."
+  },
+  "optionalTransferOutcomes": {
+    "40004291051": {
+      "total_count": 8,
+      "jobs": [
+        {
+          "id": 120588522008,
+          "run_id": 40004291051,
+          "workflow_name": "Build Finite",
+          "head_branch": "gh-readonly-queue/main/pr-238-a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "run_url": "https://api.github.com/repos/closure-labs/finite/actions/runs/40004291051",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOTRdZKM8AAAAcE6LSGA",
+          "head_sha": "c42037d4164d4b4cbe1bb3554b9783cbfd99cfc0",
+          "url": "https://api.github.com/repos/closure-labs/finite/actions/jobs/120588522008",
+          "html_url": "https://github.com/closure-labs/finite/actions/runs/40004291051/job/120588522008",
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-10-23T18:34:32Z",
+          "started_at": "2026-10-23T18:34:35Z",
+          "completed_at": "2026-10-23T18:34:44Z",
+          "name": "Select checks",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-10-23T18:34:36Z",
+              "completed_at": "2026-10-23T18:34:36Z"
+            },
+            {
+              "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-10-23T18:34:36Z",
+              "completed_at": "2026-10-23T18:34:38Z"
+            },
+            {
+              "name": "Reject stale governed validation trees",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-10-23T18:34:38Z",
+              "completed_at": "2026-10-23T18:34:41Z"
+            },
+            {
+              "name": "Validate decision reconciliation request",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-10-23T18:34:41Z",
+              "completed_at": "2026-10-23T18:34:41Z"
+            },
+            {
+              "name": "Validate manual channel selection",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-10-23T18:34:41Z",
+              "completed_at": "2026-10-23T18:34:41Z"
+            },
+            {
+              "name": "Select targeted premerge VM validation",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6,
+              "started_at": "2026-10-23T18:34:41Z",
+              "completed_at": "2026-10-23T18:34:42Z"
+            },
+            {
+              "name": "Run python3 scripts/ci/impact.py",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7,
+              "started_at": "2026-10-23T18:34:42Z",
+              "completed_at": "2026-10-23T18:34:42Z"
+            },
+            {
+              "name": "Run ./.github/actions/setup-nix",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 8,
+              "started_at": "2026-10-23T18:34:42Z",
+              "completed_at": "2026-10-23T18:34:42Z"
+            },
+            {
+              "name": "Run nix develop --file lib/ci-tools.nix shell --command python3 scripts/ci/bluefin-upstream.py reconcile",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 9,
+              "started_at": "2026-10-23T18:34:42Z",
+              "completed_at": "2026-10-23T18:34:42Z"
+            },
+            {
+              "name": "Select both images for an unpublished release version",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 10,
+              "started_at": "2026-10-23T18:34:42Z",
+              "completed_at": "2026-10-23T18:34:42Z"
+            },
+            {
+              "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 20,
+              "started_at": "2026-10-23T18:34:42Z",
+              "completed_at": "2026-10-23T18:34:42Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 21,
+              "started_at": "2026-10-23T18:34:42Z",
+              "completed_at": "2026-10-23T18:34:42Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/closure-labs/finite/check-runs/120588522008",
+          "labels": [
+            "ubuntu-24.04"
+          ],
+          "runner_id": 1000016248,
+          "runner_name": "GitHub Actions 1000016248",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        },
+        {
+          "id": 120588522445,
+          "run_id": 40004291051,
+          "workflow_name": "Build Finite",
+          "head_branch": "gh-readonly-queue/main/pr-238-a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "run_url": "https://api.github.com/repos/closure-labs/finite/actions/runs/40004291051",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOTRdZKM8AAAAcE6LTzQ",
+          "head_sha": "c42037d4164d4b4cbe1bb3554b9783cbfd99cfc0",
+          "url": "https://api.github.com/repos/closure-labs/finite/actions/jobs/120588522445",
+          "html_url": "https://github.com/closure-labs/finite/actions/runs/40004291051/job/120588522445",
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-10-23T18:34:32Z",
+          "started_at": "2026-10-23T18:34:36Z",
+          "completed_at": "2026-10-23T18:35:00Z",
+          "name": "Documentation checks",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-10-23T18:34:36Z",
+              "completed_at": "2026-10-23T18:34:37Z"
+            },
+            {
+              "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-10-23T18:34:37Z",
+              "completed_at": "2026-10-23T18:34:39Z"
+            },
+            {
+              "name": "Install documentation check tools",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-10-23T18:34:39Z",
+              "completed_at": "2026-10-23T18:34:54Z"
+            },
+            {
+              "name": "Run bash tests/repository/text-style.sh",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-10-23T18:34:54Z",
+              "completed_at": "2026-10-23T18:34:58Z"
+            },
+            {
+              "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8,
+              "started_at": "2026-10-23T18:34:58Z",
+              "completed_at": "2026-10-23T18:34:58Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9,
+              "started_at": "2026-10-23T18:34:58Z",
+              "completed_at": "2026-10-23T18:34:58Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/closure-labs/finite/check-runs/120588522445",
+          "labels": [
+            "ubuntu-24.04"
+          ],
+          "runner_id": 1000016249,
+          "runner_name": "GitHub Actions 1000016249",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        },
+        {
+          "id": 120588523930,
+          "run_id": 40004291051,
+          "workflow_name": "Build Finite",
+          "head_branch": "gh-readonly-queue/main/pr-238-a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "run_url": "https://api.github.com/repos/closure-labs/finite/actions/runs/40004291051",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOTRdZKM8AAAAcE6LZmg",
+          "head_sha": "c42037d4164d4b4cbe1bb3554b9783cbfd99cfc0",
+          "url": "https://api.github.com/repos/closure-labs/finite/actions/jobs/120588523930",
+          "html_url": "https://github.com/closure-labs/finite/actions/runs/40004291051/job/120588523930",
+          "status": "completed",
+          "conclusion": "skipped",
+          "created_at": "2026-10-23T18:34:33Z",
+          "started_at": "2026-10-23T18:34:33Z",
+          "completed_at": "2026-10-23T18:34:32Z",
+          "name": "VM tool provisioning trial",
+          "steps": [],
+          "check_run_url": "https://api.github.com/repos/closure-labs/finite/check-runs/120588523930",
+          "labels": [],
+          "runner_id": null,
+          "runner_name": null,
+          "runner_group_id": null,
+          "runner_group_name": null
+        },
+        {
+          "id": 120588741475,
+          "run_id": 40004291051,
+          "workflow_name": "Build Finite",
+          "head_branch": "gh-readonly-queue/main/pr-238-a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "run_url": "https://api.github.com/repos/closure-labs/finite/actions/runs/40004291051",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOTRdZKM8AAAAcE6YrYw",
+          "head_sha": "c42037d4164d4b4cbe1bb3554b9783cbfd99cfc0",
+          "url": "https://api.github.com/repos/closure-labs/finite/actions/jobs/120588741475",
+          "html_url": "https://github.com/closure-labs/finite/actions/runs/40004291051/job/120588741475",
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-10-23T18:35:00Z",
+          "started_at": "2026-10-23T18:35:03Z",
+          "completed_at": "2026-10-23T18:41:24Z",
+          "name": "Nix and runtime contracts",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-10-23T18:35:04Z",
+              "completed_at": "2026-10-23T18:35:05Z"
+            },
+            {
+              "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-10-23T18:35:05Z",
+              "completed_at": "2026-10-23T18:35:07Z"
+            },
+            {
+              "name": "Run ./.github/actions/setup-nix",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-10-23T18:35:07Z",
+              "completed_at": "2026-10-23T18:35:40Z"
+            },
+            {
+              "name": "Build checks, retrying transient fetch failures",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-10-23T18:35:40Z",
+              "completed_at": "2026-10-23T18:41:13Z"
+            },
+            {
+              "name": "Select images from payload dependencies",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-10-23T18:41:13Z",
+              "completed_at": "2026-10-23T18:41:18Z"
+            },
+            {
+              "name": "Post Run ./.github/actions/setup-nix",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9,
+              "started_at": "2026-10-23T18:41:18Z",
+              "completed_at": "2026-10-23T18:41:20Z"
+            },
+            {
+              "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 10,
+              "started_at": "2026-10-23T18:41:20Z",
+              "completed_at": "2026-10-23T18:41:21Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 11,
+              "started_at": "2026-10-23T18:41:21Z",
+              "completed_at": "2026-10-23T18:41:21Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/closure-labs/finite/check-runs/120588741475",
+          "labels": [
+            "ubuntu-24.04"
+          ],
+          "runner_id": 1000016250,
+          "runner_name": "GitHub Actions 1000016250",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        },
+        {
+          "id": 120591764459,
+          "run_id": 40004291051,
+          "workflow_name": "Build Finite",
+          "head_branch": "gh-readonly-queue/main/pr-238-a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "run_url": "https://api.github.com/repos/closure-labs/finite/actions/runs/40004291051",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOTRdZKM8AAAAcE9RL6w",
+          "head_sha": "c42037d4164d4b4cbe1bb3554b9783cbfd99cfc0",
+          "url": "https://api.github.com/repos/closure-labs/finite/actions/jobs/120591764459",
+          "html_url": "https://github.com/closure-labs/finite/actions/runs/40004291051/job/120591764459",
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-10-23T18:41:24Z",
+          "started_at": "2026-10-23T18:41:27Z",
+          "completed_at": "2026-10-23T19:29:08Z",
+          "name": "Validate (finite-dev) / build",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-10-23T18:41:28Z",
+              "completed_at": "2026-10-23T18:41:30Z"
+            },
+            {
+              "name": "Pre Monitor hosted runner (Community)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-10-23T18:41:30Z",
+              "completed_at": "2026-10-23T18:41:34Z"
+            },
+            {
+              "name": "Monitor hosted runner (Community)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-10-23T18:41:34Z",
+              "completed_at": "2026-10-23T18:41:34Z"
+            },
+            {
+              "name": "Validate diagnostic boundary",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 4,
+              "started_at": "2026-10-23T18:41:34Z",
+              "completed_at": "2026-10-23T18:41:34Z"
+            },
+            {
+              "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-10-23T18:41:34Z",
+              "completed_at": "2026-10-23T18:41:36Z"
+            },
+            {
+              "name": "Recheck governed validation tree before image setup",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6,
+              "started_at": "2026-10-23T18:41:36Z",
+              "completed_at": "2026-10-23T18:41:41Z"
+            },
+            {
+              "name": "Run ./.github/actions/setup-nix",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7,
+              "started_at": "2026-10-23T18:41:41Z",
+              "completed_at": "2026-10-23T18:42:05Z"
+            },
+            {
+              "name": "Make room for the image build",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8,
+              "started_at": "2026-10-23T18:42:05Z",
+              "completed_at": "2026-10-23T18:42:05Z"
+            },
+            {
+              "name": "Prepare pinned image tools once",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9,
+              "started_at": "2026-10-23T18:42:05Z",
+              "completed_at": "2026-10-23T18:42:10Z"
+            },
+            {
+              "name": "Prepare pinned scanner tools only for requested diagnostics",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 10,
+              "started_at": "2026-10-23T18:42:10Z",
+              "completed_at": "2026-10-23T18:42:10Z"
+            },
+            {
+              "name": "Validate extraction compatibility before diagnostic image work",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 11,
+              "started_at": "2026-10-23T18:42:10Z",
+              "completed_at": "2026-10-23T18:42:10Z"
+            },
+            {
+              "name": "Authenticate pinned upstream publishers",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 12,
+              "started_at": "2026-10-23T18:42:10Z",
+              "completed_at": "2026-10-23T18:42:11Z"
+            },
+            {
+              "name": "Authenticate the locked runtime Cosign publisher",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 13,
+              "started_at": "2026-10-23T18:42:11Z",
+              "completed_at": "2026-10-23T18:42:12Z"
+            },
+            {
+              "name": "Prepare candidate publication",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 14,
+              "started_at": "2026-10-23T18:42:12Z",
+              "completed_at": "2026-10-23T18:42:23Z"
+            },
+            {
+              "name": "Validate and resume immutable candidate",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 15,
+              "started_at": "2026-10-23T18:42:23Z",
+              "completed_at": "2026-10-23T18:42:23Z"
+            },
+            {
+              "name": "Install the verified locked BlueBuild CLI",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 16,
+              "started_at": "2026-10-23T18:42:23Z",
+              "completed_at": "2026-10-23T18:42:25Z"
+            },
+            {
+              "name": "Validate recipes and record generated Containerfile",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 17,
+              "started_at": "2026-10-23T18:42:25Z",
+              "completed_at": "2026-10-23T18:42:32Z"
+            },
+            {
+              "name": "Stage pinned payload",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 18,
+              "started_at": "2026-10-23T18:42:32Z",
+              "completed_at": "2026-10-23T18:42:35Z"
+            },
+            {
+              "name": "Set up the BlueBuild builder",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 19,
+              "started_at": "2026-10-23T18:42:35Z",
+              "completed_at": "2026-10-23T18:42:40Z"
+            },
+            {
+              "name": "Build with BlueBuild",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 20,
+              "started_at": "2026-10-23T18:42:40Z",
+              "completed_at": "2026-10-23T18:52:45Z"
+            },
+            {
+              "name": "Verify assembled image",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 21,
+              "started_at": "2026-10-23T18:52:45Z",
+              "completed_at": "2026-10-23T18:53:06Z"
+            },
+            {
+              "name": "Install targeted VM validation tools",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 22,
+              "started_at": "2026-10-23T18:53:06Z",
+              "completed_at": "2026-10-23T18:53:12Z"
+            },
+            {
+              "name": "Boot the exact local candidate without publication credentials",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 23,
+              "started_at": "2026-10-23T18:53:12Z",
+              "completed_at": "2026-10-23T19:28:22Z"
+            },
+            {
+              "name": "Save build evidence",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 24,
+              "started_at": "2026-10-23T19:28:22Z",
+              "completed_at": "2026-10-23T19:28:24Z"
+            },
+            {
+              "name": "Diagnose the assembled unpublished candidate",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 25,
+              "started_at": "2026-10-23T19:28:24Z",
+              "completed_at": "2026-10-23T19:28:24Z"
+            },
+            {
+              "name": "Retain diagnostic evidence including policy blockers",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 26,
+              "started_at": "2026-10-23T19:28:24Z",
+              "completed_at": "2026-10-23T19:28:24Z"
+            },
+            {
+              "name": "Post Set up the BlueBuild builder",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 49,
+              "started_at": "2026-10-23T19:28:24Z",
+              "completed_at": "2026-10-23T19:29:01Z"
+            },
+            {
+              "name": "Post Run ./.github/actions/setup-nix",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 50,
+              "started_at": "2026-10-23T19:29:01Z",
+              "completed_at": "2026-10-23T19:29:03Z"
+            },
+            {
+              "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 51,
+              "started_at": "2026-10-23T19:29:03Z",
+              "completed_at": "2026-10-23T19:29:03Z"
+            },
+            {
+              "name": "Post Monitor hosted runner (Community)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 52,
+              "started_at": "2026-10-23T19:29:03Z",
+              "completed_at": "2026-10-23T19:29:06Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 53,
+              "started_at": "2026-10-23T19:29:06Z",
+              "completed_at": "2026-10-23T19:29:06Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/closure-labs/finite/check-runs/120591764459",
+          "labels": [
+            "ubuntu-24.04"
+          ],
+          "runner_id": 1000016261,
+          "runner_name": "GitHub Actions 1000016261",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        },
+        {
+          "id": 120591764500,
+          "run_id": 40004291051,
+          "workflow_name": "Build Finite",
+          "head_branch": "gh-readonly-queue/main/pr-238-a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "run_url": "https://api.github.com/repos/closure-labs/finite/actions/runs/40004291051",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOTRdZKM8AAAAcE9RMFA",
+          "head_sha": "c42037d4164d4b4cbe1bb3554b9783cbfd99cfc0",
+          "url": "https://api.github.com/repos/closure-labs/finite/actions/jobs/120591764500",
+          "html_url": "https://github.com/closure-labs/finite/actions/runs/40004291051/job/120591764500",
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-10-23T18:41:24Z",
+          "started_at": "2026-10-23T18:41:27Z",
+          "completed_at": "2026-10-23T19:22:45Z",
+          "name": "Validate (finite) / build",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-10-23T18:41:28Z",
+              "completed_at": "2026-10-23T18:41:31Z"
+            },
+            {
+              "name": "Pre Monitor hosted runner (Community)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-10-23T18:41:31Z",
+              "completed_at": "2026-10-23T18:41:34Z"
+            },
+            {
+              "name": "Monitor hosted runner (Community)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-10-23T18:41:34Z",
+              "completed_at": "2026-10-23T18:41:35Z"
+            },
+            {
+              "name": "Validate diagnostic boundary",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 4,
+              "started_at": "2026-10-23T18:41:35Z",
+              "completed_at": "2026-10-23T18:41:35Z"
+            },
+            {
+              "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-10-23T18:41:35Z",
+              "completed_at": "2026-10-23T18:41:36Z"
+            },
+            {
+              "name": "Recheck governed validation tree before image setup",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6,
+              "started_at": "2026-10-23T18:41:36Z",
+              "completed_at": "2026-10-23T18:41:40Z"
+            },
+            {
+              "name": "Run ./.github/actions/setup-nix",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7,
+              "started_at": "2026-10-23T18:41:40Z",
+              "completed_at": "2026-10-23T18:42:06Z"
+            },
+            {
+              "name": "Make room for the image build",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8,
+              "started_at": "2026-10-23T18:42:06Z",
+              "completed_at": "2026-10-23T18:42:06Z"
+            },
+            {
+              "name": "Prepare pinned image tools once",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9,
+              "started_at": "2026-10-23T18:42:06Z",
+              "completed_at": "2026-10-23T18:42:12Z"
+            },
+            {
+              "name": "Prepare pinned scanner tools only for requested diagnostics",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 10,
+              "started_at": "2026-10-23T18:42:12Z",
+              "completed_at": "2026-10-23T18:42:12Z"
+            },
+            {
+              "name": "Validate extraction compatibility before diagnostic image work",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 11,
+              "started_at": "2026-10-23T18:42:12Z",
+              "completed_at": "2026-10-23T18:42:12Z"
+            },
+            {
+              "name": "Authenticate pinned upstream publishers",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 12,
+              "started_at": "2026-10-23T18:42:12Z",
+              "completed_at": "2026-10-23T18:42:13Z"
+            },
+            {
+              "name": "Authenticate the locked runtime Cosign publisher",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 13,
+              "started_at": "2026-10-23T18:42:13Z",
+              "completed_at": "2026-10-23T18:42:17Z"
+            },
+            {
+              "name": "Prepare candidate publication",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 14,
+              "started_at": "2026-10-23T18:42:17Z",
+              "completed_at": "2026-10-23T18:42:27Z"
+            },
+            {
+              "name": "Validate and resume immutable candidate",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 15,
+              "started_at": "2026-10-23T18:42:27Z",
+              "completed_at": "2026-10-23T18:42:27Z"
+            },
+            {
+              "name": "Install the verified locked BlueBuild CLI",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 16,
+              "started_at": "2026-10-23T18:42:27Z",
+              "completed_at": "2026-10-23T18:42:30Z"
+            },
+            {
+              "name": "Validate recipes and record generated Containerfile",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 17,
+              "started_at": "2026-10-23T18:42:30Z",
+              "completed_at": "2026-10-23T18:42:38Z"
+            },
+            {
+              "name": "Stage pinned payload",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 18,
+              "started_at": "2026-10-23T18:42:38Z",
+              "completed_at": "2026-10-23T18:42:41Z"
+            },
+            {
+              "name": "Set up the BlueBuild builder",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 19,
+              "started_at": "2026-10-23T18:42:41Z",
+              "completed_at": "2026-10-23T18:42:47Z"
+            },
+            {
+              "name": "Build with BlueBuild",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 20,
+              "started_at": "2026-10-23T18:42:47Z",
+              "completed_at": "2026-10-23T18:50:21Z"
+            },
+            {
+              "name": "Verify assembled image",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 21,
+              "started_at": "2026-10-23T18:50:21Z",
+              "completed_at": "2026-10-23T18:50:39Z"
+            },
+            {
+              "name": "Install targeted VM validation tools",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 22,
+              "started_at": "2026-10-23T18:50:39Z",
+              "completed_at": "2026-10-23T18:50:45Z"
+            },
+            {
+              "name": "Boot the exact local candidate without publication credentials",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 23,
+              "started_at": "2026-10-23T18:50:45Z",
+              "completed_at": "2026-10-23T19:22:07Z"
+            },
+            {
+              "name": "Save build evidence",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 24,
+              "started_at": "2026-10-23T19:22:07Z",
+              "completed_at": "2026-10-23T19:22:09Z"
+            },
+            {
+              "name": "Diagnose the assembled unpublished candidate",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 25,
+              "started_at": "2026-10-23T19:22:09Z",
+              "completed_at": "2026-10-23T19:22:09Z"
+            },
+            {
+              "name": "Retain diagnostic evidence including policy blockers",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 26,
+              "started_at": "2026-10-23T19:22:09Z",
+              "completed_at": "2026-10-23T19:22:09Z"
+            },
+            {
+              "name": "Post Set up the BlueBuild builder",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 49,
+              "started_at": "2026-10-23T19:22:09Z",
+              "completed_at": "2026-10-23T19:22:39Z"
+            },
+            {
+              "name": "Post Run ./.github/actions/setup-nix",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 50,
+              "started_at": "2026-10-23T19:22:39Z",
+              "completed_at": "2026-10-23T19:22:40Z"
+            },
+            {
+              "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 51,
+              "started_at": "2026-10-23T19:22:40Z",
+              "completed_at": "2026-10-23T19:22:41Z"
+            },
+            {
+              "name": "Post Monitor hosted runner (Community)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 52,
+              "started_at": "2026-10-23T19:22:41Z",
+              "completed_at": "2026-10-23T19:22:42Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 53,
+              "started_at": "2026-10-23T19:22:42Z",
+              "completed_at": "2026-10-23T19:22:42Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/closure-labs/finite/check-runs/120591764500",
+          "labels": [
+            "ubuntu-24.04"
+          ],
+          "runner_id": 1000016262,
+          "runner_name": "GitHub Actions 1000016262",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        },
+        {
+          "id": 120591764676,
+          "run_id": 40004291051,
+          "workflow_name": "Build Finite",
+          "head_branch": "gh-readonly-queue/main/pr-238-a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "run_url": "https://api.github.com/repos/closure-labs/finite/actions/runs/40004291051",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOTRdZKM8AAAAcE9RMxA",
+          "head_sha": "c42037d4164d4b4cbe1bb3554b9783cbfd99cfc0",
+          "url": "https://api.github.com/repos/closure-labs/finite/actions/jobs/120591764676",
+          "html_url": "https://github.com/closure-labs/finite/actions/runs/40004291051/job/120591764676",
+          "status": "completed",
+          "conclusion": "skipped",
+          "created_at": "2026-10-23T18:41:24Z",
+          "started_at": "2026-10-23T18:41:24Z",
+          "completed_at": "2026-10-23T18:41:24Z",
+          "name": "Publish (${{ matrix.profile }})",
+          "steps": [],
+          "check_run_url": "https://api.github.com/repos/closure-labs/finite/check-runs/120591764676",
+          "labels": [],
+          "runner_id": null,
+          "runner_name": null,
+          "runner_group_id": null,
+          "runner_group_name": null
+        },
+        {
+          "id": 120613665446,
+          "run_id": 40004291051,
+          "workflow_name": "Build Finite",
+          "head_branch": "gh-readonly-queue/main/pr-238-a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+          "run_url": "https://api.github.com/repos/closure-labs/finite/actions/runs/40004291051",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOTRdZKM8AAAAcFSJ6pg",
+          "head_sha": "c42037d4164d4b4cbe1bb3554b9783cbfd99cfc0",
+          "url": "https://api.github.com/repos/closure-labs/finite/actions/jobs/120613665446",
+          "html_url": "https://github.com/closure-labs/finite/actions/runs/40004291051/job/120613665446",
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-10-23T19:29:08Z",
+          "started_at": "2026-10-23T19:29:11Z",
+          "completed_at": "2026-10-23T19:29:17Z",
+          "name": "CI gate",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-10-23T19:29:12Z",
+              "completed_at": "2026-10-23T19:29:12Z"
+            },
+            {
+              "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-10-23T19:29:12Z",
+              "completed_at": "2026-10-23T19:29:14Z"
+            },
+            {
+              "name": "Run python3 scripts/ci/gate.py",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-10-23T19:29:14Z",
+              "completed_at": "2026-10-23T19:29:14Z"
+            },
+            {
+              "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6,
+              "started_at": "2026-10-23T19:29:14Z",
+              "completed_at": "2026-10-23T19:29:14Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7,
+              "started_at": "2026-10-23T19:29:14Z",
+              "completed_at": "2026-10-23T19:29:14Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/closure-labs/finite/check-runs/120613665446",
+          "labels": [
+            "ubuntu-24.04"
+          ],
+          "runner_id": 1000016300,
+          "runner_name": "GitHub Actions 1000016300",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        }
+      ]
+    },
+    "40011839730": {
+      "total_count": 7,
+      "jobs": [
+        {
+          "id": 120613924521,
+          "run_id": 40011839730,
+          "workflow_name": "Build Finite",
+          "head_branch": "main",
+          "run_url": "https://api.github.com/repos/closure-labs/finite/actions/runs/40011839730",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOTRdZKM8AAAAcFSZuqQ",
+          "head_sha": "c42037d4164d4b4cbe1bb3554b9783cbfd99cfc0",
+          "url": "https://api.github.com/repos/closure-labs/finite/actions/jobs/120613924521",
+          "html_url": "https://github.com/closure-labs/finite/actions/runs/40011839730/job/120613924521",
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-10-23T19:29:43Z",
+          "started_at": "2026-10-23T19:29:46Z",
+          "completed_at": "2026-10-23T19:30:31Z",
+          "name": "Documentation checks",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-10-23T19:29:47Z",
+              "completed_at": "2026-10-23T19:29:48Z"
+            },
+            {
+              "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-10-23T19:29:48Z",
+              "completed_at": "2026-10-23T19:29:49Z"
+            },
+            {
+              "name": "Install documentation check tools",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-10-23T19:29:49Z",
+              "completed_at": "2026-10-23T19:30:24Z"
+            },
+            {
+              "name": "Run bash tests/repository/text-style.sh",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-10-23T19:30:24Z",
+              "completed_at": "2026-10-23T19:30:28Z"
+            },
+            {
+              "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8,
+              "started_at": "2026-10-23T19:30:28Z",
+              "completed_at": "2026-10-23T19:30:28Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9,
+              "started_at": "2026-10-23T19:30:28Z",
+              "completed_at": "2026-10-23T19:30:28Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/closure-labs/finite/check-runs/120613924521",
+          "labels": [
+            "ubuntu-24.04"
+          ],
+          "runner_id": 1000016302,
+          "runner_name": "GitHub Actions 1000016302",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        },
+        {
+          "id": 120613924800,
+          "run_id": 40011839730,
+          "workflow_name": "Build Finite",
+          "head_branch": "main",
+          "run_url": "https://api.github.com/repos/closure-labs/finite/actions/runs/40011839730",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOTRdZKM8AAAAcFSZvwA",
+          "head_sha": "c42037d4164d4b4cbe1bb3554b9783cbfd99cfc0",
+          "url": "https://api.github.com/repos/closure-labs/finite/actions/jobs/120613924800",
+          "html_url": "https://github.com/closure-labs/finite/actions/runs/40011839730/job/120613924800",
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-10-23T19:29:43Z",
+          "started_at": "2026-10-23T19:29:46Z",
+          "completed_at": "2026-10-23T19:30:38Z",
+          "name": "Select checks",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-10-23T19:29:47Z",
+              "completed_at": "2026-10-23T19:29:48Z"
+            },
+            {
+              "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-10-23T19:29:48Z",
+              "completed_at": "2026-10-23T19:29:51Z"
+            },
+            {
+              "name": "Reject stale governed validation trees",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 3,
+              "started_at": "2026-10-23T19:29:51Z",
+              "completed_at": "2026-10-23T19:29:51Z"
+            },
+            {
+              "name": "Validate decision reconciliation request",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-10-23T19:29:51Z",
+              "completed_at": "2026-10-23T19:29:51Z"
+            },
+            {
+              "name": "Validate manual channel selection",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-10-23T19:29:51Z",
+              "completed_at": "2026-10-23T19:29:51Z"
+            },
+            {
+              "name": "Select targeted premerge VM validation",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6,
+              "started_at": "2026-10-23T19:29:51Z",
+              "completed_at": "2026-10-23T19:29:51Z"
+            },
+            {
+              "name": "Run python3 scripts/ci/impact.py",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7,
+              "started_at": "2026-10-23T19:29:51Z",
+              "completed_at": "2026-10-23T19:29:51Z"
+            },
+            {
+              "name": "Run ./.github/actions/setup-nix",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8,
+              "started_at": "2026-10-23T19:29:51Z",
+              "completed_at": "2026-10-23T19:30:10Z"
+            },
+            {
+              "name": "Run nix develop --file lib/ci-tools.nix shell --command python3 scripts/ci/bluefin-upstream.py reconcile",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9,
+              "started_at": "2026-10-23T19:30:10Z",
+              "completed_at": "2026-10-23T19:30:32Z"
+            },
+            {
+              "name": "Select both images for an unpublished release version",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 10,
+              "started_at": "2026-10-23T19:30:32Z",
+              "completed_at": "2026-10-23T19:30:34Z"
+            },
+            {
+              "name": "Post Run ./.github/actions/setup-nix",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 19,
+              "started_at": "2026-10-23T19:30:34Z",
+              "completed_at": "2026-10-23T19:30:35Z"
+            },
+            {
+              "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 20,
+              "started_at": "2026-10-23T19:30:35Z",
+              "completed_at": "2026-10-23T19:30:35Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 21,
+              "started_at": "2026-10-23T19:30:35Z",
+              "completed_at": "2026-10-23T19:30:35Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/closure-labs/finite/check-runs/120613924800",
+          "labels": [
+            "ubuntu-24.04"
+          ],
+          "runner_id": 1000016304,
+          "runner_name": "GitHub Actions 1000016304",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        },
+        {
+          "id": 120613926480,
+          "run_id": 40011839730,
+          "workflow_name": "Build Finite",
+          "head_branch": "main",
+          "run_url": "https://api.github.com/repos/closure-labs/finite/actions/runs/40011839730",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOTRdZKM8AAAAcFSZ2UA",
+          "head_sha": "c42037d4164d4b4cbe1bb3554b9783cbfd99cfc0",
+          "url": "https://api.github.com/repos/closure-labs/finite/actions/jobs/120613926480",
+          "html_url": "https://github.com/closure-labs/finite/actions/runs/40011839730/job/120613926480",
+          "status": "completed",
+          "conclusion": "skipped",
+          "created_at": "2026-10-23T19:29:43Z",
+          "started_at": "2026-10-23T19:29:43Z",
+          "completed_at": "2026-10-23T19:29:43Z",
+          "name": "VM tool provisioning trial",
+          "steps": [],
+          "check_run_url": "https://api.github.com/repos/closure-labs/finite/check-runs/120613926480",
+          "labels": [],
+          "runner_id": null,
+          "runner_name": null,
+          "runner_group_id": null,
+          "runner_group_name": null
+        },
+        {
+          "id": 120614348165,
+          "run_id": 40011839730,
+          "workflow_name": "Build Finite",
+          "head_branch": "main",
+          "run_url": "https://api.github.com/repos/closure-labs/finite/actions/runs/40011839730",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOTRdZKM8AAAAcFSzlhQ",
+          "head_sha": "c42037d4164d4b4cbe1bb3554b9783cbfd99cfc0",
+          "url": "https://api.github.com/repos/closure-labs/finite/actions/jobs/120614348165",
+          "html_url": "https://github.com/closure-labs/finite/actions/runs/40011839730/job/120614348165",
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-10-23T19:30:38Z",
+          "started_at": "2026-10-23T19:30:41Z",
+          "completed_at": "2026-10-23T19:37:17Z",
+          "name": "Nix and runtime contracts",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-10-23T19:30:42Z",
+              "completed_at": "2026-10-23T19:30:42Z"
+            },
+            {
+              "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-10-23T19:30:42Z",
+              "completed_at": "2026-10-23T19:30:44Z"
+            },
+            {
+              "name": "Run ./.github/actions/setup-nix",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-10-23T19:30:44Z",
+              "completed_at": "2026-10-23T19:31:14Z"
+            },
+            {
+              "name": "Build checks, retrying transient fetch failures",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-10-23T19:31:14Z",
+              "completed_at": "2026-10-23T19:37:08Z"
+            },
+            {
+              "name": "Select images from payload dependencies",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-10-23T19:37:08Z",
+              "completed_at": "2026-10-23T19:37:14Z"
+            },
+            {
+              "name": "Post Run ./.github/actions/setup-nix",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9,
+              "started_at": "2026-10-23T19:37:14Z",
+              "completed_at": "2026-10-23T19:37:15Z"
+            },
+            {
+              "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 10,
+              "started_at": "2026-10-23T19:37:15Z",
+              "completed_at": "2026-10-23T19:37:16Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 11,
+              "started_at": "2026-10-23T19:37:16Z",
+              "completed_at": "2026-10-23T19:37:16Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/closure-labs/finite/check-runs/120614348165",
+          "labels": [
+            "ubuntu-24.04"
+          ],
+          "runner_id": 1000016306,
+          "runner_name": "GitHub Actions 1000016306",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        },
+        {
+          "id": 120617282525,
+          "run_id": 40011839730,
+          "workflow_name": "Build Finite",
+          "head_branch": "main",
+          "run_url": "https://api.github.com/repos/closure-labs/finite/actions/runs/40011839730",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOTRdZKM8AAAAcFVmr3Q",
+          "head_sha": "c42037d4164d4b4cbe1bb3554b9783cbfd99cfc0",
+          "url": "https://api.github.com/repos/closure-labs/finite/actions/jobs/120617282525",
+          "html_url": "https://github.com/closure-labs/finite/actions/runs/40011839730/job/120617282525",
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-10-23T19:37:17Z",
+          "started_at": "2026-10-23T19:37:20Z",
+          "completed_at": "2026-10-23T19:37:24Z",
+          "name": "CI gate",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-10-23T19:37:20Z",
+              "completed_at": "2026-10-23T19:37:21Z"
+            },
+            {
+              "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-10-23T19:37:21Z",
+              "completed_at": "2026-10-23T19:37:22Z"
+            },
+            {
+              "name": "Run python3 scripts/ci/gate.py",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-10-23T19:37:22Z",
+              "completed_at": "2026-10-23T19:37:22Z"
+            },
+            {
+              "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6,
+              "started_at": "2026-10-23T19:37:22Z",
+              "completed_at": "2026-10-23T19:37:22Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7,
+              "started_at": "2026-10-23T19:37:22Z",
+              "completed_at": "2026-10-23T19:37:22Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/closure-labs/finite/check-runs/120617282525",
+          "labels": [
+            "ubuntu-24.04"
+          ],
+          "runner_id": 1000016312,
+          "runner_name": "GitHub Actions 1000016312",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        },
+        {
+          "id": 120617283394,
+          "run_id": 40011839730,
+          "workflow_name": "Build Finite",
+          "head_branch": "main",
+          "run_url": "https://api.github.com/repos/closure-labs/finite/actions/runs/40011839730",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOTRdZKM8AAAAcFVmvQg",
+          "head_sha": "c42037d4164d4b4cbe1bb3554b9783cbfd99cfc0",
+          "url": "https://api.github.com/repos/closure-labs/finite/actions/jobs/120617283394",
+          "html_url": "https://github.com/closure-labs/finite/actions/runs/40011839730/job/120617283394",
+          "status": "completed",
+          "conclusion": "skipped",
+          "created_at": "2026-10-23T19:37:17Z",
+          "started_at": "2026-10-23T19:37:17Z",
+          "completed_at": "2026-10-23T19:37:17Z",
+          "name": "Validate (${{ matrix.profile }})",
+          "steps": [],
+          "check_run_url": "https://api.github.com/repos/closure-labs/finite/check-runs/120617283394",
+          "labels": [],
+          "runner_id": null,
+          "runner_name": null,
+          "runner_group_id": null,
+          "runner_group_name": null
+        },
+        {
+          "id": 120617284628,
+          "run_id": 40011839730,
+          "workflow_name": "Build Finite",
+          "head_branch": "main",
+          "run_url": "https://api.github.com/repos/closure-labs/finite/actions/runs/40011839730",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOTRdZKM8AAAAcFVm0FA",
+          "head_sha": "c42037d4164d4b4cbe1bb3554b9783cbfd99cfc0",
+          "url": "https://api.github.com/repos/closure-labs/finite/actions/jobs/120617284628",
+          "html_url": "https://github.com/closure-labs/finite/actions/runs/40011839730/job/120617284628",
+          "status": "completed",
+          "conclusion": "skipped",
+          "created_at": "2026-10-23T19:37:17Z",
+          "started_at": "2026-10-23T19:37:17Z",
+          "completed_at": "2026-10-23T19:37:17Z",
+          "name": "Publish (${{ matrix.profile }})",
+          "steps": [],
+          "check_run_url": "https://api.github.com/repos/closure-labs/finite/check-runs/120617284628",
+          "labels": [],
+          "runner_id": null,
+          "runner_name": null,
+          "runner_group_id": null,
+          "runner_group_name": null
+        }
+      ]
+    }
   }
 }

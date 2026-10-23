@@ -377,6 +377,8 @@ class Qualification(unittest.TestCase):
             'workflow_run': {'id': 123, 'head_sha': self.revision}}
         real_run = subprocess.run
         calls = []
+        iso_failure = None
+        iso_payload = iso_data
         def api(path, paginated=False):
             if '/jobs?' in path:
                 return [{'jobs': [fixture.job]}]
@@ -386,7 +388,14 @@ class Qualification(unittest.TestCase):
         def command(args, **kwargs):
             calls.append(args)
             if args[0] == 'gh':
-                kwargs['stdout'].write(qualification_data if '/678/zip' in args[-1] else iso_data)
+                if '/678/zip' in args[-1]:
+                    kwargs['stdout'].write(qualification_data)
+                else:
+                    self.assertEqual(kwargs['timeout'], predecessor.ISO_TRANSFER_TIMEOUT)
+                    if iso_failure is not None:
+                        kwargs['stdout'].write(b'partial archive')
+                        raise iso_failure
+                    kwargs['stdout'].write(iso_payload)
             elif args[0] == 'cosign':
                 if bad_signature:
                     raise subprocess.CalledProcessError(1, args)
@@ -402,6 +411,27 @@ class Qualification(unittest.TestCase):
             self.assertFalse((self.directory / 'missing-tag').exists())
             info = {'Digest': self.candidate.split('@')[1]}
             with patch.object(predecessor.upstream, 'inspect', return_value=info):
+                transfer = ['gh', 'api', f'repos/{r.REPOSITORY}/actions/artifacts/679/zip']
+                for failure, expected in [
+                    (subprocess.TimeoutExpired(transfer, predecessor.ISO_TRANSFER_TIMEOUT), predecessor.reuse.Unavailable),
+                    (subprocess.CalledProcessError(1, transfer, stderr='HTTP 403'), subprocess.CalledProcessError),
+                    (subprocess.CalledProcessError(1, transfer, stderr='HTTP 416'), subprocess.CalledProcessError),
+                    (subprocess.TimeoutExpired(['cosign', 'verify'], 150), subprocess.TimeoutExpired),
+                ]:
+                    with self.subTest(failure=repr(failure)):
+                        iso_failure = failure
+                        before = sum(call == transfer for call in calls)
+                        destination = self.directory / 'failed-transfer'
+                        with self.assertRaises(expected):
+                            predecessor.restore(self.profile, self.candidate.split('@')[1], destination)
+                        self.assertFalse(destination.exists())
+                        self.assertEqual(sum(call == transfer for call in calls), before + 1)
+                iso_failure = None
+                iso_payload = iso_data[:-1] + bytes([iso_data[-1] ^ 1])
+                with self.assertRaisesRegex(ValueError, 'digest mismatch'):
+                    predecessor.restore(self.profile, self.candidate.split('@')[1], self.directory / 'bad-archive')
+                self.assertFalse((self.directory / 'bad-archive').exists())
+                iso_payload = iso_data
                 bad_signature = True
                 with self.assertRaises(subprocess.CalledProcessError):
                     predecessor.restore(self.profile, self.candidate.split('@')[1], self.directory / 'bad-signature')
@@ -429,6 +459,7 @@ class Qualification(unittest.TestCase):
         destination = self.directory / 'release'
         destination.mkdir()
         def download(command, stdout, **kwargs):
+            self.assertEqual(kwargs['timeout'], 1800, 'Release fetch keeps its strict existing transfer policy')
             stdout.write(data)
         with patch.object(release.subprocess, 'run', side_effect=download):
             release.authenticated_iso(artifact, run, value, destination)
@@ -438,6 +469,24 @@ class Qualification(unittest.TestCase):
             another = self.directory / 'invalid-release'; another.mkdir()
             with self.assertRaisesRegex(ValueError, 'pristine bytes'):
                 release.authenticated_iso(artifact, run, changed, another)
+
+    def test_iso_transfer_timeout_stops_real_child_before_extracting_partial_bytes(self):
+        value = self.aggregate()
+        run = {'id': 123, 'head_sha': self.revision}
+        artifact = {'id': 456, 'size_in_bytes': 100, 'digest': 'sha256:' + '0' * 64, 'workflow_run': run}
+        destination = self.directory / 'timeout-release'
+        destination.mkdir()
+        tools = self.directory / 'bin'; tools.mkdir()
+        gh = tools / 'gh'
+        gh.write_text('#!' + sys.executable + '\nimport sys,time\nsys.stdout.write("partial archive"); sys.stdout.flush(); time.sleep(2)\n')
+        gh.chmod(0o755)
+        with patch.dict(os.environ, PATH=str(tools) + os.pathsep + os.environ['PATH']):
+            with self.assertRaises(subprocess.TimeoutExpired):
+                release.authenticated_iso(artifact, run, value, destination, download_timeout=0.05)
+        self.assertEqual(list(destination.iterdir()), [])
+        for timeout in (0, -1, True, 1801, float('nan')):
+            with self.assertRaisesRegex(ValueError, 'bounded positive timeout'):
+                release.authenticated_iso(artifact, run, value, destination, download_timeout=timeout)
 
 
 class Origin(unittest.TestCase):

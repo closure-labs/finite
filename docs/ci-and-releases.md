@@ -440,6 +440,11 @@ producer/archive identities, checksums, the original installer binding, an
 unchanged installation tag, current signature verification and a new upgrade
 and rollback VM run. Full qualification receipt reuse retains the complete
 context comparison. See the [October 23 predecessor audit](ci-predecessor-2026-10-23.md).
+An optional predecessor archive transfer gets one ten-minute attempt. A timeout
+of that exact GET reconstructs the installer for the same signed predecessor
+through the existing fallback before upgrade/rollback acceptance. Authorization,
+integrity and unrelated errors remain terminal. Exact release asset retrieval
+keeps its existing strict policy. See the [ISO transfer audit](iso-transport-2026-10-23.md).
 GitHub Actions supplies backend values through the `github-actions` environment
 provider; signing and authority tasks use the encrypted `local = "pass://"`
 provider locally. Cachix uses devenv’s built-in SecretSpec requirement with

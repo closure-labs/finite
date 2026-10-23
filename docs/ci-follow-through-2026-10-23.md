@@ -29,7 +29,7 @@ before/after savings or billed cost. Nested rows must not be summed twice.
 | ISO construction | 571.576 | 807.634 |
 | VM acceptance, including guest operations | 674.236 | 991.153 |
 | Guest installation, within acceptance | 267 | 463 |
-| Home Manager activation, within acceptance | 326 | 402 |
+| Combined guest initialization, within acceptance | 326 | 402 |
 
 The two evidence archives are 126,074 and 134,462 bytes. Their native archive
 SHA-256 digests were checked before reading them; neither contains an ISO.
@@ -49,9 +49,11 @@ source for repository-wide totals including failed, cancelled and recovery work.
 Both profiles passed fresh installation and upgrade/rollback with Secure Boot,
 encrypted root, enforcing SELinux and the existing Nix daemon/socket contracts.
 The retained Home Manager receipts report successful customization and Nix
-state checks before and after upgrade. Fresh Home Manager activation measured
+state checks before and after upgrade. The combined guest initialization interval measured
 359 seconds on standard and 586 seconds on developer. The predecessor guest's
-activation measured 348 and 339 seconds. These isolated observations identify
+combined initialization measured 348 and 339 seconds. The historical `home-activation` timer includes startup checks, Homebrew setup,
+predecessor preparation, `home-init` and persistence/customization fixture
+creation. It does not measure `home-init` alone. These observations identify
 substantial guest work; they do not isolate fetch, evaluation or realization
 cost, nor justify retrying the initializer or deleting partially created homes.
 
@@ -93,6 +95,32 @@ Queue admission after the parent PR merges does not depend on completion of its
 main publication. #238 entered the protected queue while #237 completed its
 publication. Source/authority preflights and publication-current checks still
 apply. Do not cancel active publication or weaken those checks to create overlap.
+
+## Current findings
+
+Historical reports retain their original measurements. This table is the current
+work list; a successful source check is separate from observed production use.
+
+| Recommendation and evidence | Status | Next evidence |
+| --- | --- | --- |
+| Remove duplicate PR image/VM rounds ([architecture](ci-architecture-2026-10-23.md), #232) | completed | Keep protected queue coverage for both profiles |
+| Direct equivalent payload evaluation ([payload report](ci-payload-evaluation-2026-10-23.md), #237) | completed | Exact derivation equality and both main promotions passed |
+| Correct predecessor context matching ([predecessor report](ci-predecessor-2026-10-23.md)) | completed | Preserve authenticated exact-image restore checks |
+| Bound optional predecessor transfer ([ISO audit](iso-transport-2026-10-23.md), #238) | awaiting rollout evidence | Queue/source checks passed; first main selected no images and did not execute the timeout path |
+| Split guest initialization and measure all main qualification stages | requires measurement | Observe startup, Homebrew, predecessor, home-init and fixture intervals on natural runs |
+| Rank recurring work by native runner occupancy and critical path ([cost baseline](ci-workflow-costs-2026-10-23.md)) | requires measurement | Join bounded receipts, preserve unknowns and distinguish later rollout revisions |
+| Reuse installer runtime ([architecture](ci-architecture-2026-10-23.md)) | requires measurement | Stage breakdown must identify avoidable cost before any behavior change |
+| Transport guest closures ([reuse results](new-os-reuse-results.md)) | requires measurement | Preserve unseeded installs and actual bootc Home Manager activation |
+| Replace duplicate release ZIP read with native origin receipt ([ISO audit](iso-transport-2026-10-23.md)) | requires measurement | Separate draft, exact-packet correctness, five matched warm pairs and one cold pair |
+| Retained local OCI verification ([rollout](ci-rollout-2026-10-23.md)) | deferred | Exact same-build dual export required before comparisons |
+| Automatic Cachix writing and Grype database transport ([reuse experiments](reuse-timing-experiments.md)) | deferred | Remain disabled |
+| Seven-day assessment | requires measurement | Finish after 2026-10-30T05:01:17Z; later rollouts are separate incomplete cohorts |
+
+The #238 [queue run](https://github.com/closure-labs/finite/actions/runs/40004291051)
+and first [main run](https://github.com/closure-labs/finite/actions/runs/40011839730)
+both succeeded. Main intentionally selected no images, so qualification jobs
+were skipped. The source checks validate the timeout implementation; these
+outcomes do not establish execution of the optional transfer in production.
 
 ## Remaining observations and rollback
 

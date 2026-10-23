@@ -1,0 +1,199 @@
+{
+  "schema": 1,
+  "kind": "finite-iso-transfer-audit",
+  "authorizesPublication": false,
+  "repository": "closure-labs/finite",
+  "observedAt": "2026-10-23",
+  "run": 39980522095,
+  "attempt": 1,
+  "sourceRevision": "ecf670fa9b91b4b68cef6c1c0e5008d6fa42093d",
+  "profile": "finite-dev",
+  "candidateDigest": "sha256:9ca36fd40faad9cebc7f3ea4251d8189911caac026a0d4207b0b8ff1fc1f6903",
+  "previousDigest": "sha256:e8b35af24e32c7f1a511b2d410cecb72453ebc95da7c14109a0d31d3db1e9c24",
+  "buildIdentity": "v1:57ad8102ed17ac88dee21f8aaf66807d2ada5719c935c03c6e7cbccc369aae38",
+  "upgrade": {
+    "job": 120522513504,
+    "timing": {
+      "schema": 1,
+      "kind": "finite-stage-timing",
+      "authorizesPublication": false,
+      "repository": "closure-labs/finite",
+      "runId": "39980522095",
+      "runAttempt": "1",
+      "revision": "ecf670fa9b91b4b68cef6c1c0e5008d6fa42093d",
+      "profile": "finite-dev",
+      "sourceRevision": "ecf670fa9b91b4b68cef6c1c0e5008d6fa42093d",
+      "candidateDigest": "sha256:9ca36fd40faad9cebc7f3ea4251d8189911caac026a0d4207b0b8ff1fc1f6903",
+      "buildIdentity": "v1:57ad8102ed17ac88dee21f8aaf66807d2ada5719c935c03c6e7cbccc369aae38",
+      "runner": {
+        "RUNNER_OS": "Linux",
+        "RUNNER_ARCH": "X64",
+        "ImageOS": "ubuntu24",
+        "ImageVersion": "20261012.334.1"
+      },
+      "lockSha256": {
+        "flake.lock": "a1a2f898f434d48b27ad644f3148e528ef833795a6617b195e29cb36081a70cc",
+        "devenv.lock": "a86b17ce420d5a3cd8f307d3cb3973ec2670c084ef88b49a2b49b3451a92a71a"
+      },
+      "toolCohort": {
+        "pythonExecutable": "/nix/store/d7p0bc9x4g4glf0qskh5kxwxwx54slvg-python3-3.13.15-env/bin/python3.13",
+        "nixExecutable": "/nix/store/69vhmfdm78jb9c3yj0wykr2y8fnabysr-determinate-nix-3.23.2/bin/nix",
+        "vmManifest": "/nix/store/abnq92gki83dbzv2i202mqhgyfaniz98-finite-ci-vm-tools/share/finite-vm/toolchain.json",
+        "firmwareDirectory": "/nix/store/abnq92gki83dbzv2i202mqhgyfaniz98-finite-ci-vm-tools/share/finite-vm/firmware"
+      },
+      "stage": "predecessor-iso-reuse",
+      "startedAt": "2026-10-23T16:16:15.762740+00:00",
+      "seconds": 1805.396,
+      "status": 2,
+      "runnerNetworkDelta": {
+        "rx_bytes": 6179508658,
+        "tx_bytes": 18880295
+      }
+    },
+    "artifact": {
+      "id": 12516084473,
+      "sha256": "79e52a9c54f35f87133a0ed96c438852aaa707b0064f921c0c8a142740814b36"
+    },
+    "isoArtifact": {
+      "id": 12509215489,
+      "bytes": 7127240191
+    },
+    "vmAcceptanceStarted": false
+  },
+  "fresh": {
+    "job": 120522513697,
+    "artifact": {
+      "id": 12516008789,
+      "sha256": "080a509daaca7de7c294d4514ff0ddd7a0266a58a07af0c10f0aa30e80929de5"
+    },
+    "acceptance": {
+      "source": "ghcr.io/closure-labs/finite@sha256:9ca36fd40faad9cebc7f3ea4251d8189911caac026a0d4207b0b8ff1fc1f6903",
+      "profile": "finite-dev",
+      "accepted": true,
+      "secureBoot": true,
+      "encryptedRoot": true
+    },
+    "initializedHome": {
+      "schema": 1,
+      "status": "pass",
+      "checks": {
+        "nixState": true,
+        "homeCustomization": true
+      },
+      "customizationSha256": "08c3ce32ea49e4dbed38ad51074ed364f1d3b8232fa49e02c99a2d0946ffd902"
+    }
+  },
+  "initialQueuePayloadTimings": [
+    {
+      "job": 120509623632,
+      "run": 39980522095,
+      "revision": "ecf670fa9b91b4b68cef6c1c0e5008d6fa42093d",
+      "name": "Publish (finite) / build / build",
+      "status": "completed",
+      "steps": [
+        {
+          "name": "Prepare candidate publication",
+          "seconds": 300.0,
+          "conclusion": "failure",
+          "startedAt": "2026-10-23T15:49:48Z",
+          "completedAt": "2026-10-23T15:54:48Z"
+        },
+        {
+          "name": "Stage pinned payload",
+          "seconds": 0.0,
+          "conclusion": "skipped",
+          "startedAt": "2026-10-23T15:54:48Z",
+          "completedAt": "2026-10-23T15:54:48Z"
+        }
+      ]
+    },
+    {
+      "job": 120509623651,
+      "run": 39980522095,
+      "revision": "ecf670fa9b91b4b68cef6c1c0e5008d6fa42093d",
+      "name": "Publish (finite-dev) / build / build",
+      "status": "completed",
+      "steps": [
+        {
+          "name": "Prepare candidate publication",
+          "seconds": 24.0,
+          "conclusion": "success",
+          "startedAt": "2026-10-23T15:49:31Z",
+          "completedAt": "2026-10-23T15:49:55Z"
+        },
+        {
+          "name": "Stage pinned payload",
+          "seconds": 4.0,
+          "conclusion": "success",
+          "startedAt": "2026-10-23T15:50:03Z",
+          "completedAt": "2026-10-23T15:50:07Z"
+        }
+      ]
+    },
+    {
+      "job": 120542294630,
+      "run": 39990091392,
+      "revision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+      "name": "Validate (finite) / build",
+      "status": "in_progress",
+      "steps": [
+        {
+          "name": "Prepare candidate publication",
+          "seconds": 11.0,
+          "conclusion": "success",
+          "startedAt": "2026-10-23T16:57:27Z",
+          "completedAt": "2026-10-23T16:57:38Z"
+        },
+        {
+          "name": "Stage pinned payload",
+          "seconds": 10.0,
+          "conclusion": "success",
+          "startedAt": "2026-10-23T16:57:49Z",
+          "completedAt": "2026-10-23T16:57:59Z"
+        }
+      ]
+    },
+    {
+      "job": 120542294756,
+      "run": 39990091392,
+      "revision": "a250b76a01e9a6dd8e00d8ec8160f11e0d81aed4",
+      "name": "Validate (finite-dev) / build",
+      "status": "in_progress",
+      "steps": [
+        {
+          "name": "Prepare candidate publication",
+          "seconds": 10.0,
+          "conclusion": "success",
+          "startedAt": "2026-10-23T16:57:31Z",
+          "completedAt": "2026-10-23T16:57:41Z"
+        },
+        {
+          "name": "Stage pinned payload",
+          "seconds": 5.0,
+          "conclusion": "success",
+          "startedAt": "2026-10-23T16:57:50Z",
+          "completedAt": "2026-10-23T16:57:55Z"
+        }
+      ]
+    }
+  ],
+  "transferPolicy": {
+    "optionalPredecessorArchiveSeconds": 600,
+    "attempts": 1,
+    "fallback": "Construct installer for the same signed predecessor, then run existing VM acceptance",
+    "strictReleaseDefaultSeconds": 1800,
+    "wholeJobDeadlineClaim": false
+  },
+  "proposal": {
+    "kind": "native-producer-origin-receipt",
+    "implemented": false,
+    "purpose": "Avoid a repeated full native product ZIP read while preserving native producer and immutable OCI association"
+  },
+  "limitations": [
+    "One observation per event/profile; main and queue preflights differ.",
+    "Runner network counters are not per-artifact byte counts.",
+    "No complete-workflow savings claim or percentile estimate.",
+    "Initial context invalidation conservatively reconstructs predecessor ISOs.",
+    "Parent PR 237 merge/production rollout and seven-day cost observation remain pending."
+  ]
+}
