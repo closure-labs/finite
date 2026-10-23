@@ -1,0 +1,9 @@
+name: Set up pinned VM tools
+description: Realize cached Nix VM tools and Secure Boot firmware using the existing host Nix
+runs:
+  using: composite
+  steps:
+    - name: Realize and verify pinned VM tools
+      shell: bash
+      # Only strictly validated Nix store paths enter the workflow environment.
+      run: python3 scripts/ci/vm_tools.py # zizmor: ignore[github-env]

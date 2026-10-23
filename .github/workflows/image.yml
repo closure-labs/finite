@@ -185,9 +185,7 @@ jobs:
         run: bash scripts/bluebuild/inspect-built.sh "$PROFILE" "$CHANNEL" "$PUBLISH"
       - name: Install targeted VM validation tools
         if: inputs.vm_validation && !inputs.publish
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y qemu-system-x86 qemu-utils ovmf xorriso skopeo mtools openssl python3-virt-firmware
+        uses: ./.github/actions/setup-vm-tools
       - name: Boot the exact local candidate without publication credentials
         if: inputs.vm_validation && !inputs.publish
         run: bash scripts/bluebuild/local-vm.sh "$PROFILE"

@@ -43,6 +43,7 @@ class ImageInputContract(unittest.TestCase):
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
         for path in (*BUILD_FILES, *image.QUALIFICATION_ONLY,
+                     'scripts/ci/vm_tools.py', 'lib/vm-tools.nix', '.github/actions/setup-vm-tools/action.yml',
                      *('recipes/' + profile + '.yml' for profile in PROFILES)):
             self.write(path, path + '\n')
 
@@ -65,6 +66,7 @@ class ImageInputContract(unittest.TestCase):
                                     'scripts/bluebuild/security-run.sh',
                                     'scripts/bluebuild/audit-published.sh')]
         host_inputs += ['sources/bluebuild-installer.json', 'sources/installer-security.json',
+                        'scripts/ci/vm_tools.py', 'lib/vm-tools.nix', '.github/actions/setup-vm-tools/action.yml',
                         '.github/workflows/qualification.yml',
                         '.github/workflows/vm-acceptance.yml', '.github/workflows/iso.yml']
         for relative in sorted(host_inputs):
