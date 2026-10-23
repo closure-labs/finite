@@ -162,100 +162,104 @@
     '';
   };
 
-  mkCheck = checks: let
-    checkNames = builtins.attrNames checks;
-    quotedNames = pkgs.lib.concatMapStringsSep " " pkgs.lib.escapeShellArg checkNames;
-  in
-    pkgs.writeShellApplication {
-      name = "finite-ci-check";
-      # Nix comes from the host's Determinate installation; do not shadow it
-      # with the upstream Nixpkgs client inside this application wrapper.
-      runtimeInputs = with pkgs; [coreutils jq];
-      text = ''
-        repo_root="''${FINITE_SOURCE_ROOT:-$PWD}"
-        [[ -f "''${repo_root}/flake.nix" ]] || {
-          echo "Run this command from the Finite repository root" >&2
+  # Keep the existing constructor interface. The launcher discovers the proof
+  # inventory in the same evaluation that selects the aggregate derivation.
+  mkCheck = _: ciCheck;
+  ciCheck = pkgs.writeShellApplication {
+    name = "finite-ci-check";
+    # Nix comes from the host's Determinate installation; do not shadow it
+    # with the upstream Nixpkgs client inside this application wrapper.
+    runtimeInputs = with pkgs; [coreutils jq];
+    text = ''
+      repo_root="''${FINITE_SOURCE_ROOT:-$PWD}"
+      [[ -f "''${repo_root}/flake.nix" ]] || {
+        echo "Run this command from the Finite repository root" >&2
+        exit 2
+      }
+      flake_uri="path:''${repo_root}"
+      if [[ "''${GITHUB_ACTIONS:-false}" == true ]]; then
+        # Keep checkout metadata out of checks such as treefmt, which create
+        # their own temporary Git repository from the flake source. Declare
+        # the CI checkout shallow so Nix does not attempt to compute a
+        # revCount that is unavailable at fetch-depth 1.
+        flake_uri="git+file://''${repo_root}?shallow=1"
+      fi
+
+      # Evaluate the aggregate derivation in a short-lived client, then build
+      # that derivation path without retaining the full Flake evaluator heap.
+      # On a 16 GiB workstation the previous single `nix build flake#attr`
+      # client held roughly 7.5 GiB while builders ran and exhausted zram.
+      check_metadata="$(
+        nix --accept-flake-config eval --json \
+          --no-update-lock-file --no-write-lock-file \
+          "''${flake_uri}#ci-checks" \
+          --apply 'checks: { derivation = checks.drvPath; names = checks.checkNames; }'
+      )"
+      jq -e '.names | type == "array" and length > 0 and
+        all(.[]; type == "string" and test("^[a-zA-Z0-9_-]+$")) and
+        (length == (unique | length))' <<<"$check_metadata" >/dev/null
+      mapfile -t check_names < <(jq -r '.names[]' <<<"$check_metadata")
+      ci_checks_drv=$(jq -er '.derivation' <<<"$check_metadata")
+      [[ $ci_checks_drv =~ ^/nix/store/[a-z0-9]{32}-finite-ci-checks\.drv$ ]]
+      ci_checks_out="$(
+        nix --accept-flake-config build \
+          --keep-going \
+          --no-link \
+          --print-build-logs \
+          --print-out-paths \
+          "$@" \
+          "''${ci_checks_drv}^*"
+      )"
+      [[ $ci_checks_out =~ ^/nix/store/[a-z0-9]{32}-finite-ci-checks$ ]]
+
+      # Validate every standard output after realizing the IFD-backed checks.
+      # This is a separate process so its evaluator heap is released before
+      # the proof-path inspection below.
+      nix --accept-flake-config flake check \
+        "''${flake_uri}" \
+        --no-build \
+        "$@"
+
+      max_closure_size=$((1024 * 1024))
+      check_paths=()
+      for name in "''${check_names[@]}"; do
+        path="$(readlink -f "''${ci_checks_out}/''${name}")"
+        check_paths+=("''${path}")
+        [[ -e "''${path}" ]] || {
+          echo "The explicit check build did not realize ''${name}: ''${path}" >&2
+          exit 1
+        }
+      done
+      closure_sizes_json="$(
+        nix path-info --json --json-format 1 --closure-size "''${check_paths[@]}"
+      )"
+      for index in "''${!check_names[@]}"; do
+        name="''${check_names[''${index}]}"
+        path="''${check_paths[''${index}]}"
+        closure_size="$(jq -er --arg path "''${path}" '.[$path].closureSize' \
+          <<<"''${closure_sizes_json}")"
+        if (( closure_size > max_closure_size )); then
+          printf '%s proof closure is %s bytes; cache limit is %s bytes\n' \
+            "''${name}" "''${closure_size}" "''${max_closure_size}" >&2
+          exit 1
+        fi
+        printf '%s\t%s bytes\t%s\n' "''${name}" "''${closure_size}" "''${path}"
+      done
+
+      if [[ -n "''${FINITE_CHECK_PROOFS_FILE:-}" ]]; then
+        # The local wrapper owns this private, initially empty handoff file.
+        # Never overwrite an existing verdict, follow links or publish paths
+        # before all checks and closure-size validation have passed.
+        [[ -f "$FINITE_CHECK_PROOFS_FILE" && ! -L "$FINITE_CHECK_PROOFS_FILE" &&
+           -O "$FINITE_CHECK_PROOFS_FILE" && ! -s "$FINITE_CHECK_PROOFS_FILE" &&
+           $(stat -c '%a' "$FINITE_CHECK_PROOFS_FILE") == 600 ]] || {
+          echo "Check proof handoff must be an owned empty regular file with mode 0600" >&2
           exit 2
         }
-        flake_uri="path:''${repo_root}"
-        if [[ "''${GITHUB_ACTIONS:-false}" == true ]]; then
-          # Keep checkout metadata out of checks such as treefmt, which create
-          # their own temporary Git repository from the flake source. Declare
-          # the CI checkout shallow so Nix does not attempt to compute a
-          # revCount that is unavailable at fetch-depth 1.
-          flake_uri="git+file://''${repo_root}?shallow=1"
-        fi
-
-        check_names=(${quotedNames})
-
-        # Evaluate the aggregate derivation in a short-lived client, then build
-        # that derivation path without retaining the full Flake evaluator heap.
-        # On a 16 GiB workstation the previous single `nix build flake#attr`
-        # client held roughly 7.5 GiB while builders ran and exhausted zram.
-        ci_checks_drv="$(
-          nix --accept-flake-config eval --raw \
-            "''${flake_uri}#ci-checks.drvPath"
-        )"
-        [[ "''${ci_checks_drv}" == /nix/store/*.drv ]]
-        ci_checks_out="$(
-          nix --accept-flake-config build \
-            --keep-going \
-            --no-link \
-            --print-build-logs \
-            --print-out-paths \
-            "$@" \
-            "''${ci_checks_drv}^*"
-        )"
-        [[ "''${ci_checks_out}" == /nix/store/* ]]
-
-        # Validate every standard output after realizing the IFD-backed checks.
-        # This is a separate process so its evaluator heap is released before
-        # the proof-path inspection below.
-        nix --accept-flake-config flake check \
-          "''${flake_uri}" \
-          --no-build \
-          "$@"
-
-        max_closure_size=$((1024 * 1024))
-        check_paths=()
-        for name in "''${check_names[@]}"; do
-          path="$(readlink -f "''${ci_checks_out}/''${name}")"
-          check_paths+=("''${path}")
-          [[ -e "''${path}" ]] || {
-            echo "The explicit check build did not realize ''${name}: ''${path}" >&2
-            exit 1
-          }
-        done
-        closure_sizes_json="$(
-          nix path-info --json --json-format 1 --closure-size "''${check_paths[@]}"
-        )"
-        for index in "''${!check_names[@]}"; do
-          name="''${check_names[''${index}]}"
-          path="''${check_paths[''${index}]}"
-          closure_size="$(jq -er --arg path "''${path}" '.[$path].closureSize' \
-            <<<"''${closure_sizes_json}")"
-          if (( closure_size > max_closure_size )); then
-            printf '%s proof closure is %s bytes; cache limit is %s bytes\n' \
-              "''${name}" "''${closure_size}" "''${max_closure_size}" >&2
-            exit 1
-          fi
-          printf '%s\t%s bytes\t%s\n' "''${name}" "''${closure_size}" "''${path}"
-        done
-
-        if [[ -n "''${FINITE_CHECK_PROOFS_FILE:-}" ]]; then
-          # The local wrapper owns this private, initially empty handoff file.
-          # Never overwrite an existing verdict, follow links or publish paths
-          # before all checks and closure-size validation have passed.
-          [[ -f "$FINITE_CHECK_PROOFS_FILE" && ! -L "$FINITE_CHECK_PROOFS_FILE" &&
-             -O "$FINITE_CHECK_PROOFS_FILE" && ! -s "$FINITE_CHECK_PROOFS_FILE" &&
-             $(stat -c '%a' "$FINITE_CHECK_PROOFS_FILE") == 600 ]] || {
-            echo "Check proof handoff must be an owned empty regular file with mode 0600" >&2
-            exit 2
-          }
-          printf '%s\n' "''${check_paths[@]}" >"$FINITE_CHECK_PROOFS_FILE"
-        fi
-      '';
-    };
+        printf '%s\n' "''${check_paths[@]}" >"$FINITE_CHECK_PROOFS_FILE"
+      fi
+    '';
+  };
   mkLocalCache = ciApplication:
     pkgs.writeShellApplication {
       name = "finite-local-cache";

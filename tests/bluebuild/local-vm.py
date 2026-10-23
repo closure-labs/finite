@@ -52,6 +52,7 @@ class LocalVM(unittest.TestCase):
                 tool.chmod(0o755)
             (root / 'scripts/bluebuild').mkdir(parents=True)
             shutil.copy(ROOT / 'scripts/bluebuild/local-vm.sh', root / 'scripts/bluebuild/local-vm.sh')
+            shutil.copy(ROOT / 'scripts/bluebuild/measure.py', root / 'scripts/bluebuild/measure.py')
             (root / 'scripts/bluebuild/prepare-installer.sh').write_text('''#!/usr/bin/env bash
 set -eu
 mkdir -p "$ISO_OUTPUT_DIR"
@@ -79,6 +80,20 @@ cp "$1/installation.json" result.json
             self.assertTrue(document['image'].startswith('local-image@sha256:'))
             self.assertEqual(document['sourceRevision'], 'a' * 40)
             self.assertFalse(list((root / '.bluebuild').glob('*.iso')))
+            timings = [json.loads(line) for line in (root / '.bluebuild/finite-timings.jsonl').read_text().splitlines()]
+            self.assertEqual([entry['stage'] for entry in timings], [
+                'local-vm-oci-export', 'local-vm-installer-prepare', 'local-vm-iso-build', 'local-vm-acceptance'])
+            for entry in timings:
+                self.assertEqual(entry['repository'], 'closure-labs/finite')
+                self.assertEqual(entry['runId'], '5')
+                self.assertEqual(entry['runAttempt'], '1')
+                self.assertEqual(entry['revision'], 'a' * 40)
+                self.assertEqual(entry['profile'], 'finite')
+                self.assertEqual(entry['status'], 0)
+                self.assertFalse(entry['authorizesPublication'])
+            self.assertIsNone(timings[0]['candidateDigest'])
+            self.assertTrue(all(entry['candidateDigest'] == document['image'].split('@')[1]
+                                for entry in timings[1:]))
 
 
 if __name__ == '__main__':

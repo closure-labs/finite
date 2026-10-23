@@ -120,7 +120,7 @@ if phase == 'evaluation': print(state['result'])
                 self.assertFalse(checks.transient('warning: HTTP error 503\n' + error))
         self.assertFalse(checks.transient('unknown failure'))
 
-    def invoke(self, failures):
+    def invoke(self, failures, exit_status=1):
         with tempfile.TemporaryDirectory() as directory:
             script = Path(directory) / 'command.py'
             script.write_text('''
@@ -131,14 +131,14 @@ if failures:
     message = failures.pop(0)
     state.write_text(json.dumps(failures))
     print(message)
-    sys.exit(1)
+    sys.exit(int(sys.argv[1]))
 print('checks passed')
 ''')
             import json
             script.with_suffix('.json').write_text(json.dumps(failures))
             output = io.StringIO()
             with contextlib.redirect_stdout(output), patch.object(checks.time, 'sleep') as sleep:
-                result = checks.build([sys.executable, str(script)])
+                result = checks.build([sys.executable, str(script), str(exit_status)])
             return result, output.getvalue(), sleep.call_args_list
 
     def test_transient_fetch_can_recover(self):
@@ -158,6 +158,19 @@ print('checks passed')
         self.assertEqual(result, 1)
         self.assertNotIn('retrying', output)
         self.assertEqual(sleeps, [])
+
+    def test_transport_warning_cannot_hide_signal_or_wrapper_failure(self):
+        for status in (2, 126, 127, 128, 130, 137, 143, 255):
+            with self.subTest(status=status):
+                result, output, sleeps = self.invoke(['warning: HTTP error 503'], exit_status=status)
+                self.assertEqual(result, status)
+                self.assertNotIn('retrying', output)
+                self.assertEqual(sleeps, [])
+        for message in ('Killed', 'SIGKILL', 'SIGTERM', 'SIGINT', 'Out of memory', 'oom-killed', 'terminated by signal'):
+            result, output, sleeps = self.invoke(['warning: HTTP error 503\n' + message])
+            self.assertEqual(result, 1)
+            self.assertNotIn('retrying', output)
+            self.assertEqual(sleeps, [])
 
 
 if __name__ == '__main__':

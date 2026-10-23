@@ -127,6 +127,8 @@ class Premerge(unittest.TestCase):
     def test_vm_is_in_required_build_path_with_read_only_permissions(self):
         build = workflow('build')
         images = build['jobs']['images']
+        self.assertIn("github.event_name != 'pull_request'", images['if'])
+        self.assertNotIn("github.event_name != 'merge_group'", images['if'])
         self.assertEqual(images['with']['vm_validation'], "${{ needs.impact.outputs.vm == 'true' }}")
         self.assertFalse(images['with']['publish'])
         self.assertNotIn('secrets', images)
@@ -142,10 +144,10 @@ class Premerge(unittest.TestCase):
                  'docs': {'result': 'success'}, 'checks': {'result': 'success', 'outputs': {'images': 'true',
                     'matrix': json.dumps({'include': [{'profile': 'finite', 'channel': 'finite'}]})}},
                  'images': {'result': 'success'}, 'publish': {'result': 'skipped'}}
-        self.assertTrue(gate.failures(needs, False))
+        self.assertTrue(gate.failures(needs, False, 'merge_group'))
         matrix = {'include': [{'profile': profile, 'channel': profile} for profile in ('finite', 'finite-dev')]}
         needs['checks']['outputs']['matrix'] = json.dumps(matrix)
-        self.assertEqual(gate.failures(needs, False), [])
+        self.assertEqual(gate.failures(needs, False, 'merge_group'), [])
 
     def test_release_and_health_keep_human_boundaries(self):
         prep = workflow('release-set')['jobs']['prepare']['steps']

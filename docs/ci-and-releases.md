@@ -11,7 +11,9 @@ the one-time policy activation and release transition.
 
 [Build Finite](https://github.com/closure-labs/finite/actions/workflows/build.yml)
 runs on pull requests, merge groups, main pushes, daily schedules and manual
-dispatches. It selects work from the complete Git diff for each event:
+dispatches. It selects work from the complete Git diff for each event. The image
+work below runs in the protected merge queue and on applicable main/manual runs;
+PR updates run documentation and the selected full Nix/runtime aggregate:
 
 | Changed inputs | Required work |
 | --- | --- |
@@ -24,7 +26,11 @@ dispatches. It selects work from the complete Git diff for each event:
 | Manual dispatch with `reconcile=true` | All checks and only channels that differ from approved image-input identities or base digests |
 
 Fast checks finish before image builds start. Documentation-only pull requests
-run documentation checks. Every main push also reconciles public image identities
+run documentation checks. The protected merge queue builds and installs the
+selected OS candidates before merge, avoiding a second disposable OS build and
+installation on every PR update. The required gate rejects skipped or failed
+queue image jobs and still validates the complete profile selection on PRs.
+Every main push also reconciles public image identities
 with the approved checkout, so a newer docs push cannot hide a superseded pending
 image build. The daily schedule refreshes floating DNF and
 BlueBuild module inputs while retaining the approved base digests.
@@ -43,6 +49,12 @@ reads the existing `flake.lock` directly. Its shells share package definitions
 with the flake's CI and release shells without evaluating the Home Manager/Den
 configuration. SecretSpec mapping and trusted PR validation use the same
 lightweight entry point and retain their existing credential and review checks.
+The devenv check and lock-validation tasks also obtain their launchers here.
+The check launcher discovers the proof names and aggregate derivation in one
+root-flake evaluation, releases that evaluator, builds the aggregate, then checks
+standard flake outputs and every proof closure. Creating the launcher itself
+does not evaluate Den or Home Manager. The lock updater retains its exact
+flake-provided devenv package and reviewed weekly update workflow.
 
 Foundation owns the Home Manager modules, catalog and tested dependency lock.
 Finite pins a published Foundation release commit and includes its source and
@@ -95,7 +107,7 @@ lanes start after the same Determinate and image-tool setup without an Actions
 store restore. Reports bind the exact checkout, proposal, locks, native run and
 attempt, runner image and executable/firmware identities. Complete native job
 times include setup, both passes and artifact handling. The experiment excludes
-the preceding Docker build; the normal PR image/VM jobs exercise that path.
+the preceding Docker build; merge-queue image/VM jobs exercise that path.
 
 The draft's adoption gate requires all nine measurements and successful image/VM
 checks. Nix must beat both apt lanes on complete-job medians and improve common
@@ -587,13 +599,18 @@ not replace the production qualification record.
 ## Delivery resilience and release readiness
 
 Changes to boot configuration, systemd units, SELinux, the installer and the VM
-harness select premerge VM validation for both images. The required CI gate
-checks that both profiles ran. Each image job exports its assembled candidate as
+harness select merge-queue VM validation for both images. The required CI gate
+checks that both profiles ran on the assembled queue revision. PR updates run the
+full selected Nix/runtime aggregate and governed-tree preflight. Each queue image job exports its assembled candidate as
 an OCI archive and supplies that archive to the pinned installer. It boots the
 candidate with Secure Boot, encrypted storage and enforcing SELinux, then checks
 Nix startup and Home Manager initialization. This fresh-install validation fits
 inside the existing 120-minute image-job budget; production upgrade and rollback
 qualification still run before promotion.
+The image export, installer preparation, ISO build and acceptance invocation
+record separate stage timings. These reports are discovery evidence and grant
+no approval authority. See the [workflow architecture audit](ci-architecture-2026-10-23.md)
+for the measured duplication and the remaining experiments.
 
 Premerge runners have no signing keys or registry write token. Their installer
 uses a disposable unsigned local reference, and their receipts identify
