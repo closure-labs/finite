@@ -91,6 +91,16 @@ class ImageInputContract(unittest.TestCase):
         for profile in PROFILES:
             self.assertNotEqual(before[profile], image.identity(profile, self.root, '/nix/store/new-payload.drv'))
 
+    def test_cost_reporting_changes_preserve_image_and_qualification_contracts(self):
+        before_image = self.values()
+        before_context = qualification.source_inputs(self.root)
+        for relative in ('scripts/ci/workflow-costs.py', 'scripts/ci/workflow_costs.py',
+                         'scripts/ci/cost_receipts.py', '.github/workflows/workflow-costs.yml'):
+            with self.subTest(path=relative):
+                self.write(relative, 'changed read-only cost reporting\n')
+                self.assertEqual(before_image, self.values())
+                self.assertEqual(before_context, qualification.source_inputs(self.root))
+
     def test_profile_recipe_changes_affect_only_its_image(self):
         for profile in PROFILES:
             with self.subTest(profile=profile):
