@@ -2,6 +2,7 @@
 """Exercise change selection and failure propagation at CI boundaries."""
 import contextlib
 import copy
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -57,6 +58,38 @@ class Selection(unittest.TestCase):
                      'modules/outputs.nix', 'lib/image-payload.nix',
                      'templates/home-manager/customize.nix', 'lib/domain-catalog.nix']:
             self.assertEqual(impact.classify([path]), {'checks': True, 'nix': True, 'profiles': []})
+
+    def test_read_only_cost_observation_keeps_checks_without_selecting_images(self):
+        paths = ['scripts/ci/workflow-costs.py', 'scripts/ci/workflow_costs.py',
+                 'scripts/ci/cost_receipts.py', '.github/workflows/workflow-costs.yml']
+        for changed in ([path] for path in paths):
+            self.assertEqual(impact.classify(changed), {'checks': True, 'nix': False, 'profiles': []})
+        self.assertEqual(impact.classify([*paths, 'tests/ci/workflow-costs.py', 'docs/reports.md']),
+                         {'checks': True, 'nix': False, 'profiles': []})
+        for path, profiles in [('files/system/usr/libexec/finite/guest-check.py', sorted(impact.PROFILES)),
+                               ('scripts/ci/new-cost-helper.py', sorted(impact.PROFILES)),
+                               ('.github/workflows/new-cost-report.yml', sorted(impact.PROFILES)),
+                               ('recipes/finite-dev.yml', ['finite-dev'])]:
+            with self.subTest(path=path):
+                self.assertEqual(impact.classify([*paths, path]),
+                                 {'checks': True, 'nix': False, 'profiles': profiles})
+        self.assertEqual(impact.classify([*paths, 'flake.lock']),
+                         {'checks': True, 'nix': True, 'profiles': []})
+
+    def test_cost_report_mixed_with_vm_inputs_keeps_both_premerge_profiles(self):
+        spec = importlib.util.spec_from_file_location('vm_selection', ROOT / 'scripts/ci/vm-selection.py')
+        vm = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(vm)
+        for changed in (['scripts/ci/cost_receipts.py'],
+                        ['scripts/ci/cost_receipts.py', 'scripts/bluebuild/vm-acceptance.sh'],
+                        ['scripts/ci/cost_receipts.py', 'files/system/usr/libexec/finite/guest-check.py']):
+            with self.subTest(changed=changed):
+                plan = impact.classify(changed)
+                output = run_script('payloads.py', {}, GITHUB_EVENT_NAME='merge_group', GITHUB_SHA='a' * 40,
+                                    IMPACT=json.dumps({key: json.dumps(plan[key]) for key in ('nix', 'profiles')}),
+                                    VM_VALIDATION=str(vm.required(changed)).lower())
+                expected = set(impact.PROFILES) if len(changed) > 1 else set()
+                self.assertEqual({row['profile'] for row in json.loads(output['matrix'])['include']}, expected)
 
 
     def test_only_active_recipes_are_selected(self):

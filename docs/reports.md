@@ -9,6 +9,7 @@ the recorded revision and date.
 
 | Record | Scope |
 | --- | --- |
+| [Cost-report image selection, October 23](ci-cost-selection-2026-10-23.md) | Measured report-only image jobs, explicit source-only selection and unmatched transport evidence |
 | [CI stage rollout, October 23](ci-stage-rollout-2026-10-23.md) | Split guest intervals, corrected queue receipt joins and incomplete main cohorts |
 | [CI follow-through, October 23](ci-follow-through-2026-10-23.md) | Complete queue/main timings, authenticated two-profile promotion and hosted health after #237 |
 | [ISO transfers, October 23](iso-transport-2026-10-23.md) | Initial queue timings, a failed predecessor transfer and the remaining release-packet duplication |

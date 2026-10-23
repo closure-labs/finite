@@ -76,6 +76,10 @@ QUALIFICATION_ONLY = {
     'scripts/ci/vm_tools.py', '.github/actions/setup-vm-tools/action.yml',
     'scripts/ci/benchmark-security-reuse.py', '.github/workflows/benchmark-security-reuse.yml',
     'scripts/ci/benchmark-qualification-reuse.py', '.github/workflows/benchmark-vm-reuse.yml',
+    # Read-only cost observation does not build images or qualify candidates.
+    # Keep this explicit so new CI helpers still take the conservative path.
+    'scripts/ci/workflow-costs.py', 'scripts/ci/workflow_costs.py',
+    'scripts/ci/cost_receipts.py', '.github/workflows/workflow-costs.yml',
 }
 QUALIFICATION_ONLY |= IMAGE_QUALIFICATION_ONLY
 
