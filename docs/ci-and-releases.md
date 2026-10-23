@@ -664,3 +664,11 @@ checks remote state before another operation.
 Health completion triggers exclude PR and merge-queue validation runs. Same-repository
 main push, scheduled and manual delivery completions remain observed even when
 they fail. Hourly and explicit health dispatches retain missed-event recovery.
+
+The read-only **Observe workflow costs** workflow retains native run/attempt,
+source, job/profile and phase timings, including failed/cancelled work. It runs
+weekly or manually with an optional UTC rollout timestamp for a 14-day baseline
+and seven-day observation. Reports convey no approval authority and unavailable
+cache/retry/runner detail remains unknown. See the
+[October 23 audit](ci-workflow-audit-2026-10-23.md) for findings, candidate recovery
+constraints, native links and the remaining measurement gates.

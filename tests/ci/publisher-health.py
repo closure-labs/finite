@@ -167,6 +167,16 @@ class PublisherHealth(unittest.TestCase):
         self.artifacts.append(self.artifact)
         self.assertEqual(self.inspect()['state'], 'unknown')
 
+    def test_successful_preparation_is_never_automatically_redispatched(self):
+        report = {'release': {'state': 'unprepared'}, 'buildRun': 8}
+        def api(endpoint):
+            if endpoint.endswith('/git/ref/heads/main'):
+                return {'object': {'sha': 'a' * 40}}
+            return {'workflow_runs': [{'head_sha': 'a' * 40, 'status': 'completed', 'conclusion': 'success'}]}
+        with patch.object(delivery.subprocess, 'run') as mutation:
+            self.assertIn('already succeeded', delivery.dispatch(report, 'a' * 40, api))
+        mutation.assert_not_called()
+
     def test_healthy_builds_do_not_hide_failed_publisher_and_wait_is_informational(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

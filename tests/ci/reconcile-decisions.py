@@ -292,6 +292,12 @@ class Reconciliation(unittest.TestCase):
         self.execute()
         self.assertEqual(len(self.dispatched), 1)
 
+    def test_publication_starting_after_claim_defers_dispatch(self):
+        with patch.object(reconcile, 'publication_busy', side_effect=[False, True]):
+            self.assertEqual(self.execute()[0]['status'], 'publisher-busy')
+        self.assertEqual(self.journal.state['status'], 'claimed')
+        self.assertEqual(self.dispatched, [])
+
     def test_revocation_between_claim_and_dispatch_stops_publication(self):
         self.verify_results = [{'status': 'covered', 'decision': {'proposalHash': self.identity, 'disposition': 'accepted'}}, {'status': 'revoked', 'decision': {'proposalHash': self.identity, 'disposition': 'accepted'}}]
         with self.assertRaisesRegex(ValueError, 'authority changed'): self.execute()

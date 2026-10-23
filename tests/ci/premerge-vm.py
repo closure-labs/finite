@@ -130,7 +130,7 @@ class Premerge(unittest.TestCase):
         self.assertEqual(images['with']['vm_validation'], "${{ needs.impact.outputs.vm == 'true' }}")
         self.assertFalse(images['with']['publish'])
         self.assertNotIn('secrets', images)
-        self.assertEqual(images['permissions'], {'contents': 'read', 'packages': 'read'})
+        self.assertEqual(images['permissions'], {'contents': 'read', 'pull-requests': 'read', 'packages': 'read'})
         steps = workflow('image')['jobs']['build']['steps']
         vm = next(step for step in steps if step.get('name', '').startswith('Boot the exact local'))
         self.assertEqual(vm['if'], 'inputs.vm_validation && !inputs.publish')

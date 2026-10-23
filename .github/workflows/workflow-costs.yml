@@ -1,0 +1,73 @@
+name: Observe workflow costs
+on:
+  workflow_dispatch:
+    inputs:
+      rollout:
+        description: Optional UTC rollout timestamp for a 14-day baseline and seven-day observation
+        type: string
+        default: ""
+  schedule:
+    - cron: '23 6 * * 5'
+env:
+  FINITE_OPTIMIZED_CACHES: ${{ vars.FINITE_OPTIMIZED_CACHES }}
+  FINITE_CACHIX_WRITER: ${{ vars.FINITE_CACHIX_WRITER }}
+  FINITE_REUSE_INVENTORY: ${{ vars.FINITE_REUSE_INVENTORY }}
+  FINITE_GRYPE_DB_CACHE: ${{ vars.FINITE_GRYPE_DB_CACHE }}
+  FINITE_QUALIFICATION_REUSE: ${{ vars.FINITE_QUALIFICATION_REUSE }}
+  FINITE_QUALIFIED_ISO_PRESERVATION: ${{ vars.FINITE_QUALIFIED_ISO_PRESERVATION }}
+  FINITE_QUALIFIED_ISO_CHANNELS: ${{ vars.FINITE_QUALIFIED_ISO_CHANNELS }}
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: finite-workflow-costs
+  cancel-in-progress: false
+jobs:
+  observe:
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+        with:
+          cache-mode: none
+      - name: Resolve the existing read-only audit App
+        env:
+          SECAUDIT_CLIENTID: ${{ vars.SECAUDIT_CLIENTID }}
+          SECAUDIT_PEM: ${{ secrets.SECAUDIT_PEM }}
+        run: >-
+          finite-ci-secrets-run repository-audit --
+          secretspec export --file secretspec.toml --profile repository-audit --provider github-actions
+          --scope repository-audit --reason 'Finite read-only workflow cost observation' --format gha
+      - name: Generate the existing repository-scoped read-only audit token
+        id: audit-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ env.SECAUDIT_CLIENTID }}
+          private-key: ${{ env.SECAUDIT_PEM }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-administration: read
+      - name: Clear audit App credentials after minting
+        run: | # zizmor: ignore[github-env]
+          printf 'SECAUDIT_CLIENTID=\nSECAUDIT_PEM=\n' >>"$GITHUB_ENV"
+      - name: Collect native timings including failed and cancelled work
+        env:
+          GH_TOKEN: ${{ steps.audit-token.outputs.token }}
+          ROLLOUT: ${{ inputs.rollout || vars.FINITE_CI_AUDIT_ROLLOUT || '' }}
+        run: |
+          args=()
+          if [[ -n $ROLLOUT ]]; then args+=(--rollout "$ROLLOUT"); fi
+          python3 scripts/ci/workflow-costs.py "${args[@]}"
+      - name: Retain read-only observation
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: workflow-costs-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/workflow-costs.*
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 90

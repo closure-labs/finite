@@ -76,6 +76,7 @@ jobs:
     timeout-minutes: 35
     permissions:
       contents: read
+      pull-requests: read
     outputs:
       vm: ${{ steps.vm.outputs.vm }}
       release: ${{ steps.release.outputs.ready }}
@@ -87,6 +88,11 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+      - name: Reject stale governed validation trees
+        if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/ci/validation-preflight.py
       - name: Validate decision reconciliation request
         env:
           DECISION_REQUEST: ${{ inputs.decision_request || '' }}
@@ -183,6 +189,7 @@ jobs:
     if: ${{ needs.checks.outputs.images == 'true' && !(github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')) }}
     permissions:
       contents: read
+      pull-requests: read
       packages: read
     strategy:
       fail-fast: false

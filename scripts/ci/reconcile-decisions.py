@@ -179,6 +179,9 @@ def reconcile(now=time.time):
         current = controller.api(f'repos/{controller.REPOSITORY}/git/ref/heads/main')
         if not re.fullmatch(r'[0-9a-f]{40}', revision) or current.get('object', {}).get('sha') != revision:
             raise ValueError('Main changed before decision build dispatch; reconcile the current revision')
+        if publication_busy():
+            actions.append({'profile': profile, 'status': 'publisher-busy'})
+            continue
         inputs = {**inputs, 'decision_request': binding}
         controller.api(f'repos/{controller.REPOSITORY}/actions/workflows/build.yml/dispatches', 'POST',
                        {'ref': 'main', 'inputs': inputs})
