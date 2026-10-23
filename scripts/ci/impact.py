@@ -72,6 +72,8 @@ QUALIFICATION_ONLY = {
     '.github/workflows/release-recovery.yml',
     'scripts/ci/benchmark-cache-writer.py', '.github/workflows/benchmark-cache-writer.yml',
     'scripts/ci/benchmark-image-verification.py', '.github/workflows/benchmark-image-verification.yml',
+    'scripts/ci/benchmark-vm-tools.py', '.github/workflows/benchmark-vm-tools.yml',
+    'scripts/ci/vm_tools.py', '.github/actions/setup-vm-tools/action.yml',
     'scripts/ci/benchmark-security-reuse.py', '.github/workflows/benchmark-security-reuse.yml',
     'scripts/ci/benchmark-qualification-reuse.py', '.github/workflows/benchmark-vm-reuse.yml',
 }

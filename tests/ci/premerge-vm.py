@@ -103,6 +103,7 @@ class Premerge(unittest.TestCase):
         for path in ('files/system/usr/lib/systemd/system/example.service', 'files/installer/install_finite_fstab',
                      'files/system/usr/lib/tmpfiles.d/finite-gdm.conf', 'scripts/bluebuild/check-vm-gdm-labels.sh',
                      'scripts/bluebuild/vm-acceptance.sh', 'tests/nix/nix-systemd.sh', '.github/workflows/image.yml',
+                     'lib/vm-tools.nix', 'scripts/ci/vm_tools.py', '.github/actions/setup-vm-tools/action.yml',
                      'sources/bluefin.json', 'files/system/usr/share/selinux/finite.te', 'flake.lock'):
             self.assertTrue(selection.required([path]), path)
         self.assertTrue(selection.required(None))
