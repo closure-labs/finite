@@ -1,0 +1,106 @@
+name: Benchmark VM tool provisioning
+on:
+  workflow_call:
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: vm-tool-benchmark-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  FINITE_OPTIMIZED_CACHES: ${{ vars.FINITE_OPTIMIZED_CACHES }}
+  FINITE_CACHIX_WRITER: ${{ vars.FINITE_CACHIX_WRITER }}
+  FINITE_REUSE_INVENTORY: ${{ vars.FINITE_REUSE_INVENTORY }}
+  FINITE_GRYPE_DB_CACHE: ${{ vars.FINITE_GRYPE_DB_CACHE }}
+  FINITE_QUALIFICATION_REUSE: ${{ vars.FINITE_QUALIFICATION_REUSE }}
+  FINITE_QUALIFIED_ISO_PRESERVATION: ${{ vars.FINITE_QUALIFIED_ISO_PRESERVATION }}
+  FINITE_QUALIFIED_ISO_CHANNELS: ${{ vars.FINITE_QUALIFIED_ISO_CHANNELS }}
+jobs:
+  benchmark:
+    name: vm-tools-${{ matrix.provider }}-${{ matrix.repetition }}
+    if: >-
+      github.repository == 'closure-labs/finite' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'pull_request' && github.head_ref == 'perf/nix-vm-tools' &&
+        github.event.pull_request.head.repo.full_name == 'closure-labs/finite'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 70
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        include:
+          - {provider: apt, repetition: 1}
+          - {provider: apt-minimal, repetition: 1}
+          - {provider: nix, repetition: 1}
+          - {provider: apt, repetition: 2}
+          - {provider: apt-minimal, repetition: 2}
+          - {provider: nix, repetition: 2}
+          - {provider: apt, repetition: 3}
+          - {provider: apt-minimal, repetition: 3}
+          - {provider: nix, repetition: 3}
+    env:
+      VM_PROVIDER: ${{ matrix.provider }}
+      VM_REPETITION: ${{ matrix.repetition }}
+      PROPOSAL_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Record common setup start
+        run: python3 scripts/ci/benchmark-vm-tools.py mark-start .bluebuild/vm-start.json
+      - uses: ./.github/actions/setup-nix
+        with:
+          cache-mode: none
+      - name: Match the existing image-tool environment
+        run: | # zizmor: ignore[github-env]
+          tools=$(nix build --file lib/ci-tools.nix image-tools --no-link --print-out-paths)
+          [[ $tools =~ ^/nix/store/[a-z0-9]{32}-finite-ci-image-tools$ ]]
+          echo "$tools/bin" >>"$GITHUB_PATH"
+      - name: Measure cold and warm provisioning and verify tools
+        run: >-
+          python3 scripts/ci/benchmark-vm-tools.py run
+          --provider "$VM_PROVIDER" --repetition "$VM_REPETITION"
+          --start .bluebuild/vm-start.json --output .bluebuild/vm-benchmark/benchmark.json
+      - name: Retain measurements including failures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: vm-tools-${{ matrix.provider }}-${{ matrix.repetition }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/vm-benchmark/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+  summarize:
+    needs: benchmark
+    if: always() && github.repository == 'closure-labs/finite' && needs.benchmark.result != 'skipped'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Collect this attempt's measurements
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PATTERN: vm-tools-*-${{ github.run_id }}-${{ github.run_attempt }}
+        run: gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" --pattern "$PATTERN" --dir .bluebuild/vm-reports
+      - name: Collect native whole-job identities and timings
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh api --paginate --slurp
+          "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT/jobs?per_page=100"
+          > .bluebuild/vm-jobs.json
+      - name: Require complete matched measurements and report adoption gate
+        run: python3 scripts/ci/benchmark-vm-tools.py summarize .bluebuild/vm-reports .bluebuild/vm-jobs.json .bluebuild/vm-summary.md
+      - name: Retain comparison and adoption decision
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: vm-tools-summary-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/vm-summary.*
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14

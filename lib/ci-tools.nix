@@ -16,6 +16,7 @@ in {
   shell = shells.ci;
   image-tools = shells.imageTools;
   scanner-tools = shells.scannerTools;
+  vm-tools = import ./vm-tools.nix {inherit pkgs;};
   oras = pkgs.oras;
   secretspec-tools = secretspec;
   ci-secrets-run = repository.ciSecretsRun;

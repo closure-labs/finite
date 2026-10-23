@@ -78,6 +78,31 @@ and base/default branches. The two v2 fallback snapshots remain until two distin
 bounded generations exist, then maintenance can retire them. Registry credentials
 remain outside cached paths.
 
+VM validation uses the pinned `vm-tools` output from `lib/ci-tools.nix`, with the
+existing Determinate client and public binary caches. The shared setup action
+provides QEMU's VM-test build, OpenSSL, Skopeo, SSH, ISO/firmware editors and
+Secure Boot firmware. It preserves the host Nix and BlueBuild executables.
+Firmware paths enter only through a validated Nix store output. Qualification
+records the actual executable paths and hashes, package versions and firmware
+hashes; legacy apt contexts remain readable and different contexts cannot reuse
+qualification. Changing this tooling requires fresh VM evidence.
+
+**Benchmark VM tool provisioning** is reusable and can run manually. Build Finite
+also invokes it for the dedicated `perf/nix-vm-tools` draft branch; ordinary PRs
+do not run this experiment. It compares the original apt command, apt without
+recommended packages and Nix, with three cold/warm repetitions per lane. All
+lanes start after the same Determinate and image-tool setup without an Actions
+store restore. Reports bind the exact checkout, proposal, locks, native run and
+attempt, runner image and executable/firmware identities. Complete native job
+times include setup, both passes and artifact handling. The experiment excludes
+the preceding Docker build; the normal PR image/VM jobs exercise that path.
+
+The draft's adoption gate requires all nine measurements and successful image/VM
+checks. Nix must beat both apt lanes on complete-job medians and improve common
+setup plus cold provisioning by at least 10 percent and five seconds, on one
+matching runner-image version. Missing, failed or inconsistent evidence cannot
+authorize rollout. A slower or inconclusive result leaves the PR in draft.
+
 Contract checks declare separate source inputs for home integration, Nix lifecycle,
 firmware/ISO editors, dependency updates, workflow lint and repository policy.
 The full `.#ci-checks` aggregate remains required. Changes outside a group's

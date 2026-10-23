@@ -55,12 +55,14 @@ class Checks(unittest.TestCase):
         self.assertEqual(mod.check_pr(REPO, 7, BOT, github=api)['status'], 'not-required')
 
     def test_governance_requires_current_exact_human_review(self):
-        api = GitHub()
-        api.files = [{'filename': '.github/workflows/build.yml', 'status': 'modified'}]
-        self.assertEqual(mod.check_pr(REPO, 7, BOT, github=api)['status'], 'authorized')
-        api.reviews = []
-        with self.assertRaises(mod.authority.AuthorityError):
-            mod.check_pr(REPO, 7, BOT, github=api)
+        for path in ('.github/workflows/build.yml', 'lib/vm-tools.nix'):
+            with self.subTest(path=path):
+                api = GitHub()
+                api.files = [{'filename': path, 'status': 'modified'}]
+                self.assertEqual(mod.check_pr(REPO, 7, BOT, github=api)['status'], 'authorized')
+                api.reviews = []
+                with self.assertRaises(mod.authority.AuthorityError):
+                    mod.check_pr(REPO, 7, BOT, github=api)
 
     def test_team_author_can_submit_governance_and_proposals(self):
         api = GitHub()

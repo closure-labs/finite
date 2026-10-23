@@ -1,4 +1,12 @@
 name: Test ISO in UEFI VM
+env:
+  FINITE_OPTIMIZED_CACHES: ${{ vars.FINITE_OPTIMIZED_CACHES }}
+  FINITE_CACHIX_WRITER: ${{ vars.FINITE_CACHIX_WRITER }}
+  FINITE_REUSE_INVENTORY: ${{ vars.FINITE_REUSE_INVENTORY }}
+  FINITE_GRYPE_DB_CACHE: ${{ vars.FINITE_GRYPE_DB_CACHE }}
+  FINITE_QUALIFICATION_REUSE: ${{ vars.FINITE_QUALIFICATION_REUSE }}
+  FINITE_QUALIFIED_ISO_PRESERVATION: ${{ vars.FINITE_QUALIFIED_ISO_PRESERVATION }}
+  FINITE_QUALIFIED_ISO_CHANNELS: ${{ vars.FINITE_QUALIFIED_ISO_CHANNELS }}
 on:
   workflow_call:
     inputs:
@@ -53,9 +61,11 @@ jobs:
               end')
           gh run download "$ISO_RUN" --name "$artifact" --dir .bluebuild/iso
       - name: Install VM tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y qemu-system-x86 qemu-utils ovmf xorriso skopeo mtools openssl python3-virt-firmware
+        uses: ./.github/actions/setup-nix
+        with:
+          cache-mode: none
+      - name: Realize pinned VM tools and firmware
+        uses: ./.github/actions/setup-vm-tools
       - name: Install, boot, activate Home Manager, update and roll back
         run: bash scripts/bluebuild/vm-acceptance.sh .bluebuild/iso
       - name: Save acceptance evidence

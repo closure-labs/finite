@@ -80,12 +80,13 @@ skopeo inspect --raw "docker://$source" >"$state/source-manifest.json"
 fi
 mapfile -t isos < <(find "$artifact" -maxdepth 1 -name '*.iso' -type f)
 [[ ${#isos[@]} == 1 ]]
-firmware=/usr/share/OVMF/OVMF_CODE_4M.fd
-variables=/usr/share/OVMF/OVMF_VARS_4M.fd
+firmware_root=${FINITE_VM_FIRMWARE_DIR:-/usr/share/OVMF}
+firmware=$firmware_root/OVMF_CODE_4M.fd
+variables=$firmware_root/OVMF_VARS_4M.fd
 secure_args=()
 if [[ ${FINITE_SECURE_BOOT:-false} == true ]]; then
-  firmware=/usr/share/OVMF/OVMF_CODE_4M.secboot.fd
-  variables=/usr/share/OVMF/OVMF_VARS_4M.ms.fd
+  firmware=$firmware_root/OVMF_CODE_4M.secboot.fd
+  variables=$firmware_root/OVMF_VARS_4M.ms.fd
   secure_args=(-global 'driver=cfi.pflash01,property=secure,value=on')
 fi
 test -r "$firmware"

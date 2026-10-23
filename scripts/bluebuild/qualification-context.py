@@ -9,6 +9,8 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'ci'))
+import vm_tools
 sys.dont_write_bytecode = True
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -34,6 +36,8 @@ def source_inputs(root=ROOT):
                     root / 'sources/bluebuild-installer.json', root / 'sources/bluebuild-cli.json', root / 'sources/installer-security.json',
                     root / 'scripts/ci/nix-resources.py', root / 'scripts/ci/bluefin-upstream.py',
                     root / 'scripts/ci/ci-options.py', root / 'cosign.pub',
+                    root / 'scripts/ci/vm_tools.py', root / 'lib/vm-tools.nix',
+                    root / '.github/actions/setup-vm-tools/action.yml',
                     root / '.github/workflows/iso.yml',
                     root / '.github/workflows/qualification.yml',
                     root / '.github/workflows/vm-acceptance.yml'})
@@ -61,10 +65,14 @@ def validate_certificate(root=ROOT):
 def context(root=ROOT):
     validate_certificate(root)
     inputs = source_inputs(root)
-    firmware = {name: sha('/usr/share/OVMF/' + name) for name in (
+    directory = Path(os.environ.get('FINITE_VM_FIRMWARE_DIR', '/usr/share/OVMF'))
+    firmware = {name: sha(directory / name) for name in (
         'OVMF_CODE_4M.secboot.fd', 'OVMF_VARS_4M.ms.fd')}
-    versions = subprocess.check_output(['dpkg-query', '-W', '-f=${Package}=${Version}\n',
-        'qemu-system-x86', 'qemu-utils', 'ovmf', 'xorriso', 'mtools', 'openssl', 'skopeo', 'python3-virt-firmware'], text=True, timeout=30)
+    if os.environ.get('FINITE_VM_TOOLS_MANIFEST'):
+        versions = json.dumps(vm_tools.identity(), sort_keys=True)
+    else:
+        versions = subprocess.check_output(['dpkg-query', '-W', '-f=${Package}=${Version}\n',
+            'qemu-system-x86', 'qemu-utils', 'ovmf', 'xorriso', 'mtools', 'openssl', 'skopeo', 'python3-virt-firmware'], text=True, timeout=30)
     return {'schema': 2, 'platform': 'linux/amd64', 'runner': 'ubuntu-24.04',
             'inputs': inputs, 'firmware': firmware, 'packages': versions.strip(),
             'bluebuildVersion': json.loads((root / 'sources/bluebuild-cli.json').read_text())}
