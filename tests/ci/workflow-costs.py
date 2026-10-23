@@ -175,6 +175,72 @@ class Costs(unittest.TestCase):
         costs.exclusive_occupancy(report)
         self.assertTrue(all(j['exclusiveRunnerSeconds'] is None for j in report['jobs']))
 
+    def test_queue_and_production_guest_receipts_bind_to_distinct_native_jobs(self):
+        import cost_receipts
+        from contextlib import contextmanager
+        import io, zipfile
+        for lane in ('finite', 'finite-dev'):
+            self.job['name'] = f'Validate ({lane}) / build'
+            phase_job = {**self.job, 'id': 2, 'name': f'Publish ({lane}) / qualification / phase (fresh)'}
+            self.jobs = [self.job, phase_job]
+            report = self.observe()
+            artifacts = [{'id': index, 'name': f'{prefix}-{lane}{suffix}-10-1', 'expired': False,
+                          'size_in_bytes': 500, 'digest': 'sha256:' + 'c' * 64,
+                          'workflow_run': {'id': 10, 'head_sha': 'a' * 40}}
+                         for index, prefix, suffix in ((20, 'image', ''), (21, 'qualification-phase', '-fresh'))]
+            values = {'image': [{'stage': 'startup-checks', 'seconds': 2, 'status': 0},
+                                {'stage': 'home-init', 'seconds': 319, 'status': 7}],
+                      'qualification': [{'stage': 'home-init', 'seconds': 339, 'status': 0}]}
+            @contextmanager
+            def reader(artifact, repository):
+                image = artifact['name'].startswith('image-')
+                raw = io.BytesIO()
+                with zipfile.ZipFile(raw, 'w') as archive:
+                    archive.writestr(('vm-local' if image else 'vm-fresh') + '/guest-timings.json',
+                                     json.dumps({'schema': 1, 'stages': values['image' if image else 'qualification']}))
+                raw.seek(0)
+                yield raw
+            cost_receipts.join(report, artifacts + artifacts[:1], reader)
+            jobs = {j['role']: j for j in report['jobs']}
+            self.assertEqual([(s['stage'], s['seconds'], s['status']) for s in jobs['build']['stages']],
+                             [('startup-checks', 2, 0), ('home-init', 319, 7)])
+            self.assertEqual([s['seconds'] for s in jobs['qualification-fresh']['stages']], [339])
+            self.assertEqual(report['receiptCoverage']['unmatched'], 0)
+            values['image'].append(values['image'][0])
+            with self.assertRaisesRegex(ValueError, 'Duplicate or invalid'):
+                cost_receipts.join(report, artifacts, reader)
+
+    def test_host_vm_installation_cleanup_and_legacy_unknown_status_are_preserved(self):
+        import cost_receipts
+        from contextlib import contextmanager
+        import io, zipfile
+        self.job['name'] = 'Validate (finite) / build'
+        report = self.observe()
+        artifact = {'id': 20, 'name': 'image-finite-10-1', 'expired': False,
+                    'size_in_bytes': 500, 'digest': 'sha256:' + 'c' * 64,
+                    'workflow_run': {'id': 10, 'head_sha': 'a' * 40}}
+        value = {'schema': 1, 'seconds': {'installation': 284, 'persistence-customization': 1, 'cleanup': 2},
+                 'status': {'installation': 7, 'cleanup': 7}}
+        member = ['vm-local/timings.json']
+        @contextmanager
+        def reader(*args):
+            raw = io.BytesIO()
+            with zipfile.ZipFile(raw, 'w') as archive:
+                archive.writestr(member[0], json.dumps(value))
+            raw.seek(0)
+            yield raw
+        cost_receipts.join(report, [artifact], reader)
+        stages = {s['stage']: s for s in report['jobs'][0]['stages']}
+        self.assertEqual(stages['installation']['status'], 7)
+        self.assertEqual(stages['cleanup']['status'], 7)
+        self.assertIsNone(stages['persistence-customization']['status'])
+        ranked = {row['stage']: row for row in costs.stage_opportunities([report])}
+        self.assertEqual(ranked['persistence-customization']['failedSamples'], 0)
+        self.assertEqual(ranked['persistence-customization']['unknownStatusSamples'], 1)
+        member[0] = 'vm-upgrade/timings.json'
+        with self.assertRaisesRegex(ValueError, 'phase differs'):
+            cost_receipts.join(report, [artifact], reader)
+
     def test_observer_uses_only_existing_read_only_audit_credentials(self):
         import yaml
         path = ROOT / '.github/workflows/workflow-costs.yml'

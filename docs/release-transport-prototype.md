@@ -1,6 +1,6 @@
 # Native release product origin prototype
 
-This draft preserves the production ZIP verification path. The optional
+The prototype merged in #241 and preserves the production ZIP verification path. The optional
 `origin_pilot` argument is a prototype consumer API, with no production workflow
 or dispatch input enabling it. Proposal payloads, qualification receipts and
 existing dispatch inputs retain their formats. No frozen execution, decision or
@@ -55,10 +55,10 @@ savings or adopt the path until those costs have been observed. Report logical
 byte-days separately from deduplicated registry billing. Local cleanup does not
 prove registry cleanup. Preserve the original packet and all existing decisions.
 
-No hosted diagnostic samples have been collected for this draft. GitHub must
-know the new workflow on its default branch before it can be manually dispatched
-at a reviewed branch; source tests and PR aggregate checks do not establish the
-benchmark gates. Keep the draft and the existing production path until the
-matched measurements and lifecycle observation are complete. The seven-day CI
-cost assessment still ends October 30 at `05:01:17Z`; later cohorts remain
+The diagnostic workflow is registered after the prototype merge. Pin producer
+and consumer execution to reviewed code; retain the source revision and exact
+immutable packet in the result. Workflow registration and passing source checks
+do not establish the measurement gates. Keep the existing production path until
+the matched measurements and lifecycle observation are complete. The seven-day
+CI cost assessment still ends October 30 at `05:01:17Z`; later cohorts remain
 separate. Cachix writing and Grype database transport remain disabled.

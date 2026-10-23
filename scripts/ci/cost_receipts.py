@@ -56,20 +56,51 @@ def join(run, artifacts, reader=bounded_reader):
                             candidates[0]['inventoryReuse'] = {'eligible': True if reused else None,
                                 'hit': True if reused else None, 'missReason': None, 'observedReused': reused}
                         continue
-                    if name.endswith('/guest-timings.json'):
+                    if re.fullmatch(r'vm-(?:local|fresh|upgrade)/(?:guest-)?timings\.json', name):
                         if entry.file_size > 16384:
                             raise ValueError('Oversized guest timing receipt')
                         value = json.loads(b''.join(chunks(zipped, entry)))
                         phase = 'upgrade' if '-upgrade-' in artifact['name'] else 'fresh'
                         lane = 'finite-dev' if '-finite-dev-' in artifact['name'] else 'finite'
-                        candidates = [j for j in run['jobs'] if j['profile'] == lane
-                                      and j['role'] == 'qualification-' + phase
+                        role = 'build' if artifact['name'].startswith('image-') else 'qualification-' + phase
+                        guest = name.endswith('/guest-timings.json')
+                        expected_member = ('vm-local' if role == 'build' else 'vm-' + phase) + ('/guest-timings.json' if guest else '/timings.json')
+                        if name != expected_member:
+                            raise ValueError('Guest timing phase differs from native artifact role')
+                        if not isinstance(value, dict) or type(value.get('schema')) is not int or value['schema'] != 1:
+                            raise ValueError('Invalid VM timing receipt schema')
+                        if guest:
+                            stages = value.get('stages')
+                            if not isinstance(stages, list) or len(stages) > 4:
+                                raise ValueError('Invalid guest timing receipt schema')
+                        else:
+                            seconds, statuses = value.get('seconds'), value.get('status', {})
+                            if not isinstance(seconds, dict) or len(seconds) > 16 or not isinstance(statuses, dict):
+                                raise ValueError('Invalid host VM timing receipt schema')
+                            stages = [{'stage': stage, 'seconds': elapsed, 'status': statuses.get(stage)}
+                                      for stage, elapsed in seconds.items()]
+                        names = set()
+                        for row in stages:
+                            stage = row.get('stage') if isinstance(row, dict) else None
+                            allowed = stage in ('startup-checks', 'homebrew-setup', 'predecessor-preparation', 'home-init') if guest else (
+                                isinstance(stage, str) and re.fullmatch(r'(?:installation|persistence-customization|home-activation|cleanup|upgrade-staging|(?:first-boot|updated|rollback)-(?:ssh-ready|boot-contracts))', stage))
+                            status = row.get('status') if isinstance(row, dict) else None
+                            valid_status = (not guest and status is None) or (type(status) is int and 0 <= status <= 255)
+                            if (not allowed or stage in names or type(row.get('seconds')) is not int
+                                    or not 0 <= row['seconds'] <= 86400 or not valid_status):
+                                raise ValueError('Duplicate or invalid guest/host VM timing receipt')
+                            names.add(stage)
+                        candidates = [j for j in run['jobs'] if j['profile'] == lane and j['role'] == role
                                       and str(j['runAttempt']) == artifact['name'].rsplit('-', 1)[1]]
-                        if len(candidates) == 1 and value.get('schema') == 1 and len(value.get('stages', [])) <= 4:
-                            for row in value['stages']:
-                                if row.get('stage') not in ('startup-checks', 'homebrew-setup', 'predecessor-preparation', 'home-init') or type(row.get('seconds')) is not int or not 0 <= row['seconds'] <= 86400 or type(row.get('status')) is not int:
-                                    raise ValueError('Invalid guest timing receipt')
-                                candidates[0]['stages'].append({**row, 'nested': True})
+                        if len(candidates) != 1:
+                            run['receiptCoverage']['unmatched'] += 1
+                            continue
+                        job = candidates[0]
+                        for row in stages:
+                            key = (job['jobId'], name, row['stage'])
+                            if key not in seen:
+                                seen.add(key)
+                                job['stages'].append({**row, 'nested': True})
                         continue
                     if not name.endswith(('-timings.jsonl', '-stages.jsonl')):
                         continue
