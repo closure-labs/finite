@@ -44,9 +44,21 @@
   };
 
   # Den composes Home Manager aspects; BlueBuild owns image configuration.
-  outputs = inputs:
-    (inputs.nixpkgs.lib.evalModules {
-      specialArgs = {inherit inputs;};
-      modules = [(inputs.import-tree ./modules)];
-    }).config.flake;
+  outputs = inputs: let
+    flake =
+      (inputs.nixpkgs.lib.evalModules {
+        specialArgs = {inherit inputs;};
+        modules = [(inputs.import-tree ./modules)];
+      }).config.flake;
+    # getFlake needs the output attribute names even when a caller only reads
+    # inputs. Keep that boundary lazy; forcing a public export still evaluates
+    # the original module result and rejects any unlisted new export.
+    names = ["apps" "checks" "denful" "devShells" "flakeModules" "formatter" "lib" "packages" "templates"];
+  in
+    builtins.listToAttrs (map (name: {
+        inherit name;
+        value = assert builtins.attrNames flake == names;
+          flake.${name};
+      })
+      names);
 }

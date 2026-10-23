@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reuse authenticated pristine ISO bytes for an identical predecessor context."""
+"""Reuse authenticated pristine ISO bytes with unchanged generation inputs."""
 import argparse
 import importlib.util
 import json
@@ -31,15 +31,32 @@ upstream = importlib.util.module_from_spec(upstream_spec)
 upstream_spec.loader.exec_module(upstream)
 
 
+def generation_inputs(inputs):
+    # These two entry points never produce the published pristine candidate ISO:
+    # local-vm.sh is restricted to PR/merge-group jobs, and this reader is called
+    # only by the upgrade lane. Keep every other input (including unknown/new
+    # helpers, executable modes, certificates and VM checks) conservative.
+    # This projection must never be used for qualification receipt reuse.
+    if not isinstance(inputs, dict):
+        raise reuse.Unavailable('Predecessor ISO generation inputs are missing')
+    return {path: value for path, value in inputs.items() if path not in (
+        'scripts/bluebuild/local-vm.sh', 'scripts/bluebuild/reuse-predecessor-iso.py')}
+
+
 def compatible(directory, profile, digest, inputs):
     value = json.loads(qualification.desktop.read(directory / (profile + '-acceptance.json')))
     if value.get('validationOnly') is True:
         raise ValueError('Diagnostic qualification cannot provide a retained predecessor ISO')
     if (value.get('schema') != 2 or not value.get('qualifiedIso')
             or value.get('candidate') != 'ghcr.io/closure-labs/finite@' + digest
-            or value.get('profile') != profile
-            or value.get('qualificationContext', {}).get('inputs') != inputs):
+            or value.get('profile') != profile):
         raise reuse.Unavailable('Predecessor ISO candidate or generation context differs')
+    recorded = generation_inputs(value.get('qualificationContext', {}).get('inputs'))
+    current = generation_inputs(inputs)
+    if recorded != current:
+        paths = sorted(path for path in recorded.keys() | current.keys()
+                       if recorded.get(path) != current.get(path))
+        raise reuse.Unavailable('Predecessor ISO generation inputs differ: ' + ', '.join(paths[:20]))
     if (value.get('accepted') is not True or value.get('secureBoot') is not True
             or value.get('encryptedRoot') is not True
             or qualification.identity(value['qualificationContext']) != value.get('qualificationContextSha256')):
@@ -97,7 +114,7 @@ def restore(profile, digest, output):
                 staging = directory / 'iso'
                 staging.mkdir()
                 release.authenticated_iso(preserved, origin_run, value, staging)
-                # Current source-input comparison includes all locks, hook, pinned
+                # Current generation-input comparison includes all locks, hook, pinned
                 # certificate and generation scripts. finiteRevision stays original.
                 installation = json.loads((staging / 'installation.json').read_text())
                 if (installation['image'] != value['candidate'] or installation['profile'] != profile

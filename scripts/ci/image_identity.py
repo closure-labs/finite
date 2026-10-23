@@ -46,10 +46,9 @@ def identity(profile, root, payload=None):
         raise ValueError('Unsupported image profile')
     root = Path(root)
     if payload is None:
-        output = 'image-payload'
         payload = subprocess.check_output(
-            ['nix', 'eval', '--accept-flake-config', '--no-update-lock-file',
-             '--no-write-lock-file', '--raw', '.#' + output + '.drvPath'],
+            ['nix', 'eval', '--impure', '--accept-flake-config', '--no-update-lock-file',
+             '--no-write-lock-file', '--file', 'lib/ci-payload.nix', '--raw', 'payload.drvPath'],
             cwd=root, text=True, timeout=300).strip()
     if not payload.startswith('/nix/store/') or not payload.endswith('.drv'):
         raise ValueError('Invalid Nix payload identity')

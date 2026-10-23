@@ -1,0 +1,157 @@
+{
+  "schema": 1,
+  "kind": "finite-predecessor-iso-audit",
+  "authorizesPublication": false,
+  "repository": "closure-labs/finite",
+  "observedAt": "2026-10-23",
+  "sourceRevision": "23c06c71c671106ae8ac7ea5112224c5c5d400be",
+  "attempt": 1,
+  "comparisons": [
+    {
+      "profile": "finite",
+      "originRun": 39910736417,
+      "consumerRun": 39931669315,
+      "originRevision": "04cb70543c44aeb16da662c4bbb3dfe26775ac8c",
+      "consumerRevision": "23c06c71c671106ae8ac7ea5112224c5c5d400be",
+      "candidate": "ghcr.io/closure-labs/finite@sha256:b63c208d4f58122806d55aeac3e0dc5bc4eb625beaabdd3bde16d0653b4810f6",
+      "consumerPreviousDigest": "sha256:b63c208d4f58122806d55aeac3e0dc5bc4eb625beaabdd3bde16d0653b4810f6",
+      "changedInputs": [
+        "scripts/bluebuild/local-vm.sh"
+      ]
+    },
+    {
+      "profile": "finite-dev",
+      "originRun": 39910736417,
+      "consumerRun": 39931669315,
+      "originRevision": "04cb70543c44aeb16da662c4bbb3dfe26775ac8c",
+      "consumerRevision": "23c06c71c671106ae8ac7ea5112224c5c5d400be",
+      "candidate": "ghcr.io/closure-labs/finite@sha256:c55c72f53a9d1699fea24161b97f6959d61ec80d0bbe790a48b7e69b549ff8cf",
+      "consumerPreviousDigest": "sha256:c55c72f53a9d1699fea24161b97f6959d61ec80d0bbe790a48b7e69b549ff8cf",
+      "changedInputs": [
+        "scripts/bluebuild/local-vm.sh"
+      ]
+    }
+  ],
+  "restores": [
+    {
+      "profile": "finite",
+      "run": 39960735979,
+      "attempt": 1,
+      "job": 120451111668,
+      "url": "https://github.com/closure-labs/finite/actions/runs/39960735979/job/120451111668",
+      "artifact": {
+        "id": 12506639595,
+        "sha256": "3c24ae2f50d5863438bf5993e821d5db38d393b218ed2e9a1fdbba2203e01f5e",
+        "size": 219631
+      },
+      "timing": {
+        "schema": 1,
+        "kind": "finite-stage-timing",
+        "authorizesPublication": false,
+        "repository": "closure-labs/finite",
+        "runId": "39960735979",
+        "runAttempt": "1",
+        "revision": "23c06c71c671106ae8ac7ea5112224c5c5d400be",
+        "profile": "finite",
+        "sourceRevision": "23c06c71c671106ae8ac7ea5112224c5c5d400be",
+        "candidateDigest": "sha256:0f9eb0fb9e6ad0e5de6bb78e045a197c195093ab5d7cbc7a55c5afade5991a46",
+        "buildIdentity": "v1:7ebcd6756ec822a0cd708bd665ba6fdf14b9c405b21e34f9dff87637dadb5df7",
+        "runner": {
+          "RUNNER_OS": "Linux",
+          "RUNNER_ARCH": "X64",
+          "ImageOS": "ubuntu24",
+          "ImageVersion": "20261012.334.1"
+        },
+        "lockSha256": {
+          "flake.lock": "a1a2f898f434d48b27ad644f3148e528ef833795a6617b195e29cb36081a70cc",
+          "devenv.lock": "a86b17ce420d5a3cd8f307d3cb3973ec2670c084ef88b49a2b49b3451a92a71a"
+        },
+        "toolCohort": {
+          "pythonExecutable": "/nix/store/d7p0bc9x4g4glf0qskh5kxwxwx54slvg-python3-3.13.15-env/bin/python3.13",
+          "nixExecutable": "/nix/store/6qdgsgwzwsv20jsw2yywqrc01sgzc80g-determinate-nix-3.23.1/bin/nix",
+          "vmManifest": "/nix/store/abnq92gki83dbzv2i202mqhgyfaniz98-finite-ci-vm-tools/share/finite-vm/toolchain.json",
+          "firmwareDirectory": "/nix/store/abnq92gki83dbzv2i202mqhgyfaniz98-finite-ci-vm-tools/share/finite-vm/firmware"
+        },
+        "stage": "predecessor-iso-reuse",
+        "startedAt": "2026-10-23T13:52:08.157991+00:00",
+        "seconds": 130.71,
+        "status": 0,
+        "runnerNetworkDelta": {
+          "rx_bytes": 5172051925,
+          "tx_bytes": 7365130
+        }
+      },
+      "isoReuse": {
+        "schema": 1,
+        "originRun": 39944152028,
+        "originAttempt": 1,
+        "artifactSha256": "sha256:51dd85efcba02170b0b73b2b3917afd58eabe377219fc22e6e8bf532ff034cc8",
+        "image": "ghcr.io/closure-labs/finite@sha256:0319dc2e6adc1c32d1078529034969e6aa5350e2c6408af04e68c322158290fd",
+        "originalInstallationSha256": "85ced7a5bece023fab100a634113a35615748c1f685e364560798c254f0affdf"
+      }
+    },
+    {
+      "profile": "finite-dev",
+      "run": 39960735979,
+      "attempt": 1,
+      "job": 120455127230,
+      "url": "https://github.com/closure-labs/finite/actions/runs/39960735979/job/120455127230",
+      "artifact": {
+        "id": 12508412619,
+        "sha256": "0f47dd314cde646acc204f4f044a93ff82df564922c9f9186c1404a33c52aa23",
+        "size": 226333
+      },
+      "timing": {
+        "schema": 1,
+        "kind": "finite-stage-timing",
+        "authorizesPublication": false,
+        "repository": "closure-labs/finite",
+        "runId": "39960735979",
+        "runAttempt": "1",
+        "revision": "23c06c71c671106ae8ac7ea5112224c5c5d400be",
+        "profile": "finite-dev",
+        "sourceRevision": "23c06c71c671106ae8ac7ea5112224c5c5d400be",
+        "candidateDigest": "sha256:e8b35af24e32c7f1a511b2d410cecb72453ebc95da7c14109a0d31d3db1e9c24",
+        "buildIdentity": "v1:338baf7b9a6efd997de4418d8b93a9843aa5dd866257d53517f3d4440de088f6",
+        "runner": {
+          "RUNNER_OS": "Linux",
+          "RUNNER_ARCH": "X64",
+          "ImageOS": "ubuntu24",
+          "ImageVersion": "20261012.334.1"
+        },
+        "lockSha256": {
+          "flake.lock": "a1a2f898f434d48b27ad644f3148e528ef833795a6617b195e29cb36081a70cc",
+          "devenv.lock": "a86b17ce420d5a3cd8f307d3cb3973ec2670c084ef88b49a2b49b3451a92a71a"
+        },
+        "toolCohort": {
+          "pythonExecutable": "/nix/store/d7p0bc9x4g4glf0qskh5kxwxwx54slvg-python3-3.13.15-env/bin/python3.13",
+          "nixExecutable": "/nix/store/6qdgsgwzwsv20jsw2yywqrc01sgzc80g-determinate-nix-3.23.1/bin/nix",
+          "vmManifest": "/nix/store/abnq92gki83dbzv2i202mqhgyfaniz98-finite-ci-vm-tools/share/finite-vm/toolchain.json",
+          "firmwareDirectory": "/nix/store/abnq92gki83dbzv2i202mqhgyfaniz98-finite-ci-vm-tools/share/finite-vm/firmware"
+        },
+        "stage": "predecessor-iso-reuse",
+        "startedAt": "2026-10-23T14:00:37.852345+00:00",
+        "seconds": 387.376,
+        "status": 0,
+        "runnerNetworkDelta": {
+          "rx_bytes": 7149605808,
+          "tx_bytes": 9492029
+        }
+      },
+      "isoReuse": {
+        "schema": 1,
+        "originRun": 39950048323,
+        "originAttempt": 1,
+        "artifactSha256": "sha256:226f30b45517635ef33bac1a3bd69ff5e9527e6f7a4011f55385e660e3156a98",
+        "image": "ghcr.io/closure-labs/finite@sha256:2f09c96dc27b37b239de9c7c01be7f6fdc89f71a2c2ba0738abcbdc6c6b546b0",
+        "originalInstallationSha256": "4a5eed26c694fb87015bcba7f6796b530270d6c2c30952789b29bcfb6fbf99a6"
+      }
+    }
+  ],
+  "limitations": [
+    "One successful restore observation per active profile; cohorts differ from the false-miss run.",
+    "No matched savings estimate or complete-job median.",
+    "Cross-context production rollout remains unobserved.",
+    "OCI retained-export benchmark remains unrun; seven-day observation ends 2026-10-30."
+  ]
+}

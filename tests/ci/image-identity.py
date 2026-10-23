@@ -5,6 +5,7 @@ import importlib.util
 import json
 from pathlib import Path
 import tempfile
+import subprocess
 import unittest
 from unittest.mock import patch
 import sys
@@ -156,6 +157,22 @@ class ImageInputContract(unittest.TestCase):
             old = 'v1:' + hashlib.sha256(dumps(old_contract, sort_keys=True,
                                             separators=(',', ':')).encode()).hexdigest()
             self.assertNotEqual(old, current)
+
+    def test_resolved_payload_preserves_the_explicit_derivation_contract(self):
+        for profile in PROFILES:
+            with patch.object(image.subprocess, 'check_output', return_value=PAYLOAD + '\n'):
+                self.assertEqual(image.identity(profile, self.root), image.identity(profile, self.root, PAYLOAD))
+        with patch.object(image.subprocess, 'check_output', return_value='not a derivation'):
+            with self.assertRaisesRegex(ValueError, 'Invalid Nix payload identity'):
+                image.identity(PROFILES[0], self.root)
+
+    def test_payload_evaluation_errors_remain_terminal(self):
+        for error in (subprocess.TimeoutExpired(['nix'], 300), subprocess.CalledProcessError(1, ['nix'])):
+            with self.subTest(error=type(error).__name__), \
+                    patch.object(image.subprocess, 'check_output', side_effect=error) as evaluate:
+                with self.assertRaises(type(error)):
+                    image.identity(PROFILES[0], self.root)
+                self.assertEqual(evaluate.call_count, 1)
 
 
 if __name__ == '__main__':

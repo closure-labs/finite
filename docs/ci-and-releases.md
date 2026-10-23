@@ -59,6 +59,15 @@ with the flake's CI and release shells without evaluating the Home Manager/Den
 configuration. SecretSpec mapping and trusted PR validation use the same
 lightweight entry point and retain their existing credential and review checks.
 The devenv check and lock-validation tasks also obtain their launchers here.
+Image identity calculation and payload staging use `lib/ci-payload.nix` to
+evaluate the existing payload directly from the root flake's locked inputs.
+The root flake defers its nine existing exports, avoiding Den composition when
+reading inputs; accessing an export still evaluates the original module result.
+The aggregate's
+`payload-entry` proof requires the exact same derivation as the public
+`image-payload` output. Local-path evaluation uses `--impure` only to open the
+checkout; lock updates and writes remain disabled. See the
+[payload evaluation incident](ci-payload-evaluation-2026-10-23.md).
 The check launcher discovers the proof names and aggregate derivation in one
 root-flake evaluation, releases that evaluator, builds the aggregate, then checks
 standard flake outputs and every proof closure. Creating the launcher itself
@@ -424,6 +433,13 @@ ISO construction still creates unique installation tags in the existing registry
 use comma-separated supported channel names or `all` for a broader rollout.
 Preservation, predecessor ISO reuse, strict release fallback and pruning apply
 only to selected channels while the preservation switch is enabled.
+Predecessor ISO lookup excludes only the PR/queue local image entry point and
+the predecessor artifact reader from its input comparison. All other input
+contents and modes must match. Restored bytes still require authenticated
+producer/archive identities, checksums, the original installer binding, an
+unchanged installation tag, current signature verification and a new upgrade
+and rollback VM run. Full qualification receipt reuse retains the complete
+context comparison. See the [October 23 predecessor audit](ci-predecessor-2026-10-23.md).
 GitHub Actions supplies backend values through the `github-actions` environment
 provider; signing and authority tasks use the encrypted `local = "pass://"`
 provider locally. Cachix uses devenv’s built-in SecretSpec requirement with

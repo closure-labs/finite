@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "kind": "finite-payload-evaluation-audit",
+  "authorizesPublication": false,
+  "repository": "closure-labs/finite",
+  "observedAt": "2026-10-23",
+  "sourceRevision": "ecf670fa9b91b4b68cef6c1c0e5008d6fa42093d",
+  "run": 39980522095,
+  "attempt": 1,
+  "failure": {
+    "profile": "finite",
+    "job": 120509623632,
+    "phase": "Prepare candidate publication",
+    "candidateDigest": null,
+    "error": "TimeoutExpired evaluating image-payload.drvPath after 300 seconds",
+    "nix": "Determinate 3.23.2 / upstream 2.35.3",
+    "capacity": {"cpus": 4, "memoryMiB": 15988},
+    "cause": "The failed evaluation boundary is confirmed; the underlying stall is not isolated."
+  },
+  "successfulReference": {
+    "profile": "finite-dev",
+    "job": 120509623651,
+    "stage": "payload-staging",
+    "derivation": "/nix/store/ydq3wbhv6vns4440rf1bzy4pdc1kznmv-finite-image-payload-0.8.3-dev.drv",
+    "builtAt": "2026-10-23T15:50:07Z"
+  },
+  "localObservations": {
+    "runner": "development workstation; not GitHub-hosted",
+    "nix": "Determinate 3.23.3 / upstream 2.35.3",
+    "inputGraph": "Root flake inputs, including the locked Foundation graph",
+    "profileScope": ["finite", "finite-dev"],
+    "sameDerivationAsHosted": true,
+    "denCompositionPoisoned": true,
+    "warmSeconds": [0.583, 0.345],
+    "controlledColdComparison": false,
+    "completeJobSavingsClaim": false
+  },
+  "queueEvidence": [
+    {"profile": "finite", "run": 39972455258, "attempt": 1, "artifact": 12511893433, "sha256": "19a446b4408e619b9124deaa095bab2a9053f3b26d53632cc3b53e2f789e183d"},
+    {"profile": "finite-dev", "run": 39972455258, "attempt": 1, "artifact": 12512134651, "sha256": "7f88b300c72ebc561b945cddd76695be12734442bfe30db08df6cd9669a30a3e"}
+  ],
+  "rejectedPrototype": "Reading root .inputs without deferring root exports still evaluated Den; rejected by the poisoned-module fixture.",
+  "requiredHostedProofs": ["payload-entry: exact derivation equality with public image-payload", "flake-input-boundary: lazy evaluation and preservation of all exports"],
+  "healthFinding": {
+    "confirmed": "Completed-only inventory omitted the failed standard profile while the developer profile was still qualifying.",
+    "reportAddition": "activeBuilds: failed step names, running phases and approval/environment waits",
+    "historicalPromotionSelectionChanged": false,
+    "mutationAdded": false
+  },
+  "fullQualificationRequired": true,
+  "hostedRolloutObserved": false
+}
