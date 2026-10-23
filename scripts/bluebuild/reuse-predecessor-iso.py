@@ -14,6 +14,11 @@ import zipfile
 sys.dont_write_bytecode = True
 
 ROOT = Path(__file__).resolve().parents[2]
+# This optional transfer must not consume the old 30-minute release-download
+# budget before qualification even starts. Successful observed full restores
+# took 131/387 seconds; keep one ten-minute transfer attempt, then regenerate
+# the installer for the same signed predecessor through the existing fallback.
+ISO_TRANSFER_TIMEOUT = 600
 
 
 def load(name, filename):
@@ -113,7 +118,16 @@ def restore(profile, digest, output):
                     continue
                 staging = directory / 'iso'
                 staging.mkdir()
-                release.authenticated_iso(preserved, origin_run, value, staging)
+                try:
+                    release.authenticated_iso(preserved, origin_run, value, staging,
+                                              download_timeout=ISO_TRANSFER_TIMEOUT)
+                except subprocess.TimeoutExpired as error:
+                    expected = ['gh', 'api', f'repos/{reuse.REPOSITORY}/actions/artifacts/{preserved["id"]}/zip']
+                    if error.cmd != expected or error.timeout != ISO_TRANSFER_TIMEOUT:
+                        raise
+                    raise reuse.Unavailable(
+                        f'Predecessor ISO artifact {preserved["id"]} transfer exceeded {ISO_TRANSFER_TIMEOUT}s; '
+                        f'construct the installer for the same signed predecessor {digest}') from error
                 # Current generation-input comparison includes all locks, hook, pinned
                 # certificate and generation scripts. finiteRevision stays original.
                 installation = json.loads((staging / 'installation.json').read_text())

@@ -9,6 +9,7 @@ the recorded revision and date.
 
 | Record | Scope |
 | --- | --- |
+| [ISO transfers, October 23](iso-transport-2026-10-23.md) | Initial queue timings, a failed predecessor transfer and the remaining release-packet duplication |
 | [Payload evaluation, October 23](ci-payload-evaluation-2026-10-23.md) | Pre-build timeout and an equivalent direct payload entry |
 | [Predecessor ISO reuse, October 23](ci-predecessor-2026-10-23.md) | A confirmed context mismatch and authenticated restore observations |
 | [CI rollout and governed dependency updates, October 23](ci-rollout-2026-10-23.md) | Verified production qualification, VM stage measurements and Dependabot submitter diagnosis |
