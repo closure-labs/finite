@@ -103,6 +103,8 @@ def dispatch(report, revision, api=get_json):
         raise ValueError('Preparation run inventory is incomplete')
     if any(run.get('head_sha') == revision and run.get('status') != 'completed' for run in runs):
         return 'Preparation is already queued or running.'
+    if any(run.get('head_sha') == revision and run.get('conclusion') == 'success' for run in runs):
+        return 'Preparation already succeeded; inspect its proposal or explicitly recover its retained packet.'
     if any(run.get('head_sha') == revision and run.get('status') == 'completed'
            and run.get('conclusion') != 'success' for run in runs):
         raise ValueError('Paired preparation already failed or was cancelled at this revision; '

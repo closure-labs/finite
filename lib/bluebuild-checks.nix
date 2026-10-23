@@ -92,6 +92,8 @@ in {
     python3 tests/ci/security-decisions.py
     python3 tests/ci/decision-authority.py
     python3 tests/ci/decision-revocation.py
+    python3 tests/ci/validation-preflight.py
+    python3 tests/ci/workflow-costs.py
     python3 tests/ci/decision-check.py
     python3 tests/ci/decision-controller.py
     python3 tests/ci/decision-packets.py

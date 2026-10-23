@@ -18,34 +18,7 @@ CHECK_NAME = 'Maintainer decision authority'
 COLLECTOR = '.github/workflows/decision-events.yml'
 QUEUE = re.compile(r'gh-readonly-queue/main/pr-([1-9][0-9]*)-[0-9a-f]{7,40}')
 PROPOSAL = re.compile(r'automation/decisions/(security|releases)/([0-9a-f]{64})\.json')
-GOVERNED_PREFIXES = ('scripts/ci/', 'scripts/bluebuild/', '.github/workflows/', '.github/actions/', 'automation/security/',
-                     'automation/github/', 'automation/decisions/', 'lib/ci-applications/')
-GOVERNED_FILES = {'flake.nix', 'flake.lock', 'cosign.pub', '.github/CODEOWNERS',
-                  'lib/mk-pkgs.nix', 'lib/project-policy.nix', 'lib/secretspec.nix', 'lib/vm-tools.nix',
-                  'sources/bluefin.pub', 'sources/bluefin-trust.json', 'sources/cosign-runtime.json',
-                  'scripts/ci/verify-security-admission.py', 'scripts/ci/reconcile-decisions.py',
-                  'scripts/ci/verify-attestation-subject.py', 'scripts/ci/inventory-evidence.py',
-                  'secretspec.toml', 'sources/secretspec.json', 'lib/ci-tools.nix',
-                  'scripts/ci/security_decisions.py', 'scripts/ci/security_admission.py',
-                  'scripts/ci/security-admission.py', 'scripts/ci/decision_packets.py',
-                  'scripts/ci/decision_controller.py', 'lib/bluebuild-checks.nix',
-                  '.github/zizmor.yml', 'zizmor.yml', '.zizmor.yml', 'scripts/ci/decision-authority.py',
-                  'scripts/ci/decision-check.py', 'scripts/ci/decision-controller.py',
-                  'scripts/ci/approved-baseline.py', 'scripts/ci/reuse-candidate-security.py',
-                  'scripts/ci/repository-security-audit.py', 'scripts/ci/legacy-release-boundary.py', 'scripts/ci/create-release-draft.sh'}
-
-
-def governed(path):
-    return (path in GOVERNED_FILES or path.startswith(GOVERNED_PREFIXES)
-            or path.startswith('scripts/bluebuild/security')
-            or path.startswith('scripts/bluebuild/publication')
-            or path.startswith('scripts/bluebuild/release')
-            or path.startswith('scripts/ci/release')
-            or path.startswith('scripts/ci/prepare-release')
-            or path.startswith('scripts/ci/decision-')
-            or path.startswith('scripts/ci/decision_')
-            or path.startswith('scripts/ci/execute-release')
-            or path.startswith('lib/ci-'))
+from governed_tree import changed_paths, compare, governed, tree
 
 
 def post_check(repository, sha, conclusion, summary, app_id, api_post=None):
@@ -66,19 +39,6 @@ def post_check(repository, sha, conclusion, summary, app_id, api_post=None):
     return response
 
 
-def tree(api, repository, sha):
-    value = api(f'repos/{repository}/git/trees/{sha}?recursive=1')
-    if not isinstance(value, dict) or value.get('truncated') is not False or not isinstance(value.get('tree'), list):
-        raise authority.AuthorityError('Cannot prove complete merge-group tree identity')
-    entries = {}
-    for item in value['tree']:
-        if not isinstance(item, dict) or not isinstance(item.get('path'), str):
-            raise authority.AuthorityError('Invalid tree response')
-        if item['path'] in entries:
-            raise authority.AuthorityError('Duplicate merge-group tree path')
-        entries[item['path']] = (item.get('type'), item.get('mode'), item.get('sha'))
-    return entries
-
 
 def validate_proposal_packet(proposal):
     # Loaded only from the trusted main checkout, never from PR contents.
@@ -98,15 +58,10 @@ def check_pr(repository, number, expected_bot, target_sha=None, github=None):
     head = pull['head']['sha']
     target_sha = target_sha or head
     files = authority.collection(api, endpoint + '/files')
-    if len(files) != pull.get('changed_files') or not files:
-        raise authority.AuthorityError('Incomplete PR file inventory')
-    paths = set()
-    for item in files:
-        if not isinstance(item, dict) or not isinstance(item.get('filename'), str):
-            raise authority.AuthorityError('Invalid changed-file inventory')
-        paths.add(item['filename'])
-        if item.get('previous_filename'):
-            paths.add(item['previous_filename'])
+    try:
+        paths = changed_paths(files, pull.get('changed_files'))
+    except ValueError as error:
+        raise authority.AuthorityError(str(error)) from error
     sensitive = sorted(path for path in paths if governed(path))
     proposals = sorted(path for path in paths if PROPOSAL.fullmatch(path))
     if sensitive:
@@ -123,10 +78,10 @@ def check_pr(repository, number, expected_bot, target_sha=None, github=None):
         if any(path.startswith('automation/decisions/') and not PROPOSAL.fullmatch(path) for path in paths):
             raise authority.AuthorityError('Decision ledger permits only immutable canonical proposal paths')
     if target_sha != head:
-        queued, reviewed = tree(api, repository, target_sha), tree(api, repository, head)
-        for path in sensitive:
-            if queued.get(path) != reviewed.get(path):
-                raise authority.AuthorityError('Merge-group governed content differs from approved PR head: ' + path)
+        try:
+            compare(api, repository, target_sha, head, paths)
+        except ValueError as error:
+            raise authority.AuthorityError(str(error)) from error
         for path in proposals:
             if canonical_hash(authority.document_at(api, repository, path, target_sha)) != canonical_hash(authority.document_at(api, repository, path, head)):
                 raise authority.AuthorityError('Merge-group proposal differs from exact approved PR head')
