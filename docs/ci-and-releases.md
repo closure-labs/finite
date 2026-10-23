@@ -415,6 +415,13 @@ ISO construction still creates unique installation tags in the existing registry
 use comma-separated supported channel names or `all` for a broader rollout.
 Preservation, predecessor ISO reuse, strict release fallback and pruning apply
 only to selected channels while the preservation switch is enabled.
+Predecessor ISO lookup excludes only the PR/queue local image entry point and
+the predecessor artifact reader from its input comparison. All other input
+contents and modes must match. Restored bytes still require authenticated
+producer/archive identities, checksums, the original installer binding, an
+unchanged installation tag, current signature verification and a new upgrade
+and rollback VM run. Full qualification receipt reuse retains the complete
+context comparison. See the [October 23 predecessor audit](ci-predecessor-2026-10-23.md).
 GitHub Actions supplies backend values through the `github-actions` environment
 provider; signing and authority tasks use the encrypted `local = "pass://"`
 provider locally. Cachix uses devenv’s built-in SecretSpec requirement with
