@@ -55,7 +55,7 @@ jobs:
           --scope review-app --reason 'Finite human decision authority App' --format gha
       - name: Generate short-lived repository-scoped review token
         id: review-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           client-id: ${{ env.FINITE_REVIEW_CLIENT_ID }}
           private-key: ${{ env.FINITE_REVIEW_PRIVATE_KEY }}
@@ -110,7 +110,7 @@ jobs:
           --scope review-app --reason 'Finite human decision authority App' --format gha
       - name: Generate short-lived repository-scoped review token
         id: review-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           client-id: ${{ env.FINITE_REVIEW_CLIENT_ID }}
           private-key: ${{ env.FINITE_REVIEW_PRIVATE_KEY }}
@@ -171,7 +171,7 @@ jobs:
       - name: Generate a token for the development PR only
         if: steps.cycle.outputs.changed == 'true'
         id: review-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           client-id: ${{ env.FINITE_REVIEW_CLIENT_ID }}
           private-key: ${{ env.FINITE_REVIEW_PRIVATE_KEY }}
