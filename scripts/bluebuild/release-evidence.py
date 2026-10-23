@@ -109,8 +109,10 @@ def qualified_iso_artifact(artifacts, profile, run_id, attempt):
     return matches[0] if matches else None
 
 
-def authenticated_iso(entry, run, acceptance, destination):
+def authenticated_iso(entry, run, acceptance, destination, *, download_timeout=1800):
     # Authenticate GitHub archive metadata before extracting only fixed names.
+    if type(download_timeout) not in (int, float) or not 0 < download_timeout <= 1800:
+        raise ValueError('Qualified ISO transfer requires a bounded positive timeout')
     maximum = 32 * 1024 * 1024 * 1024
     binding = entry.get('workflow_run', {})
     if (type(entry.get('id')) is not int or type(entry.get('size_in_bytes')) is not int
@@ -123,9 +125,15 @@ def authenticated_iso(entry, run, acceptance, destination):
     if not re.fullmatch(r'finite(?:-dev)?\.iso', iso['name']):
         raise ValueError('Invalid qualified ISO filename')
     with tempfile.TemporaryFile() as archive:
-        subprocess.run(['gh', 'api', f'repos/{REPOSITORY}/actions/artifacts/{entry["id"]}/zip'],
-            stdout=archive, check=True, timeout=1800,
-            preexec_fn=lambda: resource.setrlimit(resource.RLIMIT_FSIZE, (maximum, maximum)))
+        try:
+            subprocess.run(['gh', 'api', f'repos/{REPOSITORY}/actions/artifacts/{entry["id"]}/zip'],
+                stdout=archive, check=True, timeout=download_timeout,
+                preexec_fn=lambda: resource.setrlimit(resource.RLIMIT_FSIZE, (maximum, maximum)))
+        except subprocess.TimeoutExpired:
+            print(f'Qualified ISO artifact {entry["id"]} transfer timed out after {download_timeout}s: '
+                  f'{os.fstat(archive.fileno()).st_size}/{entry["size_in_bytes"]} bytes received; '
+                  'no archive members extracted', file=sys.stderr)
+            raise
         archive.seek(0, 2)
         if archive.tell() != entry['size_in_bytes']:
             raise ValueError('Qualified ISO archive size differs from GitHub metadata')
