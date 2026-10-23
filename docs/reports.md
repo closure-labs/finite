@@ -9,6 +9,7 @@ the recorded revision and date.
 
 | Record | Scope |
 | --- | --- |
+| [CI follow-through, October 23](ci-follow-through-2026-10-23.md) | Complete queue/main timings, authenticated two-profile promotion and hosted health after #237 |
 | [ISO transfers, October 23](iso-transport-2026-10-23.md) | Initial queue timings, a failed predecessor transfer and the remaining release-packet duplication |
 | [Payload evaluation, October 23](ci-payload-evaluation-2026-10-23.md) | Pre-build timeout and an equivalent direct payload entry |
 | [Predecessor ISO reuse, October 23](ci-predecessor-2026-10-23.md) | A confirmed context mismatch and authenticated restore observations |
