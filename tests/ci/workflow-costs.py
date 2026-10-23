@@ -103,6 +103,78 @@ class Costs(unittest.TestCase):
             self.assertEqual(receipt['status'], 7)
             self.assertFalse(receipt['authorizesPublication'])
 
+    def test_groups_separate_workflow_event_role_and_revision(self):
+        report = self.observe()
+        other = deepcopy(report)
+        other.update(sourceRevision='b' * 40, event='push')
+        self.assertEqual(len(costs.aggregate([report, other])), 2)
+        self.assertIsNone(report['jobs'][0]['qualificationReuseHit'])
+        self.assertEqual(report['jobs'][0]['predecessorReuse'], {'eligible': None, 'hit': None, 'missReason': None})
+
+    def test_bounded_receipts_authenticate_and_do_not_charge_retried_jobs_twice(self):
+        import cost_receipts
+        from contextlib import contextmanager
+        import io, zipfile
+        report = self.observe()
+        record = {'schema': 1, 'kind': 'finite-stage-timing', 'repository': costs.REPOSITORY,
+                  'runId': '10', 'runAttempt': '1', 'revision': 'a' * 40, 'profile': 'finite',
+                  'jobName': self.job['name'], 'stage': 'predecessor-iso-reuse', 'seconds': 2.5,
+                  'status': 3, 'startedAt': '2026-10-23T10:01:00Z'}
+        artifact = {'id': 20, 'name': 'image-finite-10-1', 'expired': False,
+                    'size_in_bytes': 500, 'digest': 'sha256:' + 'c' * 64,
+                    'workflow_run': {'id': 10, 'head_sha': 'a' * 40}}
+        @contextmanager
+        def reader(*args):
+            raw = io.BytesIO()
+            with zipfile.ZipFile(raw, 'w') as archive:
+                archive.writestr('finite-timings.jsonl', json.dumps(record) + '\n' + json.dumps(record) + '\n')
+            raw.seek(0)
+            yield raw
+        cost_receipts.join(report, [artifact], reader)
+        self.assertEqual(len(report['jobs'][0]['stages']), 1)
+        self.assertEqual(report['jobs'][0]['predecessorReuse']['missReason'], 'unavailable')
+        self.assertFalse(report['jobs'][0]['predecessorReuse']['hit'])
+        record['revision'] = 'b' * 40
+        with self.assertRaisesRegex(ValueError, 'native producer'):
+            cost_receipts.join(report, [artifact], reader)
+        artifact['size_in_bytes'] = cost_receipts.MAX_ARCHIVE + 1
+        cost_receipts.join(report, [artifact], reader)
+        self.assertEqual(report['receiptCoverage']['read'], 0)
+
+    def test_fresh_inventory_receipt_does_not_infer_a_reuse_miss(self):
+        import cost_receipts
+        from contextlib import contextmanager
+        import io, zipfile
+        self.job['name'] = 'Publish (finite) / security'
+        report = self.observe()
+        artifact = {'id': 20, 'name': 'security-finite-10-1', 'expired': False,
+                    'size_in_bytes': 500, 'digest': 'sha256:' + 'c' * 64,
+                    'workflow_run': {'id': 10, 'head_sha': 'a' * 40}}
+        @contextmanager
+        def reader(*args):
+            raw = io.BytesIO()
+            with zipfile.ZipFile(raw, 'w') as archive:
+                archive.writestr('phase-timings.json', json.dumps({'schema': 1, 'inventoryReused': False}))
+            raw.seek(0)
+            yield raw
+        cost_receipts.join(report, [artifact], reader)
+        result = report['jobs'][0]['inventoryReuse']
+        self.assertFalse(result['observedReused'])
+        self.assertIsNone(result['eligible'])
+        self.assertIsNone(result['hit'])
+        self.assertIsNone(result['missReason'])
+
+    def test_exclusive_occupancy_measures_blocking_lower_bound_without_double_counting(self):
+        report = self.observe()
+        second = deepcopy(report['jobs'][0])
+        second.update(jobId=2, runnerSeconds=60, completedAt='2026-10-23T10:02:00Z')
+        report['jobs'].append(second)
+        costs.exclusive_occupancy(report)
+        self.assertEqual([j['exclusiveRunnerSeconds'] for j in report['jobs']], [60, 0])
+        report['status'] = 'in_progress'
+        costs.exclusive_occupancy(report)
+        self.assertTrue(all(j['exclusiveRunnerSeconds'] is None for j in report['jobs']))
+
     def test_observer_uses_only_existing_read_only_audit_credentials(self):
         import yaml
         path = ROOT / '.github/workflows/workflow-costs.yml'

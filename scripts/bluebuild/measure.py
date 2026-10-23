@@ -26,6 +26,8 @@ def identity(directory, env=os.environ):
     return {'schema': 1, 'kind': 'finite-stage-timing', 'authorizesPublication': False,
             'repository': env.get('GITHUB_REPOSITORY'), 'runId': env.get('GITHUB_RUN_ID'),
             'runAttempt': env.get('GITHUB_RUN_ATTEMPT'), 'revision': env.get('GITHUB_SHA'),
+            'jobName': env.get('FINITE_TIMING_JOB_NAME') or env.get('GITHUB_JOB'),
+            'phase': env.get('PHASE'),
             'profile': profile, 'sourceRevision': env.get('SOURCE_REVISION') or candidate.get('sourceRevision'),
             'candidateDigest': env.get('CANDIDATE_DIGEST'),
             'buildIdentity': env.get('BUILD_IDENTITY') or candidate.get('buildIdentity'),

@@ -9,6 +9,7 @@ from github_api import get_json
 
 REPOSITORY = 'closure-labs/finite'
 PROFILES = ('finite', 'finite-dev')
+OBSERVATION_ENDPOINT = '2026-10-30T05:01:17Z'
 
 
 def timestamp(value):
@@ -65,6 +66,16 @@ def profile(name):
     return matches[0] if len(matches) == 1 else 'shared_or_unknown'
 
 
+def job_role(name):
+    for role in ('fresh', 'upgrade'):
+        if f'phase ({role})' in name:
+            return 'qualification-' + role
+    for role in ('build', 'security', 'sign', 'promote', 'aggregate', 'prepare', 'checks', 'docs', 'gate'):
+        if re.search(r'(?:^| / )' + role + r'$', name, re.I):
+            return role
+    return 'unknown'
+
+
 def observe(run, api, now):
     if (type(run.get('id')) is not int or type(run.get('run_attempt')) is not int
             or not 1 <= run['run_attempt'] <= 100
@@ -118,13 +129,18 @@ def observe(run, api, now):
             eligibility = any(s.get('name') == 'Install context tools for the reuse pilot'
                               and s.get('conclusion') == 'success' for s in job.get('steps', []))
             jobs.append({'jobId': job['id'], 'runAttempt': job['run_attempt'], 'name': job['name'],
-                         'profile': profile(job['name']), 'status': job['status'], 'conclusion': job.get('conclusion'),
+                         'profile': profile(job['name']), 'role': job_role(job['name']),
+                         'candidateDigest': None, 'stages': [],
+                         'predecessorReuse': {'eligible': None, 'hit': None, 'missReason': None},
+                         'inventoryReuse': {'eligible': None, 'hit': None, 'missReason': None, 'observedReused': None}, 'status': job['status'], 'conclusion': job.get('conclusion'),
                          'runnerSeconds': elapsed, 'queueSeconds': queue, 'steps': phases,
                          'startedAt': started, 'completedAt': completed, 'timingAnomalies': anomalies,
                          'runner': {'labels': job.get('labels', []), 'name': job.get('runner_name'),
                                     'imageVersion': None, 'toolCohort': None},
                          'qualificationReuseEligible': eligibility if reuse else None,
-                         'qualificationReuseHit': any(s.get('conclusion') == 'success' for s in reuse) if reuse else None})
+                         'qualificationReuseHit': (any(s.get('conclusion') == 'success' for s in reuse)
+                             if eligibility and any(s.get('name') == 'Check exact qualification reuse'
+                             and s.get('conclusion') == 'success' for s in job.get('steps', [])) else None)})
     end = max((job['completed_at'] for job in values if job.get('completed_at')), default=None) if run['status'] == 'completed' else None
     elapsed = seconds(run['created_at'], end or (run.get('updated_at') if run['status'] == 'completed' else None) or now.isoformat())
     return {'repository': REPOSITORY, 'runId': run['id'], 'runAttempt': run['run_attempt'],
@@ -135,27 +151,82 @@ def observe(run, api, now):
             'candidateDigest': None, 'retryAttempts': run['run_attempt'] - 1, 'downloadRetries': None, 'elapsedSeconds': elapsed, 'attempts': attempts, 'jobs': jobs}
 
 
+def exclusive_occupancy(run):
+    """Measure sole-runner intervals as a lower bound on workflow blocking time."""
+    jobs = run['jobs']
+    measured = run['status'] == 'completed' and all(
+        j['runnerSeconds'] == 0 or j['runnerSeconds'] is not None and j['startedAt'] and j['completedAt']
+        for j in jobs)
+    for job in jobs:
+        job['exclusiveRunnerSeconds'] = 0.0 if measured else None
+    if not measured:
+        return
+    events = defaultdict(list)
+    by_id = {job['jobId']: job for job in jobs}
+    for job in jobs:
+        if not job['runnerSeconds']:
+            continue
+        events[timestamp(job['startedAt'])].append((job['jobId'], True))
+        events[timestamp(job['completedAt'])].append((job['jobId'], False))
+    active, previous = set(), None
+    for current, changes in sorted(events.items()):
+        if previous is not None and len(active) == 1:
+            by_id[next(iter(active))]['exclusiveRunnerSeconds'] += (current - previous).total_seconds()
+        for job_id, starting in changes:
+            if starting:
+                active.add(job_id)
+            else:
+                active.discard(job_id)
+        previous = current
+
+
 def aggregate(runs):
     groups = defaultdict(list)
     for run in runs:
         for job in run['jobs']:
-            groups[(run['category'], job['profile'])].append((run, job))
+            groups[(run['category'], job['profile'], run['workflow'], run['event'], job.get('role', 'unknown'), run['sourceRevision'])].append((run, job))
     rows = []
-    for (kind, lane), entries in sorted(groups.items()):
+    for (kind, lane, workflow, event, role, revision), entries in sorted(groups.items()):
         samples = [job['runnerSeconds'] for _, job in entries if job['runnerSeconds'] is not None]
         queue = [job['queueSeconds'] for _, job in entries if job['queueSeconds'] is not None]
         eligible = [job for _, job in entries if job['qualificationReuseEligible'] is True]
-        rows.append({'category': kind, 'profile': lane, 'runs': len({r['runId'] for r, _ in entries}),
+        rows.append({'category': kind, 'profile': lane, 'workflow': workflow, 'event': event,
+                     'role': role, 'rolloutRevision': revision, 'runs': len({r['runId'] for r, _ in entries}),
                      'jobs': len(entries), 'timedJobs': len(samples), 'runnerSeconds': sum(samples),
                      'medianJobSeconds': statistics.median(samples) if samples else None,
                      'queueSeconds': sum(queue), 'timedQueues': len(queue),
                      'conclusions': dict(Counter(job['conclusion'] or 'active' for _, job in entries)),
                      'qualificationReuseEligible': len(eligible),
-                     'qualificationReuseHits': sum(job['qualificationReuseHit'] is True for job in eligible)})
+                     'qualificationReuseHits': sum(job['qualificationReuseHit'] is True for job in eligible),
+                     'qualificationReuseUnknown': sum(job['qualificationReuseHit'] is None for _, job in entries),
+                     'candidateDigests': sorted({j['candidateDigest'] for _, j in entries if j.get('candidateDigest')}),
+                     'criticalPathJobs': sum(job.get('onObservedCriticalPath') is True for _, job in entries),
+                     'exclusiveRunnerSeconds': (sum(job.get('exclusiveRunnerSeconds') or 0 for _, job in entries)
+                         if any(job.get('exclusiveRunnerSeconds') is not None for _, job in entries) else None),
+                     'exclusiveOccupancyUnknownJobs': sum(job.get('exclusiveRunnerSeconds') is None for _, job in entries)})
     return rows
 
 
-def collect(api=get_json, now=None, rollout=None):
+def stage_opportunities(runs):
+    groups = defaultdict(list)
+    for run in runs:
+        for job in run['jobs']:
+            for stage in job.get('stages', []):
+                key = (run['workflow'], run['event'], job['profile'], job['role'], run['sourceRevision'], stage['stage'])
+                groups[key].append((run, job, stage))
+    rows = []
+    for (workflow, event, lane, role, revision, stage), entries in groups.items():
+        rows.append({'workflow': workflow, 'event': event, 'profile': lane, 'role': role,
+                     'rolloutRevision': revision, 'stage': stage, 'samples': len(entries),
+                     'runs': len({r['runId'] for r, _, _ in entries}),
+                     'seconds': sum(s['seconds'] for _, _, s in entries),
+                     'medianSeconds': statistics.median(s['seconds'] for _, _, s in entries),
+                     'failedSamples': sum(s.get('status') != 0 for _, _, s in entries),
+                     'criticalPathContribution': None})
+    return sorted(rows, key=lambda r: r['seconds'], reverse=True)
+
+
+def collect(api=get_json, now=None, rollout=None, *, receipts=False):
     now = now or datetime.now(timezone.utc)
     anchor = rollout or now
     if anchor > now:
@@ -181,31 +252,59 @@ def collect(api=get_json, now=None, rollout=None):
         with ThreadPoolExecutor(max_workers=4) as pool:
             runs.extend(pool.map(lambda run: observe(run, api, now), selected))
         day = end
+    receipt_budget = 40
+    for run in sorted(runs, key=lambda r: r['createdAt'], reverse=True):
+        exclusive_occupancy(run)
+        # This is observed tail occupancy, not a reconstructed dependency DAG.
+        tail = max((j['completedAt'] for j in run['jobs'] if j.get('completedAt')), default=None)
+        for job in run['jobs']:
+            job['onObservedCriticalPath'] = bool(tail and job['completedAt'] == tail and job['runnerSeconds'])
+        if receipts:
+            from cost_receipts import join
+            if receipt_budget >= 16:
+                import subprocess
+                try:
+                    join(run, inventory(api, f'repos/{REPOSITORY}/actions/runs/{run["runId"]}/artifacts', 'artifacts'))
+                except (subprocess.SubprocessError, OSError):
+                    run['receiptCoverage']['unavailable'].append('transport-failure')
+                receipt_budget -= min(16, run['receiptCoverage']['selected'])
+            else:
+                run['receiptCoverage'] = {'read': 0, 'unavailable': ['collection-receipt-budget']}
     baseline = [r for r in runs if timestamp(r['createdAt']) < anchor]
     observation = [r for r in runs if timestamp(r['createdAt']) >= anchor]
     return {'schema': 1, 'kind': 'finite-workflow-costs', 'repository': REPOSITORY,
-            'observedAt': now.isoformat(), 'authorizesPublication': False,
+            'observedAt': now.isoformat(), 'originalObservationEndpoint': OBSERVATION_ENDPOINT,
+            'receiptCollectionEnabled': receipts, 'receiptArchiveLimit': 40, 'authorizesPublication': False,
             'baseline': {'start': start.isoformat(), 'end': anchor.isoformat(), 'cohorts': aggregate(baseline)},
             'observation': {'start': anchor.isoformat() if rollout else None, 'end': finish.isoformat() if rollout else None,
                             'complete': bool(rollout and now >= anchor + timedelta(days=7)),
                             'cohorts': aggregate(observation)}, 'runs': runs,
+            'rankedStages': stage_opportunities(observation or baseline),
+            'rankedRecurringWork': sorted(aggregate(observation or baseline), key=lambda row: row['runnerSeconds'], reverse=True),
             'limitations': ['Runner seconds are elapsed occupancy, not billed cost; active work is right-censored.',
                            'Shared jobs are reported separately; skipped jobs count with zero runner time.',
                            'Native step times include setup and post-job handling; composite cache restore/save substeps are not exposed.',
                            'Internal download retries, inventory eligibility/hits, candidate digests and exact runner/tool versions require retained producer receipts; unknown values are not zero or cache misses.',
-                           'Qualification eligibility is observed from context-tool execution; hits require the conditional reused-evidence upload.',
+                           'Unknown receipt coverage, candidate identities, cohorts and reuse are explicit; unavailable is a miss reason, not an inferred context mismatch.',
+                           'Rollout revisions are exact producer source revisions; later changes are separate cohorts, with no causal savings attribution.',
+                           'Exclusive runner seconds measure sole-job intervals as a lower bound on blocking time; final-job counts mark the workflow tail. Exact dependency DAG contribution remains unknown.',
                            'No percentile estimates; sample counts accompany medians. Reports grant no approval authority.']}
 
 
 def markdown(report):
     lines = ['# Workflow cost observation', '', 'Observed at ' + report['observedAt'] + '.', '',
-             '| Window | Category | Profile | Runs | Jobs | Runner seconds | Median job seconds | Queue seconds |',
-             '| --- | --- | --- | ---: | ---: | ---: | ---: | ---: |']
+             '| Window | Workflow | Event | Role | Revision | Profile | Runs | Jobs | Runner seconds | Median job seconds | Queue seconds |',
+             '| --- | --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: |']
     for window in ('baseline', 'observation'):
         for row in report[window]['cohorts']:
             median = row['medianJobSeconds']
-            lines.append(f'| {window} | {row["category"]} | {row["profile"]} | {row["runs"]} | {row["jobs"]} | '
+            lines.append(f'| {window} | {row["workflow"]} | {row["event"]} | {row["role"]} | {row["rolloutRevision"][:12]} | {row["profile"]} | {row["runs"]} | {row["jobs"]} | '
                          f'{row["runnerSeconds"]:.1f} | {median if median is not None else "unknown"} | {row["queueSeconds"]:.1f} |')
     lines += ['', 'Seven-day observation complete: ' + str(report['observation']['complete']).lower() + '.', '']
+    lines += ['', 'Recurring work ranked by measured runner occupancy (frequency and final-job counts retained in JSON):', '']
+    for row in report.get('rankedRecurringWork', [])[:20]:
+        exclusive = 'unknown' if row['exclusiveRunnerSeconds'] is None else f"{row['exclusiveRunnerSeconds']:.1f}s"
+        lines.append(f'- {row["workflow"]}, {row["event"]}, {row["role"]}, {row["profile"]}, {row["rolloutRevision"][:12]}: {row["runnerSeconds"]:.1f}s across {row["jobs"]} jobs; {exclusive} sole-runner occupancy; final job in {row["criticalPathJobs"]}.')
+    lines += ['']
     lines.extend('- ' + item for item in report['limitations'])
     return '\n'.join(lines) + '\n'

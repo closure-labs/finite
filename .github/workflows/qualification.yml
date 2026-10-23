@@ -144,6 +144,7 @@ jobs:
           REGISTRY_TOKEN: ${{ github.token }}
           REGISTRY_USER: ${{ github.actor }}
           PHASE: ${{ matrix.phase }}
+          FINITE_TIMING_JOB_NAME: Publish (${{ inputs.profile }}) / qualification / phase (${{ matrix.phase }})
         run: |
           printf '%s' "$REGISTRY_TOKEN" | skopeo login --username "$REGISTRY_USER" --password-stdin ghcr.io
           printf '%s' "$REGISTRY_TOKEN" | docker login --username "$REGISTRY_USER" --password-stdin ghcr.io
