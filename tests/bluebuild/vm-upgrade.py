@@ -30,6 +30,27 @@ class Upgrade(unittest.TestCase):
             self.assertEqual((home / 'initializer-input').read_text(), '')
             self.assertEqual((home / 'following-command').read_text(), 'created\n')
 
+    def test_guest_timing_preserves_partial_failure_and_initializer_configuration(self):
+        import io
+        timing_spec = importlib.util.spec_from_file_location('guest_timing', ROOT / 'scripts/bluebuild/guest-timings.py')
+        timing = importlib.util.module_from_spec(timing_spec)
+        timing_spec.loader.exec_module(timing)
+        source = (ROOT / 'scripts/bluebuild/vm-acceptance.sh').read_text()
+        self.assertEqual(source.count('/usr/libexec/finite/home-init --profile'), 1)
+        self.assertIn('export NIX_CONFIG="${NIX_CONFIG:-}', source)
+        guest = source.split("<<'GUEST' | python3 scripts/bluebuild/guest-timings.py", 1)[1].split('\n', 1)[1].split('\nGUEST', 1)[0]
+        timers = guest[:guest.index('guest_begin startup-checks')]
+        script = timers + 'guest_begin startup-checks\nguest_begin home-init\nexit 7\n'
+        result = subprocess.run(['bash', '-s'], input=script, text=True, capture_output=True)
+        self.assertEqual(result.returncode, 7)
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / 'timings.json'
+            timing.collect(io.StringIO(result.stdout), path, io.StringIO())
+            rows = json.loads(path.read_text())['stages']
+            self.assertEqual([r['stage'] for r in rows], ['startup-checks', 'home-init'])
+            self.assertEqual([r['status'] for r in rows], [0, 7])
+            self.assertNotIn('homebrew-setup', [r['stage'] for r in rows])
+
     def test_marker_is_verified_after_initialization_before_upgrade(self):
         source = (ROOT / 'scripts/bluebuild/vm-acceptance.sh').read_text()
         probe = source.split("<<'HOME_INITIALIZED'\n", 1)[1].split('\nHOME_INITIALIZED', 1)[0]

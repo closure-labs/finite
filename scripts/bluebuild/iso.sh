@@ -37,9 +37,9 @@ finite:bluefin-generic|finite-dev:bluefin-dx-generic)
   ;;
 *) echo 'Image profile does not match the requested channel' >&2; exit 1 ;;
 esac
-bash "$(dirname "${BASH_SOURCE[0]}")/prepare-installer.sh"
+python3 "$(dirname "${BASH_SOURCE[0]}")/measure.py" installer-prepare bash "$(dirname "${BASH_SOURCE[0]}")/prepare-installer.sh"
 iso_started=$SECONDS
-skopeo copy --all --preserve-digests "docker://$source" "docker://$repository:$tag"
+python3 "$(dirname "${BASH_SOURCE[0]}")/measure.py" image-acquisition skopeo copy --all --preserve-digests "docker://$source" "docker://$repository:$tag"
 [[ $(skopeo inspect --format '{{.Digest}}' "docker://$repository:$tag") == "$digest" ]]
 cosign verify --new-bundle-format=false --key cosign.pub "$repository:$tag" >/dev/null
 jq -n --arg image "$source" --arg tag "$repository:$tag" \
@@ -49,7 +49,7 @@ jq -n --arg image "$source" --arg tag "$repository:$tag" \
     installer: $installer[0]}' \
   >"$ISO_OUTPUT_DIR"/installation.json
 # v0.9.37 constructs IMAGE_TAG from a tag; a digest-only reference becomes latest.
-sudo bluebuild generate-iso --run-driver docker --variant kinoite --output-dir "$ISO_OUTPUT_DIR" \
+python3 "$(dirname "${BASH_SOURCE[0]}")/measure.py" iso-build sudo bluebuild generate-iso --run-driver docker --variant kinoite --output-dir "$ISO_OUTPUT_DIR" \
   --iso-name "${channel/latest/finite}.iso" image "$repository:$tag"
 # Confirm that the install source tag has not changed while the ISO was assembled.
 [[ $(skopeo inspect --format '{{.Digest}}' "docker://$repository:$tag") == "$digest" ]]

@@ -48,7 +48,7 @@ run_phase() {
     fi
   fi
   # VM preparation personalizes a copy in /tmp; retain these pristine bytes.
-  FINITE_SECURE_BOOT=true bash scripts/bluebuild/vm-acceptance.sh "$iso_dir" "$target" "$current"
+  FINITE_SECURE_BOOT=true python3 scripts/bluebuild/measure.py vm-acceptance bash scripts/bluebuild/vm-acceptance.sh "$iso_dir" "$target" "$current"
   python3 scripts/bluebuild/qualification-context.py bind-phase --phase "$current"
   printf 'Qualification %s completed in %s seconds\n' "$current" "$((SECONDS - started))"
 }

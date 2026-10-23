@@ -57,11 +57,11 @@ jobs:
       - name: Collect native timings including failed and cancelled work
         env:
           GH_TOKEN: ${{ steps.audit-token.outputs.token }}
-          ROLLOUT: ${{ inputs.rollout || vars.FINITE_CI_AUDIT_ROLLOUT || '' }}
+          ROLLOUT: ${{ inputs.rollout || vars.FINITE_CI_AUDIT_ROLLOUT || '2026-10-23T05:01:17Z' }}
         run: |
           args=()
           if [[ -n $ROLLOUT ]]; then args+=(--rollout "$ROLLOUT"); fi
-          python3 scripts/ci/workflow-costs.py "${args[@]}"
+          python3 scripts/ci/workflow-costs.py --receipts "${args[@]}"
       - name: Retain read-only observation
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

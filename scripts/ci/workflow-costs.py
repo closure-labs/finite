@@ -13,9 +13,10 @@ from workflow_costs import collect, markdown, timestamp
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--rollout', help='Immutable rollout UTC timestamp, e.g. 2026-10-23T12:00:00Z')
+    parser.add_argument('--receipts', action='store_true', help='Join bounded authenticated native stage receipts')
     parser.add_argument('--output', type=Path, default=Path('.bluebuild/workflow-costs.json'))
     args = parser.parse_args()
-    report = collect(rollout=timestamp(args.rollout) if args.rollout else None)
+    report = collect(rollout=timestamp(args.rollout) if args.rollout else None, receipts=args.receipts)
     report['collectionCompletedAt'] = datetime.now(timezone.utc).isoformat()
     report['collectorScriptSha256'] = hashlib.sha256(Path(__file__).with_name('workflow_costs.py').read_bytes()).hexdigest()
     report['collector'] = {key: os.environ.get(key) for key in ('GITHUB_REPOSITORY', 'GITHUB_RUN_ID',

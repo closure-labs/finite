@@ -22,13 +22,26 @@ if [[ $local_validation == true ]]; then evidence="$PWD/.bluebuild/vm-local"; fi
 state=$(mktemp -d /tmp/finite-vm.XXXXXXXX)
 chmod 0700 "$state"
 record_duration() {
-  python3 - "$state/timings.json" "$1" "$2" <<'TIMING'
+  python3 - "$state/timings.json" "$1" "$2" "${3:-0}" <<'TIMING'
 import json, pathlib, sys
 path = pathlib.Path(sys.argv[1])
 value = json.loads(path.read_text()) if path.exists() else {'schema': 1, 'seconds': {}}
 value['seconds'][sys.argv[2]] = int(sys.argv[3])
+value.setdefault('status', {})[sys.argv[2]] = int(sys.argv[4])
 path.write_text(json.dumps(value, indent=2) + '\n')
 TIMING
+}
+active_stage=
+stage_started=0
+begin_stage() {
+  active_stage=$1
+  stage_started=$(monotonic_seconds)
+}
+end_stage() {
+  if [[ -n $active_stage ]]; then
+    record_duration "$active_stage" "$(($(monotonic_seconds) - stage_started))" "${1:-0}"
+    active_stage=
+  fi
 }
 trap 'rm -rf "$state"' EXIT
 rm -rf "$evidence"
@@ -105,6 +118,9 @@ log_pid=
 cleanup() {
   local result=$?
   trap - EXIT INT TERM
+  end_stage "$result"
+  local cleanup_started
+  cleanup_started=$(monotonic_seconds)
   if [[ -n $pid && -f $state/ssh-key ]]; then
     timeout 20s ssh -i "$state/ssh-key" -p 2222 -o BatchMode=yes -o StrictHostKeyChecking=no \
       -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 finite-test@127.0.0.1 \
@@ -113,6 +129,7 @@ cleanup() {
   if [[ -n $pid ]]; then kill "$pid" 2>/dev/null || true; wait "$pid" 2>/dev/null || true; fi
   if [[ -n $log_pid ]]; then kill "$log_pid" 2>/dev/null || true; wait "$log_pid" 2>/dev/null || true; fi
   # Installer/journal diagnostics can include kickstart content on failure.
+  record_duration cleanup "$(($(monotonic_seconds) - cleanup_started))" "$result"
   if ! python3 scripts/bluebuild/redact-vm-logs.py "$state" "$secrets/luks-key" "$evidence" --snapshot; then
     echo 'VM diagnostics could not be sanitized; withholding all VM artifacts.' >&2
     result=1
@@ -256,7 +273,7 @@ stream_console() {
 }
 # timeout also bounds Anaconda errors that leave the installer UI waiting.
 printf 'Starting unattended UEFI installation at %s (45-minute limit)\n' "$(date -u +%FT%TZ)"
-install_started=$(monotonic_seconds)
+begin_stage installation
 timeout 45m qemu-system-x86_64 "${qemu_args[@]}" -boot d -cdrom "$state/install.iso" \
   -serial "file:$state/install.log" &
 pid=$!
@@ -287,7 +304,7 @@ if ((install_status != 0)); then
   echo "Installer exited with status $install_status; see install.log (124 means timeout)." >&2
   exit "$install_status"
 fi
-record_duration installation "$(($(monotonic_seconds) - install_started))"
+end_stage 0
 printf 'Installer shut down at %s\n' "$(date -u +%FT%TZ)"
 rm "$state/install.iso"
 ssh_args=(-i "$state/ssh-key" -p 2222 -o BatchMode=yes -o StrictHostKeyChecking=no
@@ -409,8 +426,31 @@ jq -e --arg installed "$installed_digest" --arg index "${source##*@}" \
   '$installed == $index or any(.manifests[]?; .digest == $installed)' \
   "$state/source-manifest.json" >/dev/null
 activation_started=$(monotonic_seconds)
-ssh "${ssh_args[@]}" bash -s -- "$profile" "$phase_name" <<'GUEST'
+ssh "${ssh_args[@]}" bash -s -- "$profile" "$phase_name" <<'GUEST' | python3 scripts/bluebuild/guest-timings.py "$state/guest-timings.json"
 set -euo pipefail
+guest_now() {
+  local uptime unused
+  read -r uptime unused </proc/uptime
+  printf '%s\n' "${uptime%.*}"
+}
+guest_stage=
+guest_started=0
+guest_finish() {
+  local status=$1
+  if [[ -n $guest_stage ]]; then
+    printf 'FINITE_GUEST_STAGE %s %s %s\n' "$guest_stage" "$(($(guest_now) - guest_started))" "$status"
+    guest_stage=
+  fi
+}
+guest_begin() {
+  guest_finish 0
+  guest_stage=$1
+  guest_started=$(guest_now)
+}
+trap 'guest_finish "$?"' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+guest_begin startup-checks
 echo 'Checking profile, SELinux and Nix daemon startup'
 [[ $(cat /usr/share/finite/build-profile) == "$1" ]]
 [[ $(getenforce) == Enforcing ]]
@@ -426,20 +466,24 @@ export FINITE_NIX_COMMAND=/nix/var/nix/profiles/default/bin/nix
 export NIX_CONFIG="${NIX_CONFIG:-}
 $(python3 /var/lib/finite-vm/nix-resources.py --config)"
 python3 /var/lib/finite-vm/nix-resources.py --verify --nix "$FINITE_NIX_COMMAND"
+guest_begin homebrew-setup
 echo 'Checking the desktop user and shared Homebrew initialization'
 [[ $(id -u) == 1000 && $(id -g) == 1000 ]]
 sudo systemctl start brew-setup.service
 stat -c '%u:%g %a %n' /home/linuxbrew/.linuxbrew /home/linuxbrew/.linuxbrew/Homebrew
 [[ -w /home/linuxbrew/.linuxbrew/Homebrew && -w /home/linuxbrew/.linuxbrew/Cellar ]]
+guest_begin predecessor-preparation
 if [[ $2 == upgrade ]]; then
   bash /var/lib/finite-vm/prepare-predecessor-home
 fi
+guest_begin home-init
 echo 'Building and activating the base Home Manager environment'
 /usr/libexec/finite/home-init --profile "$HOME/profile.json" </dev/null
 GUEST
 # Initializers and their children must not consume commands from bash -s stdin.
 # Establish the fixture over a separate SSH request, then prove it exists before
 # changing deployments so an uncreated marker cannot masquerade as data loss.
+begin_stage persistence-customization
 ssh "${ssh_args[@]}" python3 - >"$state/initialized-home.json" <<'HOME_INITIALIZED'
 import hashlib
 import json
@@ -460,6 +504,8 @@ if b'VM acceptance customization' not in content:
 print(json.dumps({'schema': 1, 'status': 'pass', 'checks': {'nixState': True, 'homeCustomization': True},
                   'customizationSha256': hashlib.sha256(content).hexdigest()}))
 HOME_INITIALIZED
+end_stage 0
+# Historical combined initialization interval, retained for comparison.
 record_duration home-activation "$(($(monotonic_seconds) - activation_started))"
 if [[ -z $target ]]; then
   poweroff_vm
