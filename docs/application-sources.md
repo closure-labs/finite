@@ -91,8 +91,8 @@ The reader dispatcher also preserves supplied schema-3 selections when the
 executing Foundation helper advertises initialization support. An older helper
 rejects that selection without falling back to a seed or opening the fresh
 selector. Saved/provisioned profiles retain their format. Finite pins published
-[Foundation v0.3.0](https://github.com/closure-labs/foundation/releases/tag/v0.3.0)
-at `fdeb2ab7d88cb0ff69d25ed1a02589bc28ca7006`. Its default writer uses schema 3;
+[Foundation v0.3.2](https://github.com/closure-labs/foundation/releases/tag/v0.3.2)
+at `235c34d7e507f00c2df6b0102bcdb54a4c04c5e2`. Its default writer uses schema 3;
 integration checks use this pin directly. Existing personal consumers retain
 their independently locked sources until explicitly updated.
 

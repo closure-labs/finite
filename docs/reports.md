@@ -9,6 +9,7 @@ the recorded revision and date.
 
 | Record | Scope |
 | --- | --- |
+| [CI rollout and governed dependency updates, October 23](ci-rollout-2026-10-23.md) | Verified production qualification, VM stage measurements and Dependabot submitter diagnosis |
 | [Workflow architecture, October 23](ci-architecture-2026-10-23.md) | PR/queue duplication, installer cost and Nix/devenv evaluation boundaries |
 | [Workflow failures, October 19](workflow-failures-2026-10-19.md) | Inventory transport, lock refresh, VM fixtures, CodeQL and SBOM attestation |
 | [Build RCA, October 19](build-failure-2026-10-19.md) | Scheduled workflow consumers and Foundation predecessor initialization |

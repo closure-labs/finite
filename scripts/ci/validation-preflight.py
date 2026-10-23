@@ -7,7 +7,7 @@ import re
 import sys
 
 from github_api import get_json
-from governed_tree import SHA, changed_paths, compare
+from governed_tree import SHA, changed_paths, compare, governed
 
 
 def inspect(event, env, api=get_json):
@@ -48,6 +48,15 @@ def inspect(event, env, api=get_json):
         if len(items) < 100:
             break
     paths = changed_paths(files, pull.get('changed_files'))
+    author = pull.get('user', {})
+    expected_bot = env.get('FINITE_REVIEW_BOT_LOGIN', '')
+    if (re.fullmatch(r'[A-Za-z0-9_-]+\[bot\]', expected_bot)
+            and isinstance(author, dict) and author.get('type') == 'Bot' and author.get('login') != expected_bot
+            and any(governed(path) for path in paths)):
+        raise ValueError('Governed changes from an unsupported bot submitter: '
+                         + str(author.get('login')) + '. Adopt the update in a PR submitted by '
+                         + expected_bot + ', a Maintainer or a Super Admin, then review its current head. '
+                         'Approval or auto-merge on the original PR cannot change its submitter.')
     sensitive = compare(api, repository, target, head, paths)
     latest = api(endpoint)
     if (latest.get('head', {}).get('sha') != head or latest.get('state') != 'open'

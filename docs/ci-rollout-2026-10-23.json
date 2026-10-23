@@ -1,0 +1,343 @@
+{
+  "schema": 1,
+  "kind": "finite-ci-rollout-audit",
+  "authorizesPublication": false,
+  "observedAt": "2026-10-23T14:36:14.241287+00:00",
+  "production": {
+    "schema": 1,
+    "authorizesPublication": false,
+    "profiles": [
+      {
+        "profile": "finite",
+        "runId": 39931669315,
+        "runAttempt": 1,
+        "sourceRevision": "23c06c71c671106ae8ac7ea5112224c5c5d400be",
+        "image": "ghcr.io/closure-labs/finite@sha256:75bf6f6feb87213dd6116b747551a3b410023a26e08caf6dce797d92cb26d9d3",
+        "buildIdentity": "v1:7ebcd6756ec822a0cd708bd665ba6fdf14b9c405b21e34f9dff87637dadb5df7",
+        "qualifiedAt": "2026-10-23T10:54:13.451444+00:00",
+        "qualificationArtifact": {
+          "id": 12497090402,
+          "digest": "sha256:a946962affdbc0bee02f6dabadc31127110e2f179bffec3c7f23f53925cc0047"
+        },
+        "promotionArtifact": {
+          "id": 12496297608,
+          "digest": "sha256:e5558bfdfad5c5296092ff8ca9177d53de9c342169cf6f8715bd88085945c3b7"
+        },
+        "freshInstall": true,
+        "upgradeRollback": true,
+        "homeManager": true,
+        "secureBoot": true,
+        "encryptedRoot": true,
+        "promoted": true
+      },
+      {
+        "profile": "finite-dev",
+        "runId": 39931669315,
+        "runAttempt": 1,
+        "sourceRevision": "23c06c71c671106ae8ac7ea5112224c5c5d400be",
+        "image": "ghcr.io/closure-labs/finite@sha256:823af0dfebb798f9f7676def8df34763e69247d5c881da93be74f2d8eeda0fbd",
+        "buildIdentity": "v1:338baf7b9a6efd997de4418d8b93a9843aa5dd866257d53517f3d4440de088f6",
+        "qualifiedAt": "2026-10-23T11:04:25.405304+00:00",
+        "qualificationArtifact": {
+          "id": 12497032527,
+          "digest": "sha256:356f87ff838fec7463a579199d69d4f044a04bc6badeef706f7e0c43b707b071"
+        },
+        "promotionArtifact": {
+          "id": 12497465700,
+          "digest": "sha256:6878d2bc0925dc52703744e9a8ca5eeed0d254aa513761c10d3bd3eaaaa1b103"
+        },
+        "freshInstall": true,
+        "upgradeRollback": true,
+        "homeManager": true,
+        "secureBoot": true,
+        "encryptedRoot": true,
+        "promoted": true
+      }
+    ]
+  },
+  "queueMeasurements": [
+    {
+      "repository": "closure-labs/finite",
+      "runId": 39924113610,
+      "runAttempt": 1,
+      "sourceRevision": "ead1fa429344a2bd3f90342da5b608cad380aea7",
+      "profile": "finite",
+      "candidate": "local-image@sha256:430aaf4f17fcc780b7bebd5b1fba10e5b6e809d0ef8af6468aba4dc61167a817",
+      "artifact": {
+        "id": 12490947076,
+        "digest": "sha256:a20f089d016acce2847ccc994f5706a8909ab0afa669837366d998c2826382f7"
+      },
+      "cohorts": [
+        {
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261012.334.1"
+          },
+          "tools": {
+            "pythonExecutable": "/nix/store/d7p0bc9x4g4glf0qskh5kxwxwx54slvg-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/6qdgsgwzwsv20jsw2yywqrc01sgzc80g-determinate-nix-3.23.1/bin/nix",
+            "vmManifest": null,
+            "firmwareDirectory": null
+          },
+          "lockSha256": {
+            "flake.lock": "a1a2f898f434d48b27ad644f3148e528ef833795a6617b195e29cb36081a70cc",
+            "devenv.lock": "a86b17ce420d5a3cd8f307d3cb3973ec2670c084ef88b49a2b49b3451a92a71a"
+          }
+        },
+        {
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261012.334.1"
+          },
+          "tools": {
+            "pythonExecutable": "/nix/store/d7p0bc9x4g4glf0qskh5kxwxwx54slvg-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/6qdgsgwzwsv20jsw2yywqrc01sgzc80g-determinate-nix-3.23.1/bin/nix",
+            "vmManifest": "/nix/store/abnq92gki83dbzv2i202mqhgyfaniz98-finite-ci-vm-tools/share/finite-vm/toolchain.json",
+            "firmwareDirectory": "/nix/store/abnq92gki83dbzv2i202mqhgyfaniz98-finite-ci-vm-tools/share/finite-vm/firmware"
+          },
+          "lockSha256": {
+            "flake.lock": "a1a2f898f434d48b27ad644f3148e528ef833795a6617b195e29cb36081a70cc",
+            "devenv.lock": "a86b17ce420d5a3cd8f307d3cb3973ec2670c084ef88b49a2b49b3451a92a71a"
+          }
+        }
+      ],
+      "stages": [
+        {
+          "stage": "payload-staging",
+          "seconds": 2.485,
+          "status": 0,
+          "candidateDigest": null,
+          "cohort": 0
+        },
+        {
+          "stage": "image-build",
+          "seconds": 430.391,
+          "status": 0,
+          "candidateDigest": null,
+          "cohort": 0
+        },
+        {
+          "stage": "runtime-checks",
+          "seconds": 17.76,
+          "status": 0,
+          "candidateDigest": null,
+          "cohort": 0
+        },
+        {
+          "stage": "local-vm-oci-export",
+          "seconds": 183.876,
+          "status": 0,
+          "candidateDigest": null,
+          "cohort": 1
+        },
+        {
+          "stage": "local-vm-installer-prepare",
+          "seconds": 15.787,
+          "status": 0,
+          "candidateDigest": "sha256:430aaf4f17fcc780b7bebd5b1fba10e5b6e809d0ef8af6468aba4dc61167a817",
+          "cohort": 1
+        },
+        {
+          "stage": "local-vm-iso-build",
+          "seconds": 737.695,
+          "status": 0,
+          "candidateDigest": "sha256:430aaf4f17fcc780b7bebd5b1fba10e5b6e809d0ef8af6468aba4dc61167a817",
+          "cohort": 1
+        },
+        {
+          "stage": "local-vm-acceptance",
+          "seconds": 794.435,
+          "status": 0,
+          "candidateDigest": "sha256:430aaf4f17fcc780b7bebd5b1fba10e5b6e809d0ef8af6468aba4dc61167a817",
+          "cohort": 1
+        }
+      ],
+      "vmStageSeconds": {
+        "installation": 353,
+        "first-boot-ssh-ready": 46,
+        "first-boot-boot-contracts": 56,
+        "home-activation": 342
+      }
+    },
+    {
+      "repository": "closure-labs/finite",
+      "runId": 39924113610,
+      "runAttempt": 1,
+      "sourceRevision": "ead1fa429344a2bd3f90342da5b608cad380aea7",
+      "profile": "finite-dev",
+      "candidate": "local-image@sha256:de8135e2c810fc7a0d3d2b8849781a80f45b19565611286d9a8ccf0c50f1c719",
+      "artifact": {
+        "id": 12491830467,
+        "digest": "sha256:99bb06480ebe631ee33ab87a717eceda346b07781dbc8c4d8940fd74d7d7bdf0"
+      },
+      "cohorts": [
+        {
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261012.334.1"
+          },
+          "tools": {
+            "pythonExecutable": "/nix/store/d7p0bc9x4g4glf0qskh5kxwxwx54slvg-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/6qdgsgwzwsv20jsw2yywqrc01sgzc80g-determinate-nix-3.23.1/bin/nix",
+            "vmManifest": null,
+            "firmwareDirectory": null
+          },
+          "lockSha256": {
+            "flake.lock": "a1a2f898f434d48b27ad644f3148e528ef833795a6617b195e29cb36081a70cc",
+            "devenv.lock": "a86b17ce420d5a3cd8f307d3cb3973ec2670c084ef88b49a2b49b3451a92a71a"
+          }
+        },
+        {
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261012.334.1"
+          },
+          "tools": {
+            "pythonExecutable": "/nix/store/d7p0bc9x4g4glf0qskh5kxwxwx54slvg-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/6qdgsgwzwsv20jsw2yywqrc01sgzc80g-determinate-nix-3.23.1/bin/nix",
+            "vmManifest": "/nix/store/abnq92gki83dbzv2i202mqhgyfaniz98-finite-ci-vm-tools/share/finite-vm/toolchain.json",
+            "firmwareDirectory": "/nix/store/abnq92gki83dbzv2i202mqhgyfaniz98-finite-ci-vm-tools/share/finite-vm/firmware"
+          },
+          "lockSha256": {
+            "flake.lock": "a1a2f898f434d48b27ad644f3148e528ef833795a6617b195e29cb36081a70cc",
+            "devenv.lock": "a86b17ce420d5a3cd8f307d3cb3973ec2670c084ef88b49a2b49b3451a92a71a"
+          }
+        }
+      ],
+      "stages": [
+        {
+          "stage": "payload-staging",
+          "seconds": 4.429,
+          "status": 0,
+          "candidateDigest": null,
+          "cohort": 0
+        },
+        {
+          "stage": "image-build",
+          "seconds": 628.641,
+          "status": 0,
+          "candidateDigest": null,
+          "cohort": 0
+        },
+        {
+          "stage": "runtime-checks",
+          "seconds": 18.639,
+          "status": 0,
+          "candidateDigest": null,
+          "cohort": 0
+        },
+        {
+          "stage": "local-vm-oci-export",
+          "seconds": 301.959,
+          "status": 0,
+          "candidateDigest": null,
+          "cohort": 1
+        },
+        {
+          "stage": "local-vm-installer-prepare",
+          "seconds": 22.03,
+          "status": 0,
+          "candidateDigest": "sha256:de8135e2c810fc7a0d3d2b8849781a80f45b19565611286d9a8ccf0c50f1c719",
+          "cohort": 1
+        },
+        {
+          "stage": "local-vm-iso-build",
+          "seconds": 821.334,
+          "status": 0,
+          "candidateDigest": "sha256:de8135e2c810fc7a0d3d2b8849781a80f45b19565611286d9a8ccf0c50f1c719",
+          "cohort": 1
+        },
+        {
+          "stage": "local-vm-acceptance",
+          "seconds": 940.61,
+          "status": 0,
+          "candidateDigest": "sha256:de8135e2c810fc7a0d3d2b8849781a80f45b19565611286d9a8ccf0c50f1c719",
+          "cohort": 1
+        }
+      ],
+      "vmStageSeconds": {
+        "installation": 451,
+        "first-boot-ssh-ready": 52,
+        "first-boot-boot-contracts": 62,
+        "home-activation": 364
+      }
+    }
+  ],
+  "dependencyAdoption": {
+    "originalPR": 233,
+    "originalHead": "24265c09767aca8ad3ee745b36a7918f89ddcea6",
+    "blocker": "ineligible governed submitter",
+    "nativeApprovalPresent": true,
+    "files": [
+      {
+        "filename": ".github/actions/setup-nix/action.yml",
+        "sha": "f518e51d95228546f371b770488d936bce3b1a3f"
+      },
+      {
+        "filename": ".github/workflows/benchmark-image-tools.yml",
+        "sha": "e7084da8575c5c8e2562372235db856cf0133519"
+      },
+      {
+        "filename": ".github/workflows/decision-authority.yml",
+        "sha": "dba5dca20bc92779208b5b808e784b4a5449ee92"
+      },
+      {
+        "filename": ".github/workflows/decision-proposals.yml",
+        "sha": "f1d8441c3f72536e80a4a0e15773a82993ecb5aa"
+      },
+      {
+        "filename": ".github/workflows/delivery-health.yml",
+        "sha": "37f47fb69d123223d089cda98f83884e995e798e"
+      },
+      {
+        "filename": ".github/workflows/publication.yml",
+        "sha": "282f96288b70baade73a94493386c01db7b3690d"
+      },
+      {
+        "filename": ".github/workflows/publish-release-set.yml",
+        "sha": "a89bcd0ee76c5b02084184010a59bbb40da234ee"
+      },
+      {
+        "filename": ".github/workflows/release-set.yml",
+        "sha": "a0cb5a002e394697fa4121d20c6a80843c2da047"
+      },
+      {
+        "filename": ".github/workflows/repository-security.yml",
+        "sha": "35e7c8ce9acb7f7f8cd2522892a8743c4c1dc743"
+      },
+      {
+        "filename": ".github/workflows/workflow-costs.yml",
+        "sha": "78033df74417de29f6c46656d23577def740d5e8"
+      }
+    ],
+    "tokenInputReview": {
+      "updatedSteps": 18,
+      "allInputsSupported": true,
+      "allRepositoryScoped": true,
+      "permissionsExpanded": false
+    },
+    "replacementNeedsFreshReview": true
+  },
+  "unadoptedExperiments": [
+    {
+      "name": "path-only security decision routing",
+      "reason": "Pending runtime pushes can be replaced before selection; runtime coverage must be proved before suppressing ordinary reconciliation."
+    }
+  ],
+  "observation": {
+    "endsAt": "2026-10-30T05:01:17Z",
+    "complete": false
+  },
+  "ociAlternative": {
+    "matchedBenchmarkComplete": false,
+    "adopted": false
+  }
+}
