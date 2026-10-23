@@ -92,7 +92,11 @@ class Integrations(unittest.TestCase):
         self.assertTrue(any('--profile review-app' in s.get('run', '') and '--scope review-app' in s['run']
                             for s in steps[:token_index]))
         self.assertIn('FINITE_REVIEW_PRIVATE_KEY=\\n', steps[token_index + 1]['run'])
-        proposal = steps[-1]
+        proposal = next(s for s in steps if s.get('name') == 'Propose the single official release approval')
+        origin = next(s for s in steps if s.get('name') == 'Retain native release product origin')
+        self.assertGreater(steps.index(origin), steps.index(proposal))
+        self.assertEqual(origin['with']['path'], '.bluebuild/release-set-origin.json')
+        self.assertEqual(origin['with']['retention-days'], 90)
         self.assertEqual(proposal['env']['REGISTRY_TOKEN'], '${{ github.token }}')
         self.assertEqual(proposal['env']['GH_TOKEN'], '${{ steps.decision-app.outputs.token }}')
         self.assertIn('propose --kind release-set', proposal['run'])

@@ -8,8 +8,8 @@ import decision_packets
 from archive_read import MAXIMUM, archive_reader, chunks, members
 
 
-def bound_artifact(repository, run_id, attempt, revision, collection):
-    expected = f'release-set-packet-{run_id}-{attempt}'
+def bound_artifact(repository, run_id, attempt, revision, collection, *, prefix="release-set-packet"):
+    expected = f'{prefix}-{run_id}-{attempt}'
     artifacts = collection(f'repos/{repository}/actions/runs/{run_id}/artifacts', 'artifacts')
     matches = [item for item in artifacts if item.get('name') == expected and item.get('expired') is False]
     if len(matches) != 1:

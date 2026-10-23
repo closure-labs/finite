@@ -715,6 +715,10 @@ def propose(proposal, packet_directory=None):
         release_artifact.verify_archive(packet_directory, original, REPOSITORY)
         origin['artifacts'] = [{key: original[key] for key in ('id', 'name', 'digest')}]
         reference = decision_packets.push(packet_directory, origin)
+        # Emitted only after native ZIP authentication and durable OCI persistence.
+        import release_origin
+        release_origin.write(packet_directory, origin, original, reference, collection,
+                             ROOT / '.bluebuild/release-set-origin.json')
     identity = canonical_hash(proposal)
     branch = 'automation/decision-' + identity
     existing = collection(f'repos/{REPOSITORY}/pulls?state=all&head=closure-labs:{branch}')

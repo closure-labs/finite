@@ -108,6 +108,8 @@ in {
     python3 tests/ci/verify-attestation-subject.py
     python3 tests/ci/release-handoff.py
     python3 tests/ci/ci-savings.py
+    python3 tests/ci/release-origin.py
+    python3 tests/ci/release-transport-benchmark.py
     python3 tests/ci/execute-release-set.py
     python3 tests/ci/release-recovery.py
     python3 tests/ci/image-identity.py
