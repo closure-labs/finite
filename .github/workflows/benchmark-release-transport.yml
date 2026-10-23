@@ -1,0 +1,164 @@
+name: Diagnose release product transport
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        type: choice
+        required: true
+        options: [produce, consume]
+      packet_ref:
+        description: Produce from an authenticated original release packet; consume a new diagnostic packet
+        type: string
+        required: true
+env:
+  FINITE_OPTIMIZED_CACHES: ${{ vars.FINITE_OPTIMIZED_CACHES }}
+  FINITE_CACHIX_WRITER: ${{ vars.FINITE_CACHIX_WRITER }}
+  FINITE_REUSE_INVENTORY: ${{ vars.FINITE_REUSE_INVENTORY }}
+  FINITE_GRYPE_DB_CACHE: ${{ vars.FINITE_GRYPE_DB_CACHE }}
+  FINITE_QUALIFICATION_REUSE: ${{ vars.FINITE_QUALIFICATION_REUSE }}
+  FINITE_QUALIFIED_ISO_PRESERVATION: ${{ vars.FINITE_QUALIFIED_ISO_PRESERVATION }}
+  FINITE_QUALIFIED_ISO_CHANNELS: ${{ vars.FINITE_QUALIFIED_ISO_CHANNELS }}
+
+permissions:
+  contents: read
+  actions: read
+  packages: read
+concurrency:
+  group: finite-release-transport-diagnostic-${{ inputs.mode }}
+  cancel-in-progress: false
+jobs:
+  producer:
+    if: github.repository == 'closure-labs/finite' && inputs.mode == 'produce'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    permissions:
+      contents: read
+      actions: read
+      packages: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PACKET_REF: ${{ inputs.packet_ref }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
+        with:
+          skip-if-available: "80G"
+      - uses: ./.github/actions/setup-nix
+        with:
+          cache-mode: none
+      - name: Authenticate and stage original two-profile products
+        env:
+          REGISTRY_USER: ${{ github.actor }}
+        run: |
+          nix develop --file lib/ci-tools.nix release --command bash <<'STAGE'
+          set -euo pipefail
+          printf '%s' "$GH_TOKEN" | oras login ghcr.io --username "$REGISTRY_USER" --password-stdin
+          trap 'oras logout ghcr.io >/dev/null 2>&1 || true' EXIT
+          python3 scripts/bluebuild/measure.py producer-source-verification \
+            python3 scripts/ci/benchmark-release-transport.py stage --reference "$PACKET_REF"
+          STAGE
+      - name: Retain new diagnostic native product ZIP
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-transport-packet-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/diagnostic-packet/
+          include-hidden-files: true
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+      - name: Persist authenticated diagnostic packet
+        env:
+          REGISTRY_USER: ${{ github.actor }}
+        run: |
+          nix develop --file lib/ci-tools.nix release --command bash <<'PERSIST'
+          set -euo pipefail
+          printf '%s' "$GH_TOKEN" | oras login ghcr.io --username "$REGISTRY_USER" --password-stdin
+          trap 'oras logout ghcr.io >/dev/null 2>&1 || true' EXIT
+          python3 scripts/bluebuild/measure.py producer-native-verification-and-oci-upload \
+            python3 scripts/ci/benchmark-release-transport.py persist --reference "$PACKET_REF"
+          PERSIST
+      - name: Retain native diagnostic origin
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-transport-origin-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/release-set-origin.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+      - name: Clean diagnostic producer products
+        if: always()
+        run: python3 scripts/bluebuild/measure.py producer-cleanup python3 -c 'import shutil; shutil.rmtree(".bluebuild/diagnostic-packet", ignore_errors=True)'
+      - name: Retain producer costs and immutable reference
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-transport-producer-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .bluebuild/diagnostic-reference.json
+            .bluebuild/ci-timings.jsonl
+          include-hidden-files: true
+          retention-days: 7
+  consumer:
+    name: consumer-${{ matrix.phase }}-${{ matrix.pair }}-${{ matrix.mode }}
+    if: github.repository == 'closure-labs/finite' && inputs.mode == 'consume'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - {"phase": "cold", "pair": 1, "mode": "legacy"}
+          - {"phase": "cold", "pair": 1, "mode": "receipt"}
+          - {"phase": "warm", "pair": 1, "mode": "legacy"}
+          - {"phase": "warm", "pair": 1, "mode": "receipt"}
+          - {"phase": "warm", "pair": 2, "mode": "legacy"}
+          - {"phase": "warm", "pair": 2, "mode": "receipt"}
+          - {"phase": "warm", "pair": 3, "mode": "legacy"}
+          - {"phase": "warm", "pair": 3, "mode": "receipt"}
+          - {"phase": "warm", "pair": 4, "mode": "legacy"}
+          - {"phase": "warm", "pair": 4, "mode": "receipt"}
+          - {"phase": "warm", "pair": 5, "mode": "legacy"}
+          - {"phase": "warm", "pair": 5, "mode": "receipt"}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PACKET_REF: ${{ inputs.packet_ref }}
+      BENCHMARK_MODE: ${{ matrix.mode }}
+      BENCHMARK_PHASE: ${{ matrix.phase }}
+      BENCHMARK_PAIR: ${{ matrix.pair }}
+      FINITE_BENCHMARK_JOB: consumer-${{ matrix.phase }}-${{ matrix.pair }}-${{ matrix.mode }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
+        with:
+          skip-if-available: "80G"
+      - uses: ./.github/actions/setup-nix
+        with:
+          cache-mode: none
+      - name: Verify complete transport and clean local products
+        env:
+          REGISTRY_USER: ${{ github.actor }}
+        run: |
+          nix develop --file lib/ci-tools.nix release --command bash <<'CONSUME'
+          set -euo pipefail
+          printf '%s' "$GH_TOKEN" | oras login ghcr.io --username "$REGISTRY_USER" --password-stdin
+          trap 'oras logout ghcr.io >/dev/null 2>&1 || true' EXIT
+          python3 scripts/bluebuild/measure.py consumer-complete-transport \
+            python3 scripts/ci/benchmark-release-transport.py consume --reference "$PACKET_REF" \
+              --mode "$BENCHMARK_MODE" --phase "$BENCHMARK_PHASE" --pair "$BENCHMARK_PAIR"
+          CONSUME
+      - name: Retain consumer correctness and costs
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-transport-sample-${{ matrix.phase }}-${{ matrix.pair }}-${{ matrix.mode }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .bluebuild/transport-sample.json
+            .bluebuild/ci-timings.jsonl
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7

@@ -18,6 +18,7 @@ import tempfile
 import decision_controller as controller
 import decision_packets
 import release_artifact
+import release_origin
 import release_handoff
 import archive_read
 from release_set import CHANNELS, GitHubClient, execute, payload_digest, sha256, validate_evidence
@@ -53,7 +54,8 @@ def approved(proposal_hash, github=None):
     return proposal, receipt, references[0]
 
 
-def check_product(packet, proposal, manifest, github=None, *, cached_archive=None):
+def check_product(packet, proposal, manifest, github=None, *, cached_archive=None,
+                  origin_pilot=False, reference=None, cached_receipt=None):
     document = load_json(packet / 'release-set.json')
     if document.get('payload') != proposal['payload']:
         raise ValueError('Packet product bytes differ from approved release payload')
@@ -81,7 +83,10 @@ def check_product(packet, proposal, manifest, github=None, *, cached_archive=Non
     binding = [{key: artifact[key] for key in ('id', 'name', 'digest')}]
     if producer.get('artifacts') != binding:
         raise ValueError('Initial product packet does not bind the actual uploaded artifact')
-    release_artifact.verify_archive(packet, artifact, controller.REPOSITORY, manifest['files'], cached_archive=cached_archive)
+    authenticated = origin_pilot and release_origin.verify(packet, manifest, reference, artifact,
+                        controller.collection, api, cached_archive=cached_receipt)
+    if not authenticated:
+        release_artifact.verify_archive(packet, artifact, controller.REPOSITORY, manifest['files'], cached_archive=cached_archive)
     for channel in CHANNELS:
         directory = packet / ('release-' + channel)
         for name, digest in document['payload']['channels'][channel]['assets'].items():
@@ -320,7 +325,7 @@ def artifact_reader_credentials():
             os.environ['GH_TOKEN'] = previous
 
 
-def materialize_products(output, proposal, reference, *, staged=False, retain_archive=False, original_reference=None):
+def materialize_products(output, proposal, reference, *, staged=False, retain_archive=False, original_reference=None, origin_pilot=False):
     if staged:
         if output.is_symlink() or not output.is_dir():
             raise ValueError('Staged execution directory is missing or unsafe')
@@ -341,11 +346,13 @@ def materialize_products(output, proposal, reference, *, staged=False, retain_ar
                 for name in proposal['payload']['channels'][channel]['assets']:
                     (output / 'packet/signed' / channel / name).unlink()
     else:
-        if staged and (cached.is_symlink() or not cached.is_file()):
+        if staged and not origin_pilot and (cached.is_symlink() or not cached.is_file()):
             raise ValueError('Staged original archive is missing or unsafe')
         print('Release phase: authenticate original Actions archive and every product member', flush=True)
         try:
-            document = check_product(output / 'packet', proposal, manifest, cached_archive=cached)
+            document = check_product(output / 'packet', proposal, manifest, cached_archive=cached,
+                                     origin_pilot=origin_pilot, reference=reference,
+                                     cached_receipt=output / 'transport/origin.zip' if staged or retain_archive else None)
         finally:
             if staged:
                 cached.unlink(missing_ok=True)

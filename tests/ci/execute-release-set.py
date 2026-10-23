@@ -192,6 +192,18 @@ class ExecutionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             module.check_product(self.root, self.proposal, self.manifest, github=lambda _: self.run)
 
+    def test_origin_pilot_missing_falls_back_but_invalid_never_does(self):
+        with patch.object(module.release_origin, 'verify', return_value=False), patch.object(module.release_artifact, 'verify_archive') as legacy:
+            module.check_product(self.root, self.proposal, self.manifest, github=lambda _: self.run, origin_pilot=True)
+            legacy.assert_called_once()
+        with patch.object(module.release_origin, 'verify', side_effect=ValueError('invalid receipt')), patch.object(module.release_artifact, 'verify_archive') as legacy:
+            with self.assertRaisesRegex(ValueError, 'invalid receipt'):
+                module.check_product(self.root, self.proposal, self.manifest, github=lambda _: self.run, origin_pilot=True)
+            legacy.assert_not_called()
+        with patch.object(module.release_origin, 'verify', return_value=True), patch.object(module.release_artifact, 'verify_archive') as legacy:
+            module.check_product(self.root, self.proposal, self.manifest, github=lambda _: self.run, origin_pilot=True)
+            legacy.assert_not_called()
+
     def test_transport_outliving_app_token_uses_job_reads_then_fresh_live_authority(self):
         files = {path.relative_to(self.root).as_posix(): path.read_bytes()
                  for path in self.root.rglob('*') if path.is_file()}
