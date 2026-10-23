@@ -221,7 +221,8 @@ def stage_opportunities(runs):
                      'runs': len({r['runId'] for r, _, _ in entries}),
                      'seconds': sum(s['seconds'] for _, _, s in entries),
                      'medianSeconds': statistics.median(s['seconds'] for _, _, s in entries),
-                     'failedSamples': sum(s.get('status') != 0 for _, _, s in entries),
+                     'failedSamples': sum(type(s.get('status')) is int and s['status'] != 0 for _, _, s in entries),
+                     'unknownStatusSamples': sum(s.get('status') is None for _, _, s in entries),
                      'criticalPathContribution': None})
     return sorted(rows, key=lambda r: r['seconds'], reverse=True)
 

@@ -107,11 +107,11 @@ work list; a successful source check is separate from observed production use.
 | Direct equivalent payload evaluation ([payload report](ci-payload-evaluation-2026-10-23.md), #237) | completed | Exact derivation equality and both main promotions passed |
 | Correct predecessor context matching ([predecessor report](ci-predecessor-2026-10-23.md)) | completed | Preserve authenticated exact-image restore checks |
 | Bound optional predecessor transfer ([ISO audit](iso-transport-2026-10-23.md), #238) | awaiting rollout evidence | Queue/source checks passed; first main selected no images and did not execute the timeout path |
-| Split guest initialization and measure all main qualification stages | requires measurement | Observe startup, Homebrew, predecessor, home-init and fixture intervals on natural runs |
-| Rank recurring work by native runner occupancy and critical path ([cost baseline](ci-workflow-costs-2026-10-23.md)) | requires measurement | Join bounded receipts, preserve unknowns and distinguish later rollout revisions |
+| Split guest initialization and measure all main qualification stages | awaiting rollout evidence | #240 records the [first split queue intervals](ci-stage-rollout-2026-10-23.md); first main stopped before qualification and the later main cohort was still active |
+| Rank recurring work by native runner occupancy and critical path ([cost baseline](ci-workflow-costs-2026-10-23.md)) | requires measurement | Correct queue/host receipt joins in this follow-up; retain unknowns, separate later revisions and finish the seven-day window |
 | Reuse installer runtime ([architecture](ci-architecture-2026-10-23.md)) | requires measurement | Stage breakdown must identify avoidable cost before any behavior change |
 | Transport guest closures ([reuse results](new-os-reuse-results.md)) | requires measurement | Preserve unseeded installs and actual bootc Home Manager activation |
-| Replace duplicate release ZIP read with native origin receipt ([ISO audit](iso-transport-2026-10-23.md)) | requires measurement | Separate draft, exact-packet correctness, five matched warm pairs and one cold pair |
+| Replace duplicate release ZIP read with native origin receipt ([ISO audit](iso-transport-2026-10-23.md)) | requires measurement | #241 merged the disabled prototype; a new diagnostic packet and five matched warm pairs plus one cold pair must establish correctness and cost before enabling production |
 | Retained local OCI verification ([rollout](ci-rollout-2026-10-23.md)) | deferred | Exact same-build dual export required before comparisons |
 | Automatic Cachix writing and Grype database transport ([reuse experiments](reuse-timing-experiments.md)) | deferred | Remain disabled |
 | Seven-day assessment | requires measurement | Finish after 2026-10-30T05:01:17Z; later rollouts are separate incomplete cohorts |
