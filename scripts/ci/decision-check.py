@@ -21,7 +21,7 @@ PROPOSAL = re.compile(r'automation/decisions/(security|releases)/([0-9a-f]{64})\
 GOVERNED_PREFIXES = ('scripts/ci/', 'scripts/bluebuild/', '.github/workflows/', '.github/actions/', 'automation/security/',
                      'automation/github/', 'automation/decisions/', 'lib/ci-applications/')
 GOVERNED_FILES = {'flake.nix', 'flake.lock', 'cosign.pub', '.github/CODEOWNERS',
-                  'lib/mk-pkgs.nix', 'lib/project-policy.nix', 'lib/secretspec.nix',
+                  'lib/mk-pkgs.nix', 'lib/project-policy.nix', 'lib/secretspec.nix', 'lib/vm-tools.nix',
                   'sources/bluefin.pub', 'sources/bluefin-trust.json', 'sources/cosign-runtime.json',
                   'scripts/ci/verify-security-admission.py', 'scripts/ci/reconcile-decisions.py',
                   'scripts/ci/verify-attestation-subject.py', 'scripts/ci/inventory-evidence.py',
