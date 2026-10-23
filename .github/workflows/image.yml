@@ -88,6 +88,7 @@ jobs:
         if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
         env:
           GH_TOKEN: ${{ github.token }}
+          FINITE_REVIEW_BOT_LOGIN: ${{ vars.FINITE_REVIEW_BOT_LOGIN }}
         run: python3 scripts/ci/validation-preflight.py
       - uses: ./.github/actions/setup-nix
       - name: Make room for the image build

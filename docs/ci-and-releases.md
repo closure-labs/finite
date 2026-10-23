@@ -37,6 +37,15 @@ BlueBuild module inputs while retaining the approved base digests.
 Missing comparison data selects full validation. Renames include both paths,
 so moving an image input into documentation still triggers image builds.
 
+Governed workflow, signing, policy and tooling updates require an eligible
+submitter as well as human review. Dependabot cannot meet the configured App's
+submitter requirement for those paths. Adopt the update in a PR authored by the
+configured App, a Maintainer or a Super Admin; review the new PR's exact head.
+Approving the original Dependabot PR or toggling auto-merge does not change its
+submitter. The early read-only preflight rejects unsupported bot submissions
+before expensive validation when the public App login is configured. The
+authoritative App check still verifies submitter and reviewer authority.
+
 Use hosted CI for full Nix evaluation, aggregate checks, VM qualification and
 large ISO verification. Local full-check evaluation exhausted memory on the
 15-GiB development workstation during the October 14 rollout. Keep local review
