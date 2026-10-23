@@ -100,6 +100,10 @@ class Tools(unittest.TestCase):
         self.assertEqual(len(value['jobs']['benchmark']['strategy']['matrix']['include']), 9)
         self.assertNotIn('secrets.', (ROOT / '.github/workflows/benchmark-vm-tools.yml').read_text())
         self.assertNotIn('ready_for_review', (ROOT / '.github/workflows/benchmark-vm-tools.yml').read_text())
+        for job in value['jobs'].values():
+            for step in job.get('steps', []):
+                if step.get('uses', '').startswith('actions/upload-artifact@'):
+                    self.assertTrue(step['with']['include-hidden-files'], 'Reports under .bluebuild must remain visible to uploads')
 
 
 class Measurements(unittest.TestCase):
