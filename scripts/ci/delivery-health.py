@@ -14,16 +14,46 @@ from github_api import get_json
 from release_readiness import CHANNELS, PREFIX, eligible_build, release_status, root_version
 
 
+def failed_phases(jobs):
+    phases = []
+    for job in jobs:
+        if job.get('conclusion') in ('failure', 'timed_out', 'cancelled', 'action_required', 'startup_failure'):
+            steps = [step['name'] for step in job.get('steps', [])
+                     if step.get('conclusion') in ('failure', 'timed_out', 'cancelled')]
+            phases.append(job['name'] + (': ' + ', '.join(steps) if steps else ''))
+    return phases
+
+
 def inspect(revision, version, bot, api=get_json, now=None):
     now = now or datetime.now(timezone.utc)
-    document = api(PREFIX + '/actions/workflows/build.yml/runs?branch=main&status=completed&per_page=30')
+    document = api(PREFIX + '/actions/workflows/build.yml/runs?branch=main&per_page=30')
     runs = document['workflow_runs']
     if not isinstance(runs, list) or len(runs) > 30:
         raise ValueError('Invalid build health inventory')
     runs = [run for run in runs if run.get('head_branch') == 'main'
             and run.get('head_repository', {}).get('full_name') == 'closure-labs/finite'
-            and run.get('event') in ('push', 'schedule', 'workflow_dispatch')
-            and run.get('status') == 'completed']
+            and run.get('event') in ('push', 'schedule', 'workflow_dispatch')]
+    active, active_problems, active_blockers = [], [], []
+    for run in runs:
+        if run.get('status') == 'completed':
+            continue
+        if run.get('status') not in ('queued', 'in_progress', 'waiting', 'pending', 'requested'):
+            raise ValueError('Unknown active build status')
+        run_id, attempt = run.get('id'), run.get('run_attempt')
+        if type(run_id) is not int or type(attempt) is not int or not re.fullmatch('[0-9a-f]{40}', run.get('head_sha', '')):
+            raise ValueError('Invalid active build identity')
+        jobs = api(PREFIX + f'/actions/runs/{run_id}/attempts/{attempt}/jobs?per_page=100')
+        if jobs['total_count'] > 100 or len(jobs['jobs']) != jobs['total_count']:
+            raise ValueError('Active build job inventory is incomplete')
+        failed = failed_phases(jobs['jobs'])
+        running = [job['name'] for job in jobs['jobs'] if job.get('status') == 'in_progress']
+        active.append({'runId': run_id, 'runAttempt': attempt, 'revision': run['head_sha'],
+                       'status': run.get('status'), 'failedPhases': failed, 'runningPhases': running})
+        if failed:
+            active_problems.append('Active main run ' + str(run_id) + ' has failed phases: ' + ', '.join(failed))
+        if run.get('status') == 'waiting':
+            active_blockers.append('Main run ' + str(run_id) + ' is waiting; inspect its approval or environment gate.')
+    runs = [run for run in runs if run.get('status') == 'completed']
     channels = {channel: {'qualified': None, 'promoted': None} for channel in CHANNELS}
     failures, selected = [], None
     for index, run in enumerate(runs):
@@ -40,7 +70,7 @@ def inspect(revision, version, bot, api=get_json, now=None):
                 if channels[channel][kind] is None and f'Publish ({channel}) / {name}' in names:
                     channels[channel][kind] = receipt
         if index == 0 and run.get('conclusion') == 'failure':
-            failures = [job['name'] for job in jobs['jobs'] if job.get('conclusion') == 'failure']
+            failures = failed_phases(jobs['jobs'])
         if selected is None and run['head_sha'] == revision and run.get('conclusion') == 'success':
             artifacts = api(PREFIX + f'/actions/runs/{run_id}/artifacts?per_page=100')
             if artifacts['total_count'] > 100:
@@ -49,7 +79,7 @@ def inspect(revision, version, bot, api=get_json, now=None):
                 selected = run_id
         if all(value for channel in channels.values() for value in channel.values()) and (selected or index >= 9):
             break
-    problems = []
+    problems = active_problems
     if failures:
         problems.append('Latest main build failed: ' + ', '.join(failures))
     for channel, states in channels.items():
@@ -73,7 +103,7 @@ def inspect(revision, version, bot, api=get_json, now=None):
             proposals.append(proposal)
     if len(proposals) > 1:
         raise ValueError('Multiple release decisions claim this version; inspect reservations')
-    blockers = []
+    blockers = active_blockers
     if proposals:
         release = inspect_publisher(proposals[0], api)
         if release['state'] in ('failed', 'partial', 'not_started', 'unknown'):
@@ -90,7 +120,7 @@ def inspect(revision, version, bot, api=get_json, now=None):
         if release['state'] == 'recovery':
             problems.append(release['reason'])
     return {'schema': 1, 'healthy': not problems, 'blockers': blockers, 'problems': problems, 'channels': channels,
-            'version': version, 'release': release, 'buildRun': selected}
+            'version': version, 'release': release, 'buildRun': selected, 'activeBuilds': active}
 
 
 def dispatch(report, revision, api=get_json):
@@ -126,6 +156,11 @@ def summary(report):
                 if receipt else 'Unavailable in recent runs')
     for channel, state in report['channels'].items():
         lines.append(f'| {channel} | {link(state["qualified"])} | {link(state["promoted"])} |')
+    for run in report.get('activeBuilds', []):
+        url = 'https://github.com/closure-labs/finite/actions/runs/' + str(run['runId'])
+        lines += ['', f'Active main run [{run["runId"]}]({url}): {run["status"]}.']
+        lines.extend('- Failed phase: ' + phase for phase in run['failedPhases'])
+        lines.extend('- Running phase: ' + phase for phase in run['runningPhases'])
     release = report['release']
     lines += ['', 'Release publication: ' + release['state'] + ' — ' + release['reason'], '']
     if release.get('runUrl'):

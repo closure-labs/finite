@@ -295,6 +295,42 @@ class Qualification(unittest.TestCase):
         with self.assertRaises(ValueError):
             predecessor.compatible(self.directory, self.profile, self.candidate.split('@')[1], self.context['inputs'])
 
+    def test_predecessor_artifact_ignores_only_non_generating_entry_points(self):
+        for path in ('scripts/bluebuild/local-vm.sh', 'scripts/bluebuild/reuse-predecessor-iso.py'):
+            with self.subTest(path=path):
+                value = self.aggregate()
+                old = {**self.context['inputs'], path: {'sha256': 'old', 'executable': True}}
+                value['qualificationContext']['inputs'] = old
+                value['qualificationContextSha256'] = q.identity(value['qualificationContext'])
+                receipt = self.directory / (self.profile + '-acceptance.json')
+                receipt.write_text(json.dumps(value))
+                current = {**old, path: {'sha256': 'new', 'executable': True}}
+                predecessor.compatible(self.directory, self.profile, self.candidate.split('@')[1], current)
+                # The full receipt still differs: this exception applies only
+                # to pristine bytes, never to reuse of an old VM verdict.
+                with self.assertRaises(r.Unavailable):
+                    self.validate(context={**self.context, 'inputs': current})
+                value['qualificationContextSha256'] = '0' * 64
+                receipt.write_text(json.dumps(value))
+                with self.assertRaises(ValueError):
+                    predecessor.compatible(self.directory, self.profile, self.candidate.split('@')[1], current)
+
+    def test_predecessor_generation_projection_preserves_other_inputs_and_modes(self):
+        paths = ('scripts/bluebuild/iso.sh', 'scripts/bluebuild/prepare-installer.sh',
+                 'scripts/bluebuild/vm-acceptance.sh', 'files/installer/secure-boot.pem',
+                 'files/installer/lorax-post.sh', 'cosign.pub', 'scripts/bluebuild/new-helper.py')
+        for path in paths:
+            for change in ({'sha256': 'changed', 'executable': False},
+                           {'sha256': 'old', 'executable': True}, None):
+                with self.subTest(path=path, change=change):
+                    original = {path: {'sha256': 'old', 'executable': False}}
+                    current = {} if change is None else {path: change}
+                    self.assertNotEqual(predecessor.generation_inputs(original),
+                                        predecessor.generation_inputs(current))
+        for missing in (None, [], 'legacy'):
+            with self.assertRaises(predecessor.reuse.Unavailable):
+                predecessor.generation_inputs(missing)
+
     def archive(self, extra=None):
         self.aggregate()
         stream = io.BytesIO()

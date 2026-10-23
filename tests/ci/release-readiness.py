@@ -224,6 +224,52 @@ class Readiness(unittest.TestCase):
             self.assertEqual(report['channels'][channel]['promoted']['runId'], 7)
         self.assertIn('/actions/runs/7', delivery.summary(report))
 
+    def active_health(self, status, active_jobs, identity=SHA, total_count=None):
+        now = datetime(2026, 10, 21, tzinfo=timezone.utc)
+        active = {'id': 8, 'run_attempt': 1, 'head_sha': identity, 'head_branch': 'main',
+                  'head_repository': {'full_name': ready.REPOSITORY}, 'event': 'push',
+                  'status': status, 'conclusion': None, 'updated_at': now.isoformat()}
+        previous = {**active, 'id': 7, 'head_sha': 'b' * 40, 'status': 'completed', 'conclusion': 'success'}
+        def api(endpoint, **kwargs):
+            if '/workflows/build.yml/runs?' in endpoint:
+                self.assertNotIn('status=completed', endpoint)
+                return {'workflow_runs': [active, previous]}
+            if '/runs/8/' in endpoint:
+                return {'total_count': len(active_jobs) if total_count is None else total_count, 'jobs': active_jobs}
+            if '/runs/7/' in endpoint:
+                jobs = [{'name': f'Publish ({channel}) / {suffix}', 'conclusion': 'success'}
+                        for channel in ready.CHANNELS for suffix in ('qualification / aggregate', 'promote')]
+                return {'total_count': len(jobs), 'jobs': jobs}
+            return self.api(endpoint, **kwargs)
+        return delivery.inspect(SHA, 'development', BOT, api, now)
+
+    def test_active_profile_failure_is_visible_before_other_profile_completes(self):
+        jobs = [{'name': 'Publish (finite) / build / build', 'status': 'completed', 'conclusion': 'failure',
+                 'steps': [{'name': 'Prepare candidate publication', 'conclusion': 'failure'}]},
+                {'name': 'Publish (finite-dev) / qualification / phase (fresh)', 'status': 'in_progress'}]
+        report = self.active_health('in_progress', jobs)
+        self.assertFalse(report['healthy'])
+        self.assertIn('Prepare candidate publication', report['problems'][0])
+        self.assertIn('finite-dev', report['activeBuilds'][0]['runningPhases'][0])
+        for channel in ready.CHANNELS:
+            self.assertEqual(report['channels'][channel]['promoted']['runId'], 7)
+        self.assertIn('/actions/runs/8', delivery.summary(report))
+        self.assertIsNone(report['buildRun'])
+
+    def test_queued_running_and_approval_waiting_builds_do_not_replace_successful_channels(self):
+        for status in ('queued', 'in_progress', 'waiting'):
+            report = self.active_health(status, [])
+            self.assertTrue(report['healthy'])
+            self.assertEqual(bool(report['blockers']), status == 'waiting')
+            self.assertEqual(report['channels']['finite']['promoted']['runId'], 7)
+        with self.assertRaisesRegex(ValueError, 'Invalid active build identity'):
+            self.active_health('in_progress', [], identity='unknown')
+        with self.assertRaisesRegex(ValueError, 'Unknown active build status'):
+            self.active_health('unknown', [])
+        for count in (1, 101):
+            with self.assertRaisesRegex(ValueError, 'Active build job inventory is incomplete'):
+                self.active_health('in_progress', [], total_count=count)
+
     def test_failed_preparation_requires_explicit_retry_without_dispatching_again(self):
         report = {'release': {'state': 'unprepared'}, 'buildRun': 7}
         for conclusion in ('failure', 'timed_out', 'cancelled', 'action_required'):

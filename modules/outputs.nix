@@ -1,6 +1,7 @@
 {
   catalog,
   config,
+  inputs,
   lib,
   mkPkgs,
   outputDependencies,
@@ -154,6 +155,16 @@
     // {
       formatting = formattingCheck;
       home-configurations = homeCheck;
+      flake-input-boundary = assert import ../tests/nix/flake-input-boundary.nix;
+        pkgs.runCommand "finite-flake-input-boundary-proof" {} ''
+          touch "$out"
+        '';
+      payload-entry = assert lib.assertMsg (
+        (import ../lib/ci-payload.nix {inherit inputs;}).payload.drvPath == imagePayload.payload.drvPath
+      ) "The lightweight payload must match the public image-payload derivation exactly";
+        pkgs.runCommand "finite-payload-entry-proof" {} ''
+          touch "$out"
+        '';
       cache-configuration = assert lib.assertMsg ((import ../flake.nix).nixConfig == project.nixConfig)
       "Keep the concrete flake cache configuration synchronized with project-policy.nix";
         pkgs.runCommand "finite-cache-configuration" {} ''
