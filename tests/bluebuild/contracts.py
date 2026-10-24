@@ -139,7 +139,14 @@ class BlueBuildContracts(unittest.TestCase):
                           if s.get('id') == 'acceptance')
         self.assertNotIn('continue-on-error', acceptance)
         self.assertEqual(qualification['jobs']['phase']['needs'], 'prepare')
-        self.assertFalse(qualification['jobs']['phase']['strategy']['fail-fast'])
+        self.assertEqual(qualification['jobs']['phase']['strategy']['fail-fast'],
+                         "${{ inputs.validation_only && inputs.installer_benchmark != '' }}")
+        inputs = qualification.get('on', qualification.get(True))['workflow_call']['inputs']
+        self.assertIs(inputs['validation_only']['default'], False)
+        self.assertEqual(inputs['installer_benchmark']['default'], '')
+        production = publication['jobs']['qualification']['with']
+        self.assertIs(production.get('validation_only', False), False)
+        self.assertEqual(production.get('installer_benchmark', ''), '')
         self.assertEqual(qualification['jobs']['aggregate']['needs'], ['prepare', 'phase'])
         self.assertIn("needs.phase.result == 'success'", qualification['jobs']['aggregate']['if'])
         self.assertIn("needs.prepare.outputs.reused == 'true'", qualification['jobs']['aggregate']['if'])

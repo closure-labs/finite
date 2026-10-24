@@ -116,7 +116,9 @@ jobs:
     needs: prepare
     if: needs.prepare.outputs.reused != 'true'
     strategy:
-      fail-fast: false
+      # A controlled benchmark cannot use a partial pair. Cancel its sibling
+      # instead of spending another VM round after a cohort or acceptance failure.
+      fail-fast: ${{ inputs.validation_only && inputs.installer_benchmark != '' }}
       matrix:
         phase: ${{ fromJSON(inputs.previous != '' && '["fresh","upgrade"]' || '["fresh"]') }}
     runs-on: ubuntu-24.04

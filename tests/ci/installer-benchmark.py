@@ -38,6 +38,74 @@ def samples():
             for p in b.PROFILES for pair in b.PAIRS for mode in b.MODES)]
 
 
+class Planning(unittest.TestCase):
+    def release(self):
+        return {'id': 422010717, 'tag_name': 'ubuntu24/20261023.334',
+                'published_at': '2026-10-23T15:33:17Z', 'draft': False, 'prerelease': False}
+
+    def test_only_the_exact_completed_runner_release_allows_planning(self):
+        with patch.object(b, 'get_json', return_value=self.release()) as api:
+            value = b.require_runner_release('20261023.334.3')
+        api.assert_called_once_with('repos/actions/runner-images/releases/tags/ubuntu24%2F20261023.334')
+        self.assertEqual(value['releaseId'], 422010717)
+        self.assertEqual(value['tag'], 'ubuntu24/20261023.334')
+        self.assertIs(value['prerelease'], False)
+        for key, changed in [('tag_name', 'ubuntu24/other'), ('id', True), ('draft', True),
+                ('prerelease', True), ('prerelease', None), ('prerelease', 'false'),
+                ('published_at', None), ('published_at', '2026-10-23T15:33:17')]:
+            with self.subTest(key=key, changed=changed), self.assertRaises(ValueError):
+                b.require_runner_release('20261023.334.3', lambda endpoint: {**self.release(), key: changed})
+        with patch.object(b, 'get_json') as api, self.assertRaises(ValueError):
+            b.require_runner_release('../../other/repository')
+        api.assert_not_called()
+
+    def invoke(self, root):
+        inputs = plan()['profiles']
+        products = {'records': [{'profile': profile, 'inputs': dict(zip(
+            ('digest', 'previous', 'identity', 'source_revision'), entry['inputs'].values(), strict=True))}
+            for profile, entry in inputs.items()]}
+        (root / 'products.json').write_text(json.dumps(products))
+        (root / 'cohorts.json').write_text(json.dumps({p: e['runtimeCohorts'] for p, e in inputs.items()}))
+        args = ['installer-benchmark.py', 'plan', '--head', plan()['head'], '--runner-image', plan()['runnerImage'],
+                '--products', str(root / 'products.json'), '--cohorts', str(root / 'cohorts.json'),
+                '--output', str(root / 'plan.json')]
+        with patch.object(sys, 'argv', args):
+            b.main()
+
+    def test_incomplete_or_unavailable_rollout_creates_no_plan(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with patch.object(b, 'get_json', return_value={**self.release(), 'prerelease': True}), self.assertRaises(ValueError):
+                self.invoke(root)
+            self.assertFalse((root / 'plan.json').exists())
+            with patch.object(b, 'get_json', side_effect=OSError('metadata unavailable')), self.assertRaises(OSError):
+                self.invoke(root)
+            self.assertFalse((root / 'plan.json').exists())
+
+    def test_plan_binds_release_evidence_and_cannot_be_overwritten(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with patch.object(b, 'get_json', return_value=self.release()):
+                self.invoke(root)
+            target = root / 'plan.json'; before = target.read_bytes(); value = json.loads(before)
+            self.assertEqual(value['runnerRelease']['releaseId'], 422010717)
+            b.validate_plan(value)
+            with patch.object(b, 'get_json') as api, self.assertRaisesRegex(ValueError, 'overwrite'):
+                self.invoke(root)
+            api.assert_not_called(); self.assertEqual(target.read_bytes(), before)
+
+
+    def test_plan_created_during_release_lookup_is_preserved(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); target = root / 'plan.json'; frozen = 'another frozen plan\n'
+            def published(endpoint):
+                target.write_text(frozen)
+                return self.release()
+            with patch.object(b, 'get_json', side_effect=published), self.assertRaises(FileExistsError):
+                self.invoke(root)
+            self.assertEqual(target.read_text(), frozen)
+
+
 class Gates(unittest.TestCase):
     def test_all_predeclared_samples_required_and_never_authorize_publication(self):
         values = samples(); result = b.compare(plan(), values)
