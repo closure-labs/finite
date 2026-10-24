@@ -48,6 +48,13 @@ Five warm pairs and one cold pair must pass correctness; warm medians must
 improve by at least 10% and 30 seconds; cold cost may regress by at most 10%.
 A performance pass alone never enables production.
 
+The [evidence follow-up](ci-transport-evidence-2026-10-24.md) records the first
+six completed samples, including the unmatched first warm pair. Its draft
+reporter retains native setup/transfer failure costs even when sample evidence
+is absent, exposes per-pair cohort mismatches and distinguishes incomplete
+evidence from failed verification. It preserves the original comparison gates
+and production default.
+
 Diagnostic Actions artifacts retain seven days of logical bytes. The OCI packet
 has no automatic expiry. Its retained storage and eventual exact-reference
 cleanup remain explicit missing lifecycle evidence; do not claim full storage

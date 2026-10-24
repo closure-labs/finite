@@ -95,7 +95,8 @@ class ImageInputContract(unittest.TestCase):
         before_image = self.values()
         before_context = qualification.source_inputs(self.root)
         for relative in ('scripts/ci/workflow-costs.py', 'scripts/ci/workflow_costs.py',
-                         'scripts/ci/cost_receipts.py', '.github/workflows/workflow-costs.yml'):
+                         'scripts/ci/cost_receipts.py', '.github/workflows/workflow-costs.yml',
+                         'scripts/ci/report-release-transport.py', 'scripts/ci/release_transport_benchmark.py'):
             with self.subTest(path=relative):
                 self.write(relative, 'changed read-only cost reporting\n')
                 self.assertEqual(before_image, self.values())
