@@ -148,6 +148,13 @@ jobs:
         id: benchmark
         if: inputs.validation_only
         run: python3 scripts/bluebuild/benchmark-controls.py --record
+      - name: Verify KVM and record runner capacity
+        env:
+          PHASE: ${{ matrix.phase }}
+        run: |
+          # Record the failed probe even if permission preparation fails.
+          if [[ -e /dev/kvm ]]; then sudo -n chmod a+rw /dev/kvm || true; fi
+          timeout 20s python3 scripts/ci/vm-host.py --output ".bluebuild/$PROFILE-$PHASE-vm-host.json"
       - uses: ./.github/actions/setup-nix
         with:
           cache-mode: ${{ steps.benchmark.outputs.cache-mode || 'none' }}
@@ -191,6 +198,7 @@ jobs:
           name: ${{ inputs.validation_only && 'qualification-diagnostic-phase' || 'qualification-phase' }}-${{ inputs.profile }}-${{ matrix.phase }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             .bluebuild/*outcome.json
+            .bluebuild/*-vm-host.json
             .bluebuild/nix-setup.json
             .bluebuild/*-benchmark.json
             .bluebuild/*qualification-context.json
@@ -281,6 +289,7 @@ jobs:
           path: |
             .bluebuild/*acceptance.json
             .bluebuild/*outcome.json
+            .bluebuild/*-vm-host.json
             .bluebuild/*-benchmark.json
             .bluebuild/*-stages.jsonl
             .bluebuild/vm*/**/*.json

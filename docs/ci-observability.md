@@ -21,6 +21,23 @@ installer-internal image transfer; it does not isolate that transfer from Lorax
 work. Failure statuses propagate unchanged. No installer or guest behavior is
 changed, and unseeded fresh installs and actual bootc activation remain required.
 
+Qualification phases probe usable KVM before Nix setup, image acquisition and ISO
+construction. The bounded probe checks Linux KVM API version 12, creates an empty
+VM descriptor and closes it without allocating guest memory or booting a guest.
+Missing devices, denied access and VM creation failures stop the phase and retain
+their distinct failure stages in `*-vm-host.json`, uploaded even on failure. A
+timeout may leave no probe receipt; the native step still records failure. The
+later VM launch retains its own KVM requirement.
+
+Host receipts record kernel, CPU model, runner image and effective CPU/memory
+capacity using the same cgroup-aware detector as Nix setup. Missing capacity is
+explicitly unknown and does not create a new eligibility threshold. The expected
+guest remains QEMU q35 with SMM, KVM, two vCPUs and 4 GiB RAM. These observations
+do not establish resource contention, a speedup or complete guest bootability.
+See the [Linux KVM API](https://docs.kernel.org/virt/kvm/api.html) for the empty-VM
+probe's limits. Use natural qualification runs to observe rollout costs; this
+change dispatches no additional full VM rounds.
+
 The read-only collector joins native image and qualification-phase archives,
 limited to 16 archives of 8 MiB each per run and 40 archives per collection.
 Security phase receipts can prove inventory reuse; a fresh inventory alone
