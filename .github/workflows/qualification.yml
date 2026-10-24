@@ -23,6 +23,10 @@ on:
       validation_only:
         type: boolean
         default: false
+      installer_compression:
+        description: Diagnostic-only runtime compression; default preserves the pinned installer
+        type: string
+        default: default
       force_qualification:
         type: boolean
         default: false
@@ -63,6 +67,7 @@ jobs:
       SOURCE_REVISION: ${{ inputs.source_revision }}
       GH_TOKEN: ${{ github.token }}
       FINITE_VALIDATION_ONLY: ${{ inputs.validation_only }}
+      FINITE_INSTALLER_COMPRESSION: ${{ inputs.installer_compression }}
       QUALIFICATION_PREFIX: ${{ inputs.validation_only && 'qualification-diagnostic' || 'qualification' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -119,6 +124,7 @@ jobs:
       SOURCE_REVISION: ${{ inputs.source_revision }}
       GH_TOKEN: ${{ github.token }}
       FINITE_VALIDATION_ONLY: ${{ inputs.validation_only }}
+      FINITE_INSTALLER_COMPRESSION: ${{ inputs.installer_compression }}
       QUALIFICATION_PREFIX: ${{ inputs.validation_only && 'qualification-diagnostic' || 'qualification' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -209,6 +215,7 @@ jobs:
       SOURCE_REVISION: ${{ inputs.source_revision }}
       GH_TOKEN: ${{ github.token }}
       FINITE_VALIDATION_ONLY: ${{ inputs.validation_only }}
+      FINITE_INSTALLER_COMPRESSION: ${{ inputs.installer_compression }}
       QUALIFICATION_PREFIX: ${{ inputs.validation_only && 'qualification-diagnostic' || 'qualification' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

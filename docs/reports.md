@@ -37,6 +37,7 @@ the recorded revision and date.
 | [Nix workflow resources](nix-workflow-resources.md) | Runner sizing and concurrency audit |
 | [Recurring workflow cost roles, October 24 UTC](ci-cost-roles-2026-10-24.md) | Retained baseline ranking, corrected source/legacy roles and conserved native occupancy |
 | [Next CI optimization evidence, October 24 UTC](ci-next-optimization-2026-10-24.md) | Complete transport result, early supersession checks, Nix observations and nested ISO/initializer investigation |
+| [ISO runtime compression diagnostic](ci-iso-compression-diagnostic.md) | Natural two-profile ISO timings, verified scanner receipt rollout and a gated manual zstd prototype |
 | [Bounded scanner cost observations](ci-security-cost-observation.md) | October 24: retain small native scanner timings so bounded cost reports can observe phases without downloading full security archives. |
 | [Home Manager evaluation result](ci-home-proof-evaluation.md) | Matched trial, retained serial evaluation, Foundation v0.3.3 and corrected cache telemetry |
 

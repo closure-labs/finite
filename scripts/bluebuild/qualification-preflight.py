@@ -32,6 +32,13 @@ def require_eligible(revision, environ=None):
     mode = env.get('FINITE_VALIDATION_ONLY', 'false')
     if mode not in ('true', 'false', ''):
         raise ValueError('Qualification validation-only mode must be an explicit boolean')
+    compression = env.get('FINITE_INSTALLER_COMPRESSION', 'default')
+    if compression not in ('default', 'zstd'):
+        raise ValueError('Unknown installer compression experiment')
+    if compression != 'default' and mode != 'true':
+        raise ValueError('Installer compression experiments require validation-only qualification')
+    if compression == 'zstd' and not re.fullmatch(r'sha256:[0-9a-f]{64}', env.get('PREVIOUS_DIGEST', '')):
+        raise ValueError('Compression diagnostics require a predecessor for upgrade and rollback')
     ref = env.get('GITHUB_REF', '')
     if mode == 'true':
         expected = REPOSITORY + '/.github/workflows/benchmark-image-tools.yml@' + ref

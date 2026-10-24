@@ -8,6 +8,11 @@ on:
         type: choice
         default: tool-setup
         options: [tool-setup, cache-lanes, qualification, options-smoke]
+      installer_compression:
+        description: Runtime compression for validation=qualification; production remains unchanged
+        type: choice
+        default: default
+        options: [default, zstd]
       profile:
         description: Signed candidate profile for diagnostic qualification
         type: choice
@@ -160,3 +165,4 @@ jobs:
       source_revision: ${{ inputs.source_revision }}
       force_qualification: true
       validation_only: true
+      installer_compression: ${{ inputs.installer_compression }}
