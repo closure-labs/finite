@@ -402,17 +402,17 @@
         "nixpkgs-weekly": "nixpkgs-weekly"
       },
       "locked": {
-        "lastModified": 1792735169,
-        "narHash": "sha256-eNG+WrEWY4Py5S6BD5OVNEyIvEbC/iQieeuqEJ6TMJY=",
+        "lastModified": 1792809709,
+        "narHash": "sha256-7G9HKe8AH4pVi1gWY0//KENgC9e97ezlEof3hsuZV1g=",
         "owner": "closure-labs",
         "repo": "foundation",
-        "rev": "235c34d7e507f00c2df6b0102bcdb54a4c04c5e2",
+        "rev": "0391c2e7bf7284ba0e999be73046cf03a0601918",
         "type": "github"
       },
       "original": {
         "owner": "closure-labs",
         "repo": "foundation",
-        "rev": "235c34d7e507f00c2df6b0102bcdb54a4c04c5e2",
+        "rev": "0391c2e7bf7284ba0e999be73046cf03a0601918",
         "type": "github"
       }
     },
