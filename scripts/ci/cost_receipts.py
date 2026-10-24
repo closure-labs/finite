@@ -2,6 +2,7 @@
 from contextlib import contextmanager
 import json
 import resource
+import math
 import subprocess
 import tempfile
 import re
@@ -109,9 +110,57 @@ def bounded_reader(artifact, repository):
         yield archive
 
 
+
+def security_receipt(run, artifact, value, seen):
+    """Read the small phase projection without treating it as security clearance."""
+    compact = artifact['name'].startswith('security-costs-')
+    if (run['workflow'] != '.github/workflows/build.yml'
+            or not isinstance(value, dict) or type(value.get('schema')) is not int or value['schema'] != 1
+            or type(value.get('inventoryReused')) is not bool):
+        raise ValueError('Invalid security cost receipt')
+    phases = value.get('phases')
+    # Earlier full scanner archives can lack phase detail. Retain their reuse
+    # observation without inventing any measured stages.
+    if phases is None and not compact:
+        phases = []
+    if not isinstance(phases, list) or len(phases) > 32:
+        raise ValueError('Invalid security phase observations')
+    for row in phases:
+        if (not isinstance(row, dict) or not isinstance(row.get('phase'), str)
+                or not re.fullmatch(r'[a-z][a-z0-9-]{0,63}', row['phase'])
+                or type(row.get('seconds')) not in (int, float)
+                or not math.isfinite(row['seconds']) or not 0 <= row['seconds'] <= 86400
+                or type(row.get('success')) is not bool):
+            raise ValueError('Invalid security phase observation')
+    lane = 'finite-dev' if '-finite-dev-' in artifact['name'] else 'finite'
+    candidates = [j for j in run['jobs'] if j['profile'] == lane and j['role'] == 'security'
+                  and str(j['runAttempt']) == artifact['name'].rsplit('-', 1)[1]]
+    if len(candidates) != 1:
+        run['receiptCoverage']['unmatched'] += 1
+        return
+    job = candidates[0]
+    # A compact projection and its legacy full archive must agree. Repeated
+    # commands remain separate samples; duplicate artifacts do not charge them
+    # twice.
+    fingerprint = json.dumps(value, sort_keys=True)
+    binding = ('security-costs', job['jobId'])
+    previous = next((entry[2] for entry in seen if entry[:2] == binding), None)
+    if previous is not None:
+        if previous != fingerprint:
+            raise ValueError('Conflicting security cost receipts')
+        return
+    seen.add((*binding, fingerprint))
+    reused = value['inventoryReused']
+    job['inventoryReuse'] = {'eligible': True if reused else None,
+                             'hit': True if reused else None, 'missReason': None, 'observedReused': reused}
+    job['stages'].extend({'stage': 'security-' + row['phase'], 'seconds': row['seconds'],
+                          'status': 'success' if row['success'] else 'failure', 'nested': True}
+                         for row in phases)
+
+
 def join(run, artifacts, reader=bounded_reader):
     selected = [a for a in artifacts if re.fullmatch(
-        r'(?:(?:image|security)-finite(?:-dev)?|qualification-phase-finite(?:-dev)?-(?:fresh|upgrade)|source-checks)-'
+        r'(?:(?:image|security(?:-costs)?)-finite(?:-dev)?|qualification-phase-finite(?:-dev)?-(?:fresh|upgrade)|source-checks)-'
         + str(run['runId']) + r'-[1-9][0-9]*', a.get('name', ''))]
     run['receiptCoverage'] = {'selected': len(selected), 'read': 0, 'unavailable': [], 'unmatched': 0}
     if len(selected) > MAX_RECEIPTS:
@@ -121,14 +170,20 @@ def join(run, artifacts, reader=bounded_reader):
     for artifact in selected:
         binding = artifact.get('workflow_run', {})
         if (binding.get('id') != run['runId'] or binding.get('head_sha') != run['sourceRevision']
-                or not re.fullmatch(r'sha256:[0-9a-f]{64}', artifact.get('digest', ''))):
+                or not isinstance(artifact.get('digest'), str)
+                or not re.fullmatch(r'sha256:[0-9a-f]{64}', artifact['digest'])):
             raise ValueError('Cost receipt artifact lacks native run/source binding')
         if artifact.get('expired') or not 0 < artifact.get('size_in_bytes', 0) <= MAX_ARCHIVE:
             run['receiptCoverage']['unavailable'].append('expired-or-size-bound')
             continue
         with reader(artifact, run['repository']) as archive:
             with zipfile.ZipFile(archive) as zipped:
-                for name, entry in members(zipped, max_files=1024, max_bytes=MAX_ARCHIVE):
+                compact = artifact['name'].startswith('security-costs-')
+                entries = list(members(zipped, max_files=1 if compact else 1024,
+                                       max_bytes=65536 if compact else MAX_ARCHIVE))
+                if compact and [name for name, _ in entries] != ['phase-timings.json']:
+                    raise ValueError('Missing or unexpected compact security cost member')
+                for name, entry in entries:
                     if artifact['name'].startswith('source-checks-'):
                         if name not in ('nix-checks.json', 'nix-setup.json'):
                             continue
@@ -139,14 +194,7 @@ def join(run, artifacts, reader=bounded_reader):
                     if name == 'phase-timings.json' and artifact['name'].startswith('security-'):
                         if entry.file_size > 65536:
                             raise ValueError('Oversized security phase receipt')
-                        value = json.loads(b''.join(chunks(zipped, entry)))
-                        lane = 'finite-dev' if '-finite-dev-' in artifact['name'] else 'finite'
-                        candidates = [j for j in run['jobs'] if j['profile'] == lane and j['role'] == 'security'
-                                      and str(j['runAttempt']) == artifact['name'].rsplit('-', 1)[1]]
-                        reused = value.get('inventoryReused')
-                        if len(candidates) == 1 and type(reused) is bool:
-                            candidates[0]['inventoryReuse'] = {'eligible': True if reused else None,
-                                'hit': True if reused else None, 'missReason': None, 'observedReused': reused}
+                        security_receipt(run, artifact, json.loads(b''.join(chunks(zipped, entry))), seen)
                         continue
                     if re.fullmatch(r'vm-(?:local|fresh|upgrade)/(?:guest-)?timings\.json', name):
                         if entry.file_size > 16384:
