@@ -6,11 +6,96 @@ import subprocess
 import tempfile
 import re
 import zipfile
+from datetime import datetime
 
 from archive_read import authenticate, chunks, members
 
 MAX_ARCHIVE = 8 * 1024**2
 MAX_RECEIPTS = 16
+
+
+def nix_receipt(run, artifact, name, value, seen):
+    """Join source phases to one producing job, never to a retry's reused job."""
+    attempt = artifact['name'].rsplit('-', 1)[1]
+    if (not isinstance(value, dict) or type(value.get('schema')) is not int or value['schema'] != 1
+            or value.get('kind') != 'finite-nix-observation'
+            or value.get('authorizesPublication') is not False
+            or value.get('repository') != run['repository']
+            or str(value.get('runId')) != str(run['runId'])
+            or str(value.get('runAttempt')) != attempt
+            or value.get('revision') != run['sourceRevision'] or value.get('jobName') != 'checks'
+            or not isinstance(value.get('checkoutRevision'), str)
+            or not re.fullmatch('[0-9a-f]{40}', value['checkoutRevision'])
+            or run['workflow'] != '.github/workflows/build.yml'
+            or not isinstance(value.get('workflowRef'), str)
+            or not value['workflowRef'].startswith(run['repository'] + '/.github/workflows/build.yml@')):
+        raise ValueError('Nix observation differs from native producer')
+    candidates = [j for j in run['jobs'] if j['profile'] == 'shared_or_unknown' and j['role'] == 'checks'
+                  and str(j['runAttempt']) == attempt]
+    if len(candidates) != 1:
+        run['receiptCoverage']['unmatched'] += 1
+        return
+    job = candidates[0]
+    job['checkoutRevision'] = value['checkoutRevision']
+    if name == 'nix-setup.json':
+        cache = value.get('cache')
+        if cache is not None and (not isinstance(cache, dict) or set(cache) != {
+                'STORE_KEY', 'SOURCE_KEY', 'STORE_HIT', 'SOURCE_HIT'} or any(
+                item is not None and (not isinstance(item, str) or len(item) > 512)
+                for item in cache.values()) or any(cache[key] not in (None, 'true', 'false')
+                for key in ('STORE_HIT', 'SOURCE_HIT'))):
+            raise ValueError('Invalid Nix cache observation')
+        if value.get('status') not in (None, 'success', 'failure', 'cancelled'):
+            raise ValueError('Invalid Nix setup status')
+        stages = [{'stage': 'Nix setup', 'seconds': value.get('seconds'),
+                   'status': value.get('status'), 'startedAt': value.get('startedAt')}]
+    else:
+        aggregate = value.get('aggregateDerivation')
+        if aggregate is not None and (not isinstance(aggregate, str) or not re.fullmatch(
+                r'/nix/store/[a-z0-9]{32}-finite-ci-checks\.drv', aggregate)):
+            raise ValueError('Invalid observed aggregate derivation')
+        job['nixAggregateDerivation'] = aggregate
+        stages = value.get('phases')
+        if not isinstance(stages, list) or not 1 <= len(stages) <= 2:
+            raise ValueError('Invalid Nix phase observations')
+        for index, row in enumerate(stages):
+            if (not isinstance(row, dict) or row.get('stage') != ('Evaluate aggregate', 'Build aggregate')[index]
+                    or row.get('outcome') not in ('success', 'failure', 'error')
+                    or row.get('status') is not None and (type(row['status']) is not int or not 0 <= row['status'] <= 255)):
+                raise ValueError('Invalid Nix phase result')
+            attempts = row.get('attempts')
+            if not isinstance(attempts, list) or not 1 <= len(attempts) <= 3:
+                raise ValueError('Invalid Nix retry observations')
+            for number, trial in enumerate(attempts, 1):
+                if (not isinstance(trial, dict) or type(trial.get('attempt')) is not int or trial['attempt'] != number
+                        or type(trial.get('seconds')) not in (int, float) or not 0 <= trial['seconds'] <= 86400
+                        or trial.get('status') is not None and (type(trial['status']) is not int or not -255 <= trial['status'] <= 255)):
+                    raise ValueError('Invalid Nix retry result')
+    for row in stages:
+        elapsed = row.get('seconds')
+        if elapsed is None and name != 'nix-setup.json' or elapsed is not None and (
+                type(elapsed) not in (int, float) or not 0 <= elapsed <= 86400):
+            raise ValueError('Invalid Nix observation duration')
+        try:
+            started = datetime.fromisoformat(row['startedAt'].replace('Z', '+00:00'))
+            if started.tzinfo is None:
+                raise ValueError('Missing timezone')
+        except (KeyError, AttributeError, TypeError, ValueError) as error:
+            raise ValueError('Invalid Nix observation timestamp') from error
+        key = (job['jobId'], name, row['stage'])
+        if key not in seen:
+            seen.add(key)
+            job['stages'].append({**row, 'nested': True})
+    if name == 'nix-setup.json':
+        job['nixCache'] = cache
+    runner = value.get('runner')
+    if not isinstance(runner, dict):
+        raise ValueError('Invalid Nix runner observation')
+    job['runner']['imageVersion'] = runner.get('ImageVersion')
+    cohort = value.get('toolCohort')
+    if not isinstance(cohort, dict):
+        raise ValueError('Invalid Nix tool cohort')
+    job['runner']['toolCohort'] = cohort
 
 
 @contextmanager
@@ -26,7 +111,7 @@ def bounded_reader(artifact, repository):
 
 def join(run, artifacts, reader=bounded_reader):
     selected = [a for a in artifacts if re.fullmatch(
-        r'(?:(?:image|security)-finite(?:-dev)?|qualification-phase-finite(?:-dev)?-(?:fresh|upgrade))-'
+        r'(?:(?:image|security)-finite(?:-dev)?|qualification-phase-finite(?:-dev)?-(?:fresh|upgrade)|source-checks)-'
         + str(run['runId']) + r'-[1-9][0-9]*', a.get('name', ''))]
     run['receiptCoverage'] = {'selected': len(selected), 'read': 0, 'unavailable': [], 'unmatched': 0}
     if len(selected) > MAX_RECEIPTS:
@@ -44,6 +129,13 @@ def join(run, artifacts, reader=bounded_reader):
         with reader(artifact, run['repository']) as archive:
             with zipfile.ZipFile(archive) as zipped:
                 for name, entry in members(zipped, max_files=1024, max_bytes=MAX_ARCHIVE):
+                    if artifact['name'].startswith('source-checks-'):
+                        if name not in ('nix-checks.json', 'nix-setup.json'):
+                            continue
+                        if entry.file_size > 65536:
+                            raise ValueError('Oversized Nix observation')
+                        nix_receipt(run, artifact, name, json.loads(b''.join(chunks(zipped, entry))), seen)
+                        continue
                     if name == 'phase-timings.json' and artifact['name'].startswith('security-'):
                         if entry.file_size > 65536:
                             raise ValueError('Oversized security phase receipt')

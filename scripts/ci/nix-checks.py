@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Retry Nix transport failures without repeating failed tests or evaluations."""
 from collections import deque
+from contextlib import contextmanager
+from datetime import datetime, timezone
 import os
 from pathlib import Path
 import re
@@ -8,6 +10,8 @@ import subprocess
 import sys
 import tempfile
 import time
+
+from nix_observation import identity, write
 
 DERIVATION = re.compile(r'/nix/store/[a-z0-9]{32}-finite-ci-checks\.drv')
 
@@ -32,19 +36,25 @@ def transient(output):
     return not re.search(permanent, output, re.I) and bool(re.search(transport, output, re.I))
 
 
-def build(command, attempts=3, delay=30, *, stdout=None):
+def build(command, attempts=3, delay=30, *, stdout=None, observations=None):
     for attempt in range(1, attempts + 1):
         tail = deque(maxlen=500)
         if stdout is not None:
             stdout.seek(0)
             stdout.truncate()
-        with subprocess.Popen(command, stdout=stdout if stdout is not None else subprocess.PIPE,
-                              stderr=subprocess.PIPE if stdout is not None else subprocess.STDOUT,
-                              text=True, errors='replace') as process:
-            for line in process.stderr if stdout is not None else process.stdout:
-                print(line, end='', flush=True)
-                tail.append(line)
-            status = process.wait()
+        started, status = time.monotonic(), None
+        try:
+            with subprocess.Popen(command, stdout=stdout if stdout is not None else subprocess.PIPE,
+                                  stderr=subprocess.PIPE if stdout is not None else subprocess.STDOUT,
+                                  text=True, errors='replace') as process:
+                for line in process.stderr if stdout is not None else process.stdout:
+                    print(line, end='', flush=True)
+                    tail.append(line)
+                status = process.wait()
+        finally:
+            if observations is not None:
+                observations.append({'attempt': attempt, 'status': status,
+                                     'seconds': round(time.monotonic() - started, 3)})
         if not status:
             return 0
         if status != 1 or attempt == attempts or not transient(''.join(tail)):
@@ -75,25 +85,43 @@ def run_checks(env=os.environ):
     # Release the Flake/Home Manager evaluator before builders start. Only the
     # exact evaluated aggregate is built, with its successful GC root retained.
     phases = {}
+    records = []
+    aggregate = None
+
+    @contextmanager
+    def phase(name):
+        record = {'stage': name, 'startedAt': datetime.now(timezone.utc).isoformat(),
+                  'status': None, 'outcome': 'error', 'attempts': []}
+        started = time.monotonic()
+        try:
+            yield record
+            record['outcome'] = 'success' if record['status'] == 0 else 'failure'
+        finally:
+            record['seconds'] = round(time.monotonic() - started, 3)
+            phases[name] = record['seconds']
+            records.append(record)
+
     try:
-        started = time.monotonic()
-        with tempfile.TemporaryFile(mode='w+', encoding='utf-8') as output:
-            status = build(['nix', 'eval', '--accept-flake-config', '--no-update-lock-file',
-                            '--no-write-lock-file', '--raw', '.#ci-checks.drvPath'], stdout=output)
-            phases['Evaluate aggregate'] = time.monotonic() - started
-            if status:
-                return status
-            output.seek(0)
-            value = output.read(4097)
-            if len(value) > 4096:
-                raise ValueError('Oversized aggregate evaluation result')
-            derivation = value.strip()
-        command = check_command(derivation, env)
-        started = time.monotonic()
-        status = build(command)
-        phases['Build aggregate'] = time.monotonic() - started
-        return status
+        with phase('Evaluate aggregate') as record:
+            with tempfile.TemporaryFile(mode='w+', encoding='utf-8') as output:
+                status = build(['nix', 'eval', '--accept-flake-config', '--no-update-lock-file',
+                                '--no-write-lock-file', '--raw', '.#ci-checks.drvPath'],
+                               stdout=output, observations=record['attempts'])
+                record['status'] = status
+                if status:
+                    return status
+                output.seek(0)
+                value = output.read(4097)
+                if len(value) > 4096:
+                    raise ValueError('Oversized aggregate evaluation result')
+                derivation = value.strip()
+            command = check_command(derivation, env)
+            aggregate = derivation
+        with phase('Build aggregate') as record:
+            record['status'] = build(command, observations=record['attempts'])
+            return record['status']
     finally:
+        write('nix-checks.json', {**identity(env), 'phases': records, 'aggregateDerivation': aggregate})
         summary = env.get('GITHUB_STEP_SUMMARY')
         if summary:
             with open(summary, 'a') as output:
