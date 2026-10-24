@@ -80,6 +80,7 @@ QUALIFICATION_ONLY = {
     # Keep this explicit so new CI helpers still take the conservative path.
     'scripts/ci/workflow-costs.py', 'scripts/ci/workflow_costs.py',
     'scripts/ci/cost_receipts.py', '.github/workflows/workflow-costs.yml',
+    'scripts/ci/report-release-transport.py', 'scripts/ci/release_transport_benchmark.py',
 }
 QUALIFICATION_ONLY |= IMAGE_QUALIFICATION_ONLY
 

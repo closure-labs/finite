@@ -9,6 +9,7 @@ the recorded revision and date.
 
 | Record | Scope |
 | --- | --- |
+| [Transport evidence coverage, October 24 UTC](ci-transport-evidence-2026-10-24.md) | Native costs for absent samples, explicit cohort failures and the first matched warm result |
 | [Cost-report image selection, October 23](ci-cost-selection-2026-10-23.md) | Measured report-only image jobs, explicit source-only selection and unmatched transport evidence |
 | [CI stage rollout, October 23](ci-stage-rollout-2026-10-23.md) | Split guest intervals, corrected queue receipt joins and incomplete main cohorts |
 | [CI follow-through, October 23](ci-follow-through-2026-10-23.md) | Complete queue/main timings, authenticated two-profile promotion and hosted health after #237 |

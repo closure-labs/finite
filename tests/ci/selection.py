@@ -61,7 +61,8 @@ class Selection(unittest.TestCase):
 
     def test_read_only_cost_observation_keeps_checks_without_selecting_images(self):
         paths = ['scripts/ci/workflow-costs.py', 'scripts/ci/workflow_costs.py',
-                 'scripts/ci/cost_receipts.py', '.github/workflows/workflow-costs.yml']
+                 'scripts/ci/cost_receipts.py', '.github/workflows/workflow-costs.yml',
+                 'scripts/ci/report-release-transport.py', 'scripts/ci/release_transport_benchmark.py']
         for changed in ([path] for path in paths):
             self.assertEqual(impact.classify(changed), {'checks': True, 'nix': False, 'profiles': []})
         self.assertEqual(impact.classify([*paths, 'tests/ci/workflow-costs.py', 'docs/reports.md']),
