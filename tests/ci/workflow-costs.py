@@ -191,6 +191,126 @@ class Costs(unittest.TestCase):
         self.assertIsNone(result['hit'])
         self.assertIsNone(result['missReason'])
 
+    def scanner_costs(self, *, compact=True, phases=None):
+        self.job['name'] = 'Publish (finite) / security'
+        artifact = {'id': 20, 'name': ('security-costs' if compact else 'security') + '-finite-10-1',
+                    'expired': False, 'size_in_bytes': 500, 'digest': 'sha256:' + 'c' * 64,
+                    'workflow_run': {'id': 10, 'head_sha': 'a' * 40}}
+        value = {'schema': 1, 'inventoryReused': False, 'phases': phases if phases is not None else [
+            {'phase': 'image-transfer', 'seconds': 45.5, 'success': True},
+            {'phase': 'inventory-cataloging', 'seconds': 12, 'success': False}]}
+        return artifact, value
+
+    def scanner_reader(self, value, member='phase-timings.json'):
+        from contextlib import contextmanager
+        import io, zipfile
+        @contextmanager
+        def reader(*args):
+            raw = io.BytesIO()
+            with zipfile.ZipFile(raw, 'w') as archive:
+                if member is not None:
+                    archive.writestr(member, json.dumps(value))
+            raw.seek(0)
+            yield raw
+        return reader
+
+    def test_compact_scanner_receipt_survives_oversized_full_evidence(self):
+        import cost_receipts
+        artifact, value = self.scanner_costs()
+        legacy = {**artifact, 'id': 21, 'name': 'security-finite-10-1',
+                  'size_in_bytes': cost_receipts.MAX_ARCHIVE + 1}
+        report = self.observe()
+        cost_receipts.join(report, [legacy, artifact], self.scanner_reader(value))
+        self.assertEqual(report['receiptCoverage']['read'], 1)
+        self.assertEqual(report['receiptCoverage']['unavailable'], ['expired-or-size-bound'])
+        job = report['jobs'][0]
+        self.assertEqual([s['seconds'] for s in job['stages']], [45.5, 12])
+        self.assertTrue(all(s['nested'] for s in job['stages']))
+        self.assertEqual(job['stages'][1]['status'], 'failure')
+        self.assertEqual(costs.aggregate([report])[0]['runnerSeconds'], 120)
+        self.assertEqual(sum(row['failedSamples'] for row in costs.stage_opportunities([report])), 1)
+        self.assertIsNone(job['inventoryReuse']['hit'])
+        self.assertIsNone(job['candidateDigest'])
+
+    def test_full_and_compact_scanner_receipts_do_not_duplicate_retry_costs(self):
+        import cost_receipts
+        artifact, value = self.scanner_costs(phases=[
+            {'phase': 'database-update', 'seconds': 10, 'success': False},
+            {'phase': 'database-update', 'seconds': 20, 'success': True}])
+        legacy = {**artifact, 'id': 21, 'name': 'security-finite-10-1'}
+        for items in ([artifact, legacy, artifact], [legacy, artifact]):
+            report = self.observe()
+            cost_receipts.join(report, items, self.scanner_reader(value))
+            self.assertEqual(len(report['jobs']), 1)
+            self.assertEqual(len(report['jobs'][0]['stages']), 2)
+            row = costs.stage_opportunities([report])[0]
+            self.assertEqual((row['seconds'], row['samples'], row['failedSamples']), (30, 2, 1))
+            self.assertEqual(report['jobs'][0]['runnerSeconds'], 120)
+
+    def test_conflicting_scanner_projections_fail_closed(self):
+        import cost_receipts
+        artifact, value = self.scanner_costs()
+        report = self.observe()
+        seen = set()
+        report['receiptCoverage'] = {'unmatched': 0}
+        cost_receipts.security_receipt(report, artifact, value, seen)
+        changed = deepcopy(value)
+        changed['phases'][0]['seconds'] += 1
+        with self.assertRaisesRegex(ValueError, 'Conflicting'):
+            cost_receipts.security_receipt(report, artifact, changed, seen)
+
+    def test_compact_scanner_schema_duration_and_member_bounds(self):
+        import cost_receipts
+        artifact, value = self.scanner_costs()
+        invalid = [None, [], {**value, 'schema': True}, {**value, 'schema': 2},
+                   {**value, 'inventoryReused': 'false'}, {**value, 'phases': None},
+                   {**value, 'phases': value['phases'] * 17}]
+        for field, item in [('seconds', True), ('seconds', -1), ('seconds', 86401),
+                            ('seconds', float('nan')), ('seconds', float('inf')),
+                            ('success', 0), ('phase', '../image-transfer')]:
+            bad = deepcopy(value)
+            bad['phases'][0][field] = item
+            invalid.append(bad)
+        for bad in invalid:
+            with self.subTest(value=bad), self.assertRaises(ValueError):
+                cost_receipts.join(self.observe(), [artifact], self.scanner_reader(bad))
+        for member in (None, 'wrong.json'):
+            with self.subTest(member=member), self.assertRaisesRegex(ValueError, 'compact'):
+                cost_receipts.join(self.observe(), [artifact], self.scanner_reader(value, member))
+        with self.assertRaises(ValueError):
+            cost_receipts.join(self.observe(), [artifact], self.scanner_reader({**value, 'unused': 'x' * 65536}))
+
+    def test_scanner_costs_bind_native_source_attempt_profile_and_workflow(self):
+        import cost_receipts
+        artifact, value = self.scanner_costs()
+        for changed in ({**artifact, 'workflow_run': {'id': 10, 'head_sha': 'b' * 40}},
+                        {**artifact, 'workflow_run': {'id': 11, 'head_sha': 'a' * 40}},
+                        {**artifact, 'digest': None}):
+            with self.subTest(artifact=changed), self.assertRaisesRegex(ValueError, 'native'):
+                cost_receipts.join(self.observe(), [changed], self.scanner_reader(value))
+        for name in ('security-costs-finite-10-2', 'security-costs-finite-dev-10-1'):
+            report = self.observe()
+            cost_receipts.join(report, [{**artifact, 'name': name}], self.scanner_reader(value))
+            self.assertEqual(report['receiptCoverage']['unmatched'], 1)
+            self.assertEqual(report['jobs'][0]['stages'], [])
+        report = self.observe()
+        report['workflow'] = '.github/workflows/other.yml'
+        with self.assertRaises(ValueError):
+            cost_receipts.join(report, [artifact], self.scanner_reader(value))
+
+    def test_compact_scanner_upload_is_failure_safe_and_contains_only_timings(self):
+        import yaml
+        workflow = yaml.safe_load((ROOT / '.github/workflows/publication.yml').read_text())
+        steps = workflow['jobs']['security']['steps']
+        upload = next(s for s in steps if s.get('name') == 'Retain bounded scanner costs including failures')
+        self.assertEqual(upload['if'], 'always()')
+        self.assertEqual(upload['with']['path'], '.bluebuild/security-${{ inputs.profile }}/phase-timings.json')
+        self.assertEqual(upload['with']['if-no-files-found'], 'ignore')
+        self.assertEqual(upload['with']['retention-days'], 14)
+        legacy = next(s for s in steps if s.get('name') == 'Retain scanner evidence including failures')
+        self.assertEqual(legacy['with']['retention-days'], 90)
+        self.assertEqual(legacy['with']['path'], '.bluebuild/security-${{ inputs.profile }}/')
+
     def test_nix_observations_join_original_attempt_without_double_charging(self):
         import cost_receipts
         from contextlib import contextmanager
