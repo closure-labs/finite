@@ -181,7 +181,7 @@ def smoke():
         value = observe_runtime(builder)
         if value['repositoryMetadata']['count'] != 1 or value['repositoryConfiguration']['count'] != 1:
             raise ValueError('Pinned DNF metadata paths differ from the observer')
-    subprocess.run(['/usr/local/bin/lorax', '--version'], check=True, timeout=30)
+    subprocess.run(['/usr/local/bin/lorax', '--help'], check=True, timeout=30)
     print('Pinned Lorax, DNF and RPM observer APIs passed; smoke fixtures are not runtime cohort evidence')
 
 

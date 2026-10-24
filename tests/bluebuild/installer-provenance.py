@@ -82,6 +82,27 @@ class Provenance(unittest.TestCase):
         repo.unlink(); repo.symlink_to(ROOT / 'flake.lock')
         with self.assertRaises(ValueError): p.file_inventory(self.root, 'repomd.xml')
 
+    def test_smoke_uses_the_existing_help_option_and_checks_real_inventory_paths(self):
+        class Builder:
+            def create_squashfs_runtime(self, outfile='/tmp/runtime', compression='xz', compressargs=None, size=2):
+                pass
+        config = SimpleNamespace()
+        dnf = ModuleType('libdnf5'); dnf.base = SimpleNamespace(Base=lambda: SimpleNamespace(get_config=lambda: config))
+        package = ModuleType('pylorax'); tree = ModuleType('pylorax.treebuilder'); tree.RuntimeBuilder = Builder
+        package.treebuilder = tree
+        def checked(command, **kwargs):
+            # In the real CLI --version takes an argument; --help exits zero.
+            self.assertEqual(command, ['/usr/local/bin/lorax', '--help'])
+            self.assertEqual(kwargs, {'check': True, 'timeout': 30})
+        with patch.dict(sys.modules, {'libdnf5': dnf, 'pylorax': package, 'pylorax.treebuilder': tree}), \
+                patch.object(p, 'limited_output', return_value=b'package-0:1-1.x86_64 abcdef\n') as queried, \
+                patch.object(p.subprocess, 'run', side_effect=checked) as run, contextlib.redirect_stdout(io.StringIO()):
+            p.smoke()
+        run.assert_called_once()
+        self.assertEqual(queried.call_count, 2)
+        self.assertEqual(queried.call_args_list[0].args[0][:3], ['rpm', '--root', '/'])
+        self.assertFalse(Path(config.cachedir).exists())
+
     def test_hook_delegates_exactly_once_preserves_arguments_result_and_restores_methods(self):
         calls = []
         class Builder:
