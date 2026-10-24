@@ -18,7 +18,7 @@ FILES = {'flake.lock', 'sources/determinate-nix.json', 'scripts/ci/nix-resources
          'sources/bluebuild-installer.json', 'sources/installer-security.json',
          '.github/workflows/build.yml', '.github/workflows/image.yml',
          '.github/workflows/qualification.yml', 'scripts/ci/vm-selection.py',
-         'lib/vm-tools.nix', 'scripts/ci/vm_tools.py', '.github/actions/setup-vm-tools/action.yml',
+         'lib/vm-tools.nix', 'scripts/ci/vm_tools.py', 'scripts/ci/vm-host.py', '.github/actions/setup-vm-tools/action.yml',
          'scripts/ci/local_vm.py'}
 
 
