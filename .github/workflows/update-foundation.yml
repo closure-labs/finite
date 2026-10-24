@@ -41,6 +41,7 @@ jobs:
 
       - name: Resolve the newest published Foundation release
         id: release
+        timeout-minutes: 15
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-
