@@ -47,6 +47,7 @@ if [[ $compression == zstd ]]; then
 COPY lorax-zstd.conf /tmp/finite-lorax-zstd.conf
 COPY installer-compression.py /tmp/finite-installer-compression.py
 RUN python3 /tmp/finite-installer-compression.py merge /etc/lorax/lorax.conf /tmp/finite-lorax-zstd.conf \
+    && python3 /tmp/finite-installer-compression.py probe \
     && rm /tmp/finite-installer-compression.py /tmp/finite-lorax-zstd.conf
 COMPRESSION
 fi
@@ -85,7 +86,6 @@ installed_certificate_sha=$(docker run --rm --entrypoint sha256sum "$alias" \
 if [[ $compression == zstd ]]; then
   docker run --rm --entrypoint cat "$alias" /etc/lorax/lorax.conf >"$installer_context/installed-lorax.conf"
   actual_compression_sha=$(python3 "$compression_helper" verify "$installer_context/installed-lorax.conf")
-  docker run --rm --entrypoint mksquashfs "$alias" -help-comp zstd >/dev/null
 fi
 image_id=$(docker inspect --format '{{.Id}}' "$alias")
 mkdir -p "$output"

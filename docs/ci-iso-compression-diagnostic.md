@@ -1,7 +1,7 @@
 # ISO runtime compression diagnostic, October 24, 2026 UTC
 
 Keep this prototype draft until hosted correctness and matched complete-job
-cost gates pass. No compression benchmark has run and no speedup is claimed.
+cost gates pass. No successful compression comparison has run and no speedup is claimed.
 Production retains the pinned installer's existing configuration.
 
 ## Measured target and rollout
@@ -43,9 +43,11 @@ separate zstd trial without changing templates, root layout or boot hooks.
 The existing manual **Benchmark image tool setup** workflow accepts
 `installer_compression=default|zstd` for `validation=qualification`.
 `default` leaves installer construction unchanged. The zstd preset selects
-level 15 and disables the xz-specific BCJ filter. The pinned container must
-support [`mksquashfs -help-comp zstd`](https://manpages.debian.org/unstable/squashfs-tools/mksquashfs.1.en.html)
-before the experiment proceeds.
+level 15 and disables the xz-specific BCJ filter. The pinned container must pass a tiny real zstd pack/unpack round trip before
+the experiment proceeds. Its squashfs-tools 4.6.1 predates `-help-comp`; probing
+through that newer help option produced a false failure in the first pilot.
+The replacement uses the pinned tool's actual codec, one worker, a 64 MiB pack
+budget and 30-second command timeouts, then checks identical decoded bytes.
 
 The zstd path requires the exact hosted Finite checkout, explicit validation-only
 mode, a non-main branch, the existing benchmark workflow identity and an exact
@@ -68,11 +70,34 @@ signed candidate and predecessor remain independently verified. Secure Boot,
 encrypted root, enforcing SELinux, both Nix sockets, real bootc Home Manager
 activation, single initialization and customization preservation remain required.
 
+## First hosted pilot
+
+Both profiles' first pilots stopped during installer preparation, before ISO
+construction or VM installation. The [standard run](https://github.com/closure-labs/finite/actions/runs/40072263880)
+cost 150 runner seconds and the [developer run](https://github.com/closure-labs/finite/actions/runs/40072341745)
+cost 178, including setup, failure retention and cleanup. The
+[retained failed-work record](ci-iso-compression-first-pilot-2026-10-24.json.gz)
+binds the exact producer inputs, native jobs and partial timing receipts.
+These 328 seconds remain diagnostic cost and are not successful performance
+samples.
+
+The capability probe used a newer CLI option absent from the pinned
+[4.6.1 source](https://github.com/plougher/squashfs-tools/blob/4.6.1/squashfs-tools/mksquashfs.c).
+The source and native logs establish a probe compatibility error. The zstd
+codec and guest acceptance were untested in those runs. The corrected derived-container build
+performs a tiny actual pack/unpack probe, compares the decoded bytes and removes
+temporary files on success, command failure, timeout or integrity failure.
+Regressions exercise the helper's real CLI with older-style tools whose help
+option fails, plus pack/unpack failures and corrupt decoded content. Real native
+codec and both-profile VM acceptance remain required after this correction.
+
 ## Hosted pilot and adoption gates
 
-Wait for #248's normal two-profile main qualification and promotion to finish.
-Select the exact resulting signed candidate and predecessor digests, build
-identity and candidate source revision separately for `finite` and `finite-dev`.
+#248's main rollout completed both profiles' fresh-install, upgrade/rollback
+qualification and promotion successfully. Both immutable signed input sets were
+authenticated from its native qualification archives, including hash-bound desktop
+evidence. Use those exact candidate/predecessor digests, build identity and source
+revision separately for `finite` and `finite-dev`.
 Use the same diagnostic checkout and immutable inputs for both compression arms.
 Do not edit decisions, frozen executions, published channels or release assets.
 

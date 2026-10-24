@@ -2,9 +2,10 @@
 """Apply and verify the one reviewed diagnostic Lorax compression preset."""
 import configparser
 import hashlib
-import json
 from pathlib import Path
 import sys
+import subprocess
+import tempfile
 
 SETTINGS = {'type': 'zstd', 'args': '-Xcompression-level 15', 'bcj': 'off'}
 
@@ -39,13 +40,36 @@ def verify(target):
     return hashlib.sha256(Path(target).read_bytes()).hexdigest()
 
 
+def probe():
+    # The pinned 4.6.1 CLI predates -help-comp. Exercise the codec instead of
+    # inferring support from help text or an undocumented help exit status.
+    with tempfile.TemporaryDirectory(prefix='finite-zstd-probe-') as temporary:
+        root = Path(temporary)
+        source = root / 'input'
+        source.mkdir()
+        expected = b'finite installer zstd capability probe\n' * 16
+        (source / 'probe').write_bytes(expected)
+        image = root / 'probe.squashfs'
+        subprocess.run(['mksquashfs', str(source), str(image), '-noappend',
+                        '-comp', 'zstd', '-Xcompression-level', '15',
+                        '-processors', '1', '-mem', '64M', '-no-progress'],
+                       check=True, timeout=30, stdout=subprocess.DEVNULL)
+        output = root / 'output'
+        subprocess.run(['unsquashfs', '-processors', '1', '-d', str(output), str(image)],
+                       check=True, timeout=30, stdout=subprocess.DEVNULL)
+        if (output / 'probe').read_bytes() != expected:
+            raise ValueError('Pinned installer zstd round trip changed the probe bytes')
+
+
 if __name__ == '__main__':
     operation, *paths = sys.argv[1:]
-    if operation == 'preset' and len(paths) == 1:
+    if operation == 'probe' and not paths:
+        probe()
+    elif operation == 'preset' and len(paths) == 1:
         validate_preset(paths[0])
     elif operation == 'merge' and len(paths) == 2:
         merge(*paths)
     elif operation == 'verify' and len(paths) == 1:
         print(verify(paths[0]))
     else:
-        raise ValueError('Expected preset PATH, merge TARGET PRESET or verify PATH')
+        raise ValueError('Expected probe, preset PATH, merge TARGET PRESET or verify PATH')
