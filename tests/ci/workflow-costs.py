@@ -64,6 +64,33 @@ class Costs(unittest.TestCase):
         self.run['event'] = 'merge_group'
         self.assertEqual(self.observe()['category'], 'merge_queue')
 
+    def test_native_source_job_names_keep_roles_and_unique_retry_costs(self):
+        expected = {'Nix and runtime contracts': 'checks', 'Documentation checks': 'docs',
+                    'Select checks': 'selection', 'CI gate': 'gate'}
+        self.jobs = [{**self.job, 'id': index + 1, 'name': name}
+                     for index, name in enumerate(expected)]
+        report = self.observe()
+        self.assertEqual({j['name']: j['role'] for j in report['jobs']}, expected)
+        self.assertEqual(len(report['jobs']), 4)
+        self.assertEqual(sum(row['runnerSeconds'] for row in costs.aggregate([report])), 480)
+        self.assertTrue(all(j['profile'] == 'shared_or_unknown' for j in report['jobs']))
+        self.assertTrue(all(j['qualificationReuseHit'] is None for j in report['jobs']))
+        for name in ('Nix and runtime contracts (new)', 'Future runtime checks', 'Documentation validation'):
+            self.assertEqual(costs.job_role(name), 'unknown')
+
+    def test_legacy_qualification_does_not_become_a_current_phase_or_profile(self):
+        self.job['name'] = 'Publish (bluefin-dx-next) / qualification / qualify'
+        historical = self.observe()
+        self.assertEqual(historical['jobs'][0]['role'], 'qualification')
+        self.assertEqual(historical['jobs'][0]['profile'], 'shared_or_unknown')
+        self.job['name'] = 'Publish (finite-dev) / qualification / phase (upgrade)'
+        current = self.observe()
+        self.assertEqual(current['jobs'][0]['role'], 'qualification-upgrade')
+        self.assertEqual(current['jobs'][0]['profile'], 'finite-dev')
+        self.assertEqual({r['role'] for r in costs.aggregate([historical, current])},
+                         {'qualification', 'qualification-upgrade'})
+        self.assertEqual(costs.job_role('Publish (finite) / other / qualify'), 'unknown')
+
     def test_skipped_synthetic_job_is_zero_cost(self):
         self.job['conclusion'] = 'skipped'
         self.assertEqual(self.observe()['jobs'][0]['runnerSeconds'], 0)

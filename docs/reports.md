@@ -34,6 +34,7 @@ the recorded revision and date.
 | [October 14 rollout results](ci-rollout-results.md) | Hosted qualification and cache measurements |
 | [CI optimization review](ci-optimization-review.md) and [rollout plan](ci-rollout.md) | Measured bottlenecks and the earlier rollout |
 | [Nix workflow resources](nix-workflow-resources.md) | Runner sizing and concurrency audit |
+| [Recurring workflow cost roles, October 24 UTC](ci-cost-roles-2026-10-24.md) | Retained baseline ranking, corrected source/legacy roles and conserved native occupancy |
 
 ## Earlier security and migration work
 

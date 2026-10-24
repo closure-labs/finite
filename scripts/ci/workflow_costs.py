@@ -67,9 +67,17 @@ def profile(name):
 
 
 def job_role(name):
+    # Resolve exact native display names before reusable job suffixes.
+    source_roles = {'Nix and runtime contracts': 'checks', 'Documentation checks': 'docs',
+                    'Select checks': 'selection', 'CI gate': 'gate'}
+    if name in source_roles:
+        return source_roles[name]
     for role in ('fresh', 'upgrade'):
         if f'phase ({role})' in name:
             return 'qualification-' + role
+    # Historical monolithic qualification is distinct from today's VM phases.
+    if re.fullmatch(r'Publish \([a-z0-9-]+\) / qualification / qualify', name):
+        return 'qualification'
     for role in ('build', 'security', 'sign', 'promote', 'aggregate', 'prepare', 'checks', 'docs', 'gate'):
         if re.search(r'(?:^| / )' + role + r'$', name, re.I):
             return role
