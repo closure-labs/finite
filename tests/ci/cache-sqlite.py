@@ -25,6 +25,13 @@ CLI = os.environ.get('FINITE_TEST_SQLITE3') or shutil.which('sqlite3')
 
 
 class Configuration(unittest.TestCase):
+    def test_cache_observation_uses_the_pinned_actions_native_hit_output(self):
+        steps = yaml.safe_load((ROOT / '.github/actions/setup-nix/action.yml').read_text())['runs']['steps']
+        record = next(step for step in steps if step.get('name') == 'Record cache selection')
+        # cache-nix-action v7 exports hit, not actions/cache's cache-hit.
+        self.assertEqual(record['env']['STORE_HIT'], '${{ steps.store-cache.outputs.hit }}')
+        self.assertEqual(record['env']['SOURCE_HIT'], '${{ steps.source-cache.outputs.hit }}')
+
     def test_preserves_existing_config_and_is_idempotent_at_both_startup_locations(self):
         with tempfile.TemporaryDirectory() as temporary:
             home = Path(temporary)

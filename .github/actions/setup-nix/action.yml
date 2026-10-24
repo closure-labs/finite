@@ -123,8 +123,8 @@ runs:
       env:
         STORE_KEY: ${{ steps.store-cache.outputs.restored-key }}
         SOURCE_KEY: ${{ steps.source-cache.outputs.restored-key }}
-        STORE_HIT: ${{ steps.store-cache.outputs.cache-hit }}
-        SOURCE_HIT: ${{ steps.source-cache.outputs.cache-hit }}
+        STORE_HIT: ${{ steps.store-cache.outputs.hit }}
+        SOURCE_HIT: ${{ steps.source-cache.outputs.hit }}
       run: |
         python3 scripts/ci/nix_observation.py cache-selection
         python3 - <<'PY'
