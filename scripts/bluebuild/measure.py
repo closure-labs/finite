@@ -3,6 +3,8 @@
 from datetime import datetime, timezone
 import json
 import hashlib
+import math
+import resource
 import shutil
 import os
 from pathlib import Path
@@ -51,15 +53,41 @@ def network_bytes():
     return {}
 
 
+RESOURCE_FIELDS = {'userCpuSeconds': 'ru_utime', 'systemCpuSeconds': 'ru_stime',
+                   'blockInputOperations': 'ru_inblock', 'blockOutputOperations': 'ru_oublock'}
+
+
+def child_resources():
+    try:
+        usage = resource.getrusage(resource.RUSAGE_CHILDREN)
+        return {name: getattr(usage, field) for name, field in RESOURCE_FIELDS.items()}
+    except (OSError, ValueError):
+        return {}
+
+
+def resource_delta(before, after):
+    # These counters cover terminated, waited-for children (and descendants
+    # whose usage they reaped), not Docker/build daemons or detached work.
+    result = {'scope': 'terminated-and-waited-children', 'includesDaemonWork': False}
+    for name in RESOURCE_FIELDS:
+        start, finish = before.get(name), after.get(name)
+        result[name] = (round(finish - start, 6)
+                        if type(start) in (int, float) and type(finish) in (int, float)
+                        and math.isfinite(start) and math.isfinite(finish) and finish >= start else None)
+    return result
+
+
 def main():
     name, *command = sys.argv[1:]
     started = datetime.now(timezone.utc).isoformat()
     before = time.monotonic()
     network_before = network_bytes()
+    resources_before = child_resources()
     status = 127
     try:
         status = subprocess.run(command, check=False).returncode
     finally:
+        resources = resource_delta(resources_before, child_resources())
         directory = Path('.bluebuild')
         directory.mkdir(exist_ok=True)
         network_after = network_bytes()
@@ -68,7 +96,8 @@ def main():
         with (directory / (os.environ.get('PROFILE', 'ci') + '-timings.jsonl')).open('a') as output:
             print(json.dumps({**identity(directory), 'stage': name, 'startedAt': started,
                               'seconds': round(time.monotonic() - before, 3),
-                              'status': status, 'runnerNetworkDelta': traffic}), file=output)
+                              'status': status, 'runnerNetworkDelta': traffic,
+                              'childResourceUsage': resources}), file=output)
     return status if status >= 0 else 128 - status
 
 

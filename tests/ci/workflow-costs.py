@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Native timing includes failed work and reused jobs without double charging."""
 from copy import deepcopy
+import contextlib
 from datetime import datetime, timezone
+import importlib.util
 from pathlib import Path
 import sys
 import json
@@ -9,10 +11,14 @@ import os
 import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'scripts/ci'))
 import workflow_costs as costs
+spec = importlib.util.spec_from_file_location('stage_measure', ROOT / 'scripts/bluebuild/measure.py')
+measure = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(measure)
 
 
 class Costs(unittest.TestCase):
@@ -129,6 +135,8 @@ class Costs(unittest.TestCase):
             self.assertEqual(receipt['candidateDigest'], 'sha256:' + 'c' * 64)
             self.assertEqual(receipt['status'], 7)
             self.assertFalse(receipt['authorizesPublication'])
+            self.assertEqual(receipt['childResourceUsage']['scope'], 'terminated-and-waited-children')
+            self.assertFalse(receipt['childResourceUsage']['includesDaemonWork'])
 
     def test_groups_separate_workflow_event_role_and_revision(self):
         report = self.observe()
@@ -477,6 +485,49 @@ class Costs(unittest.TestCase):
         report = costs.collect(api=lambda _: {'total_count': 0, 'workflow_runs': []}, now=self.now)
         self.assertFalse(report['observation']['complete'])
         self.assertFalse(report['authorizesPublication'])
+
+
+class ChildResources(unittest.TestCase):
+    def test_deltas_keep_zero_distinct_from_missing_or_reset_counters(self):
+        before = {'userCpuSeconds': 10.5, 'systemCpuSeconds': 2, 'blockInputOperations': 100,
+                  'blockOutputOperations': 70}
+        after = {'userCpuSeconds': 12, 'systemCpuSeconds': 2, 'blockInputOperations': 140,
+                 'blockOutputOperations': 20}
+        value = measure.resource_delta(before, after)
+        self.assertEqual(value['userCpuSeconds'], 1.5)
+        self.assertEqual(value['systemCpuSeconds'], 0)
+        self.assertEqual(value['blockInputOperations'], 40)
+        self.assertIsNone(value['blockOutputOperations'])
+        for missing in ({}, {'userCpuSeconds': float('nan')}):
+            value = measure.resource_delta(missing, after)
+            self.assertTrue(all(value[name] is None for name in measure.RESOURCE_FIELDS))
+
+    def test_resource_read_failure_does_not_replace_command_failure(self):
+        with tempfile.TemporaryDirectory() as temporary, contextlib.chdir(temporary), \
+                patch.object(sys, 'argv', ['measure.py', 'failure', sys.executable, '-c', 'raise SystemExit(7)']), \
+                patch.dict(os.environ, PROFILE='finite'), \
+                patch.object(measure.resource, 'getrusage', side_effect=OSError('unavailable')):
+            self.assertEqual(measure.main(), 7)
+            value = json.loads(Path('.bluebuild/finite-timings.jsonl').read_text())
+        self.assertEqual(value['status'], 7)
+        self.assertTrue(all(value['childResourceUsage'][name] is None for name in measure.RESOURCE_FIELDS))
+
+    def test_native_success_failure_and_signal_preserve_output_and_status(self):
+        for command, expected, recorded in [('raise SystemExit(0)', 0, 0),
+                                            ('raise SystemExit(7)', 7, 7),
+                                            ('import signal; os.kill(os.getpid(), signal.SIGTERM)', 143, -15)]:
+            with self.subTest(status=recorded), tempfile.TemporaryDirectory() as temporary:
+                result = subprocess.run([sys.executable, str(ROOT / 'scripts/bluebuild/measure.py'), 'resource-fixture',
+                                         sys.executable, '-c', 'import os; print("child-output", flush=True); ' + command],
+                                        cwd=temporary, env={**os.environ, 'PROFILE': 'finite'}, capture_output=True, text=True)
+                value = json.loads((Path(temporary) / '.bluebuild/finite-timings.jsonl').read_text())
+            self.assertEqual(result.returncode, expected, result.stderr)
+            self.assertEqual(result.stdout, 'child-output\n')
+            self.assertEqual(value['status'], recorded)
+            self.assertFalse(value['authorizesPublication'])
+            for name in measure.RESOURCE_FIELDS:
+                self.assertIsNotNone(value['childResourceUsage'][name])
+                self.assertGreaterEqual(value['childResourceUsage'][name], 0)
 
 
 if __name__ == '__main__':

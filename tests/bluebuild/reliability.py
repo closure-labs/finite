@@ -32,6 +32,7 @@ publication = load('publication_reliability', 'scripts/bluebuild/publication.py'
 unlock = load('unlock_vm_test', 'scripts/bluebuild/unlock-vm.py')
 redact = load('redact_vm_test', 'scripts/bluebuild/redact-vm-logs.py')
 scan = load('scanner_identity_test', 'scripts/bluebuild/security-scan.py')
+qualification = load('qualification_resource_test', 'scripts/bluebuild/qualification-context.py')
 
 
 class ScannerSourceIdentity(unittest.TestCase):
@@ -73,6 +74,16 @@ class ImageIdentity(unittest.TestCase):
         before = self.value()
         (self.root / 'README.md').write_text('New docs\n')
         self.assertEqual(before, self.value())
+
+    def test_host_timing_changes_keep_image_identity_but_invalidate_qualification(self):
+        measure = self.root / 'scripts/bluebuild/measure.py'
+        for profile in ('finite', 'finite-dev'):
+            with self.subTest(profile=profile):
+                before = self.value(profile)
+                before_qualification = qualification.source_inputs(self.root)
+                measure.write_text(measure.read_text() + '\n# Changed host resource observation\n')
+                self.assertEqual(before, self.value(profile))
+                self.assertNotEqual(before_qualification, qualification.source_inputs(self.root))
 
     def test_policy_changes_requalify_without_changing_filesystem_identity(self):
         directory = self.root / 'automation/security'
