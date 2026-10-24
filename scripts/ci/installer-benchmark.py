@@ -44,6 +44,26 @@ def read(path):
     return json.loads(path.read_bytes())
 
 
+def require_runner_release(image, api=None):
+    if not controls.matches(r'[0-9]{8}\.[0-9]+\.[0-9]+', image):
+        raise ValueError('Invalid declared Ubuntu runner image')
+    # ImageVersion appends a build component to the runner-images release tag.
+    tag = 'ubuntu24/' + image.rsplit('.', 1)[0]
+    value = (api or get_json)('repos/actions/runner-images/releases/tags/' + quote(tag, safe=''))
+    if (not isinstance(value, dict) or value.get('tag_name') != tag
+            or type(value.get('id')) is not int or value['id'] <= 0
+            or not isinstance(value.get('published_at'), str)):
+        raise ValueError('Runner release metadata has no exact published origin')
+    if value.get('draft') is not False or value.get('prerelease') is not False:
+        raise ValueError('Runner image deployment is incomplete or unknown; do not create benchmark samples')
+    published = datetime.fromisoformat(value['published_at'].replace('Z', '+00:00'))
+    if published.tzinfo is None:
+        raise ValueError('Runner release timestamp lacks a timezone')
+    return {'repository': 'actions/runner-images', 'tag': tag, 'releaseId': value['id'],
+            'publishedAt': value['published_at'], 'draft': False, 'prerelease': False,
+            'checkedAt': datetime.now(timezone.utc).isoformat()}
+
+
 def validate_plan(plan):
     if (plan.get('schema') != 1 or plan.get('authorizesPublication') is not False
             or plan.get('repository') != REPOSITORY
@@ -295,6 +315,8 @@ def main():
     report.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
     if args.operation == 'plan':
+        if args.output.exists():
+            raise ValueError('Refusing to overwrite a frozen installer benchmark plan')
         products, cohorts = read(args.products), read(args.cohorts)
         profiles = {}
         for profile in PROFILES:
@@ -308,7 +330,11 @@ def main():
             'runnerImage': args.runner_image, 'profiles': profiles, 'pairs': list(PAIRS),
             'warmDefinition': 'Exact authenticated Nix checks snapshot hit. Runtime DNF and unseeded guest remain fresh. Restore, setup and cleanup are charged.',
             'replacementPolicy': 'No replacements; retain failed and mismatched native work.'}
-        args.output.write_text(json.dumps(validate_plan(plan), indent=2) + '\n')
+        validate_plan(plan)
+        plan['runnerRelease'] = require_runner_release(args.runner_image)
+        # An exclusive create also protects a plan created during the lookup.
+        with args.output.open('x') as output:
+            output.write(json.dumps(plan, indent=2) + '\n')
         return
     plan = validate_plan(read(args.plan)); runs = read(args.runs)
     if not isinstance(runs, list) or len(runs) > 24 or any(type(r) is not int or r <= 0 for r in runs) or len(set(runs)) != len(runs):

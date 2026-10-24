@@ -44,6 +44,18 @@ not runtime cohort evidence. Use it before spending full qualification rounds.
 
 ## Predeclare native samples
 
+Before creating a new plan, the CLI reads the exact Ubuntu runner-image release
+through the bounded read-only GitHub metadata client. GitHub documents that an
+image [pre-release becomes a release when deployment finishes](https://github.com/actions/runner-images#image-releases).
+Draft, pre-release, missing, mismatched or unavailable release metadata stops
+planning before any plan file is created. A completed release's ID, tag,
+publication time and observation time enter the frozen plan. Existing plan files
+cannot be overwritten, including a file created while the lookup is in flight.
+Earlier frozen plans remain readable for failed-work accounting.
+
+Release completion avoids a known incomplete rollout; it does not replace the
+per-job runner-image check or prove that every subsequent job will match.
+
 `scripts/ci/installer-benchmark.py plan` freezes a source head, runner image,
 authenticated immutable product inputs and observed fresh/upgrade runtime
 cohorts for each profile. Supply `--products` with the authenticated pilot request
@@ -108,6 +120,30 @@ No repeated matrix is dispatched automatically. First establish actual runtime
 cohorts at the reviewed head and inspect measurement cost. Preserve both
 profiles' actual Secure Boot, encrypted-root, SELinux, Nix sockets, Home Manager
 activation and persistence/customization acceptance throughout.
+
+Controlled diagnostic benchmarks enable matrix
+[fail-fast](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idstrategyfail-fast):
+if either phase fails, GitHub cancels its in-progress or queued sibling phase.
+Production qualification and diagnostics without benchmark controls keep both
+phases running. Cancellation remains failed work, never a valid sample or a
+reason to substitute a replacement.
+
+## First controlled cold round
+
+The first [default arm](https://github.com/closure-labs/finite/actions/runs/40110223014)
+was assigned `20261012.334.1` for fresh install despite the plan requiring
+`20261023.334.3`. The phase stopped before Nix setup. Its upgrade sibling and the
+[zstd arm](https://github.com/closure-labs/finite/actions/runs/40110319161) had
+already started; both workflows were cancelled rather than continuing an
+ineligible pair. Complete native occupancy was 185 and 192 seconds, respectively.
+The [retained stop record](ci-installer-cohort-stop-2026-10-24.json.gz) binds the
+frozen plan, complete native job accounting, collector and rollout status.
+These **377 runner seconds** remain failed diagnostic cost. No developer, warm
+or replacement samples were launched, and no comparison or adoption gate passed.
+The requested image was still a pre-release at the observation endpoint,
+October 24, 2026 at 16:44 UTC. The immutable plan and failed cost remain unchanged.
+The planning preflight and benchmark-only sibling cancellation address this
+observed waste; they do not establish measured net savings.
 
 ## Additional savings in this change
 

@@ -616,6 +616,8 @@ class ExecutionGate(unittest.TestCase):
         reuse = next(step for step in prepare['steps'] if step.get('id') == 'reuse')
         self.assertIn('!inputs.validation_only', reuse['env']['ENABLED'])
         phase = workflow['jobs']['phase']
+        # Only explicit controlled trials may stop sibling VM phases early.
+        self.assertEqual(phase['strategy']['fail-fast'], "${{ inputs.validation_only && inputs.installer_benchmark != '' }}")
         preserved = next(step for step in phase['steps'] if step.get('name') == 'Preserve pristine qualified candidate ISO for the pilot')
         self.assertIn('!inputs.validation_only', preserved['if'])
         self.assertIn("contains(format(',{0},', env.FINITE_QUALIFIED_ISO_CHANNELS), format(',{0},', inputs.channel))", preserved['if'])
