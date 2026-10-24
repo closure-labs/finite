@@ -529,7 +529,7 @@ class ExecutionGate(unittest.TestCase):
         self.revision = 'a' * 40
         self.env = {'GITHUB_ACTIONS': 'true', 'GITHUB_REPOSITORY': 'closure-labs/finite',
             'GITHUB_SHA': self.revision, 'GITHUB_REF': 'refs/heads/ci/qualification-benchmark',
-            'GITHUB_EVENT_NAME': 'workflow_dispatch', 'FINITE_VALIDATION_ONLY': 'true',
+            'GITHUB_EVENT_NAME': 'workflow_dispatch', 'FINITE_VALIDATION_ONLY': 'true', 'PREVIOUS_DIGEST': 'sha256:'+'e'*64,
             'GITHUB_WORKFLOW_REF': 'closure-labs/finite/.github/workflows/benchmark-image-tools.yml@refs/heads/ci/qualification-benchmark'}
 
     def test_only_explicit_manual_branch_benchmark_authorizes_diagnostics(self):
@@ -562,10 +562,55 @@ class ExecutionGate(unittest.TestCase):
             self.assertFalse(result['validationOnly'])
             main.assert_called_once_with(self.revision)
 
+    def test_compression_is_manual_diagnostic_only_and_unknown_modes_fail_closed(self):
+        with patch.object(preflight.production,'require_current') as main:
+            self.assertTrue(preflight.require_eligible(self.revision,{**self.env,'FINITE_INSTALLER_COMPRESSION':'zstd'})['validationOnly'])
+            for changes in ({'FINITE_VALIDATION_ONLY':'false'}, {'GITHUB_REF':'refs/heads/main'}, {'GITHUB_EVENT_NAME':'pull_request'}, {'GITHUB_WORKFLOW_REF':'closure-labs/finite/.github/workflows/build.yml@refs/heads/ci/qualification-benchmark'}, {'FINITE_INSTALLER_COMPRESSION':'lz4'}, {'PREVIOUS_DIGEST':''}, {'PREVIOUS_DIGEST':'mutable:tag'}):
+                with self.subTest(changes=changes),self.assertRaises(ValueError):
+                    preflight.require_eligible(self.revision,{**self.env,'FINITE_INSTALLER_COMPRESSION':'zstd',**changes})
+            main.assert_not_called()
+
+    def test_diagnostic_iso_size_is_measured_without_changing_production_binding(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory=Path(temporary);(directory/'image.iso').write_bytes(b'iso bytes')
+            (directory/'installation.json').write_text(json.dumps({'installer':{'source':'pinned'}}))
+            with patch.object(q.subprocess,'run'),patch.dict(os.environ,FINITE_VALIDATION_ONLY='false'):
+                baseline=q.iso_binding(directory)
+                self.assertNotIn('sizeBytes',baseline)
+                with patch.dict(os.environ,FINITE_VALIDATION_ONLY='true'):
+                    diagnostic=q.iso_binding(directory)
+                self.assertEqual(diagnostic['sizeBytes'],9)
+                self.assertEqual({k:v for k,v in diagnostic.items() if k!='sizeBytes'},baseline)
+
+    def test_compression_variants_have_different_context_identities(self):
+        original_sha=q.sha
+        def digest(path):
+            return original_sha(path) if Path(path).name=='lorax-zstd.conf' else 'a'*64
+        with patch.object(q,'validate_certificate'),patch.object(q,'source_inputs',return_value={}),patch.object(q,'sha',side_effect=digest),patch.object(q.vm_tools,'identity',return_value={'schema':1}),patch.dict(os.environ,FINITE_VM_TOOLS_MANIFEST='fixture',FINITE_INSTALLER_COMPRESSION='default'):
+            baseline=q.context()
+            self.assertNotIn('installerCompression',baseline)
+            with patch.dict(os.environ,FINITE_INSTALLER_COMPRESSION='zstd'):
+                diagnostic=q.context()
+            self.assertNotEqual(q.identity(baseline),q.identity(diagnostic))
+            self.assertEqual(diagnostic['installerCompression']['presetSha256'],original_sha(ROOT/'files/installer/lorax-zstd.conf'))
+            with patch.dict(os.environ,FINITE_INSTALLER_COMPRESSION='unknown'),self.assertRaises(ValueError):q.context()
+
     def test_workflow_diagnostic_artifacts_and_cache_gates_are_distinct(self):
         workflow = yaml.safe_load((ROOT / '.github/workflows/qualification.yml').read_text())
         call = workflow.get('on', workflow.get(True))['workflow_call']
         self.assertFalse(call['inputs']['validation_only']['default'])
+        self.assertEqual(call['inputs']['installer_compression']['default'],'default')
+        for name in ('prepare','phase','aggregate'):
+            self.assertEqual(workflow['jobs'][name]['env']['FINITE_INSTALLER_COMPRESSION'],'${{ inputs.installer_compression }}')
+        for name in ('prepare','aggregate'):
+            setup = next(step for step in workflow['jobs'][name]['steps'] if step.get('uses') == './.github/actions/setup-nix')
+            self.assertEqual(setup['if'], '${{ !inputs.validation_only }}')
+        phase_steps = workflow['jobs']['phase']['steps']
+        gate_index = next(i for i,step in enumerate(phase_steps) if step.get('id') == 'benchmark')
+        setup_index = next(i for i,step in enumerate(phase_steps) if step.get('uses') == './.github/actions/setup-nix')
+        self.assertLess(gate_index,setup_index)
+        retention = next(step for step in workflow['jobs']['aggregate']['steps'] if step.get('name') == 'Save qualification evidence')
+        self.assertEqual(retention['with']['retention-days'], '${{ inputs.validation_only && 14 || 90 }}')
         prepare = workflow['jobs']['prepare']
         self.assertIn('benchmark-image-tools.yml', prepare['if'])
         reuse = next(step for step in prepare['steps'] if step.get('id') == 'reuse')

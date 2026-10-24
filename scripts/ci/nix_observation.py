@@ -39,8 +39,8 @@ def write(name, value):
 
 
 def setup(command, env=os.environ):
-    # Other callers of the shared action retain their existing setup behavior.
-    if env.get('GITHUB_JOB') != 'checks':
+    # Existing source checks and explicit diagnostics retain setup observations.
+    if env.get('GITHUB_JOB') != 'checks' and env.get('FINITE_NIX_OBSERVATION') != 'true':
         return
     target = DIRECTORY / 'nix-setup.json'
     if command == 'setup-start':

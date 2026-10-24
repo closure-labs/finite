@@ -73,9 +73,16 @@ def context(root=ROOT):
     else:
         versions = subprocess.check_output(['dpkg-query', '-W', '-f=${Package}=${Version}\n',
             'qemu-system-x86', 'qemu-utils', 'ovmf', 'xorriso', 'mtools', 'openssl', 'skopeo', 'python3-virt-firmware'], text=True, timeout=30)
-    return {'schema': 2, 'platform': 'linux/amd64', 'runner': 'ubuntu-24.04',
+    value = {'schema': 2, 'platform': 'linux/amd64', 'runner': 'ubuntu-24.04',
             'inputs': inputs, 'firmware': firmware, 'packages': versions.strip(),
             'bluebuildVersion': json.loads((root / 'sources/bluebuild-cli.json').read_text())}
+    compression = os.environ.get('FINITE_INSTALLER_COMPRESSION', 'default')
+    if compression == 'zstd':
+        value['installerCompression'] = {'schema': 1, 'algorithm': 'zstd', 'level': 15, 'bcj': False,
+            'presetSha256': sha(root / 'files/installer/lorax-zstd.conf')}
+    elif compression != 'default':
+        raise ValueError('Unknown installer compression experiment')
+    return value
 
 
 def iso_binding(directory):
@@ -83,9 +90,12 @@ def iso_binding(directory):
     paths = list(directory.glob('*.iso'))
     if len(paths) != 1 or paths[0].is_symlink():
         raise ValueError('Qualification requires one pristine candidate ISO')
-    return {'name': paths[0].name, 'sha256': sha(paths[0]),
+    value = {'name': paths[0].name, 'sha256': sha(paths[0]),
             'installationSha256': sha(directory / 'installation.json'),
             'installer': json.loads((directory / 'installation.json').read_text())['installer']}
+    if os.environ.get('FINITE_VALIDATION_ONLY') == 'true':
+        value['sizeBytes'] = paths[0].stat().st_size
+    return value
 
 
 def bind_phase(directory, phase):

@@ -4,6 +4,15 @@ set -euo pipefail
   echo 'Prepare the installer only on the ephemeral finite ISO runner.' >&2
   exit 2
 }
+compression=${FINITE_INSTALLER_COMPRESSION:-default}
+case "$compression" in
+  default) ;;
+  zstd)
+    # The existing gate accepts only explicit manual non-main diagnostics.
+    python3 "$(dirname "${BASH_SOURCE[0]}")/qualification-preflight.py" --revision "${GITHUB_SHA:?}"
+    ;;
+  *) echo 'Unknown installer compression experiment' >&2; exit 2 ;;
+esac
 lock=sources/bluebuild-installer.json
 source=$(jq -er '.image + "@" + .digest' "$lock")
 alias=$(jq -er .cliAlias "$lock")
@@ -26,6 +35,35 @@ openssl x509 -in "$certificate" -checkend 0 -noout
 installer_context=$(mktemp -d "${TMPDIR:-/tmp}/finite-installer-context.XXXXXX")
 trap 'rm -rf -- "$installer_context"' EXIT
 cp -a files/installer/. "$installer_context/"
+compression_sha=
+actual_compression_sha=
+if [[ $compression == zstd ]]; then
+  compression_sha=$(sha256sum "$installer_context/lorax-zstd.conf" | cut -d' ' -f1)
+  compression_helper="$(dirname "${BASH_SOURCE[0]}")/installer-compression.py"
+  python3 "$compression_helper" preset "$installer_context/lorax-zstd.conf"
+  cp "$compression_helper" "$installer_context/installer-compression.py"
+  cat >>"$installer_context/Containerfile" <<'COMPRESSION'
+
+COPY lorax-zstd.conf /tmp/finite-lorax-zstd.conf
+COPY installer-compression.py /tmp/finite-installer-compression.py
+RUN python3 /tmp/finite-installer-compression.py merge /etc/lorax/lorax.conf /tmp/finite-lorax-zstd.conf \
+    && python3 /tmp/finite-installer-compression.py probe \
+    && rm /tmp/finite-installer-compression.py /tmp/finite-lorax-zstd.conf
+COMPRESSION
+fi
+if [[ ${FINITE_VALIDATION_ONLY:-false} == true ]]; then
+  python3 "$(dirname "${BASH_SOURCE[0]}")/qualification-preflight.py" --revision "${GITHUB_SHA:?}"
+  cp "$(dirname "${BASH_SOURCE[0]}")/installer-provenance.py" "$installer_context/installer-provenance.py"
+  # Only diagnostics wrap the pinned Lorax CLI. Production keeps its exact
+  # Containerfile. The wrapper observes inputs and delegates each call once.
+  cat >>"$installer_context/Containerfile" <<'PROVENANCE'
+
+COPY installer-provenance.py /usr/local/libexec/finite-installer-provenance.py
+RUN test -x /usr/bin/lorax && test ! -e /usr/local/bin/lorax \
+    && printf '%s\n' '#!/bin/sh' 'exec /usr/bin/python3 /usr/local/libexec/finite-installer-provenance.py hook -- "$@"' >/usr/local/bin/lorax \
+    && chmod 0755 /usr/local/bin/lorax
+PROVENANCE
+fi
 openssl x509 -in "$certificate" -outform DER -out "$installer_context/secure-boot.der"
 [[ $(sha256sum "$installer_context/secure-boot.der" | cut -d' ' -f1) == "$certificate_sha" ]]
 docker pull "$source"
@@ -58,10 +96,18 @@ actual_hook_sha=$(docker run --rm --entrypoint sha256sum "$alias" \
 installed_certificate_sha=$(docker run --rm --entrypoint sha256sum "$alias" \
   /build-container-installer/sb_pubkey.der | cut -d' ' -f1)
 [[ $installed_certificate_sha == "$certificate_sha" ]]
+if [[ $compression == zstd ]]; then
+  docker run --rm --entrypoint cat "$alias" /etc/lorax/lorax.conf >"$installer_context/installed-lorax.conf"
+  actual_compression_sha=$(python3 "$compression_helper" verify "$installer_context/installed-lorax.conf")
+fi
 image_id=$(docker inspect --format '{{.Id}}' "$alias")
 mkdir -p "$output"
 jq --arg resolved "$source" --arg id "$image_id" --arg hook "$hook" \
+  --arg compression "$compression" --arg compressionHash "$compression_sha" --arg installedCompressionHash "$actual_compression_sha" \
   --arg hash "$hook_sha" --arg revision "${GITHUB_SHA:?}" --arg certificate "$certificate_sha" \
   '. + {resolvedImage: $resolved, localImageId: $id, finiteRevision: $revision,
-    secureBootCertificateSha256: $certificate, postInstallHook: {path: $hook, sha256: $hash}}' \
+    secureBootCertificateSha256: $certificate, postInstallHook: {path: $hook, sha256: $hash}}
+    + (if $compression == "zstd" then {diagnosticCompression: {
+        schema: 1, algorithm: "zstd", level: 15, bcj: false, presetSha256: $compressionHash, configurationSha256: $installedCompressionHash}}
+       else {} end)' \
   "$lock" >"$output/installer.json"

@@ -49,8 +49,17 @@ jq -n --arg image "$source" --arg tag "$repository:$tag" \
     installer: $installer[0]}' \
   >"$ISO_OUTPUT_DIR"/installation.json
 # v0.9.37 constructs IMAGE_TAG from a tag; a digest-only reference becomes latest.
-python3 "$(dirname "${BASH_SOURCE[0]}")/measure.py" iso-build sudo bluebuild generate-iso --run-driver docker --variant kinoite --output-dir "$ISO_OUTPUT_DIR" \
+iso_command=(sudo bluebuild generate-iso)
+if [[ ${FINITE_VALIDATION_ONLY:-false} == true ]]; then
+  iso_command=(python3 "$(dirname "${BASH_SOURCE[0]}")/installer-provenance.py" capture --output "$ISO_OUTPUT_DIR/runtime-provenance.json" -- "${iso_command[@]}")
+fi
+python3 "$(dirname "${BASH_SOURCE[0]}")/measure.py" iso-build "${iso_command[@]}" --run-driver docker --variant kinoite --output-dir "$ISO_OUTPUT_DIR" \
   --iso-name "${channel/latest/finite}.iso" image "$repository:$tag"
+if [[ ${FINITE_VALIDATION_ONLY:-false} == true ]]; then
+  jq --slurpfile runtime "$ISO_OUTPUT_DIR/runtime-provenance.json" \
+    '.installer.runtimeProvenance = $runtime[0]' "$ISO_OUTPUT_DIR/installation.json" >"$ISO_OUTPUT_DIR/installation.tmp"
+  mv "$ISO_OUTPUT_DIR/installation.tmp" "$ISO_OUTPUT_DIR/installation.json"
+fi
 # Confirm that the install source tag has not changed while the ISO was assembled.
 [[ $(skopeo inspect --format '{{.Digest}}' "docker://$repository:$tag") == "$digest" ]]
 (cd "$ISO_OUTPUT_DIR" && sha256sum -- *.iso installation.json >SHA256SUMS)
