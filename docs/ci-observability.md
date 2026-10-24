@@ -38,6 +38,22 @@ See the [Linux KVM API](https://docs.kernel.org/virt/kvm/api.html) for the empty
 probe's limits. Use natural qualification runs to observe rollout costs; this
 change dispatches no additional full VM rounds.
 
+Stage receipts also record user/system CPU seconds and block input/output
+operation counts from terminated, waited-for child processes. These are
+`getrusage(RUSAGE_CHILDREN)` counter deltas, not bytes, device throughput or
+whole-runner utilization. Docker, BuildKit and other independent daemons are
+outside that scope; a low child CPU count cannot establish that those services
+were idle. Missing or decreasing counters remain unknown rather than zero.
+Command output and exit status remain unchanged when resource reads fail.
+Nested stages overlap their parents and must not be charged again. See
+[Python's resource usage reference](https://docs.python.org/3/library/resource.html#resource.getrusage).
+
+The host timing helper is a qualification input rather than an OS filesystem
+input. Later timing-only edits therefore preserve image identity while still
+invalidating qualification reuse and selecting both required premerge VM
+profiles. Updating this identity implementation has a one-time rollout cost
+because its own source remains hashed; retain that cohort separately.
+
 The read-only collector joins native image and qualification-phase archives,
 limited to 16 archives of 8 MiB each per run and 40 archives per collection.
 Security phase receipts can prove inventory reuse; a fresh inventory alone
@@ -59,6 +75,6 @@ context mismatch. Compare complete cohorts before changing installer runtime
 reuse or guest closure transport. Changing VM helpers invalidates their authenticated reuse context on first rollout;
 keep that reconstruction cohort separate. No savings or benchmark adoption is claimed.
 
-Run the collector with `--receipts --rollout 2026-10-23T05:01:17Z` after the endpoint to finish the assessment. Include failed,
+Use bounded recent-run snapshots to prioritize improvements now; the seven-day endpoint does not block that work. Run the collector with `--receipts --rollout 2026-10-23T05:01:17Z` after the endpoint for the separate complete-window assessment. Include failed,
 cancelled, active and cleanup work and identify incomplete later cohorts.
 Automatic Cachix writing and Grype database transport remain disabled.

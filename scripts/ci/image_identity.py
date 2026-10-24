@@ -14,6 +14,8 @@ IMAGE_INPUT_SCHEMA = 4
 # qualification-context.py binds the VM/ISO inputs separately. Keep this list
 # explicit: a newly added BlueBuild helper remains an image input until reviewed.
 QUALIFICATION_ONLY = {
+    # Host timing observations do not enter the assembled OS filesystem.
+    'scripts/bluebuild/measure.py',
     'files/installer/lorax-zstd.conf',
     'scripts/bluebuild/installer-compression.py', 'scripts/bluebuild/installer-provenance.py',
     'scripts/bluebuild/benchmark-controls.py',
