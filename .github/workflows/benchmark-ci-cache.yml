@@ -2,6 +2,11 @@ name: Benchmark CI cache lanes
 
 on:
   workflow_dispatch:
+    inputs:
+      evaluation_only:
+        description: Compare serial and paired Home Manager proof evaluation only; no image or VM jobs
+        type: boolean
+        default: false
   workflow_call:
 
 # Bootstrap public options; setup-nix resolves them through SecretSpec.
@@ -20,6 +25,7 @@ permissions:
 
 jobs:
   benchmark:
+    if: ${{ !inputs.evaluation_only }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     strategy:
@@ -59,7 +65,7 @@ jobs:
           retention-days: 14
 
   summarize:
-    if: always()
+    if: always() && !inputs.evaluation_only
     needs: benchmark
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -84,6 +90,29 @@ jobs:
         with:
           name: ci-cache-summary-${{ github.run_id }}-${{ github.run_attempt }}
           path: .bluebuild/cache-benchmark-summary.md
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+
+  home-evaluation:
+    if: github.repository == 'closure-labs/finite' && github.event_name == 'workflow_dispatch' && inputs.evaluation_only
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+        with:
+          cache-mode: none
+      - name: Compare complete proof matrices with bounded evaluators
+        run: python3 scripts/ci/benchmark-home-evaluation.py
+      - name: Retain proof comparison including failures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: home-evaluation-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/home-evaluation/
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 14

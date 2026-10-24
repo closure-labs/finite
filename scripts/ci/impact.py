@@ -32,6 +32,7 @@ QUALIFICATION_ONLY = {
     'scripts/ci/ci-options.py', 'sources/secretspec.json',
     'secretspec.toml', 'devenv.nix', 'devenv.yaml', 'devenv-tasks.nix',
     'scripts/ci/prune-ci-caches.py', 'scripts/ci/benchmark-ci-cache.py',
+    'scripts/ci/benchmark-home-evaluation.py',
     '.github/workflows/cache-maintenance.yml', '.github/workflows/benchmark-ci-cache.yml',
     'scripts/ci/reuse-candidate-security.py',
     'automation/security/image-policy.json',

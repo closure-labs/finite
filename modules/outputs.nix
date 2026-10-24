@@ -68,62 +68,14 @@
   homeFlakeModule = import ../lib/home-manager-flake-module.nix {
     inherit (outputDependencies) foundation;
   };
-  allRoles = catalog.roleNames;
-  mkHomeProof = foundation: hardware: packages: roles: let
-    username = "finite-check-${foundation}-${hardware}-${lib.concatStringsSep "-" packages}-${lib.concatStringsSep "-" roles}";
-    evaluated = lib.evalModules {
-      # Den resolves its generated module imports from these Flake inputs.
-      modules = [
-        homeFlakeModule
-        {
-          finite.homeProfile = {
-            schema = 2;
-            inherit foundation hardware packages roles;
-            identity = {
-              inherit username;
-              homeDirectory = "/var/home/${username}";
-            };
-          };
-        }
-      ];
-    };
-  in
-    evaluated.config.flake.homeConfigurations.${username}.activationPackage;
-  foundationHardwareProofs =
-    lib.concatMap (
-      foundation:
-        map (hardware: mkHomeProof foundation hardware [] []) catalog.homeHardwareNames
-    )
-    catalog.foundationNames;
-  roleProofs =
-    map (
-      role:
-        mkHomeProof
-        (builtins.head catalog.foundationNames)
-        (builtins.head catalog.homeHardwareNames)
-        []
-        [role]
-    )
-    allRoles;
-  allRolesProof =
-    mkHomeProof
-    (lib.last catalog.foundationNames)
-    (lib.last catalog.homeHardwareNames)
-    []
-    allRoles;
-  allPackagesProof =
-    mkHomeProof
-    (builtins.head catalog.foundationNames)
-    (builtins.head catalog.homeHardwareNames)
-    catalog.packageNames
-    [];
-  homeProofsEvaluated =
-    builtins.deepSeq (
-      map (activation: activation.drvPath) (foundationHardwareProofs ++ roleProofs ++ [allRolesProof allPackagesProof])
-    )
-    true;
+  homeProofs = import ../lib/home-proofs.nix {
+    inherit catalog lib;
+    inherit (outputDependencies) foundation;
+    schedule = outputDependencies.homeProofScheduler or (builtins.parallel or (_: result: result));
+  };
   homeCheck = assert import ../tests/home/catalog-projection.nix {inherit lib catalog;};
-  assert homeProofsEvaluated;
+  assert import ../tests/nix/home-proofs.nix;
+  assert homeProofs.evaluated;
     pkgs.runCommand "finite-home-configurations-proof" {} ''
       touch "$out"
     '';
@@ -173,7 +125,11 @@
     };
   ciChecks =
     pkgs.runCommand "finite-ci-checks" {
-      passthru.checkNames = builtins.attrNames checks;
+      passthru = {
+        checkNames = builtins.attrNames checks;
+        homeProofCases = homeProofs.cases;
+        homeProofPaths = homeProofs.paths;
+      };
     } ''
       mkdir "$out"
       ${lib.concatStringsSep "\n" (

@@ -37,6 +37,7 @@ the recorded revision and date.
 | [Nix workflow resources](nix-workflow-resources.md) | Runner sizing and concurrency audit |
 | [Recurring workflow cost roles, October 24 UTC](ci-cost-roles-2026-10-24.md) | Retained baseline ranking, corrected source/legacy roles and conserved native occupancy |
 | [Next CI optimization evidence, October 24 UTC](ci-next-optimization-2026-10-24.md) | Complete transport result, early supersession checks, Nix observations and nested ISO/initializer investigation |
+| [Home Manager proof evaluation trial](ci-home-proof-evaluation.md) | Bounded paired scheduling, exact aggregate/matrix comparison and natural source timing evidence |
 
 ## Earlier security and migration work
 

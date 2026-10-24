@@ -9,7 +9,7 @@
   system = [../files/system ../files/scripts ../files/dnf ../recipes ../sources];
   nixInputs = [../flake.nix ../flake.lock ../devenv.lock ../sources];
 in {
-  home-contracts = source [../tests/home ../scripts/home ../files/system];
+  home-contracts = source [../tests/home ../scripts/home ../files/system ../tests/nix/evaluation-command.py ../scripts/ci/benchmark-home-evaluation.py];
   nix-lifecycle = source ([../tests/nix ../scripts/bluebuild ../tests/bluebuild/nix-readiness.sh ../tests/bluebuild/wifi-power.py ../tests/bluebuild/vm-predecessor-home.sh] ++ system);
   vm-iso-layout = source [../tests/bluebuild/vm-iso.sh ../scripts/bluebuild/prepare-vm-iso.sh];
   vm-firmware = source [../tests/bluebuild/vm-firmware.sh ../scripts/bluebuild/prepare-vm-firmware.sh];
