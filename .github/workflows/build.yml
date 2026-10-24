@@ -166,6 +166,10 @@ jobs:
     # Allow cold evaluation to seed the Nix store cache. GitHub permits restores
     # from the same ref and base/default branches, not unrelated PR refs.
     timeout-minutes: 60
+    env:
+      # PR checks execute the merge checkout; native run/artifact identity names
+      # the PR head. Retain both instead of misjoining their observations.
+      FINITE_OBSERVATION_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
     outputs:
       images: ${{ steps.selection.outputs.images }}
       matrix: ${{ steps.selection.outputs.matrix }}
@@ -183,6 +187,18 @@ jobs:
           IMPACT: ${{ toJSON(needs.impact.outputs) }}
           VM_VALIDATION: ${{ needs.impact.outputs.vm }}
         run: nix develop --file lib/ci-tools.nix shell --command python3 scripts/ci/payloads.py
+
+      - name: Retain Nix setup and check observations including failures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: source-checks-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .bluebuild/nix-checks.json
+            .bluebuild/nix-setup.json
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 14
 
   images:
     name: Validate (${{ matrix.profile }})

@@ -191,6 +191,72 @@ class Costs(unittest.TestCase):
         self.assertIsNone(result['hit'])
         self.assertIsNone(result['missReason'])
 
+    def test_nix_observations_join_original_attempt_without_double_charging(self):
+        import cost_receipts
+        from contextlib import contextmanager
+        import io, zipfile
+        self.job['name'] = 'Nix and runtime contracts'
+        report = self.observe()
+        native_seconds = report['jobs'][0]['runnerSeconds']
+        value = {'schema': 1, 'kind': 'finite-nix-observation', 'authorizesPublication': False,
+                 'repository': costs.REPOSITORY, 'runId': '10', 'runAttempt': '1',
+                 'revision': 'a' * 40, 'checkoutRevision': 'b' * 40, 'jobName': 'checks',
+                 'workflowRef': costs.REPOSITORY + '/.github/workflows/build.yml@refs/heads/main',
+                 'runner': {'ImageVersion': '20261023'}, 'toolCohort': {}, 'phases': [{
+                     'stage': 'Evaluate aggregate', 'startedAt': '2026-10-23T10:01:00Z',
+                     'seconds': 20.0, 'status': 1, 'outcome': 'failure', 'attempts': [
+                         {'attempt': 1, 'status': 1, 'seconds': 20.0}]}]}
+        setup = {**value, 'startedAt': '2026-10-23T10:01:00Z', 'seconds': None,
+                 'status': None, 'cache': None}
+        setup.pop('phases')
+        artifact = {'id': 20, 'name': 'source-checks-10-1', 'expired': False,
+                    'size_in_bytes': 1000, 'digest': 'sha256:' + 'c' * 64,
+                    'workflow_run': {'id': 10, 'head_sha': 'a' * 40}}
+        @contextmanager
+        def reader(*args):
+            raw = io.BytesIO()
+            with zipfile.ZipFile(raw, 'w') as archive:
+                archive.writestr('nix-checks.json', json.dumps(value))
+                archive.writestr('nix-setup.json', json.dumps(setup))
+            raw.seek(0)
+            yield raw
+        cost_receipts.join(report, [artifact, artifact], reader)
+        job = report['jobs'][0]
+        self.assertEqual(job['runnerSeconds'], native_seconds)
+        self.assertEqual(job['checkoutRevision'], 'b' * 40)
+        self.assertEqual(len(job['stages']), 2)
+        self.assertEqual(job['stages'][0]['status'], 1)
+        self.assertIsNone(job['stages'][1]['seconds'])
+        self.assertIsNone(job['nixCache'])
+        self.assertIsNone(job['candidateDigest'])
+        self.assertIsNone(job['predecessorReuse']['hit'])
+        rows = costs.stage_opportunities([report])
+        self.assertEqual(rows[0]['failedSamples'], 1)
+        self.assertEqual(rows[1]['stage'], 'Nix setup')
+        self.assertIsNone(rows[1]['seconds'])
+        self.assertIsNone(rows[1]['medianSeconds'])
+        self.assertEqual(rows[1]['unknownDurationSamples'], 1)
+        for key, wrong in [('revision', 'b' * 40), ('runAttempt', '2'), ('jobName', 'build'),
+                           ('authorizesPublication', True), ('schema', True), ('workflowRef', 'other/workflow')]:
+            with self.subTest(key=key):
+                changed = {**value, key: wrong}
+                with self.assertRaisesRegex(ValueError, 'native producer'):
+                    cost_receipts.nix_receipt(report, artifact, 'nix-checks.json', changed, set())
+        for elapsed in (-1, True, float('nan'), None):
+            changed = deepcopy(value)
+            changed['phases'][0]['seconds'] = elapsed
+            with self.subTest(elapsed=elapsed), self.assertRaisesRegex(ValueError, 'duration'):
+                cost_receipts.nix_receipt(report, artifact, 'nix-checks.json', changed, set())
+        changed = deepcopy(value)
+        changed['phases'][0]['attempts'] *= 4
+        with self.assertRaisesRegex(ValueError, 'retry observations'):
+            cost_receipts.nix_receipt(report, artifact, 'nix-checks.json', changed, set())
+        # A receipt for attempt two cannot relabel work reused from attempt one.
+        artifact['name'] = 'source-checks-10-2'
+        changed = {**value, 'runAttempt': '2'}
+        cost_receipts.nix_receipt(report, artifact, 'nix-checks.json', changed, set())
+        self.assertEqual(report['receiptCoverage']['unmatched'], 1)
+
     def test_exclusive_occupancy_measures_blocking_lower_bound_without_double_counting(self):
         report = self.observe()
         second = deepcopy(report['jobs'][0])

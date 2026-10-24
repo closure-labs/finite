@@ -12,13 +12,45 @@ import unittest
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / 'scripts/ci'))
 spec = importlib.util.spec_from_file_location('nix_checks', ROOT / 'scripts/ci/nix-checks.py')
 checks = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(checks)
+import nix_observation as observation
 DRV = '/nix/store/' + 'a' * 32 + '-finite-ci-checks.drv'
 
 
 class RetryChecks(unittest.TestCase):
+    def test_pr_native_head_and_executed_merge_checkout_remain_distinct(self):
+        value = observation.identity({'GITHUB_SHA': 'a' * 40, 'FINITE_OBSERVATION_REVISION': 'b' * 40})
+        self.assertEqual(value['revision'], 'b' * 40)
+        self.assertEqual(value['checkoutRevision'], 'a' * 40)
+        self.assertEqual(observation.identity({'GITHUB_SHA': 'c' * 40})['revision'], 'c' * 40)
+
+    def test_setup_observation_retains_partial_failure_and_unknown_cache(self):
+        env = {'GITHUB_JOB': 'checks', 'GITHUB_RUN_ID': '12', 'GITHUB_RUN_ATTEMPT': '2'}
+        with tempfile.TemporaryDirectory() as directory, contextlib.chdir(directory):
+            observation.setup('setup-start', env)
+            observation.setup('setup-finish', {**env, 'SETUP_STATUS': 'failure'})
+            result = json.loads(Path('.bluebuild/nix-setup.json').read_text())
+            self.assertEqual(result['status'], 'failure')
+            self.assertIsNone(result['cache'])
+            self.assertGreaterEqual(result['seconds'], 0)
+            observation.setup('setup-start', env)
+            observation.setup('cache-selection', {**env, 'STORE_KEY': 'snapshot', 'STORE_HIT': 'true'})
+            observation.setup('setup-finish', {**env, 'SETUP_STATUS': 'success'})
+            result = json.loads(Path('.bluebuild/nix-setup.json').read_text())
+            self.assertEqual(result['cache']['STORE_KEY'], 'snapshot')
+            self.assertEqual(result['cache']['STORE_HIT'], 'true')
+            self.assertIsNone(result['cache']['SOURCE_HIT'])
+            observation.setup('setup-start', env)
+            with self.assertRaisesRegex(ValueError, 'differs from this job'):
+                observation.setup('setup-finish', {**env, 'GITHUB_RUN_ATTEMPT': '3'})
+            with self.assertRaisesRegex(ValueError, 'Oversized'):
+                observation.write('large.json', {'payload': 'x' * observation.MAX_BYTES})
+            self.assertFalse(Path('.bluebuild/large.json').exists())
+            observation.setup('setup-start', {'GITHUB_JOB': 'other'})
+
     def test_hosted_checks_root_successful_proofs_before_bounded_cache_gc(self):
         command = checks.check_command(DRV, {'GITHUB_ACTIONS': 'true', 'RUNNER_TEMP': '/tmp/runner'})
         self.assertEqual(command[command.index('--out-link') + 1], '/tmp/runner/finite-checks-cache-root')
@@ -57,12 +89,13 @@ if phase == 'evaluation': print(state['result'])
             env = {**os.environ, 'PATH': str(root) + os.pathsep + os.environ['PATH'],
                    'FAKE_NIX_ROOT': directory, 'GITHUB_ACTIONS': 'true',
                    'RUNNER_TEMP': directory, 'GITHUB_STEP_SUMMARY': str(summary)}
-            with patch.dict(os.environ, env, clear=True), patch.object(checks.time, 'sleep'), \
+            with contextlib.chdir(root), patch.dict(os.environ, env, clear=True), patch.object(checks.time, 'sleep'), \
                     contextlib.redirect_stdout(io.StringIO()):
                 try:
                     status = checks.run_checks(env)
                 except ValueError:
                     status = 'invalid'
+            self.receipt = json.loads((root / '.bluebuild/nix-checks.json').read_text())
             return status, json.loads(state.read_text())['calls'], summary.read_text()
 
     def test_evaluation_is_separate_and_builds_only_its_exact_derivation(self):
@@ -78,6 +111,7 @@ if phase == 'evaluation': print(state['result'])
         self.assertIn('--out-link', calls[1]['args'])
         self.assertIn('Evaluate aggregate', summary)
         self.assertIn('Build aggregate', summary)
+        self.assertEqual(self.receipt['aggregateDerivation'], DRV)
 
     def test_evaluation_transport_retry_discards_partial_output(self):
         status, calls, _ = self.phases(evaluation=['HTTP error 503'])
@@ -88,6 +122,22 @@ if phase == 'evaluation': print(state['result'])
         status, calls, _ = self.phases(builds=['HTTP error 503'])
         self.assertEqual(status, 0)
         self.assertEqual([c['phase'] for c in calls], ['evaluation', 'builds', 'builds'])
+        phases = self.receipt['phases']
+        self.assertEqual([len(p['attempts']) for p in phases], [1, 2])
+        self.assertEqual([p['status'] for p in phases[1]['attempts']], [1, 0])
+        self.assertEqual(phases[1]['outcome'], 'success')
+        self.assertGreaterEqual(phases[1]['seconds'], sum(p['seconds'] for p in phases[1]['attempts']) - .01)
+
+    def test_partial_failures_are_retained_without_inventing_unstarted_builds(self):
+        status, _, _ = self.phases(evaluation=['hash mismatch'])
+        self.assertEqual(status, 1)
+        self.assertEqual(len(self.receipt['phases']), 1)
+        self.assertEqual(self.receipt['phases'][0]['outcome'], 'failure')
+        self.assertEqual(self.receipt['phases'][0]['status'], 1)
+        self.assertFalse(self.receipt['authorizesPublication'])
+        self.phases(result='invalid')
+        self.assertEqual(self.receipt['phases'][0]['outcome'], 'error')
+        self.assertEqual(len(self.receipt['phases']), 1)
 
     def test_terminal_evaluation_and_build_failures_stop_their_phase(self):
         for errors in ({'evaluation': ['hash mismatch']}, {'builds': ['Reason: builder failed with exit code 1']}):

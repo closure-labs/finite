@@ -84,6 +84,10 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
       - uses: ./.github/actions/setup-nix
+      - name: Stop obsolete publication before security setup
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"
       - name: Read checked publication admission policy
         id: admission-policy
         run: |
@@ -175,6 +179,10 @@ jobs:
           save: true
           paths: ~/.cache/grype/db
 
+      - name: Recheck publication before inventory and scanning
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"
       - name: Make room for the immutable image inventory
         if: steps.reuse.outputs.reused != 'true'
         uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2

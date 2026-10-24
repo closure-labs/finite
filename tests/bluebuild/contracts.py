@@ -25,6 +25,31 @@ def modules(recipe, seen=()):
             yield module
 
 class BlueBuildContracts(unittest.TestCase):
+    def test_obsolete_publication_stops_before_expensive_setup_without_gating_prs(self):
+        image = read('.github/workflows/image.yml')['jobs']['build']['steps']
+        security = read('.github/workflows/publication.yml')['jobs']['security']['steps']
+        for steps, name, expensive in (
+                (image, 'Stop obsolete publication before image setup', 'Make room for the image build'),
+                (security, 'Stop obsolete publication before security setup', 'Reuse authenticated publisher evidence from this build')):
+            index = next(i for i, step in enumerate(steps) if step.get('name') == name)
+            self.assertEqual(steps[index - 1]['uses'], './.github/actions/setup-nix')
+            self.assertEqual(steps[index]['run'], 'python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"')
+            self.assertNotIn('continue-on-error', steps[index])
+            self.assertEqual(steps[index]['env']['GH_TOKEN'], '${{ github.token }}')
+            self.assertLess(index, next(i for i, step in enumerate(steps) if step.get('name') == expensive))
+        self.assertEqual(next(step for step in image if step.get('name', '').startswith('Stop obsolete'))['if'], 'inputs.publish')
+        for steps, name, expensive in (
+                (image, 'Recheck publication after image preparation', 'Build with BlueBuild'),
+                (security, 'Recheck publication before inventory and scanning', 'Make room for the immutable image inventory')):
+            index = next(i for i, step in enumerate(steps) if step.get('name') == name)
+            self.assertEqual(steps[index]['run'], 'python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"')
+            self.assertEqual(steps[index + 1]['name'], expensive)
+        checks = read('.github/workflows/build.yml')['jobs']['checks']['steps']
+        retain = checks[-1]
+        self.assertEqual(retain['if'], 'always()')
+        self.assertIn('source-checks-${{ github.run_id }}-${{ github.run_attempt }}', retain['with']['name'])
+        self.assertEqual(retain['with']['retention-days'], 14)
+
     def test_profiles_are_independent_and_tags_do_not_overlap(self):
         tags = []
         for profile, (foundation, hardware, expected_tags) in EXPECTED.items():

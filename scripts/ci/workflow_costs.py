@@ -224,15 +224,19 @@ def stage_opportunities(runs):
                 groups[key].append((run, job, stage))
     rows = []
     for (workflow, event, lane, role, revision, stage), entries in groups.items():
+        measured = [s['seconds'] for _, _, s in entries if s.get('seconds') is not None]
         rows.append({'workflow': workflow, 'event': event, 'profile': lane, 'role': role,
                      'rolloutRevision': revision, 'stage': stage, 'samples': len(entries),
+                     'timedSamples': len(measured), 'unknownDurationSamples': len(entries) - len(measured),
                      'runs': len({r['runId'] for r, _, _ in entries}),
-                     'seconds': sum(s['seconds'] for _, _, s in entries),
-                     'medianSeconds': statistics.median(s['seconds'] for _, _, s in entries),
-                     'failedSamples': sum(type(s.get('status')) is int and s['status'] != 0 for _, _, s in entries),
+                     'seconds': sum(measured) if measured else None,
+                     'medianSeconds': statistics.median(measured) if measured else None,
+                     'failedSamples': sum((type(s.get('status')) is int and s['status'] != 0)
+                         or s.get('status') in ('failure', 'cancelled') or s.get('outcome') in ('failure', 'error')
+                         for _, _, s in entries),
                      'unknownStatusSamples': sum(s.get('status') is None for _, _, s in entries),
                      'criticalPathContribution': None})
-    return sorted(rows, key=lambda r: r['seconds'], reverse=True)
+    return sorted(rows, key=lambda r: (r['seconds'] is not None, r['seconds'] or 0), reverse=True)
 
 
 def collect(api=get_json, now=None, rollout=None, *, receipts=False):

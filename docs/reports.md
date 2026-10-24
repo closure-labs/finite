@@ -36,6 +36,7 @@ the recorded revision and date.
 | [CI optimization review](ci-optimization-review.md) and [rollout plan](ci-rollout.md) | Measured bottlenecks and the earlier rollout |
 | [Nix workflow resources](nix-workflow-resources.md) | Runner sizing and concurrency audit |
 | [Recurring workflow cost roles, October 24 UTC](ci-cost-roles-2026-10-24.md) | Retained baseline ranking, corrected source/legacy roles and conserved native occupancy |
+| [Next CI optimization evidence, October 24 UTC](ci-next-optimization-2026-10-24.md) | Complete transport result, early supersession checks, Nix observations and nested ISO/initializer investigation |
 
 ## Earlier security and migration work
 
