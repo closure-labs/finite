@@ -602,6 +602,15 @@ class ExecutionGate(unittest.TestCase):
         self.assertEqual(call['inputs']['installer_compression']['default'],'default')
         for name in ('prepare','phase','aggregate'):
             self.assertEqual(workflow['jobs'][name]['env']['FINITE_INSTALLER_COMPRESSION'],'${{ inputs.installer_compression }}')
+        for name in ('prepare','aggregate'):
+            setup = next(step for step in workflow['jobs'][name]['steps'] if step.get('uses') == './.github/actions/setup-nix')
+            self.assertEqual(setup['if'], '${{ !inputs.validation_only }}')
+        phase_steps = workflow['jobs']['phase']['steps']
+        gate_index = next(i for i,step in enumerate(phase_steps) if step.get('id') == 'benchmark')
+        setup_index = next(i for i,step in enumerate(phase_steps) if step.get('uses') == './.github/actions/setup-nix')
+        self.assertLess(gate_index,setup_index)
+        retention = next(step for step in workflow['jobs']['aggregate']['steps'] if step.get('name') == 'Save qualification evidence')
+        self.assertEqual(retention['with']['retention-days'], '${{ inputs.validation_only && 14 || 90 }}')
         prepare = workflow['jobs']['prepare']
         self.assertIn('benchmark-image-tools.yml', prepare['if'])
         reuse = next(step for step in prepare['steps'] if step.get('id') == 'reuse')

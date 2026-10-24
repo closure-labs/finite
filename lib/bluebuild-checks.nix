@@ -134,6 +134,8 @@ in {
     python3 tests/ci/prune-ci-caches.py
     python3 tests/ci/ci-cache-benchmark.py
     python3 tests/ci/delivery-policy.py
+    python3 tests/ci/installer-benchmark.py
+    python3 tests/bluebuild/installer-provenance.py
     python3 tests/ci/image-tools-benchmark.py
     python3 tests/ci/image-verification-benchmark.py
     python3 tests/ci/security-reuse-benchmark.py

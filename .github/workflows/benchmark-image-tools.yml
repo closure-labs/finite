@@ -7,12 +7,16 @@ on:
         description: Hosted experiment; qualification never promotes an image
         type: choice
         default: tool-setup
-        options: [tool-setup, cache-lanes, qualification, options-smoke]
+        options: [tool-setup, cache-lanes, qualification, options-smoke, installer-smoke]
       installer_compression:
         description: Runtime compression for validation=qualification; production remains unchanged
         type: choice
         default: default
         options: [default, zstd]
+      installer_benchmark:
+        description: Optional predeclared benchmark controls JSON; mismatches stop before VM work
+        type: string
+        default: ""
       profile:
         description: Signed candidate profile for diagnostic qualification
         type: choice
@@ -55,6 +59,39 @@ permissions:
   actions: read
 
 jobs:
+  installer-smoke:
+    if: inputs.validation == 'installer-smoke' && github.repository == 'closure-labs/finite' && github.ref != 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        compression: [default, zstd]
+    env:
+      FINITE_VALIDATION_ONLY: "true"
+      FINITE_INSTALLER_COMPRESSION: ${{ matrix.compression }}
+      PREVIOUS_DIGEST: ${{ inputs.previous }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Validate manual branch diagnostic boundary
+        run: python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"
+      - name: Check pinned installer observer APIs without ISO or VM work
+        run: |
+          bash scripts/bluebuild/prepare-installer.sh
+          installer=$(jq -er .cliAlias sources/bluebuild-installer.json)
+          docker run --rm --network=none --memory=512m --memory-swap=512m --entrypoint /usr/bin/python3 "$installer" /usr/local/libexec/finite-installer-provenance.py smoke
+      - name: Retain installer smoke metadata including failures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: installer-observer-smoke-${{ matrix.compression }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/iso/installer.json
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 14
+
   options-smoke:
     if: inputs.validation == 'options-smoke'
     runs-on: ubuntu-24.04
@@ -166,3 +203,4 @@ jobs:
       force_qualification: true
       validation_only: true
       installer_compression: ${{ inputs.installer_compression }}
+      installer_benchmark: ${{ inputs.installer_benchmark }}

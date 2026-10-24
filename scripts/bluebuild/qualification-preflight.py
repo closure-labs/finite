@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Gate production qualification or isolated manual branch VM diagnostics."""
 import argparse
+import importlib.util
 import os
 from pathlib import Path
 import re
@@ -39,6 +40,11 @@ def require_eligible(revision, environ=None):
         raise ValueError('Installer compression experiments require validation-only qualification')
     if compression == 'zstd' and not re.fullmatch(r'sha256:[0-9a-f]{64}', env.get('PREVIOUS_DIGEST', '')):
         raise ValueError('Compression diagnostics require a predecessor for upgrade and rollback')
+    benchmark = env.get('FINITE_INSTALLER_BENCHMARK', '')
+    if benchmark:
+        spec = importlib.util.spec_from_file_location('benchmark_controls', Path(__file__).with_name('benchmark-controls.py'))
+        module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+        module.controls(benchmark, env)
     ref = env.get('GITHUB_REF', '')
     if mode == 'true':
         expected = REPOSITORY + '/.github/workflows/benchmark-image-tools.yml@' + ref

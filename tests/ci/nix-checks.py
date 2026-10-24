@@ -51,6 +51,22 @@ class RetryChecks(unittest.TestCase):
             self.assertFalse(Path('.bluebuild/large.json').exists())
             observation.setup('setup-start', {'GITHUB_JOB': 'other'})
 
+    def test_explicit_diagnostic_setup_keeps_unknown_cache_distinct_from_a_miss(self):
+        env = {'GITHUB_JOB': 'phase', 'FINITE_NIX_OBSERVATION': 'true', 'GITHUB_RUN_ID': '12', 'GITHUB_RUN_ATTEMPT': '1'}
+        with tempfile.TemporaryDirectory() as directory, contextlib.chdir(directory):
+            observation.setup('setup-start', env)
+            observation.setup('cache-selection', env)
+            observation.setup('setup-finish', {**env, 'SETUP_STATUS': 'success'})
+            unknown = json.loads(Path('.bluebuild/nix-setup.json').read_text())
+            self.assertIsNone(unknown['cache']['STORE_HIT'])
+            observation.setup('setup-start', env)
+            observation.setup('cache-selection', {**env, 'STORE_HIT': 'false'})
+            missed = json.loads(Path('.bluebuild/nix-setup.json').read_text())
+            self.assertEqual(missed['cache']['STORE_HIT'], 'false')
+            Path('.bluebuild/nix-setup.json').unlink()
+            observation.setup('setup-start', {'GITHUB_JOB': 'phase'})
+            self.assertFalse(Path('.bluebuild/nix-setup.json').exists())
+
     def test_hosted_checks_root_successful_proofs_before_bounded_cache_gc(self):
         command = checks.check_command(DRV, {'GITHUB_ACTIONS': 'true', 'RUNNER_TEMP': '/tmp/runner'})
         self.assertEqual(command[command.index('--out-link') + 1], '/tmp/runner/finite-checks-cache-root')

@@ -51,6 +51,19 @@ RUN python3 /tmp/finite-installer-compression.py merge /etc/lorax/lorax.conf /tm
     && rm /tmp/finite-installer-compression.py /tmp/finite-lorax-zstd.conf
 COMPRESSION
 fi
+if [[ ${FINITE_VALIDATION_ONLY:-false} == true ]]; then
+  python3 "$(dirname "${BASH_SOURCE[0]}")/qualification-preflight.py" --revision "${GITHUB_SHA:?}"
+  cp "$(dirname "${BASH_SOURCE[0]}")/installer-provenance.py" "$installer_context/installer-provenance.py"
+  # Only diagnostics wrap the pinned Lorax CLI. Production keeps its exact
+  # Containerfile. The wrapper observes inputs and delegates each call once.
+  cat >>"$installer_context/Containerfile" <<'PROVENANCE'
+
+COPY installer-provenance.py /usr/local/libexec/finite-installer-provenance.py
+RUN test -x /usr/bin/lorax && test ! -e /usr/local/bin/lorax \
+    && printf '%s\n' '#!/bin/sh' 'exec /usr/bin/python3 /usr/local/libexec/finite-installer-provenance.py hook -- "$@"' >/usr/local/bin/lorax \
+    && chmod 0755 /usr/local/bin/lorax
+PROVENANCE
+fi
 openssl x509 -in "$certificate" -outform DER -out "$installer_context/secure-boot.der"
 [[ $(sha256sum "$installer_context/secure-boot.der" | cut -d' ' -f1) == "$certificate_sha" ]]
 docker pull "$source"

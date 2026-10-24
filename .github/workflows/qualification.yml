@@ -27,6 +27,10 @@ on:
         description: Diagnostic-only runtime compression; default preserves the pinned installer
         type: string
         default: default
+      installer_benchmark:
+        description: Diagnostic-only predeclared runner, runtime and cache cohort controls
+        type: string
+        default: ""
       force_qualification:
         type: boolean
         default: false
@@ -68,6 +72,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       FINITE_VALIDATION_ONLY: ${{ inputs.validation_only }}
       FINITE_INSTALLER_COMPRESSION: ${{ inputs.installer_compression }}
+      FINITE_INSTALLER_BENCHMARK: ${{ inputs.installer_benchmark }}
       QUALIFICATION_PREFIX: ${{ inputs.validation_only && 'qualification-diagnostic' || 'qualification' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -77,6 +82,7 @@ jobs:
         if: inputs.validation_only
         run: python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"
       - uses: ./.github/actions/setup-nix
+        if: ${{ !inputs.validation_only }}
         with:
           cache-mode: none
       - name: Validate qualification execution context
@@ -116,6 +122,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 180
     env:
+      FINITE_BENCHMARK_PHASE: ${{ matrix.phase }}
+      FINITE_NIX_OBSERVATION: ${{ inputs.validation_only && inputs.installer_benchmark != '' }}
       PROFILE: ${{ inputs.profile }}
       CHANNEL: ${{ inputs.channel }}
       CANDIDATE_DIGEST: ${{ inputs.digest }}
@@ -125,6 +133,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       FINITE_VALIDATION_ONLY: ${{ inputs.validation_only }}
       FINITE_INSTALLER_COMPRESSION: ${{ inputs.installer_compression }}
+      FINITE_INSTALLER_BENCHMARK: ${{ inputs.installer_benchmark }}
       QUALIFICATION_PREFIX: ${{ inputs.validation_only && 'qualification-diagnostic' || 'qualification' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -133,9 +142,14 @@ jobs:
       - name: Validate manual branch diagnostic boundary
         if: inputs.validation_only
         run: python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"
+      - name: Validate and record predeclared benchmark controls
+        id: benchmark
+        if: inputs.validation_only
+        run: python3 scripts/bluebuild/benchmark-controls.py --record
       - uses: ./.github/actions/setup-nix
         with:
-          cache-mode: none
+          cache-mode: ${{ steps.benchmark.outputs.cache-mode || 'none' }}
+          cache-profile: checks
       - name: Validate qualification execution context
         run: python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"
       - uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
@@ -175,6 +189,8 @@ jobs:
           name: ${{ inputs.validation_only && 'qualification-diagnostic-phase' || 'qualification-phase' }}-${{ inputs.profile }}-${{ matrix.phase }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             .bluebuild/*outcome.json
+            .bluebuild/nix-setup.json
+            .bluebuild/*-benchmark.json
             .bluebuild/*qualification-context.json
             .bluebuild/*-stages.jsonl
             .bluebuild/vm*/**/*.json
@@ -216,6 +232,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       FINITE_VALIDATION_ONLY: ${{ inputs.validation_only }}
       FINITE_INSTALLER_COMPRESSION: ${{ inputs.installer_compression }}
+      FINITE_INSTALLER_BENCHMARK: ${{ inputs.installer_benchmark }}
       QUALIFICATION_PREFIX: ${{ inputs.validation_only && 'qualification-diagnostic' || 'qualification' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -225,6 +242,7 @@ jobs:
         if: inputs.validation_only
         run: python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"
       - uses: ./.github/actions/setup-nix
+        if: ${{ !inputs.validation_only }}
         with:
           cache-mode: none
       - name: Validate qualification execution context
@@ -261,11 +279,12 @@ jobs:
           path: |
             .bluebuild/*acceptance.json
             .bluebuild/*outcome.json
+            .bluebuild/*-benchmark.json
             .bluebuild/*-stages.jsonl
             .bluebuild/vm*/**/*.json
             .bluebuild/vm*/**/*.log
             .bluebuild/iso-*/*.json
             .bluebuild/iso-*/SHA256SUMS
           include-hidden-files: true
-          retention-days: 90
+          retention-days: ${{ inputs.validation_only && 14 || 90 }}
 

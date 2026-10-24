@@ -14,6 +14,8 @@ PROFILES = {
 # These files qualify an existing immutable image; they are not filesystem
 # inputs. Keep source/security checks while reusing already validated builds.
 QUALIFICATION_ONLY = {
+    '.github/workflows/benchmark-image-tools.yml', 'scripts/ci/benchmark-image-tools.py',
+    'scripts/ci/installer-benchmark.py',
     "scripts/ci/release_handoff.py", "scripts/ci/nix-checks.py", "scripts/ci/nix_observation.py", "lib/check-sources.nix",
     "scripts/ci/github_api.py", "scripts/ci/release_readiness.py",
     "scripts/ci/release-readiness.py", "scripts/ci/delivery-health.py",

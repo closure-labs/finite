@@ -106,13 +106,13 @@ elif command=='run' and 'sha256sum' in sys.argv:
     print(digest+'  '+sys.argv[-1])
 ''')
             docker.chmod(0o755)
-            for compression, status, corrupt in [('default',42,False),('default',0,False),('zstd',42,False),('zstd',0,False),('zstd',1,True)]:
+            for compression, status, corrupt, diagnostic in [('default',42,False,True),('default',0,False,True),('zstd',42,False,True),('zstd',0,False,True),('zstd',1,True,True),('default',0,False,False)]:
                 with self.subTest(compression=compression,build_status=status,corrupt=corrupt):
                     result = subprocess.run(['bash', str(ROOT / 'scripts/bluebuild/prepare-installer.sh')],
                         cwd=root, env=dict(os.environ, GITHUB_ACTIONS='true', GITHUB_REPOSITORY='closure-labs/finite',
                             GITHUB_SHA='a' * 40, FINITE_TEST_DOCKER_BUILD_STATUS=str(0 if corrupt else status),
                             FINITE_INSTALLER_COMPRESSION=compression, FINITE_TEST_CORRUPT_COMPRESSION=str(corrupt).lower(),
-                            FINITE_VALIDATION_ONLY='true',PREVIOUS_DIGEST='sha256:'+'e'*64,GITHUB_REF='refs/heads/ci/qualification-benchmark',
+                            FINITE_VALIDATION_ONLY=str(diagnostic).lower(),PREVIOUS_DIGEST='sha256:'+'e'*64,GITHUB_REF='refs/heads/ci/qualification-benchmark',
                             GITHUB_EVENT_NAME='workflow_dispatch',
                             GITHUB_WORKFLOW_REF='closure-labs/finite/.github/workflows/benchmark-image-tools.yml@refs/heads/ci/qualification-benchmark',
                             PATH=str(root / 'bin') + ':' + os.environ['PATH']), capture_output=True)
@@ -127,7 +127,10 @@ elif command=='run' and 'sha256sum' in sys.argv:
                         installer=json.loads((root/'.bluebuild/iso/installer.json').read_text())
                         if compression=='default':
                             self.assertNotIn('diagnosticCompression',installer)
-                            self.assertEqual(observed['containerfile'],(root/'files/installer/Containerfile').read_text())
+                            self.assertTrue(observed['containerfile'].startswith((root/'files/installer/Containerfile').read_text()))
+                            if diagnostic:self.assertIn('finite-installer-provenance.py',observed['containerfile'])
+                            else:self.assertEqual(observed['containerfile'],(root/'files/installer/Containerfile').read_text())
+                            self.assertNotIn('finite-installer-compression.py',observed['containerfile'])
                         else:
                             self.assertIn('logdir = /custom-logs',observed['configuration'])
                             actual=hashlib.sha256(observed['configuration'].encode()).hexdigest()
