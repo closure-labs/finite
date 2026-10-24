@@ -116,6 +116,14 @@ workflow warm median improving by at least 10 percent and 30 seconds; each cold
 phase and the cold workflow must regress no more than 10 percent. Size effects
 remain explicit. A report never authorizes publication or enables compression.
 
+Each successful phase also requires a matching native runner startup image,
+read from the authenticated native job log with an 8 MiB/30-second bound. The
+startup image and its release URL must agree with the predeclared version and
+the receipt environment. Unknown or conflicting evidence keeps the sample
+ineligible and preserves its complete native cost. Later workflow-printed
+metadata cannot replace the startup section. See the
+[native-runner observations](ci-native-runner-evidence-2026-10-24.md).
+
 No repeated matrix is dispatched automatically. First establish actual runtime
 cohorts at the reviewed head and inspect measurement cost. Preserve both
 profiles' actual Secure Boot, encrypted-root, SELinux, Nix sockets, Home Manager

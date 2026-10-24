@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import sys
 import tempfile
+import subprocess
 import unittest
 from unittest.mock import patch
 
@@ -181,7 +182,9 @@ class NativeReceipts(unittest.TestCase):
     def setUp(self):
         self.plan = plan(); self.native = {'id': 1}
         self.cost = {'jobs': [{'jobId': i, 'name': f'qualification / phase ({phase})',
-            'conclusion': 'success', 'runnerSeconds': 100} for i, phase in enumerate(('fresh', 'upgrade'))]}
+            'conclusion': 'success', 'runnerSeconds': 100} for i, phase in enumerate(('fresh', 'upgrade'), 1)]}
+        self.native_images = {j['jobId']: {'jobId': j['jobId'], 'image': 'ubuntu-24.04',
+                              'version': self.plan['runnerImage']} for j in self.cost['jobs']}
         core = {name: {'count': 2, 'sha256': 'a' * 64} for name in
                 ('runtimeRpms','installerRpms','repositoryMetadata','repositoryConfiguration')}
         runtime = {**core, 'schema': 1, 'authorizesPublication': False,
@@ -228,7 +231,7 @@ class NativeReceipts(unittest.TestCase):
 
     def verify(self):
         with patch.object(b.desktop, 'validate') as validate:
-            value = b.verify_documents(self.plan, self.native, self.cost, self.docs, self.hashes)
+            value = b.verify_documents(self.plan, self.native, self.cost, self.docs, self.hashes, self.native_images)
             validate.assert_called_once()
             return value
 
@@ -256,6 +259,92 @@ class NativeReceipts(unittest.TestCase):
         self.assertFalse(self.verify()['eligible'])
         self.setUp(); self.docs[key][0]['runner']['ImageVersion'] = 'other'
         self.assertFalse(self.verify()['eligible'])
+
+    def test_native_startup_mismatch_or_unknown_rejects_even_matching_environment(self):
+        self.assertTrue(self.verify()['eligible'])
+        for image in (None, {'jobId': 1, 'image': 'ubuntu-24.04', 'version': '20261012.334.1'},
+                      {'jobId': 2, 'image': 'ubuntu-24.04', 'version': self.plan['runnerImage']}):
+            with self.subTest(image=image):
+                self.native_images[1] = image
+                value = self.verify()
+                self.assertFalse(value['eligible'])
+                self.assertTrue(any('native runner startup image' in r for r in value['reasons']))
+
+
+class NativeRunner(unittest.TestCase):
+    def header(self):
+        lines = ["Current runner version: '2.338.0'", '##[group]Runner Image Provisioner',
+                 'Version: 20261021.618', '##[endgroup]', '##[group]Runner Image',
+                 'Image: ubuntu-24.04', 'Version: 20261012.334.1',
+                 'Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261012.334',
+                 '##[endgroup]', '##[group]GITHUB_TOKEN Permissions']
+        return ('\ufeff' + '\n'.join('2026-10-24T21:06:20.0000000Z ' + line for line in lines) + '\n').encode()
+
+    def test_startup_group_ignores_provisioner_and_user_printed_metadata(self):
+        raw = self.header() + b'##[group]Runner Image\nVersion: 20261023.334.3\n\xff'
+        self.assertEqual(b.parse_runner_header(raw)['version'], '20261012.334.1')
+        for old, replacement in [(b'##[group]GITHUB_TOKEN Permissions', b'missing-boundary'),
+                                  (b'Image: ubuntu-24.04', b'Image: ubuntu-latest'),
+                                  (b'Version: 20261012.334.1', b'Version: unknown'),
+                                  (b'ubuntu24%2F20261012.334', b'ubuntu24%2F20261023.334'),
+                                  (b'Image: ubuntu-24.04', b'Image: ubuntu-24.04\nImage: ubuntu-24.04')]:
+            with self.subTest(old=old), self.assertRaises(ValueError):
+                b.parse_runner_header(self.header().replace(old, replacement))
+        duplicate = self.header().replace(b'##[group]GITHUB_TOKEN Permissions', b'##[group]Runner Image\n##[endgroup]\n##[group]GITHUB_TOKEN Permissions')
+        with self.assertRaises(ValueError): b.parse_runner_header(duplicate)
+        forged = self.header().replace(b'##[group]GITHUB_TOKEN Permissions', b'Prepare workflow directory\n##[group]Run untrusted command\n##[group]GITHUB_TOKEN Permissions')
+        with self.assertRaises(ValueError): b.parse_runner_header(forged)
+
+    def test_log_transport_is_read_only_bounded_and_hashed(self):
+        raw = self.header()
+        def read(command, **kwargs):
+            self.assertEqual(command, ['gh', 'api', '--allow-escape-sequences',
+                'repos/closure-labs/finite/actions/jobs/123/logs'])
+            self.assertEqual(kwargs['timeout'], 30)
+            self.assertTrue(kwargs['check'])
+            with patch.object(b.resource, 'setrlimit') as limit:
+                kwargs['preexec_fn']()
+            limit.assert_called_once_with(b.resource.RLIMIT_FSIZE, (8 * 1024**2, 8 * 1024**2))
+            kwargs['stdout'].write(raw)
+        with patch.object(b.subprocess, 'run', side_effect=read):
+            value = b.native_runner_image(123)
+        self.assertEqual(value['version'], '20261012.334.1')
+        self.assertEqual(value['logSha256'], b.hashlib.sha256(raw).hexdigest())
+        with patch.object(b.subprocess, 'run') as api, self.assertRaises(ValueError):
+            b.native_runner_image(True)
+        api.assert_not_called()
+
+    def test_interrupted_receipt_download_retains_native_failed_work(self):
+        native = {'id': 1, 'head_sha': plan()['head'], 'repository': {'full_name': b.REPOSITORY},
+            'event': 'workflow_dispatch', 'head_branch': 'diagnostic', 'run_attempt': 1,
+            'status': 'completed', 'conclusion': 'success', 'path': '.github/workflows/benchmark-image-tools.yml',
+            'created_at': '2026-10-24T01:00:00Z'}
+        artifact = {'name': 'qualification-diagnostic-finite-1-1', 'workflow_run': {'id': 1, 'head_sha': plan()['head']},
+                    'expired': False, 'size_in_bytes': 100}
+        with patch.object(b, 'observe', return_value={'jobs': [{'jobId': 1, 'runnerSeconds': 125}]}), \
+                patch.object(b, 'inventory', return_value=[artifact]), \
+                patch.object(b, 'archive_reader', side_effect=subprocess.CalledProcessError(1, ['gh', 'api'])), \
+                patch.object(b, 'native_runner_image') as log:
+            value = b.native_sample(1, plan(), lambda endpoint: native)
+        self.assertEqual(value['knownRunnerSeconds'], 125)
+        self.assertFalse(value['eligible'])
+        log.assert_not_called()
+
+    def test_unavailable_native_log_leaves_unknown_cohort_and_retains_cost(self):
+        native = {'id': 1, 'head_sha': plan()['head'], 'repository': {'full_name': b.REPOSITORY},
+            'event': 'workflow_dispatch', 'head_branch': 'diagnostic', 'run_attempt': 1,
+            'status': 'completed', 'conclusion': 'success', 'path': '.github/workflows/benchmark-image-tools.yml',
+            'created_at': '2026-10-24T01:00:00Z'}
+        cost = {'jobs': [{'jobId': 123, 'name': 'qualification / phase (fresh)', 'runnerSeconds': 125}]}
+        for error in (subprocess.TimeoutExpired(['gh'], 30), subprocess.CalledProcessError(1, ['gh']), ValueError('unknown header')):
+            with self.subTest(error=type(error).__name__), patch.object(b, 'observe', return_value=cost), \
+                    patch.object(b, 'inventory', return_value=[]), \
+                    patch.object(b, 'native_runner_image', side_effect=error), \
+                    patch.object(b, 'verify_documents', return_value={'eligible': False, 'reasons': ['unknown native image']}) as verify:
+                value = b.native_sample(1, plan(), lambda endpoint: native)
+            self.assertEqual(verify.call_args.args[-1], {123: None})
+            self.assertEqual(value['knownRunnerSeconds'], 125)
+            self.assertFalse(value['eligible'])
 
 
 if __name__ == '__main__':
