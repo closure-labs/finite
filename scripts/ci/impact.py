@@ -44,6 +44,7 @@ QUALIFICATION_ONLY = {
     '.github/workflows/release-set.yml', '.github/workflows/publish-release-set.yml',
     '.github/workflows/attest-image.yml', 'scripts/ci/verify-attestation-subject.py',
     'scripts/ci/decision-authority.py', 'scripts/ci/decision-controller.py',
+    'scripts/ci/reconcile-decisions.py',
     'scripts/ci/decision_controller.py', 'scripts/ci/security_admission.py',
     'scripts/ci/decision_packets.py',
     'scripts/ci/bluefin-upstream.py', 'scripts/ci/impact.py', 'scripts/ci/image_identity.py',

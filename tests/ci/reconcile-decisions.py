@@ -70,6 +70,7 @@ class Reconciliation(unittest.TestCase):
         self.verify_results = None
         self.verifications = 0
         self.native_scan = {'status': 'complete', 'scannerHealth': 'healthy', 'image': IMAGE}
+        self.fetches = []
         self.patches = [patch.object(reconcile.controller, 'ROOT', self.root),
                         patch.object(reconcile.controller, 'api', side_effect=self.api),
                         patch.object(reconcile.controller, 'collection', side_effect=self.collection),
@@ -84,11 +85,141 @@ class Reconciliation(unittest.TestCase):
             item.start()
             self.addCleanup(item.stop)
 
-    def fetch(self, reference, directory, digest):
-        location = directory / 'finite'
-        location.mkdir(parents=True)
-        (location / 'vulnerabilities.json').write_text(json.dumps({'descriptor': {'timestamp': '2026-01-01T00:00:00Z'}}))
-        (location / 'security-result.json').write_text(json.dumps({'status': 'complete', 'scannerHealth': 'healthy', 'image': IMAGE}))
+    def fetch(self, reference, directory, digest, *, existing=False):
+        self.fetches.append((reference, directory, digest, existing))
+        if existing:
+            self.assertTrue(directory.is_dir())
+            return
+        for profile in reconcile.controller.PROFILES:
+            location = directory / profile
+            location.mkdir(parents=True)
+            (location / 'vulnerabilities.json').write_text(json.dumps({'descriptor': {'timestamp': '2026-01-01T00:00:00Z'}}))
+            (location / 'security-result.json').write_text(json.dumps({'status': 'complete', 'scannerHealth': 'healthy', 'image': IMAGE}))
+
+    def two_profile_proposal(self):
+        ledger = self.root / 'automation/decisions/security'
+        (ledger / (self.identity + '.json')).unlink()
+        self.proposal['payload']['profiles'] = list(reconcile.controller.PROFILES)
+        self.identity = reconcile.canonical_hash(self.proposal)
+        (ledger / (self.identity + '.json')).write_text(json.dumps(self.proposal))
+
+    def test_shared_packet_downloads_once_but_rechecks_bytes_health_and_authority_for_each_profile(self):
+        self.two_profile_proposal()
+        with patch.object(reconcile, 'publication_busy', return_value=True):
+            self.assertEqual([item['status'] for item in self.execute()], ['publisher-busy'] * 2)
+        self.assertEqual([item[3] for item in self.fetches], [False, True])
+        self.assertEqual(self.fetches[0][:3], self.fetches[1][:3])
+        self.assertEqual(self.verifications, 2)
+        self.assertEqual([call.kwargs['profile'] for call in reconcile.controller.native_result.call_args_list],
+                         list(reconcile.controller.PROFILES))
+        self.assertFalse(self.fetches[0][1].exists())
+        self.assertEqual(self.dispatched, [])
+
+    def test_staging_is_not_reused_between_reconciliation_invocations(self):
+        self.two_profile_proposal()
+        with patch.object(reconcile, 'publication_busy', return_value=True):
+            self.execute()
+            self.execute()
+        self.assertEqual([item[3] for item in self.fetches], [False, True, False, True])
+        self.assertNotEqual(self.fetches[0][1], self.fetches[2][1])
+        self.assertTrue(all(not item[1].exists() for item in self.fetches))
+        self.assertEqual(self.verifications, 4)
+
+    def test_first_dispatch_still_stops_before_second_profile_or_extra_transfer(self):
+        self.two_profile_proposal()
+        self.assertEqual([item['status'] for item in self.execute()], ['dispatched'])
+        self.assertEqual([item[3] for item in self.fetches], [False])
+        self.assertEqual(self.verifications, 2)
+        self.assertEqual(len(self.dispatched), 1)
+        self.assertFalse(self.fetches[0][1].exists())
+
+    def test_second_profile_native_health_failure_is_not_covered_by_first_profile(self):
+        self.two_profile_proposal()
+        reconcile.controller.native_result.side_effect = [self.native_scan, ValueError('Invalid native evidence')]
+        with patch.object(reconcile, 'publication_busy', return_value=True), \
+                self.assertRaisesRegex(ValueError, 'Invalid native evidence'):
+            self.execute()
+        self.assertEqual([item[3] for item in self.fetches], [False, True])
+        self.assertEqual(self.verifications, 1)
+        self.assertEqual(self.dispatched, [])
+
+    def test_different_immutable_packets_are_staged_separately(self):
+        developer = deepcopy(self.proposal)
+        developer['payload'].update(profiles=['finite-dev'])
+        developer['payload']['packet'].update(reference='different-packet', sha256='d' * 64)
+        identity = reconcile.canonical_hash(developer)
+        (self.root / 'automation/decisions/security' / (identity + '.json')).write_text(json.dumps(developer))
+        self.verify_results = [{'status': 'covered', 'decision': {'proposalHash': item}}
+                               for item in (self.identity, identity)]
+        def fetch(*args, **kwargs):
+            if self.fetches:
+                self.assertFalse(self.fetches[0][1].exists())
+            self.fetch(*args, **kwargs)
+        with patch.object(reconcile, 'publication_busy', return_value=True), \
+                patch.object(reconcile.decision_packets, 'fetch', side_effect=fetch):
+            self.execute()
+        self.assertEqual([item[3] for item in self.fetches], [False, False])
+        self.assertNotEqual(self.fetches[0][1], self.fetches[1][1])
+        self.assertEqual(self.verifications, 2)
+
+    def test_different_expected_packet_hash_does_not_use_staged_bytes(self):
+        developer = deepcopy(self.proposal)
+        developer['payload'].update(profiles=['finite-dev'])
+        developer['payload']['packet']['sha256'] = 'd' * 64
+        identity = reconcile.canonical_hash(developer)
+        (self.root / 'automation/decisions/security' / (identity + '.json')).write_text(json.dumps(developer))
+        def fetch(reference, directory, digest, **kwargs):
+            if digest == 'd' * 64:
+                self.assertFalse(kwargs.get('existing', False))
+                raise ValueError('Packet contents differ from approved manifest')
+            self.fetch(reference, directory, digest, **kwargs)
+        with patch.object(reconcile, 'publication_busy', return_value=True), \
+                patch.object(reconcile.decision_packets, 'fetch', side_effect=fetch), \
+                self.assertRaisesRegex(ValueError, 'approved manifest'):
+            self.execute()
+        self.assertEqual(self.verifications, 1)
+        self.assertEqual(self.dispatched, [])
+
+    def test_corrupt_staged_packet_stops_before_second_health_authority_or_dispatch(self):
+        self.two_profile_proposal()
+        def fetch(reference, directory, digest, *, existing=False):
+            if existing:
+                raise ValueError('Packet member integrity failure')
+            self.fetch(reference, directory, digest)
+        with patch.object(reconcile, 'publication_busy', return_value=True), \
+                patch.object(reconcile.decision_packets, 'fetch', side_effect=fetch), \
+                self.assertRaisesRegex(ValueError, 'integrity failure'):
+            self.execute()
+        self.assertEqual(reconcile.controller.native_result.call_count, 1)
+        self.assertEqual(self.verifications, 1)
+        self.assertFalse(self.fetches[0][1].exists())
+        self.assertEqual(self.dispatched, [])
+
+    def test_failed_initial_transfer_is_cleaned_and_never_retained_for_retry(self):
+        self.two_profile_proposal()
+        def fetch(*args, **kwargs):
+            self.fetch(*args, **kwargs)
+            raise OSError('Interrupted transfer')
+        with patch.object(reconcile.decision_packets, 'fetch', side_effect=fetch), \
+                self.assertRaisesRegex(OSError, 'Interrupted'):
+            self.execute()
+        self.assertEqual(self.verifications, 0)
+        self.assertFalse(self.fetches[0][1].exists())
+        with patch.object(reconcile, 'publication_busy', return_value=True):
+            self.execute()
+        self.assertEqual([item[3] for item in self.fetches], [False, False, True])
+
+    def test_cached_packet_does_not_carry_approval_across_profiles_or_past_revocation(self):
+        self.two_profile_proposal()
+        self.verify_results = [
+            {'status': 'review-required'},
+            {'status': 'covered', 'decision': {'proposalHash': self.identity}},
+            {'status': 'revoked'}]
+        with self.assertRaisesRegex(ValueError, 'authority changed'):
+            self.execute()
+        self.assertEqual([item[3] for item in self.fetches], [False, True])
+        self.assertEqual(self.verifications, 3)
+        self.assertEqual(self.dispatched, [])
 
     def verify(self, *args, **kwargs):
         self.verifications += 1

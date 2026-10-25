@@ -43,6 +43,7 @@ class Selection(unittest.TestCase):
 
     def test_decision_controls_keep_contracts_without_rebuilding_os_images(self):
         paths = ['.github/workflows/decision-proposals.yml', 'scripts/ci/decision-controller.py',
+                 'scripts/ci/reconcile-decisions.py',
                  'scripts/ci/decision_controller.py', 'scripts/ci/security_admission.py',
                  'scripts/ci/release_artifact.py', 'scripts/ci/decision_packets.py',
                  'scripts/ci/archive_read.py', 'scripts/ci/publisher_health.py', 'scripts/ci/reconcile-delivery.py',
