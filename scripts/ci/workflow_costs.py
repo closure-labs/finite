@@ -2,6 +2,8 @@
 from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
+import json
+import math
 import re
 import statistics
 
@@ -153,6 +155,7 @@ def observe(run, api, now):
     elapsed = seconds(run['created_at'], end or (run.get('updated_at') if run['status'] == 'completed' else None) or now.isoformat())
     return {'repository': REPOSITORY, 'runId': run['id'], 'runAttempt': run['run_attempt'],
             'sourceRevision': run['head_sha'], 'workflow': run['path'], 'event': run['event'],
+            'headBranch': run.get('head_branch'),
             'url': run['html_url'], 'createdAt': run['created_at'], 'status': run['status'],
             'conclusion': run.get('conclusion'), 'category': category(run, jobs=[{'steps': job['steps']} for job in jobs]),
             'decisionRequest': (re.search(r'\[decision:([0-9a-f]{64})\]', run.get('display_title', '')) or [None, None])[1],
@@ -239,6 +242,118 @@ def stage_opportunities(runs):
     return sorted(rows, key=lambda r: (r['seconds'] is not None, r['seconds'] or 0), reverse=True)
 
 
+def source_repetition(runs):
+    """Measure repeated recorded inputs; never decide whether checks may be skipped."""
+    proofs, targets, seen = [], [], {}
+    for run in runs:
+        if run['repository'] != REPOSITORY or run['workflow'] != '.github/workflows/build.yml':
+            continue
+        proof_completed = None
+        if (run['event'] == 'merge_group' and run['status'] == 'completed'
+                and run['conclusion'] == 'success'
+                and isinstance(run.get('headBranch'), str)
+                and run['headBranch'].startswith('gh-readonly-queue/main/')):
+            try:
+                proof_completed = max(timestamp(job['completedAt']) for job in run['jobs']
+                                      if job['conclusion'] != 'skipped')
+            except (ValueError, TypeError):
+                pass
+        for job in run['jobs']:
+            if job['role'] != 'checks':
+                continue
+            projection = (run['runId'], run['sourceRevision'], job)
+            if job['jobId'] in seen:
+                if seen[job['jobId']] != projection:
+                    raise ValueError('Conflicting native source-job projections')
+                continue
+            seen[job['jobId']] = projection
+            row = {'runId': run['runId'], 'jobId': job['jobId'], 'runAttempt': job['runAttempt'],
+                   'sourceRevision': run['sourceRevision'], 'checkoutRevision': job.get('checkoutRevision'),
+                   'aggregateDerivation': job.get('nixAggregateDerivation'),
+                   'runnerSeconds': job['runnerSeconds'], 'exclusiveRunnerSeconds': job.get('exclusiveRunnerSeconds'),
+                   'state': 'unknown', 'missing': [], 'queueProof': None, 'nestedPhaseSeconds': None,
+                   'reuseEligible': None, 'reuseHit': None, 'nativeRunnerImage': None}
+            if run['event'] in ('push', 'schedule', 'workflow_dispatch') and run.get('headBranch') != 'main':
+                row['missing'].append('native-main-branch')
+            if job['status'] != 'completed' or job['conclusion'] != 'success':
+                row['missing'].append('successful-source-job')
+            if row['checkoutRevision'] != run['sourceRevision']:
+                row['missing'].append('exact-checkout-revision')
+            if not isinstance(row['aggregateDerivation'], str) or not re.fullmatch(
+                    r'/nix/store/[a-z0-9]{32}-finite-ci-checks\.drv', row['aggregateDerivation']):
+                row['missing'].append('aggregate-derivation')
+            cohort = job['runner'].get('toolCohort')
+            if (not isinstance(cohort, dict) or not isinstance(cohort.get('lockSha256'), dict)
+                    or any(not isinstance(cohort['lockSha256'].get(lock), str)
+                           or not re.fullmatch('[0-9a-f]{64}', cohort['lockSha256'][lock])
+                           for lock in ('flake.lock', 'devenv.lock'))
+                    or any(not isinstance(cohort.get(key), str) or not cohort[key].startswith('/')
+                           for key in ('nixExecutable', 'pythonExecutable'))):
+                row['missing'].append('recorded-tool-cohort')
+            try:
+                cohort_key = json.dumps(cohort, sort_keys=True, allow_nan=False)
+            except (ValueError, TypeError):
+                cohort_key = None
+                row['missing'].append('serializable-tool-cohort')
+            phases = [s for s in job['stages'] if s['stage'] in ('Evaluate aggregate', 'Build aggregate')]
+            if (len(phases) != 2 or {s['stage'] for s in phases} != {'Evaluate aggregate', 'Build aggregate'}
+                    or any(s.get('outcome') != 'success' or type(s.get('status')) is not int or s['status'] != 0
+                           or type(s.get('seconds')) not in (int, float) or not math.isfinite(s['seconds'])
+                           or not 0 <= s['seconds'] <= 86400 for s in phases)):
+                row['missing'].append('successful-aggregate-phases')
+            else:
+                row['nestedPhaseSeconds'] = sum(s['seconds'] for s in phases)
+                if (job['runnerSeconds'] is not None and row['nestedPhaseSeconds'] > job['runnerSeconds'] + 1):
+                    row['missing'].append('phases-within-native-occupancy')
+            try:
+                started, completed = timestamp(job['startedAt']), timestamp(job['completedAt'])
+                if completed < started:
+                    raise ValueError('Reversed source-job interval')
+            except (ValueError, TypeError):
+                started = completed = None
+                row['missing'].append('native-job-interval')
+            if started is not None and row['nestedPhaseSeconds'] is not None:
+                try:
+                    intervals = {s['stage']: (timestamp(s['startedAt']),
+                                 timestamp(s['startedAt']) + timedelta(seconds=s['seconds'])) for s in phases}
+                    tolerance = timedelta(seconds=1)
+                    if any(begin < started - tolerance or end > completed + tolerance
+                           for begin, end in intervals.values()):
+                        row['missing'].append('phase-native-interval')
+                    if intervals['Build aggregate'][0] < intervals['Evaluate aggregate'][1] - tolerance:
+                        row['missing'].append('serial-aggregate-phases')
+                except (KeyError, ValueError, TypeError, OverflowError):
+                    row['missing'].append('aggregate-phase-intervals')
+            key = (run['sourceRevision'], row['checkoutRevision'], row['aggregateDerivation'], cohort_key)
+            if proof_completed is not None and not row['missing']:
+                proofs.append((key, proof_completed, row))
+            if run['event'] in ('push', 'schedule', 'workflow_dispatch'):
+                targets.append((key, started, row))
+    rows = []
+    for key, started, row in targets:
+        if not row['missing']:
+            earlier = [(completed, proof) for candidate, completed, proof in proofs
+                       if candidate == key and completed <= started and proof['runId'] != row['runId']]
+            if earlier:
+                _, proof = max(earlier, key=lambda item: (item[0], item[1]['jobId']))
+                row['state'] = 'repeated-recorded-inputs'
+                row['queueProof'] = {field: proof[field] for field in ('runId', 'jobId', 'runAttempt')}
+            else:
+                row['state'] = 'no-earlier-matching-queue-proof-observed'
+        rows.append(row)
+    repeated = [row for row in rows if row['state'] == 'repeated-recorded-inputs']
+    return {'authorizesPublication': False, 'productionReuseEnabled': False,
+            'eligibilityEvaluated': False, 'observedQueueProofs': len(proofs),
+            'repeatedJobs': len(repeated), 'unknownJobs': sum(row['state'] == 'unknown' for row in rows),
+            'repeatedKnownRunnerSeconds': sum(row['runnerSeconds'] or 0 for row in repeated),
+            'repeatedRunnerTimeUnknownJobs': sum(row['runnerSeconds'] is None for row in repeated),
+            'repeatedNestedPhaseSeconds': sum(row['nestedPhaseSeconds'] for row in repeated),
+            'repeatedKnownExclusiveRunnerSeconds': sum(row['exclusiveRunnerSeconds'] or 0 for row in repeated),
+            'repeatedExclusiveTimeUnknownJobs': sum(row['exclusiveRunnerSeconds'] is None for row in repeated),
+            'rows': sorted(rows, key=lambda row: (row['state'] != 'repeated-recorded-inputs',
+                                                -(row['runnerSeconds'] or 0), row['jobId']))}
+
+
 def collect(api=get_json, now=None, rollout=None, *, receipts=False):
     now = now or datetime.now(timezone.utc)
     anchor = rollout or now
@@ -294,6 +409,7 @@ def collect(api=get_json, now=None, rollout=None, *, receipts=False):
                             'cohorts': aggregate(observation)}, 'runs': runs,
             'rankedStages': stage_opportunities(observation or baseline),
             'rankedRecurringWork': sorted(aggregate(observation or baseline), key=lambda row: row['runnerSeconds'], reverse=True),
+            'sourceRepetition': source_repetition(runs),
             'limitations': ['Runner seconds are elapsed occupancy, not billed cost; active work is right-censored.',
                            'Shared jobs are reported separately; skipped jobs count with zero runner time.',
                            'Native step times include setup and post-job handling; composite cache restore/save substeps are not exposed.',
@@ -301,6 +417,7 @@ def collect(api=get_json, now=None, rollout=None, *, receipts=False):
                            'Unknown receipt coverage, candidate identities, cohorts and reuse are explicit; unavailable is a miss reason, not an inferred context mismatch.',
                            'Rollout revisions are exact producer source revisions; later changes are separate cohorts, with no causal savings attribution.',
                            'Exclusive runner seconds measure sole-job intervals as a lower bound on blocking time; final-job counts mark the workflow tail. Exact dependency DAG contribution remains unknown.',
+                           'Source repetition matches recorded checkout, aggregate and tool inputs to an earlier successful queue job; it does not evaluate reuse eligibility, verify native runner image identity or establish savings. Missing receipts and unseen queue proofs are not cache misses.',
                            'No percentile estimates; sample counts accompany medians. Reports grant no approval authority.']}
 
 
@@ -319,5 +436,12 @@ def markdown(report):
         exclusive = 'unknown' if row['exclusiveRunnerSeconds'] is None else f"{row['exclusiveRunnerSeconds']:.1f}s"
         lines.append(f'- {row["workflow"]}, {row["event"]}, {row["role"]}, {row["profile"]}, {row["rolloutRevision"][:12]}: {row["runnerSeconds"]:.1f}s across {row["jobs"]} jobs; {exclusive} sole-runner occupancy; final job in {row["criticalPathJobs"]}.')
     lines += ['']
+    repetition = report.get('sourceRepetition')
+    if repetition:
+        lines += ['Repeated source work after an observed matching queue proof: '
+                  f'{repetition["repeatedJobs"]} jobs, {repetition["repeatedKnownRunnerSeconds"]:.1f} known native runner seconds, '
+                  f'{repetition["repeatedNestedPhaseSeconds"]:.1f} nested evaluation/build seconds. '
+                  'These measurements overlap; no check reuse or savings is inferred.',
+                  f'Unknown source coverage: {repetition["unknownJobs"]} jobs. Unseen queue proofs are not cache misses.', '']
     lines.extend('- ' + item for item in report['limitations'])
     return '\n'.join(lines) + '\n'

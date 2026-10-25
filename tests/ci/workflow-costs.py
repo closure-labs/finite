@@ -21,6 +21,179 @@ measure = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(measure)
 
 
+class SourceRepetition(unittest.TestCase):
+    def setUp(self):
+        self.revision = 'b' * 40
+        self.aggregate = '/nix/store/' + 'a' * 32 + '-finite-ci-checks.drv'
+        self.cohort = {'lockSha256': {'flake.lock': 'c' * 64, 'devenv.lock': 'd' * 64},
+                       'nixExecutable': '/nix/store/nix/bin/nix', 'pythonExecutable': '/usr/bin/python3'}
+        def job(identity, start, finish, seconds):
+            return {'jobId': identity, 'runAttempt': 1, 'role': 'checks', 'status': 'completed',
+                    'conclusion': 'success', 'startedAt': start, 'completedAt': finish,
+                    'checkoutRevision': self.revision, 'nixAggregateDerivation': self.aggregate,
+                    'runnerSeconds': seconds, 'exclusiveRunnerSeconds': seconds,
+                    'runner': {'toolCohort': deepcopy(self.cohort)},
+                    'stages': [{'stage': name, 'seconds': elapsed, 'outcome': 'success', 'status': 0,
+                                'startedAt': start if name == 'Evaluate aggregate' else
+                                (costs.timestamp(start) + costs.timedelta(seconds=seconds / 2)).isoformat()}
+                               for name, elapsed in [('Evaluate aggregate', 30), ('Build aggregate', 20)]]}
+        self.proof = {'repository': costs.REPOSITORY, 'workflow': '.github/workflows/build.yml',
+                      'event': 'merge_group', 'status': 'completed', 'conclusion': 'success', 'runId': 10,
+                      'sourceRevision': self.revision, 'headBranch': 'gh-readonly-queue/main/pr-1-base',
+                      'jobs': [job(100, '2026-10-25T01:00:00Z', '2026-10-25T01:01:00Z', 60),
+                               {'jobId': 101, 'role': 'build', 'conclusion': 'success',
+                                'completedAt': '2026-10-25T01:03:00Z', 'runnerSeconds': 60}]}
+        self.target = {**deepcopy(self.proof), 'event': 'workflow_dispatch', 'headBranch': 'main', 'runId': 20,
+                       'jobs': [job(200, '2026-10-25T01:04:00Z', '2026-10-25T01:06:00Z', 120)]}
+        self.target['jobs'][0]['stages'][0]['seconds'] = 70
+        self.target['jobs'][0]['stages'][1]['startedAt'] = '2026-10-25T01:05:10Z'
+
+    def report(self, proof=None):
+        return costs.source_repetition([self.proof if proof is None else proof, self.target])
+
+    def test_exact_recorded_inputs_repeat_without_authorizing_or_double_adding_cost(self):
+        before = deepcopy([self.proof, self.target])
+        report = self.report()
+        self.assertEqual(report['repeatedJobs'], 1)
+        self.assertEqual(report['repeatedKnownRunnerSeconds'], 120)
+        self.assertEqual(report['repeatedNestedPhaseSeconds'], 90)
+        self.assertEqual(report['repeatedKnownExclusiveRunnerSeconds'], 120)
+        self.assertEqual(report['rows'][0]['queueProof'], {'runId': 10, 'jobId': 100, 'runAttempt': 1})
+        self.assertFalse(report['authorizesPublication'])
+        self.assertFalse(report['productionReuseEnabled'])
+        self.assertFalse(report['eligibilityEvaluated'])
+        self.assertIsNone(report['rows'][0]['reuseEligible'])
+        self.assertIsNone(report['rows'][0]['reuseHit'])
+        self.assertIsNone(report['rows'][0]['nativeRunnerImage'])
+        self.assertEqual([self.proof, self.target], before)
+
+    def test_source_aggregate_or_recorded_tools_cannot_match_across_cohorts(self):
+        for change in ('source', 'aggregate', 'tool'):
+            with self.subTest(change=change):
+                self.setUp()
+                if change == 'source':
+                    self.target['sourceRevision'] = self.target['jobs'][0]['checkoutRevision'] = 'e' * 40
+                elif change == 'aggregate':
+                    self.target['jobs'][0]['nixAggregateDerivation'] = self.aggregate.replace('a' * 32, 'e' * 32)
+                else:
+                    self.target['jobs'][0]['runner']['toolCohort']['pythonExecutable'] = '/usr/bin/python3.11'
+                self.assertEqual(self.report()['rows'][0]['state'], 'no-earlier-matching-queue-proof-observed')
+
+    def test_native_pr_head_does_not_substitute_for_actual_checkout(self):
+        self.target['jobs'][0]['checkoutRevision'] = 'e' * 40
+        self.assertIn('exact-checkout-revision', self.report()['rows'][0]['missing'])
+        self.assertEqual(self.report()['unknownJobs'], 1)
+
+    def test_entire_queue_workflow_must_finish_before_target_starts(self):
+        self.proof['jobs'][1]['completedAt'] = '2026-10-25T01:05:00Z'
+        self.assertEqual(self.report()['repeatedJobs'], 0)
+
+    def test_failed_active_or_nonqueue_run_is_not_a_successful_queue_proof(self):
+        for field, value in [('status', 'in_progress'), ('conclusion', 'failure'),
+                             ('event', 'pull_request'), ('headBranch', 'other')]:
+            with self.subTest(field=field):
+                proof = {**self.proof, field: value}
+                self.assertEqual(self.report(proof)['observedQueueProofs'], 0)
+
+    def test_missing_queue_timestamps_do_not_create_a_proof(self):
+        self.proof['jobs'][1]['completedAt'] = None
+        self.assertEqual(self.report()['observedQueueProofs'], 0)
+
+    def test_missing_receipts_and_tools_remain_unknown(self):
+        for field in ('checkoutRevision', 'nixAggregateDerivation', 'stages', 'toolCohort'):
+            with self.subTest(field=field):
+                self.setUp()
+                job = self.target['jobs'][0]
+                if field == 'toolCohort': job['runner'][field] = None
+                elif field == 'stages': job[field] = []
+                else: job.pop(field)
+                report = self.report()
+                self.assertEqual(report['unknownJobs'], 1)
+                self.assertEqual(report['repeatedJobs'], 0)
+                self.assertIsNone(report['rows'][0]['reuseHit'])
+
+    def test_partial_failed_or_invalid_phases_remain_unknown(self):
+        for mutation in ('partial', 'failed', 'nan', 'negative', 'boolean', 'outside-job'):
+            with self.subTest(mutation=mutation):
+                self.setUp()
+                phases = self.target['jobs'][0]['stages']
+                if mutation == 'partial': phases.pop()
+                elif mutation == 'failed': phases[0]['outcome'] = 'failure'
+                else: phases[0]['seconds'] = {'nan': float('nan'), 'negative': -1,
+                                               'boolean': True, 'outside-job': 500}[mutation]
+                self.assertEqual(self.report()['unknownJobs'], 1)
+
+    def test_invalid_job_interval_or_nonmain_dispatch_remains_unknown(self):
+        for mutation in ('missing-time', 'reversed-time', 'no-timezone', 'branch'):
+            with self.subTest(mutation=mutation):
+                self.setUp()
+                if mutation == 'branch': self.target['headBranch'] = 'other'
+                else:
+                    self.target['jobs'][0]['startedAt'] = {'missing-time': None,
+                        'reversed-time': '2026-10-25T02:00:00Z', 'no-timezone': '2026-10-25T01:04:00'}[mutation]
+                self.assertEqual(self.report()['unknownJobs'], 1)
+
+    def test_copied_phase_timestamps_do_not_become_current_source_cost(self):
+        self.target['jobs'][0]['stages'][0]['startedAt'] = '2026-10-24T01:04:00Z'
+        report = self.report()
+        self.assertEqual(report['repeatedJobs'], 0)
+        self.assertIn('phase-native-interval', report['rows'][0]['missing'])
+        self.assertEqual(report['rows'][0]['runnerSeconds'], 120)
+
+    def test_overlapping_serial_aggregate_phases_remain_unknown(self):
+        self.target['jobs'][0]['stages'][1]['startedAt'] = '2026-10-25T01:04:30Z'
+        self.assertIn('serial-aggregate-phases', self.report()['rows'][0]['missing'])
+
+    def test_no_observed_proof_is_not_a_cache_miss(self):
+        report = costs.source_repetition([self.target])
+        self.assertEqual(report['rows'][0]['state'], 'no-earlier-matching-queue-proof-observed')
+        self.assertIsNone(report['rows'][0]['reuseEligible'])
+        self.assertIsNone(report['rows'][0]['reuseHit'])
+
+    def test_reused_source_job_across_retry_projections_is_counted_once(self):
+        replay = {**deepcopy(self.target), 'runAttempt': 2}
+        report = costs.source_repetition([self.proof, self.target, replay])
+        self.assertEqual(report['repeatedJobs'], 1)
+        self.assertEqual(report['repeatedKnownRunnerSeconds'], 120)
+        replay['jobs'][0]['runnerSeconds'] = 121
+        with self.assertRaisesRegex(ValueError, 'Conflicting native source-job'):
+            costs.source_repetition([self.proof, self.target, replay])
+
+    def test_latest_available_proof_is_selected_deterministically(self):
+        later = deepcopy(self.proof)
+        later['runId'] = 11
+        later['jobs'][0]['jobId'] = 110
+        later['jobs'][1]['completedAt'] = '2026-10-25T01:03:30Z'
+        report = costs.source_repetition([later, self.target, self.proof])
+        self.assertEqual(report['rows'][0]['queueProof']['runId'], 11)
+
+    def test_unknown_native_and_exclusive_time_are_preserved(self):
+        self.target['jobs'][0].update(runnerSeconds=None, exclusiveRunnerSeconds=None)
+        report = self.report()
+        self.assertEqual(report['repeatedRunnerTimeUnknownJobs'], 1)
+        self.assertEqual(report['repeatedExclusiveTimeUnknownJobs'], 1)
+        self.assertIsNone(report['rows'][0]['runnerSeconds'])
+        self.assertIsNone(report['rows'][0]['exclusiveRunnerSeconds'])
+
+    def test_unserializable_cohort_is_unknown_and_foreign_workflows_are_excluded(self):
+        self.target['jobs'][0]['runner']['toolCohort']['extra'] = float('nan')
+        self.assertIn('serializable-tool-cohort', self.report()['rows'][0]['missing'])
+        for field, value in [('repository', 'fork/repo'), ('workflow', '.github/workflows/other.yml')]:
+            with self.subTest(field=field):
+                report = costs.source_repetition([{**self.target, field: value}])
+                self.assertEqual(report['rows'], [])
+
+    def test_markdown_labels_overlapping_measurements_and_unknown_coverage(self):
+        report = {'observedAt': 'now', 'baseline': {'cohorts': []},
+                  'observation': {'cohorts': [], 'complete': False}, 'limitations': [],
+                  'sourceRepetition': self.report()}
+        rendered = costs.markdown(report)
+        self.assertIn('120.0 known native runner seconds', rendered)
+        self.assertIn('90.0 nested evaluation/build seconds', rendered)
+        self.assertIn('These measurements overlap', rendered)
+        self.assertIn('Unseen queue proofs are not cache misses', rendered)
+
+
 class Costs(unittest.TestCase):
     def setUp(self):
         self.now = datetime(2026, 10, 23, 12, tzinfo=timezone.utc)

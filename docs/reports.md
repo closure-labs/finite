@@ -9,6 +9,7 @@ the recorded revision and date.
 
 | Record | Scope |
 | --- | --- |
+| [Source repetition and rollout evidence, October 25 UTC](ci-source-repetition-2026-10-25.md) | Completed two-profile promotion, bounded source-repeat accounting and observed controller staging paths |
 | [Active publisher lookup, October 25 UTC](ci-active-publishers-2026-10-25.md) | First native controller phase receipt and draft bounded queries that avoid reading completed publisher history |
 | [Decision reconciliation timings, October 25 UTC](ci-reconciliation-timings-2026-10-25.md) | Successful staging rollout, unmatched complete-job observations and bounded per-profile controller phase timings |
 | [Decision packet staging, October 25 UTC](ci-decision-packet-staging-2026-10-25.md) | Draft controller prototype avoids repeated shared-packet blob fetches while retaining per-profile integrity and live approval checks |
