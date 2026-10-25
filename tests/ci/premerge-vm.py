@@ -156,7 +156,8 @@ class Premerge(unittest.TestCase):
         self.assertIn('environment: release', (ROOT / '.github/workflows/publish-release-set.yml').read_text())
         jobs = workflow('delivery-health')['jobs']
         health = jobs['reconcile']['steps']
-        observer = next(step for step in jobs['health']['steps'] if step.get('id') == 'review-token')['with']
+        self.assertNotIn('health', jobs)
+        observer = next(step for step in health if step.get('id') == 'health-token')['with']
         self.assertEqual(observer['permission-actions'], 'read')
         self.assertNotIn('permission-issues', observer)
         self.assertTrue(any('reconcile-delivery.py' in step.get('run', '') for step in health))
