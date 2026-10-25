@@ -2,6 +2,7 @@
 """Paired preparation is idempotent; incomplete products require recovery."""
 import base64
 import copy
+import contextlib
 from datetime import datetime, timedelta, timezone
 import importlib.util
 import json
@@ -18,6 +19,9 @@ import release_readiness as ready
 spec = importlib.util.spec_from_file_location('delivery', ROOT / 'scripts/ci/delivery-health.py')
 delivery = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(delivery)
+spec = importlib.util.spec_from_file_location('reconciliation', ROOT / 'scripts/ci/reconcile-delivery.py')
+reconciliation = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(reconciliation)
 SHA = 'a' * 40
 BOT = 'cl-decider[bot]'
 
@@ -319,6 +323,7 @@ class Readiness(unittest.TestCase):
                 summary = Path(temporary) / 'summary.md'
                 with patch.dict(os.environ, {'GITHUB_ACTIONS': 'true', 'GITHUB_REPOSITORY': ready.REPOSITORY,
                                             'GITHUB_REF': 'refs/heads/main', 'GITHUB_SHA': SHA,
+                                            'GITHUB_RUN_ID': '1', 'GITHUB_RUN_ATTEMPT': '1', 'GITHUB_JOB': 'reconcile',
                                             'GITHUB_STEP_SUMMARY': str(summary)}), \
                         patch.object(delivery, 'root_version', return_value=self.version), \
                         patch.object(delivery, 'inspect', return_value=report), \
@@ -331,6 +336,98 @@ class Readiness(unittest.TestCase):
                 self.assertIn('Ready to prepare', summary.read_text())
             finally:
                 os.chdir(previous)
+
+
+class DeliverySnapshots(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        self.enterContext(contextlib.chdir(self.root))
+        self.enterContext(patch.dict(os.environ, {'GITHUB_ACTIONS': 'true',
+            'GITHUB_REPOSITORY': ready.REPOSITORY, 'GITHUB_REF': 'refs/heads/main', 'GITHUB_SHA': SHA,
+            'GITHUB_RUN_ID': '12', 'GITHUB_RUN_ATTEMPT': '2', 'GITHUB_JOB': 'reconcile',
+            'GITHUB_OUTPUT': str(self.root / 'output'), 'GITHUB_STEP_SUMMARY': str(self.root / 'summary')}))
+        self.report = {'healthy': True, 'problems': [], 'channels': {}, 'buildRun': 5,
+                       'release': {'state': 'unprepared', 'reason': 'Ready to prepare'}}
+        self.path = Path('.bluebuild/delivery-health.json')
+
+    def produce(self, healthy=True):
+        self.report['healthy'] = healthy
+        with patch.object(delivery, 'root_version', return_value='1.2.3'), \
+                patch.object(delivery, 'inspect', return_value=self.report) as inspect:
+            self.assertEqual(delivery.main(), 0 if healthy else 1)
+        return inspect
+
+    def test_dispatch_reuses_one_read_only_inspection_even_when_health_is_unhealthy(self):
+        for healthy in (True, False):
+            inspect = self.produce(healthy)
+            with patch.object(delivery, 'inspect', side_effect=AssertionError('No second inspection')), \
+                    patch.object(delivery, 'dispatch', return_value='No preparation dispatch needed.') as dispatch:
+                reconciliation.reconcile(self.path, delivery)
+            inspect.assert_called_once()
+            self.assertEqual(dispatch.call_args.args[0]['buildRun'], 5)
+            self.assertEqual(dispatch.call_args.args[0]['healthy'], healthy)
+            self.assertIn('snapshot=true', (self.root / 'output').read_text())
+
+    def test_standalone_reconciliation_still_inspects_and_dispatches(self):
+        with patch.object(delivery, 'root_version', return_value='1.2.3'), \
+                patch.object(delivery, 'inspect', return_value=self.report) as inspect, \
+                patch.object(delivery, 'dispatch', return_value='No preparation dispatch needed.') as dispatch:
+            reconciliation.reconcile(delivery=delivery)
+        inspect.assert_called_once()
+        dispatch.assert_called_once_with(self.report, SHA)
+
+    def test_cross_job_attempt_revision_and_invalid_dispatch_fields_never_dispatch(self):
+        self.produce()
+        original = json.loads(self.path.read_text())
+        mutations = [('repository', 'other/repo'), ('revision', 'b' * 40), ('runId', '13'),
+                     ('runAttempt', '3'), ('jobName', 'other'), ('schema', True)]
+        for key, value in mutations:
+            changed = copy.deepcopy(original)
+            changed['snapshot'][key] = value
+            self.path.write_text(json.dumps(changed))
+            with self.subTest(key=key), patch.object(delivery, 'dispatch') as dispatch:
+                with self.assertRaises(ValueError):
+                    reconciliation.reconcile(self.path, delivery)
+                dispatch.assert_not_called()
+        for fields in ({'buildRun': True}, {'healthy': 'yes'}, {'release': None}):
+            self.path.write_text(json.dumps({**original, **fields}))
+            with self.subTest(fields=fields), self.assertRaises(ValueError):
+                delivery.read_snapshot(self.path)
+
+    def test_missing_nonregular_oversized_and_duplicate_json_snapshots_reject(self):
+        with self.assertRaises(ValueError):
+            delivery.read_snapshot(self.path)
+        self.path.parent.mkdir()
+        self.path.write_text('x' * (1024 * 1024 + 1))
+        with self.assertRaises(ValueError):
+            delivery.read_snapshot(self.path)
+        self.path.write_text('{"snapshot":1,"snapshot":2}')
+        with self.assertRaises(ValueError):
+            delivery.read_snapshot(self.path)
+        link = self.root / 'linked.json'
+        link.symlink_to(self.path.resolve())
+        with self.assertRaises(ValueError):
+            delivery.read_snapshot(link)
+
+    def test_failed_inspection_removes_stale_snapshot_and_cannot_dispatch(self):
+        self.produce()
+        with patch.object(delivery, 'inspect', side_effect=ValueError('Unavailable inventory')), \
+                self.assertRaisesRegex(ValueError, 'Unavailable inventory'):
+            delivery.main()
+        self.assertFalse(self.path.exists())
+        with patch.object(delivery, 'dispatch') as dispatch, self.assertRaises(ValueError):
+            reconciliation.reconcile(self.path, delivery)
+        dispatch.assert_not_called()
+
+    def test_dispatch_failure_preserves_read_only_report(self):
+        self.produce()
+        before = self.path.read_bytes()
+        with patch.object(delivery, 'dispatch', side_effect=ValueError('Lost response')), \
+                self.assertRaisesRegex(ValueError, 'Lost response'):
+            reconciliation.reconcile(self.path, delivery)
+        self.assertEqual(self.path.read_bytes(), before)
 
 
 if __name__ == '__main__':

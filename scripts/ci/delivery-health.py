@@ -14,6 +14,35 @@ from github_api import get_json
 from release_readiness import CHANNELS, PREFIX, eligible_build, release_status, root_version
 
 
+def snapshot_identity(env=os.environ):
+    identity = {'schema': 1, 'repository': env.get('GITHUB_REPOSITORY'),
+                'revision': env.get('GITHUB_SHA'), 'runId': env.get('GITHUB_RUN_ID'),
+                'runAttempt': env.get('GITHUB_RUN_ATTEMPT'), 'jobName': env.get('GITHUB_JOB')}
+    if (identity['repository'] != 'closure-labs/finite'
+            or not isinstance(identity['revision'], str) or not re.fullmatch('[a-f0-9]{40}', identity['revision'])
+            or any(not isinstance(identity[key], str) or not re.fullmatch('[1-9][0-9]*', identity[key])
+                   for key in ('runId', 'runAttempt'))
+            or not isinstance(identity['jobName'], str) or not re.fullmatch('[A-Za-z0-9_-]{1,100}', identity['jobName'])):
+        raise ValueError('Delivery snapshot requires the exact native job identity')
+    return identity
+
+
+def read_snapshot(path, env=os.environ):
+    path = Path(path)
+    if path.is_symlink() or not path.is_file() or not 0 < path.stat().st_size <= 1024 * 1024:
+        raise ValueError('Delivery snapshot must be a bounded regular file')
+    report = load_json(path)
+    if (not isinstance(report, dict) or not isinstance(report.get('snapshot'), dict)
+            or type(report['snapshot'].get('schema')) is not int
+            or report['snapshot'] != snapshot_identity(env)
+            or type(report.get('healthy')) is not bool or not isinstance(report.get('release'), dict)
+            or not isinstance(report['release'].get('state'), str)
+            or len(report['release']['state']) > 64 or 'buildRun' not in report
+            or report['buildRun'] is not None and (type(report['buildRun']) is not int or report['buildRun'] <= 0)):
+        raise ValueError('Delivery snapshot differs from this job or has invalid dispatch fields')
+    return report
+
+
 def failed_phases(jobs):
     phases = []
     for job in jobs:
@@ -177,9 +206,21 @@ def main():
             or os.environ.get('GITHUB_REF') != 'refs/heads/main'):
         raise ValueError('Delivery health requires trusted hosted main')
     revision = os.environ['GITHUB_SHA']
+    target = Path('.bluebuild/delivery-health.json')
+    target.parent.mkdir(exist_ok=True)
+    target.unlink(missing_ok=True)
+    identity = snapshot_identity()
     report = inspect(revision, root_version(), os.environ.get('FINITE_REVIEW_BOT_LOGIN'))
-    Path('.bluebuild').mkdir(exist_ok=True)
-    Path('.bluebuild/delivery-health.json').write_text(json.dumps(report, indent=2) + '\n')
+    report = {**report, 'snapshot': identity}
+    raw = json.dumps(report, indent=2) + '\n'
+    if len(raw.encode()) > 1024 * 1024:
+        raise ValueError('Delivery snapshot exceeds size budget')
+    temporary = target.with_suffix('.tmp')
+    temporary.write_text(raw)
+    temporary.replace(target)
+    if output := os.environ.get('GITHUB_OUTPUT'):
+        with open(output, 'a') as stream:
+            stream.write('snapshot=true\n')
     with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as output:
         output.write(summary(report))
     return 0 if report['healthy'] else 1

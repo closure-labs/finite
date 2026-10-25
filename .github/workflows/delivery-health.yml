@@ -23,61 +23,6 @@ env:
   FINITE_QUALIFIED_ISO_PRESERVATION: ${{ vars.FINITE_QUALIFIED_ISO_PRESERVATION }}
   FINITE_QUALIFIED_ISO_CHANNELS: ${{ vars.FINITE_QUALIFIED_ISO_CHANNELS }}
 jobs:
-  health:
-    if: >-
-      github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' &&
-      vars.FINITE_REVIEW_APP_ID != '' &&
-      (github.event_name != 'workflow_run' ||
-       (github.event.workflow_run.head_repository.full_name == 'closure-labs/finite' &&
-        github.event.workflow_run.head_branch == 'main' &&
-        (github.event.workflow_run.event == 'push' ||
-         github.event.workflow_run.event == 'schedule' ||
-         github.event.workflow_run.event == 'workflow_dispatch')))
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    steps:
-      - name: Monitor hosted runner (Community)
-        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2
-        with:
-          egress-policy: audit
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: main
-          persist-credentials: false
-      - uses: ./.github/actions/setup-nix
-      - name: Resolve declared review App credentials
-        env:
-          FINITE_REVIEW_CLIENT_ID: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
-          FINITE_REVIEW_PRIVATE_KEY: ${{ secrets.DECIDER_KEY }}
-        run: >-
-          finite-ci-secrets-run review-app --
-          secretspec export --file secretspec.toml --profile review-app --provider github-actions
-          --scope review-app --reason 'Finite human decision authority App' --format gha
-      - name: Generate short-lived repository-scoped review token
-        id: review-token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-        with:
-          client-id: ${{ env.FINITE_REVIEW_CLIENT_ID }}
-          private-key: ${{ env.FINITE_REVIEW_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: ${{ github.event.repository.name }}
-          permission-contents: read
-          permission-pull-requests: read
-          permission-actions: read
-      - name: Clear App private credentials
-        run: | # zizmor: ignore[github-env]
-          printf 'FINITE_REVIEW_CLIENT_ID=\nFINITE_REVIEW_PRIVATE_KEY=\n' >>"$GITHUB_ENV"
-      - name: Report delivery and publisher health
-        env:
-          GH_TOKEN: ${{ steps.review-token.outputs.token }}
-        run: python3 scripts/ci/delivery-health.py
-      - name: Retain delivery health
-        if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: delivery-health-${{ github.run_id }}-${{ github.run_attempt }}
-          path: .bluebuild/delivery-health.json
-          retention-days: 30
   reconcile:
     if: >-
       github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' &&
@@ -101,6 +46,7 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup-nix
       - name: Resolve declared review App credentials
+        id: credentials
         env:
           FINITE_REVIEW_CLIENT_ID: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
           FINITE_REVIEW_PRIVATE_KEY: ${{ secrets.DECIDER_KEY }}
@@ -109,7 +55,19 @@ jobs:
           secretspec export --file secretspec.toml --profile review-app --provider github-actions
           --scope review-app --reason 'Finite human decision authority App' --format gha
       - name: Generate short-lived repository-scoped review token
+        id: health-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ env.FINITE_REVIEW_CLIENT_ID }}
+          private-key: ${{ env.FINITE_REVIEW_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: read
+          permission-pull-requests: read
+          permission-actions: read
+      - name: Generate the preparation and audit token
         id: review-token
+        if: always() && steps.credentials.outcome == 'success'
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           client-id: ${{ env.FINITE_REVIEW_CLIENT_ID }}
@@ -121,17 +79,45 @@ jobs:
           permission-actions: write
           permission-issues: write
       - name: Clear App private credentials
+        if: always()
         run: | # zizmor: ignore[github-env]
           printf 'FINITE_REVIEW_CLIENT_ID=\nFINITE_REVIEW_PRIVATE_KEY=\n' >>"$GITHUB_ENV"
-      - name: Reconcile release preparation
+      - name: Report delivery and publisher health
+        id: health
+        if: always() && steps.health-token.outcome == 'success'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ steps.health-token.outputs.token }}
+        run: python3 scripts/ci/delivery-health.py
+      - name: Retain delivery health
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: delivery-health-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/delivery-health.json
+          retention-days: 30
+      - name: Reconcile release preparation from the same-job snapshot
+        id: preparation
+        if: always() && steps.health.outputs.snapshot == 'true' && steps.review-token.outcome == 'success'
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ steps.review-token.outputs.token }}
-        run: python3 scripts/ci/reconcile-delivery.py
+        run: python3 scripts/ci/reconcile-delivery.py --report .bluebuild/delivery-health.json
       - name: Report audit and human decision health independently
+        id: decision-health
         if: always() && steps.review-token.outcome == 'success'
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ steps.review-token.outputs.token }}
         run: python3 scripts/ci/decision-health.py
+      - name: Preserve independent health and preparation failures
+        if: always()
+        env:
+          HEALTH_OUTCOME: ${{ steps.health.outcome }}
+          PREPARATION_OUTCOME: ${{ steps.preparation.outcome }}
+          AUDIT_OUTCOME: ${{ steps.decision-health.outcome }}
+        run: |
+          [[ $HEALTH_OUTCOME == success && $PREPARATION_OUTCOME == success && $AUDIT_OUTCOME == success ]]
   next-development:
     if: >-
       github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' &&
