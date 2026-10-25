@@ -52,12 +52,23 @@ session, then run the read-only repository audit. If a release is active or the
 setting cannot be changed, retain the existing hold and report the pending
 activation; do not cancel or unblock an existing execution implicitly.
 
+Authority event processing now resolves bounded PR/head/queue targets in a cheap
+trusted-main discovery job without Nix or App credentials. The App workers are
+serialized by repository, PR and target SHA, with one active and only the newest
+pending worker. Running writers are not cancelled. PR heads and queue SHAs are
+separate targets; review edits and dismissals still generate fresh evaluation.
+Workers reauthenticate collector provenance and current PR state. Changed heads
+are reported obsolete without posting, and a replaced queue ref cannot receive
+a late result. Metadata failures never generate a success check. The original
+batch CLI remains available; target discovery and explicit worker arguments are
+additive interfaces.
+
 | Work | State | Acceptance |
 | --- | --- | --- |
 | Consolidate proposal approval | Implemented; awaiting hosted rollout | Observe the protected check on normal proposal/governance events. |
 | Share delivery-health setup | Implemented; awaiting hosted rollout | One setup and one inspection, same-run snapshot reuse, independent failure reporting and live dispatch guards. |
 | Remove migration release approval | Implemented policy; awaiting reviewed activation | One manual release-proposal approval; retain the environment, secrets, main-only access and fresh signing/publication checks. |
-| Coalesce authority workers | Planned | One active and newest pending worker per PR/target, with fresh state and obsolete-target rejection. |
+| Coalesce authority workers | Implemented; awaiting hosted rollout | One active and newest pending worker per PR/target, with fresh state and obsolete-target rejection. |
 | Exact-commit queue source proof | Planned; default off | Bounded authenticated lookup, full fallback, five natural shadow matches before a canary. |
 
 Use recent runs without waiting for October 30. Preserve historical reports and

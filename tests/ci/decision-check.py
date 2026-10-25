@@ -190,6 +190,93 @@ class Checks(unittest.TestCase):
         with self.assertRaises(mod.authority.AuthorityError):
             mod.run_checks(REPO, 1, BOT, 999, api, post)
 
+    def test_target_discovery_is_read_only_and_keeps_review_fallback(self):
+        for event in ('pull_request', 'pull_request_review'):
+            api = GitHub()
+            api.collector.update(event=event, pull_requests=[])
+            self.assertEqual(mod.resolve_targets(REPO, 1, api),
+                             {'include': [{'number': 7, 'head': HEAD, 'target': HEAD}]})
+            self.assertFalse(any('/contents/' in endpoint or '/orgs/' in endpoint for endpoint in api.calls))
+        api = GitHub()
+        api.pr['state'] = 'closed'
+        self.assertEqual(mod.resolve_targets(REPO, 1, api), {'include': []})
+
+    def test_discovery_retains_distinct_queue_identity_and_fails_closed(self):
+        api = GitHub()
+        api.collector.update(event='merge_group', head_branch='gh-readonly-queue/main/pr-7-abcdef0', head_sha=MERGE)
+        self.assertEqual(mod.resolve_targets(REPO, 1, api),
+                         {'include': [{'number': 7, 'head': HEAD, 'target': MERGE}]})
+        api.pr['head']['sha'] = 'bad'
+        with self.assertRaises(mod.authority.AuthorityError):
+            mod.resolve_targets(REPO, 1, api)
+        api.collector['path'] = 'attacker.yml'
+        with self.assertRaises(mod.authority.AuthorityError):
+            mod.resolve_targets(REPO, 1, api)
+
+    def test_worker_revalidates_live_review_instead_of_reusing_old_event_result(self):
+        api = GitHub()
+        posted = []
+        def post(endpoint, body):
+            posted.append(body)
+            return {'app': {'id': 123}}
+        expected = (7, HEAD, HEAD)
+        self.assertEqual(mod.run_checks(REPO, 1, BOT, 123, api, post, expected=expected)['checks'][0]['status'], 'authorized')
+        api.reviews.clear()
+        self.assertEqual(mod.run_checks(REPO, 2, BOT, 123, api, post, expected=expected)['checks'][0]['status'], 'review-required')
+        self.assertEqual([body['conclusion'] for body in posted], ['success', 'failure'])
+        self.assertTrue(all(body['head_sha'] == HEAD for body in posted))
+
+    def test_obsolete_head_before_or_during_validation_never_posts(self):
+        for during in (False, True):
+            api = GitHub()
+            if during:
+                self.packet_validator.side_effect = lambda _: api.pr['head'].update(sha='e' * 40)
+            else:
+                api.pr['head']['sha'] = 'e' * 40
+            with self.subTest(during=during):
+                result = mod.run_checks(REPO, 1, BOT, 123, api,
+                    lambda *_: self.fail('Obsolete worker must not post'), expected=(7, HEAD, HEAD))
+                self.assertEqual(result['checks'][0]['status'], 'obsolete')
+
+    def test_worker_cannot_choose_unrelated_pr_or_target(self):
+        for expected in ((8, HEAD, HEAD), (7, HEAD, MERGE), (7, 'bad', HEAD), (True, HEAD, HEAD)):
+            with self.subTest(expected=expected), self.assertRaises(mod.authority.AuthorityError):
+                mod.run_checks(REPO, 1, BOT, 123, GitHub(),
+                    lambda *_: self.fail('Invalid worker must not post'), expected=expected)
+
+    def test_replaced_queue_reference_never_receives_a_late_result(self):
+        api = GitHub()
+        api.collector.update(event='merge_group', head_branch='gh-readonly-queue/main/pr-7-abcdef0', head_sha=MERGE)
+        self.packet_validator.side_effect = lambda _: setattr(api, 'queue_sha', HEAD)
+        with self.assertRaises(mod.authority.AuthorityError):
+            mod.run_checks(REPO, 1, BOT, 123, api,
+                lambda *_: self.fail('Replaced queue must not post'), expected=(7, HEAD, MERGE))
+
+    def test_discovery_bound_is_explicit_instead_of_truncating_targets(self):
+        api = GitHub()
+        with mock.patch.object(mod, 'collector_targets', return_value=[(7, None)] * 65):
+            with self.assertRaisesRegex(mod.authority.AuthorityError, 'bounded matrix'):
+                mod.resolve_targets(REPO, 1, api)
+
+    def test_authority_workflow_serializes_writers_after_cheap_native_discovery(self):
+        import yaml
+        workflow = yaml.safe_load((ROOT / '.github/workflows/decision-authority.yml').read_text())
+        discover = workflow['jobs']['discover']
+        self.assertEqual(discover['permissions'], {'contents': 'read', 'actions': 'read', 'pull-requests': 'read'})
+        self.assertFalse(any(s.get('uses') == './.github/actions/setup-nix'
+                             or s.get('uses', '').startswith('actions/create-github-app-token@')
+                             for s in discover['steps']))
+        writer = workflow['jobs']['authority']
+        self.assertEqual(writer['needs'], 'discover')
+        self.assertFalse(writer['strategy']['fail-fast'])
+        self.assertFalse(writer['concurrency']['cancel-in-progress'])
+        group = writer['concurrency']['group']
+        self.assertIn('matrix.number', group)
+        self.assertIn('matrix.target', group)
+        self.assertNotIn('workflow_run.id', group)
+        command = next(s['run'] for s in writer['steps'] if '--expected-head' in s.get('run', ''))
+        self.assertIn('--target-sha', command)
+
     def test_security_authority_boundary_paths(self):
         for path in ('scripts/ci/applicability-evidence.py', 'scripts/bluebuild/future-scan-helper.py', 'flake.lock', 'flake.nix', 'cosign.pub', 'lib/mk-pkgs.nix',
                      'lib/project-policy.nix', 'lib/secretspec.nix', 'sources/bluefin-trust.json',

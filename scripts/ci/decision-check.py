@@ -130,16 +130,51 @@ def collector_targets(run, repository, github=None):
     return sorted(set(targets))
 
 
-def run_checks(repository, run_id, expected_bot, app_id, github=None, api_post=None):
+def resolve_targets(repository, run_id, github=None):
+    """Resolve bounded worker identities from authenticated native metadata."""
+    if (not isinstance(repository, str) or not authority.REPOSITORY.fullmatch(repository)
+            or type(run_id) is not int or run_id < 1):
+        raise authority.AuthorityError('Invalid collector discovery context')
+    api = github or authority.github_api
+    run = api(f'repos/{repository}/actions/runs/{run_id}')
+    targets = []
+    for number, target in collector_targets(run, repository, api):
+        pull = api(f'repos/{repository}/pulls/{number}')
+        head = pull.get('head', {}).get('sha')
+        if pull.get('state') != 'open' or pull.get('base', {}).get('ref') != 'main':
+            continue
+        if pull.get('number') != number or not isinstance(head, str) or not authority.SHA.fullmatch(head):
+            raise authority.AuthorityError('Discovery lacks an immutable PR head')
+        targets.append({'number': number, 'head': head, 'target': target or head})
+    if len(targets) > 64:
+        raise authority.AuthorityError('Authority worker inventory exceeds bounded matrix')
+    return {'include': targets}
+
+
+def run_checks(repository, run_id, expected_bot, app_id, github=None, api_post=None, *, expected=None):
     authority.validate_context(repository, expected_bot)
     if type(run_id) is not int or run_id < 1 or type(app_id) is not int or app_id < 1:
         raise authority.AuthorityError('Invalid collector run or review App ID')
     api = github or authority.github_api
     run = api(f'repos/{repository}/actions/runs/{run_id}')
     outcomes = []
-    for number, target in collector_targets(run, repository, api):
+    targets = collector_targets(run, repository, api)
+    if expected is not None:
+        number, head, target = expected
+        if (type(number) is not int or number < 1 or not isinstance(head, str)
+                or not authority.SHA.fullmatch(head) or not isinstance(target, str)
+                or not authority.SHA.fullmatch(target)
+                or (number, target if run['event'] == 'merge_group' else None) not in targets
+                or run['event'] != 'merge_group' and target != head):
+            raise authority.AuthorityError('Worker differs from authenticated collector targets')
+        targets = [(n, t) for n, t in targets if n == number]
+    for number, target in targets:
         pull = api(f'repos/{repository}/pulls/{number}')
         sha = target or pull.get('head', {}).get('sha', '')
+        if expected is not None and (pull.get('state') != 'open'
+                or pull.get('base', {}).get('ref') != 'main' or pull.get('head', {}).get('sha') != expected[1]):
+            outcomes.append({'pullRequest': number, 'target': expected[2], 'status': 'obsolete'})
+            continue
         try:
             result = check_pr(repository, number, expected_bot, target, api)
             summary = ('Eligible human approval verified for governed changes.' if result['status'] == 'authorized'
@@ -148,6 +183,16 @@ def run_checks(repository, run_id, expected_bot, app_id, github=None, api_post=N
         except (authority.AuthorityError, ValueError, KeyError, TypeError) as error:
             result = {'pullRequest': number, 'target': sha, 'status': 'review-required', 'reason': str(error)}
             summary, conclusion = 'Maintainer decision required: ' + str(error), 'failure'
+        if expected is not None:
+            latest = api(f'repos/{repository}/pulls/{number}')
+            if (latest.get('state') != 'open' or latest.get('base', {}).get('ref') != 'main'
+                    or latest.get('head', {}).get('sha') != expected[1]):
+                outcomes.append({'pullRequest': number, 'target': expected[2], 'status': 'obsolete'})
+                continue
+            if target is not None:
+                # A replaced queue target must not receive a late App result.
+                if (number, target) not in collector_targets(run, repository, api):
+                    raise authority.AuthorityError('Queue target changed before authority publication')
         post_check(repository, sha, conclusion, summary, app_id, api_post)
         outcomes.append(result)
     return {'schema': 1, 'collectorRun': run_id, 'checks': outcomes}
@@ -159,9 +204,21 @@ def main():
     parser.add_argument('--repository', default=os.environ.get('GITHUB_REPOSITORY'))
     parser.add_argument('--bot-login', default=os.environ.get('FINITE_REVIEW_BOT_LOGIN'))
     parser.add_argument('--app-id', type=int, default=os.environ.get('FINITE_REVIEW_APP_ID'))
+    parser.add_argument('--resolve-targets', action='store_true', help='Read native targets without App credentials or check writes')
+    parser.add_argument('--pull-request', type=int)
+    parser.add_argument('--expected-head')
+    parser.add_argument('--target-sha')
     args = parser.parse_args()
+    worker = (args.pull_request, args.expected_head, args.target_sha)
+    if any(value is not None for value in worker) and not all(value is not None for value in worker):
+        parser.error('Worker requires PR, expected head and target SHA together')
+    if args.resolve_targets and any(value is not None for value in worker):
+        parser.error('Target discovery cannot publish worker checks')
     try:
-        print(json.dumps(run_checks(args.repository, args.collector_run, args.bot_login, args.app_id)))
+        result = (resolve_targets(args.repository, args.collector_run) if args.resolve_targets else
+                  run_checks(args.repository, args.collector_run, args.bot_login, args.app_id,
+                             expected=worker if args.pull_request is not None else None))
+        print(json.dumps(result))
         return 0
     except (authority.AuthorityError, ValueError, TypeError, KeyError, OSError, subprocess.SubprocessError) as error:
         print(json.dumps({'status': 'unauthorized', 'error': str(error)}))
