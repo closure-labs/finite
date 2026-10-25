@@ -58,6 +58,7 @@ mutate_and_reject '.environments.release.protection_rules = []' 'environments.re
 mutate_and_reject '.environments.release.protection_rules[0].reviewers = [{type: "User", id: 52590374}]' 'environments.release.protection_rules'
 mutate_and_reject '.environments["package-cleanup"].protection_rules[0].reviewers = [{type: "Team", id: 20196828}]' 'environments.package-cleanup.protection_rules'
 mutate_and_reject '.environments.release.deployment_branches[0].name = "*"' 'environments.release.deployment_branches'
+mutate_and_reject '.environments.release.protection_rules += [{type: "required_reviewers", prevent_self_review: false, reviewers: [{type: "Team", id: 20196962}]}]' 'environments.release.protection_rules'
 mutate_and_reject '.main.rulesets = []' 'main.rulesets'
 mutate_and_reject '.main.rulesets[0].enforcement = "disabled"' 'main.rulesets'
 mutate_and_reject '.main.rulesets[0].bypass_actors = [{actor_id: 1, actor_type: "Integration", bypass_mode: "always"}]' 'main.rulesets'

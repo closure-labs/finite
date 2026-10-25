@@ -182,10 +182,13 @@ class Integrations(unittest.TestCase):
                         self.assertEqual(step['with']['permission-members'], 'read', name)
                         self.assertEqual(step['with']['repositories'], '${{ github.event.repository.name }}')
         rules = json.loads((ROOT / 'automation/github/repository-security.json').read_text())
-        for name in ('release', 'package-cleanup'):
-            reviewers = next(rule['reviewers'] for rule in rules['environments'][name]['protection_rules']
-                             if rule['type'] == 'required_reviewers')
-            self.assertEqual(reviewers, [{'type': 'Team', 'id': 20196962}])
+        reviewers = next(rule['reviewers'] for rule in rules['environments']['package-cleanup']['protection_rules']
+                         if rule['type'] == 'required_reviewers')
+        self.assertEqual(reviewers, [{'type': 'Team', 'id': 20196962}])
+        release = rules['environments']['release']
+        self.assertEqual(release['protection_rules'], [{'type': 'branch_policy'}])
+        self.assertFalse(release['can_admins_bypass'])
+        self.assertEqual(release['deployment_branches'], [{'name': 'main', 'type': 'branch'}])
 
 
 if __name__ == '__main__':

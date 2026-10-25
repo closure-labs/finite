@@ -93,16 +93,6 @@
       ],
       "protection_rules": [
         {
-          "prevent_self_review": false,
-          "reviewers": [
-            {
-              "type": "Team",
-              "id": 20196962
-            }
-          ],
-          "type": "required_reviewers"
-        },
-        {
           "type": "branch_policy"
         }
       ]

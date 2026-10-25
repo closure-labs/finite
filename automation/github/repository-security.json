@@ -71,16 +71,6 @@
       "can_admins_bypass": false,
       "protection_rules": [
         {
-          "type": "required_reviewers",
-          "prevent_self_review": false,
-          "reviewers": [
-            {
-              "type": "Team",
-              "id": 20196962
-            }
-          ]
-        },
-        {
           "type": "branch_policy"
         }
       ],
