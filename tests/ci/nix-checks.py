@@ -134,6 +134,54 @@ if phase == 'evaluation': print(state['result'])
         self.assertEqual(status, 0)
         self.assertEqual([c['phase'] for c in calls], ['evaluation', 'evaluation', 'builds'])
 
+    def test_real_children_record_attempt_cpu_and_io_without_claiming_daemon_or_rss(self):
+        status, _, _ = self.phases(builds=['HTTP error 503'])
+        self.assertEqual(status, 0)
+        for phase in self.receipt['phases']:
+            for attempt in phase['attempts']:
+                usage = attempt['childResourceUsage']
+                self.assertEqual(usage['scope'], 'terminated-and-waited-children')
+                self.assertFalse(usage['includesDaemonWork'])
+                self.assertGreater(usage['userCpuSeconds'] + usage['systemCpuSeconds'], 0)
+                self.assertIs(type(usage['blockInputOperations']), int)
+                self.assertGreaterEqual(usage['blockInputOperations'], 0)
+                self.assertGreaterEqual(usage['blockOutputOperations'], 0)
+                self.assertEqual(set(usage), {'scope', 'includesDaemonWork', 'userCpuSeconds', 'systemCpuSeconds',
+                                             'blockInputOperations', 'blockOutputOperations'})
+
+    def test_attempt_counters_subtract_prior_commands_and_do_not_include_retry_sleep(self):
+        samples = [(10., 2., 100, 200), (12., 3., 103, 207),
+                   (12., 3., 103, 207), (15., 4., 105, 211),
+                   (15., 4., 105, 211), (16., 6., 108, 212)]
+        with patch.object(checks, 'child_usage', side_effect=samples):
+            status, _, _ = self.phases(evaluation=['HTTP error 503'])
+        self.assertEqual(status, 0)
+        attempts = [a['childResourceUsage'] for phase in self.receipt['phases'] for a in phase['attempts']]
+        self.assertEqual([a['userCpuSeconds'] for a in attempts], [2., 3., 1.])
+        self.assertEqual([a['systemCpuSeconds'] for a in attempts], [1., 1., 2.])
+        self.assertEqual([a['blockInputOperations'] for a in attempts], [3, 2, 3])
+        self.assertEqual([a['blockOutputOperations'] for a in attempts], [7, 4, 1])
+        self.assertEqual([a['status'] for a in self.receipt['phases'][0]['attempts']], [1, 0])
+
+    def test_unavailable_usage_stays_unknown_and_preserves_failure(self):
+        with patch.object(checks.resource, 'getrusage', side_effect=OSError('unavailable')):
+            status, _, _ = self.phases(evaluation=['hash mismatch'])
+        self.assertEqual(status, 1)
+        self.assertEqual(self.receipt['phases'][0]['outcome'], 'failure')
+        self.assertIsNone(self.receipt['phases'][0]['attempts'][0]['childResourceUsage'])
+        self.assertIsNone(checks.usage_delta(None, (1., 2., 3, 4)))
+        self.assertIsNone(checks.usage_delta((1., 2., 3, 4), None))
+        self.assertIsNone(checks.usage_delta((1., 2., 3, 4), (0., 2., 3, 4)))
+
+    def test_unlaunched_command_keeps_unknown_usage_and_original_error(self):
+        attempts = []
+        with patch.object(checks.subprocess, 'Popen', side_effect=FileNotFoundError('missing')):
+            with self.assertRaises(FileNotFoundError):
+                checks.build(['missing'], observations=attempts)
+        self.assertEqual(len(attempts), 1)
+        self.assertIsNone(attempts[0]['status'])
+        self.assertIsNone(attempts[0]['childResourceUsage'])
+
     def test_build_transport_retry_does_not_evaluate_again(self):
         status, calls, _ = self.phases(builds=['HTTP error 503'])
         self.assertEqual(status, 0)

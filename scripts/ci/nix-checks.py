@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 import os
 from pathlib import Path
 import re
+import resource
 import subprocess
 import sys
 import tempfile
@@ -14,6 +15,29 @@ import time
 from nix_observation import identity, write
 
 DERIVATION = re.compile(r'/nix/store/[a-z0-9]{32}-finite-ci-checks\.drv')
+
+
+def child_usage():
+    # This serial wrapper starts no other children during a command. Daemon
+    # builders and unrelated runner processes are outside RUSAGE_CHILDREN.
+    try:
+        usage = resource.getrusage(resource.RUSAGE_CHILDREN)
+        return (usage.ru_utime, usage.ru_stime, usage.ru_inblock, usage.ru_oublock)
+    except OSError:
+        return None
+
+
+def usage_delta(before, after):
+    if before is None or after is None:
+        return None
+    delta = [end - start for start, end in zip(before, after)]
+    if any(value < 0 for value in delta):
+        return None
+    # ru_maxrss is a lifetime high-water mark, so it cannot be subtracted to
+    # obtain per-command RSS. Do not report it as a phase measurement.
+    return dict(zip(('userCpuSeconds', 'systemCpuSeconds', 'blockInputOperations',
+                     'blockOutputOperations'), [round(value, 6) for value in delta]),
+                scope='terminated-and-waited-children', includesDaemonWork=False)
 
 
 def transient(output):
@@ -43,10 +67,12 @@ def build(command, attempts=3, delay=30, *, stdout=None, observations=None):
             stdout.seek(0)
             stdout.truncate()
         started, status = time.monotonic(), None
+        usage_before, launched = child_usage(), False
         try:
             with subprocess.Popen(command, stdout=stdout if stdout is not None else subprocess.PIPE,
                                   stderr=subprocess.PIPE if stdout is not None else subprocess.STDOUT,
                                   text=True, errors='replace') as process:
+                launched = True
                 for line in process.stderr if stdout is not None else process.stdout:
                     print(line, end='', flush=True)
                     tail.append(line)
@@ -54,7 +80,9 @@ def build(command, attempts=3, delay=30, *, stdout=None, observations=None):
         finally:
             if observations is not None:
                 observations.append({'attempt': attempt, 'status': status,
-                                     'seconds': round(time.monotonic() - started, 3)})
+                                     'seconds': round(time.monotonic() - started, 3),
+                                     'childResourceUsage': usage_delta(usage_before, child_usage())
+                                     if launched else None})
         if not status:
             return 0
         if status != 1 or attempt == attempts or not transient(''.join(tail)):

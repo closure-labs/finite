@@ -72,6 +72,19 @@ def nix_receipt(run, artifact, name, value, seen):
                         or type(trial.get('seconds')) not in (int, float) or not 0 <= trial['seconds'] <= 86400
                         or trial.get('status') is not None and (type(trial['status']) is not int or not -255 <= trial['status'] <= 255)):
                     raise ValueError('Invalid Nix retry result')
+                usage = trial.get('childResourceUsage')
+                if usage is not None:
+                    if (not isinstance(usage, dict) or set(usage) != {
+                            'scope', 'includesDaemonWork', 'userCpuSeconds', 'systemCpuSeconds',
+                            'blockInputOperations', 'blockOutputOperations'}
+                            or usage['scope'] != 'terminated-and-waited-children'
+                            or usage['includesDaemonWork'] is not False
+                            or any(type(usage[key]) not in (int, float) or not math.isfinite(usage[key])
+                                   or not 0 <= usage[key] <= 86400 * 1024
+                                   for key in ('userCpuSeconds', 'systemCpuSeconds'))
+                            or any(type(usage[key]) is not int or not 0 <= usage[key] <= 2**63 - 1
+                                   for key in ('blockInputOperations', 'blockOutputOperations'))):
+                        raise ValueError('Invalid Nix child resource observation')
     for row in stages:
         elapsed = row.get('seconds')
         if elapsed is None and name != 'nix-setup.json' or elapsed is not None and (

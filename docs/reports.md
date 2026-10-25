@@ -9,6 +9,7 @@ the recorded revision and date.
 
 | Record | Scope |
 | --- | --- |
+| [Source resource observations and recent results, October 25 UTC](ci-source-resources-2026-10-25.md) | Scoped qualification/source/controller costs and per-attempt CPU/I/O observations without extra VM rounds |
 | [Shared channel payload evaluation, October 25 UTC](ci-channel-payload-2026-10-25.md) | One per-invocation generic payload evaluation preserves both image identities and channel checks |
 | [Source repetition and rollout evidence, October 25 UTC](ci-source-repetition-2026-10-25.md) | Completed two-profile promotion, bounded source-repeat accounting and observed controller staging paths |
 | [Active publisher lookup, October 25 UTC](ci-active-publishers-2026-10-25.md) | First native controller phase receipt and draft bounded queries that avoid reading completed publisher history |
