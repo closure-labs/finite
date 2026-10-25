@@ -174,7 +174,7 @@ jobs:
     needs: prepare
     if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
-    # Retain the existing human release environment during migration.
+    # The merged proposal is the manual approval; this environment scopes keys.
     environment: release
     timeout-minutes: 180
     permissions:

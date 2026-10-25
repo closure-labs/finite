@@ -90,9 +90,12 @@ reviewed activation of `maintainer-decision` mode. Its CI correction gives
 historical policy tests an explicit legacy fixture; the complete 1,072-test
 CI/BlueBuild matrix passes in both legacy and maintainer modes.
 
-The release environment reviewer remains restricted to Super Admins during the
-release transition. Package-cleanup review also uses that team. The sequence
-below records the activation and verification boundaries.
+The exact merged release proposal is the single manual release approval. The
+`release` environment retains signing secrets and main-only deployment access;
+it adds no second reviewer prompt. Current authority and fresh evidence are
+checked before signing and publication. Package-cleanup retains its separate
+Super Admin approval. The sequence below records the earlier activation and
+verification boundaries.
 
 Initial baseline proposals use the same native severity and CVSS calculations as
 the eventual maintainer mode. Legacy AI dispositions cannot suppress those
