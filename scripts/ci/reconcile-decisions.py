@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Resume eligible retained candidates after a merged human decision, without waiting runners."""
 import json
+from contextlib import ExitStack
 from datetime import datetime, timezone
 import os
 from pathlib import Path
@@ -91,6 +92,12 @@ def reconcile(now=time.time):
             raise ValueError('Invalid immutable decision ledger identity')
         records[identity] = proposal
     journal = GitHubClient(controller.REPOSITORY, 'automation/decision-journal')
+    with ExitStack() as staging:
+        return _reconcile_profiles(records, bot, journal, now, staging)
+
+
+def _reconcile_profiles(records, bot, journal, now, staging):
+    staged_key, directory = None, None
     actions = []
     for profile in controller.PROFILES:
         relevant = {key for key, p in records.items() if profile in p['payload']['profiles']}
@@ -103,23 +110,32 @@ def reconcile(now=time.time):
         identity = next(iter(leaves))
         proposal = records[identity]
         packet = proposal['payload']['packet']
-        with tempfile.TemporaryDirectory() as temporary:
-            directory = Path(temporary) / 'packet'
+        key = (packet['reference'], packet['sha256'])
+        if key == staged_key:
+            # Reauthenticate the manifest, complete inventory and every local
+            # size/hash for each profile; only the duplicate blob transfer is
+            # avoided. Native scan health and live human authority stay below.
+            decision_packets.fetch(packet['reference'], directory, packet['sha256'], existing=True)
+        else:
+            # Keep at most one packet on disk, even for distinct profile leaves.
+            staging.close()
+            directory = Path(staging.enter_context(tempfile.TemporaryDirectory())) / 'packet'
             decision_packets.fetch(packet['reference'], directory, packet['sha256'])
-            # Packets retain the original native bytes, including summaries
-            # written before maintainer mode. Reconstruct the accepted snapshot
-            # so its CVSS ceilings and related severities are preserved. This
-            # historical clock selects build/rescan work only: publication
-            # independently enforces fresh native evidence and live authority.
-            native = directory / profile
-            scanned = load_json(native / 'vulnerabilities.json')['descriptor']['timestamp']
-            if not isinstance(scanned, str):
-                raise ValueError('Decision snapshot requires a native scan timestamp')
-            snapshot_time = datetime.fromisoformat(scanned.replace('Z', '+00:00'))
-            if snapshot_time.tzinfo is None or snapshot_time > datetime.now(timezone.utc):
-                raise ValueError('Decision snapshot requires an authenticated historical scan time')
-            scan = controller.native_result(native, snapshot_time, snapshot_time, profile=profile)
-            admission = verify(scan, profile, controller.REPOSITORY, bot)
+            staged_key = key
+        # Packets retain the original native bytes, including summaries
+        # written before maintainer mode. Reconstruct the accepted snapshot
+        # so its CVSS ceilings and related severities are preserved. This
+        # historical clock selects build/rescan work only: publication
+        # independently enforces fresh native evidence and live authority.
+        native = directory / profile
+        scanned = load_json(native / 'vulnerabilities.json')['descriptor']['timestamp']
+        if not isinstance(scanned, str):
+            raise ValueError('Decision snapshot requires a native scan timestamp')
+        snapshot_time = datetime.fromisoformat(scanned.replace('Z', '+00:00'))
+        if snapshot_time.tzinfo is None or snapshot_time > datetime.now(timezone.utc):
+            raise ValueError('Decision snapshot requires an authenticated historical scan time')
+        scan = controller.native_result(native, snapshot_time, snapshot_time, profile=profile)
+        admission = verify(scan, profile, controller.REPOSITORY, bot)
         if admission['status'] != 'covered':
             actions.append({'profile': profile, 'status': admission['status']})
             continue

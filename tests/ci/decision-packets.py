@@ -151,9 +151,10 @@ class Packets(unittest.TestCase):
             command.reset_mock()
             self.assertEqual(mod.fetch(registry.reference, output, existing=True), registry.packet)
             self.assertEqual([call.args[0][1:3] for call in command.call_args_list], [['manifest', 'fetch']])
-            (output / 'finite/security-result.json').write_bytes(b'forged')
-            with self.assertRaisesRegex(ValueError, 'integrity'):
-                mod.fetch(registry.reference, output, existing=True)
+            for altered in (b'forged', b'x' * len(registry.data)):
+                (output / 'finite/security-result.json').write_bytes(altered)
+                with self.subTest(size=len(altered)), self.assertRaisesRegex(ValueError, 'integrity'):
+                    mod.fetch(registry.reference, output, existing=True)
 
     def test_staged_packet_rejects_added_files_and_symlinked_directories(self):
         for alteration in ('extra', 'link'):
