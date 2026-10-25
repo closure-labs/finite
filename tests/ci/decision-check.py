@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 import importlib.util
+import base64
+import hashlib
+import json
 from pathlib import Path
 import sys
 import unittest
@@ -86,6 +89,47 @@ class Checks(unittest.TestCase):
 
     def test_exact_canonical_bot_proposal(self):
         self.assertEqual(mod.check_pr(REPO, 7, BOT, github=GitHub())['status'], 'authorized')
+
+    def test_proposal_and_nonproposal_governance_each_validate_review_once(self):
+        for proposal in (True, False):
+            api = GitHub()
+            if not proposal:
+                api.files = [{'filename': '.github/workflows/build.yml', 'status': 'modified'}]
+            with self.subTest(proposal=proposal), mock.patch.object(
+                    mod.authority, 'approval', wraps=mod.authority.approval) as approval:
+                self.assertEqual(mod.check_pr(REPO, 7, BOT, github=api)['status'], 'authorized')
+                self.assertEqual(approval.call_count, 1)
+                self.assertEqual(sum('/reviews?' in call for call in api.calls), 1)
+
+    def test_consolidated_proposal_check_rejects_withdrawal_stale_head_and_lost_eligibility(self):
+        mutations = [lambda api: api.reviews.clear(),
+                     lambda api: api.reviews[0].update(commit_id='e' * 40),
+                     lambda api: api.reviews[0].update(state='DISMISSED'),
+                     lambda api: api.members.clear(),
+                     lambda api: api.roles.update(maintainer='read')]
+        for number, mutate in enumerate(mutations):
+            api = GitHub()
+            mutate(api)
+            with self.subTest(case=number), self.assertRaises(mod.authority.AuthorityError):
+                mod.check_pr(REPO, 7, BOT, github=api)
+        self.packet_validator.assert_not_called()
+
+    def test_each_proposal_retains_independent_document_and_review_validation(self):
+        api = GitHub()
+        second = {**fixtures.PROPOSAL, 'payload': {'profiles': {'finite-dev': []}, 'disposition': 'accepted'}}
+        path = mod.authority.proposal_path(second)
+        api.files.append({'filename': path, 'status': 'added'})
+        api.pr['changed_files'] = 2
+        def github(endpoint):
+            if '/contents/' + path in endpoint:
+                raw = json.dumps(second).encode()
+                return {'type': 'file', 'sha': hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest(),
+                        'size': len(raw), 'encoding': 'base64', 'content': base64.b64encode(raw).decode()}
+            return api(endpoint)
+        with mock.patch.object(mod.authority, 'approval', wraps=mod.authority.approval) as approval:
+            self.assertEqual(mod.check_pr(REPO, 7, BOT, github=github)['status'], 'authorized')
+            self.assertEqual(approval.call_count, 2)
+        self.assertEqual(self.packet_validator.call_count, 2)
 
     def test_packet_validation_is_required_after_authority(self):
         self.packet_validator.side_effect = mod.authority.AuthorityError('Invalid immutable scan packet')
