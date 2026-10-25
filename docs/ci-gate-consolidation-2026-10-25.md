@@ -25,8 +25,14 @@ Focused regressions establish one approval validation for a single proposal,
 one for non-proposal governance, and one per proposal in a multi-proposal PR.
 Dismissed/missing approval, a stale reviewed head and lost team membership or
 permission still reject the PR before packet validation. Required source checks
-and documentation checks continue to run; this host-only change selects no
-image or VM work.
+and documentation checks continue to run. PR 265 merged after its protected
+queue passed: run `40217942823` used 1,694 runner seconds and selected both image
+validation jobs. The conservative classifier had not yet listed
+`decision-check.py` as a host-only input. The initial source-only description was
+incorrect. Its main run `40219479618` passed source checks, both image builds,
+security scans and signing; qualification remains in progress at this report's
+observation. The later classifier change explicitly covers this helper and
+tests that host-only authority edits preserve image and qualification identity.
 
 ## Ordered follow-up
 
@@ -63,14 +69,63 @@ a late result. Metadata failures never generate a success check. The original
 batch CLI remains available; target discovery and explicit worker arguments are
 additive interfaces.
 
+## Exact-commit source proof
+
+The prototype defaults to `FINITE_SOURCE_PROOF_REUSE=off`. Only native main-push
+source checks may consume a proof. PR, protected queue, scheduled and manual
+checks execute the full pinned aggregate. Queue execution adds a versioned
+configuration fingerprint to its existing source receipt after the exact clean
+checkout is verified. The fingerprint binds locked inputs, the actual Nix and
+Python executables and versions, selected Nix settings, public CI options and
+the Linux/X64 runner label. Selected configuration values are hashed; raw Nix
+configuration and access tokens are never retained. The reuse control itself is
+excluded so a shadow consumer can compare with a full queue producer.
+
+A consumer has one 15-second process-group budget for configuration inspection,
+native metadata, transfer, hashing and cleanup. It accepts only a completed,
+successful native queue workflow for the exact commit, completed before the
+consumer was created and no more than 24 hours old. Repository IDs, workflow,
+run, attempt, source job, artifact origin and ZIP digest must agree. The ZIP is
+bounded to 2 MiB, with bounded members. Both receipt phases must show successful
+executed evaluation/build attempts within the native job interval. Missing,
+failed, malformed, expired, interrupted or ambiguous evidence falls back to the
+full checks. A configuration difference is a known ineligible result; unavailable
+verification remains unknown rather than being counted as a cache miss.
+
+`shadow` always executes the full aggregate and records whether its derivation
+matches the authenticated producer. Only `enabled` may skip those two source
+phases after successful verification. Its separate consumer receipt records
+lookup cost and immutable producer references, with no invented evaluation or
+build timings. The read-only cost report counts unique native jobs across retry
+projections and exposes shadow matches, mismatches, enabled hits and unknown
+coverage. The historical source-repetition diagnostic remains observational;
+its recorded-input matches do not establish reuse eligibility or savings.
+
+Collect five successful natural shadow comparisons before enabling a canary.
+Do not generate commits or full VM rounds merely to fill that cohort. Confirm
+there are no unresolved mismatches, retain full fallback and compare complete
+source-job cost, including setup, lookup, retention and cleanup. Keep the mode
+in shadow while evidence is incomplete; `off` immediately disables consumption.
+Source proof grants no release approval or publication authority. Fresh source,
+security, signing, reservations and publication boundaries remain independent.
+
+Local validation passed 302 focused regressions, documentation checks,
+actionlint and offline zizmor (no medium or high findings). Coverage includes
+forged origins, changed products/evidence, missing or invalid receipts,
+interrupted lookups, failed producers, fallback, partial timings, retry
+accounting, approval revocation, stale authority, reservation contention,
+lost responses and partial publication. Hosted pinned aggregate verification
+is required before rollout.
+
 | Work | State | Acceptance |
 | --- | --- | --- |
-| Consolidate proposal approval | Implemented; awaiting hosted rollout | Observe the protected check on normal proposal/governance events. |
+| Consolidate proposal approval | Merged; protected queue passed, main qualification running | Observe the protected check on normal proposal/governance events. |
 | Share delivery-health setup | Implemented; awaiting hosted rollout | One setup and one inspection, same-run snapshot reuse, independent failure reporting and live dispatch guards. |
 | Remove migration release approval | Implemented policy; awaiting reviewed activation | One manual release-proposal approval; retain the environment, secrets, main-only access and fresh signing/publication checks. |
 | Coalesce authority workers | Implemented; awaiting hosted rollout | One active and newest pending worker per PR/target, with fresh state and obsolete-target rejection. |
-| Exact-commit queue source proof | Planned; default off | Bounded authenticated lookup, full fallback, five natural shadow matches before a canary. |
+| Exact-commit queue source proof | Implemented prototype; default off, awaiting hosted checks | Bounded authenticated lookup, full fallback, five natural shadow matches before a canary. |
 
 Use recent runs without waiting for October 30. Preserve historical reports and
-frozen executions. No local Nix, image or VM run was used. Automatic Cachix
-writing and Grype database transport remain disabled.
+frozen executions. No local Nix evaluation/build, image or VM run was used.
+Metadata-only Nix configuration inspection used a 128 MiB limit and peaked at
+20.9 MiB. Automatic Cachix writing and Grype database transport remain disabled.

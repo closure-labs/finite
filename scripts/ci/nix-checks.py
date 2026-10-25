@@ -13,6 +13,7 @@ import tempfile
 import time
 
 from nix_observation import identity, write
+import source_proof
 
 DERIVATION = re.compile(r'/nix/store/[a-z0-9]{32}-finite-ci-checks\.drv')
 
@@ -115,6 +116,10 @@ def run_checks(env=os.environ):
     phases = {}
     records = []
     aggregate = None
+    # Remove only this wrapper's old observations before considering reuse.
+    for name in ('nix-checks.json', 'source-reuse.json'):
+        (Path('.bluebuild') / name).unlink(missing_ok=True)
+    configuration, reuse = source_proof.prepare(env)
 
     @contextmanager
     def phase(name):
@@ -130,6 +135,9 @@ def run_checks(env=os.environ):
             records.append(record)
 
     try:
+        if reuse is not None and reuse['hit'] is True:
+            aggregate = reuse['producer']['aggregateDerivation']
+            return 0
         with phase('Evaluate aggregate') as record:
             with tempfile.TemporaryFile(mode='w+', encoding='utf-8') as output:
                 status = build(['nix', 'eval', '--accept-flake-config', '--no-update-lock-file',
@@ -149,13 +157,23 @@ def run_checks(env=os.environ):
             record['status'] = build(command, observations=record['attempts'])
             return record['status']
     finally:
-        write('nix-checks.json', {**identity(env), 'phases': records, 'aggregateDerivation': aggregate})
+        if records:
+            write('nix-checks.json', {**identity(env), 'phases': records, 'aggregateDerivation': aggregate,
+                                      'reuseProof': configuration})
+        if reuse is not None:
+            if reuse['mode'] == 'shadow' and reuse['eligible'] is True:
+                reuse['shadowMatch'] = (aggregate == reuse['producer']['aggregateDerivation']
+                                       if len(records) == 2 and all(row['status'] == 0 for row in records) else None)
+            write('source-reuse.json', reuse)
         summary = env.get('GITHUB_STEP_SUMMARY')
         if summary:
             with open(summary, 'a') as output:
                 output.write('\n### Nix check phases\n\n| Phase | Seconds including retries |\n| --- | ---: |\n')
                 for phase, elapsed in phases.items():
                     output.write(f'| {phase} | {elapsed:.2f} |\n')
+                if reuse is not None:
+                    output.write('\nSource proof: ' + reuse['mode'] + '; ' + str(reuse['reason'])
+                                 + '; reused=' + str(reuse['hit']) + '; shadow match=' + str(reuse['shadowMatch']) + '\n')
 
 
 if __name__ == '__main__':
