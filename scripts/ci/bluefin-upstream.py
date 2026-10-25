@@ -150,10 +150,22 @@ def update(root=ROOT, observed=None):
             'changed': bool(changes), 'profiles': [p.stem for p, _ in changes]}
 
 
+def payload_derivation(root):
+    """Evaluate the same generic payload contract used by image_identity.identity."""
+    return subprocess.check_output(
+        ['nix', 'eval', '--impure', '--accept-flake-config', '--no-update-lock-file',
+         '--no-write-lock-file', '--file', 'lib/ci-payload.nix', '--raw', 'payload.drvPath'],
+        cwd=root, text=True, timeout=300).strip()
+
+
 def reconcile(root=ROOT):
+    approved = recipes(root)
+    # Both profiles hash this generic payload. Keep recipe/file hashing and
+    # registry reads separate; share only this invocation's payload evaluation.
+    payload = payload_derivation(root)
     pending = []
-    for profile, recipe in recipes(root).items():
-        expected_identity = image_identity(profile, root)
+    for profile, recipe in approved.items():
+        expected_identity = image_identity(profile, root, payload=payload)
         images = [inspect(REPOSITORY + ':' + tag, allow_missing=True) for tag in recipe['tags']]
         valid = True
         for info in images:
