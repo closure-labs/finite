@@ -2,6 +2,8 @@
 """Authenticate human decisions against authoritative GitHub PR reviews, not ledger claims."""
 import argparse
 import base64
+from contextlib import contextmanager
+from contextvars import ContextVar
 import hashlib
 import json
 import os
@@ -22,6 +24,31 @@ APPROVER_TEAM_ID = 20196962
 SUBMITTER_TEAM = 'maintainers'
 SUBMITTER_TEAM_ID = 20196828
 KINDS = {'security-findings': 'security', 'security-revocation': 'security', 'release-set': 'releases'}
+DOCUMENT_BYTES = 16 * 1024 * 1024
+DOCUMENT_ENTRIES = 64
+_documents = ContextVar('immutable_authority_documents', default=None)
+
+
+@contextmanager
+def immutable_documents():
+    """Reuse verified immutable bytes only for this reconciliation invocation."""
+    token = _documents.set({'values': {}, 'bytes': 0})
+    try:
+        yield
+    finally:
+        _documents.reset(token)
+
+
+def decode_document(raw):
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError('Duplicate proposal key')
+            result[key] = value
+        return result
+    return json.loads(raw, object_pairs_hook=unique,
+                      parse_constant=lambda value: (_ for _ in ()).throw(ValueError('Nonfinite proposal number')))
 
 
 class AuthorityError(ValueError):
@@ -69,6 +96,11 @@ def validate_context(repository, expected_bot):
 def document_at(api, repository, path, revision):
     if not isinstance(revision, str) or not SHA.fullmatch(revision):
         raise AuthorityError('Content lookup requires immutable commit SHA')
+    documents = _documents.get()
+    binding = (repository, path, revision)
+    if documents is not None and binding in documents['values']:
+        # Parse fresh objects so a caller cannot mutate another check's input.
+        return decode_document(documents['values'][binding])
     content = api(f'repos/{repository}/contents/{quote(path, safe="/")}?ref={revision}')
     if (not isinstance(content, dict) or content.get('type') != 'file'
             or content.get('encoding') not in ('base64', 'none')
@@ -95,15 +127,14 @@ def document_at(api, repository, path, revision):
         identity = hashlib.sha1(b'blob ' + str(len(raw)).encode('ascii') + b'\0' + raw).hexdigest()
         if identity != content['sha']:
             raise ValueError('Git blob object SHA differs from authenticated metadata')
-        def unique(pairs):
-            result = {}
-            for key, value in pairs:
-                if key in result:
-                    raise ValueError('Duplicate proposal key')
-                result[key] = value
-            return result
-        return json.loads(raw, object_pairs_hook=unique,
-                          parse_constant=lambda value: (_ for _ in ()).throw(ValueError('Nonfinite proposal number')))
+        document = decode_document(raw)
+        # Cache only bytes authenticated against immutable-ref metadata, Git
+        # object SHA and strict JSON parsing. Exhaustion falls back to reads.
+        if (documents is not None and len(documents['values']) < DOCUMENT_ENTRIES
+                and documents['bytes'] + len(raw) <= DOCUMENT_BYTES):
+            documents['values'][binding] = raw
+            documents['bytes'] += len(raw)
+        return document
     except (ValueError, TypeError) as error:
         raise AuthorityError('Invalid proposal blob') from error
 

@@ -15,7 +15,7 @@ import time
 import decision_controller as controller
 import decision_packets
 from release_set import GitHubClient
-from security_admission import verify
+from security_admission import authority, verify
 from security_decisions import canonical_hash, load_json
 
 
@@ -179,7 +179,7 @@ def _reconcile(now, observer):
             raise ValueError('Invalid immutable decision ledger identity')
         records[identity] = proposal
     journal = GitHubClient(controller.REPOSITORY, 'automation/decision-journal')
-    with ExitStack() as staging:
+    with ExitStack() as staging, authority.immutable_documents():
         try:
             return _reconcile_profiles(records, bot, journal, now, staging, observer)
         finally:
