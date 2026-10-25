@@ -1,5 +1,10 @@
 # Recent CI costs and next changes, October 24 UTC
 
+Later [native-runner observations](ci-native-runner-evidence-2026-10-24.md)
+found a disagreement between environment-derived image versions and native
+startup metadata. Preserve this snapshot's original measurements, but do not
+use its receipt-derived versions alone to establish a matched runner cohort.
+
 Act on recent evidence now. This interim snapshot covers runs created from
 `2026-10-24T05:00:00Z` through `2026-10-24T20:43:16Z`. It contains 172 native runs
 and 485 unique jobs, including 145 successful, eight failed, four cancelled,

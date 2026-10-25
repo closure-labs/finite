@@ -7,10 +7,13 @@ import importlib.util
 import json
 from pathlib import Path
 import re
+import resource
 import statistics
+import subprocess
 import sys
+import tempfile
 import zipfile
-from urllib.parse import quote
+from urllib.parse import quote, unquote
 
 from archive_read import archive_reader, members, chunks
 from github_api import get_json
@@ -90,6 +93,61 @@ def validate_plan(plan):
     return plan
 
 
+def parse_runner_header(raw):
+    # Restrict parsing to the runner's startup section, before any workflow
+    # command can print lookalike image metadata into the job log.
+    marker = b'##[group]GITHUB_TOKEN Permissions'
+    boundary = raw.find(marker)
+    if boundary < 0:
+        raise ValueError('Incomplete native runner startup header')
+    raw = raw[:boundary + len(marker)]
+    lines = [re.sub(r'^\d{4}-\d\d-\d\dT[0-9:.]+Z ', '', line)
+             for line in raw.decode('utf-8-sig').splitlines()]
+    if not lines or not lines[0].startswith('Current runner version: '):
+        raise ValueError('Missing native runner startup header')
+    boundary = lines.index('##[group]GITHUB_TOKEN Permissions')
+    startup = lines[:boundary]
+    if ('Prepare workflow directory' in startup or any(line.startswith('##[group]Run ') for line in startup)):
+        raise ValueError('Runner metadata appeared after workflow preparation')
+    if startup.count('##[group]Runner Image') != 1:
+        raise ValueError('Missing or ambiguous native runner image')
+    start = startup.index('##[group]Runner Image') + 1
+    end = startup.index('##[endgroup]', start)
+    fields = {}
+    for line in startup[start:end]:
+        key, separator, value = line.partition(': ')
+        if separator:
+            if key in fields:
+                raise ValueError('Duplicate native runner image metadata')
+            fields[key] = value
+    version = fields.get('Version', '')
+    if fields.get('Image') != 'ubuntu-24.04' or not re.fullmatch(r'[0-9]{8}\.[0-9]+\.[0-9]+', version):
+        raise ValueError('Unknown native Ubuntu runner image')
+    tag = 'ubuntu24/' + version.rsplit('.', 1)[0]
+    release = fields.get('Image Release', '')
+    if unquote(release) != 'https://github.com/actions/runner-images/releases/tag/' + tag:
+        raise ValueError('Native runner release differs from its version')
+    return {'image': fields['Image'], 'version': version, 'release': release}
+
+
+def native_runner_image(job_id):
+    if type(job_id) is not int or job_id < 1:
+        raise ValueError('Native runner lookup requires a job ID')
+    # Only successful native samples reach this lookup. Eight MiB/30 seconds
+    # bounds each log read; transport and size failures leave the cohort unknown.
+    with tempfile.TemporaryFile() as log:
+        maximum = 8 * 1024**2
+        subprocess.run(['gh', 'api', '--allow-escape-sequences',
+                        f'repos/{REPOSITORY}/actions/jobs/{job_id}/logs'],
+                       stdout=log, stderr=subprocess.PIPE, check=True, timeout=30,
+                       preexec_fn=lambda: resource.setrlimit(resource.RLIMIT_FSIZE, (maximum, maximum)))
+        log.seek(0)
+        value = parse_runner_header(log.read(65536))
+        log.seek(0)
+        return {**value, 'jobId': job_id, 'source': 'native-job-startup-log',
+                'logSha256': hashlib.file_digest(log, 'sha256').hexdigest()}
+
+
 def native_sample(run_id, plan, api=get_json):
     native = api(f'repos/{REPOSITORY}/actions/runs/{run_id}')
     if (native.get('id') != run_id or native.get('head_sha') != plan['head']
@@ -133,14 +191,22 @@ def native_sample(run_id, plan, api=get_json):
                     hashes[key] = hashlib.sha256(raw).hexdigest()
                     documents[key] = [json.loads(line) for line in raw.splitlines()] if name.endswith('.jsonl') else json.loads(raw)
         result['receiptSha256'] = hashes
-        result.update(verify_documents(plan, native, cost, documents, hashes))
-    except (ValueError, KeyError, TypeError, StopIteration, OSError, zipfile.BadZipFile) as error:
+        native_images = {}
+        for job in cost['jobs']:
+            if job['name'] not in ('qualification / phase (fresh)', 'qualification / phase (upgrade)'):
+                continue
+            try:
+                native_images[job['jobId']] = native_runner_image(job['jobId'])
+            except (ValueError, OSError, subprocess.SubprocessError):
+                native_images[job['jobId']] = None
+        result.update(verify_documents(plan, native, cost, documents, hashes, native_images))
+    except (ValueError, KeyError, TypeError, StopIteration, OSError, zipfile.BadZipFile, subprocess.SubprocessError) as error:
         result['eligible'] = False
         result['reasons'].append('Producer receipt verification failed: ' + type(error).__name__)
     return result
 
 
-def verify_documents(plan, native, cost, documents, hashes):
+def verify_documents(plan, native, cost, documents, hashes, native_images=None):
     run_id = native['id']
     profile_entries = [(p, f'qualification-diagnostic-{p}-{run_id}-1/') for p in PROFILES]
     profile, prefix = next((p, prefix) for p, prefix in profile_entries if prefix + p + '-acceptance.json' in documents)
@@ -226,7 +292,12 @@ def verify_documents(plan, native, cost, documents, hashes):
         job = next(j for j in cost['jobs'] if j['name'] == f'qualification / phase ({phase})')
         if job['conclusion'] != 'success' or job['runnerSeconds'] is None:
             reasons.append(phase + ': missing successful complete native phase job')
+        native_image = (native_images or {}).get(job['jobId'])
+        if (not isinstance(native_image, dict) or native_image.get('jobId') != job['jobId']
+                or native_image.get('image') != 'ubuntu-24.04' or native_image.get('version') != plan['runnerImage']):
+            reasons.append(phase + ': unknown or mismatched native runner startup image')
         phase_results.append({'phase': phase, 'jobId': job['jobId'], 'runnerSeconds': job['runnerSeconds'],
+            'nativeRunnerImage': native_image,
             'isoBytes': iso['sizeBytes'], 'runtimeCohort': runtime['cohortSha256'],
             'toolCohort': cohorts[0] if cohorts else None,
             'cacheKey': cache.get('STORE_KEY'), 'qualificationContext': phase_acceptance['qualificationContext']})
