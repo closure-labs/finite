@@ -255,6 +255,60 @@ class Costs(unittest.TestCase):
             self.assertEqual((row['seconds'], row['samples'], row['failedSamples']), (30, 2, 1))
             self.assertEqual(report['jobs'][0]['runnerSeconds'], 120)
 
+    def test_resumed_scanner_timings_cannot_be_charged_to_the_receiving_job(self):
+        import cost_receipts
+        artifact, value = self.scanner_costs(phases=[
+            {'phase': 'rootfs-extraction', 'seconds': 150, 'success': True},
+            {'phase': 'inventory-cataloging', 'seconds': 171, 'success': True}])
+        value['inventoryReused'] = True
+        legacy = {**artifact, 'id': 21, 'name': 'security-finite-10-1'}
+        for category, steps in (
+                ('recovery', []),
+                ('publication', [{'name': 'Revalidate fresh security evidence for a resumed candidate',
+                                  'conclusion': 'success'}]),
+                ('publication', [{'name': 'Revalidate fresh security evidence for a resumed candidate',
+                                  'conclusion': 'failure'}])):
+            with self.subTest(category=category, steps=steps):
+                self.job['steps'] = steps
+                report = self.observe()
+                report['category'] = category
+                cost_receipts.join(report, [artifact, legacy, artifact], self.scanner_reader(value))
+                job = report['jobs'][0]
+                self.assertEqual(job['runnerSeconds'], 120)
+                self.assertEqual(job['stages'], [])
+                self.assertEqual(costs.stage_opportunities([report]), [])
+                self.assertTrue(all(item is None for item in job['inventoryReuse'].values()))
+                attribution = job['securityTimingAttribution']
+                self.assertEqual(attribution['status'], 'unknown')
+                self.assertEqual(attribution['reportedPhases'], value['phases'])
+                self.assertTrue(attribution['reportedInventoryReused'])
+                self.assertEqual(sum(row['runnerSeconds'] for row in costs.aggregate([report])), 120)
+
+    def test_short_resumed_timings_and_fresh_scan_fallback_still_need_producer_binding(self):
+        import cost_receipts
+        artifact, value = self.scanner_costs(phases=[
+            {'phase': 'vulnerability-scan', 'seconds': 3, 'success': True}])
+        # A successful revalidation step can also mean unavailable evidence and
+        # a subsequent fresh scan. Neither duration nor an inventory flag proves
+        # the legacy phase receipt was produced by this job.
+        self.job['steps'] = [{'name': 'Revalidate fresh security evidence for a resumed candidate',
+                              'conclusion': 'success'}]
+        report = self.observe()
+        cost_receipts.join(report, [artifact], self.scanner_reader(value))
+        self.assertEqual(report['jobs'][0]['stages'], [])
+        self.assertFalse(report['jobs'][0]['securityTimingAttribution']['reportedInventoryReused'])
+        self.assertIsNone(report['jobs'][0]['inventoryReuse']['observedReused'])
+
+    def test_skipped_security_revalidation_does_not_hide_new_scan_costs(self):
+        import cost_receipts
+        artifact, value = self.scanner_costs()
+        self.job['steps'] = [{'name': 'Revalidate fresh security evidence for a resumed candidate',
+                              'conclusion': 'skipped'}]
+        report = self.observe()
+        cost_receipts.join(report, [artifact], self.scanner_reader(value))
+        self.assertEqual([stage['seconds'] for stage in report['jobs'][0]['stages']], [45.5, 12])
+        self.assertNotIn('securityTimingAttribution', report['jobs'][0])
+
     def test_conflicting_scanner_projections_fail_closed(self):
         import cost_receipts
         artifact, value = self.scanner_costs()

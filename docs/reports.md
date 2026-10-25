@@ -9,6 +9,7 @@ the recorded revision and date.
 
 | Record | Scope |
 | --- | --- |
+| [Recovery cost attribution, October 25 UTC](ci-recovery-cost-attribution-2026-10-25.md) | Copied scanner phases remain unattributed; conserved native recovery cost and production KVM observations |
 | [Installer benchmark controls and CI savings, October 24](ci-installer-benchmark.md) | Complete cold observations, cohort controls, setup/selection/retention savings |
 | [Transport evidence coverage, October 24 UTC](ci-transport-evidence-2026-10-24.md) | Native costs for absent samples, explicit cohort failures and the first matched warm result |
 | [Cost-report image selection, October 23](ci-cost-selection-2026-10-23.md) | Measured report-only image jobs, explicit source-only selection and unmatched transport evidence |
