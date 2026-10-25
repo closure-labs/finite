@@ -606,6 +606,30 @@ class Costs(unittest.TestCase):
         changed['phases'][0]['attempts'] *= 4
         with self.assertRaisesRegex(ValueError, 'retry observations'):
             cost_receipts.nix_receipt(report, artifact, 'nix-checks.json', changed, set())
+        usage = {'scope': 'terminated-and-waited-children', 'includesDaemonWork': False,
+                 'userCpuSeconds': 3.25, 'systemCpuSeconds': 1.,
+                 'blockInputOperations': 10, 'blockOutputOperations': 15}
+        for resource_value in (None, usage):
+            changed = deepcopy(value)
+            changed['phases'][0]['attempts'][0]['childResourceUsage'] = resource_value
+            projected = self.observe()
+            cost_receipts.nix_receipt(projected, artifact, 'nix-checks.json', changed, set())
+            self.assertEqual(projected['jobs'][0]['runnerSeconds'], native_seconds)
+            self.assertEqual(projected['jobs'][0]['stages'][0]['attempts'][0]['childResourceUsage'], resource_value)
+        for key, wrong in [('scope', 'whole-runner'), ('includesDaemonWork', True),
+                           ('userCpuSeconds', True), ('userCpuSeconds', float('nan')),
+                           ('systemCpuSeconds', -1), ('systemCpuSeconds', float('inf')),
+                           ('blockInputOperations', 1.5), ('blockOutputOperations', True),
+                           ('blockOutputOperations', 2**63)]:
+            changed = deepcopy(value)
+            changed['phases'][0]['attempts'][0]['childResourceUsage'] = {**usage, key: wrong}
+            with self.subTest(resource=key, wrong=wrong), self.assertRaisesRegex(ValueError, 'resource'):
+                cost_receipts.nix_receipt(self.observe(), artifact, 'nix-checks.json', changed, set())
+        for invalid in ({}, [], 'unknown', {**usage, 'peakRss': 123}):
+            changed = deepcopy(value)
+            changed['phases'][0]['attempts'][0]['childResourceUsage'] = invalid
+            with self.subTest(resource=invalid), self.assertRaisesRegex(ValueError, 'resource'):
+                cost_receipts.nix_receipt(self.observe(), artifact, 'nix-checks.json', changed, set())
         # A receipt for attempt two cannot relabel work reused from attempt one.
         artifact['name'] = 'source-checks-10-2'
         changed = {**value, 'runAttempt': '2'}
