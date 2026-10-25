@@ -3,6 +3,7 @@
 from copy import deepcopy
 from datetime import datetime, timezone
 import importlib.util
+import io
 import json
 import os
 from pathlib import Path
@@ -39,6 +40,99 @@ class Journal:
         self.version = str(self.calls)
         self.state = deepcopy(state)
         return self.version
+
+
+def observation_env():
+    return {'GITHUB_ACTIONS': 'true', 'GITHUB_REPOSITORY': reconcile.controller.REPOSITORY,
+            'GITHUB_REF': 'refs/heads/main', 'GITHUB_JOB': 'reconcile', 'GITHUB_SHA': SHA,
+            'GITHUB_RUN_ID': '10', 'GITHUB_RUN_ATTEMPT': '1',
+            'GITHUB_WORKFLOW_REF': reconcile.controller.REPOSITORY + '/.github/workflows/decision-proposals.yml@refs/heads/main'}
+
+
+class Observations(unittest.TestCase):
+    def make(self, root, clock=None, env=None):
+        with patch.object(reconcile.subprocess, 'check_output', return_value='b' * 40):
+            return reconcile.Observation(env=env or observation_env(),
+                                         output=Path(root) / 'costs.json', clock=clock)
+
+    def test_success_preserves_result_and_records_running_partial_without_arguments(self):
+        with tempfile.TemporaryDirectory() as root:
+            observer = self.make(root, clock=iter([1, 3]).__next__)
+            observer.profile = 'finite'
+            result = object()
+            def operation(secret):
+                self.assertEqual(secret, 'private-token')
+                partial = json.loads(observer.output.read_text())['stages'][0]
+                self.assertEqual((partial['outcome'], partial['seconds']), ('running', None))
+                return result
+            self.assertIs(observer.call('packet-download', operation, 'private-token'), result)
+            value = json.loads(observer.output.read_text())
+            self.assertEqual(value['checkoutRevision'], 'b' * 40)
+            self.assertEqual(value['stages'][0]['seconds'], 2)
+            self.assertEqual(value['stages'][0]['profile'], 'finite')
+            self.assertEqual(value['stages'][0]['outcome'], 'success')
+            self.assertFalse(value['authorizesPublication'])
+            self.assertNotIn('private-token', observer.output.read_text())
+
+    def test_original_exception_and_partial_error_survive(self):
+        with tempfile.TemporaryDirectory() as root:
+            observer = self.make(root, clock=lambda: 2)
+            failure = RuntimeError('sensitive error text')
+            with self.assertRaises(RuntimeError) as raised:
+                observer.call('authority-check', lambda: (_ for _ in ()).throw(failure))
+            self.assertIs(raised.exception, failure)
+            row = json.loads(observer.output.read_text())['stages'][0]
+            self.assertEqual((row['outcome'], row['seconds']), ('error', 0))
+            self.assertNotIn('sensitive error text', observer.output.read_text())
+
+    def test_missing_reset_and_invalid_clocks_remain_unknown(self):
+        for values in ([5, 4], [0, 86401], [float('nan'), 1], [True, 1], [None, 1], [OSError('clock'), 1]):
+            with self.subTest(values=values), tempfile.TemporaryDirectory() as root:
+                clock = iter(values)
+                def read():
+                    value = next(clock)
+                    if isinstance(value, BaseException):
+                        raise value
+                    return value
+                observer = self.make(root, clock=read)
+                self.assertEqual(observer.call('journal-read', lambda: 7), 7)
+                self.assertIsNone(json.loads(observer.output.read_text())['stages'][0]['seconds'])
+
+    def test_observation_write_failure_changes_neither_result_nor_exception(self):
+        with tempfile.TemporaryDirectory() as root, patch('sys.stderr', new_callable=io.StringIO) as errors:
+            blocked = Path(root) / 'not-a-directory'
+            blocked.write_text('file')
+            observer = self.make(root)
+            observer.output = blocked / 'costs.json'
+            self.assertEqual(observer.call('journal-read', lambda: 7), 7)
+            with self.assertRaisesRegex(ValueError, 'original'):
+                observer.call('dispatch', lambda: (_ for _ in ()).throw(ValueError('original')))
+            self.assertEqual(errors.getvalue().count('timing unavailable'), 1)
+
+    def test_phase_and_serialized_size_bounds_never_skip_operations(self):
+        with tempfile.TemporaryDirectory() as root:
+            observer = self.make(root, clock=lambda: 0)
+            calls = []
+            for index in range(65):
+                observer.call('journal-read', calls.append, index)
+            value = json.loads(observer.output.read_text())
+            self.assertEqual(len(calls), 65)
+            self.assertEqual(len(value['stages']), 64)
+            self.assertTrue(value['truncated'])
+            self.assertLessEqual(observer.output.stat().st_size, 65536)
+            observer.document['oversized'] = 'x' * 65536
+            with patch('sys.stderr', new_callable=io.StringIO):
+                self.assertEqual(observer.call('journal-read', lambda: 9), 9)
+            self.assertLessEqual(observer.output.stat().st_size, 65536)
+
+    def test_unhosted_or_unbound_context_does_not_create_receipts(self):
+        for key, wrong in (('GITHUB_ACTIONS', 'false'), ('GITHUB_REF', 'refs/heads/branch'),
+                           ('GITHUB_JOB', 'checks'), ('GITHUB_REPOSITORY', 'fork/repo'),
+                           ('GITHUB_WORKFLOW_REF', 'other/workflow'), ('GITHUB_RUN_ID', ''), ('GITHUB_SHA', 'bad')):
+            with self.subTest(key=key), tempfile.TemporaryDirectory() as root:
+                observer = self.make(root, env={**observation_env(), key: wrong})
+                self.assertEqual(observer.call('journal-read', lambda: 9), 9)
+                self.assertFalse(observer.output.exists())
 
 
 class Reconciliation(unittest.TestCase):
@@ -102,6 +196,39 @@ class Reconciliation(unittest.TestCase):
         self.proposal['payload']['profiles'] = list(reconcile.controller.PROFILES)
         self.identity = reconcile.canonical_hash(self.proposal)
         (ledger / (self.identity + '.json')).write_text(json.dumps(self.proposal))
+
+    def test_enabled_observations_preserve_two_profile_behavior_and_cleanup(self):
+        self.two_profile_proposal()
+        with patch.object(reconcile.subprocess, 'check_output', return_value=SHA):
+            observer = reconcile.Observation(env=observation_env(), output=self.root / 'observations.json')
+        with patch.object(reconcile, 'publication_busy', return_value=True):
+            self.assertEqual([item['status'] for item in reconcile.reconcile(now=lambda: 1000, observer=observer)],
+                             ['publisher-busy', 'publisher-busy'])
+        rows = json.loads(observer.output.read_text())['stages']
+        self.assertEqual([row['stage'] for row in rows if row['stage'].startswith('packet-')],
+                         ['packet-download', 'packet-staged-verification'])
+        self.assertEqual([row['profile'] for row in rows if row['stage'] == 'authority-check'],
+                         ['finite', 'finite-dev'])
+        self.assertEqual(rows[0]['stage'], 'reconciliation')
+        self.assertEqual(rows[0]['outcome'], 'success')
+        self.assertEqual(rows[-1]['stage'], 'staging-cleanup')
+        self.assertTrue(all(not fetch[1].exists() for fetch in self.fetches))
+        self.assertEqual(self.verifications, 2)
+        self.assertEqual(self.dispatched, [])
+
+    def test_enabled_observations_preserve_lost_response_and_partial_results(self):
+        with patch.object(reconcile.subprocess, 'check_output', return_value=SHA):
+            observer = reconcile.Observation(env=observation_env(), output=self.root / 'observations.json')
+        self.ambiguous_dispatch = True
+        with self.assertRaisesRegex(RuntimeError, 'Lost dispatch response'):
+            reconcile.reconcile(now=lambda: 1000, observer=observer)
+        rows = json.loads(observer.output.read_text())['stages']
+        self.assertEqual(self.journal.state['status'], 'claimed')
+        self.assertEqual(rows[0]['outcome'], 'error')
+        self.assertEqual(next(row['outcome'] for row in rows if row['stage'] == 'dispatch'), 'error')
+        self.assertEqual(rows[-1]['stage'], 'staging-cleanup')
+        self.assertEqual(rows[-1]['outcome'], 'success')
+        self.assertTrue(all(not fetch[1].exists() for fetch in self.fetches))
 
     def test_shared_packet_downloads_once_but_rechecks_bytes_health_and_authority_for_each_profile(self):
         self.two_profile_proposal()

@@ -3,9 +3,11 @@
 import json
 from contextlib import ExitStack
 from datetime import datetime, timezone
+import math
 import os
 from pathlib import Path
 import re
+import subprocess
 import sys
 import tempfile
 import time
@@ -18,6 +20,80 @@ from security_decisions import canonical_hash, load_json
 
 
 LEASE_SECONDS = 900
+
+
+class Observation:
+    """Bounded local timings; neither arguments nor authority results are retained."""
+    def __init__(self, env=os.environ, output=Path('.bluebuild/reconciliation-costs.json'), clock=None):
+        self.enabled = (env.get('GITHUB_ACTIONS') == 'true'
+                        and env.get('GITHUB_REPOSITORY') == controller.REPOSITORY
+                        and env.get('GITHUB_REF') == 'refs/heads/main'
+                        and env.get('GITHUB_JOB') == 'reconcile'
+                        and re.fullmatch(r'[1-9][0-9]*', env.get('GITHUB_RUN_ID', '')) is not None
+                        and re.fullmatch(r'[1-9][0-9]*', env.get('GITHUB_RUN_ATTEMPT', '')) is not None
+                        and re.fullmatch(r'[0-9a-f]{40}', env.get('GITHUB_SHA', '')) is not None
+                        and env.get('GITHUB_WORKFLOW_REF') == controller.REPOSITORY + '/.github/workflows/decision-proposals.yml@refs/heads/main')
+        self.output, self.clock, self.profile = output, clock or time.monotonic, None
+        self.warned = False
+        self.document = {'schema': 1, 'kind': 'finite-reconciliation-costs', 'authorizesPublication': False,
+                         'repository': env.get('GITHUB_REPOSITORY'), 'runId': env.get('GITHUB_RUN_ID'),
+                         'runAttempt': env.get('GITHUB_RUN_ATTEMPT'), 'revision': env.get('GITHUB_SHA'),
+                         'workflowRef': env.get('GITHUB_WORKFLOW_REF'), 'jobName': env.get('GITHUB_JOB'),
+                         'checkoutRevision': None, 'stages': [], 'truncated': False}
+        if self.enabled:
+            try:
+                checkout = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True,
+                                                   stderr=subprocess.DEVNULL, timeout=5).strip()
+                if re.fullmatch(r'[0-9a-f]{40}', checkout):
+                    self.document['checkoutRevision'] = checkout
+            except (OSError, subprocess.SubprocessError):
+                pass
+
+    def timestamp(self):
+        try:
+            value = self.clock()
+            return value if type(value) in (int, float) and math.isfinite(value) else None
+        except (OSError, ValueError, TypeError):
+            return None
+
+    def save(self):
+        try:
+            raw = json.dumps(self.document) + '\n'
+            if len(raw.encode()) > 65536:
+                raise ValueError('Observation exceeds bound')
+            self.output.parent.mkdir(parents=True, exist_ok=True)
+            temporary = self.output.with_suffix('.tmp')
+            temporary.write_text(raw)
+            temporary.replace(self.output)
+        except (OSError, ValueError, TypeError):
+            if not self.warned:
+                print('Reconciliation timing unavailable; operation results remain authoritative.', file=sys.stderr)
+                self.warned = True
+
+    def call(self, stage, function, *args, **kwargs):
+        if not self.enabled:
+            return function(*args, **kwargs)
+        if len(self.document['stages']) >= 64:
+            self.document['truncated'] = True
+            self.save()
+            return function(*args, **kwargs)
+        row = {'stage': stage, 'profile': self.profile, 'startedAt': datetime.now(timezone.utc).isoformat(),
+               'seconds': None, 'outcome': 'running'}
+        self.document['stages'].append(row)
+        self.save()
+        started = self.timestamp()
+        try:
+            result = function(*args, **kwargs)
+            row['outcome'] = 'success'
+            return result
+        except BaseException:
+            row['outcome'] = 'error'
+            raise
+        finally:
+            finished = self.timestamp()
+            row['seconds'] = round(finished - started, 6) if (
+                started is not None and finished is not None and 0 <= finished - started <= 86400) else None
+            self.save()
 
 
 def build_inputs(profile, origin):
@@ -68,7 +144,12 @@ def publication_busy():
     return False
 
 
-def reconcile(now=time.time):
+def reconcile(now=time.time, observer=None):
+    observer = observer or Observation()
+    return observer.call('reconciliation', _reconcile, now, observer)
+
+
+def _reconcile(now, observer):
     controller.trusted_context()
     mode = load_json(controller.ROOT / 'automation/security/image-policy.json').get('mode', 'fixable-severity')
     if mode not in ('fixable-severity', 'upstream-maintained-risk', 'desktop-critical-only', 'maintainer-decision'):
@@ -93,13 +174,29 @@ def reconcile(now=time.time):
         records[identity] = proposal
     journal = GitHubClient(controller.REPOSITORY, 'automation/decision-journal')
     with ExitStack() as staging:
-        return _reconcile_profiles(records, bot, journal, now, staging)
+        try:
+            return _reconcile_profiles(records, bot, journal, now, staging, observer)
+        finally:
+            observer.profile = None
+            observer.call('staging-cleanup', staging.close)
 
 
-def _reconcile_profiles(records, bot, journal, now, staging):
+def historical_native_result(native, profile):
+    # This clock reconstructs historical scan health, never publication freshness.
+    scanned = load_json(native / 'vulnerabilities.json')['descriptor']['timestamp']
+    if not isinstance(scanned, str):
+        raise ValueError('Decision snapshot requires a native scan timestamp')
+    snapshot_time = datetime.fromisoformat(scanned.replace('Z', '+00:00'))
+    if snapshot_time.tzinfo is None or snapshot_time > datetime.now(timezone.utc):
+        raise ValueError('Decision snapshot requires an authenticated historical scan time')
+    return controller.native_result(native, snapshot_time, snapshot_time, profile=profile)
+
+
+def _reconcile_profiles(records, bot, journal, now, staging, observer):
     staged_key, directory = None, None
     actions = []
     for profile in controller.PROFILES:
+        observer.profile = profile
         relevant = {key for key, p in records.items() if profile in p['payload']['profiles']}
         superseded = {parent for key in relevant for parent in records[key]['payload']['supersedes']}
         leaves = relevant - superseded
@@ -115,12 +212,13 @@ def _reconcile_profiles(records, bot, journal, now, staging):
             # Reauthenticate the manifest, complete inventory and every local
             # size/hash for each profile; only the duplicate blob transfer is
             # avoided. Native scan health and live human authority stay below.
-            decision_packets.fetch(packet['reference'], directory, packet['sha256'], existing=True)
+            observer.call('packet-staged-verification', decision_packets.fetch,
+                          packet['reference'], directory, packet['sha256'], existing=True)
         else:
             # Keep at most one packet on disk, even for distinct profile leaves.
-            staging.close()
+            observer.call('staging-cleanup', staging.close)
             directory = Path(staging.enter_context(tempfile.TemporaryDirectory())) / 'packet'
-            decision_packets.fetch(packet['reference'], directory, packet['sha256'])
+            observer.call('packet-download', decision_packets.fetch, packet['reference'], directory, packet['sha256'])
             staged_key = key
         # Packets retain the original native bytes, including summaries
         # written before maintainer mode. Reconstruct the accepted snapshot
@@ -128,14 +226,8 @@ def _reconcile_profiles(records, bot, journal, now, staging):
         # historical clock selects build/rescan work only: publication
         # independently enforces fresh native evidence and live authority.
         native = directory / profile
-        scanned = load_json(native / 'vulnerabilities.json')['descriptor']['timestamp']
-        if not isinstance(scanned, str):
-            raise ValueError('Decision snapshot requires a native scan timestamp')
-        snapshot_time = datetime.fromisoformat(scanned.replace('Z', '+00:00'))
-        if snapshot_time.tzinfo is None or snapshot_time > datetime.now(timezone.utc):
-            raise ValueError('Decision snapshot requires an authenticated historical scan time')
-        scan = controller.native_result(native, snapshot_time, snapshot_time, profile=profile)
-        admission = verify(scan, profile, controller.REPOSITORY, bot)
+        scan = observer.call('native-evidence', historical_native_result, native, profile)
+        admission = observer.call('authority-check', verify, scan, profile, controller.REPOSITORY, bot)
         if admission['status'] != 'covered':
             actions.append({'profile': profile, 'status': admission['status']})
             continue
@@ -143,9 +235,9 @@ def _reconcile_profiles(records, bot, journal, now, staging):
                 or admission['decision'].get('proposalHash') != identity):
             raise ValueError('Reconciliation decision differs from authenticated active decision')
         request_id = canonical_hash({'decision': identity, 'profile': profile, 'image': scan['image']})
-        state, version = journal.read_journal(request_id)
+        state, version = observer.call('journal-read', journal.read_journal, request_id)
         origin = packet['producer']
-        inputs = build_inputs(profile, origin)
+        inputs = observer.call('producer-inputs', build_inputs, profile, origin)
         if 'resume_run' in inputs:
             # Existing trusted build/resume contracts reauthenticate ancestry,
             # image identity and native evidence; stale evidence is rescanned.
@@ -159,11 +251,11 @@ def _reconcile_profiles(records, bot, journal, now, staging):
                     or ('binding' in state and state['binding'] != canonical_hash({'request': request_id, 'inputs': state['inputs']}))
                     or type(state.get('leaseUntil', 0)) not in (int, float)):
                 raise ValueError('Invalid reconciliation journal')
-            observed = observed_dispatch(state.get('binding', binding))
+            observed = observer.call('dispatch-discovery', observed_dispatch, state.get('binding', binding))
             if observed:
                 if state.get('status') != 'dispatched' or state.get('observedRun') != observed['id'] or state.get('leaseUntil') != 0:
                     state.update(status='dispatched', observedRun=observed['id'], leaseUntil=0)
-                    version = journal.write_journal(request_id, state, version)
+                    version = observer.call('journal-write', journal.write_journal, request_id, state, version)
                 # A resume that failed after its inputs expired is retried once
                 # as a new full build, with its own discoverable request marker.
                 fallback = ('resume_run' in state['inputs'] and 'resume_run' not in inputs
@@ -178,7 +270,7 @@ def _reconcile_profiles(records, bot, journal, now, staging):
             elif state.get('leaseUntil', 0) > now():
                 actions.append({'profile': profile, 'status': 'dispatch-pending'})
                 continue
-        if publication_busy():
+        if observer.call('publication-busy', publication_busy):
             actions.append({'profile': profile, 'status': 'publisher-busy'})
             continue
         claim = {'schema': 1, 'status': 'claimed', 'decision': identity, 'profile': profile,
@@ -186,22 +278,22 @@ def _reconcile_profiles(records, bot, journal, now, staging):
         # CAS establishes one dispatcher before a side effect. An ambiguous POST
         # or crash leaves a discoverable claim; a later invocation observes the
         # run marker before retrying an expired claim.
-        version = journal.write_journal(request_id, claim, version)
-        admission = verify(scan, profile, controller.REPOSITORY, bot)
+        version = observer.call('journal-write', journal.write_journal, request_id, claim, version)
+        admission = observer.call('authority-recheck', verify, scan, profile, controller.REPOSITORY, bot)
         if (admission['status'] != 'covered' or not isinstance(admission.get('decision'), dict)
                 or admission['decision'].get('proposalHash') != identity):
             raise ValueError('Decision authority changed before build dispatch')
         revision = os.environ.get('GITHUB_SHA', '')
-        current = controller.api(f'repos/{controller.REPOSITORY}/git/ref/heads/main')
+        current = observer.call('source-check', controller.api, f'repos/{controller.REPOSITORY}/git/ref/heads/main')
         if not re.fullmatch(r'[0-9a-f]{40}', revision) or current.get('object', {}).get('sha') != revision:
             raise ValueError('Main changed before decision build dispatch; reconcile the current revision')
-        if publication_busy():
+        if observer.call('publication-busy', publication_busy):
             actions.append({'profile': profile, 'status': 'publisher-busy'})
             continue
         inputs = {**inputs, 'decision_request': binding}
-        controller.api(f'repos/{controller.REPOSITORY}/actions/workflows/build.yml/dispatches', 'POST',
-                       {'ref': 'main', 'inputs': inputs})
-        journal.write_journal(request_id, {**claim, 'status': 'dispatched', 'leaseUntil': 0}, version)
+        observer.call('dispatch', controller.api, f'repos/{controller.REPOSITORY}/actions/workflows/build.yml/dispatches', 'POST',
+                      {'ref': 'main', 'inputs': inputs})
+        observer.call('journal-write', journal.write_journal, request_id, {**claim, 'status': 'dispatched', 'leaseUntil': 0}, version)
         actions.append({'profile': profile, 'status': 'dispatched'})
         # The workflow's hourly/completed-build reconciler handles the next
         # profile after this run. Multiple POSTs can replace queued publishers.
