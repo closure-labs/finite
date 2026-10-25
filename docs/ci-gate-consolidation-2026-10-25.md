@@ -30,10 +30,22 @@ image or VM work.
 
 ## Ordered follow-up
 
+Delivery health and preparation reconciliation now share one runner setup and
+one read-only inspection. The retained report includes the repository, checkout,
+run, attempt and job identity; only that same job may consume it through
+`--report`. Standalone reconciliation retains its original inspection behavior.
+Reports are bounded regular JSON files and are replaced atomically. Failed
+inspection removes any stale snapshot. Unhealthy reports still permit dispatch
+when existing policy allows it; absent or mismatched snapshots cannot dispatch.
+The inspector receives a read-only token, preparation receives the existing
+scoped write token, and audit-health reporting runs independently. A final step
+preserves each component's failure outcome. Neither current-main validation nor
+duplicate/lost-response dispatch guards are cached.
+
 | Work | State | Acceptance |
 | --- | --- | --- |
 | Consolidate proposal approval | Implemented; awaiting hosted rollout | Observe the protected check on normal proposal/governance events. |
-| Share delivery-health setup | Planned | One setup and one inspection, same-run snapshot reuse, independent failure reporting and live dispatch guards. |
+| Share delivery-health setup | Implemented; awaiting hosted rollout | One setup and one inspection, same-run snapshot reuse, independent failure reporting and live dispatch guards. |
 | Remove migration release approval | Planned | One manual release-proposal approval; retain the environment, secrets, main-only access and fresh signing/publication checks. |
 | Coalesce authority workers | Planned | One active and newest pending worker per PR/target, with fresh state and obsolete-target rejection. |
 | Exact-commit queue source proof | Planned; default off | Bounded authenticated lookup, full fallback, five natural shadow matches before a canary. |

@@ -41,7 +41,8 @@ class Savings(unittest.TestCase):
         self.assertEqual(triggers['workflow_run']['branches'], ['main'])
         self.assertEqual(triggers['workflow_run']['types'], ['completed'])
         self.assertIn('schedule', triggers)
-        for name in ('health', 'reconcile'):
+        self.assertNotIn('health', data['jobs'])
+        for name in ('reconcile',):
             guard = data['jobs'][name]['if']
             self.assertIn("github.event_name != 'workflow_run'", guard)
             self.assertIn("head_repository.full_name == 'closure-labs/finite'", guard)
@@ -49,8 +50,21 @@ class Savings(unittest.TestCase):
             for event in ('push', 'schedule', 'workflow_dispatch'):
                 self.assertIn("event == '" + event + "'", guard)
             self.assertNotIn('conclusion', guard, 'Failed main delivery must still be monitored')
-        token = next(s for s in data['jobs']['health']['steps'] if s.get('id') == 'review-token')['with']
+        steps = data['jobs']['reconcile']['steps']
+        self.assertEqual(sum(s.get('uses') == './.github/actions/setup-nix' for s in steps), 1)
+        token = next(s for s in steps if s.get('id') == 'health-token')['with']
         self.assertTrue(all(v == 'read' for k, v in token.items() if k.startswith('permission-')))
+        health = next(s for s in steps if s.get('id') == 'health')
+        self.assertEqual(health['env']['GH_TOKEN'], '${{ steps.health-token.outputs.token }}')
+        self.assertTrue(health['continue-on-error'])
+        preparation = next(s for s in steps if s.get('id') == 'preparation')
+        self.assertIn('--report .bluebuild/delivery-health.json', preparation['run'])
+        self.assertIn("steps.health.outputs.snapshot == 'true'", preparation['if'])
+        self.assertTrue(preparation['continue-on-error'])
+        audit = next(s for s in steps if s.get('id') == 'decision-health')
+        self.assertIn('always()', audit['if'])
+        self.assertTrue(audit['continue-on-error'])
+        self.assertEqual(steps[-1]['if'], 'always()')
 
     def test_signer_never_receives_full_products_and_keeps_environment_gate(self):
         data = workflow('publish-release-set')['jobs']
