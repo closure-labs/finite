@@ -439,6 +439,126 @@ class Costs(unittest.TestCase):
         cost_receipts.nix_receipt(report, artifact, 'nix-checks.json', changed, set())
         self.assertEqual(report['receiptCoverage']['unmatched'], 1)
 
+    def reconciliation_costs(self):
+        self.run['path'] = '.github/workflows/decision-proposals.yml'
+        self.job['name'] = 'reconcile'
+        artifact = {'id': 20, 'name': 'reconciliation-costs-10-1', 'expired': False,
+                    'size_in_bytes': 500, 'digest': 'sha256:' + 'c' * 64,
+                    'workflow_run': {'id': 10, 'head_sha': 'a' * 40}}
+        value = {'schema': 1, 'kind': 'finite-reconciliation-costs', 'authorizesPublication': False,
+                 'repository': costs.REPOSITORY, 'runId': '10', 'runAttempt': '1',
+                 'revision': 'a' * 40, 'checkoutRevision': 'b' * 40, 'jobName': 'reconcile',
+                 'workflowRef': costs.REPOSITORY + '/.github/workflows/decision-proposals.yml@refs/heads/main',
+                 'truncated': False, 'stages': [
+                     {'stage': 'reconciliation', 'profile': None, 'seconds': None, 'outcome': 'running'},
+                     {'stage': 'packet-download', 'profile': 'finite', 'seconds': 12.5, 'outcome': 'success'},
+                     {'stage': 'authority-check', 'profile': 'finite-dev', 'seconds': 0, 'outcome': 'error'}]}
+        for row in value['stages']:
+            row['startedAt'] = '2026-10-23T10:01:00Z'
+        return artifact, value
+
+    def test_reconciliation_phases_bind_producing_job_and_preserve_partial_unknown_cost(self):
+        import cost_receipts
+        artifact, value = self.reconciliation_costs()
+        report = self.observe()
+        cost_receipts.join(report, [artifact, artifact], self.scanner_reader(value, 'reconciliation-costs.json'))
+        job = report['jobs'][0]
+        self.assertEqual(len(report['jobs']), 1)
+        self.assertEqual(job['runnerSeconds'], 120)
+        self.assertEqual(job['checkoutRevision'], 'b' * 40)
+        self.assertEqual(len(job['stages']), 3)
+        self.assertEqual([row['profile'] for row in job['stages']], [None, 'finite', 'finite-dev'])
+        self.assertIsNone(job['stages'][0]['seconds'])
+        self.assertIsNone(job['stages'][0]['status'])
+        self.assertEqual(job['stages'][2]['seconds'], 0)
+        self.assertEqual(job['stages'][2]['status'], 'failure')
+        self.assertTrue(all(row['nested'] for row in job['stages']))
+        self.assertEqual(sum(row['failedSamples'] for row in costs.stage_opportunities([report])), 1)
+        self.assertEqual(sum(row['unknownDurationSamples'] for row in costs.stage_opportunities([report])), 1)
+        self.assertEqual(sum(row['runnerSeconds'] for row in costs.aggregate([report])), 120)
+
+    def test_reconciliation_receipts_cannot_relabel_native_workflow_source_attempt_or_job(self):
+        import cost_receipts
+        artifact, value = self.reconciliation_costs()
+        invalid = [('schema', True), ('kind', 'other'), ('authorizesPublication', True),
+                   ('repository', 'fork/finite'), ('runId', '11'), ('runAttempt', '2'),
+                   ('revision', 'd' * 40), ('jobName', 'checks'), ('workflowRef', 'other'),
+                   ('truncated', 0), ('checkoutRevision', 'bad')]
+        for field, wrong in invalid:
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'native producer'):
+                cost_receipts.join(self.observe(), [artifact],
+                                   self.scanner_reader({**value, field: wrong}, 'reconciliation-costs.json'))
+        report = self.observe()
+        report['workflow'] = '.github/workflows/build.yml'
+        with self.assertRaisesRegex(ValueError, 'native producer'):
+            cost_receipts.join(report, [artifact], self.scanner_reader(value, 'reconciliation-costs.json'))
+        report = self.observe()
+        value['runAttempt'] = '2'
+        cost_receipts.join(report, [{**artifact, 'name': 'reconciliation-costs-10-2'}],
+                           self.scanner_reader(value, 'reconciliation-costs.json'))
+        self.assertEqual(report['receiptCoverage']['unmatched'], 1)
+        self.assertEqual(report['jobs'][0]['stages'], [])
+
+    def test_reconciliation_schema_and_compact_archive_bounds_fail_closed(self):
+        import cost_receipts
+        artifact, value = self.reconciliation_costs()
+        invalid = [None, {**value, 'stages': []}, {**value, 'stages': value['stages'] * 22}]
+        for key, wrong in [('stage', '../escape'), ('profile', 'foreign'), ('seconds', True),
+                           ('seconds', -1), ('seconds', 86401), ('seconds', float('nan')),
+                           ('seconds', float('inf')), ('outcome', 'unreviewed'),
+                           ('startedAt', '2026-10-23T10:01:00')]:
+            changed = deepcopy(value)
+            changed['stages'][1][key] = wrong
+            invalid.append(changed)
+        changed = deepcopy(value)
+        changed['stages'][0]['seconds'] = 1
+        invalid.append(changed)
+        for changed in invalid:
+            with self.subTest(value=changed), self.assertRaises(ValueError):
+                cost_receipts.join(self.observe(), [artifact], self.scanner_reader(changed, 'reconciliation-costs.json'))
+        for member in (None, 'other.json'):
+            with self.subTest(member=member), self.assertRaisesRegex(ValueError, 'compact'):
+                cost_receipts.join(self.observe(), [artifact], self.scanner_reader(value, member))
+        with self.assertRaises(ValueError):
+            cost_receipts.join(self.observe(), [artifact], self.scanner_reader(
+                {**value, 'oversized': 'x' * 65536}, 'reconciliation-costs.json'))
+
+    def test_conflicting_reconciliation_projections_are_rejected(self):
+        import cost_receipts
+        artifact, value = self.reconciliation_costs()
+        report = self.observe()
+        report['receiptCoverage'] = {'unmatched': 0}
+        seen = set()
+        cost_receipts.reconciliation_receipt(report, artifact, value, seen)
+        changed = deepcopy(value)
+        changed['stages'][1]['seconds'] = 11
+        with self.assertRaisesRegex(ValueError, 'Conflicting'):
+            cost_receipts.reconciliation_receipt(report, artifact, changed, seen)
+
+    def test_reconciliation_unknown_checkout_duration_and_truncation_stay_explicit(self):
+        import cost_receipts
+        artifact, value = self.reconciliation_costs()
+        value.update(checkoutRevision=None, truncated=True)
+        value['stages'][1]['seconds'] = None
+        report = self.observe()
+        cost_receipts.join(report, [artifact], self.scanner_reader(value, 'reconciliation-costs.json'))
+        job = report['jobs'][0]
+        self.assertIsNone(job['checkoutRevision'])
+        self.assertTrue(job['reconciliationTimingsTruncated'])
+        self.assertIsNone(job['stages'][1]['seconds'])
+        self.assertIsNone(job['candidateDigest'])
+        self.assertIsNone(job['inventoryReuse']['hit'])
+
+    def test_reconciliation_upload_is_bounded_and_failure_safe(self):
+        import yaml
+        workflow = yaml.safe_load((ROOT / '.github/workflows/decision-proposals.yml').read_text())
+        upload = next(step for step in workflow['jobs']['reconcile']['steps']
+                      if step.get('name') == 'Retain bounded reconciliation costs including failures')
+        self.assertEqual(upload['if'], 'always()')
+        self.assertEqual(upload['with']['path'], '.bluebuild/reconciliation-costs.json')
+        self.assertEqual(upload['with']['if-no-files-found'], 'ignore')
+        self.assertEqual(upload['with']['retention-days'], 14)
+
     def test_exclusive_occupancy_measures_blocking_lower_bound_without_double_counting(self):
         report = self.observe()
         second = deepcopy(report['jobs'][0])

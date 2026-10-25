@@ -9,6 +9,7 @@ the recorded revision and date.
 
 | Record | Scope |
 | --- | --- |
+| [Decision reconciliation timings, October 25 UTC](ci-reconciliation-timings-2026-10-25.md) | Successful staging rollout, unmatched complete-job observations and bounded per-profile controller phase timings |
 | [Decision packet staging, October 25 UTC](ci-decision-packet-staging-2026-10-25.md) | Draft controller prototype avoids repeated shared-packet blob fetches while retaining per-profile integrity and live approval checks |
 | [Recovery cost attribution, October 25 UTC](ci-recovery-cost-attribution-2026-10-25.md) | Copied scanner phases remain unattributed; conserved native recovery cost and production KVM observations |
 | [Installer benchmark controls and CI savings, October 24](ci-installer-benchmark.md) | Complete cold observations, cohort controls, setup/selection/retention savings |

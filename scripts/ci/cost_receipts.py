@@ -171,9 +171,60 @@ def security_receipt(run, artifact, value, seen):
                          for row in phases)
 
 
+def reconciliation_receipt(run, artifact, value, seen):
+    """Bind controller phases to their actual producing job, including failures."""
+    attempt = artifact['name'].rsplit('-', 1)[1]
+    if (run['workflow'] != '.github/workflows/decision-proposals.yml'
+            or not isinstance(value, dict) or type(value.get('schema')) is not int or value['schema'] != 1
+            or value.get('kind') != 'finite-reconciliation-costs' or value.get('authorizesPublication') is not False
+            or value.get('repository') != run['repository'] or str(value.get('runId')) != str(run['runId'])
+            or str(value.get('runAttempt')) != attempt or value.get('revision') != run['sourceRevision']
+            or value.get('jobName') != 'reconcile'
+            or value.get('workflowRef') != run['repository'] + '/.github/workflows/decision-proposals.yml@refs/heads/main'
+            or type(value.get('truncated')) is not bool
+            or value.get('checkoutRevision') is not None and (not isinstance(value['checkoutRevision'], str)
+                or not re.fullmatch(r'[0-9a-f]{40}', value['checkoutRevision']))):
+        raise ValueError('Reconciliation costs differ from native producer')
+    rows = value.get('stages')
+    if not isinstance(rows, list) or not 1 <= len(rows) <= 64:
+        raise ValueError('Invalid reconciliation phase count')
+    for row in rows:
+        if (not isinstance(row, dict) or not isinstance(row.get('stage'), str)
+                or not re.fullmatch(r'[a-z][a-z0-9-]{0,63}', row['stage'])
+                or row.get('profile') not in (None, 'finite', 'finite-dev')
+                or row.get('outcome') not in ('running', 'success', 'error')
+                or row.get('seconds') is not None and (type(row['seconds']) not in (int, float)
+                    or not math.isfinite(row['seconds']) or not 0 <= row['seconds'] <= 86400)
+                or row.get('outcome') == 'running' and row.get('seconds') is not None):
+            raise ValueError('Invalid reconciliation phase result')
+        try:
+            if datetime.fromisoformat(row['startedAt'].replace('Z', '+00:00')).tzinfo is None:
+                raise ValueError('Missing timezone')
+        except (KeyError, AttributeError, TypeError, ValueError) as error:
+            raise ValueError('Invalid reconciliation timestamp') from error
+    candidates = [job for job in run['jobs'] if job['name'] == 'reconcile' and str(job['runAttempt']) == attempt]
+    if len(candidates) != 1:
+        run['receiptCoverage']['unmatched'] += 1
+        return
+    job = candidates[0]
+    fingerprint = json.dumps(value, sort_keys=True)
+    binding = ('reconciliation-costs', job['jobId'])
+    previous = next((entry[2] for entry in seen if entry[:2] == binding), None)
+    if previous is not None:
+        if previous != fingerprint:
+            raise ValueError('Conflicting reconciliation cost receipts')
+        return
+    seen.add((*binding, fingerprint))
+    job['checkoutRevision'] = value.get('checkoutRevision')
+    job['reconciliationTimingsTruncated'] = value['truncated']
+    job['stages'].extend({**row, 'stage': 'reconciliation-' + row['stage'], 'nested': True,
+                          'status': None if row['outcome'] == 'running' else
+                          'failure' if row['outcome'] == 'error' else 'success'} for row in rows)
+
+
 def join(run, artifacts, reader=bounded_reader):
     selected = [a for a in artifacts if re.fullmatch(
-        r'(?:(?:image|security(?:-costs)?)-finite(?:-dev)?|qualification-phase-finite(?:-dev)?-(?:fresh|upgrade)|source-checks)-'
+        r'(?:(?:image|security(?:-costs)?)-finite(?:-dev)?|qualification-phase-finite(?:-dev)?-(?:fresh|upgrade)|source-checks|reconciliation-costs)-'
         + str(run['runId']) + r'-[1-9][0-9]*', a.get('name', ''))]
     run['receiptCoverage'] = {'selected': len(selected), 'read': 0, 'unavailable': [], 'unmatched': 0}
     if len(selected) > MAX_RECEIPTS:
@@ -191,12 +242,17 @@ def join(run, artifacts, reader=bounded_reader):
             continue
         with reader(artifact, run['repository']) as archive:
             with zipfile.ZipFile(archive) as zipped:
-                compact = artifact['name'].startswith('security-costs-')
+                reconciliation = artifact['name'].startswith('reconciliation-costs-')
+                compact = reconciliation or artifact['name'].startswith('security-costs-')
                 entries = list(members(zipped, max_files=1 if compact else 1024,
                                        max_bytes=65536 if compact else MAX_ARCHIVE))
-                if compact and [name for name, _ in entries] != ['phase-timings.json']:
-                    raise ValueError('Missing or unexpected compact security cost member')
+                if compact and [name for name, _ in entries] != [
+                        'reconciliation-costs.json' if reconciliation else 'phase-timings.json']:
+                    raise ValueError('Missing or unexpected compact cost member')
                 for name, entry in entries:
+                    if reconciliation:
+                        reconciliation_receipt(run, artifact, json.loads(b''.join(chunks(zipped, entry))), seen)
+                        continue
                     if artifact['name'].startswith('source-checks-'):
                         if name not in ('nix-checks.json', 'nix-setup.json'):
                             continue
