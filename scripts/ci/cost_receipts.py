@@ -151,6 +151,19 @@ def security_receipt(run, artifact, value, seen):
         return
     seen.add((*binding, fingerprint))
     reused = value['inventoryReused']
+    # Resuming a candidate can copy the original scanner's phase-timings.json
+    # verbatim, including its inventory flag. The new artifact's native binding
+    # authenticates transport, not which job performed those phases. Successful
+    # revalidation also permits a fresh-scan fallback, so native step success
+    # alone establishes neither reuse nor current phase attribution. Preserve
+    # the unbound observations without charging them to this job's stages.
+    if run.get('category') == 'recovery' or any(
+            step['name'] == 'Revalidate fresh security evidence for a resumed candidate'
+            for step in job['steps']):
+        job['securityTimingAttribution'] = {
+            'status': 'unknown', 'reason': 'resumed-security-timings-lack-producer-binding',
+            'reportedInventoryReused': reused, 'reportedPhases': phases}
+        return
     job['inventoryReuse'] = {'eligible': True if reused else None,
                              'hit': True if reused else None, 'missReason': None, 'observedReused': reused}
     job['stages'].extend({'stage': 'security-' + row['phase'], 'seconds': row['seconds'],
