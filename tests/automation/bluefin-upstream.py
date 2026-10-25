@@ -29,6 +29,7 @@ identity_module = load('identity_cache_contract', 'scripts/ci/image_identity.py'
 NEW = 'sha256:' + 'a' * 64
 IMAGE = 'sha256:' + 'b' * 64
 IDENTITY = 'v1:' + 'c' * 64
+PAYLOAD = '/nix/store/fixture.drv'
 
 
 class BluefinTests(unittest.TestCase):
@@ -60,6 +61,9 @@ class BluefinTests(unittest.TestCase):
             mock = patch.object(module, 'image_identity', return_value=IDENTITY)
             mock.start()
             self.addCleanup(mock.stop)
+            payload = patch.object(module, 'payload_derivation', return_value=PAYLOAD)
+            payload.start()
+            self.addCleanup(payload.stop)
 
     def snapshot(self):
         return {p.name: p.read_bytes() for p in (self.root / 'recipes').glob('*.yml')}
@@ -188,6 +192,46 @@ class BluefinTests(unittest.TestCase):
             return image
         with patch.object(upstream, 'inspect', side_effect=missed_publication):
             self.assertEqual(upstream.reconcile(self.root)['profiles'], ['finite-dev'])
+
+    def test_payload_failure_stops_before_identity_or_registry_reads(self):
+        for error in (subprocess.CalledProcessError(1, 'nix'), subprocess.TimeoutExpired('nix', 300)):
+            with self.subTest(error=error), patch.object(upstream, 'payload_derivation', side_effect=error), \
+                    patch.object(upstream, 'image_identity') as identity, patch.object(upstream, 'inspect') as inspect:
+                with self.assertRaises(type(error)):
+                    upstream.reconcile(self.root)
+                identity.assert_not_called()
+                inspect.assert_not_called()
+
+    def test_shared_payload_keeps_profile_and_alias_read_order(self):
+        events = []
+        def identity(profile, root, *, payload):
+            self.assertEqual(payload, PAYLOAD)
+            events.append('identity:' + profile)
+            return IDENTITY
+        def inspect(reference, **kwargs):
+            events.append('inspect:' + reference.rsplit(':', 1)[1])
+            return self.published(reference, **kwargs)
+        def evaluate(root):
+            events.append('payload')
+            return PAYLOAD
+        with patch.object(upstream, 'payload_derivation', side_effect=evaluate), \
+                patch.object(upstream, 'image_identity', side_effect=identity), \
+                patch.object(upstream, 'inspect', side_effect=inspect):
+            self.assertEqual(upstream.reconcile(self.root)['profiles'], [])
+        self.assertEqual(events, ['payload', 'identity:finite', 'inspect:finite', 'inspect:latest',
+                                  'identity:finite-dev', 'inspect:finite-dev'])
+
+    def test_registry_failure_after_shared_evaluation_is_not_a_success(self):
+        with patch.object(upstream, 'inspect', side_effect=RuntimeError('registry unavailable')):
+            with self.assertRaisesRegex(RuntimeError, 'registry unavailable'):
+                upstream.reconcile(self.root)
+
+    def test_invalid_recipes_fail_before_payload_evaluation(self):
+        with patch.object(upstream, 'recipes', side_effect=ValueError('Invalid recipe')), \
+                patch.object(upstream, 'payload_derivation') as evaluate:
+            with self.assertRaisesRegex(ValueError, 'Invalid recipe'):
+                upstream.reconcile(self.root)
+            evaluate.assert_not_called()
 
     def test_docs_push_recovers_replaced_pending_publication(self):
         docs = {'checks': False, 'nix': False, 'profiles': []}
@@ -621,6 +665,48 @@ class DeterministicIdentity(unittest.TestCase):
 
     def identity(self, profile='finite'):
         return identity_module.identity(profile, self.root, '/nix/store/fixture.drv')
+
+    def published(self, reference, **kwargs):
+        profile = 'finite-dev' if reference.endswith(':finite-dev') else 'finite'
+        recipe = upstream.recipes(self.root)[profile]
+        return {'Digest': IMAGE, 'Labels': {'org.opencontainers.image.base.digest': recipe['digest'],
+                'io.finite.profile': profile, 'io.finite.build-inputs': self.identity(profile),
+                'org.opencontainers.image.source': 'https://github.com/closure-labs/finite'}}
+
+    def test_one_evaluation_preserves_both_real_profile_identities_and_recipes(self):
+        before = {p: (self.root / 'recipes' / f'{p}.yml').read_bytes() for p in upstream.PROFILES}
+        with patch.object(upstream.subprocess, 'check_output', return_value=PAYLOAD + '\n') as evaluate, \
+                patch.object(upstream, 'inspect', side_effect=self.published):
+            self.assertEqual(upstream.reconcile(self.root)['profiles'], [])
+        evaluate.assert_called_once()
+        self.assertEqual({p: (self.root / 'recipes' / f'{p}.yml').read_bytes() for p in upstream.PROFILES}, before)
+
+    def test_payload_command_timeout_and_configuration_match_identity_contract(self):
+        with patch.object(identity_module.subprocess, 'check_output', return_value=PAYLOAD) as baseline:
+            identity_module.identity('finite', self.root)
+        with patch.object(upstream.subprocess, 'check_output', return_value=PAYLOAD + '\n') as shared:
+            self.assertEqual(upstream.payload_derivation(self.root), PAYLOAD)
+        self.assertEqual(shared.call_args, baseline.call_args)
+
+    def test_payload_is_refreshed_each_invocation_and_changes_both_profile_selection(self):
+        with patch.object(upstream.subprocess, 'check_output', side_effect=[PAYLOAD, '/nix/store/changed.drv']) as evaluate, \
+                patch.object(upstream, 'inspect', side_effect=self.published):
+            self.assertEqual(upstream.reconcile(self.root)['profiles'], [])
+            self.assertEqual(upstream.reconcile(self.root)['profiles'], sorted(upstream.PROFILES))
+        self.assertEqual(evaluate.call_count, 2)
+
+    def test_invalid_shared_payload_cannot_reach_registry_reads(self):
+        with patch.object(upstream.subprocess, 'check_output', return_value='not-a-derivation'), \
+                patch.object(upstream, 'inspect') as inspect:
+            with self.assertRaisesRegex(ValueError, 'Invalid Nix payload identity'):
+                upstream.reconcile(self.root)
+        inspect.assert_not_called()
+
+    def test_channel_helper_bytes_are_not_part_of_either_image_identity(self):
+        before = {p: self.identity(p) for p in upstream.PROFILES}
+        helper = self.root / 'scripts/ci/bluefin-upstream.py'
+        helper.write_bytes(helper.read_bytes() + b'\n# Channel reconciliation only\n')
+        self.assertEqual({p: self.identity(p) for p in upstream.PROFILES}, before)
 
     def test_timestamp_bytecode_presence_and_changed_headers_do_not_change_identity(self):
         source = self.root / 'scripts/bluebuild/publication.py'
