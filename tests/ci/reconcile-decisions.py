@@ -11,6 +11,7 @@ import sys
 import tempfile
 import unittest
 from unittest.mock import patch
+from urllib.parse import parse_qs, urlsplit
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'scripts/ci'))
@@ -47,6 +48,70 @@ def observation_env():
             'GITHUB_REF': 'refs/heads/main', 'GITHUB_JOB': 'reconcile', 'GITHUB_SHA': SHA,
             'GITHUB_RUN_ID': '10', 'GITHUB_RUN_ATTEMPT': '1',
             'GITHUB_WORKFLOW_REF': reconcile.controller.REPOSITORY + '/.github/workflows/decision-proposals.yml@refs/heads/main'}
+
+
+class PublicationBusy(unittest.TestCase):
+    def publisher(self, **changes):
+        return {'event': 'push', 'head_branch': 'main',
+                'head_repository': {'full_name': reconcile.controller.REPOSITORY},
+                'path': '.github/workflows/build.yml', 'status': 'in_progress', **changes}
+
+    def test_every_incomplete_status_blocks_even_beyond_large_completed_history(self):
+        statuses = ('in_progress', 'queued', 'requested', 'waiting', 'pending')
+        for active in statuses:
+            requested = []
+            def api(path):
+                query = parse_qs(urlsplit(path).query)
+                self.assertEqual(query['branch'], ['main'])
+                self.assertEqual(query['per_page'], ['100'])
+                self.assertEqual(query['page'], ['1'])
+                # An unfiltered listing would exhaust its pagination bound
+                # before reaching this older active publisher.
+                self.assertIn('status', query)
+                status = query['status'][0]
+                requested.append(status)
+                return {'workflow_runs': [self.publisher(status=active)] if status == active else []}
+            with self.subTest(status=active), patch.object(reconcile.controller, 'api', side_effect=api):
+                self.assertTrue(reconcile.publication_busy())
+                self.assertEqual(requested, list(statuses[:statuses.index(active) + 1]))
+
+    def test_idle_checks_all_statuses_and_ignores_unrelated_or_completed_runs(self):
+        unrelated = [self.publisher(status='completed'), self.publisher(event='pull_request'),
+                     self.publisher(event='merge_group'), self.publisher(head_branch='other'),
+                     self.publisher(head_repository={'full_name': 'fork/finite'}),
+                     self.publisher(path='.github/workflows/other.yml')]
+        with patch.object(reconcile.controller, 'collection', return_value=unrelated) as collection:
+            self.assertFalse(reconcile.publication_busy())
+        self.assertEqual([parse_qs(urlsplit(call.args[0]).query)['status'][0]
+                          for call in collection.call_args_list],
+                         ['in_progress', 'queued', 'requested', 'waiting', 'pending'])
+
+    def test_matching_publisher_on_later_active_page_still_blocks(self):
+        def api(path):
+            query = parse_qs(urlsplit(path).query)
+            if query['status'] != ['waiting']:
+                return {'workflow_runs': []}
+            if query['page'] == ['1']:
+                return {'workflow_runs': [self.publisher(event='pull_request', status='waiting')] * 100}
+            self.assertEqual(query['page'], ['2'])
+            return {'workflow_runs': [self.publisher(event='workflow_dispatch', status='waiting')]}
+        with patch.object(reconcile.controller, 'api', side_effect=api):
+            self.assertTrue(reconcile.publication_busy())
+
+    def test_transport_malformed_and_pagination_failures_never_mean_idle(self):
+        for error in (ValueError('GitHub read failed'), TimeoutError('read timed out')):
+            with self.subTest(error=error), patch.object(reconcile.controller, 'api', side_effect=error):
+                with self.assertRaises(type(error)):
+                    reconcile.publication_busy()
+        for response in ({'workflow_runs': None}, {'workflow_runs': {}}):
+            with self.subTest(response=response), patch.object(reconcile.controller, 'api', return_value=response):
+                with self.assertRaisesRegex(ValueError, 'Invalid bounded API collection'):
+                    reconcile.publication_busy()
+        with patch.object(reconcile.controller, 'api', return_value={
+                'workflow_runs': [self.publisher(event='pull_request')] * 100}) as api:
+            with self.assertRaisesRegex(ValueError, 'exceeds bounded pagination'):
+                reconcile.publication_busy()
+            self.assertEqual(api.call_count, 10)
 
 
 class Observations(unittest.TestCase):
@@ -512,6 +577,17 @@ class Reconciliation(unittest.TestCase):
         self.observed = [{'id': 456, 'path': '.github/workflows/build.yml', 'head_branch': 'main',
                           'head_repository': {'full_name': 'closure-labs/finite'}, 'event': 'schedule', 'status': 'queued'}]
         self.assertEqual(self.execute()[0]['status'], 'publisher-busy')
+        self.assertEqual(self.dispatched, [])
+        self.assertEqual(self.journal.calls, 0)
+
+    def test_later_status_lookup_failure_never_claims_or_dispatches(self):
+        def collection(path, key):
+            if '&status=waiting' in path:
+                raise ValueError('Publisher status lookup unavailable')
+            return self.collection(path, key)
+        with patch.object(reconcile.controller, 'collection', side_effect=collection):
+            with self.assertRaisesRegex(ValueError, 'status lookup unavailable'):
+                self.execute()
         self.assertEqual(self.dispatched, [])
         self.assertEqual(self.journal.calls, 0)
 

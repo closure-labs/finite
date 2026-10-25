@@ -134,13 +134,19 @@ def observed_dispatch(binding):
 
 def publication_busy():
     """Do not replace another publisher in GitHub's single pending concurrency slot."""
-    runs = controller.collection(f'repos/{controller.REPOSITORY}/actions/workflows/build.yml/runs?branch=main', 'workflow_runs')
-    for run in runs:
-        if (run.get('event') in controller.PRODUCERS['build.yml'] and run.get('head_branch') == 'main'
-                and run.get('head_repository', {}).get('full_name') == controller.REPOSITORY
-                and run.get('path', '').removeprefix('.github/workflows/') == 'build.yml'
-                and run.get('status') != 'completed'):
-            return True
+    # Query every incomplete status separately: completed history must neither
+    # hide an older waiting publisher nor consume the pagination budget. Keep
+    # both live checks around the journal claim and dispatch; do not cache them.
+    for status in ('in_progress', 'queued', 'requested', 'waiting', 'pending'):
+        runs = controller.collection(
+            f'repos/{controller.REPOSITORY}/actions/workflows/build.yml/runs?branch=main&status={status}',
+            'workflow_runs')
+        for run in runs:
+            if (run.get('event') in controller.PRODUCERS['build.yml'] and run.get('head_branch') == 'main'
+                    and run.get('head_repository', {}).get('full_name') == controller.REPOSITORY
+                    and run.get('path', '').removeprefix('.github/workflows/') == 'build.yml'
+                    and run.get('status') != 'completed'):
+                return True
     return False
 
 
