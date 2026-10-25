@@ -2,6 +2,8 @@
 """Reconciliation reauthenticates humans and recovers ambiguous dispatches."""
 from copy import deepcopy
 from datetime import datetime, timezone
+import base64
+import hashlib
 import importlib.util
 import io
 import json
@@ -306,6 +308,46 @@ class Reconciliation(unittest.TestCase):
                          list(reconcile.controller.PROFILES))
         self.assertFalse(self.fetches[0][1].exists())
         self.assertEqual(self.dispatched, [])
+
+    def observe_document_reads(self):
+        calls = []
+        def github(endpoint):
+            self.assertIn('/contents/', endpoint)
+            calls.append(endpoint)
+            raw = json.dumps(self.proposal).encode()
+            return {'type': 'file', 'sha': hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest(),
+                    'size': len(raw), 'encoding': 'base64', 'content': base64.b64encode(raw).decode()}
+        def verify(*args):
+            document = reconcile.authority.document_at(github, 'closure-labs/finite',
+                                                       'automation/decisions/security/proposal.json', SHA)
+            self.assertEqual(document, self.proposal)
+            return self.verify(*args)
+        reconcile.verify.side_effect = verify
+        return calls
+
+    def test_document_bytes_are_shared_across_profiles_but_not_invocations(self):
+        self.two_profile_proposal()
+        calls = self.observe_document_reads()
+        with patch.object(reconcile, 'publication_busy', return_value=True):
+            self.assertEqual([item['status'] for item in self.execute()], ['publisher-busy'] * 2)
+            self.assertEqual(len(calls), 1)
+            self.assertEqual([item['status'] for item in self.execute()], ['publisher-busy'] * 2)
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(self.verifications, 4)
+        self.assertEqual(self.dispatched, [])
+
+    def test_failed_dispatch_clears_document_scope_and_keeps_authority_recheck(self):
+        calls = self.observe_document_reads()
+        self.ambiguous_dispatch = True
+        with self.assertRaisesRegex(RuntimeError, 'Lost dispatch response'):
+            self.execute()
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(self.verifications, 2)
+        self.assertEqual(self.journal.state['status'], 'claimed')
+        self.ambiguous_dispatch = False
+        self.assertEqual(self.execute()[0]['status'], 'already-dispatched')
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(len(self.dispatched), 1)
 
     def test_staging_is_not_reused_between_reconciliation_invocations(self):
         self.two_profile_proposal()

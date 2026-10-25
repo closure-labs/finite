@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 import sys
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'scripts/ci'))
@@ -37,6 +38,7 @@ class GitHub:
         self.files = [{'filename': mod.proposal_path(PROPOSAL), 'status': 'added'}]
         self.blobs = {}
         self.compare = 'ahead'
+        self.main = MAIN
         self.fail = None
         self.calls = []
 
@@ -74,7 +76,7 @@ class GitHub:
                     'encoding': 'base64', 'size': len(data),
                     'content': base64.b64encode(data).decode()}
         if endpoint.endswith('/git/ref/heads/main'):
-            return {'object': {'sha': MAIN}}
+            return {'object': {'sha': self.main}}
         if '/compare/' in endpoint:
             return {'status': self.compare}
         raise AssertionError('Unexpected API call: ' + endpoint)
@@ -82,6 +84,131 @@ class GitHub:
 
 def verify(api, **kwargs):
     return mod.verify_proposal(PROPOSAL, 7, REPO, BOT, github=api, **kwargs)
+
+
+class ImmutableDocuments(unittest.TestCase):
+    def test_same_binding_reuses_verified_bytes_and_returns_fresh_objects(self):
+        api = GitHub()
+        path = mod.proposal_path(PROPOSAL)
+        with mod.immutable_documents():
+            first = mod.document_at(api, REPO, path, HEAD)
+            first['payload']['disposition'] = 'rejected'
+            self.assertEqual(mod.document_at(api, REPO, path, HEAD), PROPOSAL)
+            self.assertEqual(len(api.calls), 1)
+            for repo, name, revision in [('other/repo', path, HEAD), (REPO, 'other.json', HEAD),
+                                         (REPO, path, MERGE)]:
+                self.assertEqual(mod.document_at(api, repo, name, revision), PROPOSAL)
+            self.assertEqual(len(api.calls), 4)
+
+    def test_invocations_nested_scopes_and_errors_do_not_leak_documents(self):
+        api = GitHub()
+        path = mod.proposal_path(PROPOSAL)
+        with mod.immutable_documents():
+            mod.document_at(api, REPO, path, HEAD)
+            with mod.immutable_documents():
+                mod.document_at(api, REPO, path, HEAD)
+            mod.document_at(api, REPO, path, HEAD)
+            self.assertEqual(len(api.calls), 2)
+        with self.assertRaisesRegex(RuntimeError, 'stop'), mod.immutable_documents():
+            mod.document_at(api, REPO, path, HEAD)
+            raise RuntimeError('stop')
+        mod.document_at(api, REPO, path, HEAD)
+        mod.document_at(api, REPO, path, HEAD)
+        self.assertEqual(len(api.calls), 5)
+
+    def test_full_budget_falls_back_to_original_reads(self):
+        for limit in ('DOCUMENT_BYTES', 'DOCUMENT_ENTRIES'):
+            api = GitHub()
+            with self.subTest(limit=limit), patch.object(mod, limit, 0), mod.immutable_documents():
+                for _ in range(2):
+                    self.assertEqual(mod.document_at(api, REPO, 'proposal.json', HEAD), PROPOSAL)
+                self.assertEqual(len(api.calls), 2)
+
+    def test_budget_boundary_retains_first_binding_and_reads_overflow(self):
+        for limit, maximum in [('DOCUMENT_BYTES', len(json.dumps(PROPOSAL).encode())), ('DOCUMENT_ENTRIES', 1)]:
+            api = GitHub()
+            with self.subTest(limit=limit), patch.object(mod, limit, maximum), mod.immutable_documents():
+                for revision in (HEAD, MERGE, HEAD, MERGE):
+                    self.assertEqual(mod.document_at(api, REPO, 'proposal.json', revision), PROPOSAL)
+                self.assertEqual(len(api.calls), 3)
+
+    def test_invalid_bytes_are_never_reused(self):
+        for raw in (b'{"duplicate":1,"duplicate":2}', b'{"number":NaN}'):
+            calls = []
+            api = GitHub()
+            def github(endpoint):
+                calls.append(endpoint)
+                if len(calls) == 1:
+                    return {'type': 'file', 'sha': hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest(),
+                            'size': len(raw), 'encoding': 'base64', 'content': base64.b64encode(raw).decode()}
+                return api(endpoint)
+            with self.subTest(raw=raw), mod.immutable_documents():
+                with self.assertRaises(mod.AuthorityError):
+                    mod.document_at(github, REPO, 'proposal.json', HEAD)
+                self.assertEqual(mod.document_at(github, REPO, 'proposal.json', HEAD), PROPOSAL)
+                self.assertEqual(len(calls), 2)
+
+    def test_invalid_object_identity_is_never_reused(self):
+        api = GitHub()
+        calls = []
+        def github(endpoint):
+            value = api(endpoint)
+            calls.append(endpoint)
+            return {**value, 'sha': 'f' * 40} if len(calls) == 1 else value
+        with mod.immutable_documents():
+            with self.assertRaises(mod.AuthorityError):
+                mod.document_at(github, REPO, 'proposal.json', HEAD)
+            self.assertEqual(mod.document_at(github, REPO, 'proposal.json', HEAD), PROPOSAL)
+            self.assertEqual(len(calls), 2)
+
+    def test_warm_documents_do_not_reuse_live_authority(self):
+        api = GitHub()
+        with mod.immutable_documents():
+            self.assertEqual(verify(api)['status'], 'authorized')
+            self.assertEqual(verify(api)['status'], 'authorized')
+            self.assertEqual(sum('/contents/' in call for call in api.calls), 3)
+            self.assertEqual(sum('/reviews?' in call for call in api.calls), 2)
+            self.assertEqual(sum('/compare/' in call for call in api.calls), 2)
+            api.reviews.clear()
+            with self.assertRaises(mod.HumanDecisionRequired):
+                verify(api)
+            self.assertEqual(sum('/reviews?' in call for call in api.calls), 3)
+
+    def test_warm_documents_preserve_membership_permission_and_main_failures(self):
+        mutations = [lambda api: api.members.clear(), lambda api: api.roles.update(maintainer='read'),
+                     lambda api: api.memberships.update(maintainer={'state': 'pending', 'role': 'member'}),
+                     lambda api: setattr(api, 'compare', 'behind'), lambda api: setattr(api, 'fail', '/reviews?'),
+                     lambda api: api.pr.update(merged=False, state='open')]
+        for mutate in mutations:
+            api = GitHub()
+            with self.subTest(mutation=mutations.index(mutate)), mod.immutable_documents():
+                verify(api)
+                mutate(api)
+                with self.assertRaises(mod.AuthorityError):
+                    verify(api)
+
+    def test_new_head_requires_new_content_and_approval(self):
+        api = GitHub()
+        with mod.immutable_documents():
+            verify(api)
+            api.pr['head']['sha'] = 'd' * 40
+            with self.assertRaises(mod.HumanDecisionRequired):
+                verify(api)
+            self.assertEqual(sum('/contents/' in call for call in api.calls), 4)
+
+    def test_new_main_fetches_new_binding_and_rejects_changed_decision(self):
+        for changed in (False, True):
+            api = GitHub()
+            with self.subTest(changed=changed), mod.immutable_documents():
+                verify(api)
+                api.main = 'e' * 40
+                if changed:
+                    api.blobs[api.main] = {**PROPOSAL, 'payload': {'disposition': 'rejected'}}
+                    with self.assertRaisesRegex(mod.AuthorityError, 'no longer unchanged on main'):
+                        verify(api)
+                else:
+                    self.assertEqual(verify(api)['status'], 'authorized')
+                self.assertEqual(sum('/contents/' in call for call in api.calls), 4)
 
 
 class OriginFallback(unittest.TestCase):
@@ -521,8 +648,10 @@ class Authority(unittest.TestCase):
         def api(endpoint):
             calls.append(endpoint)
             return metadata if '/contents/' in endpoint else blob
-        result = mod.document_at(api, REPO, 'automation/decisions/security/large.json', HEAD)
-        self.assertEqual(result, proposal)
+        with mod.immutable_documents():
+            for _ in range(2):
+                result = mod.document_at(api, REPO, 'automation/decisions/security/large.json', HEAD)
+                self.assertEqual(result, proposal)
         self.assertEqual(calls[-1], f'repos/{REPO}/git/blobs/{metadata["sha"]}')
         self.assertEqual(len(calls), 2)
 
