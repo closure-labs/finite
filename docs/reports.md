@@ -9,6 +9,7 @@ the recorded revision and date.
 
 | Record | Scope |
 | --- | --- |
+| [CI gate consolidation, October 25 UTC](ci-gate-consolidation-2026-10-25.md) | One proposal approval validation and ordered health, release-gate, event-worker and source-proof follow-up |
 | [Immutable decision documents and rollout, October 25 UTC](ci-immutable-documents-2026-10-25.md) | Verified source CPU rollout and bounded removal of repeated immutable Git document transfers |
 | [Source resource observations and recent results, October 25 UTC](ci-source-resources-2026-10-25.md) | Scoped qualification/source/controller costs and per-attempt CPU/I/O observations without extra VM rounds |
 | [Shared channel payload evaluation, October 25 UTC](ci-channel-payload-2026-10-25.md) | One per-invocation generic payload evaluation preserves both image identities and channel checks |

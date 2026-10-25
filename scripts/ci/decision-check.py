@@ -67,7 +67,10 @@ def check_pr(repository, number, expected_bot, target_sha=None, github=None):
     if sensitive:
         if not authority.submitter(api, repository, pull.get('user'), expected_bot):
             raise authority.AuthorityError('Governed PR submitter must be the configured App, a Maintainer or a Super Admin')
-        authority.approval(api, repository, number, head)
+        # Each proposal verifier authenticates this exact PR/head itself.
+        # Governed changes without proposals still need their own review check.
+        if not proposals:
+            authority.approval(api, repository, number, head)
         for path in proposals:
             proposal = authority.document_at(api, repository, path, head)
             if authority.proposal_path(proposal) != path:
