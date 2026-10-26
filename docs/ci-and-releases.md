@@ -303,7 +303,9 @@ gh workflow run build.yml --ref main -f reconcile=true
 `cosign.pub` is the public trust key. The matching private key belongs in the
 `image-signing` environment's `COSIGN_PRIVATE_KEY` Actions secret. This
 environment admits only `main`. Release-asset signing uses a separate copy in
-the approval-protected `release` environment. Builders and scanners receive no
+the main-only `release` environment. The exact release-proposal review supplies
+the manual release approval; that environment scopes signing secrets without a
+second reviewer. Builders and scanners receive no
 signing key; remove the repository-wide copy after migration and retirement of
 older workflows. Verify a published digest from
 a trusted checkout:
@@ -353,8 +355,9 @@ entry through the protected queue.
    `finite-0.8.2-dev` and `finite-dev-0.8.2-dev` for the prerelease. Manual
    preparation accepts the successful same-revision build run.
 4. Review both products, qualification evidence, scan decisions and claimed
-   physical-hardware results in the proposal. Its human approval and the protected
-   signing environment remain required. Merging the decision starts paired
+   physical-hardware results in the proposal. Its exact-head human approval and
+   the protected signing environment remain required; there is no duplicate
+   environment reviewer. Merging the decision starts paired
    publication; see [Durable releases](workstation-qualification.md#durable-releases).
    Do not publish a separate `vVERSION` release before installer qualification.
 
@@ -387,6 +390,18 @@ The channel tags continue to receive daily builds. Release records identify
 specific source revisions and image digests for reproducibility.
 
 ## Maintain dependencies and repository policy
+
+Repository-local action and reusable-workflow references use GitHub's
+[`$/` self-repository syntax](https://github.blog/changelog/2026-07-30-reference-same-repository-actions-with-self-repository-syntax/).
+They resolve at the workflow commit, independently of later workspace writes.
+Hosted runner 2.338.0 meets the feature's 2.336.0 minimum. Actionlint 1.7.12
+does not yet recognize this syntax: `scripts/ci/lint-workflows.py` validates
+canonical existing targets and rejects symlinks, then projects only YAML `uses`
+scalars to the older syntax in a temporary tree for static analysis. It preserves
+all Actionlint failures. Zizmor checks the original workflows without new
+suppressions. Remove the projection when the pinned Actionlint supports native
+self-repository references. Current completion work is tracked in the
+[0.8.3 ledger](v0.8.3-release-plan.md).
 
 Nix lock updates, coordinated Home Manager/Nixpkgs release updates and the
 Determinate checksum update use the retained dependency workflows. Their
@@ -575,6 +590,18 @@ before computing change outputs. Generated updates pass text checks before a
 PR is created. Dedicated credentials remain scoped to existing PR/merge steps;
 the default workflow token has contents-read permission.
 
+Weekly lock-refresh PRs use a short-lived repository-scoped Decider App token
+for branch pushes and PR creation, after public lock generation and validation.
+The workflow authenticates the configured bot's live GitHub identity and uses
+its bot name and noreply email for both commit author and committer. The PR
+validator requires that same App author; it does not fall back to a personal
+PAT for creation. Its `automation/decider-weekly-flake-input-refresh` branch
+avoids reusing the older personal-authored refresh PR. The existing updater
+credential remains separate for bounded
+validation monitoring and protected-queue operations. Existing PR authors
+cannot be changed; supersede a personal-authored PR with the reviewed bot PR
+that retains its changes.
+
 Updater jobs allow 270 minutes, including a bounded 240-minute wait for child
 validation. Existing PR and manual runs are reused only for the same branch
 and commit. Failures include a direct run link and never enable auto-merge.
@@ -725,3 +752,29 @@ and seven-day observation. Reports convey no approval authority and unavailable
 cache/retry/runner detail remains unknown. See the
 [October 23 audit](ci-workflow-audit-2026-10-23.md) for findings, candidate recovery
 constraints, native links and the remaining measurement gates.
+
+### Cosign download recovery
+
+Every maintained Cosign installer call uses the exact-workflow-commit
+`setup-cosign` action. It retains the pinned Sigstore installer, requested
+release, bootstrap digest and signature verification. Only that installer's
+curl configuration changes: its four download attempts wait 15 seconds between
+transient failures, with 15-second connection and 60-second transfer limits.
+Retries may start only within a 180-second retry budget; an already started
+transfer can finish within its 60-second limit. A healthy download has no added
+wait. HTTP 504 and curl's other transient conditions retry automatically;
+permanent HTTP errors and integrity/signature failures stop installation.
+The setting is scoped to the installer step, including sparse signing jobs.
+It neither reruns the job nor repeats successful qualification work. A present
+bad download is still rejected by the unchanged upstream verification.
+
+### Failed-job qualification retries
+
+Qualification aggregation authenticates each successful phase's actual producing
+attempt. GitHub can copy a completed job into a retry with a new check-run ID;
+the corresponding artifact retains its original attempt suffix. The collector
+requires one exact successful execution and its original immutable archive,
+then stages all required phase files before aggregation. A newly failed phase
+cannot use an older successful result. Original phase and pristine-ISO producer
+identities remain recorded and are independently checked during recovery.
+See the [observed retry failure and repair](ci-qualification-retry-2026-10-26.md).

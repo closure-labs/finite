@@ -69,7 +69,7 @@ jobs:
       - uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
         with:
           skip-if-available: "80G"
-      - uses: ./.github/actions/setup-nix
+      - uses: $/.github/actions/setup-nix
       - name: Validate and collect qualified evidence
         id: evidence
         env:
@@ -163,8 +163,8 @@ jobs:
           BUILD_RUN: ${{ inputs.build_run }}
           ISO_RUN: ${{ inputs.iso_run }}
         run: python3 scripts/ci/release-request.py --check-tag
-      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
-      - uses: ./.github/actions/setup-nix
+      - uses: $/.github/actions/setup-cosign
+      - uses: $/.github/actions/setup-nix
         with:
           cache-mode: none
       - name: Prepare pinned signing credential resolver

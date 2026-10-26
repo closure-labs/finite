@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Bind qualification to reviewed inputs and the actual runner firmware/tools."""
 import argparse
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import hashlib
 import importlib.util
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -150,6 +151,35 @@ def aggregate(directory, profile, candidate, previous, source, build_identity, r
     if os.environ.get('FINITE_VALIDATION_ONLY') != 'true' and os.environ.get('GITHUB_RUN_ID') and os.environ.get('GITHUB_RUN_ATTEMPT'):
         acceptance['qualifiedIsoOrigin'] = {'run': int(os.environ['GITHUB_RUN_ID']),
             'attempt': int(os.environ['GITHUB_RUN_ATTEMPT']), 'revision': revision}
+        origins_path = directory / 'qualification-phase-origins.json'
+        if origins_path.exists():
+            origins = json.loads(desktop.read(origins_path))
+            if (origins.get('schema') != 1 or origins.get('repository') != 'closure-labs/finite'
+                    or origins.get('run') != int(os.environ['GITHUB_RUN_ID'])
+                    or origins.get('attempt') != int(os.environ['GITHUB_RUN_ATTEMPT'])
+                    or origins.get('revision') != revision or origins.get('profile') != profile
+                    or origins.get('validationOnly') is not False
+                    or not isinstance(origins.get('phases'), dict) or set(origins['phases']) != set(phases)):
+                raise ValueError('Collected phase origins differ from aggregation identity')
+            for origin in origins['phases'].values():
+                if (not isinstance(origin, dict) or origin.get('run') != origins['run']
+                        or origin.get('revision') != revision or type(origin.get('attempt')) is not int
+                        or not 1 <= origin['attempt'] <= origins['attempt']
+                        or any(type(origin.get(key)) is not int or origin[key] <= 0 for key in ('job', 'artifactId'))
+                        or not isinstance(origin.get('completedAt'), str)
+                        or not isinstance(origin.get('artifactDigest'), str)
+                        or not re.fullmatch(r'sha256:[0-9a-f]{64}', origin['artifactDigest'])):
+                    raise ValueError('Invalid collected phase origin')
+            completions = [datetime.fromisoformat(origin['completedAt'].replace('Z', '+00:00'))
+                           for origin in origins['phases'].values()]
+            now = datetime.now(timezone.utc)
+            if any(value.tzinfo is None or value > now or now - value > timedelta(hours=24) for value in completions):
+                raise ValueError('Collected qualification phase is expired or from the future')
+            acceptance['qualifiedAt'] = min(completions).isoformat()
+            acceptance['qualificationPhaseOrigins'] = origins['phases']
+            acceptance['qualifiedIsoOrigin'] = {key: origins['phases']['fresh'][key]
+                                                 for key in ('run', 'attempt', 'revision')}
+
     desktop.assemble(directory, acceptance)
     (directory / (profile + '-acceptance.json')).write_text(json.dumps(acceptance, indent=2) + '\n')
     return acceptance

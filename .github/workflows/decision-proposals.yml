@@ -85,7 +85,7 @@ jobs:
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
               output.write('needed=' + str(value['needed']).lower() + '\n')
           PYTHON
-      - uses: ./.github/actions/setup-nix
+      - uses: $/.github/actions/setup-nix
         if: steps.callback.outputs.needed == 'true'
       - name: Resolve declared review App credentials
         if: steps.callback.outputs.needed == 'true'

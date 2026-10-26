@@ -81,7 +81,7 @@ jobs:
       - name: Validate manual branch diagnostic boundary
         if: inputs.validation_only
         run: python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"
-      - uses: ./.github/actions/setup-nix
+      - uses: $/.github/actions/setup-nix
         if: ${{ !inputs.validation_only }}
         with:
           cache-mode: none
@@ -89,7 +89,7 @@ jobs:
         run: python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"
       - name: Install context tools for the reuse pilot
         if: ${{ !inputs.validation_only && env.FINITE_QUALIFICATION_REUSE == 'true' && !inputs.force_qualification }}
-        uses: ./.github/actions/setup-vm-tools
+        uses: $/.github/actions/setup-vm-tools
       - name: Check exact qualification reuse
         id: reuse
         env:
@@ -155,7 +155,7 @@ jobs:
           # Record the failed probe even if permission preparation fails.
           if [[ -e /dev/kvm ]]; then sudo -n chmod a+rw /dev/kvm || true; fi
           timeout 20s python3 scripts/ci/vm-host.py --output ".bluebuild/$PROFILE-$PHASE-vm-host.json"
-      - uses: ./.github/actions/setup-nix
+      - uses: $/.github/actions/setup-nix
         with:
           cache-mode: ${{ steps.benchmark.outputs.cache-mode || 'none' }}
           cache-profile: checks
@@ -164,9 +164,9 @@ jobs:
       - uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
         with:
           skip-if-available: "80G"
-      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+      - uses: $/.github/actions/setup-cosign
       - name: Install qualification tools
-        uses: ./.github/actions/setup-vm-tools
+        uses: $/.github/actions/setup-vm-tools
       - name: Qualify immutable candidate phase
         id: acceptance
         env:
@@ -251,7 +251,7 @@ jobs:
       - name: Validate manual branch diagnostic boundary
         if: inputs.validation_only
         run: python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"
-      - uses: ./.github/actions/setup-nix
+      - uses: $/.github/actions/setup-nix
         if: ${{ !inputs.validation_only }}
         with:
           cache-mode: none
@@ -263,13 +263,10 @@ jobs:
         run: |
           python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"
           if [[ "$REUSED" == true ]]; then
-            gh run download "$GITHUB_RUN_ID" --name "qualification-reused-$PROFILE-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" --dir .bluebuild
+            python3 scripts/bluebuild/collect-qualification.py --reused
             python3 scripts/bluebuild/reuse-qualification.py --profile "$PROFILE" --verify-reused ".bluebuild/$PROFILE-acceptance.json"
           else
-            gh run download "$GITHUB_RUN_ID" --name "$QUALIFICATION_PREFIX-phase-$PROFILE-fresh-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" --dir .bluebuild
-            if [[ -n "$PREVIOUS_DIGEST" ]]; then
-              gh run download "$GITHUB_RUN_ID" --name "$QUALIFICATION_PREFIX-phase-$PROFILE-upgrade-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" --dir .bluebuild
-            fi
+            python3 scripts/bluebuild/collect-qualification.py
             python3 scripts/bluebuild/qualification-context.py aggregate
           fi
       - name: Record qualification outcome

@@ -94,15 +94,31 @@ def job_role(name, workflow=None):
     return 'unknown'
 
 
+def execution_key(job):
+    """Exact completed runner execution, independent of copied check-run IDs."""
+    if (job.get('status') != 'completed' or type(job.get('runner_id')) is not int
+            or job['runner_id'] <= 0 or not job.get('runner_name')
+            or not job.get('started_at') or not job.get('completed_at')):
+        return None
+    try:
+        if seconds(job['started_at'], job['completed_at']) <= 0:
+            return None
+    except ValueError:
+        return None
+    return (job['run_id'], job['head_sha'], job['name'], job['runner_id'], job['runner_name'],
+            job['started_at'], job['completed_at'], job.get('conclusion'),
+            json.dumps(job.get('steps', []), sort_keys=True, allow_nan=False))
+
+
 def observe(run, api, now):
     if (type(run.get('id')) is not int or type(run.get('run_attempt')) is not int
             or not 1 <= run['run_attempt'] <= 100
             or not re.fullmatch('[0-9a-f]{40}', run.get('head_sha', ''))
             or run.get('repository', {}).get('full_name') != REPOSITORY):
         raise ValueError('Invalid native workflow identity')
-    attempts, jobs, seen = [], [], set()
-    # Attempt endpoints include reused jobs. Charge each native job ID once,
-    # retaining its original producing attempt instead of multiplying its cost.
+    attempts, jobs, seen, executions = [], [], set(), {}
+    # Retry inventories can copy completed work under a new check-run ID.
+    # Retain its original producing attempt and all authenticated native aliases.
     for attempt in range(1, run['run_attempt'] + 1):
         native = (run if attempt == run['run_attempt'] else
                   api(f'repos/{REPOSITORY}/actions/runs/{run["id"]}/attempts/{attempt}'))
@@ -120,6 +136,17 @@ def observe(run, api, now):
                 continue
             seen.add(job['id'])
             started, completed = job.get('started_at'), job.get('completed_at')
+            key = execution_key(job)
+            prior = executions.get(key, []) if key is not None else []
+            if len(prior) == 1 and prior[0]['runAttempt'] < attempt and job['run_attempt'] == attempt:
+                try:
+                    carried = timestamp(completed) < timestamp(native.get('run_started_at'))
+                except ValueError:
+                    carried = False
+                if carried:
+                    prior[0].setdefault('nativeAliases', []).append(
+                        {'jobId': job['id'], 'runAttempt': job['run_attempt']})
+                    continue
             active = job.get('status') == 'in_progress'
             end = completed or (now.isoformat() if active else None)
             # Skipped jobs can have reversed synthetic timestamps and used no runner.
@@ -159,6 +186,8 @@ def observe(run, api, now):
                          'qualificationReuseHit': (any(s.get('conclusion') == 'success' for s in reuse)
                              if eligibility and any(s.get('name') == 'Check exact qualification reuse'
                              and s.get('conclusion') == 'success' for s in job.get('steps', [])) else None)})
+            if key is not None:
+                executions.setdefault(key, []).append(jobs[-1])
     end = max((job['completed_at'] for job in values if job.get('completed_at')), default=None) if run['status'] == 'completed' else None
     elapsed = seconds(run['created_at'], end or (run.get('updated_at') if run['status'] == 'completed' else None) or now.isoformat())
     return {'repository': REPOSITORY, 'runId': run['id'], 'runAttempt': run['run_attempt'],

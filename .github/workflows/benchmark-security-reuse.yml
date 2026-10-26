@@ -66,7 +66,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: ./.github/actions/setup-nix
+      - uses: $/.github/actions/setup-nix
         with:
           cache-mode: none
       - name: Realize pinned native scanner tools
@@ -155,7 +155,7 @@ jobs:
           persist-credentials: false
       - name: Record setup start
         run: python3 scripts/ci/benchmark-security-reuse.py mark-start .bluebuild/security-setup-start.json
-      - uses: ./.github/actions/setup-nix
+      - uses: $/.github/actions/setup-nix
         with:
           cache-mode: none
       - name: Make room for native inventory
@@ -220,7 +220,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: ./.github/actions/setup-nix
+      - uses: $/.github/actions/setup-nix
         with:
           cache-mode: none
       - name: Collect small reports and complete-job timestamps

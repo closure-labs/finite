@@ -116,7 +116,7 @@ class CacheBenchmark(unittest.TestCase):
         job = workflow['jobs']['benchmark']
         self.assertEqual(job['strategy']['matrix'], {'mode': list(benchmark.MODES), 'tool': list(benchmark.TOOLS),
                          'repetition': [1, 2, 3]})
-        setup = next(step for step in job['steps'] if step.get('uses') == './.github/actions/setup-nix')
+        setup = next(step for step in job['steps'] if step.get('uses') == '$/.github/actions/setup-nix')
         self.assertEqual(setup['with'], {'cache-mode': '${{ matrix.mode }}', 'cache-profile': 'sources'})
         self.assertEqual(workflow['permissions'], {'contents': 'read', 'actions': 'read'})
         self.assertEqual(workflow['jobs']['summarize']['needs'], 'benchmark')
@@ -125,7 +125,7 @@ class CacheBenchmark(unittest.TestCase):
         for job in workflow['jobs'].values():
             for step in job['steps']:
                 action = step.get('uses', '')
-                if action and not action.startswith('./'):
+                if action and not action.startswith('$/'):
                     self.assertRegex(action, r'@[a-f0-9]{40}$')
 
     def test_registered_entry_point_separates_benchmarks_and_diagnostic_qualification(self):
@@ -133,7 +133,7 @@ class CacheBenchmark(unittest.TestCase):
         event = workflow.get('on', workflow.get(True))['workflow_dispatch']
         self.assertEqual(event['inputs']['validation']['default'], 'tool-setup')
         jobs = workflow['jobs']
-        self.assertEqual(jobs['cache-lanes']['uses'], './.github/workflows/benchmark-ci-cache.yml')
+        self.assertEqual(jobs['cache-lanes']['uses'], '$/.github/workflows/benchmark-ci-cache.yml')
         diagnostic = jobs['qualification']
         self.assertIn("github.ref != 'refs/heads/main'", diagnostic['if'])
         self.assertIs(diagnostic['with']['validation_only'], True)

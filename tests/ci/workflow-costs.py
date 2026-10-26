@@ -296,6 +296,53 @@ class Costs(unittest.TestCase):
         self.assertEqual(row['queueSeconds'], 60)
         self.assertEqual(row['conclusions'], {'failure': 1})
 
+    def copied_job_report(self, changes=None, *, run_changes=None, original_changes=None):
+        original = {**self.job, 'runner_id': 100, 'runner_name': 'GitHub Actions 100',
+                    'conclusion': 'success', **(original_changes or {})}
+        clone = {**deepcopy(original), 'id': 2, 'run_attempt': 2, **(changes or {})}
+        run = {**self.run, 'run_started_at': '2026-10-23T10:10:00Z', **(run_changes or {})}
+        def api(endpoint):
+            if endpoint.endswith('/attempts/1'):
+                return {**run, 'run_attempt': 1, 'run_started_at': '2026-10-23T10:00:00Z'}
+            if '/jobs?' in endpoint:
+                rows = [original] if '/attempts/1/' in endpoint else [clone]
+                return {'total_count': len(rows), 'jobs': deepcopy(rows)}
+            self.fail('Unexpected endpoint: ' + endpoint)
+        return costs.observe(run, api, self.now)
+
+    def test_copied_check_run_identity_charges_original_runner_execution_once(self):
+        report = self.copied_job_report()
+        self.assertEqual(len(report['jobs']), 1)
+        self.assertEqual(report['jobs'][0]['jobId'], 1)
+        self.assertEqual(report['jobs'][0]['runAttempt'], 1)
+        self.assertEqual(report['jobs'][0]['nativeAliases'], [{'jobId': 2, 'runAttempt': 2}])
+        self.assertEqual(costs.aggregate([report])[0]['runnerSeconds'], 120)
+        costs.exclusive_occupancy(report)
+        self.assertEqual(report['jobs'][0]['exclusiveRunnerSeconds'], 120)
+
+    def test_real_retry_and_prior_failure_both_remain_charged(self):
+        report = self.copied_job_report(
+            {'started_at': '2026-10-23T10:11:00Z', 'completed_at': '2026-10-23T10:13:00Z'},
+            original_changes={'conclusion': 'failure'})
+        self.assertEqual(len(report['jobs']), 2)
+        self.assertEqual(sum(j['runnerSeconds'] for j in report['jobs']), 240)
+        self.assertEqual(costs.aggregate([report])[0]['conclusions'], {'failure': 2})
+
+    def test_different_runner_or_steps_cannot_prove_copied_execution(self):
+        for change in ({'runner_id': 101}, {'runner_name': 'another runner'},
+                       {'steps': [{'name': 'different step', 'conclusion': 'success'}]},
+                       {'name': 'different job'}, {'conclusion': 'failure'}):
+            with self.subTest(change=change):
+                self.assertEqual(len(self.copied_job_report(change)['jobs']), 2)
+
+    def test_missing_execution_identity_is_not_assumed_duplicate(self):
+        for change in ({'runner_id': None}, {'runner_id': 0}, {'runner_name': None}):
+            with self.subTest(change=change):
+                self.assertEqual(len(self.copied_job_report(original_changes=change)['jobs']), 2)
+        for start in (None, 'invalid', '2026-10-23T10:02:00Z'):
+            with self.subTest(start=start):
+                self.assertEqual(len(self.copied_job_report(run_changes={'run_started_at': start})['jobs']), 2)
+
     def test_active_and_cancelled_work_remain_visible(self):
         self.job.update(status='in_progress', conclusion=None, completed_at=None)
         self.run.update(status='in_progress', conclusion=None)

@@ -1,0 +1,40 @@
+{
+  "coverage": "complete",
+  "coverageScope": "reviewed repository policy",
+  "drift": [],
+  "excluded": [
+    "legacy branch protection (effective rulesets checked)",
+    "organization membership and secret access",
+    "environment secret values"
+  ],
+  "inspected": [
+    "repos/closure-labs/finite/actions/permissions",
+    "repos/closure-labs/finite/actions/permissions/selected-actions",
+    "repos/closure-labs/finite/actions/permissions/workflow",
+    "repos/closure-labs/finite",
+    "repos/closure-labs/finite/automated-security-fixes",
+    "repos/closure-labs/finite/vulnerability-alerts",
+    "repos/closure-labs/finite/environments?per_page=100&page=1",
+    "repos/closure-labs/finite/environments/doppler-pilot",
+    "repos/closure-labs/finite/environments/doppler-pilot/deployment-branch-policies?per_page=100&page=1",
+    "repos/closure-labs/finite/environments/doppler-pilot/deployment_protection_rules?per_page=100&page=1",
+    "repos/closure-labs/finite/environments/image-signing",
+    "repos/closure-labs/finite/environments/image-signing/deployment-branch-policies?per_page=100&page=1",
+    "repos/closure-labs/finite/environments/image-signing/deployment_protection_rules?per_page=100&page=1",
+    "repos/closure-labs/finite/environments/package-cleanup",
+    "repos/closure-labs/finite/environments/package-cleanup/deployment-branch-policies?per_page=100&page=1",
+    "repos/closure-labs/finite/environments/package-cleanup/deployment_protection_rules?per_page=100&page=1",
+    "repos/closure-labs/finite/environments/release",
+    "repos/closure-labs/finite/environments/release/deployment-branch-policies?per_page=100&page=1",
+    "repos/closure-labs/finite/environments/release/deployment_protection_rules?per_page=100&page=1",
+    "repos/closure-labs/finite/rules/branches/main?per_page=100&page=1",
+    "repos/closure-labs/finite/rulesets/20912451"
+  ],
+  "repository": "closure-labs/finite",
+  "schema": 1,
+  "status": "pass",
+  "unavailable": [],
+  "observedAt": "2026-10-26T17:28:06.570674+00:00",
+  "readOnly": true,
+  "sourceRevision": "a028a4b2884d4bfc8d266a5b970cf5a5cf70361d"
+}

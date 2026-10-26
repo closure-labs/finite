@@ -68,7 +68,7 @@ jobs:
     permissions:
       contents: read
       actions: read
-    uses: ./.github/workflows/benchmark-vm-tools.yml
+    uses: $/.github/workflows/benchmark-vm-tools.yml
 
   impact:
     name: Select checks
@@ -120,7 +120,7 @@ jobs:
       - id: impact
         if: ${{ !inputs.reconcile && steps.target.outputs.selected != 'true' }}
         run: python3 scripts/ci/impact.py
-      - uses: ./.github/actions/setup-nix
+      - uses: $/.github/actions/setup-nix
         if: inputs.reconcile || (github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && github.event_name == 'push')
       # A newer pending push can replace an older image-changing push. Compare
       # public channels as well as this push diff before deciding to skip builds.
@@ -182,7 +182,7 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
-      - uses: ./.github/actions/setup-nix
+      - uses: $/.github/actions/setup-nix
       - name: Build checks, retrying transient fetch failures
         env:
           # Only native main pushes look up producer evidence. Keep this
@@ -222,7 +222,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.checks.outputs.matrix || '{"include":[]}') }}
-    uses: ./.github/workflows/image.yml
+    uses: $/.github/workflows/image.yml
     with:
       profile: ${{ matrix.profile }}
       channel: ${{ matrix.channel }}
@@ -243,7 +243,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.checks.outputs.matrix || '{"include":[]}') }}
-    uses: ./.github/workflows/publication.yml
+    uses: $/.github/workflows/publication.yml
     secrets:
       DECIDER_KEY: ${{ secrets.DECIDER_KEY }}
       DECIDER_CLIENT: ${{ secrets.DECIDER_CLIENT }}

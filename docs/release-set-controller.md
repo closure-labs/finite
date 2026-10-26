@@ -71,10 +71,10 @@ including partial execution, permanent version conflicts, CAS contention,
 changed remote assets, local symlinks, mismatched qualification, and idempotent
 retry. No live release is created by these tests.
 
-The additive `release-set.yml` workflow prepares a packet through
+The active `release-set.yml` workflow prepares a packet through
 `prepare-release-set.py` and optionally opens a bot-authored release proposal
-when the review App is configured. It does not sign or publish. It retains the
-legacy release workflows and their existing approval gates during rollout.
+when the review App is configured. It does not sign or publish. Retained legacy
+recovery workflows cannot bypass the current decision and publication controls.
 Preparation uses a successful build at the same trusted main checkout revision,
 requires preserved qualified ISOs for both channels, and collects fresh scans.
 The initial packet reference belongs in the PR review material or immutable
@@ -84,8 +84,8 @@ accepted scan decisions and the merged release approval before execution.
 
 ## Approved publication and recovery
 
-`publish-release-set.yml` is additive and inactive until the maintainer-decision
-mode, App and baseline are correctly configured. Dispatch on main with the merged
+`publish-release-set.yml` is active with the configured maintainer-decision
+mode, App and approved baseline. Dispatch on main with the merged
 proposal's full canonical hash. Preparation reauthenticates that proposal,
 resolves exactly one initial packet reference from its originating bot PR body,
 fetches by OCI digest, checks the successful trusted release-set producer, and
@@ -121,8 +121,9 @@ for its push and manual dispatch events, as well as the manual preparation
 workflow. It reuses inventory bytes only; vulnerability findings, database
 freshness and current security admission are evaluated again for both images.
 
-An isolated signer job retains the existing `release` environment reviewer during
-migration. It checks current authority before exposing scoped signing keys, signs
+An isolated signer job uses the main-only `release` environment without a second
+manual reviewer. The release proposal supplies the human decision. It checks
+current authority before exposing scoped signing keys, signs
 both complete asset checksum manifests and verifies them with the public key.
 A separate publisher rechecks release and security authority, verifies both
 checksum bundles and exact product/evidence byte coverage, stages both releases,

@@ -15,6 +15,6 @@ in {
   vm-firmware = source [../tests/bluebuild/vm-firmware.sh ../scripts/bluebuild/prepare-vm-firmware.sh];
   dependency-update-contracts = source ([../tests/automation ../scripts/ci/http-get.py] ++ nixInputs);
   dependency-locks = source nixInputs;
-  workflow-lint = source [../.github ../files/scripts ../files/installer ../files/system/usr/libexec/finite/check-initramfs ../scripts/bluebuild];
+  workflow-lint = source [../.github ../lib/bluebuild-checks.nix ../scripts/ci/lint-workflows.py ../tests/ci/workflow-lint.py ../tests/ci/cosign-download.py ../scripts/ci/impact.py ../scripts/ci/image_identity.py ../scripts/ci/vm-selection.py ../files/scripts ../files/installer ../files/system/usr/libexec/finite/check-initramfs ../scripts/bluebuild];
   repository-security = source [../automation/github ../tests/automation/repository-security.sh ../tests/fixtures/repository-security ../scripts/ci/repository-security-audit.py];
 }

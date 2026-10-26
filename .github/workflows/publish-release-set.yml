@@ -50,7 +50,7 @@ jobs:
       - uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
         with:
           skip-if-available: "80G"
-      - uses: ./.github/actions/setup-nix
+      - uses: $/.github/actions/setup-nix
       - name: Realize pinned release tools before authority credentials
         run: nix develop --file lib/ci-tools.nix release --command true
       - name: Resolve declared review App credentials
@@ -192,7 +192,7 @@ jobs:
       - uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
         with:
           skip-if-available: "80G"
-      - uses: ./.github/actions/setup-nix
+      - uses: $/.github/actions/setup-nix
       - name: Realize pinned release tools before authority credentials
         run: nix develop --file lib/ci-tools.nix release --command true
       - name: Resolve declared review App credentials
@@ -309,7 +309,7 @@ jobs:
       - uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
         with:
           skip-if-available: "80G"
-      - uses: ./.github/actions/setup-nix
+      - uses: $/.github/actions/setup-nix
       - name: Realize pinned release tools before authority credentials
         run: nix develop --file lib/ci-tools.nix release --command true
       - name: Resolve declared review App credentials

@@ -90,7 +90,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           FINITE_REVIEW_BOT_LOGIN: ${{ vars.FINITE_REVIEW_BOT_LOGIN }}
         run: python3 scripts/ci/validation-preflight.py
-      - uses: ./.github/actions/setup-nix
+      - uses: $/.github/actions/setup-nix
       - name: Stop obsolete publication before image setup
         if: inputs.publish
         env:
@@ -201,7 +201,7 @@ jobs:
         run: bash scripts/bluebuild/inspect-built.sh "$PROFILE" "$CHANNEL" "$PUBLISH"
       - name: Install targeted VM validation tools
         if: inputs.vm_validation && !inputs.publish
-        uses: ./.github/actions/setup-vm-tools
+        uses: $/.github/actions/setup-vm-tools
       - name: Boot the exact local candidate without publication credentials
         if: inputs.vm_validation && !inputs.publish
         run: bash scripts/bluebuild/local-vm.sh "$PROFILE"

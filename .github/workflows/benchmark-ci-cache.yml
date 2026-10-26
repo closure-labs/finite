@@ -39,7 +39,7 @@ jobs:
           persist-credentials: false
       - name: Record setup start
         run: python3 scripts/ci/benchmark-ci-cache.py mark-start .bluebuild/cache-setup-start.json
-      - uses: ./.github/actions/setup-nix
+      - uses: $/.github/actions/setup-nix
         with:
           cache-mode: ${{ matrix.mode }}
           cache-profile: sources

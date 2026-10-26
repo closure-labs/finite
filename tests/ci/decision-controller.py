@@ -137,10 +137,10 @@ class Controller(unittest.TestCase):
         import yaml
         steps = yaml.safe_load((ROOT / '.github/workflows/decision-proposals.yml').read_text())['jobs']['reconcile']['steps']
         probe = next(step for step in steps if step.get('id') == 'callback')
-        setup = next(step for step in steps if step.get('uses') == './.github/actions/setup-nix')
+        setup = next(step for step in steps if step.get('uses') == '$/.github/actions/setup-nix')
         self.assertLess(steps.index(probe), steps.index(setup))
         for step in steps:
-            if step.get('uses') == './.github/actions/setup-nix' or step.get('id') == 'review-token' \
+            if step.get('uses') == '$/.github/actions/setup-nix' or step.get('id') == 'review-token' \
                     or step.get('name') in ('Resolve declared review App credentials', 'Propose findings or reconcile approved decisions'):
                 self.assertIn("steps.callback.outputs.needed == 'true'", step['if'])
         upload = next(step for step in steps if step.get('name', '').startswith('Retain bounded reconciliation'))

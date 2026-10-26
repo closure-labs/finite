@@ -37,7 +37,7 @@ jobs:
       - uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
         with:
           skip-if-available: "80G"
-      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+      - uses: $/.github/actions/setup-cosign
       - name: Download verified ISO artifact
         env:
           GH_TOKEN: ${{ github.token }}
@@ -61,11 +61,11 @@ jobs:
               end')
           gh run download "$ISO_RUN" --name "$artifact" --dir .bluebuild/iso
       - name: Install VM tools
-        uses: ./.github/actions/setup-nix
+        uses: $/.github/actions/setup-nix
         with:
           cache-mode: none
       - name: Realize pinned VM tools and firmware
-        uses: ./.github/actions/setup-vm-tools
+        uses: $/.github/actions/setup-vm-tools
       - name: Install, boot, activate Home Manager, update and roll back
         run: bash scripts/bluebuild/vm-acceptance.sh .bluebuild/iso
       - name: Save acceptance evidence

@@ -298,6 +298,77 @@ class Gate(unittest.TestCase):
             self.assertLess(names.index('Validate generated text'), names.index('Open or update pull request'))
             self.assertGreaterEqual(workflow['jobs']['update']['timeout-minutes'], 210)
 
+    def lock_identity(self, user, *, slug='cl-decider', expected='cl-decider[bot]', fail=False):
+        import yaml
+        steps = yaml.safe_load((ROOT / '.github/workflows/update-flake-lock.yml').read_text())['jobs']['update']['steps']
+        step = next(step for step in steps if step.get('id') == 'pr-identity')
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            gh = root / 'gh'
+            gh.write_text('#!/bin/sh\nprintf "%s\\n" "$@" >"$FIXTURE_ARGS"\nprintf "%s" "$FIXTURE_USER"\nexit "$FIXTURE_STATUS"\n')
+            gh.chmod(0o755)
+            output, args = root / 'output', root / 'args'
+            result = subprocess.run(['bash', '-e', '-c', step['run']], capture_output=True, text=True,
+                                    env={**os.environ, 'PATH': str(root) + os.pathsep + os.environ['PATH'],
+                                         'APP_SLUG': slug, 'EXPECTED_BOT': expected,
+                                         'GH_TOKEN': 'fixture-app-token', 'GITHUB_OUTPUT': str(output),
+                                         'FIXTURE_ARGS': str(args), 'FIXTURE_USER': json.dumps(user),
+                                         'FIXTURE_STATUS': '1' if fail else '0'})
+            return result, output.read_text() if output.exists() else '', args.read_text() if args.exists() else ''
+
+    def test_lock_refresh_uses_scoped_app_for_creation_and_preserves_queue_auth(self):
+        import yaml
+        workflow = yaml.safe_load((ROOT / '.github/workflows/update-flake-lock.yml').read_text())
+        steps = workflow['jobs']['update']['steps']
+        token = next(step for step in steps if step.get('id') == 'lock-pr-token')
+        self.assertEqual(token['if'], "steps.source.outputs.changed == 'true'")
+        self.assertEqual(token['uses'], 'actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510')
+        self.assertEqual({key: value for key, value in token['with'].items() if key.startswith('permission-')},
+                         {'permission-contents': 'write', 'permission-pull-requests': 'write'})
+        self.assertEqual(token['with']['owner'], '${{ github.repository_owner }}')
+        self.assertEqual(token['with']['repositories'], '${{ github.event.repository.name }}')
+        create = next(step for step in steps if step.get('id') == 'update')
+        self.assertEqual(create['with']['token'], '${{ steps.lock-pr-token.outputs.token }}')
+        self.assertEqual(create['with']['branch'], 'automation/decider-weekly-flake-input-refresh')
+        self.assertEqual(create['with']['author'], '${{ steps.pr-identity.outputs.name }} <${{ steps.pr-identity.outputs.email }}>')
+        self.assertEqual(create['with']['committer'], create['with']['author'])
+        self.assertEqual(create['with']['add-paths'].splitlines(), ['flake.lock', 'devenv.lock'])
+        validate = next(step for step in steps if step.get('name') == 'Validate and enable auto-merge')
+        self.assertEqual(validate['env']['EXPECTED_AUTHOR'], '${{ steps.pr-identity.outputs.pr-author }}')
+        self.assertEqual(validate['env']['EXPECTED_BRANCH'], create['with']['branch'])
+        self.assertEqual(validate['env']['GH_TOKEN'], '${{ env.MERGE_QUEUE_TOKEN }}')
+        names = [step.get('name') for step in steps]
+        self.assertLess(names.index('Validate generated text'), names.index('Create short-lived Decider PR token'))
+        self.assertLess(names.index('Clear Decider private credentials'), names.index('Open or update pull request'))
+        clear = next(step for step in steps if step.get('name') == 'Clear Decider private credentials')
+        self.assertEqual(clear['if'], "always() && steps.credentials.outcome == 'success'")
+
+    def test_live_decider_identity_produces_bot_commit_and_app_pr_author(self):
+        result, output, args = self.lock_identity({'id': 344936881, 'login': 'cl-decider[bot]', 'type': 'Bot'})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(output, 'name=cl-decider[bot]\nemail=344936881+cl-decider[bot]@users.noreply.github.com\npr-author=app/cl-decider\n')
+        self.assertEqual(args.splitlines(), ['api', 'users/cl-decider[bot]'])
+
+    def test_personal_or_malformed_bot_metadata_cannot_create_pr_identity(self):
+        for user in ({'id': 1, 'login': 'declarative-dale', 'type': 'User'},
+                     {'id': 1, 'login': 'cl-decider[bot]', 'type': 'User'},
+                     {'id': True, 'login': 'cl-decider[bot]', 'type': 'Bot'},
+                     {'id': 0, 'login': 'cl-decider[bot]', 'type': 'Bot'}):
+            with self.subTest(user=user):
+                result, output, _ = self.lock_identity(user)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(output, '')
+
+    def test_wrong_app_or_lookup_failure_never_falls_back_to_personal_auth(self):
+        for options in ({'slug': 'other-app'}, {'slug': 'invalid/slug'}, {'expected': ''}):
+            with self.subTest(options=options):
+                result, output, args = self.lock_identity({}, **options)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual((output, args), ('', ''))
+        result, output, _ = self.lock_identity({}, fail=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(output, '')
+
     def test_missing_matrix_and_omitted_explicit_image_block(self):
         needs = self.needs(True, ['finite'])
         needs['checks']['outputs'] = {}

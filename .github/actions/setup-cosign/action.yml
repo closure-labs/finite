@@ -1,0 +1,15 @@
+name: Set up verified Cosign with bounded download retries
+description: Keep pinned Sigstore verification and allow transient downloads time to recover
+inputs:
+  cosign-release:
+    description: Exact Cosign release accepted by the pinned upstream installer
+    required: false
+    default: v3.0.6
+runs:
+  using: composite
+  steps:
+    - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+      env:
+        CURL_HOME: ${{ github.action_path }}/download
+      with:
+        cosign-release: ${{ inputs.cosign-release }}

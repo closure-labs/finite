@@ -92,8 +92,8 @@ class Tools(unittest.TestCase):
         for name in ('image', 'qualification', 'vm-acceptance'):
             value = yaml.safe_load((ROOT / '.github/workflows' / (name + '.yml')).read_text())
             uses = [step.get('uses') for job in value['jobs'].values() for step in job.get('steps', [])]
-            self.assertIn('./.github/actions/setup-vm-tools', uses)
-            self.assertIn('./.github/actions/setup-nix', uses)
+            self.assertIn('$/.github/actions/setup-vm-tools', uses)
+            self.assertIn('$/.github/actions/setup-nix', uses)
             self.assertNotIn('apt-get install', (ROOT / '.github/workflows' / (name + '.yml')).read_text())
         value = yaml.safe_load((ROOT / '.github/workflows/benchmark-vm-tools.yml').read_text())
         self.assertEqual(value['permissions'], {'contents': 'read', 'actions': 'read'})
