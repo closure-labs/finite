@@ -75,6 +75,17 @@ context mismatch. Compare complete cohorts before changing installer runtime
 reuse or guest closure transport. Changing VM helpers invalidates their authenticated reuse context on first rollout;
 keep that reconstruction cohort separate. No savings or benchmark adoption is claimed.
 
+Source-proof rollout reports retain whole native source-job occupancy alongside
+the authenticated lookup observation. Cost cohorts separate exact revision,
+mode, eligibility, hit, reason, job outcome and workflow outcome. Setup, lookup,
+retention and cleanup are already inside native occupancy. Failed and active
+work remains in known cost; active elapsed time is censored and excluded from
+completed-job medians. Missing durations and eligibility remain unknown.
+Duplicate job projections are counted once, and conflicting projections fail.
+Only a successful source job within a completed successful workflow counts
+toward the five natural shadow comparisons. These observations neither activate
+reuse nor establish causal savings across revisions.
+
 Use bounded recent-run snapshots to prioritize improvements now; the seven-day endpoint does not block that work. Run the collector with `--receipts --rollout 2026-10-23T05:01:17Z` after the endpoint for the separate complete-window assessment. Include failed,
 cancelled, active and cleanup work and identify incomplete later cohorts.
 Automatic Cachix writing and Grype database transport remain disabled.
