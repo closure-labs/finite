@@ -9,6 +9,7 @@ the recorded revision and date.
 
 | Record | Scope |
 | --- | --- |
+| [Recent rollout completion and costs, October 26 UTC](ci-recent-rollout-2026-10-26.md) | Completed two-profile production integration, conserved recent costs and explicit reuse/receipt limits |
 | [Historical decision provenance prototype, October 26 UTC](ci-history-provenance-2026-10-26.md) | Bounded parallel historical reads, six-arm read-only replay and pending complete-job canary |
 | [Qualification retry recovery, October 26 UTC](ci-qualification-retry-2026-10-26.md) | Authenticated carried-phase collection, original ISO attempts and corrected copied-job accounting |
 | [Stable 0.8.3 completion ledger](v0.8.3-release-plan.md) | Current CI/CD investigations, iterative campaign gates, source-proof promotion and workstation/release readiness |
