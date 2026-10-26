@@ -1,0 +1,109 @@
+name: Admit trusted pull-request CI
+
+on:
+  pull_request_target: # zizmor: ignore[dangerous-triggers] Trusted main code; native metadata only, never PR checkout.
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
+  workflow_run: # zizmor: ignore[dangerous-triggers] Only native blocked PR run metadata is consumed.
+    workflows: [Build Finite, CodeQL Advanced, Collect maintainer decision events]
+    types: [completed]
+
+env:
+  FINITE_OPTIMIZED_CACHES: ${{ vars.FINITE_OPTIMIZED_CACHES }}
+  FINITE_CACHIX_WRITER: ${{ vars.FINITE_CACHIX_WRITER }}
+  FINITE_REUSE_INVENTORY: ${{ vars.FINITE_REUSE_INVENTORY }}
+  FINITE_GRYPE_DB_CACHE: ${{ vars.FINITE_GRYPE_DB_CACHE }}
+  FINITE_QUALIFICATION_REUSE: ${{ vars.FINITE_QUALIFICATION_REUSE }}
+  FINITE_QUALIFIED_ISO_PRESERVATION: ${{ vars.FINITE_QUALIFIED_ISO_PRESERVATION }}
+  FINITE_QUALIFIED_ISO_CHANNELS: ${{ vars.FINITE_QUALIFIED_ISO_CHANNELS }}
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+
+jobs:
+  discover:
+    if: >-
+      github.repository == 'closure-labs/finite' &&
+      (github.event_name == 'pull_request_target' ||
+       (github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'action_required'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.targets.outputs.matrix }}
+      has-targets: ${{ steps.targets.outputs.has-targets }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Discover only native CI executions requiring approval
+        id: targets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PYTHON'
+          import json, os, subprocess
+          value = json.loads(subprocess.check_output(
+              ['python3', 'scripts/ci/ci-run-admission.py', '--discover'], text=True, timeout=240))
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write('matrix=' + json.dumps(value, separators=(',', ':')) + '\n')
+              output.write('has-targets=' + str(bool(value['include'])).lower() + '\n')
+          PYTHON
+
+  approve-execution:
+    needs: discover
+    if: needs.discover.outputs.has-targets == 'true'
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.discover.outputs.matrix) }}
+    concurrency:
+      group: finite-ci-admission-${{ github.repository_id }}-${{ matrix.number }}-${{ matrix.head }}
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Monitor hosted runner
+        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+      - name: Resolve declared review App credentials
+        env:
+          FINITE_REVIEW_CLIENT_ID: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
+          FINITE_REVIEW_PRIVATE_KEY: ${{ secrets.DECIDER_KEY }}
+        run: >-
+          finite-ci-secrets-run review-app --
+          secretspec export --file secretspec.toml --profile review-app --provider github-actions
+          --scope review-app --reason 'Finite trusted CI execution admission' --format gha
+      - name: Generate token limited to execution approval and identity reads
+        id: ci-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ env.FINITE_REVIEW_CLIENT_ID }}
+          private-key: ${{ env.FINITE_REVIEW_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-actions: write
+          permission-contents: read
+          permission-pull-requests: read
+          permission-members: read
+      - name: Clear App private credentials
+        run: | # zizmor: ignore[github-env]
+          printf 'FINITE_REVIEW_CLIENT_ID=\nFINITE_REVIEW_PRIVATE_KEY=\n' >>"$GITHUB_ENV"
+      - name: Authenticate live PR author and approve only current-head CI runs
+        env:
+          GH_TOKEN: ${{ steps.ci-token.outputs.token }}
+          FINITE_CI_ADMISSION_APP_SLUG: ${{ steps.ci-token.outputs.app-slug }}
+          FINITE_REVIEW_BOT_LOGIN: ${{ vars.FINITE_REVIEW_BOT_LOGIN }}
+          FINITE_REVIEW_APP_ID: ${{ vars.FINITE_REVIEW_APP_ID }}
+          TARGET_PR: ${{ matrix.number }}
+          EXPECTED_HEAD: ${{ matrix.head }}
+          TARGET_RUNS: ${{ toJSON(matrix.runs) }}
+        run: >-
+          python3 scripts/ci/ci-run-admission.py --pull-request "$TARGET_PR"
+          --head "$EXPECTED_HEAD" --runs "$TARGET_RUNS"

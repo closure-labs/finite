@@ -882,6 +882,100 @@ class Costs(unittest.TestCase):
         costs.exclusive_occupancy(report)
         self.assertTrue(all(j['exclusiveRunnerSeconds'] is None for j in report['jobs']))
 
+    def blocking_fixture(self):
+        report = self.observe()
+        first = report['jobs'][0]
+        # The producer is projected through two retry attempts by observe().
+        first['stages'] = [{'stage': 'outer', 'startedAt': '2026-10-23T10:01:10Z',
+                            'seconds': 100, 'status': 7},
+                           {'stage': 'parallel', 'startedAt': '2026-10-23T10:01:20Z',
+                            'seconds': 20, 'status': 0},
+                           {'stage': 'nested', 'startedAt': '2026-10-23T10:02:30Z',
+                            'seconds': 30, 'status': 0}]
+        for identity, begin, finish in ((2, '10:01:20', '10:01:40'), (3, '10:02:10', '10:02:40')):
+            job = deepcopy(first)
+            job.update(jobId=identity, startedAt='2026-10-23T' + begin + 'Z',
+                       completedAt='2026-10-23T' + finish + 'Z', stages=[], runnerSeconds=20 if identity == 2 else 30)
+            report['jobs'].append(job)
+        costs.exclusive_occupancy(report)
+        return report
+
+    def test_stage_blocking_intersects_multiple_parallel_intervals_and_retains_failures(self):
+        report = self.blocking_fixture()
+        self.assertEqual([j['exclusiveRunnerSeconds'] for j in report['jobs']], [70, 0, 0])
+        rows = {row['stage']: row for row in costs.stage_opportunities([report])}
+        self.assertEqual(rows['outer']['exclusiveRunnerSeconds'], 50)
+        self.assertEqual(rows['parallel']['exclusiveRunnerSeconds'], 0)
+        self.assertEqual(rows['nested']['exclusiveRunnerSeconds'], 20)
+        self.assertEqual(rows['outer']['failedSamples'], 1)
+        self.assertEqual(rows['outer']['samples'], 1)
+        self.assertIsNone(rows['outer']['criticalPathContribution'])
+        self.assertEqual(sum(r['runnerSeconds'] for r in costs.aggregate([report])), 170)
+
+    def test_stage_unknown_placement_is_distinct_from_measured_zero(self):
+        report = self.blocking_fixture()
+        report['jobs'][0]['stages'].append({'stage': 'outer', 'seconds': 5, 'status': 0})
+        row = next(row for row in costs.stage_opportunities([report]) if row['stage'] == 'outer')
+        self.assertEqual(row['exclusiveRunnerSeconds'], 50)
+        self.assertEqual(row['exclusiveOccupancyUnknownSamples'], 1)
+        self.assertEqual(row['samples'], 2)
+        relative = costs.stage_opportunities([{**report, 'jobs': [{**report['jobs'][0],
+                    'stages': [{'stage': 'guest-home-init', 'seconds': 5, 'status': 0}]}]}])[0]
+        self.assertIsNone(relative['exclusiveRunnerSeconds'])
+        self.assertEqual(relative['exclusiveOccupancyUnknownSamples'], 1)
+
+    def test_active_or_partial_native_intervals_cannot_place_stages(self):
+        for change in ('active', 'missing-job-duration', 'missing-job-end'):
+            with self.subTest(change=change):
+                report = self.blocking_fixture()
+                if change == 'active': report['status'] = 'in_progress'
+                elif change == 'missing-job-duration': report['jobs'][1]['runnerSeconds'] = None
+                else: report['jobs'][1]['completedAt'] = None
+                costs.exclusive_occupancy(report)
+                row = costs.stage_opportunities([report])[0]
+                self.assertIsNone(row['exclusiveRunnerSeconds'])
+                self.assertEqual(row['exclusiveOccupancyUnknownSamples'], 1)
+                self.assertTrue(all(job['exclusiveRunnerIntervals'] is None for job in report['jobs']))
+
+    def test_bad_or_unbounded_stage_intervals_remain_unknown(self):
+        job = self.blocking_fixture()['jobs'][0]
+        base = job['stages'][0]
+        for change in ({'startedAt': None}, {'startedAt': '2026-10-23T10:01:10'},
+                       {'startedAt': '2026-10-23T10:00:58Z'}, {'seconds': 112},
+                       {'seconds': None}, {'seconds': float('nan')}, {'seconds': float('inf')},
+                       {'seconds': True}, {'seconds': -1}, {'seconds': 86401}):
+            with self.subTest(change=change):
+                self.assertIsNone(costs.stage_exclusive_seconds(job, {**base, **change}))
+
+    def test_second_precision_tolerance_is_clipped_to_native_job(self):
+        job = self.blocking_fixture()['jobs'][0]
+        self.assertEqual(costs.stage_exclusive_seconds(job, {'startedAt': '2026-10-23T10:00:59.5Z',
+                                                            'seconds': 121}), 70)
+        self.assertEqual(costs.stage_exclusive_seconds(job, {'startedAt': '2026-10-23T10:01:10Z',
+                                                            'seconds': 0}), 0)
+
+    def test_skipped_jobs_use_no_intervals_and_leave_native_cost_conserved(self):
+        report = self.blocking_fixture()
+        report['jobs'].append({**deepcopy(report['jobs'][0]), 'jobId': 4, 'stages': [],
+                               'runnerSeconds': 0, 'startedAt': None, 'completedAt': None,
+                               'status': 'completed', 'conclusion': 'skipped'})
+        costs.exclusive_occupancy(report)
+        self.assertEqual(report['jobs'][-1]['exclusiveRunnerIntervals'], [])
+        self.assertEqual(report['jobs'][0]['exclusiveRunnerSeconds'], 70)
+        self.assertEqual(sum(r['runnerSeconds'] for r in costs.aggregate([report])), 170)
+
+    def test_stage_markdown_shows_overlaps_and_partial_known_coverage(self):
+        run = self.blocking_fixture()
+        run['jobs'][0]['stages'].append({'stage': 'relative', 'seconds': None, 'status': None})
+        report = {'observedAt': 'now', 'baseline': {'cohorts': []},
+                  'observation': {'cohorts': [], 'complete': False}, 'limitations': [],
+                  'rankedStages': costs.stage_opportunities([run])}
+        rendered = costs.markdown(report)
+        self.assertIn('nested stages overlap and must not be added', rendered)
+        self.assertIn('blocking lower bound, not exact dependency DAG contribution', rendered)
+        self.assertIn('| 100.0 | 50.0 | 0 |', rendered)
+        self.assertIn('| unknown | unknown | 1 |', rendered)
+
     def test_queue_and_production_guest_receipts_bind_to_distinct_native_jobs(self):
         import cost_receipts
         from contextlib import contextmanager

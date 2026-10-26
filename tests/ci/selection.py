@@ -80,6 +80,12 @@ class Selection(unittest.TestCase):
         self.assertEqual(impact.classify([*paths, 'flake.lock']),
                          {'checks': True, 'nix': True, 'profiles': []})
 
+    def test_ci_execution_admission_is_host_only_but_mixed_guest_changes_keep_images(self):
+        paths = ['.github/workflows/ci-run-admission.yml', 'scripts/ci/ci-run-admission.py',
+                 'automation/github/ci-execution.json', 'tests/ci/ci-run-admission.py']
+        self.assertEqual(impact.classify(paths), {'checks': True, 'nix': False, 'profiles': []})
+        self.assertEqual(impact.classify(paths + ['files/system/etc/changed.conf'])['profiles'], sorted(impact.PROFILES))
+
     def test_cost_report_mixed_with_vm_inputs_keeps_both_premerge_profiles(self):
         spec = importlib.util.spec_from_file_location('vm_selection', ROOT / 'scripts/ci/vm-selection.py')
         vm = importlib.util.module_from_spec(spec)

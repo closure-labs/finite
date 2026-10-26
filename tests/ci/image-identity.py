@@ -98,7 +98,8 @@ class ImageInputContract(unittest.TestCase):
                          'scripts/ci/cost_receipts.py', '.github/workflows/workflow-costs.yml',
                          'scripts/ci/report-release-transport.py', 'scripts/ci/release_transport_benchmark.py',
                          'scripts/ci/source_proof.py', 'scripts/ci/decision-check.py',
-                         '.github/workflows/decision-authority.yml'):
+                         '.github/workflows/decision-authority.yml', '.github/workflows/ci-run-admission.yml',
+                         'scripts/ci/ci-run-admission.py', 'automation/github/ci-execution.json'):
             with self.subTest(path=relative):
                 self.write(relative, 'changed read-only cost reporting\n')
                 self.assertEqual(before_image, self.values())

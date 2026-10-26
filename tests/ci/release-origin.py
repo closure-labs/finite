@@ -54,7 +54,7 @@ class Origin(unittest.TestCase):
         if not self.present: return []
         stream = io.BytesIO()
         with zipfile.ZipFile(stream, 'w') as archive:
-            archive.writestr('release-set-origin.json', json.dumps(self.value))
+            archive.writestr(zipfile.ZipInfo('release-set-origin.json', (2026, 1, 1, 0, 0, 0)), json.dumps(self.value))
         self.raw = stream.getvalue()
         return [{'id': 11, 'name': origin.artifact_name(self.producer), 'expired': False,
                  'size_in_bytes': len(self.raw), 'digest': 'sha256:' + hashlib.sha256(self.raw).hexdigest(),
@@ -76,6 +76,13 @@ class Origin(unittest.TestCase):
         self.assertTrue(self.verify(cached_archive=cached))
         self.assertEqual(self.downloads, 1)
         self.assertFalse(self.value['authorizesPublication'])
+
+    def test_immutable_fixture_archive_does_not_change_with_wall_clock(self):
+        with patch.object(zipfile.time, 'localtime', side_effect=[(2026, 1, 1, 0, 0, 0, 0, 1, 0),
+                                                               (2026, 1, 1, 0, 0, 4, 0, 1, 0)]):
+            first = self.collection('', 'artifacts')[0]
+            second = self.collection('', 'artifacts')[0]
+        self.assertEqual(first['digest'], second['digest'])
 
     def test_only_absent_receipt_allows_legacy_fallback(self):
         self.present = False
