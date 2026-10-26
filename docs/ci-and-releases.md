@@ -590,6 +590,18 @@ before computing change outputs. Generated updates pass text checks before a
 PR is created. Dedicated credentials remain scoped to existing PR/merge steps;
 the default workflow token has contents-read permission.
 
+Weekly lock-refresh PRs use a short-lived repository-scoped Decider App token
+for branch pushes and PR creation, after public lock generation and validation.
+The workflow authenticates the configured bot's live GitHub identity and uses
+its bot name and noreply email for both commit author and committer. The PR
+validator requires that same App author; it does not fall back to a personal
+PAT for creation. Its `automation/decider-weekly-flake-input-refresh` branch
+avoids reusing the older personal-authored refresh PR. The existing updater
+credential remains separate for bounded
+validation monitoring and protected-queue operations. Existing PR authors
+cannot be changed; supersede a personal-authored PR with the reviewed bot PR
+that retains its changes.
+
 Updater jobs allow 270 minutes, including a bounded 240-minute wait for child
 validation. Existing PR and manual runs are reused only for the same branch
 and commit. Failures include a direct run link and never enable auto-merge.
