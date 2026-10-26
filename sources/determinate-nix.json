@@ -1,18 +1,18 @@
 {
   "architecture": "x86_64-linux",
   "installer": {
-    "sha256": "c41a1e6a9fbb557f16b0de5faf7f361f0351b2d0726e7d56c2e2ed7f4f7d075e",
-    "url": "https://github.com/DeterminateSystems/nix-installer/releases/download/v3.23.3/nix-installer-x86_64-linux"
+    "sha256": "c3866cc8ed9cf64546e77b5791160a87ec628467b17cd2746d3b2ed258262df6",
+    "url": "https://github.com/DeterminateSystems/nix-installer/releases/download/v3.24.1/nix-installer-x86_64-linux"
   },
   "minimumRuntimeVersion": "3.21.9",
   "schema": 1,
   "selinuxPolicy": {
     "sha256": "44a7427c40825b1fb3b331c480d55569296b619c7c50ff27ee2e237eb1bdcd8d",
-    "url": "https://raw.githubusercontent.com/DeterminateSystems/nix-installer/v3.23.3/src/action/linux/selinux/determinate-nix.pp"
+    "url": "https://raw.githubusercontent.com/DeterminateSystems/nix-installer/v3.24.1/src/action/linux/selinux/determinate-nix.pp"
   },
   "selinuxFileContexts": {
     "sha256": "668726761299f1c51b74aa5c6cc1a8196e206bb6ccf04eeecd944eadc13713c9",
-    "url": "https://raw.githubusercontent.com/DeterminateSystems/nix-installer/v3.23.3/src/action/linux/selinux/nix.fc"
+    "url": "https://raw.githubusercontent.com/DeterminateSystems/nix-installer/v3.24.1/src/action/linux/selinux/nix.fc"
   },
-  "version": "3.23.3"
+  "version": "3.24.1"
 }
