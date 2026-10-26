@@ -129,3 +129,39 @@ Use recent runs without waiting for October 30. Preserve historical reports and
 frozen executions. No local Nix evaluation/build, image or VM run was used.
 Metadata-only Nix configuration inspection used a 128 MiB limit and peaked at
 20.9 MiB. Automatic Cachix writing and Grype database transport remain disabled.
+
+## First main shadow lookup, October 26 UTC
+
+PR 269 merged after [queue 40251210093](https://github.com/closure-labs/finite/actions/runs/40251210093)
+passed both required local VM profiles. Its
+[main run](https://github.com/closure-labs/finite/actions/runs/40255341966)
+passed using 492 runner seconds, followed by successful natural controller and
+delivery-health runs. Shadow lookup took 6.581 seconds and returned unknown
+eligibility with `lookup-unavailable`; the complete aggregate still ran. This is
+zero successful shadow comparisons, not a cache miss or a verified match.
+
+The source job declared `actions: read` but its consuming step supplied neither
+`GH_TOKEN` nor `GITHUB_TOKEN`. The initial workflow regression did not cover that
+credential wiring. An authenticated read-only replay verifies the exact native
+producer, source job and immutable artifact. That replay uses the retained
+producer configuration and does not establish the missing consumer comparison.
+It is diagnostic evidence, not an adoption sample.
+
+The correction supplies the existing short-lived `github.token` only on the
+source-check step for Finite's native main pushes. Job permissions remain
+`contents: read` and `actions: read`; other events receive an empty value and
+still execute full checks. The token is not added to job or workflow environment
+scope, persisted in receipts or included in the configuration fingerprint.
+
+If neither supported token variable is present, lookup now reports
+`lookup-auth-unavailable` immediately, before configuration inspection or API
+requests. Eligibility and hit remain unknown and full checks run. Queue producer
+configuration capture still works without consumer credentials. Read-only cost
+accounting retains this unknown reason rather than converting it to a miss.
+
+Keep repository mode in shadow while the correction rolls out. Five natural
+successful comparisons, with no unresolved mismatch, remain required before an
+enabled canary. The independent [recent findings draft](https://github.com/closure-labs/finite/pull/270)
+retains its original census while current main is integrated for governed-tree
+review. No initialization,
+installer, guest behavior, release approval or publication rule changes here.

@@ -28,7 +28,8 @@ DEADLINE = 15
 SETTINGS = ('system', 'sandbox', 'experimental-features', 'max-jobs', 'cores', 'eval-cores',
             'pure-eval', 'restrict-eval', 'substituters', 'trusted-public-keys')
 REASONS = {'disabled', 'no-exact-queue-proof', 'configuration-mismatch', 'lookup-timeout',
-           'lookup-unavailable', 'invalid-lookup-result', 'oversized-lookup-result', 'verified-exact-queue-proof'}
+           'lookup-unavailable', 'lookup-auth-unavailable', 'invalid-lookup-result',
+           'oversized-lookup-result', 'verified-exact-queue-proof'}
 
 
 def eligibility_reason(eligible, reason):
@@ -358,6 +359,10 @@ def prepare(env):
 
 
 def main():
+    if sys.argv[1:] == ['--lookup'] and not any(
+            os.environ.get(name, '').strip() for name in ('GH_TOKEN', 'GITHUB_TOKEN')):
+        print(json.dumps({'eligible': None, 'reason': 'lookup-auth-unavailable'}))
+        return
     try:
         current = configuration()
         value = {'configuration': current}

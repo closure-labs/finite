@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 """Offline evidence binding and negative VM observation fixtures."""
 import copy
+import contextlib
 import hashlib
 import importlib.util
+import io
 import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location('desktop_test', ROOT / 'scripts/bluebuild/desktop-qualification.py')
@@ -89,6 +92,50 @@ class Desktop(unittest.TestCase):
         observed=m.guest.observations(*args)
         self.assertEqual(observed['selinux']['permissiveDomains'], ['unconfined_service_t'])
         with self.assertRaises(ValueError): m.guest.observations(*(*args[:2], 'sshd_t', *args[3:]))
+
+    def test_invalid_process_rows_still_fail_with_bounded_evidence(self):
+        good = 'system_u:system_r:init_t:s0 1 systemd'
+        for bad in ('?', '? 23 worker', 'system_u:system_r:init_t:s0 nope systemd',
+                    'system_u:system_r:init_t:s0 ٢ systemd',
+                    'system_u:system_r:init_t:s0 23', '?' * 1024):
+            with self.subTest(row=bad[:40]), self.assertRaises(m.guest.ProcessObservationError) as caught:
+                m.guest.observations('Enforcing', '1', '', good + '\n' + bad,
+                                     'tcp LISTEN 0 128 *:22 *:* owners', 'finite')
+            details = caught.exception.details
+            self.assertEqual(details['stage'], 'processes')
+            self.assertEqual(details['rowNumber'], 2)
+            self.assertEqual(details['row'], bad[:m.guest.ERROR_ROW_LIMIT])
+            self.assertEqual(details['rowLength'], len(bad))
+            self.assertEqual(details['truncated'], len(bad) > m.guest.ERROR_ROW_LIMIT)
+            self.assertIsInstance(caught.exception, ValueError)
+
+    def test_collector_retains_error_details_and_returns_failure(self):
+        values = ['Enforcing', '', '? 23 worker', 'tcp LISTEN 0 128 *:22 *:* owners']
+        output = io.StringIO()
+        with patch.object(m.guest, 'command', side_effect=values), \
+                patch.object(m.guest.Path, 'read_text', side_effect=['1', 'finite']), \
+                contextlib.redirect_stdout(output):
+            status = m.guest.main()
+        result = json.loads(output.getvalue())
+        self.assertEqual(status, 1)
+        self.assertEqual(result['schema'], 1)
+        self.assertEqual(result['status'], 'error')
+        self.assertEqual(result['details']['row'], '? 23 worker')
+        self.assertFalse(result['physicalHardwareAssessed'])
+        self.assertNotIn('accepted', result)
+
+    def test_diagnostic_error_cannot_become_qualification(self):
+        path = self.root / 'vm-fresh/first-boot-desktop.json'
+        path.write_text(json.dumps({'schema': 1, 'status': 'error',
+            'error': 'Malformed or unlabelled candidate process observation',
+            'details': {'stage': 'processes', 'rowNumber': 2, 'row': '? 23 worker',
+                        'rowLength': 11, 'truncated': False}, 'physicalHardwareAssessed': False}))
+        with self.assertRaises((ValueError, KeyError)):
+            m.assemble(self.root, self.acceptance)
+        forged = {**self.observation, 'status': 'error', 'details': {'row': '? 23 worker'}}
+        path.write_text(json.dumps(forged))
+        with self.assertRaises(ValueError):
+            m.assemble(self.root, self.acceptance)
 
 
 if __name__ == '__main__': unittest.main()
