@@ -133,8 +133,19 @@ class BlueBuildContracts(unittest.TestCase):
         self.assertEqual(promotion['needs'], ['build', 'security', 'sign', 'qualification'])
         self.assertIn("needs.build.result == 'success'", promotion['if'])
         self.assertIn('!cancelled()', promotion['if'])
-        self.assertEqual(publication['jobs']['qualification']['needs'], ['build', 'sign', 'preflight'])
+        self.assertEqual(publication['jobs']['qualification']['needs'], ['build', 'sign'])
+        self.assertNotIn('preflight', publication['jobs'])
         qualification = read('.github/workflows/qualification.yml')
+        preparation = qualification['jobs']['prepare']['steps']
+        preflight = next(s for s in preparation
+                         if s.get('name') == 'Reject obsolete publication before reuse or VM work')
+        self.assertEqual(preflight['if'], '${{ !inputs.validation_only }}')
+        self.assertIn('publication-current.py', preflight['run'])
+        self.assertIn('--record', preflight['run'])
+        self.assertLess(preparation.index(preflight),
+                        next(i for i, s in enumerate(preparation) if s.get('id') == 'reuse'))
+        self.assertEqual(publication['jobs']['qualification']['with']['build_evidence'],
+                         '${{ needs.build.outputs.evidence }}')
         acceptance = next(s for s in qualification['jobs']['phase']['steps']
                           if s.get('id') == 'acceptance')
         self.assertNotIn('continue-on-error', acceptance)
