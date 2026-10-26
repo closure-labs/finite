@@ -35,7 +35,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: ./.github/actions/setup-nix
+      - uses: $/.github/actions/setup-nix
       - name: Resolve stable linux/amd64 digests
         id: resolve
         run: nix develop --file lib/ci-tools.nix shell --command python3 scripts/ci/bluefin-upstream.py update
@@ -57,7 +57,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: ./.github/actions/setup-nix
+      - uses: $/.github/actions/setup-nix
         with:
           merge-queue-token: ${{ secrets.MERGE_QUEUE_PAT }}
           require-merge-queue-token: "true"
@@ -109,7 +109,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: ./.github/actions/setup-nix
+      - uses: $/.github/actions/setup-nix
       - name: Dispatch recovery when published channels lag approved digests
         env:
           GH_TOKEN: ${{ github.token }}

@@ -303,7 +303,9 @@ gh workflow run build.yml --ref main -f reconcile=true
 `cosign.pub` is the public trust key. The matching private key belongs in the
 `image-signing` environment's `COSIGN_PRIVATE_KEY` Actions secret. This
 environment admits only `main`. Release-asset signing uses a separate copy in
-the approval-protected `release` environment. Builders and scanners receive no
+the main-only `release` environment. The exact release-proposal review supplies
+the manual release approval; that environment scopes signing secrets without a
+second reviewer. Builders and scanners receive no
 signing key; remove the repository-wide copy after migration and retirement of
 older workflows. Verify a published digest from
 a trusted checkout:
@@ -353,8 +355,9 @@ entry through the protected queue.
    `finite-0.8.2-dev` and `finite-dev-0.8.2-dev` for the prerelease. Manual
    preparation accepts the successful same-revision build run.
 4. Review both products, qualification evidence, scan decisions and claimed
-   physical-hardware results in the proposal. Its human approval and the protected
-   signing environment remain required. Merging the decision starts paired
+   physical-hardware results in the proposal. Its exact-head human approval and
+   the protected signing environment remain required; there is no duplicate
+   environment reviewer. Merging the decision starts paired
    publication; see [Durable releases](workstation-qualification.md#durable-releases).
    Do not publish a separate `vVERSION` release before installer qualification.
 
@@ -387,6 +390,18 @@ The channel tags continue to receive daily builds. Release records identify
 specific source revisions and image digests for reproducibility.
 
 ## Maintain dependencies and repository policy
+
+Repository-local action and reusable-workflow references use GitHub's
+[`$/` self-repository syntax](https://github.blog/changelog/2026-07-30-reference-same-repository-actions-with-self-repository-syntax/).
+They resolve at the workflow commit, independently of later workspace writes.
+Hosted runner 2.338.0 meets the feature's 2.336.0 minimum. Actionlint 1.7.12
+does not yet recognize this syntax: `scripts/ci/lint-workflows.py` validates
+canonical existing targets and rejects symlinks, then projects only YAML `uses`
+scalars to the older syntax in a temporary tree for static analysis. It preserves
+all Actionlint failures. Zizmor checks the original workflows without new
+suppressions. Remove the projection when the pinned Actionlint supports native
+self-repository references. Current completion work is tracked in the
+[0.8.3 ledger](v0.8.3-release-plan.md).
 
 Nix lock updates, coordinated Home Manager/Nixpkgs release updates and the
 Determinate checksum update use the retained dependency workflows. Their

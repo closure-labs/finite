@@ -76,7 +76,7 @@ class RequestTests(unittest.TestCase):
         for name in ('release', 'sign-release'):
             steps = workflow['jobs'][name]['steps']
             validate = next(i for i, step in enumerate(steps) if step.get('name') == 'Validate release request')
-            setup = next(i for i, step in enumerate(steps) if step.get('uses') == './.github/actions/setup-nix')
+            setup = next(i for i, step in enumerate(steps) if step.get('uses') == '$/.github/actions/setup-nix')
             self.assertLess(validate, setup)
             self.assertNotIn('secrets.', str(steps[validate]))
         signer = workflow['jobs']['sign-release']

@@ -14,6 +14,7 @@ PROFILES = {
 # These files qualify an existing immutable image; they are not filesystem
 # inputs. Keep source/security checks while reusing already validated builds.
 QUALIFICATION_ONLY = {
+    'scripts/ci/lint-workflows.py',
     # Trusted metadata-only admission starts CI; it never changes OS inputs.
     '.github/workflows/ci-run-admission.yml', 'scripts/ci/ci-run-admission.py',
     '.github/workflows/benchmark-image-tools.yml', 'scripts/ci/benchmark-image-tools.py',

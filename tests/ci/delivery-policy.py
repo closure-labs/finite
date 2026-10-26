@@ -22,7 +22,7 @@ class DeliveryPolicy(unittest.TestCase):
         self.assertFalse(selected['verified_allowed'])
         for path in (ROOT / '.github').rglob('*.yml'):
             for action in re.findall(r'\buses:\s*([^\s#]+)', path.read_text()):
-                if action.startswith('./'):
+                if action.startswith('$/'):
                     continue
                 with self.subTest(path=path, action=action):
                     self.assertRegex(action, r'@[0-9a-f]{40}$')

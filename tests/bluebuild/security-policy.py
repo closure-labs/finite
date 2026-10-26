@@ -631,7 +631,7 @@ class PublicationBoundary(unittest.TestCase):
         self.assertIn('sign', publication['qualification']['needs'])
         signer = publication['sign']
         self.assertIn("github.ref == 'refs/heads/main'", signer['if'])
-        setup = next(step for step in signer['steps'] if step.get('uses') == './.github/actions/setup-nix')
+        setup = next(step for step in signer['steps'] if step.get('uses') == '$/.github/actions/setup-nix')
         self.assertEqual(setup['with']['cache-mode'], 'none')
         self.assertNotIn('env', setup)
         checkout = next(step for step in signer['steps'] if step.get('uses', '').startswith('actions/checkout@'))

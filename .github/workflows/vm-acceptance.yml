@@ -61,11 +61,11 @@ jobs:
               end')
           gh run download "$ISO_RUN" --name "$artifact" --dir .bluebuild/iso
       - name: Install VM tools
-        uses: ./.github/actions/setup-nix
+        uses: $/.github/actions/setup-nix
         with:
           cache-mode: none
       - name: Realize pinned VM tools and firmware
-        uses: ./.github/actions/setup-vm-tools
+        uses: $/.github/actions/setup-vm-tools
       - name: Install, boot, activate Home Manager, update and roll back
         run: bash scripts/bluebuild/vm-acceptance.sh .bluebuild/iso
       - name: Save acceptance evidence

@@ -89,7 +89,7 @@ class Evidence(unittest.TestCase):
         jobs = yaml.safe_load((ROOT / '.github/workflows/qualification.yml').read_text())['jobs']
         steps = jobs['phase']['steps']
         probe = next(i for i, step in enumerate(steps) if step.get('name') == 'Verify KVM and record runner capacity')
-        setup = next(i for i, step in enumerate(steps) if step.get('uses') == './.github/actions/setup-nix')
+        setup = next(i for i, step in enumerate(steps) if step.get('uses') == '$/.github/actions/setup-nix')
         self.assertLess(probe, setup)
         self.assertNotIn('continue-on-error', steps[probe])
         self.assertIn('timeout 20s', steps[probe]['run'])

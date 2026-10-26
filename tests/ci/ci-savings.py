@@ -51,7 +51,7 @@ class Savings(unittest.TestCase):
                 self.assertIn("event == '" + event + "'", guard)
             self.assertNotIn('conclusion', guard, 'Failed main delivery must still be monitored')
         steps = data['jobs']['reconcile']['steps']
-        self.assertEqual(sum(s.get('uses') == './.github/actions/setup-nix' for s in steps), 1)
+        self.assertEqual(sum(s.get('uses') == '$/.github/actions/setup-nix' for s in steps), 1)
         token = next(s for s in steps if s.get('id') == 'health-token')['with']
         self.assertTrue(all(v == 'read' for k, v in token.items() if k.startswith('permission-')))
         health = next(s for s in steps if s.get('id') == 'health')

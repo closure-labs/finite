@@ -69,7 +69,7 @@ class Benchmark(unittest.TestCase):
         self.assertEqual(job['strategy']['matrix']['mode'], ['baseline', 'candidate'])
         self.assertEqual(job['runs-on'], 'ubuntu-24.04')
         self.assertNotIn('cache-nix', json.dumps(job))
-        self.assertNotIn('./.github/actions/setup-nix', json.dumps(job))
+        self.assertNotIn('$/.github/actions/setup-nix', json.dumps(job))
         setup = yaml.safe_load((ROOT / '.github/actions/setup-nix/action.yml').read_text())
         install = next(s for s in setup['runs']['steps'] if s.get('uses', '').startswith('DeterminateSystems/determinate-nix-action@'))
         self.assertIn(install['uses'], [s.get('uses') for s in job['steps']])

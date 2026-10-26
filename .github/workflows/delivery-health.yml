@@ -44,7 +44,7 @@ jobs:
         with:
           ref: main
           persist-credentials: false
-      - uses: ./.github/actions/setup-nix
+      - uses: $/.github/actions/setup-nix
       - name: Resolve declared review App credentials
         id: credentials
         env:
@@ -143,7 +143,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 scripts/ci/release-cycle.py
-      - uses: ./.github/actions/setup-nix
+      - uses: $/.github/actions/setup-nix
         if: steps.cycle.outputs.changed == 'true'
       - name: Resolve declared review App credentials
         if: steps.cycle.outputs.changed == 'true'

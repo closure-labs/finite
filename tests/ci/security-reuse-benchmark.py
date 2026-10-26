@@ -541,7 +541,7 @@ class Workflow(unittest.TestCase):
             self.assertIn("github.ref == 'refs/heads/main'", job['if'])
             self.assertIn("github.event_name == 'workflow_dispatch'", job['if'])
             for step in job['steps']:
-                if step.get('uses') == './.github/actions/setup-nix':
+                if step.get('uses') == '$/.github/actions/setup-nix':
                     self.assertEqual(step['with']['cache-mode'], 'none')
         steps = workflow['jobs']['scan']['steps']
         restore = next(step for step in steps if step.get('id') == 'database')

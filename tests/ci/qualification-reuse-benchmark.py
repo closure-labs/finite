@@ -200,7 +200,7 @@ class Benchmark(unittest.TestCase):
         self.assertNotIn('force_qualification:', workflow)
         self.assertIn('qualification-benchmark-handoff-', workflow)
         self.assertNotIn('FINITE_QUALIFICATION_REUSE: "true"', workflow)
-        self.assertNotIn('uses: ./.github/workflows/qualification.yml', workflow)
+        self.assertNotIn('uses: $/.github/workflows/qualification.yml', workflow)
 
     def summary_fixture(self):
         original = self.baseline()

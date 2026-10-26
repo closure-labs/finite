@@ -32,7 +32,7 @@ class BlueBuildContracts(unittest.TestCase):
                 (image, 'Stop obsolete publication before image setup', 'Make room for the image build'),
                 (security, 'Stop obsolete publication before security setup', 'Reuse authenticated publisher evidence from this build')):
             index = next(i for i, step in enumerate(steps) if step.get('name') == name)
-            self.assertEqual(steps[index - 1]['uses'], './.github/actions/setup-nix')
+            self.assertEqual(steps[index - 1]['uses'], '$/.github/actions/setup-nix')
             self.assertEqual(steps[index]['run'], 'python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"')
             self.assertNotIn('continue-on-error', steps[index])
             self.assertEqual(steps[index]['env']['GH_TOKEN'], '${{ github.token }}')
@@ -99,7 +99,7 @@ class BlueBuildContracts(unittest.TestCase):
             self.assertIn(required, trust)
             self.assertIn(required, images['if'])
         self.assertEqual(publish['strategy'], images['strategy'])
-        self.assertEqual(publish['uses'], './.github/workflows/publication.yml')
+        self.assertEqual(publish['uses'], '$/.github/workflows/publication.yml')
         self.assertEqual(publish['permissions']['packages'], 'write')
         reusable = read('.github/workflows/image.yml')
         build = reusable['jobs']['build']

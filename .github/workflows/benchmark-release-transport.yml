@@ -45,7 +45,7 @@ jobs:
       - uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
         with:
           skip-if-available: "80G"
-      - uses: ./.github/actions/setup-nix
+      - uses: $/.github/actions/setup-nix
         with:
           cache-mode: none
       - name: Authenticate and stage original two-profile products
@@ -136,7 +136,7 @@ jobs:
       - uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
         with:
           skip-if-available: "80G"
-      - uses: ./.github/actions/setup-nix
+      - uses: $/.github/actions/setup-nix
         with:
           cache-mode: none
       - name: Verify complete transport and clean local products

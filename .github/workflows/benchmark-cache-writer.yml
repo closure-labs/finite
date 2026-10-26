@@ -34,7 +34,7 @@ jobs:
           persist-credentials: false
       - name: Record setup start
         run: python3 scripts/ci/benchmark-cache-writer.py mark-start .bluebuild/writer-start.json
-      - uses: ./.github/actions/setup-nix
+      - uses: $/.github/actions/setup-nix
         with:
           cache-mode: none
       - name: Measure credential-free cold and warm preparation

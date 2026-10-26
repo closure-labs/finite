@@ -56,7 +56,7 @@ class Manifest(unittest.TestCase):
         self.assertNotRegex(action, r'\bvars\.')
         for path in (ROOT / '.github/workflows').glob('*.yml'):
             source = path.read_text()
-            if './.github/actions/setup-nix' not in source:
+            if '$/.github/actions/setup-nix' not in source:
                 continue
             with self.subTest(workflow=path.name):
                 values = yaml.safe_load(source).get('env', {})
@@ -98,7 +98,7 @@ class Manifest(unittest.TestCase):
                      'update-bluefin', 'queue-dependabot'):
             data = yaml.safe_load((ROOT / '.github/workflows' / (name + '.yml')).read_text())
             steps = [step for job in data['jobs'].values() for step in job['steps']]
-            setups = [step for step in steps if step.get('uses') == './.github/actions/setup-nix'
+            setups = [step for step in steps if step.get('uses') == '$/.github/actions/setup-nix'
                       and 'merge-queue-token' in step.get('with', {})]
             with self.subTest(updater=name):
                 self.assertEqual(len(setups), 1)

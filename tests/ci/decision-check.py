@@ -265,7 +265,7 @@ class Checks(unittest.TestCase):
         workflow = yaml.safe_load((ROOT / '.github/workflows/decision-authority.yml').read_text())
         discover = workflow['jobs']['discover']
         self.assertEqual(discover['permissions'], {'contents': 'read', 'actions': 'read', 'pull-requests': 'read', 'checks': 'read'})
-        self.assertFalse(any(s.get('uses') == './.github/actions/setup-nix'
+        self.assertFalse(any(s.get('uses') == '$/.github/actions/setup-nix'
                              or s.get('uses', '').startswith('actions/create-github-app-token@')
                              for s in discover['steps']))
         writer = workflow['jobs']['authority']

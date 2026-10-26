@@ -61,7 +61,7 @@ class Resources(unittest.TestCase):
                 installed = False
                 for step in job.get('steps', []):
                     uses = step.get('uses', '')
-                    if uses == './.github/actions/setup-nix' or uses.startswith('DeterminateSystems/determinate-nix-action@'):
+                    if uses == '$/.github/actions/setup-nix' or uses.startswith('DeterminateSystems/determinate-nix-action@'):
                         installed = True
                     command = step.get('run', '')
                     if re.search(r'\bnix\s+(shell|develop|build|eval|run)\b', command) or 'scripts/ci/nix-checks.py' in command or 'scripts/ci/benchmark-image-tools.py' in command:
@@ -69,7 +69,7 @@ class Resources(unittest.TestCase):
                             self.assertTrue(installed)
                 # The setup condition must cover the conditional reconcile step.
                 if path.name == 'build.yml' and name == 'impact':
-                    setup = next(s for s in job['steps'] if s.get('uses') == './.github/actions/setup-nix')
+                    setup = next(s for s in job['steps'] if s.get('uses') == '$/.github/actions/setup-nix')
                     self.assertIn('inputs.reconcile', setup['if'])
                     self.assertIn("github.event_name == 'push'", setup['if'])
 
