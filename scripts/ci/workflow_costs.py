@@ -178,6 +178,7 @@ def exclusive_occupancy(run):
         for j in jobs)
     for job in jobs:
         job['exclusiveRunnerSeconds'] = 0.0 if measured else None
+        job['exclusiveRunnerIntervals'] = [] if measured else None
     if not measured:
         return
     events = defaultdict(list)
@@ -190,7 +191,9 @@ def exclusive_occupancy(run):
     active, previous = set(), None
     for current, changes in sorted(events.items()):
         if previous is not None and len(active) == 1:
-            by_id[next(iter(active))]['exclusiveRunnerSeconds'] += (current - previous).total_seconds()
+            job = by_id[next(iter(active))]
+            job['exclusiveRunnerSeconds'] += (current - previous).total_seconds()
+            job['exclusiveRunnerIntervals'].append([previous.isoformat(), current.isoformat()])
         for job_id, starting in changes:
             if starting:
                 active.add(job_id)
@@ -226,6 +229,28 @@ def aggregate(runs):
     return rows
 
 
+def stage_exclusive_seconds(job, stage):
+    """Intersect a bounded stage with measured sole-runner intervals, not a DAG."""
+    intervals = job.get('exclusiveRunnerIntervals')
+    elapsed = stage.get('seconds')
+    if (intervals is None or type(elapsed) not in (int, float)
+            or not math.isfinite(elapsed) or not 0 <= elapsed <= 86400):
+        return None
+    try:
+        begin = timestamp(stage.get('startedAt'))
+        end = begin + timedelta(seconds=elapsed)
+        job_start, job_end = timestamp(job.get('startedAt')), timestamp(job.get('completedAt'))
+        # Native Actions timestamps have second precision. Clip that tolerance
+        # at the job boundary; do not invent placement for relative guest times.
+        if begin < job_start - timedelta(seconds=1) or end > job_end + timedelta(seconds=1):
+            return None
+        return sum(max(0, (min(end, job_end, timestamp(finish))
+                           - max(begin, job_start, timestamp(start))).total_seconds())
+                   for start, finish in intervals)
+    except (ValueError, TypeError, OverflowError):
+        return None
+
+
 def stage_opportunities(runs):
     groups = defaultdict(list)
     for run in runs:
@@ -236,6 +261,7 @@ def stage_opportunities(runs):
     rows = []
     for (workflow, event, lane, role, revision, stage), entries in groups.items():
         measured = [s['seconds'] for _, _, s in entries if s.get('seconds') is not None]
+        exclusive = [stage_exclusive_seconds(job, item) for _, job, item in entries]
         rows.append({'workflow': workflow, 'event': event, 'profile': lane, 'role': role,
                      'rolloutRevision': revision, 'stage': stage, 'samples': len(entries),
                      'timedSamples': len(measured), 'unknownDurationSamples': len(entries) - len(measured),
@@ -246,6 +272,9 @@ def stage_opportunities(runs):
                          or s.get('status') in ('failure', 'cancelled') or s.get('outcome') in ('failure', 'error')
                          for _, _, s in entries),
                      'unknownStatusSamples': sum(s.get('status') is None for _, _, s in entries),
+                     'exclusiveRunnerSeconds': (sum(value for value in exclusive if value is not None)
+                                                if any(value is not None for value in exclusive) else None),
+                     'exclusiveOccupancyUnknownSamples': sum(value is None for value in exclusive),
                      'criticalPathContribution': None})
     return sorted(rows, key=lambda r: (r['seconds'] is not None, r['seconds'] or 0), reverse=True)
 
@@ -475,6 +504,17 @@ def markdown(report):
         exclusive = 'unknown' if row['exclusiveRunnerSeconds'] is None else f"{row['exclusiveRunnerSeconds']:.1f}s"
         lines.append(f'- {row["workflow"]}, {row["event"]}, {row["role"]}, {row["profile"]}, {row["rolloutRevision"][:12]}: {row["runnerSeconds"]:.1f}s across {row["jobs"]} jobs; {exclusive} sole-runner occupancy; final job in {row["criticalPathJobs"]}.')
     lines += ['']
+    if report.get('rankedStages'):
+        lines += ['Measured stages ranked by elapsed time; nested stages overlap and must not be added:', '',
+                  '| Stage | Workflow | Event | Role | Profile | Revision | Runs | Samples | Seconds | Sole-runner seconds | Unknown placement |',
+                  '| --- | --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: |']
+        for row in report['rankedStages'][:20]:
+            elapsed = 'unknown' if row['seconds'] is None else f"{row['seconds']:.1f}"
+            exclusive = row.get('exclusiveRunnerSeconds')
+            sole = 'unknown' if exclusive is None else f'{exclusive:.1f}'
+            lines.append(f'| {row["stage"]} | {row["workflow"]} | {row["event"]} | {row["role"]} | {row["profile"]} | {row["rolloutRevision"][:12]} | {row["runs"]} | {row["samples"]} | {elapsed} | {sole} | {row.get("exclusiveOccupancyUnknownSamples", row["samples"])} |')
+        lines += ['', 'Sole-runner stage time is a blocking lower bound, not exact dependency DAG contribution. '
+                  'Missing absolute timestamps and incomplete native intervals remain unknown.', '']
     repetition = report.get('sourceRepetition')
     if repetition:
         lines += ['Repeated source work after an observed matching queue proof: '
