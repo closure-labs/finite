@@ -37,7 +37,7 @@ QUALIFICATION_ONLY = {
     'scripts/bluebuild/prepare-vm-predecessor-policy.sh',
     'scripts/bluebuild/prune-qualified-isos.py', 'scripts/bluebuild/qualification-context.py',
     'scripts/bluebuild/publication-current.py',
-    'scripts/bluebuild/qualification-preflight.py', 'scripts/bluebuild/qualify.sh',
+    'scripts/bluebuild/qualification-preflight.py', 'scripts/bluebuild/collect-qualification.py', 'scripts/bluebuild/qualify.sh',
     'scripts/bluebuild/redact-vm-logs.py', 'scripts/bluebuild/release-evidence.py',
     'scripts/bluebuild/reuse-predecessor-iso.py', 'scripts/bluebuild/reuse-qualification.py',
     'scripts/bluebuild/sign-release.sh', 'scripts/bluebuild/unlock-vm.py',

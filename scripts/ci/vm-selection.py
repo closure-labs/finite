@@ -14,7 +14,7 @@ PREFIXES = ('files/system/usr/lib/systemd/', 'files/system/usr/lib/tmpfiles.d/',
             'files/system/usr/lib/kernel/', 'files/system/usr/share/selinux/', 'files/system/usr/libexec/', 'files/system/etc/',
             'files/installer/', 'files/security/', 'scripts/bluebuild/', 'tests/nix/',
             'recipes/', 'files/scripts/', 'modules/nix/', 'lib/image-payload', 'sources/bluefin')
-FILES = {'flake.lock', 'sources/determinate-nix.json', 'scripts/ci/nix-resources.py',
+FILES = {'.github/actions/setup-cosign/action.yml', '.github/actions/setup-cosign/download/.curlrc', 'flake.lock', 'sources/determinate-nix.json', 'scripts/ci/nix-resources.py',
          'sources/bluebuild-installer.json', 'sources/installer-security.json',
          '.github/workflows/build.yml', '.github/workflows/image.yml',
          '.github/workflows/qualification.yml', 'scripts/ci/vm-selection.py',

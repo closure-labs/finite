@@ -647,7 +647,7 @@ class PublicationBoundary(unittest.TestCase):
         self.assertIn('--new-bundle-format=false --use-signing-config=false', sign['run'])
         self.assertNotIn('--tlog-upload=false', sign['run'])
         self.assertNotIn('--insecure-ignore', sign['run'])
-        installer = next(step for step in signer['steps'] if step.get('uses', '').startswith('sigstore/cosign-installer@'))
+        installer = next(step for step in signer['steps'] if step.get('uses') == '$/.github/actions/setup-cosign')
         runtime = json.loads((ROOT / 'sources/cosign-runtime.json').read_text())
         self.assertEqual(installer['with']['cosign-release'], 'v' + runtime['version'])
         self.assertNotIn('scripts/', sign['run'])

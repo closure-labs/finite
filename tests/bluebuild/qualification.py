@@ -84,6 +84,45 @@ class Qualification(unittest.TestCase):
     def aggregate(self, previous=''):
         return q.aggregate(self.directory, self.profile, self.candidate, previous, self.source, self.build, self.revision)
 
+    def test_carried_fresh_phase_preserves_original_iso_producing_attempt(self):
+        origins = {'schema': 1, 'repository': 'closure-labs/finite', 'run': 10, 'attempt': 2,
+                   'revision': self.revision, 'profile': self.profile, 'validationOnly': False,
+                   'phases': {'fresh': {'run': 10, 'attempt': 1, 'revision': self.revision,
+                                        'job': 100, 'artifactId': 300, 'artifactDigest': 'sha256:' + '1' * 64,
+                                        'completedAt': datetime.now(timezone.utc).isoformat()}}}
+        (self.directory / 'qualification-phase-origins.json').write_text(json.dumps(origins))
+        with patch.dict(os.environ, {'GITHUB_RUN_ID': '10', 'GITHUB_RUN_ATTEMPT': '2',
+                                     'FINITE_VALIDATION_ONLY': 'false'}):
+            value = self.aggregate()
+        self.assertEqual(value['qualifiedIsoOrigin'], {'run': 10, 'attempt': 1, 'revision': self.revision})
+        self.assertEqual(value['qualificationPhaseOrigins'], origins['phases'])
+        self.assertEqual(value['qualifiedAt'], origins['phases']['fresh']['completedAt'])
+
+    def test_collected_origins_cannot_relabel_run_source_profile_or_future_attempt(self):
+        base = {'schema': 1, 'repository': 'closure-labs/finite', 'run': 10, 'attempt': 2,
+                'revision': self.revision, 'profile': self.profile, 'validationOnly': False,
+                'phases': {'fresh': {'run': 10, 'attempt': 1, 'revision': self.revision,
+                                     'job': 100, 'artifactId': 300, 'artifactDigest': 'sha256:' + '1' * 64,
+                                        'completedAt': datetime.now(timezone.utc).isoformat()}}}
+        for change in ({'run': 99}, {'revision': '0' * 40}, {'profile': 'other'}, {'validationOnly': True},
+                       {'phases': {'fresh': {**base['phases']['fresh'], 'attempt': 3}}}):
+            with self.subTest(change=change), patch.dict(os.environ, {
+                    'GITHUB_RUN_ID': '10', 'GITHUB_RUN_ATTEMPT': '2', 'FINITE_VALIDATION_ONLY': 'false'}):
+                (self.directory / 'qualification-phase-origins.json').write_text(json.dumps({**base, **change}))
+                with self.assertRaises(ValueError): self.aggregate()
+
+    def test_carried_phase_age_cannot_be_renewed_by_a_later_aggregate(self):
+        origin = {'run': 10, 'attempt': 1, 'revision': self.revision, 'job': 100,
+                  'artifactId': 300, 'artifactDigest': 'sha256:' + '1' * 64}
+        for completed in (datetime.now(timezone.utc) - timedelta(hours=25),
+                          datetime.now(timezone.utc) + timedelta(hours=1)):
+            receipt = {'schema': 1, 'repository': 'closure-labs/finite', 'run': 10, 'attempt': 2,
+                       'revision': self.revision, 'profile': self.profile, 'validationOnly': False,
+                       'phases': {'fresh': {**origin, 'completedAt': completed.isoformat()}}}
+            (self.directory / 'qualification-phase-origins.json').write_text(json.dumps(receipt))
+            with patch.dict(os.environ, {'GITHUB_RUN_ID': '10', 'GITHUB_RUN_ATTEMPT': '2', 'FINITE_VALIDATION_ONLY': 'false'}):
+                with self.assertRaisesRegex(ValueError, 'expired or from the future'): self.aggregate()
+
     def validate(self, acceptance=None, **overrides):
         if acceptance:
             (self.directory / (self.profile + '-acceptance.json')).write_text(json.dumps(acceptance))

@@ -42,6 +42,7 @@ def module(name, path):
 EVIDENCE = module('recovery_evidence', ROOT / 'scripts/bluebuild/release-evidence.py')
 REQUEST = module('recovery_request', ROOT / 'scripts/ci/release-request.py')
 CONTEXT = module('recovery_context', ROOT / 'scripts/bluebuild/qualification-context.py')
+COLLECTION = module('recovery_phase_collection', ROOT / 'scripts/bluebuild/collect-qualification.py')
 POLICY = module('recovery_policy', ROOT / 'scripts/bluebuild/security-policy.py')
 
 
@@ -304,9 +305,9 @@ def packet(directory, channel, source, original_run, *, inputs=None):
         raise ValueError('Recovery requires the original preserved main-build ISO')
     build_number = int(build_url.rsplit('/', 1)[1])
     build = github('actions/runs/' + str(build_number)); run_identity(build, build_number, 'build.yml')
-    if (build.get('status') != 'completed' or build.get('conclusion') != 'success' or build['head_sha'] != source
-            or acceptance.get('qualifiedIsoOrigin') != {'run': build_number, 'attempt': build['run_attempt'], 'revision': source}):
+    if (build.get('status') != 'completed' or build.get('conclusion') != 'success' or build['head_sha'] != source):
         raise ValueError('Qualified original build/ISO producer did not succeed at exact source')
+    COLLECTION.verify_fresh_origin(acceptance, build)
     iso = acceptance['qualifiedIso']
     if (iso.get('name') != profile + '.iso' or installation['installer'].get('finiteRevision') != source
             or sha(directory / iso['name']) != iso.get('sha256')

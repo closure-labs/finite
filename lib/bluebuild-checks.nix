@@ -164,6 +164,7 @@ in {
     python3 tests/bluebuild/installer.py
     python3 tests/bluebuild/installer-certificate.py
     python3 tests/bluebuild/qualification.py
+    python3 tests/bluebuild/qualification-collection.py
     python3 tests/bluebuild/provisioning.py
     python3 tests/bluebuild/security-policy.py
     python3 tests/bluebuild/security-remediation.py
@@ -202,8 +203,9 @@ in {
   dependency-locks = check "dependency-locks" [applications.validateLocks] ''
     ${lib.getExe applications.validateLocks}
   '';
-  workflows = check "workflow-lint" (with pkgs; [actionlint shellcheck zizmor (python3.withPackages (p: [p.pyyaml]))]) ''
+  workflows = check "workflow-lint" (with pkgs; [actionlint shellcheck zizmor curl (python3.withPackages (p: [p.pyyaml]))]) ''
     python3 tests/ci/workflow-lint.py
+    python3 tests/ci/cosign-download.py
     python3 scripts/ci/lint-workflows.py
     zizmor --offline --no-config --collect=all .github
     shellcheck --exclude=SC1091 files/scripts/*.sh scripts/bluebuild/*.sh
