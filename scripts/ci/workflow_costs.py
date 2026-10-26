@@ -70,6 +70,8 @@ def profile(name):
 
 def job_role(name, workflow=None):
     # Generic collector/discovery names need the native workflow binding.
+    if workflow == '.github/workflows/decision-proposals.yml' and name == 'reconcile':
+        return 'decision-reconciliation'
     if workflow == '.github/workflows/decision-authority.yml':
         if name == 'discover':
             return 'authority-discovery'

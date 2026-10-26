@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 """Exercise authority against a fake GitHub API; local JSON is never enough."""
 import base64
+from concurrent.futures import ThreadPoolExecutor
+from contextvars import copy_context
 import hashlib
 import copy
 import importlib.util
 import json
 from pathlib import Path
 import sys
+from threading import Barrier, Lock
 import unittest
 from unittest.mock import patch
 
@@ -87,6 +90,32 @@ def verify(api, **kwargs):
 
 
 class ImmutableDocuments(unittest.TestCase):
+    def concurrent_reads(self, same_binding, max_entries):
+        barrier, lock = Barrier(4), Lock()
+        calls = []
+        api = GitHub()
+        def github(endpoint):
+            with lock:
+                calls.append(endpoint)
+            barrier.wait(timeout=2)
+            return api(endpoint)
+        with patch.object(mod, 'DOCUMENT_ENTRIES', max_entries), mod.immutable_documents():
+            with ThreadPoolExecutor(max_workers=4) as pool:
+                pending = [pool.submit(copy_context().run, mod.document_at, github, REPO,
+                                       'proposal.json', HEAD if same_binding else str(i + 1) * 40)
+                           for i in range(4)]
+                self.assertEqual([future.result() for future in pending], [PROPOSAL] * 4)
+            retained = mod._documents.get()
+            self.assertEqual(len(retained['values']), 1)
+            self.assertEqual(retained['bytes'], len(json.dumps(PROPOSAL).encode()))
+        self.assertEqual(len(calls), 4)
+
+    def test_parallel_misses_share_binding_without_double_charging_budget(self):
+        self.concurrent_reads(True, 64)
+
+    def test_parallel_distinct_bindings_cannot_overrun_cache_budget(self):
+        self.concurrent_reads(False, 1)
+
     def test_same_binding_reuses_verified_bytes_and_returns_fresh_objects(self):
         api = GitHub()
         path = mod.proposal_path(PROPOSAL)

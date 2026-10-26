@@ -253,6 +253,8 @@ def reconciliation_receipt(run, artifact, value, seen):
             or value.get('jobName') != 'reconcile'
             or value.get('workflowRef') != run['repository'] + '/.github/workflows/decision-proposals.yml@refs/heads/main'
             or type(value.get('truncated')) is not bool
+            or value.get('historicalReadWorkers') is not None and (
+                type(value['historicalReadWorkers']) is not int or value['historicalReadWorkers'] not in (1, 4))
             or value.get('checkoutRevision') is not None and (not isinstance(value['checkoutRevision'], str)
                 or not re.fullmatch(r'[0-9a-f]{40}', value['checkoutRevision']))):
         raise ValueError('Reconciliation costs differ from native producer')
@@ -288,6 +290,7 @@ def reconciliation_receipt(run, artifact, value, seen):
     seen.add((*binding, fingerprint))
     job['checkoutRevision'] = value.get('checkoutRevision')
     job['reconciliationTimingsTruncated'] = value['truncated']
+    job['reconciliationReadWorkers'] = value.get('historicalReadWorkers')
     job['stages'].extend({**row, 'stage': 'reconciliation-' + row['stage'], 'nested': True,
                           'status': None if row['outcome'] == 'running' else
                           'failure' if row['outcome'] == 'error' else 'success'} for row in rows)

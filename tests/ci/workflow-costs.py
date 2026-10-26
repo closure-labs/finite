@@ -895,7 +895,8 @@ class Costs(unittest.TestCase):
         invalid = [('schema', True), ('kind', 'other'), ('authorizesPublication', True),
                    ('repository', 'fork/finite'), ('runId', '11'), ('runAttempt', '2'),
                    ('revision', 'd' * 40), ('jobName', 'checks'), ('workflowRef', 'other'),
-                   ('truncated', 0), ('checkoutRevision', 'bad')]
+                   ('truncated', 0), ('checkoutRevision', 'bad'),
+                   ('historicalReadWorkers', True), ('historicalReadWorkers', 2), ('historicalReadWorkers', '4')]
         for field, wrong in invalid:
             with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'native producer'):
                 cost_receipts.join(self.observe(), [artifact],
@@ -960,6 +961,19 @@ class Costs(unittest.TestCase):
         self.assertIsNone(job['stages'][1]['seconds'])
         self.assertIsNone(job['candidateDigest'])
         self.assertIsNone(job['inventoryReuse']['hit'])
+
+    def test_controller_worker_mode_is_authenticated_and_legacy_mode_stays_unknown(self):
+        artifact, value = self.reconciliation_costs()
+        for workers in (None, 1, 4):
+            current = {**value}
+            if workers is not None:
+                current['historicalReadWorkers'] = workers
+            report = self.observe()
+            cost_receipts.join(report, [artifact], self.scanner_reader(current, 'reconciliation-costs.json'))
+            self.assertEqual(report['jobs'][0]['reconciliationReadWorkers'], workers)
+            self.assertEqual(report['jobs'][0]['role'], 'decision-reconciliation')
+            self.assertEqual(sum(row['runnerSeconds'] for row in costs.aggregate([report])), 120)
+        self.assertEqual(costs.job_role('reconcile', '.github/workflows/unrelated.yml'), 'unknown')
 
     def test_reconciliation_upload_is_bounded_and_failure_safe(self):
         import yaml
