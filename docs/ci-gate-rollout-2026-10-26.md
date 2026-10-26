@@ -114,13 +114,32 @@ it does not identify the earlier bad row or waive its rejection.
 
 ## Current findings
 
+The later [#275 main build](https://github.com/closure-labs/finite/actions/runs/40347208371)
+and its [controller callback](https://github.com/closure-labs/finite/actions/runs/40349147958)
+passed. Four natural main consumers have authenticated shadow matches, with
+zero mismatches and one earlier unknown credential-wiring observation. Keep
+shadow mode until five successful natural comparisons; no enabled reuse hit
+has been observed.
+
+The older [scheduled build](https://github.com/closure-labs/finite/actions/runs/40346577478)
+correctly stopped at the stale-source preflight after main advanced. It produced
+no security scan archives. Its [failed controller callback](https://github.com/closure-labs/finite/actions/runs/40347905716)
+then spent 52 native runner seconds, including 24 seconds of Nix setup and
+15 seconds in the controller step, before rejecting the unsuccessful no-image
+job inventory. Those step intervals are nested within the job, not additional
+costs. The callback optimization skips Nix, App token creation and collection
+only after authenticating a failed build with no scan evidence. Production
+savings remain unmeasured until a natural qualifying callback occurs. Retain
+the failed build and callback costs; neither has been rerun for this report.
+
 | Recommendation | Classification | Current action |
 | --- | --- | --- |
 | Remove duplicate proposal approval reads | completed | #265 merged; proposal verifiers retain approval, non-proposal governance keeps its explicit check, and revocation/eligibility regressions pass. |
 | Share delivery-health setup and inspection | completed | #266 main and authenticated same-job snapshot passed, including independent failed-health reporting. |
 | One manual release approval | completed | #267 merged; live environment activation and full administrator audit passed. Keep exact proposal approval and independent signing/publication checks. |
 | Coalesce authority events by PR/target | awaiting rollout evidence | #268 merged and native discovery/worker execution passed; observe natural bursts before claiming recurring savings. |
-| Exact-commit main source proof | awaiting rollout evidence | #269 is implemented and approved; first queue failed on transport and the retry is running. Repository mode is shadow. No main comparison yet; require five natural successful comparisons before an enabled canary. |
+| Exact-commit main source proof | awaiting rollout evidence | Four natural successful main comparisons; zero mismatches, one earlier unknown. Repository mode is shadow. Require five successful comparisons before an enabled canary. |
+| Failed build callbacks without scans | awaiting rollout evidence | Skip controller setup only after a complete live native inventory proves no scan evidence. Preserve failed-run health reporting and strict collection whenever evidence is present or metadata is unknown. |
 | Bounded process-error evidence and native authority cost roles | awaiting rollout evidence | Implemented in this draft with unchanged rejection and unique-job accounting; require hosted checks and normal rollout. |
 | Installer runtime reuse | requires measurement | [Ranked ISO costs](ci-recent-costs-2026-10-24.md) remain substantial. Identify candidate-independent work and retain unseeded fresh installation before designing a behavioral change. |
 | Guest closure transport | requires measurement | Separate downloads from activation and preserve actual bootc Home Manager activation. The cache transport failure does not establish a safe reusable closure design. |

@@ -70,8 +70,25 @@ jobs:
         with:
           ref: main
           persist-credentials: false
+      - name: Inspect failed producer callback before controller setup
+        id: callback
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PYTHON'
+          import json, os, sys
+          sys.path.insert(0, 'scripts/ci')
+          from decision_controller import callback_work
+          with open(os.environ['GITHUB_EVENT_PATH']) as source:
+              value = callback_work(os.environ['GITHUB_EVENT_NAME'], json.load(source))
+          print(json.dumps(value))
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write('needed=' + str(value['needed']).lower() + '\n')
+          PYTHON
       - uses: ./.github/actions/setup-nix
+        if: steps.callback.outputs.needed == 'true'
       - name: Resolve declared review App credentials
+        if: steps.callback.outputs.needed == 'true'
         env:
           FINITE_REVIEW_CLIENT_ID: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
           FINITE_REVIEW_PRIVATE_KEY: ${{ secrets.DECIDER_KEY }}
@@ -80,6 +97,7 @@ jobs:
           secretspec export --file secretspec.toml --profile review-app --provider github-actions
           --scope review-app --reason 'Finite human decision authority App' --format gha
       - name: Generate short-lived repository-scoped review token
+        if: steps.callback.outputs.needed == 'true'
         id: review-token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
@@ -94,9 +112,11 @@ jobs:
           permission-administration: read
           permission-members: read
       - name: Clear App private credentials
+        if: always() && steps.review-token.outcome == 'success'
         run: | # zizmor: ignore[github-env]
           printf 'FINITE_REVIEW_CLIENT_ID=\nFINITE_REVIEW_PRIVATE_KEY=\n' >>"$GITHUB_ENV"
       - name: Propose findings or reconcile approved decisions
+        if: success() && steps.callback.outputs.needed == 'true'
         env:
           GH_TOKEN: ${{ steps.review-token.outputs.token }}
           REGISTRY_TOKEN: ${{ github.token }}
