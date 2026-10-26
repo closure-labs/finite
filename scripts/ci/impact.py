@@ -17,6 +17,8 @@ QUALIFICATION_ONLY = {
     '.github/workflows/benchmark-image-tools.yml', 'scripts/ci/benchmark-image-tools.py',
     'scripts/ci/installer-benchmark.py',
     "scripts/ci/release_handoff.py", "scripts/ci/nix-checks.py", "scripts/ci/nix_observation.py", "lib/check-sources.nix",
+    'scripts/ci/source_proof.py',
+    'scripts/ci/decision-check.py',
     "scripts/ci/github_api.py", "scripts/ci/release_readiness.py",
     "scripts/ci/release-readiness.py", "scripts/ci/delivery-health.py",
     'scripts/ci/release_versions.py', 'scripts/ci/release-cycle.py',

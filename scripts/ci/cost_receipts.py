@@ -15,6 +15,64 @@ MAX_ARCHIVE = 8 * 1024**2
 MAX_RECEIPTS = 16
 
 
+def source_reuse_receipt(run, artifact, value, seen):
+    """Account only the consumer lookup; producer execution is a reference."""
+    from source_proof import valid_producer, eligibility_reason
+    attempt = artifact['name'].rsplit('-', 1)[1]
+    if (not isinstance(value, dict) or type(value.get('schema')) is not int or value['schema'] != 1
+            or value.get('kind') != 'finite-source-reuse' or value.get('authorizesPublication') is not False
+            or value.get('repository') != run['repository'] or str(value.get('runId')) != str(run['runId'])
+            or str(value.get('runAttempt')) != attempt or value.get('revision') != run['sourceRevision']
+            or value.get('checkoutRevision') != run['sourceRevision'] or value.get('jobName') != 'checks'
+            or run['workflow'] != '.github/workflows/build.yml' or run['event'] != 'push'
+            or run.get('headBranch') != 'main'
+            or value.get('workflowRef') != run['repository'] + '/.github/workflows/build.yml@refs/heads/main'):
+        raise ValueError('Source reuse observation differs from native consumer')
+    mode, eligible, hit = value.get('mode'), value.get('eligible'), value.get('hit')
+    if (mode not in ('off', 'shadow', 'enabled') or not eligibility_reason(eligible, value.get('reason'))
+            or any(item is not None and type(item) is not bool for item in (eligible, hit, value.get('shadowMatch')))
+            or hit is True and (mode != 'enabled' or eligible is not True)
+            or eligible is None and hit is not None
+            or eligible is False and hit is not False
+            or eligible is True and hit is not (mode == 'enabled')
+            or eligible is True and not valid_producer(value.get('producer'), run['sourceRevision'])
+            or eligible is not True and value.get('producer') is not None
+            or mode == 'off' and (eligible is not None or hit is not None)
+            or (mode == 'off') != (value.get('reason') == 'disabled')
+            or value.get('shadowMatch') is not None and (mode != 'shadow' or eligible is not True)):
+        raise ValueError('Invalid source reuse decision observation')
+    elapsed = value.get('seconds')
+    if elapsed is not None and (type(elapsed) not in (int, float) or not math.isfinite(elapsed) or not 0 <= elapsed <= 86400):
+        raise ValueError('Invalid source proof lookup duration')
+    if mode == 'off' and (elapsed is not None or value.get('startedAt') is not None):
+        raise ValueError('Disabled lookup cannot claim execution')
+    if elapsed is not None:
+        try:
+            started = datetime.fromisoformat(value['startedAt'].replace('Z', '+00:00'))
+            if started.tzinfo is None:
+                raise ValueError('Missing timezone')
+        except (KeyError, TypeError, AttributeError, ValueError) as error:
+            raise ValueError('Invalid source lookup timestamp') from error
+    jobs = [job for job in run['jobs'] if job['role'] == 'checks' and str(job['runAttempt']) == attempt]
+    if len(jobs) != 1:
+        run['receiptCoverage']['unmatched'] += 1
+        return
+    job = jobs[0]
+    binding = ('source-reuse', job['jobId'])
+    fingerprint = json.dumps(value, sort_keys=True, allow_nan=False)
+    previous = next((entry[2] for entry in seen if entry[:2] == binding), None)
+    if previous is not None:
+        if previous != fingerprint:
+            raise ValueError('Conflicting source reuse observations')
+        return
+    seen.add((*binding, fingerprint))
+    job['sourceReuse'] = {key: value.get(key) for key in ('mode', 'eligible', 'hit', 'reason', 'producer', 'shadowMatch')}
+    job['sourceReuse']['lookupSeconds'] = elapsed
+    if elapsed is not None:
+        job['stages'].append({'stage': 'Source proof lookup', 'seconds': elapsed, 'startedAt': value['startedAt'],
+                              'status': 0 if eligible is not None else 1, 'nested': True})
+
+
 def nix_receipt(run, artifact, name, value, seen):
     """Join source phases to one producing job, never to a retry's reused job."""
     attempt = artifact['name'].rsplit('-', 1)[1]
@@ -267,6 +325,11 @@ def join(run, artifacts, reader=bounded_reader):
                         reconciliation_receipt(run, artifact, json.loads(b''.join(chunks(zipped, entry))), seen)
                         continue
                     if artifact['name'].startswith('source-checks-'):
+                        if name == 'source-reuse.json':
+                            if entry.file_size > 65536:
+                                raise ValueError('Oversized source reuse observation')
+                            source_reuse_receipt(run, artifact, decode_json(b''.join(chunks(zipped, entry))), seen)
+                            continue
                         if name not in ('nix-checks.json', 'nix-setup.json'):
                             continue
                         if entry.file_size > 65536:
@@ -362,3 +425,12 @@ def join(run, artifacts, reader=bounded_reader):
                                 'hit': status == 0 if status in (0, 3) else None,
                                 'missReason': 'unavailable' if status == 3 else None}
         run['receiptCoverage']['read'] += 1
+    for job in run['jobs']:
+        if job.get('sourceReuse', {}).get('hit') is True and any(
+                stage['stage'] in ('Evaluate aggregate', 'Build aggregate') for stage in job['stages']):
+            raise ValueError('Reused source cannot claim executed consumer phases')
+
+
+def decode_json(raw):
+    from source_proof import decode
+    return decode(raw)

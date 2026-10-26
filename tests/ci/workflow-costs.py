@@ -16,6 +16,7 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'scripts/ci'))
 import workflow_costs as costs
+import cost_receipts
 spec = importlib.util.spec_from_file_location('stage_measure', ROOT / 'scripts/bluebuild/measure.py')
 measure = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(measure)
@@ -50,6 +51,23 @@ class SourceRepetition(unittest.TestCase):
 
     def report(self, proof=None):
         return costs.source_repetition([self.proof if proof is None else proof, self.target])
+
+    def test_source_rollout_counts_unique_native_jobs_and_preserves_incomplete_coverage(self):
+        run = {**deepcopy(self.target), 'event': 'push'}
+        job = run['jobs'][0]
+        job['sourceReuse'] = {'mode': 'shadow', 'eligible': True, 'hit': False, 'shadowMatch': True,
+                              'reason': 'verified-exact-queue-proof', 'producer': {'jobId': 100}, 'lookupSeconds': 2}
+        report = costs.source_proof_rollout([self.proof, run, deepcopy(run)])
+        self.assertEqual(report['shadowMatches'], 1)
+        self.assertEqual(report['enabledHits'], 0)
+        self.assertIsNone(report['activationDecision'])
+        self.assertEqual(len(report['rows']), 1)
+        job['conclusion'] = 'failure'
+        self.assertEqual(costs.source_proof_rollout([run])['shadowMatches'], 0)
+        job['sourceReuse']['shadowMatch'] = False
+        self.assertEqual(costs.source_proof_rollout([run])['shadowMismatches'], 1)
+        del job['sourceReuse']
+        self.assertEqual(costs.source_proof_rollout([run])['unknownJobs'], 1)
 
     def test_exact_recorded_inputs_repeat_without_authorizing_or_double_adding_cost(self):
         before = deepcopy([self.proof, self.target])
@@ -566,6 +584,80 @@ class Costs(unittest.TestCase):
         legacy = next(s for s in steps if s.get('name') == 'Retain scanner evidence including failures')
         self.assertEqual(legacy['with']['retention-days'], 90)
         self.assertEqual(legacy['with']['path'], '.bluebuild/security-${{ inputs.profile }}/')
+
+    def source_reuse(self):
+        self.run.update(event='push', head_branch='main')
+        self.job['name'] = 'Nix and runtime contracts'
+        artifact = {'id': 20, 'name': 'source-checks-10-1', 'expired': False,
+                    'size_in_bytes': 2000, 'digest': 'sha256:' + 'c' * 64,
+                    'workflow_run': {'id': 10, 'head_sha': 'a' * 40}}
+        value = {'schema': 1, 'kind': 'finite-source-reuse', 'authorizesPublication': False,
+                 'repository': costs.REPOSITORY, 'runId': '10', 'runAttempt': '1',
+                 'revision': 'a' * 40, 'checkoutRevision': 'a' * 40, 'jobName': 'checks',
+                 'workflowRef': costs.REPOSITORY + '/.github/workflows/build.yml@refs/heads/main',
+                 'mode': 'enabled', 'eligible': True, 'hit': True, 'reason': 'verified-exact-queue-proof',
+                 'seconds': 2., 'startedAt': '2026-10-23T10:01:00Z', 'shadowMatch': None,
+                 'producer': {'runId': 9, 'runAttempt': 1, 'jobId': 50, 'artifactId': 51,
+                              'artifactDigest': 'sha256:' + 'd' * 64, 'revision': 'a' * 40,
+                              'aggregateDerivation': '/nix/store/' + 'b' * 32 + '-finite-ci-checks.drv'}}
+        return artifact, value
+
+    def test_source_reuse_is_a_reference_not_a_duplicate_producer_charge(self):
+        from contextlib import contextmanager
+        import io, zipfile
+        artifact, value = self.source_reuse()
+        @contextmanager
+        def reader(*args):
+            raw = io.BytesIO()
+            with zipfile.ZipFile(raw, 'w') as zipped:
+                zipped.writestr('source-reuse.json', json.dumps(value))
+            raw.seek(0)
+            yield raw
+        report = self.observe()
+        before = report['jobs'][0]['runnerSeconds']
+        cost_receipts.join(report, [artifact, artifact], reader)
+        job = report['jobs'][0]
+        self.assertEqual(job['runnerSeconds'], before)
+        self.assertTrue(job['sourceReuse']['hit'])
+        self.assertEqual(job['sourceReuse']['producer']['jobId'], 50)
+        self.assertEqual([row['stage'] for row in job['stages']], ['Source proof lookup'])
+        self.assertEqual(job['stages'][0]['seconds'], 2.)
+        # Native retry projections must not relabel an earlier job as a consumer.
+        report = self.observe()
+        report['receiptCoverage'] = {'unmatched': 0}
+        cost_receipts.source_reuse_receipt(report, {**artifact, 'name': 'source-checks-10-2'},
+                                         {**value, 'runAttempt': '2'}, set())
+        self.assertEqual(report['receiptCoverage']['unmatched'], 1)
+        self.assertNotIn('sourceReuse', report['jobs'][0])
+        report = self.observe()
+        report['jobs'][0]['stages'] = [{'stage': 'Evaluate aggregate', 'seconds': 100.}]
+        with self.assertRaisesRegex(ValueError, 'cannot claim executed'):
+            cost_receipts.join(report, [artifact], reader)
+
+    def test_source_reuse_unknown_disabled_and_missed_remain_distinct(self):
+        artifact, original = self.source_reuse()
+        for mode, eligible, hit, reason in [('off', None, None, 'disabled'),
+                ('enabled', None, None, 'lookup-unavailable'), ('enabled', False, False, 'no-exact-queue-proof')]:
+            value = {**original, 'mode': mode, 'eligible': eligible, 'hit': hit, 'reason': reason, 'producer': None}
+            if mode == 'off':
+                value.update(seconds=None, startedAt=None)
+            report = self.observe()
+            cost_receipts.source_reuse_receipt(report, artifact, value, set())
+            observed = report['jobs'][0]['sourceReuse']
+            self.assertIs(observed['eligible'], eligible)
+            self.assertIs(observed['hit'], hit)
+            self.assertEqual(len(report['jobs'][0]['stages']), 0 if mode == 'off' else 1)
+
+    def test_invalid_source_reuse_claims_do_not_join(self):
+        artifact, value = self.source_reuse()
+        for change in ({'repository': 'fork/repo'}, {'runAttempt': '2'}, {'checkoutRevision': 'f' * 40},
+                       {'schema': True}, {'mode': 'shadow'}, {'eligible': None}, {'producer': {}},
+                       {'hit': 'true'}, {'seconds': float('nan')}, {'authorizesPublication': True},
+                       {'eligible': False, 'hit': False, 'reason': 'lookup-timeout', 'producer': None},
+                       {'eligible': None, 'hit': None, 'reason': 'no-exact-queue-proof', 'producer': None},
+                       {'eligible': None, 'hit': None, 'reason': 'disabled', 'producer': None}):
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                cost_receipts.source_reuse_receipt(self.observe(), artifact, {**value, **change}, set())
 
     def test_nix_observations_join_original_attempt_without_double_charging(self):
         import cost_receipts

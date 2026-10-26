@@ -18,7 +18,8 @@ MANIFEST = tomllib.loads((ROOT / 'secretspec.toml').read_text())
 FLAGS = {'FINITE_OPTIMIZED_CACHES', 'FINITE_CACHIX_WRITER', 'FINITE_REUSE_INVENTORY',
          'FINITE_GRYPE_DB_CACHE', 'FINITE_QUALIFICATION_REUSE', 'FINITE_QUALIFIED_ISO_PRESERVATION'}
 SELECTOR = 'FINITE_QUALIFIED_ISO_CHANNELS'
-PUBLIC_OPTIONS = FLAGS | {SELECTOR}
+SOURCE_MODE = 'FINITE_SOURCE_PROOF_REUSE'
+PUBLIC_OPTIONS = FLAGS | {SELECTOR, SOURCE_MODE}
 SPEC = importlib.util.spec_from_file_location('scoped_ci_options', ROOT / 'scripts/ci/ci-options.py')
 OPTIONS = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(OPTIONS)
@@ -59,8 +60,18 @@ class Manifest(unittest.TestCase):
                 continue
             with self.subTest(workflow=path.name):
                 values = yaml.safe_load(source).get('env', {})
-                self.assertEqual({key: values.get(key) for key in PUBLIC_OPTIONS},
-                                 {key: '${{ vars.' + key + ' }}' for key in PUBLIC_OPTIONS})
+                self.assertEqual({key: values.get(key) for key in PUBLIC_OPTIONS - {SOURCE_MODE}},
+                                 {key: '${{ vars.' + key + ' }}' for key in PUBLIC_OPTIONS - {SOURCE_MODE}})
+        build = yaml.safe_load((ROOT / '.github/workflows/build.yml').read_text())
+        self.assertEqual(build['jobs']['checks']['env'][SOURCE_MODE], '${{ vars.FINITE_SOURCE_PROOF_REUSE }}')
+
+    def test_source_proof_mode_defaults_off_and_rejects_ambiguous_values(self):
+        self.assertEqual(OPTIONS.options({})[SOURCE_MODE], 'off')
+        for mode in ('off', 'shadow', 'enabled'):
+            self.assertEqual(OPTIONS.options({SOURCE_MODE: mode})[SOURCE_MODE], mode)
+        for mode in ('true', 'on', 'enabled\nGH_TOKEN=bad', 'unknown'):
+            with self.subTest(mode=mode), self.assertRaises(ValueError):
+                OPTIONS.options({SOURCE_MODE: mode})
 
     def test_cache_writer_uses_native_devenv_without_exposing_tokens_to_readers(self):
         action = yaml.safe_load((ROOT / '.github/actions/setup-nix/action.yml').read_text())
@@ -222,7 +233,7 @@ class Resolution(unittest.TestCase):
                 'COSIGN_PRIVATE_KEY': 'fixture-only-private-key', 'SECAUDIT_PEM': 'fixture-only-app-key',
                 'CACHIX_AUTH_TOKEN': 'fixture-only-cache-token', 'MERGE_QUEUE_TOKEN': 'fixture-only-updater'})
             self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertEqual(json.loads(result.stdout), {**{name: 'false' for name in FLAGS}, SELECTOR: 'finite'})
+            self.assertEqual(json.loads(result.stdout), {**{name: 'false' for name in FLAGS}, SELECTOR: 'finite', SOURCE_MODE: 'off'})
             self.assertNotIn('fixture-only', result.stdout)
 
     def test_signing_and_read_scopes_never_inherit_other_task_credentials(self):

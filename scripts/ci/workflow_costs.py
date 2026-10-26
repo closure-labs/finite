@@ -250,6 +250,36 @@ def stage_opportunities(runs):
     return sorted(rows, key=lambda r: (r['seconds'] is not None, r['seconds'] or 0), reverse=True)
 
 
+def source_proof_rollout(runs):
+    """Summarize authenticated consumer receipts without inferring activation."""
+    rows, seen = [], {}
+    for run in runs:
+        if (run['repository'] != REPOSITORY or run['workflow'] != '.github/workflows/build.yml'
+                or run['event'] != 'push' or run.get('headBranch') != 'main'):
+            continue
+        for job in run['jobs']:
+            if job['role'] != 'checks':
+                continue
+            projection = (run['runId'], run['sourceRevision'], job)
+            if job['jobId'] in seen:
+                if seen[job['jobId']] != projection:
+                    raise ValueError('Conflicting native source-job projections')
+                continue
+            seen[job['jobId']] = projection
+            receipt = job.get('sourceReuse') or {}
+            rows.append({'runId': run['runId'], 'jobId': job['jobId'], 'runAttempt': job['runAttempt'],
+                         'sourceRevision': run['sourceRevision'], 'status': job['status'],
+                         'conclusion': job['conclusion'],
+                         **{key: receipt.get(key) for key in ('mode', 'eligible', 'hit', 'reason',
+                                                            'producer', 'shadowMatch', 'lookupSeconds')}})
+    return {'authorizesPublication': False, 'activationDecision': None,
+            'shadowMatches': sum(row['mode'] == 'shadow' and row['shadowMatch'] is True
+                                 and row['status'] == 'completed' and row['conclusion'] == 'success' for row in rows),
+            'shadowMismatches': sum(row['shadowMatch'] is False for row in rows),
+            'enabledHits': sum(row['hit'] is True for row in rows),
+            'unknownJobs': sum(row['eligible'] is None for row in rows), 'rows': rows}
+
+
 def source_repetition(runs):
     """Measure repeated recorded inputs; never decide whether checks may be skipped."""
     proofs, targets, seen = [], [], {}
@@ -418,6 +448,7 @@ def collect(api=get_json, now=None, rollout=None, *, receipts=False):
             'rankedStages': stage_opportunities(observation or baseline),
             'rankedRecurringWork': sorted(aggregate(observation or baseline), key=lambda row: row['runnerSeconds'], reverse=True),
             'sourceRepetition': source_repetition(runs),
+            'sourceProofRollout': source_proof_rollout(runs),
             'limitations': ['Runner seconds are elapsed occupancy, not billed cost; active work is right-censored.',
                            'Shared jobs are reported separately; skipped jobs count with zero runner time.',
                            'Native step times include setup and post-job handling; composite cache restore/save substeps are not exposed.',
@@ -451,5 +482,10 @@ def markdown(report):
                   f'{repetition["repeatedNestedPhaseSeconds"]:.1f} nested evaluation/build seconds. '
                   'These measurements overlap; no check reuse or savings is inferred.',
                   f'Unknown source coverage: {repetition["unknownJobs"]} jobs. Unseen queue proofs are not cache misses.', '']
+    rollout = report.get('sourceProofRollout')
+    if rollout:
+        lines += [f'Authenticated source-proof rollout: {rollout["shadowMatches"]} successful shadow matches, '
+                  f'{rollout["shadowMismatches"]} mismatches, {rollout["enabledHits"]} enabled hits and '
+                  f'{rollout["unknownJobs"]} jobs with unknown eligibility. No activation decision is inferred.', '']
     lines.extend('- ' + item for item in report['limitations'])
     return '\n'.join(lines) + '\n'

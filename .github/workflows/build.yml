@@ -166,7 +166,11 @@ jobs:
     # Allow cold evaluation to seed the Nix store cache. GitHub permits restores
     # from the same ref and base/default branches, not unrelated PR refs.
     timeout-minutes: 60
+    permissions:
+      contents: read
+      actions: read
     env:
+      FINITE_SOURCE_PROOF_REUSE: ${{ vars.FINITE_SOURCE_PROOF_REUSE }}
       # PR checks execute the merge checkout; native run/artifact identity names
       # the PR head. Retain both instead of misjoining their observations.
       FINITE_OBSERVATION_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -196,6 +200,7 @@ jobs:
           path: |
             .bluebuild/nix-checks.json
             .bluebuild/nix-setup.json
+            .bluebuild/source-reuse.json
           include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 14
