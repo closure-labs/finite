@@ -85,6 +85,59 @@ class SourceRepetition(unittest.TestCase):
         self.assertIsNone(report['rows'][0]['nativeRunnerImage'])
         self.assertEqual([self.proof, self.target], before)
 
+    def test_source_shadow_gate_requires_whole_workflow_success(self):
+        run = {**deepcopy(self.target), 'event': 'push'}
+        run['jobs'][0]['sourceReuse'] = {'mode': 'shadow', 'eligible': True, 'hit': False,
+                                       'shadowMatch': True, 'reason': 'verified-exact-queue-proof'}
+        for status, conclusion in (('in_progress', None), ('completed', 'failure'),
+                                   ('completed', 'cancelled'), ('completed', 'success')):
+            run.update(status=status, conclusion=conclusion)
+            with self.subTest(status=status, conclusion=conclusion):
+                report = costs.source_proof_rollout([run])
+                self.assertEqual(report['shadowMatches'], int(conclusion == 'success'))
+                self.assertEqual(report['costCohorts'][0]['knownRunnerSeconds'], 120)
+
+    def test_source_cost_cohorts_conserve_retries_failures_active_and_unknown_cost(self):
+        runs = []
+        for identity, mode, eligible, elapsed, status, conclusion in (
+                (200, 'shadow', True, 120, 'completed', 'success'),
+                (201, 'enabled', True, 30, 'completed', 'success'),
+                (202, 'enabled', True, 40, 'completed', 'failure'),
+                (203, 'enabled', None, 15, 'in_progress', None),
+                (204, None, None, None, 'completed', 'failure')):
+            run = {**deepcopy(self.target), 'event': 'push', 'runId': identity,
+                   'sourceRevision': ('c' if identity == 201 else 'b') * 40}
+            job = run['jobs'][0]
+            job.update(jobId=identity, runnerSeconds=elapsed, status=status, conclusion=conclusion,
+                       sourceReuse={'mode': mode, 'eligible': eligible,
+                                    'hit': None if eligible is None else mode == 'enabled' and eligible is True,
+                                    'reason': 'verified-exact-queue-proof' if eligible else None})
+            runs.append(run)
+        retry = {**deepcopy(runs[0]), 'jobs': [deepcopy(runs[0]['jobs'][0]),
+                                             {**deepcopy(runs[1]['jobs'][0]), 'jobId': 205, 'runAttempt': 2}]}
+        # Carried earlier-attempt jobs appear in native retry inventories once.
+        retry['jobs'][1]['sourceReuse']['mode'] = 'shadow'
+        retry['jobs'][1]['sourceReuse']['hit'] = False
+        report = costs.source_proof_rollout([*runs, retry])
+        self.assertEqual(len(report['rows']), 6)
+        self.assertEqual(sum(row['knownRunnerSeconds'] or 0 for row in report['costCohorts']), 235)
+        self.assertEqual(sum(row['unknownDurationJobs'] for row in report['costCohorts']), 1)
+        active = next(row for row in report['costCohorts'] if row['status'] == 'in_progress')
+        self.assertEqual(active['knownRunnerSeconds'], 15)
+        self.assertIsNone(active['completedJobMedianSeconds'])
+        self.assertEqual({row['sourceRevision'] for row in report['costCohorts']}, {'b' * 40, 'c' * 40})
+        self.assertEqual(costs.source_proof_rollout([runs[1]])['costCohorts'][0]['completedJobMedianSeconds'], 30)
+        conflict = deepcopy(runs[0]); conflict['jobs'][0]['runnerSeconds'] = 121
+        with self.assertRaisesRegex(ValueError, 'Conflicting native source-job'):
+            costs.source_proof_rollout([runs[0], conflict])
+        rendered = costs.markdown({'observedAt': 'now', 'baseline': {'cohorts': []},
+                                   'observation': {'cohorts': [], 'complete': False}, 'limitations': [],
+                                   'sourceProofRollout': report})
+        self.assertIn('Whole-job occupancy includes setup, lookup, retention and cleanup', rendered)
+        self.assertIn('Active elapsed time remains censored', rendered)
+        self.assertIn('| unknown | unknown | unknown | unknown | failure/success |', rendered)
+        self.assertIn('| 15 | 0 | unknown |', rendered)
+
     def test_source_aggregate_or_recorded_tools_cannot_match_across_cohorts(self):
         for change in ('source', 'aggregate', 'tool'):
             with self.subTest(change=change):

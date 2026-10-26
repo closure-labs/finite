@@ -299,14 +299,33 @@ def source_proof_rollout(runs):
             rows.append({'runId': run['runId'], 'jobId': job['jobId'], 'runAttempt': job['runAttempt'],
                          'sourceRevision': run['sourceRevision'], 'status': job['status'],
                          'conclusion': job['conclusion'],
+                         'workflowStatus': run['status'], 'workflowConclusion': run['conclusion'],
+                         'runnerSeconds': job.get('runnerSeconds'),
+                         'exclusiveRunnerSeconds': job.get('exclusiveRunnerSeconds'),
                          **{key: receipt.get(key) for key in ('mode', 'eligible', 'hit', 'reason',
                                                             'producer', 'shadowMatch', 'lookupSeconds')}})
+    dimensions = ('sourceRevision', 'mode', 'eligible', 'hit', 'reason', 'status', 'conclusion',
+                  'workflowStatus', 'workflowConclusion')
+    groups = defaultdict(list)
+    for row in rows:
+        groups[tuple(row[key] for key in dimensions)].append(row)
+    cohorts = []
+    for key, entries in groups.items():
+        measured = [row['runnerSeconds'] for row in entries if row['runnerSeconds'] is not None]
+        completed = [row['runnerSeconds'] for row in entries
+                     if row['status'] == 'completed' and row['runnerSeconds'] is not None]
+        cohorts.append({**dict(zip(dimensions, key)), 'jobs': len(entries),
+                        'knownRunnerSeconds': sum(measured) if measured else None,
+                        'unknownDurationJobs': len(entries) - len(measured),
+                        'completedJobMedianSeconds': statistics.median(completed) if completed else None})
     return {'authorizesPublication': False, 'activationDecision': None,
             'shadowMatches': sum(row['mode'] == 'shadow' and row['shadowMatch'] is True
-                                 and row['status'] == 'completed' and row['conclusion'] == 'success' for row in rows),
+                                 and row['status'] == 'completed' and row['conclusion'] == 'success'
+                                 and row['workflowStatus'] == 'completed'
+                                 and row['workflowConclusion'] == 'success' for row in rows),
             'shadowMismatches': sum(row['shadowMatch'] is False for row in rows),
             'enabledHits': sum(row['hit'] is True for row in rows),
-            'unknownJobs': sum(row['eligible'] is None for row in rows), 'rows': rows}
+            'unknownJobs': sum(row['eligible'] is None for row in rows), 'rows': rows, 'costCohorts': cohorts}
 
 
 def source_repetition(runs):
@@ -527,5 +546,19 @@ def markdown(report):
         lines += [f'Authenticated source-proof rollout: {rollout["shadowMatches"]} successful shadow matches, '
                   f'{rollout["shadowMismatches"]} mismatches, {rollout["enabledHits"]} enabled hits and '
                   f'{rollout["unknownJobs"]} jobs with unknown eligibility. No activation decision is inferred.', '']
+        if rollout.get('costCohorts'):
+            def shown(value):
+                return 'unknown' if value is None else str(value)
+            lines += ['Source-proof complete-job costs, separated by revision, mode and outcome:', '',
+                      '| Revision | Mode | Eligible | Hit | Reason | Job / workflow outcome | Jobs | Known runner seconds | Unknown durations | Completed job median seconds |',
+                      '| --- | --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: |']
+            for row in rollout['costCohorts']:
+                lines.append(f'| {row["sourceRevision"][:12]} | {shown(row["mode"])} | {shown(row["eligible"])} | {shown(row["hit"])} | {shown(row["reason"])} | '
+                             f'{shown(row["conclusion"])}/{shown(row["workflowConclusion"])} | {row["jobs"]} | '
+                             f'{shown(row["knownRunnerSeconds"])} | {row["unknownDurationJobs"]} | {shown(row["completedJobMedianSeconds"])} |')
+            lines += ['', 'Whole-job occupancy includes setup, lookup, retention and cleanup. '
+                      'Active elapsed time remains censored and is excluded from completed medians. '
+                      'Lookup and other nested stages must not be added to job cost. '
+                      'Different revisions are separate cohorts; these observations do not establish causal savings.', '']
     lines.extend('- ' + item for item in report['limitations'])
     return '\n'.join(lines) + '\n'

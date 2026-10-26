@@ -9,6 +9,7 @@ the recorded revision and date.
 
 | Record | Scope |
 | --- | --- |
+| [Source-proof canary readiness, October 26 UTC](ci-source-canary-readiness-2026-10-26.md) | Five authenticated natural shadow matches, whole-job baseline and bounded canary procedure |
 | [CI stage blocking and source-proof rollout, October 26 UTC](ci-stage-blocking-2026-10-26.md) | First natural source-proof match, conserved stage blocking intervals and completed combined rollout |
 | [CI gate rollout and recent costs, October 26 UTC](ci-gate-rollout-2026-10-26.md) | Conserved 155-run census, current implementation status, bounded VM failure evidence and native authority roles |
 | [CI gate consolidation, October 25 UTC](ci-gate-consolidation-2026-10-25.md) | One proposal approval validation and ordered health, release-gate, event-worker and source-proof follow-up |
