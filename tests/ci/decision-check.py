@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import importlib.util
 import base64
+from copy import deepcopy
+from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 from pathlib import Path
@@ -262,7 +264,7 @@ class Checks(unittest.TestCase):
         import yaml
         workflow = yaml.safe_load((ROOT / '.github/workflows/decision-authority.yml').read_text())
         discover = workflow['jobs']['discover']
-        self.assertEqual(discover['permissions'], {'contents': 'read', 'actions': 'read', 'pull-requests': 'read'})
+        self.assertEqual(discover['permissions'], {'contents': 'read', 'actions': 'read', 'pull-requests': 'read', 'checks': 'read'})
         self.assertFalse(any(s.get('uses') == './.github/actions/setup-nix'
                              or s.get('uses', '').startswith('actions/create-github-app-token@')
                              for s in discover['steps']))
@@ -291,6 +293,231 @@ class Checks(unittest.TestCase):
         self.assertTrue(mod.governed('scripts/ci/decision_revocation.py'))
         self.assertTrue(mod.governed('scripts/ci/execute-release-set.py'))
         self.assertFalse(mod.governed('docs/README.md'))
+
+
+class RecoveryGitHub(GitHub):
+    def __init__(self):
+        super().__init__()
+        self.controller = {'id': 55, 'path': mod.CONTROLLER, 'repository': {'full_name': REPO},
+                           'head_repository': {'full_name': REPO}, 'head_branch': 'main',
+                           'head_sha': 'e' * 40, 'status': 'in_progress', 'event': 'schedule', 'run_attempt': 1}
+        self.checks = {}
+        self.refs = []
+        self.pr['number'] = 7
+
+    def __call__(self, endpoint):
+        if endpoint.endswith('/actions/runs/55'): return self.controller
+        if '/git/matching-refs/' in endpoint: return self.refs
+        if '/check-runs?' in endpoint:
+            target = endpoint.split('/commits/')[1].split('/')[0]
+            values = self.checks.get(target, [])
+            return {'total_count': len(values), 'check_runs': deepcopy(values)}
+        return super().__call__(endpoint)
+
+
+class ApprovalRecovery(unittest.TestCase):
+    def setUp(self):
+        patcher = mock.patch.object(mod, 'validate_proposal_packet', return_value={})
+        self.validator = patcher.start()
+        self.addCleanup(patcher.stop)
+        self.api = RecoveryGitHub()
+        self.now = datetime(2026, 10, 26, 6, tzinfo=timezone.utc)
+        self.posts = []
+
+    def post(self, endpoint, body):
+        self.assertEqual(endpoint, f'repos/{REPO}/check-runs')
+        self.posts.append(body)
+        return {'app': {'id': 123}}
+
+    def stamp(self, state='success', target=HEAD, *, minutes=20, app=123):
+        fingerprint = mod.review_fingerprint(self.api, REPO, 7, HEAD)
+        row = {'id': 90, 'name': mod.CHECK_NAME, 'head_sha': target, 'app': {'id': app},
+               'status': 'completed', 'conclusion': 'success' if state == 'success' else 'failure',
+               'completed_at': (self.now - timedelta(minutes=minutes)).isoformat(),
+               'external_id': mod.REVIEW_STAMP + fingerprint + ':' + state}
+        self.api.checks[target] = [row]
+        return row
+
+    def targets(self, **kwargs):
+        return mod.recovery_targets(REPO, 55, 123, kwargs.pop('api', self.api), now=self.now, **kwargs)
+
+    def worker(self, target=HEAD, **kwargs):
+        return mod.run_checks(REPO, 55, BOT, 123, kwargs.pop('api', self.api), self.post,
+                              expected=(7, HEAD, target), recovery=True)
+
+    def test_late_approval_replaces_old_rejection_with_fresh_validation(self):
+        approved = deepcopy(self.api.reviews)
+        self.api.reviews = []
+        self.stamp('review-required', minutes=30)
+        self.assertEqual(self.targets(), {'include': []})
+        self.api.reviews = approved
+        self.api.reviews[0]['submitted_at'] = '2000-01-01T00:00:00Z'
+        self.assertEqual(self.targets()['include'], [{'number': 7, 'head': HEAD, 'target': HEAD}])
+        self.worker()
+        self.assertEqual(self.posts[0]['conclusion'], 'success')
+        self.assertTrue(self.posts[0]['external_id'].endswith(':success'))
+        self.assertEqual(self.api.calls.count(f'repos/{REPO}/pulls/7/reviews?per_page=100&page=1') > 0, True)
+
+    def test_unchanged_success_or_real_review_rejection_starts_no_worker(self):
+        for state in ('success', 'review-required', 'invalid'):
+            with self.subTest(state=state):
+                self.stamp(state, minutes=10000)
+                self.assertEqual(self.targets(), {'include': []})
+        self.assertEqual(self.posts, [])
+
+    def test_missing_foreign_or_unstamped_check_is_selected(self):
+        self.assertEqual(len(self.targets()['include']), 1)
+        self.stamp(app=999)
+        self.assertEqual(len(self.targets()['include']), 1)
+        row = self.stamp()
+        row['external_id'] = None
+        self.assertEqual(len(self.targets()['include']), 1)
+        row['head_sha'] = MERGE
+        with self.assertRaisesRegex(ValueError, 'native target'): self.targets()
+
+    def test_event_grace_and_technical_retry_are_bounded(self):
+        row = self.stamp('technical-error', minutes=1)
+        self.assertEqual(self.targets(), {'include': []})
+        row['completed_at'] = (self.now - timedelta(minutes=3)).isoformat()
+        self.assertEqual(len(self.targets()['include']), 1)
+        row['completed_at'] = self.now.replace(tzinfo=None).isoformat()
+        with self.assertRaisesRegex(ValueError, 'timestamp'): self.targets()
+
+    def test_manual_recheck_is_scoped_and_forces_live_validation(self):
+        self.api.controller['event'] = 'workflow_dispatch'
+        self.stamp()
+        with self.assertRaisesRegex(ValueError, 'one PR'): self.targets()
+        self.assertEqual(self.targets(number=7)['include'], [{'number': 7, 'head': HEAD, 'target': HEAD}])
+        self.worker()
+        self.assertEqual(len(self.posts), 1)
+        self.api.controller['event'] = 'schedule'
+        with self.assertRaisesRegex(ValueError, 'native open PRs'): self.targets(number=7)
+
+    def test_recovery_cannot_bypass_missing_approval_or_revocation(self):
+        for state in ('DISMISSED', 'CHANGES_REQUESTED'):
+            with self.subTest(state=state):
+                self.api.reviews[0]['state'] = state
+                self.posts = []
+                self.worker()
+                self.assertEqual(self.posts[0]['conclusion'], 'failure')
+                self.assertTrue(self.posts[0]['external_id'].endswith(':review-required'))
+        self.api.reviews = []
+        self.posts = []
+        self.worker()
+        self.assertEqual(self.posts[0]['conclusion'], 'failure')
+
+    def test_review_dismissal_and_self_approval_edit_change_snapshot(self):
+        before = mod.review_fingerprint(self.api, REPO, 7, HEAD)
+        self.api.reviews[0]['state'] = 'DISMISSED'
+        self.assertNotEqual(mod.review_fingerprint(self.api, REPO, 7, HEAD), before)
+        self.api.reviews[0].update(state='COMMENTED', body='/decider approve ' + HEAD)
+        approved = mod.review_fingerprint(self.api, REPO, 7, HEAD)
+        self.api.reviews[0]['body'] = '/decider withdraw ' + HEAD
+        self.assertNotEqual(mod.review_fingerprint(self.api, REPO, 7, HEAD), approved)
+
+    def test_review_change_during_validation_cannot_post_late_success(self):
+        self.validator.side_effect = lambda _: self.api.reviews.clear()
+        result = self.worker()
+        self.assertEqual(result['checks'][0]['status'], 'obsolete')
+        self.assertEqual(result['checks'][0]['reason'], 'review-changed')
+        self.assertEqual(self.posts, [])
+
+    def test_moved_head_and_queue_replacement_cannot_receive_success(self):
+        self.api.pr['head']['sha'] = 'b' * 40
+        self.assertEqual(self.worker()['checks'][0]['status'], 'obsolete')
+        self.assertEqual(self.posts, [])
+        self.api.pr['head']['sha'] = HEAD
+        self.api.refs = [{'ref': 'refs/heads/gh-readonly-queue/main/pr-7-abcdef0',
+                          'object': {'type': 'commit', 'sha': MERGE}}]
+        self.assertEqual({row['target'] for row in self.targets()['include']}, {HEAD, MERGE})
+        self.validator.side_effect = lambda _: self.api.refs.clear()
+        with self.assertRaisesRegex(ValueError, 'Queue target changed'): self.worker(MERGE)
+        self.assertEqual(self.posts, [])
+
+    def test_forged_recovery_origin_is_rejected_before_discovery_or_writes(self):
+        original = deepcopy(self.api.controller)
+        for change in ({'event': 'pull_request'}, {'head_branch': 'topic'}, {'path': 'attacker.yml'},
+                       {'status': 'completed'}, {'id': 56}, {'run_attempt': True},
+                       {'head_repository': {'full_name': 'attacker/repo'}}):
+            with self.subTest(change=change):
+                self.api.controller = {**original, **change}
+                with self.assertRaises(ValueError): self.targets()
+                with self.assertRaises(ValueError): self.worker()
+        self.assertEqual(self.posts, [])
+
+    def test_discovery_is_metadata_only_and_inventory_failures_do_not_spawn_writers(self):
+        self.targets()
+        self.assertFalse(any('/contents/' in endpoint or endpoint.startswith('orgs/') for endpoint in self.api.calls))
+        def incomplete(endpoint):
+            value = self.api(endpoint)
+            if '/check-runs?' in endpoint: value['total_count'] += 1
+            return value
+        with self.assertRaisesRegex(ValueError, 'Incomplete'): self.targets(api=incomplete)
+        self.assertEqual(self.posts, [])
+
+    def test_transient_metadata_error_is_stamped_for_recovery_not_as_stable_rejection(self):
+        def unavailable(endpoint):
+            if '/files?' in endpoint:
+                try:
+                    raise mod.authority.GitHubReadError('temporary metadata failure')
+                except mod.authority.GitHubReadError as error:
+                    raise mod.authority.AuthorityError('metadata unavailable') from error
+            return self.api(endpoint)
+        self.worker(api=unavailable)
+        self.assertEqual(self.posts[0]['conclusion'], 'failure')
+        self.assertTrue(self.posts[0]['external_id'].endswith(':technical-error'))
+
+    def test_review_snapshot_ignores_irrelevant_comments_but_binds_current_head(self):
+        fingerprint = mod.review_fingerprint(self.api, REPO, 7, HEAD)
+        extra = {**deepcopy(self.api.reviews[0]), 'id': 999, 'state': 'COMMENTED', 'body': 'Looks good'}
+        self.api.reviews.append(extra)
+        self.assertEqual(mod.review_fingerprint(self.api, REPO, 7, HEAD), fingerprint)
+        self.assertNotEqual(mod.review_fingerprint(self.api, REPO, 7, MERGE), fingerprint)
+
+    def test_manual_recovery_only_refreshes_check_not_test_jobs_or_publication(self):
+        self.api.controller['event'] = 'workflow_dispatch'
+        result = self.worker()
+        self.assertEqual(result['recoveryRun'], 55)
+        self.assertNotIn('collectorRun', result)
+        self.assertEqual(len(self.posts), 1)
+        self.assertEqual(self.posts[0]['name'], mod.CHECK_NAME)
+        self.assertEqual(self.posts[0]['head_sha'], HEAD)
+        self.assertFalse(any('/rerun' in endpoint or '/dispatches' in endpoint for endpoint in self.api.calls))
+
+    def test_manual_closed_pr_and_inconsistent_check_result_are_not_successful_refresh(self):
+        self.api.controller['event'] = 'workflow_dispatch'
+        self.api.pr['state'] = 'closed'
+        with self.assertRaisesRegex(ValueError, 'open main-targeting'): self.targets(number=7)
+        self.api.pr['state'] = 'open'
+        self.api.controller['event'] = 'schedule'
+        row = self.stamp('success')
+        row['conclusion'] = 'failure'
+        self.assertEqual(len(self.targets()['include']), 1)
+
+    def test_recovery_cli_reports_rejected_live_authority_as_failure(self):
+        import io
+        from contextlib import redirect_stdout
+        env = {'GITHUB_REPOSITORY': REPO, 'GITHUB_RUN_ID': '55',
+               'GITHUB_WORKFLOW_REF': REPO + '/' + mod.CONTROLLER + '@refs/heads/main',
+               'FINITE_REVIEW_BOT_LOGIN': BOT, 'FINITE_REVIEW_APP_ID': '123'}
+        for status, expected in (('review-required', 1), ('authorized', 0)):
+            with self.subTest(status=status), mock.patch.dict(mod.os.environ, env), \
+                    mock.patch.object(sys, 'argv', ['check', '--recovery-run', '55', '--pull-request', '7',
+                        '--expected-head', HEAD, '--target-sha', HEAD]), \
+                    mock.patch.object(mod, 'run_checks', return_value={'checks': [{'status': status}]}), \
+                    redirect_stdout(io.StringIO()):
+                self.assertEqual(mod.main(), expected)
+
+    def test_workflow_exposes_main_only_manual_recheck_and_cheap_periodic_repair(self):
+        import yaml
+        value = yaml.safe_load((ROOT / '.github/workflows/decision-authority.yml').read_text())
+        trigger = value.get('on', value.get(True))
+        self.assertTrue(trigger['workflow_dispatch']['inputs']['pull_request']['required'])
+        self.assertEqual(len(trigger['schedule']), 1)
+        discover = value['jobs']['discover']
+        self.assertIn("github.ref == 'refs/heads/main'", discover['if'])
+        self.assertFalse(any('setup-nix' in step.get('uses', '') for step in discover['steps']))
+        self.assertEqual(value['jobs']['authority']['if'], "needs.discover.outputs.has-targets == 'true'")
 
 
 if __name__ == '__main__':
