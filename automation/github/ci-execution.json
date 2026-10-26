@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "repository": "closure-labs/finite",
+  "repositoryId": 1293375784,
+  "decider": {"login": "cl-decider[bot]", "id": 344936881, "appId": 5384448, "appSlug": "cl-decider"},
+  "superAdmins": {"organization": "closure-labs", "slug": "super-admins", "id": 20196962},
+  "pullRequestStates": ["draft", "ready"],
+  "workflows": [".github/workflows/build.yml", ".github/workflows/codeql.yml", ".github/workflows/decision-events.yml"],
+  "executionApprovalOnly": true,
+  "grantsMergeApproval": false,
+  "otherContributors": "retain-existing-approval"
+}

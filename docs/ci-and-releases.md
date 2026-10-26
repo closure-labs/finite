@@ -9,6 +9,11 @@ the one-time policy activation and release transition.
 
 ## Build and validate
 
+Draft and ready PRs may start validation before human merge review. The
+[trusted CI execution policy](ci-execution-admission.md) automatically approves
+GitHub execution holds for Decider and live Super Admin authors on the current
+PR head; it grants no merge or publication approval.
+
 [Build Finite](https://github.com/closure-labs/finite/actions/workflows/build.yml)
 runs on pull requests, merge groups, main pushes, daily schedules and manual
 dispatches. It selects work from the complete Git diff for each event. The image
