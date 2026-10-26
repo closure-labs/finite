@@ -637,7 +637,9 @@ class Costs(unittest.TestCase):
     def test_source_reuse_unknown_disabled_and_missed_remain_distinct(self):
         artifact, original = self.source_reuse()
         for mode, eligible, hit, reason in [('off', None, None, 'disabled'),
-                ('enabled', None, None, 'lookup-unavailable'), ('enabled', False, False, 'no-exact-queue-proof')]:
+                ('enabled', None, None, 'lookup-unavailable'),
+                ('shadow', None, None, 'lookup-auth-unavailable'),
+                ('enabled', False, False, 'no-exact-queue-proof')]:
             value = {**original, 'mode': mode, 'eligible': eligible, 'hit': hit, 'reason': reason, 'producer': None}
             if mode == 'off':
                 value.update(seconds=None, startedAt=None)

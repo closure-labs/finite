@@ -187,6 +187,18 @@ class Toolchain(unittest.TestCase):
         self.assertFalse((ROOT / '.github/workflows/update-kernel.yml').exists())
         self.assertFalse((ROOT / 'sources/kernel-next.json').exists())
 
+    def test_source_proof_lookup_gets_a_step_scoped_read_only_native_token(self):
+        workflow = yaml.safe_load((ROOT / '.github/workflows/build.yml').read_text())
+        checks = workflow['jobs']['checks']
+        self.assertEqual(checks['permissions'], {'contents': 'read', 'actions': 'read'})
+        command = next(s for s in checks['steps'] if s.get('run') == 'python3 scripts/ci/nix-checks.py')
+        self.assertEqual(command['env']['GH_TOKEN'], "${{ github.repository == 'closure-labs/finite' && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.token || '' }}")
+        self.assertNotIn('GH_TOKEN', workflow.get('env', {}))
+        self.assertNotIn('GH_TOKEN', checks.get('env', {}))
+        for step in checks['steps']:
+            if step is not command:
+                self.assertNotIn('GH_TOKEN', step.get('env', {}))
+
 
 
 

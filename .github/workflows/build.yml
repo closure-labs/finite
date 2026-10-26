@@ -184,6 +184,10 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/actions/setup-nix
       - name: Build checks, retrying transient fetch failures
+        env:
+          # Only native main pushes look up producer evidence. Keep this
+          # existing read-only capability on the consuming step.
+          GH_TOKEN: ${{ github.repository == 'closure-labs/finite' && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.token || '' }}
         run: python3 scripts/ci/nix-checks.py
       - name: Select images from payload dependencies
         id: selection

@@ -550,6 +550,7 @@ class SourceProof(unittest.TestCase):
             self.assertNotIn('fixture-password', encoded)
             settings['access-tokens']['value'] = 'different-secret'
             self.assertEqual(proof.configuration(env), current)
+            self.assertEqual(proof.configuration({**env, 'GH_TOKEN': 'fixture-read-token'}), current)
             self.assertEqual(proof.configuration({**env, 'FINITE_SOURCE_PROOF_REUSE': 'shadow'}), current)
             self.assertNotEqual(proof.configuration({**env, 'FINITE_OPTIMIZED_CACHES': 'true'}), current)
             Path('flake.lock').write_text('{"changed":true}')
@@ -565,6 +566,42 @@ class SourceProof(unittest.TestCase):
             proof.main()
         self.assertNotIn('fixture-private-token', output.getvalue())
         self.assertIsNone(json.loads(output.getvalue())['eligible'])
+
+    def test_lookup_without_credentials_is_unknown_without_metadata_or_network(self):
+        for tokens in ({}, {'GH_TOKEN': '', 'GITHUB_TOKEN': ' '}):
+            output = io.StringIO()
+            with patch.dict(proof.os.environ, tokens, clear=True), \
+                    patch.object(proof.sys, 'argv', ['source_proof.py', '--lookup']), \
+                    patch.object(proof, 'configuration') as config, \
+                    patch.object(proof, 'lookup') as lookup, contextlib.redirect_stdout(output):
+                proof.main()
+            self.assertEqual(json.loads(output.getvalue()),
+                             {'eligible': None, 'reason': 'lookup-auth-unavailable'})
+            config.assert_not_called()
+            lookup.assert_not_called()
+
+    def test_native_token_names_reach_lookup_without_becoming_receipt_data(self):
+        for key in ('GH_TOKEN', 'GITHUB_TOKEN'):
+            output = io.StringIO()
+            with patch.dict(proof.os.environ, {key: 'fixture-private-token'}, clear=True), \
+                    patch.object(proof.sys, 'argv', ['source_proof.py', '--lookup']), \
+                    patch.object(proof, 'configuration', return_value=self.config), \
+                    patch.object(proof, 'lookup', return_value={'eligible': False, 'reason': 'no-exact-queue-proof'}) as lookup, \
+                    contextlib.redirect_stdout(output):
+                proof.main()
+            lookup.assert_called_once()
+            self.assertEqual(json.loads(output.getvalue())['configuration'], self.config)
+            self.assertNotIn('fixture-private-token', output.getvalue())
+
+    def test_queue_configuration_capture_does_not_require_lookup_credentials(self):
+        output = io.StringIO()
+        with patch.dict(proof.os.environ, {}, clear=True), \
+                patch.object(proof.sys, 'argv', ['source_proof.py', '--configuration']), \
+                patch.object(proof, 'configuration', return_value=self.config), \
+                patch.object(proof, 'lookup') as lookup, contextlib.redirect_stdout(output):
+            proof.main()
+        self.assertEqual(json.loads(output.getvalue()), {'configuration': self.config})
+        lookup.assert_not_called()
 
     def test_interrupted_transfer_and_missing_receipt_never_produce_a_proof(self):
         @contextlib.contextmanager
