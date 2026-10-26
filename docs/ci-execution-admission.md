@@ -47,6 +47,8 @@ runs are left alone. The only mutation is the native Actions run's `/approve`
 endpoint. Mutations are not retried; an uncertain response is reconciled by
 reading the native state. An unresolved result fails without a second POST.
 Workers for the same PR/head are serialized without cancelling a running writer.
+Each worker re-scans the complete current blocked set, so replacing an older
+pending worker cannot strand its workflow when a newer event arrives.
 
 The Decider App already has Actions write permission. This worker requests only
 Actions write and contents/PR/members read, using the existing SecretSpec

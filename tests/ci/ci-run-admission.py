@@ -218,6 +218,30 @@ class Admission(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Incomplete'): mod.discover(self.event, self.env, self.rules, incomplete)
         self.assertEqual(self.posts, [])
 
+    def test_newest_worker_reconciles_all_blocked_current_head_runs(self):
+        other = {**deepcopy(self.run), 'id': 41, 'workflow_id': 51, 'path': '.github/workflows/codeql.yml'}
+        def api(endpoint):
+            if endpoint.endswith('/actions/runs/41'): return deepcopy(other)
+            if endpoint.endswith('/actions/workflows/51'):
+                return {'id': 51, 'path': other['path'], 'state': 'active'}
+            if '/actions/runs?' in endpoint:
+                return {'total_count': 2, 'workflow_runs': [deepcopy(self.run), deepcopy(other)]}
+            return self.api(endpoint)
+        # Only the newest event's run is passed in. The older pending worker
+        # may have been replaced; both native blocked executions must progress.
+        result = mod.approve(self.rules, 7, HEAD, [41], api=api, post=self.posts.append)
+        self.assertEqual([row['runId'] for row in result['runs']], [40, 41])
+        self.assertEqual(self.posts, ['repos/closure-labs/finite/actions/runs/40/approve',
+                                      'repos/closure-labs/finite/actions/runs/41/approve'])
+
+    def test_worker_requires_complete_blocked_inventory_before_any_mutation(self):
+        def incomplete(endpoint):
+            value = self.api(endpoint)
+            if '/actions/runs?' in endpoint: value['total_count'] = 2
+            return value
+        with self.assertRaisesRegex(ValueError, 'Incomplete'): self.approve(api=incomplete)
+        self.assertEqual(self.posts, [])
+
     def test_invalid_target_lists_never_issue_approval(self):
         for targets in ([], [True], [40, 40], [-1], [40] * 17):
             with self.subTest(targets=targets), self.assertRaises(ValueError):

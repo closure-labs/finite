@@ -91,18 +91,22 @@ def associated_pull(api, rules, run):
     return matches[0]
 
 
+def blocked_runs(api, rules, current):
+    listing = api(f'repos/{rules["repository"]}/actions/runs?event=pull_request&status=action_required&head_sha={current["head"]["sha"]}&per_page=100')
+    runs = listing.get('workflow_runs')
+    if (not isinstance(runs, list) or type(listing.get('total_count')) is not int
+            or listing['total_count'] != len(runs) or len(runs) > 100):
+        raise ValueError('Incomplete bounded CI approval inventory')
+    return [run for run in runs if bound_run(run, current, rules) and requires_approval(run)]
+
+
 def discover(event, env, rules, api=get_json):
     repository = rules['repository']
     if env.get('GITHUB_REPOSITORY') != repository:
         raise ValueError('Wrong CI admission repository')
     if env['GITHUB_EVENT_NAME'] == 'pull_request_target':
         current = pull(api, rules, event['number'], event['pull_request']['head']['sha'])
-        listing = api(f'repos/{repository}/actions/runs?event=pull_request&status=action_required&head_sha={current["head"]["sha"]}&per_page=100')
-        runs = listing.get('workflow_runs')
-        if (not isinstance(runs, list) or type(listing.get('total_count')) is not int
-                or listing['total_count'] != len(runs) or len(runs) > 100):
-            raise ValueError('Incomplete bounded CI approval inventory')
-        candidates = [(current, run) for run in runs if bound_run(run, current, rules) and requires_approval(run)]
+        candidates = [(current, run) for run in blocked_runs(api, rules, current)]
     elif env['GITHUB_EVENT_NAME'] == 'workflow_run':
         run_id = event['workflow_run']['id']
         if type(run_id) is not int or run_id < 1:
@@ -154,7 +158,13 @@ def approve(rules, number, head, run_ids, *, api=get_json, post=post_approval):
         result['status'] = 'manual-execution-approval-required'
         return result
     repository = rules['repository']
-    for run_id in run_ids:
+    # GitHub retains only the newest pending worker for this PR/head. Reconcile
+    # the complete current blocked set so coalescing cannot strand an older
+    # workflow whose pending worker was replaced by a later event.
+    targets = sorted(set(run_ids) | {run['id'] for run in blocked_runs(api, rules, current)})
+    if len(targets) > 16:
+        raise ValueError('Current blocked CI execution bound exceeded')
+    for run_id in targets:
         endpoint = f'repos/{repository}/actions/runs/{run_id}'
         run = api(endpoint)
         if not bound_run(run, current, rules):
