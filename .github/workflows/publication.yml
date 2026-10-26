@@ -364,42 +364,15 @@ jobs:
           cosign verify --new-bundle-format=false --key cosign.pub "$image"
           SIGN_IMAGE
 
-  preflight:
-    needs: [build, sign]
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    permissions:
-      contents: read
-      packages: read
-      actions: read
-    env:
-      PROFILE: ${{ inputs.profile }}
-    steps:
-      - name: Monitor hosted runner (Community)
-        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2
-        with:
-          egress-policy: audit
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: $/.github/actions/setup-nix
-      - name: Reject obsolete publication before VM work
-        env:
-          GH_TOKEN: ${{ github.token }}
-          IMAGE_ARTIFACT: ${{ needs.build.outputs.evidence }}
-        run: |
-          gh run download "$GITHUB_RUN_ID" --name "$IMAGE_ARTIFACT" --dir .bluebuild
-          nix develop --file lib/ci-tools.nix shell --command python3 scripts/bluebuild/publication-current.py \
-            --record ".bluebuild/$PROFILE-publication.json"
-
   qualification:
-    needs: [build, sign, preflight]
+    needs: [build, sign]
     permissions:
       contents: read
       packages: write
       actions: read
     uses: $/.github/workflows/qualification.yml
     with:
+      build_evidence: ${{ needs.build.outputs.evidence }}
       profile: ${{ inputs.profile }}
       channel: ${{ inputs.channel }}
       digest: ${{ needs.build.outputs.digest }}

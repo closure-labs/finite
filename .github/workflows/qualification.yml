@@ -2,6 +2,10 @@ name: Qualify candidate in Secure Boot VM
 on:
   workflow_call:
     inputs:
+      build_evidence:
+        description: Native publication record artifact; required for production qualification
+        type: string
+        default: ""
       profile:
         type: string
         required: true
@@ -87,6 +91,17 @@ jobs:
           cache-mode: none
       - name: Validate qualification execution context
         run: python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"
+      - name: Reject obsolete publication before reuse or VM work
+        if: ${{ !inputs.validation_only }}
+        env:
+          IMAGE_ARTIFACT: ${{ inputs.build_evidence }}
+        run: |
+          set -euo pipefail
+          [[ $IMAGE_ARTIFACT == "image-$PROFILE-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" ]]
+          gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" \
+            --name "$IMAGE_ARTIFACT" --dir .bluebuild
+          nix develop --file lib/ci-tools.nix shell --command python3 scripts/bluebuild/publication-current.py \
+            --record ".bluebuild/$PROFILE-publication.json"
       - name: Install context tools for the reuse pilot
         if: ${{ !inputs.validation_only && env.FINITE_QUALIFICATION_REUSE == 'true' && !inputs.force_qualification }}
         uses: $/.github/actions/setup-vm-tools
