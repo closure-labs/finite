@@ -26,7 +26,8 @@ jobs:
     if: >-
       github.repository == 'closure-labs/finite' &&
       (github.event_name == 'pull_request_target' ||
-       (github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'action_required'))
+       ((github.event.workflow_run.event == 'pull_request' || github.event.workflow_run.event == 'pull_request_review') &&
+        github.event.workflow_run.conclusion == 'action_required'))
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:

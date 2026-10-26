@@ -51,7 +51,7 @@ class Admission(unittest.TestCase):
         if endpoint.endswith('/actions/workflows/50'): return deepcopy(self.workflow)
         if '/actions/runs?' in endpoint:
             return {'total_count': 1, 'workflow_runs': [deepcopy(self.run)]}
-        if '/commits/' in endpoint and '/pulls?' in endpoint: return [{'number': 7}]
+        if '/pulls?state=open&base=main&head=' in endpoint: return [{'number': 7}]
         if endpoint.endswith('/teams/super-admins'):
             return {'id': 20196962, 'slug': 'super-admins', 'organization': {'login': 'closure-labs'}}
         if '/teams/super-admins/members?' in endpoint:
@@ -159,10 +159,102 @@ class Admission(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'execution changed'): self.approve(api=api)
         self.assertEqual(self.posts, [])
 
-    def test_missing_fork_association_is_resolved_through_native_commit_metadata(self):
+    def test_missing_fork_association_is_resolved_through_native_source_tuple(self):
         self.run['pull_requests'] = []
         self.assertEqual(self.approve()['status'], 'checked')
         self.assertEqual(len(self.posts), 1)
+
+    def test_missing_run_and_commit_associations_need_only_bounded_source_lookup(self):
+        self.run['pull_requests'] = []
+        reads = []
+        def api(endpoint):
+            reads.append(endpoint)
+            if '/commits/' in endpoint: self.fail('Commit associations may be empty and are not needed')
+            return self.api(endpoint)
+        self.assertEqual(self.approve(api=api)['status'], 'checked')
+        self.assertTrue(any('/pulls?state=open&base=main&head=fork%3Atopic&per_page=100&page=1' in path for path in reads))
+        self.assertEqual(len(self.posts), 1)
+
+    def test_source_lookup_never_substitutes_for_live_exact_head_or_author(self):
+        self.run['pull_requests'] = []
+        for mutation in ('head', 'repository', 'branch', 'untrusted-author'):
+            with self.subTest(mutation=mutation):
+                self.setUp();self.run['pull_requests'] = []
+                def api(endpoint):
+                    value = self.api(endpoint)
+                    if endpoint.endswith('/pulls/7') and self.pr_reads > 1:
+                        if mutation == 'head': value['head']['sha'] = 'b' * 40
+                        elif mutation == 'repository': value['head']['repo']['id'] = 100
+                        elif mutation == 'branch': value['head']['ref'] = 'other'
+                        else: value['user'] = {'type': 'User', 'login': 'outsider', 'id': 999}
+                    return value
+                with self.assertRaises(ValueError): self.approve(api=api)
+                self.assertEqual(self.posts, [])
+
+    def test_review_event_collector_is_allowed_but_other_review_workflows_are_not(self):
+        self.run.update(event='pull_request_review', path='.github/workflows/decision-events.yml')
+        self.workflow['path'] = self.run['path']
+        self.assertEqual(self.approve()['status'], 'checked')
+        self.assertEqual(len(self.posts), 1)
+        for path in ('.github/workflows/build.yml', '.github/workflows/codeql.yml'):
+            with self.subTest(path=path):
+                self.setUp();self.run.update(event='pull_request_review', path=path)
+                with self.assertRaises(ValueError): self.approve()
+                self.assertEqual(self.posts, [])
+
+    def test_coalesced_inventory_includes_review_collector_but_excludes_manual_runs(self):
+        review = {**deepcopy(self.run), 'id': 41, 'workflow_id': 51,
+                  'event': 'pull_request_review', 'path': '.github/workflows/decision-events.yml'}
+        manual = {**deepcopy(self.run), 'id': 42, 'event': 'workflow_dispatch'}
+        reads = []
+        def api(endpoint):
+            reads.append(endpoint)
+            if endpoint.endswith('/actions/runs/41'): return deepcopy(review)
+            if endpoint.endswith('/actions/workflows/51'):
+                return {'id': 51, 'path': review['path'], 'state': 'active'}
+            if '/actions/runs?' in endpoint:
+                return {'total_count': 3, 'workflow_runs': [deepcopy(self.run), deepcopy(review), manual]}
+            return self.api(endpoint)
+        result = self.approve(api=api)
+        self.assertEqual([row['runId'] for row in result['runs']], [40, 41])
+        self.assertEqual(len(self.posts), 2)
+        self.assertFalse(any('event=pull_request&' in endpoint for endpoint in reads))
+
+    def test_empty_ambiguous_or_oversized_source_lookup_fails_closed(self):
+        for candidates in ([], [{'number': 7}] * 2, [{'number': 7}] * 17):
+            with self.subTest(count=len(candidates)):
+                self.setUp();self.run['pull_requests'] = []
+                def api(endpoint):
+                    if '/pulls?state=open&base=main&head=' in endpoint: return candidates
+                    return self.api(endpoint)
+                with self.assertRaises(ValueError): self.approve(api=api)
+                self.assertEqual(self.posts, [])
+
+    def test_source_branch_is_url_encoded_and_missing_identity_is_rejected(self):
+        self.run['pull_requests'] = []
+        self.run['head_branch'] = self.pr['head']['ref'] = 'topic/quote$'
+        reads = []
+        def api(endpoint):
+            reads.append(endpoint)
+            return self.api(endpoint)
+        self.assertEqual(self.approve(api=api)['status'], 'checked')
+        self.assertTrue(any('head=fork%3Atopic%2Fquote%24' in path for path in reads))
+        self.assertEqual(len(self.posts), 1)
+        for change in ({'head_branch': ''}, {'head_sha': 'invalid'},
+                       {'head_repository': {'id': 99, 'full_name': 'invalid'}},
+                       {'head_repository': {'id': True, 'full_name': 'fork/finite'}}):
+            with self.subTest(change=change):
+                self.setUp();self.run.update(change, pull_requests=[])
+                with self.assertRaises(ValueError): self.approve()
+                self.assertEqual(self.posts, [])
+
+    def test_source_lookup_api_failure_is_not_an_empty_successful_origin(self):
+        self.run['pull_requests'] = []
+        def api(endpoint):
+            if '/pulls?state=open&base=main&head=' in endpoint: raise RuntimeError('metadata unavailable')
+            return self.api(endpoint)
+        with self.assertRaises(RuntimeError): self.approve(api=api)
+        self.assertEqual(self.posts, [])
 
     def test_ambiguous_or_foreign_pr_associations_cannot_approve(self):
         self.run['pull_requests'] = [{'number': 7}, {'number': 7}]

@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+from urllib.parse import quote
 
 from github_api import get_json
 
@@ -49,12 +50,18 @@ def pull(api, rules, number, head=None):
     return value
 
 
+def ci_context(run, rules):
+    return (run.get('path') in rules['workflows'] and
+            (run.get('event') == 'pull_request' or
+             run.get('event') == 'pull_request_review' and run.get('path') == '.github/workflows/decision-events.yml'))
+
+
 def bound_run(run, current, rules):
     head = current['head']
     repo = head.get('repo', {})
     return (isinstance(run, dict) and type(run.get('id')) is int and run['id'] > 0
             and type(run.get('run_attempt')) is int and run['run_attempt'] > 0
-            and run.get('event') == 'pull_request' and run.get('path') in rules['workflows']
+            and ci_context(run, rules)
             and run.get('repository', {}).get('id') == rules['repositoryId']
             and run.get('repository', {}).get('full_name') == rules['repository']
             and run.get('head_sha') == head['sha'] and run.get('head_branch') == head.get('ref')
@@ -75,9 +82,21 @@ def associated_pull(api, rules, run):
     if not isinstance(candidates, list) or len(candidates) > 16:
         raise ValueError('Invalid native CI PR associations')
     if not candidates:
-        # GitHub omits PR associations for some fork runs. Resolve through
-        # native commit associations, then bind the full repo/branch/head tuple.
-        candidates = authority.collection(api, f'repos/{rules["repository"]}/commits/{run["head_sha"]}/pulls')
+        # GitHub can omit both run and commit PR associations for an open fork.
+        # Query the native source owner/ref, then require the full immutable
+        # repo/branch/head tuple below. Query results alone grant no trust.
+        source = run.get('head_repository', {})
+        name, branch, sha = source.get('full_name'), run.get('head_branch'), run.get('head_sha')
+        if (not isinstance(name, str) or not authority.REPOSITORY.fullmatch(name)
+                or type(source.get('id')) is not int or source['id'] < 1
+                or not isinstance(branch, str) or not 0 < len(branch) <= 1024
+                or not isinstance(sha, str) or not authority.SHA.fullmatch(sha)):
+            raise ValueError('Missing native CI source identity')
+        selector = quote(name.split('/')[0] + ':' + branch, safe='')
+        candidates = authority.collection(api,
+            f'repos/{rules["repository"]}/pulls?state=open&base=main&head={selector}')
+    if len(candidates) > 16:
+        raise ValueError('Native CI PR origin inventory exceeds bound')
     matches = []
     for candidate in candidates:
         number = candidate.get('number') if isinstance(candidate, dict) else None
@@ -92,7 +111,7 @@ def associated_pull(api, rules, run):
 
 
 def blocked_runs(api, rules, current):
-    listing = api(f'repos/{rules["repository"]}/actions/runs?event=pull_request&status=action_required&head_sha={current["head"]["sha"]}&per_page=100')
+    listing = api(f'repos/{rules["repository"]}/actions/runs?status=action_required&head_sha={current["head"]["sha"]}&per_page=100')
     runs = listing.get('workflow_runs')
     if (not isinstance(runs, list) or type(listing.get('total_count')) is not int
             or listing['total_count'] != len(runs) or len(runs) > 100):
@@ -114,8 +133,7 @@ def discover(event, env, rules, api=get_json):
         run = api(f'repos/{repository}/actions/runs/{run_id}')
         if run.get('id') != run_id:
             raise ValueError('Native CI run ID differs from trigger')
-        if (run.get('event') != 'pull_request' or run.get('path') not in rules['workflows']
-                or not requires_approval(run)):
+        if not ci_context(run, rules) or not requires_approval(run):
             return {'include': []}
         candidates = [(associated_pull(api, rules, run), run)]
     else:

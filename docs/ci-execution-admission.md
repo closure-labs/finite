@@ -28,11 +28,17 @@ access to this repository. Maintainer-team membership or repository admin
 access outside Super Admins does not grant this exception. Membership/API
 failures leave execution unapproved.
 
-Each run must belong to the reviewed Build Finite, CodeQL or decision-event
-collector workflow, target this repository, and match the open main-targeting
+Each run must belong to a reviewed PR CI workflow. The decision-event collector
+also permits native `pull_request_review` executions, so an execution hold cannot
+strand a late review before authority validation. Other review-triggered,
+manual, schedule, merge-group and publication runs are excluded. Runs target this repository, and match the open main-targeting
 PR's exact head SHA, source repository ID and branch. Native workflow identity
 and active state are checked. Missing fork-run PR associations are resolved
-through native commit associations; ambiguous origins fail closed.
+through a bounded native open-PR lookup by source owner and branch. Each result
+must still match the full source repository ID/name, branch, exact head and
+open main-targeting PR. Commit associations can also be empty for an open fork,
+so they are not used as a prerequisite. Ambiguous or unavailable origins fail
+closed; the lookup never grants author trust.
 
 Draft and ready PRs use the same authorization. Opening, pushing, reopening or
 changing draft state triggers a cheap read-only discovery. An empty inventory
@@ -72,3 +78,22 @@ boundary changed its digest between the initial download and staged reuse.
 The fixture now uses a fixed ZIP member timestamp, with a clock-boundary
 regression. Production archive authentication and release transport are
 unchanged. This change is stacked on #272 for one combined protected validation.
+
+## Fork-origin lookup evidence
+
+A [read-only native snapshot](ci-fork-origin-2026-10-26.json) records an open
+[public fork PR](https://github.com/cli/cli/pull/14816) whose
+[workflow run](https://github.com/cli/cli/actions/runs/40157926064) has an empty PR
+association list. Its commit-to-PR lookup is also empty at the recorded head.
+The source owner/branch query identifies that exact open PR, and its source
+repository ID, branch and head match the native run. This is metadata lookup
+evidence; Finite's pinned Decider or live Super Admin authorization still runs
+independently before any execution approval.
+
+The current lookup rejects missing source identity, ambiguous or oversized
+results, changed heads, mismatched source repositories and unavailable metadata.
+An existing explicit PR association is still authenticated directly. Source
+branches are URL encoded, never inserted into shell commands. The reconciled
+blocked-run inventory also includes review-event collectors, so replacing an
+older pending worker cannot strand a late-review collector. Other review
+workflows and manual, schedule, merge-group or publication runs remain excluded.
