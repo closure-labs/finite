@@ -4,7 +4,8 @@ The [reviewed execution policy](../automation/github/ci-execution.json) permits
 Decider and current Super Admin authors to start CI automatically for draft and
 ready PRs. This applies to GitHub's fork-workflow execution approval only.
 Human merge review, protected queue checks and publication authority retain
-their existing rules. The worker never submits a PR review, posts a successful
+their existing rules. A stale human-review result can be refreshed through the
+[approval recheck](approval-recheck.md) action. The worker never submits a PR review, posts a successful
 check, enables auto-merge, approves an environment or publishes a product.
 
 Ordinary PR checks already run without waiting for the maintainer decision

@@ -13,6 +13,7 @@ Draft and ready PRs may start validation before human merge review. The
 [trusted CI execution policy](ci-execution-admission.md) automatically approves
 GitHub execution holds for Decider and live Super Admin authors on the current
 PR head; it grants no merge or publication approval.
+If a late review leaves an old rejection visible, use the [approval recheck](approval-recheck.md) action; periodic metadata reconciliation also repairs stale authority checks.
 
 [Build Finite](https://github.com/closure-labs/finite/actions/workflows/build.yml)
 runs on pull requests, merge groups, main pushes, daily schedules and manual
