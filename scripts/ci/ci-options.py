@@ -8,6 +8,7 @@ from pathlib import Path
 OPTIONS = ('FINITE_OPTIMIZED_CACHES', 'FINITE_CACHIX_WRITER', 'FINITE_REUSE_INVENTORY',
            'FINITE_GRYPE_DB_CACHE', 'FINITE_QUALIFICATION_REUSE', 'FINITE_QUALIFIED_ISO_PRESERVATION')
 ISO_CHANNELS_OPTION = 'FINITE_QUALIFIED_ISO_CHANNELS'
+SOURCE_PROOF_OPTION = 'FINITE_SOURCE_PROOF_REUSE'
 CHANNEL_PROFILES = {'finite': 'finite', 'finite-dev': 'finite-dev'}
 
 
@@ -31,6 +32,10 @@ def options(env):
             raise ValueError('Expected true or false for ' + key)
         result[key] = value
     result[ISO_CHANNELS_OPTION] = ','.join(iso_channels(env.get(ISO_CHANNELS_OPTION)))
+    mode = env.get(SOURCE_PROOF_OPTION) or 'off'
+    if mode not in ('off', 'shadow', 'enabled'):
+        raise ValueError('Expected off, shadow or enabled for ' + SOURCE_PROOF_OPTION)
+    result[SOURCE_PROOF_OPTION] = mode
     return result
 
 
