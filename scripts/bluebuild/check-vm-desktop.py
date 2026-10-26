@@ -8,6 +8,17 @@ import sys
 import tempfile
 
 LIMIT = 2 * 1024 * 1024
+ERROR_ROW_LIMIT = 512
+
+
+class ProcessObservationError(ValueError):
+    def __init__(self, number, row):
+        super().__init__('Malformed or unlabelled candidate process observation')
+        # comm contains process names, never command arguments. Bound the row
+        # before retaining it so a collection failure remains actionable.
+        self.details = {'stage': 'processes', 'rowNumber': number,
+                        'row': row[:ERROR_ROW_LIMIT], 'rowLength': len(row),
+                        'truncated': len(row) > ERROR_ROW_LIMIT}
 
 
 def command(args):
@@ -27,11 +38,11 @@ def observations(enforcement, kernel_enforcement, permissive, processes, listene
     if 'sshd_t' in permissive_types:
         raise ValueError('SSH fixture domain must enforce SELinux')
     rows = []
-    for line in processes.splitlines():
+    for number, line in enumerate(processes.splitlines(), 1):
         fields = line.split(None, 2)
         if (len(fields) != 3 or not fields[1].isascii() or not fields[1].isdigit()
                 or not re.fullmatch(r'[^\s:]+:[^\s:]+:[A-Za-z0-9_]+_t:[^\s]+', fields[0])):
-            raise ValueError('Malformed or unlabelled candidate process observation')
+            raise ProcessObservationError(number, line)
         rows.append({'pid': int(fields[1]), 'context': fields[0], 'command': fields[2]})
     if (not rows or len(rows) > 8192 or not any(row['pid'] == 1 for row in rows)
             or not any(row['command'] == 'sshd' and row['context'].split(':')[2] == 'sshd_t' for row in rows)):
@@ -73,8 +84,11 @@ def main():
         print(json.dumps(result, sort_keys=True))
         return 0
     except (OSError, ValueError, subprocess.SubprocessError) as error:
-        print(json.dumps({'schema': 1, 'status': 'error', 'error': str(error),
-                          'physicalHardwareAssessed': False}))
+        result = {'schema': 1, 'status': 'error', 'error': str(error),
+                  'physicalHardwareAssessed': False}
+        if isinstance(error, ProcessObservationError):
+            result['details'] = error.details
+        print(json.dumps(result))
         return 1
 
 

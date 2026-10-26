@@ -270,6 +270,27 @@ class Costs(unittest.TestCase):
                          {'qualification', 'qualification-upgrade'})
         self.assertEqual(costs.job_role('Publish (finite) / other / qualify'), 'unknown')
 
+    def test_authority_roles_bind_native_workflow_and_conserve_retry_cost(self):
+        worker = 'authority (269, ' + 'a' * 40 + ', ' + 'b' * 40 + ')'
+        self.run['path'] = '.github/workflows/decision-authority.yml'
+        self.jobs = [{**self.job, 'id': number, 'name': name}
+                     for number, name in enumerate(('discover', 'authority', worker), 1)]
+        report = self.observe()
+        self.assertEqual([j['role'] for j in report['jobs']],
+                         ['authority-discovery', 'maintainer-authority', 'maintainer-authority'])
+        self.assertEqual(len(report['jobs']), 3)
+        self.assertEqual(sum(r['runnerSeconds'] for r in costs.aggregate([report])), 360)
+        self.assertTrue(all(j['profile'] == 'shared_or_unknown' for j in report['jobs']))
+        for name in ('discover', 'authority', worker, 'authority (269, invalid, invalid)'):
+            self.assertEqual(costs.job_role(name), 'unknown')
+            self.assertEqual(costs.job_role(name, '.github/workflows/other.yml'), 'unknown')
+        for name in ('authority (0, ' + 'a' * 40 + ', ' + 'b' * 40 + ')', 'discover (future)'):
+            self.assertEqual(costs.job_role(name, self.run['path']), 'unknown')
+        self.run['path'] = '.github/workflows/decision-events.yml'
+        self.jobs = [{**self.job, 'name': 'collect'}]
+        self.assertEqual(self.observe()['jobs'][0]['role'], 'decision-event-collection')
+        self.assertEqual(costs.job_role('collect'), 'unknown')
+
     def test_skipped_synthetic_job_is_zero_cost(self):
         self.job['conclusion'] = 'skipped'
         self.assertEqual(self.observe()['jobs'][0]['runnerSeconds'], 0)

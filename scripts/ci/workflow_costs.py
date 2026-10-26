@@ -68,7 +68,15 @@ def profile(name):
     return matches[0] if len(matches) == 1 else 'shared_or_unknown'
 
 
-def job_role(name):
+def job_role(name, workflow=None):
+    # Generic collector/discovery names need the native workflow binding.
+    if workflow == '.github/workflows/decision-authority.yml':
+        if name == 'discover':
+            return 'authority-discovery'
+        if name == 'authority' or re.fullmatch(r'authority \([1-9][0-9]*, [a-f0-9]{40}, [a-f0-9]{40}\)', name):
+            return 'maintainer-authority'
+    if workflow == '.github/workflows/decision-events.yml' and name == 'collect':
+        return 'decision-event-collection'
     # Resolve exact native display names before reusable job suffixes.
     source_roles = {'Nix and runtime contracts': 'checks', 'Documentation checks': 'docs',
                     'Select checks': 'selection', 'CI gate': 'gate'}
@@ -139,7 +147,7 @@ def observe(run, api, now):
             eligibility = any(s.get('name') == 'Install context tools for the reuse pilot'
                               and s.get('conclusion') == 'success' for s in job.get('steps', []))
             jobs.append({'jobId': job['id'], 'runAttempt': job['run_attempt'], 'name': job['name'],
-                         'profile': profile(job['name']), 'role': job_role(job['name']),
+                         'profile': profile(job['name']), 'role': job_role(job['name'], run['path']),
                          'candidateDigest': None, 'stages': [],
                          'predecessorReuse': {'eligible': None, 'hit': None, 'missReason': None},
                          'inventoryReuse': {'eligible': None, 'hit': None, 'missReason': None, 'observedReused': None}, 'status': job['status'], 'conclusion': job.get('conclusion'),
