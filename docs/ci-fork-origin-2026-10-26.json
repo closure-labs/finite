@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "readOnly": true,
+  "observedAt": "2026-10-26T14:01:38.177274+00:00",
+  "repository": "cli/cli",
+  "pullRequest": 14816,
+  "prState": "open",
+  "baseBranch": "trunk",
+  "headSha": "6235af8fddba186b2ded7c686c24fe83289f7c46",
+  "headBranch": "docs/login-hint-scopes",
+  "sourceRepository": {
+    "id": 1432792115,
+    "fullName": "yunaremaia/cli-1"
+  },
+  "workflowRunId": 40157926064,
+  "nativeRunAssociations": [],
+  "nativeCommitAssociations": [],
+  "sourceTupleLookupMatches": [
+    14816
+  ],
+  "authorizesAnyExecution": false,
+  "extraCiRuns": 0
+}
