@@ -35,7 +35,8 @@ run_phase() {
   if [[ ${FINITE_VALIDATION_ONLY:-false} != true && $current == upgrade && $iso_preservation_enabled == true ]]; then
     status=0
     python3 scripts/bluebuild/measure.py predecessor-iso-reuse \
-      nix develop --file lib/ci-tools.nix shell --command python3 scripts/bluebuild/reuse-predecessor-iso.py --profile "$PROFILE" --digest "$digest" --output "$iso_dir" || status=$?
+      nix develop --file lib/ci-tools.nix shell --command python3 scripts/bluebuild/reuse-predecessor-iso.py --profile "$PROFILE" --digest "$digest" --output "$iso_dir" \
+      --diagnostics ".bluebuild/$PROFILE-predecessor-reuse.json" || status=$?
     if [[ $status == 0 ]]; then reused=true; fi
     if [[ $status != 0 && $status != 3 ]]; then return "$status"; fi
   fi

@@ -90,18 +90,28 @@ there is still no hosted four-worker result. The replay improvement in the
 
 The #285 graph change retains security, attestation, signing and final live
 promotion guards. Its first hosted failure was an outdated graph contract,
-corrected at `a4b4ecb397e9be51ab0d576f218a13496802a5ec`; protected rollout remains
-pending. Its native installer log confirms FlakeHub authentication was skipped.
+corrected at `a4b4ecb397e9be51ab0d576f218a13496802a5ec`. Both profiles passed
+[queue 40416602661](https://github.com/closure-labs/finite/actions/runs/40416602661),
+and #285 merged as `a32eb21e9fec7d8d52965a951193b538be14685c`.
+[Main 40423136364](https://github.com/closure-labs/finite/actions/runs/40423136364)
+passed with no images selected; its delivery-health and reconciliation callbacks
+also passed. The source job consumed an authenticated exact queue proof in 71
+runner seconds, with 2.773 seconds of lookup and no aggregate evaluation/build.
+These later observations are separate from the five-run cost sample above.
+The consolidated production preflight did not execute on that no-image main run;
+observe it on the next natural publication before claiming measured savings.
+Its earlier native installer log confirms FlakeHub authentication was skipped.
 
 ## Next bounded work
 
-1. Complete #285's corrected aggregate, protected queue and natural main rollout.
-   Measure the consolidated prepare job and whole publication, preserving both
-   profiles' fresh/upgrade evidence.
+1. #285 passed its corrected aggregate, both protected queue profiles and its
+   no-image main run. Measure the consolidated prepare job and whole publication
+   on the next natural image run, preserving both profiles' fresh/upgrade evidence.
 2. Observe a bounded four-worker historical-read controller with the same ledger,
    packet and tool cohort, then return to one before deciding ongoing adoption.
-3. Add bounded predecessor-ISO miss reasons without relaxing origin, integrity,
-   exact generation-context or acceptance checks. Use natural upgrade runs.
+3. The [bounded diagnostics implementation](ci-predecessor-diagnostics-2026-10-27.md)
+   preserves origin, integrity, exact generation-context and acceptance checks.
+   Observe its first natural upgrade receipts before changing eligibility.
 4. Keep runtime reuse blocked on complete installer/RPM/template/certificate
    identity and candidate-specific injection. Add Foundation timings before guest
    closure transport. Compression still needs matching released cohorts.

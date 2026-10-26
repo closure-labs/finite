@@ -296,6 +296,57 @@ def reconciliation_receipt(run, artifact, value, seen):
                           'failure' if row['outcome'] == 'error' else 'success'} for row in rows)
 
 
+def predecessor_reuse_receipt(run, artifact, value, seen):
+    """Native-bound observations; no part of this document authorizes reuse."""
+    reasons = {'no-successful-run', 'no-qualification-artifact', 'qualification-unavailable', 'legacy-evidence',
+               'candidate-or-profile-mismatch', 'generation-inputs-missing',
+               'generation-inputs-changed', 'generation-ineligible', 'preserved-iso-missing',
+               'installation-tag-missing', 'iso-transfer-timeout'}
+    if (not isinstance(value, dict) or type(value.get('schema')) is not int or value['schema'] != 1
+            or value.get('kind') != 'finite-predecessor-iso-reuse'
+            or value.get('authorizesPublication') is not False
+            or value.get('repository') != run['repository']
+            or value.get('runId') != str(run['runId'])
+            or value.get('revision') != run['sourceRevision']
+            or value.get('profile') not in ('finite', 'finite-dev')
+            or not isinstance(value.get('runAttempt'), str)
+            or not re.fullmatch(r'[1-9][0-9]*', value['runAttempt'])
+            or not isinstance(value.get('predecessorDigest'), str)
+            or not re.fullmatch(r'sha256:[0-9a-f]{64}', value['predecessorDigest'])
+            or value.get('outcome') not in ('hit', 'miss', 'error')):
+        raise ValueError('Predecessor observation differs from native producer')
+    expected = f'qualification-phase-{value["profile"]}-upgrade-{run["runId"]}-{value["runAttempt"]}'
+    if artifact['name'] != expected or run['workflow'] != '.github/workflows/build.yml':
+        raise ValueError('Predecessor observation is outside production upgrade evidence')
+    counts, paths = value.get('missCounts'), value.get('changedInputPaths')
+    if (type(value.get('runsExamined')) is not int or not 0 <= value['runsExamined'] <= 20
+            or type(value.get('artifactsExamined')) is not int or not 0 <= value['artifactsExamined'] <= 1000000
+            or not isinstance(counts, dict) or not set(counts).issubset(reasons)
+            or any(type(n) is not int or not 1 <= n <= 1000000 for n in counts.values())
+            or not isinstance(paths, list) or len(paths) > 20
+            or any(not isinstance(p, str) or len(p) > 200
+                   or not re.fullmatch(r'[A-Za-z0-9_./-]+', p) or p.startswith('/')
+                   or any(part in ('', '.', '..') for part in p.split('/')) for p in paths)
+            or paths != sorted(set(paths))
+            or type(value.get('changedInputPathsTruncated')) is not bool):
+        raise ValueError('Invalid or oversized predecessor miss observations')
+    jobs = [j for j in run['jobs'] if j['name'] == f'Publish ({value["profile"]}) / qualification / phase (upgrade)'
+            and j['role'] == 'qualification-upgrade'
+            and j['profile'] == value['profile'] and str(j['runAttempt']) == value['runAttempt']]
+    if len(jobs) != 1:
+        run['receiptCoverage']['unmatched'] += 1
+        return
+    job = jobs[0]
+    fingerprint = json.dumps(value, sort_keys=True)
+    binding = ('predecessor-reuse', job['jobId'])
+    previous = next((entry[2] for entry in seen if entry[:2] == binding), None)
+    if previous is not None and previous != fingerprint:
+        raise ValueError('Conflicting predecessor reuse observations')
+    seen.add((*binding, fingerprint))
+    job['predecessorReuseDiagnostics'] = {**value, 'artifactId': artifact['id'],
+                                         'artifactSha256': artifact['digest']}
+
+
 def join(run, artifacts, reader=bounded_reader):
     selected = [a for a in artifacts if re.fullmatch(
         r'(?:(?:image|security(?:-costs)?)-finite(?:-dev)?|qualification-phase-finite(?:-dev)?-(?:fresh|upgrade)|source-checks|reconciliation-costs)-'
@@ -343,6 +394,15 @@ def join(run, artifacts, reader=bounded_reader):
                         if entry.file_size > 65536:
                             raise ValueError('Oversized security phase receipt')
                         security_receipt(run, artifact, json.loads(b''.join(chunks(zipped, entry))), seen)
+                        continue
+                    if re.fullmatch(r'finite(?:-dev)?-predecessor-reuse\.json', name):
+                        if entry.file_size > 16384:
+                            raise ValueError('Oversized predecessor reuse observation')
+                        value = decode_json(b''.join(chunks(zipped, entry)))
+                        if (not isinstance(value, dict)
+                                or name != str(value.get('profile', '')) + '-predecessor-reuse.json'):
+                            raise ValueError('Predecessor observation filename/profile differs')
+                        predecessor_reuse_receipt(run, artifact, value, seen)
                         continue
                     if re.fullmatch(r'vm-(?:local|fresh|upgrade)/(?:guest-)?timings\.json', name):
                         if entry.file_size > 16384:
@@ -429,6 +489,12 @@ def join(run, artifacts, reader=bounded_reader):
                                 'missReason': 'unavailable' if status == 3 else None}
         run['receiptCoverage']['read'] += 1
     for job in run['jobs']:
+        observation = job.get('predecessorReuseDiagnostics')
+        if observation is not None:
+            expected = {'hit': 0, 'miss': 3, 'error': 2}[observation['outcome']]
+            if any(stage.get('status') != expected for stage in job['stages']
+                   if stage.get('stage') == 'predecessor-iso-reuse'):
+                raise ValueError('Predecessor observation differs from measured command outcome')
         if job.get('sourceReuse', {}).get('hit') is True and any(
                 stage['stage'] in ('Evaluate aggregate', 'Build aggregate') for stage in job['stages']):
             raise ValueError('Reused source cannot claim executed consumer phases')
