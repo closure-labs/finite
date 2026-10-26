@@ -486,6 +486,29 @@ class Reconciliation(unittest.TestCase):
     def execute(self, clock=1000):
         return reconcile.reconcile(now=lambda: clock)
 
+    def test_parallel_initial_history_keeps_final_authority_recheck_serial(self):
+        with patch.object(reconcile, 'verify', side_effect=self.verify) as verify:
+            result = reconcile.reconcile(now=lambda: 1000, historical_workers=4)
+        self.assertEqual(result[0]['status'], 'dispatched')
+        self.assertEqual(verify.call_args_list[0].kwargs, {'historical_workers': 4})
+        self.assertEqual(verify.call_args_list[1].kwargs, {})
+
+    def test_parallel_initial_history_does_not_bypass_revocation_before_dispatch(self):
+        self.verify_results = [{'status': 'covered', 'decision': {'proposalHash': self.identity}},
+                               {'status': 'revoked'}]
+        with self.assertRaisesRegex(ValueError, 'authority changed'):
+            reconcile.reconcile(now=lambda: 1000, historical_workers=4)
+        self.assertEqual(self.dispatched, [])
+
+    def test_worker_mode_is_observed_and_invalid_limits_fail_before_reconciliation(self):
+        with patch.object(reconcile.subprocess, 'check_output', return_value=SHA):
+            observer = reconcile.Observation(env=observation_env(), output=self.root / 'observations.json')
+        reconcile.reconcile(now=lambda: 1000, observer=observer, historical_workers=4)
+        self.assertEqual(json.loads(observer.output.read_text())['historicalReadWorkers'], 4)
+        for value in (True, 0, 2, '4'):
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, 'one or four'):
+                reconcile.reconcile(historical_workers=value)
+
     def test_claim_before_dispatch_and_live_authority_rechecked(self):
         result = self.execute()
         self.assertEqual(result[0]['status'], 'dispatched')

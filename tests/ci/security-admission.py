@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 import sys
 import tempfile
+import threading
 import unittest
 from unittest.mock import patch
 
@@ -98,8 +99,84 @@ class AdmissionTests(unittest.TestCase):
             self.allowed.add(identity)
         return identity
 
-    def verify(self, current=None, profile='finite'):
-        return module.verify(current or scan(), profile, 'closure-labs/finite', 'finite-review[bot]', self.records)
+    def verify(self, current=None, profile='finite', **options):
+        return module.verify(current or scan(), profile, 'closure-labs/finite', 'finite-review[bot]', self.records, **options)
+
+    def chain(self, length=8):
+        identities = []
+        for _ in range(length):
+            identities.append(self.write(self.proposal(supersedes=identities[-1:])))
+        return identities
+
+    def test_serial_and_parallel_history_return_identical_receipts(self):
+        self.chain()
+        serial = self.verify(historical_workers=1)
+        parallel = self.verify(historical_workers=4)
+        self.assertEqual(serial, parallel)
+        self.assertEqual(sum(c[0] == 'verify' for c in self.calls), 2)
+        self.assertEqual(sum(c[0] == 'history' for c in self.calls), 14)
+
+    def test_parallel_history_is_bounded_and_finishes_before_live_authority(self):
+        identities = self.chain()
+        lock, ready = threading.Lock(), threading.Event()
+        state = {'active': 0, 'maximum': 0, 'done': set()}
+        owner = threading.get_ident()
+        def history(proposal, *args, **kwargs):
+            identity = canonical_hash(proposal)
+            self.assertNotEqual(threading.get_ident(), owner)
+            with lock:
+                state['active'] += 1
+                state['maximum'] = max(state['maximum'], state['active'])
+                if state['active'] == 4:
+                    ready.set()
+            self.assertTrue(ready.wait(2), 'Independent historical reads did not overlap')
+            with lock:
+                state['active'] -= 1
+                state['done'].add(identity)
+            return self.historical(proposal, *args, **kwargs)
+        def authorize(*args, **kwargs):
+            self.assertEqual(threading.get_ident(), owner)
+            self.assertEqual(state['active'], 0)
+            self.assertEqual(state['done'], set(identities[:-1]))
+            return self.authorize(*args, **kwargs)
+        with patch.object(module, '_historical_provenance', side_effect=history), \
+                patch.object(module.authority, 'verify_proposal', side_effect=authorize):
+            self.assertEqual(self.verify(historical_workers=4)['status'], 'covered')
+        self.assertEqual(state['maximum'], 4)
+
+    def test_failed_parallel_history_cannot_reach_live_acceptance(self):
+        identities = self.chain()
+        def history(proposal, *args, **kwargs):
+            if canonical_hash(proposal) == identities[0]:
+                raise TechnicalError('Historical provenance unavailable')
+            return self.historical(proposal, *args, **kwargs)
+        with patch.object(module, '_historical_provenance', side_effect=history), \
+                patch.object(module.authority, 'verify_proposal') as active, \
+                self.assertRaisesRegex(TechnicalError, 'Historical provenance unavailable'):
+            self.verify(historical_workers=4)
+        active.assert_not_called()
+
+    def test_parallel_history_does_not_cache_current_authority_between_profiles(self):
+        identities = self.chain()
+        self.assertEqual(self.verify(historical_workers=4)['status'], 'covered')
+        self.allowed.remove(identities[-1])
+        with self.assertRaises(module.authority.AuthorityError):
+            self.verify(profile='finite-dev', historical_workers=4)
+        self.assertEqual(sum(c[0] == 'verify' for c in self.calls), 2)
+
+    def test_parallel_history_cannot_hide_changed_live_ledger(self):
+        self.chain()
+        before = self.tree()
+        with patch.object(self, 'tree', side_effect=[before, {'truncated': False, 'tree': []}]), \
+                self.assertRaisesRegex(TechnicalError, 'complete current main inventory'):
+            self.verify(historical_workers=4)
+
+    def test_invalid_worker_limits_fail_before_authority_reads(self):
+        self.chain()
+        for value in (True, 0, 2, 3, 5, '4', None):
+            with self.subTest(value=value), self.assertRaises(TechnicalError):
+                self.verify(historical_workers=value)
+        self.assertEqual(self.calls, [])
 
     def test_new_live_revocation_and_deleted_record_reject_stale_checkout(self):
         accepted = self.write(self.proposal())

@@ -127,6 +127,7 @@ jobs:
           PROPOSAL_DISPOSITION: ${{ inputs.disposition || 'accepted' }}
           DECISION_RATIONALE: ${{ inputs.rationale || '' }}
           DECISION_HASH: ${{ inputs.decision_hash || '' }}
+          DECISION_HISTORY_WORKERS: ${{ vars.FINITE_AUTHORITY_HISTORY_WORKERS || '1' }}
         run: |
           nix develop --file lib/ci-tools.nix release --command bash <<'CONTROLLER'
           set -euo pipefail
@@ -153,7 +154,7 @@ jobs:
                 --disposition "$PROPOSAL_DISPOSITION" --rationale "$DECISION_RATIONALE"
             fi
           fi
-          python3 scripts/ci/reconcile-decisions.py
+          python3 scripts/ci/reconcile-decisions.py --historical-read-workers "$DECISION_HISTORY_WORKERS"
           CONTROLLER
       - name: Retain bounded reconciliation costs including failures
         if: always()

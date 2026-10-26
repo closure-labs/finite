@@ -11,6 +11,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+from threading import RLock
 from urllib.parse import quote
 
 from github_api import GitHubReadError, get_json
@@ -32,7 +33,7 @@ _documents = ContextVar('immutable_authority_documents', default=None)
 @contextmanager
 def immutable_documents():
     """Reuse verified immutable bytes only for this reconciliation invocation."""
-    token = _documents.set({'values': {}, 'bytes': 0})
+    token = _documents.set({'values': {}, 'bytes': 0, 'lock': RLock()})
     try:
         yield
     finally:
@@ -98,9 +99,13 @@ def document_at(api, repository, path, revision):
         raise AuthorityError('Content lookup requires immutable commit SHA')
     documents = _documents.get()
     binding = (repository, path, revision)
-    if documents is not None and binding in documents['values']:
+    cached = None
+    if documents is not None:
+        with documents['lock']:
+            cached = documents['values'].get(binding)
+    if cached is not None:
         # Parse fresh objects so a caller cannot mutate another check's input.
-        return decode_document(documents['values'][binding])
+        return decode_document(cached)
     content = api(f'repos/{repository}/contents/{quote(path, safe="/")}?ref={revision}')
     if (not isinstance(content, dict) or content.get('type') != 'file'
             or content.get('encoding') not in ('base64', 'none')
@@ -130,10 +135,15 @@ def document_at(api, repository, path, revision):
         document = decode_document(raw)
         # Cache only bytes authenticated against immutable-ref metadata, Git
         # object SHA and strict JSON parsing. Exhaustion falls back to reads.
-        if (documents is not None and len(documents['values']) < DOCUMENT_ENTRIES
-                and documents['bytes'] + len(raw) <= DOCUMENT_BYTES):
-            documents['values'][binding] = raw
-            documents['bytes'] += len(raw)
+        if documents is not None:
+            with documents['lock']:
+                prior = documents['values'].get(binding)
+                if prior is not None and prior != raw:
+                    raise ValueError('Conflicting immutable proposal bytes')
+                if (prior is None and len(documents['values']) < DOCUMENT_ENTRIES
+                        and documents['bytes'] + len(raw) <= DOCUMENT_BYTES):
+                    documents['values'][binding] = raw
+                    documents['bytes'] += len(raw)
         return document
     except (ValueError, TypeError) as error:
         raise AuthorityError('Invalid proposal blob') from error

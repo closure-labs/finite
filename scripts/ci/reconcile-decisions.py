@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Resume eligible retained candidates after a merged human decision, without waiting runners."""
 import json
+import argparse
 from contextlib import ExitStack
 from datetime import datetime, timezone
 import math
@@ -150,12 +151,15 @@ def publication_busy():
     return False
 
 
-def reconcile(now=time.time, observer=None):
+def reconcile(now=time.time, observer=None, historical_workers=1):
+    if type(historical_workers) is not int or historical_workers not in (1, 4):
+        raise ValueError('Historical provenance requires one or four read workers')
     observer = observer or Observation()
-    return observer.call('reconciliation', _reconcile, now, observer)
+    observer.document['historicalReadWorkers'] = historical_workers
+    return observer.call('reconciliation', _reconcile, now, observer, historical_workers)
 
 
-def _reconcile(now, observer):
+def _reconcile(now, observer, historical_workers=1):
     controller.trusted_context()
     mode = load_json(controller.ROOT / 'automation/security/image-policy.json').get('mode', 'fixable-severity')
     if mode not in ('fixable-severity', 'upstream-maintained-risk', 'desktop-critical-only', 'maintainer-decision'):
@@ -181,7 +185,7 @@ def _reconcile(now, observer):
     journal = GitHubClient(controller.REPOSITORY, 'automation/decision-journal')
     with ExitStack() as staging, authority.immutable_documents():
         try:
-            return _reconcile_profiles(records, bot, journal, now, staging, observer)
+            return _reconcile_profiles(records, bot, journal, now, staging, observer, historical_workers)
         finally:
             observer.profile = None
             observer.call('staging-cleanup', staging.close)
@@ -198,7 +202,7 @@ def historical_native_result(native, profile):
     return controller.native_result(native, snapshot_time, snapshot_time, profile=profile)
 
 
-def _reconcile_profiles(records, bot, journal, now, staging, observer):
+def _reconcile_profiles(records, bot, journal, now, staging, observer, historical_workers=1):
     staged_key, directory = None, None
     actions = []
     for profile in controller.PROFILES:
@@ -233,7 +237,8 @@ def _reconcile_profiles(records, bot, journal, now, staging, observer):
         # independently enforces fresh native evidence and live authority.
         native = directory / profile
         scan = observer.call('native-evidence', historical_native_result, native, profile)
-        admission = observer.call('authority-check', verify, scan, profile, controller.REPOSITORY, bot)
+        options = {'historical_workers': 4} if historical_workers == 4 else {}
+        admission = observer.call('authority-check', verify, scan, profile, controller.REPOSITORY, bot, **options)
         if admission['status'] != 'covered':
             actions.append({'profile': profile, 'status': admission['status']})
             continue
@@ -309,7 +314,10 @@ def _reconcile_profiles(records, bot, journal, now, staging, observer):
 
 if __name__ == '__main__':
     try:
-        print(json.dumps({'schema': 1, 'actions': reconcile()}))
+        parser = argparse.ArgumentParser(description=__doc__)
+        parser.add_argument('--historical-read-workers', type=int, choices=(1, 4), default=1)
+        args = parser.parse_args()
+        print(json.dumps({'schema': 1, 'actions': reconcile(historical_workers=args.historical_read_workers)}))
     except Exception as error:
         print('Decision reconciliation failed: ' + str(error), file=sys.stderr)
         sys.exit(2)

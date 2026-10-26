@@ -5,6 +5,8 @@ GitHub authority checks; superseded ancestors require immutable merge provenance
 """
 import importlib.util
 import hashlib
+from concurrent.futures import ThreadPoolExecutor
+from contextvars import copy_context
 from pathlib import Path
 import re
 
@@ -179,8 +181,29 @@ def live_ledger(records, repository, github=None):
     return inventory
 
 
+def historical_batch(records, identities, repository, bot_login, github=None, workers=1):
+    """Read-only provenance only; never returns current acceptance authority."""
+    if type(workers) is not int or workers not in (1, 4):
+        raise TechnicalError('Historical provenance requires one or four read workers')
+    def historical(identity):
+        proposal = records[identity]['proposal']
+        number = authority.find_origin_pr(proposal, repository, bot_login, github=github)
+        return _historical_provenance(proposal, number, repository, bot_login, github)
+    if workers == 1 or len(identities) < 2:
+        return {identity: historical(identity) for identity in identities}
+    # Context copies share only bounded immutable bytes, protected by its lock.
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        pending = [(identity, pool.submit(copy_context().run, historical, identity)) for identity in identities]
+        try:
+            return {identity: future.result() for identity, future in pending}
+        except BaseException:
+            for _, future in pending:
+                future.cancel()
+            raise
+
+
 def verify(scan_result, profile, repository, bot_login,
-           records_path=ROOT / 'automation/decisions/security', github=None):
+           records_path=ROOT / 'automation/decisions/security', github=None, *, historical_workers=1):
     """Return covered/review-required/rejected/revoked and fresh authority receipts.
 
     Packet authenticity is established by the required App check before a human
@@ -190,6 +213,8 @@ def verify(scan_result, profile, repository, bot_login,
     """
     if profile not in PROFILES:
         raise TechnicalError('Unsupported publication profile')
+    if type(historical_workers) is not int or historical_workers not in (1, 4):
+        raise TechnicalError('Historical provenance requires one or four read workers')
     authority.validate_context(repository, bot_login)
     # Validate the scan before any decision can waive an infrastructure failure.
     initial = evaluate(scan_result, profile)
@@ -222,10 +247,10 @@ def verify(scan_result, profile, repository, bot_login,
     if len(leaves) != 1:
         raise TechnicalError('Multiple unrelated live decisions require explicit human supersession')
     active = next(iter(leaves))
-    receipts = {}
+    receipts, order = {}, []
     visiting, visited = set(), set()
 
-    def authenticate(identity):
+    def validate_chain(identity):
         if identity in visiting:
             raise TechnicalError('Security decision supersession cycle')
         if identity in visited:
@@ -236,7 +261,7 @@ def verify(scan_result, profile, repository, bot_login,
         record = records[identity]
         parents = record['payload']['supersedes']
         for parent in parents:
-            authenticate(parent)
+            validate_chain(parent)
             if not set(record['payload']['profiles']).intersection(records[parent]['payload']['profiles']):
                 raise TechnicalError('Decision supersedes an unrelated profile')
         if record['payload']['disposition'] == 'revoked':
@@ -245,17 +270,18 @@ def verify(scan_result, profile, repository, bot_login,
             parent_payload = records[parents[0]]['payload']
             if any(record['payload'][field] != parent_payload[field] for field in ('profiles', 'findings', 'packet')):
                 raise TechnicalError('Revocation differs from the complete accepted snapshot')
-        number = authority.find_origin_pr(record['proposal'], repository, bot_login, github=github)
-        if identity == active:
-            receipts[identity] = authority.verify_proposal(record['proposal'], number, repository,
-                                                          bot_login, require_merged=True, github=github)
-        else:
-            receipts[identity] = _historical_provenance(record['proposal'], number, repository, bot_login, github)
         visiting.remove(identity)
         visited.add(identity)
+        order.append(identity)
 
     for identity in sorted(relevant):
-        authenticate(identity)
+        validate_chain(identity)
+
+    ancestors = [identity for identity in order if identity != active]
+    receipts.update(historical_batch(records, ancestors, repository, bot_login, github, historical_workers))
+    number = authority.find_origin_pr(records[active]['proposal'], repository, bot_login, github=github)
+    receipts[active] = authority.verify_proposal(records[active]['proposal'], number, repository,
+                                                bot_login, require_merged=True, github=github)
     identity = active
     payload = records[identity]['payload']
     disposition = payload['disposition']
