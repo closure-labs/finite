@@ -73,7 +73,7 @@ class LegacyBoundary(unittest.TestCase):
             self.assertEqual(workflow.count('name: Enforce legacy release boundary'), 2)
             prepare, signer = workflow.split('\n  sign-release:', 1)
             self.assertLess(prepare.index('legacy-release-boundary.py'), prepare.index('uses: hastd/free-disk-space'))
-            self.assertLess(signer.index('legacy-release-boundary.py'), signer.index('uses: sigstore/cosign-installer'))
+            self.assertLess(signer.index('legacy-release-boundary.py'), signer.index('uses: $/.github/actions/setup-cosign'))
             self.assertLess(signer.index('name: Recheck current main policy before signing credentials'), signer.index('COSIGN_PRIVATE_KEY:'))
             self.assertLess(signer.index('name: Recheck current main policy before publication credentials'), signer.index('MERGE_QUEUE_TOKEN:'))
             self.assertIn('automation/security/', signer)

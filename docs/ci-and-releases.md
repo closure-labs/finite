@@ -740,3 +740,18 @@ and seven-day observation. Reports convey no approval authority and unavailable
 cache/retry/runner detail remains unknown. See the
 [October 23 audit](ci-workflow-audit-2026-10-23.md) for findings, candidate recovery
 constraints, native links and the remaining measurement gates.
+
+### Cosign download recovery
+
+Every maintained Cosign installer call uses the exact-workflow-commit
+`setup-cosign` action. It retains the pinned Sigstore installer, requested
+release, bootstrap digest and signature verification. Only that installer's
+curl configuration changes: its four download attempts wait 15 seconds between
+transient failures, with 15-second connection and 60-second transfer limits.
+Retries may start only within a 180-second retry budget; an already started
+transfer can finish within its 60-second limit. A healthy download has no added
+wait. HTTP 504 and curl's other transient conditions retry automatically;
+permanent HTTP errors and integrity/signature failures stop installation.
+The setting is scoped to the installer step, including sparse signing jobs.
+It neither reruns the job nor repeats successful qualification work. A present
+bad download is still rejected by the unchanged upstream verification.
