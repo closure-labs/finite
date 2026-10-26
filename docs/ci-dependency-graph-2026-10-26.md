@@ -108,8 +108,10 @@ pilot still require their release-ledger evidence.
 
 ## Verification
 
-The 86 focused toolchain, qualification, publication-authority and selection
-regressions passed. Failure fixtures cover wrong/missing native artifact names,
+The 95 focused toolchain, graph contract, qualification, publication-authority,
+publication-currentness and selection regressions passed. The first hosted aggregate caught an older
+graph contract that still expected the removed standalone preflight job. That
+assertion now checks the consolidated preparation gate before reuse instead. Failure fixtures cover wrong/missing native artifact names,
 interrupted acquisition and rejected publication records; existing qualification
 fixtures cover exact context, source eligibility and partial evidence. Actionlint
 through the checked self-reference adapter and offline Zizmor passed. Documentation
