@@ -61,6 +61,75 @@ def collection(path, key=None):
     raise ValueError('Decision collection exceeds bounded pagination')
 
 
+def callback_work(event_name, event):
+    """Skip only failed build callbacks with a complete, empty scan inventory.
+
+    This is a workload hint, never evidence of security health or approval.
+    Unknown metadata retains the existing controller and its strict validation.
+    """
+    needed = {'schema': 1, 'needed': True, 'reason': 'controller-required'}
+    if event_name != 'workflow_run':
+        return needed
+    try:
+        expected = event['workflow_run']
+        run_id = expected['id']
+        if (type(run_id) is not int or run_id <= 0
+                or event['repository']['full_name'] != REPOSITORY
+                or event['repository']['id'] != 1293375784):
+            return needed
+        fields = ('id', 'path', 'event', 'head_branch', 'status', 'conclusion',
+                  'head_sha', 'run_attempt')
+        def matches(run):
+            return (isinstance(run, dict)
+                    and all(run.get(key) == expected.get(key) for key in fields)
+                    and run.get('path') == '.github/workflows/build.yml'
+                    and run.get('event') in PRODUCERS['build.yml']
+                    and run.get('head_branch') == 'main'
+                    and run.get('status') == 'completed'
+                    and run.get('conclusion') in ('failure', 'cancelled', 'timed_out')
+                    and type(run.get('run_attempt')) is int and run['run_attempt'] > 0
+                    and re.fullmatch(r'[0-9a-f]{40}', run.get('head_sha', ''))
+                    and run.get('head_repository', {}).get('full_name') == REPOSITORY
+                    and run.get('head_repository', {}).get('id') == 1293375784
+                    and expected.get('head_repository', {}).get('full_name') == REPOSITORY
+                    and expected.get('head_repository', {}).get('id') == 1293375784)
+        # Ordinary successful builds and audits need no additional API reads.
+        if not matches(expected):
+            return needed
+        endpoint = f'repos/{REPOSITORY}/actions/runs/{run_id}'
+        if not matches(api(endpoint)):
+            return needed
+        seen, count = set(), None
+        for page in range(1, 11):
+            result = api(endpoint + f'/artifacts?per_page=100&page={page}')
+            total, items = result['total_count'], result['artifacts']
+            if (type(total) is not int or not 0 <= total <= 999
+                    or (count is not None and total != count)
+                    or not isinstance(items, list) or len(items) > 100):
+                return needed
+            count = total
+            for artifact in items:
+                if (not isinstance(artifact, dict) or type(artifact.get('id')) is not int
+                        or artifact['id'] <= 0 or artifact['id'] in seen
+                        or not isinstance(artifact.get('name'), str)):
+                    return needed
+                seen.add(artifact['id'])
+                # Include expired, partial and older-attempt scans: only the
+                # existing collector can validate or reject their provenance.
+                if artifact['name'].startswith('security-'):
+                    return needed
+            if len(items) < 100:
+                if len(seen) != count or not matches(api(endpoint)):
+                    return needed
+                return {'schema': 1, 'needed': False, 'reason': 'failed-build-without-scans',
+                        'sourceRun': run_id, 'sourceAttempt': expected['run_attempt'],
+                        'sourceConclusion': expected['conclusion'],
+                        'authorizesPublication': False}
+    except (ValueError, KeyError, TypeError, AttributeError):
+        pass
+    return needed
+
+
 def producer(run_id, allowed=None):
     if type(run_id) is not int or run_id <= 0:
         raise ValueError('Invalid producer run ID')

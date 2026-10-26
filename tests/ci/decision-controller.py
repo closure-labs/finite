@@ -48,6 +48,104 @@ def proposal():
 
 
 class Controller(unittest.TestCase):
+    def callback_event(self):
+        run = {**RUN, 'head_repository': {'id': 1293375784, 'full_name': mod.REPOSITORY}}
+        return {'repository': {'id': 1293375784, 'full_name': mod.REPOSITORY}, 'workflow_run': run}
+
+    def callback_reads(self, event, items=None):
+        return [event['workflow_run'], {'total_count': len(items or []), 'artifacts': items or []},
+                copy.deepcopy(event['workflow_run'])]
+
+    def test_failed_callback_without_scans_skips_privileged_setup_only(self):
+        for conclusion in ('failure', 'cancelled', 'timed_out'):
+            event = self.callback_event()
+            event['workflow_run']['conclusion'] = conclusion
+            with self.subTest(conclusion=conclusion), \
+                    mock.patch.object(mod, 'api', side_effect=self.callback_reads(event)) as api:
+                result = mod.callback_work('workflow_run', event)
+            self.assertFalse(result['needed'])
+            self.assertEqual(result['sourceAttempt'], 2)
+            self.assertEqual(result['sourceConclusion'], conclusion)
+            self.assertFalse(result['authorizesPublication'])
+            self.assertEqual(len(api.call_args_list), 3)
+            self.assertTrue(all(len(call.args) == 1 and not call.kwargs for call in api.call_args_list))
+
+    def test_success_manual_schedule_and_audit_callbacks_keep_work_without_reads(self):
+        event = self.callback_event()
+        for name in ('workflow_dispatch', 'schedule', 'push'):
+            with self.subTest(name=name), mock.patch.object(mod, 'api') as api:
+                self.assertTrue(mod.callback_work(name, event)['needed'])
+                api.assert_not_called()
+        for field, value in (('conclusion', 'success'), ('conclusion', 'unknown'),
+                             ('path', '.github/workflows/image-security.yml'),
+                             ('event', 'pull_request'), ('head_branch', 'feature')):
+            changed = copy.deepcopy(event)
+            changed['workflow_run'][field] = value
+            with self.subTest(field=field, value=value), mock.patch.object(mod, 'api') as api:
+                self.assertTrue(mod.callback_work('workflow_run', changed)['needed'])
+                api.assert_not_called()
+
+    def test_partial_expired_wrong_attempt_and_malformed_scan_metadata_keep_collector(self):
+        event = self.callback_event()
+        for item in ({'id': 1, 'name': 'security-finite-7-2'},
+                     {'id': 1, 'name': 'security-finite-7-1', 'expired': True},
+                     {'id': '1', 'name': 'costs'}, {'id': 1, 'name': None}):
+            with self.subTest(item=item), \
+                    mock.patch.object(mod, 'api', side_effect=self.callback_reads(event, [item])):
+                self.assertTrue(mod.callback_work('workflow_run', event)['needed'])
+
+    def test_callback_origin_mismatch_and_rerun_races_keep_existing_validation(self):
+        event = self.callback_event()
+        for index in (0, 2):
+            for field, value in (('id', 8), ('run_attempt', 3), ('head_sha', 'b' * 40),
+                                 ('status', 'in_progress'), ('conclusion', 'success'),
+                                 ('event', 'workflow_dispatch'), ('path', 'other.yml'),
+                                 ('head_branch', 'feature'), ('head_repository', {'full_name': 'other/repo'})):
+                reads = self.callback_reads(event)
+                reads[index] = {**reads[index], field: value}
+                with self.subTest(index=index, field=field), mock.patch.object(mod, 'api', side_effect=reads):
+                    self.assertTrue(mod.callback_work('workflow_run', event)['needed'])
+        for key, value in (('repository', {'id': 1, 'full_name': mod.REPOSITORY}),
+                           ('repository', {'id': 1293375784, 'full_name': 'other/repo'}),
+                           ('workflow_run', None)):
+            with self.subTest(key=key, value=value), mock.patch.object(mod, 'api'):
+                self.assertTrue(mod.callback_work('workflow_run', {**event, key: value})['needed'])
+
+    def test_callback_inventory_pagination_is_complete_and_bounded(self):
+        event = self.callback_event()
+        items = [{'id': n, 'name': 'costs-' + str(n)} for n in range(1, 101)]
+        for count, last in ((100, []), (101, [{'id': 101, 'name': 'costs-101'}])):
+            reads = [event['workflow_run'], {'total_count': count, 'artifacts': items},
+                     {'total_count': count, 'artifacts': last}, event['workflow_run']]
+            with self.subTest(count=count), mock.patch.object(mod, 'api', side_effect=reads):
+                self.assertFalse(mod.callback_work('workflow_run', event)['needed'])
+        for inventory in ({'total_count': 1, 'artifacts': []},
+                          {'total_count': 1000, 'artifacts': items},
+                          {'total_count': True, 'artifacts': []},
+                          {'total_count': 2, 'artifacts': [items[0], items[0]]},
+                          {'total_count': 0, 'artifacts': 'unknown'}, {}):
+            with self.subTest(inventory=inventory), mock.patch.object(mod, 'api',
+                    side_effect=[event['workflow_run'], inventory]):
+                self.assertTrue(mod.callback_work('workflow_run', event)['needed'])
+        with mock.patch.object(mod, 'api', side_effect=[event['workflow_run'],
+                {'total_count': 100, 'artifacts': items}, {'total_count': 99, 'artifacts': []}]):
+            self.assertTrue(mod.callback_work('workflow_run', event)['needed'])
+        with mock.patch.object(mod, 'api', side_effect=ValueError('read failed')):
+            self.assertTrue(mod.callback_work('workflow_run', event)['needed'])
+
+    def test_callback_workflow_gates_setup_and_keeps_failure_cost_upload(self):
+        import yaml
+        steps = yaml.safe_load((ROOT / '.github/workflows/decision-proposals.yml').read_text())['jobs']['reconcile']['steps']
+        probe = next(step for step in steps if step.get('id') == 'callback')
+        setup = next(step for step in steps if step.get('uses') == './.github/actions/setup-nix')
+        self.assertLess(steps.index(probe), steps.index(setup))
+        for step in steps:
+            if step.get('uses') == './.github/actions/setup-nix' or step.get('id') == 'review-token' \
+                    or step.get('name') in ('Resolve declared review App credentials', 'Propose findings or reconcile approved decisions'):
+                self.assertIn("steps.callback.outputs.needed == 'true'", step['if'])
+        upload = next(step for step in steps if step.get('name', '').startswith('Retain bounded reconciliation'))
+        self.assertEqual(upload['if'], 'always()')
+
     def test_security_summary_exposes_both_profiles_and_prioritizes_review_risks(self):
         from security_decisions import normalize_findings
         def observation(advisory, severity, known=False):

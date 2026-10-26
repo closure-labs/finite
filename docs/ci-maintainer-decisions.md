@@ -40,6 +40,22 @@ normalized CVE/component/exposure records, risk ceilings, and an immutable GHCR
 packet. Review summaries link vulnerabilities; the full packet contains native
 reports and authenticated producer identities and hashes.
 
+Before Nix or App credential setup, a completed build callback checks whether
+the producer failed, was cancelled or timed out without any native scan
+artifacts. The read-only check binds repository identity, workflow, event,
+source and attempt to live run metadata, verifies a complete bounded artifact
+inventory, then rechecks the run for a retry race. Only that case skips the
+controller callback. Missing, malformed or changing metadata keeps the existing
+controller path. Any `security-` artifact, including partial, expired or
+older-attempt evidence, also keeps strict collection and validation.
+
+This skip records the failed producer conclusion; it does not certify scan
+health or authorize publication. Independent delivery health still observes
+the build failure. Successful builds, security audits, decision-file pushes,
+scheduled reconciliation and explicit manual operations keep their existing
+behavior. The scheduled reconciler continues checking existing decisions even
+when a failed build supplied no new evidence.
+
 Only a current human member of `closure-labs/super-admins` (team ID `20196962`)
 with effective maintain/admin access may approve the exact PR head. The App-origin `Maintainer decision authority` check verifies current role,
 review state, live pinned-team membership, immutable proposal content and merge provenance. It also protects
