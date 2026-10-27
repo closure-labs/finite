@@ -298,9 +298,9 @@ class Gate(unittest.TestCase):
             self.assertLess(names.index('Validate generated text'), names.index('Open or update pull request'))
             self.assertGreaterEqual(workflow['jobs']['update']['timeout-minutes'], 210)
 
-    def lock_identity(self, user, *, slug='cl-decider', expected='cl-decider[bot]', fail=False):
+    def lock_identity(self, user, *, slug='cl-decider', expected='cl-decider[bot]', fail=False, workflow='update-flake-lock'):
         import yaml
-        steps = yaml.safe_load((ROOT / '.github/workflows/update-flake-lock.yml').read_text())['jobs']['update']['steps']
+        steps = yaml.safe_load((ROOT / f'.github/workflows/{workflow}.yml').read_text())['jobs']['update']['steps']
         step = next(step for step in steps if step.get('id') == 'pr-identity')
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -348,6 +348,42 @@ class Gate(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(output, 'name=cl-decider[bot]\nemail=344936881+cl-decider[bot]@users.noreply.github.com\npr-author=app/cl-decider\n')
         self.assertEqual(args.splitlines(), ['api', 'users/cl-decider[bot]'])
+
+    def test_foundation_update_uses_fresh_scoped_bot_auth_after_validation(self):
+        import yaml
+        workflow = yaml.safe_load((ROOT / '.github/workflows/update-foundation.yml').read_text())
+        job = workflow['jobs']['update']
+        self.assertIn("github.ref == 'refs/heads/main'", job['if'])
+        self.assertIn("github.repository == 'closure-labs/finite'", job['if'])
+        steps = job['steps']
+        token = next(step for step in steps if step.get('id') == 'foundation-pr-token')
+        self.assertEqual(token['if'], "steps.release.outputs.changed == 'true'")
+        self.assertEqual({k: v for k, v in token['with'].items() if k.startswith('permission-')},
+                         {'permission-contents': 'write', 'permission-pull-requests': 'write'})
+        self.assertEqual(token['with']['repositories'], '${{ github.event.repository.name }}')
+        create = next(step for step in steps if step.get('id') == 'update')
+        self.assertEqual(create['with']['token'], '${{ steps.foundation-pr-token.outputs.token }}')
+        self.assertEqual(create['with']['author'], '${{ steps.pr-identity.outputs.name }} <${{ steps.pr-identity.outputs.email }}>')
+        self.assertEqual(create['with']['committer'], create['with']['author'])
+        self.assertEqual(create['with']['add-paths'].splitlines(), ['flake.nix', 'flake.lock', 'sources/foundation.json'])
+        self.assertNotIn('MERGE_QUEUE', json.dumps(workflow))
+        names = [step.get('name') for step in steps]
+        self.assertLess(names.index('Validate generated text'), names.index('Create short-lived Decider PR token'))
+        self.assertLess(names.index('Clear Decider private credentials'), names.index('Open or update pull request'))
+        clear = next(step for step in steps if step.get('name') == 'Clear Decider private credentials')
+        self.assertEqual(clear['if'], "always() && steps.credentials.outcome == 'success'")
+
+    def test_foundation_identity_rejects_personal_auth_and_wrong_app(self):
+        bot = {'id': 344936881, 'login': 'cl-decider[bot]', 'type': 'Bot'}
+        result, output, _ = self.lock_identity(bot, workflow='update-foundation')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('name=cl-decider[bot]\n', output)
+        for user, options in (({'id': 1, 'login': 'declarative-dale', 'type': 'User'}, {}),
+                              ({**bot, 'id': True}, {}), (bot, {'slug': 'other-app'}), (bot, {'fail': True})):
+            with self.subTest(user=user, options=options):
+                result, output, _ = self.lock_identity(user, workflow='update-foundation', **options)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(output, '')
 
     def test_personal_or_malformed_bot_metadata_cannot_create_pr_identity(self):
         for user in ({'id': 1, 'login': 'declarative-dale', 'type': 'User'},
