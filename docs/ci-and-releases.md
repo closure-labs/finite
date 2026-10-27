@@ -9,6 +9,13 @@ the one-time policy activation and release transition.
 
 ## Build and validate
 
+CodeQL scans Actions and Python on pull requests and main pushes, plus weekly
+and manual runs. The protected merge queue retains `CI gate` and maintainer
+authority. CodeQL has no queue trigger while it is not a required check; adding
+it to required checks must also restore that trigger. See the
+[recent census](ci-recent-census-2026-10-27.md) for the measured event duplication
+and effective-rule snapshot.
+
 Draft and ready PRs may start validation before human merge review. The
 [trusted CI execution policy](ci-execution-admission.md) automatically approves
 GitHub execution holds for Decider and live Super Admin authors on the current

@@ -42,7 +42,7 @@ class Selection(unittest.TestCase):
                 self.assertEqual(impact.classify(['README.md', path]), {'checks': True, 'nix': False, 'profiles': sorted(impact.PROFILES)})
 
     def test_decision_controls_keep_contracts_without_rebuilding_os_images(self):
-        paths = ['.github/workflows/decision-proposals.yml', 'scripts/ci/decision-controller.py',
+        paths = ['.github/workflows/codeql.yml', '.github/workflows/decision-proposals.yml', 'scripts/ci/decision-controller.py',
                  'scripts/ci/decision-check.py', '.github/workflows/decision-authority.yml', 'scripts/ci/source_proof.py',
                  'scripts/ci/reconcile-decisions.py',
                  'scripts/ci/decision_controller.py', 'scripts/ci/security_admission.py',
