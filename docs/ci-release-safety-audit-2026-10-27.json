@@ -145,8 +145,8 @@
     "Final-source policy audit, stable qualification and workstation pilot"
   ],
   "proposedSourceSha256": {
-    "scripts/ci/nix-checks.py": "3c2fb400b3c05fcaeb30908d33d1604dfd617e9febc98d3ee2926cb4dd06c791",
-    "tests/ci/nix-checks.py": "61b532cf628bc9e65a5422d3504a1df159e146cdfe5cf7c2de0d46076d4cb4f6"
+    "scripts/ci/nix-checks.py": "ce9d1f8c4437ea133f190dff80cbe2bd9a568837e4f113ba5cb393a235916916",
+    "tests/ci/nix-checks.py": "51f6bf1ae0ac9a8f596641249c8e2b1e89dee4f58d22bee955de43ab1e626578"
   },
   "queueFailure": {
     "aggregateDerivation": "/nix/store/siq0wir94zgnmcda91z4qqmh1ijp9879-finite-ci-checks.drv",
@@ -181,7 +181,7 @@
     "secretspec.toml": "0a2708190108b9581e0f2ead07ab58e2e99c24a7f45d544a2a93f847b7e031ec"
   },
   "status": "reviewed-with-open-evidence",
-  "testTotal": 361,
+  "testTotal": 362,
   "tests": [
     {
       "exitCode": 0,
@@ -304,7 +304,7 @@
     {
       "exitCode": 0,
       "suite": "tests/ci/nix-checks.py",
-      "tests": 41
+      "tests": 42
     }
   ],
   "workflowInventory": [

@@ -131,14 +131,15 @@ reported cause. A single normal protected-queue retry was requested at the
 unchanged approved head; it remains separate from the failed attempt's cost.
 
 The follow-up narrowly recognizes those explicit curl transport messages in
-the existing three-attempt wrapper. HTTP 416 alone remains nonretryable. Build,
+the existing three-attempt wrapper. HTTP 416 requires a preceding nonzero-offset interruption of that exact URL in
+the same attempt; unrelated, reordered or unproven range errors remain nonretryable. Build,
 evaluation, permission, integrity, signal, disk-full and quota failures override
 transient warnings. Retrying builds the already evaluated aggregate and does
-not repeat successful evaluation. The 41 wrapper regressions passed, including
+not repeat successful evaluation. The 42 wrapper regressions passed, including
 both observed curl variants and terminal-failure precedence. Hosted pinned
 aggregate validation remains required for this executable change.
 
-All 320 safety regressions and 41 wrapper regressions passed using installed
+All 320 safety regressions and 42 wrapper regressions passed using installed
 Python/static tools. The
 first release-recovery suite attempt hit the local scratch quota in its oversized
 metadata fixture; after removal of a verified-clean superseded checkout, all 24

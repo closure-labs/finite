@@ -326,6 +326,18 @@ print('checks passed')
                 self.assertNotIn('retrying', output)
                 self.assertEqual(sleeps, [])
 
+    def test_range_recovery_requires_prior_interruption_of_every_exact_url(self):
+        warning = ("warning: unable to download 'https://cache.nixos.org/nar/one': HTTP error 200 "
+                   '(curl error: Failure when receiving data from the peer); retrying from offset 100\n')
+        failure = "error: unable to download 'https://cache.nixos.org/nar/one': HTTP error 416\n"
+        for output in (failure + warning, warning + failure.replace('/one', '/two'),
+                       warning + failure + failure.replace('/one', '/two'),
+                       warning.replace('offset 100', 'offset 0') + failure,
+                       warning + failure + 'HTTP error 422'):
+            with self.subTest(output=output):
+                self.assertFalse(checks.transient(output))
+        self.assertTrue(checks.transient('\x1b[31m' + warning + failure + '\x1b[0m'))
+
     def test_retry_budget_is_bounded(self):
         result, output, sleeps = self.invoke(['error: HTTP error 503'] * 4)
         self.assertEqual(result, 1)
