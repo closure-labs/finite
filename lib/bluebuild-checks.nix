@@ -107,6 +107,7 @@ in {
     python3 tests/ci/publication-authority.py
     python3 tests/ci/release-set.py
     python3 tests/ci/prepare-release-set.py
+    python3 tests/ci/recovery-completion.py
     python3 tests/ci/reconcile-decisions.py
     python3 tests/ci/verify-attestation-subject.py
     python3 tests/ci/release-handoff.py

@@ -15,6 +15,7 @@ import time
 
 import decision_controller as controller
 import decision_packets
+from recovery_completion import completion
 from release_set import GitHubClient
 from security_admission import authority, verify
 from security_decisions import canonical_hash, load_json
@@ -254,6 +255,12 @@ def _reconcile_profiles(records, bot, journal, now, staging, observer, historica
             # image identity and native evidence; stale evidence is rescanned.
             inputs['resume_digest'] = scan['image'].split('@')[1]
         binding = canonical_hash({'request': request_id, 'inputs': inputs})
+        if state and state.get('status') == 'satisfied':
+            if (state.get('schema') != 2 or state.get('decision') != identity or state.get('profile') != profile
+                    or not isinstance(state.get('publisherProof'), dict) or state.get('leaseUntil') != 0):
+                raise ValueError('Invalid satisfied reconciliation journal')
+            # Historical proof never suppresses recovery without fresh authentication.
+            state = None
         if state:
             if (state.get('schema') != 1 or state.get('decision') != identity or state.get('profile') != profile
                     or state.get('status') not in ('claimed', 'dispatched') or not isinstance(state.get('inputs'), dict)
@@ -281,6 +288,13 @@ def _reconcile_profiles(records, bot, journal, now, staging, observer, historica
             elif state.get('leaseUntil', 0) > now():
                 actions.append({'profile': profile, 'status': 'dispatch-pending'})
                 continue
+        proof = observer.call('completion-check', completion, profile, origin, native, identity, bot)
+        if proof is not None:
+            satisfied = {'schema': 2, 'status': 'satisfied', 'decision': identity, 'profile': profile,
+                         'publisherProof': proof, 'leaseUntil': 0}
+            observer.call('journal-write', journal.write_journal, request_id, satisfied, version)
+            actions.append({'profile': profile, 'status': 'satisfied', 'run': proof['runId']})
+            continue
         if observer.call('publication-busy', publication_busy):
             actions.append({'profile': profile, 'status': 'publisher-busy'})
             continue
@@ -298,6 +312,13 @@ def _reconcile_profiles(records, bot, journal, now, staging, observer, historica
         current = observer.call('source-check', controller.api, f'repos/{controller.REPOSITORY}/git/ref/heads/main')
         if not re.fullmatch(r'[0-9a-f]{40}', revision) or current.get('object', {}).get('sha') != revision:
             raise ValueError('Main changed before decision build dispatch; reconcile the current revision')
+        proof = observer.call('completion-check', completion, profile, origin, native, identity, bot)
+        if proof is not None:
+            satisfied = {'schema': 2, 'status': 'satisfied', 'decision': identity, 'profile': profile,
+                         'publisherProof': proof, 'leaseUntil': 0}
+            observer.call('journal-write', journal.write_journal, request_id, satisfied, version)
+            actions.append({'profile': profile, 'status': 'satisfied', 'run': proof['runId']})
+            continue
         if observer.call('publication-busy', publication_busy):
             actions.append({'profile': profile, 'status': 'publisher-busy'})
             continue
