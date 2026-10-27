@@ -31,6 +31,70 @@ class Toolchain(unittest.TestCase):
             with self.subTest(path=path.relative_to(ROOT)):
                 inspect(yaml.safe_load(path.read_text()))
 
+    def test_flakehub_publishing_is_disabled_in_every_workflow_and_installer(self):
+        installers = 0
+        for path in sorted((ROOT / '.github').rglob('*.yml')):
+            def inspect(value):
+                nonlocal installers
+                if isinstance(value, dict):
+                    uses = value.get('uses', '').lower()
+                    self.assertNotIn('flakehub-push', uses, str(path))
+                    self.assertNotIn('flakehub-cache', uses, str(path))
+                    command = value.get('run', '').lower()
+                    self.assertNotRegex(command, r'\b(?:fh|flakehub)\s+(?:push|publish)\b')
+                    if uses.startswith('determinatesystems/determinate-nix-action@'):
+                        installers += 1
+                        for key in ('ACTIONS_ID_TOKEN_REQUEST_URL', 'ACTIONS_ID_TOKEN_REQUEST_TOKEN'):
+                            self.assertEqual(value['env'][key], '')
+                    for item in value.values():
+                        inspect(item)
+                elif isinstance(value, list):
+                    for item in value:
+                        inspect(item)
+            inspect(yaml.safe_load(path.read_text()))
+        self.assertEqual(installers, 2)
+
+    def test_publication_record_gate_precedes_reuse_and_both_vm_phases(self):
+        publication = yaml.safe_load((ROOT / '.github/workflows/publication.yml').read_text())['jobs']
+        self.assertNotIn('preflight', publication)
+        qualification = publication['qualification']
+        self.assertEqual(qualification['needs'], ['build', 'sign'])
+        self.assertEqual(qualification['with']['build_evidence'], '${{ needs.build.outputs.evidence }}')
+        self.assertEqual(publication['sign']['needs'], ['security', 'attest'])
+        self.assertEqual(publication['promote']['needs'], ['build', 'security', 'sign', 'qualification'])
+        jobs = yaml.safe_load((ROOT / '.github/workflows/qualification.yml').read_text())['jobs']
+        steps = jobs['prepare']['steps']
+        gate = next(s for s in steps if s.get('name') == 'Reject obsolete publication before reuse or VM work')
+        self.assertEqual(gate['if'], '${{ !inputs.validation_only }}')
+        self.assertLess(steps.index(gate), next(i for i, s in enumerate(steps) if s.get('id') == 'reuse'))
+        self.assertLess(steps.index(gate), next(i for i, s in enumerate(steps) if s.get('uses') == '$/.github/actions/setup-vm-tools'))
+        self.assertEqual(jobs['phase']['needs'], 'prepare')
+        # Exercise missing/mismatched artifacts, interrupted download, and a
+        # rejected publication record. Each must prevent downstream VM work.
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for tool in ('gh', 'nix'):
+                script = root / tool
+                script.write_text('#!/bin/sh\nprintf "%s\\n" "' + tool + '" >>"$CALLS"\nexit "$' + tool.upper() + '_STATUS"\n')
+                script.chmod(0o755)
+            env = {**os.environ, 'PATH': str(root) + os.pathsep + os.environ['PATH'],
+                   'CALLS': str(root / 'calls'), 'GH_STATUS': '0', 'NIX_STATUS': '0',
+                   'PROFILE': 'finite', 'GITHUB_RUN_ID': '123', 'GITHUB_RUN_ATTEMPT': '2',
+                   'GITHUB_REPOSITORY': 'closure-labs/finite'}
+            for artifact, gh_status, nix_status, expected in (
+                ('', '0', '0', []), ('image-finite-123-1', '0', '0', []),
+                ('image-finite-123-2', '1', '0', ['gh']),
+                ('image-finite-123-2', '0', '1', ['gh', 'nix']),
+                ('image-finite-123-2', '0', '0', ['gh', 'nix'])):
+                with self.subTest(artifact=artifact, gh=gh_status, nix=nix_status):
+                    (root / 'calls').unlink(missing_ok=True)
+                    result = subprocess.run(['bash', '-c', gate['run']], cwd=root,
+                        env={**env, 'IMAGE_ARTIFACT': artifact, 'GH_STATUS': gh_status, 'NIX_STATUS': nix_status},
+                        capture_output=True, text=True)
+                    self.assertEqual(result.returncode == 0,
+                                     artifact == 'image-finite-123-2' and gh_status == nix_status == '0')
+                    self.assertEqual((root / 'calls').read_text().splitlines() if (root / 'calls').exists() else [], expected)
+
     def test_scanner_profile_is_optional_and_requires_actual_native_tools(self):
         workflow = yaml.safe_load((ROOT / '.github/workflows/image.yml').read_text())
         step = next(s for s in workflow['jobs']['build']['steps']
