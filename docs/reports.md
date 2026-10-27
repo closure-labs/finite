@@ -9,6 +9,7 @@ the recorded revision and date.
 
 | Record | Scope |
 | --- | --- |
+| [Recent complete cost census, October 27 UTC](ci-recent-census-2026-10-27.md) | Conserved 159-run recent cohort, completed diagnostics rollout and bounded natural controller canary |
 | [Bounded predecessor reuse diagnostics, October 27 UTC](ci-predecessor-diagnostics-2026-10-27.md) | Native-bound miss counters and capped input-path samples with unchanged acceptance and fallback behavior |
 | [Recent rollout completion and costs, October 26 UTC](ci-recent-rollout-2026-10-26.md) | Completed two-profile production integration, conserved recent costs and explicit reuse/receipt limits |
 | [CI dependency graph and publishing audit, October 26 UTC](ci-dependency-graph-2026-10-26.md) | Explicit FlakeHub authentication boundary, consolidated publication preflight and validated asset ownership |

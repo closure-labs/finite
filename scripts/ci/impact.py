@@ -14,6 +14,8 @@ PROFILES = {
 # These files qualify an existing immutable image; they are not filesystem
 # inputs. Keep source/security checks while reusing already validated builds.
 QUALIFICATION_ONLY = {
+    # Static analysis scheduling does not change or qualify OS image inputs.
+    '.github/workflows/codeql.yml',
     'scripts/ci/lint-workflows.py',
     '.github/actions/setup-cosign/action.yml', '.github/actions/setup-cosign/download/.curlrc',
     # Trusted metadata-only admission starts CI; it never changes OS inputs.

@@ -27,6 +27,16 @@ class Integrations(unittest.TestCase):
                 if any(uses(step, 'github/codeql-action/init') for step in job.get('steps', [])):
                     entries.append((path.name, name, job))
         self.assertEqual(len(entries), 1, 'Use one CodeQL workflow, disable duplicate default setup at rollout')
+        workflow = document('codeql')
+        events = workflow.get('on', workflow.get(True))
+        self.assertEqual(set(events), {'push', 'pull_request', 'schedule', 'workflow_dispatch'})
+        self.assertEqual(events['push']['branches'], ['main'])
+        self.assertEqual(events['pull_request']['branches'], ['main'])
+        self.assertTrue(events['schedule'])
+        # Required queue validation and authority retain their independent events.
+        for name in ('build', 'decision-events'):
+            workflow = document(name)
+            self.assertIn('merge_group', workflow.get('on', workflow.get(True)))
         job = entries[0][2]
         self.assertEqual(job['strategy']['matrix']['language'], ['actions', 'python'])
         self.assertEqual(job['permissions'], {'contents': 'read', 'security-events': 'write'})
