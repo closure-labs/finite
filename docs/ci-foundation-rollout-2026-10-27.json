@@ -1,0 +1,1364 @@
+{
+  "schema": 1,
+  "readOnly": true,
+  "authorizesPublication": false,
+  "observedAt": "2026-10-27T14:03:51.120530+00:00",
+  "runId": 40468511341,
+  "sourceRevision": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+  "conclusion": "success",
+  "receiptCoverage": {
+    "selected": 3,
+    "read": 3,
+    "unavailable": [],
+    "unmatched": 0
+  },
+  "artifacts": [
+    {
+      "digest": "sha256:b988de53caf80f62bf78b85317304b7b98686b0c2d778fd58cb414f988889b06",
+      "id": 12719019373,
+      "name": "image-finite-dev-40468511341-1",
+      "size": 135604,
+      "workflow_run": {
+        "head_branch": "gh-readonly-queue/main/pr-291-afc20e1d8aebbffaf106d5c87818430bafd7eb7e",
+        "head_repository_id": 1293375784,
+        "head_sha": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+        "id": 40468511341,
+        "repository_id": 1293375784
+      }
+    },
+    {
+      "digest": "sha256:b61a57c2b945c73ca77df7dbd360b6467361a90da0c0488d6e881529966a8e20",
+      "id": 12718713803,
+      "name": "image-finite-40468511341-1",
+      "size": 127953,
+      "workflow_run": {
+        "head_branch": "gh-readonly-queue/main/pr-291-afc20e1d8aebbffaf106d5c87818430bafd7eb7e",
+        "head_repository_id": 1293375784,
+        "head_sha": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+        "id": 40468511341,
+        "repository_id": 1293375784
+      }
+    },
+    {
+      "digest": "sha256:34bff71f147cdc15ab049c9668f021b220096822fd3225464454f1667d0679de",
+      "id": 12717558661,
+      "name": "source-checks-40468511341-1",
+      "size": 2452,
+      "workflow_run": {
+        "head_branch": "gh-readonly-queue/main/pr-291-afc20e1d8aebbffaf106d5c87818430bafd7eb7e",
+        "head_repository_id": 1293375784,
+        "head_sha": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+        "id": 40468511341,
+        "repository_id": 1293375784
+      }
+    }
+  ],
+  "completeQueueRunnerSeconds": 5829.0,
+  "profiles": [
+    {
+      "profile": "finite",
+      "jobId": 122071780586,
+      "runnerSeconds": 2440.0,
+      "foundationTimings": {
+        "schema": 1,
+        "stages": [
+          {
+            "schema": 1,
+            "kind": "foundation-stage-timing",
+            "authorizesPublication": false,
+            "stage": "profile-validation",
+            "seconds": 21.179391,
+            "startedAt": "2026-10-27T08:19:23.823761+00:00",
+            "outcome": "success",
+            "status": 0
+          },
+          {
+            "schema": 1,
+            "kind": "foundation-stage-timing",
+            "authorizesPublication": false,
+            "stage": "home-manager-realisation",
+            "seconds": 167.876694,
+            "startedAt": "2026-10-27T08:19:45.003237+00:00",
+            "outcome": "success",
+            "status": 0
+          },
+          {
+            "schema": 1,
+            "kind": "foundation-stage-timing",
+            "authorizesPublication": false,
+            "stage": "brew-policy-evaluation",
+            "seconds": 0.635569,
+            "startedAt": "2026-10-27T08:22:32.880164+00:00",
+            "outcome": "success",
+            "status": 0
+          },
+          {
+            "schema": 1,
+            "kind": "foundation-stage-timing",
+            "authorizesPublication": false,
+            "stage": "brew-bootstrap",
+            "seconds": 143.641418,
+            "startedAt": "2026-10-27T08:22:33.516493+00:00",
+            "outcome": "success",
+            "status": 0
+          },
+          {
+            "schema": 1,
+            "kind": "foundation-stage-timing",
+            "authorizesPublication": false,
+            "stage": "brew-provisioning",
+            "seconds": 144.278314,
+            "startedAt": "2026-10-27T08:22:32.880140+00:00",
+            "outcome": "success",
+            "status": 0
+          },
+          {
+            "schema": 1,
+            "kind": "foundation-stage-timing",
+            "authorizesPublication": false,
+            "stage": "activation",
+            "seconds": 101.793007,
+            "startedAt": "2026-10-27T08:24:57.159026+00:00",
+            "outcome": "success",
+            "status": 0
+          },
+          {
+            "schema": 1,
+            "kind": "foundation-stage-timing",
+            "authorizesPublication": false,
+            "stage": "commit-and-activation",
+            "seconds": 101.795578,
+            "startedAt": "2026-10-27T08:24:57.158573+00:00",
+            "outcome": "success",
+            "status": 0
+          },
+          {
+            "schema": 1,
+            "kind": "foundation-stage-timing",
+            "authorizesPublication": false,
+            "stage": "initialization",
+            "seconds": 435.148193,
+            "startedAt": "2026-10-27T08:19:23.806280+00:00",
+            "outcome": "success",
+            "status": 0
+          }
+        ],
+        "rejectedRecords": 0
+      },
+      "stages": [
+        {
+          "schema": 1,
+          "kind": "finite-stage-timing",
+          "authorizesPublication": false,
+          "repository": "closure-labs/finite",
+          "runId": "40468511341",
+          "runAttempt": "1",
+          "revision": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+          "jobName": "build",
+          "phase": null,
+          "profile": "finite",
+          "sourceRevision": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+          "candidateDigest": null,
+          "buildIdentity": "v1:3a09bf6f39d7d1d255caaddb600b889af70dc7656ac30075a752492eb9e8976c",
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261023.334.3"
+          },
+          "lockSha256": {
+            "flake.lock": "bb5e58db2e8027309dba243b584391d7d12ad1c3980cdec3504a0fd4fdc03d05",
+            "devenv.lock": "3ed21088a570fa561a5e6c879156bc24ee1df5854a2f34790e56b65f9415d1f8"
+          },
+          "toolCohort": {
+            "pythonExecutable": "/nix/store/96a77n30fxka384s8a0rffdf7j1v58vk-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/69vhmfdm78jb9c3yj0wykr2y8fnabysr-determinate-nix-3.23.2/bin/nix",
+            "vmManifest": null,
+            "firmwareDirectory": null
+          },
+          "stage": "payload-staging",
+          "startedAt": "2026-10-27T07:47:45.888496+00:00",
+          "seconds": 2.342,
+          "status": 0,
+          "runnerNetworkDelta": {
+            "rx_bytes": 79076404,
+            "tx_bytes": 244389
+          },
+          "childResourceUsage": {
+            "scope": "terminated-and-waited-children",
+            "includesDaemonWork": false,
+            "userCpuSeconds": 0.441041,
+            "systemCpuSeconds": 0.218291,
+            "blockInputOperations": 0,
+            "blockOutputOperations": 158400
+          }
+        },
+        {
+          "schema": 1,
+          "kind": "finite-stage-timing",
+          "authorizesPublication": false,
+          "repository": "closure-labs/finite",
+          "runId": "40468511341",
+          "runAttempt": "1",
+          "revision": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+          "jobName": "build",
+          "phase": null,
+          "profile": "finite",
+          "sourceRevision": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+          "candidateDigest": null,
+          "buildIdentity": "v1:3a09bf6f39d7d1d255caaddb600b889af70dc7656ac30075a752492eb9e8976c",
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261023.334.3"
+          },
+          "lockSha256": {
+            "flake.lock": "bb5e58db2e8027309dba243b584391d7d12ad1c3980cdec3504a0fd4fdc03d05",
+            "devenv.lock": "3ed21088a570fa561a5e6c879156bc24ee1df5854a2f34790e56b65f9415d1f8"
+          },
+          "toolCohort": {
+            "pythonExecutable": "/nix/store/96a77n30fxka384s8a0rffdf7j1v58vk-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/69vhmfdm78jb9c3yj0wykr2y8fnabysr-determinate-nix-3.23.2/bin/nix",
+            "vmManifest": null,
+            "firmwareDirectory": null
+          },
+          "stage": "image-build",
+          "startedAt": "2026-10-27T07:47:53.145593+00:00",
+          "seconds": 435.564,
+          "status": 0,
+          "runnerNetworkDelta": {
+            "rx_bytes": 3820749371,
+            "tx_bytes": 5208974
+          },
+          "childResourceUsage": {
+            "scope": "terminated-and-waited-children",
+            "includesDaemonWork": false,
+            "userCpuSeconds": 18.846063,
+            "systemCpuSeconds": 10.298433,
+            "blockInputOperations": 3440,
+            "blockOutputOperations": 1568
+          }
+        },
+        {
+          "schema": 1,
+          "kind": "finite-stage-timing",
+          "authorizesPublication": false,
+          "repository": "closure-labs/finite",
+          "runId": "40468511341",
+          "runAttempt": "1",
+          "revision": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+          "jobName": "build",
+          "phase": null,
+          "profile": "finite",
+          "sourceRevision": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+          "candidateDigest": null,
+          "buildIdentity": "v1:3a09bf6f39d7d1d255caaddb600b889af70dc7656ac30075a752492eb9e8976c",
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261023.334.3"
+          },
+          "lockSha256": {
+            "flake.lock": "bb5e58db2e8027309dba243b584391d7d12ad1c3980cdec3504a0fd4fdc03d05",
+            "devenv.lock": "3ed21088a570fa561a5e6c879156bc24ee1df5854a2f34790e56b65f9415d1f8"
+          },
+          "toolCohort": {
+            "pythonExecutable": "/nix/store/96a77n30fxka384s8a0rffdf7j1v58vk-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/69vhmfdm78jb9c3yj0wykr2y8fnabysr-determinate-nix-3.23.2/bin/nix",
+            "vmManifest": null,
+            "firmwareDirectory": null
+          },
+          "stage": "runtime-checks",
+          "startedAt": "2026-10-27T07:55:08.857091+00:00",
+          "seconds": 16.493,
+          "status": 0,
+          "runnerNetworkDelta": {
+            "rx_bytes": 44542,
+            "tx_bytes": 445372
+          },
+          "childResourceUsage": {
+            "scope": "terminated-and-waited-children",
+            "includesDaemonWork": false,
+            "userCpuSeconds": 0.012246,
+            "systemCpuSeconds": 0.014473,
+            "blockInputOperations": 16,
+            "blockOutputOperations": 0
+          }
+        },
+        {
+          "schema": 1,
+          "kind": "finite-stage-timing",
+          "authorizesPublication": false,
+          "repository": "closure-labs/finite",
+          "runId": "40468511341",
+          "runAttempt": "1",
+          "revision": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+          "jobName": "build",
+          "phase": null,
+          "profile": "finite",
+          "sourceRevision": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+          "candidateDigest": null,
+          "buildIdentity": "v1:3a09bf6f39d7d1d255caaddb600b889af70dc7656ac30075a752492eb9e8976c",
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261023.334.3"
+          },
+          "lockSha256": {
+            "flake.lock": "bb5e58db2e8027309dba243b584391d7d12ad1c3980cdec3504a0fd4fdc03d05",
+            "devenv.lock": "3ed21088a570fa561a5e6c879156bc24ee1df5854a2f34790e56b65f9415d1f8"
+          },
+          "toolCohort": {
+            "pythonExecutable": "/nix/store/96a77n30fxka384s8a0rffdf7j1v58vk-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/69vhmfdm78jb9c3yj0wykr2y8fnabysr-determinate-nix-3.23.2/bin/nix",
+            "vmManifest": "/nix/store/jk73dnmpw27g3xba27nfmwpxrn63cvn4-finite-ci-vm-tools/share/finite-vm/toolchain.json",
+            "firmwareDirectory": "/nix/store/jk73dnmpw27g3xba27nfmwpxrn63cvn4-finite-ci-vm-tools/share/finite-vm/firmware"
+          },
+          "stage": "local-vm-oci-export",
+          "startedAt": "2026-10-27T07:55:31.321083+00:00",
+          "seconds": 184.361,
+          "status": 0,
+          "runnerNetworkDelta": {
+            "rx_bytes": 179848,
+            "tx_bytes": 291737
+          },
+          "childResourceUsage": {
+            "scope": "terminated-and-waited-children",
+            "includesDaemonWork": false,
+            "userCpuSeconds": 110.501056,
+            "systemCpuSeconds": 19.812514,
+            "blockInputOperations": 1169392,
+            "blockOutputOperations": 31984688
+          }
+        },
+        {
+          "schema": 1,
+          "kind": "finite-stage-timing",
+          "authorizesPublication": false,
+          "repository": "closure-labs/finite",
+          "runId": "40468511341",
+          "runAttempt": "1",
+          "revision": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+          "jobName": "build",
+          "phase": null,
+          "profile": "finite",
+          "sourceRevision": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+          "candidateDigest": "sha256:b330b10e962ffafae6a3eb7a0b4097e73c711fc09a2578ceb82148f8044de923",
+          "buildIdentity": "v1:3a09bf6f39d7d1d255caaddb600b889af70dc7656ac30075a752492eb9e8976c",
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261023.334.3"
+          },
+          "lockSha256": {
+            "flake.lock": "bb5e58db2e8027309dba243b584391d7d12ad1c3980cdec3504a0fd4fdc03d05",
+            "devenv.lock": "3ed21088a570fa561a5e6c879156bc24ee1df5854a2f34790e56b65f9415d1f8"
+          },
+          "toolCohort": {
+            "pythonExecutable": "/nix/store/96a77n30fxka384s8a0rffdf7j1v58vk-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/69vhmfdm78jb9c3yj0wykr2y8fnabysr-determinate-nix-3.23.2/bin/nix",
+            "vmManifest": "/nix/store/jk73dnmpw27g3xba27nfmwpxrn63cvn4-finite-ci-vm-tools/share/finite-vm/toolchain.json",
+            "firmwareDirectory": "/nix/store/jk73dnmpw27g3xba27nfmwpxrn63cvn4-finite-ci-vm-tools/share/finite-vm/firmware"
+          },
+          "stage": "local-vm-installer-prepare",
+          "startedAt": "2026-10-27T07:58:47.804931+00:00",
+          "seconds": 15.957,
+          "status": 0,
+          "runnerNetworkDelta": {
+            "rx_bytes": 419051359,
+            "tx_bytes": 641899
+          },
+          "childResourceUsage": {
+            "scope": "terminated-and-waited-children",
+            "includesDaemonWork": false,
+            "userCpuSeconds": 0.204429,
+            "systemCpuSeconds": 0.192865,
+            "blockInputOperations": 3152,
+            "blockOutputOperations": 64
+          }
+        },
+        {
+          "schema": 1,
+          "kind": "finite-stage-timing",
+          "authorizesPublication": false,
+          "repository": "closure-labs/finite",
+          "runId": "40468511341",
+          "runAttempt": "1",
+          "revision": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+          "jobName": "build",
+          "phase": null,
+          "profile": "finite",
+          "sourceRevision": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+          "candidateDigest": "sha256:b330b10e962ffafae6a3eb7a0b4097e73c711fc09a2578ceb82148f8044de923",
+          "buildIdentity": "v1:3a09bf6f39d7d1d255caaddb600b889af70dc7656ac30075a752492eb9e8976c",
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261023.334.3"
+          },
+          "lockSha256": {
+            "flake.lock": "bb5e58db2e8027309dba243b584391d7d12ad1c3980cdec3504a0fd4fdc03d05",
+            "devenv.lock": "3ed21088a570fa561a5e6c879156bc24ee1df5854a2f34790e56b65f9415d1f8"
+          },
+          "toolCohort": {
+            "pythonExecutable": "/nix/store/96a77n30fxka384s8a0rffdf7j1v58vk-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/69vhmfdm78jb9c3yj0wykr2y8fnabysr-determinate-nix-3.23.2/bin/nix",
+            "vmManifest": "/nix/store/jk73dnmpw27g3xba27nfmwpxrn63cvn4-finite-ci-vm-tools/share/finite-vm/toolchain.json",
+            "firmwareDirectory": "/nix/store/jk73dnmpw27g3xba27nfmwpxrn63cvn4-finite-ci-vm-tools/share/finite-vm/firmware"
+          },
+          "stage": "local-vm-iso-build",
+          "startedAt": "2026-10-27T07:59:03.811662+00:00",
+          "seconds": 753.445,
+          "status": 0,
+          "runnerNetworkDelta": {
+            "rx_bytes": 1239017298,
+            "tx_bytes": 5425633
+          },
+          "childResourceUsage": {
+            "scope": "terminated-and-waited-children",
+            "includesDaemonWork": false,
+            "userCpuSeconds": 0.072249,
+            "systemCpuSeconds": 0.100353,
+            "blockInputOperations": 552,
+            "blockOutputOperations": 0
+          }
+        },
+        {
+          "schema": 1,
+          "kind": "finite-stage-timing",
+          "authorizesPublication": false,
+          "repository": "closure-labs/finite",
+          "runId": "40468511341",
+          "runAttempt": "1",
+          "revision": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+          "jobName": "build",
+          "phase": null,
+          "profile": "finite",
+          "sourceRevision": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+          "candidateDigest": "sha256:b330b10e962ffafae6a3eb7a0b4097e73c711fc09a2578ceb82148f8044de923",
+          "buildIdentity": "v1:3a09bf6f39d7d1d255caaddb600b889af70dc7656ac30075a752492eb9e8976c",
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261023.334.3"
+          },
+          "lockSha256": {
+            "flake.lock": "bb5e58db2e8027309dba243b584391d7d12ad1c3980cdec3504a0fd4fdc03d05",
+            "devenv.lock": "3ed21088a570fa561a5e6c879156bc24ee1df5854a2f34790e56b65f9415d1f8"
+          },
+          "toolCohort": {
+            "pythonExecutable": "/nix/store/96a77n30fxka384s8a0rffdf7j1v58vk-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/69vhmfdm78jb9c3yj0wykr2y8fnabysr-determinate-nix-3.23.2/bin/nix",
+            "vmManifest": "/nix/store/jk73dnmpw27g3xba27nfmwpxrn63cvn4-finite-ci-vm-tools/share/finite-vm/toolchain.json",
+            "firmwareDirectory": "/nix/store/jk73dnmpw27g3xba27nfmwpxrn63cvn4-finite-ci-vm-tools/share/finite-vm/firmware"
+          },
+          "stage": "local-vm-acceptance",
+          "startedAt": "2026-10-27T08:11:56.302938+00:00",
+          "seconds": 890.949,
+          "status": 0,
+          "runnerNetworkDelta": {
+            "rx_bytes": 6012875852,
+            "tx_bytes": 10018786
+          },
+          "childResourceUsage": {
+            "scope": "terminated-and-waited-children",
+            "includesDaemonWork": false,
+            "userCpuSeconds": 1442.416054,
+            "systemCpuSeconds": 125.558272,
+            "blockInputOperations": 9191456,
+            "blockOutputOperations": 99260600
+          }
+        },
+        {
+          "stage": "foundation-profile-validation",
+          "seconds": 21.179391,
+          "status": 0,
+          "outcome": "success",
+          "guestStartedAt": "2026-10-27T08:19:23.823761+00:00",
+          "nested": true
+        },
+        {
+          "stage": "foundation-home-manager-realisation",
+          "seconds": 167.876694,
+          "status": 0,
+          "outcome": "success",
+          "guestStartedAt": "2026-10-27T08:19:45.003237+00:00",
+          "nested": true
+        },
+        {
+          "stage": "foundation-brew-policy-evaluation",
+          "seconds": 0.635569,
+          "status": 0,
+          "outcome": "success",
+          "guestStartedAt": "2026-10-27T08:22:32.880164+00:00",
+          "nested": true
+        },
+        {
+          "stage": "foundation-brew-bootstrap",
+          "seconds": 143.641418,
+          "status": 0,
+          "outcome": "success",
+          "guestStartedAt": "2026-10-27T08:22:33.516493+00:00",
+          "nested": true
+        },
+        {
+          "stage": "foundation-brew-provisioning",
+          "seconds": 144.278314,
+          "status": 0,
+          "outcome": "success",
+          "guestStartedAt": "2026-10-27T08:22:32.880140+00:00",
+          "nested": true
+        },
+        {
+          "stage": "foundation-activation",
+          "seconds": 101.793007,
+          "status": 0,
+          "outcome": "success",
+          "guestStartedAt": "2026-10-27T08:24:57.159026+00:00",
+          "nested": true
+        },
+        {
+          "stage": "foundation-commit-and-activation",
+          "seconds": 101.795578,
+          "status": 0,
+          "outcome": "success",
+          "guestStartedAt": "2026-10-27T08:24:57.158573+00:00",
+          "nested": true
+        },
+        {
+          "stage": "foundation-initialization",
+          "seconds": 435.148193,
+          "status": 0,
+          "outcome": "success",
+          "guestStartedAt": "2026-10-27T08:19:23.806280+00:00",
+          "nested": true
+        },
+        {
+          "stage": "startup-checks",
+          "seconds": 1,
+          "status": 0,
+          "nested": true
+        },
+        {
+          "stage": "homebrew-setup",
+          "seconds": 0,
+          "status": 0,
+          "nested": true
+        },
+        {
+          "stage": "predecessor-preparation",
+          "seconds": 0,
+          "status": 0,
+          "nested": true
+        },
+        {
+          "stage": "home-init",
+          "seconds": 435,
+          "status": 0,
+          "nested": true
+        },
+        {
+          "stage": "installation",
+          "seconds": 351,
+          "status": 0,
+          "nested": true
+        },
+        {
+          "stage": "first-boot-ssh-ready",
+          "seconds": 46,
+          "status": 0,
+          "nested": true
+        },
+        {
+          "stage": "first-boot-boot-contracts",
+          "seconds": 59,
+          "status": 0,
+          "nested": true
+        },
+        {
+          "stage": "persistence-customization",
+          "seconds": 1,
+          "status": 0,
+          "nested": true
+        },
+        {
+          "stage": "home-activation",
+          "seconds": 437,
+          "status": 0,
+          "nested": true
+        },
+        {
+          "stage": "cleanup",
+          "seconds": 0,
+          "status": 0,
+          "nested": true
+        }
+      ]
+    },
+    {
+      "profile": "finite-dev",
+      "jobId": 122071780647,
+      "runnerSeconds": 2994.0,
+      "foundationTimings": {
+        "schema": 1,
+        "stages": [
+          {
+            "schema": 1,
+            "kind": "foundation-stage-timing",
+            "authorizesPublication": false,
+            "stage": "profile-validation",
+            "seconds": 21.638358,
+            "startedAt": "2026-10-27T08:28:03.449977+00:00",
+            "outcome": "success",
+            "status": 0
+          },
+          {
+            "schema": 1,
+            "kind": "foundation-stage-timing",
+            "authorizesPublication": false,
+            "stage": "home-manager-realisation",
+            "seconds": 167.748087,
+            "startedAt": "2026-10-27T08:28:25.088437+00:00",
+            "outcome": "success",
+            "status": 0
+          },
+          {
+            "schema": 1,
+            "kind": "foundation-stage-timing",
+            "authorizesPublication": false,
+            "stage": "brew-policy-evaluation",
+            "seconds": 0.87497,
+            "startedAt": "2026-10-27T08:31:12.836737+00:00",
+            "outcome": "success",
+            "status": 0
+          },
+          {
+            "schema": 1,
+            "kind": "foundation-stage-timing",
+            "authorizesPublication": false,
+            "stage": "brew-bootstrap",
+            "seconds": 148.485707,
+            "startedAt": "2026-10-27T08:31:13.713150+00:00",
+            "outcome": "success",
+            "status": 0
+          },
+          {
+            "schema": 1,
+            "kind": "foundation-stage-timing",
+            "authorizesPublication": false,
+            "stage": "brew-provisioning",
+            "seconds": 149.362716,
+            "startedAt": "2026-10-27T08:31:12.836712+00:00",
+            "outcome": "success",
+            "status": 0
+          },
+          {
+            "schema": 1,
+            "kind": "foundation-stage-timing",
+            "authorizesPublication": false,
+            "stage": "activation",
+            "seconds": 113.024222,
+            "startedAt": "2026-10-27T08:33:42.199966+00:00",
+            "outcome": "success",
+            "status": 0
+          },
+          {
+            "schema": 1,
+            "kind": "foundation-stage-timing",
+            "authorizesPublication": false,
+            "stage": "commit-and-activation",
+            "seconds": 113.025304,
+            "startedAt": "2026-10-27T08:33:42.199503+00:00",
+            "outcome": "success",
+            "status": 0
+          },
+          {
+            "schema": 1,
+            "kind": "foundation-stage-timing",
+            "authorizesPublication": false,
+            "stage": "initialization",
+            "seconds": 451.796683,
+            "startedAt": "2026-10-27T08:28:03.428503+00:00",
+            "outcome": "success",
+            "status": 0
+          }
+        ],
+        "rejectedRecords": 0
+      },
+      "stages": [
+        {
+          "schema": 1,
+          "kind": "finite-stage-timing",
+          "authorizesPublication": false,
+          "repository": "closure-labs/finite",
+          "runId": "40468511341",
+          "runAttempt": "1",
+          "revision": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+          "jobName": "build",
+          "phase": null,
+          "profile": "finite-dev",
+          "sourceRevision": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+          "candidateDigest": null,
+          "buildIdentity": "v1:9c5cd4a7b0278ff9f2256fcb348635d01b89a11b4963e79db433f298239e36b7",
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261023.334.3"
+          },
+          "lockSha256": {
+            "flake.lock": "bb5e58db2e8027309dba243b584391d7d12ad1c3980cdec3504a0fd4fdc03d05",
+            "devenv.lock": "3ed21088a570fa561a5e6c879156bc24ee1df5854a2f34790e56b65f9415d1f8"
+          },
+          "toolCohort": {
+            "pythonExecutable": "/nix/store/96a77n30fxka384s8a0rffdf7j1v58vk-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/69vhmfdm78jb9c3yj0wykr2y8fnabysr-determinate-nix-3.23.2/bin/nix",
+            "vmManifest": null,
+            "firmwareDirectory": null
+          },
+          "stage": "payload-staging",
+          "startedAt": "2026-10-27T07:47:46.545166+00:00",
+          "seconds": 2.115,
+          "status": 0,
+          "runnerNetworkDelta": {
+            "rx_bytes": 79043660,
+            "tx_bytes": 231308
+          },
+          "childResourceUsage": {
+            "scope": "terminated-and-waited-children",
+            "includesDaemonWork": false,
+            "userCpuSeconds": 0.448578,
+            "systemCpuSeconds": 0.223451,
+            "blockInputOperations": 0,
+            "blockOutputOperations": 158400
+          }
+        },
+        {
+          "schema": 1,
+          "kind": "finite-stage-timing",
+          "authorizesPublication": false,
+          "repository": "closure-labs/finite",
+          "runId": "40468511341",
+          "runAttempt": "1",
+          "revision": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+          "jobName": "build",
+          "phase": null,
+          "profile": "finite-dev",
+          "sourceRevision": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+          "candidateDigest": null,
+          "buildIdentity": "v1:9c5cd4a7b0278ff9f2256fcb348635d01b89a11b4963e79db433f298239e36b7",
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261023.334.3"
+          },
+          "lockSha256": {
+            "flake.lock": "bb5e58db2e8027309dba243b584391d7d12ad1c3980cdec3504a0fd4fdc03d05",
+            "devenv.lock": "3ed21088a570fa561a5e6c879156bc24ee1df5854a2f34790e56b65f9415d1f8"
+          },
+          "toolCohort": {
+            "pythonExecutable": "/nix/store/96a77n30fxka384s8a0rffdf7j1v58vk-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/69vhmfdm78jb9c3yj0wykr2y8fnabysr-determinate-nix-3.23.2/bin/nix",
+            "vmManifest": null,
+            "firmwareDirectory": null
+          },
+          "stage": "image-build",
+          "startedAt": "2026-10-27T07:47:53.346416+00:00",
+          "seconds": 595.326,
+          "status": 0,
+          "runnerNetworkDelta": {
+            "rx_bytes": 5793772059,
+            "tx_bytes": 7963906
+          },
+          "childResourceUsage": {
+            "scope": "terminated-and-waited-children",
+            "includesDaemonWork": false,
+            "userCpuSeconds": 27.900713,
+            "systemCpuSeconds": 14.954074,
+            "blockInputOperations": 5264,
+            "blockOutputOperations": 1608
+          }
+        },
+        {
+          "schema": 1,
+          "kind": "finite-stage-timing",
+          "authorizesPublication": false,
+          "repository": "closure-labs/finite",
+          "runId": "40468511341",
+          "runAttempt": "1",
+          "revision": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+          "jobName": "build",
+          "phase": null,
+          "profile": "finite-dev",
+          "sourceRevision": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+          "candidateDigest": null,
+          "buildIdentity": "v1:9c5cd4a7b0278ff9f2256fcb348635d01b89a11b4963e79db433f298239e36b7",
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261023.334.3"
+          },
+          "lockSha256": {
+            "flake.lock": "bb5e58db2e8027309dba243b584391d7d12ad1c3980cdec3504a0fd4fdc03d05",
+            "devenv.lock": "3ed21088a570fa561a5e6c879156bc24ee1df5854a2f34790e56b65f9415d1f8"
+          },
+          "toolCohort": {
+            "pythonExecutable": "/nix/store/96a77n30fxka384s8a0rffdf7j1v58vk-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/69vhmfdm78jb9c3yj0wykr2y8fnabysr-determinate-nix-3.23.2/bin/nix",
+            "vmManifest": null,
+            "firmwareDirectory": null
+          },
+          "stage": "runtime-checks",
+          "startedAt": "2026-10-27T07:57:48.864662+00:00",
+          "seconds": 18.97,
+          "status": 0,
+          "runnerNetworkDelta": {
+            "rx_bytes": 45841,
+            "tx_bytes": 459509
+          },
+          "childResourceUsage": {
+            "scope": "terminated-and-waited-children",
+            "includesDaemonWork": false,
+            "userCpuSeconds": 0.010413,
+            "systemCpuSeconds": 0.016198,
+            "blockInputOperations": 392,
+            "blockOutputOperations": 0
+          }
+        },
+        {
+          "schema": 1,
+          "kind": "finite-stage-timing",
+          "authorizesPublication": false,
+          "repository": "closure-labs/finite",
+          "runId": "40468511341",
+          "runAttempt": "1",
+          "revision": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+          "jobName": "build",
+          "phase": null,
+          "profile": "finite-dev",
+          "sourceRevision": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+          "candidateDigest": null,
+          "buildIdentity": "v1:9c5cd4a7b0278ff9f2256fcb348635d01b89a11b4963e79db433f298239e36b7",
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261023.334.3"
+          },
+          "lockSha256": {
+            "flake.lock": "bb5e58db2e8027309dba243b584391d7d12ad1c3980cdec3504a0fd4fdc03d05",
+            "devenv.lock": "3ed21088a570fa561a5e6c879156bc24ee1df5854a2f34790e56b65f9415d1f8"
+          },
+          "toolCohort": {
+            "pythonExecutable": "/nix/store/96a77n30fxka384s8a0rffdf7j1v58vk-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/69vhmfdm78jb9c3yj0wykr2y8fnabysr-determinate-nix-3.23.2/bin/nix",
+            "vmManifest": "/nix/store/jk73dnmpw27g3xba27nfmwpxrn63cvn4-finite-ci-vm-tools/share/finite-vm/toolchain.json",
+            "firmwareDirectory": "/nix/store/jk73dnmpw27g3xba27nfmwpxrn63cvn4-finite-ci-vm-tools/share/finite-vm/firmware"
+          },
+          "stage": "local-vm-oci-export",
+          "startedAt": "2026-10-27T07:58:14.092193+00:00",
+          "seconds": 320.974,
+          "status": 0,
+          "runnerNetworkDelta": {
+            "rx_bytes": 300956,
+            "tx_bytes": 435640
+          },
+          "childResourceUsage": {
+            "scope": "terminated-and-waited-children",
+            "includesDaemonWork": false,
+            "userCpuSeconds": 206.876113,
+            "systemCpuSeconds": 35.147758,
+            "blockInputOperations": 32627656,
+            "blockOutputOperations": 52527520
+          }
+        },
+        {
+          "schema": 1,
+          "kind": "finite-stage-timing",
+          "authorizesPublication": false,
+          "repository": "closure-labs/finite",
+          "runId": "40468511341",
+          "runAttempt": "1",
+          "revision": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+          "jobName": "build",
+          "phase": null,
+          "profile": "finite-dev",
+          "sourceRevision": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+          "candidateDigest": "sha256:77a88fdffbc6c14d9e35d791b6541601fc127d11e1392a8a1824f31ba2ba0d61",
+          "buildIdentity": "v1:9c5cd4a7b0278ff9f2256fcb348635d01b89a11b4963e79db433f298239e36b7",
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261023.334.3"
+          },
+          "lockSha256": {
+            "flake.lock": "bb5e58db2e8027309dba243b584391d7d12ad1c3980cdec3504a0fd4fdc03d05",
+            "devenv.lock": "3ed21088a570fa561a5e6c879156bc24ee1df5854a2f34790e56b65f9415d1f8"
+          },
+          "toolCohort": {
+            "pythonExecutable": "/nix/store/96a77n30fxka384s8a0rffdf7j1v58vk-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/69vhmfdm78jb9c3yj0wykr2y8fnabysr-determinate-nix-3.23.2/bin/nix",
+            "vmManifest": "/nix/store/jk73dnmpw27g3xba27nfmwpxrn63cvn4-finite-ci-vm-tools/share/finite-vm/toolchain.json",
+            "firmwareDirectory": "/nix/store/jk73dnmpw27g3xba27nfmwpxrn63cvn4-finite-ci-vm-tools/share/finite-vm/firmware"
+          },
+          "stage": "local-vm-installer-prepare",
+          "startedAt": "2026-10-27T08:03:53.010096+00:00",
+          "seconds": 15.892,
+          "status": 0,
+          "runnerNetworkDelta": {
+            "rx_bytes": 419072483,
+            "tx_bytes": 517631
+          },
+          "childResourceUsage": {
+            "scope": "terminated-and-waited-children",
+            "includesDaemonWork": false,
+            "userCpuSeconds": 0.209631,
+            "systemCpuSeconds": 0.206424,
+            "blockInputOperations": 11736,
+            "blockOutputOperations": 64
+          }
+        },
+        {
+          "schema": 1,
+          "kind": "finite-stage-timing",
+          "authorizesPublication": false,
+          "repository": "closure-labs/finite",
+          "runId": "40468511341",
+          "runAttempt": "1",
+          "revision": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+          "jobName": "build",
+          "phase": null,
+          "profile": "finite-dev",
+          "sourceRevision": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+          "candidateDigest": "sha256:77a88fdffbc6c14d9e35d791b6541601fc127d11e1392a8a1824f31ba2ba0d61",
+          "buildIdentity": "v1:9c5cd4a7b0278ff9f2256fcb348635d01b89a11b4963e79db433f298239e36b7",
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261023.334.3"
+          },
+          "lockSha256": {
+            "flake.lock": "bb5e58db2e8027309dba243b584391d7d12ad1c3980cdec3504a0fd4fdc03d05",
+            "devenv.lock": "3ed21088a570fa561a5e6c879156bc24ee1df5854a2f34790e56b65f9415d1f8"
+          },
+          "toolCohort": {
+            "pythonExecutable": "/nix/store/96a77n30fxka384s8a0rffdf7j1v58vk-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/69vhmfdm78jb9c3yj0wykr2y8fnabysr-determinate-nix-3.23.2/bin/nix",
+            "vmManifest": "/nix/store/jk73dnmpw27g3xba27nfmwpxrn63cvn4-finite-ci-vm-tools/share/finite-vm/toolchain.json",
+            "firmwareDirectory": "/nix/store/jk73dnmpw27g3xba27nfmwpxrn63cvn4-finite-ci-vm-tools/share/finite-vm/firmware"
+          },
+          "stage": "local-vm-iso-build",
+          "startedAt": "2026-10-27T08:04:08.952402+00:00",
+          "seconds": 815.521,
+          "status": 0,
+          "runnerNetworkDelta": {
+            "rx_bytes": 1241277385,
+            "tx_bytes": 9002733
+          },
+          "childResourceUsage": {
+            "scope": "terminated-and-waited-children",
+            "includesDaemonWork": false,
+            "userCpuSeconds": 0.079255,
+            "systemCpuSeconds": 0.092634,
+            "blockInputOperations": 2392,
+            "blockOutputOperations": 0
+          }
+        },
+        {
+          "schema": 1,
+          "kind": "finite-stage-timing",
+          "authorizesPublication": false,
+          "repository": "closure-labs/finite",
+          "runId": "40468511341",
+          "runAttempt": "1",
+          "revision": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+          "jobName": "build",
+          "phase": null,
+          "profile": "finite-dev",
+          "sourceRevision": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+          "candidateDigest": "sha256:77a88fdffbc6c14d9e35d791b6541601fc127d11e1392a8a1824f31ba2ba0d61",
+          "buildIdentity": "v1:9c5cd4a7b0278ff9f2256fcb348635d01b89a11b4963e79db433f298239e36b7",
+          "runner": {
+            "RUNNER_OS": "Linux",
+            "RUNNER_ARCH": "X64",
+            "ImageOS": "ubuntu24",
+            "ImageVersion": "20261023.334.3"
+          },
+          "lockSha256": {
+            "flake.lock": "bb5e58db2e8027309dba243b584391d7d12ad1c3980cdec3504a0fd4fdc03d05",
+            "devenv.lock": "3ed21088a570fa561a5e6c879156bc24ee1df5854a2f34790e56b65f9415d1f8"
+          },
+          "toolCohort": {
+            "pythonExecutable": "/nix/store/96a77n30fxka384s8a0rffdf7j1v58vk-python3-3.13.15-env/bin/python3.13",
+            "nixExecutable": "/nix/store/69vhmfdm78jb9c3yj0wykr2y8fnabysr-determinate-nix-3.23.2/bin/nix",
+            "vmManifest": "/nix/store/jk73dnmpw27g3xba27nfmwpxrn63cvn4-finite-ci-vm-tools/share/finite-vm/toolchain.json",
+            "firmwareDirectory": "/nix/store/jk73dnmpw27g3xba27nfmwpxrn63cvn4-finite-ci-vm-tools/share/finite-vm/firmware"
+          },
+          "stage": "local-vm-acceptance",
+          "startedAt": "2026-10-27T08:18:11.293234+00:00",
+          "seconds": 1053.437,
+          "status": 0,
+          "runnerNetworkDelta": {
+            "rx_bytes": 6012872649,
+            "tx_bytes": 9477986
+          },
+          "childResourceUsage": {
+            "scope": "terminated-and-waited-children",
+            "includesDaemonWork": false,
+            "userCpuSeconds": 1738.856726,
+            "systemCpuSeconds": 141.904083,
+            "blockInputOperations": 15501232,
+            "blockOutputOperations": 112813824
+          }
+        },
+        {
+          "stage": "foundation-profile-validation",
+          "seconds": 21.638358,
+          "status": 0,
+          "outcome": "success",
+          "guestStartedAt": "2026-10-27T08:28:03.449977+00:00",
+          "nested": true
+        },
+        {
+          "stage": "foundation-home-manager-realisation",
+          "seconds": 167.748087,
+          "status": 0,
+          "outcome": "success",
+          "guestStartedAt": "2026-10-27T08:28:25.088437+00:00",
+          "nested": true
+        },
+        {
+          "stage": "foundation-brew-policy-evaluation",
+          "seconds": 0.87497,
+          "status": 0,
+          "outcome": "success",
+          "guestStartedAt": "2026-10-27T08:31:12.836737+00:00",
+          "nested": true
+        },
+        {
+          "stage": "foundation-brew-bootstrap",
+          "seconds": 148.485707,
+          "status": 0,
+          "outcome": "success",
+          "guestStartedAt": "2026-10-27T08:31:13.713150+00:00",
+          "nested": true
+        },
+        {
+          "stage": "foundation-brew-provisioning",
+          "seconds": 149.362716,
+          "status": 0,
+          "outcome": "success",
+          "guestStartedAt": "2026-10-27T08:31:12.836712+00:00",
+          "nested": true
+        },
+        {
+          "stage": "foundation-activation",
+          "seconds": 113.024222,
+          "status": 0,
+          "outcome": "success",
+          "guestStartedAt": "2026-10-27T08:33:42.199966+00:00",
+          "nested": true
+        },
+        {
+          "stage": "foundation-commit-and-activation",
+          "seconds": 113.025304,
+          "status": 0,
+          "outcome": "success",
+          "guestStartedAt": "2026-10-27T08:33:42.199503+00:00",
+          "nested": true
+        },
+        {
+          "stage": "foundation-initialization",
+          "seconds": 451.796683,
+          "status": 0,
+          "outcome": "success",
+          "guestStartedAt": "2026-10-27T08:28:03.428503+00:00",
+          "nested": true
+        },
+        {
+          "stage": "startup-checks",
+          "seconds": 1,
+          "status": 0,
+          "nested": true
+        },
+        {
+          "stage": "homebrew-setup",
+          "seconds": 0,
+          "status": 0,
+          "nested": true
+        },
+        {
+          "stage": "predecessor-preparation",
+          "seconds": 0,
+          "status": 0,
+          "nested": true
+        },
+        {
+          "stage": "home-init",
+          "seconds": 452,
+          "status": 0,
+          "nested": true
+        },
+        {
+          "stage": "installation",
+          "seconds": 472,
+          "status": 0,
+          "nested": true
+        },
+        {
+          "stage": "first-boot-ssh-ready",
+          "seconds": 53,
+          "status": 0,
+          "nested": true
+        },
+        {
+          "stage": "first-boot-boot-contracts",
+          "seconds": 67,
+          "status": 0,
+          "nested": true
+        },
+        {
+          "stage": "persistence-customization",
+          "seconds": 1,
+          "status": 0,
+          "nested": true
+        },
+        {
+          "stage": "home-activation",
+          "seconds": 454,
+          "status": 0,
+          "nested": true
+        },
+        {
+          "stage": "cleanup",
+          "seconds": 0,
+          "status": 0,
+          "nested": true
+        }
+      ]
+    }
+  ],
+  "mainRun": 40474776795,
+  "mainStatus": "failed closed at both signing admission checks; no production qualification executed",
+  "limitations": [
+    "One queue run and two profiles are not matched warm/cold pairs.",
+    "Nested guest intervals overlap; host critical path remains unknown.",
+    "No production predecessor miss observed."
+  ],
+  "mainAttempt1": {
+    "runnerSeconds": 3369.0,
+    "receiptCoverage": {
+      "selected": 7,
+      "read": 5,
+      "unavailable": [
+        "expired-or-size-bound",
+        "expired-or-size-bound"
+      ],
+      "unmatched": 0
+    },
+    "jobs": [
+      {
+        "jobId": 122090186951,
+        "name": "Documentation checks",
+        "role": "docs",
+        "profile": "shared_or_unknown",
+        "runnerSeconds": 18.0,
+        "conclusion": "success"
+      },
+      {
+        "jobId": 122090187430,
+        "name": "Select checks",
+        "role": "selection",
+        "profile": "shared_or_unknown",
+        "runnerSeconds": 60.0,
+        "conclusion": "success"
+      },
+      {
+        "jobId": 122090188702,
+        "name": "VM tool provisioning trial",
+        "role": "unknown",
+        "profile": "shared_or_unknown",
+        "runnerSeconds": 0,
+        "conclusion": "skipped"
+      },
+      {
+        "jobId": 122090593224,
+        "name": "Nix and runtime contracts",
+        "role": "checks",
+        "profile": "shared_or_unknown",
+        "runnerSeconds": 85.0,
+        "conclusion": "success"
+      },
+      {
+        "jobId": 122091161489,
+        "name": "Publish (finite) / build / build",
+        "role": "build",
+        "profile": "finite",
+        "runnerSeconds": 533.0,
+        "conclusion": "success"
+      },
+      {
+        "jobId": 122091161645,
+        "name": "Publish (finite-dev) / build / build",
+        "role": "build",
+        "profile": "finite-dev",
+        "runnerSeconds": 707.0,
+        "conclusion": "success"
+      },
+      {
+        "jobId": 122091162849,
+        "name": "Validate (${{ matrix.profile }})",
+        "role": "unknown",
+        "profile": "shared_or_unknown",
+        "runnerSeconds": 0,
+        "conclusion": "skipped"
+      },
+      {
+        "jobId": 122094661258,
+        "name": "Publish (finite) / security",
+        "role": "security",
+        "profile": "finite",
+        "runnerSeconds": 584.0,
+        "conclusion": "success"
+      },
+      {
+        "jobId": 122095810146,
+        "name": "Publish (finite-dev) / security",
+        "role": "security",
+        "profile": "finite-dev",
+        "runnerSeconds": 988.0,
+        "conclusion": "success"
+      },
+      {
+        "jobId": 122098556303,
+        "name": "Publish (finite) / attest / attest",
+        "role": "unknown",
+        "profile": "finite",
+        "runnerSeconds": 87.0,
+        "conclusion": "success"
+      },
+      {
+        "jobId": 122099161937,
+        "name": "Publish (finite) / sign",
+        "role": "sign",
+        "profile": "finite",
+        "runnerSeconds": 90.0,
+        "conclusion": "failure"
+      },
+      {
+        "jobId": 122099834570,
+        "name": "Publish (finite) / qualification",
+        "role": "unknown",
+        "profile": "finite",
+        "runnerSeconds": 0,
+        "conclusion": "skipped"
+      },
+      {
+        "jobId": 122099835122,
+        "name": "Publish (finite) / promote",
+        "role": "promote",
+        "profile": "finite",
+        "runnerSeconds": 0,
+        "conclusion": "skipped"
+      },
+      {
+        "jobId": 122102511351,
+        "name": "Publish (finite-dev) / attest / attest",
+        "role": "unknown",
+        "profile": "finite-dev",
+        "runnerSeconds": 96.0,
+        "conclusion": "success"
+      },
+      {
+        "jobId": 122103206974,
+        "name": "Publish (finite-dev) / sign",
+        "role": "sign",
+        "profile": "finite-dev",
+        "runnerSeconds": 116.0,
+        "conclusion": "failure"
+      },
+      {
+        "jobId": 122104068747,
+        "name": "Publish (finite-dev) / qualification",
+        "role": "unknown",
+        "profile": "finite-dev",
+        "runnerSeconds": 0,
+        "conclusion": "skipped"
+      },
+      {
+        "jobId": 122104069100,
+        "name": "CI gate",
+        "role": "gate",
+        "profile": "shared_or_unknown",
+        "runnerSeconds": 5.0,
+        "conclusion": "failure"
+      },
+      {
+        "jobId": 122104070893,
+        "name": "Publish (finite-dev) / promote",
+        "role": "promote",
+        "profile": "finite-dev",
+        "runnerSeconds": 0,
+        "conclusion": "skipped"
+      }
+    ],
+    "sourceProofLookupSeconds": 2.774
+  },
+  "securityDecision": {
+    "pr": 296,
+    "head": "38bf6e1f42a5c7a94dcad8fe32619c9b9ded6051",
+    "proposalSha256": "ccce3619efbc2d94e1f387b1af5c5248d5f159f0d91ea1a14ab7037536c9e0ec",
+    "proposedDisposition": "accepted",
+    "approval": "not yet approved",
+    "findings": 563,
+    "counts": {
+      "finite": {
+        "Medium": 114,
+        "High": 127,
+        "Low": 12,
+        "Critical": 21,
+        "Unknown": 3
+      },
+      "finite-dev": {
+        "High": 131,
+        "Medium": 119,
+        "Low": 10,
+        "Critical": 22,
+        "Unknown": 4
+      }
+    },
+    "packet": {
+      "reference": "ghcr.io/closure-labs/finite-decisions@sha256:3f77d49056296be42044dc655c104eb4182377a80a7b958daecb63193a39575d",
+      "sha256": "a58833720dd62a758fa3cc8ff854758e3e02010e972f63048cd024c52c74a899",
+      "producer": {
+        "repository": "closure-labs/finite",
+        "workflow": "build.yml",
+        "runId": 40474776795,
+        "runAttempt": 1,
+        "headSha": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f",
+        "artifacts": [
+          {
+            "id": 12721695878,
+            "name": "security-finite-40474776795-1",
+            "digest": "sha256:bdc2ece25a4645781ac5ba89da4feedd401419bdf303716e47f46587b454e627"
+          },
+          {
+            "id": 12721627950,
+            "name": "security-finite-dev-40474776795-1",
+            "digest": "sha256:94dff3319c15afdd10592e7070f53b9a2ad1ea8fc83986712caf44c1cbf90765"
+          }
+        ]
+      }
+    }
+  }
+}
