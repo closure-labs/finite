@@ -90,7 +90,7 @@ def job_role(name, workflow=None):
     # Historical monolithic qualification is distinct from today's VM phases.
     if re.fullmatch(r'Publish \([a-z0-9-]+\) / qualification / qualify', name):
         return 'qualification'
-    for role in ('build', 'security', 'sign', 'promote', 'aggregate', 'prepare', 'checks', 'docs', 'gate'):
+    for role in ('build', 'security', 'attest', 'sign', 'promote', 'aggregate', 'prepare', 'checks', 'docs', 'gate'):
         if re.search(r'(?:^| / )' + role + r'$', name, re.I):
             return role
     return 'unknown'

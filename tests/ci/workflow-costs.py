@@ -409,6 +409,21 @@ class Costs(unittest.TestCase):
         self.assertEqual(self.observe()['jobs'][0]['role'], 'decision-event-collection')
         self.assertEqual(costs.job_role('collect'), 'unknown')
 
+    def test_native_attestation_cost_is_profiled_and_counted_once_across_retries(self):
+        self.jobs = [{**self.job, 'id': ident, 'name': f'Publish ({profile}) / attest / attest',
+                      'completed_at': finished, 'conclusion': conclusion}
+                     for ident, profile, finished, conclusion in (
+                         (1, 'finite', '2026-10-23T10:02:27Z', 'success'),
+                         (2, 'finite-dev', '2026-10-23T10:02:36Z', 'failure'))]
+        report = self.observe()
+        self.assertEqual(len(report['jobs']), 2)
+        self.assertEqual({j['role'] for j in report['jobs']}, {'attest'})
+        grouped = costs.aggregate([report])
+        self.assertEqual({r['profile'] for r in grouped}, {'finite', 'finite-dev'})
+        self.assertEqual(sum(r['runnerSeconds'] for r in grouped), 183)
+        self.assertEqual({j['conclusion'] for j in report['jobs']}, {'success', 'failure'})
+        self.assertEqual(costs.job_role('Publish (finite) / attest / future'), 'unknown')
+
     def test_skipped_synthetic_job_is_zero_cost(self):
         self.job['conclusion'] = 'skipped'
         self.assertEqual(self.observe()['jobs'][0]['runnerSeconds'], 0)
