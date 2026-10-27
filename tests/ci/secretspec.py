@@ -94,7 +94,7 @@ class Manifest(unittest.TestCase):
         for path in (ROOT / '.github/workflows').glob('*.yml'):
             with self.subTest(workflow=path.name):
                 self.assertNotIn('secrets.MERGE_QUEUE_TOKEN', path.read_text())
-        for name in ('update-foundation', 'update-flake-lock', 'update-determinate-nix',
+        for name in ('update-flake-lock', 'update-determinate-nix',
                      'update-bluefin', 'queue-dependabot'):
             data = yaml.safe_load((ROOT / '.github/workflows' / (name + '.yml')).read_text())
             steps = [step for job in data['jobs'].values() for step in job['steps']]
@@ -105,6 +105,9 @@ class Manifest(unittest.TestCase):
                 setup = setups[0]
                 self.assertEqual(setup['with']['merge-queue-token'], pat)
                 self.assertEqual(setup['with']['require-merge-queue-token'], 'true')
+        foundation = (ROOT / '.github/workflows/update-foundation.yml').read_text()
+        self.assertNotIn('MERGE_QUEUE_PAT', foundation)
+        self.assertNotIn('MERGE_QUEUE_TOKEN', foundation)
         self.assertFalse((ROOT / '.github/workflows/update-kernel.yml').exists())
         for name in ('release', 'release-recovery'):
             data = yaml.safe_load((ROOT / '.github/workflows' / (name + '.yml')).read_text())

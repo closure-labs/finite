@@ -410,9 +410,9 @@ suppressions. Remove the projection when the pinned Actionlint supports native
 self-repository references. Current completion work is tracked in the
 [0.8.3 ledger](v0.8.3-release-plan.md).
 
-Nix lock updates, coordinated Home Manager/Nixpkgs release updates and the
-Determinate checksum update use the retained dependency workflows. Their
-protected-branch automation reads the repository-available GitHub secret
+Dependency updates use the retained workflows. Weekly lock refreshes and
+Foundation release proposals use repository-scoped Decider tokens for PR
+creation. Remaining legacy updater/queue operations read the GitHub secret
 `MERGE_QUEUE_PAT` (including an organization secret granted to this repository).
 Workflows map it to SecretSpec's internal `MERGE_QUEUE_TOKEN` key, so existing
 local pass entries keep their names. Release publishing uses the same mapping.
@@ -608,6 +608,13 @@ credential remains separate for bounded
 validation monitoring and protected-queue operations. Existing PR authors
 cannot be changed; supersede a personal-authored PR with the reviewed bot PR
 that retains its changes.
+
+Foundation release proposals use the same authenticated Decider commit identity,
+with only Contents/PR write on this repository. The main-only updater resolves
+published release metadata and validates locks/text before issuing its fresh
+token, then clears the App key before PR creation. It receives no publishing
+PAT and grants no merge or release approval. Existing protected review,
+qualification and publication requirements still apply.
 
 Updater jobs allow 270 minutes, including a bounded 240-minute wait for child
 validation. Existing PR and manual runs are reused only for the same branch
