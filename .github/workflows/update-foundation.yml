@@ -1,8 +1,8 @@
-name: Update the reviewed Foundation release
+name: Propose a CI-qualified Foundation main update
 
 on:
   schedule:
-    - cron: "47 9 * * 1"
+    - cron: "47 9 * * *"
   workflow_dispatch:
 
 concurrency:
@@ -24,7 +24,7 @@ permissions:
 
 jobs:
   update:
-    name: Select the newest published Foundation release
+    name: Select the CI-qualified Foundation main commit
     if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 270
@@ -37,7 +37,7 @@ jobs:
       - name: Set up Nix and Cachix
         uses: $/.github/actions/setup-nix
 
-      - name: Resolve the newest published Foundation release
+      - name: Resolve and qualify the Foundation main commit
         id: release
         timeout-minutes: 15
         env:
@@ -56,7 +56,7 @@ jobs:
         if: steps.release.outputs.changed == 'true'
         run: nix develop --file lib/ci-tools.nix shell --command bash tests/repository/text-style.sh
 
-      - name: Resolve Decider credentials after public release validation
+      - name: Resolve Decider credentials after public source validation
         if: steps.release.outputs.changed == 'true'
         id: credentials
         env:
@@ -122,13 +122,14 @@ jobs:
           base: main
           branch: automation/foundation-release
           delete-branch: true
-          commit-message: "inputs: update Foundation to ${{ steps.release.outputs.release }}"
-          title: "inputs: update Foundation to ${{ steps.release.outputs.release }}"
+          commit-message: "inputs: update Foundation to ${{ steps.release.outputs.revision }}"
+          title: "inputs: update Foundation to ${{ steps.release.outputs.revision }}"
           add-paths: |
             flake.nix
             flake.lock
             sources/foundation.json
           body: |
-            Adopt a published Foundation release at its immutable commit.
+            Adopt the CI-qualified Foundation main commit at its immutable revision.
+            The source metadata records the exact upstream CI run and attempt.
             Foundation owns the tested Home Manager dependency closure.
             Review this PR and require the normal image and bootstrap validation before merging.

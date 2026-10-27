@@ -421,8 +421,8 @@
       },
       "original": {
         "owner": "closure-labs",
+        "ref": "main",
         "repo": "foundation",
-        "rev": "b72d5abfb1199baca777fdb34c16d30ec0b4747a",
         "type": "github"
       }
     },

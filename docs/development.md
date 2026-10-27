@@ -67,9 +67,11 @@ automatically.
 ## Work on Home Manager
 
 The Home Manager implementation lives in `closure-labs/foundation`. Finite
-consumes its constructor, catalog, template and helpers at an immutable released
-commit. Change Home Manager behavior in Foundation and validate its release first;
-then update Finite's Foundation pin and source provenance through a reviewed PR.
+consumes its constructor, catalog, template and helpers at an immutable locked
+commit discovered from main. Change Home Manager behavior in Foundation and pass
+its canonical main CI first; then update Finite's Foundation lock and source
+provenance through a reviewed PR. See [Foundation delivery](foundation-delivery.md)
+for the exact qualification and rollback policy.
 Do not make Foundation follow Finite's Nix dependency pins.
 
 Finite retains image profiles, host compatibility, Nix provisioning and cloud-init

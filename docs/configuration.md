@@ -2,13 +2,13 @@
 
 Choose roles and optional packages with `finite-configure`, then add your own
 apps and settings in `~/.config/home-manager/`. Your configuration uses a pinned
-[Foundation](https://github.com/closure-labs/foundation) release and stays with
+[Foundation](https://github.com/closure-labs/foundation) source and stays with
 you across system updates.
 
 ## Your personal configuration
 
 `~/.config/home-manager/` contains a small flake importing Foundation, its lock,
-`foundation.json` release provenance, `profile.json`, `customize.nix` and
+`foundation.json` source provenance, `profile.json`, `customize.nix` and
 `modules/local.nix`. Shared modules stay in the pinned Foundation source.
 
 Use `finite-configure` to choose roles and optional packages. Edit
@@ -43,23 +43,31 @@ control so they can be restored as one configuration.
 
 ## Update Foundation
 
-New personal flakes track `github:closure-labs/foundation/latest-release`.
-The branch advances only to published stable releases with passing CI;
-`flake.lock` records the exact source and dependency pins. `nh home switch -u`
-updates all personal flake inputs and activates the result. Use
+Foundation's main-delivery helpers create personal flakes tracking
+`github:closure-labs/foundation/main`. The lock records the exact source revision,
+content hash and dependency pins; a version tag is no longer required for an
+update. Existing installed helpers retain their previous release policy until
+Finite adopts the new Foundation source through a reviewed lock update.
+
+`nh home switch -u` updates all personal inputs and activates the result. Use
 `nh home switch -U foundation` to update only Foundation, or `nh home switch`
-to apply changes while keeping the existing lock. The lock is authoritative if
-`foundation.json` still describes an earlier release after an NH update.
+to keep the existing lock. Direct NH/Nix updates do not check Foundation's main
+CI qualification. The lock is authoritative if `foundation.json` still describes
+an earlier source after an NH update.
 
 Existing fixed-commit consumers can opt in by changing their Foundation URL in
-`flake.nix` to `github:closure-labs/foundation/latest-release` and updating that
-input. Existing configurations are never rewritten at login.
+`flake.nix` to `github:closure-labs/foundation/main` and updating that input.
+Existing configurations are never rewritten at login. The main-delivery helper
+migrates the former `latest-release` URL during an explicit accepted update.
 
-Run `finite-home-update --check` to inspect published releases. Run
-`finite-home-update`, or `ujust update`, to stage, build and apply the latest
-supported published release. Drafts, prereleases and older versions are excluded.
-Foundation's own tested dependency closure advances with its release; personal
-inputs and local modules remain yours.
+With the new helper, run `finite-home-update --check` to inspect the current main
+candidate. Run `finite-home-update`, or `ujust update`, to stage, build and apply
+that commit only after canonical upstream main CI passes. Pending or failed CI
+is reported without replacing the installed source. Revision identity, not a
+version bump, determines availability; backwards source updates are rejected.
+Foundation's tested dependency closure advances with the selected source;
+personal inputs and local modules remain yours. Finite's production proposal
+policy is described in [Foundation delivery](foundation-delivery.md).
 
 The updater runs as the desktop user with a 3 GiB memory limit, one build job
 and one core. Larger profiles can explicitly set
@@ -70,11 +78,11 @@ updates keep a `home-manager.previous.*` backup. If activation fails, it restore
 the configuration and attempts to reactivate the previous generation. Homebrew
 and Flatpak side effects cannot all be undone by this rollback.
 
-Background checks can display a clickable release notification; they do not
-activate updates. `finite-app-status --json` reports release availability and
+Background checks can display a clickable update notification; they do not
+activate updates. `finite-app-status --json` reports update availability and
 `finite-app-status --review` opens the review window. An OS update or graphical
 login does not overwrite an existing user's configuration or select another
-Foundation release. Bluefin's root `uupd` timer remains separate from the explicit
+Foundation source. Bluefin's root `uupd` timer remains separate from the explicit
 user update step.
 
 ## Migrate the former copied template
