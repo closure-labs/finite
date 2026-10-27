@@ -38,7 +38,7 @@ unknown. Internal Nix evaluation/fetch/build and Flatpak readiness remain inside
 their parent stages until separately measured.
 
 [Foundation #23](https://github.com/closure-labs/foundation/pull/23) merged the
-producer instrumentation. [Foundation v0.4.0](https://github.com/closure-labs/foundation/releases/tag/v0.4.0)
+producer instrumentation. [Foundation v0.4.1](https://github.com/closure-labs/foundation/releases/tag/v0.4.1)
 is published, and this candidate pins its reviewed immutable source. Both profiles'
 fresh-install and upgrade/rollback qualification remain required before adoption.
 Earlier v0.3.3 mains legitimately supply no Foundation timing records; an upgrade
