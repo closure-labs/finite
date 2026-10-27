@@ -15,6 +15,7 @@ the recorded revision and date.
 | [CI dependency graph and publishing audit, October 26 UTC](ci-dependency-graph-2026-10-26.md) | Explicit FlakeHub authentication boundary, consolidated publication preflight and validated asset ownership |
 | [Historical decision provenance prototype, October 26 UTC](ci-history-provenance-2026-10-26.md) | Bounded parallel historical reads, six-arm read-only replay and pending complete-job canary |
 | [Qualification retry recovery, October 26 UTC](ci-qualification-retry-2026-10-26.md) | Authenticated carried-phase collection, original ISO attempts and corrected copied-job accounting |
+| [Source priorities and completed audit rollout, October 27 UTC](ci-source-priorities-2026-10-27.md) | #287/#288 native rollout, unexecuted predecessor diagnostics, conserved source-step/CPU decomposition and Foundation timing draft |
 | [Release safety and remaining CI work, October 27 UTC](ci-release-safety-audit-2026-10-27.md) | Admission/release guard mapping, 320 focused regressions, credential and retention audit, closed inconclusive controller trial and remaining remediation boundaries |
 | [Stable 0.8.3 completion ledger](v0.8.3-release-plan.md) | Current CI/CD investigations, iterative campaign gates, source-proof promotion and workstation/release readiness |
 | [Source-proof canary readiness, October 26 UTC](ci-source-canary-readiness-2026-10-26.md) | Five authenticated natural shadow matches, whole-job baseline and bounded canary procedure |
