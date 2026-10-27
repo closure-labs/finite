@@ -25,6 +25,7 @@ permissions:
 jobs:
   update:
     name: Select the newest published Foundation release
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 270
     steps:
@@ -35,9 +36,6 @@ jobs:
 
       - name: Set up Nix and Cachix
         uses: $/.github/actions/setup-nix
-        with:
-          merge-queue-token: ${{ secrets.MERGE_QUEUE_PAT }}
-          require-merge-queue-token: "true"
 
       - name: Resolve the newest published Foundation release
         id: release
@@ -58,12 +56,69 @@ jobs:
         if: steps.release.outputs.changed == 'true'
         run: nix develop --file lib/ci-tools.nix shell --command bash tests/repository/text-style.sh
 
+      - name: Resolve Decider credentials after public release validation
+        if: steps.release.outputs.changed == 'true'
+        id: credentials
+        env:
+          FINITE_REVIEW_CLIENT_ID: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
+          FINITE_REVIEW_PRIVATE_KEY: ${{ secrets.DECIDER_KEY }}
+        run: >-
+          finite-ci-secrets-run review-app --
+          secretspec export --file secretspec.toml --profile review-app --provider github-actions
+          --scope review-app --reason 'Finite Foundation-update PR authorship' --format gha
+
+      - name: Create short-lived Decider PR token
+        if: steps.release.outputs.changed == 'true'
+        id: foundation-pr-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ env.FINITE_REVIEW_CLIENT_ID }}
+          private-key: ${{ env.FINITE_REVIEW_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Clear Decider private credentials
+        if: always() && steps.credentials.outcome == 'success'
+        run: | # zizmor: ignore[github-env]
+          printf 'FINITE_REVIEW_CLIENT_ID=\nFINITE_REVIEW_PRIVATE_KEY=\n' >>"$GITHUB_ENV"
+
+      - name: Authenticate Decider commit and PR identity
+        if: steps.release.outputs.changed == 'true'
+        id: pr-identity
+        env:
+          GH_TOKEN: ${{ steps.foundation-pr-token.outputs.token }}
+          APP_SLUG: ${{ steps.foundation-pr-token.outputs.app-slug }}
+          EXPECTED_BOT: ${{ vars.FINITE_REVIEW_BOT_LOGIN }}
+        run: |
+          python3 - <<'PYTHON'
+          import json, os, re, subprocess
+          from pathlib import Path
+          slug = os.environ['APP_SLUG']
+          if not re.fullmatch(r'[A-Za-z0-9_-]+', slug):
+              raise ValueError('Invalid Decider App slug')
+          login = slug + '[bot]'
+          if login != os.environ['EXPECTED_BOT']:
+              raise ValueError('Token App differs from configured Decider bot')
+          user = json.loads(subprocess.check_output(['gh', 'api', 'users/' + login], text=True, timeout=30))
+          if (not isinstance(user, dict) or user.get('login') != login or user.get('type') != 'Bot'
+                  or type(user.get('id')) is not int or user['id'] <= 0):
+              raise ValueError('GitHub did not authenticate the configured Decider bot')
+          with Path(os.environ['GITHUB_OUTPUT']).open('a') as output:
+              output.write('name=' + login + '\n')
+              output.write('email=' + str(user['id']) + '+' + login + '@users.noreply.github.com\n')
+              output.write('pr-author=app/' + slug + '\n')
+          PYTHON
+
       - name: Open or update pull request
         if: steps.release.outputs.changed == 'true'
         id: update
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
-          token: ${{ env.MERGE_QUEUE_TOKEN }}
+          token: ${{ steps.foundation-pr-token.outputs.token }}
+          author: ${{ steps.pr-identity.outputs.name }} <${{ steps.pr-identity.outputs.email }}>
+          committer: ${{ steps.pr-identity.outputs.name }} <${{ steps.pr-identity.outputs.email }}>
           base: main
           branch: automation/foundation-release
           delete-branch: true
