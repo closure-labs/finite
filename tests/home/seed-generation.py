@@ -15,7 +15,6 @@ ROOT = Path(__file__).resolve().parents[2]
 CATALOG = Path(os.environ["FINITE_HOME_CATALOG_PATH"])
 SOURCE = Path(os.environ["FINITE_TEST_FOUNDATION_SOURCE"])
 COMMAND = os.environ["FINITE_TEST_CLOUD_INIT_COMMAND"]
-SCHEMA = json.loads(CATALOG.read_text()).get("profileCapabilities", {}).get("writeSchema", 2)
 
 
 def yaml_json(contents):
@@ -42,13 +41,12 @@ class SeedGeneration(SeedFixture):
         result = self.invoke("--hardware", "generic-x86_64", "--roles", "it,developer", "--packages", "uv,jj")
         self.assertEqual(result.returncode, 0, result.stderr)
         profile = yaml_json((self.output / "profile.yaml").read_text())
-        self.assertEqual(profile["schema"], SCHEMA)
+        self.assertEqual(profile["schema"], 3)
         self.assertEqual(profile["roles"], ["developer", "it"])
         self.assertEqual(profile["packages"], ["jj", "uv"])
         self.assertEqual(profile["identity"], {"username": "seed-target", "homeDirectory": "/var/home/seed-target"})
-        if SCHEMA == 3:
-            self.assertEqual(profile["capabilities"], [])
-            self.assertEqual(profile["host"]["formFactor"], "generic")
+        self.assertEqual(profile["capabilities"], [])
+        self.assertEqual(profile["host"]["formFactor"], "generic")
 
     def test_invalid_selections_and_identity_leave_output_absent(self):
         for selection in (("--roles", "developer,developer"), ("--roles", "unknown"),
@@ -67,20 +65,12 @@ class SeedGeneration(SeedFixture):
         self.assertEqual(sentinel.read_text(), "preserve")
         self.assertEqual(list(self.output.iterdir()), [sentinel])
 
-    def test_new_options_are_explicitly_rejected_by_the_schema_two_writer(self):
-        if SCHEMA == 3:
-            result = self.invoke("--cpu", "amd", "--form-factor", "desktop", "--no-camera", "--capabilities", "")
-            self.assertEqual(result.returncode, 0, result.stderr)
-            value = yaml_json((self.output / "profile.yaml").read_text())
-            self.assertEqual(value["host"]["cpu"], "amd")
-            self.assertFalse(value["host"]["camera"])
-        else:
-            for selection in (("--capabilities", ""), ("--no-camera",), ("--cpu", "amd")):
-                with self.subTest(selection=selection):
-                    result = self.invoke("--hardware", "generic-x86_64", *selection)
-                    self.assertNotEqual(result.returncode, 0)
-                    self.assertIn("schema-3", result.stderr.lower())
-                    self.assertFalse(self.output.exists())
+    def test_host_and_capability_options_are_supported(self):
+        result = self.invoke("--cpu", "amd", "--form-factor", "desktop", "--no-camera", "--capabilities", "")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        value = yaml_json((self.output / "profile.yaml").read_text())
+        self.assertEqual(value["host"]["cpu"], "amd")
+        self.assertFalse(value["host"]["camera"])
 
     def test_iso_contains_matching_profile_and_cloud_init_metadata(self):
         result = self.invoke("--hardware", "dell-xps-9350-intel")
@@ -103,7 +93,6 @@ class SeedGeneration(SeedFixture):
         self.assertTrue(all(path.stat().st_mode & 0o777 == 0o644 for path in self.output.iterdir()))
 
 
-@unittest.skipUnless(SCHEMA == 3, "Requires the current Foundation writer")
 class CurrentSeedGeneration(SeedFixture):
     def test_mixed_roles_host_and_capabilities_match_actual_foundation_normalization(self):
         result = self.invoke("--roles", "creative,family,developer", "--capabilities", "recording,office",

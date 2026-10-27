@@ -10,6 +10,9 @@ Development version: `0.8.3-dev`. The next stable release is 0.8.3.
 
 ### Changed
 
+- Make Home Manager selection readers, first-login and seed writers schema-3-only.
+  Remove the legacy seed implementation; reject older saved/provisioned profiles
+  without rewriting user data or generating replacement selections.
 - Keep ISO payloads out of protected signing handoffs, authenticating native
   preparation and fetching original approved products once for publication.
 - Bound checks snapshots by dependency generation, scope contract source inputs,

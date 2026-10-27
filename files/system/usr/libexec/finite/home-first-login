@@ -48,7 +48,7 @@ until [[ -x "$nix" ]] &&
 done
 [[ -r "$running" ]] || { echo "Finite profile metadata is unavailable: $running" >&2; false; }
 
-# Older helpers do not expose this query. They can initialize only schema 1/2.
+# Require an explicit helper contract; never infer legacy profile support.
 # Variables inside this literal filter belong to jq, not Bash.
 # shellcheck disable=SC2016
 capability_filter='def valid_capabilities:
@@ -62,13 +62,17 @@ capability_filter='def valid_capabilities:
 if capabilities=$(FINITE_NIX_COMMAND="$nix" "$home_init" --capabilities); then
 	jq -e "$capability_filter valid_capabilities" <<<"$capabilities" >/dev/null || { echo "Invalid Home Manager helper capabilities" >&2; false; }
 else
-	capabilities='{"schema":1,"initializeSchemas":[1,2],"normalizeSchemas":[2],"writeSchema":2,"catalogSchemas":[3]}'
+	echo "Home Manager helper must advertise schema-3 support" >&2
+	false
 fi
 
 initialize_profile() {
 	local candidate="$1" schema
-	# Check before invoking historical initializers that silently assign schema 2.
-	schema=$(yq -o=json '.' "$candidate" | jq -er '.schema | select(type == "number" and . > 0 and floor == .)')
+	# Reject unsupported selections without changing or replacing user data.
+	schema=$(yq -o=json '.' "$candidate" | jq -er '.schema | select(type == "number" and . == 3)') || {
+		echo "Home Manager selection must use schema 3; preserve and convert the profile explicitly: $candidate" >&2
+		return 2
+	}
 	jq -e --argjson schema "$schema" '.initializeSchemas | index($schema) != null' <<<"$capabilities" >/dev/null || {
 		echo "Installed Home Manager helper cannot initialize profile schema $schema: $candidate" >&2
 		return 2
@@ -101,12 +105,12 @@ case "${image_hardware}" in
 	*) echo "Unsupported Finite image hardware: ${image_hardware}" >&2; false ;;
 esac
 
-# Only fresh selection negotiates a writer; saved profiles retain their schema.
+# Fresh selections require a schema-3 catalog and helper.
 jq -e --argjson helper "$capabilities" --arg foundation "$foundation" --arg hardware "$hardware" "$capability_filter"'
   . as $catalog |
-  (.profileCapabilities.writeSchema // 2) as $writer |
-  ($writer == 2 or $writer == 3) and
-  (if has("profileSchema") then .profileSchema == $writer else true end) and
+  3 as $writer |
+  .profileCapabilities.writeSchema == $writer and
+  .profileSchema == $writer and
   ($helper.catalogSchemas | index($catalog.schema) != null) and
   ($helper.initializeSchemas | index($writer) != null) and
   ($helper.normalizeSchemas | index($writer) != null) and
@@ -117,14 +121,11 @@ jq -e --argjson helper "$capabilities" --arg foundation "$foundation" --arg hard
     (.value.label | type == "string") and (.value.order | type == "number") and
     (.value.classification == null or
       (.value.classification as $id | $catalog.classifications[$id].label | type == "string"))) and
-  (if has("profileCapabilities") then
-    (.profileCapabilities | valid_capabilities) and
-    (.profileCapabilities.catalogSchemas | index($catalog.schema) != null) and
-    (.profileCapabilities.normalizeSchemas | index($writer) != null) and
-    (.profileCapabilities.initializeSchemas | index($writer) != null)
-   else true end)
+  (.profileCapabilities | valid_capabilities) and
+  (.profileCapabilities.catalogSchemas | index($catalog.schema) != null) and
+  (.profileCapabilities.normalizeSchemas | index($writer) != null) and
+  (.profileCapabilities.initializeSchemas | index($writer) != null)
 ' "$catalog" >/dev/null || { echo "Incompatible Home Manager profile catalog or helper" >&2; false; }
-writer_schema=$(jq -er '.profileCapabilities.writeSchema // 2' "$catalog")
 role_rows=()
 mapfile -d '' -t role_rows < <(jq -j '
   . as $catalog | .roles | to_entries | sort_by(.value.order, .key)[] |
@@ -143,12 +144,10 @@ fi
 generated=$(mktemp)
 trap 'rm -f -- "$generated"' EXIT
 jq -n \
-	--argjson schema "$writer_schema" \
 	--arg foundation "$foundation" \
 	--arg hardware "$hardware" \
 	--arg roles "$roles" \
-	'{schema: $schema, foundation: $foundation, hardware: $hardware, packages: [],
-    roles: (if $roles == "" then [] else ($roles | split(",")) end), identity: {}} |
-    if $schema == 3 then . + {capabilities: []} else . end' \
+	'{schema: 3, foundation: $foundation, hardware: $hardware, packages: [], capabilities: [],
+    roles: (if $roles == "" then [] else ($roles | split(",")) end), identity: {}}' \
 	>"$generated"
 initialize_profile "$generated"

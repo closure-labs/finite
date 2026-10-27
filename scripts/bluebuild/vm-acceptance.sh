@@ -458,7 +458,7 @@ mountpoint /nix
 /nix/var/nix/profiles/default/bin/nix store ping --store daemon
 printf 'persistent-nix-state\n' | sudo tee /var/home/nix/finite-acceptance >/dev/null
 jq -n --arg foundation "$(jq -r .foundation /usr/share/finite/profile.json)" \
-  '{schema:2,foundation:$foundation,hardware:"generic-x86_64",packages:[],roles:[],identity:{}}' >"$HOME/profile.json"
+  '{schema:3,foundation:$foundation,hardware:"generic-x86_64",packages:[],roles:[],capabilities:[],identity:{}}' >"$HOME/profile.json"
 export XDG_RUNTIME_DIR="/run/user/$(id -u)"
 export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
 export FINITE_NIX_COMMAND=/nix/var/nix/profiles/default/bin/nix

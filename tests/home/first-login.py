@@ -38,12 +38,12 @@ exit 3
         nix = executable('nix', 'exit 0\n')
         home_init = executable('home-init', """
 if [[ ${1:-} == --capabilities ]]; then
-  printf '%s\n' '{"schema":1,"initializeSchemas":[1,2,3],"normalizeSchemas":[2,3],"writeSchema":3,"catalogSchemas":[3]}'
+  printf '%s\n' '{"schema":1,"initializeSchemas":[3],"normalizeSchemas":[3],"writeSchema":3,"catalogSchemas":[3]}'
   exit 0
 fi
 touch "$LOGIN_ROOT/initialized"
 """)
-        (self.root / 'seed.yaml').write_text('schema: 2\n')
+        (self.root / 'seed.yaml').write_text('schema: 3\n')
         (self.root / 'running.json').write_text('{}\n')
         self.env = {**os.environ, 'PATH': str(binaries) + ':' + os.environ['PATH'],
                     'LOGIN_ROOT': str(self.root), 'ACTIVE': 'both', 'FINITE_NIX_COMMAND': nix,
