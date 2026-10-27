@@ -36,7 +36,11 @@ def collect(stream, output, console=sys.stdout):
                     record = decode(line[len(FOUNDATION):])
                     if any(row['stage'] == record['stage'] for row in foundation):
                         raise ValueError('Duplicate Foundation timing')
+                    # Keep the complete guest receipt under its existing 16 KiB cap.
                     foundation.append(record)
+                    if len(document().encode()) > 14336:
+                        foundation.pop()
+                        raise ValueError('Foundation timing envelope exceeds receipt budget')
                 except (ValueError, TypeError):
                     rejected = min(rejected + 1, 1000000)
                 try:

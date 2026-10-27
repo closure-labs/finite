@@ -96,6 +96,7 @@ in {
     python3 tests/ci/ci-run-admission.py
     python3 tests/ci/decision-revocation.py
     python3 tests/ci/validation-preflight.py
+    python3 tests/ci/foundation-diagnostics.py
     python3 tests/ci/workflow-costs.py
     python3 tests/ci/decision-check.py
     python3 tests/ci/decision-controller.py
@@ -107,6 +108,7 @@ in {
     python3 tests/ci/publication-authority.py
     python3 tests/ci/release-set.py
     python3 tests/ci/prepare-release-set.py
+    python3 tests/ci/recovery-completion.py
     python3 tests/ci/reconcile-decisions.py
     python3 tests/workstation/cleanup-brew.py
     python3 tests/ci/verify-attestation-subject.py
