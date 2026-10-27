@@ -95,6 +95,7 @@ in {
     python3 tests/ci/ci-run-admission.py
     python3 tests/ci/decision-revocation.py
     python3 tests/ci/validation-preflight.py
+    python3 tests/ci/foundation-diagnostics.py
     python3 tests/ci/workflow-costs.py
     python3 tests/ci/decision-check.py
     python3 tests/ci/decision-controller.py
