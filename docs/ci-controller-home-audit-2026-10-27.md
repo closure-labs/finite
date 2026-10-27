@@ -138,3 +138,25 @@ latency tradeoff. First distinguish transport from installation and no-op checks
 An asynchronous service can improve perceived login time only with explicit
 readiness/failure reporting. Baking defaults into `/usr` does not make mutable
 Flatpak installations bootc-transactional. Keep fresh-install coverage unseeded.
+
+## Recovery guard implementation
+
+The completion verifier now joins a successful trusted main publisher to exact
+profile/build identity, source ancestry, successful sign/security/qualification/
+promotion jobs, digest-authenticated native archives, current qualification
+inputs, encrypted Secure Boot acceptance and desktop evidence. It revalidates
+fresh native security, live decision coverage, the image signature and every
+public alias. Registry labels alone cannot satisfy a request.
+
+Checks run before a CAS claim and again immediately before dispatch. Missing,
+stale, revoked, malformed, mismatched or ambiguous proof retains recovery. The
+lookup is bounded to ten recent successful publishers. A schema-2 `satisfied`
+journal records immutable publisher/artifact identities separately from schema-1
+claims and dispatches; every subsequent reconciliation reauthenticates live proof.
+Existing dispatched records and lost-response discovery retain their semantics.
+Frozen decisions and historical packets are unchanged.
+
+The cancelled follow-ups 40535098249 and 40537674162 consumed **776 runner
+seconds combined**. This is incurred cost, retained from the supplied audit
+accounting; no avoided cost or recurring savings has been measured. Source tests
+do not establish production rollout or new qualification.
