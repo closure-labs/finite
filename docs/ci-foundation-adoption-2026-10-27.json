@@ -1,0 +1,179 @@
+{
+  "schema": 1,
+  "readOnly": true,
+  "authorizesPublication": false,
+  "baselineMain": "afc20e1d8aebbffaf106d5c87818430bafd7eb7e",
+  "collectorPr": 291,
+  "nativeUpdaterAuthor": {
+    "id": 344936881,
+    "login": "cl-decider[bot]",
+    "type": "Bot"
+  },
+  "qualificationStatus": "not-yet-qualified",
+  "observedAt": "2026-10-27T06:43:31.072342+00:00",
+  "foundationRelease": {
+    "schema": 1,
+    "authorizesPublication": false,
+    "tag": "v0.4.1",
+    "sourceRevision": "8ae2b6bdcca1f7c025fd9c75e7b5273cffd79de0",
+    "releaseUrl": "https://github.com/closure-labs/foundation/releases/tag/v0.4.1",
+    "publishedAt": "2026-10-27T06:32:50Z",
+    "nativeReleaseId": 425102140,
+    "nativeValidationRun": 40461006918,
+    "checksumVerified": true,
+    "nativeAssets": [
+      {
+        "id": 680690033,
+        "name": "foundation-v0.4.1.tar.gz",
+        "size": 179890,
+        "digest": "sha256:f87e7201990e3a9aaa74ae3fa5c5deeba18fd97486b1d14fb7bc0297dea493ac",
+        "created_at": "2026-10-27T06:32:16Z",
+        "updated_at": "2026-10-27T06:32:16Z"
+      },
+      {
+        "id": 680690031,
+        "name": "SHA256SUMS",
+        "size": 91,
+        "digest": "sha256:6ef72dae7a0498e882dc568a53a20d48070044ddd0afb8a2449cf5b5f07f5b6f",
+        "created_at": "2026-10-27T06:32:16Z",
+        "updated_at": "2026-10-27T06:32:16Z"
+      }
+    ],
+    "initializerSourceUnchangedFrom040": true,
+    "changedFiles": [
+      ".github/workflows/check.yml",
+      ".github/workflows/home-release.yml",
+      ".github/workflows/lock-update.yml",
+      "CHANGELOG.md",
+      "README.md",
+      "VERSION",
+      "docs/ACTIVATION.md",
+      "docs/API.md",
+      "docs/ARCHITECTURE.md",
+      "docs/CAMERA.md",
+      "docs/CI.md",
+      "docs/PROFILES.md",
+      "docs/README.md",
+      "flake.lock",
+      "foundation.json",
+      "modules/ci/_graph.json",
+      "modules/ci/_graph.nix",
+      "modules/ci/_plans.nix",
+      "modules/ci/default.nix",
+      "modules/flake/exports/_api.nix",
+      "modules/flake/exports/_outputs.nix",
+      "modules/home/commands/_feature.nix",
+      "modules/home/commands/_packages.nix",
+      "modules/hosts/camera/ipu7/_check.py",
+      "modules/hosts/camera/ipu7/_feature.nix",
+      "modules/hosts/camera/ipu7/_home.nix",
+      "modules/hosts/camera/ipu7/_package.nix",
+      "modules/hosts/camera/ipu7/default.nix",
+      "scripts/ci_plan.py",
+      "tests/foundation-cli.sh",
+      "tests/test_ci_plan.py",
+      "tests/test_ipu7_camera.py"
+    ]
+  },
+  "pinAudit": {
+    "schema": 1,
+    "readOnly": true,
+    "authorizesPublication": false,
+    "updaterRun": 40462552121,
+    "updaterSource": "afc20e1d8aebbffaf106d5c87818430bafd7eb7e",
+    "pinCommit": "538c36b598ab693436bce1243b393ff1de499173",
+    "foundationRevision": "8ae2b6bdcca1f7c025fd9c75e7b5273cffd79de0",
+    "foundationNarHash": "sha256-c1Opu2UmbVqhcE52rx6/RZVGYiSHfrEeNin6IqAMXmM=",
+    "version": "0.4.1",
+    "unchangedOtherRootClosures": {
+      "den": 1,
+      "devenv": 12,
+      "gen": 24,
+      "import-tree": 1,
+      "nixpkgs": 1,
+      "nixpkgs-weekly": 1,
+      "treefmt-nix": 2
+    },
+    "nativeProducerFileSha256": {
+      "flake.nix": "0025b7ff51d0db7b33185c415d6eb2b539856f5bf5cf74d37fd011148a3f6b89",
+      "flake.lock": "bb5e58db2e8027309dba243b584391d7d12ad1c3980cdec3504a0fd4fdc03d05",
+      "sources/foundation.json": "baee797a5a17b3bb9eedb1ce3cd078f4721d7519af10c2b24ab3673c50788545"
+    }
+  },
+  "supersededPinPr": 295,
+  "priorCandidate": {
+    "authorizesPublication": false,
+    "baselineMain": "d50da603f4a9729ae1994acddc07a2734a250c6a",
+    "channelRuns": [
+      40453822418,
+      40453823064
+    ],
+    "collectorPr": 291,
+    "foundationRelease": {
+      "checksumVerified": true,
+      "humanPublicationApproval": true,
+      "nativeArchiveMatchesReviewedSource": true,
+      "nativeAssets": [
+        {
+          "created_at": "2026-10-27T05:06:22Z",
+          "digest": "sha256:08413cb214976bd223c1c32458cd15b830a87e23c0b9b80b9ef58a3bc781f25f",
+          "id": 680514058,
+          "name": "foundation-v0.4.0.tar.gz",
+          "size": 171814,
+          "updated_at": "2026-10-27T05:06:22Z"
+        },
+        {
+          "created_at": "2026-10-27T05:06:22Z",
+          "digest": "sha256:c64f38929b2c74074dfbb24fc815574dea6482a1031d03cc5f65f89f94b68654",
+          "id": 680514062,
+          "name": "SHA256SUMS",
+          "size": 91,
+          "updated_at": "2026-10-27T05:06:22Z"
+        }
+      ],
+      "nativeReleaseId": 425054046,
+      "nativeValidationRun": 40452595186,
+      "publishedAt": "2026-10-27T05:10:39Z",
+      "releaseUrl": "https://github.com/closure-labs/foundation/releases/tag/v0.4.0",
+      "sourceRevision": "214e62aa594fc51a7416d69a01ab345edf036f77",
+      "tag": "v0.4.0"
+    },
+    "latestReleaseRevision": "214e62aa594fc51a7416d69a01ab345edf036f77",
+    "nativeUpdaterAuthor": {
+      "id": 344936881,
+      "login": "cl-decider[bot]",
+      "type": "Bot"
+    },
+    "observedAt": "2026-10-27T05:30:38.848035+00:00",
+    "pinAudit": {
+      "authorizesPublication": false,
+      "foundationNarHash": "sha256-xyfDSCECkypjFIhQRmFe0HZuaVzn3Mo6uPVzmw1yQHg=",
+      "foundationRevision": "214e62aa594fc51a7416d69a01ab345edf036f77",
+      "nativeProducerFileSha256": {
+        "flake.lock": "3bad76e9c9dbb0004372ef25f8011758ac19a9f481a3e2a88440d89ff3fe6432",
+        "flake.nix": "ff3b8fcc56d9e1a5b06e24429bbfb848993dcfb5db8e86b108cf770126c5985b",
+        "sources/foundation.json": "b5e691f939b72027c6251e425157ae011a00431ca51df70c52a034cdb8d77fc0"
+      },
+      "pinCommit": "34d4bd23b8601368cfe91cfa6ebb42cab77642c7",
+      "readOnly": true,
+      "schema": 1,
+      "unchangedOtherRootClosures": {
+        "den": 1,
+        "devenv": 12,
+        "gen": 24,
+        "import-tree": 1,
+        "nixpkgs": 1,
+        "nixpkgs-weekly": 1,
+        "treefmt-nix": 2
+      },
+      "updaterRun": 40454988212,
+      "updaterSource": "d50da603f4a9729ae1994acddc07a2734a250c6a",
+      "version": "0.4.0"
+    },
+    "qualificationStatus": "not-yet-qualified",
+    "readOnly": true,
+    "schema": 1,
+    "supersededPinPr": 293
+  },
+  "initializerSourceUnchangedFrom040": true
+}

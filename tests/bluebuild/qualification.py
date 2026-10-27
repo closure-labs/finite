@@ -167,6 +167,23 @@ class Qualification(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'current installer/test'):
             r.verify_reused_acceptance(value, root=tree)
 
+    def test_foundation_timing_dependency_is_bound_to_qualification(self):
+        tree = self.directory / 'foundation-input-tree'
+        (tree / 'scripts/ci').mkdir(parents=True)
+        (tree / 'sources').mkdir()
+        (tree / 'sources/installer-security.json').write_text('{}')
+        validator = tree / 'scripts/ci/foundation_timings.py'
+        validator.write_text('version = 1\n')
+        before = q.source_inputs(tree)
+        self.assertIn('scripts/ci/foundation_timings.py', before)
+        value = self.aggregate()
+        value['qualificationReuse'] = {'run': 123}
+        value['qualificationContext']['inputs'] = before
+        value['qualificationContextSha256'] = q.identity(value['qualificationContext'])
+        validator.write_text('version = 2\n')
+        with self.assertRaisesRegex(ValueError, 'current installer/test'):
+            r.verify_reused_acceptance(value, root=tree)
+
     def test_nonselected_release_keeps_legacy_iso_run_and_does_not_claim_exact_bytes(self):
         acceptance = self.aggregate()
         acceptance.pop('qualifiedIsoOrigin', None)

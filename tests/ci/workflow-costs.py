@@ -1197,6 +1197,56 @@ class Costs(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'Duplicate or invalid'):
                 cost_receipts.join(report, artifacts, reader)
 
+    def test_foundation_observation_is_native_bound_optional_and_not_a_host_clock(self):
+        import cost_receipts
+        from contextlib import contextmanager
+        import io, zipfile
+        self.job['name'] = 'Validate (finite) / build'
+        artifact = {'id': 20, 'name': 'image-finite-10-1', 'expired': False,
+                    'size_in_bytes': 500, 'digest': 'sha256:' + 'c' * 64,
+                    'workflow_run': {'id': 10, 'head_sha': 'a' * 40}}
+        record = {'schema': 1, 'kind': 'foundation-stage-timing', 'authorizesPublication': False,
+                  'stage': 'initialization', 'seconds': 12.5, 'status': 7, 'outcome': 'error',
+                  'startedAt': '2026-10-27T01:00:00Z'}
+        observation = {'schema': 1, 'stages': [record], 'rejectedRecords': 1}
+        value = {'schema': 1, 'stages': [{'stage': 'home-init', 'seconds': 13, 'status': 7}], 'foundation': observation}
+        member = ['vm-local/guest-timings.json']
+        @contextmanager
+        def reader(*args):
+            raw = io.BytesIO()
+            with zipfile.ZipFile(raw, 'w') as archive:
+                archive.writestr(member[0], json.dumps(value))
+            raw.seek(0)
+            yield raw
+        report = self.observe()
+        cost_receipts.join(report, [artifact, artifact], reader)
+        job = report['jobs'][0]
+        self.assertEqual(job['foundationTimings'], observation)
+        self.assertEqual(len(job['stages']), 2)
+        stage = job['stages'][0]
+        self.assertEqual((stage['stage'], stage['seconds'], stage['status']), ('foundation-initialization', 12.5, 7))
+        self.assertNotIn('startedAt', stage)
+        self.assertIsNone(costs.stage_exclusive_seconds(job, stage))
+        for change in ({'stage': 'unreviewed'}, {'seconds': True}, {'seconds': float('inf')},
+                       {'seconds': 10**800}, {'authorizesPublication': True}, {'status': 0},
+                       {'startedAt': '2026-10-27T01:00:00'}, {'status': True}, {'private': 'data'}):
+            with self.subTest(change=change):
+                observation['stages'] = [{**record, **change}]
+                with self.assertRaises(ValueError):
+                    cost_receipts.join(self.observe(), [artifact], reader)
+        observation['stages'] = [record, record]
+        with self.assertRaisesRegex(ValueError, 'Duplicate Foundation'):
+            cost_receipts.join(self.observe(), [artifact], reader)
+        observation['stages'] = [record]
+        member[0] = 'vm-fresh/guest-timings.json'
+        with self.assertRaisesRegex(ValueError, 'phase differs'):
+            cost_receipts.join(self.observe(), [artifact], reader)
+        member[0] = 'vm-local/guest-timings.json'
+        del value['foundation']
+        report = self.observe()
+        cost_receipts.join(report, [artifact], reader)
+        self.assertIsNone(report['jobs'][0]['foundationTimings'])
+
     def test_host_vm_installation_cleanup_and_legacy_unknown_status_are_preserved(self):
         import cost_receipts
         from contextlib import contextmanager

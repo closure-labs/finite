@@ -10,6 +10,7 @@ import zipfile
 from datetime import datetime
 
 from archive_read import authenticate, chunks, members
+from foundation_timings import STAGES as FOUNDATION_STAGES, validate as validate_foundation_timing
 
 MAX_ARCHIVE = 8 * 1024**2
 MAX_RECEIPTS = 16
@@ -407,7 +408,7 @@ def join(run, artifacts, reader=bounded_reader):
                     if re.fullmatch(r'vm-(?:local|fresh|upgrade)/(?:guest-)?timings\.json', name):
                         if entry.file_size > 16384:
                             raise ValueError('Oversized guest timing receipt')
-                        value = json.loads(b''.join(chunks(zipped, entry)))
+                        value = decode_json(b''.join(chunks(zipped, entry)))
                         phase = 'upgrade' if '-upgrade-' in artifact['name'] else 'fresh'
                         lane = 'finite-dev' if '-finite-dev-' in artifact['name'] else 'finite'
                         role = 'build' if artifact['name'].startswith('image-') else 'qualification-' + phase
@@ -444,6 +445,29 @@ def join(run, artifacts, reader=bounded_reader):
                             run['receiptCoverage']['unmatched'] += 1
                             continue
                         job = candidates[0]
+                        if guest and 'foundation' in value:
+                            observation = value['foundation']
+                            if (not isinstance(observation, dict) or set(observation) != {'schema', 'stages', 'rejectedRecords'}
+                                    or type(observation['schema']) is not int or observation['schema'] != 1
+                                    or not isinstance(observation['stages'], list)
+                                    or len(observation['stages']) > len(FOUNDATION_STAGES)
+                                    or type(observation['rejectedRecords']) is not int
+                                    or not 0 <= observation['rejectedRecords'] <= 1000000):
+                                raise ValueError('Invalid Foundation timing envelope')
+                            records = [validate_foundation_timing(row) for row in observation['stages']]
+                            if len({row['stage'] for row in records}) != len(records):
+                                raise ValueError('Duplicate Foundation timing stage')
+                            if job.get('foundationTimings') not in (None, observation):
+                                raise ValueError('Conflicting Foundation timing observations')
+                            job['foundationTimings'] = observation
+                            for row in records:
+                                key = (job['jobId'], name, 'foundation-' + row['stage'])
+                                if key not in seen:
+                                    seen.add(key)
+                                    # Guest wall time is not an authenticated host-clock interval.
+                                    job['stages'].append({'stage': 'foundation-' + row['stage'],
+                                        'seconds': row['seconds'], 'status': row['status'],
+                                        'outcome': row['outcome'], 'guestStartedAt': row['startedAt'], 'nested': True})
                         for row in stages:
                             key = (job['jobId'], name, row['stage'])
                             if key not in seen:

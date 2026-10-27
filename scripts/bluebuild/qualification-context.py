@@ -37,6 +37,7 @@ def source_inputs(root=ROOT):
                     root / 'sources/bluebuild-installer.json', root / 'sources/bluebuild-cli.json', root / 'sources/installer-security.json',
                     root / 'scripts/ci/nix-resources.py', root / 'scripts/ci/bluefin-upstream.py',
                     root / 'scripts/ci/ci-options.py', root / 'cosign.pub',
+                    root / 'scripts/ci/foundation_timings.py',
                     root / 'scripts/ci/vm_tools.py', root / 'scripts/ci/vm-host.py', root / 'lib/vm-tools.nix',
                     root / '.github/actions/setup-vm-tools/action.yml',
                     root / '.github/workflows/iso.yml',
