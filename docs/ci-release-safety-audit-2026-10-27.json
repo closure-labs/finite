@@ -1,0 +1,1359 @@
+{
+  "authorizesPublication": false,
+  "controllerCampaign": {
+    "authorizesOngoingAdoption": false,
+    "nativeSamples": 0,
+    "restoredAt": "2026-10-27T02:19:02.766922+00:00",
+    "serialRestored": true,
+    "status": "deadline-without-complete-sample"
+  },
+  "coverageScope": "Source contracts, focused offline regressions, bounded live metadata; not final release acceptance",
+  "limits": [
+    "Lists use one bounded page; a full page requires further pagination before absence can be concluded.",
+    "Secret update timestamps do not establish token expiry or permissions.",
+    "No secret values were requested."
+  ],
+  "observations": [
+    {
+      "endpoint": "repos/closure-labs/finite/environments/release",
+      "metadata": {
+        "deploymentBranchPolicy": {
+          "custom_branch_policies": true,
+          "protected_branches": false
+        },
+        "name": "release",
+        "protectionRuleTypes": [
+          "branch_policy"
+        ]
+      },
+      "name": "releaseEnvironment",
+      "status": "observed"
+    },
+    {
+      "endpoint": "repos/closure-labs/finite/environments/release/deployment-branch-policies?per_page=100",
+      "metadata": {
+        "policies": [
+          {
+            "name": "main",
+            "type": "branch"
+          }
+        ],
+        "totalCount": 1
+      },
+      "name": "releaseBranches",
+      "status": "observed"
+    },
+    {
+      "endpoint": "repos/closure-labs/finite/actions/secrets?per_page=100",
+      "metadata": {
+        "effectiveScopes": "unknown",
+        "expiry": "unknown",
+        "publishingCredential": [],
+        "totalCount": 3
+      },
+      "name": "repositoryPublishingSecret",
+      "status": "observed"
+    },
+    {
+      "endpoint": "repos/closure-labs/finite/environments/release/secrets?per_page=100",
+      "metadata": {
+        "effectiveScopes": "unknown",
+        "expiry": "unknown",
+        "publishingCredential": [],
+        "totalCount": 1
+      },
+      "name": "environmentPublishingSecret",
+      "status": "observed"
+    },
+    {
+      "endpoint": "orgs/closure-labs/actions/secrets/MERGE_QUEUE_PAT/repositories?per_page=100",
+      "httpStatus": "403",
+      "name": "organizationPublishingSecretAccess",
+      "status": "unavailable"
+    },
+    {
+      "endpoint": "repos/closure-labs/finite/actions/variables?per_page=100",
+      "metadata": {
+        "disabledExperiments": [
+          {
+            "name": "FINITE_CACHIX_WRITER",
+            "value": "false"
+          }
+        ],
+        "historyWorkers": [],
+        "totalCount": 11
+      },
+      "name": "repositoryVariables",
+      "status": "observed"
+    },
+    {
+      "endpoint": "repos/closure-labs/finite/releases?per_page=100",
+      "metadata": {
+        "count": 17,
+        "development083": [
+          {
+            "draft": false,
+            "prerelease": true,
+            "tag": "finite-dev-0.8.3-dev"
+          },
+          {
+            "draft": false,
+            "prerelease": true,
+            "tag": "finite-0.8.3-dev"
+          }
+        ],
+        "stable083": []
+      },
+      "name": "releases",
+      "status": "observed"
+    },
+    {
+      "credential": "Decider repository-read",
+      "endpoint": "repos/closure-labs/finite/contents/versions/0.8.3.json?ref=automation/release-journal",
+      "httpStatus": 404,
+      "journalBranchVerified": true,
+      "limits": "Recheck before freeze; this does not reserve a version.",
+      "name": "stable083Reservation",
+      "status": "not-found"
+    },
+    {
+      "httpStatus": 422,
+      "limits": "Installation token issuance rejected; no installation permissions were changed.",
+      "name": "deciderPublishingCapability",
+      "requestedPermissions": [
+        "contents:write",
+        "workflows:write"
+      ],
+      "status": "unavailable"
+    },
+    {
+      "developmentTagsPresent": [
+        "finite-0.8.3-dev",
+        "finite-dev-0.8.3-dev"
+      ],
+      "exactTagsPresent": [],
+      "limits": "Prefix lookup returned only existing development tags; no tags or assets were changed.",
+      "name": "stable083Tags",
+      "status": "observed"
+    }
+  ],
+  "observedAt": "2026-10-27T03:02:43.711561+00:00",
+  "openEvidence": [
+    "Natural external-contributor execution hold repair",
+    "First production relocated preflight and predecessor diagnostic",
+    "Publishing credential source, effective scopes and expiry",
+    "Final-source policy audit, stable qualification and workstation pilot"
+  ],
+  "proposedSourceSha256": {
+    "scripts/ci/nix-checks.py": "3c2fb400b3c05fcaeb30908d33d1604dfd617e9febc98d3ee2926cb4dd06c791",
+    "tests/ci/nix-checks.py": "61b532cf628bc9e65a5422d3504a1df159e146cdfe5cf7c2de0d46076d4cb4f6"
+  },
+  "queueFailure": {
+    "aggregateDerivation": "/nix/store/siq0wir94zgnmcda91z4qqmh1ijp9879-finite-ci-checks.drv",
+    "authorizesPublication": false,
+    "cause": "NAR curl send/receive interruption followed by HTTP 416 on resume",
+    "head": "5eb659e15488aff45ee9b140c94c905704dde648",
+    "outcome": "failure",
+    "queueRetryRequestedAtSameApprovedHead": true,
+    "run": 40441743136,
+    "sameAggregatePassedOnPr": 40436012463
+  },
+  "readOnly": true,
+  "repository": "closure-labs/finite",
+  "schema": 1,
+  "sourceRevision": "41b5ad889713769ab449fd1158c3e5692e0fcfab",
+  "sourceSha256": {
+    ".github/actions/setup-nix/action.yml": "0aed7df3aa77829e573880ab7928a537b42b8ffbdeaf77da31574e4fb93d3ba5",
+    ".github/workflows/publication.yml": "86a38164a68408e92250e97e73d0345acc42c62e07bcfbc0e12e32ee707355bd",
+    ".github/workflows/publish-release-set.yml": "8baae1016cefde97561205bd550a4b47c8db6d6eecbb3b8d30a42e1395870b4e",
+    ".github/workflows/qualification.yml": "f5c1b8473e14a7e1db4695523f20f7264255cb2aadc866111a1e627dac7e402e",
+    "automation/github/ci-execution.json": "402703bd7ced72201555133bed55e65adfb7dc274d0bab9030c12c5763899253",
+    "scripts/ci/archive_read.py": "d9f56bfa8a1de2fdae32d1df08de9653577f01ed243eecf2a56f6192e3d36337",
+    "scripts/ci/ci-run-admission.py": "3e04a8872c0a4350dfbd54bf9c9d1b0c863beb0d1cccd4d91abff5c20f72474c",
+    "scripts/ci/decision-authority.py": "d6ca45fcc4b069a5d236e48d43eb411692dd814e9cb82c62d7eff41a1b49fdce",
+    "scripts/ci/decision-check.py": "27112f7ed5e8674401927eae0b29de2c5f0d0df95733cf97c27048021253531b",
+    "scripts/ci/execute-release-set.py": "45f829b2a63780e995b37ce812b847631c864258b3db965ec98b96900e242534",
+    "scripts/ci/prepare-release-set.py": "735942eeed03b08a8703a51021da25d0bc97500c3e09c5491e378bf1b3599ece",
+    "scripts/ci/release_artifact.py": "770ac9a3c35888b53df1dccdfa5563a26b3624956dd28460a652fc8c007def65",
+    "scripts/ci/release_handoff.py": "517b43b6c8db2e35827eec7bb2b52bac8daae6e7e9686e71ccc587eb324b0dba",
+    "scripts/ci/release_origin.py": "21021362937290e45e61529b044af2c492d4882cb0b4c12bf5286cc44c79ddfa",
+    "scripts/ci/release_set.py": "84208068cbc590c2f8baa6fcfdf42e6776a30a24650ec8fc80e5ef39c505bfde",
+    "secretspec.toml": "0a2708190108b9581e0f2ead07ab58e2e99c24a7f45d544a2a93f847b7e031ec"
+  },
+  "status": "reviewed-with-open-evidence",
+  "testTotal": 361,
+  "tests": [
+    {
+      "exitCode": 0,
+      "seconds": 0.426,
+      "suite": "tests/ci/ci-run-admission.py",
+      "tests": 29
+    },
+    {
+      "exitCode": 0,
+      "seconds": 0.195,
+      "suite": "tests/ci/decision-check.py",
+      "tests": 42
+    },
+    {
+      "exitCode": 0,
+      "seconds": 0.19,
+      "suite": "tests/ci/decision-authority.py",
+      "tests": 55
+    },
+    {
+      "exitCode": 0,
+      "seconds": 0.148,
+      "suite": "tests/ci/decision-revocation.py",
+      "tests": 5
+    },
+    {
+      "exitCode": 0,
+      "seconds": 0.167,
+      "suite": "tests/ci/release-origin.py",
+      "tests": 9
+    },
+    {
+      "exitCode": 0,
+      "seconds": 0.244,
+      "suite": "tests/ci/release-handoff.py",
+      "tests": 8
+    },
+    {
+      "exitCode": 0,
+      "seconds": 0.177,
+      "suite": "tests/ci/prepare-release-set.py",
+      "tests": 10
+    },
+    {
+      "exitCode": 0,
+      "seconds": 0.18,
+      "suite": "tests/ci/execute-release-set.py",
+      "tests": 22
+    },
+    {
+      "exitCode": 0,
+      "seconds": 0.162,
+      "suite": "tests/ci/release-set.py",
+      "tests": 29
+    },
+    {
+      "attempts": [
+        {
+          "exitCode": 1,
+          "reason": "Scratch disk quota exceeded in oversized metadata fixture."
+        },
+        {
+          "exitCode": 0,
+          "reason": "Rerun after removing verified-clean superseded checkout; no source changes.",
+          "tests": 24
+        }
+      ],
+      "exitCode": 0,
+      "seconds": 4.034,
+      "suite": "tests/ci/release-recovery.py",
+      "tests": 24
+    },
+    {
+      "exitCode": 0,
+      "seconds": 0.173,
+      "suite": "tests/ci/release-readiness.py",
+      "tests": 24
+    },
+    {
+      "exitCode": 0,
+      "seconds": 0.208,
+      "suite": "tests/ci/release-request.py",
+      "tests": 6
+    },
+    {
+      "exitCode": 0,
+      "seconds": 0.652,
+      "suite": "tests/ci/release-selection.py",
+      "tests": 9
+    },
+    {
+      "exitCode": 0,
+      "seconds": 0.153,
+      "suite": "tests/ci/release-cycle.py",
+      "tests": 3
+    },
+    {
+      "exitCode": 0,
+      "seconds": 1.139,
+      "suite": "tests/ci/publication-authority.py",
+      "tests": 4
+    },
+    {
+      "exitCode": 0,
+      "seconds": 0.298,
+      "suite": "tests/ci/security-admission.py",
+      "tests": 25
+    },
+    {
+      "exitCode": 0,
+      "seconds": 0.159,
+      "suite": "tests/ci/legacy-release-boundary.py",
+      "tests": 7
+    },
+    {
+      "exitCode": 0,
+      "suite": "tests/ci/security-integrations.py",
+      "tests": 9
+    },
+    {
+      "exitCode": 0,
+      "suite": "tests/ci/nix-checks.py",
+      "tests": 41
+    }
+  ],
+  "workflowInventory": [
+    {
+      "artifact": {
+        "if-no-files-found": "error",
+        "name": "cache-writer-${{ matrix.mode }}-${{ matrix.repetition }}-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 14
+      },
+      "job": "writer",
+      "step": "Retain measurements including failures",
+      "workflow": ".github/workflows/benchmark-cache-writer.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": "error",
+        "name": "cache-writer-summary-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 14
+      },
+      "job": "summarize",
+      "step": "Retain measured comparison",
+      "workflow": ".github/workflows/benchmark-cache-writer.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": "error",
+        "name": "ci-cache-${{ matrix.mode }}-${{ matrix.tool }}-${{ matrix.repetition }}-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 14
+      },
+      "job": "benchmark",
+      "step": "Retain measurements including failures",
+      "workflow": ".github/workflows/benchmark-ci-cache.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": "error",
+        "name": "ci-cache-summary-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 14
+      },
+      "job": "summarize",
+      "step": "Retain comparison",
+      "workflow": ".github/workflows/benchmark-ci-cache.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": "ignore",
+        "name": "installer-observer-smoke-${{ matrix.compression }}-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 14
+      },
+      "job": "installer-smoke",
+      "step": "Retain installer smoke metadata including failures",
+      "workflow": ".github/workflows/benchmark-image-tools.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": "error",
+        "name": "image-tools-${{ matrix.mode }}-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 14
+      },
+      "job": "benchmark",
+      "step": "Retain measurements including failures",
+      "workflow": ".github/workflows/benchmark-image-tools.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": "error",
+        "name": "image-verification-${{ matrix.phase }}-${{ matrix.repetition }}-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 14
+      },
+      "job": "diagnostic",
+      "step": "Retain measurements including failures",
+      "workflow": ".github/workflows/benchmark-image-verification.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": "error",
+        "name": "image-verification-summary-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 14
+      },
+      "job": "summarize",
+      "step": "Retain diagnostic comparison",
+      "workflow": ".github/workflows/benchmark-image-verification.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": "error",
+        "name": "release-transport-packet-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 7
+      },
+      "job": "producer",
+      "step": "Retain new diagnostic native product ZIP",
+      "workflow": ".github/workflows/benchmark-release-transport.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": "error",
+        "name": "release-transport-origin-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 7
+      },
+      "job": "producer",
+      "step": "Retain native diagnostic origin",
+      "workflow": ".github/workflows/benchmark-release-transport.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": null,
+        "name": "release-transport-producer-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 7
+      },
+      "job": "producer",
+      "step": "Retain producer costs and immutable reference",
+      "workflow": ".github/workflows/benchmark-release-transport.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": "error",
+        "name": "release-transport-sample-${{ matrix.phase }}-${{ matrix.pair }}-${{ matrix.mode }}-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 7
+      },
+      "job": "consumer",
+      "step": "Retain consumer correctness and costs",
+      "workflow": ".github/workflows/benchmark-release-transport.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": "error",
+        "name": "security-benchmark-seed-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 14
+      },
+      "job": "seed",
+      "step": "Retain bounded seed receipt including rejection metadata",
+      "workflow": ".github/workflows/benchmark-security-reuse.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": "error",
+        "name": "security-benchmark-${{ matrix.lane }}-${{ matrix.repetition }}-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 14
+      },
+      "job": "scan",
+      "step": "Retain measurements including failures",
+      "workflow": ".github/workflows/benchmark-security-reuse.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": "error",
+        "name": "security-benchmark-summary-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 14
+      },
+      "job": "summarize",
+      "step": "Retain the comparison",
+      "workflow": ".github/workflows/benchmark-security-reuse.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": "error",
+        "name": "qualification-benchmark-handoff-${{ inputs.profile }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.sample }}",
+        "retention-days": 1
+      },
+      "job": "restore",
+      "step": "Save diagnostic-only acceptance handoff",
+      "workflow": ".github/workflows/benchmark-vm-reuse.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": "error",
+        "name": "qualification-benchmark-report-restore-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.sample }}",
+        "retention-days": 14
+      },
+      "job": "restore",
+      "step": "Preserve restore measurements including failure",
+      "workflow": ".github/workflows/benchmark-vm-reuse.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": "error",
+        "name": "qualification-benchmark-report-aggregate-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.sample }}",
+        "retention-days": 14
+      },
+      "job": "aggregate",
+      "step": "Preserve aggregate measurements including failure",
+      "workflow": ".github/workflows/benchmark-vm-reuse.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": "error",
+        "name": "qualification-reuse-summary-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 14
+      },
+      "job": "summarize",
+      "step": "Save small diagnostic summary including incomplete results",
+      "workflow": ".github/workflows/benchmark-vm-reuse.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": "error",
+        "name": "vm-tools-${{ matrix.provider }}-${{ matrix.repetition }}-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 14
+      },
+      "job": "benchmark",
+      "step": "Retain measurements including failures",
+      "workflow": ".github/workflows/benchmark-vm-tools.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": "error",
+        "name": "vm-tools-summary-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 14
+      },
+      "job": "summarize",
+      "step": "Retain comparison and adoption decision",
+      "workflow": ".github/workflows/benchmark-vm-tools.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": "ignore",
+        "name": "source-checks-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 14
+      },
+      "job": "checks",
+      "step": "Retain Nix setup and check observations including failures",
+      "workflow": ".github/workflows/build.yml"
+    },
+    {
+      "job": "publish",
+      "secretNames": [
+        "CACHIX_AUTH_TOKEN"
+      ],
+      "step": "Publish allowlisted roots",
+      "workflow": ".github/workflows/cache-maintenance.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": null,
+        "name": "cache-roots-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 14
+      },
+      "job": "publish",
+      "step": "Retain cache size measurements",
+      "workflow": ".github/workflows/cache-maintenance.yml"
+    },
+    {
+      "job": "approve-execution",
+      "secretNames": [
+        "DECIDER_CLIENT",
+        "DECIDER_KEY"
+      ],
+      "step": "Resolve declared review App credentials",
+      "workflow": ".github/workflows/ci-run-admission.yml"
+    },
+    {
+      "appPermissions": {
+        "actions": "write",
+        "contents": "read",
+        "members": "read",
+        "pull-requests": "read"
+      },
+      "job": "approve-execution",
+      "step": "Generate token limited to execution approval and identity reads",
+      "workflow": ".github/workflows/ci-run-admission.yml"
+    },
+    {
+      "job": "authority",
+      "secretNames": [
+        "DECIDER_CLIENT",
+        "DECIDER_KEY"
+      ],
+      "step": "Resolve declared review App credentials",
+      "workflow": ".github/workflows/decision-authority.yml"
+    },
+    {
+      "appPermissions": {
+        "actions": "read",
+        "administration": "read",
+        "checks": "write",
+        "contents": "read",
+        "members": "read",
+        "pull-requests": "read"
+      },
+      "job": "authority",
+      "step": "Generate short-lived repository-scoped review token",
+      "workflow": ".github/workflows/decision-authority.yml"
+    },
+    {
+      "job": "reconcile",
+      "secretNames": [
+        "DECIDER_CLIENT",
+        "DECIDER_KEY"
+      ],
+      "step": "Resolve declared review App credentials",
+      "workflow": ".github/workflows/decision-proposals.yml"
+    },
+    {
+      "appPermissions": {
+        "actions": "write",
+        "administration": "read",
+        "contents": "write",
+        "issues": "write",
+        "members": "read",
+        "pull-requests": "write"
+      },
+      "job": "reconcile",
+      "step": "Generate short-lived repository-scoped review token",
+      "workflow": ".github/workflows/decision-proposals.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": "ignore",
+        "name": "reconciliation-costs-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 14
+      },
+      "job": "reconcile",
+      "step": "Retain bounded reconciliation costs including failures",
+      "workflow": ".github/workflows/decision-proposals.yml"
+    },
+    {
+      "job": "reconcile",
+      "secretNames": [
+        "DECIDER_CLIENT",
+        "DECIDER_KEY"
+      ],
+      "step": "Resolve declared review App credentials",
+      "workflow": ".github/workflows/delivery-health.yml"
+    },
+    {
+      "appPermissions": {
+        "actions": "read",
+        "contents": "read",
+        "pull-requests": "read"
+      },
+      "job": "reconcile",
+      "step": "Generate short-lived repository-scoped review token",
+      "workflow": ".github/workflows/delivery-health.yml"
+    },
+    {
+      "appPermissions": {
+        "actions": "write",
+        "contents": "read",
+        "issues": "write",
+        "pull-requests": "read"
+      },
+      "job": "reconcile",
+      "step": "Generate the preparation and audit token",
+      "workflow": ".github/workflows/delivery-health.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": null,
+        "name": "delivery-health-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 30
+      },
+      "job": "reconcile",
+      "step": "Retain delivery health",
+      "workflow": ".github/workflows/delivery-health.yml"
+    },
+    {
+      "job": "next-development",
+      "secretNames": [
+        "DECIDER_CLIENT",
+        "DECIDER_KEY"
+      ],
+      "step": "Resolve declared review App credentials",
+      "workflow": ".github/workflows/delivery-health.yml"
+    },
+    {
+      "appPermissions": {
+        "contents": "write",
+        "pull-requests": "write"
+      },
+      "job": "next-development",
+      "step": "Generate a token for the development PR only",
+      "workflow": ".github/workflows/delivery-health.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": null,
+        "name": "desktop-go-summary-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 30
+      },
+      "job": "evidence",
+      "step": "Retain small evidence summary",
+      "workflow": ".github/workflows/desktop-security-evidence.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": null,
+        "name": "desktop-go-raw-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 30
+      },
+      "job": "evidence",
+      "step": "Retain raw diagnostic evidence",
+      "workflow": ".github/workflows/desktop-security-evidence.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": null,
+        "name": "published-security-${{ matrix.channel }}-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 90
+      },
+      "job": "audit",
+      "step": "Retain scan results including failures",
+      "workflow": ".github/workflows/image-security.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": null,
+        "name": "image-${{ inputs.profile }}-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 14
+      },
+      "job": "build",
+      "step": "Save build evidence",
+      "workflow": ".github/workflows/image.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": null,
+        "name": "diagnostic-${{ inputs.profile }}-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 30
+      },
+      "job": "build",
+      "step": "Retain diagnostic evidence including policy blockers",
+      "workflow": ".github/workflows/image.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": null,
+        "name": "finite-iso-${{ inputs.channel }}-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 7
+      },
+      "job": "iso",
+      "step": "Upload ISO, source record and checksums",
+      "workflow": ".github/workflows/iso.yml"
+    },
+    {
+      "job": "security",
+      "secretNames": [
+        "DECIDER_CLIENT",
+        "DECIDER_KEY"
+      ],
+      "step": "Resolve declared read-only authority App credentials",
+      "workflow": ".github/workflows/publication.yml"
+    },
+    {
+      "appPermissions": {
+        "actions": "read",
+        "administration": "read",
+        "contents": "read",
+        "members": "read",
+        "pull-requests": "read"
+      },
+      "job": "security",
+      "step": "Generate short-lived read-only authority token",
+      "workflow": ".github/workflows/publication.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": "ignore",
+        "name": "security-costs-${{ inputs.profile }}-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 14
+      },
+      "job": "security",
+      "step": "Retain bounded scanner costs including failures",
+      "workflow": ".github/workflows/publication.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": null,
+        "name": "security-${{ inputs.profile }}-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 90
+      },
+      "job": "security",
+      "step": "Retain scanner evidence including failures",
+      "workflow": ".github/workflows/publication.yml"
+    },
+    {
+      "job": "sign",
+      "secretNames": [
+        "DECIDER_CLIENT",
+        "DECIDER_KEY"
+      ],
+      "step": "Resolve declared read-only authority App credentials",
+      "workflow": ".github/workflows/publication.yml"
+    },
+    {
+      "appPermissions": {
+        "actions": "read",
+        "administration": "read",
+        "contents": "read",
+        "members": "read",
+        "pull-requests": "read"
+      },
+      "job": "sign",
+      "step": "Generate short-lived read-only authority token",
+      "workflow": ".github/workflows/publication.yml"
+    },
+    {
+      "job": "sign",
+      "secretNames": [
+        "COSIGN_PASSWORD",
+        "COSIGN_PRIVATE_KEY"
+      ],
+      "step": "Sign the independently scanned immutable digest",
+      "workflow": ".github/workflows/publication.yml"
+    },
+    {
+      "job": "promote",
+      "secretNames": [
+        "DECIDER_CLIENT",
+        "DECIDER_KEY"
+      ],
+      "step": "Resolve declared read-only authority App credentials",
+      "workflow": ".github/workflows/publication.yml"
+    },
+    {
+      "appPermissions": {
+        "actions": "read",
+        "administration": "read",
+        "contents": "read",
+        "members": "read",
+        "pull-requests": "read"
+      },
+      "job": "promote",
+      "step": "Generate short-lived read-only authority token",
+      "workflow": ".github/workflows/publication.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": null,
+        "name": "promotion-${{ inputs.profile }}-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 90
+      },
+      "job": "promote",
+      "step": "Save promotion evidence",
+      "workflow": ".github/workflows/publication.yml"
+    },
+    {
+      "job": "prepare",
+      "secretNames": [
+        "DECIDER_CLIENT",
+        "DECIDER_KEY"
+      ],
+      "step": "Resolve declared review App credentials",
+      "workflow": ".github/workflows/publish-release-set.yml"
+    },
+    {
+      "appPermissions": {
+        "actions": "read",
+        "administration": "read",
+        "contents": "read",
+        "members": "read",
+        "pull-requests": "read"
+      },
+      "job": "prepare",
+      "step": "Create repository-scoped authority token",
+      "workflow": ".github/workflows/publish-release-set.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": "error",
+        "name": "release-execution-identity-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 90
+      },
+      "job": "prepare",
+      "step": "Retain native publisher identity",
+      "workflow": ".github/workflows/publish-release-set.yml"
+    },
+    {
+      "job": "prepare",
+      "secretNames": [
+        "DECIDER_CLIENT",
+        "DECIDER_KEY"
+      ],
+      "step": "Resolve fresh review App credentials after product transfers",
+      "workflow": ".github/workflows/publish-release-set.yml"
+    },
+    {
+      "appPermissions": {
+        "actions": "read",
+        "administration": "read",
+        "contents": "read",
+        "members": "read",
+        "pull-requests": "read"
+      },
+      "job": "prepare",
+      "step": "Create fresh repository-scoped authority token",
+      "workflow": ".github/workflows/publish-release-set.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": "error",
+        "name": "release-signing-request-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 90
+      },
+      "job": "prepare",
+      "step": "Retain authenticated signing evidence",
+      "workflow": ".github/workflows/publish-release-set.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": "warn",
+        "name": "release-preparation-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 90
+      },
+      "job": "prepare",
+      "step": "Retain preparation failure diagnostics without product payloads",
+      "workflow": ".github/workflows/publish-release-set.yml"
+    },
+    {
+      "job": "sign",
+      "secretNames": [
+        "DECIDER_CLIENT",
+        "DECIDER_KEY"
+      ],
+      "step": "Resolve declared review App credentials",
+      "workflow": ".github/workflows/publish-release-set.yml"
+    },
+    {
+      "appPermissions": {
+        "actions": "read",
+        "administration": "read",
+        "contents": "read",
+        "members": "read",
+        "pull-requests": "read"
+      },
+      "job": "sign",
+      "step": "Create repository-scoped authority token",
+      "workflow": ".github/workflows/publish-release-set.yml"
+    },
+    {
+      "job": "sign",
+      "secretNames": [
+        "DECIDER_CLIENT",
+        "DECIDER_KEY"
+      ],
+      "step": "Resolve fresh review App credentials after artifact transfer",
+      "workflow": ".github/workflows/publish-release-set.yml"
+    },
+    {
+      "appPermissions": {
+        "actions": "read",
+        "administration": "read",
+        "contents": "read",
+        "members": "read",
+        "pull-requests": "read"
+      },
+      "job": "sign",
+      "step": "Create fresh repository-scoped authority token",
+      "workflow": ".github/workflows/publish-release-set.yml"
+    },
+    {
+      "job": "sign",
+      "secretNames": [
+        "COSIGN_PASSWORD",
+        "COSIGN_PRIVATE_KEY"
+      ],
+      "step": "Sign both approved asset manifests with scoped credentials",
+      "workflow": ".github/workflows/publish-release-set.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": null,
+        "name": "signed-release-execution-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 90
+      },
+      "job": "sign",
+      "step": "Retain signed execution packet for safe exact-byte retries",
+      "workflow": ".github/workflows/publish-release-set.yml"
+    },
+    {
+      "job": "publish",
+      "secretNames": [
+        "DECIDER_CLIENT",
+        "DECIDER_KEY"
+      ],
+      "step": "Resolve declared review App credentials",
+      "workflow": ".github/workflows/publish-release-set.yml"
+    },
+    {
+      "appPermissions": {
+        "actions": "read",
+        "administration": "read",
+        "contents": "read",
+        "members": "read",
+        "pull-requests": "read"
+      },
+      "job": "publish",
+      "step": "Create repository-scoped authority token",
+      "workflow": ".github/workflows/publish-release-set.yml"
+    },
+    {
+      "job": "publish",
+      "secretNames": [
+        "DECIDER_CLIENT",
+        "DECIDER_KEY"
+      ],
+      "step": "Resolve fresh review App credentials after artifact transfer",
+      "workflow": ".github/workflows/publish-release-set.yml"
+    },
+    {
+      "appPermissions": {
+        "actions": "read",
+        "administration": "read",
+        "contents": "read",
+        "members": "read",
+        "pull-requests": "read"
+      },
+      "job": "publish",
+      "step": "Create fresh repository-scoped authority token",
+      "workflow": ".github/workflows/publish-release-set.yml"
+    },
+    {
+      "job": "publish",
+      "secretNames": [
+        "MERGE_QUEUE_PAT"
+      ],
+      "step": "Revalidate authority and stage both signed releases",
+      "workflow": ".github/workflows/publish-release-set.yml"
+    },
+    {
+      "job": "publish",
+      "secretNames": [
+        "DECIDER_CLIENT",
+        "DECIDER_KEY"
+      ],
+      "step": "Resolve fresh review App credentials after asset staging",
+      "workflow": ".github/workflows/publish-release-set.yml"
+    },
+    {
+      "appPermissions": {
+        "actions": "read",
+        "administration": "read",
+        "contents": "read",
+        "members": "read",
+        "pull-requests": "read"
+      },
+      "job": "publish",
+      "step": "Create fresh repository-scoped authority token",
+      "workflow": ".github/workflows/publish-release-set.yml"
+    },
+    {
+      "job": "publish",
+      "secretNames": [
+        "MERGE_QUEUE_PAT"
+      ],
+      "step": "Revalidate current authority and commit both publications",
+      "workflow": ".github/workflows/publish-release-set.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": null,
+        "name": "qualification-reused-${{ inputs.profile }}-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 1
+      },
+      "job": "prepare",
+      "step": "Save authenticated reusable qualification",
+      "workflow": ".github/workflows/qualification.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": null,
+        "name": "${{ inputs.validation_only && 'qualification-diagnostic-phase' || 'qualification-phase' }}-${{ inputs.profile }}-${{ matrix.phase }}-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 7
+      },
+      "job": "phase",
+      "step": "Save phase evidence",
+      "workflow": ".github/workflows/qualification.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": null,
+        "name": "finite-qualified-iso-${{ inputs.profile }}-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 7
+      },
+      "job": "phase",
+      "step": "Preserve pristine qualified candidate ISO for the pilot",
+      "workflow": ".github/workflows/qualification.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": null,
+        "name": "${{ inputs.validation_only && 'qualification-diagnostic' || 'qualification' }}-${{ inputs.profile }}-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": "${{ inputs.validation_only && 14 || 90 }}"
+      },
+      "job": "aggregate",
+      "step": "Save qualification evidence",
+      "workflow": ".github/workflows/qualification.yml"
+    },
+    {
+      "job": "enqueue",
+      "secretNames": [
+        "MERGE_QUEUE_PAT"
+      ],
+      "step": "Set up Nix and SecretSpec",
+      "workflow": ".github/workflows/queue-dependabot.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": "error",
+        "name": "verified-unsigned-release-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 14
+      },
+      "job": "verify-prepared",
+      "step": "Preserve verified unsigned assets",
+      "workflow": ".github/workflows/release-recovery.yml"
+    },
+    {
+      "job": "sign-release",
+      "secretNames": [
+        "COSIGN_PASSWORD",
+        "COSIGN_PRIVATE_KEY"
+      ],
+      "step": "Sign release manifest in an isolated job",
+      "workflow": ".github/workflows/release-recovery.yml"
+    },
+    {
+      "job": "sign-release",
+      "secretNames": [
+        "MERGE_QUEUE_PAT"
+      ],
+      "step": "Create draft release with durable evidence",
+      "workflow": ".github/workflows/release-recovery.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": null,
+        "name": "release-set-packet-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 90
+      },
+      "job": "prepare",
+      "step": "Retain packet including incomplete preparation evidence",
+      "workflow": ".github/workflows/release-set.yml"
+    },
+    {
+      "job": "prepare",
+      "secretNames": [
+        "DECIDER_CLIENT",
+        "DECIDER_KEY"
+      ],
+      "step": "Resolve declared review App credentials",
+      "workflow": ".github/workflows/release-set.yml"
+    },
+    {
+      "appPermissions": {
+        "actions": "read",
+        "administration": "read",
+        "contents": "write",
+        "members": "read",
+        "pull-requests": "write"
+      },
+      "job": "prepare",
+      "step": "Resolve scoped decision App identity",
+      "workflow": ".github/workflows/release-set.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": "error",
+        "name": "release-set-origin-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 90
+      },
+      "job": "prepare",
+      "step": "Retain native release product origin",
+      "workflow": ".github/workflows/release-set.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": null,
+        "name": "unsigned-release-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 14
+      },
+      "job": "release",
+      "step": "Save unsigned release assets",
+      "workflow": ".github/workflows/release.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": null,
+        "name": "release-security-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 90
+      },
+      "job": "release",
+      "step": "Save security evidence even when the release is blocked",
+      "workflow": ".github/workflows/release.yml"
+    },
+    {
+      "job": "sign-release",
+      "secretNames": [
+        "COSIGN_PASSWORD",
+        "COSIGN_PRIVATE_KEY"
+      ],
+      "step": "Sign release manifest in an isolated job",
+      "workflow": ".github/workflows/release.yml"
+    },
+    {
+      "job": "sign-release",
+      "secretNames": [
+        "MERGE_QUEUE_PAT"
+      ],
+      "step": "Create draft release with durable evidence",
+      "workflow": ".github/workflows/release.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": "error",
+        "name": "remediation-preflight-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 30
+      },
+      "job": "prerequisites",
+      "step": "Retain prerequisite evidence",
+      "workflow": ".github/workflows/remediation-preflight.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": "error",
+        "name": "remediation-transaction-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 30
+      },
+      "job": "transaction",
+      "step": "Retain transaction evidence",
+      "workflow": ".github/workflows/remediation-transaction.yml"
+    },
+    {
+      "job": "audit",
+      "secretNames": [
+        "SECAUDIT_PEM"
+      ],
+      "step": "Check audit App configuration",
+      "workflow": ".github/workflows/repository-security.yml"
+    },
+    {
+      "job": "audit",
+      "secretNames": [
+        "SECAUDIT_PEM"
+      ],
+      "step": "Resolve declared audit App credentials",
+      "workflow": ".github/workflows/repository-security.yml"
+    },
+    {
+      "appPermissions": {
+        "administration": "read"
+      },
+      "job": "audit",
+      "step": "Generate repository-scoped audit token",
+      "workflow": ".github/workflows/repository-security.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": null,
+        "name": "repository-security-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 30
+      },
+      "job": "audit",
+      "step": "Save audit result",
+      "workflow": ".github/workflows/repository-security.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": null,
+        "name": "bluefin-upstream-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 14
+      },
+      "job": "check",
+      "step": "Save successful check evidence",
+      "workflow": ".github/workflows/update-bluefin.yml"
+    },
+    {
+      "job": "update",
+      "secretNames": [
+        "MERGE_QUEUE_PAT"
+      ],
+      "step": "$/.github/actions/setup-nix",
+      "workflow": ".github/workflows/update-bluefin.yml"
+    },
+    {
+      "job": "update",
+      "secretNames": [
+        "MERGE_QUEUE_PAT"
+      ],
+      "step": "Set up Nix and Cachix",
+      "workflow": ".github/workflows/update-determinate-nix.yml"
+    },
+    {
+      "job": "update",
+      "secretNames": [
+        "MERGE_QUEUE_PAT"
+      ],
+      "step": "Set up Nix and Cachix",
+      "workflow": ".github/workflows/update-flake-lock.yml"
+    },
+    {
+      "job": "update",
+      "secretNames": [
+        "DECIDER_CLIENT",
+        "DECIDER_KEY"
+      ],
+      "step": "Resolve Decider credentials after public lock validation",
+      "workflow": ".github/workflows/update-flake-lock.yml"
+    },
+    {
+      "appPermissions": {
+        "contents": "write",
+        "pull-requests": "write"
+      },
+      "job": "update",
+      "step": "Create short-lived Decider PR token",
+      "workflow": ".github/workflows/update-flake-lock.yml"
+    },
+    {
+      "job": "update",
+      "secretNames": [
+        "MERGE_QUEUE_PAT"
+      ],
+      "step": "Set up Nix and Cachix",
+      "workflow": ".github/workflows/update-foundation.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": null,
+        "name": "vm-acceptance-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 14
+      },
+      "job": "vm",
+      "step": "Save acceptance evidence",
+      "workflow": ".github/workflows/vm-acceptance.yml"
+    },
+    {
+      "job": "observe",
+      "secretNames": [
+        "SECAUDIT_PEM"
+      ],
+      "step": "Resolve the existing read-only audit App",
+      "workflow": ".github/workflows/workflow-costs.yml"
+    },
+    {
+      "appPermissions": {
+        "administration": "read"
+      },
+      "job": "observe",
+      "step": "Generate the existing repository-scoped read-only audit token",
+      "workflow": ".github/workflows/workflow-costs.yml"
+    },
+    {
+      "artifact": {
+        "if-no-files-found": "error",
+        "name": "workflow-costs-${{ github.run_id }}-${{ github.run_attempt }}",
+        "retention-days": 90
+      },
+      "job": "observe",
+      "step": "Retain read-only observation",
+      "workflow": ".github/workflows/workflow-costs.yml"
+    }
+  ]
+}

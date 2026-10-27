@@ -48,7 +48,7 @@ def transient(output):
         r'builder (?:for .*? failed|failed) with exit code|'
         r'hash mismatch|syntax error|undefined variable|attribute .* missing|'
         r'HTTP (?:error |response:? )?(?:400|401|403|404)\b|'
-        r'Permission denied|unauthorized|forbidden|'
+        r'Permission denied|unauthorized|forbidden|No space left on device|Disk quota exceeded|'
         r'\b(?:SIGKILL|SIGTERM|SIGINT|Killed|Out of memory|oom-killed)\b|terminated by signal'
     )
     transport = (
@@ -56,6 +56,8 @@ def transient(output):
         r'(?:could not|couldn.t) resolve (?:host|hostname)|'
         r'(?:connection|network) (?:reset|timed out|is unreachable)|'
         r'(?:unable|failed) to download .*?(?:timed out|Timeout)|'
+        r'(?:unable|failed) to download [^\n]*?curl error: '
+        r'(?:Failure when receiving data from the peer|Failed sending data to the peer)|'
         r'Temporary failure in name resolution|TLS connect error'
     )
     return not re.search(permanent, output, re.I) and bool(re.search(transport, output, re.I))
