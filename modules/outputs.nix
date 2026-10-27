@@ -211,17 +211,17 @@
     home-manager-template.package = homeScaffold;
     home-profile = {
       package = applications.homeProfile;
-      appProgram = "${applications.homeProfile}/bin/finite-home-profile";
+      appProgram = lib.getExe applications.homeProfile;
     };
     home-bootstrap = {
       package = applications.homeBootstrap;
-      appProgram = "${applications.homeBootstrap}/bin/finite-home-bootstrap";
+      appProgram = lib.getExe applications.homeBootstrap;
     };
     home-update.package = homeApplications.homeUpdate;
     home-migrate.package = homeApplications.homeMigrate;
     home-init = {
       package = applications.homeInit;
-      appProgram = "${applications.homeInit}/bin/finite-home-init";
+      appProgram = lib.getExe applications.homeInit;
     };
     cloud-init.appProgram = "${applications.cloudInit}/bin/finite-cloud-init";
     local-cache.appProgram = "${localCache}/bin/finite-local-cache";
