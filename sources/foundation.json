@@ -1,7 +1,7 @@
 {
   "compatibility": 1,
-  "narHash": "sha256-c1Opu2UmbVqhcE52rx6/RZVGYiSHfrEeNin6IqAMXmM=",
-  "rev": "8ae2b6bdcca1f7c025fd9c75e7b5273cffd79de0",
+  "narHash": "sha256-r36MxuaXzs5uLL+1FLtZWxrD68xsUnpcJSRiqAQrIVo=",
+  "rev": "b72d5abfb1199baca777fdb34c16d30ec0b4747a",
   "schema": 1,
-  "version": "0.4.1"
+  "version": "0.5.1"
 }
