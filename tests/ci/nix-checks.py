@@ -301,6 +301,43 @@ print('checks passed')
         self.assertIn('checks passed', output)
         self.assertEqual([call.args[0] for call in sleeps], [30])
 
+    def test_interrupted_nar_transfer_then_range_error_can_recover(self):
+        for message in ('Failure when receiving data from the peer', 'Failed sending data to the peer'):
+            failure = ("warning: unable to download 'https://cache.nixos.org/nar/fixture.nar.zst': "
+                       'HTTP error 200 (curl error: ' + message + '); retrying from offset 1966080\n'
+                       "error: unable to download 'https://cache.nixos.org/nar/fixture.nar.zst': HTTP error 416\n"
+                       'error: Cannot build aggregate. Reason: 1 dependency failed.')
+            with self.subTest(message=message):
+                result, output, sleeps = self.invoke([failure])
+                self.assertEqual(result, 0)
+                self.assertIn('checks passed', output)
+                self.assertEqual([call.args[0] for call in sleeps], [30])
+
+    def test_range_error_alone_or_terminal_failure_never_retries(self):
+        self.assertFalse(checks.transient('error: unable to download archive: HTTP error 416'))
+        warning = ('warning: unable to download archive: HTTP error 200 '
+                   '(curl error: Failure when receiving data from the peer)\n')
+        for error in ('hash mismatch', 'HTTP error 401', 'HTTP error 403', 'HTTP error 404',
+                      'Reason: builder failed with exit code 1', 'Disk quota exceeded',
+                      'No space left on device', 'Out of memory'):
+            with self.subTest(error=error):
+                result, output, sleeps = self.invoke([warning + error])
+                self.assertEqual(result, 1)
+                self.assertNotIn('retrying', output)
+                self.assertEqual(sleeps, [])
+
+    def test_range_recovery_requires_prior_interruption_of_every_exact_url(self):
+        warning = ("warning: unable to download 'https://cache.nixos.org/nar/one': HTTP error 200 "
+                   '(curl error: Failure when receiving data from the peer); retrying from offset 100\n')
+        failure = "error: unable to download 'https://cache.nixos.org/nar/one': HTTP error 416\n"
+        for output in (failure + warning, warning + failure.replace('/one', '/two'),
+                       warning + failure + failure.replace('/one', '/two'),
+                       warning.replace('offset 100', 'offset 0') + failure,
+                       warning + failure + 'HTTP error 422'):
+            with self.subTest(output=output):
+                self.assertFalse(checks.transient(output))
+        self.assertTrue(checks.transient('\x1b[31m' + warning + failure + '\x1b[0m'))
+
     def test_retry_budget_is_bounded(self):
         result, output, sleeps = self.invoke(['error: HTTP error 503'] * 4)
         self.assertEqual(result, 1)

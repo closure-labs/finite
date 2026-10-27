@@ -42,13 +42,14 @@ def usage_delta(before, after):
 
 
 def transient(output):
+    output = re.sub(r'\x1b\[[0-9;]*m', '', output)
     # A transport warning earlier in the log must not hide a later build,
     # evaluation, authentication or integrity failure.
     permanent = (
         r'builder (?:for .*? failed|failed) with exit code|'
         r'hash mismatch|syntax error|undefined variable|attribute .* missing|'
-        r'HTTP (?:error |response:? )?(?:400|401|403|404)\b|'
-        r'Permission denied|unauthorized|forbidden|'
+        r'HTTP (?:error |response:? )?4(?!(?:08|16|29)\b)[0-9]{2}\b|'
+        r'Permission denied|unauthorized|forbidden|No space left on device|Disk quota exceeded|'
         r'\b(?:SIGKILL|SIGTERM|SIGINT|Killed|Out of memory|oom-killed)\b|terminated by signal'
     )
     transport = (
@@ -56,9 +57,23 @@ def transient(output):
         r'(?:could not|couldn.t) resolve (?:host|hostname)|'
         r'(?:connection|network) (?:reset|timed out|is unreachable)|'
         r'(?:unable|failed) to download .*?(?:timed out|Timeout)|'
+        r'(?:unable|failed) to download [^\n]*?curl error: '
+        r'(?:Failure when receiving data from the peer|Failed sending data to the peer)|'
         r'Temporary failure in name resolution|TLS connect error'
     )
-    return not re.search(permanent, output, re.I) and bool(re.search(transport, output, re.I))
+    if re.search(permanent, output, re.I):
+        return False
+    if re.search(r'HTTP (?:error |response:? )?416\b', output, re.I):
+        # A warning for another download must not excuse an unrelated 416.
+        # Only retry a resumed URL interrupted earlier in this same attempt.
+        interrupted = re.compile(r"(?:unable|failed) to download '([^'\n]+)': [^\n]*"
+                                 r'curl error: (?:Failure when receiving data from the peer|'
+                                 r'Failed sending data to the peer)[^\n]*'
+                                 r'retrying from offset [1-9][0-9]*', re.I)
+        ranges = list(re.finditer(r"(?:unable|failed) to download '([^'\n]+)': HTTP error 416\b", output, re.I))
+        return bool(ranges) and all(any(prior[1] == failure[1]
+            for prior in interrupted.finditer(output[:failure.start()])) for failure in ranges)
+    return bool(re.search(transport, output, re.I))
 
 
 def build(command, attempts=3, delay=30, *, stdout=None, observations=None):

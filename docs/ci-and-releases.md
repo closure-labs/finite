@@ -729,8 +729,9 @@ same-revision build run. A new main revision can prepare automatically again.
 Paired preparation can reuse authenticated inventory bytes from trusted main
 builds; vulnerability databases, findings and policy results are scanned anew.
 
-Human review of the paired proposal and the protected release signing environment
-remain required. Merging the proposal starts **Publish approved two-image
+Human review of the exact paired proposal supplies the release approval. The
+main-only `release` environment scopes signing keys without a second manual
+reviewer. Merging the proposal starts **Publish approved two-image
 release**. Its existing journal, immutable packet, fresh admission checks and
 partial-publication recovery remain in force. The per-channel release and
 recovery workflows are labelled **Retired**; use the paired workflows instead.
