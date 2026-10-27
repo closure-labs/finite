@@ -232,7 +232,7 @@ class Reconciliation(unittest.TestCase):
         self.verifications = 0
         self.native_scan = {'status': 'complete', 'scannerHealth': 'healthy', 'image': IMAGE}
         self.fetches = []
-        self.patches = [patch.object(reconcile.controller, 'ROOT', self.root),
+        self.patches = [patch.object(reconcile, 'completion', return_value=None),patch.object(reconcile.controller, 'ROOT', self.root),
                         patch.object(reconcile.controller, 'api', side_effect=self.api),
                         patch.object(reconcile.controller, 'collection', side_effect=self.collection),
                         patch.object(reconcile.decision_packets, 'fetch', side_effect=self.fetch),
@@ -508,6 +508,33 @@ class Reconciliation(unittest.TestCase):
         for value in (True, 0, 2, '4'):
             with self.subTest(value=value), self.assertRaisesRegex(ValueError, 'one or four'):
                 reconcile.reconcile(historical_workers=value)
+
+    def test_independent_publisher_satisfies_without_claim_or_dispatch(self):
+        proof = {'runId': 456, 'artifacts': {'promotion': {'sha256': 'd' * 64}}}
+        with patch.object(reconcile, 'completion', return_value=proof):
+            self.assertEqual(self.execute()[0]['status'], 'satisfied')
+        self.assertEqual(self.journal.state['schema'], 2)
+        self.assertEqual(self.journal.state['publisherProof'], proof)
+        self.assertNotIn('inputs', self.journal.state)
+        self.assertEqual(self.dispatched, [])
+
+    def test_completion_after_claim_prevents_post(self):
+        with patch.object(reconcile, 'completion', side_effect=[None, {'runId': 456}]):
+            self.assertEqual(self.execute()[0]['status'], 'satisfied')
+        self.assertEqual(self.journal.calls, 2)
+        self.assertEqual(self.dispatched, [])
+
+    def test_satisfied_receipt_requires_live_reauthentication(self):
+        with patch.object(reconcile, 'completion', return_value={'runId': 456}):
+            self.execute()
+        self.assertEqual(self.execute()[0]['status'], 'dispatched')
+        self.assertEqual(len(self.dispatched), 1)
+
+    def test_satisfaction_cas_conflict_does_not_dispatch(self):
+        self.journal.fail_at = 1
+        with patch.object(reconcile, 'completion', return_value={'runId': 456}), self.assertRaises(RuntimeError):
+            self.execute()
+        self.assertEqual(self.dispatched, [])
 
     def test_claim_before_dispatch_and_live_authority_rechecked(self):
         result = self.execute()
