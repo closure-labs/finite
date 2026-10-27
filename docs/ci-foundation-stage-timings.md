@@ -46,3 +46,28 @@ that initializes an older predecessor can also retain that unknown observation.
 The VM wrapper remains a qualification generation input; the first updated
 context can conservatively miss predecessor reuse. Do not relax that identity
 or claim observed production diagnostics from fixtures.
+
+## Refined version-2 observations
+
+The consumer accepts legacy schema-1 rows and bounded schema-2 detail rows in the
+same optional envelope. Its allowlist now includes optional preparation, Bluefin
+readiness/install/postcheck, bundle identity, Nix activity observations, separate
+client/root-daemon resources, and actual service/Flatpak work. Each line remains
+at most 1 KiB. The writer reserves a 14 KiB observation/receipt budget beneath
+the unchanged 16 KiB reader cap. Malformed, duplicate and unknown records increment
+the bounded rejection count while valid partial records remain available.
+
+Only fixed detail keys survive: Nix start/stop activity counts and union/overlap
+intervals; cgroup numeric counters and coverage; the inherited Brewfile hash and
+cache presence. Raw paths, command arguments and arbitrary logger fields are
+rejected. Incomplete intervals and unsupported evaluation boundaries stay unknown.
+Resource rows distinguish the realization's client scope from shared root daemon
+cgroups; client limits are not a whole-build cap. Snapshot rows' zero-length
+observation intervals do not mean zero resource consumption.
+
+These rows are diagnostics, never qualification or admission authority. Existing
+103/132-second log gaps remain arrival windows, not exact service timings.
+Producer deployment and natural qualification observations remain pending; source
+fixtures do not establish a performance gain. Do not add extra evaluations or VM
+rounds solely for a report, and keep matched warm/cold correctness and complete
+cost gates for any subsequent reuse or concurrency proposal.
