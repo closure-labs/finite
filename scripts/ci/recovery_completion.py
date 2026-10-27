@@ -15,6 +15,7 @@ import tempfile
 import zipfile
 
 import decision_controller as controller
+import image_identity
 from security_decisions import canonical_hash, load_json
 
 REPOSITORY = controller.REPOSITORY
@@ -100,7 +101,20 @@ def successful_job(jobs, name, run):
     return job['id']
 
 
-def authenticate(profile, origin, native, decision, bot, run):
+def current_build_identity(profile):
+    """Use the production image-input contract from this exact trusted checkout.
+
+    This runs only in the hosted controller, never to instrument user realization.
+    Missing current proof retains recovery rather than trusting registry labels.
+    """
+    checkout = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=controller.ROOT,
+                                       text=True, stderr=subprocess.DEVNULL, timeout=10).strip()
+    if checkout != os.environ.get('GITHUB_SHA'):
+        raise ValueError('Completion checkout differs from the trusted current source')
+    return image_identity.identity(profile, controller.ROOT)
+
+
+def authenticate(profile, origin, native, decision, bot, run, current_identity):
     security = controller.module('completion_security', controller.ROOT / 'scripts/ci/reuse-candidate-security.py')
     qualification = controller.module('completion_qualification', controller.ROOT / 'scripts/bluebuild/reuse-qualification.py')
     publication = security.publication
@@ -115,7 +129,8 @@ def authenticate(profile, origin, native, decision, bot, run):
     baseline = load_json(native / 'approved-baseline.json')
     identity = baseline.get('buildIdentity')
     if (baseline.get('profile') != profile or baseline.get('sourceRevision') != origin['headSha']
-            or not isinstance(identity, str) or not re.fullmatch(r'v1:[0-9a-f]{64}', identity)):
+            or not isinstance(identity, str) or not re.fullmatch(r'v1:[0-9a-f]{64}', identity)
+            or identity != current_identity):
         raise ValueError('Recovery packet lacks exact profile/build identity')
     prefix = f'repos/{REPOSITORY}/actions/runs/{run["id"]}'
     jobs = controller.collection(prefix + f'/attempts/{run["run_attempt"]}/jobs', 'jobs')
@@ -176,7 +191,8 @@ def authenticate(profile, origin, native, decision, bot, run):
         raise ValueError('Main changed before completion was recorded')
     return {'schema': 1, 'repository': REPOSITORY, 'workflow': 'build.yml', 'runId': run['id'],
             'runAttempt': run['run_attempt'], 'revision': run['head_sha'], 'sourceRevision': source,
-            'profile': profile, 'buildIdentity': identity, 'image': image, 'decision': decision,
+            'profile': profile, 'buildIdentity': identity, 'currentBuildIdentity': current_identity,
+            'currentRevision': os.environ['GITHUB_SHA'], 'image': image, 'decision': decision,
             'jobs': job_ids, 'artifacts': {kind: {'id': value['id'], 'sha256': value['digest']}
                 for kind, value in (('promotion', promotion), ('qualification', qualified), ('security', scanned))},
             'promotionSha256': canonical_hash(record), 'aliases': tags}
@@ -185,6 +201,7 @@ def authenticate(profile, origin, native, decision, bot, run):
 def completion(profile, origin, native, decision, bot):
     """A bounded recent window; incomplete proof always retains normal recovery."""
     try:
+        current_identity = current_build_identity(profile)
         result = controller.api(f'repos/{REPOSITORY}/actions/workflows/build.yml/runs?branch=main&status=success&per_page=10')
         runs = result.get('workflow_runs')
         if not isinstance(runs, list) or len(runs) > 10:
@@ -193,7 +210,7 @@ def completion(profile, origin, native, decision, bot):
             try:
                 # Reread native state instead of trusting the discovery listing.
                 run = controller.api(f'repos/{REPOSITORY}/actions/runs/{value["id"]}')
-                return authenticate(profile, origin, native, decision, bot, run)
+                return authenticate(profile, origin, native, decision, bot, run, current_identity)
             except (ValueError, KeyError, TypeError, OSError, RuntimeError, subprocess.SubprocessError, zipfile.BadZipFile):
                 continue
     except (ValueError, KeyError, TypeError, OSError, RuntimeError, subprocess.SubprocessError):

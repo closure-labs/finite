@@ -160,3 +160,11 @@ The cancelled follow-ups 40535098249 and 40537674162 consumed **776 runner
 seconds combined**. This is incurred cost, retained from the supplied audit
 accounting; no avoided cost or recurring savings has been measured. Source tests
 do not establish production rollout or new qualification.
+
+The final source audit additionally binds satisfaction to the production
+`image_identity` contract for the exact current hosted checkout. Agreement
+between an old request and an old publisher is insufficient after current image
+inputs change, even when every source remains on the same ancestry chain. A
+missing current identity is a normal recovery miss. This hosted eligibility
+evaluation is independent of user realization instrumentation; it does not add a
+second Home Manager realization or claim performance savings.
