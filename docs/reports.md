@@ -9,6 +9,8 @@ the recorded revision and date.
 
 | Record | Scope |
 | --- | --- |
+| [Bounded predecessor reuse diagnostics, October 27 UTC](ci-predecessor-diagnostics-2026-10-27.md) | Native-bound miss counters and capped input-path samples with unchanged acceptance and fallback behavior |
+| [Recent rollout completion and costs, October 26 UTC](ci-recent-rollout-2026-10-26.md) | Completed two-profile production integration, conserved recent costs and explicit reuse/receipt limits |
 | [CI dependency graph and publishing audit, October 26 UTC](ci-dependency-graph-2026-10-26.md) | Explicit FlakeHub authentication boundary, consolidated publication preflight and validated asset ownership |
 | [Historical decision provenance prototype, October 26 UTC](ci-history-provenance-2026-10-26.md) | Bounded parallel historical reads, six-arm read-only replay and pending complete-job canary |
 | [Qualification retry recovery, October 26 UTC](ci-qualification-retry-2026-10-26.md) | Authenticated carried-phase collection, original ISO attempts and corrected copied-job accounting |

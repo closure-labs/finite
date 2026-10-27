@@ -445,8 +445,23 @@ class Qualification(unittest.TestCase):
                 patch.object(predecessor.reuse, 'github', side_effect=api), \
                 patch.object(predecessor.subprocess, 'run', side_effect=command):
             bad_signature = False
+            cases = [(predecessor.reuse, 'metadata', predecessor.reuse.Unavailable('expired'), 'qualification-unavailable'),
+                     (predecessor.reuse, 'extract', predecessor.reuse.Unavailable('legacy'), 'legacy-evidence'),
+                     (predecessor, 'compatible', predecessor.Ineligible('generation-inputs-changed', 'changed', ['scripts/bluebuild/iso.sh']), 'generation-inputs-changed')]
+            for owner, name, error, reason in cases:
+                diagnostic = predecessor.Diagnostics()
+                with self.subTest(reason=reason), patch.object(owner, name, side_effect=error), self.assertRaises(predecessor.reuse.Unavailable):
+                    predecessor.restore(self.profile, self.candidate.split('@')[1], self.directory / 'ineligible', diagnostic)
+                self.assertEqual(diagnostic.counts, {reason: 1})
+                self.assertEqual((diagnostic.runs, diagnostic.artifacts), (1, 1))
+            diagnostic = predecessor.Diagnostics()
+            with patch.object(predecessor.release, 'qualified_iso_artifact', return_value=None), self.assertRaises(predecessor.reuse.Unavailable):
+                predecessor.restore(self.profile, self.candidate.split('@')[1], self.directory / 'no-iso', diagnostic)
+            self.assertEqual(diagnostic.counts, {'preserved-iso-missing': 1})
+            diagnostic = predecessor.Diagnostics()
             with patch.object(predecessor.upstream, 'inspect', return_value=None), self.assertRaises(predecessor.reuse.Unavailable):
-                predecessor.restore(self.profile, self.candidate.split('@')[1], self.directory / 'missing-tag')
+                predecessor.restore(self.profile, self.candidate.split('@')[1], self.directory / 'missing-tag', diagnostic)
+            self.assertEqual(diagnostic.counts, {'installation-tag-missing': 1})
             self.assertFalse((self.directory / 'missing-tag').exists())
             info = {'Digest': self.candidate.split('@')[1]}
             with patch.object(predecessor.upstream, 'inspect', return_value=info):
@@ -461,8 +476,10 @@ class Qualification(unittest.TestCase):
                         iso_failure = failure
                         before = sum(call == transfer for call in calls)
                         destination = self.directory / 'failed-transfer'
+                        diagnostic = predecessor.Diagnostics()
                         with self.assertRaises(expected):
-                            predecessor.restore(self.profile, self.candidate.split('@')[1], destination)
+                            predecessor.restore(self.profile, self.candidate.split('@')[1], destination, diagnostic)
+                        self.assertEqual(diagnostic.counts, {'iso-transfer-timeout': 1} if expected is predecessor.reuse.Unavailable else {})
                         self.assertFalse(destination.exists())
                         self.assertEqual(sum(call == transfer for call in calls), before + 1)
                 iso_failure = None
@@ -481,6 +498,83 @@ class Qualification(unittest.TestCase):
                 self.assertEqual((destination / (self.profile + '.iso')).read_bytes(), b'pristine fixture ISO')
                 self.assertEqual(json.loads((destination / 'installation.json').read_text())['installer']['finiteRevision'], self.revision)
                 self.assertTrue((destination / 'iso-reuse.json').is_file())
+
+    def test_predecessor_diagnostics_bound_paths_counts_and_exclusive_destination(self):
+        diagnostic = predecessor.Diagnostics()
+        for _ in range(2):
+            diagnostic.miss('generation-inputs-changed', [f'scripts/file-{i}.py' for i in range(30)])
+        diagnostic.miss('legacy-evidence', ['/absolute', '../escape', 'raw\nresponse', 'x' * 201])
+        self.assertEqual(len(diagnostic.paths), 20)
+        self.assertTrue(diagnostic.truncated)
+        self.assertEqual(diagnostic.counts['generation-inputs-changed'], 2)
+        with self.assertRaises(ValueError): diagnostic.miss('unbounded arbitrary exception')
+        path = self.directory / 'observation.json'
+        diagnostic.write(path, self.profile, self.previous, 'miss')
+        raw = path.read_bytes()
+        self.assertLess(len(raw), 16384)
+        value = json.loads(raw)
+        self.assertFalse(value['authorizesPublication'])
+        self.assertEqual(value['outcome'], 'miss')
+        with self.assertRaises(FileExistsError): diagnostic.write(path, self.profile, self.previous, 'hit')
+        self.assertEqual(path.read_bytes(), raw)
+        interrupted = self.directory / 'interrupted.json'
+        with patch.object(predecessor.os, 'link', side_effect=OSError('interrupted publication')), self.assertRaises(OSError):
+            diagnostic.write(interrupted, self.profile, self.previous, 'miss')
+        self.assertFalse(interrupted.exists())
+        with patch.dict(os.environ, GITHUB_RUN_ID='x' * 16384), self.assertRaises(ValueError):
+            diagnostic.write(interrupted, self.profile, self.previous, 'miss')
+        self.assertEqual(list(self.directory.glob('.predecessor-reuse-*')), [])
+        link = self.directory / 'diagnostic-link'
+        link.symlink_to(path)
+        with self.assertRaises(ValueError): diagnostic.write(link, self.profile, self.previous, 'hit')
+        directory_link = self.directory / 'directory-link'
+        directory_link.symlink_to(self.directory, target_is_directory=True)
+        with self.assertRaises(ValueError): diagnostic.write(directory_link / 'new.json', self.profile, self.previous, 'miss')
+
+    def test_predecessor_diagnostics_retained_with_failed_native_phase(self):
+        workflow = yaml.safe_load((ROOT / '.github/workflows/qualification.yml').read_text())
+        retain = next(s for s in workflow['jobs']['phase']['steps'] if s.get('name') == 'Save phase evidence')
+        self.assertEqual(retain['if'], 'always()')
+        self.assertIn('.bluebuild/*-predecessor-reuse.json', retain['with']['path'].splitlines())
+        self.assertIn('--diagnostics ".bluebuild/$PROFILE-predecessor-reuse.json"',
+                      (ROOT / 'scripts/bluebuild/qualify.sh').read_text())
+
+    def test_predecessor_diagnostics_cli_preserves_hit_miss_and_integrity_error(self):
+        from contextlib import redirect_stdout, redirect_stderr
+        for error, expected, outcome in ((None, 0, 'hit'),
+                (predecessor.reuse.Unavailable('none'), 3, 'miss'),
+                (ValueError('forged archive'), 2, 'error'),
+                (subprocess.CalledProcessError(1, ['cosign']), 2, 'error')):
+            with self.subTest(outcome=outcome):
+                path = self.directory / ('diagnostic-' + str(expected) + '.json')
+                path.unlink(missing_ok=True)
+                args = ['reuse-predecessor-iso.py', '--profile', self.profile, '--digest', self.previous,
+                        '--output', str(self.directory / 'restore'), '--diagnostics', str(path)]
+                with patch.object(sys, 'argv', args), patch.object(predecessor, 'restore', side_effect=error), redirect_stdout(io.StringIO()):
+                    self.assertEqual(predecessor.main(), expected)
+                self.assertEqual(json.loads(path.read_text())['outcome'], outcome)
+                with patch.object(sys, 'argv', args), patch.object(predecessor, 'restore', side_effect=error), redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+                    self.assertEqual(predecessor.main(), expected)  # Existing diagnostic cannot mask original status.
+
+    def test_predecessor_diagnostics_no_artifacts_and_known_generation_paths(self):
+        env = {'GITHUB_ACTIONS': 'true', 'GITHUB_REPOSITORY': r.REPOSITORY, 'GITHUB_REF': 'refs/heads/main'}
+        diagnostic = predecessor.Diagnostics()
+        def api(path, paginated=False):
+            return [{'artifacts': []}] if paginated else {'workflow_runs': [{'id': 123}]}
+        with patch.dict(os.environ, env), patch.object(predecessor.qualification, 'source_inputs', return_value={}), patch.object(predecessor.reuse, 'github', side_effect=api), self.assertRaises(predecessor.reuse.Unavailable):
+            predecessor.restore(self.profile, self.previous, self.directory / 'restore', diagnostic)
+        self.assertEqual(diagnostic.counts, {'no-qualification-artifact': 1})
+        value = self.aggregate()
+        current = {**self.context['inputs'], 'scripts/new.py': 'b' * 64}
+        with self.assertRaises(predecessor.Ineligible) as raised:
+            predecessor.compatible(self.directory, self.profile, self.candidate.split('@')[1], current)
+        self.assertEqual(raised.exception.reason, 'generation-inputs-changed')
+        self.assertEqual(raised.exception.paths, ['scripts/new.py'])
+        self.assertFalse(raised.exception.omitted_paths)
+        with self.assertRaises(predecessor.Ineligible) as raised:
+            predecessor.compatible(self.directory, self.profile, self.candidate.split('@')[1], {})
+        self.assertEqual(raised.exception.paths, [])
+        self.assertTrue(raised.exception.omitted_paths)
 
     def test_exact_release_iso_archive_is_hash_bound_and_rejects_other_bytes(self):
         value = self.aggregate()

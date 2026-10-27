@@ -534,6 +534,78 @@ class Costs(unittest.TestCase):
             yield raw
         return reader
 
+    def predecessor_observation(self):
+        self.job['name'] = 'Publish (finite) / qualification / phase (upgrade)'
+        artifact = {'id': 20, 'name': 'qualification-phase-finite-upgrade-10-1', 'expired': False,
+                    'digest': 'sha256:' + 'c' * 64, 'size_in_bytes': 1000,
+                    'workflow_run': {'id': 10, 'head_sha': 'a' * 40}}
+        value = {'schema': 1, 'kind': 'finite-predecessor-iso-reuse', 'authorizesPublication': False,
+                 'repository': costs.REPOSITORY, 'runId': '10', 'runAttempt': '1', 'revision': 'a' * 40,
+                 'profile': 'finite', 'predecessorDigest': 'sha256:' + 'b' * 64, 'outcome': 'miss',
+                 'runsExamined': 20, 'artifactsExamined': 2, 'missCounts': {'generation-inputs-changed': 2},
+                 'changedInputPaths': ['scripts/bluebuild/iso.sh'], 'changedInputPathsTruncated': False}
+        return artifact, value
+
+    def test_predecessor_observations_bind_to_native_upgrade_and_preserve_unknowns(self):
+        artifact, value = self.predecessor_observation()
+        for outcome in ('hit', 'miss', 'error'):
+            report = self.observe()
+            cost_receipts.join(report, [artifact, artifact],
+                self.scanner_reader({**value, 'outcome': outcome}, 'finite-predecessor-reuse.json'))
+            job = report['jobs'][0]
+            self.assertEqual(job['predecessorReuseDiagnostics']['outcome'], outcome)
+            self.assertEqual(job['predecessorReuseDiagnostics']['artifactId'], 20)
+            self.assertIsNone(job['predecessorReuse']['hit'])  # Diagnostics alone never establish a measured command verdict.
+            self.assertEqual(sum(row['runnerSeconds'] for row in costs.aggregate([report])), 120)
+        report = self.observe()
+        cost_receipts.join(report, [], self.scanner_reader(value))
+        self.assertIsNone(report['jobs'][0]['predecessorReuseDiagnostics'])
+        self.assertIsNone(report['jobs'][0]['predecessorReuse']['hit'])
+        value['runAttempt'] = '2'
+        cost_receipts.join(report, [{**artifact, 'name': 'qualification-phase-finite-upgrade-10-2'}],
+                           self.scanner_reader(value, 'finite-predecessor-reuse.json'))
+        self.assertEqual(report['receiptCoverage']['unmatched'], 1)
+
+    def test_predecessor_observations_reject_forged_origins_and_unbounded_values(self):
+        artifact, value = self.predecessor_observation()
+        for field, bad in [('schema', True), ('kind', 'other'), ('authorizesPublication', True),
+                ('repository', 'fork/finite'), ('runId', '11'), ('revision', 'd' * 40),
+                ('runAttempt', '0'), ('profile', 'other'), ('predecessorDigest', 'mutable:tag'),
+                ('outcome', 'accepted'), ('runsExamined', 21), ('runsExamined', True),
+                ('artifactsExamined', 1000001), ('missCounts', {'raw exception': 1}),
+                ('missCounts', {'legacy-evidence': True}), ('missCounts', {'legacy-evidence': 0}),
+                ('changedInputPaths', ['../escape']), ('changedInputPaths', ['x' * 201]),
+                ('changedInputPaths', ['a', 'a']), ('changedInputPaths', ['a'] * 21),
+                ('changedInputPathsTruncated', 1)]:
+            with self.subTest(field=field, bad=bad), self.assertRaises(ValueError):
+                cost_receipts.join(self.observe(), [artifact],
+                    self.scanner_reader({**value, field: bad}, 'finite-predecessor-reuse.json'))
+        for member in ('finite-dev-predecessor-reuse.json',):
+            with self.assertRaises(ValueError):
+                cost_receipts.join(self.observe(), [artifact], self.scanner_reader(value, member))
+        for name in ('qualification-phase-finite-fresh-10-1', 'qualification-phase-finite-dev-upgrade-10-1'):
+            with self.assertRaises(ValueError):
+                cost_receipts.join(self.observe(), [{**artifact, 'name': name}],
+                                   self.scanner_reader(value, 'finite-predecessor-reuse.json'))
+        with self.assertRaisesRegex(ValueError, 'Oversized'):
+            cost_receipts.join(self.observe(), [artifact], self.scanner_reader({**value, 'extra': 'x' * 16384}, 'finite-predecessor-reuse.json'))
+        with self.assertRaises(ValueError):
+            cost_receipts.join(self.observe(), [artifact], self.scanner_reader([], 'finite-predecessor-reuse.json'))
+
+    def test_predecessor_observations_reject_conflicts_and_mismatched_measured_status(self):
+        artifact, value = self.predecessor_observation()
+        report = self.observe()
+        seen = set()
+        report['receiptCoverage'] = {'unmatched': 0}
+        cost_receipts.predecessor_reuse_receipt(report, artifact, value, seen)
+        with self.assertRaisesRegex(ValueError, 'Conflicting'):
+            cost_receipts.predecessor_reuse_receipt(report, artifact, {**value, 'outcome': 'hit'}, seen)
+        for outcome, measured in (('hit', 3), ('miss', 0), ('error', 3)):
+            report = self.observe()
+            report['jobs'][0]['stages'] = [{'stage': 'predecessor-iso-reuse', 'status': measured}]
+            with self.assertRaisesRegex(ValueError, 'measured command'):
+                cost_receipts.join(report, [artifact], self.scanner_reader({**value, 'outcome': outcome}, 'finite-predecessor-reuse.json'))
+
     def test_compact_scanner_receipt_survives_oversized_full_evidence(self):
         import cost_receipts
         artifact, value = self.scanner_costs()

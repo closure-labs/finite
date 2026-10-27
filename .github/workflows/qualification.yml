@@ -213,6 +213,7 @@ jobs:
           name: ${{ inputs.validation_only && 'qualification-diagnostic-phase' || 'qualification-phase' }}-${{ inputs.profile }}-${{ matrix.phase }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             .bluebuild/*outcome.json
+            .bluebuild/*-predecessor-reuse.json
             .bluebuild/*-vm-host.json
             .bluebuild/nix-setup.json
             .bluebuild/*-benchmark.json
