@@ -1,0 +1,210 @@
+{
+  "schema": 1,
+  "readOnly": true,
+  "authorizesPublication": false,
+  "observedAt": "2026-10-27T16:05:51.805854+00:00",
+  "followupRun": 40535098249,
+  "journal": [
+    {
+      "path": "releases/6254b3d78d30e3f00b45cef67174de8d6dd2aa7c0437d7a965c0db5a7eeac0bd.json",
+      "value": {
+        "binding": "cc4b1c48a7f38a2ae1bbc212ca2a4598d779de172fdcd360035bd350e735ed55",
+        "decision": "ccce3619efbc2d94e1f387b1af5c5248d5f159f0d91ea1a14ab7037536c9e0ec",
+        "inputs": {
+          "resume_digest": "sha256:2420c56db94ff042359271f86bbe97db7a231d863e6fd233532a5d8f7c38adfc",
+          "resume_run": "40474776795",
+          "target": "finite"
+        },
+        "leaseUntil": 0,
+        "observedRun": 40535098249,
+        "profile": "finite",
+        "schema": 1,
+        "status": "dispatched"
+      }
+    },
+    {
+      "path": "releases/a64c79bbc2e452e74290c4fad99afe11c7337037b5ab933258469fcad4a08e99.json",
+      "value": {
+        "binding": "0cb0b783949c73b33b4fa25d56e7cc2d2880181149d29c0df7f846a9bd5a10c6",
+        "decision": "ccce3619efbc2d94e1f387b1af5c5248d5f159f0d91ea1a14ab7037536c9e0ec",
+        "inputs": {
+          "resume_digest": "sha256:72e362cfb545c60f58659e5167b3977a7e28db5b7132ea04740f4a5d62f7e64e",
+          "resume_run": "40474776795",
+          "target": "finite-dev"
+        },
+        "leaseUntil": 0,
+        "profile": "finite-dev",
+        "schema": 1,
+        "status": "dispatched"
+      }
+    }
+  ],
+  "cancelledAsRedundant": true,
+  "publishedChannels": {
+    "finite": {
+      "digest": "sha256:4fb99462e6d200fb0dd6d2091cc2dcb36787594780e5e6f55a8194a16fa81c4c",
+      "buildIdentity": "v1:3a09bf6f39d7d1d255caaddb600b889af70dc7656ac30075a752492eb9e8976c",
+      "source": "3125b26c6087b9394f8ff42a3120fd03a596289e"
+    },
+    "finite-dev": {
+      "digest": "sha256:f26ad8dfda67435d93b53ba2663e3ab7e4a1f0667e0e34d0114cdc6a455a7f10",
+      "buildIdentity": "v1:9c5cd4a7b0278ff9f2256fcb348635d01b89a11b4963e79db433f298239e36b7",
+      "source": "3125b26c6087b9394f8ff42a3120fd03a596289e"
+    }
+  },
+  "requestCandidate": {
+    "digest": "sha256:2420c56db94ff042359271f86bbe97db7a231d863e6fd233532a5d8f7c38adfc",
+    "buildIdentity": "v1:3a09bf6f39d7d1d255caaddb600b889af70dc7656ac30075a752492eb9e8976c",
+    "source": "7b5d3e690d3efcbdf72e87fdb2ecd25831ec892f"
+  },
+  "qualifyingRun": 40521333174,
+  "homeObservations": {
+    "schema": 1,
+    "readOnly": true,
+    "authorizesPublication": false,
+    "runId": 40521333174,
+    "rows": [
+      {
+        "profile": "finite",
+        "nativeJobId": 122270446873,
+        "rawLogSha256": "171e456f47d6a50649472e2abbbbf1af7523d5275b9493f78cc58c11fa115978",
+        "rawLogBytes": 1270860,
+        "counts": {
+          "substitutionMessages": 1262,
+          "buildMessages": 102,
+          "brewInstallingMessages": 20
+        },
+        "activationLogArrivalWindows": [
+          {
+            "hook": "checkBrewProviders",
+            "nextHook": "checkExistingGpuDrivers",
+            "logArrivalSeconds": 0.053337
+          },
+          {
+            "hook": "checkExistingGpuDrivers",
+            "nextHook": "checkFilesChanged",
+            "logArrivalSeconds": 0.004394
+          },
+          {
+            "hook": "checkFilesChanged",
+            "nextHook": "checkLinkTargets",
+            "logArrivalSeconds": 0.001737
+          },
+          {
+            "hook": "checkLinkTargets",
+            "nextHook": "writeBoundary",
+            "logArrivalSeconds": 0.020805
+          },
+          {
+            "hook": "writeBoundary",
+            "nextHook": "linkGeneration",
+            "logArrivalSeconds": 0.049557
+          },
+          {
+            "hook": "linkGeneration",
+            "nextHook": "reloadSystemd",
+            "logArrivalSeconds": 0.093799
+          },
+          {
+            "hook": "reloadSystemd",
+            "nextHook": "flatpak-managed-install",
+            "logArrivalSeconds": 102.617531
+          },
+          {
+            "hook": "flatpak-managed-install",
+            "nextHook": "foundationIpu7",
+            "logArrivalSeconds": 0.006168
+          },
+          {
+            "hook": "foundationIpu7",
+            "nextHook": "installPackages",
+            "logArrivalSeconds": 0.1599
+          },
+          {
+            "hook": "installPackages",
+            "nextHook": "onFilesChange",
+            "logArrivalSeconds": 0.541695
+          }
+        ]
+      },
+      {
+        "profile": "finite-dev",
+        "nativeJobId": 122272966689,
+        "rawLogSha256": "612ed35559b6efd8135a4ae2f933587921147e8b536a95f7eec484291400c8a2",
+        "rawLogBytes": 1306293,
+        "counts": {
+          "substitutionMessages": 1262,
+          "buildMessages": 101,
+          "brewInstallingMessages": 20
+        },
+        "activationLogArrivalWindows": [
+          {
+            "hook": "checkBrewProviders",
+            "nextHook": "checkExistingGpuDrivers",
+            "logArrivalSeconds": 0.055741
+          },
+          {
+            "hook": "checkExistingGpuDrivers",
+            "nextHook": "checkFilesChanged",
+            "logArrivalSeconds": 0.004852
+          },
+          {
+            "hook": "checkFilesChanged",
+            "nextHook": "checkLinkTargets",
+            "logArrivalSeconds": 0.001706
+          },
+          {
+            "hook": "checkLinkTargets",
+            "nextHook": "writeBoundary",
+            "logArrivalSeconds": 0.021883
+          },
+          {
+            "hook": "writeBoundary",
+            "nextHook": "linkGeneration",
+            "logArrivalSeconds": 0.052768
+          },
+          {
+            "hook": "linkGeneration",
+            "nextHook": "reloadSystemd",
+            "logArrivalSeconds": 0.101715
+          },
+          {
+            "hook": "reloadSystemd",
+            "nextHook": "flatpak-managed-install",
+            "logArrivalSeconds": 132.330899
+          },
+          {
+            "hook": "flatpak-managed-install",
+            "nextHook": "foundationIpu7",
+            "logArrivalSeconds": 0.008682
+          },
+          {
+            "hook": "foundationIpu7",
+            "nextHook": "installPackages",
+            "logArrivalSeconds": 0.163644
+          },
+          {
+            "hook": "installPackages",
+            "nextHook": "onFilesChange",
+            "logArrivalSeconds": 0.844669
+          }
+        ]
+      }
+    ],
+    "limitations": [
+      "Log-arrival gaps reflect transport and buffering, not monotonic hook execution time.",
+      "Operation message counts are not unique paths/derivations or download/build wall time.",
+      "No new VM or local Nix runs were used."
+    ]
+  },
+  "controllerRemediationStatus": "Audit/design only; no guard change deployed.",
+  "secondRedundantRun": {
+    "runId": 40537674162,
+    "profile": "finite-dev",
+    "source": "2b9b87409e909a0d98586fe7a8ec4c86d7b30fd0",
+    "originRun": 40474776795,
+    "originDigest": "sha256:72e362cfb545c60f58659e5167b3977a7e28db5b7132ea04740f4a5d62f7e64e",
+    "originBuildIdentity": "v1:9c5cd4a7b0278ff9f2256fcb348635d01b89a11b4963e79db433f298239e36b7",
+    "cancellation": "requested while queued after native journal/current channel checks"
+  }
+}
