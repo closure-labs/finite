@@ -84,20 +84,21 @@ When available, its Professional classification is shown beside each work role.
 Saved selections take precedence over provisioning seeds; invalid or unsupported
 profiles produce an error instead of a replacement selection. Existing complete
 personal consumers are left to their own update workflow. Fresh-login and seed
-writers select schema 2 or 3 from the bundled Foundation catalog. The initializer
-must support the selected format before the fresh-selection dialog opens.
+writers emit schema 3 only. The initializer must support that format before the
+fresh-selection dialog opens.
 
-The reader dispatcher also preserves supplied schema-3 selections when the
+The reader dispatcher accepts supplied schema-3 selections only when the
 executing Foundation helper advertises initialization support. An older helper
 rejects that selection without falling back to a seed or opening the fresh
-selector. Saved/provisioned profiles retain their format. Finite pins published
-[Foundation v0.3.2](https://github.com/closure-labs/foundation/releases/tag/v0.3.2)
-at `235c34d7e507f00c2df6b0102bcdb54a4c04c5e2`. Its default writer uses schema 3;
-integration checks use this pin directly. Existing personal consumers retain
-their independently locked sources until explicitly updated.
+selector. Legacy saved/provisioned selections are rejected without modifying
+them or opening a replacement selector; convert them explicitly to schema 3
+first. The bundled Foundation revision is recorded in `sources/foundation.json`
+and `flake.lock`; integration checks use this pin directly. Removing legacy
+formats from the bundled Foundation itself requires pinning a published release
+containing that change. Existing personal consumers retain their independently
+locked sources until explicitly updated.
 
-With a schema-3 Foundation source, seeds support Professional/Personal roles,
-optional capabilities and independent host declarations, for example:
+Seeds support Professional/Personal roles, optional capabilities and independent host declarations, for example:
 
 ```bash
 finite-cloud-init --foundation bluefin --user family-member \
@@ -107,9 +108,8 @@ finite-cloud-init --foundation bluefin --user family-member \
 
 `--hardware` remains a convenience adapter. Schema 3 also accepts `--system`,
 `--form-factor`, `--cpu`, `--gpus`, `--model`, `--camera`/`--no-camera`,
-`--fingerprint`/`--no-fingerprint` and `--capabilities`. The schema-2 writer
-rejects these new flags explicitly. Seed identity belongs to `--user`, not the
-machine generating it. Foundation's bundled pure validator canonicalizes the
+`--fingerprint`/`--no-fingerprint` and `--capabilities`. Seed identity belongs to
+`--user`, not the machine generating it. Foundation's bundled pure validator canonicalizes the
 profile before any output directory is created. Existing outputs are preserved;
 failed publication removes only the directory created by that invocation.
 Cloud-init remains disabled by default; the generated ISO is inert until an

@@ -77,8 +77,9 @@
         homeFlakeModule
         {
           finite.homeProfile = {
-            schema = 2;
+            schema = 3;
             inherit foundation hardware packages roles;
+            capabilities = [];
             identity = {
               inherit username;
               homeDirectory = "/var/home/${username}";

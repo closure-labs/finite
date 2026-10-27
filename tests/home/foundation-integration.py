@@ -9,8 +9,8 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-CAPABILITIES = {"schema": 1, "initializeSchemas": [1, 2], "normalizeSchemas": [2],
-                "writeSchema": 2, "catalogSchemas": [3]}
+CAPABILITIES = {"schema": 1, "initializeSchemas": [3], "normalizeSchemas": [3],
+                "writeSchema": 3, "catalogSchemas": [3]}
 
 
 class FoundationIntegration(unittest.TestCase):
@@ -59,7 +59,7 @@ class FirstLoginReaders(unittest.TestCase):
         self.log = self.root / "events.jsonl"
         self.catalog = self.root / "catalog.json"
         self.catalog.write_text(json.dumps({
-            "schema": 3, "profileCapabilities": CAPABILITIES,
+            "schema": 3, "profileSchema": 3, "profileCapabilities": CAPABILITIES,
             "classifications": {"professional": {"label": "Professional"}},
             "foundations": {"bluefin": {"hardware": ["generic-x86_64", "dell-xps-9350-intel"]}},
             "roles": {"it": {"label": "IT", "order": 60, "classification": "professional"},
@@ -109,25 +109,33 @@ if command == "zenity" and "--list" in sys.argv:
     def selections(self, events):
         return [event for event in events if event[0] == "home-init" and "--profile" in event]
 
-    def test_saved_schema_one_and_two_are_preserved_and_dispatched(self):
+    def test_legacy_saved_profiles_are_rejected_without_replacement(self):
         for schema in (1, 2):
             self.saved.write_text(json.dumps({"schema": schema, "roles": ["developer"], "packages": []}))
             with self.subTest(schema=schema):
                 result, events = self.run_login()
-                self.assertEqual(result.returncode, 0, result.stderr)
-                self.assertEqual(self.selections(events)[0][2], str(self.saved))
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(self.selections(events), [])
                 self.assertFalse(any("--list" in event for event in events))
 
+    def test_legacy_seed_is_rejected_without_replacement(self):
+        self.seed.write_text("schema: 2\nroles: [developer]\n")
+        result, events = self.run_login()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(self.selections(events), [])
+        self.assertFalse(any("--list" in event for event in events))
+        self.assertIn("must use schema 3", result.stderr)
+
     def test_saved_profile_takes_precedence_over_seed(self):
-        self.saved.write_text('{"schema":2,"roles":["developer"]}')
-        self.seed.write_text("schema: 2\nroles: [it]\n")
+        self.saved.write_text('{"schema":3,"roles":["developer"]}')
+        self.seed.write_text("schema: 3\nroles: [it]\n")
         result, events = self.run_login()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(self.selections(events)[0][2], str(self.saved))
 
     def test_unsupported_or_malformed_saved_profile_never_selects_a_replacement(self):
-        self.seed.write_text("schema: 2\nroles: [it]\n")
-        for content in ('{"schema":3}', '{"schema":true}', '{}', 'not: [valid yaml', ''):
+        self.seed.write_text("schema: 3\nroles: [it]\n")
+        for content in ('{"schema":4}', '{"schema":true}', '{}', 'not: [valid yaml', ''):
             self.saved.write_text(content)
             with self.subTest(content=content):
                 result, events = self.run_login()
@@ -136,8 +144,8 @@ if command == "zenity" and "--list" in sys.argv:
                 self.assertFalse(any("--list" in event for event in events))
 
     def test_helper_validation_failure_does_not_open_selector_or_use_seed(self):
-        self.saved.write_text('{"schema":2,"roles":["unknown","unknown"]}')
-        self.seed.write_text("schema: 2\n")
+        self.saved.write_text('{"schema":3,"roles":["unknown","unknown"]}')
+        self.seed.write_text("schema: 3\n")
         result, events = self.run_login(LOGIN_INIT_STATUS="2")
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(len(self.selections(events)), 1)
@@ -146,7 +154,7 @@ if command == "zenity" and "--list" in sys.argv:
 
     def test_dangling_saved_profile_is_preserved_without_replacement(self):
         self.saved.symlink_to(self.root / "missing-profile.json")
-        self.seed.write_text("schema: 2\n")
+        self.seed.write_text("schema: 3\n")
         result, events = self.run_login()
         self.assertNotEqual(result.returncode, 0)
         self.assertTrue(self.saved.is_symlink())
@@ -154,22 +162,20 @@ if command == "zenity" and "--list" in sys.argv:
         self.assertFalse(any("--list" in event for event in events))
 
     def test_seed_yaml_is_used_only_without_saved_profile(self):
-        self.seed.write_text("schema: 2\nroles: [developer]\npackages: []\n")
+        self.seed.write_text("schema: 3\nroles: [developer]\npackages: []\n")
         result, events = self.run_login()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(self.selections(events)[0][2], str(self.seed))
 
-    def test_legacy_helper_only_allows_known_schemas(self):
-        for schema, success in ((1, True), (2, True), (3, False)):
-            self.saved.write_text(json.dumps({"schema": schema}))
-            with self.subTest(schema=schema):
-                result, events = self.run_login(LOGIN_CAPABILITY_STATUS="2")
-                self.assertEqual(result.returncode == 0, success, result.stderr)
-                self.assertEqual(bool(self.selections(events)), success)
-                self.assertFalse(any("--list" in event for event in events))
+    def test_helper_without_capabilities_is_rejected(self):
+        self.saved.write_text(json.dumps({"schema": 3}))
+        result, events = self.run_login(LOGIN_CAPABILITY_STATUS="2")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(self.selections(events), [])
+        self.assertFalse(any("--list" in event for event in events))
 
     def test_schema_three_saved_and_seeded_profiles_follow_actual_helper_capabilities(self):
-        reader = {**CAPABILITIES, "initializeSchemas": [1, 2, 3], "normalizeSchemas": [2, 3]}
+        reader = {**CAPABILITIES, "initializeSchemas": [3], "normalizeSchemas": [3]}
         value = {"schema": 3, "roles": ["family", "creative"], "packages": [],
                  "capabilities": ["recording"], "custom": {"retain": True}}
         for path in (self.saved, self.seed):
@@ -185,17 +191,17 @@ if command == "zenity" and "--list" in sys.argv:
                 self.assertEqual(json.loads(selected[0][-1]), value)
                 self.assertFalse(any("--list" in event for event in events))
 
-    def test_schema_three_is_not_regenerated_when_an_old_helper_cannot_read_it(self):
+    def test_schema_three_is_not_regenerated_when_a_helper_cannot_read_it(self):
         value = {"schema": 3, "roles": ["family"], "capabilities": ["notes"], "custom": "retain"}
         self.saved.write_text(json.dumps(value))
-        self.seed.write_text("schema: 2\nroles: [developer]\n")
-        result, events = self.run_login()
+        self.seed.write_text("schema: 3\nroles: [developer]\n")
+        result, events = self.run_login(LOGIN_CAPABILITIES=json.dumps({**CAPABILITIES, "initializeSchemas": [4], "normalizeSchemas": [4], "writeSchema": 4}))
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(self.selections(events), [])
         self.assertFalse(any("--list" in event for event in events))
 
     def test_explicit_malformed_helper_capabilities_fail(self):
-        self.saved.write_text('{"schema":2}')
+        self.saved.write_text('{"schema":3}')
         for value in ("not JSON", "{}", "null", json.dumps({**CAPABILITIES, "initializeSchemas": []})):
             with self.subTest(value=value):
                 result, events = self.run_login(LOGIN_CAPABILITIES=value)
@@ -220,29 +226,26 @@ if command == "zenity" and "--list" in sys.argv:
         start = dialog.index("FALSE")
         self.assertEqual(dialog[start:], ["FALSE", "Professional", "Developer", "developer", "FALSE", "Professional", "IT", "it"])
         generated = json.loads(self.selections(events)[0][-1])
-        self.assertEqual(generated, {"schema": 2, "foundation": "bluefin", "hardware": "generic-x86_64",
-                                     "roles": ["developer", "it"], "packages": [], "identity": {}})
+        self.assertEqual(generated, {"schema": 3, "foundation": "bluefin", "hardware": "generic-x86_64",
+                                     "roles": ["developer", "it"], "packages": [], "capabilities": [], "identity": {}})
 
-    def test_old_catalog_without_classifications_or_capabilities_remains_usable(self):
+    def test_catalog_without_capabilities_is_rejected(self):
         value = json.loads(self.catalog.read_text())
         del value["profileCapabilities"]
-        del value["classifications"]
-        for role in value["roles"].values():
-            del role["classification"]
         self.catalog.write_text(json.dumps(value))
-        result, events = self.run_login(LOGIN_CAPABILITY_STATUS="2")
-        self.assertEqual(result.returncode, 0, result.stderr)
-        dialog = next(event for event in events if "--list" in event)
-        self.assertEqual(dialog[dialog.index("FALSE"):][:4], ["FALSE", "", "Developer", "developer"])
+        result, events = self.run_login()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(self.selections(events), [])
+        self.assertFalse(any("--list" in event for event in events))
 
     def test_newer_helper_does_not_change_the_fresh_login_writer_format(self):
-        future = {**CAPABILITIES, "initializeSchemas": [1, 2, 3], "normalizeSchemas": [2, 3], "writeSchema": 3}
+        future = {**CAPABILITIES, "initializeSchemas": [3, 4], "normalizeSchemas": [3, 4], "writeSchema": 4}
         result, events = self.run_login(LOGIN_CAPABILITIES=json.dumps(future))
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(json.loads(self.selections(events)[0][-1])["schema"], 2)
+        self.assertEqual(json.loads(self.selections(events)[0][-1])["schema"], 3)
 
     def current_catalog(self):
-        reader = {**CAPABILITIES, "initializeSchemas": [1, 2, 3], "normalizeSchemas": [2, 3]}
+        reader = {**CAPABILITIES, "initializeSchemas": [3], "normalizeSchemas": [3]}
         value = json.loads(self.catalog.read_text())
         value.update(profileSchema=3, profileCapabilities={**reader, "writeSchema": 3})
         value["classifications"]["personal"] = {"label": "Personal"}
@@ -252,20 +255,17 @@ if command == "zenity" and "--list" in sys.argv:
 
     def test_current_catalog_selects_schema_three_with_a_capable_reader(self):
         reader = self.current_catalog()
-        for write_schema in (2, 3):
-            with self.subTest(helper_write_schema=write_schema):
-                result, events = self.run_login(LOGIN_CAPABILITIES=json.dumps({**reader, "writeSchema": write_schema}),
-                                                LOGIN_ROLES="developer,family")
-                self.assertEqual(result.returncode, 0, result.stderr)
-                generated = json.loads(self.selections(events)[0][-1])
-                self.assertEqual(generated, {"schema": 3, "foundation": "bluefin", "hardware": "generic-x86_64",
-                                            "roles": ["developer", "family"], "packages": [], "capabilities": [], "identity": {}})
-                dialog = next(event for event in events if "--list" in event)
-                self.assertIn("Personal", dialog)
+        result, events = self.run_login(LOGIN_CAPABILITIES=json.dumps(reader), LOGIN_ROLES="developer,family")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        generated = json.loads(self.selections(events)[0][-1])
+        self.assertEqual(generated, {"schema": 3, "foundation": "bluefin", "hardware": "generic-x86_64",
+                                    "roles": ["developer", "family"], "packages": [], "capabilities": [], "identity": {}})
+        dialog = next(event for event in events if "--list" in event)
+        self.assertIn("Personal", dialog)
 
     def test_current_writer_rejects_an_incapable_helper_before_selection(self):
         self.current_catalog()
-        result, events = self.run_login()
+        result, events = self.run_login(LOGIN_CAPABILITIES=json.dumps({**CAPABILITIES, "initializeSchemas": [4], "normalizeSchemas": [4], "writeSchema": 4}))
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(self.selections(events), [])
         self.assertFalse(any("--list" in event for event in events))
@@ -281,7 +281,7 @@ if command == "zenity" and "--list" in sys.argv:
 
     def test_current_catalog_does_not_override_saved_profile_precedence(self):
         self.current_catalog()
-        self.saved.write_text('{"schema":2,"roles":["it"]}')
+        self.saved.write_text('{"schema":3,"roles":["it"]}')
         result, events = self.run_login()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(self.selections(events)[0][2], str(self.saved))
@@ -289,8 +289,8 @@ if command == "zenity" and "--list" in sys.argv:
 
     def test_fresh_catalog_mismatch_prevents_selector_and_writer(self):
         baseline = json.loads(self.catalog.read_text())
-        for change in ({"writeSchema": 3}, {"catalogSchemas": [4]}, {"initializeSchemas": [True]},
-                       {"initializeSchemas": [1, 1, 2]}, {"normalizeSchemas": []}):
+        for change in ({"writeSchema": 2}, {"catalogSchemas": [4]}, {"initializeSchemas": [True]},
+                       {"initializeSchemas": [3, 3]}, {"normalizeSchemas": []}):
             value = {**baseline, "profileCapabilities": {**baseline["profileCapabilities"], **change}}
             self.catalog.write_text(json.dumps(value))
             with self.subTest(change=change):
