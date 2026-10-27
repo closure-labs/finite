@@ -274,6 +274,22 @@
         "type": "github"
       }
     },
+    "flake-file": {
+      "locked": {
+        "lastModified": 1771897754,
+        "narHash": "sha256-SQhPQRbs35fQ8ZE7tbfHsf2eu5r+oICyZL1SpGIPvGg=",
+        "owner": "vic",
+        "repo": "flake-file",
+        "rev": "619d2212482c104fd3bbc815d80c6227b1b01338",
+        "type": "github"
+      },
+      "original": {
+        "owner": "vic",
+        "repo": "flake-file",
+        "rev": "619d2212482c104fd3bbc815d80c6227b1b01338",
+        "type": "github"
+      }
+    },
     "flake-parts": {
       "inputs": {
         "nixpkgs-lib": [
@@ -339,6 +355,28 @@
         "type": "github"
       }
     },
+    "flake-parts_4": {
+      "inputs": {
+        "nixpkgs-lib": [
+          "foundation",
+          "determinate",
+          "nix",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1782949081,
+        "narHash": "sha256-vp6Y/Grm98ESt6ceOkWiHWyZRDV3J1RID4w+6NWK9yA=",
+        "rev": "17c9d6cdfc60c64f4ee8d306f9bc0b4ccb51481e",
+        "revCount": 480,
+        "type": "tarball",
+        "url": "https://api.flakehub.com/f/pinned/hercules-ci/flake-parts/0.1.480%2Brev-17c9d6cdfc60c64f4ee8d306f9bc0b4ccb51481e/019f2195-dee5-7233-9747-eca0c27f7406/source.tar.gz"
+      },
+      "original": {
+        "type": "tarball",
+        "url": "https://flakehub.com/f/hercules-ci/flake-parts/0.1"
+      }
+    },
     "flake-utils": {
       "inputs": {
         "systems": "systems"
@@ -362,8 +400,11 @@
         "den": "den_2",
         "determinate": "determinate",
         "devenv": "devenv_2",
+        "flake-file": "flake-file",
+        "flake-parts": "flake-parts_4",
         "gen": "gen",
         "home-manager": "home-manager",
+        "import-tree": "import-tree_2",
         "nix-flatpak": "nix-flatpak",
         "nixGL": "nixGL",
         "nixpkgs": "nixpkgs_6",
@@ -371,17 +412,17 @@
         "nixpkgs-weekly": "nixpkgs-weekly"
       },
       "locked": {
-        "lastModified": 1792809709,
-        "narHash": "sha256-7G9HKe8AH4pVi1gWY0//KENgC9e97ezlEof3hsuZV1g=",
+        "lastModified": 1793076353,
+        "narHash": "sha256-xyfDSCECkypjFIhQRmFe0HZuaVzn3Mo6uPVzmw1yQHg=",
         "owner": "closure-labs",
         "repo": "foundation",
-        "rev": "0391c2e7bf7284ba0e999be73046cf03a0601918",
+        "rev": "214e62aa594fc51a7416d69a01ab345edf036f77",
         "type": "github"
       },
       "original": {
         "owner": "closure-labs",
         "repo": "foundation",
-        "rev": "0391c2e7bf7284ba0e999be73046cf03a0601918",
+        "rev": "214e62aa594fc51a7416d69a01ab345edf036f77",
         "type": "github"
       }
     },
@@ -1860,6 +1901,22 @@
     },
     "import-tree_2": {
       "locked": {
+        "lastModified": 1783029876,
+        "narHash": "sha256-iI88R3wHz8wTKQb5orvpc51L/Xr64AJyxid/0MKa/b8=",
+        "owner": "denful",
+        "repo": "import-tree",
+        "rev": "a164a12202f58eb67559bd33b5592f20660d9baf",
+        "type": "github"
+      },
+      "original": {
+        "owner": "denful",
+        "repo": "import-tree",
+        "rev": "a164a12202f58eb67559bd33b5592f20660d9baf",
+        "type": "github"
+      }
+    },
+    "import-tree_3": {
+      "locked": {
         "lastModified": 1788467110,
         "narHash": "sha256-ljEMTXP/rH0tOvDzc9gzwww6KcHRPRnEHzd9lK48V7s=",
         "owner": "vic",
@@ -2298,7 +2355,7 @@
         "devenv": "devenv",
         "foundation": "foundation",
         "gen": "gen_2",
-        "import-tree": "import-tree_2",
+        "import-tree": "import-tree_3",
         "nixpkgs": "nixpkgs_7",
         "nixpkgs-weekly": "nixpkgs-weekly_2",
         "treefmt-nix": "treefmt-nix_3"
