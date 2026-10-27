@@ -20,7 +20,7 @@
 
   inputs = {
     # Foundation owns the Home Manager dependency graph; do not add follows here.
-    foundation.url = "github:closure-labs/foundation/0391c2e7bf7284ba0e999be73046cf03a0601918";
+    foundation.url = "github:closure-labs/foundation/214e62aa594fc51a7416d69a01ab345edf036f77";
     # Update Den and the gen hub together: newer Den APIs may require a newer schema.
     den.url = "github:denful/den/90c303be407632d3983fb619e714c53b2349b8e6";
 
