@@ -20,6 +20,7 @@
       ../scripts/bluebuild
       ../scripts/ci
       ../scripts/home
+      ../scripts/workstation
       ../tests
       ../modules/outputs.nix
       ../lib
@@ -109,6 +110,7 @@ in {
     python3 tests/ci/prepare-release-set.py
     python3 tests/ci/recovery-completion.py
     python3 tests/ci/reconcile-decisions.py
+    python3 tests/workstation/cleanup-brew.py
     python3 tests/ci/verify-attestation-subject.py
     python3 tests/ci/release-handoff.py
     python3 tests/ci/ci-savings.py
