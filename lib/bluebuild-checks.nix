@@ -58,8 +58,8 @@ in {
     export FINITE_TEST_FOUNDATION_SOURCE=${foundation}
     shellcheck -s bash files/system/usr/libexec/finite/lib/update-shell-env
     bash tests/home/contracts.sh \
-      ${applications.homeProfile}/bin/finite-home-profile \
-      ${applications.homeInit}/bin/finite-home-init \
+      ${lib.getExe applications.homeProfile} \
+      ${lib.getExe applications.homeInit} \
       ${applications.cloudInit}/bin/finite-cloud-init \
       ${homeScaffold}
     python3 tests/home/maintenance.py
