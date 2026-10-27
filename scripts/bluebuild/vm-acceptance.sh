@@ -478,7 +478,7 @@ if [[ $2 == upgrade ]]; then
 fi
 guest_begin home-init
 echo 'Building and activating the base Home Manager environment'
-/usr/libexec/finite/home-init --profile "$HOME/profile.json" </dev/null
+FOUNDATION_TIMINGS=1 /usr/libexec/finite/home-init --profile "$HOME/profile.json" </dev/null 2>&1
 GUEST
 # Initializers and their children must not consume commands from bash -s stdin.
 # Establish the fixture over a separate SSH request, then prove it exists before

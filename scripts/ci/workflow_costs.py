@@ -180,6 +180,7 @@ def observe(run, api, now):
                          'candidateDigest': None, 'stages': [],
                          'predecessorReuse': {'eligible': None, 'hit': None, 'missReason': None},
                          'predecessorReuseDiagnostics': None,
+                         'foundationTimings': None,
                          'inventoryReuse': {'eligible': None, 'hit': None, 'missReason': None, 'observedReused': None}, 'status': job['status'], 'conclusion': job.get('conclusion'),
                          'runnerSeconds': elapsed, 'queueSeconds': queue, 'steps': phases,
                          'startedAt': started, 'completedAt': completed, 'timingAnomalies': anomalies,

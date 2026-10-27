@@ -19,7 +19,7 @@ spec.loader.exec_module(upgrade)
 class Upgrade(unittest.TestCase):
     def test_home_initializer_cannot_consume_following_remote_script_commands(self):
         source = (ROOT / 'scripts/bluebuild/vm-acceptance.sh').read_text()
-        command = next(line for line in source.splitlines() if line.startswith('/usr/libexec/finite/home-init --profile'))
+        command = next(line for line in source.splitlines() if '/usr/libexec/finite/home-init --profile' in line)
         with tempfile.TemporaryDirectory() as temporary:
             home = Path(temporary)
             initializer = home / 'initializer.py'
@@ -29,6 +29,44 @@ class Upgrade(unittest.TestCase):
             subprocess.run(['bash', '-s'], input=script, text=True, check=True, env={**os.environ, 'HOME': str(home)})
             self.assertEqual((home / 'initializer-input').read_text(), '')
             self.assertEqual((home / 'following-command').read_text(), 'created\n')
+        self.assertIn('FOUNDATION_TIMINGS=1 ', command)
+
+    def test_foundation_timings_are_optional_bounded_and_preserve_partial_failure(self):
+        import io
+        timing_spec = importlib.util.spec_from_file_location('foundation_guest_timing', ROOT / 'scripts/bluebuild/guest-timings.py')
+        timing = importlib.util.module_from_spec(timing_spec)
+        timing_spec.loader.exec_module(timing)
+        record = {'schema': 1, 'kind': 'foundation-stage-timing', 'authorizesPublication': False,
+                  'stage': 'initialization', 'startedAt': '2026-10-27T01:00:00+00:00',
+                  'seconds': 12.5, 'outcome': 'error', 'status': 7}
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / 'timings.json'
+            stream = 'FOUNDATION_TIMING ' + json.dumps(record) + '\nFINITE_GUEST_STAGE home-init 13 7\n'
+            rows = timing.collect(io.StringIO(stream), path, io.StringIO())
+            self.assertEqual(rows, [{'stage': 'home-init', 'seconds': 13, 'status': 7}])
+            self.assertEqual(json.loads(path.read_text())['foundation'], {'schema': 1, 'stages': [record], 'rejectedRecords': 0})
+            invalid = [record, {**record, 'stage': '/private/path'}, {**record, 'seconds': float('nan')},
+                       {**record, 'seconds': 10**800}, {**record, 'authorizesPublication': True}]
+            stream = ''.join('FOUNDATION_TIMING ' + json.dumps(row) + '\n' for row in invalid)
+            stream += 'FOUNDATION_TIMING ' + 'x' * 2048 + '\nFOUNDATION_TIMING invalid-json\n'
+            stream += 'FOUNDATION_TIMING {"schema":1,"schema":1}\n'
+            timing.collect(io.StringIO(stream), path, io.StringIO())
+            value = json.loads(path.read_text())['foundation']
+            self.assertEqual(value['stages'], [record])
+            self.assertEqual(value['rejectedRecords'], 7)
+            self.assertNotIn('/private/path', path.read_text())
+            timing.collect(io.StringIO('FINITE_GUEST_STAGE home-init 1 0\n'), path, io.StringIO())
+            self.assertNotIn('foundation', json.loads(path.read_text()))
+
+    def test_optional_foundation_write_failure_does_not_fail_guest_stream(self):
+        import io
+        timing_spec = importlib.util.spec_from_file_location('unwritable_foundation_timing', ROOT / 'scripts/bluebuild/guest-timings.py')
+        timing = importlib.util.module_from_spec(timing_spec)
+        timing_spec.loader.exec_module(timing)
+        class Unwritable:
+            def write_text(self, value):
+                raise OSError('fixture disk error')
+        self.assertEqual(timing.collect(io.StringIO('FOUNDATION_TIMING invalid-json\n'), Unwritable(), io.StringIO()), [])
 
     def test_guest_timing_preserves_partial_failure_and_initializer_configuration(self):
         import io
