@@ -60,7 +60,8 @@ class Completion(unittest.TestCase):
                     {'revision': SHA, 'qualificationContext': {'inputs': {'source': 'bound'}}}))
             return None
         self.admission = Mock(return_value={'status': 'covered', 'decision': {'proposalHash': 'decision'}})
-        patches = [patch.object(completion.controller, 'api', return_value={'object': {'sha': SHA}}),
+        patches = [patch.object(completion, 'current_build_identity', return_value=IDENTITY),
+                   patch.object(completion.controller, 'api', return_value={'object': {'sha': SHA}}),
                    patch.object(completion.controller, 'module', side_effect=lambda name, _: self.security if 'security' in name else self.qualification),
                    patch.object(completion.controller, 'collection', side_effect=lambda path, _: deepcopy(self.jobs if path.endswith('/jobs') else self.entries)),
                    patch.object(completion, 'download', side_effect=download),
@@ -71,7 +72,7 @@ class Completion(unittest.TestCase):
             item.start(); self.addCleanup(item.stop)
 
     def authenticate(self):
-        return completion.authenticate('finite', {'headSha': SHA}, self.native, 'decision', 'bot', self.run)
+        return completion.authenticate('finite', {'headSha': SHA}, self.native, 'decision', 'bot', self.run, IDENTITY)
 
     def test_complete_native_and_live_proof(self):
         proof = self.authenticate()
@@ -80,6 +81,17 @@ class Completion(unittest.TestCase):
         self.assertEqual(self.security.inspect_candidate.call_count, 2)
         self.security.revalidate.assert_called_once()
         self.qualification.validate.assert_called_once()
+
+    def test_changed_current_image_inputs_cannot_be_satisfied_by_an_old_equivalent_pair(self):
+        with self.assertRaisesRegex(ValueError, 'profile/build identity'):
+            completion.authenticate('finite', {'headSha': SHA}, self.native, 'decision', 'bot', self.run,
+                                    'v1:' + 'f' * 64)
+
+    def test_unknown_current_inputs_retain_recovery_without_reading_publishers(self):
+        with patch.object(completion, 'current_build_identity', side_effect=ValueError('unavailable')), \
+                patch.object(completion.controller, 'api') as api:
+            self.assertIsNone(completion.completion('finite', {}, self.native, 'decision', 'bot'))
+            api.assert_not_called()
 
     def test_untrusted_failed_or_wrong_attempt_jobs(self):
         for changes in ({'status': 'in_progress'}, {'conclusion': 'failure'}, {'run_attempt': 2}, {'head_sha': 'f' * 40}):
