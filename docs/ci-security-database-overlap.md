@@ -83,12 +83,27 @@ scanner with the overlap CLI flag only in the overlap arm. This does not change
 the production launcher or enable a production feature flag. The paired arms
 must use matching immutable image, source, tool, policy and runner identities,
 and matching resource controls. Both run the native policy without a waiver.
-Each scanner shares a fixed 10-GiB cgroup limit with its updater, reserves 4 GiB
-of available host RAM, allows no swap, and has a 3,600-second scan deadline
+Each scanner shares a fixed 10-GiB cgroup limit with its updater, requires 4 GiB
+of available host RAM beyond that limit before launch, allows no swap, and has a 3,600-second scan deadline
 plus 180 seconds for bounded evidence validation. The service limits tasks to
 256 and stops on OOM; a sampled 4-GiB free-disk floor is enforced. Native DB
 command deadlines remain 1,800 seconds for serial and 600 for overlap.
 Both arms enable database hash and age validation at startup.
+
+The real owned cgroup's memory, swap and task limits are checked before and after
+the scan. The [kernel permits temporary `memory.max` overshoot](https://docs.kernel.org/admin-guide/cgroup-v2.html#memory-interface-files),
+so `memory.peak` is retained as an exact observation, not clamped to the configured
+limit or accepted with an invented page/percentage tolerance. A separate,
+conservative diagnostic budget requires the observed peak to fit the pre-arm
+available RAM minus the existing 4-GiB reserve; the pre-arm observation must also
+fit physical RAM and match the parent receipt. This is not proof that host RAM
+headroom stayed constant during the scan, nor a larger configured cgroup limit.
+Missing or malformed telemetry, a peak beyond that budget, changed cgroup limits,
+or any OOM/kill still fails. Summary rows show the exact peak, bytes above the
+limit, `memory.events.max` boundary/reclaim counts and `high` throttling counts.
+Limit pressure is not OOM, bytes reclaimed or elapsed reclaim time. A pressure-
+affected timing is not an unconstrained memory-demand measurement or evidence
+that the workload remained below the configured limit.
 
 Scanner-reported DB/provider snapshot identity must match before comparing
 findings or timing: schema, build time, source and every provider capture/input
@@ -112,6 +127,18 @@ The per-pair job timeout is 120 minutes and artifacts expire after 14 days. The
 workflow stops instead of refreshing or substituting a DB merely to make a
 cohort comparable. Rerun only after diagnosing a rejected cohort; do not mix
 receipts across workflow attempts.
+
+### First real run and telemetry correction
+
+[Run 40765793821](https://github.com/closure-labs/finite/actions/runs/40765793821)
+completed one healthy serial scan in 827.819 seconds, including 91.249 seconds of
+DB acquisition. It then failed a too-strict `memory.peak <= memory.max` assertion:
+the recorded peak was 10,737,426,432 bytes, 8,192 above the enforced 10-GiB limit,
+with 12,988 max-boundary events and no OOM or kill. Service quiescence and workspace
+cleanup were confirmed. No overlap arm ran, and the summary correctly rejected
+the incomplete cohort. The correction above preserves the kernel limits and
+reports the pressure; it does not retroactively accept that run or establish any
+performance improvement. A new complete, reviewed-workflow run is required.
 
 ## Evidence needed before any rollout
 

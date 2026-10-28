@@ -43,6 +43,7 @@ ORDERS = {'serial-first': ('serial', 'overlap'), 'overlap-first': ('overlap', 's
 POLICY = {'memoryMaxBytes': MEMORY, 'memorySwapMaxBytes': 0, 'headroomBytes': HEADROOM,
           'scanTimeoutSeconds': SECONDS, 'serviceRuntimeMaxSeconds': SECONDS + 180, 'tasksMax': 256, 'minimumFreeDiskBytes': HEADROOM,
           'sampleIntervalSeconds': 1, 'cache': 'new-private-home-tmp-db-and-inventory-per-arm',
+          'observedPeakBudget': 'pre-arm-available-memory-minus-headroom',
           'imageParallelCopies': 1, 'syftParallelism': 1,
           'serialDatabaseTimeoutSeconds': 1800, 'overlapDatabaseTimeoutSeconds': 600,
           'maxEvidenceBytes': EVIDENCE_BYTES, 'maxRetainedNativeBytes': RETAIN_BYTES}
@@ -223,16 +224,53 @@ def io_valid(raw):
         raise ValueError('Missing I/O devices')
 
 
+def memory_observation(value):
+    """Separate kernel enforcement from peak telemetry and reclaim pressure.
+
+    memory.max permits temporary overshoot; it is not an exact upper bound on
+    memory.peak. Do not invent a page/percentage tolerance or clamp the sample.
+    The existing pre-arm headroom reserve supplies a conservative observation
+    budget, not a claim that host headroom stayed constant during the scan.
+    https://docs.kernel.org/admin-guide/cgroup-v2.html#memory-interface-files
+    """
+    total = value.get('memoryTotalBytes')
+    available = value.get('initialAvailableMemoryBytes')
+    peak = value.get('peakMemoryBytes')
+    if (type(total) is not int or type(available) is not int
+            or not MEMORY + HEADROOM <= available <= total or type(peak) is not int):
+        raise ValueError('Missing or invalid host memory observation budget')
+    if not 0 < peak <= available - HEADROOM:
+        raise ValueError('Observed memory peak is outside the pre-arm headroom budget')
+    events = value.get('memoryEvents')
+    required = {'low', 'high', 'max', 'oom', 'oom_kill'}
+    if (not isinstance(events, dict) or not required <= events.keys()
+            or any(not isinstance(k, str) or not re.fullmatch(r'[a-z_]+', k)
+                   or type(v) is not int or v < 0 for k, v in events.items())):
+        raise ValueError('Missing or malformed cgroup memory events')
+    overage = max(0, peak - MEMORY)
+    pressure = []
+    if events['max']: pressure.append('max-boundary-reclaim')
+    if events['high']: pressure.append('high-boundary-throttling')
+    if overage: pressure.append('observed-peak-above-memory-max')
+    return {'enforcedMemoryMaxBytes': MEMORY, 'observedPeakBytes': peak,
+            'observedPeakOverLimitBytes': overage,
+            'preArmHeadroomBudgetBytes': available - HEADROOM,
+            'maxBoundaryEvents': events['max'], 'highBoundaryEvents': events['high'],
+            'pressure': pressure or ['no-limit-pressure-observed']}
+
+
 def resources_valid(value):
-    if (type(value.get('exitCode')) is not int or value['exitCode'] != 0 or value.get('memoryMaxBytes') != MEMORY
-            or value.get('memorySwapMaxBytes') != 0 or value.get('diskFloorBreached') is not False
-            or type(value.get('peakMemoryBytes')) is not int):
+    if (type(value.get('exitCode')) is not int or value['exitCode'] != 0
+            or type(value.get('memoryMaxBytes')) is not int or value['memoryMaxBytes'] != MEMORY
+            or type(value.get('memorySwapMaxBytes')) is not int or value['memorySwapMaxBytes'] != 0
+            or value.get('diskFloorBreached') is not False
+            or type(value.get('peakMemoryBytes')) is not int
+            or value.get('cgroupLimitsVerifiedAtEnd') is not True):
         raise ValueError('Failed, unbounded or disk-exhausted worker')
-    number(value['peakMemoryBytes'], MEMORY, True)
+    memory_observation(value)
     number(value.get('scanWallSeconds'), SECONDS, True)
     events = value.get('memoryEvents')
-    if (not isinstance(events, dict) or events.get('oom') != 0 or events.get('oom_kill') != 0
-            or any(type(v) is not int or v < 0 for v in events.values())):
+    if any(events.get(key, 0) != 0 for key in ('oom', 'oom_kill', 'oom_group_kill')):
         raise ValueError('Missing or nonzero cgroup OOM evidence')
     if (type(value.get('diskFreeMinimumBytes')) is not int or value['diskFreeMinimumBytes'] < HEADROOM
             or type(value.get('diskFreeStartBytes')) is not int
@@ -286,12 +324,18 @@ def worker(args):
     if args.lane == 'overlap': command.append('--experimental-database-overlap')
     record = {'schema': 1, 'lane': args.lane, 'exitCode': None, 'diskFloorBreached': False,
               'memoryMaxBytes': MEMORY, 'memorySwapMaxBytes': 0, 'diskSamples': 0,
+              'initialAvailableMemoryBytes': args.available_memory_bytes,
+              'memoryTotalBytes': TRANSFER.runner_cohort()['memoryTotalKiB'] * 1024,
+              'cgroupLimitsVerifiedAtEnd': False,
               'diskFreeStartBytes': shutil.disk_usage(temporary).free}
     record['diskFreeMinimumBytes'] = record['diskFreeStartBytes']
     before = time.monotonic()
     network = TRANSFER.METADATA.network_bytes()
     process = None
     try:
+        if (type(args.available_memory_bytes) is not int
+                or not MEMORY + HEADROOM <= args.available_memory_bytes <= record['memoryTotalBytes']):
+            raise ValueError('Invalid pre-arm memory budget before native scan')
         if record['diskFreeStartBytes'] < HEADROOM:
             raise ValueError('Insufficient disk headroom before native scan')
         process = subprocess.Popen(command, cwd=ROOT, env=env)
@@ -330,15 +374,30 @@ def worker(args):
         if process is not None and process.poll() is None:
             process.terminate()
         record.setdefault('scanWallSeconds', round(time.monotonic() - before, 3))
-        record['peakMemoryBytes'] = int((group / 'memory.peak').read_text())
-        record['memoryEvents'] = {key: int(value) for key, value in
-                                  (line.split() for line in (group / 'memory.events').read_text().splitlines())}
-        record['ioStat'] = (group / 'io.stat').read_text()
-        after = TRANSFER.METADATA.network_bytes()
-        record['runnerNetworkDelta'] = {key: after[key] - value for key, value in network.items() if key in after}
-        record['workerWallSeconds'] = round(time.monotonic() - before, 3)
-        save(output / 'worker.json', record)
-    resources_valid(record)
+        try:
+            # Recheck the actual owned cgroup and all unchanged caps, not just
+            # the desired launch properties, before accepting its telemetry.
+            if cgroup_path(args.unit) != group:
+                raise ValueError('Worker cgroup changed during the scan')
+            record['cgroupLimitsVerifiedAtEnd'] = True
+            record['peakMemoryBytes'] = int((group / 'memory.peak').read_text())
+            rows = (group / 'memory.events').read_text().splitlines()
+            if (any(not re.fullmatch(r'[a-z_]+ [0-9]+', row) for row in rows)
+                    or len({row.split()[0] for row in rows}) != len(rows)):
+                raise ValueError('Malformed or duplicate cgroup memory events')
+            record['memoryEvents'] = {key: int(value) for key, value in (line.split() for line in rows)}
+            record['ioStat'] = (group / 'io.stat').read_text()
+            after = TRANSFER.METADATA.network_bytes()
+            record['runnerNetworkDelta'] = {key: after[key] - value for key, value in network.items() if key in after}
+            if 'error' not in record:
+                resources_valid(record)
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            record['resourceValidationError'] = str(error)
+            record.setdefault('error', str(error))
+            raise
+        finally:
+            record['workerWallSeconds'] = round(time.monotonic() - before, 3)
+            save(output / 'worker.json', record)
 
 
 @contextmanager
@@ -410,6 +469,7 @@ def measured_arm(lane, image, output, context):
                 'GITHUB_WORKFLOW_REF', 'GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT', 'RUNNER_OS', 'RUNNER_ARCH', 'ImageVersion')
         command += ['--setenv=' + key + '=' + os.environ[key] for key in keys]
         command += [sys.executable, str(Path(__file__).resolve()), 'worker', '--unit', unit, '--lane', lane,
+                    '--available-memory-bytes', str(record['initialAvailableMemoryBytes']),
                     '--image', image, '--temporary', str(temporary), '--output', str(output), '--context', str(context)]
         # Do not lose process ownership if cancellation arrives between fork
         # and assignment. systemd, not this launcher, starts the service worker.
@@ -434,6 +494,8 @@ def measured_arm(lane, image, output, context):
         if record.get('exitCode') != 0 or not record['serviceQuiescent'] or record['timedOut']:
             raise ValueError('Bounded service failed or shutdown is unconfirmed')
         resources_valid(worker_record)
+        if worker_record['initialAvailableMemoryBytes'] != record['initialAvailableMemoryBytes']:
+            raise ValueError('Worker memory budget differs from the pre-arm observation')
         if worker_record.get('nativeTemporaryCleanupVerified') is not True:
             raise ValueError('Native temporary cleanup was not verified')
         return record
@@ -470,6 +532,8 @@ def pair_valid(arms):
                 or arm.get('workspaceRemoved') is not True):
             raise ValueError('Failed arm or unconfirmed service/workspace cleanup')
         resources_valid(arm['worker'])
+        if arm['worker']['initialAvailableMemoryBytes'] != arm.get('initialAvailableMemoryBytes'):
+            raise ValueError('Worker memory budget differs from the pre-arm observation')
         if arm['worker'].get('lane') != arm['lane']:
             raise ValueError('Worker lane differs from arm receipt')
         native = arm['worker']['native']
@@ -495,7 +559,8 @@ def pair_valid(arms):
     by_lane = {arm['lane']: arm for arm in arms}
     return {'scanWallSavedSeconds': by_lane['serial']['worker']['scanWallSeconds'] - by_lane['overlap']['worker']['scanWallSeconds'],
             'armWallSavedSeconds': by_lane['serial']['armWallSeconds'] - by_lane['overlap']['armWallSeconds'],
-            'peakMemoryDeltaBytes': by_lane['overlap']['worker']['peakMemoryBytes'] - by_lane['serial']['worker']['peakMemoryBytes']}
+            'peakMemoryDeltaBytes': by_lane['overlap']['worker']['peakMemoryBytes'] - by_lane['serial']['worker']['peakMemoryBytes'],
+            'memoryObservations': {lane: memory_observation(arm['worker']) for lane, arm in by_lane.items()}}
 
 
 def benchmark(args):
@@ -556,6 +621,9 @@ def comparison(reports, pages):
                 or [a['lane'] for a in report['arms']] != list(ORDERS[report['order']])):
             raise ValueError('Failed pair, wrong execution identity or order')
         delta = pair_valid(report['arms'])
+        if any(a['worker']['memoryTotalBytes'] != report['runnerHardware']['memoryTotalKiB'] * 1024
+               for a in report['arms']):
+            raise ValueError('Worker physical memory differs from the runner cohort')
         if delta != report['comparison']:
             raise ValueError('Reported comparison differs from arm measurements')
         identities.append(report['arms'][0]['worker']['native'])
@@ -585,11 +653,15 @@ def comparison(reports, pages):
             'scanWallMedianSavedSeconds': statistics.median(row['scanWallSavedSeconds'] for row in rows),
             'armWallMedianSavedSeconds': statistics.median(row['armWallSavedSeconds'] for row in rows),
             'orderMedians': {order: statistics.median(r['scanWallSavedSeconds'] for r in rows if r['order'] == order) for order in ORDERS},
+            'memoryLimitPressureObserved': any(m['pressure'] != ['no-limit-pressure-observed']
+                                               for row in rows for m in row['memoryObservations'].values()),
             'releaseEligibilityEstablished': False, 'productionChangeRecommended': False,
             'limitations': ['This compares scanner wall time, not separate whole-job savings.',
                            'Cold application workspaces do not imply cold host/page/network caches; both orders are repeated.',
                            'DB/provider identities are scanner-reported, not an independently hashed database-file comparison.',
                            'Disk and network are sampled runner-wide observations, not exclusive per-process counters.',
+                           'memory.max is enforced but may be exceeded temporarily; exact peaks and limit pressure are reported, not waived or clamped.',
+                           'The pre-arm available-memory budget does not prove continuous host headroom or unconstrained memory demand.',
                            'Policy health is not human publication admission; no production rollout is enabled.']}
 
 
@@ -604,6 +676,7 @@ def main():
     child = commands.add_parser('worker')
     for name in ('unit', 'image'): child.add_argument('--' + name, required=True)
     child.add_argument('--lane', choices=('serial', 'overlap'), required=True)
+    child.add_argument('--available-memory-bytes', type=int, required=True)
     for name in ('temporary', 'output', 'context'): child.add_argument('--' + name, type=Path, required=True)
     summary = commands.add_parser('summarize')
     for name in ('directory', 'jobs', 'output'): summary.add_argument(name, type=Path)
