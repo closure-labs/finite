@@ -11,6 +11,7 @@ from pathlib import Path
 import tarfile
 import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 SPEC = importlib.util.spec_from_file_location('extraction_scan', ROOT / 'scripts/bluebuild/security-scan.py')
@@ -24,6 +25,27 @@ IDENTITY = 'v1:' + 'b' * 64
 
 
 class ExtractionLayout(unittest.TestCase):
+    def test_scanner_extracts_rootfs_without_repack_metadata(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            with patch.object(scan, 'run') as run:
+                scan.unpack_rootfs(root / 'image', root / 'bundle/rootfs')
+            run.assert_called_once_with(['umoci', 'raw', 'unpack', '--rootless', '--image',
+                                         str(root / 'image') + ':audit', str(root / 'bundle/rootfs')])
+            self.assertTrue((root / 'bundle').is_dir())
+
+    def test_raw_extraction_rejects_existing_or_linked_rootfs(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            directory = root / 'existing'
+            directory.mkdir()
+            link = root / 'dangling'
+            link.symlink_to(root / 'missing')
+            for destination in (directory, link):
+                with patch.object(scan, 'run') as run, self.assertRaisesRegex(ValueError, 'must be new'):
+                    scan.unpack_rootfs(root / 'image', destination)
+                run.assert_not_called()
+
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)

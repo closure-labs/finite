@@ -91,7 +91,7 @@ For OCI image indexes, evidence retains the exact signed parent manifest and
 the unique Linux amd64 child manifest. Policy verification hashes both raw
 artifacts, verifies their descriptor relationship and binds both native scanners
 to that child. The trusted scanner job uses rootless umoci to unpack the
-authenticated OCI image, then inventories that directory with the image cataloger
+authenticated OCI image with `raw unpack --rootless`, then inventories that directory with the image cataloger
 set and a base path that prevents following links outside the rootfs. Native
 Syft/Grype directory metadata is preserved. Extraction provenance records the
 parent and child digests, tool version, exact source/base paths and native SBOM
@@ -152,3 +152,36 @@ replacements but cannot prevent redirecting a tag to an older legitimately signe
 image or enforce current qualification. Digest and evidence checks protect the
 normal publication path; eliminating this residual requires separate registry
 write boundaries or an external promotion service.
+
+## Rootfs-only extraction optimization (October 2026)
+
+The native scanner now uses pinned umoci's rootfs-only command. Full `unpack`
+also walks/hashes the extracted tree for a repack mtree and creates OCI runtime
+configuration; this scanner neither repacks nor runs that bundle. Both commands
+use the same rootless layer extraction implementation, including compressed
+layer digest and uncompressed DiffID verification. The original manifest/config
+binding, image cataloger set, base path, probes, resource caps, fresh database
+update, vulnerability scan and current policy evaluation are unchanged. The
+extraction receipt records the command; inventory generation already hashes the
+scanner implementation, so the change invalidates old reuse identities.
+
+This removes unused runtime/repack metadata, not a security scan. Existing
+exact-digest inventory reuse remains bounded and unchanged. A new image cannot
+reuse a different image's inventory; the observed October 28 fresh security job
+is not evidence of a duplicate Syft invocation. There is one native cataloging
+invocation, producing both JSON formats in that invocation.
+
+The bounded `scripts/ci/extraction-layout-smoke.py` fixture compares old and new
+extraction bytes, modes, rootless ownership, symlink targets, hardlink counts,
+ordinary whiteouts and opaque directory whiteouts, while checking original blob
+preservation. Corrupt layer bytes and a wrong DiffID must fail. The fixture uses
+pinned umoci 0.6.0 without an image pull/build or image execution. Its subsecond
+warm-cache timings are diagnostic only: **no production time saving is claimed**.
+The October 28 522.092-second extraction / 392.899-second cataloging receipt
+is a baseline observation, not a matched before/after benchmark. Establish actual
+savings with a same-image, same-tool, same-runner-cohort paired hosted comparison
+before attributing any portion of that extraction duration to mtree generation.
+
+Upstream implementation references (pinned version):
+[full unpack](https://github.com/opencontainers/umoci/blob/v0.6.0/unpack.go) and
+[raw unpack](https://github.com/opencontainers/umoci/blob/v0.6.0/cmd/umoci/raw-unpack.go).
