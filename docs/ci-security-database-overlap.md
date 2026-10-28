@@ -1,7 +1,8 @@
 # Validate earlier security database acquisition
 
-This is an **opt-in experiment**, not a production rollout. No workflow enables
-it. Default scanning remains serial. Run
+This is an **opt-in experiment**, not a production rollout. Production scanning
+remains serial. The manual `benchmark-database-overlap.yml` workflow compares
+the two paths in isolation; it cannot build, sign, promote or release an image. Run
 `python3 tests/bluebuild/security-database-overlap.py` for small offline lifecycle
 fixtures; no OS image, real database, signing key or VM is needed.
 
@@ -53,7 +54,66 @@ See [Grype configuration](https://oss.anchore.com/docs/reference/grype/configura
 for the supported database settings. No stale fallback or background error grants
 clearance; the normal policy result is still required.
 
-## Hosted experiment needed before any rollout
+## Manual hosted comparison
+
+After the benchmark workflow is reviewed and available on `main`, dispatch
+**Benchmark isolated security database overlap** with:
+
+- `image`: the complete immutable `ghcr.io/closure-labs/finite@sha256:...` reference;
+- `profile`: `finite` or `finite-dev`, tested in separate workflow runs;
+- `origin_run`: the successful native main **Build Finite** run that produced
+  this exact signed image and its native security evidence.
+
+The benchmark authenticates the native producer metadata and signature before
+scanning. It requires an explicit manual main invocation in `closure-labs/finite`
+and read-only credentials. It does not accept a mutable image tag, a failed
+producer, or a locally fabricated hosted event.
+
+Six fresh `ubuntu-24.04` jobs each run a serial/overlap pair sequentially: three
+serial-first and three overlap-first repetitions. At most one pair job runs at a
+time. A failed pair stops the remaining matrix jobs. Each arm uses fresh image
+inventory and a cold isolated DB; no scanner or inventory cache is restored or
+saved. Public pinned Nix tool substitution is common to both arms and is not a
+scanner-cache hit. Paired arms share setup, and the second arm may benefit from
+host or network caches outside the experiment's control. Reversed orders expose
+that effect; they do not establish a perfectly cold host cache.
+
+The benchmark owns its bounded hosted scanner service and calls the same native
+scanner with the overlap CLI flag only in the overlap arm. This does not change
+the production launcher or enable a production feature flag. The paired arms
+must use matching immutable image, source, tool, policy and runner identities,
+and matching resource controls. Both run the native policy without a waiver.
+Each scanner shares a fixed 10-GiB cgroup limit with its updater, reserves 4 GiB
+of available host RAM, allows no swap, and has a 3,600-second scan deadline
+plus 180 seconds for bounded evidence validation. The service limits tasks to
+256 and stops on OOM; a sampled 4-GiB free-disk floor is enforced. Native DB
+command deadlines remain 1,800 seconds for serial and 600 for overlap.
+Both arms enable database hash and age validation at startup.
+
+Scanner-reported DB/provider snapshot identity must match before comparing
+findings or timing: schema, build time, source and every provider capture/input
+identity are retained; only the arm-owned database path is normalized. This is
+not an independently hashed database-file comparison.
+An upstream DB publication between arms, changed coverage, unhealthy scanner,
+OOM, timeout, incomplete telemetry or missing observation rejects the comparison;
+it is not counted as a performance gain. The summary explicitly rejects incomplete cohorts; available individual failure
+receipts remain in artifacts rather than silently becoming accepted samples.
+
+Artifacts retain bounded native policy/provenance/timing evidence, resource
+measurements, integrity hashes for full evidence files, and complete same-attempt
+GitHub job timestamps. Image layers, extracted rootfs, raw DB and unbounded full
+inventory payloads are not uploaded. Arm wall time is measured directly: never
+sum overlapping phase durations. Whole-job timestamps describe the complete
+**pair job**, including common setup and both arms; they are not independent
+serial-versus-overlap whole-job measurements. Even a repeatable arm-level benefit
+therefore remains diagnostic rather than sufficient production rollout evidence.
+
+The per-pair job timeout is 120 minutes and artifacts expire after 14 days. The
+workflow stops instead of refreshing or substituting a DB merely to make a
+cohort comparable. Rerun only after diagnosing a rejected cohort; do not mix
+receipts across workflow attempts.
+
+## Evidence needed before any rollout
 
 1. Use the same immutable image, pinned tools/policy, runner class and inventory
    mode for serial and overlap arms. Compare finite and finite-dev separately.
@@ -81,4 +141,5 @@ The existing policy-negative tests cover stale/invalid DBs, stale/missing provid
 records and missing Fedora coverage. The new process fixtures cover real child
 processes, both cancellation signals, timeouts, updater failure, inventory failure,
 private-cache cleanup, single-snapshot ordering and unchanged default behavior.
-Real Grype/database and shared-resource performance validation remain outstanding.
+The hosted benchmark is a way to collect real Grype/database and shared-resource
+performance evidence, not evidence that those runs have already passed.

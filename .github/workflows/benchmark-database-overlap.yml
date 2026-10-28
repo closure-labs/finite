@@ -1,0 +1,146 @@
+name: Benchmark isolated security database overlap
+
+on:
+  workflow_dispatch:
+    inputs:
+      image:
+        description: Existing signed immutable ghcr.io/closure-labs/finite@sha256 image
+        type: string
+        required: true
+      profile:
+        description: Profile from the successful native main build
+        type: choice
+        required: true
+        options: [finite, finite-dev]
+      origin_run:
+        description: Successful native main Build Finite run for this exact image
+        type: string
+        required: true
+
+# Public setup options only. The experiment overrides inventory/DB reuse after
+# setup normalization; no transport cache is saved or restored by this workflow.
+env:
+  FINITE_OPTIMIZED_CACHES: ${{ vars.FINITE_OPTIMIZED_CACHES }}
+  FINITE_CACHIX_WRITER: ${{ vars.FINITE_CACHIX_WRITER }}
+  FINITE_REUSE_INVENTORY: ${{ vars.FINITE_REUSE_INVENTORY }}
+  FINITE_GRYPE_DB_CACHE: ${{ vars.FINITE_GRYPE_DB_CACHE }}
+  FINITE_QUALIFICATION_REUSE: ${{ vars.FINITE_QUALIFICATION_REUSE }}
+  FINITE_QUALIFIED_ISO_PRESERVATION: ${{ vars.FINITE_QUALIFIED_ISO_PRESERVATION }}
+  FINITE_QUALIFIED_ISO_CHANNELS: ${{ vars.FINITE_QUALIFIED_ISO_CHANNELS }}
+
+permissions:
+  contents: read
+  actions: read
+  packages: read
+
+concurrency:
+  group: finite-database-overlap-benchmark
+  cancel-in-progress: false
+
+jobs:
+  pair:
+    name: Database overlap (${{ matrix.order }}, ${{ matrix.repetition }})
+    if: >-
+      github.repository == 'closure-labs/finite' &&
+      github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      # A safety or comparability failure stops the remaining diagnostic pairs.
+      fail-fast: true
+      max-parallel: 1
+      matrix:
+        include:
+          - {order: serial-first, repetition: 1}
+          - {order: overlap-first, repetition: 1}
+          - {order: overlap-first, repetition: 2}
+          - {order: serial-first, repetition: 2}
+          - {order: serial-first, repetition: 3}
+          - {order: overlap-first, repetition: 3}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      BENCHMARK_IMAGE: ${{ inputs.image }}
+      BENCHMARK_PROFILE: ${{ inputs.profile }}
+      BENCHMARK_ORIGIN: ${{ inputs.origin_run }}
+      BENCHMARK_ORDER: ${{ matrix.order }}
+      BENCHMARK_REPETITION: ${{ matrix.repetition }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Record setup start
+        run: python3 scripts/ci/benchmark-database-overlap.py mark-start .bluebuild/database-overlap-start.json
+      - name: Make room for sequential native inventories
+        uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
+        with:
+          skip-if-available: "80G"
+      - uses: $/.github/actions/setup-nix
+        with:
+          cache-mode: none
+      - name: Realize pinned native scanner tools
+        run: | # zizmor: ignore[github-env]
+          tools=$(nix build --file lib/ci-tools.nix scanner-tools --no-link --print-out-paths)
+          [[ $tools =~ ^/nix/store/[a-z0-9]{32}-finite-ci-scanner-tools$ ]]
+          echo "$tools/bin" >>"$GITHUB_PATH"
+      - name: Authenticate image and measure one cold serial-overlap pair
+        run: >-
+          finite-ci-secrets-run repository-read --
+          python3 scripts/ci/benchmark-database-overlap.py run
+          --image "$BENCHMARK_IMAGE" --profile "$BENCHMARK_PROFILE" --origin "$BENCHMARK_ORIGIN"
+          --order "$BENCHMARK_ORDER" --repetition "$BENCHMARK_REPETITION"
+          --start .bluebuild/database-overlap-start.json --output .bluebuild/database-overlap-report
+      # The collector writes a bounded metadata/evidence subset, never image,
+      # rootfs, DB or unbounded full-inventory payloads into this directory.
+      - name: Retain bounded measurements including failures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: database-overlap-${{ matrix.order }}-${{ matrix.repetition }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/database-overlap-report/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+
+  summarize:
+    needs: pair
+    if: >-
+      always() && github.repository == 'closure-labs/finite' &&
+      github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Download this attempt's bounded diagnostic receipts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPORT_PATTERN: database-overlap-*-${{ github.run_id }}-${{ github.run_attempt }}
+        run: >-
+          gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY"
+          --pattern "$REPORT_PATTERN" --dir .bluebuild/database-overlap-reports
+      - name: Fetch complete same-attempt job timestamps
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p .bluebuild
+          gh api --paginate --slurp \
+            "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT/jobs?per_page=100" \
+            > .bluebuild/database-overlap-jobs.json
+      - name: Require matched snapshots and healthy complete reversed-order observations
+        if: always()
+        run: >-
+          python3 scripts/ci/benchmark-database-overlap.py summarize
+          .bluebuild/database-overlap-reports .bluebuild/database-overlap-jobs.json .bluebuild/database-overlap-summary.json
+      - name: Retain comparison including rejected or incomplete cohorts
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: database-overlap-summary-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .bluebuild/database-overlap-summary.json
+            .bluebuild/database-overlap-jobs.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
