@@ -19,7 +19,7 @@ Unrelated existing work in the user's original checkouts was left untouched.
 | Full personal candidate | passed | Immutable Foundation source commit 7f1aa0e; activation package built without installing it |
 | Finite source proposal updater | passed | `python3 -B tests/ci/foundation-update.py` — 17 tests, OK |
 | Finite command integration | passed | `python3 -B tests/home/foundation-integration.py` — 34 tests, OK |
-| Administrator helper | passed | `tests/workstation/password-manager-setup.py` — 20 tests, OK |
+| Administrator helper | passed | `tests/workstation/password-manager-setup.py` — 22 tests, OK |
 | Desktop migration | passed | `tests/bluebuild/desktop-integration.py` — 15 tests, OK |
 | Existing image contracts | passed | `tests/bluebuild/contracts.py` — 5 tests, OK |
 | Text and whitespace | passed | `bash tests/repository/text-style.sh`; `git diff --check` |
@@ -66,11 +66,33 @@ reported `Foundation 0.5.1 is current` for `foundation home update --check`.
 The live consumer continues to select its existing qualified main source; no
 unmerged source or new OS deployment was silently adopted.
 
+## Browser acceptance follow-up
+
+The operator restarted Firefox and 1Password, but the extension reported a
+yellow connection problem. Desktop logs showed `invalid group attempted to
+connect` and `PipeAuthError(NoCreds)`. BrowserSupport verified Firefox, then its
+desktop connection was reset. The installer had incorrectly used system
+`groupadd`, assigning GID 946; 1Password requires a GID greater than 1000.
+
+The source installer now uses ordinary `groupadd` and validates the GID after
+creation and during installation/status, including idempotent installations.
+Foundation preparation applies the same threshold. Regression coverage rejects
+946 and 1000 and accepts 1001. The administrator helper's 22 tests and
+Foundation's 14 preflight tests pass. The earlier installed/status result did
+not establish a working browser handshake.
+
+Host inspection confirmed `root:onepassword` mode `2755`, GID 946, an empty
+group membership list, and GID 1001 available. The operator was given bounded
+`groupmod`, `chgrp` and `chmod` repair commands. Repair execution and successful
+browser handshake remain unconfirmed. The approved helper binaries and hashes
+are unchanged. Integration toggling removed native manifests; the two active
+manifests were restored from the generated candidate with allowlists preserved.
+
 ## Rollout limits
 
 | Acceptance | Status | Remaining action |
 |---|---|---|
-| 1Password desktop/extension handshake | not_run | Operator restarts app/browser and confirms connection |
+| 1Password desktop/extension handshake | failed | Correct GID 946, restart app/browser and confirm connection |
 | Containing Foundation main adoption | not_run | Review/merge, canonical CI qualification, then consumer update |
 | Finite assembled images and deployment | not_run | Hosted image validation and separately authorized rollout |
 | Global camera migration and physical capture | not_run | Use reviewed operator helper/new image; verify capture/WebRTC/resume/reboot |

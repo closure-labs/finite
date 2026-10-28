@@ -17,6 +17,13 @@ native security wrapper, uses root ownership with group `onepassword` and mode
 execute user setup scripts, assign users to the helper group, use setuid, or
 replace the Nix store binary's permissions. SELinux labeling remains enforced.
 
+The group GID must be greater than 1000, as required by 1Password. New groups use
+ordinary `groupadd`; existing groups with GIDs at or below 1000 require an
+explicit administrator correction. Installation and status reject invalid GIDs,
+including otherwise matching existing installations. After changing a group's
+GID, correct the installed wrapper's group and restore mode `2755`, then restart
+the desktop app and browser. Do not add the user to this identity group.
+
 Review status after installation. Preserve prior helper versions and their
 closure roots for Home Manager rollback; removal refuses to invalidate retained
 generation references. A package or wrapper hash mismatch is a failure, never a

@@ -62,6 +62,11 @@ class SetupTests(unittest.TestCase):
         self.referrers = ''
         self.group_exists = True
         self.group_gid = os.getgid() or 1000
+        # File ownership tests use the caller's real group without privileges.
+        # Production-boundary tests below explicitly restore the real threshold.
+        threshold = patch.object(setup, 'MIN_GID', min(1000, self.group_gid - 1))
+        threshold.start()
+        self.addCleanup(threshold.stop)
         self.installer = setup.Installer(store_root=self.store, state_root=self.state,
             state_anchor=self.base, trusted_uid=os.getuid(), effective_uid=lambda: 0,
             run=self.run_command, group_lookup=self.group_lookup)
@@ -93,7 +98,7 @@ class SetupTests(unittest.TestCase):
             raise subprocess.CalledProcessError(9, command)
         output = ''
         if command[0] == setup.GROUPADD:
-            self.assertEqual(command, [setup.GROUPADD, '--system', 'onepassword'])
+            self.assertEqual(command, [setup.GROUPADD, 'onepassword'])
             self.group_exists = True
         elif '--add-root' in command:
             self.assertEqual(command[3:5], ['--indirect', '--realise'])
@@ -335,13 +340,41 @@ class SetupTests(unittest.TestCase):
     def test_existing_identity_group_is_used_and_missing_group_created_without_members(self):
         self.group_exists = False
         self.install()
-        self.assertEqual(self.calls.count([setup.GROUPADD, '--system', 'onepassword']), 1)
+        self.assertEqual(self.calls.count([setup.GROUPADD, 'onepassword']), 1)
         self.assertFalse(any('usermod' in command or 'gpasswd' in command for command in self.calls))
 
-    def test_root_identity_group_is_rejected(self):
-        self.group_gid = 0
-        with self.assertRaisesRegex(setup.SetupError, 'must not be root'):
-            self.install()
+    def test_identity_group_requires_gid_larger_than_1000(self):
+        with patch.object(setup, 'MIN_GID', 1000):
+            for gid in (0, 946, 1000):
+                with self.subTest(gid=gid):
+                    self.group_gid = gid
+                    with self.assertRaisesRegex(setup.SetupError, 'larger than 1000'):
+                        self.installer.group()
+            self.group_gid = 1001
+            self.assertEqual(self.installer.group(), 1001)
+        self.assertEqual(self.calls, [])
+
+    def test_new_identity_group_is_validated_after_creation(self):
+        self.group_exists = False
+        self.group_gid = 946
+        with patch.object(setup, 'MIN_GID', 1000):
+            with self.assertRaisesRegex(setup.SetupError, 'larger than 1000'):
+                self.installer.group()
+        self.assertEqual(self.calls, [[setup.GROUPADD, 'onepassword']])
+        self.assertFalse(self.state.exists())
+
+    def test_status_and_idempotent_install_reject_invalid_existing_group(self):
+        self.install()
+        before = list(self.calls)
+        with patch.object(setup, 'MIN_GID', 1000):
+            for gid in (946, 1000):
+                with self.subTest(gid=gid):
+                    self.group_gid = gid
+                    with self.assertRaisesRegex(setup.SetupError, 'larger than 1000'):
+                        self.installer.status(self.value)
+                    with self.assertRaisesRegex(setup.SetupError, 'larger than 1000'):
+                        self.install()
+        self.assertEqual(self.calls, before)
 
     def test_removal_preserves_external_roots_and_generation_rollback(self):
         self.install()
