@@ -38,13 +38,15 @@ EMPTY_CONFIG_TYPE = 'application/vnd.oci.empty.v1+json'
 EMPTY_CONFIG = {'mediaType': EMPTY_CONFIG_TYPE,
     'digest': 'sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a',
     'size': 2, 'data': 'e30='}
+ORDER = ((1, 1), (2, 1), (2, 2), (1, 2), (1, 3), (2, 3))
+PAIRED_JOB = 'transfer-paired'
 
 
 def empty_attestation_config(manifest, native):
     """Admit only BuildKit's canonical empty config on a bound attestation."""
     value = manifest.get('config')
     if (manifest.get('artifactType') != 'application/vnd.docker.attestation.manifest.v1+json'
-            or value != EMPTY_CONFIG):
+            or value != EMPTY_CONFIG or type(value.get('size')) is not int):
         raise ValueError('Unsupported or noncanonical empty attestation configuration')
     subject = METADATA.descriptor(manifest.get('subject'), METADATA.MANIFEST_TYPES, METADATA.METADATA_LIMIT)
     if subject != native:
@@ -95,11 +97,12 @@ def metadata_binding(recorder, args, env):
             raise ValueError('Copied child must be a single manifest')
         retain(METADATA.descriptor(entry, METADATA.MANIFEST_TYPES, METADATA.METADATA_LIMIT))
         native_child = entry['digest'] == native['digest']
-        if not native_child and manifest.get('config', {}).get('mediaType') == EMPTY_CONFIG_TYPE:
+        config_descriptor = manifest.get('config')
+        if not native_child and isinstance(config_descriptor, dict) and config_descriptor.get('mediaType') == EMPTY_CONFIG_TYPE:
             descriptor, config_raw = empty_attestation_config(manifest, native)
             (recorder.directory / ('config-' + str(number) + '.stdout')).write_bytes(config_raw)
         else:
-            descriptor = METADATA.descriptor(manifest.get('config'), METADATA.CONFIG_TYPES, METADATA.METADATA_LIMIT)
+            descriptor = METADATA.descriptor(config_descriptor, METADATA.CONFIG_TYPES, METADATA.METADATA_LIMIT)
             config_raw = fetch('config-' + str(number), entry['digest'], config=True)
         config = METADATA.document(config_raw, descriptor['digest'], descriptor['size'])
         retain(descriptor)
@@ -353,7 +356,7 @@ def benchmark(args):
             or not re.fullmatch(r'v1:[0-9a-f]{64}', args.identity)):
         raise ValueError('Invalid diagnostic input')
     args.output.mkdir(parents=True, exist_ok=False)
-    before = time.monotonic()
+    before, started = time.monotonic(), time.time()
     setup = time.time() - read(args.start)['unixSeconds']
     report = {'schema': 1, 'experiment': 'bounded-image-transfer', 'status': 'error',
         'copies': args.copies, 'repetition': args.repetition, 'revision': os.environ['GITHUB_SHA'],
@@ -364,6 +367,9 @@ def benchmark(args):
         'cosignKeySha256': METADATA.sha((ROOT / 'cosign.pub').read_bytes()),
         'setupSeconds': round(setup, 3), 'stages': [], 'copy': {}, 'integrity': None,
         'productionChangeRecommended': False}
+    if getattr(args, 'sequence', None) is not None:
+        report.update(sequence=args.sequence, jobName=PAIRED_JOB,
+                      timingScope='arm-only-shared-setup-excluded', startedUnixSeconds=started)
     recorder = METADATA.Recorder(args.output, report)
     try:
         if not 0 <= setup <= 1800: raise ValueError('Invalid setup start marker')
@@ -393,15 +399,70 @@ def benchmark(args):
     finally:
         report['diagnosticSeconds'] = round(time.monotonic() - before, 3)
         report['setupPlusDiagnosticSeconds'] = round(setup + report['diagnosticSeconds'], 3)
+        report['completedUnixSeconds'] = time.time()
         (args.output / 'benchmark.json').write_text(json.dumps(report, indent=2) + '\n')
 
 
-def comparison(reports, pages):
+def paired(args):
+    """Run all six arms on one host; a failed arm stops further paid transfers."""
+    hosted()
+    args.output.mkdir(parents=True, exist_ok=False)
+    before, started = time.monotonic(), time.time()
+    setup = started - read(args.start)['unixSeconds']
+    if not 0 <= setup <= 1800: raise ValueError('Invalid shared setup marker')
+    session = {'schema': 1, 'experiment': 'bounded-image-transfer-paired', 'status': 'error',
+        'revision': os.environ['GITHUB_SHA'], 'run': int(os.environ['GITHUB_RUN_ID']),
+        'attempt': int(os.environ['GITHUB_RUN_ATTEMPT']), 'jobName': PAIRED_JOB,
+        'startedUnixSeconds': started, 'sharedSetupSeconds': round(setup, 3), 'outcomes': [],
+        'productionChangeRecommended': False}
+    try:
+        for sequence, (copies, repetition) in enumerate(ORDER, 1):
+            outcome = {'sequence': sequence, 'copies': copies, 'repetition': repetition, 'status': 'not-run'}
+            session['outcomes'].append(outcome)
+            if any(row['status'] == 'error' for row in session['outcomes']): continue
+            marker = args.output / ('start-' + str(sequence) + '.json')
+            marker.write_text(json.dumps({'unixSeconds': time.time()}) + '\n')
+            arm = argparse.Namespace(**vars(args))
+            arm.copies, arm.repetition, arm.sequence = copies, repetition, sequence
+            arm.start, arm.output = marker, args.output / f'arm-{sequence}'
+            try:
+                benchmark(arm)
+                outcome['status'] = 'success'
+            except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as error:
+                outcome.update(status='error', error=str(error))
+        if all(row['status'] == 'success' for row in session['outcomes']): session['status'] = 'success'
+    finally:
+        session['sessionSeconds'] = round(time.monotonic() - before, 3)
+        session['setupPlusSessionSeconds'] = round(setup + session['sessionSeconds'], 3)
+        session['completedUnixSeconds'] = time.time()
+        (args.output / 'paired.json').write_text(json.dumps(session, indent=2) + '\n')
+    return session
+
+
+def comparison(reports, pages, session=None):
+    # Failed receipts deliberately lack success-only binding/resource fields.
+    # Retain their actual outcomes instead of throwing KeyError or fabricating
+    # a winner. The CLI writes this result and still exits nonzero.
+    if (not reports or any(report.get('status') != 'success' for report in reports)
+            or session is not None and session.get('status') != 'success'):
+        return {'schema': 2, 'experiment': 'bounded-image-transfer-paired', 'status': 'inconclusive',
+            'reason': 'Failed or unexecuted transfer arms; no performance comparison is valid',
+            'outcomes': session.get('outcomes', []) if session else [
+                {key: report.get(key) for key in ('copies', 'repetition', 'status', 'error')} for report in reports],
+            'productionChangeRecommended': False}
     expected = {(copies, repetition) for copies in (1, 2) for repetition in (1, 2, 3)}
     if len(reports) != 6 or {(r['copies'], r['repetition']) for r in reports} != expected:
         raise ValueError('Require all six unique baseline/candidate measurements, including failed arms')
+    if (not isinstance(session, dict) or session.get('schema') != 1
+            or session.get('experiment') != 'bounded-image-transfer-paired' or session.get('jobName') != PAIRED_JOB
+            or session.get('outcomes') != [{'sequence': n, 'copies': c, 'repetition': r, 'status': 'success'}
+                                         for n, (c, r) in enumerate(ORDER, 1)]):
+        raise ValueError('Missing exact single-host paired-session receipt')
+    reports = sorted(reports, key=lambda report: report['sequence'])
+    if [(r['sequence'], r['copies'], r['repetition']) for r in reports] != [(n, c, r) for n, (c, r) in enumerate(ORDER, 1)]:
+        raise ValueError('Arm receipts do not match the predetermined paired order')
     keys = ('revision', 'run', 'attempt', 'profile', 'digest', 'source', 'identity', 'policy', 'runnerImage',
-            'platform', 'runnerHardware', 'lockSha256', 'cosignKeySha256', 'versions', 'binding', 'integrity')
+            'platform', 'runnerHardware', 'lockSha256', 'cosignKeySha256', 'versions', 'binding', 'integrity', 'jobName', 'timingScope')
     if len({json.dumps({key: r[key] for key in keys}, sort_keys=True) for r in reports}) != 1:
         raise ValueError('Different immutable image, tool, runner-image or cache/resource cohort')
     if not reports[0]['runnerImage'] or reports[0]['policy'] != POLICY:
@@ -413,7 +474,30 @@ def comparison(reports, pages):
         if not isinstance(page.get('jobs'), list) or len(page['jobs']) > 100:
             raise ValueError('Invalid job metadata page')
         jobs.extend(page['jobs'])
+    matched = [job for job in jobs if job.get('name') == PAIRED_JOB]
+    if len(matched) != 1: raise ValueError('Missing or duplicate complete paired job')
+    job = matched[0]
+    if (job.get('status') != 'completed' or job.get('conclusion') != 'success'
+            or type(job.get('id')) is not int or job['id'] <= 0
+            or job.get('run_id') != session['run'] or job.get('run_attempt') != session['attempt']
+            or job.get('head_sha') != session['revision']):
+        raise ValueError('Paired job does not bind successful exact run/attempt/revision')
+    stamps = [job.get(key, '') for key in ('started_at', 'completed_at')]
+    if any(not isinstance(value, str) or not re.fullmatch(r'[0-9T:Z-]{20}', value) for value in stamps):
+        raise ValueError('Missing job timestamps')
+    job_start, job_end = [datetime.fromisoformat(stamp.replace('Z', '+00:00')).timestamp() for stamp in stamps]
+    seconds = job_end - job_start
+    def number(value):
+        return type(value) in (int, float) and math.isfinite(value)
+    for key in ('sharedSetupSeconds', 'sessionSeconds', 'setupPlusSessionSeconds', 'startedUnixSeconds', 'completedUnixSeconds'):
+        if not number(session.get(key)) or session[key] < 0: raise ValueError('Invalid paired-session timing')
+    if (not 0 < seconds <= 270 * 60 or seconds + 2 < session['setupPlusSessionSeconds']
+            or abs(session['sharedSetupSeconds'] + session['sessionSeconds'] - session['setupPlusSessionSeconds']) > .01
+            or abs(session['completedUnixSeconds'] - session['startedUnixSeconds'] - session['sessionSeconds']) > 2
+            or session['startedUnixSeconds'] < job_start - 2 or session['completedUnixSeconds'] > job_end + 2):
+        raise ValueError('Native job timestamps do not cover the complete paired session')
     rows = []
+    previous_end = session['startedUnixSeconds']
     for report in reports:
         if (report.get('schema') != 1 or report.get('experiment') != 'bounded-image-transfer'
                 or report.get('status') != 'success' or not isinstance(report.get('integrity'), dict)
@@ -422,23 +506,14 @@ def comparison(reports, pages):
                 or report['copy'].get('serviceQuiescent') is not True
                 or report['copy'].get('exitCode') != 0 or report['copy'].get('timedOut') is not False):
             raise ValueError('Failed, timed-out or unverified arm; no performance conclusion')
-        name = f"transfer-{report['copies']}-{report['repetition']}"
-        matched = [job for job in jobs if job.get('name') == name]
-        if len(matched) != 1: raise ValueError('Missing or duplicate complete job: ' + name)
-        job = matched[0]
-        if (job.get('status') != 'completed' or job.get('conclusion') != 'success'
-                or job.get('run_id') != report['run'] or job.get('run_attempt') != report['attempt']
-                or job.get('head_sha') != report['revision']):
-            raise ValueError('Job does not bind successful exact run/attempt/revision')
-        stamps = [job.get(key, '') for key in ('started_at', 'completed_at')]
-        if any(not isinstance(value, str) or not re.fullmatch(r'[0-9T:Z-]{20}', value) for value in stamps):
-            raise ValueError('Missing job timestamps')
-        seconds = (datetime.fromisoformat(stamps[1].replace('Z', '+00:00')) - datetime.fromisoformat(stamps[0].replace('Z', '+00:00'))).total_seconds()
+        if (any(report[key] != session[key] for key in ('run', 'attempt', 'revision', 'jobName'))
+                or report['timingScope'] != 'arm-only-shared-setup-excluded'):
+            raise ValueError('Arm belongs to a different session or timing scope')
         for value in (report['copy']['seconds'], report['copy']['peakMemoryBytes'], report['copy']['blobBytesPerSecond'],
                       report['setupPlusDiagnosticSeconds'], seconds):
             if type(value) not in (int, float) or not math.isfinite(value) or value <= 0:
                 raise ValueError('Invalid measured metric')
-        if (report['copy']['peakMemoryBytes'] > MEMORY or not 0 < seconds <= 2700
+        if (report['copy']['peakMemoryBytes'] > MEMORY
                 or seconds + 2 < report['setupPlusDiagnosticSeconds']):
             raise ValueError('Invalid memory bound or incomplete job duration')
         resources = resource_receipt(report['copy'].get('resources'))
@@ -450,16 +525,29 @@ def comparison(reports, pages):
                 or transfer > service + .01 or service > diagnostic + .01
                 or abs(setup + diagnostic - report['setupPlusDiagnosticSeconds']) > .01):
             raise ValueError('Impossible transfer/service/diagnostic/setup timing order')
+        started, ended = report.get('startedUnixSeconds'), report.get('completedUnixSeconds')
+        if (not number(started) or not number(ended) or started < previous_end or ended < started
+                or ended > session['completedUnixSeconds'] or abs(ended - started - diagnostic) > 2):
+            raise ValueError('Overlapping, reordered or out-of-session arm timestamps')
+        previous_end = ended
         size = report['integrity'].get('uniqueBlobBytes')
         if (type(size) is not int or not 0 < size <= 32 * 1024**3
                 or not math.isclose(report['copy']['blobBytesPerSecond'], size / transfer, rel_tol=1e-9)):
             raise ValueError('Throughput does not match independently verified blob bytes')
-        rows.append({'copies': report['copies'], 'repetition': report['repetition'], 'jobId': job['id'],
+        rows.append({'copies': report['copies'], 'repetition': report['repetition'], 'sequence': report['sequence'],
                      'copySeconds': report['copy']['seconds'], 'peakMemoryBytes': report['copy']['peakMemoryBytes'],
-                     'blobBytesPerSecond': report['copy']['blobBytesPerSecond'], 'wholeJobSeconds': seconds})
-    return {'schema': 1, 'experiment': 'bounded-image-transfer', 'cohort': {key: reports[0][key] for key in keys},
+                     'blobBytesPerSecond': report['copy']['blobBytesPerSecond'], 'armDiagnosticSeconds': diagnostic})
+    pairs = []
+    for repetition in (1, 2, 3):
+        baseline = next(row for row in rows if row['repetition'] == repetition and row['copies'] == 1)
+        candidate = next(row for row in rows if row['repetition'] == repetition and row['copies'] == 2)
+        pairs.append({'repetition': repetition, 'copySecondsDeltaCandidateMinusBaseline': candidate['copySeconds'] - baseline['copySeconds'],
+                      'copySpeedupRatio': baseline['copySeconds'] / candidate['copySeconds']})
+    return {'schema': 2, 'experiment': 'bounded-image-transfer-paired', 'status': 'complete', 'cohort': {key: reports[0][key] for key in keys},
             'measurements': rows, 'medians': {str(copies): {key: statistics.median(row[key] for row in rows if row['copies'] == copies)
-                for key in ('copySeconds', 'peakMemoryBytes', 'blobBytesPerSecond', 'wholeJobSeconds')} for copies in (1, 2)},
+                for key in ('copySeconds', 'peakMemoryBytes', 'blobBytesPerSecond', 'armDiagnosticSeconds')} for copies in (1, 2)},
+            'pairs': pairs, 'wholeExperimentJob': {'jobId': job['id'], 'seconds': seconds, 'sharedSetupSeconds': session['sharedSetupSeconds'],
+                'sessionSeconds': session['sessionSeconds'], 'includesBothArmsAndUpload': True, 'perArmWholeJobComparisonAvailable': False},
             'productionChangeRecommended': False}
 
 
@@ -471,6 +559,9 @@ def main():
     for name in ('copies', 'repetition'): run.add_argument('--' + name, type=int, required=True)
     for name in ('profile', 'digest', 'source', 'identity'): run.add_argument('--' + name, required=True)
     for name in ('start', 'output'): run.add_argument('--' + name, type=Path, required=True)
+    pair = commands.add_parser('run-paired')
+    for name in ('profile', 'digest', 'source', 'identity'): pair.add_argument('--' + name, required=True)
+    for name in ('start', 'output'): pair.add_argument('--' + name, type=Path, required=True)
     child = commands.add_parser('worker')
     for name in ('unit', 'image'): child.add_argument('--' + name, required=True)
     child.add_argument('--copies', type=int, required=True)
@@ -483,13 +574,23 @@ def main():
         args.output.write_text(json.dumps({'unixSeconds': time.time()}) + '\n')
     elif args.command == 'run':
         benchmark(args)
+    elif args.command == 'run-paired':
+        sys.exit(0 if paired(args)['status'] == 'success' else 2)
     elif args.command == 'worker':
         sys.exit(worker(args))
     else:
-        result = comparison([read(path) for path in sorted(args.directory.rglob('benchmark.json'))], read(args.jobs))
-        result['jobMetadataSha256'] = METADATA.sha(args.jobs.read_bytes())
+        try:
+            sessions = list(args.directory.rglob('paired.json'))
+            if len(sessions) > 1: raise ValueError('Duplicate paired-session receipts')
+            session = read(sessions[0]) if sessions else None
+            result = comparison([read(path) for path in sorted(args.directory.rglob('benchmark.json'))], read(args.jobs), session)
+            result['jobMetadataSha256'] = METADATA.sha(args.jobs.read_bytes())
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            result = {'schema': 2, 'experiment': 'bounded-image-transfer-paired', 'status': 'inconclusive',
+                      'reason': 'Invalid or incomplete evidence: ' + str(error), 'productionChangeRecommended': False}
         args.output.write_text(json.dumps(result, indent=2) + '\n')
-        print(json.dumps(result['medians'], indent=2))
+        print(json.dumps(result.get('medians', result), indent=2))
+        if result['status'] != 'complete': sys.exit(2)
 
 
 if __name__ == '__main__':

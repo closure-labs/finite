@@ -1,6 +1,6 @@
 # Bounded security-image transfer experiment
 
-The latest natural build at `29ff94251593c51eb08c4fef11a1fad15f69ea25`,
+The October 28 natural build at `29ff94251593c51eb08c4fef11a1fad15f69ea25`,
 [run 40704887511](https://github.com/closure-labs/finite/actions/runs/40704887511),
 reported `finite-dev` image transfer **508.218 s**, rootfs extraction **123.803 s**,
 cataloging **251.953 s**, fresh DB acquisition **56.181 s** and vulnerability
@@ -24,6 +24,32 @@ scanner (`--all --preserve-digests --src-no-creds --retry-times 3`). Only copies
 1 and 2 are admitted. The existing Docker registry-verification diagnostic and
 its unresolved same-build dual-export question remain separate.
 
+## First hosted attempt: inconclusive, before transfer
+
+[Run 40761439573](https://github.com/closure-labs/finite/actions/runs/40761439573)
+failed all six arms before launching the copy worker. Signatures passed, but the
+bound BuildKit attestation used the canonical empty OCI configuration:
+`application/vnd.oci.empty.v1+json`, two bytes `{}`, digest
+`sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a`,
+embedded as `e30=`. Applying native-image configuration rules to that attestation
+incorrectly rejected it. The exact 839-byte attestation manifest is retained as
+an offline regression fixture, not as authority to skip signature verification.
+Its test removes exactly one repository-required terminal newline before checking
+the original 839-byte SHA-256.
+
+The correction admits only that exact canonical configuration on an attestation
+with the expected artifact type and an exact native subject descriptor. Native
+and shared descriptor validators remain unchanged. Inline bytes must match
+canonical data, size and digest, and the two-byte blob must still appear in the
+copied layout and pass independent hashing; it is neither omitted nor synthesized.
+
+The attempt also revealed five strict hardware cohorts across six independent
+jobs. The fix below uses one host rather than relaxing CPU/RAM/kernel equality.
+The failed summary previously accessed absent success-only `binding` fields;
+failed receipts now produce a readable `inconclusive` summary with outcomes,
+no medians, and a nonzero exit. This attempt establishes **no memory, throughput
+or savings result** because the bounded copy workers never ran.
+
 ## Controlled execution
 
 - Select one existing **signed linux/amd64 image or parent index** by digest,
@@ -33,13 +59,17 @@ its unresolved same-build dual-export question remain separate.
   to the preflight byte budget and post-copy independent digest verification.
   Unknown alternate-platform children fail before transfer. The signature stays
   bound to the original parent; never substitute an unsigned child digest.
-- Six independent fresh hosted jobs: three samples per arm, `ubuntu-24.04`,
-  maximum one active transfer job. Each starts with a new empty private OCI
-  layout and home, no Actions/Nix-store restore and no image cache seeding.
+- One fresh `ubuntu-24.04` job runs six sequential arms on the **same host**:
+  three adjacent pairs in fixed order **1→2, 2→1, 1→2**. Three pairs cannot fully
+  balance order, so ordering effects remain a limitation, not a hidden control.
+  Every arm starts with a new empty private OCI layout and home. There is no
+  Actions/Nix-store restore or image cache seeding. Tool setup is shared once.
   CPU model/count, total RAM, kernel and runner-image cohort must match; initial
-  available memory is retained separately. Matrix order is not an execution-order
-  guarantee. Remote registry/CDN caches,
-  network locality and unrelated runner network activity remain uncontrolled.
+  available memory is retained separately. A failed arm stops later transfers,
+  which are explicitly marked not-run; no slow/failing sample is silently dropped.
+  Fresh layouts do **not** establish cold OS, filesystem, DNS or registry/CDN
+  caches. No global cache flush is performed. Cache/order effects, unrelated
+  runner traffic and time-varying network load remain uncontrolled.
 - Both arms use a **fixed 4 GiB cgroup memory cap**, no swap, 4 GiB available
   memory reserve, 64 tasks and a 30-minute service lifetime. This is intentionally
   narrower than the production scanner's adaptive maximum of 10 GiB, not a
@@ -62,27 +92,35 @@ its unresolved same-build dual-export question remain separate.
 
 Run manually after review, choosing the branch containing the workflow and
 explicit immutable inputs. Do not dispatch on a floating tag. A full invocation
-has six jobs capped at 45 minutes each plus one 10-minute summary job: a hard
+has one paired job capped at 270 minutes plus one 10-minute summary job: a hard
 workflow ceiling of **280 runner-minutes**, not expected runtime or billed cost.
 The single concurrency group prevents overlapping diagnostic runs. There is no
 schedule or automatic PR trigger, and this PR does not dispatch the benchmark.
 
 ## What the receipts mean
 
-Each arm retains setup, signature/metadata, transfer and independent-integrity
+Each arm retains signature/metadata, transfer and independent-integrity
 durations, blob bytes, blob-bytes/transfer-second throughput, cgroup peak memory,
 failure/timeout/exit outcome and runner network deltas. Blob throughput is **not
 wire throughput**: retry traffic/protocol overhead differ, and runner network
 bytes include other activity. Transfer time includes the configured retry policy.
-Private layout cleanup remains included in the diagnostic total.
+Private layout cleanup remains included in the arm diagnostic total. The shared
+tool/setup cost is recorded **once** in `paired.json`, not attributed to each arm.
+Per-arm setup markers exclude that shared preparation and all preceding arms.
 
 The summary requires all six successful, uniquely identified arms and identical
 image/source/provenance, lock/tool versions, signing key, runner image/hardware,
 cache/resource policy and verified bytes. It rejects incomplete, failed,
 timed-out or mismatched cohorts instead of dropping slow/failing samples.
-Raw failed-arm receipts remain in their artifacts even when aggregation fails.
-Complete same-attempt GitHub job timestamps bind run, attempt and revision and
-include setup, artifact upload and post-job work. Queue wait is excluded.
+Raw failed-arm receipts and explicit not-run outcomes remain in the artifacts.
+The summary verifies the fixed sequence and non-overlapping timestamps inside
+the paired session. It reports per-arm medians and each pair's copy-time delta
+and ratio. Complete same-attempt GitHub job timestamps bind run, attempt and
+revision and give **one whole-experiment-job total**, including shared setup,
+all six arms, artifact upload and post-job work. Queue wait is excluded. There
+is no per-arm whole-job comparison: the JSON explicitly records
+`perArmWholeJobComparisonAvailable: false`. Incomplete or failed sessions never
+produce performance medians or pair ratios.
 
 No extraction, uncompressed DiffID validation, inventory, DB refresh or complete
 security scan is performed in this transport-only experiment. Production still
@@ -95,10 +133,12 @@ review. The summary always records `productionChangeRecommended: false`.
 ## Validation status
 
 Executed locally: small offline integrity, resource/credential guards, bounded
-log handling, command-flag equivalence, drift/failure/whole-job aggregation and
-workflow/selection contract tests. No local multi-GiB download or image execution
-was performed. Full hosted cgroup/systemd and throughput measurements are
-**deferred**; this draft provides the controlled experiment, not savings results.
+log handling, command-flag equivalence, canonical-attestation anti-forgery,
+same-host ordering, failure classification and whole-experiment timing tests.
+No local multi-GiB download or image execution was performed. The first hosted
+attempt failed before transfer; the corrected real cgroup/systemd and throughput
+measurements remain **deferred pending review and a deliberate rerun**. No
+performance improvement is claimed.
 
 ```sh
 python3 tests/ci/image-transfer-benchmark.py
