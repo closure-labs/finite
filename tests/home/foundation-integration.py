@@ -27,8 +27,10 @@ class FoundationIntegration(unittest.TestCase):
                 shim = source / "shim"
                 shim.write_text((ROOT / "files/system" / command).read_text().replace(
                     "/usr/bin/python3", sys.executable))
-                result = subprocess.run(["bash", str(shim), "--check"],
-                                        env=dict(os.environ, PATH=os.defpath, FINITE_FOUNDATION_SOURCE=str(source)),
+                # Resolve Bash from the test toolchain before isolating PATH so
+                # neither host paths nor an installed Foundation affect dispatch.
+                result = subprocess.run([shutil.which("bash"), str(shim), "--check"],
+                                        env=dict(os.environ, PATH=str(source), FINITE_FOUNDATION_SOURCE=str(source)),
                                         capture_output=True, text=True)
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual(result.stdout.strip(), operation + "|--check")
@@ -37,12 +39,12 @@ class FoundationIntegration(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             source = Path(temp)
             modern = source / 'foundation'
-            modern.write_text('#!/bin/sh\nprintf "%s\\n" "$*"\nexit "${MODERN_STATUS:-0}"\n')
+            modern.write_text(f'#!{shutil.which("bash")}\nprintf "%s\\n" "$*"\nexit "${{MODERN_STATUS:-0}}"\n')
             modern.chmod(0o755)
             for status in (0, 7):
                 with self.subTest(status=status):
-                    result = subprocess.run(['bash', str(ROOT / 'files/system/usr/bin/finite-home-update'), '--check'],
-                                            env=dict(os.environ, PATH=str(source) + os.pathsep + os.defpath,
+                    result = subprocess.run([shutil.which('bash'), str(ROOT / 'files/system/usr/bin/finite-home-update'), '--check'],
+                                            env=dict(os.environ, PATH=str(source),
                                                      MODERN_STATUS=str(status), FINITE_FOUNDATION_SOURCE='/does-not-exist'),
                                             capture_output=True, text=True)
                     self.assertEqual(result.returncode, status, result.stderr)

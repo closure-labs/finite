@@ -90,10 +90,30 @@ manifests were restored from the generated candidate with allowlists preserved.
 
 ## Rollout limits
 
+### PR #308 CI follow-up — 2026-10-28
+
+The hosted home-contract check failed before exercising three dispatch cases:
+the tests replaced the Nix toolchain PATH with `os.defpath`, where Bash is absent
+in the build sandbox. The fixtures now resolve Bash from the test toolchain and
+use a fixture-only child PATH, preserving isolation from any installed Foundation.
+All 34 command integration tests passed both normally and in a namespace without
+`/usr` or `/bin`, using cached Nix-store tools. This is focused regression evidence,
+not a full hermetic aggregate or assembled-image result.
+
+The source proposal updater now has 19 passing tests, including an empty canonical
+CI inventory (wait without adoption) and main advancing during the lock update
+(restore all three proposal files). No qualification checks were weakened.
+
+Foundation #32 has merged at `5c0cd8d0fcb96613780ce7ac77e3fa4630558cea`;
+its canonical main CI run `40622556987` passed. Finite's pin remains unchanged:
+the qualified proposal updater has not run with its required GitHub CLI access
+in this executor. Source adoption and the separately authorized consumer update
+remain pending; a green upstream run alone does not establish either.
+
 | Acceptance | Status | Remaining action |
 |---|---|---|
 | 1Password desktop/extension handshake | failed | Correct GID 946, restart app/browser and confirm connection |
-| Containing Foundation main adoption | not_run | Review/merge, canonical CI qualification, then consumer update |
+| Containing Foundation main adoption | not_run | Run the qualified proposal updater with GitHub CLI access, review the pin change, then authorize the consumer update |
 | Finite assembled images and deployment | not_run | Hosted image validation and separately authorized rollout |
 | Global camera migration and physical capture | not_run | Use reviewed operator helper/new image; verify capture/WebRTC/resume/reboot |
 | Extension state on corrected image | not_run | Verify Custom Command Menu after image rollout |

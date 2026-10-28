@@ -29,8 +29,9 @@ GATE = {'name': 'CI gate', 'head_sha': REV, 'status': 'completed', 'conclusion':
 
 class Qualification(unittest.TestCase):
     def check(self, run=None, gates=None, runs=None):
+        inventory = [RUN] if runs is None else runs
         responses = [{'id': 7, 'path': updater.WORKFLOW, 'state': 'active'},
-                     {'total_count': len(runs or [RUN]), 'workflow_runs': runs or [RUN]},
+                     {'total_count': len(inventory), 'workflow_runs': inventory},
                      run or RUN,
                      {'total_count': len(gates if gates is not None else [GATE]),
                       'jobs': gates if gates is not None else [GATE]}, run or RUN]
@@ -43,6 +44,12 @@ class Qualification(unittest.TestCase):
         self.assertEqual(result['runId'], 42)
         self.assertEqual(result['runAttempt'], 2)
         self.assertIn('attempts/2/jobs', api.call_args_list[-2].args[0])
+
+    def test_no_canonical_run_waits_without_fetching_jobs(self):
+        result, api = self.check(runs=[])
+        self.assertIsNone(result)
+        self.assertEqual(api.call_count, 2)
+        self.assertIn('head_sha=' + REV, api.call_args.args[0])
 
     def test_pending_or_failed_latest_run_never_falls_back(self):
         for status, conclusion in [('queued', None), ('in_progress', None), ('completed', 'failure'), ('completed', 'cancelled')]:
@@ -178,6 +185,13 @@ class Transaction(unittest.TestCase):
             updater.qualification.return_value = {**self.evidence, 'runAttempt': 3}
         with self.assertRaises(ValueError):
             self.execute(mutate=rerun)
+        self.assert_unchanged()
+
+    def test_main_advancement_during_lock_update_rolls_back(self):
+        def advance(lock):
+            updater.main_revision.return_value = 'e' * 40
+        with self.assertRaisesRegex(ValueError, 'qualification changed during the lock update'):
+            self.execute(mutate=advance)
         self.assert_unchanged()
 
     def test_nonforward_history_is_rejected(self):
