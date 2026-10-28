@@ -2,6 +2,7 @@
 import copy
 import importlib.util
 import json
+import os
 from pathlib import Path
 import sys
 import tempfile
@@ -38,6 +39,13 @@ class Qualification(unittest.TestCase):
         with patch.object(updater, 'api', side_effect=responses) as api:
             result = updater.qualification(REV)
             return result, api
+
+    def test_public_transport_requires_explicit_opt_in(self):
+        for value, expected in [('', False), ('true', False), ('1', True)]:
+            with self.subTest(value=value), patch.dict(os.environ, {'FINITE_FOUNDATION_PUBLIC_API': value}), \
+                    patch.object(updater, 'get_json', return_value={}) as get:
+                updater.api('git/ref/heads/main')
+                get.assert_called_once_with('repos/closure-labs/foundation/git/ref/heads/main', public=expected)
 
     def test_exact_push_success_and_attempt_specific_gate(self):
         result, api = self.check()
@@ -138,6 +146,18 @@ class Transaction(unittest.TestCase):
         node = json.loads((self.root / 'flake.lock').read_text())['nodes']['foundation']
         self.assertEqual(node['locked'], LOCKED)
         self.assertEqual(json.loads((self.root / 'sources/foundation.json').read_text())['narHash'], HASH)
+
+    def test_nix_metadata_final_marker_is_implicit_in_persisted_lock(self):
+        self.execute(resolved={**LOCKED, '__final': True})
+        node = json.loads((self.root / 'flake.lock').read_text())['nodes']['foundation']
+        self.assertEqual(node['locked'], LOCKED)
+
+    def test_invalid_final_marker_and_unknown_source_fields_are_rejected(self):
+        for delta in [{'__final': False}, {'__final': 1}, {'__final': 'true'},
+                      {'__final': None}, {'unknown': True}]:
+            with self.subTest(delta=delta), self.assertRaises(ValueError):
+                self.execute(resolved={**LOCKED, **delta})
+            self.assert_unchanged()
 
     def test_malformed_or_mismatched_resolution_hash_never_mutates(self):
         for value in [None, False, 'wrong', 'sha256-' + 'B' * 43 + '=']:

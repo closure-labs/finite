@@ -19,7 +19,8 @@ def capture(command, **kwargs):
 
 
 def api(path):
-    return get_json("repos/" + REPOSITORY + "/" + path)
+    return get_json("repos/" + REPOSITORY + "/" + path,
+                    public=os.environ.get("FINITE_FOUNDATION_PUBLIC_API") == "1")
 
 
 def main_revision():
@@ -102,6 +103,13 @@ def unrelated_inputs(lock):
 def update(root, rev, evidence):
     resolved = json.loads(capture(["nix", "flake", "metadata", "--no-update-lock-file", "--json", "github:" + REPOSITORY + "/" + rev]))
     locked = resolved["locked"]
+    # Nix metadata exposes its internal finality marker; lockfile.cc omits it
+    # because persisted lock entries are implicitly final. Normalize only this
+    # known marker, rejecting false/malformed values; compare all source fields.
+    if "__final" in locked:
+        if locked["__final"] is not True:
+            raise ValueError("Foundation resolution is not final")
+        locked = {key: value for key, value in locked.items() if key != "__final"}
     supplied_hash = locked.get("narHash")
     if (locked.get("type") != "github" or locked.get("owner") != "closure-labs"
             or locked.get("repo") != "foundation" or locked.get("rev") != rev

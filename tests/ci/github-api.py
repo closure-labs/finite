@@ -81,5 +81,49 @@ class Reads(unittest.TestCase):
                 self.assertFalse(caught.exception.transient)
 
 
+class PublicReads(unittest.TestCase):
+    def test_explicit_public_mode_preserves_status_checks(self):
+        with patch.object(api, 'public_response', return_value=reply()) as read:
+            self.assertEqual(api.get_json(ENDPOINT, public=True), {'ok': True})
+            read.assert_called_once_with(ENDPOINT)
+
+    def test_public_auth_failures_never_fall_back_or_retry(self):
+        for status in (301, 302, 401, 403, 404):
+            with self.subTest(status=status), \
+                    patch.object(api, 'public_response', return_value=reply(status)) as read, \
+                    patch.object(api.subprocess, 'run') as run:
+                with self.assertRaises(api.GitHubReadError):
+                    api.get_json(ENDPOINT, public=True)
+                self.assertEqual(read.call_count, 1)
+                run.assert_not_called()
+
+    def test_public_transport_retries_bounded_and_keeps_response_private(self):
+        with patch.object(api, 'public_response', side_effect=[subprocess.TimeoutExpired([], 30), reply()]), \
+                patch.object(api.time, 'sleep') as sleep:
+            self.assertEqual(api.get_json(ENDPOINT, public=True), {'ok': True})
+            sleep.assert_called_once_with(2)
+
+    def test_public_request_fixed_origin_no_auth_no_redirect_and_wall_limit(self):
+        with patch.object(api.subprocess, 'run', return_value=reply()) as run:
+            api.public_response(ENDPOINT)
+            command = run.call_args.args[0]
+            self.assertEqual(command[:2], ['curl', '--disable'])
+            self.assertEqual(command[-1], 'https://api.github.com/' + ENDPOINT)
+            self.assertEqual(command[command.index('--request') + 1], 'GET')
+            self.assertNotIn('--location', command)
+            self.assertNotIn('--user', command)
+            self.assertIn('--suppress-connect-headers', command)
+            self.assertIn('Cache-Control: no-cache', command)
+            self.assertEqual(command[command.index('--proto') + 1], '=https')
+            self.assertEqual(run.call_args.kwargs['timeout'], 30)
+
+    def test_public_oversized_and_invalid_json_fail_closed(self):
+        for body in ['invalid', 'x' * (8 * 1024 * 1024 + 1)]:
+            response = subprocess.CompletedProcess([], 0, 'HTTP/2 200 OK\n\n' + body, '')
+            with patch.object(api, 'public_response', return_value=response):
+                with self.assertRaises(api.GitHubReadError):
+                    api.get_json(ENDPOINT, public=True)
+
+
 if __name__ == '__main__':
     unittest.main()
