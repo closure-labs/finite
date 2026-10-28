@@ -77,7 +77,7 @@ in {
     bash tests/nix/nix-selinux.sh
     bash tests/bluebuild/vm-predecessor-home.sh
   '';
-  bluebuild = check "bluebuild-contracts" [pkgs.gawk pkgs.git pkgs.jq pkgs.openssl pkgs.sqlite applications.ciSecretsRun (import ./secretspec.nix {inherit pkgs;}) pkgs.yq-go (pkgs.python3.withPackages (p: [p.pyyaml]))] ''
+  bluebuild = check "bluebuild-contracts" [pkgs.gawk pkgs.git pkgs.glib pkgs.jq pkgs.openssl pkgs.sqlite applications.ciSecretsRun (import ./secretspec.nix {inherit pkgs;}) pkgs.yq-go (pkgs.python3.withPackages (p: [p.pyyaml]))] ''
     export PYTHONDONTWRITEBYTECODE=1
     python3 tests/automation/bluefin-upstream.py
     python3 tests/ci/foundation-update.py
@@ -155,6 +155,8 @@ in {
     python3 tests/ci/approved-baseline.py
     python3 tests/ci/local-candidate-evidence.py
     python3 tests/bluebuild/contracts.py
+    python3 tests/bluebuild/desktop-integration.py
+    python3 tests/workstation/password-manager-setup.py
     python3 tests/bluebuild/build.py
     python3 tests/bluebuild/inspect-built.py
     python3 tests/bluebuild/upstream-kernel.py

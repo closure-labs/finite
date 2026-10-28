@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
+if command -v foundation >/dev/null 2>&1; then
+    exec foundation home update "$@"
+fi
 export FINITE_FOUNDATION_SOURCE="${FINITE_FOUNDATION_SOURCE:-/usr/share/finite/foundation}"
 export FINITE_FOUNDATION_METADATA="${FINITE_FOUNDATION_METADATA:-/usr/share/finite/foundation-source.json}"
 export FINITE_FOUNDATION_CATALOG="${FINITE_FOUNDATION_CATALOG:-/usr/share/finite/home-profile-catalog.json}"

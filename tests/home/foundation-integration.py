@@ -28,10 +28,25 @@ class FoundationIntegration(unittest.TestCase):
                 shim.write_text((ROOT / "files/system" / command).read_text().replace(
                     "/usr/bin/python3", sys.executable))
                 result = subprocess.run(["bash", str(shim), "--check"],
-                                        env=dict(os.environ, FINITE_FOUNDATION_SOURCE=str(source)),
+                                        env=dict(os.environ, PATH=os.defpath, FINITE_FOUNDATION_SOURCE=str(source)),
                                         capture_output=True, text=True)
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual(result.stdout.strip(), operation + "|--check")
+
+    def test_update_prefers_installed_foundation_and_propagates_failure(self):
+        with tempfile.TemporaryDirectory() as temp:
+            source = Path(temp)
+            modern = source / 'foundation'
+            modern.write_text('#!/bin/sh\nprintf "%s\\n" "$*"\nexit "${MODERN_STATUS:-0}"\n')
+            modern.chmod(0o755)
+            for status in (0, 7):
+                with self.subTest(status=status):
+                    result = subprocess.run(['bash', str(ROOT / 'files/system/usr/bin/finite-home-update'), '--check'],
+                                            env=dict(os.environ, PATH=str(source) + os.pathsep + os.defpath,
+                                                     MODERN_STATUS=str(status), FINITE_FOUNDATION_SOURCE='/does-not-exist'),
+                                            capture_output=True, text=True)
+                    self.assertEqual(result.returncode, status, result.stderr)
+                    self.assertEqual(result.stdout.strip(), 'home update --check')
 
     def test_existing_user_configuration_skips_login_initialization(self):
         with tempfile.TemporaryDirectory() as temp:

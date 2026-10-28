@@ -97,10 +97,10 @@ class Transaction(unittest.TestCase):
         self.before = {p: p.read_bytes() for p in self.root.rglob('*') if p.is_file()}
         self.evidence = {'workflow': updater.WORKFLOW, 'runId': 42, 'runAttempt': 2, 'url': 'https://github.com/closure-labs/foundation/actions/runs/42'}
 
-    def execute(self, mutate=None, metadata=None, main=REV, evidence=None, comparison=None):
+    def execute(self, mutate=None, metadata=None, main=REV, evidence=None, comparison=None, resolved=None):
         def capture(command, **kwargs):
             if command[1:3] == ['flake', 'metadata']:
-                return json.dumps({'locked': LOCKED, 'locks': {'root': 'root', 'nodes': {'root': {}}}})
+                return json.dumps({'locked': LOCKED if resolved is None else resolved, 'locks': {'root': 'root', 'nodes': {'root': {}}}})
             if command[1] == 'eval':
                 return json.dumps({'metadata': metadata or METADATA, 'lock': {'root': 'root', 'nodes': {'root': {}}}})
             self.assertEqual(command, ['nix', 'flake', 'update', 'foundation'])
@@ -125,6 +125,25 @@ class Transaction(unittest.TestCase):
         self.assertEqual(metadata['version'], '0.5.1')
         self.assertEqual(metadata['rev'], REV)
         self.assertEqual(metadata['upstreamCI'], self.evidence)
+
+    def test_metadata_without_hash_uses_exact_evaluated_source(self):
+        self.execute(resolved={key: value for key, value in LOCKED.items() if key != 'narHash'})
+        node = json.loads((self.root / 'flake.lock').read_text())['nodes']['foundation']
+        self.assertEqual(node['locked'], LOCKED)
+        self.assertEqual(json.loads((self.root / 'sources/foundation.json').read_text())['narHash'], HASH)
+
+    def test_malformed_or_mismatched_resolution_hash_never_mutates(self):
+        for value in [None, False, 'wrong', 'sha256-' + 'B' * 43 + '=']:
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                self.execute(resolved={**LOCKED, 'narHash': value})
+            self.assert_unchanged()
+
+    def test_missing_metadata_hash_does_not_allow_invalid_evaluated_source(self):
+        for delta in [{'rev': OLD}, {'narHash': None}, {'narHash': 'wrong'}]:
+            with self.subTest(delta=delta), self.assertRaises(ValueError):
+                self.execute(resolved={key: value for key, value in LOCKED.items() if key != 'narHash'},
+                             metadata={**METADATA, **delta})
+            self.assert_unchanged()
 
     def test_wrong_lock_hash_revision_original_or_unrelated_closure_rolls_back(self):
         for mutate in [lambda lock: lock['nodes']['foundation']['locked'].update(rev=OLD),

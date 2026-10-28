@@ -548,3 +548,12 @@ hold remain explicit. Release eligibility has not been established.
 - [x] Audit all host Nix jobs and qualification guests; all host Nix callers already install the pinned Determinate action. Replace hard-coded concurrency with CPU/RAM/cgroup-aware budgets and verify effective settings without revealing configuration secrets.
 - [x] Enable measured parallel evaluation; preserve bounded per-builder CPU use, cache behavior, lightweight maintenance entry points and benchmark cache isolation. Size guest commands from the2-CPU/4-GiB VM rather than host hardware.
 - [ ] Validate the exact change on hosted runners, including actual installer settings and focused contracts. Keep publication gates and merge sequencing intact.
+
+## Workstation reboot remediation — 2026-10-27
+
+| Task | Owner | Status | Acceptance |
+|---|---|---|---|
+| Finite updater dispatch/source resolution and image fixes | finite_fixes | IMPLEMENTED / TESTED | Focused regressions and image contracts pass |
+| Narrow administrator password-helper utility | coordinator | IMPLEMENTED / TESTED | Exact-artifact approval, atomic install, root permissions, GC roots and rollback tests |
+| Workstation configuration cleanup | coordinator | SOURCE READY; OPERATOR GATES RECORDED | Native Gear Lever, retired Claude handler, no unrelated profile changes |
+| QA/security review and rollout receipts | coordinator | SOURCE READY; OPERATOR GATES RECORDED | Evidence statuses and remaining operator gates recorded |

@@ -102,9 +102,11 @@ def unrelated_inputs(lock):
 def update(root, rev, evidence):
     resolved = json.loads(capture(["nix", "flake", "metadata", "--no-update-lock-file", "--json", "github:" + REPOSITORY + "/" + rev]))
     locked = resolved["locked"]
+    supplied_hash = locked.get("narHash")
     if (locked.get("type") != "github" or locked.get("owner") != "closure-labs"
             or locked.get("repo") != "foundation" or locked.get("rev") != rev
-            or not re.fullmatch(r"sha256-[A-Za-z0-9+/]{43}=", locked.get("narHash", ""))):
+            or ("narHash" in locked and (not isinstance(supplied_hash, str)
+                or not re.fullmatch(r"sha256-[A-Za-z0-9+/]{43}=", supplied_hash)))):
         raise ValueError("Foundation resolution differs from qualified source")
     expression = ('let f = builtins.getFlake "github:' + REPOSITORY + '/' + rev
                   + '"; in { metadata = (builtins.fromJSON (builtins.readFile (f.outPath + "/foundation.json")))'
@@ -114,8 +116,15 @@ def update(root, rev, evidence):
     if (type(metadata.get("schema")) is not int or metadata["schema"] != 1
             or type(metadata.get("compatibility")) is not int or metadata["compatibility"] != 1
             or not re.fullmatch(r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)", metadata.get("version", ""))
-            or metadata.get("rev") != rev or metadata.get("narHash") != locked["narHash"]):
+            or metadata.get("rev") != rev
+            or not isinstance(metadata.get("narHash"), str)
+            or not re.fullmatch(r"sha256-[A-Za-z0-9+/]{43}=", metadata["narHash"])
+            or (supplied_hash is not None and metadata["narHash"] != supplied_hash)):
         raise ValueError("Foundation source metadata or compatibility is unsupported")
+    # Nix's lazy source metadata may omit narHash until the immutable source is
+    # evaluated. Its evaluated content hash is authoritative; a supplied hash
+    # still has to agree before any lock or consumer file can be changed.
+    locked = {**locked, "narHash": metadata["narHash"]}
     current = json.loads((root / "sources/foundation.json").read_text())
     if tuple(map(int, metadata["version"].split("."))) < tuple(map(int, current["version"].split("."))):
         raise ValueError("Foundation milestone version would move backwards")
