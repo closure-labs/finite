@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Opt-in bounded skopeo transport experiment; never security or release clearance."""
 import argparse
+import base64
 from contextlib import contextmanager
 from datetime import datetime
 import hashlib
@@ -33,6 +34,27 @@ POLICY = {'memoryMaxBytes': MEMORY, 'memorySwapMaxBytes': 0, 'headroomBytes': HE
 SECRET_NAMES = ('CACHIX_AUTH_TOKEN', 'COSIGN_PRIVATE_KEY', 'COSIGN_PASSWORD', 'REGISTRY_TOKEN',
                 'MERGE_QUEUE_TOKEN', 'SECAUDIT_PEM', 'SECAUDIT_CLIENTID')
 ATTESTATION_TYPE = 'application/vnd.in-toto+json'
+EMPTY_CONFIG_TYPE = 'application/vnd.oci.empty.v1+json'
+EMPTY_CONFIG = {'mediaType': EMPTY_CONFIG_TYPE,
+    'digest': 'sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a',
+    'size': 2, 'data': 'e30='}
+
+
+def empty_attestation_config(manifest, native):
+    """Admit only BuildKit's canonical empty config on a bound attestation."""
+    value = manifest.get('config')
+    if (manifest.get('artifactType') != 'application/vnd.docker.attestation.manifest.v1+json'
+            or value != EMPTY_CONFIG):
+        raise ValueError('Unsupported or noncanonical empty attestation configuration')
+    subject = METADATA.descriptor(manifest.get('subject'), METADATA.MANIFEST_TYPES, METADATA.METADATA_LIMIT)
+    if subject != native:
+        raise ValueError('Attestation subject differs from its exact native descriptor')
+    raw = base64.b64decode(value['data'], validate=True)
+    if raw != b'{}' or METADATA.document(raw, value['digest'], value['size']) != {}:
+        raise ValueError('Empty attestation config bytes do not match their descriptor')
+    # Strip only the already-verified embedded representation; the actual copy
+    # must still materialize and independently hash this two-byte OCI blob.
+    return {key: value[key] for key in ('mediaType', 'digest', 'size')}, raw
 
 
 def metadata_binding(recorder, args, env):
@@ -72,14 +94,18 @@ def metadata_binding(recorder, args, env):
         if manifest.get('schemaVersion') != 2 or manifest.get('mediaType') not in METADATA.MANIFEST_TYPES or 'manifests' in manifest:
             raise ValueError('Copied child must be a single manifest')
         retain(METADATA.descriptor(entry, METADATA.MANIFEST_TYPES, METADATA.METADATA_LIMIT))
-        descriptor = METADATA.descriptor(manifest.get('config'), METADATA.CONFIG_TYPES, METADATA.METADATA_LIMIT)
-        config_raw = fetch('config-' + str(number), entry['digest'], config=True)
+        native_child = entry['digest'] == native['digest']
+        if not native_child and manifest.get('config', {}).get('mediaType') == EMPTY_CONFIG_TYPE:
+            descriptor, config_raw = empty_attestation_config(manifest, native)
+            (recorder.directory / ('config-' + str(number) + '.stdout')).write_bytes(config_raw)
+        else:
+            descriptor = METADATA.descriptor(manifest.get('config'), METADATA.CONFIG_TYPES, METADATA.METADATA_LIMIT)
+            config_raw = fetch('config-' + str(number), entry['digest'], config=True)
         config = METADATA.document(config_raw, descriptor['digest'], descriptor['size'])
         retain(descriptor)
         layers = manifest.get('layers')
         if not isinstance(layers, list) or not 0 < len(layers) <= 1024:
             raise ValueError('Invalid copied child layers')
-        native_child = entry['digest'] == native['digest']
         types = METADATA.LAYER_TYPES if native_child else {ATTESTATION_TYPE}
         for layer in layers: retain(METADATA.descriptor(layer, types, 32 * 1024**3))
         if native_child:

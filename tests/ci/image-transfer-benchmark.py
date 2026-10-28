@@ -159,6 +159,39 @@ class Transfer(unittest.TestCase):
                     (directory / 'blob').write_text('owned')
             self.assertEqual(directory.exists(), not quiescent)
 
+    def test_real_buildkit_attestation_accepts_only_canonical_empty_config(self):
+        path = ROOT / 'tests/fixtures/image-transfer/buildkit-attestation.json'
+        raw = path.read_bytes()
+        self.assertEqual(M.METADATA.sha(raw), 'sha256:f26f09e719156a600a5d891b4f06f1e0cf9f2dc4c94bf5a10bc2c94680f57d23')
+        manifest = json.loads(raw); native = manifest['subject']
+        descriptor, config = M.empty_attestation_config(manifest, native)
+        self.assertEqual(config, b'{}')
+        self.assertEqual(descriptor, {key: M.EMPTY_CONFIG[key] for key in ('mediaType', 'digest', 'size')})
+        for mutation in ({'data': 'e30'}, {'data': 'e30=\n'}, {'data': 'W10='}, {'data': ''},
+                {'size': 3}, {'size': '2'}, {'digest': 'sha256:' + '0' * 64}, {'urls': ['https://elsewhere']},
+                {'mediaType': 'application/vnd.oci.image.config.v1+json'}, {'extra': True}):
+            value = copy.deepcopy(manifest); value['config'].update(mutation)
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError): M.empty_attestation_config(value, native)
+        for mutation in ({'artifactType': 'other'}, {'subject': dict(native, size=native['size'] + 1)},
+                         {'subject': dict(native, digest='sha256:' + '0' * 64)}, {'subject': None}):
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                M.empty_attestation_config(dict(manifest, **mutation), native)
+
+    def test_native_manifest_still_rejects_empty_or_inline_configs(self):
+        for descriptor in (M.EMPTY_CONFIG, dict(M.EMPTY_CONFIG, mediaType='application/vnd.oci.image.config.v1+json')):
+            manifest = {'schemaVersion': 2, 'mediaType': 'application/vnd.oci.image.manifest.v1+json',
+                        'config': descriptor, 'layers': []}
+            raw = json.dumps(manifest).encode()
+            args = argparse.Namespace(digest=M.METADATA.sha(raw), profile='finite-dev', source='a' * 40, identity='v1:' + 'b' * 64)
+            recorder = Mock(directory=self.root)
+            def fetch(stage, command, **kwargs):
+                (self.root / (stage + '.stdout')).write_bytes(raw)
+                return raw
+            recorder.command.side_effect = fetch
+            with self.subTest(descriptor=descriptor), self.assertRaisesRegex(ValueError, 'descriptor'):
+                M.metadata_binding(recorder, args, {})
+            self.assertEqual(recorder.command.call_count, 1)
+
     def test_signed_index_budgets_and_binds_native_and_attestation_graph(self):
         source, identity = 'a' * 40, 'v1:' + 'b' * 64
         objects, configs = {}, {}
@@ -174,9 +207,11 @@ class Transfer(unittest.TestCase):
         native_manifest = blob({'schemaVersion': 2, 'mediaType': 'application/vnd.oci.image.manifest.v1+json',
             'config': native_config, 'layers': [native_layer]}, 'application/vnd.oci.image.manifest.v1+json')
         configs[native_manifest['digest']] = objects[native_config['digest']]
-        attestation_config = blob({'architecture': 'unknown', 'os': 'unknown'}, 'application/vnd.oci.image.config.v1+json')
+        attestation_config = dict(M.EMPTY_CONFIG)
+        objects[attestation_config['digest']] = b'{}'
         attestation_layer = blob({'predicateType': 'fixture'}, M.ATTESTATION_TYPE)
         attestation = blob({'schemaVersion': 2, 'mediaType': 'application/vnd.oci.image.manifest.v1+json',
+            'artifactType': 'application/vnd.docker.attestation.manifest.v1+json', 'subject': native_manifest,
             'config': attestation_config, 'layers': [attestation_layer]}, 'application/vnd.oci.image.manifest.v1+json')
         configs[attestation['digest']] = objects[attestation_config['digest']]
         entries = [dict(native_manifest, platform={'os': 'linux', 'architecture': 'amd64'}),
@@ -189,18 +224,27 @@ class Transfer(unittest.TestCase):
             directory = self.root
             def command(recorder, stage, command, **kwargs):
                 digest = command[-1].split('@')[1]
+                if '--config' in command and digest == attestation['digest']:
+                    raise AssertionError('Canonical inline config should not invoke image-config inspection')
                 raw = configs[digest] if '--config' in command else objects[digest]
                 (recorder.directory / (stage + '.stdout')).write_bytes(raw)
                 return raw
         raw, binding = M.metadata_binding(Recorder(), args, {})
         self.assertEqual(len(binding['transportBlobs']), 7)
         self.assertEqual(binding['nativeDigest'], native_manifest['digest'])
+        self.assertIn({key: M.EMPTY_CONFIG[key] for key in ('mediaType', 'digest', 'size')}, binding['transportBlobs'])
         layout = self.root / 'index-layout'; blobs = layout / 'blobs/sha256'; blobs.mkdir(parents=True)
         for digest, value in objects.items(): (blobs / digest[7:]).write_bytes(value)
         (layout / 'oci-layout').write_text('{"imageLayoutVersion":"1.0.0"}')
         (layout / 'index.json').write_text(json.dumps({'schemaVersion': 2, 'manifests': [top]}))
         digestfile = self.root / 'digest'; digestfile.write_text(top['digest'])
         self.assertTrue(M.verify_layout(layout, digestfile, args.digest, raw, binding)['compressedBlobsVerified'])
+        empty_blob = blobs / M.EMPTY_CONFIG['digest'][7:]
+        empty_blob.write_bytes(b'[]')
+        with self.assertRaisesRegex(ValueError, 'digest verification'): M.verify_layout(layout, digestfile, args.digest, raw, binding)
+        empty_blob.unlink()
+        with self.assertRaisesRegex(ValueError, 'missing OCI blob'): M.verify_layout(layout, digestfile, args.digest, raw, binding)
+        empty_blob.write_bytes(b'{}')
         path = blobs / attestation_layer['digest'][7:]; path.write_bytes(b'x' * path.stat().st_size)
         with self.assertRaises(ValueError): M.verify_layout(layout, digestfile, args.digest, raw, binding)
         entries[1]['annotations']['vnd.docker.reference.digest'] = 'sha256:' + 'f' * 64
