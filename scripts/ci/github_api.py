@@ -49,7 +49,20 @@ def response_parts(output):
     return int(match[1]), headers, body
 
 
-def get_json(endpoint, *, environment=None, missing=False):
+def public_response(endpoint):
+    """Credential-free official API GET, with no redirects and a wall timeout."""
+    return subprocess.run([
+        'curl', '--disable', '--silent', '--show-error', '--fail-with-body',
+        '--include', '--suppress-connect-headers', '--proto', '=https',
+        '--max-time', '30', '--max-filesize', str(8 * 1024 * 1024),
+        '--request', 'GET', '--header', 'Accept: application/vnd.github+json',
+        '--header', 'X-GitHub-Api-Version: 2022-11-28',
+        '--header', 'Cache-Control: no-cache',
+        'https://api.github.com/' + endpoint,
+    ], capture_output=True, text=True, check=False, timeout=30)
+
+
+def get_json(endpoint, *, environment=None, missing=False, public=False):
     if not re.fullmatch(r'(?:repos|orgs)/[A-Za-z0-9_./%?=&+,:@~-]+', endpoint):
         raise GitHubReadError('Invalid GitHub metadata endpoint')
     label = endpoint.split('?')[0]
@@ -59,10 +72,13 @@ def get_json(endpoint, *, environment=None, missing=False):
         try:
             # Authority, leases and release state must be revalidated at the
             # origin, including immediately after a successful write.
-            result = subprocess.run(['gh', 'api', '--method', 'GET', '--include',
-                                     '-H', 'Cache-Control: no-cache', endpoint],
-                                    capture_output=True, text=True, check=False,
-                                    timeout=30, env=environment)
+            if public:
+                result = public_response(endpoint)
+            else:
+                result = subprocess.run(['gh', 'api', '--method', 'GET', '--include',
+                                         '-H', 'Cache-Control: no-cache', endpoint],
+                                        capture_output=True, text=True, check=False,
+                                        timeout=30, env=environment)
             output = result.stdout.replace('\r\n', '\n')
             if len(output.encode()) > 8 * 1024 * 1024:
                 raise GitHubReadError('GitHub response exceeds size budget: ' + label)
@@ -70,9 +86,10 @@ def get_json(endpoint, *, environment=None, missing=False):
                 status, headers, body = response_parts(output)
             elif not result.returncode:
                 raise GitHubReadError('GitHub response lacks HTTP metadata: ' + label)
+            successful = result.returncode == 0
             if status == 404 and missing:
                 return None
-            if result.returncode == 0 and status == 200:
+            if successful and status == 200:
                 try:
                     return json.loads(body)
                 except ValueError as error:
@@ -81,7 +98,7 @@ def get_json(endpoint, *, environment=None, missing=False):
                                          or 'retry-after' in headers)
             retry = status in (408, 429, 500, 502, 503, 504) or limited or status is None
             reason = 'HTTP ' + str(status) if status else 'transport failure'
-        except subprocess.TimeoutExpired:
+        except (subprocess.TimeoutExpired, TimeoutError):
             reason, retry = 'timeout', True
         request_id = headers.get('x-github-request-id', 'unavailable')
         if not re.fullmatch(r'[A-Za-z0-9:-]{1,100}', request_id):
