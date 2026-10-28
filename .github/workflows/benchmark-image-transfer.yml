@@ -1,0 +1,134 @@
+name: Benchmark bounded image transfer
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        type: choice
+        required: true
+        options: [finite, finite-dev]
+      digest:
+        description: Existing signed image/index digest (sha256); no image build or publication
+        type: string
+        required: true
+      source_revision:
+        description: Exact source revision in the existing image labels
+        type: string
+        required: true
+      identity:
+        description: Exact io.finite.build-inputs identity in the existing image labels
+        type: string
+        required: true
+
+env:
+  FINITE_OPTIMIZED_CACHES: ${{ vars.FINITE_OPTIMIZED_CACHES }}
+  FINITE_CACHIX_WRITER: ${{ vars.FINITE_CACHIX_WRITER }}
+  FINITE_REUSE_INVENTORY: ${{ vars.FINITE_REUSE_INVENTORY }}
+  FINITE_GRYPE_DB_CACHE: ${{ vars.FINITE_GRYPE_DB_CACHE }}
+  FINITE_QUALIFICATION_REUSE: ${{ vars.FINITE_QUALIFICATION_REUSE }}
+  FINITE_QUALIFIED_ISO_PRESERVATION: ${{ vars.FINITE_QUALIFIED_ISO_PRESERVATION }}
+  FINITE_QUALIFIED_ISO_CHANNELS: ${{ vars.FINITE_QUALIFIED_ISO_CHANNELS }}
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: finite-image-transfer-benchmark
+  cancel-in-progress: false
+
+jobs:
+  transfer:
+    name: transfer-${{ matrix.copies }}-${{ matrix.repetition }}
+    if: github.repository == 'closure-labs/finite'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include:
+          - {copies: 1, repetition: 1}
+          - {copies: 2, repetition: 1}
+          - {copies: 2, repetition: 2}
+          - {copies: 1, repetition: 2}
+          - {copies: 1, repetition: 3}
+          - {copies: 2, repetition: 3}
+    env:
+      COPIES: ${{ matrix.copies }}
+      REPETITION: ${{ matrix.repetition }}
+      PROFILE: ${{ inputs.profile }}
+      DIGEST: ${{ inputs.digest }}
+      SOURCE: ${{ inputs.source_revision }}
+      IDENTITY: ${{ inputs.identity }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Record setup start
+        run: python3 scripts/ci/benchmark-image-transfer.py mark-start .bluebuild/transfer-start.json
+      - uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
+        with:
+          skip-if-available: "80G"
+      - uses: $/.github/actions/setup-nix
+        with:
+          cache-mode: none
+      - name: Prepare pinned image tools
+        run: | # zizmor: ignore[github-env]
+          tools=$(nix build --file lib/ci-tools.nix image-tools --no-link --print-out-paths)
+          [[ $tools =~ ^/nix/store/[a-z0-9]{32}-finite-ci-image-tools$ ]]
+          echo "$tools/bin" >>"$GITHUB_PATH"
+      - name: Measure one bounded immutable transfer
+        run: >-
+          python3 scripts/ci/benchmark-image-transfer.py run
+          --copies "$COPIES" --repetition "$REPETITION" --profile "$PROFILE"
+          --digest "$DIGEST" --source "$SOURCE" --identity "$IDENTITY"
+          --start .bluebuild/transfer-start.json --output .bluebuild/transfer-report
+      - name: Retain measurements including failures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: image-transfer-${{ matrix.copies }}-${{ matrix.repetition }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/transfer-report/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+
+  summarize:
+    if: always() && github.repository == 'closure-labs/finite'
+    needs: transfer
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Download this attempt's diagnostic receipts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPORT_PATTERN: image-transfer-*-${{ github.run_id }}-${{ github.run_attempt }}
+        run: >-
+          gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY"
+          --pattern "$REPORT_PATTERN" --dir .bluebuild/transfer-reports
+      - name: Fetch complete same-attempt job timestamps
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh api --paginate --slurp
+          "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT/jobs?per_page=100"
+          > .bluebuild/transfer-jobs.json
+      - name: Require complete matched image, tools, runner and cache cohort
+        run: >-
+          python3 scripts/ci/benchmark-image-transfer.py summarize
+          .bluebuild/transfer-reports .bluebuild/transfer-jobs.json .bluebuild/transfer-summary.json
+      - name: Retain comparison and complete-job metadata
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: image-transfer-summary-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .bluebuild/transfer-summary.json
+            .bluebuild/transfer-jobs.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14

@@ -145,6 +145,7 @@ in {
     python3 tests/bluebuild/installer-provenance.py
     python3 tests/ci/image-tools-benchmark.py
     python3 tests/ci/image-verification-benchmark.py
+    python3 tests/ci/image-transfer-benchmark.py
     python3 tests/ci/security-reuse-benchmark.py
     python3 tests/ci/qualification-reuse-benchmark.py
     python3 tests/ci/remediation-preflight.py
