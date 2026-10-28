@@ -28,9 +28,13 @@ pkgs.writeShellApplication {
 
     foundation_node="$(jq -er '.nodes.root.inputs.foundation' flake.lock)"
     jq -e --arg node "$foundation_node" --slurpfile source sources/foundation.json '
-      .nodes[$node].locked |
+      (.nodes[$node].original == {
+        type: "github", owner: "closure-labs", repo: "foundation", ref: "main"
+      }) and
+      (.nodes[$node].locked |
       .owner == "closure-labs" and .repo == "foundation" and
-      .rev == $source[0].rev and .narHash == $source[0].narHash
+      .type == "github" and
+      .rev == $source[0].rev and .narHash == $source[0].narHash)
     ' flake.lock >/dev/null
 
     [[ "$(original_url flake.lock nixpkgs)" == \

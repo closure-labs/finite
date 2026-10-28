@@ -26,7 +26,15 @@ pkgs.writeShellApplication {
       unset GH_TOKEN GITHUB_TOKEN MERGE_QUEUE_TOKEN RELEASE_PUBLISH_TOKEN REGISTRY_TOKEN
       unset SECAUDIT_PEM SECAUDIT_CLIENTID FINITE_REVIEW_PRIVATE_KEY
     }
-    (unset_public_credentials; nix --accept-flake-config flake update)
+    # Foundation has a separate exact-main CI qualification and provenance
+    # transaction. A general refresh must not advance it implicitly.
+    inputs_json=$(jq -ce '.nodes[.root].inputs | keys | map(select(. != "foundation"))' flake.lock)
+    mapfile -t update_inputs < <(jq -r '.[]' <<<"$inputs_json")
+    [[ "''${#update_inputs[@]}" -gt 0 ]] || {
+      echo "No general flake inputs to update" >&2
+      exit 2
+    }
+    (unset_public_credentials; nix --accept-flake-config flake update "''${update_inputs[@]}")
 
     devenv_update_root=$(mktemp -d)
     trap 'rm -rf "$devenv_update_root"' EXIT

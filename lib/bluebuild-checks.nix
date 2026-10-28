@@ -80,6 +80,7 @@ in {
   bluebuild = check "bluebuild-contracts" [pkgs.gawk pkgs.git pkgs.jq pkgs.openssl pkgs.sqlite applications.ciSecretsRun (import ./secretspec.nix {inherit pkgs;}) pkgs.yq-go (pkgs.python3.withPackages (p: [p.pyyaml]))] ''
     export PYTHONDONTWRITEBYTECODE=1
     python3 tests/automation/bluefin-upstream.py
+    python3 tests/ci/foundation-update.py
     python3 tests/ci/github-api.py
     python3 tests/ci/publisher-health.py
     python3 tests/ci/release-readiness.py

@@ -9,12 +9,13 @@ touch "$test_root/flake.nix"
 printf '%s\n' '{"inputs":{"devenv":{"url":"github:cachix/devenv"}},"secretspec":{"enable":true,"provider":"keyring","cachix_auth_token":true}}' >"$test_root/devenv.yaml"
 export CACHIX_AUTH_TOKEN=fixture-cache MERGE_QUEUE_TOKEN=fixture-updater
 export MOCK_UPDATE_ROOT_FILE="$test_root/update-root"
-printf '{}\n' >"$test_root/flake.lock"
+printf '%s\n' '{"root":"root","nodes":{"root":{"inputs":{"foundation":"foundation","devenv":"devenv","nixpkgs":"nixpkgs"}}}}' >"$test_root/flake.lock"
 printf '{}\n' >"$test_root/devenv.lock"
 
 nix() {
 	[[ -z "${CACHIX_AUTH_TOKEN+x}" && -z "${MERGE_QUEUE_TOKEN+x}" ]] || return 1
-	printf '{"nodes": {}}\n' >flake.lock
+	[[ "$*" == '--accept-flake-config flake update devenv nixpkgs' ]] || return 1
+	printf '%s\n' '{"root":"root","nodes":{"root":{"inputs":{"foundation":"foundation","devenv":"devenv","nixpkgs":"nixpkgs"}}}}' >flake.lock
 }
 devenv() {
 	[[ "$*" == update ]] || return 1

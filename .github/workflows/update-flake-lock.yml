@@ -24,7 +24,7 @@ permissions:
 
 jobs:
   update:
-    name: Refresh every locked input
+    name: Refresh general inputs (Foundation is qualified separately)
     runs-on: ubuntu-24.04
     timeout-minutes: 270
     steps:
