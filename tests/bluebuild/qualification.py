@@ -674,6 +674,198 @@ class Origin(unittest.TestCase):
                 r.metadata(self.run, [self.job], {**self.artifact, field: value}, self.profile)
 
 
+class LazyReuse(unittest.TestCase):
+    def setUp(self):
+        self.fixture = Qualification()
+        self.fixture.setUp()
+        self.addCleanup(self.fixture.doCleanups)
+        f = self.fixture
+        self.acceptance = f.aggregate()
+        self.desktop = (f.directory / 'finite-desktop-acceptance.json').read_bytes()
+        origin = Origin()
+        origin.setUp()
+        self.run = {**origin.run, 'head_sha': f.revision, 'updated_at': datetime.now(timezone.utc).isoformat()}
+        self.job = {**origin.job, 'head_sha': f.revision}
+        self.artifact = {**origin.artifact, 'workflow_run': {'id': self.run['id'], 'head_sha': f.revision}}
+        self.output = f.directory / 'reused'
+        self.env = {'GITHUB_ACTIONS': 'true', 'GITHUB_REPOSITORY': r.REPOSITORY,
+                    'GITHUB_REF': 'refs/heads/main', 'GITHUB_SHA': '1' * 40,
+                    'CANDIDATE_DIGEST': f.candidate.split('@')[1], 'PREVIOUS_DIGEST': '',
+                    'SOURCE_REVISION': f.source, 'BUILD_IDENTITY': f.build}
+        self.context = copy.deepcopy(f.context)
+        self.calls = []
+        self.empty = False
+        self.corrupt_archive = False
+        self.omit_desktop = False
+
+    def exercise(self):
+        archive = io.BytesIO()
+        with zipfile.ZipFile(archive, 'w') as zipped:
+            zipped.writestr('finite-acceptance.json', json.dumps(self.acceptance))
+            if not self.omit_desktop:
+                zipped.writestr('finite-desktop-acceptance.json', self.desktop)
+        data = archive.getvalue()
+        artifact = {**self.artifact, 'size_in_bytes': len(data),
+                    'digest': 'sha256:' + hashlib.sha256(data).hexdigest()}
+        def api(path, paginated=False):
+            self.calls.append(path)
+            if '/runs?' in path: return {'workflow_runs': [] if self.empty else [self.run]}
+            if '/artifacts?' in path: return [{'artifacts': [artifact]}]
+            if '/jobs?' in path: return [{'jobs': [self.job]}]
+            raise AssertionError('Unexpected API request: ' + path)
+        def download(command, **kwargs):
+            self.assertEqual(command, ['gh', 'api', f'repos/{r.REPOSITORY}/actions/artifacts/{artifact["id"]}/zip'])
+            kwargs['stdout'].write(b'x' * len(data) if self.corrupt_archive else data)
+        with patch.dict(os.environ, self.env), patch.object(r, 'github', side_effect=api), \
+                patch.object(r.subprocess, 'run', side_effect=download), \
+                patch.object(r.qualification, 'source_inputs', return_value=self.fixture.context['inputs']), \
+                patch.object(r, 'prepare_context', return_value=self.context) as prepare, \
+                patch.object(r, 'validate', wraps=r.validate) as validate:
+            self.prepare, self.validate = prepare, validate
+            return r.reuse('finite', self.output, prepare_tools=True)
+
+    def test_no_evidence_does_not_prepare_context_or_create_output(self):
+        self.empty = True
+        with self.assertRaises(r.Unavailable): self.exercise()
+        self.prepare.assert_not_called()
+        self.validate.assert_not_called()
+        self.assertEqual(len(self.calls), 1)
+        self.assertFalse(self.output.exists())
+
+    def test_static_misses_skip_tools_without_extra_metadata_queries(self):
+        original = copy.deepcopy(self.acceptance)
+        for field, value in (('candidate', 'different'), ('previousDigest', 'different'),
+                             ('profile', 'finite-dev'), ('sourceRevision', '0' * 40),
+                             ('buildIdentity', 'v1:' + '0' * 64), ('qualificationContext', {})):
+            with self.subTest(field=field):
+                self.acceptance = {**original, field: value}
+                self.calls.clear()
+                with self.assertRaises(r.Unavailable): self.exercise()
+                self.prepare.assert_not_called()
+                self.validate.assert_not_called()
+                self.assertEqual(len(self.calls), 3)
+                self.assertFalse(self.output.exists())
+
+    def test_missing_malformed_diagnostic_and_untrusted_evidence_cannot_authorize_reuse(self):
+        self.omit_desktop = True
+        with self.assertRaises(r.Unavailable): self.exercise()
+        self.prepare.assert_not_called()
+        self.omit_desktop = False
+        original = copy.deepcopy(self.acceptance)
+        for value in ([], None, {**original, 'validationOnly': True}):
+            self.acceptance = value
+            with self.assertRaises(ValueError): self.exercise()
+            self.prepare.assert_not_called()
+            self.assertFalse(self.output.exists())
+        self.acceptance = original
+        self.run['head_repository'] = {'full_name': 'foreign/repository'}
+        with self.assertRaises(ValueError): self.exercise()
+        self.prepare.assert_not_called()
+        self.assertFalse(self.output.exists())
+
+    def test_archive_substitution_fails_before_tool_preparation(self):
+        self.corrupt_archive = True
+        with self.assertRaisesRegex(ValueError, 'archive digest'): self.exercise()
+        self.prepare.assert_not_called()
+        self.validate.assert_not_called()
+        self.assertFalse(self.output.exists())
+
+    def test_possible_match_still_checks_actual_runtime_and_racing_source_context(self):
+        for field, value in (('firmware', {'code': 'changed'}), ('packages', 'qemu=changed'),
+                             ('inputs', {'installer': 'changed while provisioning'})):
+            with self.subTest(field=field):
+                self.context = {**self.fixture.context, field: value}
+                with self.assertRaises(r.Unavailable): self.exercise()
+                self.prepare.assert_called_once()
+                self.validate.assert_called_once()
+                self.assertFalse(self.output.exists())
+
+    def test_possible_match_still_checks_verdict_hash_age_and_complete_phase_evidence(self):
+        original = copy.deepcopy(self.acceptance)
+        for field, value in (('accepted', False), ('secureBoot', False), ('encryptedRoot', False),
+                             ('qualificationContextSha256', '0' * 64),
+                             ('qualifiedAt', (datetime.now(timezone.utc) - timedelta(hours=25)).isoformat()),
+                             ('qualifiedIso', {'name': 'wrong.iso'}),
+                             ('vmSecurityEvidence', {'path': 'finite-desktop-acceptance.json', 'sha256': '0' * 64})):
+            with self.subTest(field=field):
+                self.acceptance = {**original, field: value}
+                with self.assertRaises(ValueError): self.exercise()
+                self.prepare.assert_called_once()
+                self.validate.assert_called_once()
+                self.assertFalse(self.output.exists())
+        self.acceptance = original
+        desktop = json.loads(self.desktop)
+        desktop['phases'] = {}
+        self.desktop = json.dumps(desktop).encode()
+        self.acceptance['vmSecurityEvidence']['sha256'] = hashlib.sha256(self.desktop).hexdigest()
+        with self.assertRaisesRegex(ValueError, 'required fresh/upgrade'): self.exercise()
+        self.validate.assert_called_once()
+        self.assertFalse(self.output.exists())
+
+    def test_evidence_expiring_during_lazy_tool_preparation_falls_back_to_fresh(self):
+        start = datetime.now(timezone.utc)
+        self.acceptance['qualifiedAt'] = (start - timedelta(hours=24) + timedelta(seconds=1)).isoformat()
+        with patch.object(r, 'datetime', wraps=datetime) as clock:
+            clock.now.side_effect = [start, start + timedelta(seconds=30)]
+            with self.assertRaises(r.Unavailable): self.exercise()
+        self.prepare.assert_called_once()
+        self.validate.assert_called_once()
+        self.assertFalse(self.output.exists())
+
+    def test_real_eligible_resumed_source_undergoes_complete_verification_once(self):
+        # The producer revision and image source deliberately differ.
+        origin = self.exercise()
+        self.prepare.assert_called_once()
+        self.validate.assert_called_once()
+        self.assertEqual(len(self.calls), 3)
+        self.assertEqual(origin['qualificationRevision'], self.fixture.revision)
+        value = json.loads((self.output / 'finite-acceptance.json').read_text())
+        self.assertEqual(value['revision'], self.env['GITHUB_SHA'])
+        self.assertEqual(value['qualifiedAt'], self.acceptance['qualifiedAt'])
+        self.assertEqual(value['sourceRevision'], self.fixture.source)
+        r.qualification.desktop.verify(self.output, value)
+
+    def test_workflow_only_reports_reuse_after_full_checker_success(self):
+        workflow = yaml.safe_load((ROOT / '.github/workflows/qualification.yml').read_text())
+        step = next(item for item in workflow['jobs']['prepare']['steps'] if item.get('id') == 'reuse')
+        tool = self.fixture.directory / 'python3'
+        tool.write_text('#!/bin/sh\nexit "$TEST_STATUS"\n')
+        tool.chmod(0o755)
+        output = self.fixture.directory / 'github-output'
+        for status in (0, 2, 3):
+            output.unlink(missing_ok=True)
+            result = subprocess.run(['bash', '-e', '-c', step['run']],
+                env={**os.environ, 'PROFILE': 'finite', 'GITHUB_OUTPUT': str(output),
+                     'TEST_STATUS': str(status), 'PATH': str(tool.parent) + os.pathsep + os.environ['PATH']},
+                check=False, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 2 if status == 2 else 0)
+            self.assertEqual(output.read_text().splitlines(),
+                             ['reused=false', 'reused=true'] if status == 0 else ['reused=false'])
+
+    def test_lazy_tools_use_original_smoke_identity_and_pinned_context_interpreter(self):
+        before = dict(os.environ)
+        env = {**before, 'PATH': '/fixture/bin:' + before['PATH'],
+               'FINITE_VM_FIRMWARE_DIR': '/fixture/fw', 'FINITE_VM_TOOLS_MANIFEST': '/fixture/manifest'}
+        for failure in (False, True):
+            def context(command, **kwargs):
+                self.assertEqual(command[:3], ['python3', str(ROOT / 'scripts/bluebuild/qualification-context.py'), 'context'])
+                self.assertEqual(kwargs['env'], env)
+                self.assertEqual(kwargs['cwd'], ROOT)
+                self.assertTrue(kwargs['check'])
+                if failure: raise subprocess.CalledProcessError(1, command)
+                (Path(command[-1]) / 'qualification-context.json').write_text(json.dumps(self.context))
+            with patch.object(r.qualification.vm_tools, 'provision', return_value=env) as provision, \
+                    patch.object(r.qualification.vm_tools, 'smoke') as smoke, \
+                    patch.object(r.subprocess, 'run', side_effect=context):
+                if failure:
+                    with self.assertRaises(subprocess.CalledProcessError): r.prepare_context()
+                else:
+                    self.assertEqual(r.prepare_context(), self.context)
+                provision.assert_called_once_with('nix')
+                smoke.assert_called_once_with(env)
+                self.assertEqual(dict(os.environ), before)
+
+
 class ExecutionGate(unittest.TestCase):
     def setUp(self):
         self.revision = 'a' * 40
@@ -764,7 +956,9 @@ class ExecutionGate(unittest.TestCase):
         prepare = workflow['jobs']['prepare']
         self.assertIn('benchmark-image-tools.yml', prepare['if'])
         reuse = next(step for step in prepare['steps'] if step.get('id') == 'reuse')
-        self.assertIn('!inputs.validation_only', reuse['env']['ENABLED'])
+        self.assertIn('!inputs.validation_only', reuse['if'])
+        self.assertIn("env.FINITE_QUALIFICATION_REUSE == 'true'", reuse['if'])
+        self.assertIn('!inputs.force_qualification', reuse['if'])
         phase = workflow['jobs']['phase']
         # Only explicit controlled trials may stop sibling VM phases early.
         self.assertEqual(phase['strategy']['fail-fast'], "${{ inputs.validation_only && inputs.installer_benchmark != '' }}")

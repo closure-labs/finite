@@ -443,6 +443,24 @@ class Costs(unittest.TestCase):
         self.job['steps'][-1]['conclusion'] = 'success'
         self.assertTrue(self.observe()['jobs'][0]['qualificationReuseHit'])
 
+    def test_lazy_reuse_gate_preserves_attempt_hit_miss_and_unknown_observations(self):
+        for lookup, upload, eligible, hit in (
+                ('success', 'success', True, True), ('success', 'skipped', True, False),
+                ('failure', 'skipped', True, None), ('skipped', 'skipped', False, None),
+                (None, None, False, None)):
+            with self.subTest(lookup=lookup, upload=upload):
+                self.job['steps'] = [{'name': 'Check enabled exact qualification reuse', 'conclusion': lookup},
+                                    {'name': 'Save authenticated reusable qualification', 'conclusion': upload}]
+                value = self.observe()['jobs'][0]
+                self.assertEqual(value['qualificationReuseEligible'], eligible)
+                self.assertEqual(value['qualificationReuseHit'], hit)
+        # Historical always-success disabled checks are not evidence of an attempt.
+        self.job['steps'] = [{'name': 'Check exact qualification reuse', 'conclusion': 'success'},
+                            {'name': 'Save authenticated reusable qualification', 'conclusion': 'skipped'}]
+        value = self.observe()['jobs'][0]
+        self.assertFalse(value['qualificationReuseEligible'])
+        self.assertIsNone(value['qualificationReuseHit'])
+
     def test_incomplete_native_pagination_and_reversed_time_rejected(self):
         with self.assertRaisesRegex(ValueError, 'Incomplete'):
             costs.inventory(lambda _: {'total_count': 2, 'jobs': [self.job]}, 'repos/x/jobs', 'jobs')

@@ -173,8 +173,15 @@ def observe(run, api, now):
             # A successful reuse-check command alone cannot prove a hit. This
             # upload runs only after exact qualification reuse was accepted.
             reuse = [s for s in job.get('steps', []) if s.get('name') == 'Save authenticated reusable qualification']
-            eligibility = any(s.get('name') == 'Install context tools for the reuse pilot'
-                              and s.get('conclusion') == 'success' for s in job.get('steps', []))
+            # The new lookup is explicitly workflow-gated and provisions tools
+            # lazily. Older lookups also ran a successful no-op when disabled,
+            # so retain their separate setup marker rather than inferring an
+            # attempt from the old lookup's success alone.
+            eligibility = any((s.get('name') == 'Install context tools for the reuse pilot'
+                               and s.get('conclusion') == 'success')
+                              or (s.get('name') == 'Check enabled exact qualification reuse'
+                                  and s.get('conclusion') in ('success', 'failure'))
+                              for s in job.get('steps', []))
             jobs.append({'jobId': job['id'], 'runAttempt': job['run_attempt'], 'name': job['name'],
                          'profile': profile(job['name']), 'role': job_role(job['name'], run['path']),
                          'candidateDigest': None, 'stages': [],
@@ -188,7 +195,7 @@ def observe(run, api, now):
                                     'imageVersion': None, 'toolCohort': None},
                          'qualificationReuseEligible': eligibility if reuse else None,
                          'qualificationReuseHit': (any(s.get('conclusion') == 'success' for s in reuse)
-                             if eligibility and any(s.get('name') == 'Check exact qualification reuse'
+                             if eligibility and any(s.get('name') in ('Check exact qualification reuse', 'Check enabled exact qualification reuse')
                              and s.get('conclusion') == 'success' for s in job.get('steps', [])) else None)})
             if key is not None:
                 executions.setdefault(key, []).append(jobs[-1])
