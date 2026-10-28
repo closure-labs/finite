@@ -1,0 +1,217 @@
+#!/usr/bin/python3
+"""Repair only identified inherited desktop defects; inspect is read-only."""
+import argparse
+import contextlib
+import errno
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import secrets
+import stat
+import subprocess
+
+LEGACY_IPA = '/var/lib/finite/libcamera/ipa'
+CAMERA = 'etc/libcamera/configuration.yaml'
+EXTENSION = 'usr/share/gnome-shell/extensions/custom-command-list@storageb.github.com'
+
+
+def capture(command, **kwargs):
+    return subprocess.run(command, check=True, text=True, capture_output=True, **kwargs).stdout
+
+
+@contextlib.contextmanager
+def directory(path):
+    """Pin a directory without traversing links, including in its ancestors."""
+    path = Path(path).absolute()
+    if '..' in path.parts:
+        raise ValueError('Parent traversal is not an image root')
+    descriptor = os.open('/', os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        for component in path.parts[1:]:
+            following = os.open(component, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                                dir_fd=descriptor)
+            os.close(descriptor)
+            descriptor = following
+        yield descriptor
+    finally:
+        os.close(descriptor)
+
+
+def read_file(parent, name):
+    descriptor = os.open(name, os.O_RDONLY | os.O_NOFOLLOW, dir_fd=parent)
+    with os.fdopen(descriptor, 'rb') as stream:
+        metadata = os.fstat(stream.fileno())
+        if not stat.S_ISREG(metadata.st_mode) or metadata.st_size > 1024 * 1024:
+            raise ValueError('Camera configuration must be a regular file below 1 MiB')
+        before = stream.read(1024 * 1024 + 1)
+        if len(before) > 1024 * 1024:
+            raise ValueError('Camera configuration is oversized')
+        try:
+            label = os.getxattr(stream.fileno(), 'security.selinux')
+        except OSError as error:
+            if error.errno not in (errno.ENODATA, errno.ENOTSUP):
+                raise
+            label = None
+    return before, metadata, label
+
+
+def camera_configuration(path, parent):
+    before, metadata, label = read_file(parent, path.name)
+    # Parse the exact approved bytes, never a second path-based read.
+    value = json.loads(capture(['yq', '-o=json', '.'], input=before.decode()))
+    if not isinstance(value, dict):
+        raise ValueError('Camera configuration must be a mapping')
+    configuration = value.get('configuration', {})
+    if not isinstance(configuration, dict):
+        raise ValueError('Camera configuration section must be a mapping')
+    ipa = configuration.get('ipa', {})
+    if not isinstance(ipa, dict):
+        raise ValueError('Camera IPA section must be a mapping')
+    paths = ipa.get('module_paths', [])
+    if not isinstance(paths, list) or not all(isinstance(item, str) for item in paths):
+        raise ValueError('Camera IPA module_paths must be a list of strings')
+    return before, value, paths, metadata, label
+
+
+def inspect_camera(root):
+    path = root / CAMERA
+    if not path.exists() and not path.is_symlink():
+        return {'status': 'absent'}
+    with directory(path.parent) as parent:
+        before, _, paths, _, _ = camera_configuration(path, parent)
+    return {'status': 'legacy-selected' if LEGACY_IPA in paths else 'host-default-or-custom',
+            'sha256': hashlib.sha256(before).hexdigest()}
+
+
+def replace_contents(parent, name, contents, metadata, label):
+    temporary = '.finite-camera-' + secrets.token_hex(12)
+    descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                         0o600, dir_fd=parent)
+    try:
+        with os.fdopen(descriptor, 'wb') as stream:
+            stream.write(contents)
+            stream.flush()
+            if os.geteuid() == 0:
+                os.fchown(stream.fileno(), metadata.st_uid, metadata.st_gid)
+            os.fchmod(stream.fileno(), stat.S_IMODE(metadata.st_mode))
+            if label is not None:
+                os.setxattr(stream.fileno(), 'security.selinux', label)
+            os.fsync(stream.fileno())
+        os.replace(temporary, name, src_dir_fd=parent, dst_dir_fd=parent)
+        os.fsync(parent)
+    finally:
+        try:
+            os.unlink(temporary, dir_fd=parent)
+        except FileNotFoundError:
+            pass
+
+
+def repair_camera(root, expected=None, backup=True, relabel=None):
+    path = root / CAMERA
+    if not path.exists() and not path.is_symlink():
+        return {'status': 'absent'}
+    with directory(path.parent) as parent:
+        return repair_camera_file(root, path, parent, expected, backup, relabel)
+
+
+def repair_camera_file(root, path, parent, expected, backup, relabel):
+    before, value, paths, metadata, label = camera_configuration(path, parent)
+    digest = hashlib.sha256(before).hexdigest()
+    if expected is not None and digest != expected:
+        raise ValueError('Camera configuration changed; inspect and review its current identity first')
+    if LEGACY_IPA not in paths:
+        return {'status': 'unchanged', 'sha256': digest}
+    if not any((root / directory / 'ipa_soft_simple.so').is_file()
+               for directory in ('usr/lib64/libcamera/ipa', 'usr/lib/libcamera/ipa')):
+        raise ValueError('No host software IPA module is available; preserving the legacy selection')
+    # Preserve every unrelated declaration. An empty path list is removed so
+    # libcamera uses its host module directories instead of the private ABI.
+    remaining = [item for item in paths if item != LEGACY_IPA]
+    ipa = value['configuration']['ipa']
+    if remaining:
+        ipa['module_paths'] = remaining
+    else:
+        del ipa['module_paths']
+    if not ipa:
+        del value['configuration']['ipa']
+    rendered = capture(['yq', '-P'], input=json.dumps(value)).encode()
+    saved = path.with_name(path.name + '.finite-previous.' + digest)
+    if backup:
+        try:
+            descriptor = os.open(saved.name, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                                 0o600, dir_fd=parent)
+        except FileExistsError:
+            if read_file(parent, saved.name)[0] != before:
+                raise ValueError('Existing camera backup does not match the reviewed configuration')
+        else:
+            with os.fdopen(descriptor, 'wb') as stream:
+                stream.write(before)
+                stream.flush()
+                if os.geteuid() == 0:
+                    os.fchown(stream.fileno(), metadata.st_uid, metadata.st_gid)
+                os.fchmod(stream.fileno(), stat.S_IMODE(metadata.st_mode))
+                if label is not None:
+                    os.setxattr(stream.fileno(), 'security.selinux', label)
+                os.fsync(stream.fileno())
+    current, current_metadata, _ = read_file(parent, path.name)
+    if current != before or (current_metadata.st_dev, current_metadata.st_ino) != (metadata.st_dev, metadata.st_ino):
+        raise ValueError('Camera configuration changed during preparation')
+    replace_contents(parent, path.name, rendered, metadata, label)
+    if relabel is not None:
+        try:
+            relabel(path)
+        except (OSError, subprocess.CalledProcessError) as error:
+            try:
+                replace_contents(parent, path.name, before, metadata, label)
+                relabel(path)
+            except (OSError, subprocess.CalledProcessError) as rollback:
+                raise ValueError(f'Camera relabel failed; rollback or rollback relabel also failed: {rollback}. '
+                                 f'Review the retained original backup: {saved}') from error
+            raise ValueError(f'Camera relabel failed; original configuration and label restored. Backup: {saved}') from error
+    return {'status': 'repaired', 'originalSha256': digest,
+            **({'backup': str(saved)} if backup else {})}
+
+
+def compile_extension(root):
+    extension = root / EXTENSION
+    if not extension.exists():
+        return {'status': 'absent'}
+    schemas = extension / 'schemas'
+    with directory(schemas):
+        pass
+    if not list(schemas.glob('*.gschema.xml')):
+        raise ValueError('Installed Custom Command Menu extension has no schema XML')
+    subprocess.run(['glib-compile-schemas', '--strict', str(schemas)], check=True)
+    if not (schemas / 'gschemas.compiled').is_file():
+        raise ValueError('Custom Command Menu schema compilation produced no output')
+    return {'status': 'compiled'}
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('operation', choices=('inspect', 'image', 'repair-camera'))
+    parser.add_argument('--root', type=Path, default=Path('/'), help='Image root; defaults to the running host')
+    parser.add_argument('--expected-sha256', help='Reviewed current camera configuration digest')
+    args = parser.parse_args()
+    root = args.root.absolute()
+    try:
+        if args.operation != 'inspect' and root == Path('/') and os.geteuid() != 0:
+            raise ValueError('Repair requires administrator privileges; inspection does not')
+        if args.operation == 'inspect':
+            result = {'camera': inspect_camera(root)}
+        elif args.operation == 'image':
+            result = {'camera': repair_camera(root, backup=False), 'extension': compile_extension(root)}
+        else:
+            if not re.fullmatch(r'[0-9a-f]{64}', args.expected_sha256 or ''):
+                raise ValueError('repair-camera requires the exact reviewed --expected-sha256')
+            relabel = (lambda path: subprocess.run(['restorecon', '-F', str(path)], check=True)) if root == Path('/') else None
+            result = {'camera': repair_camera(root, args.expected_sha256, relabel=relabel)}
+        print(json.dumps(result, sort_keys=True))
+    except (OSError, ValueError, subprocess.CalledProcessError) as error:
+        parser.exit(1, f'Desktop integration: {error}\n')
+
+
+if __name__ == '__main__':
+    main()

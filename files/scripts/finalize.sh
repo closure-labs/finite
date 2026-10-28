@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+python3 /usr/libexec/finite/desktop-integration image
 test -s /usr/share/finite/profile.json
 test -s /usr/lib/finite/determinate-nix-seed/receipt.json
 test -d /usr/lib/finite/determinate-nix-seed/store
