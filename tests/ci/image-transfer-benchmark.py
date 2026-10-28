@@ -123,13 +123,16 @@ class Transfer(unittest.TestCase):
 
     def test_worker_records_success_and_nonzero_status_inside_valid_cgroup(self):
         args = argparse.Namespace(unit='finite-transfer-' + 'a' * 16, image=self.image,
-            layout=self.root / 'image', digestfile=self.root / 'digest', copies=2, output=self.root)
+            layout=self.root / 'image', digestfile=self.root / 'digest', copies=2, output=self.root,
+            available_memory_bytes=12 * 1024**3)
         def read(path):
             return {'cgroup': '0::/system.slice/' + args.unit + '.service', 'memory.max': str(M.MEMORY),
-                    'memory.swap.max': '0', 'memory.peak': '1024', 'memory.events': 'oom 0\noom_kill 0\n'}[path.name]
+                    'memory.swap.max': '0', 'pids.max': '64', 'memory.peak': '1024',
+                    'memory.events': 'low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\n'}[path.name]
         for status in (0, 9):
             with patch.object(Path, 'read_text', read), patch.object(M.subprocess, 'run', return_value=argparse.Namespace(returncode=status)), \
-                    patch.object(M.time, 'monotonic', side_effect=[10, 20]):
+                    patch.object(M.time, 'monotonic', side_effect=[10, 20]), \
+                    patch.object(M, 'runner_cohort', return_value={'memoryTotalKiB': 16 * 1024**2}):
                 self.assertEqual(M.worker(args), status)
             value = json.loads((self.root / 'copy-resources.json').read_text())
             self.assertEqual(value['seconds'], 10)
@@ -137,8 +140,102 @@ class Transfer(unittest.TestCase):
             if status:
                 with self.assertRaises(ValueError): M.resource_receipt(value)
             else: M.resource_receipt(value)
-        value['exitCode'] = 0; value['memoryEvents'] = 'oom 1\noom_kill 1\n'
+        value.pop('resourceValidationError'); value['exitCode'] = 0
+        value['memoryEvents'] = 'low 0\nhigh 0\nmax 0\noom 1\noom_kill 1\n'
         with self.assertRaisesRegex(ValueError, 'OOM'): M.resource_receipt(value)
+
+    def test_memory_overshoot_is_retained_with_pressure_not_clamped(self):
+        reports, pages = self.reports()
+        for report in reports:
+            record = report['copy']
+            record['peakMemoryBytes'] = M.MEMORY + 8192
+            record['resources']['peakMemoryBytes'] = M.MEMORY + 8192
+            record['resources']['memoryEvents'] = 'low 0\nhigh 3\nmax 12988\noom 0\noom_kill 0\noom_group_kill 0\n'
+            record['memoryObservation'] = M.memory_observation(record['resources'])
+        result = self.compare(reports, pages)
+        self.assertTrue(result['memoryLimitPressureObserved'])
+        self.assertFalse(result['productionChangeRecommended'])
+        self.assertEqual(result['medians']['1']['peakMemoryBytes'], M.MEMORY + 8192)
+        for row in result['measurements']:
+            observation = row['memoryObservation']
+            self.assertEqual(observation['observedPeakOverLimitBytes'], 8192)
+            self.assertEqual(observation['enforcedMemoryMaxBytes'], M.MEMORY)
+            self.assertEqual(observation['maxBoundaryEvents'], 12988)
+            self.assertEqual(observation['highBoundaryEvents'], 3)
+            self.assertEqual(observation['preArmHeadroomBudgetBytes'], 8 * 1024**3)
+
+    def test_memory_budget_and_exact_enforcement_are_mandatory(self):
+        reports, _ = self.reports(); original = reports[0]['copy']['resources']
+        for key, value in (('initialAvailableMemoryBytes', True), ('initialAvailableMemoryBytes', 20 * 1024**3),
+                ('initialAvailableMemoryBytes', M.MEMORY + M.HEADROOM - 1), ('memoryTotalBytes', None),
+                ('peakMemoryBytes', 8 * 1024**3 + 1), ('peakMemoryBytes', 0), ('peakMemoryBytes', 1.0),
+                ('memoryMaxBytes', M.MEMORY + 8192), ('memoryMaxBytes', float(M.MEMORY)),
+                ('memorySwapMaxBytes', False), ('memorySwapMaxBytes', 1), ('exitCode', False),
+                ('cgroupLimitsVerifiedAtEnd', False), ('resourceValidationError', 'cap changed')):
+            value = dict(original, **{key: value})
+            with self.subTest(key=key, value=value), self.assertRaises(ValueError): M.resource_receipt(value)
+        for missing in ('initialAvailableMemoryBytes', 'memoryTotalBytes', 'cgroupLimitsVerifiedAtEnd'):
+            value = dict(original); del value[missing]
+            with self.subTest(missing=missing), self.assertRaises(ValueError): M.resource_receipt(value)
+
+    def test_memory_events_must_be_complete_unique_and_oom_free(self):
+        reports, _ = self.reports(); original = reports[0]['copy']['resources']
+        events = original['memoryEvents']
+        for invalid in (events.replace('max 0\n', ''), events + 'max 0\n', events.replace('high 0', 'high -1'),
+                events.replace('low 0', 'low 1.0'), events.replace('oom 0', 'oom 1'),
+                events.replace('oom_kill 0', 'oom_kill 1'), events + 'oom_group_kill 1\n', {}, ''):
+            with self.subTest(events=invalid), self.assertRaises(ValueError):
+                M.resource_receipt(dict(original, memoryEvents=invalid))
+
+    def test_memory_budget_is_bound_to_parent_and_hardware_cohort(self):
+        original, pages = self.reports()
+        for mutation in ('parent', 'parent-type', 'worker', 'physical', 'reported-observation'):
+            reports = copy.deepcopy(original); record = reports[0]['copy']
+            if mutation == 'parent': record['initialAvailableMemoryBytes'] += 1024
+            elif mutation == 'parent-type': record['initialAvailableMemoryBytes'] = float(record['initialAvailableMemoryBytes'])
+            elif mutation == 'worker': record['resources']['initialAvailableMemoryBytes'] += 1024
+            elif mutation == 'physical': record['resources']['memoryTotalBytes'] += 1024
+            else: record['memoryObservation']['observedPeakOverLimitBytes'] = 8192
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError): self.compare(reports, pages)
+
+    def test_worker_rechecks_owned_caps_and_retains_validation_failure(self):
+        args = argparse.Namespace(unit='finite-transfer-' + 'a' * 16, image=self.image,
+            layout=self.root / 'image', digestfile=self.root / 'digest', copies=2, output=self.root,
+            available_memory_bytes=12 * 1024**3)
+        for changed in ('cgroup', 'memory.max', 'memory.swap.max', 'pids.max'):
+            for exit_code in (0, 9):
+                counts = {}
+                def read(path):
+                    counts[path.name] = counts.get(path.name, 0) + 1
+                    values = {'cgroup': '0::/system.slice/' + args.unit + '.service', 'memory.max': str(M.MEMORY),
+                        'memory.swap.max': '0', 'pids.max': '64'}
+                    if path.name == changed and counts[path.name] == 2:
+                        return '0::/system.slice/foreign.service' if changed == 'cgroup' else '999'
+                    return values[path.name]
+                with patch.object(Path, 'read_text', read), patch.object(M, 'runner_cohort', return_value={'memoryTotalKiB': 16 * 1024**2}), \
+                        patch.object(M.subprocess, 'run', return_value=argparse.Namespace(returncode=exit_code)):
+                    self.assertEqual(M.worker(args), exit_code or 2)
+                receipt = json.loads((self.root / 'copy-resources.json').read_text())
+                self.assertEqual(receipt['exitCode'], exit_code)
+                self.assertFalse(receipt['cgroupLimitsVerifiedAtEnd'])
+                self.assertIn('resourceValidationError', receipt)
+                with self.assertRaises(ValueError): M.resource_receipt(receipt)
+
+    def test_worker_timeout_retains_failure_evidence(self):
+        args = argparse.Namespace(unit='finite-transfer-' + 'a' * 16, image=self.image,
+            layout=self.root / 'image', digestfile=self.root / 'digest', copies=1, output=self.root,
+            available_memory_bytes=12 * 1024**3)
+        def read(path):
+            return {'memory.peak': '1024', 'memory.events': 'low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\n'}[path.name]
+        with patch.object(M, 'cgroup_path', return_value=self.root), patch.object(Path, 'read_text', read), \
+                patch.object(M, 'runner_cohort', return_value={'memoryTotalKiB': 16 * 1024**2}), \
+                patch.object(M.subprocess, 'run', side_effect=subprocess.TimeoutExpired('skopeo', 1800)):
+            with self.assertRaises(subprocess.TimeoutExpired): M.worker(args)
+        receipt = json.loads((self.root / 'copy-resources.json').read_text())
+        self.assertIsNone(receipt['exitCode'])
+        self.assertIn('error', receipt)
+        self.assertEqual(receipt['peakMemoryBytes'], 1024)
+        self.assertIn('resourceValidationError', receipt)
 
     def test_stop_timeout_still_kills_client_joins_reader_and_checks_unit(self):
         process, reader, record = Mock(), Mock(), {}
@@ -159,6 +256,41 @@ class Transfer(unittest.TestCase):
                     (directory / 'blob').write_text('owned')
             self.assertEqual(directory.exists(), not quiescent)
 
+    def test_real_buildkit_attestation_accepts_only_canonical_empty_config(self):
+        path = ROOT / 'tests/fixtures/image-transfer/buildkit-attestation.json'
+        # Repository text fixtures require a newline absent from the exact wire bytes.
+        raw = path.read_bytes().removesuffix(b'\n')
+        self.assertEqual(len(raw), 839)
+        self.assertEqual(M.METADATA.sha(raw), 'sha256:f26f09e719156a600a5d891b4f06f1e0cf9f2dc4c94bf5a10bc2c94680f57d23')
+        manifest = json.loads(raw); native = manifest['subject']
+        descriptor, config = M.empty_attestation_config(manifest, native)
+        self.assertEqual(config, b'{}')
+        self.assertEqual(descriptor, {key: M.EMPTY_CONFIG[key] for key in ('mediaType', 'digest', 'size')})
+        for mutation in ({'data': 'e30'}, {'data': 'e30=\n'}, {'data': 'W10='}, {'data': ''},
+                {'size': 3}, {'size': 2.0}, {'size': '2'}, {'digest': 'sha256:' + '0' * 64}, {'urls': ['https://elsewhere']},
+                {'mediaType': 'application/vnd.oci.image.config.v1+json'}, {'extra': True}):
+            value = copy.deepcopy(manifest); value['config'].update(mutation)
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError): M.empty_attestation_config(value, native)
+        for mutation in ({'artifactType': 'other'}, {'subject': dict(native, size=native['size'] + 1)},
+                         {'subject': dict(native, digest='sha256:' + '0' * 64)}, {'subject': None}):
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                M.empty_attestation_config(dict(manifest, **mutation), native)
+
+    def test_native_manifest_still_rejects_empty_or_inline_configs(self):
+        for descriptor in (M.EMPTY_CONFIG, dict(M.EMPTY_CONFIG, mediaType='application/vnd.oci.image.config.v1+json')):
+            manifest = {'schemaVersion': 2, 'mediaType': 'application/vnd.oci.image.manifest.v1+json',
+                        'config': descriptor, 'layers': []}
+            raw = json.dumps(manifest).encode()
+            args = argparse.Namespace(digest=M.METADATA.sha(raw), profile='finite-dev', source='a' * 40, identity='v1:' + 'b' * 64)
+            recorder = Mock(directory=self.root)
+            def fetch(stage, command, **kwargs):
+                (self.root / (stage + '.stdout')).write_bytes(raw)
+                return raw
+            recorder.command.side_effect = fetch
+            with self.subTest(descriptor=descriptor), self.assertRaisesRegex(ValueError, 'descriptor'):
+                M.metadata_binding(recorder, args, {})
+            self.assertEqual(recorder.command.call_count, 1)
+
     def test_signed_index_budgets_and_binds_native_and_attestation_graph(self):
         source, identity = 'a' * 40, 'v1:' + 'b' * 64
         objects, configs = {}, {}
@@ -174,9 +306,11 @@ class Transfer(unittest.TestCase):
         native_manifest = blob({'schemaVersion': 2, 'mediaType': 'application/vnd.oci.image.manifest.v1+json',
             'config': native_config, 'layers': [native_layer]}, 'application/vnd.oci.image.manifest.v1+json')
         configs[native_manifest['digest']] = objects[native_config['digest']]
-        attestation_config = blob({'architecture': 'unknown', 'os': 'unknown'}, 'application/vnd.oci.image.config.v1+json')
+        attestation_config = dict(M.EMPTY_CONFIG)
+        objects[attestation_config['digest']] = b'{}'
         attestation_layer = blob({'predicateType': 'fixture'}, M.ATTESTATION_TYPE)
         attestation = blob({'schemaVersion': 2, 'mediaType': 'application/vnd.oci.image.manifest.v1+json',
+            'artifactType': 'application/vnd.docker.attestation.manifest.v1+json', 'subject': native_manifest,
             'config': attestation_config, 'layers': [attestation_layer]}, 'application/vnd.oci.image.manifest.v1+json')
         configs[attestation['digest']] = objects[attestation_config['digest']]
         entries = [dict(native_manifest, platform={'os': 'linux', 'architecture': 'amd64'}),
@@ -189,24 +323,44 @@ class Transfer(unittest.TestCase):
             directory = self.root
             def command(recorder, stage, command, **kwargs):
                 digest = command[-1].split('@')[1]
+                if '--config' in command and digest == attestation['digest']:
+                    raise AssertionError('Canonical inline config should not invoke image-config inspection')
                 raw = configs[digest] if '--config' in command else objects[digest]
                 (recorder.directory / (stage + '.stdout')).write_bytes(raw)
                 return raw
         raw, binding = M.metadata_binding(Recorder(), args, {})
         self.assertEqual(len(binding['transportBlobs']), 7)
         self.assertEqual(binding['nativeDigest'], native_manifest['digest'])
+        self.assertIn({key: M.EMPTY_CONFIG[key] for key in ('mediaType', 'digest', 'size')}, binding['transportBlobs'])
         layout = self.root / 'index-layout'; blobs = layout / 'blobs/sha256'; blobs.mkdir(parents=True)
         for digest, value in objects.items(): (blobs / digest[7:]).write_bytes(value)
         (layout / 'oci-layout').write_text('{"imageLayoutVersion":"1.0.0"}')
         (layout / 'index.json').write_text(json.dumps({'schemaVersion': 2, 'manifests': [top]}))
         digestfile = self.root / 'digest'; digestfile.write_text(top['digest'])
         self.assertTrue(M.verify_layout(layout, digestfile, args.digest, raw, binding)['compressedBlobsVerified'])
+        empty_blob = blobs / M.EMPTY_CONFIG['digest'][7:]
+        empty_blob.write_bytes(b'[]')
+        with self.assertRaisesRegex(ValueError, 'digest verification'): M.verify_layout(layout, digestfile, args.digest, raw, binding)
+        empty_blob.unlink()
+        with self.assertRaisesRegex(ValueError, 'missing OCI blob'): M.verify_layout(layout, digestfile, args.digest, raw, binding)
+        empty_blob.write_bytes(b'{}')
         path = blobs / attestation_layer['digest'][7:]; path.write_bytes(b'x' * path.stat().st_size)
         with self.assertRaises(ValueError): M.verify_layout(layout, digestfile, args.digest, raw, binding)
+        for invalid_config in (None, [], 'invalid'):
+            value = json.loads(objects[attestation['digest']]); value['config'] = invalid_config
+            invalid_child = blob(value, attestation['mediaType'])
+            invalid_entries = [entries[0], dict(entries[1], **invalid_child)]
+            invalid_top = blob({'schemaVersion': 2, 'mediaType': top['mediaType'], 'manifests': invalid_entries}, top['mediaType'])
+            args.digest = invalid_top['digest']
+            with self.subTest(config=invalid_config), self.assertRaisesRegex(ValueError, 'descriptor'):
+                M.metadata_binding(Recorder(), args, {})
         entries[1]['annotations']['vnd.docker.reference.digest'] = 'sha256:' + 'f' * 64
         bad = blob({'schemaVersion': 2, 'mediaType': 'application/vnd.oci.image.index.v1+json', 'manifests': entries}, top['mediaType'])
         args.digest = bad['digest']
         with self.assertRaisesRegex(ValueError, 'bound attestation'): M.metadata_binding(Recorder(), args, {})
+
+    def compare(self, reports, pages, session=None):
+        return M.comparison(reports, pages, session if session is not None else self.session)
 
     def reports(self):
         reports, jobs = [], []
@@ -215,57 +369,139 @@ class Transfer(unittest.TestCase):
                 reports.append({'schema': 1, 'experiment': 'bounded-image-transfer', 'status': 'success',
                     'copies': copies, 'repetition': repetition, 'revision': 'a' * 40, 'run': 123, 'attempt': 1,
                     'profile': 'finite-dev', 'digest': 'sha256:' + 'b' * 64, 'source': 'c' * 40, 'identity': 'v1:' + 'd' * 64,
-                    'policy': M.POLICY, 'runnerImage': 'fixture-image', 'runnerHardware': {'logicalCPUs': 4}, 'platform': 'Linux-X64', 'lockSha256': 'lock',
+                    'policy': M.POLICY, 'runnerImage': 'fixture-image', 'runnerHardware': {'logicalCPUs': 4, 'memoryTotalKiB': 16 * 1024**2}, 'platform': 'Linux-X64', 'lockSha256': 'lock',
                     'cosignKeySha256': 'key', 'versions': {'skopeo': 'pinned', 'cosign': 'pinned'}, 'binding': {},
                     'integrity': {'manifestConfigLayersVerified': True, 'compressedBlobsVerified': True, 'uniqueBlobBytes': 1024},
                     'copy': {'exitCode': 0, 'timedOut': False, 'serviceQuiescent': True, 'seconds': 10, 'boundedServiceSeconds': 11,
                         'peakMemoryBytes': 1024, 'blobBytesPerSecond': 102.4,
+                        'initialAvailableMemoryBytes': 12 * 1024**3,
                         'resources': {'exitCode': 0, 'seconds': 10, 'peakMemoryBytes': 1024, 'memoryMaxBytes': M.MEMORY,
-                                      'memorySwapMaxBytes': 0, 'memoryEvents': 'oom 0\noom_kill 0\n'}},
+                                      'memorySwapMaxBytes': 0, 'memoryEvents': 'low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\n',
+                                      'initialAvailableMemoryBytes': 12 * 1024**3, 'memoryTotalBytes': 16 * 1024**3,
+                                      'cgroupLimitsVerifiedAtEnd': True}},
                     'setupSeconds': 10, 'diagnosticSeconds': 20, 'setupPlusDiagnosticSeconds': 30})
                 jobs.append({'id': len(jobs) + 1, 'name': f'transfer-{copies}-{repetition}', 'run_id': 123,
                     'run_attempt': 1, 'head_sha': 'a' * 40, 'status': 'completed', 'conclusion': 'success',
                     'started_at': '2026-10-28T00:00:00Z', 'completed_at': '2026-10-28T00:01:00Z'})
-        return reports, [{'jobs': jobs}]
+        base = M.datetime.fromisoformat('2026-10-28T00:00:00+00:00').timestamp()
+        for report in reports:
+            report['copy']['memoryObservation'] = M.memory_observation(report['copy']['resources'])
+            sequence = M.ORDER.index((report['copies'], report['repetition'])) + 1
+            started = base + 10 + (sequence - 1) * 21
+            report.update(sequence=sequence, jobName=M.PAIRED_JOB, timingScope='arm-only-shared-setup-excluded',
+                          startedUnixSeconds=started, completedUnixSeconds=started + 20,
+                          setupSeconds=0.01, setupPlusDiagnosticSeconds=20.01)
+        job = dict(jobs[0], name=M.PAIRED_JOB, completed_at='2026-10-28T00:04:00Z')
+        self.session = {'schema': 1, 'experiment': 'bounded-image-transfer-paired', 'status': 'success',
+            'revision': 'a' * 40, 'run': 123, 'attempt': 1, 'jobName': M.PAIRED_JOB,
+            'startedUnixSeconds': base + 10, 'completedUnixSeconds': base + 135,
+            'sharedSetupSeconds': 10, 'sessionSeconds': 125, 'setupPlusSessionSeconds': 135,
+            'outcomes': [{'sequence': n, 'copies': c, 'repetition': r, 'status': 'success'} for n, (c, r) in enumerate(M.ORDER, 1)]}
+        return reports, [{'jobs': [job]}]
 
     def test_complete_matched_cohort_includes_whole_job_but_never_adopts(self):
-        reports, pages = self.reports(); result = M.comparison(reports, pages)
-        self.assertEqual(result['medians']['1']['wholeJobSeconds'], 60)
+        reports, pages = self.reports(); result = self.compare(reports, pages)
+        self.assertEqual(result['wholeExperimentJob']['seconds'], 240)
+        self.assertNotIn('wholeJobSeconds', result['medians']['1'])
+        self.assertFalse(result['wholeExperimentJob']['perArmWholeJobComparisonAvailable'])
+        self.assertEqual(len(result['pairs']), 3)
         self.assertEqual(result['medians']['2']['copySeconds'], 10)
         self.assertFalse(result['productionChangeRecommended'])
 
+    def test_failed_receipts_without_binding_produce_readable_inconclusive_output(self):
+        reports = [{'schema': 1, 'experiment': 'bounded-image-transfer', 'copies': c, 'repetition': r,
+                    'status': 'error', 'error': 'Unsupported or unbounded image descriptor'} for c, r in M.ORDER]
+        result = M.comparison(reports, [])
+        self.assertEqual(result['status'], 'inconclusive')
+        self.assertEqual(len(result['outcomes']), 6)
+        self.assertNotIn('medians', result)
+        self.assertFalse(result['productionChangeRecommended'])
+        for index, report in enumerate(reports):
+            directory = self.root / str(index); directory.mkdir()
+            (directory / 'benchmark.json').write_text(json.dumps(report))
+        jobs = self.root / 'jobs.json'; jobs.write_text('[]')
+        output = self.root / 'summary.json'
+        result = subprocess.run(['python3', str(ROOT / 'scripts/ci/benchmark-image-transfer.py'), 'summarize',
+            str(self.root), str(jobs), str(output)], capture_output=True, text=True, timeout=10)
+        self.assertEqual(result.returncode, 2)
+        self.assertNotIn('Traceback', result.stderr)
+        self.assertEqual(json.loads(output.read_text())['status'], 'inconclusive')
+        # Missing native metadata is not a traceback or a passing comparison.
+        jobs.unlink()
+        result = subprocess.run(['python3', str(ROOT / 'scripts/ci/benchmark-image-transfer.py'), 'summarize',
+            str(self.root), str(jobs), str(output)], capture_output=True, text=True, timeout=10)
+        self.assertEqual(result.returncode, 2)
+        self.assertNotIn('Traceback', result.stderr)
+        self.assertEqual(json.loads(output.read_text())['status'], 'inconclusive')
+
+    def test_one_host_controller_runs_exact_order_or_stops_after_failure(self):
+        for fail in (False, True):
+            marker = self.root / 'start.json'; marker.write_text(json.dumps({'unixSeconds': M.time.time()}))
+            args = argparse.Namespace(start=marker, output=self.root / str(fail), profile='finite-dev',
+                                      digest='sha256:' + 'a' * 64, source='b' * 40, identity='v1:' + 'c' * 64)
+            called = []
+            def arm(value):
+                called.append((value.copies, value.repetition, value.sequence, value.output))
+                self.assertGreaterEqual(M.read(value.start)['unixSeconds'], M.read(marker)['unixSeconds'])
+                if fail and value.sequence == 2: raise ValueError('fixture copy failed')
+            env = {'GITHUB_SHA': 'a' * 40, 'GITHUB_RUN_ID': '1', 'GITHUB_RUN_ATTEMPT': '1'}
+            with patch.object(M, 'hosted'), patch.object(M, 'benchmark', side_effect=arm), patch.dict(os.environ, env):
+                session = M.paired(args)
+            self.assertEqual([(c, r) for c, r, _, _ in called], list(M.ORDER[:2] if fail else M.ORDER))
+            self.assertEqual(len({path for _, _, _, path in called}), len(called))
+            self.assertEqual(session['status'], 'error' if fail else 'success')
+            self.assertEqual(len(session['outcomes']), 6)
+            if fail:
+                self.assertEqual([v['status'] for v in session['outcomes']], ['success', 'error', *['not-run'] * 4])
+                self.assertEqual(M.comparison([], [], session)['status'], 'inconclusive')
+            self.assertTrue((args.output / 'paired.json').is_file())
+
+    def test_single_host_and_order_guards_are_not_relaxed_for_hardware_drift(self):
+        original, pages = self.reports()
+        for mutation in ({'runnerHardware': {'logicalCPUs': 8}}, {'jobName': 'other-job'},
+                         {'sequence': 2}, {'startedUnixSeconds': 0}, {'timingScope': 'whole-job'}):
+            reports = copy.deepcopy(original); reports[0].update(mutation)
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError): self.compare(reports, pages)
+        with self.assertRaisesRegex(ValueError, 'single-host'): M.comparison(original, pages, None)
+        session = copy.deepcopy(self.session); session['outcomes'][1]['copies'] = 1
+        with self.assertRaises(ValueError): self.compare(original, pages, session)
+        session = copy.deepcopy(self.session); session['startedUnixSeconds'] += 50
+        with self.assertRaises(ValueError): self.compare(original, pages, session)
+
     def test_failures_drift_duplicates_missing_and_unverified_cannot_select_winner(self):
         original, pages = self.reports()
-        for mutation in ({'status': 'error'}, {'runnerImage': 'other'}, {'versions': {'skopeo': 'other'}},
+        for mutation in ({'runnerImage': 'other'}, {'versions': {'skopeo': 'other'}},
                 {'digest': 'other'}, {'integrity': None}, {'repetition': 2}, {'policy': {}}, {'setupPlusDiagnosticSeconds': 100}):
             reports = copy.deepcopy(original); reports[0].update(mutation)
-            with self.subTest(mutation=mutation), self.assertRaises(ValueError): M.comparison(reports, pages)
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError): self.compare(reports, pages)
         for key, value in (('timedOut', True), ('exitCode', 9), ('seconds', float('nan')), ('peakMemoryBytes', M.MEMORY + 1)):
             reports = copy.deepcopy(original); reports[0]['copy'][key] = value
-            with self.subTest(key=key), self.assertRaises(ValueError): M.comparison(reports, pages)
-        with self.assertRaises(ValueError): M.comparison(original[:-1], pages)
+            with self.subTest(key=key), self.assertRaises(ValueError): self.compare(reports, pages)
+        with self.assertRaises(ValueError): self.compare(original[:-1], pages)
 
     def test_impossible_timing_throughput_and_resource_receipts_fail(self):
         original, pages = self.reports()
         for key, value in (('seconds', 6000), ('boundedServiceSeconds', 5), ('blobBytesPerSecond', 999999999), ('resources', {})):
             reports = copy.deepcopy(original); reports[0]['copy'][key] = value
-            with self.subTest(key=key), self.assertRaises(ValueError): M.comparison(reports, pages)
+            with self.subTest(key=key), self.assertRaises(ValueError): self.compare(reports, pages)
         reports = copy.deepcopy(original); reports[0]['copy']['resources']['memoryEvents'] = 'oom 1\noom_kill 1\n'
-        with self.assertRaises(ValueError): M.comparison(reports, pages)
+        with self.assertRaises(ValueError): self.compare(reports, pages)
 
     def test_whole_job_identity_and_final_success_are_mandatory(self):
         reports, original = self.reports()
         for mutation in ({'status': 'in_progress'}, {'conclusion': 'failure'}, {'run_attempt': 2},
                 {'run_id': 124}, {'head_sha': 'other'}, {'completed_at': None}):
             pages = copy.deepcopy(original); pages[0]['jobs'][0].update(mutation)
-            with self.subTest(mutation=mutation), self.assertRaises(ValueError): M.comparison(reports, pages)
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError): self.compare(reports, pages)
 
     def test_manual_workflow_has_bounded_matrix_without_publication_or_credentials(self):
         workflow = (ROOT / '.github/workflows/benchmark-image-transfer.yml').read_text()
         self.assertIn('workflow_dispatch:', workflow)
         self.assertNotIn('pull_request:', workflow)
-        self.assertIn('max-parallel: 1', workflow)
-        self.assertEqual(workflow.count('- {copies:'), 6)
+        self.assertNotIn('matrix:', workflow)
+        self.assertIn('name: transfer-paired', workflow)
+        self.assertIn('timeout-minutes: 270', workflow)
+        self.assertIn('run-paired', workflow)
         self.assertIn('cache-mode: none', workflow)
         self.assertNotIn('secrets.', workflow)
         self.assertNotIn('packages: write', workflow)

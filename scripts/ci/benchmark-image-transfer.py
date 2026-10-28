@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Opt-in bounded skopeo transport experiment; never security or release clearance."""
 import argparse
+import base64
 from contextlib import contextmanager
 from datetime import datetime
 import hashlib
@@ -28,11 +29,35 @@ HEADROOM = 4 * 1024**3
 TRANSFER_SECONDS = 1800
 LOG_LIMIT = 1024**2
 POLICY = {'memoryMaxBytes': MEMORY, 'memorySwapMaxBytes': 0, 'headroomBytes': HEADROOM,
+          'observedPeakBudget': 'pre-arm-available-memory-minus-headroom',
           'runtimeMaxSeconds': TRANSFER_SECONDS, 'tasksMax': 64, 'retryTimes': 3,
           'cache': 'new-empty-oci-layout-no-actions-cache', 'copies': [1, 2]}
 SECRET_NAMES = ('CACHIX_AUTH_TOKEN', 'COSIGN_PRIVATE_KEY', 'COSIGN_PASSWORD', 'REGISTRY_TOKEN',
                 'MERGE_QUEUE_TOKEN', 'SECAUDIT_PEM', 'SECAUDIT_CLIENTID')
 ATTESTATION_TYPE = 'application/vnd.in-toto+json'
+EMPTY_CONFIG_TYPE = 'application/vnd.oci.empty.v1+json'
+EMPTY_CONFIG = {'mediaType': EMPTY_CONFIG_TYPE,
+    'digest': 'sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a',
+    'size': 2, 'data': 'e30='}
+ORDER = ((1, 1), (2, 1), (2, 2), (1, 2), (1, 3), (2, 3))
+PAIRED_JOB = 'transfer-paired'
+
+
+def empty_attestation_config(manifest, native):
+    """Admit only BuildKit's canonical empty config on a bound attestation."""
+    value = manifest.get('config')
+    if (manifest.get('artifactType') != 'application/vnd.docker.attestation.manifest.v1+json'
+            or value != EMPTY_CONFIG or type(value.get('size')) is not int):
+        raise ValueError('Unsupported or noncanonical empty attestation configuration')
+    subject = METADATA.descriptor(manifest.get('subject'), METADATA.MANIFEST_TYPES, METADATA.METADATA_LIMIT)
+    if subject != native:
+        raise ValueError('Attestation subject differs from its exact native descriptor')
+    raw = base64.b64decode(value['data'], validate=True)
+    if raw != b'{}' or METADATA.document(raw, value['digest'], value['size']) != {}:
+        raise ValueError('Empty attestation config bytes do not match their descriptor')
+    # Strip only the already-verified embedded representation; the actual copy
+    # must still materialize and independently hash this two-byte OCI blob.
+    return {key: value[key] for key in ('mediaType', 'digest', 'size')}, raw
 
 
 def metadata_binding(recorder, args, env):
@@ -72,14 +97,19 @@ def metadata_binding(recorder, args, env):
         if manifest.get('schemaVersion') != 2 or manifest.get('mediaType') not in METADATA.MANIFEST_TYPES or 'manifests' in manifest:
             raise ValueError('Copied child must be a single manifest')
         retain(METADATA.descriptor(entry, METADATA.MANIFEST_TYPES, METADATA.METADATA_LIMIT))
-        descriptor = METADATA.descriptor(manifest.get('config'), METADATA.CONFIG_TYPES, METADATA.METADATA_LIMIT)
-        config_raw = fetch('config-' + str(number), entry['digest'], config=True)
+        native_child = entry['digest'] == native['digest']
+        config_descriptor = manifest.get('config')
+        if not native_child and isinstance(config_descriptor, dict) and config_descriptor.get('mediaType') == EMPTY_CONFIG_TYPE:
+            descriptor, config_raw = empty_attestation_config(manifest, native)
+            (recorder.directory / ('config-' + str(number) + '.stdout')).write_bytes(config_raw)
+        else:
+            descriptor = METADATA.descriptor(config_descriptor, METADATA.CONFIG_TYPES, METADATA.METADATA_LIMIT)
+            config_raw = fetch('config-' + str(number), entry['digest'], config=True)
         config = METADATA.document(config_raw, descriptor['digest'], descriptor['size'])
         retain(descriptor)
         layers = manifest.get('layers')
         if not isinstance(layers, list) or not 0 < len(layers) <= 1024:
             raise ValueError('Invalid copied child layers')
-        native_child = entry['digest'] == native['digest']
         types = METADATA.LAYER_TYPES if native_child else {ATTESTATION_TYPE}
         for layer in layers: retain(METADATA.descriptor(layer, types, 32 * 1024**3))
         if native_child:
@@ -98,20 +128,56 @@ def runner_cohort():
             'kernelRelease': platform.release()}
 
 
-def resource_receipt(value):
-    if (not isinstance(value, dict) or value.get('exitCode') != 0
-            or value.get('memoryMaxBytes') != MEMORY or value.get('memorySwapMaxBytes') != 0
-            or type(value.get('peakMemoryBytes')) is not int or not 0 < value['peakMemoryBytes'] <= MEMORY
-            or type(value.get('seconds')) not in (int, float) or not 0 < value['seconds'] <= TRANSFER_SECONDS):
-        raise ValueError('Invalid or failed bounded worker resource receipt')
+def memory_observation(value):
+    """Report peak and pressure separately from the unchanged kernel limit.
+
+    memory.max permits temporary overshoot; use the existing pre-arm reserve
+    as an observation budget, not an arbitrary tolerance or a larger cap.
+    https://docs.kernel.org/admin-guide/cgroup-v2.html#memory-interface-files
+    """
+    total, available, peak = (value.get(key) for key in
+                             ('memoryTotalBytes', 'initialAvailableMemoryBytes', 'peakMemoryBytes'))
+    if (type(total) is not int or type(available) is not int
+            or not MEMORY + HEADROOM <= available <= total or type(peak) is not int
+            or not 0 < peak <= available - HEADROOM):
+        raise ValueError('Invalid observed peak or pre-arm headroom budget')
     events = value.get('memoryEvents', '')
     if not isinstance(events, str) or len(events) > 4096: raise ValueError('Invalid memory events')
     rows = events.splitlines()
     if any(not re.fullmatch(r'[a-z_]+ [0-9]+', row) for row in rows): raise ValueError('Malformed memory events')
-    counters = dict(row.split() for row in rows)
-    if len(counters) != len(rows) or counters.get('oom') != '0' or counters.get('oom_kill') != '0':
+    counters = {key: int(count) for key, count in (row.split() for row in rows)}
+    if len(counters) != len(rows) or not {'low', 'high', 'max', 'oom', 'oom_kill'} <= counters.keys():
+        raise ValueError('Missing or duplicate cgroup memory events')
+    if any(counters.get(key, 0) for key in ('oom', 'oom_kill', 'oom_group_kill')):
         raise ValueError('Missing or nonzero cgroup OOM evidence')
+    overage = max(0, peak - MEMORY)
+    pressure = []
+    if counters['max']: pressure.append('max-boundary-reclaim')
+    if counters['high']: pressure.append('high-boundary-throttling')
+    if overage: pressure.append('observed-peak-above-memory-max')
+    return {'enforcedMemoryMaxBytes': MEMORY, 'observedPeakBytes': peak,
+            'observedPeakOverLimitBytes': overage, 'preArmHeadroomBudgetBytes': available - HEADROOM,
+            'maxBoundaryEvents': counters['max'], 'highBoundaryEvents': counters['high'],
+            'pressure': pressure or ['no-limit-pressure-observed']}
+
+
+def resource_receipt(value):
+    if (not isinstance(value, dict) or type(value.get('exitCode')) is not int or value['exitCode'] != 0
+            or type(value.get('memoryMaxBytes')) is not int or value['memoryMaxBytes'] != MEMORY
+            or type(value.get('memorySwapMaxBytes')) is not int or value['memorySwapMaxBytes'] != 0
+            or value.get('cgroupLimitsVerifiedAtEnd') is not True or value.get('resourceValidationError')
+            or type(value.get('seconds')) not in (int, float) or not 0 < value['seconds'] <= TRANSFER_SECONDS):
+        raise ValueError('Invalid or failed bounded worker resource receipt')
+    memory_observation(value)
     return value
+
+
+def copy_resources(record):
+    resources = resource_receipt(record.get('resources'))
+    if (type(record.get('initialAvailableMemoryBytes')) is not int
+            or record['initialAvailableMemoryBytes'] != resources['initialAvailableMemoryBytes']):
+        raise ValueError('Worker memory budget differs from the pre-arm observation')
+    return resources
 
 
 def read(path, limit=METADATA.METADATA_LIMIT):
@@ -159,27 +225,52 @@ def drain(source, target):
     return total
 
 
-def worker(args):
-    """Read cgroup peak before systemd releases the completed service's counters."""
+def cgroup_path(unit):
     group = Path('/proc/self/cgroup').read_text().strip()
-    if not re.fullmatch(r'finite-transfer-[0-9a-f]{16}', args.unit) or not group.startswith('0::/'):
+    if not re.fullmatch(r'finite-transfer-[0-9a-f]{16}', unit) or not group.startswith('0::/'):
         raise ValueError('Worker requires the owned unified cgroup')
     relative = group[4:]
-    if Path(relative).name != args.unit + '.service' or '..' in Path(relative).parts:
+    if Path(relative).name != unit + '.service' or '..' in Path(relative).parts:
         raise ValueError('Worker is not in its bounded service')
     cgroup = Path('/sys/fs/cgroup') / relative
     if (cgroup.joinpath('memory.max').read_text().strip() != str(MEMORY)
-            or cgroup.joinpath('memory.swap.max').read_text().strip() != '0'):
-        raise ValueError('Worker memory and swap limits differ from the control')
+            or cgroup.joinpath('memory.swap.max').read_text().strip() != '0'
+            or cgroup.joinpath('pids.max').read_text().strip() != '64'):
+        raise ValueError('Worker memory, swap or task limits differ from the control')
+    return cgroup
+
+
+def worker(args):
+    """Read cgroup peak before systemd releases the completed service's counters."""
+    cgroup = cgroup_path(args.unit)
+    receipt = {'exitCode': None, 'memoryMaxBytes': MEMORY, 'memorySwapMaxBytes': 0,
+               'initialAvailableMemoryBytes': args.available_memory_bytes,
+               'memoryTotalBytes': runner_cohort()['memoryTotalKiB'] * 1024,
+               'cgroupLimitsVerifiedAtEnd': False}
+    if (type(args.available_memory_bytes) is not int
+            or not MEMORY + HEADROOM <= args.available_memory_bytes <= receipt['memoryTotalBytes']):
+        raise ValueError('Invalid pre-arm memory budget before copy')
     before = time.monotonic()
-    result = subprocess.run(copy_command(args.image, args.layout, args.digestfile, args.copies), check=False,
-                            timeout=TRANSFER_SECONDS)
-    receipt = {'exitCode': result.returncode, 'seconds': round(time.monotonic() - before, 3),
-               'peakMemoryBytes': int(cgroup.joinpath('memory.peak').read_text()),
-               'memoryMaxBytes': MEMORY, 'memorySwapMaxBytes': 0,
-               'memoryEvents': cgroup.joinpath('memory.events').read_text()}
-    args.output.joinpath('copy-resources.json').write_text(json.dumps(receipt) + '\n')
-    return result.returncode
+    try:
+        result = subprocess.run(copy_command(args.image, args.layout, args.digestfile, args.copies), check=False,
+                                timeout=TRANSFER_SECONDS)
+        receipt['exitCode'] = result.returncode
+    except (OSError, subprocess.SubprocessError) as error:
+        receipt['error'] = str(error)
+        raise
+    finally:
+        receipt['seconds'] = round(time.monotonic() - before, 3)
+        try:
+            if cgroup_path(args.unit) != cgroup: raise ValueError('Worker cgroup changed during copy')
+            receipt['cgroupLimitsVerifiedAtEnd'] = True
+            receipt['peakMemoryBytes'] = int(cgroup.joinpath('memory.peak').read_text())
+            receipt['memoryEvents'] = cgroup.joinpath('memory.events').read_text()
+            resource_receipt(receipt)
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            receipt['resourceValidationError'] = str(error)
+        finally:
+            args.output.joinpath('copy-resources.json').write_text(json.dumps(receipt) + '\n')
+    return receipt['exitCode'] or (2 if receipt.get('resourceValidationError') else 0)
 
 
 def measured_copy(command, output, home, record):
@@ -205,6 +296,7 @@ def measured_copy(command, output, home, record):
                '--setenv=XDG_CONFIG_HOME=' + str(home), '--setenv=TMPDIR=' + str(home),
                '--setenv=GOMEMLIMIT=3GiB', sys.executable, str(Path(__file__).resolve()), 'worker',
                '--unit', unit, '--copies', copies, '--image', image, '--layout', layout,
+               '--available-memory-bytes', str(record['initialAvailableMemoryBytes']),
                '--digestfile', digestfile, '--output', str(output.resolve())]
     before, counters = time.monotonic(), METADATA.network_bytes()
     process = None
@@ -227,7 +319,8 @@ def measured_copy(command, output, home, record):
         record['resources'] = resources
         if record['timedOut'] or record['exitCode'] != 0:
             raise ValueError('Bounded copy failed or has missing/invalid memory accounting')
-        resource_receipt(resources)
+        copy_resources(record)
+        record['memoryObservation'] = memory_observation(resources)
         record['peakMemoryBytes'] = resources['peakMemoryBytes']
         record['seconds'] = resources['seconds']
     finally:
@@ -327,7 +420,7 @@ def benchmark(args):
             or not re.fullmatch(r'v1:[0-9a-f]{64}', args.identity)):
         raise ValueError('Invalid diagnostic input')
     args.output.mkdir(parents=True, exist_ok=False)
-    before = time.monotonic()
+    before, started = time.monotonic(), time.time()
     setup = time.time() - read(args.start)['unixSeconds']
     report = {'schema': 1, 'experiment': 'bounded-image-transfer', 'status': 'error',
         'copies': args.copies, 'repetition': args.repetition, 'revision': os.environ['GITHUB_SHA'],
@@ -338,6 +431,9 @@ def benchmark(args):
         'cosignKeySha256': METADATA.sha((ROOT / 'cosign.pub').read_bytes()),
         'setupSeconds': round(setup, 3), 'stages': [], 'copy': {}, 'integrity': None,
         'productionChangeRecommended': False}
+    if getattr(args, 'sequence', None) is not None:
+        report.update(sequence=args.sequence, jobName=PAIRED_JOB,
+                      timingScope='arm-only-shared-setup-excluded', startedUnixSeconds=started)
     recorder = METADATA.Recorder(args.output, report)
     try:
         if not 0 <= setup <= 1800: raise ValueError('Invalid setup start marker')
@@ -367,15 +463,70 @@ def benchmark(args):
     finally:
         report['diagnosticSeconds'] = round(time.monotonic() - before, 3)
         report['setupPlusDiagnosticSeconds'] = round(setup + report['diagnosticSeconds'], 3)
+        report['completedUnixSeconds'] = time.time()
         (args.output / 'benchmark.json').write_text(json.dumps(report, indent=2) + '\n')
 
 
-def comparison(reports, pages):
+def paired(args):
+    """Run all six arms on one host; a failed arm stops further paid transfers."""
+    hosted()
+    args.output.mkdir(parents=True, exist_ok=False)
+    before, started = time.monotonic(), time.time()
+    setup = started - read(args.start)['unixSeconds']
+    if not 0 <= setup <= 1800: raise ValueError('Invalid shared setup marker')
+    session = {'schema': 1, 'experiment': 'bounded-image-transfer-paired', 'status': 'error',
+        'revision': os.environ['GITHUB_SHA'], 'run': int(os.environ['GITHUB_RUN_ID']),
+        'attempt': int(os.environ['GITHUB_RUN_ATTEMPT']), 'jobName': PAIRED_JOB,
+        'startedUnixSeconds': started, 'sharedSetupSeconds': round(setup, 3), 'outcomes': [],
+        'productionChangeRecommended': False}
+    try:
+        for sequence, (copies, repetition) in enumerate(ORDER, 1):
+            outcome = {'sequence': sequence, 'copies': copies, 'repetition': repetition, 'status': 'not-run'}
+            session['outcomes'].append(outcome)
+            if any(row['status'] == 'error' for row in session['outcomes']): continue
+            marker = args.output / ('start-' + str(sequence) + '.json')
+            marker.write_text(json.dumps({'unixSeconds': time.time()}) + '\n')
+            arm = argparse.Namespace(**vars(args))
+            arm.copies, arm.repetition, arm.sequence = copies, repetition, sequence
+            arm.start, arm.output = marker, args.output / f'arm-{sequence}'
+            try:
+                benchmark(arm)
+                outcome['status'] = 'success'
+            except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as error:
+                outcome.update(status='error', error=str(error))
+        if all(row['status'] == 'success' for row in session['outcomes']): session['status'] = 'success'
+    finally:
+        session['sessionSeconds'] = round(time.monotonic() - before, 3)
+        session['setupPlusSessionSeconds'] = round(setup + session['sessionSeconds'], 3)
+        session['completedUnixSeconds'] = time.time()
+        (args.output / 'paired.json').write_text(json.dumps(session, indent=2) + '\n')
+    return session
+
+
+def comparison(reports, pages, session=None):
+    # Failed receipts deliberately lack success-only binding/resource fields.
+    # Retain their actual outcomes instead of throwing KeyError or fabricating
+    # a winner. The CLI writes this result and still exits nonzero.
+    if (not reports or any(report.get('status') != 'success' for report in reports)
+            or session is not None and session.get('status') != 'success'):
+        return {'schema': 2, 'experiment': 'bounded-image-transfer-paired', 'status': 'inconclusive',
+            'reason': 'Failed or unexecuted transfer arms; no performance comparison is valid',
+            'outcomes': session.get('outcomes', []) if session else [
+                {key: report.get(key) for key in ('copies', 'repetition', 'status', 'error')} for report in reports],
+            'productionChangeRecommended': False}
     expected = {(copies, repetition) for copies in (1, 2) for repetition in (1, 2, 3)}
     if len(reports) != 6 or {(r['copies'], r['repetition']) for r in reports} != expected:
         raise ValueError('Require all six unique baseline/candidate measurements, including failed arms')
+    if (not isinstance(session, dict) or session.get('schema') != 1
+            or session.get('experiment') != 'bounded-image-transfer-paired' or session.get('jobName') != PAIRED_JOB
+            or session.get('outcomes') != [{'sequence': n, 'copies': c, 'repetition': r, 'status': 'success'}
+                                         for n, (c, r) in enumerate(ORDER, 1)]):
+        raise ValueError('Missing exact single-host paired-session receipt')
+    reports = sorted(reports, key=lambda report: report['sequence'])
+    if [(r['sequence'], r['copies'], r['repetition']) for r in reports] != [(n, c, r) for n, (c, r) in enumerate(ORDER, 1)]:
+        raise ValueError('Arm receipts do not match the predetermined paired order')
     keys = ('revision', 'run', 'attempt', 'profile', 'digest', 'source', 'identity', 'policy', 'runnerImage',
-            'platform', 'runnerHardware', 'lockSha256', 'cosignKeySha256', 'versions', 'binding', 'integrity')
+            'platform', 'runnerHardware', 'lockSha256', 'cosignKeySha256', 'versions', 'binding', 'integrity', 'jobName', 'timingScope')
     if len({json.dumps({key: r[key] for key in keys}, sort_keys=True) for r in reports}) != 1:
         raise ValueError('Different immutable image, tool, runner-image or cache/resource cohort')
     if not reports[0]['runnerImage'] or reports[0]['policy'] != POLICY:
@@ -387,7 +538,30 @@ def comparison(reports, pages):
         if not isinstance(page.get('jobs'), list) or len(page['jobs']) > 100:
             raise ValueError('Invalid job metadata page')
         jobs.extend(page['jobs'])
+    matched = [job for job in jobs if job.get('name') == PAIRED_JOB]
+    if len(matched) != 1: raise ValueError('Missing or duplicate complete paired job')
+    job = matched[0]
+    if (job.get('status') != 'completed' or job.get('conclusion') != 'success'
+            or type(job.get('id')) is not int or job['id'] <= 0
+            or job.get('run_id') != session['run'] or job.get('run_attempt') != session['attempt']
+            or job.get('head_sha') != session['revision']):
+        raise ValueError('Paired job does not bind successful exact run/attempt/revision')
+    stamps = [job.get(key, '') for key in ('started_at', 'completed_at')]
+    if any(not isinstance(value, str) or not re.fullmatch(r'[0-9T:Z-]{20}', value) for value in stamps):
+        raise ValueError('Missing job timestamps')
+    job_start, job_end = [datetime.fromisoformat(stamp.replace('Z', '+00:00')).timestamp() for stamp in stamps]
+    seconds = job_end - job_start
+    def number(value):
+        return type(value) in (int, float) and math.isfinite(value)
+    for key in ('sharedSetupSeconds', 'sessionSeconds', 'setupPlusSessionSeconds', 'startedUnixSeconds', 'completedUnixSeconds'):
+        if not number(session.get(key)) or session[key] < 0: raise ValueError('Invalid paired-session timing')
+    if (not 0 < seconds <= 270 * 60 or seconds + 2 < session['setupPlusSessionSeconds']
+            or abs(session['sharedSetupSeconds'] + session['sessionSeconds'] - session['setupPlusSessionSeconds']) > .01
+            or abs(session['completedUnixSeconds'] - session['startedUnixSeconds'] - session['sessionSeconds']) > 2
+            or session['startedUnixSeconds'] < job_start - 2 or session['completedUnixSeconds'] > job_end + 2):
+        raise ValueError('Native job timestamps do not cover the complete paired session')
     rows = []
+    previous_end = session['startedUnixSeconds']
     for report in reports:
         if (report.get('schema') != 1 or report.get('experiment') != 'bounded-image-transfer'
                 or report.get('status') != 'success' or not isinstance(report.get('integrity'), dict)
@@ -396,44 +570,57 @@ def comparison(reports, pages):
                 or report['copy'].get('serviceQuiescent') is not True
                 or report['copy'].get('exitCode') != 0 or report['copy'].get('timedOut') is not False):
             raise ValueError('Failed, timed-out or unverified arm; no performance conclusion')
-        name = f"transfer-{report['copies']}-{report['repetition']}"
-        matched = [job for job in jobs if job.get('name') == name]
-        if len(matched) != 1: raise ValueError('Missing or duplicate complete job: ' + name)
-        job = matched[0]
-        if (job.get('status') != 'completed' or job.get('conclusion') != 'success'
-                or job.get('run_id') != report['run'] or job.get('run_attempt') != report['attempt']
-                or job.get('head_sha') != report['revision']):
-            raise ValueError('Job does not bind successful exact run/attempt/revision')
-        stamps = [job.get(key, '') for key in ('started_at', 'completed_at')]
-        if any(not isinstance(value, str) or not re.fullmatch(r'[0-9T:Z-]{20}', value) for value in stamps):
-            raise ValueError('Missing job timestamps')
-        seconds = (datetime.fromisoformat(stamps[1].replace('Z', '+00:00')) - datetime.fromisoformat(stamps[0].replace('Z', '+00:00'))).total_seconds()
+        if (any(report[key] != session[key] for key in ('run', 'attempt', 'revision', 'jobName'))
+                or report['timingScope'] != 'arm-only-shared-setup-excluded'):
+            raise ValueError('Arm belongs to a different session or timing scope')
         for value in (report['copy']['seconds'], report['copy']['peakMemoryBytes'], report['copy']['blobBytesPerSecond'],
                       report['setupPlusDiagnosticSeconds'], seconds):
             if type(value) not in (int, float) or not math.isfinite(value) or value <= 0:
                 raise ValueError('Invalid measured metric')
-        if (report['copy']['peakMemoryBytes'] > MEMORY or not 0 < seconds <= 2700
-                or seconds + 2 < report['setupPlusDiagnosticSeconds']):
-            raise ValueError('Invalid memory bound or incomplete job duration')
-        resources = resource_receipt(report['copy'].get('resources'))
+        if seconds + 2 < report['setupPlusDiagnosticSeconds']:
+            raise ValueError('Incomplete job duration')
+        resources = copy_resources(report['copy'])
+        total = report['runnerHardware'].get('memoryTotalKiB')
+        if type(total) is not int or resources['memoryTotalBytes'] != total * 1024:
+            raise ValueError('Worker physical memory differs from the runner cohort')
         if any(report['copy'][key] != resources[key] for key in ('seconds', 'peakMemoryBytes')):
             raise ValueError('Copy metrics differ from the bounded worker receipt')
+        observation = memory_observation(resources)
+        if report['copy'].get('memoryObservation') != observation:
+            raise ValueError('Reported memory observation differs from worker telemetry')
         transfer, service, diagnostic, setup = (report['copy']['seconds'], report['copy']['boundedServiceSeconds'],
                                                report['diagnosticSeconds'], report['setupSeconds'])
         if (any(type(v) not in (int, float) or not math.isfinite(v) or v < 0 for v in (service, diagnostic, setup))
                 or transfer > service + .01 or service > diagnostic + .01
                 or abs(setup + diagnostic - report['setupPlusDiagnosticSeconds']) > .01):
             raise ValueError('Impossible transfer/service/diagnostic/setup timing order')
+        started, ended = report.get('startedUnixSeconds'), report.get('completedUnixSeconds')
+        if (not number(started) or not number(ended) or started < previous_end or ended < started
+                or ended > session['completedUnixSeconds'] or abs(ended - started - diagnostic) > 2):
+            raise ValueError('Overlapping, reordered or out-of-session arm timestamps')
+        previous_end = ended
         size = report['integrity'].get('uniqueBlobBytes')
         if (type(size) is not int or not 0 < size <= 32 * 1024**3
                 or not math.isclose(report['copy']['blobBytesPerSecond'], size / transfer, rel_tol=1e-9)):
             raise ValueError('Throughput does not match independently verified blob bytes')
-        rows.append({'copies': report['copies'], 'repetition': report['repetition'], 'jobId': job['id'],
+        rows.append({'copies': report['copies'], 'repetition': report['repetition'], 'sequence': report['sequence'],
                      'copySeconds': report['copy']['seconds'], 'peakMemoryBytes': report['copy']['peakMemoryBytes'],
-                     'blobBytesPerSecond': report['copy']['blobBytesPerSecond'], 'wholeJobSeconds': seconds})
-    return {'schema': 1, 'experiment': 'bounded-image-transfer', 'cohort': {key: reports[0][key] for key in keys},
+                     'memoryObservation': observation,
+                     'blobBytesPerSecond': report['copy']['blobBytesPerSecond'], 'armDiagnosticSeconds': diagnostic})
+    pairs = []
+    for repetition in (1, 2, 3):
+        baseline = next(row for row in rows if row['repetition'] == repetition and row['copies'] == 1)
+        candidate = next(row for row in rows if row['repetition'] == repetition and row['copies'] == 2)
+        pairs.append({'repetition': repetition, 'copySecondsDeltaCandidateMinusBaseline': candidate['copySeconds'] - baseline['copySeconds'],
+                      'copySpeedupRatio': baseline['copySeconds'] / candidate['copySeconds']})
+    return {'schema': 2, 'experiment': 'bounded-image-transfer-paired', 'status': 'complete', 'cohort': {key: reports[0][key] for key in keys},
             'measurements': rows, 'medians': {str(copies): {key: statistics.median(row[key] for row in rows if row['copies'] == copies)
-                for key in ('copySeconds', 'peakMemoryBytes', 'blobBytesPerSecond', 'wholeJobSeconds')} for copies in (1, 2)},
+                for key in ('copySeconds', 'peakMemoryBytes', 'blobBytesPerSecond', 'armDiagnosticSeconds')} for copies in (1, 2)},
+            'pairs': pairs, 'wholeExperimentJob': {'jobId': job['id'], 'seconds': seconds, 'sharedSetupSeconds': session['sharedSetupSeconds'],
+                'sessionSeconds': session['sessionSeconds'], 'includesBothArmsAndUpload': True, 'perArmWholeJobComparisonAvailable': False},
+            'memoryLimitPressureObserved': any(row['memoryObservation']['pressure'] != ['no-limit-pressure-observed'] for row in rows),
+            'memoryLimitations': ['Exact enforced memory.max may be exceeded temporarily; peaks and limit pressure are not clamped.',
+                                 'Pre-arm available-memory budget does not prove continuous host headroom or unconstrained memory demand.'],
             'productionChangeRecommended': False}
 
 
@@ -445,9 +632,13 @@ def main():
     for name in ('copies', 'repetition'): run.add_argument('--' + name, type=int, required=True)
     for name in ('profile', 'digest', 'source', 'identity'): run.add_argument('--' + name, required=True)
     for name in ('start', 'output'): run.add_argument('--' + name, type=Path, required=True)
+    pair = commands.add_parser('run-paired')
+    for name in ('profile', 'digest', 'source', 'identity'): pair.add_argument('--' + name, required=True)
+    for name in ('start', 'output'): pair.add_argument('--' + name, type=Path, required=True)
     child = commands.add_parser('worker')
     for name in ('unit', 'image'): child.add_argument('--' + name, required=True)
     child.add_argument('--copies', type=int, required=True)
+    child.add_argument('--available-memory-bytes', type=int, required=True)
     for name in ('layout', 'digestfile', 'output'): child.add_argument('--' + name, type=Path, required=True)
     summary = commands.add_parser('summarize')
     for name in ('directory', 'jobs', 'output'): summary.add_argument(name, type=Path)
@@ -457,13 +648,23 @@ def main():
         args.output.write_text(json.dumps({'unixSeconds': time.time()}) + '\n')
     elif args.command == 'run':
         benchmark(args)
+    elif args.command == 'run-paired':
+        sys.exit(0 if paired(args)['status'] == 'success' else 2)
     elif args.command == 'worker':
         sys.exit(worker(args))
     else:
-        result = comparison([read(path) for path in sorted(args.directory.rglob('benchmark.json'))], read(args.jobs))
-        result['jobMetadataSha256'] = METADATA.sha(args.jobs.read_bytes())
+        try:
+            sessions = list(args.directory.rglob('paired.json'))
+            if len(sessions) > 1: raise ValueError('Duplicate paired-session receipts')
+            session = read(sessions[0]) if sessions else None
+            result = comparison([read(path) for path in sorted(args.directory.rglob('benchmark.json'))], read(args.jobs), session)
+            result['jobMetadataSha256'] = METADATA.sha(args.jobs.read_bytes())
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            result = {'schema': 2, 'experiment': 'bounded-image-transfer-paired', 'status': 'inconclusive',
+                      'reason': 'Invalid or incomplete evidence: ' + str(error), 'productionChangeRecommended': False}
         args.output.write_text(json.dumps(result, indent=2) + '\n')
-        print(json.dumps(result['medians'], indent=2))
+        print(json.dumps(result.get('medians', result), indent=2))
+        if result['status'] != 'complete': sys.exit(2)
 
 
 if __name__ == '__main__':
