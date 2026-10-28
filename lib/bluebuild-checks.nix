@@ -175,6 +175,7 @@ in {
     python3 tests/bluebuild/qualification-collection.py
     python3 tests/bluebuild/provisioning.py
     python3 tests/bluebuild/security-policy.py
+    python3 tests/bluebuild/security-database-overlap.py
     python3 tests/bluebuild/security-remediation.py
     python3 tests/bluebuild/tailscale-security.py
     python3 tests/bluebuild/desktop-qualification.py

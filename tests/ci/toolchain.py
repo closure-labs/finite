@@ -67,7 +67,9 @@ class Toolchain(unittest.TestCase):
         gate = next(s for s in steps if s.get('name') == 'Reject obsolete publication before reuse or VM work')
         self.assertEqual(gate['if'], '${{ !inputs.validation_only }}')
         self.assertLess(steps.index(gate), next(i for i, s in enumerate(steps) if s.get('id') == 'reuse'))
-        self.assertLess(steps.index(gate), next(i for i, s in enumerate(steps) if s.get('uses') == '$/.github/actions/setup-vm-tools'))
+        reuse = next(s for s in steps if s.get('id') == 'reuse')
+        self.assertIn('--prepare-context', reuse['run'])
+        self.assertNotIn('$/.github/actions/setup-vm-tools', [s.get('uses') for s in steps])
         self.assertEqual(jobs['phase']['needs'], 'prepare')
         # Exercise missing/mismatched artifacts, interrupted download, and a
         # rejected publication record. Each must prevent downstream VM work.

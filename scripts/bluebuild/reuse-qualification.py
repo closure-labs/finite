@@ -149,7 +149,41 @@ def validate(directory, profile, candidate, previous, source, build_identity, co
     return acceptance
 
 
-def reuse(profile, output):
+def prefilter(directory, profile, candidate, previous, source, build_identity):
+    """Reject definite static mismatches; returning never authorizes reuse.
+
+    Called only after authenticating the producer and archive. Do not infer
+    candidate identity from the producer's head SHA: resumed images can have an
+    older source revision. The full runtime context and verdict are checked by
+    validate() after this filter, even when all static fields match.
+    """
+    acceptance = json.loads(qualification.desktop.read(directory / (profile + '-acceptance.json')))
+    if not isinstance(acceptance, dict):
+        raise ValueError('Qualification evidence must be an object')
+    if acceptance.get('validationOnly') is True:
+        raise ValueError('Diagnostic qualification cannot authorize publication or reuse')
+    if (acceptance.get('candidate') != candidate or acceptance.get('previousDigest') != previous
+            or acceptance.get('profile') != profile or acceptance.get('sourceRevision') != source
+            or acceptance.get('buildIdentity') != build_identity):
+        raise Unavailable('Qualification candidate, predecessor or source identity changed')
+    context = acceptance.get('qualificationContext')
+    if not isinstance(context, dict) or context.get('inputs') != qualification.source_inputs():
+        raise Unavailable('Qualification installer/test inputs changed or are missing')
+
+
+def prepare_context():
+    """Use the same pinned tools, smoke checks and interpreter as setup-vm-tools."""
+    env = qualification.vm_tools.provision('nix')
+    qualification.vm_tools.smoke(env)
+    with tempfile.TemporaryDirectory(prefix='finite-qualification-context-') as temporary:
+        directory = Path(temporary)
+        subprocess.run(['python3', str(ROOT / 'scripts/bluebuild/qualification-context.py'),
+                        'context', '--directory', str(directory)],
+                       env=env, cwd=ROOT, check=True, timeout=90)
+        return json.loads((directory / 'qualification-context.json').read_text())
+
+
+def reuse(profile, output, *, prepare_tools=False):
     if (os.environ.get('GITHUB_ACTIONS') != 'true' or os.environ.get('GITHUB_REPOSITORY') != REPOSITORY
             or os.environ.get('GITHUB_REF') != 'refs/heads/main'
             or not re.fullmatch('[0-9a-f]{40}', os.environ.get('GITHUB_SHA', ''))):
@@ -162,7 +196,7 @@ def reuse(profile, output):
         raise ValueError('Qualification reuse requires exact profile/candidate/source identities')
     if output is None or output.exists() or output.is_symlink() or any(path.is_symlink() for path in output.absolute().parents):
         raise ValueError('Qualification reuse output must be new with no symlinked parents')
-    context = json.loads((Path('.bluebuild') / 'qualification-context.json').read_text())
+    context = None if prepare_tools else json.loads((Path('.bluebuild') / 'qualification-context.json').read_text())
     now = datetime.now(timezone.utc)
     candidate = 'ghcr.io/closure-labs/finite@' + os.environ['CANDIDATE_DIGEST']
     # Bounded lookup; the pilot targets recent exact candidate reruns.
@@ -195,8 +229,13 @@ def reuse(profile, output):
                         except Unavailable:
                             continue
                     try:
+                        if prepare_tools:
+                            prefilter(directory, profile, candidate, os.environ.get('PREVIOUS_DIGEST', ''),
+                                      os.environ['SOURCE_REVISION'], os.environ['BUILD_IDENTITY'])
+                            if context is None:
+                                context = prepare_context()
                         value = validate(directory, profile, candidate, os.environ.get('PREVIOUS_DIGEST', ''),
-                            os.environ['SOURCE_REVISION'], os.environ['BUILD_IDENTITY'], context, now)
+                            os.environ['SOURCE_REVISION'], os.environ['BUILD_IDENTITY'], context, datetime.now(timezone.utc))
                     except Unavailable:
                         continue
                     if value['revision'] != run['head_sha']:
@@ -253,12 +292,14 @@ def main():
     parser.add_argument('--profile', required=True)
     parser.add_argument('--output', type=Path)
     parser.add_argument('--verify-reused', type=Path)
+    parser.add_argument('--prepare-context', action='store_true',
+                        help='Provision pinned context tools only after authenticated static eligibility checks')
     args = parser.parse_args()
     try:
         if args.verify_reused:
             verify_reused_acceptance(json.loads(qualification.desktop.read(args.verify_reused)))
         else:
-            print(json.dumps(reuse(args.profile, args.output)))
+            print(json.dumps(reuse(args.profile, args.output, prepare_tools=args.prepare_context)))
         return 0
     except Unavailable as error:
         print(str(error))

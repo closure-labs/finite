@@ -102,19 +102,13 @@ jobs:
             --name "$IMAGE_ARTIFACT" --dir .bluebuild
           nix develop --file lib/ci-tools.nix shell --command python3 scripts/bluebuild/publication-current.py \
             --record ".bluebuild/$PROFILE-publication.json"
-      - name: Install context tools for the reuse pilot
-        if: ${{ !inputs.validation_only && env.FINITE_QUALIFICATION_REUSE == 'true' && !inputs.force_qualification }}
-        uses: $/.github/actions/setup-vm-tools
-      - name: Check exact qualification reuse
+      - name: Check enabled exact qualification reuse
         id: reuse
-        env:
-          ENABLED: ${{ !inputs.validation_only && env.FINITE_QUALIFICATION_REUSE == 'true' && !inputs.force_qualification }}
+        if: ${{ !inputs.validation_only && env.FINITE_QUALIFICATION_REUSE == 'true' && !inputs.force_qualification }}
         run: |
           echo "reused=false" >>"$GITHUB_OUTPUT"
-          if [[ "$ENABLED" != true ]]; then exit 0; fi
-          python3 scripts/bluebuild/qualification-context.py context
           status=0
-          python3 scripts/bluebuild/reuse-qualification.py --profile "$PROFILE" --output .bluebuild/reused || status=$?
+          python3 scripts/bluebuild/reuse-qualification.py --profile "$PROFILE" --output .bluebuild/reused --prepare-context || status=$?
           if [[ $status == 3 ]]; then exit 0; fi
           if [[ $status != 0 ]]; then exit "$status"; fi
           echo "reused=true" >>"$GITHUB_OUTPUT"

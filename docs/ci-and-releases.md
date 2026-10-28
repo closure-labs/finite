@@ -246,6 +246,14 @@ aggregate their bound receipts before promotion. An optional pilot reuses
 identical authenticated qualification for at most 24 hours, preserving its
 original time; new digests require new tests. Missing or failed acceptance blocks
 promotion. The `qualify` dispatch input bypasses reuse.
+The reuse lookup authenticates producer metadata and archive bytes before checking
+static candidate, predecessor, source/build and complete installer/test input
+identities. A definite mismatch falls back to fresh qualification without
+installing VM context tools. A possible match still provisions and smoke-checks
+the pinned tools, constructs the actual firmware/package context and runs the
+complete existing acceptance verifier. The filter cannot authorize reuse, and
+it does not replace or shorten the bounded artifact lookup. Aggregation and
+promotion still recheck reused evidence; predecessor ISO eligibility is unchanged.
 See [workstation qualification](workstation-qualification.md) for enforcement,
 upstream kernel/module preservation and durable release bundles.
 

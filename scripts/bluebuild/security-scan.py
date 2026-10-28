@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 """Scan an immutable registry image without executing it or receiving signing keys."""
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import importlib.util
 import hashlib
 import json
 import os
 import re
+import signal
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 
 spec = importlib.util.spec_from_file_location('security_policy', Path(__file__).with_name('security-policy.py'))
@@ -28,7 +31,8 @@ exec(compile(Path(inventory_spec.origin).read_bytes(), inventory_spec.origin, 'e
 PHASES = []
 
 
-def run(args, output=None):
+def run(args, output=None, *, execute=None):
+    execute = execute or subprocess.run
     tool = Path(args[0]).name
     if tool == 'skopeo':
         phase = 'image-transfer'
@@ -46,20 +50,175 @@ def run(args, output=None):
     try:
         if output:
             with output.open('w') as stream:
-                subprocess.run(args, stdout=stream, check=True, timeout=1800)
+                execute(args, stdout=stream, check=True, timeout=1800)
         else:
-            subprocess.run(args, check=True, timeout=1800)
+            execute(args, check=True, timeout=1800)
         passed = True
     finally:
         PHASES.append({'phase': phase, 'seconds': round(time.monotonic() - started, 3), 'success': passed})
 
 
-def unpack_rootfs(layout, rootfs):
+# This remains an explicit experiment: no production caller enables overlap.
+DATABASE_UPDATE_TIMEOUT = 600
+
+
+def stop_process_group(process):
+    """Reap the leader and terminate descendants even if the leader exited first."""
+    try:
+        os.killpg(process.pid, signal.SIGTERM)
+    except ProcessLookupError:
+        pass
+    try:
+        process.wait(timeout=1)
+    except subprocess.TimeoutExpired:
+        pass
+    try:
+        os.killpg(process.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
+    process.wait(timeout=5)
+
+
+class DatabaseOverlap:
+    """One isolated updater plus one foreground command, in the scanner cgroup.
+
+    No pipes buffer child output and no thread ever mutates the parent environment.
+    The worker deadline applies during Python inventory work as well as commands.
+    """
+    def __init__(self, directory):
+        self.directory = directory
+        self.temporary = tempfile.TemporaryDirectory(prefix='finite-security-db-')
+        self.environment = {**os.environ, 'GRYPE_DB_CACHE_DIR': self.temporary.name,
+                            'GRYPE_DB_AUTO_UPDATE': 'false',
+                            'GRYPE_DB_REQUIRE_UPDATE_CHECK': 'true',
+                            'GRYPE_DB_VALIDATE_BY_HASH_ON_START': 'true',
+                            'GRYPE_DB_VALIDATE_AGE': 'true'}
+        self.executor = ThreadPoolExecutor(max_workers=1)
+        self.process = None
+        self.stop_lock = threading.Lock()
+        self.stopped = False
+        self.closed = False
+        self.cleaning_foreground = False
+        self.cancelled = None
+        self.handlers = {}
+        self.future = None
+        self.wait_seconds = None
+        try:
+            for number in (signal.SIGINT, signal.SIGTERM):
+                self.handlers[number] = signal.signal(number, self.cancel)
+            self.started = time.monotonic()
+            self.process = subprocess.Popen(['grype', 'db', 'update'],
+                env=self.environment, start_new_session=True)
+            self.future = self.executor.submit(self.update)
+        except BaseException:
+            self.close()
+            raise
+
+    def cancel(self, number, _frame):
+        # Repeated cancellation must not interrupt reaping or worker joining.
+        if self.cancelled is None:
+            self.cancelled = number
+            if not self.closed and not self.cleaning_foreground:
+                self.check_cancelled()
+
+    def check_cancelled(self):
+        if self.cancelled is not None:
+            raise InterruptedError('Experimental database overlap cancelled by signal ' + str(self.cancelled))
+
+    def update(self):
+        passed = False
+        try:
+            status = self.process.wait(timeout=DATABASE_UPDATE_TIMEOUT)
+            if status:
+                raise subprocess.CalledProcessError(status, self.process.args)
+            passed = True
+        finally:
+            self.stop_update()
+            PHASES.append({'phase': 'database-update', 'seconds': round(time.monotonic() - self.started, 3),
+                           'success': passed, 'concurrentWithInventory': True})
+
+    def stop_update(self):
+        # The worker and cancellation path share ownership; never signal a PID
+        # again after it has been reaped (inventory can continue for many minutes).
+        with self.stop_lock:
+            if self.process is not None and not self.stopped:
+                stop_process_group(self.process)
+                self.stopped = True
+
+    def check(self):
+        self.check_cancelled()
+        if self.future.done():
+            self.future.result()  # Never turn a failed refresh into a stale-cache fallback.
+
+    def command(self, args, *, stdout=None, check=True, timeout=1800):
+        self.check()
+        if Path(args[0]).name == 'grype':
+            if not (args[1:3] == ['db', 'search'] or args[1].startswith('sbom:')):
+                raise ValueError('Only coverage and findings may read the frozen experimental database')
+            self.wait()
+        process = subprocess.Popen(args, stdout=stdout, env=self.environment, start_new_session=True)
+        started = time.monotonic()
+        try:
+            while True:
+                self.check()
+                if time.monotonic() - started >= timeout:
+                    raise subprocess.TimeoutExpired(args, timeout)
+                try:
+                    status = process.wait(timeout=0.1)
+                    break
+                except subprocess.TimeoutExpired:
+                    continue
+            self.check()
+            if check and status:
+                raise subprocess.CalledProcessError(status, args)
+        finally:
+            self.cleaning_foreground = True
+            try:
+                stop_process_group(process)
+            finally:
+                self.cleaning_foreground = False
+            self.check_cancelled()
+
+    def run(self, args, output=None):
+        run(args, output, execute=self.command)
+
+    def wait(self):
+        started = time.monotonic()
+        self.future.result()
+        if self.wait_seconds is None:
+            self.wait_seconds = round(time.monotonic() - started, 3)
+
+    def close(self):
+        if self.closed:
+            return
+        self.closed = True
+        try:
+            try:
+                self.stop_update()
+            finally:
+                self.executor.shutdown(wait=True)
+            # This diagnostic cannot grant clearance or replace native evidence.
+            if self.future is not None:
+                (self.directory / 'database-overlap.json').write_text(json.dumps({
+                    'schema': 1, 'experimental': True, 'privateColdDatabase': True,
+                    'updateTimeoutSeconds': DATABASE_UPDATE_TIMEOUT,
+                    'updateSucceeded': self.future.done() and self.future.exception() is None,
+                    'waitAfterInventorySeconds': self.wait_seconds,
+                    'performanceImprovementProven': False}, indent=2) + '\n')
+        finally:
+            try:
+                self.temporary.cleanup()
+            finally:
+                for number, handler in self.handlers.items():
+                    signal.signal(number, handler)
+
+
+def unpack_rootfs(layout, rootfs, *, execute=None):
     """Extract authenticated layers without unused runtime/repack metadata."""
     if rootfs.exists() or rootfs.is_symlink():
         raise ValueError('Rootfs extraction destination must be new')
     rootfs.parent.mkdir(parents=True, exist_ok=True)
-    run(['umoci', 'raw', 'unpack', '--rootless', '--image', str(layout) + ':audit', str(rootfs)])
+    (execute or run)(['umoci', 'raw', 'unpack', '--rootless', '--image', str(layout) + ':audit', str(rootfs)])
 
 
 def write_timings(directory, reused):
@@ -270,6 +429,8 @@ def main():
     parser.add_argument('--source-revision')
     parser.add_argument('--upstream-receipt', type=Path)
     parser.add_argument('--inventory-dir', type=Path, help='Authenticated inventory-only output from reuse-image-inventory.py')
+    parser.add_argument('--experimental-database-overlap', action='store_true',
+                        help='Hosted validation only: refresh one private DB while preparing inventory')
     args = parser.parse_args()
     try:
         directory = output_directory(args.directory)
@@ -278,9 +439,13 @@ def main():
     directory.mkdir(parents=True, exist_ok=False)
     PHASES.clear()
     reused_inventory = False
+    overlap = None
+    execute = run
     try:
         if not policy_module.IMAGE.fullmatch(args.image):
             raise ValueError('Security scan requires an immutable Finite image')
+        if args.experimental_database_overlap and os.environ.get('FINITE_SCANNER_BOUNDED') != 'true':
+            raise ValueError('Database overlap requires the bounded hosted security-run.sh wrapper')
         source_revision = args.source_revision or os.environ.get('GITHUB_SHA', '')
         if args.profile and not re.fullmatch(r'[0-9a-f]{40}', source_revision):
             raise ValueError('Candidate scan requires an exact image source revision')
@@ -303,6 +468,9 @@ def main():
                 receipt = (baseline_module.read(args.upstream_receipt)[0] if args.upstream_receipt
                            else baseline_module.authenticate(inspected))
                 baseline = baseline_module.context(inspected, args.image, receipt)
+        if args.experimental_database_overlap:
+            overlap = DatabaseOverlap(directory)
+            execute = overlap.run
         if args.inventory_dir:
             origin = inventory_module.read(args.inventory_dir / 'inventory-origin.json')
             if (origin.get('schema') != 1 or origin.get('status') != 'authenticated-inventory-only'
@@ -320,7 +488,7 @@ def main():
             with tempfile.TemporaryDirectory(prefix='finite-security-image-') as temporary:
                 temporary = Path(temporary)
                 digest_file = temporary / 'image.digest'
-                run(['skopeo', '--command-timeout', '1800s', 'copy', '--all', '--preserve-digests', '--src-no-creds',
+                execute(['skopeo', '--command-timeout', '1800s', 'copy', '--all', '--preserve-digests', '--src-no-creds',
                      '--image-parallel-copies', '1', '--retry-times', '3', '--digestfile', str(digest_file),
                      'docker://' + args.image, 'oci:' + str(temporary / 'image') + ':audit'])
                 if digest_file.read_text().strip() != args.image.split('@')[1]:
@@ -339,19 +507,22 @@ def main():
                 # producing an unused repack mtree (a second full rootfs walk/hash).
                 # Metadata checks remain in prepare_layout; the same umoci layer
                 # extractor retains compressed digest and uncompressed DiffID checks.
-                unpack_rootfs(temporary / 'image', rootfs)
-                run(['syft', 'dir:' + str(rootfs), '--base-path', str(rootfs),
+                if overlap:
+                    unpack_rootfs(temporary / 'image', rootfs, execute=execute)
+                else:
+                    unpack_rootfs(temporary / 'image', rootfs)
+                execute(['syft', 'dir:' + str(rootfs), '--base-path', str(rootfs),
                      '--override-default-catalogers', 'image', '-o',
                      'syft-json=' + str(directory / 'sbom.syft.json'),
                      '-o', 'spdx-json=' + str(directory / 'sbom.spdx.json')])
                 if risk_mode:
-                    run(['python3', str(policy_module.ROOT / 'scripts/ci/rpm-file-evidence.py'),
+                    execute(['python3', str(policy_module.ROOT / 'scripts/ci/rpm-file-evidence.py'),
                          '--rootfs', str(rootfs), '--sbom', str(directory / 'sbom.syft.json'),
                          '--image', args.image, '--output', str(directory / 'rpm-file-evidence.json')])
                     # Collect positive file/platform evidence while the authenticated
                     # rootfs already exists. Current catalog paths select probes;
                     # this diagnostic never changes the policy or grants clearance.
-                    run(['python3', str(policy_module.ROOT / 'scripts/ci/applicability-evidence.py'),
+                    execute(['python3', str(policy_module.ROOT / 'scripts/ci/applicability-evidence.py'),
                          '--rootfs', str(rootfs), '--manifest-dir', str(directory), '--image', args.image,
                          '--profile', bound['profile'], '--revision', bound['sourceRevision'],
                          '--identity', bound['buildIdentity'],
@@ -379,21 +550,32 @@ def main():
         (directory / 'coverage.json').write_text(json.dumps(coverage, indent=2) + '\n')
         # Explicit update failures are fatal; never silently fall back to an old
         # DB. Policy separately validates both build age and provider freshness.
-        run(['grype', 'db', 'update'])
+        if overlap:
+            overlap.wait()
+        else:
+            execute(['grype', 'db', 'update'])
         # Freeze this refreshed database for coverage and findings so both use
         # the same provider snapshot; update failures above remain fatal.
-        os.environ['GRYPE_DB_AUTO_UPDATE'] = 'false'
-        run(['grype', 'db', 'search', '--distro', coverage['effective'], '--ecosystem', 'rpm',
+        if not overlap:
+            os.environ['GRYPE_DB_AUTO_UPDATE'] = 'false'
+        execute(['grype', 'db', 'search', '--distro', coverage['effective'], '--ecosystem', 'rpm',
              '--pkg', policy['coverageProbePackage'], '-o', 'json'], directory / 'database-coverage.json')
-        run(['grype', 'sbom:' + str(directory / 'sbom.syft.json'),
+        execute(['grype', 'sbom:' + str(directory / 'sbom.syft.json'),
              '--distro', coverage['effective'], '--show-suppressed', '-o', 'json'],
             directory / 'vulnerabilities.json')
+        if overlap:
+            overlap.close()
+            overlap.check_cancelled()
     except (ValueError, KeyError, TypeError, OSError, subprocess.SubprocessError) as error:
         (directory / 'security-result.json').write_text(json.dumps(
             {'schema': 1, 'status': 'scanner-error', 'image': args.image, 'error': str(error)}, indent=2) + '\n')
         write_timings(directory, reused_inventory)
         print('Image security scan failed: ' + str(error), file=sys.stderr)
         raise SystemExit(2)
+    finally:
+        if overlap:
+            overlap.close()
+            write_timings(directory, reused_inventory)
     started = time.monotonic()
     status = subprocess.call(['python3', str(Path(__file__).with_name('security-policy.py')),
                               str(directory), args.image])
