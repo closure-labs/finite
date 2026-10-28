@@ -50,6 +50,15 @@ failed receipts now produce a readable `inconclusive` summary with outcomes,
 no medians, and a nonzero exit. This attempt establishes **no memory, throughput
 or savings result** because the bounded copy workers never ran.
 
+The separate [first DB experiment](https://github.com/closure-labs/finite/actions/runs/40765793821)
+subsequently exposed a shared diagnostic assumption: a successful scan's cgroup
+peak was 8,192 bytes above its enforced limit with zero OOM/kill counters and
+12,988 max-boundary events. This was not a transfer measurement, but offline
+fixtures reproduced the same false rejection in this harness. The
+[kernel documents temporary `memory.max` overshoot](https://docs.kernel.org/admin-guide/cgroup-v2.html#memory-interface-files).
+The correction below separates enforced limits from observed peak telemetry;
+it does not raise the transfer cap or infer a performance gain from that scan.
+
 ## Controlled execution
 
 - Select one existing **signed linux/amd64 image or parent index** by digest,
@@ -86,6 +95,15 @@ or savings result** because the bounded copy workers never ran.
   accounted page cache, not just Go heap or one process's RSS. The copy remains
   inside the same cap while writing all image layers; no small log-file rlimit
   is inherited by layer writes. Retained command logs are capped at 1 MiB.
+- The owned cgroup's exact memory, swap and task caps must match before and
+  after the copy. Peak telemetry is not clamped or compared to an invented
+  page/percentage tolerance. A positive integer peak must fit **pre-arm available
+  memory minus the existing 4 GiB reserve**, bounded by physical RAM. Parent and
+  worker observations must agree, and physical RAM must match the runner cohort.
+  This is a conservative observation budget, not a larger kernel limit or proof
+  of continuous host headroom. Missing/malformed counters, any OOM/group-kill,
+  timeout, nonzero exit or unconfirmed cleanup remain failures. Post-copy
+  telemetry errors are retained even when the native command also failed.
 - Only small measurements/metadata/logs are uploaded, never image blobs or
   credentials. No image is executed, built, signed or published. Workflow
   permissions are read-only, and it does not request signing/write secrets.
@@ -107,6 +125,9 @@ bytes include other activity. Transfer time includes the configured retry policy
 Private layout cleanup remains included in the arm diagnostic total. The shared
 tool/setup cost is recorded **once** in `paired.json`, not attributed to each arm.
 Per-arm setup markers exclude that shared preparation and all preceding arms.
+Each memory observation retains the exact peak, enforced limit, overage,
+pre-arm budget and max/high boundary counts. The aggregate explicitly flags
+limit pressure; constrained peak memory is not unconstrained memory demand.
 
 The summary requires all six successful, uniquely identified arms and identical
 image/source/provenance, lock/tool versions, signing key, runner image/hardware,
@@ -134,7 +155,9 @@ review. The summary always records `productionChangeRecommended: false`.
 
 Executed locally: small offline integrity, resource/credential guards, bounded
 log handling, command-flag equivalence, canonical-attestation anti-forgery,
-same-host ordering, failure classification and whole-experiment timing tests.
+same-host ordering, failure classification and whole-experiment timing tests,
+plus permitted peak overshoot, unchanged exact caps, pre-arm/cohort binding,
+complete OOM counters and post-copy failure-evidence retention.
 No local multi-GiB download or image execution was performed. The first hosted
 attempt failed before transfer; the corrected real cgroup/systemd and throughput
 measurements remain **deferred pending review and a deliberate rerun**. No

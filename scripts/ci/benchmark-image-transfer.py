@@ -29,6 +29,7 @@ HEADROOM = 4 * 1024**3
 TRANSFER_SECONDS = 1800
 LOG_LIMIT = 1024**2
 POLICY = {'memoryMaxBytes': MEMORY, 'memorySwapMaxBytes': 0, 'headroomBytes': HEADROOM,
+          'observedPeakBudget': 'pre-arm-available-memory-minus-headroom',
           'runtimeMaxSeconds': TRANSFER_SECONDS, 'tasksMax': 64, 'retryTimes': 3,
           'cache': 'new-empty-oci-layout-no-actions-cache', 'copies': [1, 2]}
 SECRET_NAMES = ('CACHIX_AUTH_TOKEN', 'COSIGN_PRIVATE_KEY', 'COSIGN_PASSWORD', 'REGISTRY_TOKEN',
@@ -127,20 +128,56 @@ def runner_cohort():
             'kernelRelease': platform.release()}
 
 
-def resource_receipt(value):
-    if (not isinstance(value, dict) or value.get('exitCode') != 0
-            or value.get('memoryMaxBytes') != MEMORY or value.get('memorySwapMaxBytes') != 0
-            or type(value.get('peakMemoryBytes')) is not int or not 0 < value['peakMemoryBytes'] <= MEMORY
-            or type(value.get('seconds')) not in (int, float) or not 0 < value['seconds'] <= TRANSFER_SECONDS):
-        raise ValueError('Invalid or failed bounded worker resource receipt')
+def memory_observation(value):
+    """Report peak and pressure separately from the unchanged kernel limit.
+
+    memory.max permits temporary overshoot; use the existing pre-arm reserve
+    as an observation budget, not an arbitrary tolerance or a larger cap.
+    https://docs.kernel.org/admin-guide/cgroup-v2.html#memory-interface-files
+    """
+    total, available, peak = (value.get(key) for key in
+                             ('memoryTotalBytes', 'initialAvailableMemoryBytes', 'peakMemoryBytes'))
+    if (type(total) is not int or type(available) is not int
+            or not MEMORY + HEADROOM <= available <= total or type(peak) is not int
+            or not 0 < peak <= available - HEADROOM):
+        raise ValueError('Invalid observed peak or pre-arm headroom budget')
     events = value.get('memoryEvents', '')
     if not isinstance(events, str) or len(events) > 4096: raise ValueError('Invalid memory events')
     rows = events.splitlines()
     if any(not re.fullmatch(r'[a-z_]+ [0-9]+', row) for row in rows): raise ValueError('Malformed memory events')
-    counters = dict(row.split() for row in rows)
-    if len(counters) != len(rows) or counters.get('oom') != '0' or counters.get('oom_kill') != '0':
+    counters = {key: int(count) for key, count in (row.split() for row in rows)}
+    if len(counters) != len(rows) or not {'low', 'high', 'max', 'oom', 'oom_kill'} <= counters.keys():
+        raise ValueError('Missing or duplicate cgroup memory events')
+    if any(counters.get(key, 0) for key in ('oom', 'oom_kill', 'oom_group_kill')):
         raise ValueError('Missing or nonzero cgroup OOM evidence')
+    overage = max(0, peak - MEMORY)
+    pressure = []
+    if counters['max']: pressure.append('max-boundary-reclaim')
+    if counters['high']: pressure.append('high-boundary-throttling')
+    if overage: pressure.append('observed-peak-above-memory-max')
+    return {'enforcedMemoryMaxBytes': MEMORY, 'observedPeakBytes': peak,
+            'observedPeakOverLimitBytes': overage, 'preArmHeadroomBudgetBytes': available - HEADROOM,
+            'maxBoundaryEvents': counters['max'], 'highBoundaryEvents': counters['high'],
+            'pressure': pressure or ['no-limit-pressure-observed']}
+
+
+def resource_receipt(value):
+    if (not isinstance(value, dict) or type(value.get('exitCode')) is not int or value['exitCode'] != 0
+            or type(value.get('memoryMaxBytes')) is not int or value['memoryMaxBytes'] != MEMORY
+            or type(value.get('memorySwapMaxBytes')) is not int or value['memorySwapMaxBytes'] != 0
+            or value.get('cgroupLimitsVerifiedAtEnd') is not True or value.get('resourceValidationError')
+            or type(value.get('seconds')) not in (int, float) or not 0 < value['seconds'] <= TRANSFER_SECONDS):
+        raise ValueError('Invalid or failed bounded worker resource receipt')
+    memory_observation(value)
     return value
+
+
+def copy_resources(record):
+    resources = resource_receipt(record.get('resources'))
+    if (type(record.get('initialAvailableMemoryBytes')) is not int
+            or record['initialAvailableMemoryBytes'] != resources['initialAvailableMemoryBytes']):
+        raise ValueError('Worker memory budget differs from the pre-arm observation')
+    return resources
 
 
 def read(path, limit=METADATA.METADATA_LIMIT):
@@ -188,27 +225,52 @@ def drain(source, target):
     return total
 
 
-def worker(args):
-    """Read cgroup peak before systemd releases the completed service's counters."""
+def cgroup_path(unit):
     group = Path('/proc/self/cgroup').read_text().strip()
-    if not re.fullmatch(r'finite-transfer-[0-9a-f]{16}', args.unit) or not group.startswith('0::/'):
+    if not re.fullmatch(r'finite-transfer-[0-9a-f]{16}', unit) or not group.startswith('0::/'):
         raise ValueError('Worker requires the owned unified cgroup')
     relative = group[4:]
-    if Path(relative).name != args.unit + '.service' or '..' in Path(relative).parts:
+    if Path(relative).name != unit + '.service' or '..' in Path(relative).parts:
         raise ValueError('Worker is not in its bounded service')
     cgroup = Path('/sys/fs/cgroup') / relative
     if (cgroup.joinpath('memory.max').read_text().strip() != str(MEMORY)
-            or cgroup.joinpath('memory.swap.max').read_text().strip() != '0'):
-        raise ValueError('Worker memory and swap limits differ from the control')
+            or cgroup.joinpath('memory.swap.max').read_text().strip() != '0'
+            or cgroup.joinpath('pids.max').read_text().strip() != '64'):
+        raise ValueError('Worker memory, swap or task limits differ from the control')
+    return cgroup
+
+
+def worker(args):
+    """Read cgroup peak before systemd releases the completed service's counters."""
+    cgroup = cgroup_path(args.unit)
+    receipt = {'exitCode': None, 'memoryMaxBytes': MEMORY, 'memorySwapMaxBytes': 0,
+               'initialAvailableMemoryBytes': args.available_memory_bytes,
+               'memoryTotalBytes': runner_cohort()['memoryTotalKiB'] * 1024,
+               'cgroupLimitsVerifiedAtEnd': False}
+    if (type(args.available_memory_bytes) is not int
+            or not MEMORY + HEADROOM <= args.available_memory_bytes <= receipt['memoryTotalBytes']):
+        raise ValueError('Invalid pre-arm memory budget before copy')
     before = time.monotonic()
-    result = subprocess.run(copy_command(args.image, args.layout, args.digestfile, args.copies), check=False,
-                            timeout=TRANSFER_SECONDS)
-    receipt = {'exitCode': result.returncode, 'seconds': round(time.monotonic() - before, 3),
-               'peakMemoryBytes': int(cgroup.joinpath('memory.peak').read_text()),
-               'memoryMaxBytes': MEMORY, 'memorySwapMaxBytes': 0,
-               'memoryEvents': cgroup.joinpath('memory.events').read_text()}
-    args.output.joinpath('copy-resources.json').write_text(json.dumps(receipt) + '\n')
-    return result.returncode
+    try:
+        result = subprocess.run(copy_command(args.image, args.layout, args.digestfile, args.copies), check=False,
+                                timeout=TRANSFER_SECONDS)
+        receipt['exitCode'] = result.returncode
+    except (OSError, subprocess.SubprocessError) as error:
+        receipt['error'] = str(error)
+        raise
+    finally:
+        receipt['seconds'] = round(time.monotonic() - before, 3)
+        try:
+            if cgroup_path(args.unit) != cgroup: raise ValueError('Worker cgroup changed during copy')
+            receipt['cgroupLimitsVerifiedAtEnd'] = True
+            receipt['peakMemoryBytes'] = int(cgroup.joinpath('memory.peak').read_text())
+            receipt['memoryEvents'] = cgroup.joinpath('memory.events').read_text()
+            resource_receipt(receipt)
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            receipt['resourceValidationError'] = str(error)
+        finally:
+            args.output.joinpath('copy-resources.json').write_text(json.dumps(receipt) + '\n')
+    return receipt['exitCode'] or (2 if receipt.get('resourceValidationError') else 0)
 
 
 def measured_copy(command, output, home, record):
@@ -234,6 +296,7 @@ def measured_copy(command, output, home, record):
                '--setenv=XDG_CONFIG_HOME=' + str(home), '--setenv=TMPDIR=' + str(home),
                '--setenv=GOMEMLIMIT=3GiB', sys.executable, str(Path(__file__).resolve()), 'worker',
                '--unit', unit, '--copies', copies, '--image', image, '--layout', layout,
+               '--available-memory-bytes', str(record['initialAvailableMemoryBytes']),
                '--digestfile', digestfile, '--output', str(output.resolve())]
     before, counters = time.monotonic(), METADATA.network_bytes()
     process = None
@@ -256,7 +319,8 @@ def measured_copy(command, output, home, record):
         record['resources'] = resources
         if record['timedOut'] or record['exitCode'] != 0:
             raise ValueError('Bounded copy failed or has missing/invalid memory accounting')
-        resource_receipt(resources)
+        copy_resources(record)
+        record['memoryObservation'] = memory_observation(resources)
         record['peakMemoryBytes'] = resources['peakMemoryBytes']
         record['seconds'] = resources['seconds']
     finally:
@@ -513,12 +577,17 @@ def comparison(reports, pages, session=None):
                       report['setupPlusDiagnosticSeconds'], seconds):
             if type(value) not in (int, float) or not math.isfinite(value) or value <= 0:
                 raise ValueError('Invalid measured metric')
-        if (report['copy']['peakMemoryBytes'] > MEMORY
-                or seconds + 2 < report['setupPlusDiagnosticSeconds']):
-            raise ValueError('Invalid memory bound or incomplete job duration')
-        resources = resource_receipt(report['copy'].get('resources'))
+        if seconds + 2 < report['setupPlusDiagnosticSeconds']:
+            raise ValueError('Incomplete job duration')
+        resources = copy_resources(report['copy'])
+        total = report['runnerHardware'].get('memoryTotalKiB')
+        if type(total) is not int or resources['memoryTotalBytes'] != total * 1024:
+            raise ValueError('Worker physical memory differs from the runner cohort')
         if any(report['copy'][key] != resources[key] for key in ('seconds', 'peakMemoryBytes')):
             raise ValueError('Copy metrics differ from the bounded worker receipt')
+        observation = memory_observation(resources)
+        if report['copy'].get('memoryObservation') != observation:
+            raise ValueError('Reported memory observation differs from worker telemetry')
         transfer, service, diagnostic, setup = (report['copy']['seconds'], report['copy']['boundedServiceSeconds'],
                                                report['diagnosticSeconds'], report['setupSeconds'])
         if (any(type(v) not in (int, float) or not math.isfinite(v) or v < 0 for v in (service, diagnostic, setup))
@@ -536,6 +605,7 @@ def comparison(reports, pages, session=None):
             raise ValueError('Throughput does not match independently verified blob bytes')
         rows.append({'copies': report['copies'], 'repetition': report['repetition'], 'sequence': report['sequence'],
                      'copySeconds': report['copy']['seconds'], 'peakMemoryBytes': report['copy']['peakMemoryBytes'],
+                     'memoryObservation': observation,
                      'blobBytesPerSecond': report['copy']['blobBytesPerSecond'], 'armDiagnosticSeconds': diagnostic})
     pairs = []
     for repetition in (1, 2, 3):
@@ -548,6 +618,9 @@ def comparison(reports, pages, session=None):
                 for key in ('copySeconds', 'peakMemoryBytes', 'blobBytesPerSecond', 'armDiagnosticSeconds')} for copies in (1, 2)},
             'pairs': pairs, 'wholeExperimentJob': {'jobId': job['id'], 'seconds': seconds, 'sharedSetupSeconds': session['sharedSetupSeconds'],
                 'sessionSeconds': session['sessionSeconds'], 'includesBothArmsAndUpload': True, 'perArmWholeJobComparisonAvailable': False},
+            'memoryLimitPressureObserved': any(row['memoryObservation']['pressure'] != ['no-limit-pressure-observed'] for row in rows),
+            'memoryLimitations': ['Exact enforced memory.max may be exceeded temporarily; peaks and limit pressure are not clamped.',
+                                 'Pre-arm available-memory budget does not prove continuous host headroom or unconstrained memory demand.'],
             'productionChangeRecommended': False}
 
 
@@ -565,6 +638,7 @@ def main():
     child = commands.add_parser('worker')
     for name in ('unit', 'image'): child.add_argument('--' + name, required=True)
     child.add_argument('--copies', type=int, required=True)
+    child.add_argument('--available-memory-bytes', type=int, required=True)
     for name in ('layout', 'digestfile', 'output'): child.add_argument('--' + name, type=Path, required=True)
     summary = commands.add_parser('summarize')
     for name in ('directory', 'jobs', 'output'): summary.add_argument(name, type=Path)

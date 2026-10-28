@@ -123,13 +123,16 @@ class Transfer(unittest.TestCase):
 
     def test_worker_records_success_and_nonzero_status_inside_valid_cgroup(self):
         args = argparse.Namespace(unit='finite-transfer-' + 'a' * 16, image=self.image,
-            layout=self.root / 'image', digestfile=self.root / 'digest', copies=2, output=self.root)
+            layout=self.root / 'image', digestfile=self.root / 'digest', copies=2, output=self.root,
+            available_memory_bytes=12 * 1024**3)
         def read(path):
             return {'cgroup': '0::/system.slice/' + args.unit + '.service', 'memory.max': str(M.MEMORY),
-                    'memory.swap.max': '0', 'memory.peak': '1024', 'memory.events': 'oom 0\noom_kill 0\n'}[path.name]
+                    'memory.swap.max': '0', 'pids.max': '64', 'memory.peak': '1024',
+                    'memory.events': 'low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\n'}[path.name]
         for status in (0, 9):
             with patch.object(Path, 'read_text', read), patch.object(M.subprocess, 'run', return_value=argparse.Namespace(returncode=status)), \
-                    patch.object(M.time, 'monotonic', side_effect=[10, 20]):
+                    patch.object(M.time, 'monotonic', side_effect=[10, 20]), \
+                    patch.object(M, 'runner_cohort', return_value={'memoryTotalKiB': 16 * 1024**2}):
                 self.assertEqual(M.worker(args), status)
             value = json.loads((self.root / 'copy-resources.json').read_text())
             self.assertEqual(value['seconds'], 10)
@@ -137,8 +140,102 @@ class Transfer(unittest.TestCase):
             if status:
                 with self.assertRaises(ValueError): M.resource_receipt(value)
             else: M.resource_receipt(value)
-        value['exitCode'] = 0; value['memoryEvents'] = 'oom 1\noom_kill 1\n'
+        value.pop('resourceValidationError'); value['exitCode'] = 0
+        value['memoryEvents'] = 'low 0\nhigh 0\nmax 0\noom 1\noom_kill 1\n'
         with self.assertRaisesRegex(ValueError, 'OOM'): M.resource_receipt(value)
+
+    def test_memory_overshoot_is_retained_with_pressure_not_clamped(self):
+        reports, pages = self.reports()
+        for report in reports:
+            record = report['copy']
+            record['peakMemoryBytes'] = M.MEMORY + 8192
+            record['resources']['peakMemoryBytes'] = M.MEMORY + 8192
+            record['resources']['memoryEvents'] = 'low 0\nhigh 3\nmax 12988\noom 0\noom_kill 0\noom_group_kill 0\n'
+            record['memoryObservation'] = M.memory_observation(record['resources'])
+        result = self.compare(reports, pages)
+        self.assertTrue(result['memoryLimitPressureObserved'])
+        self.assertFalse(result['productionChangeRecommended'])
+        self.assertEqual(result['medians']['1']['peakMemoryBytes'], M.MEMORY + 8192)
+        for row in result['measurements']:
+            observation = row['memoryObservation']
+            self.assertEqual(observation['observedPeakOverLimitBytes'], 8192)
+            self.assertEqual(observation['enforcedMemoryMaxBytes'], M.MEMORY)
+            self.assertEqual(observation['maxBoundaryEvents'], 12988)
+            self.assertEqual(observation['highBoundaryEvents'], 3)
+            self.assertEqual(observation['preArmHeadroomBudgetBytes'], 8 * 1024**3)
+
+    def test_memory_budget_and_exact_enforcement_are_mandatory(self):
+        reports, _ = self.reports(); original = reports[0]['copy']['resources']
+        for key, value in (('initialAvailableMemoryBytes', True), ('initialAvailableMemoryBytes', 20 * 1024**3),
+                ('initialAvailableMemoryBytes', M.MEMORY + M.HEADROOM - 1), ('memoryTotalBytes', None),
+                ('peakMemoryBytes', 8 * 1024**3 + 1), ('peakMemoryBytes', 0), ('peakMemoryBytes', 1.0),
+                ('memoryMaxBytes', M.MEMORY + 8192), ('memoryMaxBytes', float(M.MEMORY)),
+                ('memorySwapMaxBytes', False), ('memorySwapMaxBytes', 1), ('exitCode', False),
+                ('cgroupLimitsVerifiedAtEnd', False), ('resourceValidationError', 'cap changed')):
+            value = dict(original, **{key: value})
+            with self.subTest(key=key, value=value), self.assertRaises(ValueError): M.resource_receipt(value)
+        for missing in ('initialAvailableMemoryBytes', 'memoryTotalBytes', 'cgroupLimitsVerifiedAtEnd'):
+            value = dict(original); del value[missing]
+            with self.subTest(missing=missing), self.assertRaises(ValueError): M.resource_receipt(value)
+
+    def test_memory_events_must_be_complete_unique_and_oom_free(self):
+        reports, _ = self.reports(); original = reports[0]['copy']['resources']
+        events = original['memoryEvents']
+        for invalid in (events.replace('max 0\n', ''), events + 'max 0\n', events.replace('high 0', 'high -1'),
+                events.replace('low 0', 'low 1.0'), events.replace('oom 0', 'oom 1'),
+                events.replace('oom_kill 0', 'oom_kill 1'), events + 'oom_group_kill 1\n', {}, ''):
+            with self.subTest(events=invalid), self.assertRaises(ValueError):
+                M.resource_receipt(dict(original, memoryEvents=invalid))
+
+    def test_memory_budget_is_bound_to_parent_and_hardware_cohort(self):
+        original, pages = self.reports()
+        for mutation in ('parent', 'parent-type', 'worker', 'physical', 'reported-observation'):
+            reports = copy.deepcopy(original); record = reports[0]['copy']
+            if mutation == 'parent': record['initialAvailableMemoryBytes'] += 1024
+            elif mutation == 'parent-type': record['initialAvailableMemoryBytes'] = float(record['initialAvailableMemoryBytes'])
+            elif mutation == 'worker': record['resources']['initialAvailableMemoryBytes'] += 1024
+            elif mutation == 'physical': record['resources']['memoryTotalBytes'] += 1024
+            else: record['memoryObservation']['observedPeakOverLimitBytes'] = 8192
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError): self.compare(reports, pages)
+
+    def test_worker_rechecks_owned_caps_and_retains_validation_failure(self):
+        args = argparse.Namespace(unit='finite-transfer-' + 'a' * 16, image=self.image,
+            layout=self.root / 'image', digestfile=self.root / 'digest', copies=2, output=self.root,
+            available_memory_bytes=12 * 1024**3)
+        for changed in ('cgroup', 'memory.max', 'memory.swap.max', 'pids.max'):
+            for exit_code in (0, 9):
+                counts = {}
+                def read(path):
+                    counts[path.name] = counts.get(path.name, 0) + 1
+                    values = {'cgroup': '0::/system.slice/' + args.unit + '.service', 'memory.max': str(M.MEMORY),
+                        'memory.swap.max': '0', 'pids.max': '64'}
+                    if path.name == changed and counts[path.name] == 2:
+                        return '0::/system.slice/foreign.service' if changed == 'cgroup' else '999'
+                    return values[path.name]
+                with patch.object(Path, 'read_text', read), patch.object(M, 'runner_cohort', return_value={'memoryTotalKiB': 16 * 1024**2}), \
+                        patch.object(M.subprocess, 'run', return_value=argparse.Namespace(returncode=exit_code)):
+                    self.assertEqual(M.worker(args), exit_code or 2)
+                receipt = json.loads((self.root / 'copy-resources.json').read_text())
+                self.assertEqual(receipt['exitCode'], exit_code)
+                self.assertFalse(receipt['cgroupLimitsVerifiedAtEnd'])
+                self.assertIn('resourceValidationError', receipt)
+                with self.assertRaises(ValueError): M.resource_receipt(receipt)
+
+    def test_worker_timeout_retains_failure_evidence(self):
+        args = argparse.Namespace(unit='finite-transfer-' + 'a' * 16, image=self.image,
+            layout=self.root / 'image', digestfile=self.root / 'digest', copies=1, output=self.root,
+            available_memory_bytes=12 * 1024**3)
+        def read(path):
+            return {'memory.peak': '1024', 'memory.events': 'low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\n'}[path.name]
+        with patch.object(M, 'cgroup_path', return_value=self.root), patch.object(Path, 'read_text', read), \
+                patch.object(M, 'runner_cohort', return_value={'memoryTotalKiB': 16 * 1024**2}), \
+                patch.object(M.subprocess, 'run', side_effect=subprocess.TimeoutExpired('skopeo', 1800)):
+            with self.assertRaises(subprocess.TimeoutExpired): M.worker(args)
+        receipt = json.loads((self.root / 'copy-resources.json').read_text())
+        self.assertIsNone(receipt['exitCode'])
+        self.assertIn('error', receipt)
+        self.assertEqual(receipt['peakMemoryBytes'], 1024)
+        self.assertIn('resourceValidationError', receipt)
 
     def test_stop_timeout_still_kills_client_joins_reader_and_checks_unit(self):
         process, reader, record = Mock(), Mock(), {}
@@ -272,19 +369,23 @@ class Transfer(unittest.TestCase):
                 reports.append({'schema': 1, 'experiment': 'bounded-image-transfer', 'status': 'success',
                     'copies': copies, 'repetition': repetition, 'revision': 'a' * 40, 'run': 123, 'attempt': 1,
                     'profile': 'finite-dev', 'digest': 'sha256:' + 'b' * 64, 'source': 'c' * 40, 'identity': 'v1:' + 'd' * 64,
-                    'policy': M.POLICY, 'runnerImage': 'fixture-image', 'runnerHardware': {'logicalCPUs': 4}, 'platform': 'Linux-X64', 'lockSha256': 'lock',
+                    'policy': M.POLICY, 'runnerImage': 'fixture-image', 'runnerHardware': {'logicalCPUs': 4, 'memoryTotalKiB': 16 * 1024**2}, 'platform': 'Linux-X64', 'lockSha256': 'lock',
                     'cosignKeySha256': 'key', 'versions': {'skopeo': 'pinned', 'cosign': 'pinned'}, 'binding': {},
                     'integrity': {'manifestConfigLayersVerified': True, 'compressedBlobsVerified': True, 'uniqueBlobBytes': 1024},
                     'copy': {'exitCode': 0, 'timedOut': False, 'serviceQuiescent': True, 'seconds': 10, 'boundedServiceSeconds': 11,
                         'peakMemoryBytes': 1024, 'blobBytesPerSecond': 102.4,
+                        'initialAvailableMemoryBytes': 12 * 1024**3,
                         'resources': {'exitCode': 0, 'seconds': 10, 'peakMemoryBytes': 1024, 'memoryMaxBytes': M.MEMORY,
-                                      'memorySwapMaxBytes': 0, 'memoryEvents': 'oom 0\noom_kill 0\n'}},
+                                      'memorySwapMaxBytes': 0, 'memoryEvents': 'low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\n',
+                                      'initialAvailableMemoryBytes': 12 * 1024**3, 'memoryTotalBytes': 16 * 1024**3,
+                                      'cgroupLimitsVerifiedAtEnd': True}},
                     'setupSeconds': 10, 'diagnosticSeconds': 20, 'setupPlusDiagnosticSeconds': 30})
                 jobs.append({'id': len(jobs) + 1, 'name': f'transfer-{copies}-{repetition}', 'run_id': 123,
                     'run_attempt': 1, 'head_sha': 'a' * 40, 'status': 'completed', 'conclusion': 'success',
                     'started_at': '2026-10-28T00:00:00Z', 'completed_at': '2026-10-28T00:01:00Z'})
         base = M.datetime.fromisoformat('2026-10-28T00:00:00+00:00').timestamp()
         for report in reports:
+            report['copy']['memoryObservation'] = M.memory_observation(report['copy']['resources'])
             sequence = M.ORDER.index((report['copies'], report['repetition'])) + 1
             started = base + 10 + (sequence - 1) * 21
             report.update(sequence=sequence, jobName=M.PAIRED_JOB, timingScope='arm-only-shared-setup-excluded',
