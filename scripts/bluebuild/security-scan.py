@@ -54,6 +54,14 @@ def run(args, output=None):
         PHASES.append({'phase': phase, 'seconds': round(time.monotonic() - started, 3), 'success': passed})
 
 
+def unpack_rootfs(layout, rootfs):
+    """Extract authenticated layers without unused runtime/repack metadata."""
+    if rootfs.exists() or rootfs.is_symlink():
+        raise ValueError('Rootfs extraction destination must be new')
+    rootfs.parent.mkdir(parents=True, exist_ok=True)
+    run(['umoci', 'raw', 'unpack', '--rootless', '--image', str(layout) + ':audit', str(rootfs)])
+
+
 def write_timings(directory, reused):
     (directory / 'phase-timings.json').write_text(json.dumps(
         {'schema': 1, 'inventoryReused': reused, 'phases': PHASES}, indent=2) + '\n')
@@ -327,8 +335,11 @@ def main():
                 # Rootless extraction preserves package bytes, not runtime ownership.
                 version = subprocess.check_output(['umoci', '--version'], text=True, timeout=30).strip()
                 rootfs = temporary / 'bundle/rootfs'
-                run(['umoci', 'unpack', '--rootless', '--image', str(temporary / 'image') + ':audit',
-                     str(temporary / 'bundle')])
+                # The raw command uses the same rootless layer extractor without
+                # producing an unused repack mtree (a second full rootfs walk/hash).
+                # Metadata checks remain in prepare_layout; the same umoci layer
+                # extractor retains compressed digest and uncompressed DiffID checks.
+                unpack_rootfs(temporary / 'image', rootfs)
                 run(['syft', 'dir:' + str(rootfs), '--base-path', str(rootfs),
                      '--override-default-catalogers', 'image', '-o',
                      'syft-json=' + str(directory / 'sbom.syft.json'),
@@ -347,6 +358,7 @@ def main():
                          '--sbom', str(directory / 'sbom.syft.json'),
                          '--output', str(directory / 'applicability-evidence.json')])
                 extraction = {'schema': 1, 'method': 'umoci-rootless', 'toolVersion': version,
+                              'command': 'umoci raw unpack --rootless',
                               'signedDigest': args.image.split('@')[1],
                               'scannedManifestDigest': policy_module.manifest_binding(args.image, manifests),
                               'sourcePath': str(rootfs), 'basePath': str(rootfs), 'catalogers': 'image',
