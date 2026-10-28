@@ -5,6 +5,7 @@ import copy
 import hashlib
 import importlib.util
 import io
+import itertools
 import json
 import os
 from pathlib import Path
@@ -26,6 +27,10 @@ SPEC.loader.exec_module(M)
 IMAGE = 'ghcr.io/closure-labs/finite@sha256:' + 'a' * 64
 REVISION = 'b' * 40
 STAMP = '2026-10-28T12:00:00Z'
+# Real hosted failure 40765793821: native scan succeeded, no OOM, peak +8 KiB.
+MEMORY_TOTAL_KIB = 16367524
+INITIAL_AVAILABLE = 15221157888
+OBSERVED_PEAK = 10737426432
 
 
 def environment():
@@ -66,6 +71,8 @@ def native(lane):
 def resources(lane='serial'):
     return {'schema': 1, 'lane': lane, 'exitCode': 0, 'diskFloorBreached': False,
             'memoryMaxBytes': M.MEMORY, 'memorySwapMaxBytes': 0,
+            'initialAvailableMemoryBytes': INITIAL_AVAILABLE,
+            'memoryTotalBytes': MEMORY_TOTAL_KIB * 1024, 'cgroupLimitsVerifiedAtEnd': True,
             'peakMemoryBytes': 1024**3, 'scanWallSeconds': 100 if lane == 'serial' else 80,
             'memoryEvents': {'low': 0, 'high': 0, 'max': 0, 'oom': 0, 'oom_kill': 0},
             'diskFreeStartBytes': 20 * 1024**3, 'diskFreeMinimumBytes': 10 * 1024**3,
@@ -78,6 +85,7 @@ def resources(lane='serial'):
 def arm(lane):
     return {'lane': lane, 'serviceStarted': True, 'serviceQuiescent': True, 'timedOut': False,
             'workspaceRemoved': True, 'exitCode': 0, 'armWallSeconds': 110 if lane == 'serial' else 90,
+            'initialAvailableMemoryBytes': INITIAL_AVAILABLE,
             'worker': resources(lane)}
 
 
@@ -92,7 +100,7 @@ def reports_and_jobs():
                       'lockSha256': 'e' * 64, 'policySha256': 'f' * 64, 'platform': 'linux/amd64',
                       'tools': {'grype': 'grype 0.120.1'}, 'nixVersion': 'Nix fixture',
                       'runner': {'RUNNER_OS': 'Linux', 'RUNNER_ARCH': 'X64', 'ImageVersion': 'fixture-image'},
-                      'runnerHardware': {'logicalCPUs': 4, 'cpuModels': ['fixture'], 'memoryTotalKiB': 16000000},
+                      'runnerHardware': {'logicalCPUs': 4, 'cpuModels': ['fixture'], 'memoryTotalKiB': MEMORY_TOTAL_KIB},
                       'binding': {'image': IMAGE, 'profile': 'finite', 'originRun': 50},
                       'arms': arms, 'comparison': M.pair_valid(arms),
                       'setupSeconds': 30, 'pairWallSeconds': 205, 'setupPlusPairSeconds': 235,
@@ -193,7 +201,14 @@ class Boundaries(unittest.TestCase):
     def test_required_resources_reject_oom_floor_cap_and_missing_telemetry(self):
         self.assertEqual(M.resources_valid(resources())['exitCode'], 0)
         for key, invalid in [('exitCode', 1), ('exitCode', False), ('memoryMaxBytes', M.MEMORY + 1), ('memorySwapMaxBytes', 1),
-                             ('peakMemoryBytes', M.MEMORY + 1), ('peakMemoryBytes', True),
+                             ('memoryMaxBytes', float(M.MEMORY)), ('memorySwapMaxBytes', False),
+                             ('peakMemoryBytes', INITIAL_AVAILABLE - M.HEADROOM + 1), ('peakMemoryBytes', True),
+                             ('peakMemoryBytes', 0), ('peakMemoryBytes', MEMORY_TOTAL_KIB * 1024 + 1),
+                             ('initialAvailableMemoryBytes', M.MEMORY + M.HEADROOM - 1),
+                             ('initialAvailableMemoryBytes', MEMORY_TOTAL_KIB * 1024 + 1),
+                             ('initialAvailableMemoryBytes', True), ('memoryTotalBytes', True),
+                             ('memoryTotalBytes', float(MEMORY_TOTAL_KIB * 1024)),
+                             ('cgroupLimitsVerifiedAtEnd', False), ('cgroupLimitsVerifiedAtEnd', 1),
                              ('scanWallSeconds', 0), ('scanWallSeconds', float('inf')),
                              ('memoryEvents', {}), ('memoryEvents', {'oom': 1, 'oom_kill': 0}),
                              ('memoryEvents', {'oom': 0, 'oom_kill': 1}),
@@ -205,6 +220,46 @@ class Boundaries(unittest.TestCase):
                              ('runnerNetworkDelta', {'rx_bytes': -1, 'tx_bytes': 0})]:
             value = resources(); value[key] = invalid
             with self.subTest(key=key, invalid=invalid), self.assertRaises(ValueError): M.resources_valid(value)
+
+    def test_actual_transient_overshoot_is_preserved_with_reclaim_pressure(self):
+        value = resources(); value['peakMemoryBytes'] = OBSERVED_PEAK
+        value['memoryEvents'].update(max=12988, oom_group_kill=0)
+        before = copy.deepcopy(value)
+        self.assertIs(M.resources_valid(value), value)
+        self.assertEqual(value, before)
+        observed = M.memory_observation(value)
+        self.assertEqual(observed['enforcedMemoryMaxBytes'], M.MEMORY)
+        self.assertEqual(observed['observedPeakBytes'], OBSERVED_PEAK)
+        self.assertEqual(observed['observedPeakOverLimitBytes'], 8192)
+        self.assertEqual(observed['maxBoundaryEvents'], 12988)
+        self.assertEqual(observed['preArmHeadroomBudgetBytes'], INITIAL_AVAILABLE - M.HEADROOM)
+        self.assertEqual(observed['pressure'], ['max-boundary-reclaim', 'observed-peak-above-memory-max'])
+        # No fixed page tolerance: it is the observed pre-arm headroom budget.
+        value['peakMemoryBytes'] = INITIAL_AVAILABLE - M.HEADROOM
+        M.resources_valid(value)
+        value['peakMemoryBytes'] += 1
+        with self.assertRaises(ValueError): M.resources_valid(value)
+
+    def test_memory_requires_complete_typed_counters_and_fatal_oom(self):
+        for missing in ('memoryTotalBytes', 'initialAvailableMemoryBytes', 'peakMemoryBytes',
+                        'memoryEvents', 'cgroupLimitsVerifiedAtEnd'):
+            value = resources(); del value[missing]
+            with self.subTest(missing=missing), self.assertRaises(ValueError): M.resources_valid(value)
+        for missing in ('low', 'high', 'max', 'oom', 'oom_kill'):
+            value = resources(); del value['memoryEvents'][missing]
+            with self.subTest(missing=missing), self.assertRaises(ValueError): M.resources_valid(value)
+        for counter in ('low', 'high', 'max', 'oom', 'oom_kill', 'oom_group_kill'):
+            for invalid in (False, -1, '0', 0.0):
+                value = resources(); value['memoryEvents'][counter] = invalid
+                with self.subTest(counter=counter, invalid=invalid), self.assertRaises(ValueError): M.resources_valid(value)
+        for counter in ('oom', 'oom_kill', 'oom_group_kill'):
+            value = resources(); value['memoryEvents'][counter] = 1
+            with self.subTest(counter=counter), self.assertRaisesRegex(ValueError, 'OOM'): M.resources_valid(value)
+        value = resources(); value['memoryEvents'].update(high=2, max=3, future_counter=4)
+        M.resources_valid(value)
+        self.assertEqual(M.memory_observation(value)['pressure'], ['max-boundary-reclaim', 'high-boundary-throttling'])
+        value['memoryEvents']['bad counter'] = 0
+        with self.assertRaises(ValueError): M.resources_valid(value)
 
     def test_evidence_census_retains_small_receipts_hashes_omitted_raw_files(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -311,6 +366,35 @@ class Comparisons(unittest.TestCase):
             reports, jobs = reports_and_jobs(); mutation(reports)
             with self.subTest(mutation=mutation), self.assertRaises(ValueError): self.compare(reports, jobs)
 
+    def test_actual_peak_overage_remains_visible_in_complete_cohort(self):
+        reports, jobs = reports_and_jobs()
+        for report in reports:
+            for value in report['arms']:
+                if value['lane'] == 'serial':
+                    value['worker']['peakMemoryBytes'] = OBSERVED_PEAK
+                    value['worker']['memoryEvents'].update(max=12988, oom_group_kill=0)
+            report['comparison'] = M.pair_valid(report['arms'])
+        result = self.compare(reports, jobs)
+        self.assertTrue(result['memoryLimitPressureObserved'])
+        self.assertFalse(result['productionChangeRecommended'])
+        for pair in result['pairs']:
+            serial = pair['memoryObservations']['serial']
+            self.assertEqual(serial['observedPeakBytes'], OBSERVED_PEAK)
+            self.assertEqual(serial['observedPeakOverLimitBytes'], 8192)
+            self.assertEqual(serial['maxBoundaryEvents'], 12988)
+            self.assertEqual(pair['memoryObservations']['overlap']['pressure'], ['no-limit-pressure-observed'])
+        # Classifications are recomputed, not trusted from the report.
+        reports[0]['comparison']['memoryObservations']['serial']['pressure'] = ['no-limit-pressure-observed']
+        with self.assertRaisesRegex(ValueError, 'differs'): self.compare(reports, jobs)
+
+    def test_memory_observations_bind_to_parent_budget_and_runner(self):
+        values = [arm('serial'), arm('overlap')]
+        values[1]['worker']['initialAvailableMemoryBytes'] += 1024
+        with self.assertRaisesRegex(ValueError, 'pre-arm'): M.pair_valid(values)
+        reports, jobs = reports_and_jobs()
+        reports[0]['arms'][0]['worker']['memoryTotalBytes'] += 1024
+        with self.assertRaisesRegex(ValueError, 'runner cohort'): self.compare(reports, jobs)
+
     def test_pair_rejects_failed_cleanup_timeout_inventory_and_nonzero_exit(self):
         for mutate in (lambda a: a.update(exitCode=1), lambda a: a.update(timedOut=True),
                        lambda a: a.update(serviceQuiescent=False), lambda a: a.update(workspaceRemoved=False),
@@ -389,6 +473,84 @@ class Comparisons(unittest.TestCase):
         self.assertEqual(self.compare(reports, jobs)['scanWallMedianSavedSeconds'], 20)
 
 
+class WorkerTelemetry(unittest.TestCase):
+    def run_worker(self, *, peak=OBSERVED_PEAK, events=None, native_exit=0, final_group_error=None,
+                   missing_peak=False):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            private = root / 'private'; private.mkdir()
+            group = root / 'cgroup'; group.mkdir()
+            output = root / 'output'
+            if not missing_peak: (group / 'memory.peak').write_text(str(peak))
+            (group / 'memory.events').write_text(events if events is not None else
+                'low 0\nhigh 0\nmax 12988\noom 0\noom_kill 0\noom_group_kill 0\n')
+            (group / 'io.stat').write_text('8:0 rbytes=1024 wbytes=2048 rios=1 wios=2\n')
+            context = root / 'context.json'; M.save(context, {'tools': {}, 'policySha256': 'a' * 64})
+            args = argparse.Namespace(unit='finite-db-benchmark-' + 'a' * 16, lane='serial',
+                                      image=IMAGE, temporary=private, output=output, context=context,
+                                      available_memory_bytes=INITIAL_AVAILABLE)
+            process = Mock(); process.wait.return_value = native_exit; process.poll.return_value = native_exit
+            error = None
+            with patch.dict(os.environ, environment(), clear=True), \
+                 patch.object(M, 'cgroup_path', side_effect=[group, final_group_error or group]) as cgroups, \
+                 patch.object(M.TRANSFER, 'runner_cohort', return_value={'memoryTotalKiB': MEMORY_TOTAL_KIB}), \
+                 patch.object(M.TRANSFER.METADATA, 'network_bytes', side_effect=[{'rx_bytes': 100, 'tx_bytes': 10},
+                                                                              {'rx_bytes': 200, 'tx_bytes': 20}]), \
+                 patch.object(M.shutil, 'disk_usage', return_value=SimpleNamespace(free=20 * 1024**3)), \
+                 patch.object(M.time, 'monotonic', side_effect=itertools.count(100)), \
+                 patch.object(M.subprocess, 'Popen', return_value=process), \
+                 patch.object(M, 'native_receipt', return_value=native('serial')), \
+                 patch.object(M, 'retain_evidence', return_value={}):
+                try: M.worker(args)
+                except (OSError, ValueError) as caught: error = caught
+            self.assertEqual(cgroups.call_count, 2)
+            record = json.loads((output / 'worker.json').read_text())
+            return record, error
+
+    def test_worker_preserves_successful_scan_and_actual_peak(self):
+        record, error = self.run_worker()
+        self.assertIsNone(error)
+        self.assertEqual(record['exitCode'], 0)
+        self.assertTrue(record['cgroupLimitsVerifiedAtEnd'])
+        self.assertEqual(record['peakMemoryBytes'], OBSERVED_PEAK)
+        self.assertEqual(record['memoryEvents']['max'], 12988)
+        self.assertTrue(record['nativeTemporaryCleanupVerified'])
+        self.assertNotIn('resourceValidationError', record)
+
+    def test_post_scan_validation_failure_is_retained_separately(self):
+        record, error = self.run_worker(peak=INITIAL_AVAILABLE - M.HEADROOM + 1)
+        self.assertIsInstance(error, ValueError)
+        self.assertEqual(record['exitCode'], 0)  # The native scanner succeeded.
+        self.assertEqual(record['native']['scannerStatus'], 'complete')
+        self.assertIn('headroom budget', record['resourceValidationError'])
+        self.assertEqual(record['error'], record['resourceValidationError'])
+
+    def test_final_cgroup_change_and_missing_peak_remain_fatal_and_retained(self):
+        record, error = self.run_worker(final_group_error=ValueError('changed actual cgroup limits'))
+        self.assertIsInstance(error, ValueError)
+        self.assertFalse(record['cgroupLimitsVerifiedAtEnd'])
+        self.assertEqual(record['resourceValidationError'], 'changed actual cgroup limits')
+        record, error = self.run_worker(missing_peak=True)
+        self.assertIsInstance(error, OSError)
+        self.assertIn('memory.peak', record['resourceValidationError'])
+
+    def test_duplicate_malformed_or_missing_core_events_are_fatal(self):
+        for events in ('low 0\nhigh 0\nmax 1\noom 0\noom 0\noom_kill 0\n',
+                       'low 0\nhigh 0\nmax invalid\noom 0\noom_kill 0\n',
+                       'low 0\nhigh 0\noom 0\noom_kill 0\n', ''):
+            with self.subTest(events=events):
+                record, error = self.run_worker(events=events)
+                self.assertIsInstance(error, ValueError)
+                self.assertIn('memory events', record['resourceValidationError'])
+
+    def test_native_failure_is_not_overwritten_by_telemetry_failure(self):
+        record, error = self.run_worker(native_exit=1, final_group_error=ValueError('changed final cgroup'))
+        self.assertIsInstance(error, ValueError)
+        self.assertEqual(record['exitCode'], 1)
+        self.assertIn('Native scanner failed', record['error'])
+        self.assertEqual(record['resourceValidationError'], 'changed final cgroup')
+
+
 class Cleanup(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(); self.addCleanup(self.temporary.cleanup)
@@ -404,7 +566,7 @@ class Cleanup(unittest.TestCase):
         process.poll.return_value = 0
         original_read = Path.read_text
         def read(path, *args, **kwargs):
-            if str(path) == '/proc/meminfo': return 'MemAvailable: 20000000 kB\n'
+            if str(path) == '/proc/meminfo': return f'MemAvailable: {INITIAL_AVAILABLE // 1024} kB\n'
             return original_read(path, *args, **kwargs)
         def launch(command, **_):
             self.command = command
