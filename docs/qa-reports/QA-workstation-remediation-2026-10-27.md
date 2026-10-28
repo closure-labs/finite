@@ -100,6 +100,16 @@ All 34 command integration tests passed both normally and in a namespace without
 `/usr` or `/bin`, using cached Nix-store tools. This is focused regression evidence,
 not a full hermetic aggregate or assembled-image result.
 
+Hosted run `40634473846` subsequently passed both home-contract variants, then
+exposed six administrator-helper fixture failures: the Nix sandbox rejects real
+setgid-mode writes. A minimal local Nix derivation reproduced all six failures.
+The fixture now models only special permission bits while keeping real file
+types, ordinary permissions, ownership and group IDs. All 23 helper tests pass
+in the same sandbox, including denied or silently lost setgid rollback and
+rejection of setuid, incorrect modes and incorrect groups. The production
+installer and sandbox policy are unchanged; these fixtures do not establish
+privileged installation or browser acceptance.
+
 The source proposal updater now has 19 passing tests, including an empty canonical
 CI inventory (wait without adoption) and main advancing during the lock update
 (restore all three proposal files). No qualification checks were weakened.

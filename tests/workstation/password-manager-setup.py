@@ -70,6 +70,37 @@ class SetupTests(unittest.TestCase):
         self.installer = setup.Installer(store_root=self.store, state_root=self.state,
             state_anchor=self.base, trusted_uid=os.getuid(), effective_uid=lambda: 0,
             run=self.run_command, group_lookup=self.group_lookup)
+        # Nix deliberately forbids special-mode chmod syscalls. Model only
+        # those bits; file types, ordinary permissions and ownership stay real.
+        self.special_modes = {}
+        self.real_stat, self.real_lstat, self.real_fstat = os.stat, os.lstat, os.fstat
+        self.real_chmod, self.real_fchmod = os.chmod, os.fchmod
+        for name, replacement in (
+                ('stat', lambda *a, **kw: self.mode_info(self.real_stat(*a, **kw))),
+                ('lstat', lambda *a, **kw: self.mode_info(self.real_lstat(*a, **kw))),
+                ('fstat', lambda *a, **kw: self.mode_info(self.real_fstat(*a, **kw))),
+                ('chmod', self.chmod), ('fchmod', self.fchmod)):
+            mock = patch.object(os, name, replacement)
+            mock.start()
+            self.addCleanup(mock.stop)
+
+    def mode_info(self, info):
+        special = self.special_modes.get((info.st_dev, info.st_ino))
+        if special is None:
+            return info
+        fields = list(info)
+        fields[0] = (info.st_mode & ~0o7000) | special
+        return os.stat_result(fields)
+
+    def chmod(self, path, mode, **kwargs):
+        self.real_chmod(path, mode & ~0o7000, **kwargs)
+        info = self.real_stat(path, **kwargs)
+        self.special_modes[info.st_dev, info.st_ino] = mode & 0o7000
+
+    def fchmod(self, fd, mode):
+        self.real_fchmod(fd, mode & ~0o7000)
+        info = self.real_fstat(fd)
+        self.special_modes[info.st_dev, info.st_ino] = mode & 0o7000
 
     @staticmethod
     def digest(path):
@@ -131,6 +162,7 @@ class SetupTests(unittest.TestCase):
         self.assertEqual(info.st_uid, os.getuid())
         self.assertEqual(info.st_gid, self.group_gid)
         self.assertFalse(info.st_mode & stat.S_ISUID)
+        self.assertEqual(stat.S_IMODE(self.real_stat(destination).st_mode), 0o755)
         self.assertTrue(self.installer.status(requirement)['installed'])
         before = list(self.calls)
         self.assertTrue(self.install(requirement)['installed'])
@@ -293,6 +325,23 @@ class SetupTests(unittest.TestCase):
             self.install()
         self.assertEqual(root.read_text(), 'unrecognized administrator file')
 
+    def test_failed_or_lost_special_mode_never_leaves_a_published_install(self):
+        for failure in ('denied', 'lost'):
+            with self.subTest(failure=failure):
+                def set_mode(fd, mode):
+                    if mode & 0o7000:
+                        if failure == 'denied':
+                            raise PermissionError('special mode denied')
+                        mode &= ~0o7000
+                    self.fchmod(fd, mode)
+                with patch.object(os, 'fchmod', set_mode):
+                    expected = PermissionError if failure == 'denied' else setup.SetupError
+                    with self.assertRaisesRegex(expected, 'special mode denied|permissions'):
+                        self.install()
+                self.assertFalse(Path(self.value['hostPath']).parent.exists())
+                self.assertFalse((self.state / '.roots' / self.wrapper_root.name).exists())
+                self.assertEqual(list(self.state.glob('.install-*')), [])
+
     def test_mutable_or_symlinked_state_parents_are_rejected(self):
         parent = self.state.parent
         parent.mkdir()
@@ -323,10 +372,16 @@ class SetupTests(unittest.TestCase):
     def test_status_checks_receipt_hash_permissions_and_roots(self):
         self.install()
         destination = Path(self.value['hostPath'])
-        destination.chmod(0o755)
-        with self.assertRaisesRegex(setup.SetupError, 'permissions'):
-            self.installer.status(self.value)
+        for mode in (0o755, 0o4755, 0o6755, 0o2750, 0o2775):
+            with self.subTest(mode=oct(mode)):
+                destination.chmod(mode)
+                with self.assertRaisesRegex(setup.SetupError, 'permissions|writable'):
+                    self.installer.status(self.value)
         destination.chmod(0o2755)
+        self.group_gid += 1
+        with self.assertRaisesRegex(setup.SetupError, 'permissions or group'):
+            self.installer.status(self.value)
+        self.group_gid -= 1
         receipt = destination.parent / 'receipt.json'
         receipt.write_text('{}')
         with self.assertRaisesRegex(setup.SetupError, 'receipt'):
