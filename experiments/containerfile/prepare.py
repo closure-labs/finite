@@ -88,6 +88,19 @@ def authorized_revision():
     return revision
 
 
+def foundation_source(root=ROOT):
+    lock = json.loads((root / 'flake.lock').read_text())
+    node = lock['nodes'][lock['nodes'][lock['root']]['inputs']['foundation']]['locked']
+    source = json.loads((root / 'sources/foundation.json').read_text())
+    if (node.get('type'), node.get('owner'), node.get('repo')) != ('github', 'closure-labs', 'foundation'):
+        raise ValueError('Unexpected Foundation lock source')
+    if (not re.fullmatch('[a-f0-9]{40}', node.get('rev', ''))
+            or any(source.get(key) != node.get(key) for key in ('rev', 'narHash'))):
+        raise ValueError('Foundation release metadata differs from the lock')
+    return {key: source[key] for key in ('schema', 'compatibility', 'version', 'rev', 'narHash')} | {
+        'lastModified': node['lastModified']}
+
+
 def prepare(profile, root=ROOT):
     recipes, cosign, cli = contract(root)
     recipe = recipes['recipes/' + profile + '.yml']
@@ -119,6 +132,7 @@ def prepare(profile, root=ROOT):
             'bluebuildImage': cli['image'] + '@' + cli['digest'],
             'referenceIdentity': reference, 'experimentIdentity': experiment,
             'productionEligible': False, 'bootValidated': False,
+            'foundationSource': foundation_source(root),
             'repos': base[1]['repos']['files'], 'packages': base[1]['install']['packages'],
             'copies': base[3]['files'], 'systemUnits': base[5]['system']['enabled'],
             'userUnits': base[5]['user']['enabled'], 'osRelease': final[0]['properties'],
@@ -137,6 +151,39 @@ def rpm_inventory(output):
     packages = [dict(zip(fields, row)) for row in rows]
     canonical = json.dumps(packages, sort_keys=True, separators=(',', ':')).encode()
     return packages, hashlib.sha256(canonical).hexdigest()
+
+
+# Read installed metadata and RPM ownership only: do not start services, invoke
+# Foundation preparation, execute fzf, or install optional Homebrew bundles.
+PROVENANCE_QUERY = r"""
+import hashlib, json, os, subprocess
+from pathlib import Path
+source = Path('/usr/share/finite/foundation-source.json').read_bytes()
+fzf = Path('/usr/bin/fzf')
+if not fzf.is_file() or not os.access(fzf, os.X_OK):
+    raise ValueError('Stock fzf is missing or not executable')
+owner = subprocess.check_output(['rpm', '-qf', '--qf',
+    '%{NAME}\t%{EPOCHNUM}\t%{VERSION}\t%{RELEASE}\t%{ARCH}\n', str(fzf)], text=True)
+print(json.dumps({'foundationSource': json.loads(source),
+    'foundationSourceSha256': hashlib.sha256(source).hexdigest(),
+    'fzf': {'path': str(fzf), 'resolvedPath': str(fzf.resolve()),
+            'sha256': hashlib.sha256(fzf.read_bytes()).hexdigest(), 'owner': owner}}))
+"""
+
+
+def validate_provenance(observed, expected, packages):
+    if observed.get('foundationSource') != expected:
+        raise ValueError('Installed Foundation metadata differs from the exact lock source')
+    fzf = observed.get('fzf', {})
+    if (fzf.get('path') != '/usr/bin/fzf'
+            or not fzf.get('resolvedPath', '').startswith('/usr/')
+            or not re.fullmatch('[a-f0-9]{64}', fzf.get('sha256', ''))
+            or not re.fullmatch('[a-f0-9]{64}', observed.get('foundationSourceSha256', ''))):
+        raise ValueError('Invalid installed provenance paths or hashes')
+    owners, _ = rpm_inventory(fzf.get('owner', ''))
+    if len(owners) != 1 or owners[0]['name'] != 'fzf' or owners[0] not in packages:
+        raise ValueError('Stock fzf is not owned by the inventoried fzf RPM')
+    return dict(observed, fzf=dict(fzf, owner=owners[0]))
 
 
 def build(plan, root=ROOT):
@@ -201,6 +248,15 @@ def build(plan, root=ROOT):
                'packageCount': len(packages), 'packages': packages, 'packagesSha256': digest,
                'canonicalization': 'UTF-8 JSON packages array, sorted object keys, separators comma/colon'}
     (root / '.bluebuild/containerfile/rpm-inventory.json').write_text(json.dumps(receipt, indent=2) + '\n')
+    observed = json.loads(subprocess.check_output(
+        ['docker', 'run', '--rm', '--network=none', '--entrypoint', 'python3', image_id,
+         '-c', PROVENANCE_QUERY], text=True))
+    provenance = validate_provenance(observed, plan['foundationSource'], packages)
+    provenance.update(schema=1, sourceRevision=plan['sourceRevision'], imageId=image_id,
+                      experimentIdentity=plan['experimentIdentity'], profile=profile,
+                      bootValidated=False, userSessionValidated=False)
+    (root / '.bluebuild/containerfile/installed-provenance.json').write_text(
+        json.dumps(provenance, indent=2) + '\n')
 
 
 def main():

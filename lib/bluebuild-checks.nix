@@ -57,6 +57,7 @@
 in {
   home = check "home-contracts" (with pkgs; [gawk getent gnugrep jq just nix python3 ripgrep shellcheck xorriso yq-go]) ''
     export FINITE_HOME_CATALOG_PATH=${homeCatalog}
+    export FINITE_TEST_PROFILE_EXPORT_COMMAND=${lib.getExe applications.profileExport}
     export FINITE_TEST_FOUNDATION_SOURCE=${foundation}
     shellcheck -s bash files/system/usr/libexec/finite/lib/update-shell-env
     bash tests/home/contracts.sh \
@@ -122,6 +123,7 @@ in {
     python3 tests/ci/execute-release-set.py
     python3 tests/ci/release-recovery.py
     python3 tests/ci/image-identity.py
+    python3 tests/ci/qualification-dependencies.py
     python3 tests/ci/applicability-evidence.py
     python3 tests/ci/native-evidence-summary.py
     python3 tests/ci/diagnose-built-candidate.py

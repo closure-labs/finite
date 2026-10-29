@@ -40,6 +40,46 @@ class Contract(unittest.TestCase):
         workflow = next(line for line in declaration.splitlines() if 'workflow-lint = source' in line)
         self.assertIn('../experiments/containerfile/build.sh', workflow)
 
+    def provenance(self, source):
+        return {'foundationSource': source, 'foundationSourceSha256': '1' * 64,
+                'fzf': {'path': '/usr/bin/fzf', 'resolvedPath': '/usr/bin/fzf',
+                        'sha256': '2' * 64, 'owner': 'fzf\t0\t0.65.2\t1.fc44\tx86_64\n'}}
+
+    def test_foundation_lock_and_release_metadata_must_agree(self):
+        expected = prepare.foundation_source()
+        self.assertEqual(expected['rev'], json.loads((ROOT / 'sources/foundation.json').read_text())['rev'])
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'sources').mkdir()
+            shutil.copy2(ROOT / 'flake.lock', root / 'flake.lock')
+            source = json.loads((ROOT / 'sources/foundation.json').read_text())
+            source['rev'] = 'a' * 40
+            (root / 'sources/foundation.json').write_text(json.dumps(source))
+            with self.assertRaisesRegex(ValueError, 'differs from the lock'):
+                prepare.foundation_source(root)
+
+    def test_installed_provenance_rejects_stale_foundation_and_nonstock_fzf(self):
+        expected = prepare.foundation_source()
+        observed = self.provenance(expected)
+        packages, _ = prepare.rpm_inventory(observed['fzf']['owner'])
+        receipt = prepare.validate_provenance(observed, expected, packages)
+        self.assertEqual(receipt['fzf']['owner']['name'], 'fzf')
+        for key in expected:
+            stale = copy.deepcopy(observed)
+            stale['foundationSource'][key] = 'wrong'
+            with self.assertRaisesRegex(ValueError, 'exact lock source'):
+                prepare.validate_provenance(stale, expected, packages)
+        for field, value in [('path', '/home/linuxbrew/.linuxbrew/bin/fzf'),
+                             ('resolvedPath', '/home/linuxbrew/.linuxbrew/bin/fzf'),
+                             ('owner', 'other\t0\t0.65.2\t1.fc44\tx86_64\n'),
+                             ('sha256', 'invalid')]:
+            wrong = copy.deepcopy(observed)
+            wrong['fzf'][field] = value
+            with self.assertRaises(ValueError):
+                prepare.validate_provenance(wrong, expected, packages)
+        with self.assertRaisesRegex(ValueError, 'inventoried fzf RPM'):
+            prepare.validate_provenance(observed, expected, [])
+
     def test_current_recipes_are_supported(self):
         recipes, _, _ = prepare.contract()
         self.assertEqual(recipes['recipes/finite-dev.yml']['base-image'], 'ghcr.io/ublue-os/bluefin-dx')
@@ -146,7 +186,8 @@ class Contract(unittest.TestCase):
                 'sourceRevision': 'd' * 40, 'referenceIdentity': 'v1:reference',
                 'created': '2026-10-29T02:00:00Z', 'version': 'containerfile-dddddddddddd',
                 'description': 'unpublished experiment', 'url': 'https://github.com/closure-labs/finite',
-                'experimentIdentity': 'containerfile-v1:experiment'}
+                'experimentIdentity': 'containerfile-v1:experiment',
+                'foundationSource': prepare.foundation_source()}
         labels = {'io.finite.build-inputs': plan['experimentIdentity'],
                   'io.finite.reference-build-inputs': plan['referenceIdentity'],
                   'org.opencontainers.image.revision': plan['sourceRevision'],
@@ -184,9 +225,12 @@ class Contract(unittest.TestCase):
                 if command[:3] == ['docker', 'image', 'inspect']:
                     return json.dumps([{'Id': 'sha256:' + 'f' * 64, 'Config': {'Labels': labels}}])
                 self.assertIn('--network=none', command)
-                self.assertIn('rpm', command)
                 self.assertIn('sha256:' + 'f' * 64, command)
-                return 'nix\t0\t2.30.1\t1.fc44\tx86_64\n'
+                if 'python3' in command:
+                    self.assertIn(prepare.PROVENANCE_QUERY, command)
+                    return json.dumps(self.provenance(plan['foundationSource']))
+                self.assertIn('rpm', command)
+                return 'nix\t0\t2.30.1\t1.fc44\tx86_64\nfzf\t0\t0.65.2\t1.fc44\tx86_64\n'
             with patch.dict('os.environ', env, clear=True), patch.object(prepare.subprocess, 'run', side_effect=inspect_context) as run, patch.object(
                     prepare.subprocess, 'check_output', side_effect=output):
                 prepare.build(plan, root)
@@ -199,8 +243,12 @@ class Contract(unittest.TestCase):
                 self.assertIn('sha256:' + 'f' * 64, run.call_args_list[1].args[0])
                 receipt = json.loads((root / '.bluebuild/containerfile/rpm-inventory.json').read_text())
                 self.assertEqual(receipt['imageId'], 'sha256:' + 'f' * 64)
-                self.assertEqual(receipt['packageCount'], 1)
+                self.assertEqual(receipt['packageCount'], 2)
                 self.assertEqual(receipt['sourceRevision'], plan['sourceRevision'])
+                provenance = json.loads((root / '.bluebuild/containerfile/installed-provenance.json').read_text())
+                self.assertEqual(provenance['imageId'], receipt['imageId'])
+                self.assertEqual(provenance['foundationSource'], plan['foundationSource'])
+                self.assertFalse(provenance['userSessionValidated'])
                 for key in labels:
                     wrong = dict(labels)
                     wrong[key] = 'wrong'

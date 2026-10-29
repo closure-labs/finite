@@ -224,6 +224,10 @@
       package = applications.homeInit;
       appProgram = lib.getExe applications.homeInit;
     };
+    profile-export = {
+      package = applications.profileExport;
+      appProgram = lib.getExe applications.profileExport;
+    };
     cloud-init.appProgram = "${applications.cloudInit}/bin/finite-cloud-init";
     local-cache.appProgram = "${localCache}/bin/finite-local-cache";
     repository-security-audit.appProgram = lib.getExe applications.repositorySecurityAudit;

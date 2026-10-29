@@ -412,11 +412,11 @@
         "nixpkgs-weekly": "nixpkgs-weekly"
       },
       "locked": {
-        "lastModified": 1793155375,
-        "narHash": "sha256-7Hhkh87TF79UzPbqrwjoto+YXMWgIk+qaohHh9Lm1zY=",
+        "lastModified": 1793296495,
+        "narHash": "sha256-uPL1U/4Zl3K55YBvPEeEdIHRXjPCklEcpNxpng9D5Ro=",
         "owner": "closure-labs",
         "repo": "foundation",
-        "rev": "5c0cd8d0fcb96613780ce7ac77e3fa4630558cea",
+        "rev": "64aab55132c1f12933c05c3274aa0d90147cc4ae",
         "type": "github"
       },
       "original": {

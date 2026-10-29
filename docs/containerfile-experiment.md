@@ -125,3 +125,21 @@ source CI also caught a hermetic fileset omission and a literal cleanup glob
 warning. Later revisions correct those and retain a final RPM inventory; their
 own hosted results must be checked separately. Assembly does not establish boot
 parity or authorize replacing the production builder.
+
+## Refreshed Foundation provenance
+
+The refreshed trial reads the exact Foundation revision, NAR hash and source
+metadata from the current lock and `sources/foundation.json`, rejecting disagreement.
+After assembly it reads `/usr/share/finite/foundation-source.json` from the same
+immutable local image used for verification, and requires exact metadata equality.
+It also records the executable `/usr/bin/fzf` path, resolved path, byte hash and
+owning RPM, checking that the owner is the inventoried `fzf` package. The offline
+`installed-provenance.json` receipt binds these observations to image ID, source
+revision and experimental identity. No services or user sessions are started;
+Foundation preparation, Homebrew and fzf itself are not executed by this query.
+
+Foundation's updated Bluefin aspect waits for upstream-owned default provisioning
+and uses stock fzf rather than installing optional Brew CLI bundles. This receipt
+proves installed metadata and RPM ownership only, **not** first-login, user-session
+provisioning or boot parity. The production builder and upstream trust ownership
+remain unchanged.

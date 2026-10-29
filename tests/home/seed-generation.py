@@ -208,5 +208,67 @@ class CurrentSeedGeneration(SeedFixture):
         self.assertFalse((self.root / "absent-target").exists())
 
 
+class ProfileExport(SeedFixture):
+    def invoke(self, *selections):
+        return subprocess.run([os.environ["FINITE_TEST_PROFILE_EXPORT_COMMAND"],
+                               *self.arguments(*selections)], text=True, capture_output=True)
+
+    test_default_profile_uses_the_catalog_writer_and_target_identity = SeedGeneration.test_default_profile_uses_the_catalog_writer_and_target_identity
+    test_invalid_selections_and_identity_leave_output_absent = SeedGeneration.test_invalid_selections_and_identity_leave_output_absent
+    test_existing_output_is_preserved = SeedGeneration.test_existing_output_is_preserved
+    test_host_and_capability_options_are_supported = SeedGeneration.test_host_and_capability_options_are_supported
+    test_mixed_roles_host_and_capabilities_match_actual_foundation_normalization = CurrentSeedGeneration.test_mixed_roles_host_and_capabilities_match_actual_foundation_normalization
+    test_dell_device_overrides_and_invalid_host_declarations = CurrentSeedGeneration.test_dell_device_overrides_and_invalid_host_declarations
+
+    def test_profile_only_matches_legacy_without_iso_tooling(self):
+        legacy = subprocess.run([COMMAND, *self.arguments("--hardware", "generic-x86_64")],
+                                text=True, capture_output=True)
+        self.assertEqual(legacy.returncode, 0, legacy.stderr)
+        expected = (self.output / "profile.yaml").read_bytes()
+        self.output = self.root / "profile-only"
+        fake_bin = self.root / "bin"
+        fake_bin.mkdir()
+        failing = fake_bin / "xorriso"
+        failing.write_text("#!" + shutil.which("bash") + "\nexit 19\n")
+        failing.chmod(0o755)
+        env = {**os.environ, "PATH": str(fake_bin) + os.pathsep + os.environ["PATH"]}
+        result = subprocess.run([sys.executable, str(ROOT / "scripts/home/profile-export.py"),
+                                 str(SOURCE / "lib/generate-profile.nix"), str(CATALOG),
+                                 *self.arguments("--hardware", "generic-x86_64")],
+                                env=env, text=True, capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual([p.name for p in self.output.iterdir()], ["profile.yaml"])
+        self.assertEqual((self.output / "profile.yaml").read_bytes(), expected)
+        self.assertEqual((self.output / "profile.yaml").stat().st_mode & 0o777, 0o644)
+        self.assertIn("finite-home-init --profile", result.stderr)
+
+    def test_profile_export_rejects_mismatched_catalog_without_fallback(self):
+        catalog = json.loads(CATALOG.read_text())
+        catalog["profileSchema"] = 2
+        invalid = self.root / "invalid-catalog.json"
+        invalid.write_text(json.dumps(catalog))
+        result = subprocess.run([sys.executable, str(ROOT / "scripts/home/profile-export.py"),
+                                 str(SOURCE / "lib/generate-profile.nix"), str(invalid),
+                                 *self.arguments()], text=True, capture_output=True)
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn("schema-3", result.stderr)
+        self.assertFalse(self.output.exists())
+
+    def test_failed_copy_and_dangling_output_are_safe(self):
+        spec = importlib.util.spec_from_file_location("finite_seed", ROOT / "scripts/home/seed.py")
+        seed = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(seed)
+        args = seed.parser().parse_args(self.arguments())
+        with patch.object(seed.shutil, "copyfile", side_effect=OSError("injected failure")):
+            with self.assertRaisesRegex(OSError, "injected failure"):
+                seed.create(args, SOURCE / "lib/generate-profile.nix", CATALOG, profile_only=True)
+        self.assertFalse(self.output.exists())
+        self.output.symlink_to(self.root / "absent-target")
+        result = self.invoke()
+        self.assertEqual(result.returncode, 2)
+        self.assertTrue(self.output.is_symlink())
+        self.assertFalse((self.root / "absent-target").exists())
+
+
 if __name__ == "__main__":
     unittest.main()
