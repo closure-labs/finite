@@ -15,6 +15,11 @@ on:
         type: boolean
         default: false
 
+# Temporary opt-in for this exploratory PR only; remove before any main merge.
+concurrency:
+  group: containerfile-experiment-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -34,7 +39,13 @@ jobs:
           bash -n experiments/containerfile/build.sh
   images:
     needs: contracts
-    if: github.event_name == 'workflow_dispatch' && inputs.build_images && github.repository == 'closure-labs/finite' && github.ref != 'refs/heads/main'
+    if: >-
+      github.repository == 'closure-labs/finite' &&
+      ((github.event_name == 'workflow_dispatch' && inputs.build_images && github.ref != 'refs/heads/main') ||
+       (github.event_name == 'pull_request' && github.event.pull_request.number == 321 &&
+        github.event.pull_request.head.repo.full_name == 'closure-labs/finite' &&
+        github.event.pull_request.head.repo.fork == false &&
+        github.event.pull_request.head.ref == 'codex/explore-containerfile'))
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     strategy:
@@ -49,6 +60,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: $/.github/actions/setup-nix
       - name: Prepare locked tools
         run: |

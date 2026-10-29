@@ -6,8 +6,10 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 
 import yaml
 
@@ -52,13 +54,47 @@ def contract(root=ROOT):
     return recipes, cosign, cli
 
 
+def authorized_revision():
+    """Temporary PR-321 opt-in, never a general PR build permission."""
+    if os.environ.get('GITHUB_REPOSITORY') != 'closure-labs/finite':
+        raise ValueError('Full experiment requires the authorized repository')
+    event = os.environ.get('GITHUB_EVENT_NAME')
+    if event == 'workflow_dispatch':
+        ref = os.environ.get('GITHUB_REF', '')
+        if not ref.startswith('refs/heads/') or ref == 'refs/heads/main':
+            raise ValueError('Full experiment requires an explicit dispatch on a branch, never main')
+        revision = os.environ.get('GITHUB_SHA', '')
+    elif event == 'pull_request':
+        payload = json.loads(Path(os.environ['GITHUB_EVENT_PATH']).read_text())
+        pull = payload.get('pull_request', {})
+        head = pull.get('head', {})
+        repository = head.get('repo', {})
+        if (payload.get('number') != 321 or pull.get('number') != 321
+                or payload.get('action') not in ('opened', 'synchronize', 'reopened')
+                or payload.get('repository', {}).get('full_name') != 'closure-labs/finite'
+                or repository.get('full_name') != 'closure-labs/finite'
+                or repository.get('fork') is not False
+                or head.get('ref') != 'codex/explore-containerfile'
+                or pull.get('base', {}).get('ref') != 'main'
+                or pull.get('base', {}).get('repo', {}).get('full_name') != 'closure-labs/finite'
+                or os.environ.get('GITHUB_REF') != 'refs/pull/321/merge'):
+            raise ValueError('PR is outside the temporary experiment opt-in')
+        revision = head.get('sha', '')
+    else:
+        raise ValueError('Full experiment requires an explicit dispatch or authorized PR 321')
+    if not re.fullmatch('[a-f0-9]{40}', revision):
+        raise ValueError('Experiment requires an exact source revision')
+    return revision
+
+
 def prepare(profile, root=ROOT):
     recipes, cosign, cli = contract(root)
     recipe = recipes['recipes/' + profile + '.yml']
     base = recipes['recipes/shared/base.yml']['modules']
     final = recipes['recipes/shared/final.yml']['modules']
     revision = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, text=True).strip()
-    if not re.fullmatch('[a-f0-9]{40}', revision) or os.environ.get('GITHUB_SHA', revision) != revision:
+    expected = authorized_revision() if os.environ.get('GITHUB_ACTIONS') == 'true' else revision
+    if not re.fullmatch('[a-f0-9]{40}', revision) or expected != revision:
         raise ValueError('Checkout differs from requested source revision')
     # Read the same payload derivation and production input identity, but NEVER
     # label experimental bytes with that production identity.
@@ -89,11 +125,8 @@ def prepare(profile, root=ROOT):
 
 
 def build(plan, root=ROOT):
-    if (os.environ.get('GITHUB_EVENT_NAME') != 'workflow_dispatch'
-            or os.environ.get('GITHUB_REPOSITORY') != 'closure-labs/finite'
-            or not os.environ.get('GITHUB_REF', '').startswith('refs/heads/')
-            or os.environ['GITHUB_REF'] == 'refs/heads/main'):
-        raise ValueError('Full experiment requires an explicit dispatch on a branch, never main')
+    if authorized_revision() != plan['sourceRevision']:
+        raise ValueError('Prepared plan differs from authorized source revision')
     profile = plan['profile']
     tag = 'localhost/finite-containerfile:' + profile
     args = {'BASE_IMAGE': plan['baseImage'] + '@' + plan['baseDigest'],
@@ -108,7 +141,18 @@ def build(plan, root=ROOT):
         command += ['--build-arg', name + '=' + value]
     env = dict(os.environ)
     env.pop('SOURCE_DATE_EPOCH', None)
-    subprocess.run(command + ['.'], cwd=root, env=env, check=True)
+    # Build only an allowlisted context: no .git, checkout credentials, event
+    # payload, workflow environment, or unrelated runner files are transmitted.
+    with tempfile.TemporaryDirectory(prefix='finite-containerfile-') as temporary:
+        context = Path(temporary)
+        for directory in ('files', 'experiments/containerfile'):
+            shutil.copytree(root / directory, context / directory,
+                            ignore=shutil.ignore_patterns('__pycache__'), symlinks=True)
+        for name in ('scripts/bluebuild/verify-image.sh', 'cosign.pub', '.bluebuild/containerfile/plan.json'):
+            target = context / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(root / name, target)
+        subprocess.run(command + [str(context)], cwd=root, env=env, check=True)
     result = subprocess.check_output(['docker', 'image', 'inspect', tag], text=True)
     info = json.loads(result)[0]
     labels = info['Config']['Labels']

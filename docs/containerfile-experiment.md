@@ -58,7 +58,8 @@ but that does not sign the experimental image. Production signing is unchanged.
 ## Validation and execution
 
 The normal Nix bluebuild contract check and a small PR workflow run the unit
-contracts; neither creates an image. Locally, with Python and PyYAML installed:
+contracts without creating an image (the PR-specific opt-in below is separate).
+Locally, with Python and PyYAML installed:
 
 ```sh
 python3 experiments/containerfile/prepare.py
@@ -66,7 +67,18 @@ python3 tests/ci/containerfile-experiment.py
 bash -n experiments/containerfile/build.sh
 ```
 
-Full image assembly requires an explicit `workflow_dispatch` of
+A temporary reviewed opt-in also enables full assembly **only for internal PR
+#321 from `closure-labs/finite:codex/explore-containerfile`**. The event payload,
+repository, non-fork status, base, PR number, branch and exact checked-out head SHA
+are checked before assembly. Superseded experiment runs cancel; the two profiles
+remain sequential and bounded to 120 minutes each. The build context is an
+allowlist of image files, experiment files, public key, plan and verifier; `.git`,
+credentials and unrelated runner files are not sent to Docker. Remove this
+PR-specific trigger and its guard before any eventual main merge. This temporary
+opt-in is necessary because GitHub does not expose dispatch for this branch-only
+workflow; it is not a production or general PR build policy.
+
+Otherwise, full image assembly requires an explicit `workflow_dispatch` of
 `containerfile-experiment.yml` on an experimental branch, with `build_images`
 set to true. It builds the two profiles sequentially, uses Docker `--load` only,
 runs the existing image contract verifier with networking disabled, and uploads

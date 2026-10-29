@@ -72,8 +72,42 @@ class Contract(unittest.TestCase):
     def test_full_build_requires_explicit_branch_dispatch(self):
         for values in ({}, {'GITHUB_EVENT_NAME': 'pull_request'},
                        {'GITHUB_EVENT_NAME': 'workflow_dispatch', 'GITHUB_REPOSITORY': 'closure-labs/finite', 'GITHUB_REF': 'refs/heads/main'}):
-            with patch.dict('os.environ', values, clear=True), self.assertRaisesRegex(ValueError, 'explicit dispatch'):
+            with patch.dict('os.environ', values, clear=True), self.assertRaises(ValueError):
                 prepare.build({})
+
+    def test_pr_opt_in_is_exact_and_rejects_forks_and_wrong_event(self):
+        repository = {'full_name': 'closure-labs/finite', 'fork': False}
+        payload = {'number': 321, 'action': 'synchronize', 'repository': repository,
+                   'pull_request': {'number': 321,
+                                    'head': {'repo': repository, 'ref': 'codex/explore-containerfile', 'sha': 'a' * 40},
+                                    'base': {'ref': 'main', 'repo': repository}}}
+        with tempfile.TemporaryDirectory() as directory:
+            event = Path(directory) / 'event.json'
+            env = {'GITHUB_EVENT_NAME': 'pull_request', 'GITHUB_REPOSITORY': 'closure-labs/finite',
+                   'GITHUB_REF': 'refs/pull/321/merge', 'GITHUB_EVENT_PATH': str(event)}
+            with patch.dict('os.environ', env, clear=True):
+                event.write_text(json.dumps(payload))
+                self.assertEqual(prepare.authorized_revision(), 'a' * 40)
+                changes = [('number', 322), ('action', 'labeled'),
+                           ('pull_request.head.repo.fork', True),
+                           ('pull_request.head.repo.full_name', 'other/finite'),
+                           ('pull_request.head.ref', 'main'), ('pull_request.head.sha', 'latest'),
+                           ('pull_request.base.ref', 'other')]
+                for field, value in changes:
+                    wrong = copy.deepcopy(payload)
+                    cursor = wrong
+                    parts = field.split('.')
+                    for part in parts[:-1]:
+                        cursor = cursor[part]
+                    cursor[parts[-1]] = value
+                    event.write_text(json.dumps(wrong))
+                    with self.assertRaises(ValueError, msg=field):
+                        prepare.authorized_revision()
+                event.write_text(json.dumps(payload))
+                for key, value in [('GITHUB_EVENT_NAME', 'pull_request_target'),
+                                   ('GITHUB_REPOSITORY', 'other/finite'), ('GITHUB_REF', 'refs/pull/322/merge')]:
+                    with patch.dict('os.environ', {key: value}), self.assertRaises(ValueError):
+                        prepare.authorized_revision()
 
     def test_no_publication_or_shared_image_workflow(self):
         workflow = (ROOT / '.github/workflows/containerfile-experiment.yml').read_text()
@@ -113,11 +147,25 @@ class Contract(unittest.TestCase):
                   'io.finite.profile': 'finite', 'io.finite.foundation': 'bluefin',
                   'io.finite.production-eligible': 'false'}
         env = {'GITHUB_EVENT_NAME': 'workflow_dispatch', 'GITHUB_REPOSITORY': 'closure-labs/finite',
-               'GITHUB_REF': 'refs/heads/experiment', 'SOURCE_DATE_EPOCH': '123'}
+               'GITHUB_REF': 'refs/heads/experiment', 'SOURCE_DATE_EPOCH': '123',
+               'GITHUB_SHA': plan['sourceRevision']}
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / '.bluebuild/containerfile').mkdir(parents=True)
-            with patch.dict('os.environ', env, clear=True), patch.object(prepare.subprocess, 'run') as run, patch.object(
+            for path in ('files', 'experiments/containerfile', 'scripts/bluebuild', '.git'):
+                (root / path).mkdir(parents=True, exist_ok=True)
+            for path in ('cosign.pub', '.bluebuild/containerfile/plan.json', 'scripts/bluebuild/verify-image.sh'):
+                (root / path).write_text('fixture')
+            (root / '.git/config').write_text('credential must not enter context')
+            contexts = []
+            def inspect_context(command, **kwargs):
+                if command[:3] == ['docker', 'buildx', 'build']:
+                    context = Path(command[-1])
+                    contexts.append(sorted(str(p.relative_to(context)) for p in context.rglob('*')))
+                    self.assertFalse((context / '.git').exists())
+                    self.assertFalse((context / '.github').exists())
+                    self.assertTrue((context / 'cosign.pub').exists())
+            with patch.dict('os.environ', env, clear=True), patch.object(prepare.subprocess, 'run', side_effect=inspect_context) as run, patch.object(
                     prepare.subprocess, 'check_output', return_value=json.dumps([{'Config': {'Labels': labels}}])):
                 prepare.build(plan, root)
                 command = run.call_args_list[0].args[0]
