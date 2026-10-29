@@ -1,0 +1,83 @@
+name: Explore unpublished Containerfile
+
+on:
+  pull_request:
+    paths:
+      - experiments/containerfile/**
+      - tests/ci/containerfile-experiment.py
+      - .github/workflows/containerfile-experiment.yml
+      - recipes/**
+      - sources/**
+  workflow_dispatch:
+    inputs:
+      build_images:
+        description: Build both local-only experimental images (no push, signing or promotion)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Validate the explicit recipe parity boundary
+        run: |
+          python3 -m pip install --disable-pip-version-check PyYAML==6.0.3
+          python3 experiments/containerfile/prepare.py
+          python3 tests/ci/containerfile-experiment.py
+          bash -n experiments/containerfile/build.sh
+  images:
+    needs: contracts
+    if: github.event_name == 'workflow_dispatch' && inputs.build_images && github.repository == 'closure-labs/finite' && github.ref != 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        profile: [finite, finite-dev]
+    env:
+      PROFILE: ${{ matrix.profile }}
+      FINITE_OPTIMIZED_CACHES: ${{ vars.FINITE_OPTIMIZED_CACHES }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: $/.github/actions/setup-nix
+      - name: Prepare locked tools
+        run: |
+          tools=$(nix build --file lib/ci-tools.nix image-tools --no-link --print-out-paths)
+          echo "$tools/bin" >>"$GITHUB_PATH"
+      - name: Authenticate upstream and runtime tool publishers
+        run: |
+          python3 scripts/ci/bluefin-upstream.py verify
+          python3 scripts/ci/cosign-runtime.py --output .bluebuild/cosign-runtime.json
+          cosign verify --new-bundle-format=false --key sources/bluebuild-cli.pub "$(jq -er '.image + "@" + .digest' sources/bluebuild-cli.json)" >.bluebuild/bluebuild-cli-verified.json
+      - name: Make room for the unpublished image
+        uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
+        with:
+          skip-if-available: "80G"
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Stage the same pinned Foundation and Nix payload
+        run: bash scripts/bluebuild/stage.sh "$PROFILE"
+      - name: Assemble and verify an unsigned local experiment
+        run: python3 experiments/containerfile/prepare.py --profile "$PROFILE" --build
+      - name: Preserve experiment evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: containerfile-${{ matrix.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .bluebuild/containerfile/
+            .bluebuild/upstream-verified.json
+            .bluebuild/cosign-runtime.json
+            .bluebuild/bluebuild-cli-verified.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
