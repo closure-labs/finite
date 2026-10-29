@@ -188,6 +188,15 @@ jobs:
           printf '%s' "$REGISTRY_TOKEN" | docker login --username "$REGISTRY_USER" --password-stdin ghcr.io
           bash scripts/bluebuild/install-cli.sh
           bash scripts/bluebuild/qualify.sh "$PHASE"
+      - name: Record qualification source dependency boundaries
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 1
+        env:
+          PHASE: ${{ matrix.phase }}
+        run: |
+          mkdir -p .bluebuild
+          python3 scripts/ci/qualification-dependencies.py --output ".bluebuild/$PROFILE-$PHASE-source-boundaries.json"
       - name: Record phase outcome
         if: always()
         env:
@@ -208,6 +217,7 @@ jobs:
           path: |
             .bluebuild/*outcome.json
             .bluebuild/*-predecessor-reuse.json
+            .bluebuild/*-source-boundaries.json
             .bluebuild/*-vm-host.json
             .bluebuild/nix-setup.json
             .bluebuild/*-benchmark.json
