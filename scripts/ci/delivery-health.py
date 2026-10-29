@@ -7,6 +7,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import time
 
 from publisher_health import inspect_publisher
 from security_decisions import canonical_hash, load_json
@@ -53,12 +54,63 @@ def failed_phases(jobs):
     return phases
 
 
+# Bound discovery independently of source-only build volume. Do not stop at an
+# old creation date: an old run can have a recently completed retry/promotion.
+HISTORY_PAGE_SIZE = 30
+HISTORY_MAX_PAGES = 5
+# Request-admission budget; an admitted metadata GET retains its own bounded
+# transport timeout/retries. This is not a hard wall-clock cancellation.
+HISTORY_SECONDS = 120
+
+
+def build_history(api, deadline):
+    runs, seen = [], set()
+    for page in range(1, HISTORY_MAX_PAGES + 1):
+        if time.monotonic() >= deadline:
+            raise ValueError('Build history unavailable: observation time budget exhausted')
+        endpoint = PREFIX + f'/actions/workflows/build.yml/runs?branch=main&per_page={HISTORY_PAGE_SIZE}'
+        if page > 1:
+            endpoint += f'&page={page}'
+        document = api(endpoint)
+        if time.monotonic() >= deadline:
+            raise ValueError('Build history unavailable: observation time budget exhausted')
+        batch = document.get('workflow_runs') if isinstance(document, dict) else None
+        if not isinstance(batch, list) or len(batch) > HISTORY_PAGE_SIZE:
+            raise ValueError('Invalid build health inventory')
+        for run in batch:
+            run_id = run.get('id') if isinstance(run, dict) else None
+            if type(run_id) is not int or run_id <= 0 or run_id in seen:
+                # A moving offset inventory must not silently hide a run.
+                raise ValueError('Build history unavailable: invalid or repeated run identity')
+            seen.add(run_id)
+            runs.append(run)
+        if len(batch) < HISTORY_PAGE_SIZE:
+            return runs, {'state': 'exhausted', 'pages': page, 'runs': len(runs)}
+    return runs, {'state': 'limited', 'pages': HISTORY_MAX_PAGES, 'runs': len(runs)}
+
+
+def completed_at(job, now):
+    value = job.get('completed_at')
+    try:
+        stamp = datetime.fromisoformat(value.replace('Z', '+00:00'))
+    except (AttributeError, TypeError, ValueError) as error:
+        raise ValueError('Publication evidence unavailable: missing job completion timestamp') from error
+    if stamp.tzinfo is None or stamp > now + timedelta(minutes=5):
+        raise ValueError('Invalid publication job completion timestamp')
+    return value
+
+
 def inspect(revision, version, bot, api=get_json, now=None):
     now = now or datetime.now(timezone.utc)
-    document = api(PREFIX + '/actions/workflows/build.yml/runs?branch=main&per_page=30')
-    runs = document['workflow_runs']
-    if not isinstance(runs, list) or len(runs) > 30:
-        raise ValueError('Invalid build health inventory')
+    deadline = time.monotonic() + HISTORY_SECONDS
+    runs, history = build_history(api, deadline)
+    def observe(endpoint):
+        if time.monotonic() >= deadline:
+            raise ValueError('Build history unavailable: observation time budget exhausted')
+        result = api(endpoint)
+        if time.monotonic() >= deadline:
+            raise ValueError('Build history unavailable: observation time budget exhausted')
+        return result
     runs = [run for run in runs if run.get('head_branch') == 'main'
             and run.get('head_repository', {}).get('full_name') == 'closure-labs/finite'
             and run.get('event') in ('push', 'schedule', 'workflow_dispatch')]
@@ -71,7 +123,7 @@ def inspect(revision, version, bot, api=get_json, now=None):
         run_id, attempt = run.get('id'), run.get('run_attempt')
         if type(run_id) is not int or type(attempt) is not int or not re.fullmatch('[0-9a-f]{40}', run.get('head_sha', '')):
             raise ValueError('Invalid active build identity')
-        jobs = api(PREFIX + f'/actions/runs/{run_id}/attempts/{attempt}/jobs?per_page=100')
+        jobs = observe(PREFIX + f'/actions/runs/{run_id}/attempts/{attempt}/jobs?per_page=100')
         if jobs['total_count'] > 100 or len(jobs['jobs']) != jobs['total_count']:
             raise ValueError('Active build job inventory is incomplete')
         failed = failed_phases(jobs['jobs'])
@@ -89,32 +141,41 @@ def inspect(revision, version, bot, api=get_json, now=None):
         run_id, attempt = run.get('id'), run.get('run_attempt')
         if type(run_id) is not int or type(attempt) is not int or not re.fullmatch('[0-9a-f]{40}', run.get('head_sha', '')):
             raise ValueError('Invalid trusted build identity')
-        jobs = api(PREFIX + f'/actions/runs/{run_id}/attempts/{attempt}/jobs?per_page=100')
-        if jobs['total_count'] > 100:
+        jobs = observe(PREFIX + f'/actions/runs/{run_id}/attempts/{attempt}/jobs?per_page=100')
+        if jobs['total_count'] > 100 or len(jobs['jobs']) != jobs['total_count']:
             raise ValueError('Build job inventory is incomplete')
-        names = {job['name'] for job in jobs['jobs'] if job.get('conclusion') == 'success'}
-        receipt = {'runId': run_id, 'revision': run['head_sha'], 'completedAt': run['updated_at']}
+        successful = {job['name']: job for job in jobs['jobs'] if job.get('conclusion') == 'success'}
         for channel in CHANNELS:
             for kind, name in [('qualified', 'qualification / aggregate'), ('promoted', 'promote')]:
-                if channels[channel][kind] is None and f'Publish ({channel}) / {name}' in names:
-                    channels[channel][kind] = receipt
+                job = successful.get(f'Publish ({channel}) / {name}')
+                if job is not None:
+                    completion = completed_at(job, now)
+                    previous = channels[channel][kind]
+                    # Runs are creation-ordered, but an older run can promote
+                    # more recently on retry. Compare native job completion.
+                    stamp = datetime.fromisoformat(completion.replace('Z', '+00:00'))
+                    prior_stamp = (datetime.fromisoformat(previous['completedAt'].replace('Z', '+00:00'))
+                                   if previous is not None else None)
+                    if prior_stamp is None or stamp > prior_stamp:
+                        channels[channel][kind] = {'runId': run_id, 'revision': run['head_sha'],
+                                                   'completedAt': completion}
         if index == 0 and run.get('conclusion') == 'failure':
             failures = failed_phases(jobs['jobs'])
         if selected is None and run['head_sha'] == revision and run.get('conclusion') == 'success':
-            artifacts = api(PREFIX + f'/actions/runs/{run_id}/artifacts?per_page=100')
-            if artifacts['total_count'] > 100:
+            artifacts = observe(PREFIX + f'/actions/runs/{run_id}/artifacts?per_page=100')
+            if artifacts['total_count'] > 100 or len(artifacts['artifacts']) != artifacts['total_count']:
                 raise ValueError('Build artifact inventory is incomplete')
             if eligible_build(run, jobs['jobs'], artifacts['artifacts'], revision):
                 selected = run_id
-        if all(value for channel in channels.values() for value in channel.values()) and (selected or index >= 9):
-            break
     problems = active_problems
     if failures:
         problems.append('Latest main build failed: ' + ', '.join(failures))
     for channel, states in channels.items():
         promoted = states['promoted']
         if promoted is None:
-            problems.append(channel + ': no recorded successful promotion in the recent build window.')
+            reason = ('promotion evidence unavailable within the bounded build history'
+                      if history['state'] == 'limited' else 'no recorded successful promotion in available build history')
+            problems.append(channel + ': ' + reason + '; this does not establish a failed publication.')
         else:
             timestamp = datetime.fromisoformat(promoted['completedAt'].replace('Z', '+00:00'))
             if timestamp.tzinfo is None or timestamp > now + timedelta(minutes=5):
@@ -149,7 +210,7 @@ def inspect(revision, version, bot, api=get_json, now=None):
         if release['state'] == 'recovery':
             problems.append(release['reason'])
     return {'schema': 1, 'healthy': not problems, 'blockers': blockers, 'problems': problems, 'channels': channels,
-            'version': version, 'release': release, 'buildRun': selected, 'activeBuilds': active}
+            'version': version, 'release': release, 'buildRun': selected, 'activeBuilds': active, 'buildHistory': history}
 
 
 def dispatch(report, revision, api=get_json):
@@ -190,6 +251,8 @@ def summary(report):
         lines += ['', f'Active main run [{run["runId"]}]({url}): {run["status"]}.']
         lines.extend('- Failed phase: ' + phase for phase in run['failedPhases'])
         lines.extend('- Running phase: ' + phase for phase in run['runningPhases'])
+    if history := report.get('buildHistory'):
+        lines += ['', f'Build history: {history["runs"]} runs across {history["pages"]} pages ({history["state"]}).']
     release = report['release']
     lines += ['', 'Release publication: ' + release['state'] + ' — ' + release['reason'], '']
     if release.get('runUrl'):
