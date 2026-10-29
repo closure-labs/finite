@@ -186,7 +186,7 @@ class PublisherHealth(unittest.TestCase):
             now = datetime.now(timezone.utc)
             build = {**self.run, 'id': 8, 'head_sha': 'a' * 40, 'path': '.github/workflows/build.yml',
                      'conclusion': 'success', 'updated_at': now.isoformat()}
-            jobs = [{'name': f'Publish ({channel}) / {suffix}', 'conclusion': 'success'}
+            jobs = [{'name': f'Publish ({channel}) / {suffix}', 'conclusion': 'success', 'completed_at': now.isoformat()}
                     for channel in health.CHANNELS for suffix in ('qualification / aggregate', 'promote')]
             def api(endpoint, **kwargs):
                 if '/workflows/build.yml/' in endpoint: return {'workflow_runs': [build]}
