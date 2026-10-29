@@ -51,7 +51,10 @@ The plan retains the production input identity as `referenceIdentity` only.
 The actual `io.finite.build-inputs` label uses a distinct `containerfile-v1:`
 namespace hashing that reference and the experimental implementation/workflow.
 Revision, base digest, base name, profile and foundation labels are checked after
-assembly. `io.finite.production-eligible=false` prevents any suggestion of a
+assembly. OCI URL/description are derived from the recipe, with an explicit
+unpublished description and `containerfile-<head>` version; creation time is the
+experiment preparation time, not inherited Bluefin metadata.
+`io.finite.production-eligible=false` prevents any suggestion of a
 qualified production result. The installed signed-rebase policy remains intact,
 but that does not sign the experimental image. Production signing is unchanged.
 
@@ -82,7 +85,11 @@ Otherwise, full image assembly requires an explicit `workflow_dispatch` of
 `containerfile-experiment.yml` on an experimental branch, with `build_images`
 set to true. It builds the two profiles sequentially, uses Docker `--load` only,
 runs the existing image contract verifier with networking disabled, and uploads
-plans, publisher-verification evidence, image inspection and build metadata.
+plans, publisher-verification evidence, image inspection, build metadata and an
+offline final RPM inventory. Its sorted NEVRA/architecture records have a canonical
+JSON SHA-256 and bind the exact local image ID, source revision and experiment
+identity. This is actual installed-package evidence, not the inherited upstream
+rechunk label; it does not itself prove equality to a production inventory.
 GitHub may require a new dispatch workflow to exist on the default branch before
 it can be invoked; opening a draft PR alone is not an image-build result. Do not
 merge merely to obtain a benchmark or route through a production publisher.
@@ -104,3 +111,17 @@ retain that license in `experiments/containerfile/LICENSE.bluebuild`.
 Sources: [CLI](https://github.com/blue-build/cli),
 [modules](https://github.com/blue-build/modules),
 [bootc image building](https://bootc.dev/bootc/building/bootc-building-images.7.html).
+
+## First assembly observation (not final qualification)
+
+Both profiles assembled and passed the existing offline image verifier in
+[run 40807467855](https://github.com/closure-labs/finite/actions/runs/40807467855)
+at `bf508bba78cc1c5d4151c08bc9fe2f011e299421`. The customization RUN took about
+85 seconds per profile, while local Docker export/load took about 212 seconds
+for FINite and 417 seconds for FINite Dev. These are one-run observations of
+this different output path, not a controlled comparison or production speedup.
+The run exposed inherited OCI metadata needing explicit experiment overrides;
+source CI also caught a hermetic fileset omission and a literal cleanup glob
+warning. Later revisions correct those and retain a final RPM inventory; their
+own hosted results must be checked separately. Assembly does not establish boot
+parity or authorize replacing the production builder.

@@ -5,6 +5,7 @@ import importlib.util
 import json
 from pathlib import Path
 import shutil
+import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -143,17 +144,26 @@ class Contract(unittest.TestCase):
                 'cosignImage': 'cosign@sha256:' + 'b' * 64,
                 'bluebuildImage': 'cli@sha256:' + 'c' * 64,
                 'sourceRevision': 'd' * 40, 'referenceIdentity': 'v1:reference',
+                'created': '2026-10-29T02:00:00Z', 'version': 'containerfile-dddddddddddd',
+                'description': 'unpublished experiment', 'url': 'https://github.com/closure-labs/finite',
                 'experimentIdentity': 'containerfile-v1:experiment'}
         labels = {'io.finite.build-inputs': plan['experimentIdentity'],
                   'io.finite.reference-build-inputs': plan['referenceIdentity'],
                   'org.opencontainers.image.revision': plan['sourceRevision'],
                   'org.opencontainers.image.base.digest': plan['baseDigest'],
                   'org.opencontainers.image.base.name': plan['baseImage'],
+                  'org.opencontainers.image.created': plan['created'],
+                  'org.opencontainers.image.version': plan['version'],
+                  'org.opencontainers.image.description': plan['description'],
+                  'org.opencontainers.image.url': plan['url'],
                   'io.finite.profile': 'finite', 'io.finite.foundation': 'bluefin',
                   'io.finite.production-eligible': 'false'}
         env = {'GITHUB_EVENT_NAME': 'workflow_dispatch', 'GITHUB_REPOSITORY': 'closure-labs/finite',
                'GITHUB_REF': 'refs/heads/experiment', 'SOURCE_DATE_EPOCH': '123',
                'GITHUB_SHA': plan['sourceRevision']}
+        with patch.dict('os.environ', dict(env, GITHUB_SHA='e' * 40), clear=True):
+            with self.assertRaisesRegex(ValueError, 'Prepared plan differs'):
+                prepare.build(plan)
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / '.bluebuild/containerfile').mkdir(parents=True)
@@ -170,8 +180,15 @@ class Contract(unittest.TestCase):
                     self.assertFalse((context / '.git').exists())
                     self.assertFalse((context / '.github').exists())
                     self.assertTrue((context / 'cosign.pub').exists())
+            def output(command, **kwargs):
+                if command[:3] == ['docker', 'image', 'inspect']:
+                    return json.dumps([{'Id': 'sha256:' + 'f' * 64, 'Config': {'Labels': labels}}])
+                self.assertIn('--network=none', command)
+                self.assertIn('rpm', command)
+                self.assertIn('sha256:' + 'f' * 64, command)
+                return 'nix\t0\t2.30.1\t1.fc44\tx86_64\n'
             with patch.dict('os.environ', env, clear=True), patch.object(prepare.subprocess, 'run', side_effect=inspect_context) as run, patch.object(
-                    prepare.subprocess, 'check_output', return_value=json.dumps([{'Config': {'Labels': labels}}])):
+                    prepare.subprocess, 'check_output', side_effect=output):
                 prepare.build(plan, root)
                 command = run.call_args_list[0].args[0]
                 self.assertIn('BASE_IMAGE=' + plan['baseImage'] + '@' + plan['baseDigest'], command)
@@ -179,12 +196,45 @@ class Contract(unittest.TestCase):
                 self.assertNotIn('--push', command)
                 self.assertNotIn('SOURCE_DATE_EPOCH', run.call_args_list[0].kwargs['env'])
                 self.assertIn('--network=none', run.call_args_list[1].args[0])
+                self.assertIn('sha256:' + 'f' * 64, run.call_args_list[1].args[0])
+                receipt = json.loads((root / '.bluebuild/containerfile/rpm-inventory.json').read_text())
+                self.assertEqual(receipt['imageId'], 'sha256:' + 'f' * 64)
+                self.assertEqual(receipt['packageCount'], 1)
+                self.assertEqual(receipt['sourceRevision'], plan['sourceRevision'])
                 for key in labels:
                     wrong = dict(labels)
                     wrong[key] = 'wrong'
-                    with patch.object(prepare.subprocess, 'check_output', return_value=json.dumps([{'Config': {'Labels': wrong}}])):
+                    with patch.object(prepare.subprocess, 'check_output', return_value=json.dumps([{'Id': 'sha256:' + 'f' * 64, 'Config': {'Labels': wrong}}])):
                         with self.assertRaisesRegex(ValueError, 'labels do not match'):
                             prepare.build(plan, root)
+
+    def test_rpm_inventory_is_sorted_hashed_and_rejects_incomplete_records(self):
+        first = 'zlib\t0\t1.3.1\t1.fc44\tx86_64\n'
+        second = 'nix\t1\t2.30.1\t1.fc44\tx86_64\n'
+        packages, digest = prepare.rpm_inventory(first + second)
+        self.assertEqual(packages[0]['name'], 'nix')
+        self.assertEqual(prepare.rpm_inventory(second + first + first), (packages, digest))
+        self.assertNotEqual(prepare.rpm_inventory((first + second).replace('x86_64', 'aarch64'))[1], digest)
+        for invalid in ('', 'nix\t2.30\tx86_64', 'nix\tunknown\t2.30\t1\tx86_64'):
+            with self.assertRaises(ValueError):
+                prepare.rpm_inventory(invalid)
+
+    def test_cleanup_retains_old_hidden_entry_semantics(self):
+        script = (ROOT / 'experiments/containerfile/build.sh').read_text()
+        cleanup = next(line for line in script.splitlines() if line.startswith('find /var '))
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            mutable = root / 'var'
+            mutable.mkdir()
+            (mutable / 'cache').mkdir()
+            (mutable / 'cache/item').touch()
+            (mutable / '.hidden').touch()
+            outside = root / 'keep'
+            outside.write_text('untouched')
+            (mutable / 'link').symlink_to(outside)
+            subprocess.run(['bash', '-c', cleanup.replace('find /var ', 'find "' + str(mutable) + '" ', 1)], check=True)
+            self.assertEqual(sorted(path.name for path in mutable.iterdir()), ['.hidden'])
+            self.assertEqual(outside.read_text(), 'untouched')
 
     def test_payload_preserves_symlinks_and_modes(self):
         with tempfile.TemporaryDirectory() as directory:

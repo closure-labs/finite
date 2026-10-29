@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Fail closed on recipe drift; assemble a local-only experimental build plan."""
 import argparse
+from datetime import datetime, timezone
 import hashlib
 import json
 import os
@@ -108,7 +109,11 @@ def prepare(profile, root=ROOT):
     experiment = 'containerfile-v1:' + hashlib.sha256(json.dumps(
         {'reference': reference, 'files': implementation}, sort_keys=True).encode()).hexdigest()
     plan = {'schema': 1, 'profile': profile, 'foundation': PROFILES[profile],
-            'sourceRevision': revision, 'baseImage': recipe['base-image'],
+            'sourceRevision': revision, 'created': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+            'version': 'containerfile-' + revision[:12],
+            'description': recipe['description'] + ' (unpublished Containerfile experiment)',
+            'url': recipe['labels']['org.opencontainers.image.url'],
+            'baseImage': recipe['base-image'],
             'baseDigest': recipe['image-version'].removeprefix('stable@'),
             'cosignImage': cosign['repository'] + '@' + cosign['indexDigest'],
             'bluebuildImage': cli['image'] + '@' + cli['digest'],
@@ -124,6 +129,16 @@ def prepare(profile, root=ROOT):
     return plan
 
 
+def rpm_inventory(output):
+    fields = ('name', 'epoch', 'version', 'release', 'arch')
+    rows = sorted(set(tuple(line.split('\t')) for line in output.splitlines()))
+    if not rows or any(len(row) != 5 or not all(row) or not row[1].isdigit() for row in rows):
+        raise ValueError('Malformed RPM inventory')
+    packages = [dict(zip(fields, row)) for row in rows]
+    canonical = json.dumps(packages, sort_keys=True, separators=(',', ':')).encode()
+    return packages, hashlib.sha256(canonical).hexdigest()
+
+
 def build(plan, root=ROOT):
     if authorized_revision() != plan['sourceRevision']:
         raise ValueError('Prepared plan differs from authorized source revision')
@@ -133,7 +148,8 @@ def build(plan, root=ROOT):
             'COSIGN_IMAGE': plan['cosignImage'], 'BLUEBUILD_IMAGE': plan['bluebuildImage'],
             'PROFILE': profile, 'FOUNDATION': plan['foundation'], 'SOURCE_REVISION': plan['sourceRevision'],
             'BASE_DIGEST': plan['baseDigest'], 'REFERENCE_IDENTITY': plan['referenceIdentity'],
-            'EXPERIMENT_IDENTITY': plan['experimentIdentity']}
+            'EXPERIMENT_IDENTITY': plan['experimentIdentity'], 'CREATED': plan['created'],
+            'VERSION': plan['version'], 'DESCRIPTION': plan['description'], 'URL': plan['url']}
     command = ['docker', 'buildx', 'build', '--load', '--platform', 'linux/amd64',
                '--file', 'experiments/containerfile/Containerfile', '--tag', tag,
                '--metadata-file', '.bluebuild/containerfile/build-metadata.json']
@@ -155,6 +171,9 @@ def build(plan, root=ROOT):
         subprocess.run(command + [str(context)], cwd=root, env=env, check=True)
     result = subprocess.check_output(['docker', 'image', 'inspect', tag], text=True)
     info = json.loads(result)[0]
+    image_id = info.get('Id', '')
+    if not DIGEST.fullmatch(image_id):
+        raise ValueError('Docker inspection did not return an immutable image ID')
     labels = info['Config']['Labels']
     expected = {'io.finite.build-inputs': plan['experimentIdentity'],
                 'io.finite.reference-build-inputs': plan['referenceIdentity'],
@@ -162,13 +181,26 @@ def build(plan, root=ROOT):
                 'org.opencontainers.image.base.digest': plan['baseDigest'],
                 'io.finite.profile': profile, 'io.finite.foundation': plan['foundation'],
                 'org.opencontainers.image.base.name': plan['baseImage'],
+                'org.opencontainers.image.created': plan['created'],
+                'org.opencontainers.image.version': plan['version'],
+                'org.opencontainers.image.description': plan['description'],
+                'org.opencontainers.image.url': plan['url'],
                 'io.finite.production-eligible': 'false'}
     if any(labels.get(k) != v for k, v in expected.items()):
         raise ValueError('Experimental image labels do not match prepared inputs')
     (root / '.bluebuild/containerfile/image-inspect.json').write_text(result)
     subprocess.run(['docker', 'run', '--rm', '--network=none', '--entrypoint', 'bash',
                     '-v', str(root / 'scripts/bluebuild/verify-image.sh') + ':/verify.sh:ro',
-                    tag, '/verify.sh', profile], check=True)
+                    image_id, '/verify.sh', profile], check=True)
+    inventory = subprocess.check_output(
+        ['docker', 'run', '--rm', '--network=none', '--entrypoint', 'rpm', image_id,
+         '-qa', '--qf', '%{NAME}\t%{EPOCHNUM}\t%{VERSION}\t%{RELEASE}\t%{ARCH}\n'], text=True)
+    packages, digest = rpm_inventory(inventory)
+    receipt = {'schema': 1, 'sourceRevision': plan['sourceRevision'], 'imageId': image_id,
+               'experimentIdentity': plan['experimentIdentity'], 'profile': profile,
+               'packageCount': len(packages), 'packages': packages, 'packagesSha256': digest,
+               'canonicalization': 'UTF-8 JSON packages array, sorted object keys, separators comma/colon'}
+    (root / '.bluebuild/containerfile/rpm-inventory.json').write_text(json.dumps(receipt, indent=2) + '\n')
 
 
 def main():

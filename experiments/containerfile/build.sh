@@ -59,7 +59,9 @@ for optdir in /usr/lib/opt/*; do
   opt=$(basename "$optdir")
   printf 'L+?  "%s"  -  -  -  -  %s\n' "/opt/$opt" "$optdir" >"/usr/lib/tmpfiles.d/99-bluebuild-optfix-$opt.conf"
 done
-rm -rf /tmp/* /var/* /opt
+rm -rf /tmp/* /opt
+# Explicit image-root cleanup, matching the old non-hidden /var/* glob.
+find /var -mindepth 1 -maxdepth 1 ! -name '.*' -exec rm -rf -- {} +
 ln -s /var/opt /opt
 for file in rpmdb.sqlite rpmdb.sqlite-shm rpmdb.sqlite-wal; do
   target="/usr/share/rpm/$file"
