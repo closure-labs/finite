@@ -13,8 +13,9 @@ def csv(value):
     return value.split(",") if value else []
 
 
-def parser():
-    result = argparse.ArgumentParser(description=__doc__)
+def parser(*, profile_only=False):
+    description = "Export a validated schema-3 profile without cloud-init media." if profile_only else __doc__
+    result = argparse.ArgumentParser(description=description)
     for name in ("foundation", "user", "output"):
         result.add_argument("--" + name, required=True)
     for name in ("roles", "packages", "capabilities"):
@@ -78,7 +79,7 @@ def yaml(value):
     return run(["yq", "-P"], input=json.dumps(value), stdout=subprocess.PIPE).stdout
 
 
-def create(args, validator, catalog_file):
+def create(args, validator, catalog_file, *, profile_only=False):
     output = Path(args.output)
     if output.exists() or output.is_symlink():
         raise ValueError("Output already exists: " + str(output))
@@ -86,19 +87,22 @@ def create(args, validator, catalog_file):
     contents = yaml(profile)
     with tempfile.TemporaryDirectory(prefix="finite-seed-") as temporary:
         stage = Path(temporary)
-        user_data = "#cloud-config\n" + yaml({"preserve_hostname": True, "ssh_pwauth": False,
-            "write_files": [{"path": "/etc/finite/home-profiles/" + args.user + ".yaml",
-                             "permissions": "0644", "content": contents}]})
-        (stage / "user-data").write_text(user_data)
-        digest = hashlib.sha256(user_data.encode()).hexdigest()[:16]
-        (stage / "meta-data").write_text(yaml({"instance-id": "finite-" + digest, "local-hostname": "finite"}))
         (stage / "profile.yaml").write_text(contents)
-        run(["xorriso", "-as", "mkisofs", "-quiet", "-V", "cidata", "-J", "-R", "-o", str(stage / "seed.iso"),
-             str(stage / "user-data"), str(stage / "meta-data")])
+        names = ["profile.yaml"]
+        if not profile_only:
+            user_data = "#cloud-config\n" + yaml({"preserve_hostname": True, "ssh_pwauth": False,
+                "write_files": [{"path": "/etc/finite/home-profiles/" + args.user + ".yaml",
+                                 "permissions": "0644", "content": contents}]})
+            (stage / "user-data").write_text(user_data)
+            digest = hashlib.sha256(user_data.encode()).hexdigest()[:16]
+            (stage / "meta-data").write_text(yaml({"instance-id": "finite-" + digest, "local-hostname": "finite"}))
+            run(["xorriso", "-as", "mkisofs", "-quiet", "-V", "cidata", "-J", "-R", "-o", str(stage / "seed.iso"),
+                 str(stage / "user-data"), str(stage / "meta-data")])
+            names += ["user-data", "meta-data", "seed.iso"]
         output.mkdir(mode=0o755, parents=True)
         created = output.stat(follow_symlinks=False)
         try:
-            for name in ("user-data", "meta-data", "profile.yaml", "seed.iso"):
+            for name in names:
                 shutil.copyfile(stage / name, output / name)
                 (output / name).chmod(0o644)
         except BaseException:
@@ -111,16 +115,19 @@ def create(args, validator, catalog_file):
                 if (current.st_dev, current.st_ino) == (created.st_dev, created.st_ino):
                     shutil.rmtree(output)
             raise
+    if profile_only:
+        print("Profile exported; import profile.yaml with finite-home-init --profile as the matching target account.", file=sys.stderr)
+        return
     print("Seed generated; cloud-init is disabled by default on Finite. This ISO is inert unless an administrator "
           "explicitly enables full provisioning. Prefer importing profile.yaml with finite-home-init --profile.", file=sys.stderr)
 
 
-def main(validator, catalog_file, argv):
-    args = parser().parse_args(argv)
+def main(validator, catalog_file, argv, *, profile_only=False):
+    args = parser(profile_only=profile_only).parse_args(argv)
     try:
-        create(args, validator, catalog_file)
+        create(args, validator, catalog_file, profile_only=profile_only)
     except (ValueError, OSError, TypeError, KeyError, subprocess.CalledProcessError) as error:
-        print("Finite seed: " + str(error), file=sys.stderr)
+        print(("Finite profile export: " if profile_only else "Finite seed: ") + str(error), file=sys.stderr)
         return 2
     return 0
 

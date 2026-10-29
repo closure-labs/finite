@@ -98,23 +98,39 @@ formats from the bundled Foundation itself requires pinning a published release
 containing that change. Existing personal consumers retain their independently
 locked sources until explicitly updated.
 
-Seeds support Professional/Personal roles, optional capabilities and independent host declarations, for example:
+Profile export supports Professional/Personal roles, optional capabilities and
+independent host declarations. From a Finite checkout, export a schema-3 profile:
 
 ```bash
-finite-cloud-init --foundation bluefin --user family-member \
+nix run .#profile-export -- --foundation bluefin --user family-member \
   --roles family,media --form-factor laptop --cpu amd --gpus amd-integrated \
-  --output ./family-seed
+  --output ./family-profile
+```
+
+The output directory contains only `profile.yaml`: no ISO, cloud-config, root
+provisioning or account creation. Transfer this file to the target machine and,
+as the matching target account, import it with the installed initializer:
+
+```bash
+finite-home-init --profile ./family-profile/profile.yaml
 ```
 
 `--hardware` remains a convenience adapter. Schema 3 also accepts `--system`,
 `--form-factor`, `--cpu`, `--gpus`, `--model`, `--camera`/`--no-camera`,
-`--fingerprint`/`--no-fingerprint` and `--capabilities`. Seed identity belongs to
-`--user`, not the machine generating it. Foundation's bundled pure validator canonicalizes the
-profile before any output directory is created. Existing outputs are preserved;
-failed publication removes only the directory created by that invocation.
-Cloud-init remains disabled by default; the generated ISO is inert until an
-administrator explicitly enables provisioning. Its profile YAML can also be
-imported with `finite-home-init --profile` as the matching target account.
+`--fingerprint`/`--no-fingerprint` and `--capabilities`. Export identity belongs to
+`--user`, not the machine generating it. Foundation's bundled pure validator
+canonicalizes the profile before any output directory is created. Existing
+outputs are preserved; failed publication removes only the directory created by
+that invocation. Import retains the initializer's existing-configuration and
+partial-configuration safeguards.
+
+The `cloud-init` flake app (`finite-cloud-init`) remains a compatibility entry
+point with its existing arguments and output files. Use `nix run .#cloud-init --`
+with the same selections only when NoCloud media is specifically needed. It
+also exports `profile.yaml`, but additionally requires ISO-generation tooling.
+Cloud-init remains installed and disabled by default; its generated ISO is inert
+until an administrator explicitly enables privileged provisioning. Normal
+first-login setup continues to use systemd and Home Manager, not cloud-init.
 
 Foundation releases own the managed Home Manager modules and dependency pins.
 OS updates do not overwrite the installed personal flake. Inspect published
