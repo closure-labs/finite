@@ -216,7 +216,7 @@ class Readiness(unittest.TestCase):
             if '/runs/8/' in endpoint:
                 return {'total_count': 1, 'jobs': [{'name': 'Publish (finite) / qualification / phase (fresh)', 'conclusion': 'failure'}]}
             if '/runs/7/' in endpoint:
-                jobs = [{'name': f'Publish ({channel}) / {suffix}', 'conclusion': 'success'}
+                jobs = [{'name': f'Publish ({channel}) / {suffix}', 'conclusion': 'success', 'completed_at': now.isoformat()}
                         for channel in ready.CHANNELS for suffix in ('qualification / aggregate', 'promote')]
                 return {'total_count': len(jobs), 'jobs': jobs}
             return self.api(endpoint, **kwargs)
@@ -241,7 +241,7 @@ class Readiness(unittest.TestCase):
             if '/runs/8/' in endpoint:
                 return {'total_count': len(active_jobs) if total_count is None else total_count, 'jobs': active_jobs}
             if '/runs/7/' in endpoint:
-                jobs = [{'name': f'Publish ({channel}) / {suffix}', 'conclusion': 'success'}
+                jobs = [{'name': f'Publish ({channel}) / {suffix}', 'conclusion': 'success', 'completed_at': now.isoformat()}
                         for channel in ready.CHANNELS for suffix in ('qualification / aggregate', 'promote')]
                 return {'total_count': len(jobs), 'jobs': jobs}
             return self.api(endpoint, **kwargs)
@@ -336,6 +336,148 @@ class Readiness(unittest.TestCase):
                 self.assertIn('Ready to prepare', summary.read_text())
             finally:
                 os.chdir(previous)
+
+
+class DeliveryHistory(unittest.TestCase):
+    def setUp(self):
+        self.now = datetime(2026, 10, 29, tzinfo=timezone.utc)
+        self.runs = []
+        self.jobs = {}
+        self.requests = []
+        self.root = tempfile.TemporaryDirectory()
+        self.addCleanup(self.root.cleanup)
+        self.file = str(Path(self.root.name) / 'scripts/ci/delivery-health.py')
+
+    def add_run(self, number, channels=(), age=1, conclusion='success'):
+        self.runs.append({'id': number, 'run_attempt': 1, 'head_sha': 'b' * 40,
+                          'head_branch': 'main', 'head_repository': {'full_name': ready.REPOSITORY},
+                          'event': 'push', 'status': 'completed', 'conclusion': conclusion,
+                          # Updated metadata is not evidence of a fresh promotion.
+                          'updated_at': self.now.isoformat(),
+                          'created_at': (self.now - timedelta(days=10)).isoformat()})
+        self.jobs[number] = [{'name': f'Publish ({channel}) / {suffix}', 'conclusion': 'success',
+                             'completed_at': (self.now - timedelta(hours=age)).isoformat()}
+                            for channel in channels for suffix in ('qualification / aggregate', 'promote')]
+
+    def api(self, endpoint):
+        self.requests.append(endpoint)
+        if '/workflows/build.yml/runs?' in endpoint:
+            page = int(endpoint.split('&page=')[-1]) if '&page=' in endpoint else 1
+            start = (page - 1) * delivery.HISTORY_PAGE_SIZE
+            return {'workflow_runs': self.runs[start:start + delivery.HISTORY_PAGE_SIZE]}
+        if '/jobs?' in endpoint:
+            number = int(endpoint.split('/runs/')[1].split('/')[0])
+            return {'total_count': len(self.jobs[number]), 'jobs': self.jobs[number]}
+        raise AssertionError(endpoint)
+
+    def inspect(self, api=None):
+        with patch.object(delivery, '__file__', self.file), \
+                patch.object(delivery, 'release_status', return_value={'state': 'development', 'reason': 'No release'}):
+            return delivery.inspect(SHA, 'development', BOT, api or self.api, self.now)
+
+    def test_finds_both_promotions_after_more_than_thirty_source_only_builds(self):
+        for number in range(50, 10, -1):
+            self.add_run(number)
+        self.add_run(10, ready.CHANNELS)
+        report = self.inspect()
+        self.assertTrue(report['healthy'])
+        self.assertEqual(report['buildHistory'], {'state': 'exhausted', 'pages': 2, 'runs': 41})
+        self.assertEqual(report['channels']['finite']['promoted']['runId'], 10)
+        self.assertEqual(report['channels']['finite-dev']['promoted']['runId'], 10)
+        # Old creation timestamps cannot truncate a recently retried promotion.
+        self.assertIn('&page=2', ' '.join(self.requests))
+
+    def test_older_created_run_with_recent_retry_supersedes_stale_promotion(self):
+        self.add_run(2, ready.CHANNELS, age=40)
+        self.add_run(1, ready.CHANNELS, age=1)
+        report = self.inspect()
+        self.assertTrue(report['healthy'])
+        for channel in ready.CHANNELS:
+            self.assertEqual(report['channels'][channel]['promoted']['runId'], 1)
+
+    def test_native_completion_controls_exact_freshness_boundary(self):
+        for hours, healthy in ((35.999, True), (36, False), (37, False)):
+            self.runs.clear(); self.jobs.clear()
+            self.add_run(1, ready.CHANNELS, age=hours)
+            with self.subTest(hours=hours):
+                report = self.inspect()
+                self.assertEqual(report['healthy'], healthy)
+                if not healthy:
+                    self.assertTrue(all('36 hours' in problem for problem in report['problems']))
+
+    def test_partial_channels_and_bounded_unknown_are_not_failed_publication(self):
+        for number in range(delivery.HISTORY_PAGE_SIZE * delivery.HISTORY_MAX_PAGES, 0, -1):
+            self.add_run(number, ('finite',) if number == 1 else ())
+        report = self.inspect()
+        self.assertEqual(report['buildHistory']['state'], 'limited')
+        self.assertFalse(report['healthy'])
+        self.assertEqual(report['channels']['finite']['promoted']['runId'], 1)
+        self.assertIsNone(report['channels']['finite-dev']['promoted'])
+        self.assertIn('evidence unavailable', report['problems'][0])
+        self.assertIn('does not establish a failed publication', report['problems'][0])
+        self.assertEqual(sum('/workflows/build.yml/' in endpoint for endpoint in self.requests), 5)
+
+    def test_absent_history_does_not_claim_publication_failed(self):
+        report = self.inspect()
+        self.assertEqual(report['buildHistory']['state'], 'exhausted')
+        self.assertFalse(report['healthy'])
+        self.assertTrue(all('no recorded successful promotion' in problem for problem in report['problems']))
+        self.assertFalse(any('Latest main build failed' in problem for problem in report['problems']))
+
+    def test_true_latest_failure_is_preserved_alongside_older_promotions(self):
+        self.add_run(2, conclusion='failure')
+        self.jobs[2] = [{'name': 'Publish (finite-dev) / promote', 'conclusion': 'failure'}]
+        self.add_run(1, ready.CHANNELS)
+        report = self.inspect()
+        self.assertFalse(report['healthy'])
+        self.assertIn('Latest main build failed: Publish (finite-dev) / promote', report['problems'])
+
+    def test_missing_native_completion_cannot_invent_freshness(self):
+        self.add_run(1, ready.CHANNELS)
+        del self.jobs[1][0]['completed_at']
+        with self.assertRaisesRegex(ValueError, 'evidence unavailable'):
+            self.inspect()
+
+    def test_unavailable_page_and_duplicate_inventory_fail_closed(self):
+        for number in range(31, 0, -1): self.add_run(number)
+        from github_api import GitHubReadError
+        def unavailable(endpoint):
+            if '&page=2' in endpoint: raise GitHubReadError('Unavailable metadata')
+            return self.api(endpoint)
+        # Transport errors propagate; no healthy snapshot is fabricated.
+        with self.assertRaisesRegex(GitHubReadError, 'Unavailable metadata'):
+            self.inspect(unavailable)
+        def duplicate(endpoint):
+            result = self.api(endpoint)
+            if '&page=2' in endpoint: result['workflow_runs'][0] = self.runs[0]
+            return result
+        with self.assertRaisesRegex(ValueError, 'repeated run identity'):
+            self.inspect(duplicate)
+
+    def test_incomplete_jobs_and_artifacts_cannot_authorize_preparation(self):
+        self.add_run(1, ready.CHANNELS)
+        def incomplete(endpoint):
+            result = self.api(endpoint)
+            if '/jobs?' in endpoint: result['total_count'] += 1
+            return result
+        with self.assertRaisesRegex(ValueError, 'job inventory is incomplete'):
+            self.inspect(incomplete)
+        self.runs[0]['head_sha'] = SHA
+        def artifacts(endpoint):
+            if '/artifacts?' in endpoint: return {'total_count': 1, 'artifacts': []}
+            return self.api(endpoint)
+        with self.assertRaisesRegex(ValueError, 'artifact inventory is incomplete'):
+            self.inspect(artifacts)
+
+    def test_time_budget_exhaustion_never_produces_a_healthy_snapshot(self):
+        with patch.object(delivery.time, 'monotonic', side_effect=[0, delivery.HISTORY_SECONDS]):
+            with self.assertRaisesRegex(ValueError, 'observation time budget exhausted'):
+                self.inspect()
+
+    def test_budget_crossing_during_last_read_rejects_late_result(self):
+        with patch.object(delivery.time, 'monotonic', side_effect=[0, 0, delivery.HISTORY_SECONDS]):
+            with self.assertRaisesRegex(ValueError, 'observation time budget exhausted'):
+                self.inspect()
 
 
 class DeliverySnapshots(unittest.TestCase):
