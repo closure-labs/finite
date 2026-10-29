@@ -34,6 +34,11 @@ class Contract(unittest.TestCase):
             shutil.copytree(ROOT / directory, root / directory, ignore=shutil.ignore_patterns('__pycache__'))
         return root
 
+    def test_hermetic_workflow_lint_includes_experimental_script(self):
+        declaration = (ROOT / 'lib/check-sources.nix').read_text()
+        workflow = next(line for line in declaration.splitlines() if 'workflow-lint = source' in line)
+        self.assertIn('../experiments/containerfile/build.sh', workflow)
+
     def test_current_recipes_are_supported(self):
         recipes, _, _ = prepare.contract()
         self.assertEqual(recipes['recipes/finite-dev.yml']['base-image'], 'ghcr.io/ublue-os/bluefin-dx')
