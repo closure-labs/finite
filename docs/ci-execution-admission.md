@@ -1,8 +1,9 @@
 # Trusted pull-request CI execution
 
 The [reviewed execution policy](../automation/github/ci-execution.json) permits
-Decider and current Super Admin authors to start CI automatically for draft and
-ready PRs. This applies to GitHub's fork-workflow execution approval only.
+Decider, current Super Admin authors and verified official Dependabot Actions
+pin updates to start CI automatically for draft and ready PRs. PR readiness is
+left unchanged. This applies to GitHub's fork-workflow execution approval only.
 Human merge review, protected queue checks and publication authority retain
 their existing rules. A stale human-review result can be refreshed through the
 [approval recheck](approval-recheck.md) action. The worker never submits a PR review, posts a successful
@@ -11,9 +12,10 @@ check, enables auto-merge, approves an environment or publishes a product.
 Ordinary PR checks already run without waiting for the maintainer decision
 check. The [admission workflow](../.github/workflows/ci-run-admission.yml) handles
 an actual GitHub `action_required` run when that execution approval is needed.
-Official Dependabot pin updates also qualify only after the
-[dependency classifier and current-head human review](dependency-review.md)
-pass. Other contributors retain GitHub's existing approval requirement. No repository
+Official Dependabot pin updates qualify after the
+[immutable dependency classifier](dependency-review.md) passes. Execution does
+not require a human review; merging still requires current-head human approval.
+Other contributors retain GitHub's existing approval requirement. No repository
 or organization fork-approval setting is relaxed.
 
 ## Authenticate the author and current execution
@@ -50,12 +52,16 @@ review-event collector also re-scans blocked runs, so a later human review does
 not depend on another blocked-run event. Successful ordinary CI completions do
 not start a discovery runner. A completed trusted-main authority workflow also
 reconciles blocked official dependency PRs as bounded recovery; its success
-never supplies approval, and the worker verifies live review again.
+never supplies approval, and the worker verifies live bot identity and the
+complete pin delta again.
 
 Immediately before each approval, the worker reads live identity, PR head,
 run attempt and approval state again. A moved or closed PR, changed author,
 revoked membership, mismatched attempt, unknown metadata or different workflow
-cannot be approved. Already running, completed-failed and environment-waiting
+cannot be approved. After the final dependency classification, the worker
+re-reads the exact run ID, workflow ID/path, attempt, head and source branch
+before posting. Event sender, run actor and triggering actor never substitute
+for the live PR author. Already running, completed-failed and environment-waiting
 runs are left alone. The only mutation is the native Actions run's `/approve`
 endpoint. Mutations are not retried; an uncertain response is reconciled by
 reading the native state. An unresolved result fails without a second POST.
@@ -74,6 +80,46 @@ and the [Actions execution approval endpoint](https://docs.github.com/en/rest/ac
 Actual blocked-run execution remains rollout evidence to collect naturally;
 fixtures establish authorization boundaries without creating extra fork or VM
 runs just to populate a report.
+
+## Unprivileged PR execution
+
+The admitted workflows are Build Finite, CodeQL Advanced and the metadata-only
+decision-event collector. Their native `pull_request` triggers run on opening
+and synchronization, including draft PRs, without depending on another event.
+The controller only releases precisely bound `action_required` runs through the
+existing restricted App token. It does not dispatch replacement validation.
+
+Build's PR jobs use contents/Actions/PR reads, checkout without persisted
+credentials, and no secrets. The ordinary PR still executes documentation and
+selected Nix/runtime checks, and `CI gate` requires those selected jobs to
+succeed. Image assembly is excluded by `event_name != 'pull_request'`;
+publication also requires this repository, the main ref and a push, schedule or
+manual event. The optional VM-tools benchmark is branch-limited and read-only.
+The setup-nix composite receives no merge-queue token, disables installer OIDC,
+and saves shared caches only from main push/schedule/manual runs. PR caches
+remain subject to GitHub's native ref isolation.
+
+CodeQL PR analysis explicitly requests contents read only, has no secrets and
+uses `build-mode: none`. GitHub permits native `pull_request` code-scanning
+uploads without a security-events write token, including for Dependabot
+([GitHub documentation](https://docs.github.com/en/code-security/reference/code-scanning/troubleshoot-analysis-errors/resource-not-accessible)).
+Its existing `Analyze (actions)` and `Analyze (python)` PR check names and result
+categories remain intact. The separate non-PR job retains security-events write
+for main analysis and uses distinct `Analyze branch (...)` names so a skipped job
+cannot supply a successful result for the PR's required analysis context.
+The decision-event collector has contents read only and executes a fixed echo;
+it never checks out candidate code. None of these PR jobs receives the
+controller's App token, signing keys, publication secrets or write permissions.
+
+The full pin classifier remains shared with merge authority, unchanged. Only
+execution admission omits `authority.approval`; decision-check still validates
+current-head human review and eligibility. Unsupported changes and outsiders
+retain their existing admission behavior. Fixtures exercise both draft and
+ready execution without reviews, independent merge denial, spoofed identity,
+forks, moved heads/bases, altered workflows, and exact run/attempt binding.
+Hosted CodeQL reporting and native held-run release remain rollout evidence to
+collect after publication is authorized; local fixtures do not claim hosted
+execution evidence.
 
 ## Hosted fixture correction
 

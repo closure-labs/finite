@@ -26,7 +26,7 @@ same PR where possible and review its new head. Lock files are not included:
 FINite's paired `flake.lock`/`devenv.lock` and qualified Foundation input need
 their own typed source/provenance contract before native Nix ownership changes.
 
-## Human approval remains mandatory
+## Human merge approval remains mandatory
 
 The existing App authority check requires an active human member of the pinned
 `closure-labs/super-admins` team with maintain/admin access to approve the exact
@@ -37,11 +37,13 @@ product. Merge-queue governed content must still match the approved PR head.
 
 The ordinary PR preflight uses standard-library metadata/tree checks only. It
 does not grant approval or claim semantic pin validation. The trusted-main App
-worker performs the strict parser and live review checks. Blocked CI admission
-resolves a pinned Python/PyYAML tool before App credentials, never loads PR code
-with those credentials, and rechecks current review immediately before its
-native execution-approval request. Existing read-only PR execution and native
-protected merge requirements are unchanged; no permissions are expanded.
+merge-authority worker performs the strict parser and live review checks.
+Execution admission independently performs the same strict pin classification
+and live bot/repository/head revalidation without requiring human review. It
+resolves a pinned Python/PyYAML tool before App credentials and never loads PR
+code with those credentials. Only precisely bound native Actions executions
+are approved. PR readiness is unchanged; protected merge review remains
+mandatory. The admitted PR jobs receive no secrets or write permissions.
 
 A successful review collector wakes discovery for older blocked runs. Completed
 trusted-main authority workflows provide bounded recovery if that event was
