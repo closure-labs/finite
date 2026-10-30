@@ -3,160 +3,86 @@
     name = "finite-trusted-update";
     runtimeInputs = with pkgs; [bash coreutils gh jq];
     text = ''
-          repo_root="''${FINITE_SOURCE_ROOT:-$PWD}"
-          [[ -f "''${repo_root}/flake.nix" ]] || {
-            echo "Run this command from the Finite repository root" >&2
-            exit 2
+      repo_root="''${FINITE_SOURCE_ROOT:-$PWD}"
+      [[ -f "''${repo_root}/flake.nix" ]] || {
+        echo "Run this command from the Finite repository root" >&2
+        exit 2
+      }
+      cd "''${repo_root}"
+      set -euo pipefail
+
+      : "''${GH_TOKEN:?GH_TOKEN must be set}"
+      : "''${GITHUB_REPOSITORY:?GITHUB_REPOSITORY must be set}"
+      : "''${PR_NUMBER:?PR_NUMBER must be set}"
+      : "''${EXPECTED_BRANCH:?EXPECTED_BRANCH must be set}"
+      : "''${EXPECTED_TITLE:?EXPECTED_TITLE must be set}"
+      : "''${EXPECTED_AUTHOR:?EXPECTED_AUTHOR must be set}"
+      : "''${DEFAULT_BRANCH:?DEFAULT_BRANCH must be set}"
+      [[ $GITHUB_REPOSITORY =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]
+      [[ $PR_NUMBER =~ ^[1-9][0-9]*$ ]]
+
+      read_pr() {
+        timeout 60s gh pr view "$PR_NUMBER" \
+          --repo "$GITHUB_REPOSITORY" \
+          --json number,author,baseRefName,changedFiles,files,headRefName,headRefOid,headRepository,mergeStateStatus,state,title
+      }
+
+      validate_pr() {
+        local candidate=$1
+        [[ "$(jq -er '.number' <<<"$candidate")" == "$PR_NUMBER" ]]
+        [[ "$(jq -er '.state' <<<"$candidate")" == OPEN ]]
+        [[ "$(jq -er '.title' <<<"$candidate")" == "$EXPECTED_TITLE" ]]
+        [[ "$(jq -er '.author.login' <<<"$candidate")" == "$EXPECTED_AUTHOR" ]]
+        [[ "$(jq -er '.baseRefName' <<<"$candidate")" == "$DEFAULT_BRANCH" ]]
+        [[ "$(jq -er '.headRepository.nameWithOwner' <<<"$candidate")" == "$GITHUB_REPOSITORY" ]]
+        [[ "$(jq -er '.headRefName' <<<"$candidate")" == "$EXPECTED_BRANCH" ]]
+        [[ "$(jq -er '.headRefOid' <<<"$candidate")" =~ ^[0-9a-f]{40}$ ]]
+        if [[ -n "''${EXPECTED_FILES:-}" ]]; then
+          jq -e --arg allowed "$EXPECTED_FILES" '
+            ($allowed | split(",")) as $allowed_files |
+            (.files | type == "array" and length > 0) and
+            (.changedFiles | type == "number" and . == floor) and
+            (.files | length) == .changedFiles and
+            ([.files[].path] | unique | length) == .changedFiles and
+            all(.files[]; (.path as $path | $allowed_files | index($path)) != null)
+          ' <<<"$candidate" >/dev/null || {
+            echo 'Pull request changes files outside the declared automation scope or has an incomplete file inventory' >&2
+            return 1
           }
-          cd "''${repo_root}"
-          set -euo pipefail
+        fi
+      }
 
-          : "''${GH_TOKEN:?GH_TOKEN must be set}"
-          : "''${GITHUB_REPOSITORY:?GITHUB_REPOSITORY must be set}"
-          : "''${PR_NUMBER:?PR_NUMBER must be set}"
-          : "''${EXPECTED_BRANCH:?EXPECTED_BRANCH must be set}"
-          : "''${EXPECTED_TITLE:?EXPECTED_TITLE must be set}"
-          : "''${EXPECTED_AUTHOR:?EXPECTED_AUTHOR must be set}"
-          : "''${DEFAULT_BRANCH:?DEFAULT_BRANCH must be set}"
+      pr="$(read_pr)"
+      validate_pr "$pr"
+      head_sha="$(jq -er '.headRefOid' <<<"$pr")"
+      pr_url="https://github.com/$GITHUB_REPOSITORY/pull/$PR_NUMBER"
 
-          read_pr() {
-            gh pr view "''${PR_NUMBER}" \
-              --repo "''${GITHUB_REPOSITORY}" \
-              --json author,baseRefName,files,headRefName,headRefOid,headRepository,mergeStateStatus,state,title,url
-          }
-
-          validate_pr() {
-            local candidate=$1
-            [[ "$(jq -er '.state' <<<"''${candidate}")" == OPEN ]]
-            [[ "$(jq -er '.title' <<<"''${candidate}")" == "''${EXPECTED_TITLE}" ]]
-            [[ "$(jq -er '.author.login' <<<"''${candidate}")" == "''${EXPECTED_AUTHOR}" ]]
-            [[ "$(jq -er '.baseRefName' <<<"''${candidate}")" == "''${DEFAULT_BRANCH}" ]]
-            [[ "$(jq -er '.headRepository.nameWithOwner' <<<"''${candidate}")" == "''${GITHUB_REPOSITORY}" ]]
-            [[ "$(jq -er '.headRefName' <<<"''${candidate}")" == "''${EXPECTED_BRANCH}" ]]
-            if [[ -n "''${EXPECTED_FILES:-}" ]]; then
-              jq -e --arg allowed "''${EXPECTED_FILES}" '
-                ($allowed | split(",")) as $allowed_files |
-                (.files | length) > 0 and
-                all(.files[]; (.path as $path | $allowed_files | index($path)) != null)
-              ' <<<"''${candidate}" >/dev/null || {
-                echo 'Pull request changes files outside the declared automation scope' >&2
-                return 1
-              }
-            fi
-          }
-
-          pr="$(read_pr)"
-          validate_pr "''${pr}"
-          if [[ "$(jq -er '.mergeStateStatus' <<<"''${pr}")" == BEHIND ]]; then
-            gh pr update-branch "''${PR_NUMBER}" --repo "''${GITHUB_REPOSITORY}"
-            pr="$(read_pr)"
-            validate_pr "''${pr}"
-          fi
-          branch="$(jq -er '.headRefName' <<<"''${pr}")"
-          head_sha="$(jq -er '.headRefOid' <<<"''${pr}")"
-          pr_url="$(jq -er '.url' <<<"''${pr}")"
-
-          watch_run() {
-            local run_id=$1 status
-            echo "Validation: https://github.com/''${GITHUB_REPOSITORY}/actions/runs/$run_id"
-            if timeout 240m gh run watch "$run_id" \
-              --repo "''${GITHUB_REPOSITORY}" --interval 15 --exit-status; then
-              return 0
-            else
-              status=$?
-            fi
-            echo "::error::Validation failed or timed out (exit $status): https://github.com/''${GITHUB_REPOSITORY}/actions/runs/$run_id" >&2
-            exit "$status"
-          }
-
-          dispatch_and_wait() {
-            local workflow="$1"
-            shift
-            local previous_run_id run_id
-
-            previous_run_id="$({
-              gh run list \
-                --repo "''${GITHUB_REPOSITORY}" \
-                --workflow "''${workflow}" \
-                --event workflow_dispatch \
-                --branch "''${branch}" \
-                --commit "''${head_sha}" \
-                --limit 1 \
-                --json databaseId \
-                --jq '.[0].databaseId // empty'
-            })"
-            gh workflow run "''${workflow}" \
-              --repo "''${GITHUB_REPOSITORY}" \
-              --ref "''${branch}" \
-              "$@"
-
-        run_id=""
-            for _ in {1..24}; do
-              run_id="$({
-                gh run list \
-                  --repo "''${GITHUB_REPOSITORY}" \
-                  --workflow "''${workflow}" \
-                  --event workflow_dispatch \
-                  --branch "''${branch}" \
-                  --commit "''${head_sha}" \
-                  --limit 5 \
-                  --json databaseId \
-                  --jq ".[] | select(.databaseId > (\"''${previous_run_id:-0}\" | tonumber)) | .databaseId" |
-                  head -n 1
-              })"
-              [[ -z "''${run_id}" ]] || break
-              sleep 5
-            done
-            [[ -n "''${run_id}" ]] || {
-              echo "Could not locate ''${workflow} validation run" >&2
-              exit 1
-            }
-
-            watch_run "''${run_id}"
-          }
-
-      existing_ci_run=""
-          for _ in {1..6}; do
-            existing_ci_run="$({
-              gh run list \
-                --repo "''${GITHUB_REPOSITORY}" \
-                --workflow build.yml \
-                --event pull_request \
-                --branch "''${branch}" \
-                --commit "''${head_sha}" \
-                --limit 1 \
-                --json conclusion,databaseId,status \
-                --jq '.[0] // empty'
-            })"
-            [[ -z "''${existing_ci_run}" ]] || break
-            sleep 5
-          done
-
-          if [[ -z "''${existing_ci_run}" ]]; then
-            existing_ci_run="$(gh run list \
-              --repo "''${GITHUB_REPOSITORY}" \
-              --workflow build.yml --event workflow_dispatch \
-              --branch "''${branch}" --commit "''${head_sha}" --limit 1 \
-              --json conclusion,databaseId,status --jq '.[0] // empty')"
-          fi
-
-          if [[ -n "''${existing_ci_run}" ]]; then
-            existing_ci_run_id="$(jq -er '.databaseId' <<<"''${existing_ci_run}")"
-            if [[ "$(jq -r '.conclusion // empty' <<<"''${existing_ci_run}")" == action_required ]]; then
-              gh api \
-                --method POST \
-                "repos/''${GITHUB_REPOSITORY}/actions/runs/''${existing_ci_run_id}/approve"
-            fi
-            watch_run "''${existing_ci_run_id}"
-          else
-            dispatch_and_wait build.yml
-          fi
-          gh pr merge \
-            --repo "''${GITHUB_REPOSITORY}" \
-            --auto \
-            --merge \
-            --match-head-commit "''${head_sha}" \
-            "''${pr_url}"
+      # Native checks, human authority and the protected merge queue own the
+      # wait. Never change the head, approve a run or dispatch replacement CI.
+      latest="$(read_pr)"
+      validate_pr "$latest"
+      [[ "$(jq -er '.headRefOid' <<<"$latest")" == "$head_sha" ]] || {
+        echo 'Pull request head changed before native continuation; no request made' >&2
+        exit 1
+      }
+      if [[ "$(jq -er '.mergeStateStatus' <<<"$latest")" == BEHIND ]]; then
+        echo "Pull request is behind its base; preserving $head_sha and native requirements."
+        echo 'Any deliberate branch update needs review of its new head.'
+      fi
+      if timeout 60s gh pr merge \
+        --repo "$GITHUB_REPOSITORY" \
+        --auto \
+        --merge \
+        --match-head-commit "$head_sha" \
+        "$PR_NUMBER"; then
+        echo "Native continuation requested for $pr_url at $head_sha."
+        echo 'Required checks, human authority and the merge queue remain pending until GitHub confirms them.'
+      else
+        status=$?
+        echo "Native continuation request failed or its outcome is unconfirmed: $pr_url" >&2
+        echo 'Inspect native PR state before retrying; no mutation retry was attempted.' >&2
+        exit "$status"
+      fi
     '';
   };
   queueDependabot = pkgs.writeShellApplication {

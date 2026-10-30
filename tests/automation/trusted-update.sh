@@ -2,148 +2,133 @@
 set -euo pipefail
 
 test_root="$(mktemp -d)"
-trap 'rm -rf "${test_root}"' EXIT
+trap 'rm -rf "$test_root"' EXIT
+export MOCK_LOG="$test_root/gh.log" MOCK_READS="$test_root/reads"
+export MOCK_MODE=valid MOCK_MERGE_STATE=CLEAN
+export MOCK_HEAD=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 
-export MOCK_LOG="${test_root}/gh.log"
-export MOCK_STATE="${test_root}/dispatched"
-export MOCK_PR_STATE="${test_root}/pr-state"
-export MOCK_AUTHOR='github-actions[bot]'
-export MOCK_HEAD_REPOSITORY=example/finite
-
+# The packaged helper invokes only bounded native reads and one queue request.
+# Any accidental run approval, workflow dispatch, branch update or wait fails.
 gh() {
 	{
 		printf 'gh'
 		printf ' %q' "$@"
 		printf '\n'
-	} >>"${MOCK_LOG}"
-
-	case "${1-} ${2-}" in
+	} >>"$MOCK_LOG"
+	case "$1 $2" in
 	"pr view")
-		if [[ "${MOCK_MODE}" == behind && ! -e "${MOCK_PR_STATE}" ]]; then
-			merge_state=BEHIND
-			sha=abc123
-		else
-			merge_state=CLEAN
-			sha=def456
-		fi
-		printf '{"author":{"login":"%s"},"baseRefName":"main","headRefName":"update-test","headRefOid":"%s","headRepository":{"nameWithOwner":"%s"},"mergeStateStatus":"%s","state":"OPEN","title":"Test update","url":"https://github.com/example/finite/pull/1"}\n' "${MOCK_AUTHOR}" "${sha}" "${MOCK_HEAD_REPOSITORY}" "${merge_state}"
+		local reads=0
+		[[ ! -f $MOCK_READS ]] || reads=$(cat "$MOCK_READS")
+		reads=$((reads + 1))
+		printf '%s\n' "$reads" >"$MOCK_READS"
+		if [[ $MOCK_MODE == read-failed || ($MOCK_MODE == final-read-failed && $reads == 2) ]]; then return 8; fi
+		if [[ $MOCK_MODE == malformed ]]; then printf '{invalid'; return; fi
+		jq -cn --arg mode "$MOCK_MODE" --arg state "$MOCK_MERGE_STATE" \
+			--arg head "$MOCK_HEAD" --argjson reads "$reads" '
+			{number:1, author:{login:"github-actions[bot]"}, baseRefName:"main",
+			 changedFiles:2, files:[{path:"flake.lock"},{path:"devenv.lock"}],
+			 headRefName:"update-test", headRefOid:$head,
+			 headRepository:{nameWithOwner:"example/finite"}, mergeStateStatus:$state,
+			 state:"OPEN", title:"Test update"} |
+			if $mode == "author" or ($mode == "final-author" and $reads == 2) then .author.login="attacker"
+			elif $mode == "repository" then .headRepository.nameWithOwner="fork/finite"
+			elif $mode == "branch" then .headRefName="other"
+			elif $mode == "base" or ($mode == "final-base" and $reads == 2) then .baseRefName="other"
+			elif $mode == "title" then .title="Other update"
+			elif $mode == "closed" or ($mode == "final-closed" and $reads == 2) then .state="CLOSED"
+			elif $mode == "number" then .number=2
+			elif $mode == "sha" then .headRefOid="abc123"
+			elif $mode == "files" or ($mode == "final-files" and $reads == 2) then .files[0].path="scripts/ci/decision-authority.py"
+			elif $mode == "empty-files" then .files=[] | .changedFiles=0
+			elif $mode == "missing-files" then del(.files)
+			elif $mode == "truncated-files" then .changedFiles=3
+			elif $mode == "duplicate-files" then .files[1]=.files[0]
+			elif $mode == "changed-head" and $reads == 2 then .headRefOid="bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+			else . end'
 		;;
-	"run list")
-		if [[ " $* " == *' --event pull_request '* ]]; then
-			if [[ "${MOCK_MODE}" == existing || "${MOCK_MODE}" == failed ]]; then
-				printf '%s\n' '{"conclusion":null,"databaseId":101,"status":"in_progress"}'
-			elif [[ "${MOCK_MODE}" == action-required ]]; then
-				printf '%s\n' '{"conclusion":"action_required","databaseId":303,"status":"completed"}'
-			fi
-		elif [[ "$MOCK_MODE" == existing-dispatch && "$*" == *conclusion,databaseId,status* ]]; then
-			printf '%s\n' '{"conclusion":null,"databaseId":404,"status":"in_progress"}'
-		elif [[ -e "${MOCK_STATE}" && "$*" != *conclusion,databaseId,status* ]]; then
-			printf '%s\n' 202
-		fi
-		:
+	"pr merge")
+		[[ $* == "pr merge --repo example/finite --auto --merge --match-head-commit $MOCK_HEAD 1" ]] || return 90
+		[[ $MOCK_MODE != merge-failed ]] || return 9
 		;;
-	"workflow run")
-		: >"${MOCK_STATE}"
-		;;
-	"pr update-branch")
-		: >"${MOCK_PR_STATE}"
-		;;
-	"run watch")
-		[[ "${MOCK_MODE}" != failed ]] || return 1
-		;;
-	"api --method" | "pr merge")
-		;;
-	*)
-		echo "Unexpected gh command: $*" >&2
-		return 2
-		;;
+	*) echo "Unexpected gh operation: $*" >&2; return 91 ;;
 	esac
 }
 
-sleep() {
-	:
+timeout() {
+	[[ $1 == 60s ]] || { echo "Unexpected command timeout: $1" >&2; return 92; }
+	shift
+	"$@"
 }
-
-timeout() { shift; "$@"; }
-export -f gh sleep timeout
+export -f gh timeout
 
 run_validator() {
-	env \
-		DEFAULT_BRANCH=main \
-		EXPECTED_AUTHOR='github-actions[bot]' \
-		EXPECTED_BRANCH=update-test \
-		EXPECTED_TITLE='Test update' \
-		GH_TOKEN=test-token \
-		GITHUB_REPOSITORY=example/finite \
-		PR_NUMBER=1 \
-		finite-trusted-update
+	env DEFAULT_BRANCH=main EXPECTED_AUTHOR='github-actions[bot]' \
+		EXPECTED_BRANCH=update-test EXPECTED_TITLE='Test update' \
+		EXPECTED_FILES=flake.lock,devenv.lock GH_TOKEN=fixture-token \
+		GITHUB_REPOSITORY=example/finite PR_NUMBER=1 "$@" finite-trusted-update
 }
 
-export MOCK_MODE=existing
-run_validator
-grep -qF 'gh run watch 101' "${MOCK_LOG}"
-grep -qF 'gh pr merge' "${MOCK_LOG}"
-if grep -qF 'gh workflow run' "${MOCK_LOG}"; then
-	echo 'Validator dispatched duplicate CI despite an existing pull-request run' >&2
-	exit 1
-fi
+reset_fixture() {
+	: >"$MOCK_LOG"
+	rm -f "$MOCK_READS"
+}
 
-: >"${MOCK_LOG}"
-export MOCK_MODE=action-required
-run_validator
-grep -qF 'gh api --method POST repos/example/finite/actions/runs/303/approve' "${MOCK_LOG}"
-grep -qF 'gh run watch 303' "${MOCK_LOG}"
-grep -qF 'gh pr merge' "${MOCK_LOG}"
+# Native GitHub requirements own pending/failed/unknown checks and behind-base
+# PRs. The helper does not claim those checks passed or change the reviewed head.
+for merge_state in CLEAN BLOCKED UNSTABLE UNKNOWN BEHIND; do
+	export MOCK_MERGE_STATE=$merge_state MOCK_MODE=valid
+	reset_fixture
+	run_validator >"$test_root/output"
+	[[ $(cat "$MOCK_READS") == 2 ]]
+	[[ $(grep -c '^gh pr merge ' "$MOCK_LOG") == 1 ]]
+	[[ $(wc -l <"$MOCK_LOG") == 3 ]]
+	grep -qF 'Native continuation requested' "$test_root/output"
+	grep -qF 'remain pending until GitHub confirms them' "$test_root/output"
+	if [[ $merge_state == BEHIND ]]; then grep -qF 'preserving' "$test_root/output"; fi
+done
 
-: >"${MOCK_LOG}"
-rm -f "${MOCK_PR_STATE}"
-export MOCK_MODE=behind
-run_validator
-grep -qF 'gh pr update-branch 1' "${MOCK_LOG}"
-grep -qF -- '--match-head-commit def456' "${MOCK_LOG}"
+# Every denial, including a failed final read or same-PR metadata mutation,
+# occurs before the only mutating request.
+export MOCK_MERGE_STATE=CLEAN
+for mode in author repository branch base title closed number sha files empty-files missing-files \
+	truncated-files duplicate-files malformed read-failed final-read-failed changed-head \
+	final-author final-base final-closed final-files; do
+	export MOCK_MODE=$mode
+	reset_fixture
+	if run_validator >"$test_root/output" 2>"$test_root/error"; then
+		echo "Continuation accepted invalid fixture: $mode" >&2
+		exit 1
+	fi
+	if grep -q '^gh pr merge ' "$MOCK_LOG"; then
+		echo "Continuation mutated after rejecting fixture: $mode" >&2
+		exit 1
+	fi
+done
 
-: >"${MOCK_LOG}"
-export MOCK_MODE=existing
-export MOCK_AUTHOR=attacker
-if run_validator; then
-	echo 'Validator accepted an unexpected pull-request author' >&2
-	exit 1
-fi
-if grep -qF 'gh pr merge' "${MOCK_LOG}"; then
-	echo 'Validator attempted to merge an update from an unexpected author' >&2
-	exit 1
-fi
-export MOCK_AUTHOR='github-actions[bot]'
+# Invalid invocation identities and missing credentials fail before any API call.
+for override in GH_TOKEN= PR_NUMBER=0 PR_NUMBER=abc GITHUB_REPOSITORY=invalid EXPECTED_AUTHOR=; do
+	reset_fixture
+	if run_validator "$override" >"$test_root/output" 2>"$test_root/error"; then exit 1; fi
+	[[ ! -s $MOCK_LOG ]]
+done
 
-: >"${MOCK_LOG}"
-export MOCK_HEAD_REPOSITORY=attacker/finite
-if run_validator; then
-	echo 'Validator accepted a pull request from a fork' >&2
-	exit 1
-fi
-if grep -qF 'gh pr merge' "${MOCK_LOG}"; then
-	echo 'Validator attempted to merge an update from a fork' >&2
-	exit 1
-fi
-export MOCK_HEAD_REPOSITORY=example/finite
+# A failed mutation can have an uncertain server outcome. Never issue another
+# mutation or invent a successful merge/validation result.
+export MOCK_MODE=merge-failed
+reset_fixture
+if run_validator >"$test_root/output" 2>"$test_root/error"; then exit 1; else status=$?; fi
+[[ $status == 9 ]]
+[[ $(grep -c '^gh pr merge ' "$MOCK_LOG") == 1 ]]
+grep -qF 'outcome is unconfirmed' "$test_root/error"
+grep -qF 'no mutation retry was attempted' "$test_root/error"
+if grep -qF 'Native continuation requested' "$test_root/output"; then exit 1; fi
 
-: >"${MOCK_LOG}"
-rm -f "${MOCK_STATE}"
-export MOCK_MODE=fallback
-run_validator
-grep -qF 'gh workflow run build.yml' "${MOCK_LOG}"
-grep -qF 'gh run watch 202' "${MOCK_LOG}"
-grep -qF 'gh pr merge' "${MOCK_LOG}"
-
-: >"${MOCK_LOG}"
-export MOCK_MODE=failed
-if run_validator 2>"${test_root}/failure"; then exit 1; fi
-grep -qF 'https://github.com/example/finite/actions/runs/101' "${test_root}/failure"
-! grep -qF 'gh pr merge' "${MOCK_LOG}"
-grep -qF -- '--commit def456' "${MOCK_LOG}"
-
-: >"${MOCK_LOG}"
-export MOCK_MODE=existing-dispatch
-run_validator
-grep -qF 'gh run watch 404' "${MOCK_LOG}"
-! grep -qF 'gh workflow run' "${MOCK_LOG}"
+# A later explicit invocation revalidates the same head, then delegates
+# idempotent auto-merge/queue state to GitHub instead of polling child runs.
+export MOCK_MODE=valid
+reset_fixture
+run_validator >/dev/null
+run_validator >/dev/null
+[[ $(cat "$MOCK_READS") == 4 ]]
+[[ $(grep -c '^gh pr merge ' "$MOCK_LOG") == 2 ]]
+printf 'Native dependency continuation fixtures passed\n'

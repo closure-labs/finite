@@ -612,8 +612,7 @@ its bot name and noreply email for both commit author and committer. The PR
 validator requires that same App author; it does not fall back to a personal
 PAT for creation. Its `automation/decider-weekly-flake-input-refresh` branch
 avoids reusing the older personal-authored refresh PR. The existing updater
-credential remains separate for bounded
-validation monitoring and protected-queue operations. Existing PR authors
+credential remains separate for protected native auto-merge/queue requests. Existing PR authors
 cannot be changed; supersede a personal-authored PR with the reviewed bot PR
 that retains its changes.
 
@@ -624,16 +623,27 @@ token, then clears the App key before PR creation. It receives no publishing
 PAT and grants no merge or release approval. Existing protected review,
 qualification and publication requirements still apply.
 
-Updater jobs allow 270 minutes, including a bounded 240-minute wait for child
-validation. Existing PR and manual runs are reused only for the same branch
-and commit. Failures include a direct run link and never enable auto-merge.
+After validating the authored PR's repository, branch, base, title and allowed
+files, the updater re-reads its current head and requests native auto-merge with
+`--match-head-commit`. Each metadata read and the single request are bounded to
+60 seconds. Successful helper completion means the request was accepted, not
+that CI passed or the PR merged. GitHub retains required checks, human authority
+and merge-queue enforcement; missing, blocked or failed CI cannot be bypassed.
+
+The helper no longer waits on child runs, approves executions, dispatches a
+replacement full OS build or updates a behind branch. Behind PRs retain their
+existing head; a deliberate branch update requires review of its new head.
+Blocked execution remains with trusted CI admission or an authorized human.
+A failed or timed-out queue request is not retried automatically: inspect native
+PR state before retrying because the server may already have accepted it.
+See the [GitHub CLI merge behavior](https://cli.github.com/manual/gh_pr_merge).
 A fresh dispatch after integration uses the corrected workflow; rerunning an
 older run uses its older revision.
 
-The merge queue also allows 240 minutes for required checks. This exceeds the
+The merge queue allows 240 minutes for required checks. This exceeds the
 220-minute configured validation path and leaves allowance for queueing. A
-delivery-policy contract checks these budgets together; raising a child job's
-limit requires reviewing its orchestration deadlines.
+delivery-policy contract checks this budget; raising a child job's limit
+requires reviewing the native queue deadline.
 
 The [CI optimization review](ci-optimization-review.md) records the 30-day
 baseline, confirmed causes, current bottlenecks and ranked follow-up work.
