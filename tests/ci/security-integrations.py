@@ -19,32 +19,90 @@ def uses(step, action):
 
 
 class Integrations(unittest.TestCase):
-    def test_codeql_has_one_nonduplicated_actions_python_matrix(self):
+    def test_codeql_has_one_actions_python_matrix_per_event(self):
         entries = []
         for path in WORKFLOWS.glob('*.yml'):
             workflow = yaml.safe_load(path.read_text())
             for name, job in workflow.get('jobs', {}).items():
                 if any(uses(step, 'github/codeql-action/init') for step in job.get('steps', [])):
                     entries.append((path.name, name, job))
-        self.assertEqual(len(entries), 1, 'Use one CodeQL workflow, disable duplicate default setup at rollout')
+        self.assertEqual({entry[0] for entry in entries}, {'codeql.yml'})
+        self.assertEqual(len(entries), 2)
+        jobs = {name: job for _, name, job in entries}
+        self.assertEqual(jobs['analyze']['if'], "github.event_name == 'pull_request'")
+        self.assertEqual(jobs['analyze-branch']['if'], "github.event_name != 'pull_request'")
+        self.assertEqual(jobs['analyze']['permissions'], {'contents': 'read'})
+        self.assertEqual(jobs['analyze-branch']['permissions'], {'contents': 'read', 'security-events': 'write'})
+        self.assertEqual(jobs['analyze']['name'], 'Analyze (${{ matrix.language }})')
+        self.assertNotEqual(jobs['analyze']['name'], jobs['analyze-branch']['name'])
+        for key in ('strategy', 'steps'):
+            self.assertEqual(jobs['analyze'][key], jobs['analyze-branch'][key])
         workflow = document('codeql')
         events = workflow.get('on', workflow.get(True))
         self.assertEqual(set(events), {'push', 'pull_request', 'schedule', 'workflow_dispatch'})
         self.assertEqual(events['push']['branches'], ['main'])
         self.assertEqual(events['pull_request']['branches'], ['main'])
         self.assertTrue(events['schedule'])
+        # Complementary conditions retain branch scans for every non-PR trigger.
+        for event in events:
+            selected = 'analyze' if event == 'pull_request' else 'analyze-branch'
+            self.assertEqual(jobs[selected]['strategy']['matrix']['language'], ['actions', 'python'])
         # Required queue validation and authority retain their independent events.
         for name in ('build', 'decision-events'):
             workflow = document(name)
             self.assertIn('merge_group', workflow.get('on', workflow.get(True)))
         job = entries[0][2]
         self.assertEqual(job['strategy']['matrix']['language'], ['actions', 'python'])
-        self.assertEqual(job['permissions'], {'contents': 'read', 'security-events': 'write'})
+        self.assertEqual(job['permissions'], {'contents': 'read'})
         init = next(s for s in job['steps'] if uses(s, 'github/codeql-action/init'))
         self.assertEqual(init['with']['languages'], '${{ matrix.language }}')
         self.assertEqual(init['with']['build-mode'], 'none')
         analyze = next(s for s in job['steps'] if uses(s, 'github/codeql-action/analyze'))
         self.assertIn('matrix.language', analyze['with']['category'])
+
+    def test_admitted_pr_jobs_have_no_secrets_or_write_grants(self):
+        build = document('build')
+        jobs = build['jobs']
+        self.assertEqual(build['permissions'], {'contents': 'read'})
+        events = build.get('on', build.get(True))
+        self.assertIn('pull_request', events)
+        # All PR-reachable jobs, including the optional native benchmark.
+        for name in ('impact', 'docs', 'checks', 'gate', 'vm-tools-benchmark'):
+            job = jobs[name]
+            self.assertTrue(all(value == 'read' for value in job.get('permissions', {}).values()), name)
+            self.assertNotIn('secrets.', str(job), name)
+            self.assertNotIn('secrets', job, name)
+            for step in job.get('steps', []):
+                if uses(step, 'actions/checkout'):
+                    self.assertIs(step['with']['persist-credentials'], False)
+                if 'setup-nix' in step.get('uses', ''):
+                    self.assertNotIn('merge-queue-token', step.get('with', {}))
+        self.assertIn("github.event_name != 'pull_request'", jobs['images']['if'])
+        for guard in ("github.repository == 'closure-labs/finite'", "github.ref == 'refs/heads/main'",
+                      "github.event_name == 'push'", "github.event_name == 'schedule'",
+                      "github.event_name == 'workflow_dispatch'"):
+            self.assertIn(guard, jobs['publish']['if'])
+        self.assertEqual(jobs['gate']['if'], 'always()')
+        self.assertEqual(set(jobs['gate']['needs']), {'impact', 'docs', 'checks', 'images', 'publish'})
+        collector = document('decision-events')
+        self.assertEqual(collector['permissions'], {'contents': 'read'})
+        self.assertNotIn('secrets.', str(collector))
+        self.assertEqual(collector['jobs']['collect']['steps'], [
+            {'name': 'Record event completion for trusted authority controller',
+             'run': "echo 'GitHub run metadata is the only input to the authority controller.'"}])
+        for name in ('codeql', 'decision-events'):
+            workflow = document(name)
+            triggers = workflow.get('on', workflow.get(True))
+            self.assertIn('pull_request', triggers)
+            self.assertNotIn('draft', str(workflow))
+        pr = document('codeql')['jobs']['analyze']
+        self.assertNotIn('secrets.', str(pr))
+        self.assertEqual(pr['permissions'], {'contents': 'read'})
+        benchmark = document('benchmark-vm-tools')
+        self.assertNotIn('secrets.', str(benchmark))
+        self.assertTrue(all(value == 'read' for value in benchmark['permissions'].values()))
+        for job in benchmark['jobs'].values():
+            self.assertTrue(all(value == 'read' for value in job.get('permissions', {}).values()))
 
     def test_harden_runner_is_pinned_first_hosted_audit_without_paid_features(self):
         count = 0

@@ -225,15 +225,23 @@ class Integration(unittest.TestCase):
     def admit(self):
         return admission.approve(admission.policy(), 7, HEAD, [40], api=self.api, post=self.posts.append)
 
-    def test_official_dependency_head_needs_current_human_review(self):
-        self.assertEqual(self.check()['status'], 'authorized')
-        self.assertEqual(self.review_reads, 2)
+    def test_automatic_execution_without_review_preserves_human_merge_requirement(self):
         self.humans.reviews = []
+        for draft in (True, False):
+            with self.subTest(draft=draft):
+                self.source.pull['draft'] = draft
+                result = self.admit()
+                self.assertEqual(result['runs'][0]['status'], 'execution-approved')
+                self.assertFalse(result['grantsMergeApproval'])
+                self.assertFalse(result['authorizesPublication'])
+        self.assertEqual(self.review_reads, 0)
+        self.assertEqual(self.posts, ['repos/closure-labs/finite/actions/runs/40/approve'] * 2)
         with self.assertRaises(check.authority.HumanDecisionRequired): self.check()
-        self.assertEqual(self.admit()['status'], 'manual-execution-approval-required')
-        self.assertEqual(self.posts, [])
+        self.humans.reviews = deepcopy(authority_fixture.GitHub().reviews)
+        self.humans.reviews[0]['commit_id'] = HEAD
+        self.assertEqual(self.check()['status'], 'authorized')
 
-    def test_stale_dismissed_withdrawn_and_ineligible_reviews_never_admit(self):
+    def test_stale_dismissed_withdrawn_and_ineligible_reviews_still_block_merge(self):
         for case in ('head', 'dismissed', 'changes', 'role', 'membership'):
             self.setUp()
             if case == 'head': self.humans.reviews[0]['commit_id'] = BASE
@@ -242,16 +250,70 @@ class Integration(unittest.TestCase):
             if case == 'role': self.humans.roles['maintainer'] = 'write'
             if case == 'membership': self.humans.members = []
             with self.subTest(case=case):
-                self.assertEqual(self.admit()['status'], 'manual-execution-approval-required')
+                self.assertEqual(self.admit()['runs'][0]['status'], 'execution-approved')
+                self.assertEqual(self.review_reads, 0)
+                with self.assertRaises(check.authority.HumanDecisionRequired): self.check()
+
+    def test_live_dependency_identity_rechecked_immediately_before_admission(self):
+        for mutation in ('head', 'base', 'author', 'fork', 'branch', 'closed'):
+            self.setUp()
+            validations = 0
+            original = admission.dependency.revalidate
+            def revalidate(api, repository, context):
+                nonlocal validations
+                validations += 1
+                if validations == 3:
+                    if mutation == 'author': self.source.pull['user']['id'] = 1
+                    elif mutation == 'fork': self.source.pull['head']['repo']['id'] = 9
+                    elif mutation == 'branch': self.source.pull['head']['ref'] = 'moved'
+                    elif mutation == 'closed': self.source.pull['state'] = 'closed'
+                    else: self.source.pull[mutation]['sha'] = TAG
+                return original(api, repository, context)
+            with self.subTest(mutation=mutation), mock.patch.object(admission.dependency, 'revalidate', revalidate):
+                with self.assertRaises(ValueError): self.admit()
+            self.assertEqual(self.posts, [])
+
+    def test_forged_official_identity_and_fork_never_admit(self):
+        for mutation in ('login', 'id', 'bool-id', 'fork'):
+            self.setUp()
+            if mutation == 'login': self.source.pull['user']['login'] = 'imposter[bot]'
+            elif mutation == 'id': self.source.pull['user']['id'] = 1
+            elif mutation == 'bool-id': self.source.pull['user']['id'] = True
+            else:
+                self.source.pull['head']['repo'] = {'id': 9, 'full_name': 'fork/finite'}
+                self.run['head_repository'] = deepcopy(self.source.pull['head']['repo'])
+            with self.subTest(mutation=mutation):
+                if mutation == 'fork':
+                    with self.assertRaises(ValueError): self.admit()
+                else:
+                    self.assertEqual(self.admit()['status'], 'manual-execution-approval-required')
                 self.assertEqual(self.posts, [])
 
-    def test_live_review_rechecked_immediately_before_admission(self):
-        self.assertEqual(self.admit()['runs'][0]['status'], 'execution-approved')
-        self.assertEqual(len(self.posts), 1)
-        self.assertEqual(self.review_reads, 3)
-        self.setUp(); self.revoke_at = 3
-        with self.assertRaises(ValueError): self.admit()
-        self.assertEqual(self.posts, [])
+    def test_actor_and_triggering_actor_never_substitute_for_live_pr_author(self):
+        identities = [deepcopy(dependency.BOT), {'login': 'outsider', 'id': 9, 'type': 'User'}]
+        for actor in identities:
+            for triggering_actor in identities:
+                for official in (True, False):
+                    self.setUp()
+                    self.humans.reviews = []
+                    self.run.update(actor=actor, triggering_actor=triggering_actor)
+                    if not official:
+                        self.source.pull['user'] = {'login': 'imposter[bot]', 'id': 9, 'type': 'Bot'}
+                    # Forged event identity is a wake-up, never author authority.
+                    event = {'number': 7, 'sender': deepcopy(dependency.BOT),
+                             'pull_request': {'head': {'sha': HEAD}, 'user': deepcopy(dependency.BOT)}}
+                    env = {'GITHUB_REPOSITORY': dependency.REPOSITORY,
+                           'GITHUB_EVENT_NAME': 'pull_request_target',
+                           'GITHUB_ACTOR': actor['login'], 'GITHUB_ACTOR_ID': str(actor['id']),
+                           'GITHUB_TRIGGERING_ACTOR': triggering_actor['login']}
+                    with self.subTest(actor=actor, triggering_actor=triggering_actor, official=official), \
+                            mock.patch.dict(admission.os.environ, env):
+                        self.assertEqual(admission.discover(event, env, admission.policy(), self.api),
+                                         {'include': [{'number': 7, 'head': HEAD, 'runs': [40]}]})
+                        result = self.admit()
+                        self.assertEqual(len(self.posts), int(official))
+                        self.assertEqual(result['status'], 'checked' if official else 'manual-execution-approval-required')
+                        self.assertEqual(self.review_reads, 0)
 
     def test_non_pin_change_does_not_reach_review_or_execution(self):
         self.source = GitHub(after=AFTER.replace('echo safe', 'echo other'))
@@ -293,8 +355,9 @@ class Integration(unittest.TestCase):
             result = admission.discover(event, env, admission.policy(), self.api)
             self.assertEqual(result, {'include': [{'number': 7, 'head': HEAD, 'runs': [40]}]})
         self.assertEqual(self.review_reads, 0)
-        self.assertEqual(self.admit()['status'], 'manual-execution-approval-required')
-        self.assertEqual(self.posts, [])
+        self.assertEqual(self.admit()['runs'][0]['status'], 'execution-approved')
+        self.assertEqual(len(self.posts), 1)
+        self.assertEqual(self.review_reads, 0)
         mutations = [{'head_branch': 'attacker'}, {'event': 'pull_request'}, {'conclusion': 'cancelled'},
                      {'conclusion': 'timed_out'},
                      {'run_attempt': True}, {'repository': {'id': 9, 'full_name': dependency.REPOSITORY}},
@@ -320,7 +383,7 @@ class Integration(unittest.TestCase):
         self.assertEqual({k: v for k, v in token.items() if k.startswith('permission-')},
                          {'permission-actions': 'write', 'permission-contents': 'read',
                           'permission-pull-requests': 'read', 'permission-members': 'read'})
-        self.assertEqual(admission.policy()['dependabot']['requiresCurrentHeadHumanApproval'], True)
+        self.assertIs(admission.policy()['dependabot']['requiresCurrentHeadHumanApproval'], False)
 
 
 if __name__ == '__main__':
