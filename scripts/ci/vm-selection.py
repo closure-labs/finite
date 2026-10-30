@@ -22,8 +22,19 @@ FILES = {'.github/actions/setup-cosign/action.yml', '.github/actions/setup-cosig
          'scripts/ci/local_vm.py'}
 
 
+# Exact reviewed host-only entry points, not a blanket qualification exemption.
+# Keep source/security contracts and publication/reuse identities unchanged.
+# New helpers and mixed installer/guest changes retain the conservative route.
+HOST_CONTROLLER_ONLY = frozenset({
+    'scripts/bluebuild/prune-qualified-isos.py',
+    'scripts/bluebuild/audit-published.sh',
+    'scripts/bluebuild/publication-current.py',
+})
+
+
 def required(paths, *, lock_metadata_only=False):
     return paths is None or any((path in FILES or path.startswith(PREFIXES))
+                               and path not in HOST_CONTROLLER_ONLY
                                and not (path == 'flake.lock' and lock_metadata_only) for path in paths)
 
 
