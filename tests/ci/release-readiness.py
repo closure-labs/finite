@@ -480,6 +480,154 @@ class DeliveryHistory(unittest.TestCase):
                 self.inspect()
 
 
+class DeliveryHistoryConcurrency(unittest.TestCase):
+    def runs(self, count=8):
+        return [{'id': number, 'run_attempt': 1} for number in range(1, count + 1)]
+
+    def test_job_reads_are_four_way_bounded_and_preserve_all_results(self):
+        from threading import Barrier
+        barrier = Barrier(delivery.HISTORY_WORKERS)
+        def api(endpoint):
+            barrier.wait(timeout=3)
+            return {'total_count': 0, 'jobs': []}
+        reader = delivery.HistoryReader(api)
+        result = list(delivery.job_inventories(self.runs(), reader))
+        self.assertEqual({run['id'] for run, jobs in result}, set(range(1, 9)))
+        observed = reader.observation()
+        self.assertEqual(observed['readCalls'], 8)
+        self.assertEqual(observed['completed'], 8)
+        self.assertEqual(observed['peakConcurrentReads'], 4)
+        self.assertEqual(observed['failed'], 0)
+        self.assertGreaterEqual(observed['readSeconds'], 0)
+        self.assertGreaterEqual(observed['wallSeconds'], 0)
+
+    def test_failed_batch_does_not_read_later_batches(self):
+        from threading import Barrier
+        barrier = Barrier(delivery.HISTORY_WORKERS)
+        def api(endpoint):
+            barrier.wait(timeout=3)
+            raise ValueError('Unavailable metadata')
+        reader = delivery.HistoryReader(api)
+        with self.assertRaisesRegex(ValueError, 'Unavailable metadata'):
+            list(delivery.job_inventories(self.runs(150), reader))
+        self.assertEqual(reader.read_calls, 4)
+        self.assertEqual(reader.failed, 4)
+        self.assertEqual(reader.active, 0)
+
+    def test_malformed_first_batch_does_not_read_later_batches(self):
+        reader = delivery.HistoryReader(lambda endpoint: {'total_count': 1, 'jobs': []})
+        with self.assertRaisesRegex(ValueError, 'incomplete or invalid'):
+            list(delivery.job_inventories(self.runs(150), reader))
+        self.assertEqual(reader.read_calls, 4)
+        self.assertEqual(reader.active, 0)
+
+    def test_partial_and_invalid_inventory_shapes_fail_before_later_batches(self):
+        documents = [None, {}, {'total_count': True, 'jobs': []},
+                     {'total_count': -1, 'jobs': []}, {'total_count': 101, 'jobs': []},
+                     {'total_count': 1, 'jobs': [None]},
+                     {'total_count': 1, 'jobs': [{'name': 'phase', 'steps': None}]},
+                     {'total_count': 1, 'jobs': [{'name': 'phase', 'steps': [None]}]}]
+        for document in documents:
+            with self.subTest(document=document):
+                reader = delivery.HistoryReader(lambda endpoint: document)
+                with self.assertRaisesRegex(ValueError, 'incomplete or invalid'):
+                    list(delivery.job_inventories(self.runs(150), reader))
+                self.assertEqual(reader.read_calls, 4)
+
+    def test_transport_timeout_rate_limit_and_recovery_keep_bounds(self):
+        import github_api
+        import subprocess
+        from threading import Lock
+        from io import StringIO
+        for scenario in ('timeout', 'rate-limit', 'recover'):
+            with self.subTest(scenario=scenario):
+                attempts, lock = {}, Lock()
+                def transport(command, **kwargs):
+                    self.assertEqual(command[2:4], ['--method', 'GET'])
+                    self.assertEqual(kwargs['timeout'], 30)
+                    endpoint = command[-1]
+                    with lock:
+                        attempts[endpoint] = attempts.get(endpoint, 0) + 1
+                        attempt = attempts[endpoint]
+                    if scenario == 'timeout':
+                        raise subprocess.TimeoutExpired(command, 30)
+                    limited = scenario == 'rate-limit' or attempt == 1
+                    headers = ('HTTP/2 429 Limited\nRetry-After: 3600\n' if scenario == 'rate-limit'
+                               else 'HTTP/2 429 Limited\nRetry-After: 2\n' if limited
+                               else 'HTTP/2 200 OK\n')
+                    body = json.dumps({'total_count': 0, 'jobs': []})
+                    return subprocess.CompletedProcess(command, int(limited), headers + '\n' + body, '')
+                reader = delivery.HistoryReader(github_api.get_json)
+                with patch.object(github_api.subprocess, 'run', side_effect=transport), \
+                        patch.object(github_api.time, 'sleep') as sleep, \
+                        contextlib.redirect_stderr(StringIO()):
+                    if scenario == 'recover':
+                        self.assertEqual(len(list(delivery.job_inventories(self.runs(4), reader))), 4)
+                        self.assertEqual(set(attempts.values()), {2})
+                        self.assertEqual(reader.failed, 0)
+                    else:
+                        with self.assertRaises(github_api.GitHubReadError):
+                            list(delivery.job_inventories(self.runs(150), reader))
+                        self.assertEqual(set(attempts.values()), {3 if scenario == 'timeout' else 1})
+                        self.assertEqual(reader.failed, 4)
+                    self.assertEqual(len(attempts), 4)
+                    self.assertEqual(reader.read_calls, 4)
+                    self.assertLessEqual(reader.peak, 4)
+                    self.assertEqual(reader.active, 0)
+                    if scenario == 'rate-limit':
+                        sleep.assert_not_called()
+
+    def test_streamed_batches_release_full_response_bodies(self):
+        import weakref
+        class Inventory(dict):
+            pass
+        references = []
+        def api(endpoint):
+            result = Inventory(total_count=0, jobs=[], unused='x' * 100000)
+            references.append(weakref.ref(result))
+            return result
+        reader = delivery.HistoryReader(api)
+        inventories = delivery.job_inventories(self.runs(150), reader)
+        for index, (run, jobs) in enumerate(inventories):
+            # The current batch plus the consumer's previous response is the
+            # entire retained body set, not all previously observed history.
+            self.assertLessEqual(sum(ref() is not None for ref in references), 5)
+            self.assertEqual(run['id'], index + 1)
+        self.assertEqual(reader.read_calls, 150)
+        self.assertLessEqual(sum(ref() is not None for ref in references), 1)
+
+    def test_late_result_and_queued_reads_respect_unchanged_deadline(self):
+        clock = [0]
+        def api(endpoint):
+            clock[0] = delivery.HISTORY_SECONDS
+            return {'jobs': []}
+        with patch.object(delivery.time, 'monotonic', side_effect=lambda: clock[0]):
+            reader = delivery.HistoryReader(api)
+            with self.assertRaisesRegex(ValueError, 'budget exhausted'):
+                reader('native-jobs')
+            self.assertEqual(reader.read_calls, 1)
+            self.assertEqual(reader.failed, 1)
+            self.assertEqual(reader.completed, 0)
+            with self.assertRaisesRegex(ValueError, 'budget exhausted'):
+                reader('next-jobs')
+            self.assertEqual(reader.read_calls, 1)
+            self.assertEqual(reader.observation()['wallSeconds'], delivery.HISTORY_SECONDS)
+
+    def test_failed_inspection_emits_counts_without_metadata_or_credentials(self):
+        from io import StringIO
+        output = StringIO()
+        def api(endpoint):
+            raise ValueError('Unavailable metadata')
+        with contextlib.redirect_stdout(output), self.assertRaisesRegex(ValueError, 'Unavailable metadata'):
+            delivery.inspect(SHA, 'development', BOT, api)
+        observation = json.loads(output.getvalue().split('Delivery history reads: ')[1])
+        self.assertEqual(observation['readCalls'], 1)
+        self.assertEqual(observation['failed'], 1)
+        self.assertEqual(observation['completed'], 0)
+        self.assertEqual(set(observation), {'schema', 'readCalls', 'completed', 'failed',
+                         'peakConcurrentReads', 'readSeconds', 'wallSeconds', 'workers', 'budgetSeconds'})
+
+
 class DeliverySnapshots(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
