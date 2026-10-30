@@ -87,3 +87,36 @@ Additional offline cases exercise the actual transport with mocked subprocesses:
 exhausted timeouts, a rate limit requiring a wait beyond its budget, recovery
 from a short rate limit, and malformed/partial job responses. These tests do
 not issue live requests, relax security policy or turn missing evidence healthy.
+
+
+## Bounded rolling-window correction
+
+After the first correction, [run 41002497896](https://github.com/closure-labs/finite/actions/runs/41002497896)
+still exhausted the observation budget: 150 logical reads were admitted, 146
+completed and four failed, with peak concurrency four, 121.575 seconds of
+observed wall span and 256.7 summed read seconds. The traceback establishes a
+late-result rejection. These aggregates do not establish the individual cause
+of every failed read or attribute the delay to a particular request.
+
+The scheduler now refills on completed reads rather than waiting at a four-read
+batch barrier. It preserves input run order, allows at most eight admitted but
+unconsumed inventories, and applies backpressure when an older slow read fills
+that reorder window. The consumer may retain its previous response separately.
+Every completed future observed in a scheduling pass is validated before any
+replacement is submitted. A shared four-slot semaphore also covers foreground
+artifact reads, so prefetch cannot raise global read concurrency above four.
+Slot admission and returned results both retain the 120-second deadline; the
+150-run discovery limit, native-attempt evidence and all health failures remain.
+There is no cache, timeout increase or publication/approval policy change.
+
+Additive telemetry records `maxReadSeconds`, admitted-read `failureReasons`
+(`readError` or `resultDeadline`), and `admissionRejections` for reads never
+admitted. Inventory-shape errors occur after a successful metadata read and are
+not transport failures. Counters expose no endpoint, response or credential.
+
+Event-controlled offline fixtures demonstrate that run five can start while
+run one is blocked, ordered consumption despite reversed completion, bounded
+reorder retention, out-of-order malformed-result rejection, global concurrency
+including artifacts, and slot/result deadline failures. This proves scheduler
+behavior, not a hosted latency improvement or guaranteed completion within the
+budget. Ordinary exact-head CI and natural health observations remain necessary.
