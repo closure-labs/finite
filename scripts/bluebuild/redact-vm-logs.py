@@ -68,16 +68,18 @@ def snapshot_logs(state, secret, destination):
     if not secret:
         raise ValueError('Cannot redact an empty VM key')
     for path in state.rglob('*'):
-        if path.suffix not in ('.log', '.json') or not path.is_file() or path.is_symlink():
+        captured_gzip = path.name == 'home-init.log.gz'
+        if (path.suffix not in ('.log', '.json') and not captured_gzip) or not path.is_file() or path.is_symlink():
             continue
         target = destination / path.relative_to(state)
-        compressed = path.name == 'home-init.log'
-        if compressed:
+        compressed = path.name == 'home-init.log' or captured_gzip
+        if compressed and not captured_gzip:
             target = target.with_suffix('.log.gz')
         target.parent.mkdir(parents=True, exist_ok=True)
         temporary = target.with_suffix(target.suffix + '.tmp')
         try:
-            with path.open('rb') as source, temporary.open('wb') as raw:
+            opener = gzip.open if captured_gzip else open
+            with opener(path, 'rb') as source, temporary.open('wb') as raw:
                 if compressed:
                     with gzip.GzipFile(fileobj=raw, mode='wb', mtime=0) as output:
                         for chunk in redacted_chunks(source, secret):

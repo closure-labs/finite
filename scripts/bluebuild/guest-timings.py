@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Retain only bounded structured guest stage markers while streaming output."""
 import json
+import gzip
 import argparse
 import importlib.util
 import time
@@ -19,20 +20,36 @@ LINE_LIMIT = 16384
 LOG_LIMIT = 256 * 1024 * 1024
 
 
+class CompressedCapture:
+    """Independent gzip members preserve a readable prefix even after cancellation."""
+    def __init__(self, raw, limit=LOG_LIMIT):
+        self.raw, self.limit = raw, limit
+        self.bytes = self.input_bytes = 0
+        self.error = None
+
+    def write(self, chunk):
+        self.input_bytes += len(chunk)
+        if self.error or not chunk:
+            return
+        member = gzip.compress(chunk, compresslevel=6, mtime=0)
+        if self.bytes + len(member) > self.limit:
+            self.error = 'compressed-byte-budget'
+            return
+        self.raw.write(member)
+        self.raw.flush()
+        self.bytes += len(member)
+
+
 def bounded_lines(stream, raw, secret):
     spec = importlib.util.spec_from_file_location('vm_redactor', Path(__file__).with_name('redact-vm-logs.py'))
     redactor = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(redactor)
-    pending, overflow, total = b'', False, 0
+    pending, overflow = b'', False
     for chunk in redactor.redacted_chunks(stream, secret):
-        total += len(chunk)
-        if total > LOG_LIMIT:
-            raise ValueError('Guest log exceeded the 256 MiB diagnostic budget; evidence incomplete')
         raw.write(chunk)
-        raw.flush()
         for index, part in enumerate(chunk.split(b'\n')):
             if index:
-                yield ('[oversized guest line omitted from console; retained in artifact]\n'
+                yield ('[oversized guest line omitted from console; see capture receipt]\n'
                        if overflow else pending.decode('utf-8', errors='replace') + '\n')
                 pending, overflow = b'', False
             if len(pending) + len(part) > LINE_LIMIT:
@@ -40,7 +57,7 @@ def bounded_lines(stream, raw, secret):
             if not overflow:
                 pending += part
     if pending or overflow:
-        yield ('[oversized guest line omitted from console; retained in artifact]\n'
+        yield ('[oversized guest line omitted from console; see capture receipt]\n'
                if overflow else pending.decode('utf-8', errors='replace'))
 
 
@@ -68,7 +85,7 @@ class BoundedConsole:
         else:
             self.suppressed += 1
         if self.clock() - self.last >= 30:
-            self.output.write(f'Guest initialization continues; {self.suppressed} progress lines kept in downloadable log.\n')
+            self.output.write(f'Guest initialization continues; {self.suppressed} progress lines hidden from console.\n')
             self.last = self.clock()
 
     def flush(self):
@@ -78,7 +95,7 @@ class BoundedConsole:
         failed = not any(row['stage'] == 'home-init' and row['status'] == 0 for row in rows)
         if failed:
             self.output.write('Guest initialization failed or was incomplete; recent non-progress output:\n' + self.tail)
-        self.output.write('Full sanitized initializer output: home-init.log.gz in the VM evidence artifact.\n')
+        self.output.write('Sanitized initializer output (completeness in home-init-log.json): home-init.log.gz in the VM evidence artifact.\n')
         self.output.flush()
 
 
@@ -136,17 +153,24 @@ if __name__ == '__main__':
         parser.error('--log and --secret must be supplied together')
     if args.log:
         console = BoundedConsole(sys.stdout)
-        rows, complete = [], False
+        rows, complete, capture = [], False, None
         try:
             with args.log.open('xb') as raw:
                 args.log.chmod(0o600)
-                rows = collect(bounded_lines(sys.stdin.buffer, raw, args.secret.read_bytes().strip()), args.output, console)
-                complete = True
+                capture = CompressedCapture(raw)
+                rows = collect(bounded_lines(sys.stdin.buffer, capture, args.secret.read_bytes().strip()), args.output, console)
+                complete = capture.error is None
         finally:
             args.log.with_name('home-init-log.json').write_text(json.dumps({
                 'schema': 1, 'captureComplete': complete, 'authorizesPublication': False,
-                'consoleByteBudget': 32768, 'logByteBudget': LOG_LIMIT,
+                'consoleByteBudget': 32768, 'compressedLogByteBudget': LOG_LIMIT,
+                'compressedBytes': capture.bytes if capture else 0,
+                'sanitizedBytesObserved': capture.input_bytes if capture else 0,
+                'captureError': capture.error if capture else 'capture-not-started',
                 'homeInitStatus': next((r['status'] for r in rows if r['stage'] == 'home-init'), None)}) + '\n')
+            if capture and capture.error:
+                print('Guest log capture incomplete: compressed storage budget exhausted; '
+                      'guest status is reported separately.', file=sys.stderr)
             console.finish(rows)
     else:
         collect(sys.stdin, args.output)
