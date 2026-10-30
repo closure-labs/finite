@@ -480,6 +480,283 @@ class DeliveryHistory(unittest.TestCase):
                 self.inspect()
 
 
+class DeliveryHistoryConcurrency(unittest.TestCase):
+    def runs(self, count=8):
+        return [{'id': number, 'run_attempt': 1} for number in range(1, count + 1)]
+
+    def test_job_reads_are_four_way_bounded_and_preserve_all_results(self):
+        from threading import Barrier
+        barrier = Barrier(delivery.HISTORY_WORKERS)
+        def api(endpoint):
+            barrier.wait(timeout=3)
+            return {'total_count': 0, 'jobs': []}
+        reader = delivery.HistoryReader(api)
+        result = list(delivery.job_inventories(self.runs(), reader))
+        self.assertEqual({run['id'] for run, jobs in result}, set(range(1, 9)))
+        observed = reader.observation()
+        self.assertEqual(observed['readCalls'], 8)
+        self.assertEqual(observed['completed'], 8)
+        self.assertEqual(observed['peakConcurrentReads'], 4)
+        self.assertEqual(observed['failed'], 0)
+        self.assertGreaterEqual(observed['readSeconds'], 0)
+        self.assertGreaterEqual(observed['wallSeconds'], 0)
+
+    def test_failed_batch_does_not_read_later_batches(self):
+        from threading import Barrier
+        barrier = Barrier(delivery.HISTORY_WORKERS)
+        def api(endpoint):
+            barrier.wait(timeout=3)
+            raise ValueError('Unavailable metadata')
+        reader = delivery.HistoryReader(api)
+        with self.assertRaisesRegex(ValueError, 'Unavailable metadata'):
+            list(delivery.job_inventories(self.runs(150), reader))
+        self.assertEqual(reader.read_calls, 4)
+        self.assertEqual(reader.failed, 4)
+        self.assertEqual(reader.active, 0)
+
+    def test_malformed_first_batch_does_not_read_later_batches(self):
+        reader = delivery.HistoryReader(lambda endpoint: {'total_count': 1, 'jobs': []})
+        with self.assertRaisesRegex(ValueError, 'incomplete or invalid'):
+            list(delivery.job_inventories(self.runs(150), reader))
+        self.assertEqual(reader.read_calls, 4)
+        self.assertEqual(reader.active, 0)
+
+    def test_partial_and_invalid_inventory_shapes_fail_before_later_batches(self):
+        documents = [None, {}, {'total_count': True, 'jobs': []},
+                     {'total_count': -1, 'jobs': []}, {'total_count': 101, 'jobs': []},
+                     {'total_count': 1, 'jobs': [None]},
+                     {'total_count': 1, 'jobs': [{'name': 'phase', 'steps': None}]},
+                     {'total_count': 1, 'jobs': [{'name': 'phase', 'steps': [None]}]}]
+        for document in documents:
+            with self.subTest(document=document):
+                reader = delivery.HistoryReader(lambda endpoint: document)
+                with self.assertRaisesRegex(ValueError, 'incomplete or invalid'):
+                    list(delivery.job_inventories(self.runs(150), reader))
+                self.assertEqual(reader.read_calls, 4)
+
+    def test_transport_timeout_rate_limit_and_recovery_keep_bounds(self):
+        import github_api
+        import subprocess
+        from threading import Lock
+        from io import StringIO
+        for scenario in ('timeout', 'rate-limit', 'recover'):
+            with self.subTest(scenario=scenario):
+                attempts, lock = {}, Lock()
+                def transport(command, **kwargs):
+                    self.assertEqual(command[2:4], ['--method', 'GET'])
+                    self.assertEqual(kwargs['timeout'], 30)
+                    endpoint = command[-1]
+                    with lock:
+                        attempts[endpoint] = attempts.get(endpoint, 0) + 1
+                        attempt = attempts[endpoint]
+                    if scenario == 'timeout':
+                        raise subprocess.TimeoutExpired(command, 30)
+                    limited = scenario == 'rate-limit' or attempt == 1
+                    headers = ('HTTP/2 429 Limited\nRetry-After: 3600\n' if scenario == 'rate-limit'
+                               else 'HTTP/2 429 Limited\nRetry-After: 2\n' if limited
+                               else 'HTTP/2 200 OK\n')
+                    body = json.dumps({'total_count': 0, 'jobs': []})
+                    return subprocess.CompletedProcess(command, int(limited), headers + '\n' + body, '')
+                reader = delivery.HistoryReader(github_api.get_json)
+                with patch.object(github_api.subprocess, 'run', side_effect=transport), \
+                        patch.object(github_api.time, 'sleep') as sleep, \
+                        contextlib.redirect_stderr(StringIO()):
+                    if scenario == 'recover':
+                        self.assertEqual(len(list(delivery.job_inventories(self.runs(4), reader))), 4)
+                        self.assertEqual(set(attempts.values()), {2})
+                        self.assertEqual(reader.failed, 0)
+                    else:
+                        with self.assertRaises(github_api.GitHubReadError):
+                            list(delivery.job_inventories(self.runs(150), reader))
+                        self.assertEqual(set(attempts.values()), {3 if scenario == 'timeout' else 1})
+                        self.assertEqual(reader.failed, 4)
+                    self.assertEqual(len(attempts), 4)
+                    self.assertEqual(reader.read_calls, 4)
+                    self.assertLessEqual(reader.peak, 4)
+                    self.assertEqual(reader.active, 0)
+                    if scenario == 'rate-limit':
+                        sleep.assert_not_called()
+
+    def test_window_releases_full_response_bodies(self):
+        import weakref
+        class Inventory(dict):
+            pass
+        references = []
+        def api(endpoint):
+            result = Inventory(total_count=0, jobs=[], unused='x' * 100000)
+            references.append(weakref.ref(result))
+            return result
+        reader = delivery.HistoryReader(api)
+        inventories = delivery.job_inventories(self.runs(150), reader)
+        for index, (run, jobs) in enumerate(inventories):
+            # Eight admitted-unconsumed results plus the consumer's previous
+            # response, never the entire observed history.
+            self.assertLessEqual(sum(ref() is not None for ref in references), 9)
+            self.assertEqual(run['id'], index + 1)
+        self.assertEqual(reader.read_calls, 150)
+        self.assertLessEqual(sum(ref() is not None for ref in references), 1)
+
+    def test_mixed_latency_refills_before_oldest_finishes_and_preserves_order(self):
+        from threading import Event
+        fifth_started = Event()
+        def api(endpoint):
+            number = int(endpoint.split('/runs/')[1].split('/')[0])
+            if number == 1:
+                # A fixed four-read batch cannot start run five until run one
+                # completes. This dependency tests scheduling, not wall speed.
+                self.assertTrue(fifth_started.wait(timeout=3))
+            if number == 5:
+                fifth_started.set()
+            return {'total_count': 0, 'jobs': []}
+        reader = delivery.HistoryReader(api)
+        results = list(delivery.job_inventories(self.runs(20), reader))
+        self.assertEqual([run['id'] for run, jobs in results], list(range(1, 21)))
+        self.assertLessEqual(reader.peak, 4)
+
+    def test_reversed_completion_preserves_input_order(self):
+        from threading import Event
+        events = [Event() for _ in range(4)]
+        def api(endpoint):
+            number = int(endpoint.split('/runs/')[1].split('/')[0])
+            if number < 4:
+                self.assertTrue(events[number].wait(timeout=3))
+            events[number - 1].set()
+            return {'total_count': 0, 'jobs': []}
+        results = list(delivery.job_inventories(self.runs(4), delivery.HistoryReader(api)))
+        self.assertEqual([run['id'] for run, jobs in results], [1, 2, 3, 4])
+
+    def test_out_of_order_malformed_result_aborts_before_refill(self):
+        from concurrent.futures import ThreadPoolExecutor
+        from threading import Event
+        release, observed, scheduler_waiting = Event(), Event(), Event()
+        real_wait = delivery.wait
+        def wait(*args, **kwargs):
+            scheduler_waiting.set()
+            result = real_wait(*args, **kwargs)
+            observed.set()
+            return result
+        def api(endpoint):
+            number = int(endpoint.split('/runs/')[1].split('/')[0])
+            if number == 2:
+                self.assertTrue(scheduler_waiting.wait(timeout=3))
+                return {'total_count': 1, 'jobs': []}
+            self.assertTrue(release.wait(timeout=3))
+            return {'total_count': 0, 'jobs': []}
+        reader = delivery.HistoryReader(api)
+        with ThreadPoolExecutor(max_workers=1) as consumer, patch.object(delivery, 'wait', side_effect=wait):
+            result = consumer.submit(lambda: list(delivery.job_inventories(self.runs(150), reader)))
+            self.assertTrue(observed.wait(timeout=3))
+            release.set()
+            with self.assertRaisesRegex(ValueError, 'incomplete or invalid'):
+                result.result(timeout=3)
+        self.assertEqual(reader.read_calls, 4)
+
+    def test_slow_oldest_applies_backpressure_at_eight_inventories(self):
+        from concurrent.futures import ThreadPoolExecutor
+        from threading import Event
+        release, full = Event(), Event()
+        real_wait = delivery.wait
+        reader = None
+        def wait(pending, **kwargs):
+            if len(pending) == 1 and reader.read_calls == delivery.HISTORY_WINDOW:
+                full.set()
+            return real_wait(pending, **kwargs)
+        def api(endpoint):
+            number = int(endpoint.split('/runs/')[1].split('/')[0])
+            if number == 1:
+                self.assertTrue(release.wait(timeout=3))
+            return {'total_count': 0, 'jobs': []}
+        reader = delivery.HistoryReader(api)
+        with ThreadPoolExecutor(max_workers=1) as consumer, patch.object(delivery, 'wait', side_effect=wait):
+            result = consumer.submit(lambda: list(delivery.job_inventories(self.runs(20), reader)))
+            self.assertTrue(full.wait(timeout=3))
+            self.assertEqual(reader.read_calls, 8)
+            release.set()
+            self.assertEqual(len(result.result(timeout=3)), 20)
+
+    def test_foreground_artifact_and_background_jobs_share_four_slots(self):
+        from concurrent.futures import ThreadPoolExecutor
+        from threading import Barrier, Event
+        entered, release, waiting = Barrier(5), Event(), Event()
+        def api(endpoint):
+            if endpoint != 'artifact':
+                entered.wait(timeout=3)
+                self.assertTrue(release.wait(timeout=3))
+            return {}
+        reader = delivery.HistoryReader(api)
+        original = reader.slots.acquire
+        def acquire(*args, **kwargs):
+            waiting.set()
+            return original(*args, **kwargs)
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            jobs = [pool.submit(reader, 'job') for _ in range(4)]
+            entered.wait(timeout=3)
+            with patch.object(reader.slots, 'acquire', side_effect=acquire):
+                artifact = pool.submit(reader, 'artifact')
+                self.assertTrue(waiting.wait(timeout=3))
+                self.assertEqual(reader.read_calls, 4)
+                release.set()
+                artifact.result(timeout=3)
+            for job in jobs:
+                job.result(timeout=3)
+        self.assertEqual(reader.peak, 4)
+        self.assertEqual(reader.read_calls, 5)
+
+    def test_slot_wait_deadline_never_admits_api_call(self):
+        for acquired in (False, True):
+            clock = [0]
+            with patch.object(delivery.time, 'monotonic', side_effect=lambda: clock[0]):
+                api = unittest.mock.Mock()
+                reader = delivery.HistoryReader(api)
+                def acquire(**kwargs):
+                    self.assertEqual(kwargs['timeout'], delivery.HISTORY_SECONDS)
+                    clock[0] = delivery.HISTORY_SECONDS
+                    return acquired
+                with patch.object(reader.slots, 'acquire', side_effect=acquire), \
+                        patch.object(reader.slots, 'release') as release:
+                    with self.assertRaisesRegex(ValueError, 'budget exhausted'):
+                        reader('artifact')
+                    self.assertEqual(release.call_count, int(acquired))
+                api.assert_not_called()
+                self.assertEqual(reader.read_calls, 0)
+                self.assertEqual(reader.observation()['admissionRejections'], 1)
+
+    def test_late_result_and_queued_reads_respect_unchanged_deadline(self):
+        clock = [0]
+        def api(endpoint):
+            clock[0] = delivery.HISTORY_SECONDS
+            return {'jobs': []}
+        with patch.object(delivery.time, 'monotonic', side_effect=lambda: clock[0]):
+            reader = delivery.HistoryReader(api)
+            with self.assertRaisesRegex(ValueError, 'budget exhausted'):
+                reader('native-jobs')
+            self.assertEqual(reader.read_calls, 1)
+            self.assertEqual(reader.failed, 1)
+            self.assertEqual(reader.completed, 0)
+            with self.assertRaisesRegex(ValueError, 'budget exhausted'):
+                reader('next-jobs')
+            self.assertEqual(reader.read_calls, 1)
+            self.assertEqual(reader.observation()['wallSeconds'], delivery.HISTORY_SECONDS)
+            self.assertEqual(reader.observation()['maxReadSeconds'], delivery.HISTORY_SECONDS)
+            self.assertEqual(reader.observation()['failureReasons'], {'readError': 0, 'resultDeadline': 1})
+            self.assertEqual(reader.observation()['admissionRejections'], 1)
+
+    def test_failed_inspection_emits_counts_without_metadata_or_credentials(self):
+        from io import StringIO
+        output = StringIO()
+        def api(endpoint):
+            raise ValueError('Unavailable metadata')
+        with contextlib.redirect_stdout(output), self.assertRaisesRegex(ValueError, 'Unavailable metadata'):
+            delivery.inspect(SHA, 'development', BOT, api)
+        observation = json.loads(output.getvalue().split('Delivery history reads: ')[1])
+        self.assertEqual(observation['readCalls'], 1)
+        self.assertEqual(observation['failed'], 1)
+        self.assertEqual(observation['completed'], 0)
+        self.assertEqual(set(observation), {'schema', 'readCalls', 'completed', 'failed',
+                         'peakConcurrentReads', 'readSeconds', 'wallSeconds', 'workers', 'budgetSeconds',
+                         'admissionRejections', 'failureReasons', 'maxReadSeconds'})
+
+
 class DeliverySnapshots(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()

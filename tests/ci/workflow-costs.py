@@ -1379,5 +1379,144 @@ class ChildResources(unittest.TestCase):
                 self.assertGreaterEqual(value['childResourceUsage'][name], 0)
 
 
+class ReportingWindowsAndBudgets(unittest.TestCase):
+    now = datetime(2026, 11, 6, 12, tzinfo=timezone.utc)
+
+    def test_rolling_window_moves_while_original_rollout_stays_frozen(self):
+        empty = lambda _: {'total_count': 0, 'workflow_runs': []}
+        rolling = costs.collect(api=empty, now=self.now)
+        fixed = costs.collect(api=empty, now=self.now, rollout=costs.timestamp('2026-10-23T05:01:17Z'))
+        self.assertEqual(rolling['window'], {'start': '2026-10-23T12:00:00+00:00',
+                                           'end': '2026-11-06T12:00:00+00:00'})
+        self.assertEqual(fixed['window']['end'], '2026-10-30T05:01:17+00:00')
+        self.assertEqual(fixed['baseline']['start'], '2026-10-09T05:01:17+00:00')
+        self.assertTrue(fixed['observation']['complete'])
+        self.assertIn('Rolling 14-day operational window', costs.markdown(rolling))
+        self.assertNotIn('Seven-day observation complete', costs.markdown(rolling))
+        self.assertIn('Seven-day observation complete: true', costs.markdown(fixed))
+        for report in (rolling, fixed):
+            self.assertEqual(report['originalObservationEndpoint'], '2026-10-30T05:01:17Z')
+            self.assertFalse(report['authorizesPublication'])
+
+    def test_rolling_retains_recent_runs_and_exact_half_open_boundaries(self):
+        dates = ['2026-10-23T11:59:59Z', '2026-10-23T12:00:00Z',
+                 '2026-11-05T12:00:00Z', '2026-11-06T12:00:00Z']
+        native = [{'id': i + 1, 'created_at': date} for i, date in enumerate(dates)]
+        def observe(run, api, now):
+            return {'repository': costs.REPOSITORY, 'runId': run['id'], 'createdAt': run['created_at'],
+                    'workflow': '.github/workflows/build.yml', 'event': 'push',
+                    'status': 'completed', 'sourceRevision': 'a' * 40, 'jobs': []}
+        with patch.object(costs, 'observe', side_effect=observe):
+            report = costs.collect(api=lambda _: {'total_count': 4, 'workflow_runs': native}, now=self.now)
+        self.assertEqual([run['runId'] for run in report['runs']], [2, 3])
+        with self.assertRaisesRegex(ValueError, 'future'):
+            costs.collect(now=self.now, rollout=costs.timestamp('2026-11-07T00:00:00Z'))
+
+    def test_schedule_and_manual_window_selection(self):
+        import yaml
+        workflow = yaml.safe_load((ROOT / '.github/workflows/workflow-costs.yml').read_text())
+        dispatch = workflow[True]['workflow_dispatch']['inputs']
+        self.assertEqual(dispatch['window']['options'], ['rollout', 'rolling'])
+        self.assertEqual(dispatch['window']['default'], 'rollout')
+        step = next(s for s in workflow['jobs']['observe']['steps'] if 'Collect native' in s.get('name', ''))
+        self.assertEqual(step['env']['WINDOW'],
+                         "${{ github.event_name == 'schedule' && 'rolling' || inputs.window || 'rollout' }}")
+        self.assertIn("inputs.rollout || vars.FINITE_CI_AUDIT_ROLLOUT || '2026-10-23T05:01:17Z'", step['env']['ROLLOUT'])
+        # Exercise the actual shell without any credential or network tool.
+        with tempfile.TemporaryDirectory() as temporary:
+            stub = Path(temporary) / 'python3'
+            stub.write_text('#!/bin/sh\nprintf "%s\\n" "$@"\n')
+            stub.chmod(0o755)
+            for mode, expected in [('rolling', []), ('rollout', ['--rollout', '2026-10-23T05:01:17Z'])]:
+                result = subprocess.run(['bash', '-eu', '-c', step['run']], text=True, capture_output=True,
+                    env={**os.environ, 'PATH': temporary + ':' + os.environ['PATH'],
+                         'WINDOW': mode, 'ROLLOUT': '2026-10-23T05:01:17Z'})
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(result.stdout.splitlines(), ['scripts/ci/workflow-costs.py', '--receipts', *expected])
+            result = subprocess.run(['bash', '-eu', '-c', step['run']], text=True, capture_output=True,
+                env={**os.environ, 'PATH': temporary + ':' + os.environ['PATH'], 'WINDOW': 'bad', 'ROLLOUT': ''})
+            self.assertEqual(result.returncode, 2)
+            self.assertEqual(result.stdout, '')
+
+    def test_partial_artifact_pagination_does_not_join_or_change_native_costs(self):
+        fixture = Costs()
+        fixture.setUp()
+        pages = []
+        def api(endpoint):
+            if '/artifacts?' in endpoint:
+                pages.append(endpoint)
+                return {'total_count': 101, 'artifacts': [
+                    {'name': 'source-checks-10-1'}] + [{'name': 'unrelated'}] * 99}
+            if '/actions/runs?created=' in endpoint:
+                return {'total_count': 1, 'workflow_runs': [fixture.run]}
+            return fixture.api(endpoint)
+        baseline = costs.collect(api=api, now=fixture.now)
+        with patch.object(costs, 'RECEIPT_INVENTORY_LIMIT', 1), patch.object(cost_receipts, 'join') as join:
+            sampled = costs.collect(api=api, now=fixture.now, receipts=True)
+        join.assert_not_called()
+        self.assertEqual(len(pages), 1)
+        self.assertEqual(sampled['baseline']['cohorts'], baseline['baseline']['cohorts'])
+        self.assertEqual(sampled['runs'][0]['jobs'], baseline['runs'][0]['jobs'])
+        self.assertEqual(sampled['receiptArchivesReserved'], 0)
+        self.assertEqual(sampled['runs'][0]['receiptCoverage']['unavailable'],
+                         ['collection-receipt-inventory-budget'])
+
+    def collect_sets(self, counts, *, failed=None, metadata_limit=100):
+        runs = [{'id': i, 'created_at': f'2026-11-06T11:{i:02}:00Z'} for i in range(1, len(counts) + 1)]
+        sets = {run['id']: [{'name': f'source-checks-{run["id"]}-{j + 1}'} for j in range(count)]
+                for run, count in zip(reversed(runs), counts)}
+        calls, joined = [], []
+        def api(endpoint):
+            if '/artifacts?' in endpoint:
+                calls.append(endpoint)
+                number = int(endpoint.split('/runs/')[1].split('/')[0])
+                return {'total_count': len(sets[number]), 'artifacts': sets[number]}
+            return {'total_count': len(runs), 'workflow_runs': runs}
+        def observe(run, api, now):
+            return {'repository': costs.REPOSITORY, 'runId': run['id'], 'createdAt': run['created_at'], 'status': 'completed',
+                    'workflow': '.github/workflows/build.yml', 'event': 'push',
+                    'sourceRevision': 'a' * 40, 'jobs': []}
+        def join(run, artifacts):
+            joined.append(run['runId'])
+            count = len(cost_receipts.select(run, artifacts))
+            run['receiptCoverage'] = {'selected': count, 'read': 0, 'unavailable': [], 'unmatched': 0}
+            if run['runId'] == failed:
+                raise OSError('fixture transport failure')
+            run['receiptCoverage']['read'] = count
+        with patch.object(costs, 'observe', side_effect=observe), patch.object(cost_receipts, 'join', side_effect=join), \
+                patch.object(costs, 'RECEIPT_INVENTORY_LIMIT', metadata_limit):
+            report = costs.collect(api=api, now=self.now, receipts=True)
+        return report, calls, joined
+
+    def test_whole_sets_fit_remainder_and_larger_sets_do_not_block_smaller_ones(self):
+        report, calls, joined = self.collect_sets([16, 16, 9, 8, 1])
+        self.assertEqual(joined, [5, 4, 2])
+        self.assertEqual(len(calls), 4)
+        self.assertEqual(report['receiptArchivesReserved'], 40)
+        coverage = {r['runId']: r['receiptCoverage'] for r in report['runs']}
+        self.assertEqual(coverage[3]['selected'], 9)
+        self.assertEqual(coverage[3]['unavailable'], ['collection-receipt-budget'])
+        self.assertIsNone(coverage[1]['selected'])
+        self.assertEqual(report['baseline']['cohorts'], [])
+
+    def test_failed_and_overbound_sets_never_create_extra_download_budget(self):
+        report, calls, joined = self.collect_sets([17, 16, 16, 8, 1], failed=4)
+        self.assertEqual(joined, [4, 3, 2])
+        self.assertEqual(report['receiptArchivesReserved'], 40)
+        coverage = {r['runId']: r['receiptCoverage'] for r in report['runs']}
+        self.assertEqual(coverage[5]['unavailable'], ['receipt-count-bound'])
+        self.assertEqual(coverage[4]['unavailable'], ['transport-failure'])
+        self.assertEqual(coverage[4]['read'], 0)
+
+    def test_receipt_inventory_reads_are_bounded_even_with_empty_sets(self):
+        report, calls, joined = self.collect_sets([0, 0, 1], metadata_limit=2)
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(report['receiptInventoryReads'], 2)
+        self.assertEqual(report['receiptArchivesReserved'], 0)
+        coverage = next(r['receiptCoverage'] for r in report['runs'] if r['runId'] == 1)
+        self.assertEqual(coverage['unavailable'], ['collection-receipt-inventory-budget'])
+        self.assertEqual(joined, [3, 2])
+
+
 if __name__ == '__main__':
     unittest.main()

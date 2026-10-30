@@ -8,5 +8,10 @@
   "workflows": [".github/workflows/build.yml", ".github/workflows/codeql.yml", ".github/workflows/decision-events.yml"],
   "executionApprovalOnly": true,
   "grantsMergeApproval": false,
-  "otherContributors": "retain-existing-approval"
+  "otherContributors": "retain-existing-approval",
+  "dependabot": {
+    "login": "dependabot[bot]", "id": 49699333, "family": "github-actions-pins",
+    "sameRepositoryOnly": true, "requiresCurrentHeadHumanApproval": true
+  },
+  "authorityRecoveryWorkflow": ".github/workflows/decision-authority.yml"
 }

@@ -101,10 +101,15 @@ class Manifest(unittest.TestCase):
             setups = [step for step in steps if step.get('uses') == '$/.github/actions/setup-nix'
                       and 'merge-queue-token' in step.get('with', {})]
             with self.subTest(updater=name):
-                self.assertEqual(len(setups), 1)
-                setup = setups[0]
-                self.assertEqual(setup['with']['merge-queue-token'], pat)
-                self.assertEqual(setup['with']['require-merge-queue-token'], 'true')
+                if name == 'update-bluefin':
+                    self.assertEqual(len(setups), 1)
+                    setup = setups[0]
+                    self.assertEqual(setup['with']['merge-queue-token'], pat)
+                    self.assertEqual(setup['with']['require-merge-queue-token'], 'true')
+                else:
+                    self.assertEqual(setups, [])
+                    mapping = next(step for step in steps if step.get('id') == 'queue-credentials')
+                    self.assertEqual(mapping['env']['GITHUB_ACTIONS_MERGE_QUEUE_TOKEN'], pat)
         foundation = (ROOT / '.github/workflows/update-foundation.yml').read_text()
         self.assertNotIn('MERGE_QUEUE_PAT', foundation)
         self.assertNotIn('MERGE_QUEUE_TOKEN', foundation)
@@ -440,6 +445,159 @@ class LocalCache(unittest.TestCase):
                 else:
                     self.assertEqual(len(calls), 1)
                     self.assertNotEqual(result.returncode, 0)
+
+
+class UpdaterBoundaries(unittest.TestCase):
+    WORKFLOWS = ('update-flake-lock', 'update-determinate-nix', 'queue-dependabot')
+    GUARD = "github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'"
+    TOOL_NAMES = {
+        'ci-update-locks': 'finite-update-locks', 'ci-lock-validate': 'finite-ci-validate-locks',
+        'ci-source-update': 'finite-source-update', 'image-tools': 'finite-ci-image-tools',
+        'ci-trusted-update': 'finite-trusted-update', 'ci-queue-dependabot': 'finite-queue-dependabot',
+        'ci-github-actions-secrets': 'finite-github-actions-secrets',
+    }
+
+    def workflow(self, name):
+        document = yaml.safe_load((ROOT / '.github/workflows' / (name + '.yml')).read_text())
+        return document, next(iter(document['jobs'].values()))
+
+    def test_scheduled_and_manual_updaters_require_the_original_repository_main(self):
+        for name in self.WORKFLOWS:
+            document, job = self.workflow(name)
+            with self.subTest(workflow=name):
+                self.assertEqual(set(document[True]), {'schedule', 'workflow_dispatch'})
+                self.assertEqual(document['permissions'], {'contents': 'read'})
+                self.assertNotIn('permissions', job)
+                self.assertEqual(job['if'], self.GUARD)
+                self.assertFalse(any('secrets.' in json.dumps(value) for value in
+                                     (document.get('env', {}), job.get('env', {}))))
+                for event in ('schedule', 'workflow_dispatch'):
+                    for repository, ref, allowed in (
+                        ('closure-labs/finite', 'refs/heads/main', True),
+                        ('closure-labs/finite', 'refs/heads/feature', False),
+                        ('closure-labs/finite', 'refs/tags/main', False),
+                        ('fork/finite', 'refs/heads/main', False),
+                    ):
+                        expression = job['if'].replace('github.repository', repr(repository)).replace(
+                            'github.ref', repr(ref)).replace('&&', 'and')
+                        self.assertEqual(eval(expression, {'__builtins__': {}}, {}), allowed,
+                                         (name, event, repository, ref))
+
+    def test_composite_action_remote_pins_are_discoverable_by_dependabot(self):
+        config = yaml.safe_load((ROOT / '.github/dependabot.yml').read_text())
+        actions = next(item for item in config['updates'] if item['package-ecosystem'] == 'github-actions')
+        directories = set(actions['directories'])
+        self.assertIn('/', directories)
+        for path in (ROOT / '.github/actions').glob('*/action.yml'):
+            steps = yaml.safe_load(path.read_text())['runs']['steps']
+            if any('uses' in step and not step['uses'].startswith(('./', '$/', 'docker://')) for step in steps):
+                self.assertIn('/' + str(path.parent.relative_to(ROOT)), directories)
+
+    def test_public_work_finishes_before_credentials_and_never_reevaluates_candidate_tools(self):
+        for name in self.WORKFLOWS:
+            _, job = self.workflow(name)
+            steps = job['steps']
+            prepare = next(step for step in steps if step.get('id') == 'updater-tools')
+            mapping = next(step for step in steps if step.get('id') == 'queue-credentials')
+            with self.subTest(workflow=name):
+                setup = next(step for step in steps if step.get('uses') == '$/.github/actions/setup-nix')
+                self.assertNotIn('merge-queue-token', setup.get('with', {}))
+                self.assertNotIn('secrets.', json.dumps(prepare))
+                self.assertLess(steps.index(prepare), steps.index(mapping))
+                first_credential = min(index for index, step in enumerate(steps) if 'secrets.' in json.dumps(step))
+                for step in steps[first_credential:]:
+                    self.assertNotRegex(step.get('run', ''), r'\bnix (?:shell|build|develop|eval|run)\b')
+                if name != 'queue-dependabot':
+                    source = next(step for step in steps if step.get('id') in ('source', 'resolve'))
+                    validate = next(step for step in steps if step.get('name') == 'Validate generated text')
+                    changed = "steps." + source['id'] + ".outputs.changed == 'true'"
+                    self.assertLess(steps.index(prepare), steps.index(source))
+                    self.assertLess(steps.index(source), steps.index(validate))
+                    self.assertLess(steps.index(validate), first_credential)
+                    self.assertEqual(validate['if'], changed)
+                    self.assertIn('steps.updater-tools.outputs.public', validate['env']['PUBLIC_TOOLS'])
+                    if name == 'update-flake-lock':
+                        lock_validation = next(step for step in steps if step.get('name') == 'Validate synchronized locks')
+                        self.assertEqual(lock_validation['if'], changed)
+                        self.assertIn('steps.updater-tools.outputs.validate', lock_validation['env']['VALIDATE_TOOL'])
+                        self.assertLess(steps.index(lock_validation), first_credential)
+                        self.assertIn("steps.update.outputs.pull-request-number != ''", mapping['if'])
+                        self.assertIn("steps.update.outputs.pull-request-operation != 'closed'", mapping['if'])
+                    else:
+                        self.assertEqual(mapping['if'], changed)
+                # No always()/failure() escape: public validation failure skips mapping.
+                self.assertNotIn('always(', mapping.get('if', ''))
+                self.assertNotIn('failure(', mapping.get('if', ''))
+                queue = next(step for step in steps if 'QUEUE_TOOL' in step.get('env', {}))
+                self.assertIn('steps.updater-tools.outputs.queue', queue['env']['QUEUE_TOOL'])
+                self.assertEqual(queue['env']['GH_TOKEN'], '${{ env.MERGE_QUEUE_TOKEN }}')
+                self.assertLess(steps.index(mapping), steps.index(queue))
+
+    def run_preparation(self, name, mode='valid'):
+        _, job = self.workflow(name)
+        step = next(step for step in job['steps'] if step.get('id') == 'updater-tools')
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            nix = directory / 'nix'
+            nix.write_text('#!' + sys.executable + '\nimport json,os,sys\n'
+                           'names=json.loads(os.environ["FIXTURE_NAMES"])\n'
+                           'attr=next(arg.removeprefix(".#") for arg in sys.argv[1:] if arg.removeprefix(".#") in names)\n'
+                           'mode=os.environ["FIXTURE_MODE"]\n'
+                           'if mode=="failed-build": raise SystemExit(7)\n'
+                           'value="/nix/store/"+"a"*32+"-"+names[attr]\n'
+                           'print({"relative":"relative/tool", "empty":"", "multiple":value+"\\n"+value, '
+                           '"wrong-package":"/nix/store/"+"a"*32+"-unexpected"}.get(mode,value))\n')
+            nix.chmod(0o755)
+            output = directory / 'output'
+            result = subprocess.run(['bash', '-euo', 'pipefail', '-c', step['run']],
+                env={**os.environ, 'PATH': str(directory) + os.pathsep + os.environ['PATH'],
+                     'GITHUB_OUTPUT': str(output), 'FIXTURE_NAMES': json.dumps(self.TOOL_NAMES), 'FIXTURE_MODE': mode},
+                capture_output=True, text=True, timeout=30)
+            return result, output.read_text() if output.exists() else ''
+
+    def test_only_valid_immutable_tool_paths_are_exported_and_failures_stop_preparation(self):
+        for name in self.WORKFLOWS:
+            for mode in ('valid', 'failed-build', 'relative', 'empty', 'multiple', 'wrong-package'):
+                with self.subTest(workflow=name, mode=mode):
+                    result, output = self.run_preparation(name, mode)
+                    if mode == 'valid':
+                        self.assertEqual(result.returncode, 0, result.stderr)
+                        values = dict(line.split('=', 1) for line in output.splitlines())
+                        expected = {'queue', 'mapper'} if name == 'queue-dependabot' else {'update', 'public', 'queue', 'mapper'}
+                        if name == 'update-flake-lock':
+                            expected.add('validate')
+                        self.assertEqual(set(values), expected)
+                        self.assertTrue(all(value.startswith('/nix/store/') for value in values.values()))
+                    else:
+                        self.assertNotEqual(result.returncode, 0)
+                        self.assertEqual(output, '')
+
+    def test_late_mapping_requires_a_credential_and_cleanup_covers_failure(self):
+        for name in self.WORKFLOWS:
+            _, job = self.workflow(name)
+            mapping = next(step for step in job['steps'] if step.get('id') == 'queue-credentials')
+            cleanup = next(step for step in job['steps'] if step.get('name') == 'Clear queue credential')
+            self.assertEqual(cleanup['if'], "always() && steps.queue-credentials.outcome != 'skipped'")
+            for token, mapper_status in (('', '0'), ('fixture-token', '0'), ('fixture-token', '9')):
+                with self.subTest(workflow=name, token=bool(token), mapper_status=mapper_status), tempfile.TemporaryDirectory() as temporary:
+                    directory = Path(temporary)
+                    (directory / 'bin').mkdir()
+                    mapper = directory / 'bin/finite-github-actions-secrets'
+                    mapper.write_text('#!/bin/sh\nprintf "mapped\\n" >"$FIXTURE_LOG"\nexit "$FIXTURE_STATUS"\n')
+                    mapper.chmod(0o755)
+                    log, exported = directory / 'calls', directory / 'env'
+                    env = {**os.environ, 'CREDENTIAL_MAPPER': str(directory),
+                           'GITHUB_ACTIONS_MERGE_QUEUE_TOKEN': token, 'GITHUB_ENV': str(exported),
+                           'FIXTURE_LOG': str(log), 'FIXTURE_STATUS': mapper_status}
+                    result = subprocess.run(['bash', '-euo', 'pipefail', '-c', mapping['run']],
+                                            env=env, capture_output=True, text=True, timeout=30)
+                    self.assertEqual(result.returncode == 0, bool(token) and mapper_status == '0')
+                    self.assertEqual(log.exists(), bool(token))
+                    self.assertNotIn('fixture-token', result.stdout + result.stderr)
+                    clean = subprocess.run(['bash', '-euo', 'pipefail', '-c', cleanup['run']], env=env,
+                                           capture_output=True, text=True, timeout=30)
+                    self.assertEqual(clean.returncode, 0, clean.stderr)
+                    self.assertEqual(exported.read_text(), 'MERGE_QUEUE_TOKEN=\n')
 
 
 if __name__ == '__main__':

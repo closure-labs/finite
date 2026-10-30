@@ -89,3 +89,37 @@ reuse nor establish causal savings across revisions.
 Use bounded recent-run snapshots to prioritize improvements now; the seven-day endpoint does not block that work. Run the collector with `--receipts --rollout 2026-10-23T05:01:17Z` after the endpoint for the separate complete-window assessment. Include failed,
 cancelled, active and cleanup work and identify incomplete later cohorts.
 Automatic Cachix writing and Grype database transport remain disabled.
+
+## Rolling operations and bounded receipt coverage
+
+The Friday scheduled cost report now observes the preceding 14 days. Manual
+runs default to `window=rollout`, retaining the original October 23 anchor and
+October 30 endpoint; select `window=rolling` for a current operational snapshot.
+Rolling mode ignores the rollout input and repository rollout variable. The
+collector's original `--rollout` interface and historical reports are unchanged.
+JSON adds `windowMode` and explicit window boundaries; its existing baseline and
+observation fields remain available. The rolling Markdown summary names the
+operational window rather than claiming an incomplete seven-day experiment.
+
+Receipt selection remains newest-first, with at most 40 reserved archives,
+16 matching archives per run and 8 MiB per archive. A complete run set that fits
+the remaining budget can now be read even when fewer than 16 slots remain. A
+larger set is explicitly skipped while later smaller sets can still fit. Sets
+are never truncated: full and compact duplicate projections must still agree.
+Reservations include expired, oversized and failed transfers, so transport
+failure cannot create extra download allowance. Digest, source, attempt, member
+and expansion checks remain required.
+
+At most 256 logical receipt-inventory metadata page reads are attempted per collection,
+including empty inventories and partial pagination. The existing bounded GET
+retry policy still applies to each logical read. The ceiling exceeds the retained
+159-run census, without requiring a producer-workflow allowlist that could miss
+a new caller of a reusable workflow. Pagination may still exhaust the ceiling
+earlier, with explicit unknown coverage. This bounds the search for
+smaller sets; an incomplete inventory is never joined. `receiptInventoryReads`,
+`receiptInventoryReadLimit` and `receiptArchivesReserved` expose those limits.
+Per-run coverage distinguishes archive-budget and metadata-budget exclusions;
+a set not inventoried has an unknown selected count. Native job accounting does
+not depend on receipt coverage. Failed, cancelled and retried work still counts.
+These are coverage improvements, not representative sampling or measured CI
+speedups; unavailable stage details remain unknown.

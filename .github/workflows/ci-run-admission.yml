@@ -4,7 +4,7 @@ on:
   pull_request_target: # zizmor: ignore[dangerous-triggers] Trusted main code; native metadata only, never PR checkout.
     types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
   workflow_run: # zizmor: ignore[dangerous-triggers] Only native blocked PR run metadata is consumed.
-    workflows: [Build Finite, CodeQL Advanced, Collect maintainer decision events]
+    workflows: [Build Finite, CodeQL Advanced, Collect maintainer decision events, Verify maintainer decision authority]
     types: [completed]
 
 env:
@@ -27,7 +27,13 @@ jobs:
       github.repository == 'closure-labs/finite' &&
       (github.event_name == 'pull_request_target' ||
        ((github.event.workflow_run.event == 'pull_request' || github.event.workflow_run.event == 'pull_request_review') &&
-        github.event.workflow_run.conclusion == 'action_required'))
+        (github.event.workflow_run.conclusion == 'action_required' ||
+         (github.event.workflow_run.name == 'Collect maintainer decision events' &&
+          github.event.workflow_run.event == 'pull_request_review' &&
+          github.event.workflow_run.conclusion == 'success'))) ||
+       (github.event.workflow_run.name == 'Verify maintainer decision authority' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        (github.event.workflow_run.conclusion == 'success' || github.event.workflow_run.conclusion == 'failure')))
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
@@ -73,6 +79,12 @@ jobs:
           ref: main
           persist-credentials: false
       - uses: $/.github/actions/setup-nix
+      - name: Prepare pinned dependency parser before credentials
+        id: dependency-tools
+        run: |
+          tools=$(nix build --file lib/ci-tools.nix image-tools --no-link --print-out-paths)
+          [[ $tools =~ ^/nix/store/[a-z0-9]{32}-finite-ci-image-tools$ ]]
+          printf 'path=%s\n' "$tools" >>"$GITHUB_OUTPUT"
       - name: Resolve declared review App credentials
         env:
           FINITE_REVIEW_CLIENT_ID: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
@@ -102,9 +114,10 @@ jobs:
           FINITE_CI_ADMISSION_APP_SLUG: ${{ steps.ci-token.outputs.app-slug }}
           FINITE_REVIEW_BOT_LOGIN: ${{ vars.FINITE_REVIEW_BOT_LOGIN }}
           FINITE_REVIEW_APP_ID: ${{ vars.FINITE_REVIEW_APP_ID }}
+          DEPENDENCY_TOOLS: ${{ steps.dependency-tools.outputs.path }}
           TARGET_PR: ${{ matrix.number }}
           EXPECTED_HEAD: ${{ matrix.head }}
           TARGET_RUNS: ${{ toJSON(matrix.runs) }}
         run: >-
-          python3 scripts/ci/ci-run-admission.py --pull-request "$TARGET_PR"
+          "$DEPENDENCY_TOOLS/bin/python3" scripts/ci/ci-run-admission.py --pull-request "$TARGET_PR"
           --head "$EXPECTED_HEAD" --runs "$TARGET_RUNS"

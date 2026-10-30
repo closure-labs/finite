@@ -426,7 +426,7 @@ jq -e --arg installed "$installed_digest" --arg index "${source##*@}" \
   '$installed == $index or any(.manifests[]?; .digest == $installed)' \
   "$state/source-manifest.json" >/dev/null
 activation_started=$(monotonic_seconds)
-ssh "${ssh_args[@]}" bash -s -- "$profile" "$phase_name" <<'GUEST' | python3 scripts/bluebuild/guest-timings.py "$state/guest-timings.json"
+ssh "${ssh_args[@]}" bash -s -- "$profile" "$phase_name" <<'GUEST' 2>&1 | python3 scripts/bluebuild/guest-timings.py "$state/guest-timings.json" --log "$state/home-init.log.gz" --secret "$secrets/luks-key"
 set -euo pipefail
 guest_now() {
   local uptime unused
@@ -480,6 +480,17 @@ guest_begin home-init
 echo 'Building and activating the base Home Manager environment'
 FOUNDATION_TIMINGS=1 /usr/libexec/finite/home-init --profile "$HOME/profile.json" </dev/null 2>&1
 GUEST
+# A diagnostic storage failure is distinct from the guest process exit. The
+# pipeline above preserves a nonzero SSH status; only successful guests reach
+# this fail-closed evidence check, after all guest output has been drained.
+python3 - "$state/home-init-log.json" <<'CAPTURE'
+import json
+import sys
+with open(sys.argv[1]) as stream:
+    receipt = json.load(stream)
+if receipt.get('captureComplete') is not True:
+    raise SystemExit('VM diagnostic evidence incomplete; guest exit status is recorded separately')
+CAPTURE
 # Initializers and their children must not consume commands from bash -s stdin.
 # Establish the fixture over a separate SSH request, then prove it exists before
 # changing deployments so an uncreated marker cannot masquerade as data loss.

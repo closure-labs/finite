@@ -25,6 +25,7 @@ permissions:
 jobs:
   update:
     name: Refresh general inputs (Foundation is qualified separately)
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 270
     steps:
@@ -35,25 +36,40 @@ jobs:
 
       - name: Set up Nix and Cachix
         uses: $/.github/actions/setup-nix
-        with:
-          merge-queue-token: ${{ secrets.MERGE_QUEUE_PAT }}
-          require-merge-queue-token: "true"
+
+      - name: Prepare trusted updater tools before changing locks
+        id: updater-tools
+        run: |
+          update=$(nix build --accept-flake-config .#ci-update-locks --no-link --print-out-paths)
+          [[ $update =~ ^/nix/store/[a-z0-9]{32}-finite-update-locks$ ]]
+          validate=$(nix build --file lib/ci-tools.nix ci-lock-validate --no-link --print-out-paths)
+          [[ $validate =~ ^/nix/store/[a-z0-9]{32}-finite-ci-validate-locks$ ]]
+          public=$(nix build --file lib/ci-tools.nix image-tools --no-link --print-out-paths)
+          [[ $public =~ ^/nix/store/[a-z0-9]{32}-finite-ci-image-tools$ ]]
+          queue=$(nix build --file lib/ci-tools.nix ci-trusted-update --no-link --print-out-paths)
+          [[ $queue =~ ^/nix/store/[a-z0-9]{32}-finite-trusted-update$ ]]
+          mapper=$(nix build --file lib/ci-tools.nix ci-github-actions-secrets --no-link --print-out-paths)
+          [[ $mapper =~ ^/nix/store/[a-z0-9]{32}-finite-github-actions-secrets$ ]]
+          printf 'update=%s\nvalidate=%s\npublic=%s\nqueue=%s\nmapper=%s\n' \
+            "$update" "$validate" "$public" "$queue" "$mapper" >>"$GITHUB_OUTPUT"
 
       - name: Update the Flake and devenv locks
         id: source
-        run: >-
-          nix shell --accept-flake-config .#ci-update-locks
-          -c finite-update-locks "${GITHUB_OUTPUT}"
+        env:
+          UPDATE_TOOL: ${{ steps.updater-tools.outputs.update }}
+        run: '"${UPDATE_TOOL}/bin/finite-update-locks" "$GITHUB_OUTPUT"'
 
       - name: Validate synchronized locks
         if: steps.source.outputs.changed == 'true'
-        run: >-
-          nix shell --file lib/ci-tools.nix ci-lock-validate
-          -c finite-ci-validate-locks
+        env:
+          VALIDATE_TOOL: ${{ steps.updater-tools.outputs.validate }}
+        run: '"${VALIDATE_TOOL}/bin/finite-ci-validate-locks"'
 
       - name: Validate generated text
         if: steps.source.outputs.changed == 'true'
-        run: nix develop --file lib/ci-tools.nix shell --command bash tests/repository/text-style.sh
+        env:
+          PUBLIC_TOOLS: ${{ steps.updater-tools.outputs.public }}
+        run: PATH="${PUBLIC_TOOLS}/bin:$PATH" bash tests/repository/text-style.sh
 
       - name: Resolve Decider credentials after public lock validation
         if: steps.source.outputs.changed == 'true'
@@ -131,6 +147,21 @@ jobs:
 
             Required validation and protected-branch policy still apply.
 
+      - name: Resolve queue credential after public validation and PR creation
+        id: queue-credentials
+        if: >-
+          steps.update.outputs.pull-request-number != '' &&
+          steps.update.outputs.pull-request-operation != 'closed'
+        env:
+          CREDENTIAL_MAPPER: ${{ steps.updater-tools.outputs.mapper }}
+          GITHUB_ACTIONS_MERGE_QUEUE_TOKEN: ${{ secrets.MERGE_QUEUE_PAT }}
+        run: |
+          [[ -n "$GITHUB_ACTIONS_MERGE_QUEUE_TOKEN" ]] || {
+            echo "::error::MERGE_QUEUE_TOKEN is required for protected-branch automation"
+            exit 1
+          }
+          "${CREDENTIAL_MAPPER}/bin/finite-github-actions-secrets"
+
       - name: Validate and enable auto-merge
         if: >-
           steps.update.outputs.pull-request-number != '' &&
@@ -143,6 +174,10 @@ jobs:
           EXPECTED_TITLE: "locks: refresh Nix and devenv inputs"
           GH_TOKEN: ${{ env.MERGE_QUEUE_TOKEN }}
           PR_NUMBER: ${{ steps.update.outputs.pull-request-number }}
-        run: >-
-          nix shell --file lib/ci-tools.nix ci-trusted-update
-          -c finite-trusted-update
+          QUEUE_TOOL: ${{ steps.updater-tools.outputs.queue }}
+        run: '"${QUEUE_TOOL}/bin/finite-trusted-update"'
+
+      - name: Clear queue credential
+        if: always() && steps.queue-credentials.outcome != 'skipped'
+        run: | # zizmor: ignore[github-env]
+          printf 'MERGE_QUEUE_TOKEN=\n' >>"$GITHUB_ENV"

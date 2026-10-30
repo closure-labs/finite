@@ -76,7 +76,7 @@ class Upgrade(unittest.TestCase):
         source = (ROOT / 'scripts/bluebuild/vm-acceptance.sh').read_text()
         self.assertEqual(source.count('/usr/libexec/finite/home-init --profile'), 1)
         self.assertIn('export NIX_CONFIG="${NIX_CONFIG:-}', source)
-        guest = source.split("<<'GUEST' | python3 scripts/bluebuild/guest-timings.py", 1)[1].split('\n', 1)[1].split('\nGUEST', 1)[0]
+        guest = source.split("<<'GUEST' 2>&1 | python3 scripts/bluebuild/guest-timings.py", 1)[1].split('\n', 1)[1].split('\nGUEST', 1)[0]
         timers = guest[:guest.index('guest_begin startup-checks')]
         script = timers + 'guest_begin startup-checks\nguest_begin home-init\nexit 7\n'
         result = subprocess.run(['bash', '-s'], input=script, text=True, capture_output=True)
