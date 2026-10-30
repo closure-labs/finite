@@ -37,7 +37,8 @@ def until(predicate, seconds=5):
 def running(pid):
     try:
         return Path('/proc/' + str(pid) + '/stat').read_text().split()[2] != 'Z'
-    except FileNotFoundError:
+    except (FileNotFoundError, ProcessLookupError):
+        # procfs can report ESRCH if the process exits during open/read.
         return False
 
 
@@ -69,6 +70,27 @@ else:
     assert os.environ['GRYPE_DB_AUTO_UPDATE'] == 'false'
     print('[]' if args[:2] == ['db', 'search'] else '{}')
 '''
+
+
+class ProcessStateTests(unittest.TestCase):
+    def test_disappearing_process_is_not_running(self):
+        for error in (FileNotFoundError(2, 'gone'), ProcessLookupError(3, 'gone')):
+            with self.subTest(error=type(error).__name__):
+                with patch.object(Path, 'read_text', side_effect=error):
+                    self.assertFalse(running(123))
+
+    def test_other_read_errors_are_not_suppressed(self):
+        for error in (PermissionError(13, 'denied'), OSError(5, 'I/O error')):
+            with self.subTest(error=type(error).__name__):
+                with patch.object(Path, 'read_text', side_effect=error):
+                    with self.assertRaises(type(error)):
+                        running(123)
+
+    def test_live_and_zombie_states(self):
+        for state, expected in (('S', True), ('R', True), ('Z', False)):
+            with self.subTest(state=state):
+                with patch.object(Path, 'read_text', return_value=f'123 (fixture) {state} 1'):
+                    self.assertEqual(running(123), expected)
 
 
 class DatabaseOverlapTests(unittest.TestCase):
