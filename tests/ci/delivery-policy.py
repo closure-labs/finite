@@ -30,7 +30,7 @@ class DeliveryPolicy(unittest.TestCase):
                     self.assertTrue(permitted or any(fnmatch.fnmatchcase(action, pattern)
                                                     for pattern in selected['patterns_allowed']), action)
 
-    def test_validation_fits_queue_and_updater_deadlines(self):
+    def test_validation_fits_native_queue_deadline(self):
         jobs = workflow('build')['jobs']
         # Docs run alongside impact; images start after both and Nix checks.
         critical = max(jobs['impact']['timeout-minutes'], jobs['docs']['timeout-minutes'])
@@ -40,13 +40,17 @@ class DeliveryPolicy(unittest.TestCase):
         policy = json.loads((ROOT / 'automation/github/policies/main-merge-queue.json').read_text())
         queue = next(rule['parameters']['check_response_timeout_minutes']
                      for rule in policy['rules'] if rule['type'] == 'merge_queue')
-        operations = (ROOT / 'lib/ci-applications/dependency-operations.nix').read_text()
-        watcher = int(re.search(r'timeout (\d+)m gh run watch', operations)[1])
         self.assertGreaterEqual(queue, critical + 20)
-        self.assertGreaterEqual(watcher, critical + 20)
-        for name in ('bluefin', 'flake-lock', 'determinate-nix', 'foundation'):
-            with self.subTest(updater=name):
-                self.assertGreaterEqual(workflow('update-' + name)['jobs']['update']['timeout-minutes'], watcher + 30)
+
+    def test_updater_continuation_is_bounded_and_never_substitutes_for_native_checks(self):
+        operations = (ROOT / 'lib/ci-applications/dependency-operations.nix').read_text()
+        helper = operations.split('queueDependabot =', 1)[0]
+        self.assertIn('timeout 60s gh pr view', helper)
+        self.assertIn('timeout 60s gh pr merge', helper)
+        self.assertIn('--match-head-commit "$head_sha"', helper)
+        for forbidden in ('gh run ', 'gh workflow run', 'gh pr update-branch', '/approve', '--admin', 'sleep '):
+            with self.subTest(operation=forbidden):
+                self.assertNotIn(forbidden, helper)
 
     def test_reconciliation_is_added_only_at_trusted_push_boundary(self):
         steps = workflow('build')['jobs']['impact']['steps']

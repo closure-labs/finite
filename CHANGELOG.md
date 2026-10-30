@@ -10,6 +10,9 @@ Development version: `0.8.3-dev`. The next stable release is 0.8.3.
 
 ### Changed
 
+- Let native auto-merge and the protected merge queue wait for dependency PR
+  checks and human approval, without idle runner waits, replacement CI dispatches,
+  direct execution approvals or automatic changes to the reviewed head.
 - Make Home Manager selection readers, first-login and seed writers schema-3-only.
   Remove the legacy seed implementation; reject older saved/provisioned profiles
   without rewriting user data or generating replacement selections.
