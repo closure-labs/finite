@@ -26,6 +26,47 @@ prepare = load('prepare')
 configuration = load('image-config')
 
 
+class SignatureFixture(unittest.TestCase):
+    def test_subprocess_environment_excludes_ambient_credentials_and_destination(self):
+        fixture = load('signature-fixture')
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.dict(fixture.os.environ, {'COSIGN_REPOSITORY': 'external/target',
+                    'REGISTRY_AUTH_FILE': '/ambient/auth', 'DOCKER_HOST': 'tcp://remote:2375',
+                    'DOCKER_CONTEXT': 'remote', 'ACTIONS_ID_TOKEN_REQUEST_TOKEN': 'secret'}):
+                env = fixture.isolated_environment(Path(directory))
+            self.assertNotIn('COSIGN_REPOSITORY', env)
+            self.assertNotIn('DOCKER_HOST', env)
+            self.assertNotIn('DOCKER_CONTEXT', env)
+            self.assertNotIn('ACTIONS_ID_TOKEN_REQUEST_TOKEN', env)
+            self.assertEqual(json.loads(Path(env['REGISTRY_AUTH_FILE']).read_text()), {'auths': {}})
+            self.assertEqual(Path(env['REGISTRY_AUTH_FILE']).stat().st_mode & 0o777, 0o600)
+
+
+    def test_policy_rejects_everything_except_exact_repository_key(self):
+        fixture = load('signature-fixture')
+        value = fixture.policy('127.0.0.1:5000/signed', Path('/tmp/public.key'))
+        self.assertEqual(value['default'], [{'type': 'reject'}])
+        self.assertEqual(list(value['transports']['docker']), ['127.0.0.1:5000/signed'])
+        entry = value['transports']['docker']['127.0.0.1:5000/signed'][0]
+        self.assertEqual(entry['type'], 'sigstoreSigned')
+        self.assertEqual(entry['signedIdentity'], {'type': 'matchRepository'})
+
+    def test_wrong_digest_fixture_really_changes_digest(self):
+        fixture = load('signature-fixture')
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.assertNotEqual(fixture.image(root / 'a', 'a'), fixture.image(root / 'b', 'b'))
+
+    def test_expected_rejection_does_not_accept_network_or_success(self):
+        fixture = load('signature-fixture')
+        for code, error in ((0, ''), (1, 'connection refused'), (1, 'manifest unknown')):
+            with self.subTest(error=error), patch.object(fixture.subprocess, 'run', return_value=subprocess.CompletedProcess([], code, '', error)):
+                with self.assertRaises(RuntimeError):
+                    fixture.run('skopeo', reject=True)
+        with patch.object(fixture.subprocess, 'run', return_value=subprocess.CompletedProcess([], 1, '', 'A signature was required, but no signature exists')):
+            fixture.run('skopeo', reject=True)
+
+
 class Contract(unittest.TestCase):
     def tree(self):
         temporary = tempfile.TemporaryDirectory()

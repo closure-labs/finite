@@ -168,3 +168,44 @@ be misleading. A prepared patch or green offline fixtures are not a hosted pass.
 A runner timeout/cancellation can prevent `vm-result.json` from being written;
 missing or partial evidence is inconclusive, never a pass. The 120-minute job
 limit remains in force and does not grant an automatic retry.
+
+## Disposable signature compatibility fixture
+
+After both profiles passed unsigned fresh-install VM acceptance in
+[run 40978552126](https://github.com/closure-labs/finite/actions/runs/40978552126),
+the next proposed check isolates signature-format and consumer-policy compatibility.
+It does **not** sign an OS image or authorize a production update.
+
+The hosted, internal-PR-only fixture uses the locked image tools and requires
+Cosign 3.1.3. A digest-pinned official registry runs on a randomly assigned
+loopback port with disposable storage. Tiny synthetic OCI manifests are signed
+with a temporary, non-service-authentication test key. Verification uses an
+explicit temporary default-reject policy with `sigstoreSigned` and
+`matchRepository`, plus a temporary sigstore-attachment configuration. It never
+changes an installed OS policy or reads the production signing key.
+
+The valid signature must pass both Cosign verification and a policy-enforcing
+Skopeo copy. Unsigned content, a wrong key, an unchanged signature copied onto a
+different manifest digest, and an unchanged signature copied into another
+repository must fail for a signature reason—not a network or missing-image error.
+The fixture uses the same legacy signature format as production. Transparency
+logging and registry TLS are disabled **only for this loopback test fixture**;
+no production verification flags or trust settings change. If the pinned tools
+cannot consume this format, the fixture fails rather than relaxing its policy.
+
+Only a public outcome receipt is uploaded: source revision, tool versions,
+registry image digest, synthetic image digests, public-key hash and per-case
+outcomes. Keys and registry data stay under temporary storage and are destroyed.
+An absent receipt is inconclusive, never a pass. Workflow permissions remain
+`contents: read`, without packages write, OIDC, or persistent credentials.
+Offline tests validate policy shape and failure classification; actual hosted
+registry integration remains required before claiming compatibility.
+
+A later Containerfile-to-existing-production VM update could use an already
+signed immutable production digest with the existing public key and public
+registry reads. That needs a separately reviewed experimental harness mode;
+the present local VM path intentionally remains fresh-only. Updating a production
+VM **to** a Containerfile image under unchanged installed trust is different:
+it requires a production-key signature in `ghcr.io/closure-labs/finite`, and
+therefore explicit production-signing authorization and existing admission
+controls. A unique test tag does not isolate that trust boundary.
