@@ -299,6 +299,7 @@ class Gate(unittest.TestCase):
         return {
             'impact': {'result': 'success', 'outputs': {'checks': str(checks).lower(), 'nix': 'false', 'profiles': json.dumps(selected)}},
             'docs': {'result': 'success'},
+            'repository-secrets': {'result': 'skipped' if publish else 'success'},
             'checks': {'result': 'success' if checks else 'skipped', 'outputs': {'images': str(bool(selected)).lower(), 'matrix': json.dumps(matrix)} if checks else {}},
             'images': {'result': 'success' if selected and not publish else 'skipped'},
             'publish': {'result': 'success' if selected and publish else 'skipped'},

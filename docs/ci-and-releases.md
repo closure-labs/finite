@@ -16,6 +16,12 @@ it to required checks must also restore that trigger. See the
 [recent census](ci-recent-census-2026-10-27.md) for the measured event duplication
 and effective-rule snapshot.
 
+Every PR and merge group also runs the read-only `Repository security audit`
+Gitleaks job inside `Build Finite`; the required `CI gate` requires its success
+even for documentation-only changes. The separate historical audit leaves old
+findings visible as nonblocking debt. See [repository secret scanning](gitleaks-workflow.md)
+for exact range, failure handling and the accepted historical tradeoff.
+
 Draft and ready PRs may start validation before human merge review. The
 [trusted CI execution policy](ci-execution-admission.md) automatically approves
 GitHub execution holds for Decider and live Super Admin authors on the current

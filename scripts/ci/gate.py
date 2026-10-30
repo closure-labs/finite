@@ -12,6 +12,12 @@ def failures(needs, publish, event):
         return [f'Unsupported validation event: {event!r}']
     if publish and event in ('pull_request', 'merge_group'):
         return ['Premerge validation cannot authorize publication']
+    # Native needs binds this real job to the same workflow execution/head.
+    # A separate run, old receipt or historical scan cannot satisfy it.
+    scan = needs.get('repository-secrets', {}).get('result')
+    wanted = 'success' if event in ('pull_request', 'merge_group') else 'skipped'
+    if scan != wanted:
+        errors.append(f'repository-secrets: expected {wanted}, got {scan}')
     for job in ('impact', 'docs'):
         if needs[job]['result'] != 'success':
             errors.append(f'{job}: expected success, got {needs[job]["result"]}')
