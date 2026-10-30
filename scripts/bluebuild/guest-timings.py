@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Retain only bounded structured guest stage markers while streaming output."""
 import json
+import argparse
+import importlib.util
+import time
 from pathlib import Path
 import re
 import sys
@@ -10,6 +13,73 @@ from foundation_timings import decode
 
 PATTERN = re.compile(r'FINITE_GUEST_STAGE (startup-checks|homebrew-setup|predecessor-preparation|home-init) ([0-9]+) ([0-9]+)\n')
 FOUNDATION = 'FOUNDATION_TIMING '
+
+
+LINE_LIMIT = 16384
+LOG_LIMIT = 256 * 1024 * 1024
+
+
+def bounded_lines(stream, raw, secret):
+    spec = importlib.util.spec_from_file_location('vm_redactor', Path(__file__).with_name('redact-vm-logs.py'))
+    redactor = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(redactor)
+    pending, overflow, total = b'', False, 0
+    for chunk in redactor.redacted_chunks(stream, secret):
+        total += len(chunk)
+        if total > LOG_LIMIT:
+            raise ValueError('Guest log exceeded the 256 MiB diagnostic budget; evidence incomplete')
+        raw.write(chunk)
+        raw.flush()
+        for index, part in enumerate(chunk.split(b'\n')):
+            if index:
+                yield ('[oversized guest line omitted from console; retained in artifact]\n'
+                       if overflow else pending.decode('utf-8', errors='replace') + '\n')
+                pending, overflow = b'', False
+            if len(pending) + len(part) > LINE_LIMIT:
+                overflow = True
+            if not overflow:
+                pending += part
+    if pending or overflow:
+        yield ('[oversized guest line omitted from console; retained in artifact]\n'
+               if overflow else pending.decode('utf-8', errors='replace'))
+
+
+class BoundedConsole:
+    def __init__(self, output, clock=time.monotonic):
+        self.output, self.clock = output, clock
+        self.remaining, self.tail, self.suppressed = 32768, '', 0
+        self.last = clock()
+
+    def write(self, line):
+        if line.startswith('@nix '):
+            try:
+                value = json.loads(line[5:])
+                if (isinstance(value, dict) and value.get('action') == 'msg'
+                        and type(value.get('level')) is int and value['level'] <= 1
+                        and isinstance(value.get('msg'), str)):
+                    line = 'Nix diagnostic: ' + value['msg'][:8192] + '\n'
+            except (ValueError, TypeError):
+                pass
+        if not line.startswith('@nix '):
+            self.tail = (self.tail + line).encode()[-8192:].decode('utf-8', errors='ignore')
+        if not line.startswith('@nix ') and len(line.encode()) <= self.remaining:
+            self.output.write(line)
+            self.remaining -= len(line.encode())
+        else:
+            self.suppressed += 1
+        if self.clock() - self.last >= 30:
+            self.output.write(f'Guest initialization continues; {self.suppressed} progress lines kept in downloadable log.\n')
+            self.last = self.clock()
+
+    def flush(self):
+        self.output.flush()
+
+    def finish(self, rows):
+        failed = not any(row['stage'] == 'home-init' and row['status'] == 0 for row in rows)
+        if failed:
+            self.output.write('Guest initialization failed or was incomplete; recent non-progress output:\n' + self.tail)
+        self.output.write('Full sanitized initializer output: home-init.log.gz in the VM evidence artifact.\n')
+        self.output.flush()
 
 
 def collect(stream, output, console=sys.stdout):
@@ -27,6 +97,9 @@ def collect(stream, output, console=sys.stdout):
             if any(row['stage'] == stage for row in rows) or int(status) > 255:
                 raise ValueError('Duplicate or invalid guest timing')
             rows.append({'stage': stage, 'seconds': int(seconds), 'status': int(status)})
+            if isinstance(console, BoundedConsole):
+                console.output.write(f'Guest stage {stage}: {seconds}s, exit {status}\n')
+                console.flush()
             output.write_text(document())
         else:
             if line.startswith(FOUNDATION):
@@ -54,4 +127,26 @@ def collect(stream, output, console=sys.stdout):
 
 
 if __name__ == '__main__':
-    collect(sys.stdin, Path(sys.argv[1]))
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('output', type=Path)
+    parser.add_argument('--log', type=Path)
+    parser.add_argument('--secret', type=Path)
+    args = parser.parse_args()
+    if bool(args.log) != bool(args.secret):
+        parser.error('--log and --secret must be supplied together')
+    if args.log:
+        console = BoundedConsole(sys.stdout)
+        rows, complete = [], False
+        try:
+            with args.log.open('xb') as raw:
+                args.log.chmod(0o600)
+                rows = collect(bounded_lines(sys.stdin.buffer, raw, args.secret.read_bytes().strip()), args.output, console)
+                complete = True
+        finally:
+            args.log.with_name('home-init-log.json').write_text(json.dumps({
+                'schema': 1, 'captureComplete': complete, 'authorizesPublication': False,
+                'consoleByteBudget': 32768, 'logByteBudget': LOG_LIMIT,
+                'homeInitStatus': next((r['status'] for r in rows if r['stage'] == 'home-init'), None)}) + '\n')
+            console.finish(rows)
+    else:
+        collect(sys.stdin, args.output)

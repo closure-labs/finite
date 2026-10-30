@@ -426,7 +426,7 @@ jq -e --arg installed "$installed_digest" --arg index "${source##*@}" \
   '$installed == $index or any(.manifests[]?; .digest == $installed)' \
   "$state/source-manifest.json" >/dev/null
 activation_started=$(monotonic_seconds)
-ssh "${ssh_args[@]}" bash -s -- "$profile" "$phase_name" <<'GUEST' | python3 scripts/bluebuild/guest-timings.py "$state/guest-timings.json"
+ssh "${ssh_args[@]}" bash -s -- "$profile" "$phase_name" <<'GUEST' 2>&1 | python3 scripts/bluebuild/guest-timings.py "$state/guest-timings.json" --log "$state/home-init.log" --secret "$secrets/luks-key"
 set -euo pipefail
 guest_now() {
   local uptime unused

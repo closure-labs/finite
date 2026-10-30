@@ -3,6 +3,31 @@
 from pathlib import Path
 import sys
 import shutil
+import gzip
+
+
+def redacted_chunks(stream, secret, chunk_size=65536):
+    """Bound memory and redact secrets even when split across read boundaries."""
+    if not secret:
+        raise ValueError('Cannot redact an empty VM key')
+    pending = b''
+    read = getattr(stream, 'read1', stream.read)
+    while chunk := read(chunk_size):
+        pending += chunk
+        # Emit only bytes that cannot start a still-incomplete secret.
+        cutoff = max(0, len(pending) - len(secret) + 1)
+        cursor = 0
+        while True:
+            index = pending.find(secret, cursor)
+            if index < 0 or index >= cutoff:
+                break
+            yield pending[cursor:index]
+            yield b'[REDACTED]'
+            cursor = index + len(secret)
+        end = max(cursor, cutoff)
+        yield pending[cursor:end]
+        pending = pending[end:]
+    yield pending.replace(secret, b'[REDACTED]')
 
 
 def redact_logs(state, secret):
@@ -45,12 +70,24 @@ def snapshot_logs(state, secret, destination):
     for path in state.rglob('*'):
         if path.suffix not in ('.log', '.json') or not path.is_file() or path.is_symlink():
             continue
-        content = path.read_bytes().replace(secret, b'[REDACTED]')
         target = destination / path.relative_to(state)
+        compressed = path.name == 'home-init.log'
+        if compressed:
+            target = target.with_suffix('.log.gz')
         target.parent.mkdir(parents=True, exist_ok=True)
         temporary = target.with_suffix(target.suffix + '.tmp')
-        temporary.write_bytes(content)
-        temporary.replace(target)
+        try:
+            with path.open('rb') as source, temporary.open('wb') as raw:
+                if compressed:
+                    with gzip.GzipFile(fileobj=raw, mode='wb', mtime=0) as output:
+                        for chunk in redacted_chunks(source, secret):
+                            output.write(chunk)
+                else:
+                    for chunk in redacted_chunks(source, secret):
+                        raw.write(chunk)
+            temporary.replace(target)
+        finally:
+            temporary.unlink(missing_ok=True)
 
 
 if __name__ == '__main__':
