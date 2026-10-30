@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Read-only delivery blockers and authenticated publisher state."""
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from datetime import datetime, timedelta, timezone
 import json
 import os
@@ -9,7 +9,7 @@ import re
 import subprocess
 import sys
 import time
-from threading import Lock
+from threading import BoundedSemaphore, Lock
 
 from publisher_health import inspect_publisher
 from security_decisions import canonical_hash, load_json
@@ -66,6 +66,7 @@ HISTORY_SECONDS = 120
 
 
 HISTORY_WORKERS = 4
+HISTORY_WINDOW = 8
 
 
 class HistoryReader:
@@ -75,22 +76,35 @@ class HistoryReader:
         self.started = time.monotonic()
         self.deadline = self.started + HISTORY_SECONDS
         self.lock = Lock()
+        self.slots = BoundedSemaphore(HISTORY_WORKERS)
+        self.admission_rejections = 0
+        self.failure_reasons = {'readError': 0, 'resultDeadline': 0}
+        self.max_read_seconds = 0.0
         self.read_calls = self.completed = self.failed = self.active = self.peak = 0
         self.read_seconds = 0.0
         self.last_finished = self.started
 
     def __call__(self, endpoint):
+        remaining = self.deadline - time.monotonic()
+        acquired = remaining > 0 and self.slots.acquire(timeout=remaining)
+        if not acquired:
+            with self.lock:
+                self.admission_rejections += 1
+            raise ValueError('Build history unavailable: observation time budget exhausted')
         with self.lock:
             if time.monotonic() >= self.deadline:
+                self.slots.release()
+                self.admission_rejections += 1
                 raise ValueError('Build history unavailable: observation time budget exhausted')
             self.read_calls += 1
             self.active += 1
             self.peak = max(self.peak, self.active)
         started = time.monotonic()
-        successful = False
+        successful, reason = False, 'readError'
         try:
             result = self.api(endpoint)
             if time.monotonic() >= self.deadline:
+                reason = 'resultDeadline'
                 raise ValueError('Build history unavailable: observation time budget exhausted')
             successful = True
             return result
@@ -100,19 +114,27 @@ class HistoryReader:
                 self.active -= 1
                 self.completed += int(successful)
                 self.failed += int(not successful)
-                self.read_seconds += max(0, finished - started)
+                if not successful:
+                    self.failure_reasons[reason] += 1
+                elapsed = max(0, finished - started)
+                self.read_seconds += elapsed
+                self.max_read_seconds = max(self.max_read_seconds, elapsed)
                 self.last_finished = max(self.last_finished, finished)
+            self.slots.release()
 
     def observation(self):
         return {'schema': 1, 'readCalls': self.read_calls, 'completed': self.completed,
                 'failed': self.failed, 'peakConcurrentReads': self.peak,
+                'admissionRejections': self.admission_rejections,
+                'failureReasons': dict(self.failure_reasons),
+                'maxReadSeconds': round(self.max_read_seconds, 3),
                 'readSeconds': round(self.read_seconds, 3),
                 'wallSeconds': round(max(0, self.last_finished - self.started), 3),
                 'workers': HISTORY_WORKERS, 'budgetSeconds': HISTORY_SECONDS}
 
 
 def job_inventories(runs, observe):
-    # Stream bounded batches instead of retaining all 150 full JSON responses.
+    # Refill on completion, with bounded reordering and global read slots.
     def read(run):
         run_id, attempt = run.get('id'), run.get('run_attempt')
         if type(run_id) is not int or run_id <= 0 or type(attempt) is not int or attempt <= 0:
@@ -129,14 +151,27 @@ def job_inventories(runs, observe):
             raise ValueError(prefix + ' job inventory is incomplete or invalid')
         return run, jobs
     with ThreadPoolExecutor(max_workers=HISTORY_WORKERS) as pool:
-        for offset in range(0, len(runs), HISTORY_WORKERS):
-            # Validate the whole batch before yielding; malformed inventories
-            # never trigger submission of any later batch.
-            batch = [pool.submit(read, run) for run in runs[offset:offset + HISTORY_WORKERS]]
-            results = [future.result() for future in batch]
-            for result in results:
-                yield result
-            del results, batch, result
+        pending, ready = {}, {}
+        submitted = consumed = 0
+        while consumed < len(runs):
+            # Observe every currently completed failure before admitting work.
+            done = {future for future in pending if future.done()}
+            for future in done:
+                ready[pending.pop(future)] = future.result()
+            if done:
+                del future
+            done.clear()
+            while (submitted < len(runs) and len(pending) < HISTORY_WORKERS
+                   and len(pending) + len(ready) < HISTORY_WINDOW):
+                pending[pool.submit(read, runs[submitted])] = submitted
+                submitted += 1
+            if consumed in ready:
+                yield ready.pop(consumed)
+                consumed += 1
+            elif pending:
+                # A slow oldest read may fill the reorder window; backpressure
+                # then bounds retained responses instead of queuing 150 tasks.
+                wait(pending, return_when=FIRST_COMPLETED)
 
 
 def inspect(revision, version, bot, api=get_json, now=None):
