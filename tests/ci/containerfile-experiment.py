@@ -328,5 +328,71 @@ class Contract(unittest.TestCase):
             self.assertEqual((root / finite['keyPath'].lstrip('/')).read_text(), 'test public key')
 
 
+
+class HostedVM(unittest.TestCase):
+    def setUp(self):
+        self.vm = load('validate-vm')
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.directory = self.root / '.bluebuild/containerfile'
+        self.directory.mkdir(parents=True)
+        self.revision = 'a' * 40
+        self.image = 'sha256:' + 'b' * 64
+        self.plan = {'sourceRevision': self.revision, 'profile': 'finite',
+                     'experimentIdentity': 'containerfile-v1:' + 'c' * 64,
+                     'baseDigest': 'sha256:' + 'd' * 64, 'foundationSource': {'rev': 'e' * 40}}
+        self.receipt = {**self.plan, 'imageId': self.image}
+        self.info = {'Id': self.image, 'Config': {'Labels': {
+            'io.finite.production-eligible': 'false', 'io.finite.build-inputs': self.plan['experimentIdentity'],
+            'org.opencontainers.image.revision': self.revision, 'io.finite.profile': 'finite',
+            'org.opencontainers.image.base.digest': self.plan['baseDigest']}}}
+
+    def invoke(self, status=0, revision=None):
+        (self.directory / 'plan.json').write_text(json.dumps(self.plan))
+        (self.directory / 'installed-provenance.json').write_text(json.dumps(self.receipt))
+        with patch.dict('os.environ', {'GITHUB_ACTIONS': 'true', 'GITHUB_EVENT_NAME': 'pull_request'}), \
+                patch.object(self.vm.prepare, 'authorized_revision', return_value=self.revision), \
+                patch.object(self.vm.subprocess, 'check_output', side_effect=[revision or self.revision, json.dumps([self.info])]), \
+                patch.object(self.vm.subprocess, 'run', return_value=subprocess.CompletedProcess([], status)) as run:
+            result = self.vm.validate(self.root)
+            return result, run
+
+    def test_verified_image_uses_existing_unsigned_harness_and_actual_head(self):
+        result, run = self.invoke()
+        self.assertEqual(result, 0)
+        self.assertEqual(run.call_args.args[0], ['bash', 'scripts/bluebuild/local-vm.sh', 'finite'])
+        self.assertEqual(run.call_args.kwargs['env']['GITHUB_SHA'], self.revision)
+        self.assertEqual((self.root / '.bluebuild/finite-image-ref.txt').read_text().strip(), self.image)
+        outcome = json.loads((self.directory / 'vm-result.json').read_text())
+        self.assertFalse(outcome['authorizesPublication'])
+        self.assertEqual(outcome['imageId'], self.image)
+
+    def test_failure_exit_status_is_preserved_and_recorded(self):
+        result, _ = self.invoke(status=17)
+        self.assertEqual(result, 17)
+        self.assertEqual(json.loads((self.directory / 'vm-result.json').read_text())['exitCode'], 17)
+
+    def test_stale_receipt_and_production_identity_rejected(self):
+        for field, value in [('sourceRevision', 'f' * 40), ('imageId', 'mutable:tag'),
+                             ('experimentIdentity', 'production'), ('foundationSource', {})]:
+            with self.subTest(field=field):
+                old = self.receipt[field]
+                self.receipt[field] = value
+                with self.assertRaises(ValueError):
+                    self.invoke()
+                self.receipt[field] = old
+        self.info['Config']['Labels']['io.finite.production-eligible'] = 'true'
+        with self.assertRaises(ValueError):
+            self.invoke()
+
+    def test_wrong_checkout_and_non_pr_execution_rejected(self):
+        with self.assertRaises(ValueError):
+            self.invoke(revision='f' * 40)
+        for event in ('push', 'workflow_dispatch', 'merge_group'):
+            with patch.dict('os.environ', {'GITHUB_ACTIONS': 'true', 'GITHUB_EVENT_NAME': event}), self.assertRaises(ValueError):
+                self.vm.validate(self.root)
+
+
 if __name__ == '__main__':
     unittest.main()

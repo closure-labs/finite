@@ -89,6 +89,12 @@ jobs:
         run: bash scripts/bluebuild/stage.sh "$PROFILE"
       - name: Assemble and verify an unsigned local experiment
         run: python3 experiments/containerfile/prepare.py --profile "$PROFILE" --build
+      - name: Prepare pinned VM tools for the authorized experiment
+        if: github.event_name == 'pull_request'
+        uses: $/.github/actions/setup-vm-tools
+      - name: Validate unsigned experimental boot and first login
+        if: github.event_name == 'pull_request'
+        run: python3 experiments/containerfile/validate-vm.py
       - name: Preserve experiment evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -96,6 +102,8 @@ jobs:
           name: containerfile-${{ matrix.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             .bluebuild/containerfile/
+            .bluebuild/vm-local/
+            .bluebuild/*-timings.jsonl
             .bluebuild/upstream-verified.json
             .bluebuild/cosign-runtime.json
             .bluebuild/bluebuild-cli-verified.json

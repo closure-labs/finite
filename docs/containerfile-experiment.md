@@ -143,3 +143,28 @@ and uses stock fzf rather than installing optional Brew CLI bundles. This receip
 proves installed metadata and RPM ownership only, **not** first-login, user-session
 provisioning or boot parity. The production builder and upstream trust ownership
 remain unchanged.
+
+## Hosted unsigned boot parity
+
+The internal PR-321 image jobs now also prepare the existing pinned VM tools and
+run the unchanged local-image acceptance harness after assembly. A small adapter
+revalidates the authorized PR head, checkout, immutable image ID, experimental
+labels and installed Foundation receipt before handing that image to the harness.
+Its receipt uses the actual checked-out head (not GitHub's synthetic PR merge
+SHA). No production identity, registry push, private signing key or new workflow
+permission is introduced. Explicit dispatch remains assembly-only.
+
+This exercises the existing disposable fresh-install, Secure Boot, enforcing
+SELinux, Nix/service ordering and first-login checks on GitHub-hosted runners.
+The installer consumes an unsigned local OCI archive; the installed production
+signed-rebase policy remains unchanged. This is not signed upgrade qualification,
+production eligibility, a physical-hardware test or a Home Manager rollback test.
+A `vm-result.json` binds exit status and elapsed time to the exact experiment;
+existing sanitized `vm-local` evidence and per-profile timing records are retained
+on failure as well as success. Raw guest credentials and VM disks remain outside
+the uploaded paths, as in the existing harness. Assembly and VM timings must be
+reported separately; comparing this job's total against assembly-only runs would
+be misleading. A prepared patch or green offline fixtures are not a hosted pass.
+A runner timeout/cancellation can prevent `vm-result.json` from being written;
+missing or partial evidence is inconclusive, never a pass. The 120-minute job
+limit remains in force and does not grant an automatic retry.
