@@ -17,7 +17,7 @@ def failures(needs, publish, event):
     scan = needs.get('repository-secrets', {}).get('result')
     wanted = 'success' if event in ('pull_request', 'merge_group') else 'skipped'
     if scan != wanted:
-        errors.append(f'repository-secrets: expected {wanted}, got {scan}')
+        errors.append('Repository scan did not produce the required native job result')
     for job in ('impact', 'docs'):
         if needs[job]['result'] != 'success':
             errors.append(f'{job}: expected success, got {needs[job]["result"]}')

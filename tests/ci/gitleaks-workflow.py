@@ -180,7 +180,8 @@ class NativeGateTests(unittest.TestCase):
             self.assertEqual(gate.failures(self.needs(), False, event), [])
             for state in ('failure', 'cancelled', 'skipped', 'pending', None):
                 needs = self.needs(); needs['repository-secrets']['result'] = state
-                self.assertTrue(gate.failures(needs, False, event))
+                errors = gate.failures(needs, False, event)
+                self.assertEqual(errors, ['Repository scan did not produce the required native job result'])
             needs = self.needs(); del needs['repository-secrets']
             needs['history'] = {'result': 'success'}
             needs['savedScan'] = {'result': 'success', 'head': 'old'}
