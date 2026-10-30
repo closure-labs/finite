@@ -176,6 +176,81 @@ def run_script(script, event, **environment):
         return dict(line.split('=', 1) for line in (root / 'output').read_text().splitlines())
 
 
+class HostControllerSelection(unittest.TestCase):
+    def setUp(self):
+        spec = importlib.util.spec_from_file_location('vm_selection_controller', ROOT / 'scripts/ci/vm-selection.py')
+        self.vm = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.vm)
+        self.paths = {'scripts/bluebuild/prune-qualified-isos.py',
+                      'scripts/bluebuild/audit-published.sh',
+                      'scripts/bluebuild/publication-current.py'}
+
+    def selected(self, paths):
+        plan = impact.classify(paths)
+        output = run_script('payloads.py', {}, GITHUB_EVENT_NAME='merge_group', GITHUB_SHA='a' * 40,
+                            IMPACT=json.dumps({key: json.dumps(plan[key]) for key in ('nix', 'profiles')}),
+                            VM_VALIDATION=str(self.vm.required(paths)).lower())
+        return plan, output
+
+    def test_exact_exclusions_keep_contracts_and_empty_image_matrix(self):
+        self.assertEqual(self.vm.HOST_CONTROLLER_ONLY, self.paths)
+        for path in self.paths:
+            self.assertTrue((ROOT / path).is_file())
+            self.assertIn(path, image_identity.QUALIFICATION_ONLY)
+        for paths in ([path] for path in sorted(self.paths)):
+            plan, output = self.selected(paths)
+            self.assertEqual(plan, {'checks': True, 'nix': False, 'profiles': []})
+            self.assertEqual(output['images'], 'false')
+            self.assertEqual(json.loads(output['matrix']), {'include': []})
+        plan, output = self.selected(sorted(self.paths) + ['docs/example.md', 'tests/ci/selection.py'])
+        self.assertTrue(plan['checks'])
+        self.assertEqual(output['images'], 'false')
+
+    def test_mixed_or_unknown_vm_inputs_keep_both_profiles(self):
+        for path in ('recipes/finite.yml', 'files/scripts/upstream-kernel.py',
+                     'files/system/usr/lib/systemd/system/example.service',
+                     'files/system/usr/libexec/finite/provision-determinate-nix',
+                     'files/installer/Containerfile', 'scripts/bluebuild/vm-acceptance.sh',
+                     'scripts/bluebuild/redact-vm-logs.py', '.github/actions/setup-cosign/action.yml',
+                     'flake.lock', 'scripts/bluebuild/new-controller.py',
+                     'scripts/bluebuild/security-scan.py', 'scripts/bluebuild/reuse-qualification.py'):
+            with self.subTest(path=path):
+                _, output = self.selected(sorted(self.paths) + [path])
+                self.assertEqual({row['profile'] for row in json.loads(output['matrix'])['include']}, set(impact.PROFILES))
+        self.assertTrue(self.vm.required(None))
+        output = run_script('vm-selection.py', {}, GITHUB_EVENT_NAME='merge_group', GITHUB_SHA='a' * 40)
+        self.assertEqual(output['vm'], 'true')
+
+    def test_rename_diff_retains_both_old_and_new_paths(self):
+        from unittest.mock import patch
+        old = 'scripts/bluebuild/audit-published.sh'
+        new = 'scripts/bluebuild/renamed-audit.sh'
+        event = {'merge_group': {'base_sha': 'a' * 40, 'head_sha': 'b' * 40}}
+        with patch.object(impact.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, (old + '\0' + new + '\0').encode())) as command:
+            paths = impact.changed_paths('merge_group', event)
+        self.assertIn('--no-renames', command.call_args.args[0])
+        self.assertEqual(paths, [old, new])
+        self.assertTrue(self.vm.required(paths))
+        self.assertTrue(self.vm.required([new]))
+
+    def test_controller_gate_requires_successful_source_and_docs(self):
+        needs = Gate().needs(True, [])
+        needs['impact']['outputs']['vm'] = 'false'
+        self.assertEqual(gate.failures(needs, False, 'merge_group'), [])
+        for job in ('impact', 'docs', 'checks'):
+            for status in ('failure', 'cancelled', 'skipped'):
+                bad = copy.deepcopy(needs)
+                bad[job]['result'] = status
+                self.assertTrue(gate.failures(bad, False, 'merge_group'))
+        for job in ('images', 'publish'):
+            bad = copy.deepcopy(needs)
+            bad[job]['result'] = 'success'
+            self.assertTrue(gate.failures(bad, False, 'merge_group'))
+        bad = copy.deepcopy(needs)
+        bad['checks']['outputs'] = {}
+        self.assertTrue(gate.failures(bad, False, 'merge_group'))
+
+
 class Payloads(unittest.TestCase):
 
     def test_shared_payload_selects_both_active_variants(self):
