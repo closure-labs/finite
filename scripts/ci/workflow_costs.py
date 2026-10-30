@@ -12,6 +12,15 @@ from github_api import get_json
 REPOSITORY = 'closure-labs/finite'
 PROFILES = ('finite', 'finite-dev')
 OBSERVATION_ENDPOINT = '2026-10-30T05:01:17Z'
+RECEIPT_ARCHIVE_LIMIT = 40
+# Above the retained 159-run census: unrelated callbacks must not consume a
+# smaller metadata cap before its older production run. Still bound the search
+# independently of archives; do not hard-code a fragile producer allowlist.
+RECEIPT_INVENTORY_LIMIT = 256
+
+
+class ReceiptInventoryBudgetReached(Exception):
+    """Stop receipt-only metadata reads without losing native job accounting."""
 
 
 def timestamp(value):
@@ -506,29 +515,60 @@ def collect(api=get_json, now=None, rollout=None, *, receipts=False):
         with ThreadPoolExecutor(max_workers=4) as pool:
             runs.extend(pool.map(lambda run: observe(run, api, now), selected))
         day = end
-    receipt_budget = 40
-    for run in sorted(runs, key=lambda r: r['createdAt'], reverse=True):
+    receipt_budget = RECEIPT_ARCHIVE_LIMIT
+    receipt_inventories = 0
+    def receipt_api(endpoint):
+        nonlocal receipt_inventories
+        if receipt_inventories >= RECEIPT_INVENTORY_LIMIT:
+            raise ReceiptInventoryBudgetReached
+        receipt_inventories += 1
+        return api(endpoint)
+    for run in sorted(runs, key=lambda r: (r['createdAt'], r['runId']), reverse=True):
         exclusive_occupancy(run)
         # This is observed tail occupancy, not a reconstructed dependency DAG.
         tail = max((j['completedAt'] for j in run['jobs'] if j.get('completedAt')), default=None)
         for job in run['jobs']:
             job['onObservedCriticalPath'] = bool(tail and job['completedAt'] == tail and job['runnerSeconds'])
         if receipts:
-            from cost_receipts import join
-            if receipt_budget >= 16:
-                import subprocess
-                try:
-                    join(run, inventory(api, f'repos/{REPOSITORY}/actions/runs/{run["runId"]}/artifacts', 'artifacts'))
-                except (subprocess.SubprocessError, OSError):
-                    run['receiptCoverage']['unavailable'].append('transport-failure')
-                receipt_budget -= min(16, run['receiptCoverage']['selected'])
-            else:
-                run['receiptCoverage'] = {'read': 0, 'unavailable': ['collection-receipt-budget']}
+            from cost_receipts import join, select, MAX_RECEIPTS
+            coverage = {'selected': None, 'read': 0, 'unavailable': [], 'unmatched': 0}
+            run['receiptCoverage'] = coverage
+            if receipt_budget == 0:
+                coverage['unavailable'].append('collection-receipt-budget')
+                continue
+            if receipt_inventories >= RECEIPT_INVENTORY_LIMIT:
+                coverage['unavailable'].append('collection-receipt-inventory-budget')
+                continue
+            try:
+                artifacts = inventory(receipt_api, f'repos/{REPOSITORY}/actions/runs/{run["runId"]}/artifacts', 'artifacts')
+            except ReceiptInventoryBudgetReached:
+                coverage['unavailable'].append('collection-receipt-inventory-budget')
+                continue
+            count = len(select(run, artifacts))
+            coverage['selected'] = count
+            if count > MAX_RECEIPTS:
+                coverage['unavailable'].append('receipt-count-bound')
+                continue
+            if count > receipt_budget:
+                coverage['unavailable'].append('collection-receipt-budget')
+                continue
+            # Reserve the entire set before I/O, including unavailable archives
+            # and failed transfers. Never hide conflicts by selecting a subset.
+            receipt_budget -= count
+            import subprocess
+            try:
+                join(run, artifacts)
+            except (subprocess.SubprocessError, OSError):
+                run['receiptCoverage']['unavailable'].append('transport-failure')
     baseline = [r for r in runs if timestamp(r['createdAt']) < anchor]
     observation = [r for r in runs if timestamp(r['createdAt']) >= anchor]
     return {'schema': 1, 'kind': 'finite-workflow-costs', 'repository': REPOSITORY,
             'observedAt': now.isoformat(), 'originalObservationEndpoint': OBSERVATION_ENDPOINT,
-            'receiptCollectionEnabled': receipts, 'receiptArchiveLimit': 40, 'authorizesPublication': False,
+            'windowMode': 'rollout' if rollout else 'rolling',
+            'window': {'start': start.isoformat(), 'end': finish.isoformat()},
+            'receiptCollectionEnabled': receipts, 'receiptArchiveLimit': RECEIPT_ARCHIVE_LIMIT,
+            'receiptInventoryReadLimit': RECEIPT_INVENTORY_LIMIT, 'receiptInventoryReads': receipt_inventories,
+            'receiptArchivesReserved': RECEIPT_ARCHIVE_LIMIT - receipt_budget, 'authorizesPublication': False,
             'baseline': {'start': start.isoformat(), 'end': anchor.isoformat(), 'cohorts': aggregate(baseline)},
             'observation': {'start': anchor.isoformat() if rollout else None, 'end': finish.isoformat() if rollout else None,
                             'complete': bool(rollout and now >= anchor + timedelta(days=7)),
@@ -557,7 +597,11 @@ def markdown(report):
             median = row['medianJobSeconds']
             lines.append(f'| {window} | {row["workflow"]} | {row["event"]} | {row["role"]} | {row["rolloutRevision"][:12]} | {row["profile"]} | {row["runs"]} | {row["jobs"]} | '
                          f'{row["runnerSeconds"]:.1f} | {median if median is not None else "unknown"} | {row["queueSeconds"]:.1f} |')
-    lines += ['', 'Seven-day observation complete: ' + str(report['observation']['complete']).lower() + '.', '']
+    if report.get('windowMode') == 'rolling':
+        lines += ['', 'Rolling 14-day operational window: ' + report['window']['start'] + ' to '
+                  + report['window']['end'] + ' (end excluded).', '']
+    else:
+        lines += ['', 'Seven-day observation complete: ' + str(report['observation']['complete']).lower() + '.', '']
     lines += ['', 'Recurring work ranked by measured runner occupancy (frequency and final-job counts retained in JSON):', '']
     for row in report.get('rankedRecurringWork', [])[:20]:
         exclusive = 'unknown' if row['exclusiveRunnerSeconds'] is None else f"{row['exclusiveRunnerSeconds']:.1f}s"

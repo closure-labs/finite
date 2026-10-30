@@ -2,6 +2,11 @@ name: Observe workflow costs
 on:
   workflow_dispatch:
     inputs:
+      window:
+        description: Preserve the fixed rollout study or observe the latest 14 days
+        type: choice
+        options: [rollout, rolling]
+        default: rollout
       rollout:
         description: Optional UTC rollout timestamp for a 14-day baseline and seven-day observation
         type: string
@@ -57,10 +62,15 @@ jobs:
       - name: Collect native timings including failed and cancelled work
         env:
           GH_TOKEN: ${{ steps.audit-token.outputs.token }}
+          WINDOW: ${{ github.event_name == 'schedule' && 'rolling' || inputs.window || 'rollout' }}
           ROLLOUT: ${{ inputs.rollout || vars.FINITE_CI_AUDIT_ROLLOUT || '2026-10-23T05:01:17Z' }}
         run: |
           args=()
-          if [[ -n $ROLLOUT ]]; then args+=(--rollout "$ROLLOUT"); fi
+          case "$WINDOW" in
+            rollout) args+=(--rollout "$ROLLOUT");;
+            rolling) ;;
+            *) echo 'Unknown observation window' >&2; exit 2;;
+          esac
           python3 scripts/ci/workflow-costs.py --receipts "${args[@]}"
       - name: Retain read-only observation
         if: always()
