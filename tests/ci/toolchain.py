@@ -147,7 +147,7 @@ class Toolchain(unittest.TestCase):
         # The lock updater retains its exact flake-provided devenv package and
         # transitive input graph; do not silently substitute nixpkgs.devenv.
         workflow = (ROOT / '.github/workflows/update-flake-lock.yml').read_text()
-        self.assertIn('nix shell --accept-flake-config .#ci-update-locks', workflow)
+        self.assertIn('nix build --accept-flake-config .#ci-update-locks', workflow)
         self.assertNotIn('ci-update-locks =', entry)
 
     def test_image_tools_are_realized_once_without_development_shells(self):
