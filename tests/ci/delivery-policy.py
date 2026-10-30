@@ -15,6 +15,15 @@ def workflow(name):
     return yaml.safe_load((ROOT / '.github/workflows' / (name + '.yml')).read_text())
 
 
+def action_allowed(action, selected):
+    if not re.fullmatch(r'[^@\s]+@[0-9a-f]{40}', action):
+        return False
+    # GitHub's owned-actions setting covers both exact organization names.
+    github_owned = action.partition('/')[0] in {'actions', 'github'}
+    return (selected['github_owned_allowed'] and github_owned
+            or any(fnmatch.fnmatchcase(action, pattern) for pattern in selected['patterns_allowed']))
+
+
 class DeliveryPolicy(unittest.TestCase):
     def test_all_external_actions_are_allowed_without_verified_publisher_bypass(self):
         policy = json.loads((ROOT / 'automation/github/repository-security.json').read_text())['actions']
@@ -26,9 +35,34 @@ class DeliveryPolicy(unittest.TestCase):
                     continue
                 with self.subTest(path=path, action=action):
                     self.assertRegex(action, r'@[0-9a-f]{40}$')
-                    permitted = selected['github_owned_allowed'] and action.startswith('actions/')
-                    self.assertTrue(permitted or any(fnmatch.fnmatchcase(action, pattern)
-                                                    for pattern in selected['patterns_allowed']), action)
+                    self.assertTrue(action_allowed(action, selected), action)
+
+    def test_github_owned_actions_require_exact_owner(self):
+        selected = {'github_owned_allowed': True, 'patterns_allowed': []}
+        sha = '9b3254085494b55a0f7c4c2b3d2d52cc712ce370'
+        for action in ('github/codeql-action/init@' + sha,
+                       'github/codeql-action/analyze@' + sha,
+                       'actions/checkout@' + 'a' * 40):
+            with self.subTest(action=action):
+                self.assertTrue(action_allowed(action, selected))
+        for owner in ('github-evil', 'actions-evil', 'unrelated'):
+            with self.subTest(owner=owner):
+                self.assertFalse(action_allowed(owner + '/checkout@' + sha, selected))
+
+    def test_allowed_actions_still_require_full_sha(self):
+        selected = {'github_owned_allowed': True, 'patterns_allowed': ['unrelated/action@*']}
+        for action in ('github/codeql-action/init', 'actions/checkout', 'unrelated/action'):
+            for ref in ('v1', 'a' * 39, 'a' * 41, 'g' * 40):
+                with self.subTest(action=action, ref=ref):
+                    self.assertFalse(action_allowed(action + '@' + ref, selected))
+
+    def test_disabled_owned_actions_require_explicit_allowlist(self):
+        selected = {'github_owned_allowed': False, 'verified_allowed': True, 'patterns_allowed': []}
+        for action in ('github/codeql-action/init', 'actions/checkout', 'unrelated/action'):
+            action += '@' + 'a' * 40
+            with self.subTest(action=action):
+                self.assertFalse(action_allowed(action, selected))
+                self.assertTrue(action_allowed(action, {**selected, 'patterns_allowed': [action]}))
 
     def test_validation_fits_native_queue_deadline(self):
         jobs = workflow('build')['jobs']
