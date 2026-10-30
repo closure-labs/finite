@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Read-only delivery blockers and authenticated publisher state."""
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 import json
 import os
@@ -8,6 +9,7 @@ import re
 import subprocess
 import sys
 import time
+from threading import Lock
 
 from publisher_health import inspect_publisher
 from security_decisions import canonical_hash, load_json
@@ -63,6 +65,89 @@ HISTORY_MAX_PAGES = 5
 HISTORY_SECONDS = 120
 
 
+HISTORY_WORKERS = 4
+
+
+class HistoryReader:
+    """Bound parallel metadata reads and retain counts, never response bodies."""
+    def __init__(self, api):
+        self.api = api
+        self.started = time.monotonic()
+        self.deadline = self.started + HISTORY_SECONDS
+        self.lock = Lock()
+        self.read_calls = self.completed = self.failed = self.active = self.peak = 0
+        self.read_seconds = 0.0
+        self.last_finished = self.started
+
+    def __call__(self, endpoint):
+        with self.lock:
+            if time.monotonic() >= self.deadline:
+                raise ValueError('Build history unavailable: observation time budget exhausted')
+            self.read_calls += 1
+            self.active += 1
+            self.peak = max(self.peak, self.active)
+        started = time.monotonic()
+        successful = False
+        try:
+            result = self.api(endpoint)
+            if time.monotonic() >= self.deadline:
+                raise ValueError('Build history unavailable: observation time budget exhausted')
+            successful = True
+            return result
+        finally:
+            finished = time.monotonic()
+            with self.lock:
+                self.active -= 1
+                self.completed += int(successful)
+                self.failed += int(not successful)
+                self.read_seconds += max(0, finished - started)
+                self.last_finished = max(self.last_finished, finished)
+
+    def observation(self):
+        return {'schema': 1, 'readCalls': self.read_calls, 'completed': self.completed,
+                'failed': self.failed, 'peakConcurrentReads': self.peak,
+                'readSeconds': round(self.read_seconds, 3),
+                'wallSeconds': round(max(0, self.last_finished - self.started), 3),
+                'workers': HISTORY_WORKERS, 'budgetSeconds': HISTORY_SECONDS}
+
+
+def job_inventories(runs, observe):
+    # Stream bounded batches instead of retaining all 150 full JSON responses.
+    def read(run):
+        run_id, attempt = run.get('id'), run.get('run_attempt')
+        if type(run_id) is not int or run_id <= 0 or type(attempt) is not int or attempt <= 0:
+            raise ValueError('Invalid build job inventory identity')
+        jobs = observe(PREFIX + f'/actions/runs/{run_id}/attempts/{attempt}/jobs?per_page=100')
+        if (not isinstance(jobs, dict) or type(jobs.get('total_count')) is not int
+                or not 0 <= jobs['total_count'] <= 100 or not isinstance(jobs.get('jobs'), list)
+                or len(jobs['jobs']) != jobs['total_count']
+                or any(not isinstance(job, dict) or not isinstance(job.get('name'), str)
+                       or not isinstance(job.get('steps', []), list)
+                       or any(not isinstance(step, dict) or not isinstance(step.get('name'), str)
+                              for step in job.get('steps', [])) for job in jobs['jobs'])):
+            prefix = 'Active build' if run.get('status') != 'completed' else 'Build'
+            raise ValueError(prefix + ' job inventory is incomplete or invalid')
+        return run, jobs
+    with ThreadPoolExecutor(max_workers=HISTORY_WORKERS) as pool:
+        for offset in range(0, len(runs), HISTORY_WORKERS):
+            # Validate the whole batch before yielding; malformed inventories
+            # never trigger submission of any later batch.
+            batch = [pool.submit(read, run) for run in runs[offset:offset + HISTORY_WORKERS]]
+            results = [future.result() for future in batch]
+            for result in results:
+                yield result
+            del results, batch, result
+
+
+def inspect(revision, version, bot, api=get_json, now=None):
+    reader = HistoryReader(api)
+    try:
+        return inspect_history(revision, version, bot, api, now, reader)
+    finally:
+        # Emitted even on failure; no token, endpoint query or response content.
+        print('Delivery history reads: ' + json.dumps(reader.observation(), sort_keys=True))
+
+
 def build_history(api, deadline):
     runs, seen = [], set()
     for page in range(1, HISTORY_MAX_PAGES + 1):
@@ -100,50 +185,36 @@ def completed_at(job, now):
     return value
 
 
-def inspect(revision, version, bot, api=get_json, now=None):
+def inspect_history(revision, version, bot, api, now, observe):
     now = now or datetime.now(timezone.utc)
-    deadline = time.monotonic() + HISTORY_SECONDS
-    runs, history = build_history(api, deadline)
-    def observe(endpoint):
-        if time.monotonic() >= deadline:
-            raise ValueError('Build history unavailable: observation time budget exhausted')
-        result = api(endpoint)
-        if time.monotonic() >= deadline:
-            raise ValueError('Build history unavailable: observation time budget exhausted')
-        return result
+    runs, history = build_history(observe, observe.deadline)
     runs = [run for run in runs if run.get('head_branch') == 'main'
             and run.get('head_repository', {}).get('full_name') == 'closure-labs/finite'
             and run.get('event') in ('push', 'schedule', 'workflow_dispatch')]
     active, active_problems, active_blockers = [], [], []
-    for run in runs:
-        if run.get('status') == 'completed':
-            continue
-        if run.get('status') not in ('queued', 'in_progress', 'waiting', 'pending', 'requested'):
-            raise ValueError('Unknown active build status')
-        run_id, attempt = run.get('id'), run.get('run_attempt')
-        if type(run_id) is not int or type(attempt) is not int or not re.fullmatch('[0-9a-f]{40}', run.get('head_sha', '')):
-            raise ValueError('Invalid active build identity')
-        jobs = observe(PREFIX + f'/actions/runs/{run_id}/attempts/{attempt}/jobs?per_page=100')
-        if jobs['total_count'] > 100 or len(jobs['jobs']) != jobs['total_count']:
-            raise ValueError('Active build job inventory is incomplete')
-        failed = failed_phases(jobs['jobs'])
-        running = [job['name'] for job in jobs['jobs'] if job.get('status') == 'in_progress']
-        active.append({'runId': run_id, 'runAttempt': attempt, 'revision': run['head_sha'],
-                       'status': run.get('status'), 'failedPhases': failed, 'runningPhases': running})
-        if failed:
-            active_problems.append('Active main run ' + str(run_id) + ' has failed phases: ' + ', '.join(failed))
-        if run.get('status') == 'waiting':
-            active_blockers.append('Main run ' + str(run_id) + ' is waiting; inspect its approval or environment gate.')
-    runs = [run for run in runs if run.get('status') == 'completed']
     channels = {channel: {'qualified': None, 'promoted': None} for channel in CHANNELS}
-    failures, selected = [], None
-    for index, run in enumerate(runs):
+    failures, selected, completed_index = [], None, 0
+    for run, jobs in job_inventories(runs, observe):
+        if run.get('status') != 'completed':
+            if run.get('status') not in ('queued', 'in_progress', 'waiting', 'pending', 'requested'):
+                raise ValueError('Unknown active build status')
+            run_id, attempt = run.get('id'), run.get('run_attempt')
+            if type(run_id) is not int or type(attempt) is not int or not re.fullmatch('[0-9a-f]{40}', run.get('head_sha', '')):
+                raise ValueError('Invalid active build identity')
+            failed = failed_phases(jobs['jobs'])
+            running = [job['name'] for job in jobs['jobs'] if job.get('status') == 'in_progress']
+            active.append({'runId': run_id, 'runAttempt': attempt, 'revision': run['head_sha'],
+                           'status': run.get('status'), 'failedPhases': failed, 'runningPhases': running})
+            if failed:
+                active_problems.append('Active main run ' + str(run_id) + ' has failed phases: ' + ', '.join(failed))
+            if run.get('status') == 'waiting':
+                active_blockers.append('Main run ' + str(run_id) + ' is waiting; inspect its approval or environment gate.')
+            continue
         run_id, attempt = run.get('id'), run.get('run_attempt')
         if type(run_id) is not int or type(attempt) is not int or not re.fullmatch('[0-9a-f]{40}', run.get('head_sha', '')):
             raise ValueError('Invalid trusted build identity')
-        jobs = observe(PREFIX + f'/actions/runs/{run_id}/attempts/{attempt}/jobs?per_page=100')
-        if jobs['total_count'] > 100 or len(jobs['jobs']) != jobs['total_count']:
-            raise ValueError('Build job inventory is incomplete')
+        index = completed_index
+        completed_index += 1
         successful = {job['name']: job for job in jobs['jobs'] if job.get('conclusion') == 'success'}
         for channel in CHANNELS:
             for kind, name in [('qualified', 'qualification / aggregate'), ('promoted', 'promote')]:
