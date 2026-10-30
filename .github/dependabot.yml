@@ -5,6 +5,7 @@ updates:
     directories:
       - /
       - /.github/actions/setup-nix
+      - /.github/actions/setup-cosign
     schedule:
       interval: weekly
     cooldown:
