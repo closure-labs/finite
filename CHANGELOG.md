@@ -20,6 +20,10 @@ Development version: `0.8.3-dev`. The next stable release is 0.8.3.
 
 ### Fixed
 
+- Keep official Dependabot as the author of strictly verified Actions-pin PRs,
+  retaining exact-head Super Admin review, live eligibility and native CI holds.
+  Reconcile late review events and bound cached authority observations.
+
 - Correlate publication retries with authenticated identities from reused native
   preparation, reporting the current attempt's status and failing phase.
 - Recover decision provenance from a bounded native PR inventory when transient

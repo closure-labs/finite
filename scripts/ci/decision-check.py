@@ -22,6 +22,7 @@ REVIEW_STAMP = 'finite-authority-v1:'
 QUEUE = re.compile(r'gh-readonly-queue/main/pr-([1-9][0-9]*)-[0-9a-f]{7,40}')
 PROPOSAL = re.compile(r'automation/decisions/(security|releases)/([0-9a-f]{64})\.json')
 from governed_tree import changed_paths, compare, governed, tree
+import dependency_update as dependency
 
 
 def post_check(repository, sha, conclusion, summary, app_id, api_post=None, *, review_stamp=None):
@@ -72,9 +73,13 @@ def check_pr(repository, number, expected_bot, target_sha=None, github=None):
         raise authority.AuthorityError(str(error)) from error
     sensitive = sorted(path for path in paths if governed(path))
     proposals = sorted(path for path in paths if PROPOSAL.fullmatch(path))
+    dependency_context = None
     if sensitive:
         if not authority.submitter(api, repository, pull.get('user'), expected_bot):
-            raise authority.AuthorityError('Governed PR submitter must be the configured App, a Maintainer or a Super Admin')
+            if not dependency.official(pull):
+                raise authority.AuthorityError('Governed PR submitter must be the configured App, a Maintainer or a Super Admin')
+            dependency_context = dependency.inspect(api, repository, pull, files)
+            dependency.classify(api, dependency_context)
         # Each proposal verifier authenticates this exact PR/head itself.
         # Governed changes without proposals still need their own review check.
         if not proposals:
@@ -100,7 +105,10 @@ def check_pr(repository, number, expected_bot, target_sha=None, github=None):
     if (latest.get('head', {}).get('sha') != head or latest.get('state') != 'open'
             or latest.get('user') != pull.get('user')):
         raise authority.AuthorityError('PR changed while authority was being evaluated')
-    if sensitive and not authority.submitter(api, repository, latest.get('user'), expected_bot):
+    if dependency_context is not None:
+        dependency.revalidate(api, repository, dependency_context)
+        authority.approval(api, repository, number, head)
+    elif sensitive and not authority.submitter(api, repository, latest.get('user'), expected_bot):
         raise authority.AuthorityError('Governed PR submitter authority changed during authorization')
     return {'pullRequest': number, 'head': head, 'target': target_sha,
             'governedPaths': sensitive, 'status': 'authorized' if sensitive else 'not-required'}
@@ -237,13 +245,16 @@ def stale_review_check(api, repository, target, app_id, fingerprint, now, *, for
     fresh = stamp in {REVIEW_STAMP + fingerprint + ':' + state for state in
                      ('success', 'review-required', 'invalid')}
     expected_conclusion = 'success' if stamp.endswith(':success') else 'failure'
-    if fresh and check.get('status') == 'completed' and check.get('conclusion') == expected_conclusion:
-        return False
     value = check.get('completed_at') or check.get('started_at')
     if value:
         observed = datetime.fromisoformat(value.replace('Z', '+00:00'))
         if observed.tzinfo is None or observed > now:
             raise authority.AuthorityError('Invalid native authority check timestamp')
+        # Review stamps do not include team/permission changes. Revalidate
+        # live authority periodically even when the exact review is unchanged.
+        if (fresh and check.get('status') == 'completed' and check.get('conclusion') == expected_conclusion
+                and now - observed < timedelta(minutes=10)):
+            return False
         # Give ordinary event workers time to finish before scheduled recovery.
         if now - observed < timedelta(minutes=2):
             return False
