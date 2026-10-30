@@ -95,15 +95,29 @@ class DownloadTests(unittest.TestCase):
         calls = []
         for path in (ROOT / '.github/workflows').glob('*.yml'):
             workflow = yaml.safe_load(path.read_text())
-            for job in workflow.get('jobs', {}).values():
+            for job_name, job in workflow.get('jobs', {}).items():
                 for step in job.get('steps', []):
                     self.assertNotEqual(step.get('uses'), PIN)
                     if step.get('uses') == '$/.github/actions/setup-cosign':
-                        calls.append((path.name, step))
+                        calls.append((path.name, job_name, step))
                         self.assertNotIn('continue-on-error', step)
             self.assertNotIn('CURL_HOME', workflow.get('env', {}))
-        self.assertEqual(len(calls), 8)
-        signer = next(step for path, step in calls if path == 'publication.yml')
+        # Include the experiment's isolated signature fixture. Check call sites,
+        # not just a count that could hide a missing caller plus a duplicate.
+        self.assertCountEqual([(path, job) for path, job, _step in calls], [
+            ('containerfile-experiment.yml', 'signature-fixture'),
+            ('desktop-security-evidence.yml', 'evidence'),
+            ('iso.yml', 'iso'),
+            ('publication.yml', 'sign'),
+            ('qualification.yml', 'phase'),
+            ('release-recovery.yml', 'sign-release'),
+            ('release.yml', 'sign-release'),
+            ('remediation-transaction.yml', 'transaction'),
+            ('vm-acceptance.yml', 'vm'),
+        ])
+        fixture = next(step for path, _job, step in calls if path == 'containerfile-experiment.yml')
+        self.assertEqual(fixture['with']['cosign-release'], 'v3.1.3')
+        signer = next(step for path, _job, step in calls if path == 'publication.yml')
         self.assertEqual(signer['with']['cosign-release'], 'v3.1.3')
 
     def test_changed_download_policy_keeps_vm_coverage_without_os_payload_rebuild(self):
