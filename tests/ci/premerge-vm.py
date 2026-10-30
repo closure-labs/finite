@@ -143,6 +143,7 @@ class Premerge(unittest.TestCase):
         needs = {'impact': {'result': 'success', 'outputs': {'checks': 'true', 'nix': 'false', 'profiles': '[]', 'vm': 'true'}},
                  'docs': {'result': 'success'}, 'checks': {'result': 'success', 'outputs': {'images': 'true',
                     'matrix': json.dumps({'include': [{'profile': 'finite', 'channel': 'finite'}]})}},
+                 'repository-secrets': {'result': 'success'},
                  'images': {'result': 'success'}, 'publish': {'result': 'skipped'}}
         self.assertTrue(gate.failures(needs, False, 'merge_group'))
         matrix = {'include': [{'profile': profile, 'channel': profile} for profile in ('finite', 'finite-dev')]}

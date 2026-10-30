@@ -166,7 +166,7 @@ class BlueBuildContracts(unittest.TestCase):
         gate = workflow['jobs']['gate']
         self.assertEqual(gate['name'], 'CI gate')
         self.assertEqual(gate['if'], 'always()')
-        self.assertEqual(set(gate['needs']), {'impact', 'docs', 'checks', 'images', 'publish'})
+        self.assertEqual(set(gate['needs']), {'impact', 'docs', 'checks', 'images', 'publish', 'repository-secrets'})
 
     def test_upstream_recovery_and_health_are_independent_of_update_prs(self):
         workflow = read('.github/workflows/update-bluefin.yml')
