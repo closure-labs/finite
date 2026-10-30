@@ -348,10 +348,15 @@ def predecessor_reuse_receipt(run, artifact, value, seen):
                                          'artifactSha256': artifact['digest']}
 
 
-def join(run, artifacts, reader=bounded_reader):
-    selected = [a for a in artifacts if re.fullmatch(
+def select(run, artifacts):
+    """Plan the same complete run set that the authenticated reader consumes."""
+    return [a for a in artifacts if re.fullmatch(
         r'(?:(?:image|security(?:-costs)?)-finite(?:-dev)?|qualification-phase-finite(?:-dev)?-(?:fresh|upgrade)|source-checks|reconciliation-costs)-'
         + str(run['runId']) + r'-[1-9][0-9]*', a.get('name', ''))]
+
+
+def join(run, artifacts, reader=bounded_reader):
+    selected = select(run, artifacts)
     run['receiptCoverage'] = {'selected': len(selected), 'read': 0, 'unavailable': [], 'unmatched': 0}
     if len(selected) > MAX_RECEIPTS:
         run['receiptCoverage']['unavailable'].append('receipt-count-bound')
