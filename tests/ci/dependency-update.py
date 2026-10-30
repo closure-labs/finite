@@ -26,6 +26,8 @@ class GitHub:
         self.pull = {'number': 7, 'state': 'open', 'draft': True, 'user': deepcopy(dependency.BOT),
                      'base': {'sha': BASE, 'ref': 'main', 'repo': deepcopy(repo)},
                      'head': {'sha': HEAD, 'ref': 'dependabot/actions', 'repo': deepcopy(repo)}, 'changed_files': 1}
+        self.merge_base = MERGE_BASE
+        self.main_ref = {'ref': 'refs/heads/main', 'object': {'type': 'commit', 'sha': BASE}}
         self.files = [{'filename': path, 'status': 'modified'}]
         self.blobs, self.trees = {}, {}
         for commit, text in ((MERGE_BASE, before), (HEAD, after)):
@@ -40,10 +42,11 @@ class GitHub:
     def __call__(self, endpoint):
         self.calls.append(endpoint)
         prefix = 'repos/' + dependency.REPOSITORY
+        if endpoint == prefix + '/git/ref/heads/main': return deepcopy(self.main_ref)
         if endpoint == prefix + '/pulls/7': return deepcopy(self.pull)
         if endpoint.startswith(prefix + '/pulls/7/files?'): return deepcopy(self.files)
         if endpoint == prefix + f'/compare/{BASE}...{HEAD}':
-            return {'base_commit': {'sha': BASE}, 'merge_base_commit': {'sha': MERGE_BASE}}
+            return {'base_commit': {'sha': BASE}, 'merge_base_commit': {'sha': self.merge_base}}
         if '/git/trees/' in endpoint:
             return deepcopy(self.trees[endpoint.split('/git/trees/')[1].split('?')[0]])
         if '/git/blobs/' in endpoint: return deepcopy(self.blobs[endpoint.rsplit('/', 1)[1]])
@@ -183,6 +186,8 @@ preflight = load('dependency_preflight', 'scripts/ci/validation-preflight.py')
 class Integration(unittest.TestCase):
     def setUp(self):
         self.source = GitHub()
+        self.source.merge_base = BASE
+        self.source.trees[BASE] = deepcopy(self.source.trees[MERGE_BASE])
         self.humans = authority_fixture.GitHub()
         self.humans.reviews[0]['commit_id'] = HEAD
         self.review_reads = 0
@@ -315,8 +320,72 @@ class Integration(unittest.TestCase):
                         self.assertEqual(result['status'], 'checked' if official else 'manual-execution-approval-required')
                         self.assertEqual(self.review_reads, 0)
 
+    def test_live_main_identity_and_ancestry_are_required(self):
+        for case in ('diverged', 'moved', 'wrong-ref', 'noncommit', 'missing', 'null-object', 'null-response'):
+            self.setUp()
+            if case == 'diverged': self.source.merge_base = MERGE_BASE
+            elif case == 'moved': self.source.main_ref['object']['sha'] = TAG
+            elif case == 'wrong-ref': self.source.main_ref['ref'] = 'refs/heads/other'
+            elif case == 'noncommit': self.source.main_ref['object']['type'] = 'tag'
+            elif case == 'null-object': self.source.main_ref['object'] = None
+            elif case == 'null-response': self.source.main_ref = None
+            else: self.source.main_ref = {}
+            with self.subTest(case=case), self.assertRaises(ValueError): self.admit()
+            self.assertEqual(self.posts, [])
+
+    def test_main_movement_at_every_revalidation_or_final_run_read_blocks_post(self):
+        for move_at in range(1, 8):
+            self.setUp()
+            reads = 0
+            def api(endpoint):
+                nonlocal reads
+                if endpoint.endswith('/git/ref/heads/main'):
+                    reads += 1
+                    if reads == move_at: self.source.main_ref['object']['sha'] = TAG
+                return self.api(endpoint)
+            with self.subTest(read=move_at), self.assertRaises(ValueError):
+                admission.approve(admission.policy(), 7, HEAD, [40], api=api, post=self.posts.append)
+            self.assertEqual(self.posts, [])
+        self.setUp()
+        run_reads = 0
+        def api(endpoint):
+            nonlocal run_reads
+            if endpoint.endswith('/actions/runs/40'):
+                run_reads += 1
+                if run_reads == 3: self.source.main_ref['object']['sha'] = TAG
+            return self.api(endpoint)
+        with self.assertRaises(ValueError):
+            admission.approve(admission.policy(), 7, HEAD, [40], api=api, post=self.posts.append)
+        self.assertEqual(self.posts, [])
+
+    def test_pr_base_cannot_switch_between_successful_classifications(self):
+        for change_at in (5, 7):
+            self.setUp()
+            reads = 0
+            def api(endpoint):
+                nonlocal reads
+                if endpoint.endswith('/pulls/7'):
+                    reads += 1
+                    if reads == change_at:
+                        self.source.pull['base']['sha'] = TAG
+                        self.source.main_ref['object']['sha'] = TAG
+                return self.api(endpoint)
+            with self.subTest(read=change_at), self.assertRaises(ValueError):
+                admission.approve(admission.policy(), 7, HEAD, [40], api=api, post=self.posts.append)
+            self.assertEqual(self.posts, [])
+
+    def test_unavailable_live_main_is_not_execution_authority(self):
+        def unavailable(endpoint):
+            if endpoint.endswith('/git/ref/heads/main'): raise RuntimeError('Native main unavailable')
+            return self.api(endpoint)
+        with self.assertRaises(RuntimeError):
+            admission.approve(admission.policy(), 7, HEAD, [40], api=unavailable, post=self.posts.append)
+        self.assertEqual(self.posts, [])
+
     def test_non_pin_change_does_not_reach_review_or_execution(self):
         self.source = GitHub(after=AFTER.replace('echo safe', 'echo other'))
+        self.source.merge_base = BASE
+        self.source.trees[BASE] = deepcopy(self.source.trees[MERGE_BASE])
         with self.assertRaisesRegex(ValueError, 'outside immutable'): self.check()
         with self.assertRaisesRegex(ValueError, 'outside immutable'): self.admit()
         self.assertEqual(self.review_reads, 0)
