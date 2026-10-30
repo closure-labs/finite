@@ -553,6 +553,16 @@ The lock updater disables SecretSpec in an isolated temporary configuration and
 clears write credentials while refreshing public inputs. The developer
 configuration keeps its keyring requirement.
 
+The flake, Determinate Nix and Dependabot queue workflows run only from this
+repository's `main`, including manual dispatches. Their public setup receives no
+updater credential. They realize and validate immutable helper paths before any
+candidate source changes, and never reevaluate candidate Nix inputs in a
+credential-bearing step. Changed-source validation must succeed before the
+existing queue credential is resolved; no-change refreshes do not resolve it.
+Dependabot discovers remote action pins in both the Nix and Cosign composite
+action directories. These boundaries do not change update authorship, review
+eligibility, required checks or protected-branch approval policy.
+
 The standalone `release-publishing` scope resolves the trusted repository token
 into `GH_TOKEN` only for the controlled tag/draft child. It needs repository
 contents write and workflows write for a frozen source whose workflow files

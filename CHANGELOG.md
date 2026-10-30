@@ -20,6 +20,9 @@ Development version: `0.8.3-dev`. The next stable release is 0.8.3.
 
 ### Fixed
 
+- Restrict manual dependency maintenance to trusted main, prepare immutable
+  updater tools before source changes and defer write credentials until public
+  validation succeeds. Include the Cosign composite action in Dependabot discovery.
 - Correlate publication retries with authenticated identities from reused native
   preparation, reporting the current attempt's status and failing phase.
 - Recover decision provenance from a bounded native PR inventory when transient
