@@ -23,6 +23,10 @@ Development version: `0.8.3-dev`. The next stable release is 0.8.3.
 
 ### Fixed
 
+- Keep official Dependabot as the author of strictly verified Actions-pin PRs,
+  retaining exact-head Super Admin review, live eligibility and native CI holds.
+  Reconcile late review events and bound cached authority observations.
+
 - Restrict manual dependency maintenance to trusted main, prepare immutable
   updater tools before source changes and defer write credentials until public
   validation succeeds. Include the Cosign composite action in Dependabot discovery.

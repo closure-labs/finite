@@ -348,7 +348,7 @@ class ApprovalRecovery(unittest.TestCase):
     def test_late_approval_replaces_old_rejection_with_fresh_validation(self):
         approved = deepcopy(self.api.reviews)
         self.api.reviews = []
-        self.stamp('review-required', minutes=30)
+        self.stamp('review-required', minutes=3)
         self.assertEqual(self.targets(), {'include': []})
         self.api.reviews = approved
         self.api.reviews[0]['submitted_at'] = '2000-01-01T00:00:00Z'
@@ -358,12 +358,24 @@ class ApprovalRecovery(unittest.TestCase):
         self.assertTrue(self.posts[0]['external_id'].endswith(':success'))
         self.assertEqual(self.api.calls.count(f'repos/{REPO}/pulls/7/reviews?per_page=100&page=1') > 0, True)
 
-    def test_unchanged_success_or_real_review_rejection_starts_no_worker(self):
+    def test_recent_unchanged_review_result_avoids_duplicate_worker(self):
         for state in ('success', 'review-required', 'invalid'):
             with self.subTest(state=state):
-                self.stamp(state, minutes=10000)
+                self.stamp(state, minutes=3)
                 self.assertEqual(self.targets(), {'include': []})
         self.assertEqual(self.posts, [])
+
+    def test_unchanged_reviews_periodically_revalidate_live_membership(self):
+        for state in ('success', 'review-required', 'invalid'):
+            with self.subTest(state=state):
+                self.stamp(state, minutes=10)
+                self.assertEqual(len(self.targets()['include']), 1)
+        self.stamp('success', minutes=10000)
+        self.api.members = []
+        self.assertEqual(len(self.targets()['include']), 1)
+        self.worker()
+        self.assertEqual(self.posts[-1]['conclusion'], 'failure')
+        self.assertTrue(self.posts[-1]['external_id'].endswith(':review-required'))
 
     def test_missing_foreign_or_unstamped_check_is_selected(self):
         self.assertEqual(len(self.targets()['include']), 1)

@@ -10,6 +10,7 @@ import sys
 from urllib.parse import quote
 
 from github_api import get_json
+import dependency_update as dependency
 
 spec = importlib.util.spec_from_file_location('ci_admission_authority', Path(__file__).with_name('decision-authority.py'))
 authority = importlib.util.module_from_spec(spec)
@@ -29,6 +30,9 @@ def policy():
             or value.get('workflows') != ['.github/workflows/build.yml', '.github/workflows/codeql.yml',
                                           '.github/workflows/decision-events.yml']
             or value.get('executionApprovalOnly') is not True or value.get('grantsMergeApproval') is not False
+            or value.get('dependabot') != {'login': dependency.BOT['login'], 'id': dependency.BOT['id'],
+                 'family': 'github-actions-pins', 'sameRepositoryOnly': True, 'requiresCurrentHeadHumanApproval': True}
+            or value.get('authorityRecoveryWorkflow') != '.github/workflows/decision-authority.yml'
             or value.get('otherContributors') != 'retain-existing-approval'):
         raise ValueError('Invalid reviewed CI execution policy')
     return value
@@ -119,6 +123,45 @@ def blocked_runs(api, rules, current):
     return [run for run in runs if bound_run(run, current, rules) and requires_approval(run)]
 
 
+def authority_recovery(api, rules, run):
+    # A trusted controller completion is only a wake-up. No check conclusion,
+    # matrix output or artifact supplies approval; the worker reauthenticates it.
+    if (run.get('repository', {}).get('id') != rules['repositoryId']
+            or run.get('repository', {}).get('full_name') != rules['repository']
+            or run.get('head_repository', {}).get('id') != rules['repositoryId']
+            or run.get('head_repository', {}).get('full_name') != rules['repository']
+            or run.get('head_branch') != 'main' or not isinstance(run.get('head_sha'), str)
+            or not authority.SHA.fullmatch(run['head_sha'])
+            or run.get('event') not in ('workflow_run', 'schedule', 'workflow_dispatch')
+            or run.get('status') != 'completed' or run.get('conclusion') not in ('success', 'failure')
+            or type(run.get('run_attempt')) is not int or run['run_attempt'] < 1
+            or type(run.get('workflow_id')) is not int):
+        raise ValueError('Dependency recovery requires a native completed trusted-main authority workflow')
+    workflow = api(f'repos/{rules["repository"]}/actions/workflows/{run["workflow_id"]}')
+    if (workflow.get('id') != run['workflow_id'] or workflow.get('path') != rules['authorityRecoveryWorkflow']
+            or workflow.get('state') != 'active'):
+        raise ValueError('Dependency recovery workflow differs from active native identity')
+    values = authority.collection(api, f'repos/{rules["repository"]}/pulls?state=open&base=main')
+    if len(values) > 64:
+        raise ValueError('Dependency recovery PR inventory exceeds bound')
+    targets = []
+    for value in values:
+        if not isinstance(value, dict):
+            raise ValueError('Invalid native dependency recovery inventory')
+        if not dependency.official(value):
+            continue
+        current = pull(api, rules, value.get('number'))
+        if not dependency.official(current):
+            continue
+        runs = blocked_runs(api, rules, current)
+        if runs:
+            targets.append({'number': current['number'], 'head': current['head']['sha'],
+                            'runs': sorted(run['id'] for run in runs)})
+    if len(targets) > 16 or len({item['number'] for item in targets}) != len(targets):
+        raise ValueError('Dependency recovery target inventory is excessive or duplicated')
+    return {'include': targets}
+
+
 def discover(event, env, rules, api=get_json):
     repository = rules['repository']
     if env.get('GITHUB_REPOSITORY') != repository:
@@ -133,9 +176,19 @@ def discover(event, env, rules, api=get_json):
         run = api(f'repos/{repository}/actions/runs/{run_id}')
         if run.get('id') != run_id:
             raise ValueError('Native CI run ID differs from trigger')
-        if not ci_context(run, rules) or not requires_approval(run):
+        if run.get('path') == rules['authorityRecoveryWorkflow']:
+            return authority_recovery(api, rules, run)
+        if not ci_context(run, rules):
             return {'include': []}
-        candidates = [(associated_pull(api, rules, run), run)]
+        if requires_approval(run):
+            candidates = [(associated_pull(api, rules, run), run)]
+        elif (run.get('path') == '.github/workflows/decision-events.yml'
+                and run.get('event') == 'pull_request_review'
+                and run.get('status') == 'completed' and run.get('conclusion') == 'success'):
+            current = associated_pull(api, rules, run)
+            candidates = [(current, blocked) for blocked in blocked_runs(api, rules, current)]
+        else:
+            return {'include': []}
     else:
         raise ValueError('Unsupported CI admission event')
     grouped = {}
@@ -152,7 +205,18 @@ def trusted_author(api, rules, current):
     user = current.get('user')
     decider = rules['decider']
     if isinstance(user, dict) and user.get('type') == 'Bot':
-        return user.get('login') == decider['login'] and type(user.get('id')) is int and user['id'] == decider['id']
+        if user.get('login') == decider['login'] and type(user.get('id')) is int and user['id'] == decider['id']:
+            return True
+        if dependency.official(current):
+            context = dependency.inspect(api, rules['repository'], current)
+            dependency.classify(api, context)
+            try:
+                authority.approval(api, rules['repository'], current['number'], current['head']['sha'])
+            except authority.HumanDecisionRequired:
+                return False
+            dependency.revalidate(api, rules['repository'], context)
+            return True
+        return False
     return authority.eligible(api, rules['repository'], user)
 
 
@@ -203,8 +267,9 @@ def approve(rules, number, head, run_ids, *, api=get_json, post=post_approval):
             result['runs'].append({'runId': run_id, 'status': 'already-started-or-no-approval-required'})
             continue
         final = pull(api, rules, number, head)
-        if final.get('user') != current.get('user'):
-            raise ValueError('CI author changed immediately before approval')
+        if (final.get('user') != current.get('user')
+                or dependency.official(final) and not trusted_author(api, rules, final)):
+            raise ValueError('CI author or dependency review changed immediately before approval')
         try:
             post(endpoint + '/approve')
             state = 'execution-approved'

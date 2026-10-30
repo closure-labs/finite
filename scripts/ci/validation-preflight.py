@@ -7,6 +7,7 @@ import re
 import sys
 
 from github_api import get_json
+import dependency_update as dependency
 from governed_tree import SHA, changed_paths, compare, governed
 
 
@@ -53,10 +54,16 @@ def inspect(event, env, api=get_json):
     if (re.fullmatch(r'[A-Za-z0-9_-]+\[bot\]', expected_bot)
             and isinstance(author, dict) and author.get('type') == 'Bot' and author.get('login') != expected_bot
             and any(governed(path) for path in paths)):
-        raise ValueError('Governed changes from an unsupported bot submitter: '
-                         + str(author.get('login')) + '. Adopt the update in a PR submitted by '
-                         + expected_bot + ', a Maintainer or a Super Admin, then review its current head. '
-                         'Approval or auto-merge on the original PR cannot change its submitter.')
+        if dependency.official(pull):
+            # Shape/immutable-tree validation only. The trusted App worker
+            # separately parses pins and verifies current human authority.
+            context = dependency.inspect(api, repository, pull, files)
+            dependency.revalidate(api, repository, context)
+        else:
+            raise ValueError('Governed changes from an unsupported bot submitter: '
+                             + str(author.get('login')) + '. Adopt the update in a PR submitted by '
+                             + expected_bot + ', a Maintainer or a Super Admin, then review its current head. '
+                             'Approval or auto-merge on the original PR cannot change its submitter.')
     sensitive = compare(api, repository, target, head, paths)
     latest = api(endpoint)
     if (latest.get('head', {}).get('sha') != head or latest.get('state') != 'open'

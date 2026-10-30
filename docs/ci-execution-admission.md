@@ -11,7 +11,9 @@ check, enables auto-merge, approves an environment or publishes a product.
 Ordinary PR checks already run without waiting for the maintainer decision
 check. The [admission workflow](../.github/workflows/ci-run-admission.yml) handles
 an actual GitHub `action_required` run when that execution approval is needed.
-Other contributors retain GitHub's existing approval requirement. No repository
+Official Dependabot pin updates also qualify only after the
+[dependency classifier and current-head human review](dependency-review.md)
+pass. Other contributors retain GitHub's existing approval requirement. No repository
 or organization fork-approval setting is relaxed.
 
 ## Authenticate the author and current execution
@@ -43,8 +45,12 @@ closed; the lookup never grants author trust.
 Draft and ready PRs use the same authorization. Opening, pushing, reopening or
 changing draft state triggers a cheap read-only discovery. An empty inventory
 starts no Nix setup or App worker. A native blocked-run completion also triggers
-discovery, covering a run created after the initial PR event. Successful normal
-CI completions do not start a discovery runner.
+discovery, covering a run created after the initial PR event. A successful
+review-event collector also re-scans blocked runs, so a later human review does
+not depend on another blocked-run event. Successful ordinary CI completions do
+not start a discovery runner. A completed trusted-main authority workflow also
+reconciles blocked official dependency PRs as bounded recovery; its success
+never supplies approval, and the worker verifies live review again.
 
 Immediately before each approval, the worker reads live identity, PR head,
 run attempt and approval state again. A moved or closed PR, changed author,

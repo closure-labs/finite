@@ -1,6 +1,10 @@
 # Recheck a pull-request approval
 
-Approvals have no ten-minute expiry. A review must cover the exact current PR
+Approvals have no ten-minute expiry. Cached authority observations do: the
+periodic controller revalidates observations aged ten minutes or more so an
+unchanged review cannot indefinitely hide team or permission loss. This is a
+scheduled backstop, not instantaneous revocation; execution admission and new
+queue authority checks still re-read current eligibility. A review must cover the exact current PR
 head and come from a currently eligible Super Admin. Pushing a new head still
 requires a new review. Dismissals, withdrawal comments, changes requested and
 lost eligibility retain their existing effect.
