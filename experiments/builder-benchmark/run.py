@@ -69,11 +69,23 @@ def graph(path):
             event = json.loads(line)
         except ValueError:
             continue
-        if isinstance(event, dict) and event.get('id') and event.get('name'):
-            previous = vertices.setdefault(event['id'], {})
-            previous.update(event)
+        if not isinstance(event, dict):
+            continue
+        for vertex in event.get('vertexes', []):
+            if isinstance(vertex, dict) and vertex.get('digest') and vertex.get('name'):
+                vertices.setdefault(vertex['digest'], {}).update(vertex)
     return {'cachedVertices': sum(bool(v.get('cached')) for v in vertices.values()),
             'vertices': list(vertices.values()), 'durationsOverlap': True}
+
+
+def pin_cli_reference(generated, cli):
+    # The CLI templates the installer variant, not its shorter version tag.
+    # Match whole OCI tokens so a suffix can never be appended to a digest.
+    pattern = re.escape(cli['image'] + ':' + cli['version']) + r'(?:-installer)?(?=\s|$)'
+    result, count = re.subn(pattern, lambda _: cli['image'] + '@' + cli['digest'], generated)
+    if count != 1:
+        raise ValueError('Expected exactly one generated BlueBuild runtime CLI reference')
+    return result
 
 
 def build_command(builder, dockerfile, context, tag, metadata, output, args):
@@ -177,10 +189,7 @@ def main():
     generated_path = OUT / 'bluebuild.Containerfile'
     cli = json.loads((ROOT / 'sources/bluebuild-cli.json').read_text())
     generated_text = generated_path.read_text()
-    cli_tag = cli['image'] + ':' + cli['version']
-    if cli_tag not in generated_text:
-        raise ValueError('Generated BlueBuild runtime CLI reference changed')
-    generated_path.write_text(generated_text.replace(cli_tag, cli['image'] + '@' + cli['digest']))
+    generated_path.write_text(pin_cli_reference(generated_text, cli))
     with (OUT / 'bluebuild.Containerfile').open('a') as generated:
         generated.write('\nLABEL io.finite.production-eligible="false" '
             f'io.finite.build-inputs="benchmark:{revision}" '

@@ -34,15 +34,25 @@ class Benchmark(unittest.TestCase):
     def test_graph_preserves_cache_network_and_overlapping_timestamps(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'progress.jsonl'
-            events = [{'id': 'fetch', 'name': 'load metadata for pinned base', 'started': 'one'},
-                {'id': 'run', 'name': 'RUN customization', 'started': 'one'},
-                {'id': 'fetch', 'name': 'load metadata for pinned base', 'completed': 'two', 'cached': True}]
+            events = [{'vertexes': [{'digest': 'fetch', 'name': 'load metadata for pinned base', 'started': 'one'}]},
+                {'vertexes': [{'digest': 'run', 'name': 'RUN customization', 'started': 'one'}]},
+                {'vertexes': [{'digest': 'fetch', 'name': 'load metadata for pinned base', 'completed': 'two', 'cached': True}]}]
             path.write_text('\n'.join(map(json.dumps, events)))
             observed = benchmark.graph(path)
             self.assertEqual(observed['cachedVertices'], 1)
             self.assertTrue(observed['durationsOverlap'])
             self.assertEqual(observed['vertices'][0]['started'], 'one')
             self.assertEqual(observed['vertices'][0]['completed'], 'two')
+
+    def test_installer_tag_is_replaced_as_a_whole_reference(self):
+        cli = {'image': 'ghcr.io/blue-build/cli', 'version': 'v0.9.37', 'digest': 'sha256:' + 'a' * 64}
+        for suffix in ('', '-installer'):
+            source = 'COPY --from=ghcr.io/blue-build/cli:v0.9.37' + suffix + ' \\\n  /out/bluebuild /bins/bluebuild\n'
+            result = benchmark.pin_cli_reference(source, cli)
+            self.assertIn(cli['image'] + '@' + cli['digest'] + ' ', result)
+            self.assertNotIn(cli['digest'] + '-installer', result)
+        with self.assertRaises(ValueError):
+            benchmark.pin_cli_reference('COPY --from=ghcr.io/blue-build/cli:v0.9.37-other /out /bins', cli)
 
     def test_wrong_image_binding_stops_before_runtime_execution(self):
         with patch.object(benchmark.subprocess, 'check_output', return_value='[{"Config":{"Labels":{}}}]'), \
@@ -81,7 +91,7 @@ class Benchmark(unittest.TestCase):
     def test_bounded_work_and_identical_runtime_gate(self):
         workflow = (ROOT / '.github/workflows/builder-benchmark.yml').read_text()
         source = (ROOT / 'experiments/builder-benchmark/run.py').read_text()
-        self.assertIn('timeout-minutes: 150', workflow)
+        self.assertIn('timeout-minutes: 135', workflow)
         self.assertIn('repetition: [1, 2]', workflow)
         self.assertIn('max-parallel: 2', workflow)
         self.assertIn("for temperature in ('cold', 'warm')", source)

@@ -24,9 +24,10 @@ for production. Recipes and production build functions are not edited.
 ## Cost and pairing
 
 One workflow invocation runs exactly four jobs: two repetitions each of finite
-and finite-dev, at most two simultaneously, each capped at 150 minutes. The
-maximum is ten runner-hours plus a ten-minute contract job. This is the initial
-budget; failed jobs consume it and are not automatically retried. Setup and
+and finite-dev, at most two simultaneously, each capped at 135 minutes. The
+corrected run maximum is nine runner-hours plus a ten-minute contract job, leaving
+one hour of the initial ten-hour budget for the first failed diagnostic run.
+Failed jobs consume the budget and are not automatically retried. Setup and
 ordinary required PR CI are additional. There are sixteen build trials and eight
 fresh VM validations. No production keys, registry pushes, promotions, hardware
 tests or rollback tests are used.

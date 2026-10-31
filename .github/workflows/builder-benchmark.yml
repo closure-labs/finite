@@ -40,7 +40,7 @@ jobs:
       github.event.pull_request.head.ref == 'codex/matched-builder-benchmark' &&
       github.event.pull_request.base.ref == 'main'
     runs-on: ubuntu-24.04
-    timeout-minutes: 150
+    timeout-minutes: 135
     strategy:
       fail-fast: false
       max-parallel: 2
