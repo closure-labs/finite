@@ -9,6 +9,7 @@ import importlib.util
 import json
 from pathlib import Path
 import sys
+import tempfile
 from threading import Barrier, Lock
 import unittest
 from unittest.mock import patch
@@ -721,6 +722,67 @@ class Authority(unittest.TestCase):
             mod.verify_proposal(PROPOSAL, 7, REPO, None, github=GitHub())
         with self.assertRaises(mod.AuthorityError):
             mod.proposal_path({**PROPOSAL, 'reviewedBy': 'maintainer'})
+
+
+class RateLimitDiscovery(unittest.TestCase):
+    def test_quota_exhaustion_never_starts_extra_pr_inventory(self):
+        calls = []
+        def github(endpoint):
+            calls.append(endpoint)
+            if '/commits?path=' in endpoint:
+                return [{'sha': MERGE}]
+            try:
+                raise mod.GitHubReadError('rate-limited GET', transient=True, rate_limited=True)
+            except mod.GitHubReadError as error:
+                raise mod.AuthorityError(str(error)) from error
+        with self.assertRaises(mod.AuthorityError):
+            mod.find_origin_pr(PROPOSAL, REPO, BOT, github)
+        self.assertEqual(len(calls), 2)
+        self.assertFalse(any('/pulls?state=closed' in e for e in calls))
+
+
+class TreeBoundDocuments(unittest.TestCase):
+    def fixture(self, raw=None):
+        raw = raw or json.dumps(PROPOSAL).encode()
+        temp = tempfile.TemporaryDirectory(); self.addCleanup(temp.cleanup)
+        path = Path(temp.name) / 'proposal.json'; path.write_bytes(raw)
+        name = mod.proposal_path(PROPOSAL)
+        entry = {'path': name, 'type': 'blob', 'mode': '100644', 'size': len(raw),
+                 'sha': hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest()}
+        return path, name, entry
+
+    def test_authenticated_tree_bytes_replace_only_the_exact_immutable_content_read(self):
+        path, name, entry = self.fixture(); api = GitHub()
+        with mod.immutable_documents():
+            self.assertTrue(mod.seed_tree_document(REPO, name, MAIN, entry, path))
+            self.assertEqual(mod.document_at(api, REPO, name, MAIN), PROPOSAL)
+            self.assertEqual(api.calls, [])
+            self.assertEqual(mod.document_at(api, REPO, name, HEAD), PROPOSAL)
+            self.assertEqual(len(api.calls), 1)
+        self.assertEqual(mod.document_at(api, REPO, name, MAIN), PROPOSAL)
+        self.assertEqual(len(api.calls), 2)
+
+    def test_wrong_hash_size_path_type_or_mode_cannot_seed(self):
+        path, name, entry = self.fixture()
+        for change in ({'sha': 'f' * 40}, {'size': entry['size'] + 1}, {'path': 'other.json'},
+                       {'type': 'tree'}, {'mode': '120000'}):
+            with self.subTest(change=change), mod.immutable_documents(), self.assertRaises((mod.AuthorityError, ValueError)):
+                mod.seed_tree_document(REPO, name, MAIN, {**entry, **change}, path)
+
+    def test_duplicate_json_and_changed_local_bytes_fail_closed(self):
+        path, name, entry = self.fixture(b'{"schema":1,"schema":2}')
+        with mod.immutable_documents(), self.assertRaises(ValueError):
+            mod.seed_tree_document(REPO, name, MAIN, entry, path)
+        path, name, entry = self.fixture(); path.write_text('{}')
+        with mod.immutable_documents(), self.assertRaises(mod.AuthorityError):
+            mod.seed_tree_document(REPO, name, MAIN, entry, path)
+
+    def test_cache_budget_exhaustion_keeps_original_read_path(self):
+        path, name, entry = self.fixture(); api = GitHub()
+        with patch.object(mod, 'DOCUMENT_ENTRIES', 0), mod.immutable_documents():
+            self.assertFalse(mod.seed_tree_document(REPO, name, MAIN, entry, path))
+            self.assertEqual(mod.document_at(api, REPO, name, MAIN), PROPOSAL)
+            self.assertEqual(len(api.calls), 1)
 
 
 if __name__ == '__main__':

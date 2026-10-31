@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """Transport retries preserve authorization failure semantics and sanitized logs."""
+from datetime import datetime, timezone
+from email.utils import format_datetime
 import contextlib
 import io
 import json
@@ -11,6 +13,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'scripts/ci'))
 import github_api as api
+import github_retry as retry
 
 ENDPOINT = 'repos/closure-labs/finite/git/ref/heads/main'
 
@@ -22,16 +25,27 @@ def reply(status=200, body=None, **headers):
                                        value + '\r\n' + json.dumps(body or {'ok': True}), 'secret fixture stderr')
 
 
+def deterministic_clock(test):
+    test.clock = Clock()
+    test.enterContext(patch.object(api.time, 'monotonic', test.clock.monotonic))
+    test.enterContext(patch.object(api.time, 'time', test.clock.wall))
+    test.sleep = test.enterContext(patch.object(api.time, 'sleep', side_effect=test.clock.sleep))
+    random = test.enterContext(patch.object(retry.random, 'SystemRandom'))
+    random.return_value.uniform.return_value = .1
+
+
 class Reads(unittest.TestCase):
+    def setUp(self):
+        deterministic_clock(self)
+
     def call(self, responses):
         self.run = self.enterContext(patch.object(api.subprocess, 'run', side_effect=responses))
-        self.sleep = self.enterContext(patch.object(api.time, 'sleep'))
         self.output = self.enterContext(contextlib.redirect_stderr(io.StringIO()))
         return api.get_json(ENDPOINT)
 
     def test_transient_failure_and_timeout_recover_without_logging_response(self):
         self.assertEqual(self.call([reply(502, {'secret': 'sensitive'}), subprocess.TimeoutExpired([], 30), reply()]), {'ok': True})
-        self.assertEqual([call.args[0] for call in self.sleep.call_args_list], [2, 4])
+        self.assertEqual([call.args[0] for call in self.sleep.call_args_list], [1.1, 2.1])
         self.assertIn('request=1234:ABCD', self.output.getvalue())
         self.assertNotIn('sensitive', self.output.getvalue())
         self.assertNotIn('secret fixture', self.output.getvalue())
@@ -49,14 +63,86 @@ class Reads(unittest.TestCase):
                 self.assertEqual(run.call_count, 1)
 
     def test_rate_limit_retry_after_and_primary_reset(self):
-        self.assertEqual(self.call([reply(403, Retry_After=3), reply(429), reply()]), {'ok': True})
-        self.assertEqual([call.args[0] for call in self.sleep.call_args_list], [3, 4])
-        with patch.object(api.time, 'time', return_value=100):
-            self.assertEqual(api.delay_seconds({'x-ratelimit-remaining': '0', 'x-ratelimit-reset': '108'}, 2), 8)
+        self.assertEqual(self.call([reply(403, Retry_After=3), reply(429, Retry_After=2), reply()]), {'ok': True})
+        self.assertEqual([call.args[0] for call in self.sleep.call_args_list], [3.1, 2.1])
+
+    def test_secondary_without_server_delay_defers_without_another_call(self):
+        with patch.object(api.subprocess, 'run', return_value=reply(429)) as run:
+            with self.assertRaises(api.GitHubReadError) as caught:
+                api.get_json(ENDPOINT)
+            self.assertTrue(caught.exception.rate_limited)
+            self.assertTrue(caught.exception.transient)
+            self.assertEqual(run.call_count, 1)
+            self.sleep.assert_not_called()
+
+    def test_transport_timeout_shrinks_to_remaining_operation_budget(self):
+        calls = []
+        def transport(*args, **kwargs):
+            calls.append(kwargs['timeout'])
+            if len(calls) == 1:
+                self.clock.now += 30
+                raise subprocess.TimeoutExpired([], 30)
+            return reply()
+        with patch.object(api.subprocess, 'run', side_effect=transport):
+            self.assertEqual(api.get_json(ENDPOINT), {'ok': True})
+        self.assertEqual(calls[0], 30)
+        self.assertAlmostEqual(calls[1], 13.9)
+
+    def test_enclosing_operation_deadline_cannot_be_extended(self):
+        with patch.object(api.subprocess, 'run', return_value=reply(503)) as run:
+            with self.assertRaises(api.GitHubReadError):
+                api.get_json(ENDPOINT, deadline=1)
+            self.assertEqual(run.call_args.kwargs['timeout'], 1)
+            self.sleep.assert_not_called()
+
+    def test_signals_and_duplicate_retry_metadata_fail_without_retry(self):
+        responses = [subprocess.CompletedProcess([], -15, '', 'PRIVATE_TOKEN'),
+                     subprocess.CompletedProcess([], 1, 'HTTP/2 429 Limited\nRetry-After: 2\nRetry-After: 3\n\n{}', '')]
+        for response in responses:
+            with self.subTest(response=response.returncode), patch.object(api.subprocess, 'run', return_value=response) as run:
+                with self.assertRaises(api.GitHubReadError) as caught:
+                    api.get_json(ENDPOINT)
+                self.assertFalse(caught.exception.transient)
+                self.assertNotIn('PRIVATE_TOKEN', str(caught.exception))
+                self.assertEqual(run.call_count, 1)
+
+    def test_safe_rate_metadata_is_visible_without_raw_headers_or_body(self):
+        with patch.object(api.subprocess, 'run', return_value=reply(403, {'secret': 'PRIVATE_BODY'},
+                X_Ratelimit_Remaining=0, X_Ratelimit_Reset=1800003600)):
+            with self.assertRaises(api.GitHubReadError) as caught:
+                api.get_json(ENDPOINT)
+            self.assertIn('rate-remaining=0', str(caught.exception))
+            self.assertIn('rate-reset=1800003600', str(caught.exception))
+            self.assertNotIn('PRIVATE_BODY', str(caught.exception))
+            self.assertTrue(caught.exception.rate_limited)
+
+    def test_late_success_cannot_escape_the_monotonic_budget(self):
+        def late(*args, **kwargs):
+            self.clock.now = 46
+            return reply()
+        with patch.object(api.subprocess, 'run', side_effect=late) as run:
+            with self.assertRaises(api.GitHubReadError):
+                api.get_json(ENDPOINT)
+            self.assertEqual(run.call_count, 1)
+
+    def test_valid_json_parse_crossing_deadline_is_classified_as_deadline(self):
+        original = api.json.loads
+        response = reply()
+        def parse(raw):
+            value = original(raw)
+            self.clock.now = 46
+            return value
+        with patch.object(api.subprocess, 'run', return_value=response) as run, \
+                patch.object(api.json, 'loads', side_effect=parse):
+            with self.assertRaisesRegex(api.GitHubReadError, 'deadline') as caught:
+                api.get_json(ENDPOINT)
+            self.assertTrue(caught.exception.transient)
+            self.assertEqual(run.call_count, 1)
+            self.sleep.assert_not_called()
 
     def test_long_server_wait_exhausts_budget_without_sleeping(self):
         with patch.object(api.subprocess, 'run', return_value=reply(429, Retry_After=3600)) as run, \
-                patch.object(api.time, 'sleep') as sleep:
+                patch.object(api.time, 'sleep', side_effect=self.clock.sleep) as sleep:
             with self.assertRaisesRegex(api.GitHubReadError, 'budget exhausted'):
                 api.get_json(ENDPOINT)
             self.assertEqual(run.call_count, 1)
@@ -82,10 +168,13 @@ class Reads(unittest.TestCase):
 
 
 class PublicReads(unittest.TestCase):
+    def setUp(self):
+        deterministic_clock(self)
+
     def test_explicit_public_mode_preserves_status_checks(self):
         with patch.object(api, 'public_response', return_value=reply()) as read:
             self.assertEqual(api.get_json(ENDPOINT, public=True), {'ok': True})
-            read.assert_called_once_with(ENDPOINT)
+            read.assert_called_once_with(ENDPOINT, timeout=30)
 
     def test_public_auth_failures_never_fall_back_or_retry(self):
         for status in (301, 302, 401, 403, 404):
@@ -99,9 +188,9 @@ class PublicReads(unittest.TestCase):
 
     def test_public_transport_retries_bounded_and_keeps_response_private(self):
         with patch.object(api, 'public_response', side_effect=[subprocess.TimeoutExpired([], 30), reply()]), \
-                patch.object(api.time, 'sleep') as sleep:
+                patch.object(api.time, 'sleep', side_effect=self.clock.sleep) as sleep:
             self.assertEqual(api.get_json(ENDPOINT, public=True), {'ok': True})
-            sleep.assert_called_once_with(2)
+            sleep.assert_called_once_with(1.1)
 
     def test_public_request_fixed_origin_no_auth_no_redirect_and_wall_limit(self):
         with patch.object(api.subprocess, 'run', return_value=reply()) as run:
@@ -124,6 +213,113 @@ class PublicReads(unittest.TestCase):
                 with self.assertRaises(api.GitHubReadError):
                     api.get_json(ENDPOINT, public=True)
 
+
+# Portable policy contract from XO #212 at 109656e3767982c4adf9f766d1b7d719975e37ff.
+class Clock:
+    def __init__(self):
+        self.now, self.epoch, self.delays = 0., 1800000000., []
+    def monotonic(self):
+        return self.now
+    def wall(self):
+        return self.epoch
+    def sleep(self, delay):
+        self.delays.append(delay)
+        self.now += delay
+    def budget(self, **kwargs):
+        return retry.RetryBudget(clock=self.monotonic, wall=self.wall, sleep=self.sleep,
+                                 jitter=lambda: .1, **kwargs)
+
+
+class RetryContract(unittest.TestCase):
+    def test_seconds_and_http_date_not_before(self):
+        for value in [b'7', format_datetime(datetime.fromtimestamp(1800000007, timezone.utc), usegmt=True).encode()]:
+            clock = Clock(); budget = clock.budget()
+            self.assertTrue(budget.wait(1, 429, {b'retry-after': value}))
+            self.assertEqual(clock.delays, [7.1])
+            self.assertGreaterEqual(clock.now, 7)
+
+    def test_primary_reset_and_retry_after_both_respected(self):
+        clock = Clock(); budget = clock.budget()
+        self.assertTrue(budget.wait(1, 403, {b'x-ratelimit-remaining': b'0',
+            b'x-ratelimit-reset': b'1800000010', b'retry-after': b'3'}))
+        self.assertEqual(clock.delays, [10.1])
+
+    def test_primary_long_missing_malformed_or_stale_reset_never_sleeps(self):
+        for reset in [None, b'invalid PRIVATE_TOKEN', b'1800000000', b'1800003600']:
+            clock = Clock(); budget = clock.budget()
+            headers = {b'x-ratelimit-remaining': b'0', b'x-ratelimit-reset': reset}
+            self.assertFalse(budget.wait(1, 403, headers))
+            self.assertEqual(clock.delays, [])
+            self.assertNotIn('PRIVATE_TOKEN', budget.reason)
+
+    def test_secondary_403_requires_throttle_or_server_delay(self):
+        clock = Clock(); budget = clock.budget()
+        self.assertTrue(budget.wait(1, 403, {b'retry-after': b'2'}, 'secondary-rate-limit'))
+        self.assertEqual(clock.delays, [2.1])
+        for status, category in [(403, 'secondary-rate-limit'), (429, None)]:
+            clock = Clock(); budget = clock.budget()
+            self.assertFalse(budget.wait(1, status, {}, category))  # >=60s cannot fit45s.
+            self.assertEqual(clock.delays, [])
+
+    def test_missing_throttle_header_uses_documented_minimum_with_larger_explicit_budget(self):
+        clock = Clock(); budget = clock.budget(total=70)
+        self.assertTrue(budget.wait(1, 429))
+        self.assertEqual(clock.delays, [60.1])
+
+    def test_permission_denial_and_unrelated_4xx_never_retry(self):
+        for status in [301, 400, 401, 403, 404, 409, 422]:
+            clock = Clock(); budget = clock.budget()
+            self.assertFalse(budget.wait(1, status, {}, 'permission-denied'))
+            self.assertEqual(clock.delays, [])
+
+    def test_malformed_duplicate_negative_and_oversized_retry_after_fail_closed(self):
+        for value in [None, b'-1', b'1.5', b'nan', b'PRIVATE_TOKEN', b'x' * 129, b'9' * 12,
+                      b'Wed, 21 Oct 2015 07:28:00']:
+            clock = Clock(); budget = clock.budget()
+            self.assertFalse(budget.wait(1, 429, {b'retry-after': value}))
+            self.assertEqual(clock.delays, [])
+
+    def test_total_deadline_and_request_timeout_shrink_monotonically(self):
+        clock = Clock(); budget = clock.budget(total=5)
+        self.assertEqual(budget.remaining(), 5)
+        clock.now = 2
+        self.assertEqual(budget.remaining(), 3)
+        self.assertFalse(budget.wait(1, 503, {b'retry-after': b'3'}))
+        self.assertEqual(clock.delays, [])
+        clock.now = 5
+        with self.assertRaises(retry.RetryDeadline):
+            budget.remaining()
+
+    def test_wait_leaves_budget_and_attempts_are_bounded(self):
+        clock = Clock(); budget = clock.budget(total=4)
+        self.assertTrue(budget.wait(1, 503))
+        self.assertTrue(budget.wait(2, 503))
+        self.assertFalse(budget.wait(3, 503))
+        self.assertEqual(clock.delays, [1.1, 2.1])
+        self.assertGreater(budget.remaining(), 0)
+
+    def test_positive_jitter_is_bounded_and_never_subtracts_server_delay(self):
+        for injected, expected in [(-100, 2.05), (0, 2.05), (100, 2.25)]:
+            clock = Clock(); budget = clock.budget(); budget.jitter = lambda: injected
+            self.assertTrue(budget.wait(1, 503, {b'retry-after': b'2'}))
+            self.assertEqual(clock.delays, [expected])
+        clock = Clock(); budget = clock.budget(); budget.jitter = lambda: float('nan')
+        self.assertFalse(budget.wait(1, 503))
+        self.assertEqual(clock.delays, [])
+
+    def test_wall_clock_jump_cannot_move_monotonic_deadline(self):
+        clock = Clock(); budget = clock.budget()
+        clock.epoch += 3600
+        self.assertTrue(budget.wait(1, 429, {b'retry-after': b'2'}))
+        self.assertEqual(budget.deadline, 45)
+        self.assertAlmostEqual(budget.remaining(300), 42.9)
+
+    def test_budget_arguments_and_no_transport_cap_expansion(self):
+        for total in [0, -1, float('nan'), float('inf'), 301]:
+            with self.assertRaises(ValueError):
+                Clock().budget(total=total)
+        budget = Clock().budget(total=100)
+        self.assertEqual(budget.remaining(), 30)
 
 if __name__ == '__main__':
     unittest.main()

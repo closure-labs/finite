@@ -172,6 +172,8 @@ def live_ledger(records, repository, github=None):
         raise TechnicalError('Local security ledger differs from complete current main inventory')
     for identity, entry in inventory.items():
         record = records[identity]
+        if entry['sha'] == record['blobSha'] and record.get('sourcePath') is not None:
+            authority.seed_tree_document(repository, entry['path'], head, entry, record['sourcePath'])
         if entry['sha'] != record['blobSha']:
             # Formatting-only changes are harmless; canonical content still must
             # equal the filename and the independently validated local proposal.
@@ -202,7 +204,7 @@ def historical_batch(records, identities, repository, bot_login, github=None, wo
             raise
 
 
-def verify(scan_result, profile, repository, bot_login,
+def _verify(scan_result, profile, repository, bot_login,
            records_path=ROOT / 'automation/decisions/security', github=None, *, historical_workers=1):
     """Return covered/review-required/rejected/revoked and fresh authority receipts.
 
@@ -235,7 +237,7 @@ def verify(scan_result, profile, repository, bot_login,
             raise TechnicalError('Security ledger filename does not match canonical proposal')
         raw = candidate.read_bytes()
         blob_sha = hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest()
-        records[identity] = {'proposal': proposal, 'payload': payload, 'blobSha': blob_sha}
+        records[identity] = {'proposal': proposal, 'payload': payload, 'blobSha': blob_sha, 'sourcePath': candidate}
     live_ledger(records, repository, github)
     relevant = {key for key, value in records.items() if profile in value['payload']['profiles']}
     if not relevant:
@@ -295,3 +297,12 @@ def verify(scan_result, profile, repository, bot_login,
             'authorityChain': [receipts[key] for key in sorted(receipts)],
             'decision': {'proposalHash': identity, 'disposition': disposition,
                          'packet': payload['packet']}}
+
+
+def verify(scan_result, profile, repository, bot_login,
+           records_path=ROOT / 'automation/decisions/security', github=None, *, historical_workers=1):
+    # A single admission operation shares only cryptographically bound bytes.
+    # Main, complete ledger inventory, PRs, reviews and live roles are still read.
+    with authority.immutable_documents():
+        return _verify(scan_result, profile, repository, bot_login, records_path, github,
+                       historical_workers=historical_workers)

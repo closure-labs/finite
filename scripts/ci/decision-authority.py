@@ -94,6 +94,51 @@ def validate_context(repository, expected_bot):
         raise AuthorityError('A configured trusted GitHub App bot login is required')
 
 
+def _remember_document(binding, raw):
+    documents = _documents.get()
+    if documents is None:
+        return False
+    with documents['lock']:
+        prior = documents['values'].get(binding)
+        if prior is not None and prior != raw:
+            raise ValueError('Conflicting immutable proposal bytes')
+        if prior is not None:
+            return True
+        if len(documents['values']) >= DOCUMENT_ENTRIES or documents['bytes'] + len(raw) > DOCUMENT_BYTES:
+            return False
+        documents['values'][binding] = raw
+        documents['bytes'] += len(raw)
+        return True
+
+
+def seed_tree_document(repository, path, revision, entry, local_path):
+    """Reuse local bytes only after a complete immutable Git tree authenticated them.
+
+    This stores proposal bytes, never a decision or live authority observation.
+    Cache exhaustion retains the original API-read path.
+    """
+    documents = _documents.get()
+    if documents is None:
+        return False
+    with documents['lock']:
+        if len(documents['values']) >= DOCUMENT_ENTRIES or documents['bytes'] >= DOCUMENT_BYTES:
+            return False
+    if (not REPOSITORY.fullmatch(repository) or not SHA.fullmatch(revision)
+            or entry.get('path') != path or entry.get('type') != 'blob' or entry.get('mode') != '100644'
+            or type(entry.get('size')) is not int or not 0 < entry['size'] <= 8 * 1024 * 1024
+            or not isinstance(entry.get('sha'), str) or not SHA.fullmatch(entry['sha'])):
+        raise AuthorityError('Invalid authenticated proposal tree entry')
+    source = Path(local_path)
+    if source.is_symlink() or not source.is_file():
+        raise AuthorityError('Proposal cache requires a regular local source')
+    with source.open('rb') as stream:
+        raw = stream.read(8 * 1024 * 1024 + 1)
+    if len(raw) != entry['size'] or hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest() != entry['sha']:
+        raise AuthorityError('Local proposal differs from authenticated Git tree blob')
+    decode_document(raw)
+    return _remember_document((repository, path, revision), raw)
+
+
 def document_at(api, repository, path, revision):
     if not isinstance(revision, str) or not SHA.fullmatch(revision):
         raise AuthorityError('Content lookup requires immutable commit SHA')
@@ -133,17 +178,7 @@ def document_at(api, repository, path, revision):
         if identity != content['sha']:
             raise ValueError('Git blob object SHA differs from authenticated metadata')
         document = decode_document(raw)
-        # Cache only bytes authenticated against immutable-ref metadata, Git
-        # object SHA and strict JSON parsing. Exhaustion falls back to reads.
-        if documents is not None:
-            with documents['lock']:
-                prior = documents['values'].get(binding)
-                if prior is not None and prior != raw:
-                    raise ValueError('Conflicting immutable proposal bytes')
-                if (prior is None and len(documents['values']) < DOCUMENT_ENTRIES
-                        and documents['bytes'] + len(raw) <= DOCUMENT_BYTES):
-                    documents['values'][binding] = raw
-                    documents['bytes'] += len(raw)
+        _remember_document(binding, raw)
         return document
     except (ValueError, TypeError) as error:
         raise AuthorityError('Invalid proposal blob') from error
@@ -372,7 +407,8 @@ def find_origin_pr(proposal, repository, expected_bot, github=None):
     except AuthorityError as error:
         # A separate authoritative API can discover the same exact association.
         # Authentication, malformed responses and semantic failures never fall back.
-        if not isinstance(error.__cause__, GitHubReadError) or not error.__cause__.transient:
+        if (not isinstance(error.__cause__, GitHubReadError) or not error.__cause__.transient
+                or error.__cause__.rate_limited):
             raise
         fallback = True
         print('Commit association reads exhausted; checking bounded native PR inventory', file=sys.stderr)
