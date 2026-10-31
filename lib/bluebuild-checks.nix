@@ -127,6 +127,8 @@ in {
     python3 tests/ci/release-recovery.py
     python3 tests/ci/image-identity.py
     python3 tests/ci/qualification-dependencies.py
+    python3 tests/ci/functional-selection.py
+    python3 tests/bluebuild/bootability-pilot.py
     python3 tests/ci/applicability-evidence.py
     python3 tests/ci/native-evidence-summary.py
     python3 tests/ci/diagnose-built-candidate.py

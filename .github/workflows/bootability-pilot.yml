@@ -1,0 +1,180 @@
+name: Advisory update bootability pilot
+on:
+  workflow_call:
+    inputs:
+      mode:
+        type: string
+        default: pilot
+      profile:
+        type: string
+        required: true
+      candidate:
+        type: string
+        required: true
+      previous:
+        type: string
+        required: true
+      identity:
+        type: string
+        required: true
+      source_revision:
+        type: string
+        required: true
+      selection_base:
+        type: string
+        default: ''
+      full_suite:
+        type: boolean
+        default: false
+  pull_request:
+    paths:
+      - 'scripts/bluebuild/*bootability*'
+      - 'scripts/bluebuild/vm-acceptance.sh'
+      - 'scripts/ci/functional-selection.py'
+      - 'tests/bluebuild/bootability-pilot.py'
+      - 'tests/ci/functional-selection.py'
+      - '.github/workflows/bootability-pilot.yml'
+  workflow_dispatch:
+    inputs:
+      mode:
+        type: choice
+        options: [contracts, pilot]
+        default: contracts
+      profile:
+        type: choice
+        options: [finite, finite-dev]
+        default: finite
+      candidate:
+        description: Exact signed candidate sha256 digest
+        type: string
+        default: ''
+      previous:
+        description: Exact signed predecessor sha256 digest (must differ)
+        type: string
+        default: ''
+      identity:
+        description: Candidate v1 build identity
+        type: string
+        default: ''
+      source_revision:
+        description: Candidate source commit
+        type: string
+        default: ''
+      selection_base:
+        description: Exact base commit for advisory functional selection
+        type: string
+        default: ''
+      full_suite:
+        description: Explicitly select every functional suite (advisory only)
+        type: boolean
+        default: false
+# Public bootstrap options; setup-nix resolves them through SecretSpec.
+env:
+  FINITE_OPTIMIZED_CACHES: ${{ vars.FINITE_OPTIMIZED_CACHES }}
+  FINITE_CACHIX_WRITER: ${{ vars.FINITE_CACHIX_WRITER }}
+  FINITE_REUSE_INVENTORY: ${{ vars.FINITE_REUSE_INVENTORY }}
+  FINITE_GRYPE_DB_CACHE: ${{ vars.FINITE_GRYPE_DB_CACHE }}
+  FINITE_QUALIFICATION_REUSE: ${{ vars.FINITE_QUALIFICATION_REUSE }}
+  FINITE_QUALIFIED_ISO_PRESERVATION: ${{ vars.FINITE_QUALIFIED_ISO_PRESERVATION }}
+  FINITE_QUALIFIED_ISO_CHANNELS: ${{ vars.FINITE_QUALIFIED_ISO_CHANNELS }}
+permissions:
+  contents: read
+concurrency:
+  group: finite-bootability-pilot-${{ inputs.profile || github.ref }}
+  cancel-in-progress: false
+jobs:
+  contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Exercise bootability and selector rejection fixtures
+        run: |
+          python3 tests/bluebuild/bootability-pilot.py
+          python3 tests/ci/functional-selection.py
+          bash -n scripts/bluebuild/vm-acceptance.sh scripts/bluebuild/check-bootability-guest.sh scripts/bluebuild/run-bootability-pilot.sh
+      - name: Record advisory functional selection
+        env:
+          BASE: ${{ inputs.selection_base || github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          FULL: ${{ inputs.full_suite }}
+        run: |
+          args=()
+          if [[ $FULL == true ]]; then args+=(--full-suite); fi
+          python3 scripts/ci/functional-selection.py --base "$BASE" --head "$HEAD" "${args[@]}" --output .bluebuild/functional-selection.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: functional-selection-shadow-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/functional-selection.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+  pilot:
+    needs: contracts
+    if: >-
+      github.event_name == 'workflow_dispatch' && inputs.mode == 'pilot' &&
+      github.repository == 'closure-labs/finite' && github.ref != 'refs/heads/main' && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    permissions:
+      contents: read
+      # Only unique installer tags from iso.sh; no signing/promotion credentials.
+      packages: write
+    env:
+      PROFILE: ${{ inputs.profile }}
+      CANDIDATE_DIGEST: ${{ inputs.candidate }}
+      PREVIOUS_DIGEST: ${{ inputs.previous }}
+      BUILD_IDENTITY: ${{ inputs.identity }}
+      SOURCE_REVISION: ${{ inputs.source_revision }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Enforce diagnostic branch and first-attempt boundary
+        run: python3 scripts/bluebuild/bootability-pilot.py preflight
+      - name: Verify KVM
+        run: |
+          sudo -n chmod a+rw /dev/kvm
+          timeout 20s python3 scripts/ci/vm-host.py --output .bluebuild/pilot-vm-host.json
+      - uses: $/.github/actions/setup-nix
+        with:
+          cache-mode: none
+          cache-profile: checks
+      - uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
+        with:
+          skip-if-available: '80G'
+      - uses: $/.github/actions/setup-cosign
+      - uses: $/.github/actions/setup-vm-tools
+      - name: Install pinned BlueBuild CLI
+        run: bash scripts/bluebuild/install-cli.sh
+      - name: Fresh encrypted predecessor install and signed candidate boot
+        env:
+          REGISTRY_TOKEN: ${{ github.token }}
+          REGISTRY_USER: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$REGISTRY_TOKEN" | skopeo login --username "$REGISTRY_USER" --password-stdin ghcr.io
+          printf '%s' "$REGISTRY_TOKEN" | docker login --username "$REGISTRY_USER" --password-stdin ghcr.io
+          python3 scripts/bluebuild/measure.py pilot-end-to-end timeout --signal=TERM --kill-after=60s 105m bash scripts/bluebuild/run-bootability-pilot.sh
+      - name: Remove ephemeral state and registry credentials
+        if: always()
+        run: |
+          rm -rf /tmp/finite-vm.* .bluebuild/pilot-private
+          docker logout ghcr.io || true
+          skopeo logout ghcr.io || true
+      - name: Retain only allowlisted diagnostic receipts
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: bootability-pilot-${{ inputs.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .bluebuild/bootability-pilot/receipt.json
+            .bluebuild/bootability-pilot/timings.json
+            .bluebuild/pilot-vm-host.json
+            .bluebuild/*-timings.jsonl
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7

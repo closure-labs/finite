@@ -11,11 +11,18 @@ monotonic_seconds() {
   read -r uptime _ </proc/uptime
   printf '%s\n' "${uptime%.*}"
 }
+pilot=${FINITE_BOOTABILITY_PILOT:-false}
+[[ $pilot == true || $pilot == false ]]
+if [[ $pilot == true ]]; then
+  [[ ${FINITE_SECURE_BOOT:-false} == true && ${3:-} == upgrade ]]
+  python3 scripts/bluebuild/bootability-pilot.py preflight
+fi
 phase_name="${3:-manual}"
 [[ $phase_name =~ ^(manual|fresh|upgrade)$ ]]
 local_validation=${FINITE_LOCAL_VM_VALIDATION:-false}
 [[ $local_validation == true || $local_validation == false ]]
 evidence="$PWD/.bluebuild/vm-$phase_name"
+if [[ $pilot == true ]]; then evidence="$PWD/.bluebuild/pilot-private"; fi
 if [[ $local_validation == true ]]; then evidence="$PWD/.bluebuild/vm-local"; fi
 # Raw logs, disk images, and credentials never enter an upload path, even if
 # the runner kills this process before cleanup can sanitize diagnostics.
@@ -121,7 +128,7 @@ cleanup() {
   end_stage "$result"
   local cleanup_started
   cleanup_started=$(monotonic_seconds)
-  if [[ -n $pid && -f $state/ssh-key ]]; then
+  if [[ $pilot != true && -n $pid && -f $state/ssh-key ]]; then
     timeout 20s ssh -i "$state/ssh-key" -p 2222 -o BatchMode=yes -o StrictHostKeyChecking=no \
       -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 finite-test@127.0.0.1 \
       sudo journalctl --no-pager -b >"$state/final-journal.log" 2>&1 || true
@@ -130,6 +137,16 @@ cleanup() {
   if [[ -n $log_pid ]]; then kill "$log_pid" 2>/dev/null || true; wait "$log_pid" 2>/dev/null || true; fi
   # Installer/journal diagnostics can include kickstart content on failure.
   record_duration cleanup "$(($(monotonic_seconds) - cleanup_started))" "$result"
+  if [[ $pilot == true ]]; then
+    # Strict allowlist: no logs, disk, firmware variables, kickstart or keys.
+    mkdir -p .bluebuild/bootability-pilot
+    cp "$state/timings.json" .bluebuild/bootability-pilot/timings.json
+    if [[ -f $state/pilot-receipt.json ]]; then
+      cp "$state/pilot-receipt.json" .bluebuild/bootability-pilot/receipt.json
+    fi
+    rm -rf "$state" "$evidence"
+    exit "$result"
+  fi
   if ! python3 scripts/bluebuild/redact-vm-logs.py "$state" "$secrets/luks-key" "$evidence" --snapshot; then
     echo 'VM diagnostics could not be sanitized; withholding all VM artifacts.' >&2
     result=1
@@ -150,7 +167,7 @@ nix_policy=$(base64 -w0 files/system/usr/libexec/finite/install-determinate-nix-
 predecessor_policy=$(base64 -w0 scripts/bluebuild/prepare-vm-predecessor-policy.sh)
 predecessor_home=$(base64 -w0 scripts/bluebuild/prepare-vm-predecessor-home.sh)
 predecessor_enabled=false
-if [[ $phase_name == upgrade ]]; then
+if [[ $phase_name == upgrade && $pilot != true ]]; then
   predecessor_enabled=true
 fi
 cat >"$secrets/ks.cfg" <<KS
@@ -238,6 +255,12 @@ UNIT
 systemctl enable finite-vm-diagnostics.timer
 %end
 KS
+if [[ $pilot == true ]]; then
+  # The account label helper must not wait on Nix functional initialization.
+  # Leave all shipped OS services and their enablement untouched.
+  sed -i 's/After=local-fs.target finite-nix-selinux.service/After=local-fs.target/' "$secrets/ks.cfg"
+  sed -i '/systemctl enable finite-vm-diagnostics.timer/d' "$secrets/ks.cfg"
+fi
 bash scripts/bluebuild/prepare-vm-iso.sh "${isos[0]}" "$secrets/ks.cfg" "$state"
 bash scripts/bluebuild/prepare-vm-firmware.sh "${isos[0]}" "$variables" "$state"
 qemu-img create -f qcow2 "$state/disk.qcow2" 64G
@@ -268,6 +291,7 @@ pid=
 log_pid=
 stream_console() {
   touch "$1"
+  if [[ $pilot == true ]]; then return; fi
   tail --pid="$pid" -n +1 -F "$1" &
   log_pid=$!
 }
@@ -297,7 +321,7 @@ while kill -0 "$pid" 2>/dev/null; do
 done
 install_status=0
 wait "$pid" || install_status=$?
-wait "$log_pid" || true
+if [[ -n $log_pid ]]; then wait "$log_pid" || true; fi
 pid=
 log_pid=
 if ((install_status != 0)); then
@@ -351,6 +375,11 @@ boot_vm() {
       ssh "${ssh_args[@]}" sudo bash -s <scripts/bluebuild/check-vm-encryption.sh \
         >"$state/$phase-encryption.log"
       printf 'SSH ready for %s at %s\n' "$phase" "$(date -u +%FT%TZ)"
+      if [[ $pilot == true ]]; then
+        ssh "${ssh_args[@]}" sudo bash -s <scripts/bluebuild/check-bootability-guest.sh >"$state/$phase-pilot.json"
+        record_duration "$phase-boot-contracts" "$(($(monotonic_seconds) - started))"
+        return
+      fi
       ssh "${ssh_args[@]}" sudo bash -s <scripts/bluebuild/wait-nix.sh | tee "$state/$phase-nix.log"
       if [[ $check_security == true ]]; then
         ssh "${ssh_args[@]}" sudo bash -s <scripts/bluebuild/check-vm-security.sh \
@@ -425,6 +454,27 @@ installed_digest=$(jq -er '.status.booted.image.imageDigest' "$state/first-boot.
 jq -e --arg installed "$installed_digest" --arg index "${source##*@}" \
   '$installed == $index or any(.manifests[]?; .digest == $installed)' \
   "$state/source-manifest.json" >/dev/null
+if [[ $pilot == true ]]; then
+  [[ $local_validation == false ]]
+  [[ $source != "$target" && -n $target ]]
+  begin_stage signed-update
+  python3 scripts/bluebuild/vm-upgrade.py "$state" "$evidence" "$secrets/luks-key" "$target" ssh "${ssh_args[@]}"
+  ssh "${ssh_args[@]}" sudo bootc status --json >"$state/staged.json"
+  jq -e '.status.staged != null' "$state/staged.json" >/dev/null
+  end_stage
+  poweroff_vm
+  begin_stage candidate-reboot
+  boot_vm updated
+  ssh "${ssh_args[@]}" sudo bootc status --json >"$state/updated.json"
+  end_stage
+  # Firmware and enrollment checks are independent of functional initialization.
+  ssh "${ssh_args[@]}" env LC_ALL=C mokutil --sb-state | grep -Fx 'SecureBoot enabled' >/dev/null
+  certificate_sha=$(sha256sum "$state/sb_pubkey.der" | cut -d' ' -f1)
+  ssh "${ssh_args[@]}" sudo bash -s -- "$certificate_sha" <scripts/bluebuild/check-vm-mok.sh >"$state/pilot-mok.log"
+  python3 scripts/bluebuild/bootability-pilot.py receipt --state "$state" --source "$source" --target "$target"
+  poweroff_vm
+  exit 0
+fi
 activation_started=$(monotonic_seconds)
 ssh "${ssh_args[@]}" bash -s -- "$profile" "$phase_name" <<'GUEST' 2>&1 | python3 scripts/bluebuild/guest-timings.py "$state/guest-timings.json" --log "$state/home-init.log.gz" --secret "$secrets/luks-key"
 set -euo pipefail
