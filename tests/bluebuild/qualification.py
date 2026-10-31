@@ -460,7 +460,9 @@ class Qualification(unittest.TestCase):
         env = {'GITHUB_ACTIONS': 'true', 'GITHUB_REPOSITORY': r.REPOSITORY, 'GITHUB_REF': 'refs/heads/main'}
         with patch.dict(os.environ, env), patch.object(predecessor.qualification, 'source_inputs', return_value=self.context['inputs']), \
                 patch.object(predecessor.reuse, 'github', side_effect=api), \
-                patch.object(predecessor.subprocess, 'run', side_effect=command):
+                patch.object(predecessor.subprocess, 'run', side_effect=command),                 patch.object(predecessor.release, 'progress_download',
+                             side_effect=lambda cmd, archive, expected, timeout, maximum:
+                             command(cmd, stdout=archive, timeout=timeout)):
             bad_signature = False
             cases = [(predecessor.reuse, 'metadata', predecessor.reuse.Unavailable('expired'), 'qualification-unavailable'),
                      (predecessor.reuse, 'extract', predecessor.reuse.Unavailable('legacy'), 'legacy-evidence'),
@@ -485,6 +487,8 @@ class Qualification(unittest.TestCase):
                 transfer = ['gh', 'api', f'repos/{r.REPOSITORY}/actions/artifacts/679/zip']
                 for failure, expected in [
                     (subprocess.TimeoutExpired(transfer, predecessor.ISO_TRANSFER_TIMEOUT), predecessor.reuse.Unavailable),
+                    (predecessor.release.UnproductiveISOTransfer(transfer, predecessor.ISO_TRANSFER_TIMEOUT,
+                                                                'unproductive-rate', 123), predecessor.reuse.Unavailable),
                     (subprocess.CalledProcessError(1, transfer, stderr='HTTP 403'), subprocess.CalledProcessError),
                     (subprocess.CalledProcessError(1, transfer, stderr='HTTP 416'), subprocess.CalledProcessError),
                     (subprocess.TimeoutExpired(['cosign', 'verify'], 150), subprocess.TimeoutExpired),
@@ -496,7 +500,8 @@ class Qualification(unittest.TestCase):
                         diagnostic = predecessor.Diagnostics()
                         with self.assertRaises(expected):
                             predecessor.restore(self.profile, self.candidate.split('@')[1], destination, diagnostic)
-                        self.assertEqual(diagnostic.counts, {'iso-transfer-timeout': 1} if expected is predecessor.reuse.Unavailable else {})
+                        reason = 'iso-transfer-unproductive' if isinstance(failure, predecessor.release.UnproductiveISOTransfer) else 'iso-transfer-timeout'
+                        self.assertEqual(diagnostic.counts, {reason: 1} if expected is predecessor.reuse.Unavailable else {})
                         self.assertFalse(destination.exists())
                         self.assertEqual(sum(call == transfer for call in calls), before + 1)
                 iso_failure = None
@@ -631,12 +636,105 @@ class Qualification(unittest.TestCase):
         gh.write_text('#!' + sys.executable + '\nimport sys,time\nsys.stdout.write("partial archive"); sys.stdout.flush(); time.sleep(2)\n')
         gh.chmod(0o755)
         with patch.dict(os.environ, PATH=str(tools) + os.pathsep + os.environ['PATH']):
-            with self.assertRaises(subprocess.TimeoutExpired):
-                release.authenticated_iso(artifact, run, value, destination, download_timeout=0.05)
-        self.assertEqual(list(destination.iterdir()), [])
+            for progress in (False, True):
+                with self.subTest(progress=progress), self.assertRaises(subprocess.TimeoutExpired):
+                    release.authenticated_iso(artifact, run, value, destination, download_timeout=0.05,
+                                              progress=progress)
+                self.assertEqual(list(destination.iterdir()), [])
         for timeout in (0, -1, True, 1801, float('nan')):
             with self.assertRaisesRegex(ValueError, 'bounded positive timeout'):
                 release.authenticated_iso(artifact, run, value, destination, download_timeout=timeout)
+
+
+class TransferProgress(unittest.TestCase):
+    def trace(self, expected, received, until=595):
+        clock = [0]
+        with patch.object(release.time, 'monotonic', side_effect=lambda: clock[0]):
+            budget = release.ISOTransferProgress(expected, 600)
+            for now in range(5, until + 1, 5):
+                clock[0] = now
+                reason = budget.observe(min(expected, received(now)))
+                if reason:
+                    return now, reason
+        return None
+
+    def test_observed_slow_ratio_falls_back_after_sustained_window(self):
+        # 2.04 / 7.14 GiB after 600s, represented in MiB-sized units.
+        self.assertEqual(self.trace(7140, lambda t: int(2040 * t / 600)),
+                         (180, 'unproductive-rate'))
+
+    def test_successful_observed_and_near_cap_rates_keep_full_budget(self):
+        for duration in (131, 387, 590, 600):
+            with self.subTest(duration=duration):
+                self.assertIsNone(self.trace(7140, lambda t: int(7140 * t / duration)))
+
+    def test_startup_grace_stalls_and_late_improvement(self):
+        self.assertEqual(self.trace(7140, lambda t: 0), (120, 'no-progress'))
+        self.assertEqual(self.trace(7140, lambda t: 2000), (120, 'no-progress'))
+        self.assertIsNone(self.trace(7140, lambda t: 0 if t < 115 else 1000 + (t - 115) * 20))
+        # A fast startup followed by >90 seconds without new bytes is optional
+        # transport failure, not permission to consume the partial archive.
+        self.assertEqual(self.trace(7140, lambda t: min(t, 200) * 20), (290, 'no-progress'))
+
+    def test_recent_improvement_resets_slow_classification(self):
+        self.assertIsNone(self.trace(7140, lambda t: t * 3 if t < 150 else 450 + (t - 150) * 30))
+
+    def test_deadline_and_inconsistent_byte_counts(self):
+        clock = [0]
+        with patch.object(release.time, 'monotonic', side_effect=lambda: clock[0]):
+            budget = release.ISOTransferProgress(100, 600)
+            clock[0] = 600
+            self.assertEqual(budget.observe(100), 'deadline')
+            for sequence in ((10, 9), (101,)):
+                clock[0] = 0
+                budget = release.ISOTransferProgress(100, 600)
+                with self.assertRaises(ValueError):
+                    for size in sequence:
+                        clock[0] += 5
+                        budget.observe(size)
+
+    def fake_download(self, rate, *, status=0, expected=7140):
+        clock = [0]
+        class Child:
+            returncode = None
+            killed = False
+            def __enter__(self): return self
+            def __exit__(self, *args): return False
+            def poll(self): return self.returncode
+            def kill(self): self.killed = True; self.returncode = -9
+            def wait(self, timeout=None):
+                if self.returncode is not None: return self.returncode
+                clock[0] += timeout
+                size = min(expected, int(clock[0] * rate))
+                archive.truncate(size)
+                if size == expected or status:
+                    self.returncode = status
+                    return status
+                raise subprocess.TimeoutExpired(['gh', 'api', 'fixture'], timeout)
+        child = Child()
+        with tempfile.TemporaryFile() as archive, \
+                patch.object(release.time, 'monotonic', side_effect=lambda: clock[0]), \
+                patch.object(release.subprocess, 'Popen', return_value=child) as popen:
+            try:
+                release.progress_download(['gh', 'api', 'fixture'], archive, expected, 600, 1 << 30)
+            finally:
+                self.assertEqual(popen.call_count, 1)
+                self.child, self.elapsed = child, clock[0]
+
+    def test_unproductive_child_is_killed_and_reaped_without_retry(self):
+        with self.assertRaises(release.UnproductiveISOTransfer) as caught:
+            self.fake_download(3.4)
+        self.assertEqual(caught.exception.reason, 'unproductive-rate')
+        self.assertEqual(self.elapsed, 180)
+        self.assertTrue(self.child.killed)
+        self.assertEqual(self.child.returncode, -9)
+
+    def test_successful_child_and_http_failure_are_not_retried(self):
+        self.fake_download(20)
+        self.assertFalse(self.child.killed)
+        with self.assertRaises(subprocess.CalledProcessError):
+            self.fake_download(0, status=1)
+        self.assertFalse(self.child.killed)
 
 
 class Origin(unittest.TestCase):
