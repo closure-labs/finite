@@ -1,5 +1,6 @@
 """Small Git-graph, native job wiring and optional cached-engine fixtures."""
 import json
+import hashlib
 import copy
 import importlib.util
 import os
@@ -60,13 +61,15 @@ class RangeTests(unittest.TestCase):
             '-c', 'commit.gpgsign=false', '-c', 'core.hooksPath=/dev/null', *args], cwd=self.repo, env=self.env, stderr=subprocess.DEVNULL, text=True).strip()
 
     def commit(self, name, text):
+        (self.repo / name).parent.mkdir(parents=True, exist_ok=True)
         (self.repo / name).write_text(text)
         self.git('add', name)
         self.git('commit', '-qm', 'synthetic fixture')
 
     def run_scan(self, **values):
         env = dict(self.env, EVENT_NAME='pull_request', BASE_SHA=self.base, HEAD_SHA=self.head,
-                   RUNNER_TEMP=str(self.runtime), GITHUB_WORKSPACE=str(self.root), ARG_LOG=str(self.root / 'args.json'))
+                   RUNNER_TEMP=str(self.runtime), GITHUB_WORKSPACE=str(self.root), ARG_LOG=str(self.root / 'args.json'),
+                   GITHUB_REPOSITORY='closure-labs/finite', BASE_REPOSITORY='closure-labs/finite', BASE_REF='main')
         env.update(values)
         return subprocess.run(['bash', '-c', scan_script()], cwd=self.repo, env=env,
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -167,6 +170,160 @@ class RangeTests(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
         self.assertNotIn(token, result.stdout + result.stderr)
 
+    def real_engine(self):
+        binary = self.runtime / 'gitleaks/gitleaks'
+        binary.unlink()
+        binary.symlink_to(shutil.which('gitleaks'))
+        self.assertEqual(subprocess.check_output([str(binary), 'version'], text=True).strip(), '8.30.1')
+
+    @staticmethod
+    def finding_packet():
+        finding = {'profile': 'finite', 'component': 'pkg:rpm/fedora/example',
+                   'advisory': 'CVE-2026-12345', 'exposure': ['/usr/bin/example'],
+                   'severity': 'High', 'cvss': 8.0, 'knownExploited': False,
+                   'versions': ['1'], 'aliases': ['CVE-2026-12345'], 'fixVersions': []}
+        finding['key'] = RangeTests.packet_hash({k: finding[k] for k in
+                                               ('profile', 'component', 'advisory', 'exposure')})
+        return {'schema': 1, 'kind': 'security-findings', 'payload': {
+            'profiles': ['finite'], 'findings': [finding], 'disposition': 'accept',
+            'packet': {}, 'rationale': 'Synthetic finding identifier.', 'supersedes': []}}
+
+    @staticmethod
+    def packet_hash(value):
+        return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'),
+                                         ensure_ascii=False, allow_nan=False).encode()).hexdigest()
+
+    def inherit_packet(self, value, *, path=None, text=None):
+        # The current protected base already contains the packet. A topic merge
+        # reintroduces its bytes in a first-parent merge diff, just as in #321.
+        self.git('branch', 'packet-topic')
+        path = path or 'automation/decisions/security/' + self.packet_hash(value) + '.json'
+        self.commit(path, text if text is not None else json.dumps(value, indent=2) + '\n')
+        self.base = self.git('rev-parse', 'HEAD')
+        self.git('checkout', '-q', 'packet-topic')
+        self.commit('topic.txt', 'topic change\n')
+        self.git('merge', '-q', '--no-ff', '-m', 'inherit protected packet', 'main')
+        self.head = self.git('rev-parse', 'HEAD')
+        return path
+
+    def ignored_fingerprints(self):
+        return (self.runtime / 'verified-finding-ids.gitleaksignore').read_text().splitlines()
+
+    @unittest.skipUnless(shutil.which('gitleaks'), 'Optional cached Gitleaks binary unavailable')
+    def test_real_engine_exempts_only_recomputed_base_packet_id(self):
+        self.real_engine()
+        path = self.inherit_packet(self.finding_packet())
+        # Prove that the unmodified default engine really detects this fixture.
+        binary = self.runtime / 'gitleaks/gitleaks'
+        (self.runtime / 'no-exceptions').write_text('')
+        raw_args = [str(binary), 'git', '.', '--redact=100', '--no-banner',
+            '--config', str(self.runtime / 'gitleaks-default.toml'),
+            '--gitleaks-ignore-path', str(self.runtime / 'no-exceptions'), '--ignore-gitleaks-allow',
+            '--exit-code=2', '--log-opts=--full-history --diff-merges=first-parent ' + self.base + '..' + self.head]
+        # The config is written by the actual workflow, not candidate content.
+        self.assertEqual(self.run_scan().returncode, 0)
+        raw = subprocess.run(raw_args, cwd=self.repo, capture_output=True)
+        self.assertEqual(raw.returncode, 2)
+        ignored = self.ignored_fingerprints()
+        self.assertEqual(len(ignored), 1)
+        self.assertTrue(ignored[0].startswith(self.head + ':' + path + ':generic-api-key:'))
+        for invalid in ({'BASE_REF': 'topic'}, {'BASE_REPOSITORY': 'other/finite'},
+                        {'GITHUB_REPOSITORY': 'other/finite'}):
+            self.assertEqual(self.run_scan(**invalid).returncode, 2)
+            self.assertEqual(self.ignored_fingerprints(), [])
+        self.assertEqual(self.run_scan(EVENT_NAME='merge_group', BASE_REF='refs/heads/main').returncode, 0)
+        # Isolated Python must not import a candidate module while validating data.
+        marker = self.root / 'candidate-executed'
+        self.commit('json.py', 'from pathlib import Path\nPath(' + repr(str(marker)) + ').touch()\n')
+        self.head = self.git('rev-parse', 'HEAD')
+        self.assertEqual(self.run_scan().returncode, 0)
+        self.assertFalse(marker.exists())
+
+    @unittest.skipUnless(shutil.which('gitleaks'), 'Optional cached Gitleaks binary unavailable')
+    def test_real_engine_does_not_trust_key_labels_or_arbitrary_hex(self):
+        self.real_engine()
+        value = self.finding_packet()
+        value['payload']['findings'][0]['key'] = hashlib.sha256(b'not-a-finding-identifier').hexdigest()
+        self.inherit_packet(value)
+        self.assertEqual(self.run_scan().returncode, 2)
+        self.assertEqual(self.ignored_fingerprints(), [])
+
+    @unittest.skipUnless(shutil.which('gitleaks'), 'Optional cached Gitleaks binary unavailable')
+    def test_real_engine_does_not_exempt_modified_candidate_packets(self):
+        self.real_engine()
+        path = self.inherit_packet(self.finding_packet())
+        value = self.finding_packet()
+        finding = value['payload']['findings'][0]
+        finding['component'] = 'pkg:rpm/fedora/changed-example'
+        finding['key'] = self.packet_hash({k: finding[k] for k in
+                                           ('profile', 'component', 'advisory', 'exposure')})
+        self.commit(path, json.dumps(value, indent=2) + '\n')
+        self.head = self.git('rev-parse', 'HEAD')
+        self.assertEqual(self.run_scan().returncode, 2)
+        self.assertTrue(all(not entry.startswith(self.head + ':') for entry in self.ignored_fingerprints()))
+
+    @unittest.skipUnless(shutil.which('gitleaks'), 'Optional cached Gitleaks binary unavailable')
+    def test_real_engine_does_not_exempt_new_candidate_packets(self):
+        self.real_engine()
+        self.inherit_packet(self.finding_packet())
+        value = self.finding_packet()
+        value['payload']['rationale'] = 'Candidate introduced a new packet.'
+        new_path = 'automation/decisions/security/' + self.packet_hash(value) + '.json'
+        self.commit(new_path, json.dumps(value, indent=2) + '\n')
+        self.head = self.git('rev-parse', 'HEAD')
+        self.assertEqual(self.run_scan().returncode, 2)
+        self.assertTrue(all(not entry.startswith(self.head + ':') for entry in self.ignored_fingerprints()))
+
+    @unittest.skipUnless(shutil.which('gitleaks'), 'Optional cached Gitleaks binary unavailable')
+    def test_real_engine_still_detects_credentials_elsewhere_in_the_same_base_packet(self):
+        self.real_engine()
+        value = self.finding_packet()
+        token = 'ghp_' + '9F0r2JtQ6Lw8aD3sG7hK1mN5pR4vXyZcBeTu'
+        value['payload']['rationale'] = 'token = "' + token + '"'
+        self.inherit_packet(value)
+        result = self.run_scan()
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(len(self.ignored_fingerprints()), 1)
+        self.assertNotIn(token, result.stdout + result.stderr)
+
+    @unittest.skipUnless(shutil.which('gitleaks'), 'Optional cached Gitleaks binary unavailable')
+    def test_real_engine_binds_ids_to_the_exact_json_path(self):
+        self.real_engine()
+        value = self.finding_packet()
+        value['payload']['rationale'] = {'key': value['payload']['findings'][0]['key']}
+        self.inherit_packet(value)
+        self.assertEqual(self.run_scan().returncode, 2)
+        self.assertEqual(len(self.ignored_fingerprints()), 1)
+
+    @unittest.skipUnless(shutil.which('gitleaks'), 'Optional cached Gitleaks binary unavailable')
+    def test_real_engine_rejects_minified_adjacent_secrets(self):
+        self.real_engine()
+        value = self.finding_packet()
+        token = 'ghp_' + '9F0r2JtQ6Lw8aD3sG7hK1mN5pR4vXyZcBeTu'
+        value['payload']['rationale'] = 'token = "' + token + '"'
+        self.inherit_packet(value, text=json.dumps(value) + '\n')
+        result = self.run_scan()
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(self.ignored_fingerprints(), [])
+        self.assertNotIn(token, result.stdout + result.stderr)
+
+    @unittest.skipUnless(shutil.which('gitleaks'), 'Optional cached Gitleaks binary unavailable')
+    def test_real_engine_does_not_exempt_duplicate_json(self):
+        self.real_engine()
+        value = self.finding_packet()
+        text = (json.dumps(value, indent=2) + '\n').replace(
+            '    "rationale":', '    "rationale": "duplicate",\n    "rationale":', 1)
+        self.inherit_packet(value, text=text)
+        self.assertEqual(self.run_scan().returncode, 2)
+        self.assertEqual(self.ignored_fingerprints(), [])
+
+    @unittest.skipUnless(shutil.which('gitleaks'), 'Optional cached Gitleaks binary unavailable')
+    def test_real_engine_does_not_exempt_other_packet_paths(self):
+        self.real_engine()
+        self.inherit_packet(self.finding_packet(), path='automation/decisions/security/not-content-addressed.json')
+        self.assertEqual(self.run_scan().returncode, 2)
+        self.assertEqual(self.ignored_fingerprints(), [])
+
 
 class NativeGateTests(unittest.TestCase):
     def needs(self):
@@ -216,6 +373,8 @@ class NativeGateTests(unittest.TestCase):
         env = next(s['env'] for s in steps if s.get('name') == 'Scan complete introduced commit range')
         self.assertEqual(env['BASE_SHA'], '${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}')
         self.assertEqual(env['HEAD_SHA'], checkout['ref'])
+        self.assertEqual(env['BASE_REF'], '${{ github.event.pull_request.base.ref || github.event.merge_group.base_ref }}')
+        self.assertEqual(env['BASE_REPOSITORY'], '${{ github.event.pull_request.base.repo.full_name || github.repository }}')
 
     def test_supported_triggers_and_history_main_guard(self):
         build = yaml.load(WORKFLOW.read_text(), Loader=yaml.BaseLoader)
@@ -244,8 +403,15 @@ class NativeGateTests(unittest.TestCase):
             self.assertIn('useDefault = true', run)
             self.assertNotIn('allowlists', run)
             self.assertIn('--ignore-gitleaks-allow', run)
-            self.assertIn('--gitleaks-ignore-path "$RUNNER_TEMP/empty.gitleaksignore"', run)
+            expected = 'verified-finding-ids' if jobs is job else 'empty'
+            self.assertIn('--gitleaks-ignore-path "$RUNNER_TEMP/' + expected + '.gitleaksignore"', run)
             self.assertIn('>/dev/null 2>&1', run)
+        incoming = scan_script()
+        self.assertIn('python3 -I -', incoming)
+        self.assertIn('blob(BASE, path)', incoming)
+        self.assertIn('blob(commit, path) == oid', incoming)
+        self.assertIn("canonical_hash({k: finding[k]", incoming)
+        self.assertNotIn('import security_decisions', incoming)
 
 
 class NativeOriginTests(unittest.TestCase):

@@ -98,6 +98,8 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+          BASE_REF: ${{ github.event.pull_request.base.ref || github.event.merge_group.base_ref }}
+          BASE_REPOSITORY: ${{ github.event.pull_request.base.repo.full_name || github.repository }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
         run: |
           set -euo pipefail
@@ -111,12 +113,147 @@ jobs:
           if [[ $EVENT_NAME == merge_group ]]; then git merge-base --is-ancestor "$BASE_SHA" "$HEAD_SHA"; fi
           # This changes merge DIFF format, not commit traversal: side histories remain included.
           log_opts="--full-history --diff-merges=first-parent --text --no-ext-diff --no-textconv $BASE_SHA..$HEAD_SHA"
-          : > "$RUNNER_TEMP/empty.gitleaksignore"
+          # Only exact protected-base generated IDs receive rule/commit/path/line exceptions.
+          if ! python3 -I - <<'FINDING_IDS' >/dev/null 2>&1
+          # Trusted workflow code only; never import or execute code from the candidate.
+          import copy
+          import hashlib
+          import json
+          import os
+          from pathlib import Path, PurePosixPath
+          import re
+          import subprocess
+
+          BASE = os.environ['BASE_SHA']
+          HEAD = os.environ['HEAD_SHA']
+          PACKET = re.compile(r'automation/decisions/security/([0-9a-f]{64})\.json')
+          FIELDS = {'key', 'profile', 'component', 'advisory', 'exposure', 'severity', 'cvss',
+                    'knownExploited', 'versions', 'aliases', 'fixVersions'}
+
+
+          def git(*args):
+              return subprocess.check_output(['git', '-c', 'core.hooksPath=/dev/null', *args],
+                                             stderr=subprocess.DEVNULL)
+
+
+          def unique(pairs):
+              result = {}
+              for key, value in pairs:
+                  if key in result:
+                      raise ValueError('Duplicate JSON member')
+                  result[key] = value
+              return result
+
+
+          def canonical_hash(value):
+              return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'),
+                                              ensure_ascii=False, allow_nan=False).encode()).hexdigest()
+
+
+          def verified_lines(raw, path):
+              """Return only standalone generated-ID lines at payload.findings[].key."""
+              try:
+                  text = raw.decode('utf-8')
+                  value = json.loads(text, object_pairs_hook=unique,
+                                     parse_constant=lambda _v: (_ for _ in ()).throw(ValueError()))
+                  if (not isinstance(value, dict) or set(value) != {'schema', 'kind', 'payload'}
+                          or type(value['schema']) is not int or value['schema'] != 1
+                          or value['kind'] != 'security-findings' or canonical_hash(value) != PACKET.fullmatch(path)[1]
+                          or not isinstance(value['payload'], dict)
+                          or not isinstance(value['payload'].get('findings'), list)
+                          or text != json.dumps(value, indent=2, allow_nan=False) + '\n'):
+                      return []
+                  marked = copy.deepcopy(value)
+                  identifiers = []
+                  for index, finding in enumerate(value['payload']['findings']):
+                      if (not isinstance(finding, dict) or set(finding) != FIELDS
+                              or finding['profile'] not in ('finite', 'finite-dev')
+                              or not all(isinstance(finding[k], str) and finding[k]
+                                         for k in ('key', 'component', 'advisory'))
+                              or not re.fullmatch('[0-9a-f]{64}', finding['key'])
+                              or not (re.fullmatch(r'pkg:[a-z][a-z0-9.+-]*/[^\s?#@]+(?:[?#][^\s]+)?', finding['component'])
+                                      or re.fullmatch(r'artifact:sha256:[0-9a-f]{64}:[0-9a-f]{64}', finding['component']))
+                              or not re.fullmatch(r'(?:CVE-[0-9]{4}-[0-9]{4,}|GHSA-[a-z0-9-]+|GO-[0-9]{4}-[0-9]+|[A-Za-z][A-Za-z0-9_.:+-]{1,199})', finding['advisory'])
+                              or not isinstance(finding['exposure'], list) or not finding['exposure']
+                              or not all(isinstance(p, str) and p.startswith('/') and not p.startswith('//')
+                                         and '\\' not in p and '\x00' not in p
+                                         and not any(part in ('.', '..') for part in p.split('/'))
+                                         and str(PurePosixPath(p)) == p for p in finding['exposure'])
+                              or finding['exposure'] != sorted(set(finding['exposure']))
+                              or finding['key'] != canonical_hash({k: finding[k] for k in
+                                                                  ('profile', 'component', 'advisory', 'exposure')})):
+                          continue
+                      # Equal-length markers preserve source positions. They are inserted
+                      # only at the validated JSON path, never located by field name alone.
+                      marker = ('__FINITE_FINDING_ID_' + str(index)).ljust(64, '_')
+                      if len(marker) != 64 or marker in text:
+                          return []
+                      marked['payload']['findings'][index]['key'] = marker
+                      identifiers.append((finding['key'], marker))
+                  rendered = json.dumps(marked, indent=2, allow_nan=False) + '\n'
+                  result = []
+                  for key, marker in identifiers:
+                      quoted = json.dumps(marker)
+                      if rendered.count(quoted) != 1:
+                          return []
+                      offset = rendered.index(quoted)
+                      if text[offset:offset + 66] != json.dumps(key):
+                          return []
+                      line = text.count('\n', 0, offset) + 1
+                      # Fingerprint ignores are line-scoped. Never suppress another match
+                      # sharing a line, including minified or adjacent credential fields.
+                      if re.fullmatch(r'        "key": "' + key + r'",?', text.splitlines()[line - 1]):
+                          result.append(line)
+                  return result
+              except (ValueError, UnicodeError, TypeError, RecursionError):
+                  return []  # No exception for malformed/ambiguous packet data; scan it all.
+
+
+          def blob(revision, path):
+              entry = git('ls-tree', revision, '--', path).split(b'\t', 1)[0].split()
+              return entry[2] if len(entry) == 3 and entry[:2] == [b'100644', b'blob'] else None
+
+
+          fingerprints = set()
+          trusted = {}
+          # Only the protected main base of this repository can anchor exceptions.
+          expected_ref = 'main' if os.environ['EVENT_NAME'] == 'pull_request' else 'refs/heads/main'
+          if (os.environ.get('GITHUB_REPOSITORY') != 'closure-labs/finite'
+                  or os.environ.get('BASE_REPOSITORY') != 'closure-labs/finite'
+                  or os.environ.get('BASE_REF') != expected_ref):
+              Path(os.environ['RUNNER_TEMP'], 'verified-finding-ids.gitleaksignore').write_text('')
+              raise SystemExit(0)  # Still run the complete default scan, with no exceptions.
+          for commit in git('rev-list', '--full-history', BASE + '..' + HEAD).decode().splitlines():
+              parents = git('show', '-s', '--format=%P', commit).decode().split()
+              if parents:
+                  paths = git('diff', '--no-ext-diff', '--no-textconv', '--no-renames', '--diff-filter=AM',
+                              '--name-only', '-z', parents[0], commit, '--', 'automation/decisions/security')
+              else:
+                  paths = git('ls-tree', '-r', '--name-only', '-z', commit, '--', 'automation/decisions/security')
+              for raw_path in paths.split(b'\0'):
+                  path = raw_path.decode('utf-8', errors='replace')
+                  if not PACKET.fullmatch(path):
+                      continue
+                  if path not in trusted:
+                      oid = blob(BASE, path)
+                      trusted[path] = (oid, verified_lines(git('cat-file', 'blob', oid.decode()), path) if oid else [])
+                  oid, lines = trusted[path]
+                  # The protected event base, not candidate labels, anchors the exception.
+                  # A new or modified packet gets no exceptions, even for plausible IDs.
+                  if oid is not None and blob(commit, path) == oid:
+                      fingerprints.update(f'{commit}:{path}:generic-api-key:{line}' for line in lines)
+          Path(os.environ['RUNNER_TEMP'], 'verified-finding-ids.gitleaksignore').write_text(
+              ''.join(value + '\n' for value in sorted(fingerprints)))
+          FINDING_IDS
+          then
+            echo '::error::Unable to validate generated finding identifiers.'
+            exit 1
+          fi
           printf '[extend]\nuseDefault = true\n' > "$RUNNER_TEMP/gitleaks-default.toml"
           set +e
           timeout --signal=TERM --kill-after=15s 600s "$RUNNER_TEMP/gitleaks/gitleaks" git . \
             --config "$RUNNER_TEMP/gitleaks-default.toml" \
-            --gitleaks-ignore-path "$RUNNER_TEMP/empty.gitleaksignore" --ignore-gitleaks-allow \
+            --gitleaks-ignore-path "$RUNNER_TEMP/verified-finding-ids.gitleaksignore" --ignore-gitleaks-allow \
             --redact=100 --no-banner --log-level=error --exit-code=2 \
             --log-opts="$log_opts" >/dev/null 2>&1
           status=$?

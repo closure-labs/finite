@@ -32,10 +32,9 @@ check remains `CI gate`, whose success now includes the actual scanner job.
 This is not a synthetic successful scanner status or a settings bypass.
 
 Unlike XO, Finite has no protected-base scanner config to preserve. The workflow
-writes a fixed temporary config extending all upstream default rules; no custom
-allowlist is introduced. Candidate `.gitleaks.toml`, `.gitleaksignore` and inline
-allow comments cannot weaken it. This also permits initial rollout without a
-separate config bootstrap. Workflow changes remain subject to existing exact-tree
+writes a fixed temporary config extending all upstream default rules. Candidate
+`.gitleaks.toml`, `.gitleaksignore` and inline allow comments cannot weaken it.
+This also permits initial rollout without a separate config bootstrap. Workflow changes remain subject to existing exact-tree
 governance and human authority.
 
 ## Incoming scope and failures
@@ -52,6 +51,32 @@ Findings, engine errors and the 600-second scan timeout fail closed. Output is
 fully redacted and scanner stdout/stderr are discarded; only a fixed message and
 numeric exit status are emitted. No findings payload or report is uploaded.
 There is no baseline, size-based omission or fallback to a different range.
+
+## Verified inherited finding identifiers
+
+The incoming audit can suppress only `generic-api-key` fingerprints for generated
+`payload.findings[].key` identifiers in content-addressed
+`automation/decisions/security/<sha256>.json` packets. A packet must be a regular
+Git blob byte-identical to the trusted main event base of `closure-labs/finite`,
+have the exact version-1
+`security-findings` envelope, and match its canonical content-addressed filename.
+Each identifier is independently recomputed from `profile`, `component`,
+`advisory`, and `exposure`; a field label or 64-character hex value is insufficient.
+
+Workflow-owned standard-library code runs under isolated Python (`-I`), without
+importing candidate modules. It rejects duplicate/ambiguous JSON and requires the
+controller's pretty-printed encoding. Equal-length markers locate only validated
+JSON paths. An exception names one commit, packet path, rule, and line, and that
+line must contain only the exact identifier field. Minified or shared lines get
+no exceptions. New/modified candidate packets, arbitrary hashes, other JSON paths,
+and credentials elsewhere in the same packet remain fully scanned. No packet,
+file, commit, or history range is excluded; all other default rules remain active.
+The historical audit is unchanged. These hash checks grant no decision authority.
+
+This handles base history reappearing in first-parent merge diffs without turning
+known packet files into a secret-scanning exclusion. The generated exception file
+exists only in runner temporary storage; findings and exception payloads are not
+logged or uploaded. Generator or scanner errors fail the native gate closed.
 
 ## Explicit historical tradeoff
 
@@ -77,9 +102,11 @@ XO's separate publication-observation architecture into Finite.
 Lightweight fixtures exercise Git ranges, malformed origins, exact job naming,
 native gate failure propagation, ordinary and Dependabot PR origins, and
 read-only wiring, actual shallow clones, unrelated histories and trigger guards.
-A cached Gitleaks 8.30.1 binary additionally verifies a tiny
-synthetic history: an old finding is outside the incoming range, a new finding
-blocks despite candidate config/ignore files and an inline allow comment, and
+A cached Gitleaks 8.30.1 binary additionally verifies tiny synthetic histories
+for inherited recomputed IDs, wrong IDs, new/modified packets, duplicate/minified
+JSON, path and field relocation, adjacent credentials, and candidate Python
+module shadowing. The default-engine range fixture proves that an old finding
+is outside the incoming range, a new finding blocks despite candidate config/ignore files and an inline allow comment, and
 deleting it later does not hide it.
 No laptop builds or repository-wide history scan are needed.
 
