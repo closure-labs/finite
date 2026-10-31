@@ -302,7 +302,7 @@ def predecessor_reuse_receipt(run, artifact, value, seen):
     reasons = {'no-successful-run', 'no-qualification-artifact', 'qualification-unavailable', 'legacy-evidence',
                'candidate-or-profile-mismatch', 'generation-inputs-missing',
                'generation-inputs-changed', 'generation-ineligible', 'preserved-iso-missing',
-               'installation-tag-missing', 'iso-transfer-timeout'}
+               'installation-tag-missing', 'iso-transfer-timeout', 'iso-transfer-unproductive'}
     if (not isinstance(value, dict) or type(value.get('schema')) is not int or value['schema'] != 1
             or value.get('kind') != 'finite-predecessor-iso-reuse'
             or value.get('authorizesPublication') is not False

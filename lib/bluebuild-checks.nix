@@ -12,6 +12,7 @@
     fileset = lib.fileset.unions [
       ../.github
       ../automation
+      ../experiments/containerfile
       ../recipes
       ../files/scripts
       ../files/installer
@@ -81,6 +82,7 @@ in {
   bluebuild = check "bluebuild-contracts" [pkgs.gawk pkgs.git pkgs.glib pkgs.jq pkgs.openssl pkgs.sqlite applications.ciSecretsRun (import ./secretspec.nix {inherit pkgs;}) pkgs.yq-go (pkgs.python3.withPackages (p: [p.pyyaml]))] ''
     export PYTHONDONTWRITEBYTECODE=1
     python3 tests/automation/bluefin-upstream.py
+    python3 tests/ci/containerfile-experiment.py
     python3 tests/ci/foundation-update.py
     python3 tests/ci/github-api.py
     python3 tests/ci/publisher-health.py
@@ -223,7 +225,7 @@ in {
     python3 tests/ci/cosign-download.py
     python3 scripts/ci/lint-workflows.py
     zizmor --offline --no-config --collect=all .github
-    shellcheck --exclude=SC1091 files/scripts/*.sh scripts/bluebuild/*.sh
+    shellcheck --exclude=SC1091 files/scripts/*.sh scripts/bluebuild/*.sh experiments/containerfile/build.sh
     shellcheck -s bash files/installer/install_finite_fstab
     shellcheck files/system/usr/libexec/finite/check-initramfs
   '';

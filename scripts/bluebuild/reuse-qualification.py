@@ -54,10 +54,13 @@ def metadata(run, jobs, artifact, profile):
     if len(matches) != 1:
         raise ValueError('Qualification aggregate producer is ambiguous')
     job = matches[0]
-    if (job.get('conclusion') != 'success' or job.get('status') != 'completed'
-            or job.get('run_id') != run_id or job.get('run_attempt') != attempt
+    if (job.get('run_id') != run_id or job.get('run_attempt') != attempt
             or job.get('head_sha') != run['head_sha'] or type(job.get('id')) is not int):
         raise ValueError('Qualification aggregate did not succeed at the exact source and attempt')
+    unsuccessful = ('failure', 'cancelled', 'timed_out', 'skipped', 'neutral',
+                    'action_required', 'stale', 'startup_failure')
+    if job.get('status') != 'completed' or job.get('conclusion') not in ('success', *unsuccessful):
+        raise ValueError('Qualification aggregate has inconsistent completion metadata')
     if artifact.get('expired') is True:
         raise Unavailable('Qualification artifact expired')
     if artifact.get('digest') is None:
@@ -69,6 +72,12 @@ def metadata(run, jobs, artifact, profile):
             or not 0 < artifact['size_in_bytes'] <= ARCHIVE_LIMIT
             or binding.get('id') != run_id or binding.get('head_sha') != run['head_sha']):
         raise ValueError('Qualification artifact has no immutable origin/archive binding')
+    # A successful rerun can retain artifacts from failed earlier attempts.
+    # Authenticate each native origin before deciding eligibility; neither the
+    # run's latest success nor another attempt's aggregate can authorize it.
+    if job['conclusion'] in unsuccessful:
+        raise Unavailable(f'Qualification aggregate is ineligible: run={run_id}; '
+                          f'attempt={attempt}; job={job["id"]}; conclusion={job["conclusion"]}')
     return job['id'], attempt
 
 

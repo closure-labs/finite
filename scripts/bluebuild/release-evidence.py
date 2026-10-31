@@ -12,6 +12,8 @@ import stat
 import shutil
 import subprocess
 import tempfile
+import time
+from collections import deque
 import zipfile
 import sys
 sys.dont_write_bytecode = True
@@ -108,10 +110,93 @@ def qualified_iso_artifact(artifacts, profile, run_id, attempt):
     return matches[0] if matches else None
 
 
-def authenticated_iso(entry, run, acceptance, destination, *, download_timeout=1800):
+class UnproductiveISOTransfer(subprocess.TimeoutExpired):
+    """Optional cache transfer stopped; authenticated regeneration is required."""
+    def __init__(self, command, timeout, reason, received):
+        super().__init__(command, timeout)
+        self.reason = reason
+        self.received = received
+
+
+class ISOTransferProgress:
+    """Conservative observation only; never authenticates partial archive bytes."""
+    def __init__(self, expected, timeout):
+        self.expected, self.timeout = expected, timeout
+        self.start = self.last_progress = time.monotonic()
+        self.received = 0
+        self.samples = deque([(self.start, 0)])
+        self.slow_since = None
+
+    def observe(self, received):
+        now = time.monotonic()
+        if received < self.received or received > self.expected:
+            raise ValueError('Qualified ISO transfer has inconsistent byte progress')
+        if received > self.received:
+            self.last_progress = now
+        self.received = received
+        self.samples.append((now, received))
+        while len(self.samples) > 1 and self.samples[1][0] <= now - 60:
+            self.samples.popleft()
+        elapsed, remaining = now - self.start, self.timeout - (now - self.start)
+        if remaining <= 0:
+            return 'deadline'
+        # Let handshakes and initial bursts settle; preserve the ten-minute cap.
+        if elapsed < 120 or received == self.expected:
+            return None
+        if now - self.last_progress >= 90:
+            return 'no-progress'
+        window_start, window_bytes = self.samples[0]
+        window_time, window_progress = now - window_start, received - window_bytes
+        missing = self.expected - received
+        # Require both whole-transfer and recent 60s rates to project more than
+        # twice the remaining budget, continuously for another 60s. Improving
+        # transfers and productive transfers approaching the cap keep running.
+        slow = (window_time >= 60 and missing * elapsed > 2 * remaining * received
+                and missing * window_time > 2 * remaining * window_progress)
+        if not slow:
+            self.slow_since = None
+        elif self.slow_since is None:
+            self.slow_since = now
+        elif now - self.slow_since >= 60:
+            return 'unproductive-rate'
+        return None
+
+
+def progress_download(command, archive, expected, timeout, maximum):
+    progress = ISOTransferProgress(expected, timeout)
+    with subprocess.Popen(command, stdout=archive,
+                          preexec_fn=lambda: resource.setrlimit(resource.RLIMIT_FSIZE, (maximum, maximum))) as child:
+        try:
+            while True:
+                remaining = timeout - (time.monotonic() - progress.start)
+                if remaining <= 0:
+                    raise subprocess.TimeoutExpired(command, timeout)
+                try:
+                    code = child.wait(timeout=min(5, remaining))
+                except subprocess.TimeoutExpired:
+                    reason = progress.observe(os.fstat(archive.fileno()).st_size)
+                    if reason == 'deadline':
+                        raise subprocess.TimeoutExpired(command, timeout) from None
+                    if reason:
+                        raise UnproductiveISOTransfer(command, timeout, reason, progress.received) from None
+                    continue
+                if code:
+                    raise subprocess.CalledProcessError(code, command)
+                if time.monotonic() - progress.start >= timeout:
+                    raise subprocess.TimeoutExpired(command, timeout)
+                return
+        finally:
+            if child.poll() is None:
+                child.kill()
+                child.wait()
+
+
+def authenticated_iso(entry, run, acceptance, destination, *, download_timeout=1800, progress=False):
     # Authenticate GitHub archive metadata before extracting only fixed names.
     if type(download_timeout) not in (int, float) or not 0 < download_timeout <= 1800:
         raise ValueError('Qualified ISO transfer requires a bounded positive timeout')
+    if type(progress) is not bool:
+        raise ValueError('Qualified ISO progress policy must be explicit')
     maximum = 32 * 1024 * 1024 * 1024
     binding = entry.get('workflow_run', {})
     if (type(entry.get('id')) is not int or type(entry.get('size_in_bytes')) is not int
@@ -125,9 +210,17 @@ def authenticated_iso(entry, run, acceptance, destination, *, download_timeout=1
         raise ValueError('Invalid qualified ISO filename')
     with tempfile.TemporaryFile() as archive:
         try:
-            subprocess.run(['gh', 'api', f'repos/{REPOSITORY}/actions/artifacts/{entry["id"]}/zip'],
-                stdout=archive, check=True, timeout=download_timeout,
-                preexec_fn=lambda: resource.setrlimit(resource.RLIMIT_FSIZE, (maximum, maximum)))
+            command = ['gh', 'api', f'repos/{REPOSITORY}/actions/artifacts/{entry["id"]}/zip']
+            if progress:
+                progress_download(command, archive, entry['size_in_bytes'], download_timeout, maximum)
+            else:
+                subprocess.run(command, stdout=archive, check=True, timeout=download_timeout,
+                    preexec_fn=lambda: resource.setrlimit(resource.RLIMIT_FSIZE, (maximum, maximum)))
+        except UnproductiveISOTransfer as error:
+            print(f'Qualified ISO artifact {entry["id"]} transfer stopped early: {error.reason}; '
+                  f'{error.received}/{entry["size_in_bytes"]} bytes received; '
+                  'no archive members extracted', file=sys.stderr)
+            raise
         except subprocess.TimeoutExpired:
             print(f'Qualified ISO artifact {entry["id"]} transfer timed out after {download_timeout}s: '
                   f'{os.fstat(archive.fileno()).st_size}/{entry["size_in_bytes"]} bytes received; '

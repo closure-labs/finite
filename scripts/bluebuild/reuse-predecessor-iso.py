@@ -16,7 +16,7 @@ sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[2]
 # This optional transfer must not consume the old 30-minute release-download
 # budget before qualification even starts. Successful observed full restores
-# took 131/387 seconds; keep one ten-minute transfer attempt, then regenerate
+# took 131/387 seconds; allow up to ten minutes with progress-aware early fallback, then regenerate
 # the installer for the same signed predecessor through the existing fallback.
 ISO_TRANSFER_TIMEOUT = 600
 
@@ -41,7 +41,7 @@ MISS_REASONS = frozenset((
     'no-successful-run', 'no-qualification-artifact', 'qualification-unavailable', 'legacy-evidence',
     'candidate-or-profile-mismatch', 'generation-inputs-missing',
     'generation-inputs-changed', 'generation-ineligible', 'preserved-iso-missing',
-    'installation-tag-missing', 'iso-transfer-timeout'))
+    'installation-tag-missing', 'iso-transfer-timeout', 'iso-transfer-unproductive'))
 
 
 class Ineligible(reuse.Unavailable):
@@ -202,7 +202,16 @@ def restore(profile, digest, output, diagnostics=None):
                 staging.mkdir()
                 try:
                     release.authenticated_iso(preserved, origin_run, value, staging,
-                                              download_timeout=ISO_TRANSFER_TIMEOUT)
+                                              download_timeout=ISO_TRANSFER_TIMEOUT, progress=True)
+                except release.UnproductiveISOTransfer as error:
+                    expected = ['gh', 'api', f'repos/{reuse.REPOSITORY}/actions/artifacts/{preserved["id"]}/zip']
+                    if error.cmd != expected or error.timeout != ISO_TRANSFER_TIMEOUT:
+                        raise
+                    diagnostics.miss('iso-transfer-unproductive')
+                    raise reuse.Unavailable(
+                        f'Predecessor ISO artifact {preserved["id"]} transfer stopped: {error.reason}; '
+                        f'{error.received}/{preserved["size_in_bytes"]} bytes; '
+                        f'construct the installer for the same signed predecessor {digest}') from error
                 except subprocess.TimeoutExpired as error:
                     expected = ['gh', 'api', f'repos/{reuse.REPOSITORY}/actions/artifacts/{preserved["id"]}/zip']
                     if error.cmd != expected or error.timeout != ISO_TRANSFER_TIMEOUT:
