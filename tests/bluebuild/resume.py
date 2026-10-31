@@ -256,12 +256,86 @@ class Resume(unittest.TestCase):
             for name, content in self.files.items(): archive.writestr(name, content)
             archive.writestr('../../outside', 'never extracted')
         data = raw.getvalue()
-        artifact = {**self.artifact, 'digest': 'sha256:' + hashlib.sha256(data).hexdigest()}
+        artifact = {**self.artifact, 'digest': 'sha256:' + hashlib.sha256(data).hexdigest(),
+                    'size_in_bytes': len(data)}
         def download(command, stdout, **kwargs): stdout.write(data)
         with patch.object(pub.subprocess, 'run', side_effect=download):
             self.assertEqual(pub.origin_files(artifact, self.profile), self.files)
             with self.assertRaisesRegex(ValueError, 'digest mismatch'):
-                pub.origin_files(self.artifact, self.profile)
+                pub.origin_files({**artifact, 'digest': self.artifact['digest']}, self.profile)
+
+    def zip_receipt(self, files=None):
+        raw = io.BytesIO()
+        with zipfile.ZipFile(raw, 'w', compression=zipfile.ZIP_DEFLATED) as archive:
+            for name, content in (self.files if files is None else files).items():
+                archive.writestr(name, content)
+        data = raw.getvalue()
+        return data, {**self.artifact, 'size_in_bytes': len(data),
+                      'digest': 'sha256:' + hashlib.sha256(data).hexdigest()}
+
+    def test_single_transfer_keeps_resume_budget_and_cleanup(self):
+        data, artifact = self.zip_receipt()
+        streams = []
+        def download(command, stdout, **options):
+            self.assertEqual(command, ['gh', 'api', 'repos/closure-labs/finite/actions/artifacts/456/zip'])
+            self.assertEqual(options['timeout'], 180)
+            self.assertTrue(options['check'])
+            with patch('archive_read.resource.setrlimit') as limit:
+                options['preexec_fn']()
+                import resource
+                limit.assert_called_once_with(resource.RLIMIT_FSIZE, (64 * 1024**2, 64 * 1024**2))
+            streams.append(stdout); stdout.write(data)
+        with patch.object(pub.subprocess, 'run', side_effect=download) as transfer:
+            self.assertEqual(pub.origin_files(artifact, self.profile), self.files)
+            transfer.assert_called_once()
+        self.assertTrue(streams[0].closed)
+        for error in (subprocess.TimeoutExpired('gh', 180), subprocess.CalledProcessError(1, 'gh')):
+            with patch.object(pub.subprocess, 'run', side_effect=error) as transfer:
+                with self.assertRaises(type(error)): pub.origin_files(artifact, self.profile)
+                transfer.assert_called_once()
+
+    def test_bad_native_archive_metadata_rejected_before_transfer(self):
+        _, artifact = self.zip_receipt()
+        for key, value in (('size_in_bytes', True), ('size_in_bytes', 0),
+                           ('size_in_bytes', 64 * 1024**2 + 1), ('digest', 'invalid'), ('id', -1)):
+            with self.subTest(key=key, value=value), patch.object(pub.subprocess, 'run') as transfer:
+                with self.assertRaises(ValueError): pub.origin_files({**artifact, key: value}, self.profile)
+                transfer.assert_not_called()
+
+    def test_archive_size_digest_and_zip_corruption_fail_closed(self):
+        data, artifact = self.zip_receipt()
+        for body, metadata in ((data, {**artifact, 'size_in_bytes': len(data) + 1}),
+                               (data, {**artifact, 'digest': 'sha256:' + '0' * 64}),
+                               (b'not a zip', {**artifact, 'size_in_bytes': 9,
+                                              'digest': 'sha256:' + hashlib.sha256(b'not a zip').hexdigest()})):
+            def download(command, stdout, **options): stdout.write(body)
+            with self.subTest(body=len(body)), patch.object(pub.subprocess, 'run', side_effect=download):
+                with self.assertRaises((ValueError, zipfile.BadZipFile)):
+                    pub.origin_files(metadata, self.profile)
+
+    def test_selected_members_keep_exact_names_and_four_mib_limit(self):
+        for replacement in (None, b'', b'x' * (4 * 1024**2 + 1)):
+            files = dict(self.files)
+            if replacement is None: del files['finite-publication.json']
+            else: files['finite-publication.json'] = replacement
+            data, artifact = self.zip_receipt(files)
+            def download(command, stdout, **options): stdout.write(data)
+            with self.subTest(size=None if replacement is None else len(replacement)), \
+                    patch.object(pub.subprocess, 'run', side_effect=download):
+                with self.assertRaisesRegex(ValueError, 'Missing, duplicate or oversized'):
+                    pub.origin_files(artifact, self.profile)
+        raw = io.BytesIO()
+        with zipfile.ZipFile(raw, 'w') as archive:
+            for name, content in self.files.items(): archive.writestr(name, content)
+            import warnings
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore'); archive.writestr('finite-publication.json', b'duplicate')
+        data = raw.getvalue()
+        artifact = {**self.artifact, 'size_in_bytes': len(data), 'digest': 'sha256:' + hashlib.sha256(data).hexdigest()}
+        def download(command, stdout, **options): stdout.write(data)
+        with patch.object(pub.subprocess, 'run', side_effect=download):
+            with self.assertRaisesRegex(ValueError, 'Missing, duplicate or oversized'):
+                pub.origin_files(artifact, self.profile)
 
 
 class PromotionState(unittest.TestCase):
