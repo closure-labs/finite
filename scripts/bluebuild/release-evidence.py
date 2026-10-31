@@ -16,7 +16,7 @@ import zipfile
 import sys
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "ci"))
-from github_api import get_json
+from github_api import get_json, get_metadata
 
 desktop_spec = importlib.util.spec_from_file_location('desktop_qualification', Path(__file__).with_name('desktop-qualification.py'))
 desktop = importlib.util.module_from_spec(desktop_spec)
@@ -53,9 +53,8 @@ def latest_artifact(artifacts, prefix):
 
 
 def artifact_names(run_id):
-    pages = json.loads(subprocess.check_output(
-        ['gh', 'api', '--paginate', '--slurp', f'repos/{REPOSITORY}/actions/runs/{run_id}/artifacts?per_page=100'],
-        text=True, timeout=150))
+    pages = get_metadata(f'repos/{REPOSITORY}/actions/runs/{run_id}/artifacts?per_page=100',
+                         collection='artifacts')
     return [entry for page in pages for entry in page['artifacts']]
 
 

@@ -651,6 +651,13 @@ class Origin(unittest.TestCase):
         self.artifact = {'id': 678, 'name': 'qualification-finite-123-1', 'expired': False,
             'size_in_bytes': 2345, 'digest': 'sha256:' + 'b' * 64, 'workflow_run': {'id': 123, 'head_sha': 'a' * 40}}
 
+    def test_qualification_metadata_uses_shared_reader_for_each_collection(self):
+        for path, key in (('actions/runs/123/artifacts?per_page=100', 'artifacts'),
+                          ('actions/runs/123/attempts/1/jobs?per_page=100', 'jobs')):
+            with self.subTest(path=path), patch.object(r, 'get_metadata', return_value=[]) as get:
+                self.assertEqual(r.github(path, True), [])
+            get.assert_called_once_with('repos/closure-labs/finite/' + path, collection=key)
+
     def test_original_available_rerun_artifact_requires_its_exact_successful_attempt(self):
         self.assertEqual(r.metadata(self.run, [self.job], self.artifact, self.profile), (45, 1))
         for field, value in [('conclusion', 'failure'), ('run_attempt', 2), ('run_id', 124), ('head_sha', 'c' * 40)]:
