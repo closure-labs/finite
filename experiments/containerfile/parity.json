@@ -1,0 +1,252 @@
+{
+  "schema": 1,
+  "purpose": "Unpublished Containerfile parity exploration; not a production builder",
+  "recipeContracts": {
+    "recipes/finite.yml": {
+      "version": 1,
+      "name": "finite",
+      "description": "Finite bluefin with Home Manager and generic-x86_64",
+      "base-image": "ghcr.io/ublue-os/bluefin",
+      "blue-build-tag": "v0.9.37",
+      "alt-tags": [
+        "finite",
+        "latest"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "Finite",
+        "org.opencontainers.image.vendor": "Closure Labs",
+        "org.opencontainers.image.url": "https://github.com/closure-labs/finite",
+        "org.opencontainers.image.revision": "${GITHUB_SHA:-local}",
+        "io.finite.profile": "finite",
+        "io.finite.foundation": "bluefin",
+        "io.finite.hardware": "generic-x86_64"
+      },
+      "modules": [
+        {
+          "type": "script@v1",
+          "snippets": [
+            "install -Dm755 \"$CONFIG_DIRECTORY/scripts/upstream-kernel.py\" /usr/libexec/finite/check-upstream-kernel",
+            "python3 /usr/libexec/finite/check-upstream-kernel snapshot"
+          ]
+        },
+        {
+          "from-file": "shared/base.yml"
+        },
+        {
+          "type": "script@v1",
+          "snippets": [
+            "bash \"$CONFIG_DIRECTORY/scripts/profile.sh\" finite bluefin generic-x86_64 finite"
+          ]
+        },
+        {
+          "type": "initramfs@v1"
+        },
+        {
+          "type": "script@v1",
+          "snippets": [
+            "python3 /usr/libexec/finite/check-upstream-kernel verify"
+          ]
+        },
+        {
+          "from-file": "shared/final.yml"
+        }
+      ]
+    },
+    "recipes/finite-dev.yml": {
+      "version": 1,
+      "name": "finite",
+      "description": "Finite bluefin-dx with Home Manager and generic-x86_64",
+      "base-image": "ghcr.io/ublue-os/bluefin-dx",
+      "blue-build-tag": "v0.9.37",
+      "alt-tags": [
+        "finite-dev"
+      ],
+      "labels": {
+        "org.opencontainers.image.title": "Finite Dev",
+        "org.opencontainers.image.vendor": "Closure Labs",
+        "org.opencontainers.image.url": "https://github.com/closure-labs/finite",
+        "org.opencontainers.image.revision": "${GITHUB_SHA:-local}",
+        "io.finite.profile": "finite-dev",
+        "io.finite.foundation": "bluefin-dx",
+        "io.finite.hardware": "generic-x86_64"
+      },
+      "modules": [
+        {
+          "type": "script@v1",
+          "snippets": [
+            "install -Dm755 \"$CONFIG_DIRECTORY/scripts/upstream-kernel.py\" /usr/libexec/finite/check-upstream-kernel",
+            "python3 /usr/libexec/finite/check-upstream-kernel snapshot"
+          ]
+        },
+        {
+          "from-file": "shared/base.yml"
+        },
+        {
+          "type": "script@v1",
+          "snippets": [
+            "bash \"$CONFIG_DIRECTORY/scripts/profile.sh\" finite-dev bluefin-dx generic-x86_64 finite-dev"
+          ]
+        },
+        {
+          "type": "initramfs@v1"
+        },
+        {
+          "type": "script@v1",
+          "snippets": [
+            "python3 /usr/libexec/finite/check-upstream-kernel verify"
+          ]
+        },
+        {
+          "from-file": "shared/final.yml"
+        }
+      ]
+    },
+    "recipes/shared/base.yml": {
+      "modules": [
+        {
+          "type": "script@v1",
+          "scripts": [
+            "nix-identities.sh"
+          ]
+        },
+        {
+          "type": "dnf@v1",
+          "repos": {
+            "files": [
+              "terra.repo"
+            ]
+          },
+          "install": {
+            "packages": [
+              "cloud-init",
+              "jq",
+              "python3",
+              "libnotify",
+              "nix",
+              "nix-daemon",
+              "yq",
+              "zenity",
+              "fprintd",
+              "fprintd-pam",
+              "libfprint",
+              "pam-u2f",
+              "pamu2fcfg",
+              "libfido2",
+              "opensc",
+              "pcsc-lite",
+              "yubikey-manager"
+            ]
+          }
+        },
+        {
+          "type": "script@v1",
+          "snippets": [
+            "python3 \"$CONFIG_DIRECTORY/scripts/security-remediate.py\"",
+            "python3 \"$CONFIG_DIRECTORY/scripts/tailscale-security.py\""
+          ]
+        },
+        {
+          "type": "files@v1",
+          "files": [
+            {
+              "source": "system",
+              "destination": "/"
+            },
+            {
+              "source": "payload/home-manager-template",
+              "destination": "/usr/share/finite/home-manager-template"
+            },
+            {
+              "source": "payload/home-profile-catalog.json",
+              "destination": "/usr/share/finite/home-profile-catalog.json"
+            },
+            {
+              "source": "payload/foundation",
+              "destination": "/usr/share/finite/foundation"
+            },
+            {
+              "source": "payload/foundation-source.json",
+              "destination": "/usr/share/finite/foundation-source.json"
+            },
+            {
+              "source": "payload/version",
+              "destination": "/usr/share/finite/version"
+            }
+          ]
+        },
+        {
+          "type": "script@v1",
+          "scripts": [
+            "nix-install.sh",
+            "authselect.sh"
+          ]
+        },
+        {
+          "type": "systemd@v1",
+          "system": {
+            "enabled": [
+              "pcscd.socket",
+              "wifi-ac-power.timer",
+              "finite-firstboot-rpm-ostree.service"
+            ]
+          },
+          "user": {
+            "enabled": [
+              "finite-home-first-login.service",
+              "finite-app-update-notify.service"
+            ]
+          }
+        }
+      ]
+    },
+    "recipes/shared/final.yml": {
+      "modules": [
+        {
+          "type": "os-release@v1",
+          "properties": {
+            "NAME": "Finite",
+            "PRETTY_NAME": "Finite",
+            "HOME_URL": "https://github.com/closure-labs/finite",
+            "SUPPORT_URL": "https://github.com/closure-labs/finite/issues"
+          }
+        },
+        {
+          "type": "signing@v1"
+        },
+        {
+          "type": "script@v1",
+          "scripts": [
+            "finalize.sh"
+          ]
+        }
+      ]
+    }
+  },
+  "requiredFeatures": {
+    "authenticatedBase": "scripts/ci/bluefin-upstream.py",
+    "runtimeCosign": "scripts/ci/cosign-runtime.py",
+    "upstreamKernel": "files/scripts/upstream-kernel.py",
+    "nixIdentities": "files/scripts/nix-identities.sh",
+    "securityRemediation": "files/scripts/security-remediate.py",
+    "tailscaleSecurity": "files/scripts/tailscale-security.py",
+    "nixLifecycle": "files/scripts/nix-install.sh",
+    "pamAndFido2": "files/scripts/authselect.sh",
+    "profileAndChannel": "files/scripts/profile.sh",
+    "finalRuntimeContracts": "scripts/bluebuild/verify-image.sh",
+    "finalize": "files/scripts/finalize.sh"
+  },
+  "intentionalDifferences": [
+    "No BlueBuild recipe/module execution or Nushell added by the builder",
+    "No push, signing, promotion, ISO generation or boot qualification",
+    "Distinct experimental build identity; production input identity retained separately",
+    "Local-only image name; runtime update channel and signature policy remain production defaults"
+  ],
+  "runtimeChecksNotReplaced": [
+    "encrypted fresh install",
+    "upgrade from exact published predecessor",
+    "SELinux and Nix sockets at boot",
+    "first graphical login and Home Manager activation",
+    "rollback and mutable-state preservation",
+    "hostile NoCloud rejection"
+  ]
+}

@@ -23,6 +23,9 @@ Development version: `0.8.3-dev`. The next stable release is 0.8.3.
 
 ### Fixed
 
+- Skip bound unsuccessful historical qualification aggregates during reuse discovery;
+  retain exact-attempt success and corrupt-evidence rejection.
+
 - Stop persistently unproductive preserved-predecessor ISO downloads early,
   keeping the ten-minute cap and authenticated same-predecessor regeneration.
 

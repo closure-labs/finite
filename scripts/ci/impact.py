@@ -14,6 +14,16 @@ PROFILES = {
 # These files qualify an existing immutable image; they are not filesystem
 # inputs. Keep source/security checks while reusing already validated builds.
 QUALIFICATION_ONLY = {
+    # Local-only alternative builder: never production filesystem inputs.
+    'experiments/containerfile/Containerfile',
+    'experiments/containerfile/LICENSE.bluebuild',
+    'experiments/containerfile/build.sh',
+    'experiments/containerfile/image-config.py',
+    'experiments/containerfile/parity.json',
+    'experiments/containerfile/prepare.py',
+    'experiments/containerfile/signing-policy.json',
+    '.github/workflows/containerfile-experiment.yml',
+    'tests/ci/containerfile-experiment.py',
     # Static analysis scheduling does not change or qualify OS image inputs.
     '.github/workflows/codeql.yml',
     'scripts/ci/lint-workflows.py',

@@ -755,6 +755,33 @@ class Origin(unittest.TestCase):
             with self.subTest(field=field), self.assertRaises(ValueError):
                 r.metadata(self.run, [{**self.job, field: value}], self.artifact, self.profile)
 
+    def test_unsuccessful_native_attempts_are_ineligible_with_sanitized_origin(self):
+        for conclusion in ('failure', 'cancelled', 'timed_out', 'skipped', 'neutral',
+                           'action_required', 'stale', 'startup_failure'):
+            with self.subTest(conclusion=conclusion), self.assertRaises(r.Unavailable) as caught:
+                r.metadata(self.run, [{**self.job, 'conclusion': conclusion}], self.artifact, self.profile)
+            self.assertEqual(str(caught.exception), 'Qualification aggregate is ineligible: '
+                             'run=123; attempt=1; job=45; conclusion=' + conclusion)
+
+    def test_failed_attempt_cannot_hide_corrupt_origin_or_archive_binding(self):
+        failed = {**self.job, 'conclusion': 'failure'}
+        changes = [('run_attempt', 2), ('run_id', 124), ('head_sha', 'c' * 40), ('id', '45')]
+        for field, value in changes:
+            with self.subTest(field=field), self.assertRaises(ValueError) as caught:
+                r.metadata(self.run, [{**failed, field: value}], self.artifact, self.profile)
+            self.assertNotIsInstance(caught.exception, r.Unavailable)
+        for artifact in ({**self.artifact, 'digest': 'invalid'},
+                         {**self.artifact, 'workflow_run': {'id': 124, 'head_sha': 'a' * 40}}):
+            with self.assertRaises(ValueError) as caught:
+                r.metadata(self.run, [failed], artifact, self.profile)
+            self.assertNotIsInstance(caught.exception, r.Unavailable)
+        for status, conclusion in (('in_progress', 'success'), ('completed', None), ('completed', 'unknown')):
+            for artifact in (self.artifact, {**self.artifact, 'expired': True}, {**self.artifact, 'digest': None}):
+                with self.subTest(status=status, conclusion=conclusion, artifact=artifact), self.assertRaises(ValueError) as caught:
+                    r.metadata(self.run, [{**self.job, 'status': status, 'conclusion': conclusion}],
+                               artifact, self.profile)
+                self.assertNotIsInstance(caught.exception, r.Unavailable)
+
     def test_legacy_producer_or_missing_hash_falls_back_to_fresh(self):
         with self.assertRaises(r.Unavailable):
             r.metadata(self.run, [], self.artifact, self.profile)
@@ -795,24 +822,35 @@ class LazyReuse(unittest.TestCase):
         self.empty = False
         self.corrupt_archive = False
         self.omit_desktop = False
+        self.history = None
+        self.downloads = []
 
     def exercise(self):
-        archive = io.BytesIO()
-        with zipfile.ZipFile(archive, 'w') as zipped:
-            zipped.writestr('finite-acceptance.json', json.dumps(self.acceptance))
-            if not self.omit_desktop:
-                zipped.writestr('finite-desktop-acceptance.json', self.desktop)
-        data = archive.getvalue()
-        artifact = {**self.artifact, 'size_in_bytes': len(data),
-                    'digest': 'sha256:' + hashlib.sha256(data).hexdigest()}
+        artifacts, archives, jobs = [], {}, {}
+        for attempt, conclusion, acceptance in (self.history or [(1, 'success', self.acceptance)]):
+            archive = io.BytesIO()
+            with zipfile.ZipFile(archive, 'w') as zipped:
+                zipped.writestr('finite-acceptance.json', json.dumps(acceptance))
+                if not self.omit_desktop:
+                    zipped.writestr('finite-desktop-acceptance.json', self.desktop)
+            data = archive.getvalue()
+            artifact = {**self.artifact, 'id': self.artifact['id'] + attempt - 1,
+                        'name': f'qualification-finite-{self.run["id"]}-{attempt}',
+                        'size_in_bytes': len(data), 'digest': 'sha256:' + hashlib.sha256(data).hexdigest()}
+            artifacts.append(artifact)
+            archives[artifact['id']] = data
+            jobs[attempt] = {**self.job, 'run_attempt': attempt, 'conclusion': conclusion}
         def api(path, paginated=False):
             self.calls.append(path)
             if '/runs?' in path: return {'workflow_runs': [] if self.empty else [self.run]}
-            if '/artifacts?' in path: return [{'artifacts': [artifact]}]
-            if '/jobs?' in path: return [{'jobs': [self.job]}]
+            if '/artifacts?' in path: return [{'artifacts': artifacts}]
+            if '/jobs?' in path: return [{'jobs': [jobs[int(path.split('/attempts/')[1].split('/')[0])]]}]
             raise AssertionError('Unexpected API request: ' + path)
         def download(command, **kwargs):
-            self.assertEqual(command, ['gh', 'api', f'repos/{r.REPOSITORY}/actions/artifacts/{artifact["id"]}/zip'])
+            artifact_id = int(command[-1].split('/artifacts/')[1].split('/')[0])
+            self.assertEqual(command, ['gh', 'api', f'repos/{r.REPOSITORY}/actions/artifacts/{artifact_id}/zip'])
+            self.downloads.append(artifact_id)
+            data = archives[artifact_id]
             kwargs['stdout'].write(b'x' * len(data) if self.corrupt_archive else data)
         with patch.dict(os.environ, self.env), patch.object(r, 'github', side_effect=api), \
                 patch.object(r.subprocess, 'run', side_effect=download), \
@@ -821,6 +859,29 @@ class LazyReuse(unittest.TestCase):
                 patch.object(r, 'validate', wraps=r.validate) as validate:
             self.prepare, self.validate = prepare, validate
             return r.reuse('finite', self.output, prepare_tools=True)
+
+    def test_successful_rerun_mismatch_then_failed_old_artifact_falls_back_to_fresh(self):
+        self.history = [(1, 'failure', self.acceptance),
+                        (2, 'success', {**self.acceptance, 'candidate': 'different'})]
+        with self.assertRaisesRegex(r.Unavailable, 'No fresh exact qualification'):
+            self.exercise()
+        self.assertEqual(self.downloads, [679])
+        self.assertEqual([path for path in self.calls if '/attempts/' in path],
+                         ['actions/runs/123/attempts/2/jobs?per_page=100',
+                          'actions/runs/123/attempts/1/jobs?per_page=100'])
+        self.prepare.assert_not_called()
+        self.validate.assert_not_called()
+        self.assertFalse(self.output.exists())
+
+    def test_successful_rerun_accepts_only_its_own_bound_aggregate_and_artifact(self):
+        self.history = [(1, 'failure', self.acceptance), (2, 'success', self.acceptance)]
+        origin = self.exercise()
+        self.assertEqual(origin['attempt'], 2)
+        self.assertEqual(origin['artifactId'], 679)
+        self.assertEqual(origin['job'], self.job['id'])
+        self.assertEqual(self.downloads, [679])
+        self.validate.assert_called_once()
+        self.assertNotIn('actions/runs/123/attempts/1/jobs?per_page=100', self.calls)
 
     def test_no_evidence_does_not_prepare_context_or_create_output(self):
         self.empty = True
