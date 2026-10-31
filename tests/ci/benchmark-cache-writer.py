@@ -136,7 +136,7 @@ class Receipts(unittest.TestCase):
                     patch.object(benchmark.subprocess, 'check_output', return_value='nix fixture'), \
                     patch.object(benchmark.metrics, 'snapshot', return_value={}), \
                     patch.object(benchmark.metrics, 'delta', return_value={'seconds': 1}), \
-                    patch.object(benchmark.cache, 'realize_roots', return_value=roots('candidate')) as realize, \
+                    patch.object(benchmark.cache, 'diagnostic_roots', return_value=roots('candidate')) as realize, \
                     patch.object(benchmark.cache, 'push') as push, patch.object(benchmark.cache, 'boundary') as publication:
                 benchmark.benchmark('candidate', 1, start, output)
             self.assertEqual(realize.call_count, 2)
@@ -153,7 +153,7 @@ class Receipts(unittest.TestCase):
                     patch.object(benchmark.subprocess, 'check_output', return_value='nix fixture'), \
                     patch.object(benchmark.metrics, 'snapshot', return_value={}), \
                     patch.object(benchmark.metrics, 'delta', return_value={'seconds': 1}), \
-                    patch.object(benchmark.cache, 'realize_roots', side_effect=ValueError('bad output')), self.assertRaises(ValueError):
+                    patch.object(benchmark.cache, 'diagnostic_roots', side_effect=ValueError('bad output')), self.assertRaises(ValueError):
                 benchmark.benchmark('legacy', 1, start, output)
             record = json.loads(output.read_text())
             self.assertEqual(record['status'], 'error')
@@ -171,7 +171,7 @@ class Receipts(unittest.TestCase):
                     patch.object(benchmark.subprocess, 'check_output', return_value='nix fixture'), \
                     patch.object(benchmark.metrics, 'snapshot', return_value={}), \
                     patch.object(benchmark.metrics, 'delta', return_value={'seconds': 1}), \
-                    patch.object(benchmark.cache, 'realize_roots', side_effect=benchmark.cache.ToolIdentityError(diagnostics)), \
+                    patch.object(benchmark.cache, 'diagnostic_roots', side_effect=benchmark.cache.ToolIdentityError(diagnostics)), \
                     self.assertRaises(benchmark.cache.ToolIdentityError):
                 benchmark.benchmark('candidate', 1, start, output)
             record = json.loads(output.read_text())

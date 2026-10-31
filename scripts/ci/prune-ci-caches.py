@@ -7,6 +7,9 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from github_api import get_metadata
 
 REPOSITORY = 'closure-labs/finite'
 MAIN_REF = 'refs/heads/main'
@@ -24,10 +27,7 @@ PATTERNS = {
 
 
 def list_caches():
-    raw = subprocess.check_output(
-        ['gh', 'api', '--paginate', '--slurp',
-         f'repos/{REPOSITORY}/actions/caches?per_page=100'], text=True, timeout=180)
-    pages = json.loads(raw)
+    pages = get_metadata(f'repos/{REPOSITORY}/actions/caches?per_page=100', collection='actions_caches')
     if not isinstance(pages, list) or not pages:
         raise ValueError('Expected paginated cache API responses')
     caches, seen, total = [], set(), None

@@ -25,14 +25,98 @@ def clean_env():
             if key not in CREDENTIALS and not key.startswith(('SECRETSPEC_', 'GITHUB_ACTIONS_'))}
 
 
+PROOF_BYTES = 1024 ** 2
+PROOF_PATHS = 128
+
+
+def decode(raw):
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError('Duplicate proof metadata key')
+            result[key] = value
+        return result
+    return json.loads(raw, object_pairs_hook=unique)
+
+
+def query(command):
+    return subprocess.check_output(command, cwd=ROOT, env=clean_env(), text=True, timeout=300).strip()
+
+
+def proof_identities():
+    """Evaluate only the current repository's explicit checks, never arbitrary roots."""
+    system = query(['nix', 'eval', '--file', 'lib/project-policy.nix', 'platform.system', '--raw'])
+    if not re.fullmatch(r'[a-z0-9_]+-linux', system):
+        raise ValueError('Invalid proof platform')
+    expression = ('checks: builtins.mapAttrs (name: check: '
+                  '{ drvPath = check.drvPath; outputPath = check.outPath; }) checks')
+    identities = decode(query(['nix', 'eval', '--accept-flake-config', '--no-update-lock-file',
+        '--no-write-lock-file', '--json', '.#checks.' + system, '--apply', expression]))
+    if not isinstance(identities, dict) or not 0 < len(identities) <= PROOF_PATHS:
+        raise ValueError('Invalid current check inventory')
+    outputs, derivations = set(), set()
+    for name, identity in identities.items():
+        if (not re.fullmatch(r'[A-Za-z0-9_-]+', name) or not isinstance(identity, dict)
+                or set(identity) != {'drvPath', 'outputPath'}):
+            raise ValueError('Invalid current check identity')
+        drv, out = identity['drvPath'], identity['outputPath']
+        if (not isinstance(drv, str) or not STORE.fullmatch(drv) or not drv.endswith('.drv')
+                or not isinstance(out, str) or not STORE.fullmatch(out) or out.endswith('.drv')
+                or drv in derivations or out in outputs):
+            raise ValueError('Ambiguous current check outputs')
+        derivations.add(drv)
+        outputs.add(out)
+    return identities
+
+
+def proof_closure(paths, identities=None):
+    """Bound the deduplicated recursive union and reject every non-proof reference."""
+    if (not isinstance(paths, list) or not 0 < len(paths) <= PROOF_PATHS
+            or any(not isinstance(path, str) or not STORE.fullmatch(path) for path in paths)
+            or len(paths) != len(set(paths))):
+        raise ValueError('Invalid proof root selection')
+    identities = proof_identities() if identities is None else identities
+    allowed = {identity['outputPath'] for identity in identities.values()}
+    if not set(paths) <= allowed:
+        raise ValueError('Only current check outputs may be published')
+    records = decode(query(['nix', 'path-info', '--json', '--json-format', '1', '--recursive', *sorted(paths)]))
+    if (not isinstance(records, dict) or not set(paths) <= records.keys()
+            or not set(records) <= allowed or not 0 < len(records) <= PROOF_PATHS):
+        raise ValueError('Unexpected or oversized proof closure path inventory')
+    total, normalized = 0, {}
+    for path, record in records.items():
+        size = record.get('narSize') if isinstance(record, dict) else None
+        refs = record.get('references') if isinstance(record, dict) else None
+        nar_hash = record.get('narHash') if isinstance(record, dict) else None
+        if (type(size) is not int or not 0 < size <= PROOF_BYTES or not isinstance(refs, list)
+                or any(not isinstance(ref, str) or ref not in records for ref in refs)
+                or len(refs) != len(set(refs)) or not isinstance(nar_hash, str)
+                or not re.fullmatch(r'sha256-[A-Za-z0-9+/]{43}=', nar_hash)):
+            raise ValueError('Invalid proof closure size, hash or references')
+        total += size
+        if total > PROOF_BYTES:
+            raise ValueError('Proof union exceeds 1 MiB')
+        normalized[path] = {'narHash': nar_hash, 'narSize': size, 'references': sorted(refs)}
+    reachable, pending = set(), list(paths)
+    while pending:
+        path = pending.pop()
+        if path not in reachable:
+            reachable.add(path)
+            pending.extend(normalized[path]['references'])
+    if reachable != set(records):
+        raise ValueError('Unreachable entries in proof closure')
+    return {'bytes': total, 'pathCount': len(normalized), 'paths': normalized}
+
+
 def metadata(paths, remote=False):
     command = ['nix', 'path-info', '--json', '--json-format', '1', '--recursive']
     if remote:
         command += ['--store', CACHE]
-    value = json.loads(subprocess.check_output(command + paths, env=clean_env(),
+    value = decode(subprocess.check_output(command + paths, env=clean_env(),
                                                text=True, timeout=900))
     if (not isinstance(value, dict) or not set(paths) <= value.keys()
-            or len(value) > 20000 or any(not STORE.fullmatch(path) or not isinstance(record, dict)
+            or len(value) > PROOF_PATHS or any(not STORE.fullmatch(path) or not isinstance(record, dict)
                 or not isinstance(record.get('narHash'), str) for path, record in value.items())):
         raise ValueError('Invalid Cachix closure metadata')
     return {path: record['narHash'] for path, record in value.items()}
@@ -63,8 +147,8 @@ def run_devenv(command, *, cwd, env):
 
 
 def publish(paths, *, provider='local'):
-    paths = sorted(set(paths))
-    if (not 0 < len(paths) <= 128 or any(not STORE.fullmatch(path) or path.endswith('.drv') for path in paths)
+    paths = list(paths)
+    if (not 0 < len(paths) <= 128 or any(not isinstance(path, str) or not STORE.fullmatch(path) or path.endswith('.drv') for path in paths)
             or provider not in ('local', 'env')):
         raise ValueError('Invalid native Cachix publication request')
     env = clean_env()
@@ -76,7 +160,7 @@ def publish(paths, *, provider='local'):
         env['FINITE_CACHIX_TOKEN'] = os.environ['FINITE_CACHIX_TOKEN']
     elif any(os.environ.get(key) for key in CREDENTIALS):
         raise ValueError('Local cache publication resolves its configured backend, not inherited credentials')
-    expected = metadata(paths)
+    expected = proof_closure(paths)
     with tempfile.TemporaryDirectory(prefix='finite-devenv-cache-') as temporary:
         directory = Path(temporary)
         # Keep transient netrc credentials inside the owned directory even if
@@ -118,24 +202,19 @@ def publish(paths, *, provider='local'):
             if attempt == 2:
                 raise
             time.sleep(2 ** (attempt + 1))
-    if observed != expected:
+    if observed != {path: record['narHash'] for path, record in expected['paths'].items()}:
         raise ValueError('Cachix does not contain the complete matching closure')
 
 
 def local_proofs(proof_file):
-    if proof_file.is_symlink() or not proof_file.is_file() or proof_file.stat().st_size > 65536:
+    if (proof_file.is_symlink() or not proof_file.is_file() or proof_file.stat().st_size > 65536
+            or proof_file.stat().st_mode & 0o777 != 0o600 or proof_file.stat().st_uid != os.getuid()):
         raise ValueError('Invalid validated proof handoff')
     paths = proof_file.read_text().splitlines()
     if (not 0 < len(paths) <= 128 or len(paths) != len(set(paths))
-            or any(not STORE.fullmatch(path) or path.endswith('.drv') for path in paths)):
+            or any(not isinstance(path, str) or not STORE.fullmatch(path) or path.endswith('.drv') for path in paths)):
         raise ValueError('Invalid validated proof roots')
-    sizes = json.loads(subprocess.check_output(
-        ['nix', 'path-info', '--json', '--json-format', '1', '--closure-size', *paths],
-        env=clean_env(), text=True, timeout=300))
-    if (not isinstance(sizes, dict) or set(sizes) != set(paths)
-            or any(not isinstance(record, dict) or type(record.get('closureSize')) is not int or not 0 <= record['closureSize'] <= 1024 ** 2
-                   for record in sizes.values())):
-        raise ValueError('Only bounded check proofs may be published locally')
+
     publish(paths)
 
 

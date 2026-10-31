@@ -105,6 +105,7 @@ class DownloadTests(unittest.TestCase):
         # Include the experiment's isolated signature fixture. Check call sites,
         # not just a count that could hide a missing caller plus a duplicate.
         self.assertCountEqual([(path, job) for path, job, _step in calls], [
+            ('bootability-pilot.yml', 'pilot'),
             ('containerfile-experiment.yml', 'signature-fixture'),
             ('desktop-security-evidence.yml', 'evidence'),
             ('iso.yml', 'iso'),

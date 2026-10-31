@@ -15,10 +15,11 @@ import resource
 import subprocess
 import sys
 import tempfile
-import time
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "scripts/ci"))
+from github_api import GitHubReadError, bounded_metadata, get_metadata
 
 
 def module(name, path):
@@ -35,33 +36,8 @@ publication = reuse.publication
 
 
 def github(path, paginated=False):
-    """Retry bounded metadata GETs; authentication and invalid evidence stay fatal."""
-    command = ['gh', 'api']
-    if paginated:
-        command.extend(['--paginate', '--slurp'])
-    command.append('repos/' + publication.REPOSITORY + '/' + path)
-    for attempt in range(3):
-        try:
-            result = subprocess.run(command, capture_output=True, text=True, timeout=35, check=True)
-        except subprocess.CalledProcessError as error:
-            # gh reports HTTP status in stderr; do not retry authorization,
-            # missing artifacts, malformed JSON or failed evidence checks.
-            status = re.search(r'HTTP ([0-9]{3})\b', error.stderr or '')
-            if not status or int(status[1]) not in (408, 429, 500, 502, 503, 504):
-                print('GitHub inventory metadata request failed: ' +
-                      (status[0] if status else f'gh exit {error.returncode}'), file=sys.stderr)
-                raise
-            if attempt == 2:
-                print('GitHub inventory metadata retry budget exhausted: ' + status[0], file=sys.stderr)
-                raise
-        except subprocess.TimeoutExpired:
-            if attempt == 2:
-                raise
-        else:
-            return json.loads(result.stdout)
-        delay = 2 ** (attempt + 1)
-        print(f'GitHub inventory metadata transport failed; retry {attempt + 1}/2 in {delay}s', file=sys.stderr)
-        time.sleep(delay)
+    collection = path.split('?')[0].rsplit('/', 1)[-1] if paginated else None
+    return get_metadata('repos/' + publication.REPOSITORY + '/' + path, collection=collection)
 
 
 def hosted():
@@ -114,6 +90,7 @@ def inventory_source(record, run, profile, image):
     return source
 
 
+@bounded_metadata
 def retrieve(image, profile, output, origin_run=None):
     hosted()
     if not reuse.security.IMAGE.fullmatch(image) or profile not in reuse.security.PROFILES:
@@ -227,7 +204,7 @@ def main(argv=None):
     except (inventory.Unavailable, reuse.Unavailable) as error:
         print(str(error), file=sys.stderr)
         return 3
-    except (ValueError, KeyError, TypeError, AttributeError, OSError, subprocess.SubprocessError, zipfile.BadZipFile) as error:
+    except (GitHubReadError, ValueError, KeyError, TypeError, AttributeError, OSError, subprocess.SubprocessError, zipfile.BadZipFile) as error:
         print('Inventory reuse rejected: ' + str(error), file=sys.stderr)
         return 2
 

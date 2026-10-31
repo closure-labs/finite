@@ -8,12 +8,15 @@ import os
 from pathlib import Path
 import re
 import subprocess
-import tempfile
+import sys
 import zipfile
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'ci'))
 
 spec = importlib.util.spec_from_file_location('bluefin_upstream', Path(__file__).resolve().parents[1] / 'ci/bluefin-upstream.py')
 upstream = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(upstream)
+from archive_read import single_archive_reader
 security_spec = importlib.util.spec_from_file_location('security_policy', Path(__file__).with_name('security-policy.py'))
 security = importlib.util.module_from_spec(security_spec)
 security_spec.loader.exec_module(security)
@@ -83,16 +86,7 @@ def origin_metadata(run, jobs, artifacts, profile, run_id):
 def origin_files(artifact, profile):
     """Read only bounded named evidence files; never extract artifact paths."""
     names = (f'{profile}-publication.json', f'{profile}-image-ref.txt', f'{profile}.Containerfile')
-    with tempfile.TemporaryFile() as archive:
-        subprocess.run(['gh', 'api', f'repos/{REPOSITORY}/actions/artifacts/{artifact["id"]}/zip'],
-                       stdout=archive, check=True, timeout=180)
-        archive.seek(0, 2)
-        if not 0 < archive.tell() <= 64 * 1024 * 1024:
-            raise ValueError('Origin artifact exceeds its archive bound')
-        archive.seek(0)
-        if 'sha256:' + hashlib.file_digest(archive, 'sha256').hexdigest() != artifact['digest']:
-            raise ValueError('Origin artifact archive digest mismatch')
-        archive.seek(0)
+    with single_archive_reader(artifact, REPOSITORY, max_bytes=64 * 1024**2, timeout=180) as archive:
         with zipfile.ZipFile(archive) as zipped:
             entries = zipped.infolist()
             result = {}

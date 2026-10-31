@@ -15,6 +15,8 @@ import sys
 sys.dont_write_bytecode = True
 import tempfile
 import zipfile
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "ci"))
+from github_api import GitHubReadError, bounded_metadata, get_metadata
 
 ROOT = Path(__file__).resolve().parents[2]
 SPEC = importlib.util.spec_from_file_location('qualification_context', ROOT / 'scripts/bluebuild/qualification-context.py')
@@ -30,8 +32,8 @@ class Unavailable(ValueError):
 
 
 def github(path, paginated=False):
-    arguments = ['gh', 'api'] + (['--paginate', '--slurp'] if paginated else [])
-    return json.loads(subprocess.check_output(arguments + ['repos/' + REPOSITORY + '/' + path], text=True, timeout=150))
+    collection = path.split('?')[0].rsplit('/', 1)[-1] if paginated else None
+    return get_metadata('repos/' + REPOSITORY + '/' + path, collection=collection)
 
 
 def metadata(run, jobs, artifact, profile):
@@ -192,6 +194,7 @@ def prepare_context():
         return json.loads((directory / 'qualification-context.json').read_text())
 
 
+@bounded_metadata
 def reuse(profile, output, *, prepare_tools=False):
     if (os.environ.get('GITHUB_ACTIONS') != 'true' or os.environ.get('GITHUB_REPOSITORY') != REPOSITORY
             or os.environ.get('GITHUB_REF') != 'refs/heads/main'
@@ -265,6 +268,7 @@ def reuse(profile, output, *, prepare_tools=False):
     raise Unavailable('No fresh exact qualification artifact found')
 
 
+@bounded_metadata
 def prune_iso(profile, apply=False):
     """Keep at most two successful ISO generations per profile in the pilot."""
     if (os.environ.get('GITHUB_ACTIONS') != 'true' or os.environ.get('GITHUB_REPOSITORY') != REPOSITORY
@@ -313,7 +317,7 @@ def main():
     except Unavailable as error:
         print(str(error))
         return 3
-    except (ValueError, KeyError, TypeError, OSError, subprocess.SubprocessError, zipfile.BadZipFile) as error:
+    except (GitHubReadError, ValueError, KeyError, TypeError, OSError, subprocess.SubprocessError, zipfile.BadZipFile) as error:
         print('Qualification reuse rejected: ' + str(error))
         return 2
 

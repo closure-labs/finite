@@ -7,7 +7,11 @@ on:
         description: Hosted experiment; qualification never promotes an image
         type: choice
         default: tool-setup
-        options: [tool-setup, cache-lanes, qualification, options-smoke, installer-smoke]
+        options: [tool-setup, cache-lanes, qualification, options-smoke, installer-smoke, bootability-pilot]
+      full_suite:
+        description: Select all advisory functional suites for bootability-pilot
+        type: boolean
+        default: false
       installer_compression:
         description: Runtime compression for validation=qualification; production remains unchanged
         type: choice
@@ -210,3 +214,18 @@ jobs:
       validation_only: true
       installer_compression: ${{ inputs.installer_compression }}
       installer_benchmark: ${{ inputs.installer_benchmark }}
+
+  bootability-pilot:
+    if: inputs.validation == 'bootability-pilot' && github.repository == 'closure-labs/finite' && github.ref != 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
+    uses: $/.github/workflows/bootability-pilot.yml
+    with:
+      profile: ${{ inputs.profile }}
+      candidate: ${{ inputs.digest }}
+      previous: ${{ inputs.previous }}
+      identity: ${{ inputs.identity }}
+      source_revision: ${{ inputs.source_revision }}
+      selection_base: ${{ inputs.source_revision }}
+      full_suite: ${{ inputs.full_suite }}
