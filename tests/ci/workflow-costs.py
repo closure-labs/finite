@@ -599,6 +599,18 @@ class Costs(unittest.TestCase):
                            self.scanner_reader(value, 'finite-predecessor-reuse.json'))
         self.assertEqual(report['receiptCoverage']['unmatched'], 1)
 
+    def test_progress_fallback_observation_is_retained_without_inventing_reuse_success(self):
+        artifact, value = self.predecessor_observation()
+        for reason in ('iso-transfer-timeout', 'iso-transfer-unproductive'):
+            with self.subTest(reason=reason):
+                report = self.observe()
+                cost_receipts.join(report, [artifact], self.scanner_reader(
+                    {**value, 'missCounts': {reason: 1}}, 'finite-predecessor-reuse.json'))
+                job = report['jobs'][0]
+                self.assertEqual(job['predecessorReuseDiagnostics']['missCounts'], {reason: 1})
+                self.assertIsNone(job['predecessorReuse']['hit'])
+                self.assertEqual(sum(row['runnerSeconds'] for row in costs.aggregate([report])), 120)
+
     def test_predecessor_observations_reject_forged_origins_and_unbounded_values(self):
         artifact, value = self.predecessor_observation()
         for field, bad in [('schema', True), ('kind', 'other'), ('authorizesPublication', True),
