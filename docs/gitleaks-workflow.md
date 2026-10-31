@@ -21,9 +21,11 @@ Finite already admits the native `build.yml` PR execution by immutable
 repository, workflow, branch and current head. Keeping the scan inside that
 execution covers ordinary contributors and Dependabot without extending the
 execution-approval allowlist. Existing author, reviewer and execution-approval
-requirements still apply. The scanner uses only `contents: read`, no candidate
-scripts or local actions, no persisted checkout credentials, secrets, write or
-OIDC grants. Governance already covers both the workflow and gate implementation.
+requirements still apply. Gitleaks executes no candidate scripts or local actions,
+and receives no persisted checkout credentials, secrets, write or OIDC grants.
+The job additionally grants `actions: read` only for protected-base payload
+authentication; its API token is not passed to Gitleaks. Governance already covers
+both the workflow and gate implementation.
 
 The gate consumes GitHub's same-run `needs.repository-secrets.result`, rather
 than searching for another run by name. An unrelated workflow, historical job,
@@ -68,8 +70,9 @@ importing candidate modules. It rejects duplicate/ambiguous JSON and requires th
 controller's pretty-printed encoding. Equal-length markers locate only validated
 JSON paths. An exception names one commit, packet path, rule, and line, and that
 line must contain only the exact identifier field. Minified or shared lines get
-no exceptions. New/modified candidate packets, arbitrary hashes, other JSON paths,
-and credentials elsewhere in the same packet remain fully scanned. No packet,
+no exceptions. New/modified candidate packets get no inherited exceptions.
+Arbitrary hashes, other JSON paths and credentials elsewhere in the same packet
+remain fully scanned. No packet,
 file, commit, or history range is excluded; all other default rules remain active.
 The historical audit is unchanged. These hash checks grant no decision authority.
 
@@ -77,6 +80,43 @@ This handles base history reappearing in first-parent merge diffs without turnin
 known packet files into a secret-scanning exclusion. The generated exception file
 exists only in runner temporary storage; findings and exception payloads are not
 logged or uploaded. Generator or scanner errors fail the native gate closed.
+
+
+## Authenticated new packet identifiers
+
+A separate protected-base verifier may grant exact `generic-api-key`
+commit/path/line exceptions for one new immutable security packet in an incoming
+range. Revocations retain their existing full scan and separate authority gate;
+they receive no new exceptions or new authentication gate. It never imports PR code. The verifier and all authentication helpers are
+loaded from the exact GitHub event base checkout; an older base lacking the
+verifier grants no new exceptions. The read-only Actions token belongs only to
+that verifier step, not Gitleaks. No review, risk acceptance, signing or release
+authority is granted by this operation.
+
+The verifier reuses `decision_controller.validate_proposal_packet`: live native
+producer repository/workflow/source/run/attempt, source ancestry in protected
+main, exact artifact identities/digests, OCI manifest/layer hashes and canonical
+request hash, both downloaded Actions ZIP sizes/digests, complete matching native
+file inventories, and reevaluated normalized findings must all agree. Metadata
+alone cannot grant an exception. Canonical JSON, duplicate rejection, complete
+finding identity recomputation and equal-length structural markers restrict each
+exception to the standalone `payload.findings[].key` field.
+
+The new path is bounded to one immutable packet, a 2 MiB proposal document,
+128 OCI members, 1,538 MiB of OCI payload including its manifest, and a 600-second
+authentication timeout. Existing tighter native ZIP/member/expansion limits still
+apply. Authentication failure clears the new receipt and fails the job; the full
+Gitleaks scan still runs. Existing inherited-base semantics, scanner pin,
+complete history range, default rules and credential redaction are unchanged.
+
+The dedicated read-only fixture workflow checksum-pins the same real Gitleaks
+engine and exercises genuine secret signals, forged provenance/IDs, modified ZIP
+and OCI bytes, duplicate/minified/relocated fields and path spoofing without
+network authentication. The actual #345 payload was also independently fetched
+and authenticated: 34 native files matched, all 596 IDs recomputed, and its 593
+generated-ID detections were precisely covered. #345 itself is untouched. Its
+old event base cannot gain this behavior from a stale rerun; the policy must be
+reviewed/merged and fresh validation bound to a base containing the verifier.
 
 ## Explicit historical tradeoff
 
