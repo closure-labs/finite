@@ -56,7 +56,7 @@ def contract(root=ROOT):
 
 
 def authorized_revision():
-    """Temporary PR-321 opt-in, never a general PR build permission."""
+    """Temporary exact internal experiment opt-ins, never production authority."""
     if os.environ.get('GITHUB_REPOSITORY') != 'closure-labs/finite':
         raise ValueError('Full experiment requires the authorized repository')
     event = os.environ.get('GITHUB_EVENT_NAME')
@@ -70,15 +70,17 @@ def authorized_revision():
         pull = payload.get('pull_request', {})
         head = pull.get('head', {})
         repository = head.get('repo', {})
-        if (payload.get('number') != 321 or pull.get('number') != 321
+        number = payload.get('number')
+        branches = {321: 'codex/explore-containerfile', 341: 'codex/matched-builder-benchmark'}
+        if (type(number) is not int or number not in branches or pull.get('number') != number
                 or payload.get('action') not in ('opened', 'synchronize', 'reopened')
                 or payload.get('repository', {}).get('full_name') != 'closure-labs/finite'
                 or repository.get('full_name') != 'closure-labs/finite'
                 or repository.get('fork') is not False
-                or head.get('ref') != 'codex/explore-containerfile'
+                or head.get('ref') != branches[number]
                 or pull.get('base', {}).get('ref') != 'main'
                 or pull.get('base', {}).get('repo', {}).get('full_name') != 'closure-labs/finite'
-                or os.environ.get('GITHUB_REF') != 'refs/pull/321/merge'):
+                or os.environ.get('GITHUB_REF') != f'refs/pull/{number}/merge'):
             raise ValueError('PR is outside the temporary experiment opt-in')
         revision = head.get('sha', '')
     else:
@@ -118,6 +120,10 @@ def prepare(profile, root=ROOT):
     implementation = {str(p.relative_to(root)): sha(p) for p in sorted(
         (root / 'experiments/containerfile').rglob('*')) if p.is_file() and '__pycache__' not in p.parts}
     workflow = '.github/workflows/containerfile-experiment.yml'
+    if (os.environ.get('GITHUB_ACTIONS') == 'true'
+            and os.environ.get('GITHUB_EVENT_NAME') == 'pull_request'
+            and json.loads(Path(os.environ['GITHUB_EVENT_PATH']).read_text()).get('number') == 341):
+        workflow = '.github/workflows/builder-benchmark.yml'
     implementation[workflow] = sha(root / workflow)
     experiment = 'containerfile-v1:' + hashlib.sha256(json.dumps(
         {'reference': reference, 'files': implementation}, sort_keys=True).encode()).hexdigest()

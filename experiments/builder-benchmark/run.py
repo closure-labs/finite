@@ -99,6 +99,14 @@ def build_command(builder, dockerfile, context, tag, metadata, output, args):
     return result + [str(context)]
 
 
+def benchmark_revision():
+    revision = containerfile.authorized_revision()
+    payload = json.loads(Path(os.environ['GITHUB_EVENT_PATH']).read_text())
+    if payload.get('number') != 341:
+        raise ValueError('Matched benchmark requires its exact authorized PR')
+    return revision
+
+
 def verify(directory, image, plan):
     info = json.loads(subprocess.check_output(['docker', 'image', 'inspect', image], text=True))[0]
     labels = info.get('Config', {}).get('Labels', {})
@@ -156,7 +164,7 @@ def main():
     args = parser.parse_args()
     if os.environ.get('GITHUB_ACTIONS') != 'true' or os.environ.get('GITHUB_EVENT_NAME') != 'pull_request':
         raise ValueError('Authorized internal hosted PR only')
-    revision = containerfile.authorized_revision()
+    revision = benchmark_revision()
     if subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip() != revision:
         raise ValueError('Checkout differs from authorized head')
     # The base snapshot is part of the plan, never a moving main checkout.

@@ -64,21 +64,21 @@ class Benchmark(unittest.TestCase):
             runtime.assert_not_called()
 
     def test_internal_branch_authorization_is_exact(self):
-        payload = {'number': 999, 'action': 'opened', 'repository': {'full_name': 'closure-labs/finite'},
-            'pull_request': {'number': 999, 'head': {'sha': 'a' * 40, 'ref': 'codex/matched-builder-benchmark',
+        payload = {'number': 341, 'action': 'opened', 'repository': {'full_name': 'closure-labs/finite'},
+            'pull_request': {'number': 341, 'head': {'sha': 'a' * 40, 'ref': 'codex/matched-builder-benchmark',
                 'repo': {'full_name': 'closure-labs/finite', 'fork': False}},
                 'base': {'ref': 'main', 'repo': {'full_name': 'closure-labs/finite'}}}}
         with tempfile.TemporaryDirectory() as directory:
             event = Path(directory) / 'event.json'; event.write_text(json.dumps(payload))
             env = {'GITHUB_ACTIONS': 'true', 'GITHUB_REPOSITORY': 'closure-labs/finite',
                    'GITHUB_EVENT_NAME': 'pull_request', 'GITHUB_EVENT_PATH': str(event),
-                   'GITHUB_REF': 'refs/pull/999/merge'}
+                   'GITHUB_REF': 'refs/pull/341/merge'}
             with patch.dict(os.environ, env, clear=True):
-                self.assertEqual(benchmark.containerfile.authorized_revision(), 'a' * 40)
+                self.assertEqual(benchmark.benchmark_revision(), 'a' * 40)
                 for key, value in [('ref', 'other-branch'), ('repo', {'full_name': 'other/finite', 'fork': True})]:
                     original = payload['pull_request']['head'][key]
                     payload['pull_request']['head'][key] = value; event.write_text(json.dumps(payload))
-                    with self.assertRaises(ValueError): benchmark.containerfile.authorized_revision()
+                    with self.assertRaises(ValueError): benchmark.benchmark_revision()
                     payload['pull_request']['head'][key] = original
 
     def test_plan_contract_matches_current_recipes_and_foundation(self):
