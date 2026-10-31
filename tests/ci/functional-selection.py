@@ -48,6 +48,9 @@ class Selection(unittest.TestCase):
         self.assertEqual(m.select(['flake.lock'], before, after)['suites'], ['home-manager'])
         after['nodes']['hm']['locked']['url'] = 'https://api.flakehub.com/f/pinned/nix-community/home-manager/../../other/source.tar.gz'
         self.assertEqual(set(m.select(['flake.lock'], before, after)['suites']), m.ALL)
+        before = lock(); after = copy.deepcopy(before)
+        after['nodes']['root']['inputs']['new-shared-behavior'] = 'hm'
+        self.assertEqual(set(m.select(['flake.lock'], before, after)['suites']), m.ALL)
         malformed = lock(); malformed['nodes']['hm']['locked'] = {}
         self.assertEqual(set(m.select([], malformed, malformed)['suites']), m.ALL)
         before = lock(); after = copy.deepcopy(before)
@@ -77,7 +80,7 @@ class Selection(unittest.TestCase):
     def test_additions_removals_and_malformed_evidence(self):
         before = lock(); after = copy.deepcopy(before)
         del after['nodes']['f']['inputs']['home-manager']
-        self.assertEqual(m.select(['flake.lock'], before, after)['suites'], ['home-manager'])
+        self.assertEqual(set(m.select(['flake.lock'], before, after)['suites']), m.ALL)
         after = copy.deepcopy(before); after['nodes']['hm']['locked'] = None
         self.assertEqual(set(m.select(['flake.lock'], before, after)['suites']), m.ALL)
 

@@ -75,7 +75,8 @@ def select(paths, before, after, foundation_paths=None, full=False):
                                 r'https://api\.flakehub\.com/f/pinned/nix-community/home-manager/'
                                 r'[0-9][A-Za-z0-9%+._-]*/[0-9a-f-]{36}/source\.tar\.gz', value.get('url', ''))))
                 origins = [v[path] for v in versions.values() if path in v]
-                if origins and all(known_hm(value) for value in origins):
+                known_boundary = path == 'foundation/home-manager' and all(path in v for v in versions.values())
+                if known_boundary and origins and all(known_hm(value) for value in origins):
                     add({'home-manager'}, 'resolved Home Manager version: ' + path)
                 else:
                     add(ALL, 'Home Manager source identity changed/unknown: ' + path)
