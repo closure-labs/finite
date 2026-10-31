@@ -74,7 +74,10 @@ jobs:
     name: Repository security audit
     if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      actions: read
     steps:
       - name: Checkout exact incoming head as data
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -93,7 +96,53 @@ jobs:
           echo "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  $RUNNER_TEMP/gitleaks.tar.gz" | sha256sum --check --status
           tar -xzf "$RUNNER_TEMP/gitleaks.tar.gz" -C "$RUNNER_TEMP/gitleaks" gitleaks
           test "$("$RUNNER_TEMP/gitleaks/gitleaks" version)" = 8.30.1
+      - name: Checkout protected base scanner tools
+        if: github.repository == 'closure-labs/finite'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+          path: trusted-scanner
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Authenticate new packet finding IDs
+        if: github.repository == 'closure-labs/finite'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+          BASE_REF: ${{ github.event.pull_request.base.ref || github.event.merge_group.base_ref }}
+          BASE_REPOSITORY: ${{ github.event.pull_request.base.repo.full_name || github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
+        run: |
+          set -euo pipefail
+          umask 077
+          output="$RUNNER_TEMP/authenticated-finding-ids.gitleaksignore"
+          : >"$output"
+          expected_ref=main
+          if [[ $EVENT_NAME == merge_group ]]; then expected_ref=refs/heads/main; fi
+          [[ $BASE_REPOSITORY == closure-labs/finite && $BASE_REF == "$expected_ref" ]]
+          [[ $BASE_SHA =~ ^[0-9a-f]{40}$ && $HEAD_SHA =~ ^[0-9a-f]{40}$ ]]
+          trusted="$GITHUB_WORKSPACE/trusted-scanner"
+          test "$(git -C "$trusted" rev-parse HEAD)" = "$BASE_SHA"
+          helper="$trusted/scripts/ci/finding_id_packets.py"
+          # Until this change is reviewed and merged, old protected bases grant
+          # no new exceptions. Never fall back to a helper from PR contents.
+          if [[ ! -f $helper ]]; then exit 0; fi
+          if [[ -z $(git -C "$GITHUB_WORKSPACE/candidate" log --format= --name-only "$BASE_SHA..$HEAD_SHA" -- automation/decisions/security) ]]; then exit 0; fi
+          mkdir -p "$RUNNER_TEMP/packet-tools"
+          curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 --max-time 60 \
+            https://github.com/oras-project/oras/releases/download/v1.3.4/oras_1.3.4_linux_amd64.tar.gz \
+            -o "$RUNNER_TEMP/oras.tar.gz"
+          echo "f27adb935022d94df8dc77719c322dda592c78a0d57a6f7dcdd8d900b248c454  $RUNNER_TEMP/oras.tar.gz" | sha256sum --check --status
+          tar -xzf "$RUNNER_TEMP/oras.tar.gz" -C "$RUNNER_TEMP/packet-tools" oras
+          export PATH="$RUNNER_TEMP/packet-tools:$PATH"
+          if ! timeout --signal=TERM --kill-after=15s 600s python3 -I "$helper" \
+            --candidate "$GITHUB_WORKSPACE/candidate" --output "$output" >/dev/null 2>&1; then
+            echo '::error::New finding-ID packet authentication failed; no new exceptions granted.'
+            exit 1
+          fi
       - name: Scan complete introduced commit range
+        if: ${{ !cancelled() }}
         working-directory: candidate
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -248,6 +297,11 @@ jobs:
           then
             echo '::error::Unable to validate generated finding identifiers.'
             exit 1
+          fi
+          # Only the protected-base verifier can create this separate receipt.
+          # Candidate code is never executed and Gitleaks receives no API token.
+          if [[ -f $RUNNER_TEMP/authenticated-finding-ids.gitleaksignore ]]; then
+            cat "$RUNNER_TEMP/authenticated-finding-ids.gitleaksignore" >> "$RUNNER_TEMP/verified-finding-ids.gitleaksignore"
           fi
           printf '[extend]\nuseDefault = true\n' > "$RUNNER_TEMP/gitleaks-default.toml"
           set +e
