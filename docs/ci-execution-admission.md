@@ -81,6 +81,37 @@ Actual blocked-run execution remains rollout evidence to collect naturally;
 fixtures establish authorization boundaries without creating extra fork or VM
 runs just to populate a report.
 
+## Current-base execution binding
+
+A PR run executes a synthetic merge, while the pin classifier compares the
+merge base with the PR head. Those are different sources when main has
+advanced independently. A main-only workflow job or local-action change could
+therefore escape classification even though the final author/head/run checks
+pass. This is an admission-validation gap; it is not evidence of exploitation,
+a disclosed secret or a write token actually issued by GitHub.
+
+Official Dependabot execution now requires its classified base to equal the
+live native `refs/heads/main` commit, and its merge base to equal that base.
+Thus current main must already be included in the PR head. A clean merge of
+that base adds no unseen executable changes to the head. A stale or diverged
+branch must be refreshed before this automatic execution exception applies;
+no human execution review is substituted for that proof.
+
+The worker rechecks the live main ref after classification and once more after
+the final native run read, before its sole approval POST. The initial PR base
+must remain unchanged across validations. Missing, malformed, unavailable or
+moving main evidence fails closed. Existing PR/head/source/run/workflow/attempt
+checks and current-head human merge approval remain in force. GitHub offers no
+atomic head/base/attempt condition on its approval endpoint, so these are live
+revalidation checks rather than a claim of an atomic transaction.
+
+Real Git fixtures create divergent main-only workflow and composite changes,
+verify they survive a clean synthetic merge and pin classification, and require
+execution admission to reject them. Refreshed heads, including a harmless main
+update, pass. The ancestry guard closes the unseen-base divergence gap; it is
+not a general privilege scanner for unsafe code already trusted in current
+main. The ordinary PR permission audit below remains a separate requirement.
+
 ## Unprivileged PR execution
 
 The admitted workflows are Build Finite, CodeQL Advanced and the metadata-only

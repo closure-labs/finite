@@ -99,6 +99,7 @@ in {
     python3 tests/ci/security-decisions.py
     python3 tests/ci/decision-authority.py
     python3 tests/ci/dependency-update.py
+    python3 tests/ci/dependency-execution-source.py
     python3 tests/ci/ci-run-admission.py
     python3 tests/ci/decision-revocation.py
     python3 tests/ci/validation-preflight.py
