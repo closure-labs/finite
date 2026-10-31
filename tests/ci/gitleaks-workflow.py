@@ -632,6 +632,17 @@ class NewPacketTests(unittest.TestCase):
         self.assertEqual(output.read_text(), '')
         self.assertEqual(output.stat().st_mode & 0o777, 0o600)
 
+    def test_existing_revocations_retain_full_scan_without_new_exceptions_or_auth_gate(self):
+        value = copy.deepcopy(self.value)
+        value['kind'] = 'security-revocation'
+        value['payload']['disposition'] = 'revoked'
+        value['payload']['supersedes'] = ['a' * 64]
+        self.add_packet(value)
+        value['payload']['rationale'] += ' second revocation'
+        self.add_packet(value)
+        self.assertEqual(self.receipt(), [])
+        self.assertEqual(self.authenticated_calls, 0)
+
     def test_one_document_and_regular_blob_bounds(self):
         with self.assertRaises(ValueError):packets.proposal_lines(b' ' * (packets.MAX_DOCUMENT + 1), 'automation/decisions/security/' + 'a' * 64 + '.json')
         self.add_packet()

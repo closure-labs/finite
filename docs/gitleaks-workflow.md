@@ -84,7 +84,8 @@ logged or uploaded. Generator or scanner errors fail the native gate closed.
 
 A separate protected-base verifier may grant exact `generic-api-key`
 commit/path/line exceptions for one new immutable security packet in an incoming
-range. It never imports PR code. The verifier and all authentication helpers are
+range. Revocations retain their existing full scan and separate authority gate;
+they receive no new exceptions or new authentication gate. It never imports PR code. The verifier and all authentication helpers are
 loaded from the exact GitHub event base checkout; an older base lacking the
 verifier grants no new exceptions. The read-only Actions token belongs only to
 that verifier step, not Gitleaks. No review, risk acceptance, signing or release

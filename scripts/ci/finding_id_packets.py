@@ -102,15 +102,23 @@ def fingerprints(candidate, base, head):
             if len(entry) != 3 or entry[:2] != [b'100644', b'blob']:
                 raise ValueError('New packet must be a regular Git blob')
             changed.setdefault(entry[2], {'path': path, 'commits': []})['commits'].append(commit)
-    if len(changed) > 1:
-        raise ValueError('New packet authentication is bounded to one immutable packet per range')
-    result = set()
+    eligible = []
     for oid, item in changed.items():
         size = int(git(candidate, 'cat-file', '-s', oid.decode()))
-        if not 0 < size <= MAX_DOCUMENT:
-            raise ValueError('New packet exceeds document bound')
+        # Retain the existing authority parser's bound when identifying a
+        # revocation. The smaller new finding-document bound is applied below.
+        if not 0 < size <= decision_controller.authority.DOCUMENT_BYTES:
+            raise ValueError('Proposal exceeds existing document bound')
         raw = git(candidate, 'cat-file', 'blob', oid.decode())
+        decoded = decision_controller.decision_packets.decode_json(raw)
+        if isinstance(decoded, dict) and decoded.get('kind') == 'security-revocation':
+            continue  # No exception and no additional native authentication gate.
         value, lines = proposal_lines(raw, item['path'])
+        eligible.append((item, value, lines))
+    if len(eligible) > 1:
+        raise ValueError('New packet authentication is bounded to one immutable packet per range')
+    result = set()
+    for item, value, lines in eligible:
         authenticate_packet(value, base, candidate)
         result.update(f'{commit}:{item["path"]}:generic-api-key:{line}'
                       for commit in item['commits'] for line in lines)
