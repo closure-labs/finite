@@ -1,0 +1,95 @@
+name: Matched local builder benchmark
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - experiments/**
+      - .github/workflows/builder-benchmark.yml
+      - tests/ci/builder-benchmark.py
+
+permissions:
+  contents: read
+concurrency:
+  group: matched-builder-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+env:
+  FINITE_OPTIMIZED_CACHES: "false"
+  FINITE_CACHIX_WRITER: "false"
+  FINITE_REUSE_INVENTORY: "false"
+  FINITE_QUALIFICATION_REUSE: "false"
+
+jobs:
+  contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: |
+          python3 -m pip install --disable-pip-version-check PyYAML==6.0.3
+          python3 experiments/containerfile/prepare.py
+          python3 tests/ci/builder-benchmark.py
+          bash -n experiments/containerfile/build.sh
+  paired:
+    needs: contracts
+    if: >-
+      github.repository == 'closure-labs/finite' &&
+      github.event.pull_request.head.repo.full_name == 'closure-labs/finite' &&
+      github.event.pull_request.head.repo.fork == false &&
+      github.event.pull_request.head.ref == 'codex/matched-builder-benchmark' &&
+      github.event.pull_request.base.ref == 'main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        profile: [finite, finite-dev]
+        repetition: [1, 2]
+    env:
+      PROFILE: ${{ matrix.profile }}
+      REPETITION: ${{ matrix.repetition }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: $/.github/actions/setup-nix
+        with:
+          cache-mode: none
+      - name: Prepare locked image tools
+        run: |
+          tools=$(nix build --file lib/ci-tools.nix image-tools --no-link --print-out-paths)
+          echo "$tools/bin" >>"$GITHUB_PATH"
+      - name: Authenticate immutable upstream and runtime sources
+        run: |
+          python3 scripts/ci/bluefin-upstream.py verify
+          python3 scripts/ci/cosign-runtime.py --output .bluebuild/cosign-runtime.json
+          bash scripts/bluebuild/install-cli.sh
+      - name: Make room for isolated local outputs
+        uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
+        with:
+          skip-if-available: "80G"
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+        with:
+          version: v0.38.1
+          driver-opts: image=moby/buildkit@sha256:cec9f139f45e93c5c69c60f8b07cfad9f43f4ef6b6a6cd917527fea5ff2e3dea
+      - uses: $/.github/actions/setup-vm-tools
+      - name: Run bounded cold and warm pairs on this host
+        run: python3 experiments/builder-benchmark/run.py --profile "$PROFILE" --repetition "$REPETITION"
+      - name: Preserve public plans, graph timings, cache hits and VM receipts
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: matched-${{ matrix.profile }}-${{ matrix.repetition }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .bluebuild/benchmark/
+            .bluebuild/vm-local/
+            .bluebuild/*-timings.jsonl
+            .bluebuild/upstream-verified.json
+            .bluebuild/cosign-runtime.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
