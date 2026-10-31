@@ -36,6 +36,7 @@ jobs:
         run: python3 scripts/ci/benchmark-cache-writer.py mark-start .bluebuild/writer-start.json
       - uses: $/.github/actions/setup-nix
         with:
+          job-profile: controller
           cache-mode: none
       - name: Measure credential-free cold and warm preparation
         run: >-

@@ -88,6 +88,8 @@ jobs:
           ref: main
           persist-credentials: false
       - uses: $/.github/actions/setup-nix
+        with:
+          job-profile: controller
       - name: Resolve declared review App credentials
         env:
           FINITE_REVIEW_CLIENT_ID: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}

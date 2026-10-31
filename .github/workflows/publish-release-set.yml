@@ -51,6 +51,8 @@ jobs:
         with:
           skip-if-available: "80G"
       - uses: $/.github/actions/setup-nix
+        with:
+          job-profile: controller
       - name: Realize pinned release tools before authority credentials
         run: nix develop --file lib/ci-tools.nix release --command true
       - name: Resolve declared review App credentials
@@ -193,6 +195,8 @@ jobs:
         with:
           skip-if-available: "80G"
       - uses: $/.github/actions/setup-nix
+        with:
+          job-profile: controller
       - name: Realize pinned release tools before authority credentials
         run: nix develop --file lib/ci-tools.nix release --command true
       - name: Resolve declared review App credentials
@@ -310,6 +314,8 @@ jobs:
         with:
           skip-if-available: "80G"
       - uses: $/.github/actions/setup-nix
+        with:
+          job-profile: controller
       - name: Realize pinned release tools before authority credentials
         run: nix develop --file lib/ci-tools.nix release --command true
       - name: Resolve declared review App credentials

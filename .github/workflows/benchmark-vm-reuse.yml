@@ -66,6 +66,7 @@ jobs:
           persist-credentials: false
       - uses: $/.github/actions/setup-nix
         with:
+          job-profile: vm
           cache-mode: none
       - name: Install actual production reuse context tools
         run: |
@@ -124,6 +125,7 @@ jobs:
           persist-credentials: false
       - uses: $/.github/actions/setup-nix
         with:
+          job-profile: controller
           cache-mode: none
       - name: Authenticate transport and perform production aggregate revalidation
         env:
@@ -154,6 +156,7 @@ jobs:
           persist-credentials: false
       - uses: $/.github/actions/setup-nix
         with:
+          job-profile: controller
           cache-mode: none
       - name: Collect this attempt's small measurement receipts only
         continue-on-error: true

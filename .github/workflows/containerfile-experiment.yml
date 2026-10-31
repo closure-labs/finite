@@ -63,6 +63,8 @@ jobs:
           persist-credentials: false
           ref: ${{ github.event.pull_request.head.sha }}
       - uses: $/.github/actions/setup-nix
+        with:
+          job-profile: controller
       - name: Prepare locked signature tools
         run: |
           tools=$(nix build --file lib/ci-tools.nix image-tools --no-link --print-out-paths)
@@ -105,6 +107,8 @@ jobs:
           persist-credentials: false
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: $/.github/actions/setup-nix
+        with:
+          job-profile: image
       - name: Prepare locked tools
         run: |
           tools=$(nix build --file lib/ci-tools.nix image-tools --no-link --print-out-paths)

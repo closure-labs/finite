@@ -52,6 +52,7 @@ jobs:
         run: python3 scripts/ci/benchmark-vm-tools.py mark-start .bluebuild/vm-start.json
       - uses: $/.github/actions/setup-nix
         with:
+          job-profile: vm
           cache-mode: none
       - name: Match the existing image-tool environment
         run: | # zizmor: ignore[github-env]

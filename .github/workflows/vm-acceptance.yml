@@ -63,6 +63,7 @@ jobs:
       - name: Install VM tools
         uses: $/.github/actions/setup-nix
         with:
+          job-profile: vm
           cache-mode: none
       - name: Realize pinned VM tools and firmware
         uses: $/.github/actions/setup-vm-tools

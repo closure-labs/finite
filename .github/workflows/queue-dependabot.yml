@@ -36,6 +36,8 @@ jobs:
 
       - name: Set up Nix and SecretSpec
         uses: $/.github/actions/setup-nix
+        with:
+          job-profile: controller
 
       - name: Prepare trusted queue tools before credentials
         id: updater-tools
