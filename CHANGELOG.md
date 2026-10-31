@@ -23,6 +23,9 @@ Development version: `0.8.3-dev`. The next stable release is 0.8.3.
 
 ### Fixed
 
+- Bound GitHub GET retries by remaining monotonic time and server throttle delays;
+  reuse authenticated immutable proposal bytes without caching live authority.
+
 - Keep official Dependabot as the author of strictly verified Actions-pin PRs,
   retaining exact-head Super Admin review, live eligibility and native CI holds.
   Reconcile late review events and bound cached authority observations.

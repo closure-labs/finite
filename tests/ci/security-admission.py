@@ -402,5 +402,87 @@ class AdmissionTests(unittest.TestCase):
             self.verify()
 
 
+class AdmissionReadCounts(unittest.TestCase):
+    """Count real admission/provenance code, with only the HTTP boundary faked."""
+    def operation(self, entries=64, changed_final=False):
+        case = AdmissionTests()
+        case.setUp()
+        self.addCleanup(case.doCleanups)
+        case.find.stop(); case.auth.stop(); case.history.stop()
+        case.chain(12)
+        proposals = {}
+        for index, path in enumerate(sorted(case.records.glob('*.json'))):
+            proposal = json.loads(path.read_text())
+            proposals[module.authority.proposal_path(proposal)] = {
+                'proposal': proposal, 'raw': path.read_bytes(), 'number': index + 100,
+                'head': f'{index + 1:040x}', 'merge': f'{index + 100:040x}'}
+        calls, trees = [], []
+        def github(endpoint):
+            calls.append(endpoint)
+            if endpoint.endswith('/git/ref/heads/main'):
+                return {'object': {'sha': 'd' * 40}}
+            if endpoint.endswith('?recursive=1'):
+                trees.append(endpoint)
+                return {'truncated': False, 'tree': []} if changed_final and len(trees) == 2 else case.tree()
+            if '/commits?path=' in endpoint:
+                path = endpoint.split('path=', 1)[1].split('&')[0]
+                return [{'sha': proposals[path]['merge']}]
+            if '/commits/' in endpoint and '/pulls?' in endpoint:
+                merge = endpoint.split('/commits/')[1].split('/')[0]
+                row = next(r for r in proposals.values() if r['merge'] == merge)
+                return [{**pull(row), 'merged_at': '2026-10-20T00:00:00Z'}]
+            if '/pulls/' in endpoint:
+                number = int(endpoint.split('/pulls/')[1].split('/')[0])
+                row = next(r for r in proposals.values() if r['number'] == number)
+                if '/files?' in endpoint:
+                    return [{'filename': module.authority.proposal_path(row['proposal']), 'status': 'added'}]
+                if '/reviews?' in endpoint:
+                    return [{'id': 10, 'state': 'APPROVED', 'commit_id': row['head'],
+                             'user': {'id': 1, 'login': 'maintainer', 'type': 'User'}}]
+                return pull(row)
+            if '/contents/' in endpoint:
+                path = endpoint.split('/contents/')[1].split('?')[0]
+                raw = proposals[path]['raw']
+                return {'type': 'file', 'sha': hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest(),
+                        'encoding': 'base64', 'size': len(raw), 'content': base64.b64encode(raw).decode()}
+            if '/compare/' in endpoint:
+                return {'status': 'ahead'}
+            if endpoint == 'orgs/closure-labs/teams/super-admins':
+                return {'id': 20196962, 'slug': 'super-admins', 'organization': {'login': 'closure-labs'}}
+            if '/teams/super-admins/members?' in endpoint:
+                return [{'id': 1, 'login': 'maintainer', 'type': 'User'}]
+            if '/teams/super-admins/memberships/' in endpoint:
+                return {'state': 'active', 'role': 'member'}
+            if '/collaborators/' in endpoint:
+                return {'role_name': 'maintain'}
+            self.fail('Unexpected API ' + endpoint)
+        def pull(row):
+            return {'number': row['number'], 'user': {'type': 'Bot', 'login': 'finite-review[bot]'},
+                    'head': {'sha': row['head'], 'repo': {'full_name': 'closure-labs/finite'}},
+                    'base': {'ref': 'main', 'repo': {'full_name': 'closure-labs/finite'}},
+                    'merged': True, 'state': 'closed', 'merge_commit_sha': row['merge'], 'changed_files': 1}
+        with patch.object(module.authority, 'DOCUMENT_ENTRIES', entries):
+            result = module.verify(scan(), 'finite', 'closure-labs/finite', 'finite-review[bot]', case.records, github)
+        return result, calls
+
+    def test_twelve_decision_call_count_reduction_preserves_live_boundaries(self):
+        before, old = self.operation(entries=0)
+        after, new = self.operation()
+        self.assertEqual(before, after)
+        self.assertIsNone(module.authority._documents.get())
+        self.assertEqual((len(old), len(new)), (137, 125))
+        self.assertEqual((sum('/contents/' in e for e in old), sum('/contents/' in e for e in new)), (36, 24))
+        for fragment, count in (('/git/ref/heads/main', 14), ('?recursive=1', 2),
+                                ('/reviews?', 1), ('/members?role=all', 3),
+                                ('/memberships/maintainer', 3), ('/collaborators/maintainer/permission', 3)):
+            self.assertEqual(sum(fragment in e for e in old), count)
+            self.assertEqual(sum(fragment in e for e in new), count)
+
+    def test_final_live_ledger_change_is_not_hidden_by_cached_documents(self):
+        with self.assertRaisesRegex(TechnicalError, 'complete current main inventory'):
+            self.operation(changed_final=True)
+        self.assertIsNone(module.authority._documents.get())
+
+
 if __name__ == '__main__':
     unittest.main()
