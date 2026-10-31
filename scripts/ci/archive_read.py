@@ -15,6 +15,30 @@ import decision_packets
 MAXIMUM = 64 * 1024**3
 
 
+@contextmanager
+def single_archive_reader(artifact, repository, *, max_bytes, timeout):
+    """Authenticate one uncached transfer with explicit caller-owned limits.
+
+    Small resume evidence must not inherit release transport's retry or
+    90-minute budget. Native producer/run/attempt checks remain with the caller.
+    """
+    if (not isinstance(artifact, dict)
+            or type(max_bytes) is not int or not 0 < max_bytes <= MAXIMUM
+            or type(timeout) is not int or not 0 < timeout <= 1800
+            or type(artifact.get('size_in_bytes')) is not int
+            or not 0 < artifact['size_in_bytes'] <= max_bytes
+            or type(artifact.get('id')) is not int or artifact['id'] <= 0
+            or not isinstance(artifact.get('digest'), str)
+            or not re.fullmatch(r'sha256:[0-9a-f]{64}', artifact['digest'])):
+        raise ValueError('Invalid bounded single-transfer archive metadata or limits')
+    with tempfile.TemporaryFile() as archive:
+        subprocess.run(['gh', 'api', f'repos/{repository}/actions/artifacts/{artifact["id"]}/zip'],
+                       stdout=archive, check=True, timeout=timeout,
+                       preexec_fn=lambda: resource.setrlimit(resource.RLIMIT_FSIZE, (max_bytes, max_bytes)))
+        authenticate(archive, artifact)
+        yield archive
+
+
 def download_archive(archive, artifact, repository):
     command = ['gh', 'api', f'repos/{repository}/actions/artifacts/{artifact["id"]}/zip']
     deadline = time.monotonic() + 5400
