@@ -70,32 +70,62 @@ class Publisher(unittest.TestCase):
         with patch.dict(os.environ, dict(ENV, FINITE_CACHIX_TOKEN='secret'), clear=True), self.assertRaises(ValueError):
             cache.prepare(Path('/tmp/unused-cache-manifest'))
 
-    def test_push_checks_roots_again_before_external_write(self):
+    def test_push_rechecks_exact_proof_identity_source_and_union_before_upload(self):
+        identities = {'check': {'drvPath': STORE + '.drv', 'outputPath': STORE}}
+        roots = [{'kind': 'check-result', 'name': name, **identity} for name, identity in identities.items()]
+        closure = {'bytes': 112, 'pathCount': 1, 'paths': {STORE: {'narHash': 'sha256-' + 'a' * 43 + '=', 'narSize': 112, 'references': []}}}
         with tempfile.TemporaryDirectory() as temporary:
             manifest = Path(temporary) / 'roots.json'
-            record = {'schema': 1, 'revision': 'a' * 40, 'cache': 'finite-os',
-                      'roots': [{'kind': 'proof', 'name': 'check', 'path': STORE, 'bytes': 10}]}
+            record = {'schema': 2, 'revision': 'a' * 40, 'cache': 'finite-os', 'roots': roots, 'closure': closure}
             manifest.write_text(json.dumps(record))
-            with patch.dict(os.environ, dict(ENV, FINITE_CACHIX_TOKEN='secret'), clear=True), \
-                    patch.object(cache, 'closure_sizes', return_value={STORE: 10}), patch.object(cache.native, 'publish') as run:
+            with patch.dict(os.environ, dict(ENV, FINITE_CACHIX_TOKEN='fixture'), clear=True), \
+                    patch.object(cache.native, 'proof_identities', return_value=identities), \
+                    patch.object(cache.native, 'proof_closure', return_value=closure), patch.object(cache.native, 'publish') as upload:
                 cache.push(manifest)
-                run.assert_called_once_with([STORE], provider='env')
-                record['roots'][0]['path'] = '/tmp/credential'
-                manifest.write_text(json.dumps(record))
-                with self.assertRaises(ValueError):
-                    cache.push(manifest)
-                self.assertEqual(run.call_count, 1)
+                upload.assert_called_once_with([STORE], provider='env')
+                import copy
+                for field, value in [('schema', 1), ('revision', 'c' * 40), ('cache', 'other'),
+                                     ('roots', [{'kind': 'tool', 'name': 'scanner-tools', 'path': STORE, 'bytes': 10}]),
+                                     ('roots', [{**roots[0], 'outputPath': STORE + '-unknown'}]),
+                                     ('roots', [{**roots[0], 'drvPath': STORE + '-wrong.drv'}]),
+                                     ('roots', roots + roots), ('closure', {**closure, 'pathCount': True}),
+                                     ('closure', {**closure, 'bytes': 111})]:
+                    bad = copy.deepcopy(record);bad[field] = value;manifest.write_text(json.dumps(bad))
+                    with self.subTest(field=field), self.assertRaises(ValueError):cache.push(manifest)
+                self.assertEqual(upload.call_count, 1)
 
-    def test_changed_closure_size_cannot_publish(self):
+    def test_default_realization_selects_only_exact_current_proofs(self):
+        identities = {'check': {'drvPath': STORE + '.drv', 'outputPath': STORE}}
         with tempfile.TemporaryDirectory() as temporary:
-            manifest = Path(temporary) / 'roots.json'
-            manifest.write_text(json.dumps({'schema': 1, 'revision': 'a' * 40, 'cache': 'finite-os',
-                'roots': [{'kind': 'tool', 'name': 'scanner-tools', 'path': STORE, 'bytes': 10}]}))
-            with patch.dict(os.environ, dict(ENV, FINITE_CACHIX_TOKEN='secret'), clear=True), \
-                    patch.object(cache, 'closure_sizes', return_value={STORE: 11}), patch.object(cache.native, 'publish') as run:
-                with self.assertRaises(ValueError):
-                    cache.push(manifest)
-                run.assert_not_called()
+            proof = Path(temporary) / 'check';proof.symlink_to(STORE)
+            with patch.dict(os.environ, {}, clear=True), \
+                    patch.object(cache.native, 'proof_identities', return_value=identities), \
+                    patch.object(cache.native, 'proof_closure', return_value={'bytes': 112}) as budget, \
+                    patch.object(cache, 'output', return_value=temporary) as build, \
+                    patch.object(Path, 'resolve', return_value=Path(STORE)), patch.object(cache, 'batched_tools') as tools:
+                roots, closure = cache.realize_roots()
+                self.assertEqual(roots, [{'kind': 'check-result', 'name': 'check', **identities['check']}])
+                self.assertEqual(closure['bytes'], 112)
+                self.assertEqual(build.call_args.args[0][-1], '.#ci-checks')
+                tools.assert_not_called()
+                (Path(temporary) / 'unknown').symlink_to(STORE)
+                with self.assertRaisesRegex(ValueError, 'unknown or missing'):cache.realize_roots()
+                self.assertEqual(budget.call_count, 1)
+
+    def test_workflow_keeps_writer_boundary_and_no_ambient_upload_hook(self):
+        import yaml
+        workflow = yaml.safe_load((ROOT / '.github/workflows/cache-maintenance.yml').read_text())
+        job = workflow['jobs']['publish']
+        for condition in ("vars.FINITE_CACHIX_WRITER == 'true'", "github.event.workflow_run.conclusion == 'success'",
+                          "github.event.workflow_run.head_repository.full_name == 'closure-labs/finite'",
+                          "github.event.workflow_run.head_branch == 'main'"):
+            self.assertIn(condition, job['if'])
+        self.assertEqual(workflow['permissions'], {'contents': 'read'})
+        setup = (ROOT / '.github/actions/setup-nix/action.yml').read_text()
+        root = (ROOT / 'devenv.nix').read_text()
+        self.assertNotIn('cachix.push', root)
+        self.assertNotIn('post-build-hook', setup + root)
+        self.assertNotIn('watch-store', setup + root)
 
 
 def fixture_identities():
@@ -191,7 +221,7 @@ class Batching(unittest.TestCase):
         with patch.dict(os.environ, {}, clear=True), patch.object(cache, 'output') as proofs, \
                 patch.object(cache, 'batched_tools', return_value=roots), \
                 patch.object(cache, 'closure_sizes', return_value={root['path']: 10 for root in roots}) as sizes:
-            result = cache.realize_roots()
+            result = cache.diagnostic_roots()
         proofs.assert_not_called()
         sizes.assert_called_once_with([root['path'] for root in roots])
         self.assertEqual(len(result), len(cache.TOOLS))
@@ -211,12 +241,12 @@ class Batching(unittest.TestCase):
             with patch.dict(os.environ, {}, clear=True), patch.object(cache, 'output', return_value=temporary) as realize, \
                     patch.object(Path, 'resolve', resolve), patch.object(cache, 'batched_tools', return_value=roots), \
                     patch.object(cache, 'closure_sizes', return_value=measurements):
-                result = cache.realize_roots(include_proofs=True)
+                result = cache.diagnostic_roots(include_proofs=True)
                 self.assertEqual(result[0], {'kind': 'proof', 'name': 'check', 'path': STORE, 'bytes': cache.MIB})
                 self.assertEqual(realize.call_args.args[0][-1], '.#ci-checks')
                 measurements[STORE] += 1
                 with self.assertRaises(ValueError):
-                    cache.realize_roots(include_proofs=True)
+                    cache.diagnostic_roots(include_proofs=True)
 
     def test_batched_sizes_reject_extra_missing_boolean_and_negative_records(self):
         for records in ({}, {STORE: {'closureSize': 1}, STORE + '-extra': {'closureSize': 1}},
@@ -226,12 +256,12 @@ class Batching(unittest.TestCase):
 
     def test_root_limits_and_duplicate_names_are_enforced(self):
         valid = {'kind': 'tool', 'name': cache.TOOLS[0], 'path': STORE, 'bytes': 2 * 1024 ** 3}
-        cache.validate_roots([valid])
+        cache.validate_diagnostic_roots([valid])
         for roots in ([{**valid, 'bytes': valid['bytes'] + 1}], [valid, valid],
                       [{**valid, 'name': 'unapproved'}], [{**valid, 'bytes': True}],
                       [{**valid, 'path': STORE + '.drv'}]):
             with self.subTest(roots=roots), self.assertRaises(ValueError):
-                cache.validate_roots(roots)
+                cache.validate_diagnostic_roots(roots)
 
     def test_metadata_subprocesses_do_not_receive_credentials(self):
         with patch.dict(os.environ, {'CACHIX_AUTH_TOKEN': 'secret', 'COSIGN_PRIVATE_KEY': 'secret', 'SAFE': 'yes'}, clear=True), \
@@ -247,7 +277,7 @@ class Batching(unittest.TestCase):
         for key in cache.CREDENTIALS:
             with self.subTest(key=key), patch.dict(os.environ, {key: 'secret'}, clear=True), \
                     patch.object(cache, 'batched_tools') as realize, self.assertRaises(ValueError):
-                cache.realize_roots()
+                cache.diagnostic_roots()
             realize.assert_not_called()
 
 

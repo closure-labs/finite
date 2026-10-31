@@ -44,7 +44,7 @@ jobs:
         with:
           cache-profile: sources
           cache-mode: optimized
-      - name: Realize approved tool roots without credentials
+      - name: Realize current check proofs without credentials
         # The path is a locally realized, strictly validated trusted-main output.
         run: | # zizmor: ignore[github-env]
           if ! command -v devenv >/dev/null; then

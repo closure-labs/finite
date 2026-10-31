@@ -60,7 +60,7 @@ def benchmark(mode, repetition, start, output):
     try:
         for phase in ('cold', 'warm'):
             before = metrics.snapshot()
-            roots = cache.realize_roots(include_proofs=mode == 'legacy', batch=mode != 'legacy')
+            roots = cache.diagnostic_roots(include_proofs=mode == 'legacy', batch=mode != 'legacy')
             report['passes'].append(dict(metrics.delta(before, metrics.snapshot()), phase=phase, roots=roots))
         report['status'] = 'success'
     except (OSError, ValueError, subprocess.SubprocessError) as error:
@@ -103,7 +103,7 @@ def summarize(directory, jobs_file, output):
             seconds = entry['seconds']
             if type(seconds) not in (int, float) or not math.isfinite(seconds) or seconds < 0:
                 raise ValueError('Invalid preparation duration')
-            cache.validate_roots(entry['roots'])
+            cache.validate_diagnostic_roots(entry['roots'])
             tools = {root['name']: (root['path'], root['bytes']) for root in entry['roots'] if root['kind'] == 'tool'}
             if set(tools) != set(cache.TOOLS):
                 raise ValueError('Preparation did not realize every declared tool')
