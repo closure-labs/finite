@@ -202,6 +202,18 @@ def discover(event, env, rules, api=get_json):
                         for (number, head), ids in sorted(grouped.items())]}
 
 
+def current_dependency_base(api, rules, expected):
+    # A PR's cached base field is insufficient: bind the classification to the
+    # native protected main ref and fail closed if it moved or is unavailable.
+    value = api(f'repos/{rules["repository"]}/git/ref/heads/main')
+    if (not isinstance(expected, str) or not authority.SHA.fullmatch(expected)
+            or not isinstance(value, dict) or value.get('ref') != 'refs/heads/main'
+            or not isinstance(value.get('object'), dict)
+            or value['object'].get('type') != 'commit'
+            or value['object'].get('sha') != expected):
+        raise ValueError('Dependency execution requires the unchanged live main base')
+
+
 def trusted_author(api, rules, current):
     user = current.get('user')
     decider = rules['decider']
@@ -210,10 +222,14 @@ def trusted_author(api, rules, current):
             return True
         if dependency.official(current):
             context = dependency.inspect(api, rules['repository'], current)
+            current_dependency_base(api, rules, context['base'])
+            if context['mergeBase'] != context['base']:
+                raise ValueError('Dependency execution requires current main included in the PR head')
             dependency.classify(api, context)
             # Execution is independent of merge review. Authenticate only the
             # supported immutable pin delta here; decision-check retains review.
             latest = dependency.revalidate(api, rules['repository'], context)
+            current_dependency_base(api, rules, context['base'])
             if latest['head'].get('ref') != current['head'].get('ref'):
                 raise ValueError('Dependency source branch changed during validation')
             return True
@@ -259,7 +275,9 @@ def approve(rules, number, head, run_ids, *, api=get_json, post=post_approval):
         if associated['number'] != number:
             raise ValueError('CI execution belongs to another PR')
         latest = pull(api, rules, number, head)
-        if latest.get('user') != current.get('user') or not trusted_author(api, rules, latest):
+        if (latest.get('user') != current.get('user')
+                or dependency.official(current) and latest['base'].get('sha') != current['base'].get('sha')
+                or not trusted_author(api, rules, latest)):
             raise ValueError('CI submitter authority changed before approval')
         latest_run = api(endpoint)
         if (not bound_run(latest_run, latest, rules)
@@ -270,6 +288,7 @@ def approve(rules, number, head, run_ids, *, api=get_json, post=post_approval):
             continue
         final = pull(api, rules, number, head)
         if (final.get('user') != current.get('user')
+                or dependency.official(current) and final['base'].get('sha') != current['base'].get('sha')
                 or dependency.official(final) and not trusted_author(api, rules, final)):
             raise ValueError('CI author or dependency identity changed immediately before approval')
         # Pin classification can require several remote reads. Re-read the
@@ -281,6 +300,8 @@ def approve(rules, number, head, run_ids, *, api=get_json, post=post_approval):
         if not requires_approval(final_run):
             result['runs'].append({'runId': run_id, 'status': 'already-started-or-no-approval-required'})
             continue
+        if dependency.official(current):
+            current_dependency_base(api, rules, current['base']['sha'])
         try:
             post(endpoint + '/approve')
             state = 'execution-approved'
