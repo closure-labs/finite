@@ -12,8 +12,8 @@ m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
 
 def lock():
     return {'root': 'root', 'nodes': {'root': {'inputs': {'foundation': 'f'}},
-        'f': {'locked': {'owner': 'closure-labs', 'repo': 'foundation', 'rev': 'a' * 40}, 'inputs': {'home-manager': 'hm'}},
-        'hm': {'locked': {'owner': 'nix-community', 'repo': 'home-manager', 'rev': 'b' * 40}}}}
+        'f': {'locked': {'narHash': 'sha256-' + 'A' * 43 + '=', 'type': 'github', 'owner': 'closure-labs', 'repo': 'foundation', 'rev': 'a' * 40}, 'inputs': {'home-manager': 'hm'}},
+        'hm': {'locked': {'narHash': 'sha256-' + 'B' * 43 + '=', 'type': 'github', 'owner': 'nix-community', 'repo': 'home-manager', 'rev': 'b' * 40}}}}
 
 class Selection(unittest.TestCase):
     def test_current_lock_resolves_and_no_change_selects_none(self):
@@ -37,6 +37,22 @@ class Selection(unittest.TestCase):
             (['scripts/home.py'], m.ALL), (['lib/new-export.nix'], m.ALL), (None, m.ALL)]:
             with self.subTest(paths=paths):
                 self.assertEqual(set(m.select(['flake.lock'], before, after, paths)['suites']), expected)
+
+    def test_missing_hash_or_replaced_input_identity_selects_all(self):
+        for change in ({'owner': 'other'}, {'repo': 'other'}, {'narHash': None}, {'narHash': 'invalid'}):
+            before = lock(); after = copy.deepcopy(before)
+            after['nodes']['hm']['locked'].update(change)
+            self.assertEqual(set(m.select(['flake.lock'], before, after)['suites']), m.ALL)
+        before = lock(); after = copy.deepcopy(before)
+        after['nodes']['hm']['locked'].update(type='tarball', url='https://api.flakehub.com/f/pinned/nix-community/home-manager/0.2605.1/01234567-89ab-cdef-0123-456789abcdef/source.tar.gz')
+        self.assertEqual(m.select(['flake.lock'], before, after)['suites'], ['home-manager'])
+        after['nodes']['hm']['locked']['url'] = 'https://api.flakehub.com/f/pinned/nix-community/home-manager/../../other/source.tar.gz'
+        self.assertEqual(set(m.select(['flake.lock'], before, after)['suites']), m.ALL)
+        malformed = lock(); malformed['nodes']['hm']['locked'] = {}
+        self.assertEqual(set(m.select([], malformed, malformed)['suites']), m.ALL)
+        before = lock(); after = copy.deepcopy(before)
+        after['nodes']['f']['locked']['owner'] = 'other'
+        self.assertEqual(set(m.select(['flake.lock'], before, after, ['modules/aspects/base/browser.nix'])['suites']), m.ALL)
 
     def test_shared_scripts_base_image_unknown_and_renames_fail_closed(self):
         for path in ('files/system/usr/lib/systemd/system/firstboot.service', 'sources/bluefin.json',

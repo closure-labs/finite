@@ -38,7 +38,10 @@ def snapshot(lock):
             key = (*path, name)
             data = nodes[target]
             # Record exact immutable versions and hashes for reviewers.
-            if not isinstance(data.get('locked'), dict): raise ValueError('Unlocked dependency')
+            locked = data.get('locked')
+            if (not isinstance(locked, dict) or not isinstance(locked.get('narHash'), str)
+                    or not re.fullmatch(r'sha256-[A-Za-z0-9+/]{43}=', locked['narHash'])):
+                raise ValueError('Dependency has no valid immutable content hash')
             result['/'.join(key)] = data['locked']
             walk(target, key, (*ancestors, node))
     walk(root, (), ())
@@ -59,7 +62,11 @@ def select(paths, before, after, foundation_paths=None, full=False):
             entry = versions['after'].get(path, versions['before'].get(path, {}))
             repo = entry.get('repo', '')
             if path == 'foundation':
-                if foundation_paths is None:
+                known_source = all(v.get('type') == 'github' and v.get('owner') == 'closure-labs' and v.get('repo') == 'foundation'
+                    for v in (versions['before'].get(path, {}), versions['after'].get(path, {})))
+                if not known_source:
+                    add(ALL, 'Foundation source identity changed/unknown')
+                elif foundation_paths is None:
                     add(ALL, 'Foundation source delta unavailable/opaque')
                 else:
                     for source in foundation_paths:
@@ -75,7 +82,17 @@ def select(paths, before, after, foundation_paths=None, full=False):
                         else:
                             add(ALL, 'Foundation shared/unknown export: ' + source)
             elif repo == 'home-manager' or path.split('/')[-1] == 'home-manager':
-                add({'home-manager'}, 'resolved Home Manager version: ' + path)
+                def known_hm(value):
+                    return ((value.get('type') == 'github' and value.get('owner') == 'nix-community'
+                             and value.get('repo') == 'home-manager')
+                            or (value.get('type') == 'tarball' and re.fullmatch(
+                                r'https://api\.flakehub\.com/f/pinned/nix-community/home-manager/'
+                                r'[0-9][A-Za-z0-9%+._-]*/[0-9a-f-]{36}/source\.tar\.gz', value.get('url', ''))))
+                origins = [v[path] for v in versions.values() if path in v]
+                if origins and all(known_hm(value) for value in origins):
+                    add({'home-manager'}, 'resolved Home Manager version: ' + path)
+                else:
+                    add(ALL, 'Home Manager source identity changed/unknown: ' + path)
             elif path == 'nixpkgs-weekly' or path.startswith(('devenv/', 'gen/')):
                 # These are tooling, but no exclusion is proven yet.
                 add(ALL, 'unreviewed tooling/export impact: ' + path)
