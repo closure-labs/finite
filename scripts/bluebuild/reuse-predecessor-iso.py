@@ -138,6 +138,7 @@ def compatible(directory, profile, digest, inputs):
     return value
 
 
+@reuse.bounded_metadata
 def restore(profile, digest, output, diagnostics=None):
     diagnostics = diagnostics if diagnostics is not None else Diagnostics()
     if (os.environ.get('GITHUB_ACTIONS') != 'true' or os.environ.get('GITHUB_REPOSITORY') != reuse.REPOSITORY

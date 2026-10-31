@@ -321,5 +321,122 @@ class RetryContract(unittest.TestCase):
         budget = Clock().budget(total=100)
         self.assertEqual(budget.remaining(), 30)
 
+class MetadataDiscovery(unittest.TestCase):
+    endpoint = 'repos/closure-labs/finite/actions/runs/10/artifacts?per_page=100'
+
+    def setUp(self):
+        deterministic_clock(self)
+
+    def page(self, start, count, total):
+        return {'total_count': total, 'artifacts': [{'id': n} for n in range(start, start + count)]}
+
+    def test_complete_pagination_uses_count_and_fixed_relative_endpoints(self):
+        pages = [self.page(1, 100, 101), self.page(101, 1, 101)]
+        with patch.object(api, 'get_json', side_effect=pages) as get:
+            self.assertEqual(api.get_metadata(self.endpoint, collection='artifacts'), pages)
+        self.assertEqual([c.args[0] for c in get.call_args_list],
+                         [self.endpoint + '&page=1', self.endpoint + '&page=2'])
+        self.assertEqual([c.kwargs['deadline'] for c in get.call_args_list], [150, 150])
+        with patch.object(api, 'get_json', return_value=self.page(1, 100, 100)) as get:
+            api.get_metadata(self.endpoint, collection='artifacts')
+        self.assertEqual(get.call_count, 1, 'No redundant terminal empty-page request')
+
+    def test_transient_page_retry_uses_existing_transport_then_continues(self):
+        responses = [reply(502), reply(body=self.page(1, 100, 101)), reply(body=self.page(101, 1, 101))]
+        with patch.object(api.subprocess, 'run', side_effect=responses) as run:
+            result = api.get_metadata(self.endpoint, collection='artifacts')
+        self.assertEqual(len(result), 2)
+        self.assertEqual(run.call_count, 3)
+        self.assertEqual([c.args[0][-1] for c in run.call_args_list],
+                         [self.endpoint + '&page=1', self.endpoint + '&page=1', self.endpoint + '&page=2'])
+        self.assertEqual(self.sleep.call_count, 1)
+        self.assertTrue(all(c.kwargs['timeout'] <= 30 for c in run.call_args_list))
+
+    def test_jobs_and_caches_share_complete_listing_policy(self):
+        for key in ('jobs', 'actions_caches'):
+            with self.subTest(collection=key), patch.object(api, 'get_json', return_value={'total_count': 0, key: []}) as get:
+                self.assertEqual(api.get_metadata(self.endpoint, collection=key), [{'total_count': 0, key: []}])
+            self.assertEqual(get.call_count, 1)
+
+    def test_empty_page_is_complete_only_for_zero_native_count(self):
+        with patch.object(api, 'get_json', return_value=self.page(1, 0, 0)):
+            self.assertEqual(len(api.get_metadata(self.endpoint, collection='artifacts')), 1)
+        with patch.object(api, 'get_json', return_value=self.page(1, 0, 1)), \
+                self.assertRaisesRegex(api.GitHubReadError, 'incomplete'):
+            api.get_metadata(self.endpoint, collection='artifacts')
+
+    def test_count_drift_duplicates_and_truncated_pages_fail_closed(self):
+        malformed = [self.page(1, 99, 100), {'total_count': True, 'artifacts': []},
+                     {'total_count': 1, 'artifacts': [{'id': '1'}]},
+                     {'total_count': 0, 'artifacts': [{'id': 1}]},
+                     {'total_count': 101, 'artifacts': [{'id': n} for n in range(101)]}]
+        for page in malformed:
+            with self.subTest(page=page), patch.object(api, 'get_json', return_value=page), \
+                    self.assertRaises(api.GitHubReadError):
+                api.get_metadata(self.endpoint, collection='artifacts')
+        for second in (self.page(101, 1, 102), self.page(1, 1, 101)):
+            with patch.object(api, 'get_json', side_effect=[self.page(1, 100, 101), second]), \
+                    self.assertRaises(api.GitHubReadError):
+                api.get_metadata(self.endpoint, collection='artifacts')
+
+    def test_page_cap_rejects_partial_inventory(self):
+        with patch.object(api, 'get_json', side_effect=[self.page(1, 100, 201), self.page(101, 100, 201)]) as get:
+            with api.metadata_operation() as operation, self.assertRaisesRegex(api.GitHubReadError, 'page limit'):
+                operation.pages(self.endpoint, 'artifacts', max_pages=2)
+        self.assertEqual(get.call_count, 2)
+
+    def test_nested_scopes_share_read_limit_and_deadline_without_cross_operation_cache(self):
+        with patch.object(api, 'get_json', return_value={'ok': True}) as get:
+            with api.metadata_operation(total=50, max_reads=2) as parent:
+                api.get_metadata(ENDPOINT)
+                with api.metadata_operation(total=150, max_reads=120) as child:
+                    self.assertIs(child, parent)
+                    api.get_metadata(ENDPOINT)
+                with self.assertRaisesRegex(api.GitHubReadError, 'read limit'):
+                    api.get_metadata(ENDPOINT)
+            api.get_metadata(ENDPOINT)
+        self.assertEqual(get.call_count, 3, 'Repeat endpoints are fresh reads, not cached conclusions')
+        self.assertEqual([c.kwargs['deadline'] for c in get.call_args_list], [50, 50, 150])
+        self.assertIsNone(api._METADATA_OPERATION.get())
+
+    def test_deadline_before_next_page_and_exception_cleanup(self):
+        def first(*args, **kwargs):
+            self.clock.now = 150
+            return self.page(1, 100, 101)
+        with patch.object(api, 'get_json', side_effect=first) as get, \
+                self.assertRaisesRegex(api.GitHubReadError, 'deadline'):
+            api.get_metadata(self.endpoint, collection='artifacts')
+        self.assertEqual(get.call_count, 1)
+        self.assertIsNone(api._METADATA_OPERATION.get())
+
+    def test_paginated_throttle_cannot_outwait_enclosing_deadline(self):
+        responses = [reply(body=self.page(1, 100, 101)), reply(429, Retry_After=2)]
+        with patch.object(api.subprocess, 'run', side_effect=responses) as run, \
+                api.metadata_operation(total=1), self.assertRaises(api.GitHubReadError) as caught:
+            api.get_metadata(self.endpoint, collection='artifacts')
+        self.assertTrue(caught.exception.rate_limited)
+        self.assertEqual(run.call_count, 2)
+        self.assertTrue(all(c.kwargs['timeout'] <= 1 for c in run.call_args_list))
+        self.sleep.assert_not_called()
+
+    def test_plain_forbidden_on_page_one_is_terminal(self):
+        with patch.object(api.subprocess, 'run', return_value=reply(403)) as run, \
+                self.assertRaises(api.GitHubReadError) as caught:
+            api.get_metadata(self.endpoint, collection='artifacts')
+        self.assertFalse(caught.exception.transient)
+        self.assertEqual(run.call_count, 1)
+        self.sleep.assert_not_called()
+
+    def test_untrusted_or_ambiguous_pagination_request_is_not_executed(self):
+        invalid = ['https://evil.invalid/items?per_page=100', self.endpoint + '&page=2',
+                   self.endpoint + '&per_page=100', self.endpoint.replace('100', '20')]
+        for endpoint in invalid:
+            with self.subTest(endpoint=endpoint), patch.object(api, 'get_json') as get, self.assertRaises(ValueError):
+                api.get_metadata(endpoint, collection='artifacts')
+            get.assert_not_called()
+        for total, reads in ((0, 1), (float('nan'), 1), (301, 1), (150, True), (150, 0), (150, 301)):
+            with self.assertRaises(ValueError): api.MetadataOperation(total, reads)
+
+
 if __name__ == '__main__':
     unittest.main()

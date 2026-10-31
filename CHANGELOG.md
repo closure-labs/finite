@@ -29,6 +29,9 @@ Development version: `0.8.3-dev`. The next stable release is 0.8.3.
 - Stop persistently unproductive preserved-predecessor ISO downloads early,
   keeping the ten-minute cap and authenticated same-predecessor regeneration.
 
+- Share bounded GitHub GET retries and complete pagination across qualification,
+  predecessor, inventory and cache metadata discovery, without retrying mutations.
+
 - Bound GitHub GET retries by remaining monotonic time and server throttle delays;
   reuse authenticated immutable proposal bytes without caching live authority.
 

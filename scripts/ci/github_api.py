@@ -1,10 +1,14 @@
 """Bounded fresh GitHub GETs; no mutation retries or authority cache."""
+from contextlib import contextmanager
+from contextvars import ContextVar
+from functools import wraps
 import json
 import math
 import re
 import subprocess
 import sys
 import time
+from urllib.parse import parse_qsl, urlencode, urlsplit
 
 from github_retry import RetryBudget, RetryDeadline, number, retry_after
 
@@ -126,3 +130,88 @@ def get_json(endpoint, *, environment=None, missing=False, public=False, deadlin
                                   transient=transient, rate_limited=limited)
         print(message + '; retrying fresh GET', file=sys.stderr)
     raise AssertionError('Unreachable retry state')
+
+
+class MetadataOperation:
+    """One bounded metadata discovery; stores counters, never authority verdicts."""
+    def __init__(self, total=150, max_reads=120):
+        if (type(total) not in (int, float) or not math.isfinite(total) or not 0 < total <= 300
+                or type(max_reads) is not int or not 0 < max_reads <= 300):
+            raise ValueError('Invalid GitHub metadata operation budget')
+        self.deadline = time.monotonic() + total
+        self.max_reads, self.reads = max_reads, 0
+
+    def read(self, endpoint):
+        if time.monotonic() >= self.deadline:
+            raise GitHubReadError('GitHub metadata discovery deadline exhausted', transient=True)
+        if self.reads >= self.max_reads:
+            raise GitHubReadError('GitHub metadata discovery read limit exhausted')
+        self.reads += 1
+        return get_json(endpoint, deadline=self.deadline)
+
+    def pages(self, endpoint, collection, max_pages=20):
+        if collection not in ('artifacts', 'jobs', 'actions_caches'):
+            raise ValueError('Unsupported GitHub metadata collection')
+        if type(max_pages) is not int or not 0 < max_pages <= 20:
+            raise ValueError('Invalid GitHub metadata page limit')
+        url = urlsplit(endpoint)
+        query = parse_qsl(url.query, keep_blank_values=True, strict_parsing=True)
+        if (url.scheme or url.netloc or url.fragment
+                or len({key for key, _ in query}) != len(query)
+                or dict(query).get('per_page') != '100' or 'page' in dict(query)):
+            raise ValueError('GitHub metadata pagination requires one explicit page size')
+        pages, seen, total = [], set(), None
+        for number in range(1, max_pages + 1):
+            page = self.read(url.path + '?' + urlencode(query + [('page', str(number))]))
+            if (not isinstance(page, dict) or type(page.get('total_count')) is not int
+                    or page['total_count'] < 0 or not isinstance(page.get(collection), list)
+                    or len(page[collection]) > 100):
+                raise GitHubReadError('Invalid GitHub metadata page')
+            if total is not None and page['total_count'] != total:
+                raise GitHubReadError('GitHub metadata count changed during pagination')
+            total = page['total_count']
+            for item in page[collection]:
+                if (not isinstance(item, dict) or type(item.get('id')) is not int
+                        or item['id'] <= 0 or item['id'] in seen):
+                    raise GitHubReadError('Invalid or duplicate GitHub metadata item')
+                seen.add(item['id'])
+            if len(seen) > total:
+                raise GitHubReadError('GitHub metadata exceeds declared count')
+            pages.append(page)
+            if len(seen) == total:
+                return pages
+            if len(page[collection]) < 100:
+                raise GitHubReadError('GitHub metadata listing is incomplete')
+        raise GitHubReadError('GitHub metadata page limit exhausted')
+
+
+_METADATA_OPERATION = ContextVar('github_metadata_operation', default=None)
+
+
+@contextmanager
+def metadata_operation(total=150, max_reads=120):
+    current = _METADATA_OPERATION.get()
+    if current is not None:
+        # Nested discovery consumes the parent's counters and deadline; it
+        # cannot reset either budget or leak state into the next operation.
+        yield current
+        return
+    operation = MetadataOperation(total, max_reads)
+    token = _METADATA_OPERATION.set(operation)
+    try:
+        yield operation
+    finally:
+        _METADATA_OPERATION.reset(token)
+
+
+def bounded_metadata(function):
+    @wraps(function)
+    def wrapped(*args, **kwargs):
+        with metadata_operation():
+            return function(*args, **kwargs)
+    return wrapped
+
+
+def get_metadata(endpoint, *, collection=None):
+    with metadata_operation() as operation:
+        return operation.pages(endpoint, collection) if collection is not None else operation.read(endpoint)

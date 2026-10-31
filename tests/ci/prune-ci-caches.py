@@ -127,7 +127,7 @@ class Retention(unittest.TestCase):
                    [{'total_count': 1, 'actions_caches': [dict(entry, created_at='bad')]}],
                    [{'total_count': 1, 'actions_caches': [dict(entry, created_at='2026-01-01')]}]]
         for pages in invalid:
-            with self.subTest(pages=pages), patch.object(prune.subprocess, 'check_output', return_value=json.dumps(pages)):
+            with self.subTest(pages=pages), patch.object(prune, 'get_metadata', return_value=pages):
                 with self.assertRaises((ValueError, TypeError)):
                     prune.list_caches()
 
@@ -135,10 +135,10 @@ class Retention(unittest.TestCase):
         entries = [cache(1), cache(2)]
         pages = [{'total_count': 2, 'actions_caches': [{k: v for k, v in item.items() if k != 'timestamp'}]}
                  for item in entries]
-        with patch.object(prune.subprocess, 'check_output', return_value=json.dumps(pages)) as command:
+        with patch.object(prune, 'get_metadata', return_value=pages) as command:
             self.assertEqual([item['id'] for item in prune.list_caches()], [1, 2])
-        self.assertIn('--paginate', command.call_args.args[0])
-        self.assertIn('--slurp', command.call_args.args[0])
+        command.assert_called_once_with('repos/closure-labs/finite/actions/caches?per_page=100',
+                                        collection='actions_caches')
 
     def test_transport_errors_abort_before_any_delete(self):
         for error in (subprocess.CalledProcessError(1, 'gh'), subprocess.TimeoutExpired('gh', 180),
