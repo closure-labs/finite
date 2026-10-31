@@ -31,7 +31,7 @@ def policy():
                                           '.github/workflows/decision-events.yml']
             or value.get('executionApprovalOnly') is not True or value.get('grantsMergeApproval') is not False
             or value.get('dependabot') != {'login': dependency.BOT['login'], 'id': dependency.BOT['id'],
-                 'family': 'github-actions-pins', 'sameRepositoryOnly': True, 'requiresCurrentHeadHumanApproval': True}
+                 'family': 'github-actions-pins', 'sameRepositoryOnly': True, 'requiresCurrentHeadHumanApproval': False}
             or value.get('authorityRecoveryWorkflow') != '.github/workflows/decision-authority.yml'
             or value.get('otherContributors') != 'retain-existing-approval'):
         raise ValueError('Invalid reviewed CI execution policy')
@@ -65,6 +65,7 @@ def bound_run(run, current, rules):
     repo = head.get('repo', {})
     return (isinstance(run, dict) and type(run.get('id')) is int and run['id'] > 0
             and type(run.get('run_attempt')) is int and run['run_attempt'] > 0
+            and type(run.get('workflow_id')) is int and run['workflow_id'] > 0
             and ci_context(run, rules)
             and run.get('repository', {}).get('id') == rules['repositoryId']
             and run.get('repository', {}).get('full_name') == rules['repository']
@@ -210,11 +211,11 @@ def trusted_author(api, rules, current):
         if dependency.official(current):
             context = dependency.inspect(api, rules['repository'], current)
             dependency.classify(api, context)
-            try:
-                authority.approval(api, rules['repository'], current['number'], current['head']['sha'])
-            except authority.HumanDecisionRequired:
-                return False
-            dependency.revalidate(api, rules['repository'], context)
+            # Execution is independent of merge review. Authenticate only the
+            # supported immutable pin delta here; decision-check retains review.
+            latest = dependency.revalidate(api, rules['repository'], context)
+            if latest['head'].get('ref') != current['head'].get('ref'):
+                raise ValueError('Dependency source branch changed during validation')
             return True
         return False
     return authority.eligible(api, rules['repository'], user)
@@ -249,7 +250,7 @@ def approve(rules, number, head, run_ids, *, api=get_json, post=post_approval):
     for run_id in targets:
         endpoint = f'repos/{repository}/actions/runs/{run_id}'
         run = api(endpoint)
-        if not bound_run(run, current, rules):
+        if run.get('id') != run_id or not bound_run(run, current, rules):
             raise ValueError('CI execution differs from current PR origin')
         workflow = api(f'repos/{repository}/actions/workflows/{run["workflow_id"]}')
         if workflow.get('id') != run['workflow_id'] or workflow.get('path') != run['path'] or workflow.get('state') != 'active':
@@ -261,7 +262,8 @@ def approve(rules, number, head, run_ids, *, api=get_json, post=post_approval):
         if latest.get('user') != current.get('user') or not trusted_author(api, rules, latest):
             raise ValueError('CI submitter authority changed before approval')
         latest_run = api(endpoint)
-        if not bound_run(latest_run, latest, rules) or latest_run.get('run_attempt') != run['run_attempt']:
+        if (not bound_run(latest_run, latest, rules)
+                or any(latest_run.get(key) != run[key] for key in ('id', 'workflow_id', 'path', 'run_attempt'))):
             raise ValueError('CI execution changed before approval')
         if not requires_approval(latest_run):
             result['runs'].append({'runId': run_id, 'status': 'already-started-or-no-approval-required'})
@@ -269,13 +271,23 @@ def approve(rules, number, head, run_ids, *, api=get_json, post=post_approval):
         final = pull(api, rules, number, head)
         if (final.get('user') != current.get('user')
                 or dependency.official(final) and not trusted_author(api, rules, final)):
-            raise ValueError('CI author or dependency review changed immediately before approval')
+            raise ValueError('CI author or dependency identity changed immediately before approval')
+        # Pin classification can require several remote reads. Re-read the
+        # exact run afterwards so a new attempt cannot inherit that admission.
+        final_run = api(endpoint)
+        if (not bound_run(final_run, final, rules)
+                or any(final_run.get(key) != run[key] for key in ('id', 'workflow_id', 'path', 'run_attempt'))):
+            raise ValueError('CI execution changed immediately before approval')
+        if not requires_approval(final_run):
+            result['runs'].append({'runId': run_id, 'status': 'already-started-or-no-approval-required'})
+            continue
         try:
             post(endpoint + '/approve')
             state = 'execution-approved'
         except (RuntimeError, subprocess.SubprocessError):
             observed = api(endpoint)
-            if (not bound_run(observed, latest, rules) or observed.get('run_attempt') != run['run_attempt']
+            if (not bound_run(observed, latest, rules)
+                    or any(observed.get(key) != run[key] for key in ('id', 'workflow_id', 'path', 'run_attempt'))
                     or observed.get('status') not in ('queued', 'in_progress', 'completed')
                     or observed.get('conclusion') == 'action_required'):
                 raise RuntimeError('CI execution approval outcome unknown; no mutation retry') from None

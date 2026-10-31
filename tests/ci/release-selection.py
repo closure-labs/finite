@@ -96,6 +96,7 @@ class ReleaseSelection(unittest.TestCase):
         return {
             'impact': {'result': 'success', 'outputs': {key: json.dumps(value) for key, value in plan.items()}},
             'docs': {'result': 'success'},
+            'repository-secrets': {'result': 'skipped'},
             'checks': {'result': 'success', 'outputs': {'images': 'true',
                        'matrix': json.dumps({'include': [{'profile': profile, 'channel': channel}]})}},
             'images': {'result': 'skipped' if publish else 'success'},

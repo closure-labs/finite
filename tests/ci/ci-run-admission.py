@@ -159,6 +159,40 @@ class Admission(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'execution changed'): self.approve(api=api)
         self.assertEqual(self.posts, [])
 
+    def test_exact_run_and_workflow_binding_cannot_change_between_reads(self):
+        for key, value in (('id', 41), ('workflow_id', 51), ('path', '.github/workflows/codeql.yml')):
+            for later in ((False, True) if key == 'id' else (True,)):
+                self.setUp()
+                def api(endpoint):
+                    result = self.api(endpoint)
+                    if endpoint.endswith('/actions/runs/40') and (not later or self.run_reads > 1):
+                        result[key] = value
+                    return result
+                with self.subTest(key=key, later=later), self.assertRaises(ValueError):
+                    self.approve(api=api)
+                self.assertEqual(self.posts, [])
+
+    def test_final_run_read_rejects_changes_after_last_author_validation(self):
+        for key, value in (('id', 41), ('workflow_id', 51), ('path', '.github/workflows/codeql.yml'),
+                           ('run_attempt', 2), ('head_sha', 'b' * 40), ('head_branch', 'other')):
+            self.setUp()
+            def api(endpoint):
+                result = self.api(endpoint)
+                if endpoint.endswith('/actions/runs/40') and self.run_reads == 3:
+                    result[key] = value
+                return result
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, 'immediately before approval'):
+                self.approve(api=api)
+            self.assertEqual(self.posts, [])
+        self.setUp()
+        def started(endpoint):
+            result = self.api(endpoint)
+            if endpoint.endswith('/actions/runs/40') and self.run_reads == 3:
+                result.update(status='in_progress', conclusion=None)
+            return result
+        self.assertEqual(self.approve(api=started)['runs'][0]['status'], 'already-started-or-no-approval-required')
+        self.assertEqual(self.posts, [])
+
     def test_missing_fork_association_is_resolved_through_native_source_tuple(self):
         self.run['pull_requests'] = []
         self.assertEqual(self.approve()['status'], 'checked')

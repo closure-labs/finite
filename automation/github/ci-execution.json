@@ -11,7 +11,7 @@
   "otherContributors": "retain-existing-approval",
   "dependabot": {
     "login": "dependabot[bot]", "id": 49699333, "family": "github-actions-pins",
-    "sameRepositoryOnly": true, "requiresCurrentHeadHumanApproval": true
+    "sameRepositoryOnly": true, "requiresCurrentHeadHumanApproval": false
   },
   "authorityRecoveryWorkflow": ".github/workflows/decision-authority.yml"
 }

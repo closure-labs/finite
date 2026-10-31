@@ -92,6 +92,7 @@ in {
     python3 tests/ci/vm-tools.py
     python3 tests/ci/vm-host.py
     python3 tests/ci/selection.py
+    python3 tests/ci/gitleaks-workflow.py
     python3 tests/ci/active-variants.py
     python3 tests/ci/release-selection.py
     python3 tests/ci/release-request.py
