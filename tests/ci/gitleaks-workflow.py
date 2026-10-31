@@ -9,6 +9,11 @@ import subprocess
 import shutil
 import sys
 import tempfile
+import io
+import zipfile
+from datetime import datetime, timezone
+from contextlib import ExitStack
+from unittest.mock import patch
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -18,6 +23,7 @@ import yaml
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(ROOT / 'scripts/ci'))
 import gate
+import finding_id_packets as packets
 
 
 def workflow():
@@ -358,7 +364,7 @@ class NativeGateTests(unittest.TestCase):
         self.assertEqual(jobs['repository-secrets']['name'], 'Repository security audit')
         self.assertEqual(jobs['repository-secrets']['if'],
                          "github.event_name == 'pull_request' || github.event_name == 'merge_group'")
-        self.assertEqual(jobs['repository-secrets'].get('permissions', workflow()['permissions']), {'contents': 'read'})
+        self.assertEqual(jobs['repository-secrets']['permissions'], {'contents': 'read', 'actions': 'read'})
         self.assertIn('repository-secrets', jobs['gate']['needs'])
         self.assertEqual(jobs['gate']['name'], 'CI gate')
         self.assertEqual(jobs['gate']['if'], 'always()')
@@ -412,6 +418,251 @@ class NativeGateTests(unittest.TestCase):
         self.assertIn('blob(commit, path) == oid', incoming)
         self.assertIn("canonical_hash({k: finding[k]", incoming)
         self.assertNotIn('import security_decisions', incoming)
+
+
+class NewPacketTests(unittest.TestCase):
+    git = RangeTests.git
+    commit = RangeTests.commit
+    run_scan = RangeTests.run_scan
+    real_engine = RangeTests.real_engine
+
+    def setUp(self):
+        RangeTests.setUp(self)
+        self.base = self.head
+        self.controller = packets.decision_controller
+        self.value = RangeTests.finding_packet()
+        payload = self.value['payload']
+        payload.update(profiles=['finite', 'finite-dev'], disposition='accepted')
+        self.run = {'id': 7, 'path': '.github/workflows/build.yml', 'event': 'push', 'head_branch': 'main',
+                    'status': 'completed', 'conclusion': 'failure', 'run_attempt': 2, 'head_sha': self.base,
+                    'head_repository': {'full_name': 'closure-labs/finite'},
+                    'created_at': '2026-01-01T00:00:00Z', 'updated_at': '2026-01-01T02:00:00Z'}
+        reuse = self.controller.module('finding_fixture_reuse', ROOT / 'scripts/ci/reuse-candidate-security.py')
+        self.files = {name: b'{}' for name in reuse.REQUIRED}
+        self.zips, self.artifacts = {}, []
+        for index, profile in enumerate(('finite', 'finite-dev'), 1):
+            stream = io.BytesIO()
+            with zipfile.ZipFile(stream, 'w') as zipped:
+                for name, raw in self.files.items():zipped.writestr(name, raw)
+            raw = stream.getvalue();self.zips[index] = raw
+            self.artifacts.append({'id': index, 'name': f'security-{profile}-7-2', 'expired': False,
+                'workflow_run': {'id': 7, 'head_sha': self.base}, 'digest': 'sha256:' + hashlib.sha256(raw).hexdigest(),
+                'size_in_bytes': len(raw), 'created_at': '2026-01-01T01:00:00Z'})
+        origin = {'repository': 'closure-labs/finite', 'workflow': 'build.yml', 'runId': 7,
+                  'runAttempt': 2, 'headSha': self.base,
+                  'artifacts': [{k: a[k] for k in ('id', 'name', 'digest')} for a in self.artifacts]}
+        data = {f'{profile}/{name}': raw for profile in ('finite', 'finite-dev') for name, raw in self.files.items()}
+        inventory = {name: {'size': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()} for name, raw in data.items()}
+        manifest = {'schema': 1, 'producer': origin, 'files': inventory}
+        data['decision-packet.json'] = json.dumps(manifest).encode()
+        self.blobs = {hashlib.sha256(raw).hexdigest(): raw for raw in data.values()}
+        oci = {'schemaVersion': 2, 'artifactType': self.controller.decision_packets.TYPE,
+               'layers': [{'annotations': {'org.opencontainers.image.title': name}, 'size': len(raw),
+                           'digest': 'sha256:' + hashlib.sha256(raw).hexdigest()} for name, raw in data.items()]}
+        self.oci = json.dumps(oci).encode()
+        self.reference = self.controller.decision_packets.REGISTRY + '@sha256:' + hashlib.sha256(self.oci).hexdigest()
+        payload['packet'] = {'reference': self.reference, 'sha256': packets.canonical_hash(manifest), 'producer': origin}
+        self.stack = ExitStack();self.addCleanup(self.stack.close)
+        self.stack.enter_context(patch.object(self.controller, 'api', side_effect=self.api))
+        self.stack.enter_context(patch.object(self.controller.decision_packets, 'command', side_effect=self.registry))
+        self.original_run = subprocess.run
+        self.stack.enter_context(patch.object(subprocess, 'run', side_effect=self.transport))
+        self.stack.enter_context(patch.object(self.controller, 'native_result', side_effect=self.native))
+        self.authenticated_calls = 0
+
+    def api(self, endpoint, *args):
+        if endpoint == 'repos/closure-labs/finite/actions/runs/7':return self.run
+        if endpoint.startswith('repos/closure-labs/finite/actions/runs/7/artifacts?'):return {'artifacts': self.artifacts}
+        raise AssertionError('Unexpected network endpoint')
+
+    def registry(self, args, **kwargs):
+        if args[1:3] == ['manifest', 'fetch']:
+            if args[3] != self.reference:raise ValueError('Substituted OCI reference')
+            return self.oci
+        digest = args[3].split(':')[-1]
+        Path(args[args.index('--output') + 1]).write_bytes(self.blobs[digest])
+        return b''
+
+    def transport(self, args, **kwargs):
+        if args[:2] == ['gh', 'api']:
+            artifact_id = int(args[2].split('/')[-2])
+            kwargs['stdout'].write(self.zips[artifact_id])
+            self.authenticated_calls += 1
+            return subprocess.CompletedProcess(args, 0)
+        return self.original_run(args, **kwargs)
+
+    def native(self, directory, *args, profile=None, **kwargs):
+        observation = {'component': 'pkg:rpm/fedora/example@1', 'advisory': 'CVE-2026-12345',
+                       'locations': ['/usr/bin/example'], 'locationCoverage': 'complete',
+                       'severity': 'High', 'cvss': 8.0, 'knownExploited': False,
+                       'aliases': ['CVE-2026-12345'], 'fixVersions': []}
+        return {'status': 'complete', 'scannerHealth': 'healthy',
+                'observations': [observation] if profile == 'finite' else []}
+
+    def add_packet(self, value=None, *, text=None, path=None):
+        value = self.value if value is None else value
+        path = path or 'automation/decisions/security/' + packets.canonical_hash(value) + '.json'
+        self.commit(path, text if text is not None else json.dumps(value, indent=2) + '\n')
+        self.head = self.git('rev-parse', 'HEAD')
+        return path
+
+    def receipt(self):
+        values = packets.fingerprints(self.repo, self.base, self.head)
+        (self.runtime / 'authenticated-finding-ids.gitleaksignore').write_text(''.join(v + '\n' for v in values))
+        return values
+
+    def test_full_byte_authentication_precedes_exact_exceptions(self):
+        path = self.add_packet()
+        values = self.receipt()
+        self.assertEqual(self.authenticated_calls, 2)
+        self.assertEqual(len(values), 1)
+        self.assertTrue(values[0].startswith(self.head + ':' + path + ':generic-api-key:'))
+
+    def test_substituted_provenance_request_and_archive_bytes_never_get_receipt(self):
+        for kind in ('run', 'attempt', 'source', 'artifact', 'request', 'oci', 'zip', 'zip-digest', 'oci-bytes'):
+            with self.subTest(kind=kind):
+                value = copy.deepcopy(self.value)
+                if kind == 'run':value['payload']['packet']['producer']['runId'] = 8
+                if kind == 'attempt':value['payload']['packet']['producer']['runAttempt'] = 3
+                if kind == 'source':value['payload']['packet']['producer']['headSha'] = 'f' * 40
+                if kind == 'artifact':value['payload']['packet']['producer']['artifacts'][0]['digest'] = 'sha256:' + 'e' * 64
+                if kind == 'request':value['payload']['packet']['sha256'] = 'e' * 64
+                if kind == 'oci':value['payload']['packet']['reference'] = self.reference[:-1] + ('0' if self.reference[-1] != '0' else '1')
+                path = 'automation/decisions/security/' + packets.canonical_hash(value) + '.json'
+                raw = (json.dumps(value, indent=2) + '\n').encode()
+                parsed, _ = packets.proposal_lines(raw, path)
+                original_zip, original_blobs = self.zips.copy(), self.blobs.copy()
+                try:
+                    if kind == 'zip':self.zips[1] = b'wrong native archive bytes'
+                    if kind == 'zip-digest':self.zips[1] = self.zips[1][:-1] + bytes([self.zips[1][-1] ^ 1])
+                    if kind == 'oci-bytes':self.blobs = {key: bytes([raw[0] ^ 1]) + raw[1:] for key, raw in self.blobs.items()}
+                    with self.assertRaises((ValueError, subprocess.CalledProcessError, AssertionError)):
+                        packets.authenticate_packet(parsed, self.base, self.repo)
+                finally:self.zips, self.blobs = original_zip, original_blobs
+
+    def test_duplicate_minified_relocated_forged_and_spoofed_data_get_no_exception(self):
+        valid = copy.deepcopy(self.value)
+        raw = json.dumps(valid, indent=2) + '\n'
+        cases = [(valid, raw.replace('"schema": 1,', '"schema": 1, "schema": 1,')),
+                 (valid, json.dumps(valid))]
+        forged = copy.deepcopy(valid);forged['payload']['findings'][0]['key'] = hashlib.sha256(b'not-the-finding').hexdigest()
+        cases.append((forged, json.dumps(forged, indent=2) + '\n'))
+        moved = copy.deepcopy(valid);moved['payload']['rationale'] = {'key': moved['payload']['findings'][0].pop('key')}
+        cases.append((moved, json.dumps(moved, indent=2) + '\n'))
+        for value, text in cases:
+            path = 'automation/decisions/security/' + packets.canonical_hash(value) + '.json'
+            with self.assertRaises(ValueError):packets.proposal_lines(text.encode(), path)
+        with self.assertRaises(ValueError):packets.proposal_lines(raw.encode(), 'automation/decisions/security/not-content-addressed.json')
+
+    @unittest.skipUnless(shutil.which('gitleaks'), 'Pinned Gitleaks supplied by dedicated hosted fixture job')
+    def test_pinned_real_engine_accepts_only_authenticated_new_ids(self):
+        self.real_engine();self.add_packet()
+        self.assertEqual(self.run_scan().returncode, 2)
+        self.receipt()
+        self.assertEqual(self.run_scan().returncode, 0)
+
+    @unittest.skipUnless(shutil.which('gitleaks'), 'Pinned Gitleaks supplied by dedicated hosted fixture job')
+    def test_pinned_real_engine_still_blocks_credentials_elsewhere_in_authenticated_packet(self):
+        self.real_engine()
+        value = copy.deepcopy(self.value)
+        token = 'ghp_' + '9F0r2JtQ6Lw8aD3sG7hK1mN5pR4vXyZcBeTu'
+        value['payload']['rationale'] = 'Synthetic token=' + token
+        self.add_packet(value);self.receipt()
+        result = self.run_scan()
+        self.assertEqual(result.returncode, 2)
+        self.assertNotIn(token, result.stdout + result.stderr)
+
+    @unittest.skipUnless(shutil.which('gitleaks'), 'Pinned Gitleaks supplied by dedicated hosted fixture job')
+    def test_pinned_real_engine_blocks_unverified_new_ids(self):
+        self.real_engine()
+        value = copy.deepcopy(self.value);value['payload']['packet']['producer']['runAttempt'] = 3
+        self.add_packet(value)
+        with self.assertRaises(ValueError):self.receipt()
+        self.assertEqual(self.run_scan().returncode, 2)
+
+    @unittest.skipUnless(shutil.which('gitleaks'), 'Pinned Gitleaks supplied by dedicated hosted fixture job')
+    def test_pinned_real_engine_rejects_all_ambiguous_or_unbound_new_packets(self):
+        self.real_engine()
+        original = copy.deepcopy(self.value)
+        for kind in ('forged-id', 'duplicate-json', 'minified', 'relocated', 'path-spoof', 'same-line-secret'):
+            with self.subTest(kind=kind):
+                self.git('reset', '--hard', self.base)  # Owned synthetic temporary Git graph only.
+                value = copy.deepcopy(original);path = None
+                if kind == 'forged-id':value['payload']['findings'][0]['key'] = hashlib.sha256(b'forged-id').hexdigest()
+                if kind == 'relocated':value['payload']['rationale'] = {'key': value['payload']['findings'][0].pop('key')}
+                text = json.dumps(value, indent=2) + '\n'
+                if kind == 'duplicate-json':text = text.replace('"schema": 1,', '"schema": 1, "schema": 1,')
+                if kind == 'minified':text = json.dumps(value)
+                if kind == 'path-spoof':path = 'automation/decisions/security/not-content-addressed.json'
+                if kind == 'same-line-secret':
+                    token = 'ghp_' + '9F0r2JtQ6Lw8aD3sG7hK1mN5pR4vXyZcBeTu'
+                    key = value['payload']['findings'][0]['key']
+                    text = text.replace('"key": "' + key + '"', '"key": "' + key + '", "token": "' + token + '"')
+                self.add_packet(value, text=text, path=path)
+                output = self.runtime / 'authenticated-finding-ids.gitleaksignore';output.write_text('')
+                try:self.receipt()
+                except ValueError:pass
+                self.assertEqual(output.read_text(), '')
+                self.assertEqual(self.run_scan().returncode, 2)
+
+    def test_protected_base_absence_never_executes_candidate_helper(self):
+        trusted = self.root / 'trusted-scanner'
+        self.git('worktree', 'add', '--detach', str(trusted), self.base)
+        marker = self.root / 'candidate-helper-executed'
+        self.commit('scripts/ci/finding_id_packets.py', 'from pathlib import Path\nPath(' + repr(str(marker)) + ').touch()\n')
+        head = self.git('rev-parse', 'HEAD')
+        step = next(s for s in workflow()['jobs']['repository-secrets']['steps'] if s.get('name') == 'Authenticate new packet finding IDs')
+        result = subprocess.run(['bash', '-c', step['run']], cwd=self.repo,
+            env={**self.env, 'RUNNER_TEMP': str(self.runtime), 'GITHUB_WORKSPACE': str(self.root),
+                 'BASE_SHA': self.base, 'HEAD_SHA': head, 'BASE_REPOSITORY': 'closure-labs/finite',
+                 'BASE_REF': 'main', 'EVENT_NAME': 'pull_request'}, capture_output=True)
+        self.assertEqual(result.returncode, 0)
+        self.assertFalse(marker.exists())
+        self.assertEqual((self.runtime / 'authenticated-finding-ids.gitleaksignore').read_text(), '')
+
+    def test_verifier_wrong_tool_source_clears_receipt_before_any_authentication(self):
+        output = self.root / 'receipt';output.write_text('stale-ignore')
+        env = {'BASE_SHA': self.base, 'HEAD_SHA': self.head, 'EVENT_NAME': 'pull_request',
+               'BASE_REF': 'main', 'BASE_REPOSITORY': 'closure-labs/finite', 'GITHUB_REPOSITORY': 'closure-labs/finite'}
+        with patch.dict(os.environ, env), patch.object(packets, 'git', return_value=b'wrong-source'), \
+                patch.object(packets, 'fingerprints') as authenticate, \
+                patch.object(sys, 'argv', ['helper', '--candidate', str(self.repo), '--output', str(output)]), self.assertRaises(ValueError):
+            packets.main()
+        authenticate.assert_not_called()
+        self.assertEqual(output.read_text(), '')
+        self.assertEqual(output.stat().st_mode & 0o777, 0o600)
+
+    def test_existing_revocations_retain_full_scan_without_new_exceptions_or_auth_gate(self):
+        value = copy.deepcopy(self.value)
+        value['kind'] = 'security-revocation'
+        value['payload']['disposition'] = 'revoked'
+        value['payload']['supersedes'] = ['a' * 64]
+        self.add_packet(value)
+        value['payload']['rationale'] += ' second revocation'
+        self.add_packet(value)
+        self.assertEqual(self.receipt(), [])
+        self.assertEqual(self.authenticated_calls, 0)
+
+    def test_one_document_and_regular_blob_bounds(self):
+        with self.assertRaises(ValueError):packets.proposal_lines(b' ' * (packets.MAX_DOCUMENT + 1), 'automation/decisions/security/' + 'a' * 64 + '.json')
+        self.add_packet()
+        value = copy.deepcopy(self.value);value['payload']['rationale'] += ' another request'
+        self.add_packet(value)
+        with self.assertRaisesRegex(ValueError, 'one immutable packet'):self.receipt()
+
+    def test_workflow_credentials_belong_only_to_protected_base_verifier(self):
+        job = workflow()['jobs']['repository-secrets']
+        checkout = next(s for s in job['steps'] if s.get('name') == 'Checkout protected base scanner tools')
+        self.assertEqual(checkout['with']['ref'], '${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}')
+        self.assertIs(checkout['with']['persist-credentials'], False)
+        auth = next(s for s in job['steps'] if s.get('name') == 'Authenticate new packet finding IDs')
+        scan = next(s for s in job['steps'] if s.get('name') == 'Scan complete introduced commit range')
+        self.assertEqual(auth['env']['GH_TOKEN'], '${{ github.token }}')
+        self.assertNotIn('GH_TOKEN', scan['env'])
+        self.assertIn('python3 -I "$helper"', auth['run'])
+        self.assertIn('helper="$trusted/scripts/ci/finding_id_packets.py"', auth['run'])
+        self.assertEqual(scan['if'], '${{ !cancelled() }}')
+        self.assertNotIn('secrets.', yaml.safe_dump(job))
 
 
 class NativeOriginTests(unittest.TestCase):
