@@ -125,6 +125,21 @@ class Reads(unittest.TestCase):
                 api.get_json(ENDPOINT)
             self.assertEqual(run.call_count, 1)
 
+    def test_valid_json_parse_crossing_deadline_is_classified_as_deadline(self):
+        original = api.json.loads
+        response = reply()
+        def parse(raw):
+            value = original(raw)
+            self.clock.now = 46
+            return value
+        with patch.object(api.subprocess, 'run', return_value=response) as run, \
+                patch.object(api.json, 'loads', side_effect=parse):
+            with self.assertRaisesRegex(api.GitHubReadError, 'deadline') as caught:
+                api.get_json(ENDPOINT)
+            self.assertTrue(caught.exception.transient)
+            self.assertEqual(run.call_count, 1)
+            self.sleep.assert_not_called()
+
     def test_long_server_wait_exhausts_budget_without_sleeping(self):
         with patch.object(api.subprocess, 'run', return_value=reply(429, Retry_After=3600)) as run, \
                 patch.object(api.time, 'sleep', side_effect=self.clock.sleep) as sleep:

@@ -85,10 +85,10 @@ def get_json(endpoint, *, environment=None, missing=False, public=False, deadlin
             if result.returncode == 0 and status == 200:
                 try:
                     value = json.loads(body)
-                    budget.remaining()
-                    return value
                 except ValueError as error:
                     raise GitHubReadError('Invalid GitHub JSON: ' + label) from error
+                budget.remaining()
+                return value
             reason = 'HTTP ' + str(status) if status else 'transport failure'
         except (subprocess.TimeoutExpired, TimeoutError):
             reason = 'timeout'
