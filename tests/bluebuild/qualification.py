@@ -678,10 +678,11 @@ class Origin(unittest.TestCase):
                 r.metadata(self.run, [failed], artifact, self.profile)
             self.assertNotIsInstance(caught.exception, r.Unavailable)
         for status, conclusion in (('in_progress', 'success'), ('completed', None), ('completed', 'unknown')):
-            with self.subTest(status=status, conclusion=conclusion), self.assertRaises(ValueError) as caught:
-                r.metadata(self.run, [{**self.job, 'status': status, 'conclusion': conclusion}],
-                           self.artifact, self.profile)
-            self.assertNotIsInstance(caught.exception, r.Unavailable)
+            for artifact in (self.artifact, {**self.artifact, 'expired': True}, {**self.artifact, 'digest': None}):
+                with self.subTest(status=status, conclusion=conclusion, artifact=artifact), self.assertRaises(ValueError) as caught:
+                    r.metadata(self.run, [{**self.job, 'status': status, 'conclusion': conclusion}],
+                               artifact, self.profile)
+                self.assertNotIsInstance(caught.exception, r.Unavailable)
 
     def test_legacy_producer_or_missing_hash_falls_back_to_fresh(self):
         with self.assertRaises(r.Unavailable):
