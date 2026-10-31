@@ -67,7 +67,7 @@ class Integrations(unittest.TestCase):
         events = build.get('on', build.get(True))
         self.assertIn('pull_request', events)
         # All PR-reachable jobs, including the optional native benchmark.
-        for name in ('impact', 'docs', 'checks', 'gate', 'vm-tools-benchmark'):
+        for name in ('impact', 'docs', 'checks', 'gate', 'vm-tools-benchmark', 'repository-secrets'):
             job = jobs[name]
             self.assertTrue(all(value == 'read' for value in job.get('permissions', {}).values()), name)
             self.assertNotIn('secrets.', str(job), name)
@@ -83,7 +83,7 @@ class Integrations(unittest.TestCase):
                       "github.event_name == 'workflow_dispatch'"):
             self.assertIn(guard, jobs['publish']['if'])
         self.assertEqual(jobs['gate']['if'], 'always()')
-        self.assertEqual(set(jobs['gate']['needs']), {'impact', 'docs', 'checks', 'images', 'publish'})
+        self.assertEqual(set(jobs['gate']['needs']), {'impact', 'docs', 'checks', 'images', 'publish', 'repository-secrets'})
         collector = document('decision-events')
         self.assertEqual(collector['permissions'], {'contents': 'read'})
         self.assertNotIn('secrets.', str(collector))
